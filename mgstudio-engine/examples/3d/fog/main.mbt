@@ -99,11 +99,13 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   }
 
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+        ),
+      )
+    }),
   )
 }
 
@@ -163,8 +165,9 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     spawn_mesh(
       world,
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val
-        |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 3.0F, 1.0F)),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 3.0F, 1.0F))
+        }),
       ),
       stone_material,
       @transform.Transform::from_xyz(position.x, 1.5F, position.y),
@@ -207,10 +210,12 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     spawn_mesh(
       world,
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val
-        |> @pbr.add_mesh(
-          @math.Cuboid::new(2.0F * half_size, 0.5F, 2.0F * half_size),
-        ),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets
+          |> @pbr.add_mesh(
+            @math.Cuboid::new(2.0F * half_size, 0.5F, 2.0F * half_size),
+          )
+        }),
       ),
       stone_material,
       @transform.Transform::from_xyz(0.0F, y + 0.25F, 0.0F),
@@ -221,8 +226,9 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(

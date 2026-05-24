@@ -111,10 +111,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let plane = world.spawn_empty()
-  let plane_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(20.0F, 0.1F, 20.0F),
-  )
+  let plane_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(20.0F, 0.1F, 20.0F))
+  })
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.1F, 0.1F, 0.1F)),
   )
@@ -130,10 +129,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let cube_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
-  )
+  let cube_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  })
   spawn_axes_cube(world, cube_mesh, @sprite.Color::srgb(0.8F, 0.7F, 0.6F), TransformTracking::{
     center: @math.Vec3::new(-1.2F, -0.6F, 0.0F),
     orbit_radius: 1.4F,

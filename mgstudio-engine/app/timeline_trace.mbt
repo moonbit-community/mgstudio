@@ -66,41 +66,47 @@ pub fn timeline_trace_category_label(
 pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 
 ///|
-let timeline_trace_span_sink_ref : Ref[TimelineTraceSpanSink?] = Ref(None)
+priv struct TimelineTraceRuntimeState {
+  mut span_sink : TimelineTraceSpanSink?
+  pending_spans : Array[TimelineTraceSpan]
+}
 
 ///|
-let timeline_trace_pending_spans_ref : Ref[Array[TimelineTraceSpan]] = Ref([])
+let timeline_trace_runtime_state : TimelineTraceRuntimeState = {
+  span_sink: None,
+  pending_spans: [],
+}
 
 ///|
 pub fn set_timeline_trace_span_sink(sink : TimelineTraceSpanSink?) -> Unit {
-  timeline_trace_span_sink_ref.val = sink
+  timeline_trace_runtime_state.span_sink = sink
 }
 
 ///|
 pub fn clear_timeline_trace_span_sink() -> Unit {
-  timeline_trace_span_sink_ref.val = None
+  timeline_trace_runtime_state.span_sink = None
 }
 
 ///|
 pub fn timeline_trace_push_pending_span(span : TimelineTraceSpan) -> Unit {
-  timeline_trace_pending_spans_ref.val.push(span)
+  timeline_trace_runtime_state.pending_spans.push(span)
 }
 
 ///|
 pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan] {
-  let pending = timeline_trace_pending_spans_ref.val
-  timeline_trace_pending_spans_ref.val = []
+  let pending = timeline_trace_runtime_state.pending_spans.copy()
+  timeline_trace_runtime_state.pending_spans.clear()
   pending
 }
 
 ///|
 pub fn timeline_trace_clear_pending_spans() -> Unit {
-  timeline_trace_pending_spans_ref.val = []
+  timeline_trace_runtime_state.pending_spans.clear()
 }
 
 ///|
 pub fn timeline_trace_enabled() -> Bool {
-  timeline_trace_span_sink_ref.val is Some(_)
+  timeline_trace_runtime_state.span_sink is Some(_)
 }
 
 ///|
@@ -141,7 +147,7 @@ pub fn timeline_trace_emit_complete_span(
   ts_us : Int64,
   dur_us : Int64,
 ) -> Unit {
-  guard timeline_trace_span_sink_ref.val is Some(sink) else { return }
+  guard timeline_trace_runtime_state.span_sink is Some(sink) else { return }
   let span = TimelineTraceSpan::{
     category,
     name,

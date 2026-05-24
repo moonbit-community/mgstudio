@@ -444,19 +444,22 @@ test "app: repeated run_if_stateful keeps independent condition state" {
   let system_runs = Ref(0)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
-    .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
-      let value : Int = try! @json.from_json(state.val)
+    .run_if_stateful(0, fn(
+      _world : @ecs.World,
+      state : RunConditionState[Int],
+    ) {
+      let value = state.get()
       first_seen.push(value)
-      state.val = (value + 1).to_json()
+      state.set(value + 1)
       true
     })
-    .run_if_stateful((100).to_json(), fn(
+    .run_if_stateful(100, fn(
       _world : @ecs.World,
-      state : Ref[Json],
+      state : RunConditionState[Int],
     ) {
-      let value : Int = try! @json.from_json(state.val)
+      let value = state.get()
       second_seen.push(value)
-      state.val = (value + 10).to_json()
+      state.set(value + 10)
       true
     }),
   )
@@ -1072,7 +1075,7 @@ struct Param6 {
 
 ///|
 impl SystemParam for Param1 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1087,7 +1090,7 @@ impl SystemParam for Param1 with store(self, _state) {
 
 ///|
 impl SystemParam for Param2 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1102,7 +1105,7 @@ impl SystemParam for Param2 with store(self, _state) {
 
 ///|
 impl SystemParam for Param3 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1117,7 +1120,7 @@ impl SystemParam for Param3 with store(self, _state) {
 
 ///|
 impl SystemParam for Param4 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1132,7 +1135,7 @@ impl SystemParam for Param4 with store(self, _state) {
 
 ///|
 impl SystemParam for Param5 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1147,7 +1150,7 @@ impl SystemParam for Param5 with store(self, _state) {
 
 ///|
 impl SystemParam for Param6 with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1167,7 +1170,7 @@ struct SequenceParam {
 
 ///|
 impl SystemParam for SequenceParam with init_state(_world) {
-  Json::null()
+  system_param_empty_state(_world)
 }
 
 ///|
@@ -1310,7 +1313,7 @@ test "app: MessageWriter system param writes messages for MessageReader" {
       ignore(writer.write({ value: 42 }))
     })
     .add_system_param(fn(reader : @ecs.MessageReader[TestMessage]) {
-      let messages = try! reader.read()
+      let messages = reader.read()
       if messages.length() > 0 {
         observed.val = messages[0].value
       }

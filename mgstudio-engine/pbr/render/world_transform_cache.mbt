@@ -126,9 +126,9 @@ impl @app.Resource for Render3dWorldTransformCache with resource() {
 }
 
 ///|
-pub fn render3d_world_transform_cache_ref(
+pub fn render3d_world_transform_cache_mut(
   world : @ecs.World,
-) -> Ref[Render3dWorldTransformCache] {
+) -> @ecs.ResourceMut[Render3dWorldTransformCache] {
   if world.get_resource(Render3dWorldTransformCache::resource()) is None {
     world.insert_resource(
       Render3dWorldTransformCache::resource(),
@@ -136,56 +136,56 @@ pub fn render3d_world_transform_cache_ref(
     )
   }
   match world.get_resource_mut(Render3dWorldTransformCache::resource()) {
-    Some(cache_ref) => Ref(cache_ref.peek())
+    Some(cache) => cache
     None => abort("Missing Render3dWorldTransformCache resource")
   }
 }
 
 ///|
 pub fn render3d_world_transform_cache_begin_frame(
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> Unit {
-  cache_ref.val.frame_stamp = cache_ref.val.frame_stamp + 1
-  if cache_ref.val.frame_stamp <= 0 {
-    cache_ref.val.frame_stamp = 1
-    for i in 0..<cache_ref.val.stamps.length() {
-      cache_ref.val.stamps[i] = 0
+  cache.frame_stamp = cache.frame_stamp + 1
+  if cache.frame_stamp <= 0 {
+    cache.frame_stamp = 1
+    for i in 0..<cache.stamps.length() {
+      cache.stamps[i] = 0
     }
-    for i in 0..<cache_ref.val.skinning_stamps.length() {
-      cache_ref.val.skinning_stamps[i] = 0
+    for i in 0..<cache.skinning_stamps.length() {
+      cache.skinning_stamps[i] = 0
     }
-    for i in 0..<cache_ref.val.local_stamps.length() {
-      cache_ref.val.local_stamps[i] = 0
+    for i in 0..<cache.local_stamps.length() {
+      cache.local_stamps[i] = 0
     }
-    for i in 0..<cache_ref.val.parent_stamps.length() {
-      cache_ref.val.parent_stamps[i] = 0
+    for i in 0..<cache.parent_stamps.length() {
+      cache.parent_stamps[i] = 0
     }
   }
 }
 
 ///|
 fn render3d_world_transform_cache_ensure_entity_slot(
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
   entity_id : Int,
 ) -> Unit {
   if entity_id < 0 {
     return
   }
   let required_len = entity_id + 1
-  while cache_ref.val.transforms.length() < required_len {
-    cache_ref.val.transforms.push(None)
-    cache_ref.val.generations.push(0)
-    cache_ref.val.visiting.push(false)
-    cache_ref.val.stamps.push(0)
-    cache_ref.val.local_transforms.push(None)
-    cache_ref.val.local_generations.push(0)
-    cache_ref.val.local_stamps.push(0)
-    cache_ref.val.parent_entities.push(None)
-    cache_ref.val.parent_generations.push(0)
-    cache_ref.val.parent_stamps.push(0)
-    cache_ref.val.skinning_matrices.push(None)
-    cache_ref.val.skinning_generations.push(0)
-    cache_ref.val.skinning_stamps.push(0)
+  while cache.transforms.length() < required_len {
+    cache.transforms.push(None)
+    cache.generations.push(0)
+    cache.visiting.push(false)
+    cache.stamps.push(0)
+    cache.local_transforms.push(None)
+    cache.local_generations.push(0)
+    cache.local_stamps.push(0)
+    cache.parent_entities.push(None)
+    cache.parent_generations.push(0)
+    cache.parent_stamps.push(0)
+    cache.skinning_matrices.push(None)
+    cache.skinning_generations.push(0)
+    cache.skinning_stamps.push(0)
   }
 }
 
@@ -207,17 +207,17 @@ fn render3d_entity_global_transform(
 ///|
 fn render3d_entity_local_transform_cached_with_columns(
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
   columns : Render3dTransformColumns,
 ) -> @transform.Transform {
   if entity.id < 0 {
     return @transform.Transform::identity()
   }
-  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-  let frame_stamp = cache_ref.val.frame_stamp
-  if cache_ref.val.local_stamps[entity.id] == frame_stamp &&
-    cache_ref.val.local_generations[entity.id] == entity.generation {
-    if cache_ref.val.local_transforms[entity.id] is Some(cached) {
+  render3d_world_transform_cache_ensure_entity_slot(cache, entity.id)
+  let frame_stamp = cache.frame_stamp
+  if cache.local_stamps[entity.id] == frame_stamp &&
+    cache.local_generations[entity.id] == entity.generation {
+    if cache.local_transforms[entity.id] is Some(cached) {
       return cached
     }
     return @transform.Transform::identity()
@@ -230,9 +230,9 @@ fn render3d_entity_local_transform_cached_with_columns(
       }
     None => @transform.Transform::identity()
   }
-  cache_ref.val.local_transforms[entity.id] = Some(local_transform)
-  cache_ref.val.local_generations[entity.id] = entity.generation
-  cache_ref.val.local_stamps[entity.id] = frame_stamp
+  cache.local_transforms[entity.id] = Some(local_transform)
+  cache.local_generations[entity.id] = entity.generation
+  cache.local_stamps[entity.id] = frame_stamp
   local_transform
 }
 
@@ -240,28 +240,26 @@ fn render3d_entity_local_transform_cached_with_columns(
 pub fn render3d_entity_local_transform_cached(
   world : @ecs.World,
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> @transform.Transform {
   let columns = render3d_transform_columns(world)
-  render3d_entity_local_transform_cached_with_columns(
-    entity, cache_ref, columns,
-  )
+  render3d_entity_local_transform_cached_with_columns(entity, cache, columns)
 }
 
 ///|
 fn render3d_entity_parent_cached_with_columns(
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
   columns : Render3dTransformColumns,
 ) -> @core.Entity? {
   if entity.id < 0 {
     return None
   }
-  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-  let frame_stamp = cache_ref.val.frame_stamp
-  if cache_ref.val.parent_stamps[entity.id] == frame_stamp &&
-    cache_ref.val.parent_generations[entity.id] == entity.generation {
-    return cache_ref.val.parent_entities[entity.id]
+  render3d_world_transform_cache_ensure_entity_slot(cache, entity.id)
+  let frame_stamp = cache.frame_stamp
+  if cache.parent_stamps[entity.id] == frame_stamp &&
+    cache.parent_generations[entity.id] == entity.generation {
+    return cache.parent_entities[entity.id]
   }
   let parent_entity = match columns.parent {
     Some(parent_column) =>
@@ -271,9 +269,9 @@ fn render3d_entity_parent_cached_with_columns(
       }
     None => None
   }
-  cache_ref.val.parent_entities[entity.id] = parent_entity
-  cache_ref.val.parent_generations[entity.id] = entity.generation
-  cache_ref.val.parent_stamps[entity.id] = frame_stamp
+  cache.parent_entities[entity.id] = parent_entity
+  cache.parent_generations[entity.id] = entity.generation
+  cache.parent_stamps[entity.id] = frame_stamp
   parent_entity
 }
 
@@ -281,49 +279,47 @@ fn render3d_entity_parent_cached_with_columns(
 pub fn render3d_entity_parent_cached(
   world : @ecs.World,
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> @core.Entity? {
   let columns = render3d_transform_columns(world)
-  render3d_entity_parent_cached_with_columns(entity, cache_ref, columns)
+  render3d_entity_parent_cached_with_columns(entity, cache, columns)
 }
 
 ///|
 fn render3d_entity_world_transform_cached_with_columns(
   world : @ecs.World,
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
   columns : Render3dTransformColumns,
 ) -> @transform.Transform {
   if entity.id < 0 {
     return @transform.Transform::identity()
   }
-  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-  let frame_stamp = cache_ref.val.frame_stamp
-  if cache_ref.val.stamps[entity.id] == frame_stamp &&
-    cache_ref.val.generations[entity.id] == entity.generation {
-    if cache_ref.val.transforms[entity.id] is Some(cached) {
+  render3d_world_transform_cache_ensure_entity_slot(cache, entity.id)
+  let frame_stamp = cache.frame_stamp
+  if cache.stamps[entity.id] == frame_stamp &&
+    cache.generations[entity.id] == entity.generation {
+    if cache.transforms[entity.id] is Some(cached) {
       return cached
     }
   }
-  if cache_ref.val.stamps[entity.id] == frame_stamp &&
-    cache_ref.val.visiting[entity.id] {
+  if cache.stamps[entity.id] == frame_stamp && cache.visiting[entity.id] {
     return render3d_entity_local_transform_cached_with_columns(
-      entity, cache_ref, columns,
+      entity, cache, columns,
     )
   }
-  cache_ref.val.stamps[entity.id] = frame_stamp
-  cache_ref.val.visiting[entity.id] = true
+  cache.stamps[entity.id] = frame_stamp
+  cache.visiting[entity.id] = true
   let composed = match render3d_entity_global_transform(columns, entity) {
     Some(global_transform) => global_transform
     None => {
       let local_transform = render3d_entity_local_transform_cached_with_columns(
-        entity, cache_ref, columns,
+        entity, cache, columns,
       )
-      match
-        render3d_entity_parent_cached_with_columns(entity, cache_ref, columns) {
+      match render3d_entity_parent_cached_with_columns(entity, cache, columns) {
         Some(parent_entity) => {
           let parent_transform = render3d_entity_world_transform_cached_with_columns(
-            world, parent_entity, cache_ref, columns,
+            world, parent_entity, cache, columns,
           )
           render3d_compose_transform(parent_transform, local_transform)
         }
@@ -331,10 +327,10 @@ fn render3d_entity_world_transform_cached_with_columns(
       }
     }
   }
-  cache_ref.val.visiting[entity.id] = false
-  cache_ref.val.transforms[entity.id] = Some(composed)
-  cache_ref.val.generations[entity.id] = entity.generation
-  cache_ref.val.stamps[entity.id] = frame_stamp
+  cache.visiting[entity.id] = false
+  cache.transforms[entity.id] = Some(composed)
+  cache.generations[entity.id] = entity.generation
+  cache.stamps[entity.id] = frame_stamp
   composed
 }
 
@@ -342,11 +338,11 @@ fn render3d_entity_world_transform_cached_with_columns(
 pub fn render3d_entity_world_transform_cached(
   world : @ecs.World,
   entity : @core.Entity,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> @transform.Transform {
   let columns = render3d_transform_columns(world)
   render3d_entity_world_transform_cached_with_columns(
-    world, entity, cache_ref, columns,
+    world, entity, cache, columns,
   )
 }
 
@@ -355,47 +351,45 @@ fn render3d_entity_world_transform_cached_with_local_with_columns(
   world : @ecs.World,
   entity : @core.Entity,
   local_transform : @transform.Transform,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
   columns : Render3dTransformColumns,
 ) -> @transform.Transform {
   if entity.id < 0 {
     return @transform.Transform::identity()
   }
-  render3d_world_transform_cache_ensure_entity_slot(cache_ref, entity.id)
-  let frame_stamp = cache_ref.val.frame_stamp
-  if cache_ref.val.stamps[entity.id] == frame_stamp &&
-    cache_ref.val.generations[entity.id] == entity.generation {
-    if cache_ref.val.transforms[entity.id] is Some(cached) {
+  render3d_world_transform_cache_ensure_entity_slot(cache, entity.id)
+  let frame_stamp = cache.frame_stamp
+  if cache.stamps[entity.id] == frame_stamp &&
+    cache.generations[entity.id] == entity.generation {
+    if cache.transforms[entity.id] is Some(cached) {
       return cached
     }
   }
-  if cache_ref.val.stamps[entity.id] == frame_stamp &&
-    cache_ref.val.visiting[entity.id] {
+  if cache.stamps[entity.id] == frame_stamp && cache.visiting[entity.id] {
     return local_transform
   }
-  cache_ref.val.stamps[entity.id] = frame_stamp
-  cache_ref.val.visiting[entity.id] = true
-  cache_ref.val.local_transforms[entity.id] = Some(local_transform)
-  cache_ref.val.local_generations[entity.id] = entity.generation
-  cache_ref.val.local_stamps[entity.id] = frame_stamp
+  cache.stamps[entity.id] = frame_stamp
+  cache.visiting[entity.id] = true
+  cache.local_transforms[entity.id] = Some(local_transform)
+  cache.local_generations[entity.id] = entity.generation
+  cache.local_stamps[entity.id] = frame_stamp
   let composed = match render3d_entity_global_transform(columns, entity) {
     Some(global_transform) => global_transform
     None =>
-      match
-        render3d_entity_parent_cached_with_columns(entity, cache_ref, columns) {
+      match render3d_entity_parent_cached_with_columns(entity, cache, columns) {
         Some(parent_entity) => {
           let parent_transform = render3d_entity_world_transform_cached_with_columns(
-            world, parent_entity, cache_ref, columns,
+            world, parent_entity, cache, columns,
           )
           render3d_compose_transform(parent_transform, local_transform)
         }
         None => local_transform
       }
   }
-  cache_ref.val.visiting[entity.id] = false
-  cache_ref.val.transforms[entity.id] = Some(composed)
-  cache_ref.val.generations[entity.id] = entity.generation
-  cache_ref.val.stamps[entity.id] = frame_stamp
+  cache.visiting[entity.id] = false
+  cache.transforms[entity.id] = Some(composed)
+  cache.generations[entity.id] = entity.generation
+  cache.stamps[entity.id] = frame_stamp
   composed
 }
 
@@ -404,11 +398,11 @@ pub fn render3d_entity_world_transform_cached_with_local(
   world : @ecs.World,
   entity : @core.Entity,
   local_transform : @transform.Transform,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> @transform.Transform {
   let columns = render3d_transform_columns(world)
   render3d_entity_world_transform_cached_with_local_with_columns(
-    world, entity, local_transform, cache_ref, columns,
+    world, entity, local_transform, cache, columns,
   )
 }
 
@@ -417,10 +411,10 @@ pub fn render3d_entity_world_transform_from_components(
   world : @ecs.World,
   entity : @core.Entity,
   local_transform : @transform.Transform,
-  cache_ref : Ref[Render3dWorldTransformCache],
+  cache : Render3dWorldTransformCache,
 ) -> @transform.Transform {
   render3d_entity_world_transform_cached_with_local(
-    world, entity, local_transform, cache_ref,
+    world, entity, local_transform, cache,
   )
 }
 
@@ -431,11 +425,11 @@ pub const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
 pub fn render3d_entity_global_or_cached_transform(
   world : @ecs.World,
   entity : @core.Entity,
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  world_transform_cache_value : Render3dWorldTransformCache,
 ) -> @transform.Transform {
   let columns = render3d_transform_columns(world)
   render3d_entity_world_transform_cached_with_columns(
-    world, entity, world_transform_cache_ref, columns,
+    world, entity, world_transform_cache_value, columns,
   )
 }
 
@@ -458,11 +452,11 @@ pub fn render3d_extract_skinning_matrices(
   entity : @core.Entity,
   skinned_mesh : @mesh.SkinnedMesh,
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  world_transform_cache_value : Render3dWorldTransformCache,
 ) -> Array[Float]? {
   let columns = render3d_transform_columns(world)
   render3d_extract_skinning_matrices_with_columns(
-    world, entity, skinned_mesh, inverse_bindposes_assets, world_transform_cache_ref,
+    world, entity, skinned_mesh, inverse_bindposes_assets, world_transform_cache_value,
     columns,
   )
 }
@@ -473,22 +467,22 @@ pub fn render3d_extract_skinning_matrices_with_columns(
   entity : @core.Entity,
   skinned_mesh : @mesh.SkinnedMesh,
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-  world_transform_cache_ref : Ref[Render3dWorldTransformCache],
+  world_transform_cache_value : Render3dWorldTransformCache,
   columns : Render3dTransformColumns,
 ) -> Array[Float]? {
   if entity.id < 0 {
     return None
   }
   render3d_world_transform_cache_ensure_entity_slot(
-    world_transform_cache_ref,
+    world_transform_cache_value,
     entity.id,
   )
-  let frame_stamp = world_transform_cache_ref.val.frame_stamp
-  if entity.id < world_transform_cache_ref.val.skinning_stamps.length() &&
-    world_transform_cache_ref.val.skinning_stamps[entity.id] == frame_stamp &&
-    world_transform_cache_ref.val.skinning_generations[entity.id] ==
+  let frame_stamp = world_transform_cache_value.frame_stamp
+  if entity.id < world_transform_cache_value.skinning_stamps.length() &&
+    world_transform_cache_value.skinning_stamps[entity.id] == frame_stamp &&
+    world_transform_cache_value.skinning_generations[entity.id] ==
     entity.generation {
-    return world_transform_cache_ref.val.skinning_matrices[entity.id]
+    return world_transform_cache_value.skinning_matrices[entity.id]
   }
   let joints = skinned_mesh.joints()
   if joints.length() == 0 {
@@ -500,11 +494,11 @@ pub fn render3d_extract_skinning_matrices_with_columns(
     Some(asset) => asset
     None => return None
   }
-  let out = match world_transform_cache_ref.val.skinning_matrices[entity.id] {
+  let out = match world_transform_cache_value.skinning_matrices[entity.id] {
     Some(values) => values
     None => {
       let values : Array[Float] = []
-      world_transform_cache_ref.val.skinning_matrices[entity.id] = Some(values)
+      world_transform_cache_value.skinning_matrices[entity.id] = Some(values)
       values
     }
   }
@@ -533,7 +527,7 @@ pub fn render3d_extract_skinning_matrices_with_columns(
             )
           None => {
             let joint_world = render3d_entity_world_transform_cached_with_columns(
-              world, joint_entity, world_transform_cache_ref, columns,
+              world, joint_entity, world_transform_cache_value, columns,
             )
             @mesh.SkinningMat4::from_transform(joint_world).mul_write_row_major_f32(
               inverse_bindpose, out, out_base,
@@ -542,7 +536,7 @@ pub fn render3d_extract_skinning_matrices_with_columns(
         }
       None => {
         let joint_world = render3d_entity_world_transform_cached_with_columns(
-          world, joint_entity, world_transform_cache_ref, columns,
+          world, joint_entity, world_transform_cache_value, columns,
         )
         @mesh.SkinningMat4::from_transform(joint_world).mul_write_row_major_f32(
           inverse_bindpose, out, out_base,
@@ -550,8 +544,8 @@ pub fn render3d_extract_skinning_matrices_with_columns(
       }
     }
   }
-  world_transform_cache_ref.val.skinning_generations[entity.id] = entity.generation
-  world_transform_cache_ref.val.skinning_stamps[entity.id] = frame_stamp
-  world_transform_cache_ref.val.skinning_matrices[entity.id] = Some(out)
+  world_transform_cache_value.skinning_generations[entity.id] = entity.generation
+  world_transform_cache_value.skinning_stamps[entity.id] = frame_stamp
+  world_transform_cache_value.skinning_matrices[entity.id] = Some(out)
   Some(out)
 }

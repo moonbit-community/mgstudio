@@ -78,17 +78,18 @@ fn init_auto_exposure_compensation_curve_asset(
   })
   if next.world().get_resource_mut(auto_exposure_curve_assets_key)
     is Some(curves_ref) {
-    let curves = curves_ref.peek()
     let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
       0,
     )
-    if !curves.contains(default_curve_handle) {
-      curves.insert(
-        default_curve_handle,
-        AutoExposureCompensationCurve::AutoExposureCompensationCurve(),
-      )
-      |> ignore
-    }
+    curves_ref.modify(fn(curves) {
+      if !curves.contains(default_curve_handle) {
+        curves.insert(
+          default_curve_handle,
+          AutoExposureCompensationCurve::AutoExposureCompensationCurve(),
+        )
+        |> ignore
+      }
+    })
   }
   next
 }

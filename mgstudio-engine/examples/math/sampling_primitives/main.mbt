@@ -405,7 +405,11 @@ fn shape_sample_boundary(shape : Shape, rng : @random.Rand) -> @math.Vec3 {
 
 ///|
 fn[P : @pbr.IntoPbrMeshAsset] mesh3d_from_mesh_asset(value : P) -> @mesh.Mesh3d {
-  @mesh.Mesh3d::new(@pbr.mesh_assets_mut_or_abort().val |> @pbr.add_mesh(value))
+  @mesh.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(value)
+    }),
+  )
 }
 
 ///|
@@ -604,12 +608,14 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(20.0F, 20.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(20.0F, 20.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       materials
@@ -701,13 +707,15 @@ fn setup(
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
     mesh: @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.SphereMeshBuilder::new(
-          0.03F,
-          @mesh_primitives_dim3.SphereKind::ico(1),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.SphereMeshBuilder::new(
+            0.03F,
+            @mesh_primitives_dim3.SphereKind::ico(1),
+          ).build(),
+        )
+      }),
     ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
@@ -765,55 +773,55 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     let tick = world.increment_change_tick()
     ignore(tick)
-    if world.get_resource_ref_mut(PointCounter::resource()) is Some(counter) {
-      counter.val.count = 0
+    if world.get_resource_mut(PointCounter::resource()) is Some(counter) {
+      counter.modify(fn(value) { value.count = 0 })
     }
   }
 
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(SamplingMode::resource()) is Some(mode_ref) else {
+  guard world.get_resource_mut(SamplingMode::resource()) is Some(mode) else {
     return
   }
-  guard world.get_resource_ref_mut(SpawningMode::resource())
-    is Some(spawn_mode_ref) else {
+  guard world.get_resource_mut(SpawningMode::resource()) is Some(spawn_mode) else {
     return
   }
-  guard world.get_resource_ref_mut(SpawnQueue::resource())
-    is Some(spawn_queue_ref) else {
+  guard world.get_resource_mut(SpawnQueue::resource()) is Some(spawn_queue) else {
     return
   }
-  guard world.get_resource_ref_mut(InstructionText::resource())
-    is Some(instruction_ref) else {
+  guard world.get_resource(InstructionText::resource()) is Some(instruction) else {
     return
   }
-  guard world.get_resource_ref_mut(SampledShapes::resource())
-    is Some(sampled_shapes_ref) else {
+  guard world.get_resource(SampledShapes::resource()) is Some(sampled_shapes) else {
     return
   }
 
   if keyboard.just_pressed(@window.KeyCode::KeyS) {
-    spawn_queue_ref.val.count = spawn_queue_ref.val.count + 1
+    spawn_queue.modify(fn(value) { value.count = value.count + 1 })
   }
   if keyboard.just_pressed(@window.KeyCode::KeyD) {
-    spawn_queue_ref.val.count = spawn_queue_ref.val.count + 100
+    spawn_queue.modify(fn(value) { value.count = value.count + 100 })
   }
   if keyboard.just_pressed(@window.KeyCode::KeyM) {
-    mode_ref.val = match mode_ref.val {
-      Interior => Boundary
-      Boundary => Interior
-    }
+    mode.update(fn(value) {
+      match value {
+        Interior => Boundary
+        Boundary => Interior
+      }
+    })
   }
   if keyboard.just_pressed(@window.KeyCode::KeyA) {
-    spawn_mode_ref.val = match spawn_mode_ref.val {
-      Manual => Automatic
-      Automatic => Manual
-    }
+    spawn_mode.update(fn(value) {
+      match value {
+        Manual => Automatic
+        Automatic => Manual
+      }
+    })
   }
   if keyboard.just_pressed(@window.KeyCode::Tab) {
     let current_visibility = match
       (try! world.get_by_key(
-        instruction_ref.val.entity,
+        instruction.entity,
         @visibility.Visibility::component(),
       )) {
       Some(visibility) => visibility
@@ -824,7 +832,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       _ => @visibility.Visibility::Hidden
     }
     try! world.set_by_key(
-      instruction_ref.val.entity,
+      instruction.entity,
       @visibility.Visibility::component(),
       next_visibility,
     )
@@ -869,8 +877,8 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
   if left || right {
     let mut closest = 0
     let mut closest_distance = 1_000_000_000.0F
-    for i in 0..<sampled_shapes_ref.val.shapes.length() {
-      let distance = sampled_shapes_ref.val.shapes[i].translation
+    for i in 0..<sampled_shapes.shapes.length() {
+      let distance = sampled_shapes.shapes[i].translation
         .sub(rig.target)
         .length()
       if distance < closest_distance {
@@ -880,12 +888,12 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     let next_rig = rig
     if left && closest > 0 {
-      next_rig.target = sampled_shapes_ref.val.shapes[closest - 1].translation
+      next_rig.target = sampled_shapes.shapes[closest - 1].translation
       ignore(
         try! world.replace(camera_entity, CameraRig::component(), next_rig),
       )
-    } else if right && closest + 1 < sampled_shapes_ref.val.shapes.length() {
-      next_rig.target = sampled_shapes_ref.val.shapes[closest + 1].translation
+    } else if right && closest + 1 < sampled_shapes.shapes.length() {
+      next_rig.target = sampled_shapes.shapes[closest + 1].translation
       ignore(
         try! world.replace(camera_entity, CameraRig::component(), next_rig),
       )
@@ -903,11 +911,12 @@ fn handle_mouse(
   let tick = world.increment_change_tick()
   ignore(tick)
 
-  guard world.get_resource_ref_mut(MousePressed::resource())
-    is Some(mouse_pressed_ref) else {
+  guard world.get_resource_mut(MousePressed::resource()) is Some(mouse_pressed) else {
     return
   }
-  mouse_pressed_ref.val.value = mouse_buttons.pressed(@window.MouseButton::Left)
+  mouse_pressed.modify(fn(value) {
+    value.value = mouse_buttons.pressed(@window.MouseButton::Left)
+  })
 
   let mut camera_entity : @core.Entity? = None
   world.for_each_component(CameraRig::component(), fn(entity, _rig) {
@@ -935,7 +944,7 @@ fn handle_mouse(
     }
   }
 
-  if mouse_pressed_ref.val.value {
+  if mouse_pressed.peek().value {
     let displacement = accumulated_mouse_motion.get().delta
     if displacement.x != 0.0F || displacement.y != 0.0F {
       next_rig.yaw = rig.yaw + displacement.x / 90.0F
@@ -957,20 +966,16 @@ fn handle_mouse(
 fn spawn_points(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(SpawningMode::resource())
-    is Some(spawn_mode_ref) else {
+  guard world.get_resource(SpawningMode::resource()) is Some(spawn_mode) else {
     return
   }
-  guard world.get_resource_ref_mut(SpawnQueue::resource())
-    is Some(spawn_queue_ref) else {
+  guard world.get_resource_mut(SpawnQueue::resource()) is Some(spawn_queue) else {
     return
   }
-  guard world.get_resource_ref_mut(PointCounter::resource())
-    is Some(point_counter_ref) else {
+  guard world.get_resource_mut(PointCounter::resource()) is Some(point_counter) else {
     return
   }
-  guard world.get_resource_ref_mut(RandomSource::resource())
-    is Some(random_source_ref) else {
+  guard world.get_resource_mut(RandomSource::resource()) is Some(random_source) else {
     return
   }
   guard world.get_resource(SamplingMode::resource()) is Some(mode) else {
@@ -986,32 +991,33 @@ fn spawn_points(world : @ecs.World) -> Unit {
     return
   }
 
-  if spawn_mode_ref.val is Automatic {
-    spawn_queue_ref.val.count = spawn_queue_ref.val.count + POINTS_PER_FRAME
+  if spawn_mode is Automatic {
+    spawn_queue.modify(fn(value) {
+      value.count = value.count + POINTS_PER_FRAME
+    })
   }
-  if spawn_queue_ref.val.count <= 0 || sampled_shapes.shapes.length() == 0 {
+  if spawn_queue.peek().count <= 0 || sampled_shapes.shapes.length() == 0 {
     return
   }
 
   for _ in 0..<1000 {
-    if spawn_queue_ref.val.count <= 0 {
+    if spawn_queue.peek().count <= 0 {
       break
     }
-    spawn_queue_ref.val.count = spawn_queue_ref.val.count - 1
-    point_counter_ref.val.count = point_counter_ref.val.count + 1
+    spawn_queue.modify(fn(value) { value.count = value.count - 1 })
+    point_counter.modify(fn(value) { value.count = value.count + 1 })
 
-    let sampled_index = random_source_ref.val.rng.int(
-      limit=sampled_shapes.shapes.length(),
-    )
+    let sampled_index = random_source.modify(fn(value) {
+      value.rng.int(limit=sampled_shapes.shapes.length())
+    })
     let sampled_shape = sampled_shapes.shapes[sampled_index]
-    let sample = sampled_shape.translation.add(
+    let sample_offset = random_source.modify(fn(value) {
       match mode {
-        Interior =>
-          shape_sample_interior(sampled_shape.shape, random_source_ref.val.rng)
-        Boundary =>
-          shape_sample_boundary(sampled_shape.shape, random_source_ref.val.rng)
-      },
-    )
+        Interior => shape_sample_interior(sampled_shape.shape, value.rng)
+        Boundary => shape_sample_boundary(sampled_shape.shape, value.rng)
+      }
+    })
+    let sample = sampled_shape.translation.add(sample_offset)
     spawn_sample_point(world, point_mesh, point_material, mode, sample)
   }
 }
@@ -1026,15 +1032,13 @@ fn despawn_points(world : @ecs.World) -> Unit {
   }
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(PointCounter::resource())
-    is Some(point_counter_ref) else {
+  guard world.get_resource_mut(PointCounter::resource()) is Some(point_counter) else {
     return
   }
-  if point_counter_ref.val.count < MAX_POINTS {
+  if point_counter.peek().count < MAX_POINTS {
     return
   }
-  guard world.get_resource_ref_mut(RandomSource::resource())
-    is Some(random_source_ref) else {
+  guard world.get_resource_mut(RandomSource::resource()) is Some(random_source) else {
     return
   }
 
@@ -1046,9 +1050,12 @@ fn despawn_points(world : @ecs.World) -> Unit {
     return
   }
 
-  let skip = random_source_ref.val.rng.int(limit=sample_entities.length())
-  let despawn_amount = if point_counter_ref.val.count - MAX_POINTS < 100 {
-    point_counter_ref.val.count - MAX_POINTS
+  let skip = random_source.modify(fn(value) {
+    value.rng.int(limit=sample_entities.length())
+  })
+  let point_count = point_counter.peek().count
+  let despawn_amount = if point_count - MAX_POINTS < 100 {
+    point_count - MAX_POINTS
   } else {
     100
   }
@@ -1066,7 +1073,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
     try! (world.take(entity, SpawningPoint::component()) |> ignore)
     removed = removed + 1
   }
-  point_counter_ref.val.count = point_counter_ref.val.count - removed
+  point_counter.modify(fn(value) { value.count = value.count - removed })
 }
 
 ///|

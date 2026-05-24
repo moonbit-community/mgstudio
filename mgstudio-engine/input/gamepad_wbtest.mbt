@@ -14,9 +14,9 @@
 
 ///|
 fn gamepad_test_app() -> @app.App[@ecs.World] {
-  current_gamepads_ref.val = []
-  previous_gamepads_ref.val = []
-  host_gamepad_entities_ref.val = []
+  gamepad_input_runtime_state.current_gamepads = []
+  gamepad_input_runtime_state.previous_gamepads = []
+  gamepad_input_runtime_state.host_gamepad_entities.clear()
   @gilrs.gamepad_test_reset_state()
   input_gamepad_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
 }
@@ -76,7 +76,7 @@ fn clear_gamepad_messages(world : @ecs.World) -> Unit {
 
 ///|
 fn[T] read_messages(world : @ecs.World, key : @ecs.MessageKey[T]) -> Array[T] {
-  try! world.message_reader(key, Ref(0)).read()
+  world.message_reader(key).read()
 }
 
 ///|

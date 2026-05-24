@@ -103,7 +103,7 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
           cursor : Local[@ecs.MessageCursor[TestCursorMessage]],
           messages : ResMut[@ecs.Messages[TestCursorMessage]],
         ) {
-          for message in (try! cursor.read(messages)) {
+          for message in cursor.read(messages) {
             if message.resend {
               ignore(
                 messages.write(TestCursorMessage::{
@@ -120,7 +120,7 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
       Update,
       system(
         system_param(fn(reader : @ecs.MessageReader[TestCursorMessage]) {
-          for message in (try! reader.read()) {
+          for message in reader.read() {
             observed.push((message.resend, message.times_sent))
           }
         }),
@@ -172,7 +172,7 @@ test "app: ParamSet2 can read and write the same message type in one system" {
           ],
         ) {
           let resend : Array[TestParamSetMessage] = []
-          for message in (try! param_set.p0().read()) {
+          for message in param_set.p0().read() {
             if message.resend {
               resend.push(message)
             }
@@ -194,7 +194,7 @@ test "app: ParamSet2 can read and write the same message type in one system" {
       Update,
       system(
         system_param(fn(reader : @ecs.MessageReader[TestParamSetMessage]) {
-          for message in (try! reader.read()) {
+          for message in reader.read() {
             observed.push(message.times_sent)
           }
         }),

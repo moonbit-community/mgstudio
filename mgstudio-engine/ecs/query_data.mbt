@@ -16,8 +16,81 @@
 pub(all) struct QueryDataFetchPlan {
   priv local_component_ids : Array[Int]
   priv local_component_is_table : Array[Bool]
-  priv table_column_caches : Array[Array[Ref[RawTableColumn]?]]
+  priv table_column_caches : Array[Array[RawTableColumn?]]
   priv table_column_cache_ready : Array[@utils.IntBitSet]
+}
+
+///|
+pub(all) struct QueryDataTableRowFetch {
+  priv world : World
+  priv entity : @core.Entity
+  priv table_id : Int
+  priv row_index : Int
+}
+
+///|
+pub(all) struct QueryDataPlannedFetch {
+  priv row : QueryDataTableRowFetch
+  priv plan : QueryDataFetchPlan
+  priv offset : Int
+}
+
+///|
+pub(all) struct QueryDataSparseAnchorFetch {
+  priv row : QueryDataTableRowFetch
+  priv anchor_local_component_id : Int
+  priv plan : QueryDataFetchPlan
+  priv offset : Int
+}
+
+///|
+fn query_data_table_row_fetch(
+  world : World,
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+) -> QueryDataTableRowFetch {
+  { world, entity, table_id, row_index }
+}
+
+///|
+fn QueryDataTableRowFetch::planned(
+  self : QueryDataTableRowFetch,
+  plan : QueryDataFetchPlan,
+  offset : Int,
+) -> QueryDataPlannedFetch {
+  { row: self, plan, offset }
+}
+
+///|
+fn QueryDataTableRowFetch::sparse_anchor(
+  self : QueryDataTableRowFetch,
+  anchor_local_component_id : Int,
+  plan : QueryDataFetchPlan,
+  offset : Int,
+) -> QueryDataSparseAnchorFetch {
+  { row: self, anchor_local_component_id, plan, offset }
+}
+
+///|
+fn QueryDataPlannedFetch::with_offset(
+  self : QueryDataPlannedFetch,
+  offset : Int,
+) -> QueryDataPlannedFetch {
+  { row: self.row, plan: self.plan, offset }
+}
+
+///|
+fn QueryDataSparseAnchorFetch::with_offset(
+  self : QueryDataSparseAnchorFetch,
+  offset : Int,
+) -> QueryDataSparseAnchorFetch {
+  {
+    row: self.row,
+    anchor_local_component_id: self.anchor_local_component_id,
+    plan: self.plan,
+    offset,
+  }
 }
 
 ///|
@@ -76,12 +149,12 @@ fn QueryDataFetchPlan::component_is_table_at_offset(
 }
 
 ///|
-fn QueryDataFetchPlan::table_column_ref(
+fn QueryDataFetchPlan::cached_table_column(
   self : QueryDataFetchPlan,
   world : World,
   offset : Int,
   table_id : Int,
-) -> Ref[RawTableColumn]? {
+) -> RawTableColumn? {
   guard table_id >= 0 &&
     offset >= 0 &&
     offset < self.local_component_ids.length() &&
@@ -102,7 +175,7 @@ fn QueryDataFetchPlan::table_column_ref(
   }
   ready.insert(table_id)
   let column_ref = match world.table_storage(table_id) {
-    Some(table_ref) => table_ref.val.column(local_component_id)
+    Some(table_ref) => table_ref.column(local_component_id)
     None => None
   }
   cache[table_id] = column_ref
@@ -118,25 +191,21 @@ fn[T] QueryDataFetchPlan::value_at_table_row(
   table_id : Int,
   row_index : Int,
 ) -> T? {
-  match self.table_column_ref(world, offset, table_id) {
+  match self.cached_table_column(world, offset, table_id) {
     Some(column_ref) => {
       guard row_index >= 0 &&
-        row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+        row_index < raw_table_column_kernel_len(column_ref.storage) else {
         return None
       }
       guard offset >= 0 && offset < self.local_component_ids.length() else {
         return None
       }
-      let local_component_id = self.local_component_ids[offset]
       guard world.table_storage(table_id) is Some(table_ref) else {
         return None
       }
       guard TableRow::from_index(row_index) is Some(row) else { return None }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else {
-        return None
-      }
-      ignore(local_component_id)
-      (key.access.get)(world, entity)
+      guard table_ref.entity_at_row(row) is Some(_) else { return None }
+      key.component_get_table_row(world, table_id, row_index)
     }
     None => None
   }
@@ -149,40 +218,9 @@ pub(open) trait QueryData {
   fn prepare_fetch_plan(World) -> QueryDataFetchPlan = _
   fn append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
   fn fetch_plan_size() -> Int = _
-  fn fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fn fetch_table_row_with_plan(
-    World,
-    @core.Entity,
-    Int,
-    Int,
-    QueryDataFetchPlan,
-  ) -> Self raise EcsError = _
-  fn fetch_table_row_with_plan_offset(
-    World,
-    @core.Entity,
-    Int,
-    Int,
-    QueryDataFetchPlan,
-    Int,
-  ) -> Self raise EcsError = _
-  fn fetch_sparse_anchor(World, @core.Entity, Int, Int, Int) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan(
-    World,
-    @core.Entity,
-    Int,
-    Int,
-    Int,
-    QueryDataFetchPlan,
-  ) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan_offset(
-    World,
-    @core.Entity,
-    Int,
-    Int,
-    Int,
-    QueryDataFetchPlan,
-    Int,
-  ) -> Self raise EcsError = _
+  fn fetch_table_row(QueryDataTableRowFetch) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan_offset(QueryDataPlannedFetch) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan_offset(QueryDataSparseAnchorFetch) -> Self raise EcsError = _
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _
@@ -221,73 +259,22 @@ impl QueryData with fetch_plan_size() {
 }
 
 ///|
-impl QueryData with fetch_table_row(world, entity, _table_id, _row_index) {
-  Self::fetch(world, entity)
+impl QueryData with fetch_table_row(fetch) {
+  Self::fetch(fetch.world, fetch.entity)
 }
 
 ///|
-impl QueryData with fetch_table_row_with_plan(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-) {
-  Self::fetch_table_row_with_plan_offset(
-    world, entity, table_id, row_index, plan, 0,
-  )
+impl QueryData with fetch_table_row_with_plan_offset(fetch) {
+  Self::fetch_table_row(fetch.row)
 }
 
 ///|
-impl QueryData with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  _plan,
-  _offset,
-) {
-  Self::fetch_table_row(world, entity, table_id, row_index)
-}
-
-///|
-impl QueryData with fetch_sparse_anchor(
-  world,
-  entity,
-  _anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  Self::fetch_table_row(world, entity, table_id, row_index)
-}
-
-///|
-impl QueryData with fetch_sparse_anchor_with_plan(
-  world,
-  entity,
-  _anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-) {
-  Self::fetch_sparse_anchor_with_plan_offset(
-    world, entity, _anchor_local_component_id, table_id, row_index, plan, 0,
-  )
-}
-
-///|
-impl QueryData with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  _anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
-) {
-  Self::fetch_table_row_with_plan_offset(
-    world, entity, table_id, row_index, plan, offset,
-  )
+impl QueryData with fetch_sparse_anchor_with_plan_offset(fetch) {
+  Self::fetch_table_row_with_plan_offset({
+    row: fetch.row,
+    plan: fetch.plan,
+    offset: fetch.offset,
+  })
 }
 
 ///|
@@ -297,9 +284,10 @@ impl QueryData with iteration_anchor_components() {
 
 ///|
 pub struct Comp[T] {
-  priv value : T?
-  priv added_tick : @core.Tick?
-  priv changed_tick : @core.Tick?
+  priv key : ComponentKey[T]
+  priv value : T
+  priv added_tick : @core.Tick
+  priv changed_tick : @core.Tick
   priv changed_by : String?
   priv is_added : Bool
   priv is_changed : Bool
@@ -307,8 +295,8 @@ pub struct Comp[T] {
 
 ///|
 priv struct QueryComponentTickSnapshot {
-  added_tick : @core.Tick?
-  changed_tick : @core.Tick?
+  added_tick : @core.Tick
+  changed_tick : @core.Tick
   changed_by : String?
   is_added : Bool
   is_changed : Bool
@@ -337,30 +325,13 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
 }
 
 ///|
-pub fn[T] Comp::new(key : ComponentKey[T]) -> Comp[T] {
-  ignore(key)
-  {
-    value: None,
-    added_tick: None,
-    changed_tick: None,
-    changed_by: None,
-    is_added: false,
-    is_changed: false,
-  }
-}
-
-///|
-pub fn[T : Component] Comp::key(self : Comp[T]) -> ComponentKey[T] {
-  ignore(self)
-  Component::component()
+pub fn[T] Comp::key(self : Comp[T]) -> ComponentKey[T] {
+  self.key
 }
 
 ///|
 pub fn[T] Comp::value(self : Comp[T]) -> T {
-  match self.value {
-    Some(value) => value
-    None => abort("Comp::value expected a fetched query item")
-  }
+  self.value
 }
 
 ///|
@@ -375,18 +346,12 @@ pub fn[T] Comp::is_changed(self : Comp[T]) -> Bool {
 
 ///|
 pub fn[T] Comp::added(self : Comp[T]) -> @core.Tick {
-  match self.added_tick {
-    Some(tick) => tick
-    None => abort("Comp::added expected component tick metadata")
-  }
+  self.added_tick
 }
 
 ///|
 pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Tick {
-  match self.changed_tick {
-    Some(tick) => tick
-    None => abort("Comp::last_changed expected component tick metadata")
-  }
+  self.changed_tick
 }
 
 ///|
@@ -487,7 +452,7 @@ fn[T] query_data_require_component(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> T raise EcsError {
+) -> T {
   match world.component_value_by_key(entity, key) {
     Some(value) => value
     None =>
@@ -504,6 +469,33 @@ fn query_data_local_component_id_from_plan(
 }
 
 ///|
+fn query_data_component_local_id_or_abort(local_component_id : Int?) -> Int {
+  match local_component_id {
+    Some(local_component_id) => local_component_id
+    None => abort("QueryData::fetch expected component local id to exist")
+  }
+}
+
+///|
+fn query_data_component_storage_type_or_abort(
+  world : World,
+  local_component_id : Int,
+) -> ComponentStorageType {
+  match world.local_component_storage_type(local_component_id) {
+    Some(storage_type) => storage_type
+    None => abort("QueryData::fetch expected component storage type to exist")
+  }
+}
+
+///|
+fn query_data_tick_or_abort(tick : @core.Tick?, label : String) -> @core.Tick {
+  match tick {
+    Some(tick) => tick
+    None => abort("QueryData::fetch expected component \{label} tick metadata")
+  }
+}
+
+///|
 fn query_data_tick_snapshot_from_ticks(
   world : World,
   added_tick : @core.Tick?,
@@ -511,18 +503,14 @@ fn query_data_tick_snapshot_from_ticks(
   changed_by : String?,
 ) -> QueryComponentTickSnapshot {
   let system_ticks = world.get_tick_context().ticks()
+  let added_tick_value = query_data_tick_or_abort(added_tick, "added")
+  let changed_tick_value = query_data_tick_or_abort(changed_tick, "changed")
   {
-    added_tick,
-    changed_tick,
+    added_tick: added_tick_value,
+    changed_tick: changed_tick_value,
     changed_by,
-    is_added: match added_tick {
-      Some(tick) => system_ticks.contains(tick)
-      None => false
-    },
-    is_changed: match changed_tick {
-      Some(tick) => system_ticks.contains(tick)
-      None => false
-    },
+    is_added: system_ticks.contains(added_tick_value),
+    is_changed: system_ticks.contains(changed_tick_value),
   }
 }
 
@@ -555,9 +543,9 @@ fn query_data_tick_snapshot_at_table_row(
       (Some(table_ref), Some(row)) =>
         return query_data_tick_snapshot_from_ticks(
           world,
-          table_ref.val.added_tick_at_row(row, local_component_id),
-          table_ref.val.changed_tick_at_row(row, local_component_id),
-          table_ref.val.changed_caller_at_row(row, local_component_id),
+          table_ref.added_tick_at_row(row, local_component_id),
+          table_ref.changed_tick_at_row(row, local_component_id),
+          table_ref.changed_caller_at_row(row, local_component_id),
         )
       _ => ()
     }
@@ -567,22 +555,21 @@ fn query_data_tick_snapshot_at_table_row(
 
 ///|
 fn[T] query_data_comp_from_value(
-  world : World,
-  entity : @core.Entity,
-  local_component_id : Int?,
-  table_id : Int,
-  row_index : Int,
+  fetch : QueryDataTableRowFetch,
+  key : ComponentKey[T],
+  local_component_id : Int,
   value : T,
 ) -> Comp[T] {
-  let snapshot = match local_component_id {
-    Some(local_component_id) =>
-      query_data_tick_snapshot_at_table_row(
-        world, entity, local_component_id, table_id, row_index,
-      )
-    None => query_data_tick_snapshot_from_ticks(world, None, None, None)
-  }
+  let snapshot = query_data_tick_snapshot_at_table_row(
+    fetch.world,
+    fetch.entity,
+    local_component_id,
+    fetch.table_id,
+    fetch.row_index,
+  )
   {
-    value: Some(value),
+    key,
+    value,
     added_tick: snapshot.added_tick,
     changed_tick: snapshot.changed_tick,
     changed_by: snapshot.changed_by,
@@ -592,11 +579,175 @@ fn[T] query_data_comp_from_value(
 }
 
 ///|
+fn[T] query_data_component_value_at_fetch_location(
+  fetch : QueryDataTableRowFetch,
+  key : ComponentKey[T],
+  local_component_id : Int,
+) -> T {
+  match
+    query_data_component_storage_type_or_abort(fetch.world, local_component_id) {
+    Table =>
+      match
+        fetch.world.component_value_by_table_row_fast(
+          key,
+          local_component_id,
+          fetch.table_id,
+          fetch.row_index,
+        ) {
+        Some(value) => value
+        None =>
+          abort(
+            "QueryData::fetch expected table component value at query table row",
+          )
+      }
+    SparseSet => query_data_require_component(fetch.world, fetch.entity, key)
+  }
+}
+
+///|
+fn[T] query_data_component_value_at_planned_fetch_location(
+  fetch : QueryDataPlannedFetch,
+  key : ComponentKey[T],
+  local_component_id : Int,
+) -> T {
+  match
+    query_data_component_storage_type_or_abort(
+      fetch.row.world,
+      local_component_id,
+    ) {
+    Table =>
+      match
+        fetch.plan.value_at_table_row(
+          fetch.row.world,
+          key,
+          fetch.offset,
+          fetch.row.table_id,
+          fetch.row.row_index,
+        ) {
+        Some(value) => value
+        None =>
+          abort(
+            "QueryData::fetch expected planned table component value at query table row",
+          )
+      }
+    SparseSet =>
+      query_data_require_component(fetch.row.world, fetch.row.entity, key)
+  }
+}
+
+///|
+fn[T] query_data_optional_component_value_by_entity(
+  world : World,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> T? {
+  guard entity_has_component_id(world, key.id(), entity) else { return None }
+  match world.component_value_by_key(entity, key) {
+    Some(value) => Some(value)
+    None =>
+      abort(
+        "QueryData::fetch expected present optional component value to exist",
+      )
+  }
+}
+
+///|
+fn[T] query_data_optional_component_value_at_fetch_location(
+  fetch : QueryDataTableRowFetch,
+  key : ComponentKey[T],
+) -> T? {
+  match fetch.world.local_component_id(key.id()) {
+    Some(local_component_id) =>
+      match
+        query_data_component_storage_type_or_abort(
+          fetch.world,
+          local_component_id,
+        ) {
+        Table =>
+          if fetch.world.table_has_component_local_id(
+              fetch.table_id,
+              local_component_id,
+            ) {
+            match
+              fetch.world.component_value_by_table_row_fast(
+                key,
+                local_component_id,
+                fetch.table_id,
+                fetch.row_index,
+              ) {
+              Some(value) => Some(value)
+              None =>
+                abort(
+                  "QueryData::fetch expected optional table component value at query table row",
+                )
+            }
+          } else {
+            None
+          }
+        SparseSet =>
+          query_data_optional_component_value_by_entity(
+            fetch.world,
+            fetch.entity,
+            key,
+          )
+      }
+    None => None
+  }
+}
+
+///|
+fn[T] query_data_optional_component_value_at_planned_fetch_location(
+  fetch : QueryDataPlannedFetch,
+  key : ComponentKey[T],
+) -> T? {
+  match query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
+    Some(local_component_id) =>
+      match
+        query_data_component_storage_type_or_abort(
+          fetch.row.world,
+          local_component_id,
+        ) {
+        Table =>
+          match
+            fetch.plan.cached_table_column(
+              fetch.row.world,
+              fetch.offset,
+              fetch.row.table_id,
+            ) {
+            Some(_) =>
+              match
+                fetch.plan.value_at_table_row(
+                  fetch.row.world,
+                  key,
+                  fetch.offset,
+                  fetch.row.table_id,
+                  fetch.row.row_index,
+                ) {
+                Some(value) => Some(value)
+                None =>
+                  abort(
+                    "QueryData::fetch expected planned optional table component value at query table row",
+                  )
+              }
+            None => None
+          }
+        SparseSet =>
+          query_data_optional_component_value_by_entity(
+            fetch.row.world,
+            fetch.row.entity,
+            key,
+          )
+      }
+    None => None
+  }
+}
+
+///|
 pub fn[T] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> T raise EcsError {
+) -> T {
   query_data_require_component(world, entity, key)
 }
 
@@ -605,7 +756,7 @@ pub fn[T] query_data_component_optional(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> T? raise EcsError {
+) -> T? {
   world.component_value_by_key(entity, key)
 }
 
@@ -618,20 +769,17 @@ fn[T] query_data_require_component_mut(
   guard world.component_present(key.id(), entity) else {
     abort("QueryData::fetch expected component value to exist after matches")
   }
-  let local_component_id = world.local_component_id(key.id())
-  let table_id = world.table_id_for_entity(entity)
-  let row_index = match world.entity_table_row(entity) {
-    Some(row) => Some(row.index())
-    None => None
+  let local_component_id = match world.local_component_id(key.id()) {
+    Some(local_component_id) => local_component_id
+    None => abort("QueryData::fetch expected component local id to exist")
   }
-  {
-    world: Some(world),
-    entity: Some(entity),
-    key: Some(key),
-    table_id,
-    row_index,
-    local_component_id,
+  let (table_id, row_index) = match world.entity_table_location(entity) {
+    Some(location) => location
+    None => (-1, -1)
   }
+  mut_from_component_location(
+    world, entity, key, local_component_id, table_id, row_index,
+  )
 }
 
 ///|
@@ -654,24 +802,8 @@ pub impl QueryData for @core.Entity with fetch(_world, entity) {
 }
 
 ///|
-pub impl QueryData for @core.Entity with fetch_table_row(
-  _world,
-  entity,
-  _table_id,
-  _row_index,
-) {
-  entity
-}
-
-///|
-pub impl QueryData for @core.Entity with fetch_sparse_anchor(
-  _world,
-  entity,
-  _anchor_local_component_id,
-  _table_id,
-  _row_index,
-) {
-  entity
+pub impl QueryData for @core.Entity with fetch_table_row(fetch) {
+  fetch.entity
 }
 
 ///|
@@ -718,11 +850,9 @@ pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
 pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
   let key = T::component()
   query_data_comp_from_value(
-    world,
-    entity,
-    world.local_component_id(key.id()),
-    -1,
-    -1,
+    query_data_table_row_fetch(world, entity, -1, -1),
+    key,
+    query_data_component_local_id_or_abort(world.local_component_id(key.id())),
     query_data_require_component(world, entity, key),
   )
 }
@@ -741,121 +871,52 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_plan_size() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
-) {
+pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(fetch) {
   let key = T::component()
-  let local_component_id = world.local_component_id(key.id())
-  let value_at_row = match local_component_id {
-    Some(local_component_id) =>
-      world.component_value_by_table_row_fast(
-        key, local_component_id, table_id, row_index,
-      )
-    None => None
-  }
-  match value_at_row {
-    Some(value) =>
-      query_data_comp_from_value(
-        world, entity, local_component_id, table_id, row_index, value,
-      )
-    None =>
-      query_data_comp_from_value(
-        world,
-        entity,
-        world.local_component_id(key.id()),
-        table_id,
-        row_index,
-        query_data_require_component(world, entity, key),
-      )
-  }
+  let local_component_id = query_data_component_local_id_or_abort(
+    fetch.world.local_component_id(key.id()),
+  )
+  let value = query_data_component_value_at_fetch_location(
+    fetch, key, local_component_id,
+  )
+  query_data_comp_from_value(fetch, key, local_component_id, value)
 }
 
 ///|
 pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
   let key = T::component()
-  let local_component_id = query_data_local_component_id_from_plan(plan, offset)
-  let value_at_row = plan.value_at_table_row(
-    world, key, offset, table_id, row_index,
+  let local_component_id = query_data_component_local_id_or_abort(
+    query_data_local_component_id_from_plan(fetch.plan, fetch.offset),
   )
-  match value_at_row {
-    Some(value) =>
-      query_data_comp_from_value(
-        world, entity, local_component_id, table_id, row_index, value,
-      )
-    None =>
-      query_data_comp_from_value(
-        world,
-        entity,
-        world.local_component_id(key.id()),
-        table_id,
-        row_index,
-        query_data_require_component(world, entity, key),
-      )
-  }
-}
-
-///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  let key = T::component()
-  match world.local_component_id(key.id()) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = query_data_require_component(world, entity, key)
-      query_data_comp_from_value(
-        world,
-        entity,
-        Some(local_component_id),
-        table_id,
-        row_index,
-        value,
-      )
-    }
-    _ => Comp::fetch_table_row(world, entity, table_id, row_index)
-  }
+  let value = query_data_component_value_at_planned_fetch_location(
+    fetch, key, local_component_id,
+  )
+  query_data_comp_from_value(fetch.row, key, local_component_id, value)
 }
 
 ///|
 pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
   let key = T::component()
-  match query_data_local_component_id_from_plan(plan, offset) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = query_data_require_component(world, entity, key)
-      query_data_comp_from_value(
-        world,
-        entity,
-        Some(local_component_id),
-        table_id,
-        row_index,
-        value,
+  match query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
+    Some(local_component_id) if local_component_id ==
+      fetch.anchor_local_component_id => {
+      let value = query_data_require_component(
+        fetch.row.world,
+        fetch.row.entity,
+        key,
       )
+      query_data_comp_from_value(fetch.row, key, local_component_id, value)
     }
     _ =>
-      Comp::fetch_table_row_with_plan_offset(
-        world, entity, table_id, row_index, plan, offset,
-      )
+      Comp::fetch_table_row_with_plan_offset({
+        row: fetch.row,
+        plan: fetch.plan,
+        offset: fetch.offset,
+      })
   }
 }
 
@@ -924,75 +985,46 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_plan_size() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
-) {
+pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(fetch) {
   let key = T::component()
-  {
-    world: Some(world),
-    entity: Some(entity),
-    key: Some(key),
-    table_id: Some(table_id),
-    row_index: Some(row_index),
-    local_component_id: world.local_component_id(key.id()),
-  }
+  mut_from_component_location(
+    fetch.world,
+    fetch.entity,
+    key,
+    query_data_component_local_id_or_abort(
+      fetch.world.local_component_id(key.id()),
+    ),
+    fetch.table_id,
+    fetch.row_index,
+  )
 }
 
 ///|
 pub impl[T : Component] QueryData for Mut[T] with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
   let key = T::component()
-  {
-    world: Some(world),
-    entity: Some(entity),
-    key: Some(key),
-    table_id: Some(table_id),
-    row_index: Some(row_index),
-    local_component_id: query_data_local_component_id_from_plan(plan, offset),
-  }
-}
-
-///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor(
-  world,
-  entity,
-  _anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  let key = T::component()
-  {
-    world: Some(world),
-    entity: Some(entity),
-    key: Some(key),
-    table_id: Some(table_id),
-    row_index: Some(row_index),
-    local_component_id: world.local_component_id(key.id()),
-  }
+  mut_from_component_location(
+    fetch.row.world,
+    fetch.row.entity,
+    key,
+    query_data_component_local_id_or_abort(
+      query_data_local_component_id_from_plan(fetch.plan, fetch.offset),
+    ),
+    fetch.row.table_id,
+    fetch.row.row_index,
+  )
 }
 
 ///|
 pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  _anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  Mut::fetch_table_row_with_plan_offset(
-    world, entity, table_id, row_index, plan, offset,
-  )
+  Mut::fetch_table_row_with_plan_offset({
+    row: fetch.row,
+    plan: fetch.plan,
+    offset: fetch.offset,
+  })
 }
 
 ///|
@@ -1050,24 +1082,8 @@ pub impl QueryData for EntityRef with fetch(world, entity) {
 }
 
 ///|
-pub impl QueryData for EntityRef with fetch_table_row(
-  world,
-  entity,
-  _table_id,
-  _row_index,
-) {
-  EntityRef::{ world, entity }
-}
-
-///|
-pub impl QueryData for EntityRef with fetch_sparse_anchor(
-  world,
-  entity,
-  _anchor_local_component_id,
-  _table_id,
-  _row_index,
-) {
-  EntityRef::{ world, entity }
+pub impl QueryData for EntityRef with fetch_table_row(fetch) {
+  EntityRef::{ world: fetch.world, entity: fetch.entity }
 }
 
 ///|
@@ -1116,24 +1132,8 @@ pub impl QueryData for EntityMut with fetch(world, entity) {
 }
 
 ///|
-pub impl QueryData for EntityMut with fetch_table_row(
-  world,
-  entity,
-  _table_id,
-  _row_index,
-) {
-  EntityMut::{ world, entity }
-}
-
-///|
-pub impl QueryData for EntityMut with fetch_sparse_anchor(
-  world,
-  entity,
-  _anchor_local_component_id,
-  _table_id,
-  _row_index,
-) {
-  EntityMut::{ world, entity }
+pub impl QueryData for EntityMut with fetch_table_row(fetch) {
+  EntityMut::{ world: fetch.world, entity: fetch.entity }
 }
 
 ///|
@@ -1196,14 +1196,9 @@ pub impl[T : QueryData] QueryData for T? with fetch_plan_size() {
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
-) {
-  if T::matches(world, entity) {
-    Some(T::fetch_table_row(world, entity, table_id, row_index))
+pub impl[T : QueryData] QueryData for T? with fetch_table_row(fetch) {
+  if T::matches(fetch.world, fetch.entity) {
+    Some(T::fetch_table_row(fetch))
   } else {
     None
   }
@@ -1211,38 +1206,10 @@ pub impl[T : QueryData] QueryData for T? with fetch_table_row(
 
 ///|
 pub impl[T : QueryData] QueryData for T? with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  if T::matches(world, entity) {
-    Some(
-      T::fetch_table_row_with_plan_offset(
-        world, entity, table_id, row_index, plan, offset,
-      ),
-    )
-  } else {
-    None
-  }
-}
-
-///|
-pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  if T::matches(world, entity) {
-    Some(
-      T::fetch_sparse_anchor(
-        world, entity, anchor_local_component_id, table_id, row_index,
-      ),
-    )
+  if T::matches(fetch.row.world, fetch.row.entity) {
+    Some(T::fetch_table_row_with_plan_offset(fetch))
   } else {
     None
   }
@@ -1250,20 +1217,10 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
 
 ///|
 pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  if T::matches(world, entity) {
-    Some(
-      T::fetch_sparse_anchor_with_plan_offset(
-        world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
-      ),
-    )
+  if T::matches(fetch.row.world, fetch.row.entity) {
+    Some(T::fetch_sparse_anchor_with_plan_offset(fetch))
   } else {
     None
   }
@@ -1327,18 +1284,17 @@ pub impl[T : Component] QueryData for Has[T] with fetch_plan_size() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  _row_index,
-) {
-  let present = match world.local_component_id(T::component().id()) {
+pub impl[T : Component] QueryData for Has[T] with fetch_table_row(fetch) {
+  let present = match fetch.world.local_component_id(T::component().id()) {
     Some(local_component_id) =>
-      if world.local_component_storage_type(local_component_id) == Some(Table) {
-        world.table_has_component_local_id(table_id, local_component_id)
+      if fetch.world.local_component_storage_type(local_component_id) ==
+        Some(Table) {
+        fetch.world.table_has_component_local_id(
+          fetch.table_id,
+          local_component_id,
+        )
       } else {
-        entity_has_component_id(world, T::component().id(), entity)
+        entity_has_component_id(fetch.world, T::component().id(), fetch.entity)
       }
     None => false
   }
@@ -1347,42 +1303,23 @@ pub impl[T : Component] QueryData for Has[T] with fetch_table_row(
 
 ///|
 pub impl[T : Component] QueryData for Has[T] with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  _row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  let present = match query_data_local_component_id_from_plan(plan, offset) {
+  let present = match
+    query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
     Some(local_component_id) =>
-      if world.local_component_storage_type(local_component_id) == Some(Table) {
-        world.table_has_component_local_id(table_id, local_component_id)
+      if fetch.row.world.local_component_storage_type(local_component_id) ==
+        Some(Table) {
+        fetch.row.world.table_has_component_local_id(
+          fetch.row.table_id,
+          local_component_id,
+        )
       } else {
-        entity_has_component_id(world, T::component().id(), entity)
-      }
-    None => false
-  }
-  { present, }
-}
-
-///|
-pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  ignore(row_index)
-  let present = match world.local_component_id(T::component().id()) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id =>
-      true
-    Some(local_component_id) =>
-      if world.local_component_storage_type(local_component_id) == Some(Table) {
-        world.table_has_component_local_id(table_id, local_component_id)
-      } else {
-        entity_has_component_id(world, T::component().id(), entity)
+        entity_has_component_id(
+          fetch.row.world,
+          T::component().id(),
+          fetch.row.entity,
+        )
       }
     None => false
   }
@@ -1391,23 +1328,26 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor(
 
 ///|
 pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  ignore(row_index)
-  let present = match query_data_local_component_id_from_plan(plan, offset) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id =>
-      true
+  let present = match
+    query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
+    Some(local_component_id) if local_component_id ==
+      fetch.anchor_local_component_id => true
     Some(_local_component_id) =>
-      if plan.component_is_table_at_offset(offset) {
-        plan.table_column_ref(world, offset, table_id) is Some(_)
+      if fetch.plan.component_is_table_at_offset(fetch.offset) {
+        fetch.plan.cached_table_column(
+          fetch.row.world,
+          fetch.offset,
+          fetch.row.table_id,
+        )
+        is Some(_)
       } else {
-        entity_has_component_id(world, T::component().id(), entity)
+        entity_has_component_id(
+          fetch.row.world,
+          T::component().id(),
+          fetch.row.entity,
+        )
       }
     None => false
   }
@@ -1460,7 +1400,13 @@ pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) 
 
 ///|
 pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
-  { value: world.get_by_key(entity, T::component()) }
+  {
+    value: query_data_optional_component_value_by_entity(
+      world,
+      entity,
+      T::component(),
+    ),
+  }
 }
 
 ///|
@@ -1477,81 +1423,46 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_plan_size() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
-) {
+pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(fetch) {
   let key = T::component()
-  let value_at_row = match world.local_component_id(key.id()) {
-    Some(local_component_id) =>
-      world.component_value_by_table_row_fast(
-        key, local_component_id, table_id, row_index,
-      )
-    None => None
-  }
-  match value_at_row {
-    Some(value) => { value: Some(value) }
-    None => { value: world.get_by_key(entity, key) }
-  }
+  { value: query_data_optional_component_value_at_fetch_location(fetch, key) }
 }
 
 ///|
 pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
   let key = T::component()
-  let value_at_row = plan.value_at_table_row(
-    world, key, offset, table_id, row_index,
-  )
-  match value_at_row {
-    Some(value) => { value: Some(value) }
-    None => { value: world.get_by_key(entity, key) }
-  }
-}
-
-///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  let key = T::component()
-  match world.local_component_id(key.id()) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id =>
-      { value: world.component_value_by_key(entity, key) }
-    _ => Optional::fetch_table_row(world, entity, table_id, row_index)
+  {
+    value: query_data_optional_component_value_at_planned_fetch_location(
+      fetch, key,
+    ),
   }
 }
 
 ///|
 pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
   let key = T::component()
-  match query_data_local_component_id_from_plan(plan, offset) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id => {
+  match query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
+    Some(local_component_id) if local_component_id ==
+      fetch.anchor_local_component_id => {
       ignore(local_component_id)
-      { value: world.component_value_by_key(entity, key) }
+      {
+        value: query_data_optional_component_value_by_entity(
+          fetch.row.world,
+          fetch.row.entity,
+          key,
+        ),
+      }
     }
     _ =>
-      Optional::fetch_table_row_with_plan_offset(
-        world, entity, table_id, row_index, plan, offset,
-      )
+      Optional::fetch_table_row_with_plan_offset({
+        row: fetch.row,
+        plan: fetch.plan,
+        offset: fetch.offset,
+      })
   }
 }
 
@@ -1605,23 +1516,7 @@ pub impl QueryData for Unit with fetch(_world, _entity) {
 }
 
 ///|
-pub impl QueryData for Unit with fetch_table_row(
-  _world,
-  _entity,
-  _table_id,
-  _row_index,
-) {
-  ()
-}
-
-///|
-pub impl QueryData for Unit with fetch_sparse_anchor(
-  _world,
-  _entity,
-  _anchor_local_component_id,
-  _table_id,
-  _row_index,
-) {
+pub impl QueryData for Unit with fetch_table_row(_fetch) {
   ()
 }
 
@@ -1692,73 +1587,30 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_plan_size
 
 ///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
+  fetch,
 ) {
-  (
-    A::fetch_table_row(world, entity, table_id, row_index),
-    B::fetch_table_row(world, entity, table_id, row_index),
-  )
+  (A::fetch_table_row(fetch), B::fetch_table_row(fetch))
 }
 
 ///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  let b_offset = offset + A::fetch_plan_size()
+  let b_offset = fetch.offset + A::fetch_plan_size()
   (
-    A::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, offset,
-    ),
-    B::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, b_offset,
-    ),
-  )
-}
-
-///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  (
-    A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
   )
 }
 
 ///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  let b_offset = offset + A::fetch_plan_size()
+  let b_offset = fetch.offset + A::fetch_plan_size()
   (
-    A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
-    ),
-    B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
-    ),
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
   )
 }
 
@@ -1857,85 +1709,38 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 
 ///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row(
-  world,
-  entity,
-  table_id,
-  row_index,
+  fetch,
 ) {
   (
-    A::fetch_table_row(world, entity, table_id, row_index),
-    B::fetch_table_row(world, entity, table_id, row_index),
-    C::fetch_table_row(world, entity, table_id, row_index),
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
   )
 }
 
 ///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  let b_offset = offset + A::fetch_plan_size()
+  let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   (
-    A::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, offset,
-    ),
-    B::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, b_offset,
-    ),
-    C::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, c_offset,
-    ),
-  )
-}
-
-///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  (
-    A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    C::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
   )
 }
 
 ///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
+  fetch,
 ) {
-  let b_offset = offset + A::fetch_plan_size()
+  let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   (
-    A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
-    ),
-    B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
-    ),
-    C::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, c_offset,
-    ),
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
   )
 }
 
@@ -2077,12 +1882,12 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_table_row(world, entity, table_id, row_index) {
+) with fetch_table_row(fetch) {
   (
-    A::fetch_table_row(world, entity, table_id, row_index),
-    B::fetch_table_row(world, entity, table_id, row_index),
-    C::fetch_table_row(world, entity, table_id, row_index),
-    D::fetch_table_row(world, entity, table_id, row_index),
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
+    D::fetch_table_row(fetch),
   )
 }
 
@@ -2092,30 +1897,15 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_table_row_with_plan_offset(
-  world,
-  entity,
-  table_id,
-  row_index,
-  plan,
-  offset,
-) {
-  let b_offset = offset + A::fetch_plan_size()
+) with fetch_table_row_with_plan_offset(fetch) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   let d_offset = c_offset + C::fetch_plan_size()
   (
-    A::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, offset,
-    ),
-    B::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, b_offset,
-    ),
-    C::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, c_offset,
-    ),
-    D::fetch_table_row_with_plan_offset(
-      world, entity, table_id, row_index, plan, d_offset,
-    ),
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_table_row_with_plan_offset(fetch.with_offset(d_offset)),
   )
 }
 
@@ -2125,60 +1915,15 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_sparse_anchor(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-) {
-  (
-    A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    C::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-    D::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, table_id, row_index,
-    ),
-  )
-}
-
-///|
-pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
-  A,
-  B,
-  C,
-  D,
-) with fetch_sparse_anchor_with_plan_offset(
-  world,
-  entity,
-  anchor_local_component_id,
-  table_id,
-  row_index,
-  plan,
-  offset,
-) {
-  let b_offset = offset + A::fetch_plan_size()
+) with fetch_sparse_anchor_with_plan_offset(fetch) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   let d_offset = c_offset + C::fetch_plan_size()
   (
-    A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
-    ),
-    B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
-    ),
-    C::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, c_offset,
-    ),
-    D::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, table_id, row_index, plan, d_offset,
-    ),
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(d_offset)),
   )
 }
 

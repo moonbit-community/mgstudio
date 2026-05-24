@@ -189,7 +189,7 @@ fn[C] check_parent_has_component(
   messages : @ecs.MessageReader[CheckParentHasComponent[C]],
 ) -> Unit {
   let world = current_world_abort_missing()
-  for message in (try! messages.read()) {
+  for message in messages.read() {
     guard (world.get_by_key(message.entity, @hierarchy.ecs_key_parent) catch {
         _ => None
       })

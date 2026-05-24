@@ -187,7 +187,7 @@ fn on_resize_system(
   resize_reader : @ecs.MessageReader[@window.WindowResized],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  for event in (try! resize_reader.read()) {
+  for event in resize_reader.read() {
     update_resolution_text(world, event.width, event.height)
   }
 }

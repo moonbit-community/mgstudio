@@ -75,15 +75,20 @@ pub fn UiContext::new(
 }
 
 ///|
-let ui_context_serde_next_id : Ref[Int] = Ref(1)
+priv struct UiSerdeRuntimeState {
+  mut context_next_id : Int
+}
+
+///|
+let ui_serde_runtime_state : UiSerdeRuntimeState = { context_next_id: 1 }
 
 ///|
 let ui_context_serde_values : Map[Int, UiContext] = {}
 
 ///|
 pub impl ToJson for UiContext with to_json(self) {
-  let id = ui_context_serde_next_id.val
-  ui_context_serde_next_id.val = id + 1
+  let id = ui_serde_runtime_state.context_next_id
+  ui_serde_runtime_state.context_next_id = id + 1
   ui_context_serde_values.set(id, self)
   id.to_json()
 }

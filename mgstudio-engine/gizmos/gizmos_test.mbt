@@ -98,14 +98,15 @@ test "custom gizmo groups expose config through store and system param" {
     ),
   )
 
-  match app.world().get_resource_ref_mut(@gizmos.GizmoConfigStore::resource()) {
-    Some(store_ref) => {
-      let (config_ref, _group_ref) = store_ref.val.config_mut(
-        TestRoundGizmos::TestRoundGizmos(),
-      )
-      let current = config_ref.val
-      config_ref.val = { ..current, line: { ..current.line, width: 7.0F } }
-    }
+  match app.world().get_resource_mut(@gizmos.GizmoConfigStore::resource()) {
+    Some(store) =>
+      store.modify(fn(value) {
+        let (config_ref, _group_ref) = value.config_mut(
+          TestRoundGizmos::TestRoundGizmos(),
+        )
+        let current = config_ref.val
+        config_ref.val = { ..current, line: { ..current.line, width: 7.0F } }
+      })
     None => abort("Missing GizmoConfigStore resource in test")
   }
 

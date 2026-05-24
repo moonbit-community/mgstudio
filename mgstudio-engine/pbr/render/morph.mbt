@@ -69,37 +69,39 @@ pub fn ensure_morph_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn morph_indices_ref_or_abort(world : @ecs.World) -> Ref[MorphIndices] {
+pub fn morph_indices_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[MorphIndices] {
   ensure_morph_resources(world)
   match world.get_resource_mut(MorphIndices::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing MorphIndices resource in render world")
   }
 }
 
 ///|
-pub fn morph_uniforms_ref_or_abort(world : @ecs.World) -> Ref[MorphUniforms] {
+pub fn morph_uniforms_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[MorphUniforms] {
   ensure_morph_resources(world)
   match world.get_resource_mut(MorphUniforms::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing MorphUniforms resource in render world")
   }
 }
 
 ///|
-pub fn morph_indices_swap_and_reset(
-  morph_indices_ref : Ref[MorphIndices],
-) -> Unit {
-  morph_indices_ref.val.prev = morph_indices_ref.val.current
-  morph_indices_ref.val.current = {}
+pub fn morph_indices_swap_and_reset(morph_indices_value : MorphIndices) -> Unit {
+  morph_indices_value.prev = morph_indices_value.current
+  morph_indices_value.current = {}
 }
 
 ///|
 pub fn morph_uniforms_swap_and_reset(
-  morph_uniforms_ref : Ref[MorphUniforms],
+  morph_uniforms_value : MorphUniforms,
 ) -> Unit {
-  morph_uniforms_ref.val.prev_buffer = morph_uniforms_ref.val.current_buffer
-  morph_uniforms_ref.val.current_buffer = []
+  morph_uniforms_value.prev_buffer = morph_uniforms_value.current_buffer
+  morph_uniforms_value.current_buffer = []
 }
 
 ///|

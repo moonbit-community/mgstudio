@@ -136,31 +136,29 @@ fn picking_camera_transform(
 
 ///|
 fn picking_insert_camera_sorted(
-  cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]],
+  cameras : Array[(@core.Entity, @sprite.Camera, @camera.Projection)],
   camera : (@core.Entity, @sprite.Camera, @camera.Projection),
 ) -> Unit {
-  let mut insert_at = cameras.val.length()
-  for i in 0..<cameras.val.length() {
-    if camera.1.order > cameras.val[i].1.order {
+  let mut insert_at = cameras.length()
+  for i in 0..<cameras.length() {
+    if camera.1.order > cameras[i].1.order {
       insert_at = i
       break
     }
   }
-  cameras.val.insert(insert_at, camera)
+  cameras.insert(insert_at, camera)
 }
 
 ///|
 fn picking_insert_sprite_camera_sorted(
-  cameras : Ref[
-    Array[
-      (
-        @core.Entity,
-        @sprite.Camera,
-        @camera.Projection,
-        @transform.Transform,
-        Bool,
-      ),
-    ],
+  cameras : Array[
+    (
+      @core.Entity,
+      @sprite.Camera,
+      @camera.Projection,
+      @transform.Transform,
+      Bool,
+    ),
   ],
   camera : (
     @core.Entity,
@@ -170,14 +168,14 @@ fn picking_insert_sprite_camera_sorted(
     Bool,
   ),
 ) -> Unit {
-  let mut insert_at = cameras.val.length()
-  for i in 0..<cameras.val.length() {
-    if camera.1.order > cameras.val[i].1.order {
+  let mut insert_at = cameras.length()
+  for i in 0..<cameras.length() {
+    if camera.1.order > cameras[i].1.order {
       insert_at = i
       break
     }
   }
-  cameras.val.insert(insert_at, camera)
+  cameras.insert(insert_at, camera)
 }
 
 ///|
@@ -264,17 +262,15 @@ fn picking_sprite_cameras(
 ) -> Array[
   (@core.Entity, @sprite.Camera, @camera.Projection, @transform.Transform, Bool),
 ] {
-  let cameras : Ref[
-    Array[
-      (
-        @core.Entity,
-        @sprite.Camera,
-        @camera.Projection,
-        @transform.Transform,
-        Bool,
-      ),
-    ],
-  ] = Ref([])
+  let cameras : Array[
+    (
+      @core.Entity,
+      @sprite.Camera,
+      @camera.Projection,
+      @transform.Transform,
+      Bool,
+    ),
+  ] = []
   world.for_each_component(@sprite.ecs_key_camera2d, fn(entity, _camera2d) {
     guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
       is Some(camera) else {
@@ -300,7 +296,7 @@ fn picking_sprite_cameras(
       (entity, camera, projection, transform, has_marker),
     )
   })
-  cameras.val
+  cameras
 }
 
 ///|
@@ -451,8 +447,7 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   let scale_factor = @window.window_scale_factor()
   let window_width = @window.window_width()
   let window_height = @window.window_height()
-  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]] = Ref([],
-  )
+  let cameras : Array[(@core.Entity, @sprite.Camera, @camera.Projection)] = []
   world.for_each_component(@camera.ecs_key_camera3d, fn(entity, _camera3d) {
     guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
       is Some(camera) else {
@@ -473,7 +468,7 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
     let mut hit_top : @core.Entity? = None
     let mut hit_payload : (@core.Entity, HitData)? = None
     if input.window_position is Some(cursor) {
-      for entry in cameras.val {
+      for entry in cameras {
         if hit_top is Some(_) {
           break
         }
@@ -645,29 +640,34 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+priv struct PickingEntitySearchState {
+  mut entity : @core.Entity?
+}
+
+///|
 /// Window hit backend (`bevy_picking::window::update_window_hits` shape).
 pub fn picking_window_hit_test_system(world : @ecs.World) -> Unit {
   let inputs = pointer_inputs_for_backend(world)
-  let primary_window_entity : Ref[@core.Entity?] = Ref(None)
+  let primary_window = PickingEntitySearchState::{ entity: None }
   world.for_each_component(@window.ecs_key_primary_window, fn(
     entity,
     _primary,
   ) {
-    if primary_window_entity.val is None {
-      primary_window_entity.val = Some(entity)
+    if primary_window.entity is None {
+      primary_window.entity = Some(entity)
     }
   })
-  if primary_window_entity.val is None {
+  if primary_window.entity is None {
     world.for_each_component(@window.ecs_key_window, fn(entity, _window) {
-      if primary_window_entity.val is None {
-        primary_window_entity.val = Some(entity)
+      if primary_window.entity is None {
+        primary_window.entity = Some(entity)
       }
     })
   }
   for input in inputs {
     let pointer_id = input.pointer
     let hit_window = match input.window_position {
-      Some(_) => primary_window_entity.val
+      Some(_) => primary_window.entity
       None => None
     }
     picking_write_pointer_hits(

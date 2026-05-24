@@ -794,24 +794,17 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
   anchor_info : QuerySparseAnchorInfo,
   plan : QueryDataFetchPlan,
 ) -> D raise EcsError {
-  let entity_id = entity.id
-  if entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() {
-    let table_id = world.entity_table_ids[entity_id]
-    let row_index = world.entity_table_rows[entity_id]
-    if table_id >= 0 && row_index >= 0 {
-      return D::fetch_sparse_anchor_with_plan(
-        world,
-        entity,
-        anchor_info.local_component_id,
-        table_id,
-        row_index,
-        plan,
+  match world.entity_table_location(entity) {
+    Some((table_id, row_index)) =>
+      D::fetch_sparse_anchor_with_plan_offset(
+        query_data_table_row_fetch(world, entity, table_id, row_index).sparse_anchor(
+          anchor_info.local_component_id,
+          plan,
+          0,
+        ),
       )
-    }
+    None => D::fetch(world, entity)
   }
-  D::fetch(world, entity)
 }
 
 ///|
@@ -819,17 +812,13 @@ fn[D : QueryData] query_fetch_entity_table_row(
   world : World,
   entity : @core.Entity,
 ) -> D raise EcsError {
-  let entity_id = entity.id
-  if entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() {
-    let table_id = world.entity_table_ids[entity_id]
-    let row_index = world.entity_table_rows[entity_id]
-    if table_id >= 0 && row_index >= 0 {
-      return D::fetch_table_row(world, entity, table_id, row_index)
-    }
+  match world.entity_table_location(entity) {
+    Some((table_id, row_index)) =>
+      D::fetch_table_row(
+        query_data_table_row_fetch(world, entity, table_id, row_index),
+      )
+    None => D::fetch(world, entity)
   }
-  D::fetch(world, entity)
 }
 
 ///|
@@ -838,19 +827,15 @@ fn[D : QueryData] query_fetch_entity_table_row_with_plan(
   entity : @core.Entity,
   plan : QueryDataFetchPlan,
 ) -> D raise EcsError {
-  let entity_id = entity.id
-  if entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() {
-    let table_id = world.entity_table_ids[entity_id]
-    let row_index = world.entity_table_rows[entity_id]
-    if table_id >= 0 && row_index >= 0 {
-      return D::fetch_table_row_with_plan(
-        world, entity, table_id, row_index, plan,
+  match world.entity_table_location(entity) {
+    Some((table_id, row_index)) =>
+      D::fetch_table_row_with_plan_offset(
+        query_data_table_row_fetch(world, entity, table_id, row_index).planned(
+          plan, 0,
+        ),
       )
-    }
+    None => D::fetch(world, entity)
   }
-  D::fetch(world, entity)
 }
 
 ///|
@@ -860,20 +845,15 @@ fn[D : QueryData] query_fetch_known_table_row_with_plan(
   table_id : Int,
   plan : QueryDataFetchPlan,
 ) -> D raise EcsError {
-  let entity_id = entity.id
-  if table_id >= 0 &&
-    entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() &&
-    world.entity_table_ids[entity_id] == table_id {
-    let row_index = world.entity_table_rows[entity_id]
-    if row_index >= 0 {
-      return D::fetch_table_row_with_plan(
-        world, entity, table_id, row_index, plan,
+  match world.entity_table_location(entity) {
+    Some((actual_table_id, row_index)) if actual_table_id == table_id =>
+      D::fetch_table_row_with_plan_offset(
+        query_data_table_row_fetch(world, entity, table_id, row_index).planned(
+          plan, 0,
+        ),
       )
-    }
+    _ => query_fetch_entity_table_row_with_plan(world, entity, plan)
   }
-  query_fetch_entity_table_row_with_plan(world, entity, plan)
 }
 
 ///|
@@ -884,9 +864,9 @@ fn[D : QueryData, F : QueryFilter] query_dense_tables_single(
   table_row_filter_required : Bool,
   plan : QueryDataFetchPlan,
 ) -> D? raise EcsError {
-  let found : Ref[@core.Entity?] = Ref(None)
-  let found_table_id = Ref(-1)
-  let found_row_index = Ref(-1)
+  let mut found : @core.Entity? = None
+  let mut found_table_id = -1
+  let mut found_row_index = -1
   for table_id in dense_tables {
     guard world.table_entities_view(table_id) is Some(entities) else {
       continue
@@ -899,23 +879,21 @@ fn[D : QueryData, F : QueryFilter] query_dense_tables_single(
       ) else {
         continue
       }
-      if found.val is Some(_) {
+      if found is Some(_) {
         return None
       }
-      found.val = Some(entity)
-      found_table_id.val = table_id
-      found_row_index.val = row_index
+      found = Some(entity)
+      found_table_id = table_id
+      found_row_index = row_index
     }
   }
-  match found.val {
+  match found {
     Some(entity) =>
       Some(
-        D::fetch_table_row_with_plan(
-          world,
-          entity,
-          found_table_id.val,
-          found_row_index.val,
-          plan,
+        D::fetch_table_row_with_plan_offset(
+          query_data_table_row_fetch(
+            world, entity, found_table_id, found_row_index,
+          ).planned(plan, 0),
         ),
       )
     None => None
@@ -930,16 +908,16 @@ fn[F : QueryFilter] query_dense_tables_count(
   table_row_filter_required : Bool,
 ) -> Int {
   if !table_row_filter_required {
-    let count = Ref(0)
+    let mut count = 0
     for table_id in dense_tables {
       match world.table_entities_view(table_id) {
-        Some(entities) => count.val = count.val + entities.length()
+        Some(entities) => count = count + entities.length()
         None => ()
       }
     }
-    return count.val
+    return count
   }
-  let count = Ref(0)
+  let mut count = 0
   for table_id in dense_tables {
     guard world.table_entities_view(table_id) is Some(entities) else {
       continue
@@ -950,11 +928,11 @@ fn[F : QueryFilter] query_dense_tables_count(
       if QueryFilter::matches_table_row(
           filter, world, entity, table_id, row_index,
         ) {
-        count.val = count.val + 1
+        count = count + 1
       }
     }
   }
-  count.val
+  count
 }
 
 ///|
@@ -1100,7 +1078,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
         }
       _ => ()
     }
-    let count = Ref(0)
+    let mut count = 0
     for archetype_id in matched_archetypes {
       if table_row_filter_required {
         match self.world.archetype_entities_view(archetype_id) {
@@ -1111,16 +1089,16 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
                   self.filter,
                   entity,
                 ) {
-                count.val = count.val + 1
+                count = count + 1
               }
             }
           None => ()
         }
       } else {
-        count.val = count.val + self.world.archetype_entity_count(archetype_id)
+        count = count + self.world.archetype_entity_count(archetype_id)
       }
     }
-    return count.val
+    return count
   }
   self.matching_entities().length()
 }
@@ -1175,7 +1153,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
           }
         _ => ()
       }
-      let found : Ref[@core.Entity?] = Ref(None)
+      let mut found : @core.Entity? = None
       for archetype_id in matched_archetypes {
         match self.world.archetype_entities_view(archetype_id) {
           Some(entities) =>
@@ -1188,15 +1166,15 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
                 ) else {
                 continue
               }
-              if found.val is Some(_) {
+              if found is Some(_) {
                 return None
               }
-              found.val = Some(entity)
+              found = Some(entity)
             }
           None => ()
         }
       }
-      match found.val {
+      match found {
         Some(entity) =>
           Some(
             query_fetch_entity_table_row_with_plan(
@@ -1645,7 +1623,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     world,
   )
   let matched_archetypes_added : Array[Int] = []
-  let matched_archetypes_reset = Ref(false)
+  let mut matched_archetypes_reset = false
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
     let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
@@ -1656,7 +1634,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     self.cached_matching_archetype_generation = candidate_archetype_generation
     self.cached_matching_entities_valid = false
     self.cached_matching_tables_valid = false
-    matched_archetypes_reset.val = true
+    matched_archetypes_reset = true
   } else if self.cached_matching_archetype_generation !=
     candidate_archetype_generation {
     let added_candidate_archetypes : Array[Int] = []
@@ -1673,7 +1651,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
       self.cached_matching_archetype_bits = matched_archetype_bits
       self.cached_matching_entities_valid = false
       self.cached_matching_tables_valid = false
-      matched_archetypes_reset.val = true
+      matched_archetypes_reset = true
     } else {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
       for archetype_id in added_candidate_archetypes {
@@ -1706,7 +1684,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
   self.cached_is_dense = is_dense
   if is_dense {
     if !self.cached_matching_tables_valid ||
-      matched_archetypes_reset.val ||
+      matched_archetypes_reset ||
       !was_dense {
       let (matching_tables, matching_table_bits) = query_matching_table_cache(
         world,
@@ -1791,32 +1769,31 @@ fn query_archetype_delta(
   current : Array[Int],
   added : Array[Int],
 ) -> Bool {
-  let previous_index = Ref(0)
-  let current_index = Ref(0)
-  let removed = Ref(false)
-  while previous_index.val < previous.length() &&
-        current_index.val < current.length() {
-    let previous_id = previous[previous_index.val]
-    let current_id = current[current_index.val]
+  let mut previous_index = 0
+  let mut current_index = 0
+  let mut removed = false
+  while previous_index < previous.length() && current_index < current.length() {
+    let previous_id = previous[previous_index]
+    let current_id = current[current_index]
     if previous_id == current_id {
-      previous_index.val = previous_index.val + 1
-      current_index.val = current_index.val + 1
+      previous_index = previous_index + 1
+      current_index = current_index + 1
     } else if previous_id < current_id {
-      removed.val = true
-      previous_index.val = previous_index.val + 1
+      removed = true
+      previous_index = previous_index + 1
     } else {
       added.push(current_id)
-      current_index.val = current_index.val + 1
+      current_index = current_index + 1
     }
   }
-  if previous_index.val < previous.length() {
-    removed.val = true
+  if previous_index < previous.length() {
+    removed = true
   }
-  while current_index.val < current.length() {
-    added.push(current[current_index.val])
-    current_index.val = current_index.val + 1
+  while current_index < current.length() {
+    added.push(current[current_index])
+    current_index = current_index + 1
   }
-  removed.val
+  removed
 }
 
 ///|
@@ -2189,7 +2166,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
           }
         _ => ()
       }
-      let found : Ref[@core.Entity?] = Ref(None)
+      let mut found : @core.Entity? = None
       for archetype_id in matched_archetypes {
         match world.archetype_entities_view(archetype_id) {
           Some(entities) =>
@@ -2202,15 +2179,15 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
                 ) else {
                 continue
               }
-              if found.val is Some(_) {
+              if found is Some(_) {
                 return None
               }
-              found.val = Some(entity)
+              found = Some(entity)
             }
           None => ()
         }
       }
-      match found.val {
+      match found {
         Some(entity) =>
           Some(
             query_fetch_entity_table_row_with_plan(
@@ -2290,7 +2267,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
         }
       _ => ()
     }
-    let count = Ref(0)
+    let mut count = 0
     for archetype_id in matched_archetypes {
       if table_row_filter_required {
         match world.archetype_entities_view(archetype_id) {
@@ -2301,16 +2278,16 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
                   self.filter,
                   entity,
                 ) {
-                count.val = count.val + 1
+                count = count + 1
               }
             }
           None => ()
         }
       } else {
-        count.val = count.val + world.archetype_entity_count(archetype_id)
+        count = count + world.archetype_entity_count(archetype_id)
       }
     }
-    return count.val
+    return count
   }
   self.query_matching_entities(world).length()
 }
@@ -2483,7 +2460,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     world,
   )
   let matched_archetypes_added : Array[Int] = []
-  let matched_archetypes_reset = Ref(false)
+  let mut matched_archetypes_reset = false
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
     let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
@@ -2498,7 +2475,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     self.cached_matching_archetype_generation = candidate_archetype_generation
     self.cached_matching_entities_valid = false
     self.cached_matching_tables_valid = false
-    matched_archetypes_reset.val = true
+    matched_archetypes_reset = true
   } else if self.cached_matching_archetype_generation !=
     candidate_archetype_generation {
     let added_candidate_archetypes : Array[Int] = []
@@ -2518,7 +2495,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
       self.cached_matching_archetype_bits = matched_archetype_bits
       self.cached_matching_entities_valid = false
       self.cached_matching_tables_valid = false
-      matched_archetypes_reset.val = true
+      matched_archetypes_reset = true
     } else {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
       for archetype_id in added_candidate_archetypes {
@@ -2555,7 +2532,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
   self.cached_is_dense = is_dense
   if is_dense {
     if !self.cached_matching_tables_valid ||
-      matched_archetypes_reset.val ||
+      matched_archetypes_reset ||
       !was_dense {
       let (matching_tables, matching_table_bits) = query_matching_table_cache(
         world,
@@ -2623,12 +2600,13 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
             return Some(
               (
                 entity,
-                D::fetch_table_row_with_plan(
-                  self.query.world,
-                  entity,
-                  self.current_table_id,
-                  row_index,
-                  self.data_fetch_plan,
+                D::fetch_table_row_with_plan_offset(
+                  query_data_table_row_fetch(
+                    self.query.world,
+                    entity,
+                    self.current_table_id,
+                    row_index,
+                  ).planned(self.data_fetch_plan, 0),
                 ),
               ),
             )

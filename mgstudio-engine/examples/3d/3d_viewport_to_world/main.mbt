@@ -75,16 +75,18 @@ fn circle_line_mesh(radius : Float, segments : Int) -> @mesh.Mesh3d {
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new_with_topology(
-          points,
-          uvs,
-          None,
-          @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new_with_topology(
+            points,
+            uvs,
+            None,
+            @mesh.Mesh3dPrimitiveTopology::LineStrip,
+          ),
         ),
-      ),
-    ),
+      )
+    }),
   )
 }
 
@@ -175,12 +177,14 @@ fn ray_plane_intersection(
 fn setup(world : @ecs.World) -> Unit {
   let ground = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(20.0F, 20.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(20.0F, 20.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(

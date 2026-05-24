@@ -29,9 +29,6 @@ pub struct GlobalZIndex {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @ecs.Mutable for GlobalZIndex
-
-///|
 pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
   GlobalZIndex::{ value, }
 }
@@ -68,7 +65,7 @@ pub fn UiStack::uinodes(self : UiStack) -> Array[@core.Entity] {
 }
 
 ///|
-pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
-  self.val.partition = []
-  self.val.uinodes = []
+pub fn UiStack::clear(self : UiStack) -> Unit {
+  self.partition = []
+  self.uinodes = []
 }

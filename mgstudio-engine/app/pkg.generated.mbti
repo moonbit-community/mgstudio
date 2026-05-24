@@ -10,7 +10,6 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -149,7 +148,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemPar
 
 pub fn[E : @ecs.TriggerEvent] observe_entity_fallible(@ecs.World, @core.Entity, (@ecs.On[E]) -> Unit raise) -> Unit
 
-pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
+pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], RunConditionState[@ecs.MessageCursor[M]]) -> Bool
 
 pub fn[S] optional_state(S) -> OptionalStateSource[S]
 
@@ -213,6 +212,8 @@ pub fn[T] resource_exists_and_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bo
 
 pub fn run_all_fixed_schedules(@ecs.World) -> Unit
 
+pub fn[W] run_condition((W) -> Bool) -> RunConditionConfig[W]
+
 pub fn[W] run_condition_and((W) -> Bool, (W) -> Bool) -> (W) -> Bool
 
 pub fn[W] run_condition_not((W) -> Bool) -> (W) -> Bool
@@ -232,8 +233,6 @@ pub fn run_fixed_main_stage(@ecs.World) -> Unit
 pub fn run_fixed_schedules_with_config(@ecs.World, FixedSchedulePropagationConfig) -> Unit
 
 pub fn run_fixed_update_schedule(@ecs.World) -> Unit
-
-pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int64], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
 
 pub fn run_system(@ecs.World, SystemId) -> Unit raise
 
@@ -277,6 +276,8 @@ pub fn[S : States] state_set_dependency_depth(S) -> Int
 
 pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[StateTransitionEvent[S]]
 
+pub fn[W, S] stateful_run_condition(S, (W, RunConditionState[S]) -> Bool) -> RunConditionConfig[W]
+
 #callsite(autofill(loc))
 pub fn[W] system((W) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
@@ -312,11 +313,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_param6((P1, P2, P3, P4, P5, P6) -> Unit) -> (W) -> Unit
 
-pub fn system_param_empty_state(@ecs.World) -> Json
+pub fn[P] system_param_empty_state(@ecs.World) -> SystemParamState[P]
 
 pub fn[W, P : SystemParam, O] system_param_output((P) -> O) -> OutputSystemConfig[W, O]
 
-pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
+pub fn[T] system_param_store_no_state(T, SystemParamState[T]) -> Unit
 
 pub fn system_set(String) -> String
 
@@ -534,14 +535,13 @@ pub fn[T : Resource] App::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs
 pub fn[W] App::cleanup(Self[W]) -> Self[W]
 pub fn[W] App::cleanup_plugins(Self[W]) -> Self[W]
 pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
-pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
-pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
+pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[RunConditionConfig[W]], in_sets? : Array[String]) -> Self[W]
+pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[RunConditionConfig[W]], in_sets? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::finish(Self[W]) -> Self[W]
 pub fn[W] App::finish_plugins(Self[W]) -> Self[W]
 pub fn[W] App::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> SubApp[W]?
-pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[T : Resource] App::init_resource(Self[@ecs.World], () -> T) -> Self[@ecs.World]
 pub fn[T : Resource] App::insert_resource(Self[@ecs.World], T) -> Self[@ecs.World]
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
@@ -551,11 +551,13 @@ pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World],
 pub fn[T : Resource] App::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::is_building_plugins(Self[W]) -> Bool
 pub fn[P : Plugin] App::is_plugin_added(Self[@ecs.World], P) -> Bool
+pub fn[W] App::modify_sub_app(Self[W], AppLabel, (SubApp[W]) -> SubApp[W]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W] App::plugin_names(Self[W]) -> Array[String]
 pub fn[W] App::plugins_state(Self[W]) -> PluginsState
 pub fn[T] App::remove_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
+pub fn[W] App::replace_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn App::run(Self[@ecs.World]) -> Unit
 pub fn App::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
@@ -565,9 +567,7 @@ pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
 pub fn App::should_exit(Self[@ecs.World]) -> AppExit?
 pub fn[W] App::sub_app(Self[W], AppLabel) -> SubApp[W]
-pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]
 pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, SubApp[W])]
-pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, @ref.Ref[SubApp[W]])]
 pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
 pub fn App::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
@@ -750,14 +750,13 @@ pub fn[T] In::get(Self[T]) -> T
 pub fn[T] In::into_inner(Self[T]) -> T
 
 pub struct Local[T] {
-  value_ref : @ref.Ref[T]
+  // private fields
 }
 pub fn[T] Local::get(Self[T]) -> T
-pub fn[T] Local::get_ref(Self[T]) -> @ref.Ref[T]
-pub fn[T : @ecs.Message] Local::read(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
-pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
+pub fn[T] Local::read(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T]
+pub fn[T] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T]
 pub fn[T] Local::set(Self[T], T) -> Unit
-pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T]
+pub impl[T : FromWorld] SystemParam for Local[T]
 
 pub(all) enum LogLevel {
   Error
@@ -876,8 +875,8 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(Self[W, O], (In[O],
 pub struct ParamSet2[P0, P1] {
   param0 : P0
   param1 : P1
-  state0 : @ref.Ref[Json]
-  state1 : @ref.Ref[Json]
+  state0 : SystemParamState[P0]
+  state1 : SystemParamState[P1]
 }
 pub fn[P0, P1] ParamSet2::p0(Self[P0, P1]) -> P0
 pub fn[P0, P1] ParamSet2::p1(Self[P0, P1]) -> P1
@@ -887,9 +886,8 @@ pub struct PickingEvents {
   mut events : Array[@pointer_events.PointerEvent]
 } derive(ToJson, @json.FromJson)
 pub fn PickingEvents::PickingEvents() -> Self
-pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEvent]
-pub fn PickingEvents::drain_all(Self) -> Array[@pointer_events.PointerEvent]
-pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
+pub fn PickingEvents::drain(Self) -> Array[@pointer_events.PointerEvent]
+pub fn PickingEvents::push(Self, @pointer_events.PointerEvent) -> Unit
 pub impl Resource for PickingEvents
 
 pub struct PluginGroupBuilder[W] {
@@ -1005,31 +1003,46 @@ pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
   world : @ecs.World?
-  key : @ecs.ResourceKey[T]?
+  inner : @ecs.ResourceMut[T]?
 }
-pub fn[T : Resource] ResMut::added(Self[T]) -> Int64
-pub fn[T : Resource] ResMut::changed_by(Self[T]) -> String?
-pub fn[T : Resource] ResMut::get(Self[T]) -> T
+pub fn[T] ResMut::added(Self[T]) -> Int64
+pub fn[T] ResMut::changed_by(Self[T]) -> String?
+#callsite(autofill(loc))
+pub fn[T] ResMut::get(Self[T], loc~ : SourceLoc) -> T
 pub fn[T : Resource] ResMut::is_added(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::is_changed(Self[T]) -> Bool
-pub fn[T : Resource] ResMut::last_changed(Self[T]) -> Int64
+pub fn[T] ResMut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
-pub fn[T : Resource, R] ResMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
-pub fn[T : Resource] ResMut::peek(Self[T]) -> T
+pub fn[T, R] ResMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+pub fn[T] ResMut::peek(Self[T], loc~ : SourceLoc) -> T
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
+pub fn[T] ResMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
+pub fn[T] ResMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Resource + Eq] ResMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T] ResMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
+pub fn[T : Eq] ResMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] ResMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 pub fn[T : @ecs.Message] ResMut::write(Self[@ecs.Messages[T]], T) -> Int
 pub fn[T : @ecs.Message] ResMut::write_batch(Self[@ecs.Messages[T]], Array[T]) -> Unit
 pub fn[T : @ecs.Message + Default] ResMut::write_default(Self[@ecs.Messages[T]]) -> Int
 pub impl[T : Resource] SystemParam for ResMut[T]
+
+pub struct RunConditionConfig[W] {
+  // private fields
+}
+pub fn[W] RunConditionConfig::clone(Self[W]) -> Self[W]
+pub fn[W] RunConditionConfig::run(Self[W], W) -> Bool
+
+pub struct RunConditionState[S] {
+  // private fields
+}
+pub fn[S] RunConditionState::get(Self[S]) -> S
+pub fn[S] RunConditionState::set(Self[S], S) -> Unit
+pub fn[S] RunConditionState::update(Self[S], (S) -> S) -> Unit
 
 pub(all) enum RunFixedMainLoopSystems {
   BeforeFixedMainLoop
@@ -1218,8 +1231,8 @@ pub fn[W] SubApp::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[T : Resource] SubApp::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
-pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
-pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
+pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[RunConditionConfig[W]], in_sets? : Array[String]) -> Self[W]
+pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[RunConditionConfig[W]], in_sets? : Array[String]) -> Self[W]
 pub fn[W] SubApp::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn[T : Resource] SubApp::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
@@ -1234,16 +1247,16 @@ pub fn[W] SubApp::world(Self[W]) -> W
 
 pub struct SubApps[W] {
   mut main : SubApp[W]
-  sub_apps : @hashmap.HashMap[String, @ref.Ref[SubApp[W]]]
+  sub_apps : @hashmap.HashMap[String, SubApp[W]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
 }
 pub fn[W] SubApps::get(Self[W], AppLabel) -> SubApp[W]?
-pub fn[W] SubApps::get_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[W] SubApps::insert(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[W] SubApps::list(Self[W]) -> Array[(AppLabel, SubApp[W])]
-pub fn[W] SubApps::list_mut(Self[W]) -> Array[(AppLabel, @ref.Ref[SubApp[W]])]
+pub fn[W] SubApps::modify(Self[W], AppLabel, (SubApp[W]) -> SubApp[W]) -> Bool
 pub fn[W] SubApps::new(SubApp[W]) -> Self[W]
 pub fn[W] SubApps::remove(Self[W], AppLabel) -> SubApp[W]?
+pub fn[W] SubApps::replace(Self[W], AppLabel, SubApp[W]) -> Bool
 pub fn SubApps::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApps::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
@@ -1271,8 +1284,7 @@ pub struct SystemConfig[W] {
   name : String?
   debug_name : String?
   error_handler : ((Error, ErrorContext) -> Unit)?
-  run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
-  run_if_states : Array[@ref.Ref[Json]]
+  run_ifs : Array[RunConditionConfig[W]]
   chain_members : Array[SystemConfig[W]]?
   chain_ignore_deferred : Bool
   set : String?
@@ -1296,11 +1308,19 @@ pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::named(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bool) -> Self[W]
+pub fn[W, S] SystemConfig::run_if_stateful(Self[W], S, (W, RunConditionState[S]) -> Bool) -> Self[W]
 
 pub struct SystemId {
   index : Int
 } derive(Eq, @debug.Debug)
+
+pub struct SystemParamState[P] {
+  // private fields
+}
+pub fn[P] SystemParamState::get(Self[P]) -> P raise
+pub fn[P] SystemParamState::new(() -> P raise, (P) -> Unit) -> Self[P]
+pub fn[P] SystemParamState::stateless(() -> P raise) -> Self[P]
+pub fn[P] SystemParamState::store(Self[P], P) -> Unit
 
 pub(all) enum SystemSteppingBehavior {
   AlwaysRun
@@ -1383,7 +1403,7 @@ pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
 
 pub type RunnerFn = () -> Unit
 
-pub type StatefulRunConditionFn[W] = (W, @ref.Ref[Json]) -> Bool
+pub type StatefulRunConditionFn[W] = (W) -> Bool
 
 pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
@@ -1473,9 +1493,9 @@ pub(open) trait SubStates : States + FreelyMutableState {
 }
 
 pub(open) trait SystemParam {
-  fn init_state(@ecs.World) -> Json
-  fn get(@ref.Ref[Json]) -> Self raise
-  fn store(Self, @ref.Ref[Json]) -> Unit
+  fn init_state(@ecs.World) -> SystemParamState[Self]
+  fn get(SystemParamState[Self]) -> Self raise
+  fn store(Self, SystemParamState[Self]) -> Unit
   fn access(@ecs.World) -> SystemAccess = _
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]

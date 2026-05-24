@@ -1398,13 +1398,18 @@ fn host_input_gamepad_set_rumble(
 }
 
 ///|
-let current_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref([])
+priv struct GamepadInputRuntimeState {
+  mut current_gamepads : Array[GamepadSnapshot]
+  mut previous_gamepads : Array[GamepadSnapshot]
+  host_gamepad_entities : Array[(Int, @core.Entity)]
+}
 
 ///|
-let previous_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref([])
-
-///|
-let host_gamepad_entities_ref : Ref[Array[(Int, @core.Entity)]] = Ref([])
+let gamepad_input_runtime_state : GamepadInputRuntimeState = {
+  current_gamepads: [],
+  previous_gamepads: [],
+  host_gamepad_entities: [],
+}
 
 ///|
 let gamepad_event_message_key : @ecs.MessageKey[GamepadEvent] = @ecs.register_message(
@@ -1494,7 +1499,7 @@ fn host_gamepad_name(gamepad_id : Int) -> String {
 
 ///|
 fn mapped_gamepad_entity(host_id : Int) -> @core.Entity? {
-  for entry in host_gamepad_entities_ref.val {
+  for entry in gamepad_input_runtime_state.host_gamepad_entities {
     if entry.0 == host_id {
       return Some(entry.1)
     }
@@ -1504,13 +1509,13 @@ fn mapped_gamepad_entity(host_id : Int) -> @core.Entity? {
 
 ///|
 fn remember_gamepad_entity(host_id : Int, entity : @core.Entity) -> Unit {
-  for i in 0..<host_gamepad_entities_ref.val.length() {
-    if host_gamepad_entities_ref.val[i].0 == host_id {
-      host_gamepad_entities_ref.val[i] = (host_id, entity)
+  for i in 0..<gamepad_input_runtime_state.host_gamepad_entities.length() {
+    if gamepad_input_runtime_state.host_gamepad_entities[i].0 == host_id {
+      gamepad_input_runtime_state.host_gamepad_entities[i] = (host_id, entity)
       return
     }
   }
-  host_gamepad_entities_ref.val.push((host_id, entity))
+  gamepad_input_runtime_state.host_gamepad_entities.push((host_id, entity))
 }
 
 ///|
@@ -1526,7 +1531,7 @@ fn ensure_gamepad_entity(world : @ecs.World, host_id : Int) -> @core.Entity {
 
 ///|
 fn mapped_host_gamepad_id(entity : @core.Entity) -> Int? {
-  for entry in host_gamepad_entities_ref.val {
+  for entry in gamepad_input_runtime_state.host_gamepad_entities {
     if entry.1 == entity {
       return Some(entry.0)
     }
@@ -1874,7 +1879,7 @@ fn gamepad_connection_system(
   connection_events : @ecs.MessageReader[GamepadConnectionEvent],
 ) -> Unit {
   let world = current_gamepad_world_abort_missing()
-  for connection_event in (try! connection_events.read()) {
+  for connection_event in connection_events.read() {
     let entity = connection_event.gamepad
     guard world.is_alive(entity) else { continue }
     match connection_event.connection {
@@ -1946,7 +1951,7 @@ fn gamepad_event_processing_system(
     gamepad_mut.modify(fn(gamepad) { gamepad.digital.clear() })
   })
 
-  for raw_event in (try! raw_events.read()) {
+  for raw_event in raw_events.read() {
     match raw_event {
       Connection(connection_event) =>
         outputs.gamepad_events.write(GamepadEvent::Connection(connection_event))
@@ -2054,7 +2059,7 @@ fn gamepad_rumble_system(
   real_time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
   let now_ms = current_real_time_millis(real_time)
-  let requests_list = try! requests.read()
+  let requests_list = requests.read()
 
   running_rumbles.modify(fn(effects) {
     for i in 0..<effects.entries.length() {
@@ -2243,7 +2248,7 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 pub fn input_poll_gamepad_system(world : @ecs.World) -> Unit {
   host_input_gamepad_poll()
 
-  previous_gamepads_ref.val = current_gamepads_ref.val
+  gamepad_input_runtime_state.previous_gamepads = gamepad_input_runtime_state.current_gamepads.copy()
 
   let next_gamepads : Array[GamepadSnapshot] = []
   let n = host_input_gamepad_count()
@@ -2258,15 +2263,15 @@ pub fn input_poll_gamepad_system(world : @ecs.World) -> Unit {
     }
   }
 
-  current_gamepads_ref.val = next_gamepads
+  gamepad_input_runtime_state.current_gamepads = next_gamepads
   rebuild_gamepad_events(
-    previous_gamepads_ref.val,
-    current_gamepads_ref.val,
+    gamepad_input_runtime_state.previous_gamepads,
+    gamepad_input_runtime_state.current_gamepads,
     world,
   )
 }
 
 ///|
 pub fn input_gamepad_finish_frame() -> Unit {
-  previous_gamepads_ref.val = current_gamepads_ref.val
+  gamepad_input_runtime_state.previous_gamepads = gamepad_input_runtime_state.current_gamepads.copy()
 }

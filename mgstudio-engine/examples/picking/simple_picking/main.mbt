@@ -38,15 +38,17 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let plane_material = material_assets
+  let plane_material = materials.modify(fn(material_assets) {
+    material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.95F, 0.95F))
+  })
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32)),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32))
+          }),
         ),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity().with_rotation(
@@ -99,18 +101,22 @@ fn setup(
     ) {
       let index = cube_spawn_counter.val
       cube_spawn_counter.val = index + 1
-      let mesh_assets = meshes.peek()
-      let material_assets = materials.peek()
-      let normal = material_assets
+      let normal = materials.modify(fn(material_assets) {
+        material_assets
         |> @pbr.add_material(
           @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
         )
-      let selected = material_assets
+      })
+      let selected = materials.modify(fn(material_assets) {
+        material_assets
         |> @pbr.add_material(@sprite.Color::srgb(1.0F, 0.85F, 0.2F))
+      })
       let cube = commands.spawn(
         (
           @mesh.Mesh3d::new(
-            mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
+            meshes.modify(fn(mesh_assets) {
+              mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+            }),
           ),
           @pbr.MeshMaterial3d::new(normal),
           @transform.Transform::from_xyz(

@@ -17,12 +17,12 @@ fn frame_update(
   last_time : @app.Local[Float],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let last_time_ref = last_time.get_ref()
   let time_value = time.get()
+  let last_elapsed_secs = last_time.get()
   @app.log_info(
-    "time since last frame_update: \{(time_value.elapsed_secs() - last_time_ref.val).to_string()}",
+    "time since last frame_update: \{(time_value.elapsed_secs() - last_elapsed_secs).to_string()}",
   )
-  last_time_ref.val = time_value.elapsed_secs()
+  last_time.set(time_value.elapsed_secs())
 }
 
 ///|
@@ -31,17 +31,17 @@ fn fixed_update(
   time : @app.Res[@time.Time[Unit]],
   fixed_time : @app.Res[@time.Time[@time.Fixed]],
 ) -> Unit {
-  let last_time_ref = last_time.get_ref()
   let time_value = time.get()
   let fixed_time_value = fixed_time.get()
+  let last_elapsed_secs = last_time.get()
   @app.log_info(
-    "time since last fixed_update: \{(time_value.elapsed_secs() - last_time_ref.val).to_string()}\n",
+    "time since last fixed_update: \{(time_value.elapsed_secs() - last_elapsed_secs).to_string()}\n",
   )
   @app.log_info("fixed timestep: \{time_value.delta_secs().to_string()}\n")
   @app.log_info(
     "time accrued toward next fixed_update: \{fixed_time_value.overstep().as_secs_f32().to_string()}\n",
   )
-  last_time_ref.val = time_value.elapsed_secs()
+  last_time.set(time_value.elapsed_secs())
 }
 
 ///|

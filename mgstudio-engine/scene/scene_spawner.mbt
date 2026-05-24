@@ -96,8 +96,8 @@ impl @app.Resource for SceneRuntimeState with resource() {
 ///|
 fn scene_runtime_state_mut_or_abort(
   world : @ecs.World,
-) -> Ref[SceneRuntimeState] {
-  match world.get_resource_ref_mut(scene_runtime_state_resource_key) {
+) -> @ecs.ResourceMut[SceneRuntimeState] {
+  match world.get_resource_mut(scene_runtime_state_resource_key) {
     Some(state) => state
     None =>
       abort(
@@ -122,22 +122,23 @@ fn scene_runtime_allocate_instance(
   world : @ecs.World,
   scene : @asset.Handle[Scene],
 ) -> Int {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  let instance_id = state_ref.val.next_instance_id
-  state_ref.val.next_instance_id = instance_id + 1
-  state_ref.val.instances_by_id.set(instance_id, SceneInstanceState::{
-    scene_id: scene.id(),
-    spawned_entities: [],
-    ready: false,
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    let instance_id = state.next_instance_id
+    state.next_instance_id = instance_id + 1
+    state.instances_by_id.set(instance_id, SceneInstanceState::{
+      scene_id: scene.id(),
+      spawned_entities: [],
+      ready: false,
+    })
+    let scene_instances = match
+      state.spawned_instances_by_scene_id.get(scene.id()) {
+      Some(existing) => existing
+      None => []
+    }
+    scene_instances.push(instance_id)
+    state.spawned_instances_by_scene_id.set(scene.id(), scene_instances)
+    instance_id
   })
-  let scene_instances = match
-    state_ref.val.spawned_instances_by_scene_id.get(scene.id()) {
-    Some(existing) => existing
-    None => []
-  }
-  scene_instances.push(instance_id)
-  state_ref.val.spawned_instances_by_scene_id.set(scene.id(), scene_instances)
-  instance_id
 }
 
 ///|
@@ -178,29 +179,30 @@ fn scene_runtime_remove_instance(
   world : @ecs.World,
   instance_id : Int,
 ) -> SceneInstanceState? {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  guard state_ref.val.instances_by_id.get(instance_id) is Some(instance) else {
-    return None
-  }
-  state_ref.val.instances_by_id.remove(instance_id)
-  if state_ref.val.spawned_instances_by_scene_id.get(instance.scene_id)
-    is Some(scene_instances) {
-    for index in 0..<scene_instances.length() {
-      if scene_instances[index] == instance_id {
-        scene_instances.remove(index) |> ignore
-        break
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    guard state.instances_by_id.get(instance_id) is Some(instance) else {
+      return None
+    }
+    state.instances_by_id.remove(instance_id)
+    if state.spawned_instances_by_scene_id.get(instance.scene_id)
+      is Some(scene_instances) {
+      for index in 0..<scene_instances.length() {
+        if scene_instances[index] == instance_id {
+          scene_instances.remove(index) |> ignore
+          break
+        }
+      }
+      if scene_instances.length() == 0 {
+        state.spawned_instances_by_scene_id.remove(instance.scene_id)
+      } else {
+        state.spawned_instances_by_scene_id.set(
+          instance.scene_id,
+          scene_instances,
+        )
       }
     }
-    if scene_instances.length() == 0 {
-      state_ref.val.spawned_instances_by_scene_id.remove(instance.scene_id)
-    } else {
-      state_ref.val.spawned_instances_by_scene_id.set(
-        instance.scene_id,
-        scene_instances,
-      )
-    }
-  }
-  Some(instance)
+    Some(instance)
+  })
 }
 
 ///|
@@ -209,16 +211,17 @@ fn scene_runtime_mark_ready(
   instance_id : Int,
   spawned_entities : Array[@core.Entity],
 ) -> Bool {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  guard state_ref.val.instances_by_id.get(instance_id) is Some(instance) else {
-    return false
-  }
-  state_ref.val.instances_by_id.set(instance_id, SceneInstanceState::{
-    ..instance,
-    spawned_entities,
-    ready: true,
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    guard state.instances_by_id.get(instance_id) is Some(instance) else {
+      return false
+    }
+    state.instances_by_id.set(instance_id, SceneInstanceState::{
+      ..instance,
+      spawned_entities,
+      ready: true,
+    })
+    true
   })
-  true
 }
 
 ///|
@@ -226,18 +229,20 @@ fn scene_runtime_queue_root_spawn(
   world : @ecs.World,
   entry : SceneRootQueueEntry,
 ) -> Unit {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  state_ref.val.roots_to_spawn.push(entry)
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    state.roots_to_spawn.push(entry)
+  })
 }
 
 ///|
 fn scene_runtime_take_root_spawn_queue(
   world : @ecs.World,
 ) -> Array[SceneRootQueueEntry] {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  let queued = state_ref.val.roots_to_spawn
-  state_ref.val.roots_to_spawn = []
-  queued
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    let queued = state.roots_to_spawn
+    state.roots_to_spawn = []
+    queued
+  })
 }
 
 ///|
@@ -252,10 +257,11 @@ fn scene_runtime_queue_instance_ready(
   root_entity : @core.Entity,
   instance_id : Int,
 ) -> Unit {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  state_ref.val.instances_ready.push(SceneReadyQueueEntry::{
-    root_entity,
-    instance_id,
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    state.instances_ready.push(SceneReadyQueueEntry::{
+      root_entity,
+      instance_id,
+    })
   })
 }
 
@@ -263,10 +269,11 @@ fn scene_runtime_queue_instance_ready(
 fn scene_runtime_take_ready_queue(
   world : @ecs.World,
 ) -> Array[SceneReadyQueueEntry] {
-  let state_ref = scene_runtime_state_mut_or_abort(world)
-  let queued = state_ref.val.instances_ready
-  state_ref.val.instances_ready = []
-  queued
+  scene_runtime_state_mut_or_abort(world).modify(fn(state) {
+    let queued = state.instances_ready
+    state.instances_ready = []
+    queued
+  })
 }
 
 ///|
@@ -504,7 +511,7 @@ fn scene_spawn_instance_when_ready(
       @gltf.GltfSkinnedMeshBoundsPolicy,
     ),
   ] = []
-  let mesh_assets_ref = scene_mesh_assets_from_world_mut_or_abort(world)
+  let mesh_assets = scene_mesh_assets_from_world_mut_or_abort(world)
   let gltf_scene_asset_path = match scene_registry_find_scene_path(root.scene) {
     Some(path) => path
     None => "scene#\{root.scene.id().to_string()}"
@@ -626,7 +633,7 @@ fn scene_spawn_instance_when_ready(
     }
     if node.mesh is Some(mesh_component) {
       let source_mesh_handle = mesh_component.mesh()
-      let source_mesh = mesh_assets_ref.val.get(source_mesh_handle)
+      let source_mesh = mesh_assets.peek().get(source_mesh_handle)
       let source_geometry = match source_mesh {
         Some(mesh_asset) => mesh_asset.as_3d_geometry()
         None => None
@@ -639,9 +646,9 @@ fn scene_spawn_instance_when_ready(
       let effective_mesh = if needs_instance_mesh {
         match source_mesh {
           Some(mesh_asset) => {
-            let cloned_handle = mesh_assets_ref.val.add(
-              scene_clone_mesh_asset(mesh_asset),
-            )
+            let cloned_handle = mesh_assets.modify(fn(assets) {
+              assets.add(scene_clone_mesh_asset(mesh_asset))
+            })
             @mesh.Mesh3d::new(cloned_handle)
           }
           None => mesh_component
@@ -824,26 +831,39 @@ fn scene_flush_ready_queue_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
-  let debounced_scene_asset_ages = scene_debounced_scene_asset_ages_ref_or_abort(
-    world,
-  )
-  let modified_scene_ids : Array[Int] = []
   let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
-  let cursor_ref = scene_modified_events_cursor_ref_or_abort(world)
-  let reader = world.message_reader(message_key, cursor_ref)
-  for event in (try! reader.read()) {
-    match event {
-      Added(handle) => debounced_scene_asset_ages.val.set(handle.id(), 0)
-      Modified(handle) => {
-        let scene_id = handle.id()
-        if !debounced_scene_asset_ages.val.contains(scene_id) {
-          modified_scene_ids.push(scene_id)
+  let state = scene_modified_events_cursor_state_mut_or_abort(world)
+  let modified_scene_ids = state.modify(fn(state) {
+    let modified_scene_ids : Array[Int] = []
+    let reader = world.message_reader(
+      message_key,
+      cursor=state.modified_event_cursor,
+    )
+    let debounced_scene_asset_ages = state.debounced_scene_asset_ages
+    for event in reader.read() {
+      match event {
+        Added(handle) => debounced_scene_asset_ages.set(handle.id(), 0)
+        Modified(handle) => {
+          let scene_id = handle.id()
+          if !debounced_scene_asset_ages.contains(scene_id) {
+            modified_scene_ids.push(scene_id)
+          }
+          debounced_scene_asset_ages.set(scene_id, 0)
         }
-        debounced_scene_asset_ages.val.set(scene_id, 0)
+        _ => ()
       }
-      _ => ()
     }
-  }
+
+    let next_debounced_scene_asset_ages : Map[Int, Int] = {}
+    for entry in debounced_scene_asset_ages.iter() {
+      let (scene_id, age) = entry
+      if age <= 2 {
+        next_debounced_scene_asset_ages.set(scene_id, age + 1)
+      }
+    }
+    state.debounced_scene_asset_ages = next_debounced_scene_asset_ages
+    modified_scene_ids
+  })
 
   if modified_scene_ids.length() > 0 {
     let modified_scene_id_set : @hashset.HashSet[Int] = @hashset.HashSet([])
@@ -866,15 +886,6 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
       scene_remove_ready_component(world, root_entity)
     }
   }
-
-  let next_debounced_scene_asset_ages : Map[Int, Int] = {}
-  for entry in debounced_scene_asset_ages.val.iter() {
-    let (scene_id, age) = entry
-    if age <= 2 {
-      next_debounced_scene_asset_ages.set(scene_id, age + 1)
-    }
-  }
-  debounced_scene_asset_ages.val = next_debounced_scene_asset_ages
 }
 
 ///|

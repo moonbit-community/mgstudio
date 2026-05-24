@@ -34,16 +34,16 @@ fn print_mouse_events_system(
   cursor_moved_reader : @ecs.MessageReader[@window.CursorMoved],
   mouse_wheel_reader : @ecs.MessageReader[@input.MouseWheel],
 ) -> Unit {
-  for event in (try! mouse_button_input_reader.read()) {
+  for event in mouse_button_input_reader.read() {
     log_line(format_mouse_button_input(event))
   }
-  for event in (try! mouse_motion_reader.read()) {
+  for event in mouse_motion_reader.read() {
     log_line(format_mouse_motion(event))
   }
-  for event in (try! cursor_moved_reader.read()) {
+  for event in cursor_moved_reader.read() {
     log_line(format_cursor_moved(event))
   }
-  for event in (try! mouse_wheel_reader.read()) {
+  for event in mouse_wheel_reader.read() {
     log_line(format_mouse_wheel(event))
   }
 }
@@ -54,13 +54,13 @@ fn print_mouse_gesture_events_system(
   rotation_gesture_reader : @ecs.MessageReader[@input.RotationGesture],
   double_tap_gesture_reader : @ecs.MessageReader[@input.DoubleTapGesture],
 ) -> Unit {
-  for event in (try! pinch_gesture_reader.read()) {
+  for event in pinch_gesture_reader.read() {
     log_line("PinchGesture { delta: \{event.delta} }")
   }
-  for event in (try! rotation_gesture_reader.read()) {
+  for event in rotation_gesture_reader.read() {
     log_line("RotationGesture { delta: \{event.delta} }")
   }
-  for _event in (try! double_tap_gesture_reader.read()) {
+  for _event in double_tap_gesture_reader.read() {
     log_line("DoubleTapGesture")
   }
 }

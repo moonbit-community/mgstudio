@@ -21,9 +21,9 @@ test "picking wb: collect input honors PointerInputSettings mouse toggle" {
     PointerInputSettings::new(false, false),
   )
   picking_collect_mouse_system(world)
-  let cursor = Ref(0)
-  let disabled_inputs = try! world
-    .message_reader(pointer_input_message_key(), cursor)
+  let cursor : @ecs.MessageCursor[PointerInput] = @ecs.MessageCursor::MessageCursor()
+  let disabled_inputs = world
+    .message_reader(pointer_input_message_key(), cursor~)
     .read()
   inspect(disabled_inputs.length(), content="0")
 
@@ -31,8 +31,8 @@ test "picking wb: collect input honors PointerInputSettings mouse toggle" {
     PointerInputSettings::new(false, true),
   )
   picking_collect_mouse_system(world)
-  let with_mouse = try! world
-    .message_reader(pointer_input_message_key(), cursor)
+  let with_mouse = world
+    .message_reader(pointer_input_message_key(), cursor~)
     .read()
   inspect(with_mouse.length(), content="1")
   inspect(with_mouse[0].pointer, content="0")

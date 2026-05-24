@@ -14,23 +14,23 @@
 
 ///|
 fn read_window_created(world : @ecs.World) -> Array[@window.WindowCreated] {
-  let reader = world.message_reader(@window.ecs_key_window_created, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@window.ecs_key_window_created)
+  reader.read()
 }
 
 ///|
 fn read_raw_winit_window_events(
   world : @ecs.World,
-  cursor : Ref[Int],
+  cursor : @ecs.MessageCursor[RawWinitWindowEvent],
 ) -> Array[RawWinitWindowEvent] {
-  let reader = world.message_reader(ecs_key_raw_winit_window_event, cursor)
-  try! reader.read()
+  let reader = world.message_reader(ecs_key_raw_winit_window_event, cursor~)
+  reader.read()
 }
 
 ///|
 fn read_action_requests(world : @ecs.World) -> Array[@a11y.ActionRequest] {
-  let reader = world.message_reader(@a11y.ecs_msg_key_action_request, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@a11y.ecs_msg_key_action_request)
+  reader.read()
 }
 
 ///|
@@ -68,8 +68,8 @@ fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
 fn read_keyboard_focus_lost(
   world : @ecs.World,
 ) -> Array[@window.KeyboardFocusLost] {
-  let reader = world.message_reader(@window.ecs_key_keyboard_focus_lost, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@window.ecs_key_keyboard_focus_lost)
+  reader.read()
 }
 
 ///|
@@ -92,20 +92,20 @@ fn keyboard_press_probe_system(
 
 ///|
 fn read_window_closing(world : @ecs.World) -> Array[@window.WindowClosing] {
-  let reader = world.message_reader(@window.ecs_key_window_closing, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@window.ecs_key_window_closing)
+  reader.read()
 }
 
 ///|
 fn read_window_closed(world : @ecs.World) -> Array[@window.WindowClosed] {
-  let reader = world.message_reader(@window.ecs_key_window_closed, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@window.ecs_key_window_closed)
+  reader.read()
 }
 
 ///|
 fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
-  let reader = world.message_reader(@window.ecs_key_window_destroyed, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(@window.ecs_key_window_destroyed)
+  reader.read()
 }
 
 ///|
@@ -491,7 +491,7 @@ test "winit: typed raw winit events are published as messages" {
     @window.window_plugin(@app.App::new(@ecs.World::new())),
   ).run_once()
   let world = app.world()
-  let cursor = Ref(0)
+  let cursor : @ecs.MessageCursor[RawWinitWindowEvent] = @ecs.MessageCursor::MessageCursor()
   let writer = world.message_writer(ecs_key_raw_winit_window_event)
 
   assert_true(world.contains_message(ecs_key_raw_winit_window_event))
@@ -628,8 +628,8 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 
   let window_event_reader = app
     .world()
-    .message_reader(@window.WindowEvent::message(), Ref(0))
-  let window_events = try! window_event_reader.read()
+    .message_reader(@window.WindowEvent::message())
+  let window_events = window_event_reader.read()
   let mut focus_lost_count = 0
   for event in window_events {
     if event is @window.WindowEvent::KeyboardFocusLost(_) {

@@ -67,22 +67,25 @@ fn setup_scene(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let named_shapes : Array[(@ecs.Name, @asset.Handle[@mesh.Mesh])] = [
-    (
-      @ecs.Name::new("Annulus"),
-      mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
-    ),
-    (
-      @ecs.Name::new("Bestagon"),
-      mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
-    ),
-    (
-      @ecs.Name::new("Rhombus"),
-      mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
-    ),
-  ]
+  let named_shapes : Array[(@ecs.Name, @asset.Handle[@mesh.Mesh])] = meshes.modify(fn(
+      mesh_assets,
+    ) {
+      [
+        (
+          @ecs.Name::new("Annulus"),
+          mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
+        ),
+        (
+          @ecs.Name::new("Bestagon"),
+          mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
+        ),
+        (
+          @ecs.Name::new("Rhombus"),
+          mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
+        ),
+      ]
+    },
+  )
   let num_shapes = named_shapes.length()
 
   for i in 0..<num_shapes {
@@ -99,7 +102,9 @@ fn setup_scene(
           DisableOnClick::{  },
           @sprite.Mesh2d::new(mesh),
           @sprite.MeshMaterial2d::new(
-            material_assets |> @sprite.add_material(color),
+            materials.modify(fn(material_assets) {
+              material_assets |> @sprite.add_material(color)
+            }),
           ),
           @transform.Transform::from_xyz(
             -X_EXTENT / 2.0F +
@@ -156,7 +161,7 @@ fn disable_entities_on_click(
   valid_query : @ecs.Query[@ecs.Comp[DisableOnClick], @ecs.All],
 ) -> Unit {
   click_events.modify(fn(events) {
-    for event in @app.PickingEvents::drain_all(events) {
+    for event in @app.PickingEvents::drain(events) {
       if event.kind != @pointer_events.PointerEventKind::Click {
         continue
       }

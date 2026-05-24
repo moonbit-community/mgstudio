@@ -699,7 +699,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
   guard target_ref.val is Some(target) else { abort("expected target entity") }
   guard other_ref.val is Some(other) else { abort("expected other entity") }
 
-  let first_events = Ref(@app.PickingEvents::PickingEvents())
+  let first_events = @app.PickingEvents::PickingEvents()
   PickingEvents::push(
     first_events,
     @pointer_events.PointerEvent::new(
@@ -709,10 +709,10 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
       target=Some(target),
     ),
   )
-  get_picking_events_resource(app.world()).insert(first_events.val)
+  get_picking_events_resource(app.world()).insert(first_events)
   dispatch_pointer_observers_system(app.world())
 
-  let second_events = Ref(@app.PickingEvents::PickingEvents())
+  let second_events = @app.PickingEvents::PickingEvents()
   PickingEvents::push(
     second_events,
     @pointer_events.PointerEvent::new(
@@ -722,7 +722,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
       target=Some(other),
     ),
   )
-  get_picking_events_resource(app.world()).insert(second_events.val)
+  get_picking_events_resource(app.world()).insert(second_events)
   dispatch_pointer_observers_system(app.world())
 
   debug_inspect(hits, content="[\"enter:7\", \"chained\"]")
@@ -761,7 +761,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
   app = app.run_once()
 
   guard target_ref.val is Some(target) else { abort("expected target entity") }
-  let click_events = Ref(@app.PickingEvents::PickingEvents())
+  let click_events = @app.PickingEvents::PickingEvents()
   PickingEvents::push(
     click_events,
     @pointer_events.PointerEvent::new(
@@ -771,7 +771,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
       target=Some(target),
     ),
   )
-  get_picking_events_resource(app.world()).insert(click_events.val)
+  get_picking_events_resource(app.world()).insert(click_events)
 
   dispatch_pointer_observers_system(app.world())
 

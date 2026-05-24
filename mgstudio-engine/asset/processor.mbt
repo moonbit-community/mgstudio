@@ -88,10 +88,10 @@ priv struct AssetProcessorEntry {
 
 ///|
 priv struct AssetProcessorRegistryState {
-  processors : Ref[@hashmap.HashMap[String, Array[AssetProcessorEntry]]]
-  default_processor_by_extension : Ref[@hashmap.HashMap[String, (String, Int)]]
-  named_processors : Ref[@hashmap.HashMap[String, Array[(String, Int)]]]
-  last_registered_entry : Ref[(String, Int)?]
+  processors : @hashmap.HashMap[String, Array[AssetProcessorEntry]]
+  default_processor_by_extension : @hashmap.HashMap[String, (String, Int)]
+  named_processors : @hashmap.HashMap[String, Array[(String, Int)]]
+  mut last_registered_entry : (String, Int)?
 }
 
 ///|
@@ -129,15 +129,15 @@ fn asset_processor_registry_push_entry_in_state(
   type_name : String,
   entry : AssetProcessorEntry,
 ) -> Int {
-  let entries = match state.processors.val.get(type_name) {
+  let entries = match state.processors.get(type_name) {
     Some(entries) => entries
     None => []
   }
   let next_entries = asset_processor_registry_clone_entries(entries)
   let next_index = next_entries.length()
   next_entries.push(entry)
-  state.processors.val.set(type_name, next_entries)
-  state.last_registered_entry.val = Some((type_name, next_index))
+  state.processors.set(type_name, next_entries)
+  state.last_registered_entry = Some((type_name, next_index))
   next_index
 }
 
@@ -151,13 +151,13 @@ fn asset_processor_registry_register_name_in_state(
   if normalized_name == "" {
     return
   }
-  let entries = match state.named_processors.val.get(normalized_name) {
+  let entries = match state.named_processors.get(normalized_name) {
     Some(entries) => entries
     None => []
   }
   let next_entries = asset_processor_registry_clone_entry_refs(entries)
   next_entries.push(entry_ref)
-  state.named_processors.val.set(normalized_name, next_entries)
+  state.named_processors.set(normalized_name, next_entries)
 }
 
 ///|
@@ -167,10 +167,10 @@ fn asset_processor_registry_state_for_world(
   let key = asset_processor_registry_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetProcessorRegistryState::{
-      processors: Ref(@hashmap.HashMap([])),
-      default_processor_by_extension: Ref(@hashmap.HashMap([])),
-      named_processors: Ref(@hashmap.HashMap([])),
-      last_registered_entry: Ref(None),
+      processors: @hashmap.HashMap([]),
+      default_processor_by_extension: @hashmap.HashMap([]),
+      named_processors: @hashmap.HashMap([]),
+      last_registered_entry: None,
     })
   }
   match world.get_resource(key) {
@@ -293,9 +293,9 @@ pub fn set_default_asset_processor(
     fn set_default_to_last_registered(
       state : AssetProcessorRegistryState,
     ) -> Unit {
-      match state.last_registered_entry.val {
+      match state.last_registered_entry {
         Some(last_entry) =>
-          state.default_processor_by_extension.val.set(normalized, last_entry)
+          state.default_processor_by_extension.set(normalized, last_entry)
         None => ()
       }
     }
@@ -322,9 +322,9 @@ pub fn set_default_asset_processor_by_name(
   let world = app.world()
   asset_with_world(world, fn() {
     let state = asset_processor_registry_state_active()
-    match state.named_processors.val.get(normalized_name) {
+    match state.named_processors.get(normalized_name) {
       Some(entries) if entries.length() == 1 =>
-        state.default_processor_by_extension.val.set(
+        state.default_processor_by_extension.set(
           normalized_extension,
           entries[0],
         )
@@ -379,13 +379,11 @@ fn asset_processor_entry_for_path(
   path : AssetPath,
 ) -> AssetProcessorEntry? {
   let state = asset_processor_registry_state_active()
-  guard state.processors.val.get(type_name) is Some(entries) else {
-    return None
-  }
-  let default_candidate : Ref[AssetProcessorEntry?] = Ref(None)
-  let default_length = Ref(-1)
-  let matched_entry : Ref[AssetProcessorEntry?] = Ref(None)
-  let matched_length = Ref(-1)
+  guard state.processors.get(type_name) is Some(entries) else { return None }
+  let mut default_candidate : AssetProcessorEntry? = None
+  let mut default_length = -1
+  let mut matched_entry : AssetProcessorEntry? = None
+  let mut matched_length = -1
   for entry_index in 0..<entries.length() {
     let entry = entries[entry_index]
     for extension in entry.extensions {
@@ -393,28 +391,28 @@ fn asset_processor_entry_for_path(
       if !asset_processor_path_matches_extension(path, normalized) {
         continue
       }
-      if normalized.length() > matched_length.val {
-        matched_entry.val = Some(entry)
-        matched_length.val = normalized.length()
+      if normalized.length() > matched_length {
+        matched_entry = Some(entry)
+        matched_length = normalized.length()
       }
-      match state.default_processor_by_extension.val.get(normalized) {
+      match state.default_processor_by_extension.get(normalized) {
         Some(default_entry) => {
           let default_type_name = default_entry.0
           let default_entry_index = default_entry.1
           if default_type_name == type_name &&
             default_entry_index == entry_index &&
-            normalized.length() > default_length.val {
-            default_candidate.val = Some(entry)
-            default_length.val = normalized.length()
+            normalized.length() > default_length {
+            default_candidate = Some(entry)
+            default_length = normalized.length()
           }
         }
         _ => ()
       }
     }
   }
-  match default_candidate.val {
+  match default_candidate {
     Some(entry) => Some(entry)
-    None => matched_entry.val
+    None => matched_entry
   }
 }
 
@@ -424,7 +422,7 @@ fn asset_should_process_registered_asset(
   type_name : String,
   path : AssetPath,
 ) -> Bool {
-  asset_server.mode.val == AssetMode::Processed &&
+  asset_server.mode == AssetMode::Processed &&
   asset_processor_entry_for_path(type_name, path) is Some(_)
 }
 
@@ -433,7 +431,7 @@ fn asset_processed_output_path(
   asset_server : AssetServer,
   path : AssetPath,
 ) -> String? {
-  match asset_server.processed_file_path.val {
+  match asset_server.processed_file_path {
     Some(processed_root) =>
       Some(path_join(processed_root, asset_format_path(path)))
     None => None
@@ -446,7 +444,7 @@ fn asset_process_pending_processed_asset_loads(
   asset_server : AssetServer,
 ) -> Unit {
   let remaining : Array[PendingProcessedAssetLoad] = []
-  for pending in asset_server.pending_processed_asset_loads.val {
+  for pending in asset_server.pending_processed_asset_loads {
     match asset_processor_entry_for_path(pending.type_name, pending.path) {
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
@@ -477,5 +475,5 @@ fn asset_process_pending_processed_asset_loads(
       None => remaining.push(pending)
     }
   }
-  asset_server.pending_processed_asset_loads.val = remaining
+  asset_server.pending_processed_asset_loads = remaining
 }

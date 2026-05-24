@@ -42,14 +42,16 @@ test "app: Local persists independently per system instance" {
 
   let mut app = App::new(@ecs.World::new())
     .add_system_param(fn(local_state : Local[LocalCounter]) {
-      let state_ref = local_state.get_ref()
-      state_ref.val.value = state_ref.val.value + 1
-      seen_first.push(state_ref.val.value)
+      let state = local_state.get()
+      state.value = state.value + 1
+      local_state.set(state)
+      seen_first.push(state.value)
     })
     .add_system_param(fn(local_state : Local[LocalCounter]) {
-      let state_ref = local_state.get_ref()
-      state_ref.val.value = state_ref.val.value + 10
-      seen_second.push(state_ref.val.value)
+      let state = local_state.get()
+      state.value = state.value + 10
+      local_state.set(state)
+      seen_second.push(state.value)
     })
 
   app = app.run_once()
@@ -66,9 +68,10 @@ test "app: Local Array FromWorld starts empty and persists" {
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     local_state : Local[Array[Int]],
   ) {
-    let state_ref = local_state.get_ref()
-    state_ref.val.push(state_ref.val.length())
-    lengths.push(state_ref.val.length())
+    let state = local_state.get()
+    state.push(state.length())
+    local_state.set(state)
+    lengths.push(state.length())
   })
 
   app = app.run_once()
@@ -88,17 +91,15 @@ test "app: Local primitive FromWorld defaults are available" {
     elapsed : Local[Float],
     label : Local[String],
   ) {
-    let counter = counter.get_ref()
-    let elapsed = elapsed.get_ref()
-    let label = label.get_ref()
-    counter.val = counter.val + 1
-    elapsed.val = elapsed.val + 0.5F
-    if label.val == "" {
-      label.val = "tick"
-    }
-    seen_counters.push(counter.val)
-    seen_elapsed_ok.push(elapsed.val == 0.5F || elapsed.val == 1.0F)
-    seen_labels.push(label.val)
+    let next_counter = counter.get() + 1
+    let next_elapsed = elapsed.get() + 0.5F
+    let next_label = if label.get() == "" { "tick" } else { label.get() }
+    counter.set(next_counter)
+    elapsed.set(next_elapsed)
+    label.set(next_label)
+    seen_counters.push(next_counter)
+    seen_elapsed_ok.push(next_elapsed == 0.5F || next_elapsed == 1.0F)
+    seen_labels.push(next_label)
   })
 
   app = app.run_once()
@@ -116,11 +117,15 @@ test "app: ParamSet2 keeps each nested SystemParam state independently" {
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     params : ParamSet2[Local[LocalCounter], Local[LocalCounter]],
   ) {
-    let first = params.p0().get_ref()
-    let second = params.p1().get_ref()
-    first.val.value = first.val.value + 1
-    second.val.value = second.val.value + 10
-    seen.push((first.val.value, second.val.value))
+    let first = params.p0()
+    let second = params.p1()
+    let first_state = first.get()
+    let second_state = second.get()
+    first_state.value = first_state.value + 1
+    second_state.value = second_state.value + 10
+    first.set(first_state)
+    second.set(second_state)
+    seen.push((first_state.value, second_state.value))
   })
 
   app = app.run_once()

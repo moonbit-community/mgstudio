@@ -91,8 +91,8 @@ fn asset_source_id_debug_name(source_id : AssetSourceId) -> String {
 
 ///|
 priv struct AssetSourceBuilderRegistryState {
-  named_builders : Ref[@hashmap.HashMap[String, AssetSourceBuilder]]
-  default_builder : Ref[AssetSourceBuilder?]
+  named_builders : @hashmap.HashMap[String, AssetSourceBuilder]
+  mut default_builder : AssetSourceBuilder?
 }
 
 ///|
@@ -111,12 +111,12 @@ fn asset_source_builder_registry_upsert_in_state(
 ) -> Unit {
   match source_id {
     AssetSourceId::Default =>
-      if replace_existing || state.default_builder.val is None {
-        state.default_builder.val = Some(builder)
+      if replace_existing || state.default_builder is None {
+        state.default_builder = Some(builder)
       }
     AssetSourceId::Named(source_name) =>
-      if replace_existing || state.named_builders.val.get(source_name) is None {
-        state.named_builders.val.set(source_name, builder)
+      if replace_existing || state.named_builders.get(source_name) is None {
+        state.named_builders.set(source_name, builder)
       }
   }
 }
@@ -128,8 +128,8 @@ fn asset_source_builder_registry_for_world(
   let key = asset_source_builder_registry_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetSourceBuilderRegistryState::{
-      named_builders: Ref(@hashmap.HashMap([])),
-      default_builder: Ref(None),
+      named_builders: @hashmap.HashMap([]),
+      default_builder: None,
     })
   }
   match world.get_resource(key) {
@@ -166,7 +166,7 @@ fn asset_register_source_builder(
 fn asset_registered_source_dir_entries() -> Array[(String, String)] {
   let entries : Array[(String, String)] = []
   let state = asset_source_builder_registry_state_active()
-  for entry in state.named_builders.val.iter() {
+  for entry in state.named_builders.iter() {
     let (source_name, builder) = entry
     if resolve_assets_dir_override(Some(builder.path)) is Some(resolved) {
       entries.push((source_name, resolved))
@@ -178,7 +178,7 @@ fn asset_registered_source_dir_entries() -> Array[(String, String)] {
 ///|
 fn asset_registered_default_source_dir_override() -> String? {
   let state = asset_source_builder_registry_state_active()
-  match state.default_builder.val {
+  match state.default_builder {
     Some(default_builder) =>
       resolve_assets_dir_override(Some(default_builder.path))
     None => None
@@ -191,14 +191,14 @@ fn asset_registered_source_reader_entries() -> Array[
 ] {
   let entries : Array[(AssetSourceId, AssetSourceBuilder)] = []
   let state = asset_source_builder_registry_state_active()
-  match state.default_builder.val {
+  match state.default_builder {
     Some(default_builder) =>
       if default_builder.reader_builder is Some(_) {
         entries.push((AssetSourceId::Default, default_builder))
       }
     None => ()
   }
-  for entry in state.named_builders.val.iter() {
+  for entry in state.named_builders.iter() {
     let (source_name, builder) = entry
     if builder.reader_builder is Some(_) {
       entries.push((AssetSourceId::Named(source_name), builder))

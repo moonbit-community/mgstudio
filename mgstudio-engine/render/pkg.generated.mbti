@@ -11,7 +11,6 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -498,19 +497,19 @@ pub fn[A] ErasedPrepareNextFrameAssets::take(Self[A]) -> Array[(Int, A)]
 pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A]
 
 pub struct ErasedRenderAssets[A] {
-  items : @hashmap.HashMap[Int, @ref.Ref[A]]
+  items : @hashmap.HashMap[Int, A]
 }
 pub fn[A] ErasedRenderAssets::clear(Self[A]) -> Unit
 pub fn[A] ErasedRenderAssets::contains(Self[A], Int) -> Bool
 pub fn[A] ErasedRenderAssets::get(Self[A], Int) -> A?
-pub fn[A] ErasedRenderAssets::get_mut(Self[A], Int) -> @ref.Ref[A]?
+pub fn[A] ErasedRenderAssets::get_mut(Self[A], Int) -> A?
 pub fn[A] ErasedRenderAssets::insert(Self[A], Int, A) -> Unit
 pub fn[A] ErasedRenderAssets::is_empty(Self[A]) -> Bool
 pub fn[A] ErasedRenderAssets::len(Self[A]) -> Int
 pub fn[A] ErasedRenderAssets::new() -> Self[A]
 pub fn[A] ErasedRenderAssets::remove(Self[A], Int) -> A?
 pub fn[A : RenderAssetResource] ErasedRenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
-pub fn[A] ErasedRenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
+pub fn[A] ErasedRenderAssets::to_array(Self[A]) -> Array[(Int, A)]
 pub impl[A : RenderAssetResource] @app.Resource for ErasedRenderAssets[A]
 
 pub struct Extract[T] {
@@ -631,7 +630,7 @@ pub fn MainEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for MainEntity
 
 pub struct PendingSyncEntity {
-  records : @ref.Ref[Array[EntityRecord]]
+  records : Array[EntityRecord]
 }
 pub fn PendingSyncEntity::PendingSyncEntity() -> Self
 pub fn PendingSyncEntity::drain(Self) -> Array[EntityRecord]
@@ -689,19 +688,19 @@ pub struct RenderAssetResourceKeys[A] {
 }
 
 pub struct RenderAssets[A] {
-  items : @hashmap.HashMap[Int, @ref.Ref[A]]
+  items : @hashmap.HashMap[Int, A]
 }
 pub fn[A] RenderAssets::clear(Self[A]) -> Unit
 pub fn[A] RenderAssets::contains(Self[A], Int) -> Bool
 pub fn[A] RenderAssets::get(Self[A], Int) -> A?
-pub fn[A] RenderAssets::get_mut(Self[A], Int) -> @ref.Ref[A]?
+pub fn[A] RenderAssets::get_mut(Self[A], Int) -> A?
 pub fn[A] RenderAssets::insert(Self[A], Int, A) -> Unit
 pub fn[A] RenderAssets::is_empty(Self[A]) -> Bool
 pub fn[A] RenderAssets::len(Self[A]) -> Int
 pub fn[A] RenderAssets::new() -> Self[A]
 pub fn[A] RenderAssets::remove(Self[A], Int) -> A?
 pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
-pub fn[A] RenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
+pub fn[A] RenderAssets::to_array(Self[A]) -> Array[(Int, A)]
 pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A]
 
 pub(all) enum RenderCreation {

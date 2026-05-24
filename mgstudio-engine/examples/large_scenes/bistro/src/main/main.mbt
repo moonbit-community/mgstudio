@@ -67,10 +67,9 @@ fn setup(commands : @app.Commands) -> Unit {
     ),
   )
 
-  let floor_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(160.0F, 0.1F, 160.0F),
-  )
+  let floor_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(160.0F, 0.1F, 160.0F))
+  })
   let floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.19F, 0.21F)),
   )
@@ -84,10 +83,9 @@ fn setup(commands : @app.Commands) -> Unit {
     ),
   )
 
-  let cube_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(0.85F, 0.85F, 0.85F),
-  )
+  let cube_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(0.85F, 0.85F, 0.85F))
+  })
   for z in 0..<GRID_SIDE {
     for x in 0..<GRID_SIDE {
       let hue = (x * 17 + z * 29) % 360

@@ -114,8 +114,7 @@ fn mark_skinned_meshes_as_changed_if_their_assets_changed(
   ],
 ) -> Unit {
   let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
-  for
-    inverse_bindposes_asset_event in (try! inverse_bindposes_asset_events.read()) {
+  for inverse_bindposes_asset_event in inverse_bindposes_asset_events.read() {
     if inverse_bindposes_asset_event is @asset.AssetEvent::Modified(handle) {
       changed_asset_ids.add(handle.id())
     }
@@ -140,7 +139,7 @@ fn mark_3d_meshes_as_changed_if_their_assets_changed(
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
   let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
-  for mesh_asset_event in (try! mesh_asset_events.read()) {
+  for mesh_asset_event in mesh_asset_events.read() {
     if mesh_asset_event is @asset.AssetEvent::Modified(handle) {
       changed_asset_ids.add(handle.id())
     }
@@ -165,7 +164,7 @@ fn mark_2d_meshes_as_changed_if_their_assets_changed(
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
   let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
-  for mesh_asset_event in (try! mesh_asset_events.read()) {
+  for mesh_asset_event in mesh_asset_events.read() {
     if mesh_asset_event is @asset.AssetEvent::Modified(handle) {
       changed_asset_ids.add(handle.id())
     }

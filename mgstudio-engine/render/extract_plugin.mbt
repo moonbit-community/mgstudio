@@ -81,34 +81,37 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   @render_texture.register_asset_texture_backend()
-  if next.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
-    init_renderer_context_resources(render_sub_app_ref.val.world())
-    init_render_state(render_sub_app_ref.val.world())
-    render_sub_app_ref.val
-    .world()
-    .insert_resource(
-      render_asset_bytes_per_frame_limiter_resource_key,
-      RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
-    )
-    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
-      render_schedule_stage(),
-      @app.system(extract_render_asset_bytes_per_frame).in_set(
-        render_system_set_extract_commands,
-      ),
-    )
-    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
-      render_schedule_stage(),
-      @app.system(despawn_temporary_render_entities).in_set(
-        render_system_set_cleanup,
-      ),
-    )
-    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
-      render_schedule_stage(),
-      @app.system(reset_render_asset_bytes_per_frame).in_set(
-        render_system_set_cleanup,
-      ),
-    )
-  }
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      init_renderer_context_resources(render_sub_app.world())
+      init_render_state(render_sub_app.world())
+      render_sub_app
+      .world()
+      .insert_resource(
+        render_asset_bytes_per_frame_limiter_resource_key,
+        RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
+      )
+      render_sub_app
+      .add_systems(
+        render_schedule_stage(),
+        @app.system(extract_render_asset_bytes_per_frame).in_set(
+          render_system_set_extract_commands,
+        ),
+      )
+      .add_systems(
+        render_schedule_stage(),
+        @app.system(despawn_temporary_render_entities).in_set(
+          render_system_set_cleanup,
+        ),
+      )
+      .add_systems(
+        render_schedule_stage(),
+        @app.system(reset_render_asset_bytes_per_frame).in_set(
+          render_system_set_cleanup,
+        ),
+      )
+    }),
+  )
   if !next.contains_resource(ecs_key_render_plugin_marker) {
     register_embedded_wgsl_sources()
     @renderer.register_embedded_wgsl_sources()
@@ -136,9 +139,7 @@ pub fn try_with_render_app(
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let next = app
-  if next.get_sub_app_mut(@app.RenderApp) is Some(sub_app_ref) {
-    sub_app_ref.val = update(sub_app_ref.val)
-  }
+  ignore(next.modify_sub_app(@app.RenderApp, update))
   next
 }
 
@@ -148,14 +149,11 @@ pub fn with_render_app(
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let next = app
-  match next.get_sub_app_mut(@app.RenderApp) {
-    Some(sub_app_ref) => {
-      sub_app_ref.val = update(sub_app_ref.val)
-      next
-    }
-    None =>
-      abort(
-        "RenderApp is missing; add RenderPlugin before configuring render systems",
-      )
+  if next.modify_sub_app(@app.RenderApp, update) {
+    next
+  } else {
+    abort(
+      "RenderApp is missing; add RenderPlugin before configuring render systems",
+    )
   }
 }

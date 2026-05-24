@@ -125,11 +125,9 @@ fn core_pipeline_configure_render_sub_app(
 fn core_pipeline_install_render_graph_driver(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
-    render_sub_app_ref.val = core_pipeline_configure_render_sub_app(
-      render_sub_app_ref.val,
-    )
-  }
+  ignore(
+    app.modify_sub_app(@app.RenderApp, core_pipeline_configure_render_sub_app),
+  )
   app
 }
 

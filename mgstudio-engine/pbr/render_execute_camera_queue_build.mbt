@@ -42,7 +42,7 @@ fn render3d_camera_exposure_value_for_preprocess(
 
 ///|
 fn render3d_build_camera_queue_entry(
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   camera : Camera3dViewPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   meshes : Array[ExtractedMesh3d],
@@ -72,7 +72,7 @@ fn render3d_build_camera_queue_entry(
       camera_indirect_enabled,
     ),
     meshes,
-    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
+    mesh_runtime_state_value.mesh_preprocess_static_cache,
     camera_indirect_enabled,
     camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
   )
@@ -262,7 +262,7 @@ fn render3d_dispatch_camera_preprocess_main(
 
 ///|
 fn render3d_prepare_camera_queue_entry(
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
@@ -284,7 +284,7 @@ fn render3d_prepare_camera_queue_entry(
     camera.transform,
   )
   let queue_build_result = render3d_build_camera_queue_entry(
-    mesh_runtime_state_ref, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
+    mesh_runtime_state_value, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
     gpu_culling_supported,
   )
   Some(Render3dPreparedCameraQueue::{
@@ -300,7 +300,7 @@ fn render3d_prepare_camera_queue_entry(
 
 ///|
 fn render3d_prepare_camera_queue_entries(
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
@@ -310,7 +310,7 @@ fn render3d_prepare_camera_queue_entries(
   for camera in cameras {
     prepared.push(
       render3d_prepare_camera_queue_entry(
-        mesh_runtime_state_ref, camera, meshes, gpu_instance_buffer_builder_enabled,
+        mesh_runtime_state_value, camera, meshes, gpu_instance_buffer_builder_enabled,
         gpu_culling_supported,
       ),
     )

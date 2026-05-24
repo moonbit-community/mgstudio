@@ -96,7 +96,14 @@ fn shader_compile_error_from_composer(
 }
 
 ///|
-let startup_sources_registered : Ref[Bool] = Ref(false)
+priv struct ShaderCompileRuntimeState {
+  mut startup_sources_registered : Bool
+}
+
+///|
+let shader_compile_runtime_state : ShaderCompileRuntimeState = {
+  startup_sources_registered: false,
+}
 
 ///|
 pub fn normalize_shader_rel_path(rel : String) -> String {
@@ -105,11 +112,11 @@ pub fn normalize_shader_rel_path(rel : String) -> String {
 
 ///|
 pub fn ensure_startup_shader_sources_once(register : () -> Unit) -> Unit {
-  if startup_sources_registered.val {
+  if shader_compile_runtime_state.startup_sources_registered {
     return
   }
   register()
-  startup_sources_registered.val = true
+  shader_compile_runtime_state.startup_sources_registered = true
 }
 
 ///|
@@ -123,7 +130,7 @@ fn runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
 ///|
 pub fn clear_registered_shader_sources() -> Unit {
   @shader_source.clear_embedded_shader_sources()
-  startup_sources_registered.val = false
+  shader_compile_runtime_state.startup_sources_registered = false
 }
 
 ///|

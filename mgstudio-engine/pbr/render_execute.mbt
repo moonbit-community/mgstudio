@@ -59,15 +59,17 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
-  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
-  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
-  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+  let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
+  let morph_uniforms = @pbr_render.morph_uniforms_mut_or_abort(world)
+  let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
+  let world_transform_cache = @pbr_render.render3d_world_transform_cache_mut(
     world,
   )
-  @pbr_render.render3d_world_transform_cache_begin_frame(
-    world_transform_cache_ref,
-  )
+  world_transform_cache.modify(fn(world_transform_cache_value) {
+    @pbr_render.render3d_world_transform_cache_begin_frame(
+      world_transform_cache_value,
+    )
+  })
   let cameras_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "extract_3d_cameras",
@@ -82,7 +84,13 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "extract_3d_morphs",
   )
-  render3d_extract_morphs(source_world, morph_indices_ref, morph_uniforms_ref)
+  morph_indices.modify(fn(morph_indices_value) {
+    morph_uniforms.modify(fn(morph_uniforms_value) {
+      render3d_extract_morphs(
+        source_world, morph_indices_value, morph_uniforms_value,
+      )
+    })
+  })
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "extract_3d_morphs",
@@ -92,9 +100,13 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "extract_3d_skins",
   )
-  @pbr_render.render3d_extract_skin_bindings(
-    source_world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    world_transform_cache.modify(fn(world_transform_cache_value) {
+      @pbr_render.render3d_extract_skin_bindings(
+        source_world, skin_uniforms_value, world_transform_cache_value,
+      )
+    })
+  })
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "extract_3d_skins",
@@ -110,21 +122,31 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render3d_prepare_morphs_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
-  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
-  render3d_prepare_morphs(source_world, morph_indices_ref, morph_uniforms_ref)
+  let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
+  let morph_uniforms = @pbr_render.morph_uniforms_mut_or_abort(world)
+  morph_indices.modify(fn(morph_indices_value) {
+    morph_uniforms.modify(fn(morph_uniforms_value) {
+      render3d_prepare_morphs(
+        source_world, morph_indices_value, morph_uniforms_value,
+      )
+    })
+  })
 }
 
 ///|
 pub fn render3d_prepare_skin_bindings_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+  let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
+  let world_transform_cache = @pbr_render.render3d_world_transform_cache_mut(
     world,
   )
-  @pbr_render.render3d_prepare_skin_bindings_upload(
-    source_world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    world_transform_cache.modify(fn(world_transform_cache_value) {
+      @pbr_render.render3d_prepare_skin_bindings_upload(
+        source_world, skin_uniforms_value, world_transform_cache_value,
+      )
+    })
+  })
 }
 
 ///|
@@ -281,7 +303,7 @@ fn render3d_material_shader_paths_for_extracted_mesh(
 ///|
 fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   mesh : Mesh3dExtractedPayload,
   view_entity : @core.Entity,
   visible_entity : @core.Entity,
@@ -303,10 +325,10 @@ fn render3d_prewarm_material_pipeline(
   }
   let render_mesh = @render_mesh.RenderMesh::from_mesh(
     mesh_asset,
-    mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
+    mesh_runtime_state_value.mesh_vertex_buffer_layouts,
   )
   let layout = render_mesh.host_vertex_buffer_layout(
-    mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
+    mesh_runtime_state_value.mesh_vertex_buffer_layouts,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
@@ -347,7 +369,7 @@ fn render3d_prewarm_material_pipeline(
       )
   }
   match
-    mesh_runtime_state_ref.val.specialized_material_pipelines.render_pipeline_descriptor(
+    mesh_runtime_state_value.specialized_material_pipelines.render_pipeline_descriptor(
       pipeline_id,
     ) {
     Some(descriptor) =>
@@ -363,7 +385,7 @@ fn render3d_prewarm_material_pipeline(
 ///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
@@ -376,7 +398,7 @@ fn render3d_prewarm_mesh_pipelines(
     for camera in cameras {
       let view_pipeline_id = render3d_prewarm_material_pipeline(
         world,
-        mesh_runtime_state_ref,
+        mesh_runtime_state_value,
         mesh,
         camera.entity.main_entity,
         extracted_mesh.entity.main_entity,
@@ -479,27 +501,29 @@ fn render3d_for_each_prepared_camera(
 pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
-  let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+  let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
     world,
   )
-  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
-  let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
+  let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
+  let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
   if sorted_cameras_ref.peek().entities.length() == 0 {
     render3d_queue_clear_frame(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
-  let world_transform_cache_ref = @pbr_render.render3d_world_transform_cache_ref(
+  let world_transform_cache = @pbr_render.render3d_world_transform_cache_mut(
     world,
   )
   let frame_config = render3d_execute_frame_config(source_world)
-  let cameras = render3d_execute_collect_cameras(
-    source_world,
-    world_transform_cache_ref,
-    frame_config.gpu_instance_buffer_builder_requested,
-    frame_config.gpu_culling_supported,
-    frame_config.prepass_enabled,
-  )
+  let cameras = world_transform_cache.modify(fn(world_transform_cache_value) {
+    render3d_execute_collect_cameras(
+      source_world,
+      world_transform_cache_value,
+      frame_config.gpu_instance_buffer_builder_requested,
+      frame_config.gpu_culling_supported,
+      frame_config.prepass_enabled,
+    )
+  })
   let needs_mesh_previous_transform = render3d_set_mesh_motion_vector_flags(
     cameras,
   )
@@ -509,14 +533,23 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
-  let meshes = render3d_execute_collect_meshes(
-    world, source_world, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
-    world_transform_cache_ref, needs_mesh_previous_transform,
-  )
+  let meshes = mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
+    let meshes = morph_indices.modify(fn(morph_indices_value) {
+      skin_uniforms.modify(fn(skin_uniforms_value) {
+        world_transform_cache.modify(fn(world_transform_cache_value) {
+          render3d_execute_collect_meshes(
+            world, source_world, mesh_runtime_state_value, morph_indices_value, skin_uniforms_value,
+            world_transform_cache_value, needs_mesh_previous_transform,
+          )
+        })
+      })
+    })
+    render3d_prewarm_mesh_pipelines(
+      world, mesh_runtime_state_value, cameras, meshes,
+    )
+    meshes
+  })
   render3d_prepare_shader_asset_paths(source_world, meshes)
-  render3d_prewarm_mesh_pipelines(
-    world, mesh_runtime_state_ref, cameras, meshes,
-  )
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
@@ -560,16 +593,20 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   }
   match render3d_queue_take_pending_frame(world) {
     Some(frame) => {
-      let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+      let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
         world,
       )
-      let prepared_camera_queues = render3d_prepare_camera_queue_entries(
-        mesh_runtime_state_ref,
-        frame.cameras,
-        frame.meshes,
-        frame.frame_config.gpu_instance_buffer_builder_enabled,
-        frame.frame_config.gpu_culling_supported,
-      )
+      let prepared_camera_queues = mesh_runtime_state.modify(fn(
+        mesh_runtime_state_value,
+      ) {
+        render3d_prepare_camera_queue_entries(
+          mesh_runtime_state_value,
+          frame.cameras,
+          frame.meshes,
+          frame.frame_config.gpu_instance_buffer_builder_enabled,
+          frame.frame_config.gpu_culling_supported,
+        )
+      })
       render3d_queue_store_frame(
         world,
         frame.frame_config,
@@ -586,10 +623,12 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_queue_sweep_system(world : @ecs.World) -> Unit {
-  let mesh_runtime_state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(
+  let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
     world,
   )
-  @pbr_render.render3d_sweep_mesh_runtime_caches(mesh_runtime_state_ref)
+  mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
+    @pbr_render.render3d_sweep_mesh_runtime_caches(mesh_runtime_state_value)
+  })
 }
 
 ///|

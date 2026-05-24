@@ -594,9 +594,6 @@ pub struct Camera {
 }
 
 ///|
-pub impl @ecs.Mutable for Camera
-
-///|
 pub fn Camera::new(clear_color : Color) -> Camera {
   Camera::{
     viewport: None,
@@ -740,9 +737,6 @@ pub fn OrthographicProjection::with_scale(
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
-
-///|
-pub impl @ecs.Mutable for Projection
 
 ///|
 pub fn Projection::orthographic_2d() -> Projection {
@@ -959,14 +953,10 @@ pub type Ring[P] = @math.Ring[P]
 pub type Mesh2d = @mesh.Mesh2d
 
 ///|
-let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
+let mesh_upload_cache : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
 
 ///|
-let mesh_upload_radius_cache : Ref[@hashmap.HashMap[Int, Float]] = Ref(
-  @hashmap.HashMap([]),
-)
+let mesh_upload_radius_cache : @hashmap.HashMap[Int, Float] = @hashmap.HashMap([])
 
 ///|
 fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
@@ -1006,7 +996,7 @@ fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
   if mesh_id <= 0 {
     return 1.0F
   }
-  if mesh_upload_radius_cache.val.get(mesh_id) is Some(radius) {
+  if mesh_upload_radius_cache.get(mesh_id) is Some(radius) {
     radius
   } else {
     64.0F
@@ -1021,7 +1011,7 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
   for event in events {
     match event {
       @asset.AssetEvent::Modified(handle) =>
-        if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
+        if mesh_upload_cache.get(handle.id()) is Some(mesh_id) {
           let mut keep_cache = false
           if mesh_asset_get(handle) is Some(mesh_asset) {
             match mesh_asset.geometry {
@@ -1056,7 +1046,7 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
           }
         }
       @asset.AssetEvent::Removed(handle) =>
-        if mesh_upload_cache.val.get(handle.id()) is Some(_) {
+        if mesh_upload_cache.get(handle.id()) is Some(_) {
           ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
         }
       _ => ()
@@ -1066,10 +1056,10 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
 
 ///|
 pub fn render2d_delete_uploaded_mesh_handle_id(mesh_handle_id : Int) -> Bool {
-  match mesh_upload_cache.val.get(mesh_handle_id) {
+  match mesh_upload_cache.get(mesh_handle_id) {
     Some(mesh_id) => {
-      mesh_upload_cache.val.remove(mesh_handle_id)
-      mesh_upload_radius_cache.val.remove(mesh_id)
+      mesh_upload_cache.remove(mesh_handle_id)
+      mesh_upload_radius_cache.remove(mesh_id)
       @render.host_gpu_delete_mesh(mesh_id~)
     }
     None => false
@@ -3190,16 +3180,22 @@ struct RenderState {
 }
 
 ///|
-let render2d_diagnostic_queued_draw_item_count_ref : Ref[Int] = Ref(0)
+priv struct Render2dRuntimeState {
+  mut diagnostic_queued_draw_item_count : Int
+  mut diagnostic_prepared_camera_count : Int
+  mut diagnostic_queue_cpu_ms : Float
+  mut diagnostic_execute_cpu_ms : Float
+  mut render_state_serde_next_id : Int
+}
 
 ///|
-let render2d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref(0)
-
-///|
-let render2d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref(0.0F)
-
-///|
-let render2d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref(0.0F)
+let render2d_runtime_state : Render2dRuntimeState = {
+  diagnostic_queued_draw_item_count: 0,
+  diagnostic_prepared_camera_count: 0,
+  diagnostic_queue_cpu_ms: 0.0F,
+  diagnostic_execute_cpu_ms: 0.0F,
+  render_state_serde_next_id: 1,
+}
 
 ///|
 fn RenderState::new() -> RenderState {
@@ -3225,15 +3221,12 @@ fn RenderState::new() -> RenderState {
 }
 
 ///|
-let render_state_serde_next_id : Ref[Int] = Ref(1)
-
-///|
 let render_state_serde_values : Map[Int, RenderState] = {}
 
 ///|
 pub impl ToJson for RenderState with to_json(self) {
-  let id = render_state_serde_next_id.val
-  render_state_serde_next_id.val = id + 1
+  let id = render2d_runtime_state.render_state_serde_next_id
+  render2d_runtime_state.render_state_serde_next_id = id + 1
   render_state_serde_values.set(id, self)
   id.to_json()
 }
@@ -3252,13 +3245,13 @@ fn render_state_ref(world : @ecs.World) -> RenderState? {
 ///|
 fn render_state_update(
   world : @ecs.World,
-  update : (Ref[RenderState]) -> Unit,
+  update : (RenderState) -> Unit,
 ) -> Bool {
   let res = get_render_state_resource(world)
   guard res.get() is Some(state_value) else { return false }
-  let state = Ref(state_value)
+  let state = state_value
   update(state)
-  res.insert(state.val)
+  res.insert(state)
   true
 }
 
@@ -3745,9 +3738,9 @@ pub fn render2d_create_render_target(
   ensure_render_state_resource(world)
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
-    let rs = Ref(state_value)
-    rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
-    res.insert(rs.val)
+    let rs = state_value
+    rs.render_targets.push(RenderTargetInfo::{ id, width, height })
+    res.insert(rs)
   }
   @asset.Handle::new(id)
 }
@@ -3939,8 +3932,8 @@ pub impl @ecs.Bundle for Mesh2dBundle with insert_into(
 ///|
 pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_sprites.clear()
-    rs.val.extra_sprite_slice_batches.clear()
+    rs.extra_sprites.clear()
+    rs.extra_sprite_slice_batches.clear()
   })
   |> ignore
 }
@@ -3956,7 +3949,7 @@ pub fn render2d_push_sprite_uv(
   layers : RenderLayers,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_sprites.push(ExtractedSprite::{
+    rs.extra_sprites.push(ExtractedSprite::{
       entity: phase_entity_ref_placeholder(),
       payload: SpriteDrawPayload::{
         transform,
@@ -3986,7 +3979,7 @@ pub fn render2d_push_sprite_uv_scissor(
   scissor : @math.Rect?,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_sprites.push(ExtractedSprite::{
+    rs.extra_sprites.push(ExtractedSprite::{
       entity: phase_entity_ref_placeholder(),
       payload: SpriteDrawPayload::{
         transform,
@@ -4057,7 +4050,7 @@ pub fn render2d_push_sprite_uv_scissor_batch(
       }
       match sprite.target_camera {
         Some(camera_entity) =>
-          rs.val.extra_ui_sprites.push(ExtractedUiSprite::{
+          rs.extra_ui_sprites.push(ExtractedUiSprite::{
             entity: phase_entity_ref_placeholder(),
             extracted_camera_entity: render2d_ui_overlay_target_camera(
               Some(camera_entity),
@@ -4065,7 +4058,7 @@ pub fn render2d_push_sprite_uv_scissor_batch(
             payload,
           })
         None =>
-          rs.val.extra_sprites.push(ExtractedSprite::{
+          rs.extra_sprites.push(ExtractedSprite::{
             entity: phase_entity_ref_placeholder(),
             payload,
           })
@@ -4102,7 +4095,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
       }
       match batch.target_camera {
         Some(camera_entity) =>
-          rs.val.extra_ui_sprite_slice_batches.push(ExtractedUiSpriteSliceBatch::{
+          rs.extra_ui_sprite_slice_batches.push(ExtractedUiSpriteSliceBatch::{
             entity: phase_entity_ref_placeholder(),
             extracted_camera_entity: render2d_ui_overlay_target_camera(
               Some(camera_entity),
@@ -4110,7 +4103,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
             payload,
           })
         None =>
-          rs.val.extra_sprite_slice_batches.push(ExtractedSpriteSliceBatch::{
+          rs.extra_sprite_slice_batches.push(ExtractedSpriteSliceBatch::{
             entity: phase_entity_ref_placeholder(),
             payload,
           })
@@ -4123,26 +4116,26 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
 ///|
 pub fn render2d_clear_overlay_ui_sprites(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_sprites.clear()
-    rs.val.extra_ui_sprite_slice_batches.clear()
+    rs.extra_ui_sprites.clear()
+    rs.extra_ui_sprite_slice_batches.clear()
   })
   |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.val.extra_ui_rects.clear() }) |> ignore
+  render_state_update(world, fn(rs) { rs.extra_ui_rects.clear() }) |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.val.extra_ui_box_shadows.clear() })
+  render_state_update(world, fn(rs) { rs.extra_ui_box_shadows.clear() })
   |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.val.extra_ui_texture_slices.clear() })
+  render_state_update(world, fn(rs) { rs.extra_ui_texture_slices.clear() })
   |> ignore
 }
 
@@ -4164,7 +4157,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   border : UiBorderRect,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_rects.push(ExtractedUiRect::{
+    rs.extra_ui_rects.push(ExtractedUiRect::{
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
       payload: UiRectDrawPayload::{
@@ -4203,7 +4196,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   samples : Int,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_box_shadows.push(ExtractedUiBoxShadow::{
+    rs.extra_ui_box_shadows.push(ExtractedUiBoxShadow::{
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
       payload: UiBoxShadowDrawPayload::{
@@ -4241,7 +4234,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   atlas_rect : @math.Vec4,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_texture_slices.push(ExtractedUiTextureSlice::{
+    rs.extra_ui_texture_slices.push(ExtractedUiTextureSlice::{
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
       payload: UiTextureSliceDrawPayload::{
@@ -4848,7 +4841,7 @@ fn render2d_push_ui_camera_entity(
 ///|
 fn render2d_extract_camera_entity_ecs(
   world : @ecs.World,
-  rs : Ref[RenderState],
+  rs : RenderState,
   entity : @core.Entity,
 ) -> Unit {
   guard (try! world.get_by_key(entity, ecs_key_camera)) is Some(camera) else {
@@ -4884,7 +4877,7 @@ fn render2d_extract_camera_entity_ecs(
       target_size: target_info.physical_size,
       scale_factor,
     }
-  } else if render2d_target_info(world, rs.val, target) is Some(info) {
+  } else if render2d_target_info(world, rs, target) is Some(info) {
     let scale_factor = if info.scale_factor <= 0.0F {
       1.0F
     } else {
@@ -4892,7 +4885,7 @@ fn render2d_extract_camera_entity_ecs(
     }
     computed = CameraComputed::{ target_size: info.size, scale_factor }
   }
-  rs.val.cameras.push(ExtractedCamera2d::{
+  rs.cameras.push(ExtractedCamera2d::{
     entity,
     camera,
     projection,
@@ -4911,26 +4904,26 @@ fn render2d_extract_camera_entity_ecs(
 ///|
 fn render2d_extract_ui_only_cameras_ecs(
   world : @ecs.World,
-  rs : Ref[RenderState],
+  rs : RenderState,
 ) -> Unit {
   let ui_cameras : Array[@core.Entity] = []
-  for item in rs.val.extra_ui_sprites {
+  for item in rs.extra_ui_sprites {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.val.extra_ui_sprite_slice_batches {
+  for item in rs.extra_ui_sprite_slice_batches {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.val.extra_ui_rects {
+  for item in rs.extra_ui_rects {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.val.extra_ui_box_shadows {
+  for item in rs.extra_ui_box_shadows {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.val.extra_ui_texture_slices {
+  for item in rs.extra_ui_texture_slices {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
   for entity in ui_cameras {
-    if render2d_has_extracted_camera(rs.val.cameras, entity) {
+    if render2d_has_extracted_camera(rs.cameras, entity) {
       continue
     }
     render2d_extract_camera_entity_ecs(world, rs, entity)
@@ -5007,11 +5000,11 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   render_state_update(world, fn(rs) {
-    rs.val.draw_enabled = true
-    rs.val.primary_camera = @core.Entity::placeholder()
-    rs.val.sprites.clear()
-    rs.val.cameras.clear()
-    rs.val.meshes.clear()
+    rs.draw_enabled = true
+    rs.primary_camera = @core.Entity::placeholder()
+    rs.sprites.clear()
+    rs.cameras.clear()
+    rs.meshes.clear()
     // ECS camera components.
     let camera2d_query : @ecs.Query[@ecs.Comp[Camera2d], @ecs.All] = @ecs.query(
       source_world,
@@ -5020,13 +5013,13 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       render2d_extract_camera_entity_ecs(source_world, rs, entity)
     })
     render2d_extract_ui_only_cameras_ecs(source_world, rs)
-    if rs.val.cameras.length() > 0 {
-      let order = render2d_sorted_camera_indices(rs.val.cameras)
+    if rs.cameras.length() > 0 {
+      let order = render2d_sorted_camera_indices(rs.cameras)
       if order.length() > 0 {
-        rs.val.primary_camera = rs.val.cameras[order[0]].entity
+        rs.primary_camera = rs.cameras[order[0]].entity
       }
     }
-    render2d_prune_postprocess_intermediate_targets(rs.val)
+    render2d_prune_postprocess_intermediate_targets(rs)
 
     // ECS sprite components.
     let sprite_query : @ecs.Query[@ecs.Comp[Sprite], @ecs.All] = @ecs.query(
@@ -5097,7 +5090,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         )
       }
       if !append_computed_sprite_slices(
-          rs.val.sprites,
+          rs.sprites,
           entity,
           sprite,
           anchor,
@@ -5108,7 +5101,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
           uv_max,
           region_size,
         ) {
-        rs.val.sprites.push(ExtractedSprite::{
+        rs.sprites.push(ExtractedSprite::{
           entity: phase_entity_ref_for_main(entity),
           payload: SpriteDrawPayload::{
             transform,
@@ -5161,7 +5154,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         wireframe_config,
       )
       let mesh2d = mesh2d.value()
-      rs.val.meshes.push(ExtractedMesh2d::{
+      rs.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
         payload: Mesh2dDrawPayload::{
           mesh_id: render2d_upload_mesh_handle(mesh2d.mesh()),
@@ -5179,20 +5172,18 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
 ///|
 pub fn render_prepare_system(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
-    if !rs.val.draw_enabled {
-      rs.val.prepared_camera_indices.clear()
-      rs.val.queued_draw_item_counts.clear()
-      rs.val.queued_camera_draw_items.clear()
-      render2d_diagnostic_prepared_camera_count_ref.val = 0
-      render2d_diagnostic_queued_draw_item_count_ref.val = 0
+    if !rs.draw_enabled {
+      rs.prepared_camera_indices.clear()
+      rs.queued_draw_item_counts.clear()
+      rs.queued_camera_draw_items.clear()
+      render2d_runtime_state.diagnostic_prepared_camera_count = 0
+      render2d_runtime_state.diagnostic_queued_draw_item_count = 0
       return
     }
-    rs.val.prepared_camera_indices = render2d_sorted_camera_indices(
-      rs.val.cameras,
-    )
-    render2d_diagnostic_prepared_camera_count_ref.val = rs.val.prepared_camera_indices.length()
-    rs.val.queued_draw_item_counts.clear()
-    rs.val.queued_camera_draw_items.clear()
+    rs.prepared_camera_indices = render2d_sorted_camera_indices(rs.cameras)
+    render2d_runtime_state.diagnostic_prepared_camera_count = rs.prepared_camera_indices.length()
+    rs.queued_draw_item_counts.clear()
+    rs.queued_camera_draw_items.clear()
   })
   |> ignore
 }
@@ -5220,16 +5211,16 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
     world, color_material_probe,
   )
   render_state_update(world, fn(rs) {
-    if !rs.val.draw_enabled {
-      rs.val.queued_draw_item_counts.clear()
-      rs.val.queued_camera_draw_items.clear()
-      render2d_diagnostic_queued_draw_item_count_ref.val = 0
+    if !rs.draw_enabled {
+      rs.queued_draw_item_counts.clear()
+      rs.queued_camera_draw_items.clear()
+      render2d_runtime_state.diagnostic_queued_draw_item_count = 0
       return
     }
-    let cameras = rs.val.cameras
-    let camera_indices = if rs.val.prepared_camera_indices.length() ==
+    let cameras = rs.cameras
+    let camera_indices = if rs.prepared_camera_indices.length() ==
       cameras.length() {
-      rs.val.prepared_camera_indices
+      rs.prepared_camera_indices
     } else {
       render2d_sorted_camera_indices(cameras)
     }
@@ -5246,15 +5237,15 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       let item = build_camera_draw_items(
         world,
         material_runtime_registry,
-        rs.val.sprites,
-        rs.val.extra_sprites,
-        rs.val.extra_sprite_slice_batches,
-        rs.val.extra_ui_sprites,
-        rs.val.extra_ui_sprite_slice_batches,
-        rs.val.extra_ui_rects,
-        rs.val.extra_ui_box_shadows,
-        rs.val.extra_ui_texture_slices,
-        rs.val.meshes,
+        rs.sprites,
+        rs.extra_sprites,
+        rs.extra_sprite_slice_batches,
+        rs.extra_ui_sprites,
+        rs.extra_ui_sprite_slice_batches,
+        rs.extra_ui_rects,
+        rs.extra_ui_box_shadows,
+        rs.extra_ui_texture_slices,
+        rs.meshes,
         color_prepared_materials,
         color_material_instances,
         camera.entity,
@@ -5269,16 +5260,16 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       )
       queued_items.push(item)
     }
-    rs.val.queued_draw_item_counts = counts
-    rs.val.queued_camera_draw_items = queued_items
+    rs.queued_draw_item_counts = counts
+    rs.queued_camera_draw_items = queued_items
     let mut total = 0
     for count in counts {
       total = total + count
     }
-    render2d_diagnostic_queued_draw_item_count_ref.val = total
+    render2d_runtime_state.diagnostic_queued_draw_item_count = total
   })
   |> ignore
-  render2d_diagnostic_queue_cpu_ms_ref.val = (
+  render2d_runtime_state.diagnostic_queue_cpu_ms = (
       @time.host_time_now() - queue_start
     ) *
     1000.0F
@@ -5291,22 +5282,22 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
-  render2d_diagnostic_queued_draw_item_count_ref.val
+  render2d_runtime_state.diagnostic_queued_draw_item_count
 }
 
 ///|
 pub fn render2d_diagnostic_prepared_camera_count() -> Int {
-  render2d_diagnostic_prepared_camera_count_ref.val
+  render2d_runtime_state.diagnostic_prepared_camera_count
 }
 
 ///|
 pub fn render2d_diagnostic_queue_cpu_ms() -> Float {
-  render2d_diagnostic_queue_cpu_ms_ref.val
+  render2d_runtime_state.diagnostic_queue_cpu_ms
 }
 
 ///|
 pub fn render2d_diagnostic_execute_cpu_ms() -> Float {
-  render2d_diagnostic_execute_cpu_ms_ref.val
+  render2d_runtime_state.diagnostic_execute_cpu_ms
 }
 
 ///|
@@ -6723,9 +6714,9 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
   render_state_update(world, fn(rs) {
-    rs.val.draw_enabled = true
-    rs.val.cameras.clear()
-    rs.val.cameras.push(ExtractedCamera2d::{
+    rs.draw_enabled = true
+    rs.cameras.clear()
+    rs.cameras.push(ExtractedCamera2d::{
       entity: camera_a,
       camera: Camera::Camera().with_order(0),
       projection: OrthographicProjection::default_2d(),
@@ -6742,7 +6733,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         scale_factor: 1.0F,
       },
     })
-    rs.val.cameras.push(ExtractedCamera2d::{
+    rs.cameras.push(ExtractedCamera2d::{
       entity: camera_b,
       camera: Camera::Camera().with_order(1),
       projection: OrthographicProjection::default_2d(),
@@ -6759,13 +6750,13 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         scale_factor: 1.0F,
       },
     })
-    rs.val.prepared_camera_indices.clear()
-    rs.val.prepared_camera_indices.push(0)
-    rs.val.prepared_camera_indices.push(1)
-    rs.val.extra_ui_sprites.clear()
-    rs.val.extra_ui_sprite_slice_batches.clear()
-    rs.val.extra_ui_rects.clear()
-    rs.val.extra_ui_rects.push(
+    rs.prepared_camera_indices.clear()
+    rs.prepared_camera_indices.push(0)
+    rs.prepared_camera_indices.push(1)
+    rs.extra_ui_sprites.clear()
+    rs.extra_ui_sprite_slice_batches.clear()
+    rs.extra_ui_rects.clear()
+    rs.extra_ui_rects.push(
       extracted_ui_rect_item(
         @core.Entity::new(200, 0),
         camera_a,
@@ -6783,7 +6774,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         UiBorderRect::zero(),
       ),
     )
-    rs.val.extra_ui_rects.push(
+    rs.extra_ui_rects.push(
       extracted_ui_rect_item(
         @core.Entity::new(201, 0),
         camera_b,
@@ -6801,8 +6792,8 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         UiBorderRect::zero(),
       ),
     )
-    rs.val.extra_ui_box_shadows.clear()
-    rs.val.extra_ui_texture_slices.clear()
+    rs.extra_ui_box_shadows.clear()
+    rs.extra_ui_texture_slices.clear()
   })
   |> ignore
 
@@ -6821,10 +6812,10 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   try! (world.set_by_key(camera, ecs_key_camera, Camera::Camera()) |> ignore)
 
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_sprites.clear()
-    rs.val.extra_ui_sprite_slice_batches.clear()
-    rs.val.extra_ui_rects.clear()
-    rs.val.extra_ui_rects.push(
+    rs.extra_ui_sprites.clear()
+    rs.extra_ui_sprite_slice_batches.clear()
+    rs.extra_ui_rects.clear()
+    rs.extra_ui_rects.push(
       extracted_ui_rect_item(
         @core.Entity::new(300, 0),
         camera,
@@ -6842,8 +6833,8 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
         UiBorderRect::zero(),
       ),
     )
-    rs.val.extra_ui_box_shadows.clear()
-    rs.val.extra_ui_texture_slices.clear()
+    rs.extra_ui_box_shadows.clear()
+    rs.extra_ui_texture_slices.clear()
   })
   |> ignore
 
@@ -7172,13 +7163,24 @@ test "render2d: shape geometry builders validate" {
 }
 
 ///|
+priv struct TilemapChunkExtractionProbe {
+  mut extracted_count : Int
+  mut first_uv_min_y : Double
+  mut first_uv_max_y : Double
+  mut second_uv_min_y : Double
+  mut second_uv_max_y : Double
+}
+
+///|
 test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra sprites" {
   let tileset = @asset.Handle::new(41)
-  let extracted_count : Ref[Int] = Ref(0)
-  let first_uv_min_y : Ref[Double] = Ref(-1.0)
-  let first_uv_max_y : Ref[Double] = Ref(-1.0)
-  let second_uv_min_y : Ref[Double] = Ref(-1.0)
-  let second_uv_max_y : Ref[Double] = Ref(-1.0)
+  let probe = TilemapChunkExtractionProbe::{
+    extracted_count: 0,
+    first_uv_min_y: -1.0,
+    first_uv_max_y: -1.0,
+    second_uv_min_y: -1.0,
+    second_uv_max_y: -1.0,
+  }
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -7217,19 +7219,19 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
     |> ignore)
     @asset.asset_with_world(world, fn() { render_extract_system_ecs(world) })
     let extra_sprites = render_state_ref(world).unwrap().extra_sprites
-    extracted_count.val = extra_sprites.length()
-    first_uv_min_y.val = extra_sprites[0].payload.uv_min.y.to_double()
-    first_uv_max_y.val = extra_sprites[0].payload.uv_max.y.to_double()
-    second_uv_min_y.val = extra_sprites[1].payload.uv_min.y.to_double()
-    second_uv_max_y.val = extra_sprites[1].payload.uv_max.y.to_double()
+    probe.extracted_count = extra_sprites.length()
+    probe.first_uv_min_y = extra_sprites[0].payload.uv_min.y.to_double()
+    probe.first_uv_max_y = extra_sprites[0].payload.uv_max.y.to_double()
+    probe.second_uv_min_y = extra_sprites[1].payload.uv_min.y.to_double()
+    probe.second_uv_max_y = extra_sprites[1].payload.uv_max.y.to_double()
   })
   app = app.run_once()
 
-  debug_inspect(extracted_count.val, content="2")
-  debug_inspect(first_uv_min_y.val, content="0")
-  debug_inspect(first_uv_max_y.val, content="0.25")
-  debug_inspect(second_uv_min_y.val, content="0.75")
-  debug_inspect(second_uv_max_y.val, content="1")
+  debug_inspect(probe.extracted_count, content="2")
+  debug_inspect(probe.first_uv_min_y, content="0")
+  debug_inspect(probe.first_uv_max_y, content="0.25")
+  debug_inspect(probe.second_uv_min_y, content="0.75")
+  debug_inspect(probe.second_uv_max_y, content="1")
 }
 
 ///|
@@ -7294,39 +7296,39 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     world, color_material_probe,
   )
   render_state_update(world, fn(rs) {
-    if !rs.val.draw_enabled {
-      render2d_diagnostic_prepared_camera_count_ref.val = 0
-      render2d_diagnostic_queued_draw_item_count_ref.val = 0
+    if !rs.draw_enabled {
+      render2d_runtime_state.diagnostic_prepared_camera_count = 0
+      render2d_runtime_state.diagnostic_queued_draw_item_count = 0
       return
     }
-    rs.val.draw_enabled = false
+    rs.draw_enabled = false
     gizmos_prepare(world)
-    let cameras = rs.val.cameras
+    let cameras = rs.cameras
     if cameras.length() == 0 {
       gizmos_clear()
-      rs.val.prepared_camera_indices.clear()
-      rs.val.queued_draw_item_counts.clear()
-      rs.val.queued_camera_draw_items.clear()
-      render2d_diagnostic_prepared_camera_count_ref.val = 0
-      render2d_diagnostic_queued_draw_item_count_ref.val = 0
-      rs.val.extra_sprites.clear()
-      rs.val.extra_sprite_slice_batches.clear()
-      rs.val.extra_ui_sprites.clear()
-      rs.val.extra_ui_sprite_slice_batches.clear()
-      rs.val.extra_ui_rects.clear()
-      rs.val.extra_ui_box_shadows.clear()
-      rs.val.extra_ui_texture_slices.clear()
+      rs.prepared_camera_indices.clear()
+      rs.queued_draw_item_counts.clear()
+      rs.queued_camera_draw_items.clear()
+      render2d_runtime_state.diagnostic_prepared_camera_count = 0
+      render2d_runtime_state.diagnostic_queued_draw_item_count = 0
+      rs.extra_sprites.clear()
+      rs.extra_sprite_slice_batches.clear()
+      rs.extra_ui_sprites.clear()
+      rs.extra_ui_sprite_slice_batches.clear()
+      rs.extra_ui_rects.clear()
+      rs.extra_ui_box_shadows.clear()
+      rs.extra_ui_texture_slices.clear()
       return
     }
-    let sprites = rs.val.sprites
-    let extra_sprites = rs.val.extra_sprites
-    let extra_sprite_slice_batches = rs.val.extra_sprite_slice_batches
-    let extra_ui_sprites = rs.val.extra_ui_sprites
-    let extra_ui_sprite_slice_batches = rs.val.extra_ui_sprite_slice_batches
-    let extra_ui_rects = rs.val.extra_ui_rects
-    let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
-    let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
-    let meshes = rs.val.meshes
+    let sprites = rs.sprites
+    let extra_sprites = rs.extra_sprites
+    let extra_sprite_slice_batches = rs.extra_sprite_slice_batches
+    let extra_ui_sprites = rs.extra_ui_sprites
+    let extra_ui_sprite_slice_batches = rs.extra_ui_sprite_slice_batches
+    let extra_ui_rects = rs.extra_ui_rects
+    let extra_ui_box_shadows = rs.extra_ui_box_shadows
+    let extra_ui_texture_slices = rs.extra_ui_texture_slices
+    let meshes = rs.meshes
     fn int_from_f32_floor_nonneg(x : Float) -> Int {
       if x <= 0.0F {
         0
@@ -7388,9 +7390,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       (x, y, w, h)
     }
 
-    let camera_indices = if rs.val.prepared_camera_indices.length() ==
+    let camera_indices = if rs.prepared_camera_indices.length() ==
       cameras.length() {
-      rs.val.prepared_camera_indices
+      rs.prepared_camera_indices
     } else {
       render2d_sorted_camera_indices(cameras)
     }
@@ -7499,15 +7501,15 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       let mut draw_transparent_items : Array[DrawItem] = []
       let mut ui_overlay_draw_items : Array[DrawItem] = []
       let queued_items_for_camera = match
-        queued_camera_draw_items_at_index(rs.val, camera_order_index) {
+        queued_camera_draw_items_at_index(rs, camera_order_index) {
         Some(item) =>
           if item.camera_entity.id == camera.entity.id &&
             item.camera_entity.generation == camera.entity.generation {
             Some(item)
           } else {
-            queued_camera_draw_items_for_camera(rs.val, camera.entity)
+            queued_camera_draw_items_for_camera(rs, camera.entity)
           }
-        None => queued_camera_draw_items_for_camera(rs.val, camera.entity)
+        None => queued_camera_draw_items_for_camera(rs, camera.entity)
       }
       match queued_items_for_camera {
         Some(queued) => {
@@ -8284,7 +8286,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       if camera_postprocess_plan.uses_intermediate_source {
         auto_postprocess_source = Some(
           render2d_get_or_create_postprocess_intermediate_target(
-            rs.val,
+            rs,
             camera.entity,
             viewport_width,
             viewport_height,
@@ -8300,7 +8302,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         let mut next_postprocess_slot = 1
         fn allocate_postprocess_target() -> @asset.Handle[@asset.Image] {
           let target = render2d_get_or_create_postprocess_intermediate_target(
-            rs.val,
+            rs,
             camera.entity,
             viewport_width,
             viewport_height,
@@ -8433,19 +8435,19 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       )
     }
     gizmos_clear()
-    rs.val.prepared_camera_indices.clear()
-    rs.val.queued_draw_item_counts.clear()
-    rs.val.queued_camera_draw_items.clear()
-    rs.val.extra_sprites.clear()
-    rs.val.extra_sprite_slice_batches.clear()
-    rs.val.extra_ui_sprites.clear()
-    rs.val.extra_ui_sprite_slice_batches.clear()
-    rs.val.extra_ui_rects.clear()
-    rs.val.extra_ui_box_shadows.clear()
-    rs.val.extra_ui_texture_slices.clear()
+    rs.prepared_camera_indices.clear()
+    rs.queued_draw_item_counts.clear()
+    rs.queued_camera_draw_items.clear()
+    rs.extra_sprites.clear()
+    rs.extra_sprite_slice_batches.clear()
+    rs.extra_ui_sprites.clear()
+    rs.extra_ui_sprite_slice_batches.clear()
+    rs.extra_ui_rects.clear()
+    rs.extra_ui_box_shadows.clear()
+    rs.extra_ui_texture_slices.clear()
   })
   |> ignore
-  render2d_diagnostic_execute_cpu_ms_ref.val = (
+  render2d_runtime_state.diagnostic_execute_cpu_ms = (
       @time.host_time_now() - execute_start
     ) *
     1000.0F

@@ -1540,15 +1540,26 @@ pub impl @json.FromJson for RapierMultibodyJointHandle2d with from_json(
 }
 
 ///|
-let physics2d_config_serde_next_id : Ref[Int] = Ref(1)
+priv struct Physics2dSerdeRuntimeState {
+  mut config_next_id : Int
+  mut events_next_id : Int
+  mut context_next_id : Int
+}
+
+///|
+let physics2d_serde_runtime_state : Physics2dSerdeRuntimeState = {
+  config_next_id: 1,
+  events_next_id: 1,
+  context_next_id: 1,
+}
 
 ///|
 let physics2d_config_serde_values : Map[Int, Physics2dConfig] = {}
 
 ///|
 pub impl ToJson for Physics2dConfig with to_json(self) {
-  let id = physics2d_config_serde_next_id.val
-  physics2d_config_serde_next_id.val = id + 1
+  let id = physics2d_serde_runtime_state.config_next_id
+  physics2d_serde_runtime_state.config_next_id = id + 1
   physics2d_config_serde_values.set(id, self)
   id.to_json()
 }
@@ -1562,15 +1573,12 @@ pub impl @json.FromJson for Physics2dConfig with from_json(json, path) {
 }
 
 ///|
-let physics2d_events_serde_next_id : Ref[Int] = Ref(1)
-
-///|
 let physics2d_events_serde_values : Map[Int, Physics2dEvents] = {}
 
 ///|
 pub impl ToJson for Physics2dEvents with to_json(self) {
-  let id = physics2d_events_serde_next_id.val
-  physics2d_events_serde_next_id.val = id + 1
+  let id = physics2d_serde_runtime_state.events_next_id
+  physics2d_serde_runtime_state.events_next_id = id + 1
   physics2d_events_serde_values.set(id, self)
   id.to_json()
 }
@@ -1582,15 +1590,12 @@ pub impl @json.FromJson for Physics2dEvents with from_json(json, path) {
 }
 
 ///|
-let physics2d_context_serde_next_id : Ref[Int] = Ref(1)
-
-///|
 let physics2d_context_serde_values : Map[Int, Physics2dContext] = {}
 
 ///|
 pub impl ToJson for Physics2dContext with to_json(self) {
-  let id = physics2d_context_serde_next_id.val
-  physics2d_context_serde_next_id.val = id + 1
+  let id = physics2d_serde_runtime_state.context_next_id
+  physics2d_serde_runtime_state.context_next_id = id + 1
   physics2d_context_serde_values.set(id, self)
   id.to_json()
 }

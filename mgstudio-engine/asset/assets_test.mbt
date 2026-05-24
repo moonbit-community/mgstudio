@@ -209,10 +209,10 @@ test "asset system forwards asset events to ECS messages" {
 
   asset_update_event_messages(world)
 
-  let cursor_ref : Ref[Int] = Ref(0)
+  let cursor_ref : @ecs.MessageCursor[AssetEvent[StoreTestAsset]] = @ecs.MessageCursor::MessageCursor()
   let key : @ecs.MessageKey[AssetEvent[StoreTestAsset]] = @ecs.Message::message()
-  let reader = world.message_reader(key, cursor_ref)
-  let events = try! reader.read()
+  let reader = world.message_reader(key, cursor=cursor_ref)
+  let events = reader.read()
   debug_inspect(events.length(), content="2")
   match events[0] {
     AssetEvent::Added(handle) => debug_inspect(handle.id() == 0, content="true")
@@ -383,10 +383,12 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   asset_with_world(world_b, fn() { asset_system(world_b) })
   debug_inspect(releases_b.val, content="1")
 
-  let cursor : Ref[Int] = Ref(0)
+  let cursor : @ecs.MessageCursor[
+    AssetLoadFailedEvent[RegistryScopedLegacyAsset],
+  ] = @ecs.MessageCursor::MessageCursor()
   let key : @ecs.MessageKey[AssetLoadFailedEvent[RegistryScopedLegacyAsset]] = @ecs.Message::message()
-  let reader = world_b.message_reader(key, cursor)
-  let failures = try! reader.read()
+  let reader = world_b.message_reader(key, cursor~)
+  let failures = reader.read()
   debug_inspect(failures.length(), content="1")
   debug_inspect(failures[0].id.index() == handle_b.id(), content="true")
 
@@ -741,10 +743,10 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
 
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : Ref[Int] = Ref(0)
+  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = @ecs.MessageCursor::MessageCursor()
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
-  let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
-  let failures = try! untyped_reader.read()
+  let untyped_reader = world.message_reader(untyped_key, cursor=untyped_cursor)
+  let failures = untyped_reader.read()
   debug_inspect(failures.length(), content="1")
   let failure = failures[0]
   debug_inspect(failure.type_name.length() > 0, content="true")
@@ -758,10 +760,12 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
     content="true",
   )
 
-  let typed_cursor : Ref[Int] = Ref(0)
+  let typed_cursor : @ecs.MessageCursor[
+    AssetLoadFailedEvent[MissingLoaderAsset],
+  ] = @ecs.MessageCursor::MessageCursor()
   let typed_key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
-  let typed_reader = world.message_reader(typed_key, typed_cursor)
-  let typed_failures = try! typed_reader.read()
+  let typed_reader = world.message_reader(typed_key, cursor=typed_cursor)
+  let typed_failures = typed_reader.read()
   debug_inspect(typed_failures.length(), content="1")
   let typed_failure = typed_failures[0]
   debug_inspect(typed_failure.id.index() == handle.id(), content="true")
@@ -808,10 +812,10 @@ test "asset server retries failed typed loads with the same handle after loader 
   )
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : Ref[Int] = Ref(0)
+  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = @ecs.MessageCursor::MessageCursor()
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
-  let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
-  let failures = try! untyped_reader.read()
+  let untyped_reader = world.message_reader(untyped_key, cursor=untyped_cursor)
+  let failures = untyped_reader.read()
   debug_inspect(failures.length(), content="1")
   debug_inspect(failures[0].id == first.id(), content="true")
 
@@ -882,10 +886,10 @@ test "asset server retries failed typed loads with the same handle after loader 
   )
 
   asset_update_event_messages(world)
-  let event_cursor : Ref[Int] = Ref(0)
+  let event_cursor : @ecs.MessageCursor[AssetEvent[MissingLoaderAsset]] = @ecs.MessageCursor::MessageCursor()
   let event_key : @ecs.MessageKey[AssetEvent[MissingLoaderAsset]] = @ecs.Message::message()
-  let event_reader = world.message_reader(event_key, event_cursor)
-  let events = try! event_reader.read()
+  let event_reader = world.message_reader(event_key, cursor=event_cursor)
+  let events = event_reader.read()
   let loaded_count = Ref(0)
   let added_count = Ref(0)
   for event in events {
@@ -958,10 +962,10 @@ test "typed asset loaders are world-scoped per app world" {
     },
     content="false",
   )
-  let cursor : Ref[Int] = Ref(0)
+  let cursor : @ecs.MessageCursor[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.MessageCursor::MessageCursor()
   let key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
-  let reader = world_b.message_reader(key, cursor)
-  let failures = try! reader.read()
+  let reader = world_b.message_reader(key, cursor~)
+  let failures = reader.read()
   debug_inspect(failures.length(), content="1")
   debug_inspect(failures[0].id.index() == handle_b.id(), content="true")
 }
@@ -1040,10 +1044,10 @@ test "asset system forwards image load completion to ECS messages" {
   asset_with_world(world, fn() { asset_system(world) })
   asset_update_event_messages(world)
 
-  let cursor_ref : Ref[Int] = Ref(0)
+  let cursor_ref : @ecs.MessageCursor[AssetEvent[Image]] = @ecs.MessageCursor::MessageCursor()
   let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
-  let reader = world.message_reader(message_key, cursor_ref)
-  let events = try! reader.read()
+  let reader = world.message_reader(message_key, cursor=cursor_ref)
+  let events = reader.read()
 
   let found = Ref(false)
   let loaded_count = Ref(0)

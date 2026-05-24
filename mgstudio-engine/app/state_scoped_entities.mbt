@@ -45,13 +45,11 @@ pub fn DespawnOnEnter::state_debug(self : DespawnOnEnter) -> String {
 }
 
 ///|
-let despawn_on_exit_registration_registry : Ref[@hashmap.HashMap[String, Bool]] = Ref(
-  @hashmap.HashMap([]),
+let despawn_on_exit_registration_registry : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([],
 )
 
 ///|
-let despawn_on_enter_registration_registry : Ref[@hashmap.HashMap[String, Bool]] = Ref(
-  @hashmap.HashMap([]),
+let despawn_on_enter_registration_registry : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([],
 )
 
 ///|
@@ -113,7 +111,7 @@ fn[S : States] despawn_on_enter_entities(world : @ecs.World, state : S) -> Unit 
 ///|
 fn[S : States] ensure_despawn_on_exit_registered(state : S) -> Unit {
   let transition_key = state_transition_registration_key(state)
-  if despawn_on_exit_registration_registry.val.contains(transition_key) {
+  if despawn_on_exit_registration_registry.contains(transition_key) {
     return
   }
   register_state_transition(state)
@@ -128,13 +126,13 @@ fn[S : States] ensure_despawn_on_exit_registered(state : S) -> Unit {
       }
     },
   )
-  despawn_on_exit_registration_registry.val.set(transition_key, true)
+  despawn_on_exit_registration_registry.set(transition_key, true)
 }
 
 ///|
 fn[S : States] ensure_despawn_on_enter_registered(state : S) -> Unit {
   let transition_key = state_transition_registration_key(state)
-  if despawn_on_enter_registration_registry.val.contains(transition_key) {
+  if despawn_on_enter_registration_registry.contains(transition_key) {
     return
   }
   register_state_transition(state)
@@ -149,7 +147,7 @@ fn[S : States] ensure_despawn_on_enter_registered(state : S) -> Unit {
       }
     },
   )
-  despawn_on_enter_registration_registry.val.set(transition_key, true)
+  despawn_on_enter_registration_registry.set(transition_key, true)
 }
 
 ///|

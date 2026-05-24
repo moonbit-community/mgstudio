@@ -9,7 +9,6 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -208,9 +207,9 @@ pub fn PickingState::PickingState() -> Self
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
 pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
 pub fn PickingState::pressed(Self, Int) -> @core.Entity?
-pub fn PickingState::set_hovered(@ref.Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingState::set_last_position(@ref.Ref[Self], Int, @math.Vec2?) -> Unit
-pub fn PickingState::set_pressed(@ref.Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingState::set_hovered(Self, Int, @core.Entity?) -> Unit
+pub fn PickingState::set_last_position(Self, Int, @math.Vec2?) -> Unit
+pub fn PickingState::set_pressed(Self, Int, @core.Entity?) -> Unit
 pub impl @app.Resource for PickingState
 
 pub(all) enum PointerButton {

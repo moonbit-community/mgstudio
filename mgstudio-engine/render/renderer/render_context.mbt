@@ -259,9 +259,7 @@ fn render_context_runtime_state_default() -> RenderContextRuntimeState {
 }
 
 ///|
-let render_context_runtime_state_ref : Ref[RenderContextRuntimeState] = Ref(
-  render_context_runtime_state_default(),
-)
+let render_context_runtime_state : RenderContextRuntimeState = render_context_runtime_state_default()
 
 ///|
 fn env_or_default(key : String, default_value : String) -> String {
@@ -289,7 +287,7 @@ fn debug_runtime_error(context : String, err : Error) -> Unit {
 
 ///|
 fn ensure_backend() -> GpuBackend? {
-  let state = render_context_runtime_state_ref.val
+  let state = render_context_runtime_state
   if state.backend is Some(backend) {
     return Some(backend)
   }
@@ -301,12 +299,12 @@ fn ensure_backend() -> GpuBackend? {
 
 ///|
 pub fn render_context_backend_for_test() -> GpuBackend? {
-  render_context_runtime_state_ref.val.backend
+  render_context_runtime_state.backend
 }
 
 ///|
 pub fn render_context_set_backend_for_test(backend : GpuBackend?) -> Unit {
-  render_context_runtime_state_ref.val.backend = backend
+  render_context_runtime_state.backend = backend
 }
 
 ///|

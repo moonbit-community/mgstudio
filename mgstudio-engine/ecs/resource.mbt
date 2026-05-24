@@ -18,33 +18,26 @@ pub fn[T] World::insert_resource(
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
-  let existed = (key.access.contains)(self)
-  (key.access.set)(self, value)
-  if existed {
-    guard self.resources.get(key.id()) is Some(slot) else { return }
-    ignore(slot)
-  } else {
-    self.resources.set(key.id(), ResourceSlot::{
-      added_tick: None,
-      changed_tick: None,
-      changed_caller: None,
-    })
-  }
+  let existed = key.resource_contains(self)
+  key.resource_set(self, value)
+  self.resource_tick_registry.track(key.id(), fn(present_tick) {
+    key.resource_check_change_ticks(self, present_tick)
+  })
   if !existed {
-    self.record_resource_added(key.id())
+    key.resource_record_added(self, resource_write_tick(self), None)
   }
-  self.record_resource_changed(key.id())
+  key.resource_record_changed(self, resource_write_tick(self), None)
 }
 
 ///|
 pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
-  (key.access.get)(self)
+  key.resource_get(self)
 }
 
 ///|
 pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
-  guard (key.access.remove)(self) is Some(value) else { return None }
-  self.resources.remove(key.id())
+  guard key.resource_remove(self) is Some(value) else { return None }
+  self.resource_tick_registry.untrack(key.id())
   Some(value)
 }
 
@@ -66,7 +59,7 @@ pub fn[T] World::resource_added_since(
   key : ResourceKey[T],
   tick : @core.Tick,
 ) -> Bool {
-  match self.resource_added_tick_by_id(key.id()) {
+  match key.resource_added_tick(self) {
     Some(recorded) =>
       @core.tick_is_newer_than(recorded, tick, self.read_change_tick())
     None => false
@@ -79,7 +72,7 @@ pub fn[T] World::is_resource_added(
   key : ResourceKey[T],
   system : @core.SystemTicks,
 ) -> Bool {
-  match self.resource_added_tick_by_id(key.id()) {
+  match key.resource_added_tick(self) {
     Some(tick) => system.contains(tick)
     None => false
   }
@@ -90,7 +83,7 @@ pub fn[T] World::resource_added_tick(
   self : World,
   key : ResourceKey[T],
 ) -> @core.Tick? {
-  self.resource_added_tick_by_id(key.id())
+  key.resource_added_tick(self)
 }
 
 ///|
@@ -99,7 +92,7 @@ pub fn[T] World::resource_changed_since(
   key : ResourceKey[T],
   tick : @core.Tick,
 ) -> Bool {
-  match self.resource_changed_tick_by_id(key.id()) {
+  match key.resource_changed_tick(self) {
     Some(recorded) =>
       @core.tick_is_newer_than(recorded, tick, self.read_change_tick())
     None => false
@@ -112,7 +105,7 @@ pub fn[T] World::is_resource_changed(
   key : ResourceKey[T],
   system : @core.SystemTicks,
 ) -> Bool {
-  match self.resource_changed_tick_by_id(key.id()) {
+  match key.resource_changed_tick(self) {
     Some(tick) => system.contains(tick)
     None => false
   }
@@ -123,7 +116,7 @@ pub fn[T] World::resource_changed_tick(
   self : World,
   key : ResourceKey[T],
 ) -> @core.Tick? {
-  self.resource_changed_tick_by_id(key.id())
+  key.resource_changed_tick(self)
 }
 
 ///|
@@ -131,7 +124,7 @@ pub fn[T] World::resource_changed_by(
   self : World,
   key : ResourceKey[T],
 ) -> String? {
-  self.resource_changed_caller(key.id())
+  key.resource_changed_caller(self)
 }
 
 ///|
@@ -140,7 +133,7 @@ pub fn[T] World::mark_resource_changed(
   key : ResourceKey[T],
   caller? : String? = None,
 ) -> Unit {
-  self.record_resource_changed_with_caller(key.id(), caller)
+  key.resource_record_changed(self, resource_write_tick(self), caller)
 }
 
 ///|
@@ -149,6 +142,7 @@ pub fn[T] World::mark_resource_added(
   key : ResourceKey[T],
   caller? : String? = None,
 ) -> Unit {
-  self.record_resource_added_with_caller(key.id(), caller)
-  self.record_resource_changed_with_caller(key.id(), caller)
+  let tick = resource_write_tick(self)
+  key.resource_record_added(self, tick, caller)
+  key.resource_record_changed(self, tick, caller)
 }

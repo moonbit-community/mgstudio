@@ -358,6 +358,23 @@ test "ecs: register_message allocates a fresh typed key for repeated debug_name"
 }
 
 ///|
+test "ecs: fetched mutable component retains the explicit typed key" {
+  let world = World::new()
+  let explicit_key : ComponentKey[TypedCounter] = register_component(
+    debug_name="tests.ecs.explicit_typed_counter",
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(entity, explicit_key, TypedCounter::{ value: 7 })
+
+  let item = match (try! world.get_mut(entity, key=explicit_key)) {
+    Some(item) => item
+    None => fail("expected mutable component")
+  }
+  debug_inspect(item.key().id() == explicit_key.id(), content="true")
+  debug_inspect(item.key().id() == typed_counter_key.id(), content="false")
+}
+
+///|
 test "ecs: spawn set get update and despawn cleanup" {
   let world = World::new()
   let comp_counter : ComponentKey[Counter] = register_component(
@@ -441,10 +458,11 @@ test "ecs: typed component api uses component ownership" {
   debug_inspect(filtered.count(), content="1")
   debug_inspect(
     match (try! filtered.get(e0)) {
-      Some(counter) => Some(counter.value())
+      Some(counter) =>
+        Some((counter.key().id() == counter_key.id(), counter.value()))
       None => None
     },
-    content="Some({ value: 15 })",
+    content="Some((true, { value: 15 }))",
   )
   debug_inspect(
     match (try! filtered.get(e1)) {

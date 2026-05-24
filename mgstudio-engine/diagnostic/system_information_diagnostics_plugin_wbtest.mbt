@@ -55,40 +55,25 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
       apply_sysinfo_refresh_data(diagnostics, data)
     })
     .run_once()
-  let store_ref = app
-    .world()
-    .get_resource_ref_mut(DiagnosticsStore::resource())
-    .unwrap()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
 
   debug_inspect(
-    store_ref.val
-    .get(system_information_diagnostic_system_cpu_usage)
-    .unwrap()
-    .value()
+    store.get(system_information_diagnostic_system_cpu_usage).unwrap().value()
     is Some(_),
     content="true",
   )
   debug_inspect(
-    store_ref.val
-    .get(system_information_diagnostic_system_mem_usage)
-    .unwrap()
-    .value()
+    store.get(system_information_diagnostic_system_mem_usage).unwrap().value()
     is Some(_),
     content="true",
   )
   debug_inspect(
-    store_ref.val
-    .get(system_information_diagnostic_process_cpu_usage)
-    .unwrap()
-    .value()
+    store.get(system_information_diagnostic_process_cpu_usage).unwrap().value()
     is Some(_),
     content="true",
   )
   debug_inspect(
-    store_ref.val
-    .get(system_information_diagnostic_process_mem_usage)
-    .unwrap()
-    .value()
+    store.get(system_information_diagnostic_process_mem_usage).unwrap().value()
     is Some(_),
     content="true",
   )

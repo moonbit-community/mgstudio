@@ -9,7 +9,6 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -407,28 +406,28 @@ pub struct AssetSaver[T, Settings] {
 pub fn[T, Settings] AssetSaver::new((Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError) -> Self[T, Settings]
 
 pub struct AssetServer {
-  paths : @ref.Ref[Array[String]]
-  path_fingerprints : @ref.Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_next_ids : @ref.Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_load_states : @ref.Ref[@hashmap.HashMap[String, LoadState]]
-  typed_asset_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, DependencyLoadState]]
-  typed_asset_recursive_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, RecursiveDependencyLoadState]]
-  pending_load_failures : @ref.Ref[Array[UntypedAssetLoadFailedEvent]]
-  pending_processed_asset_loads : @ref.Ref[Array[PendingProcessedAssetLoad]]
-  pending_typed_asset_loads : @ref.Ref[Array[PendingTypedAssetLoad]]
-  pending_acquired_loads : @ref.Ref[Array[PendingAcquiredLoad]]
-  image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
-  pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
-  image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
-  image_render_asset_usages : @ref.Ref[Array[(Int, RenderAssetUsages)]]
-  image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
-  image_usage_settings : @ref.Ref[Array[(Int, Int)]]
-  gltf_loader_settings : @ref.Ref[Array[(String, ImageLoaderSettings)]]
-  default_sampler_nearest : @ref.Ref[Bool]
-  mode : @ref.Ref[AssetMode]
-  processed_file_path : @ref.Ref[String?]
-  owner_world : @ref.Ref[@ecs.World?]
+  paths : Array[String]
+  path_fingerprints : @hashmap.HashMap[String, Int]
+  typed_asset_paths : @hashmap.HashMap[String, Int]
+  typed_asset_next_ids : @hashmap.HashMap[String, Int]
+  typed_asset_load_states : @hashmap.HashMap[String, LoadState]
+  typed_asset_dependency_load_states : @hashmap.HashMap[String, DependencyLoadState]
+  typed_asset_recursive_dependency_load_states : @hashmap.HashMap[String, RecursiveDependencyLoadState]
+  pending_load_failures : Array[UntypedAssetLoadFailedEvent]
+  mut pending_processed_asset_loads : Array[PendingProcessedAssetLoad]
+  mut pending_typed_asset_loads : Array[PendingTypedAssetLoad]
+  pending_acquired_loads : Array[PendingAcquiredLoad]
+  image_paths : Array[(String, Handle[@image.Image])]
+  pending_image_assets : @hashmap.HashMap[Int, @image.Image]
+  mut image_array_layouts : Array[(Int, @image.ImageArrayLayout)]
+  mut image_render_asset_usages : Array[(Int, RenderAssetUsages)]
+  mut image_srgb_settings : Array[(Int, Bool)]
+  mut image_usage_settings : Array[(Int, Int)]
+  mut gltf_loader_settings : Array[(String, ImageLoaderSettings)]
+  mut default_sampler_nearest : Bool
+  mut mode : AssetMode
+  mut processed_file_path : String?
+  mut owner_world : @ecs.World?
 }
 pub fn[T : Asset] AssetServer::add(Self, T) -> Handle[T]
 pub fn[T : Asset] AssetServer::dependency_load_state(Self, Handle[T]) -> DependencyLoadState

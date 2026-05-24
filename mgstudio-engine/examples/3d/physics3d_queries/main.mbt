@@ -49,8 +49,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let ground = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(20.0F, 1.0F, 20.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(20.0F, 1.0F, 20.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
@@ -75,8 +76,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let wall = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 0.4F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 0.4F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(wall_material),
     @transform.Transform::from_xyz(0.0F, 2.0F, -3.0F),

@@ -36,7 +36,7 @@ fn[T] component_writer_for_key(
     } else {
       "component#\{component_definition_id.to_string()}"
     },
-    apply_fn: fn(world, entity) { (key.access.set)(world, entity, value) },
+    apply_fn: fn(world, entity) { key.component_set(world, entity, value) },
   }
 }
 

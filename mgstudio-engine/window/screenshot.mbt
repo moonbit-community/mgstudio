@@ -293,7 +293,7 @@ pub fn save_to_disk(
   path : String,
 ) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit {
   fn(event : @ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) {
-    let world = @ecs.current_observer_world_abort_missing()
+    let world = event.world()
     guard screenshot_captured_component(world, event.entity()) is Some(capture) else {
       return
     }

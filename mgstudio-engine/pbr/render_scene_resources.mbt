@@ -46,9 +46,9 @@ impl @app.Resource for Render3dSceneTargetsState with resource() {
 }
 
 ///|
-fn render3d_scene_targets_state_ref_or_init(
+fn render3d_scene_targets_state_mut_or_init(
   world : @ecs.World,
-) -> Ref[Render3dSceneTargetsState] {
+) -> @ecs.ResourceMut[Render3dSceneTargetsState] {
   if world.get_resource(Render3dSceneTargetsState::resource()) is None {
     world.insert_resource(Render3dSceneTargetsState::resource(), {
       motion_blur_targets: [],
@@ -56,7 +56,7 @@ fn render3d_scene_targets_state_ref_or_init(
     })
   }
   match world.get_resource_mut(Render3dSceneTargetsState::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dSceneTargetsState resource")
   }
 }
@@ -68,8 +68,8 @@ fn render3d_motion_blur_targets_get_or_create(
   width : Int,
   height : Int,
 ) -> (Int, Int) {
-  let scene_targets_state_ref = render3d_scene_targets_state_ref_or_init(world)
-  let motion_blur_targets = scene_targets_state_ref.val.motion_blur_targets
+  let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
+  let motion_blur_targets = scene_targets_state.peek().motion_blur_targets
   for item in motion_blur_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
@@ -104,7 +104,7 @@ fn render3d_motion_blur_targets_get_or_create(
   if !replaced {
     next.push({ entity, width, height, scene_target_id, velocity_target_id })
   }
-  scene_targets_state_ref.val.motion_blur_targets = next
+  scene_targets_state.modify(fn(state) { state.motion_blur_targets = next })
   (scene_target_id, velocity_target_id)
 }
 
@@ -115,8 +115,8 @@ fn render3d_transmission_source_target_get_or_create(
   width : Int,
   height : Int,
 ) -> Int {
-  let scene_targets_state_ref = render3d_scene_targets_state_ref_or_init(world)
-  let transmission_source_targets = scene_targets_state_ref.val.transmission_source_targets
+  let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
+  let transmission_source_targets = scene_targets_state.peek().transmission_source_targets
   for item in transmission_source_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
@@ -146,7 +146,9 @@ fn render3d_transmission_source_target_get_or_create(
   if !replaced {
     next.push({ entity, width, height, source_target_id })
   }
-  scene_targets_state_ref.val.transmission_source_targets = next
+  scene_targets_state.modify(fn(state) {
+    state.transmission_source_targets = next
+  })
   source_target_id
 }
 

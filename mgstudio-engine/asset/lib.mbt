@@ -116,15 +116,15 @@ fn asset_plugin_with_server(
       Some(path) => Some(path)
       None => resolve_assets_dir_override(file_path)
     }
-    asset_server.owner_world.val = Some(world)
+    asset_server.owner_world = Some(world)
     asset_register_builtin_loaders()
     set_runtime_assets_dir_override(runtime_assets_dir_override)
     set_runtime_asset_source_dir_overrides(
       asset_registered_source_dir_entries(),
     )
     set_runtime_asset_source_readers(asset_registered_source_reader_entries())
-    asset_server.mode.val = mode
-    asset_server.processed_file_path.val = resolve_assets_dir_override(
+    asset_server.mode = mode
+    asset_server.processed_file_path = resolve_assets_dir_override(
       processed_file_path,
     )
   })
@@ -162,7 +162,7 @@ pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let asset_server = asset_server_standalone()
-  asset_server.default_sampler_nearest.val = true
+  asset_server.default_sampler_nearest = true
   asset_plugin_with_server(
     app,
     asset_server,
@@ -180,7 +180,7 @@ pub impl @app.Plugin for AssetPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for AssetPlugin with build(self, app) {
   let asset_server = asset_server_standalone()
-  asset_server.default_sampler_nearest.val = self.default_sampler_nearest
+  asset_server.default_sampler_nearest = self.default_sampler_nearest
   asset_plugin_with_server(
     app,
     asset_server,

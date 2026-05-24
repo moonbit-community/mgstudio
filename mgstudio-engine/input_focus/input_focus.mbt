@@ -377,7 +377,7 @@ pub fn[M : FocusedInputSourceMessage] dispatch_focused_input(
   input_reader : @ecs.MessageReader[M],
   focus : @app.ResMut[InputFocus],
 ) -> Unit {
-  let unread = try! input_reader.read()
+  let unread = input_reader.read()
   if unread.is_empty() {
     return
   }

@@ -35,10 +35,12 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  let star = meshes.peek().add(build_star_mesh())
-  let material = materials
-    .peek()
-    .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::white()))
+  let star = meshes.modify(fn(meshes) { meshes.add(build_star_mesh()) })
+  let material = materials.modify(fn(materials) {
+    materials.add(
+      @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
+    )
+  })
 
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(

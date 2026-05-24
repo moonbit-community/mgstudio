@@ -19,11 +19,11 @@ pub type ShaderSourceFile = @wgsl_common.WgslSourceFile
 pub type ShaderSourceScanOptions = @wgsl_common.WgslSourceScanOptions
 
 ///|
-let embedded_shader_source_paths : Ref[Array[String]] = Ref([])
+let embedded_shader_source_paths : Array[String] = []
 
 ///|
 pub fn clear_embedded_shader_sources() -> Unit {
-  embedded_shader_source_paths.val = []
+  embedded_shader_source_paths.clear()
 }
 
 ///|
@@ -66,7 +66,7 @@ pub fn embedded_shader_source_required(
 ///|
 pub fn embedded_shader_source_files() -> Array[ShaderSourceFile] {
   let files : Array[ShaderSourceFile] = []
-  for path in embedded_shader_source_paths.val {
+  for path in embedded_shader_source_paths {
     match embedded_shader_source(path) {
       Some(source) => files.push({ rel_path: path, source })
       None => ()
@@ -78,7 +78,7 @@ pub fn embedded_shader_source_files() -> Array[ShaderSourceFile] {
 ///|
 fn upsert_embedded_shader_source_path(rel_path : String) -> Unit {
   let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
-  let paths = embedded_shader_source_paths.val
+  let paths = embedded_shader_source_paths
   for i in 0..<paths.length() {
     if @wgsl_resolver.normalize_shader_rel_path(paths[i]) == normalized {
       paths[i] = normalized

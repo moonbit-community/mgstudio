@@ -203,23 +203,23 @@ fn pointer_entity_for_id(
       match map.get_entity(pointer_id) {
         Some(entity) => Some(entity)
         None => {
-          let found : Ref[@core.Entity?] = Ref(None)
+          let found = PickingEntitySearchState::{ entity: None }
           world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
-            if found.val is None && id.value() == pointer_id {
-              found.val = Some(entity)
+            if found.entity is None && id.value() == pointer_id {
+              found.entity = Some(entity)
             }
           })
-          found.val
+          found.entity
         }
       }
     None => {
-      let found : Ref[@core.Entity?] = Ref(None)
+      let found = PickingEntitySearchState::{ entity: None }
       world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
-        if found.val is None && id.value() == pointer_id {
-          found.val = Some(entity)
+        if found.entity is None && id.value() == pointer_id {
+          found.entity = Some(entity)
         }
       })
-      found.val
+      found.entity
     }
   }
 }
@@ -271,12 +271,12 @@ pub fn spawn_mouse_pointer_system(world : @ecs.World) -> Unit {
 
 ///|
 priv struct PointerInputReaderState {
-  mut cursor : Int
+  cursor : @ecs.MessageCursor[PointerInput]
 }
 
 ///|
 fn PointerInputReaderState::PointerInputReaderState() -> PointerInputReaderState {
-  { cursor: 0 }
+  { cursor: @ecs.MessageCursor::MessageCursor() }
 }
 
 ///|
@@ -300,15 +300,17 @@ fn read_pending_pointer_inputs(world : @ecs.World) -> Array[PointerInput] {
     return []
   }
   ensure_pointer_input_reader_state(world)
-  let state_res = world.resource(pointer_input_reader_state_resource_key)
-  guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref(state_value)
-  let cursor = Ref(state_ref.val.cursor)
-  let reader = world.message_reader(pointer_input_message_key(), cursor)
-  let messages = try! reader.read()
-  state_ref.val.cursor = cursor.val
-  state_res.insert(state_ref.val)
-  messages
+  guard world.get_resource_mut(pointer_input_reader_state_resource_key)
+    is Some(state) else {
+    return []
+  }
+  state.modify(fn(state) {
+    let reader = world.message_reader(
+      pointer_input_message_key(),
+      cursor=state.cursor,
+    )
+    reader.read()
+  })
 }
 
 ///|

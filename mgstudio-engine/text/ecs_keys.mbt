@@ -226,7 +226,7 @@ priv struct EcsTextEntry {
 let text_ecs_entries : Array[EcsTextEntry] = []
 
 ///|
-let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref({})
+let text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = {}
 
 ///|
 priv struct UiEcsTextEntry {
@@ -241,33 +241,37 @@ priv struct UiEcsTextEntry {
 let ui_text_ecs_entries : Array[UiEcsTextEntry] = []
 
 ///|
-let ui_text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref({})
+let ui_text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = {}
 
 ///|
-let text_runtime_world_id_ref : Ref[Int?] = Ref(None)
+priv struct TextEcsRuntimeState {
+  mut world_id : Int?
+  mut diagnostic_sync_ecs_cpu_ms : Float
+  mut diagnostic_sync_ecs_dirty_entity_count : Int
+  mut diagnostic_sync_ecs_early_return : Bool
+}
 
 ///|
-let text_diagnostic_sync_ecs_cpu_ms_ref : Ref[Float] = Ref(0.0F)
-
-///|
-let text_diagnostic_sync_ecs_dirty_entity_count_ref : Ref[Int] = Ref(0)
-
-///|
-let text_diagnostic_sync_ecs_early_return_ref : Ref[Bool] = Ref(false)
+let text_ecs_runtime_state : TextEcsRuntimeState = {
+  world_id: None,
+  diagnostic_sync_ecs_cpu_ms: 0.0F,
+  diagnostic_sync_ecs_dirty_entity_count: 0,
+  diagnostic_sync_ecs_early_return: false,
+}
 
 ///|
 fn reset_text_runtime_state() -> Unit {
-  text_state.val.next_text_id = 0
-  text_state.val.next_span_id = 0
+  text_state.next_text_id = 0
+  text_state.next_span_id = 0
   text_state_clear_instances()
-  text_debug_frame_state.val.draws.clear()
+  text_debug_frame_state.draws.clear()
   text_ecs_entries.clear()
-  text_ecs_index_by_world_id_ref.val.clear()
+  text_ecs_index_by_world_id.clear()
   ui_text_ecs_entries.clear()
-  ui_text_ecs_index_by_world_id_ref.val.clear()
-  font_atlas_set_state.val = FontAtlasSet::FontAtlasSet()
-  default_text_font_handle_ref.val = None
-  cosmic_font_system_state.val = CosmicFontSystemState::{
+  ui_text_ecs_index_by_world_id.clear()
+  text_pipeline_runtime_state.font_atlas_set = FontAtlasSet::FontAtlasSet()
+  text_pipeline_runtime_state.default_text_font_handle = None
+  text_pipeline_runtime_state.cosmic_font_system = CosmicFontSystemState::{
     font_system: @cosmic.FontSystem::new(),
     handle_to_font_id: [],
     font_id_to_handle_id: [],
@@ -280,16 +284,16 @@ fn reset_text_runtime_state() -> Unit {
 ///|
 fn prepare_text_runtime_world(world : @ecs.World) -> Unit {
   let world_id = world.world_id()
-  if text_runtime_world_id_ref.val == Some(world_id) {
+  if text_ecs_runtime_state.world_id == Some(world_id) {
     return
   }
-  text_runtime_world_id_ref.val = Some(world_id)
+  text_ecs_runtime_state.world_id = Some(world_id)
   reset_text_runtime_state()
 }
 
 ///|
 pub fn text_reset_runtime_state_for_tests() -> Unit {
-  text_runtime_world_id_ref.val = None
+  text_ecs_runtime_state.world_id = None
   reset_text_runtime_state()
 }
 
@@ -701,8 +705,7 @@ fn text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 
 ///|
 fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
-  if text_ecs_index_by_world_id_ref.val.get(world_id)
-    is Some(index_by_entity_id) {
+  if text_ecs_index_by_world_id.get(world_id) is Some(index_by_entity_id) {
     return index_by_entity_id
   }
   let index_by_entity_id : Map[Int, Int] = {}
@@ -713,7 +716,7 @@ fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
       index_by_entity_id.set(entry.entity.id, i)
     }
   }
-  text_ecs_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  text_ecs_index_by_world_id.set(world_id, index_by_entity_id)
   index_by_entity_id
 }
 
@@ -1244,8 +1247,8 @@ fn text_ecs_sync_existing_entry(
 ///|
 fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   let sync_start = @time.host_time_now()
-  text_diagnostic_sync_ecs_early_return_ref.val = false
-  text_diagnostic_sync_ecs_dirty_entity_count_ref.val = 0
+  text_ecs_runtime_state.diagnostic_sync_ecs_early_return = false
+  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count = 0
   prepare_text_runtime_world(world)
   let world_id = world.world_id()
   let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
@@ -1371,14 +1374,14 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
     )
   }
   if !has_text_dirty_entities.val && text_ecs_entries.length() > 0 {
-    text_diagnostic_sync_ecs_early_return_ref.val = true
-    text_diagnostic_sync_ecs_cpu_ms_ref.val = (
+    text_ecs_runtime_state.diagnostic_sync_ecs_early_return = true
+    text_ecs_runtime_state.diagnostic_sync_ecs_cpu_ms = (
         @time.host_time_now() - sync_start
       ) *
       1000.0F
     return
   }
-  text_diagnostic_sync_ecs_dirty_entity_count_ref.val = dirty_entities.length()
+  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count = dirty_entities.length()
   let query : @ecs.Query[
     (@ecs.Comp[Text2d], @ecs.Comp[TextFont], @ecs.Comp[@transform.Transform]),
     @ecs.All,
@@ -1422,23 +1425,25 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
       }
     }
   })
-  text_diagnostic_sync_ecs_cpu_ms_ref.val = (@time.host_time_now() - sync_start) *
+  text_ecs_runtime_state.diagnostic_sync_ecs_cpu_ms = (
+      @time.host_time_now() - sync_start
+    ) *
     1000.0F
 }
 
 ///|
 pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float {
-  text_diagnostic_sync_ecs_cpu_ms_ref.val
+  text_ecs_runtime_state.diagnostic_sync_ecs_cpu_ms
 }
 
 ///|
 pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int {
-  text_diagnostic_sync_ecs_dirty_entity_count_ref.val
+  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count
 }
 
 ///|
 pub fn text_diagnostic_sync_ecs_early_return() -> Bool {
-  text_diagnostic_sync_ecs_early_return_ref.val
+  text_ecs_runtime_state.diagnostic_sync_ecs_early_return
 }
 
 ///|
@@ -1455,8 +1460,7 @@ fn ui_text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
 
 ///|
 fn ui_text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
-  if ui_text_ecs_index_by_world_id_ref.val.get(world_id)
-    is Some(index_by_entity_id) {
+  if ui_text_ecs_index_by_world_id.get(world_id) is Some(index_by_entity_id) {
     return index_by_entity_id
   }
   let index_by_entity_id : Map[Int, Int] = {}
@@ -1467,7 +1471,7 @@ fn ui_text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
       index_by_entity_id.set(entry.entity.id, i)
     }
   }
-  ui_text_ecs_index_by_world_id_ref.val.set(world_id, index_by_entity_id)
+  ui_text_ecs_index_by_world_id.set(world_id, index_by_entity_id)
   index_by_entity_id
 }
 

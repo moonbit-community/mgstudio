@@ -235,8 +235,8 @@ fn render_diagnostic_with_history(
 ///|
 fn render_diagnostics_store_ref_mut(
   world : @ecs.World,
-) -> Ref[DiagnosticsStore]? {
-  world.get_resource_ref_mut(DiagnosticsStore::resource())
+) -> @ecs.ResourceMut[DiagnosticsStore]? {
+  world.get_resource_mut(DiagnosticsStore::resource())
 }
 
 ///|
@@ -247,12 +247,12 @@ fn render_diagnostics_record_measurement(
   value : Int,
 ) -> Unit {
   tick |> ignore
-  match store.get_ref(path) {
-    Some(diagnostic_ref) => {
-      if !diagnostic_ref.val.is_enabled() {
+  match store.get(path) {
+    Some(diagnostic) => {
+      if !diagnostic.is_enabled() {
         return
       }
-      diagnostic_ref.val.add_measurement(
+      diagnostic.add_measurement(
         DiagnosticMeasurement::new(@core.Instant::now(), Float::from_int(value)),
       )
     }
@@ -268,12 +268,12 @@ fn render_diagnostics_record_measurement_float(
   value : Float,
 ) -> Unit {
   tick |> ignore
-  match store.get_ref(path) {
-    Some(diagnostic_ref) => {
-      if !diagnostic_ref.val.is_enabled() {
+  match store.get(path) {
+    Some(diagnostic) => {
+      if !diagnostic.is_enabled() {
         return
       }
-      diagnostic_ref.val.add_measurement(
+      diagnostic.add_measurement(
         DiagnosticMeasurement::new(@core.Instant::now(), value),
       )
     }
@@ -458,9 +458,11 @@ fn render_diagnostics_system(world : @ecs.World) -> Unit {
   guard render_diagnostics_store_ref_mut(world) is Some(store_ref) else {
     return
   }
-  render_diagnostics_record_snapshot(
-    store_ref.val,
-    tick.to_int(),
-    render_diagnostics_collect_snapshot(world),
-  )
+  store_ref.modify(fn(store) {
+    render_diagnostics_record_snapshot(
+      store,
+      tick.to_int(),
+      render_diagnostics_collect_snapshot(world),
+    )
+  })
 }

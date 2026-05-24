@@ -23,38 +23,38 @@ priv struct GilrsEventRuntimeState {
 }
 
 ///|
-let gilrs_event_runtime_state_ref : Ref[GilrsEventRuntimeState] = Ref(GilrsEventRuntimeState::{
+let gilrs_event_runtime_state : GilrsEventRuntimeState = GilrsEventRuntimeState::{
   startup_polled: false,
   poll_count: 0,
-})
+}
 
 ///|
 fn gilrs_poll_once() -> Unit {
   gamepad_poll()
-  gilrs_event_runtime_state_ref.val.poll_count = gilrs_event_runtime_state_ref.val.poll_count +
+  gilrs_event_runtime_state.poll_count = gilrs_event_runtime_state.poll_count +
     1
 }
 
 ///|
 pub fn gilrs_event_poll_count() -> Int {
-  gilrs_event_runtime_state_ref.val.poll_count
+  gilrs_event_runtime_state.poll_count
 }
 
 ///|
 pub fn gilrs_event_reset_runtime_state() -> Unit {
-  gilrs_event_runtime_state_ref.val.startup_polled = false
-  gilrs_event_runtime_state_ref.val.poll_count = 0
+  gilrs_event_runtime_state.startup_polled = false
+  gilrs_event_runtime_state.poll_count = 0
 }
 
 ///|
 pub fn gilrs_event_startup_system() -> Unit {
-  gilrs_event_runtime_state_ref.val.startup_polled = true
+  gilrs_event_runtime_state.startup_polled = true
   gilrs_poll_once()
 }
 
 ///|
 pub fn gilrs_event_system() -> Unit {
-  if !gilrs_event_runtime_state_ref.val.startup_polled {
+  if !gilrs_event_runtime_state.startup_polled {
     gilrs_event_startup_system()
     return
   }

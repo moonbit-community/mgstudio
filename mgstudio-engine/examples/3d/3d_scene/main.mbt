@@ -18,17 +18,18 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32)),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32))
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets |> @pbr.add_material(@sprite.Color::white()),
+          materials.modify(fn(material_assets) {
+            material_assets |> @pbr.add_material(@sprite.Color::white())
+          }),
         ),
         @transform.Transform::identity().with_rotation(
           @math.Quat::from_rotation_x(-@math.pi_half()),
@@ -41,13 +42,17 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets
-          |> @pbr.add_material(
-            @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
-          ),
+          materials.modify(fn(material_assets) {
+            material_assets
+            |> @pbr.add_material(
+              @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+            )
+          }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
       ),

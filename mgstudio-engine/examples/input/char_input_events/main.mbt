@@ -27,7 +27,7 @@ fn main {
 fn print_char_event_system(
   keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
 ) -> Unit {
-  for event in (try! keyboard_inputs.read()) {
+  for event in keyboard_inputs.read() {
     if !event.state.is_pressed() {
       continue
     }

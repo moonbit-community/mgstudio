@@ -19,13 +19,11 @@ const CUSTOM_FILTER_TAG_GROUP_A : Int = 0
 const CUSTOM_FILTER_TAG_GROUP_B : Int = 1
 
 ///|
-let custom_filter_tags : Ref[@hashmap.HashMap[Int, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
+let custom_filter_tags : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
 
 ///|
 fn tag_for_entity(entity : @core.Entity) -> Int? {
-  custom_filter_tags.val.get(entity.id)
+  custom_filter_tags.get(entity.id)
 }
 
 ///|
@@ -69,13 +67,13 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(10.0F, 1.2F, 10.0F),
     @math.Vec3::new(0.0F, -10.0F, 0.0F),
   )
-  custom_filter_tags.val.set(ground_a.id, CUSTOM_FILTER_TAG_GROUP_A)
+  custom_filter_tags.set(ground_a.id, CUSTOM_FILTER_TAG_GROUP_A)
   let ground_b = @rapier_examples.rapier3d_spawn_ground(
     world,
     @math.Vec3::new(10.0F, 1.2F, 10.0F),
     @math.Vec3::new(0.0F, 0.0F, 0.0F),
   )
-  custom_filter_tags.val.set(ground_b.id, CUSTOM_FILTER_TAG_GROUP_B)
+  custom_filter_tags.set(ground_b.id, CUSTOM_FILTER_TAG_GROUP_B)
 
   let num = 4
   let rad = 0.5F
@@ -96,7 +94,7 @@ fn setup(world : @ecs.World) -> Unit {
         Some(@physics3d.RigidBody3d::dynamic()),
       )
       let tag = tags[group_id % 2]
-      custom_filter_tags.val.set(body.id, tag)
+      custom_filter_tags.set(body.id, tag)
       group_id = group_id + 1
     }
   }

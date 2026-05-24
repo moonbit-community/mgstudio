@@ -112,13 +112,6 @@ pub fn VisibleEntityRanges::entity_is_in_range_of_view(
 
 ///|
 pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
-  let visible_ranges = world
-    .get_resource_mut(ecs_key_visible_entity_ranges)
-    .unwrap()
-  visible_ranges.set_changed()
-  let visible_ranges_value = visible_ranges.peek()
-  visible_ranges_value.clear()
-
   let view_entries : Array[(Int, Int)] = []
   let view_positions : Array[(Int, @math.Vec3)] = []
   let view_query : @ecs.Query[
@@ -168,59 +161,65 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
       (view_index, global_transform_component.value().translation()),
     )
   })
-  for entry in view_entries {
-    visible_ranges_value.views.set(entry.0, entry.1)
-  }
-  if view_positions.length() == 0 {
-    return
-  }
-  if world.component_count(@root_visibility.ecs_key_visibility_range) == 0 {
-    return
-  }
-
-  let entity_query : @ecs.Query[
-    (
-      @core.Entity,
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@root_visibility.VisibilityRange],
-      @ecs.Comp[@camera_primitives.Aabb]?,
-    ),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! entity_query.view(fn(_, data) {
-    let (
-      entity,
-      global_transform_component,
-      visibility_range_component,
-      aabb_component,
-    ) = data
-    if (try! world.contains_by_key(
-        entity, @root_visibility.ecs_key_no_cpu_culling,
-      )) {
+  let visible_ranges = world
+    .get_resource_mut(ecs_key_visible_entity_ranges)
+    .unwrap()
+  visible_ranges.modify(fn(visible_ranges_value) {
+    visible_ranges_value.clear()
+    for entry in view_entries {
+      visible_ranges_value.views.set(entry.0, entry.1)
+    }
+    if view_positions.length() == 0 {
       return
     }
-    let global_transform = global_transform_component.value()
-    let visibility_range = visibility_range_component.value()
-    let model_position = if visibility_range.use_aabb() {
-      match aabb_component {
-        Some(aabb) => global_transform.transform_point(aabb.value().center())
-        None => global_transform.translation()
+    if world.component_count(@root_visibility.ecs_key_visibility_range) == 0 {
+      return
+    }
+
+    let entity_query : @ecs.Query[
+      (
+        @core.Entity,
+        @ecs.Comp[@transform.GlobalTransform],
+        @ecs.Comp[@root_visibility.VisibilityRange],
+        @ecs.Comp[@camera_primitives.Aabb]?,
+      ),
+      @ecs.All,
+    ] = @ecs.query(world)
+    try! entity_query.view(fn(_, data) {
+      let (
+        entity,
+        global_transform_component,
+        visibility_range_component,
+        aabb_component,
+      ) = data
+      if (try! world.contains_by_key(
+          entity, @root_visibility.ecs_key_no_cpu_culling,
+        )) {
+        return
       }
-    } else {
-      global_transform.translation()
-    }
-    let mut visibility = 0
-    for index in 0..<view_positions.length() {
-      let (view_index, view_position) = view_positions[index]
-      if visibility_range.is_visible_at_all(
-          view_position.sub(model_position).length(),
-        ) {
-        visibility = visibility | (1 << view_index)
+      let global_transform = global_transform_component.value()
+      let visibility_range = visibility_range_component.value()
+      let model_position = if visibility_range.use_aabb() {
+        match aabb_component {
+          Some(aabb) => global_transform.transform_point(aabb.value().center())
+          None => global_transform.translation()
+        }
+      } else {
+        global_transform.translation()
       }
-    }
-    if visibility != 0 {
-      visible_ranges_value.entities.set(entity.id, visibility)
-    }
+      let mut visibility = 0
+      for index in 0..<view_positions.length() {
+        let (view_index, view_position) = view_positions[index]
+        if visibility_range.is_visible_at_all(
+            view_position.sub(model_position).length(),
+          ) {
+          visibility = visibility | (1 << view_index)
+        }
+      }
+      if visibility != 0 {
+        visible_ranges_value.entities.set(entity.id, visibility)
+      }
+    })
   })
 }
 

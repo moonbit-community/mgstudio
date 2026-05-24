@@ -838,8 +838,7 @@ pub fn animation_graph_add(
   graph : AnimationGraph,
 ) -> @asset.Handle[AnimationGraph] {
   let assets = animation_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().add(graph)
+  assets.modify(fn(store) { store.add(graph) })
 }
 
 ///|
@@ -855,8 +854,7 @@ pub fn animation_graph_set(
   graph : AnimationGraph,
 ) -> Bool {
   let assets = animation_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().set(handle, graph)
+  assets.modify(fn(store) { store.set(handle, graph) })
 }
 
 ///|
@@ -866,38 +864,42 @@ fn thread_animation_graphs(
   threaded_graphs : @app.ResMut[ThreadedAnimationGraphs],
 ) -> Unit {
   let graph_assets_value = graph_assets.get()
-  let threaded_graphs_value = threaded_graphs.peek()
-  for event in (try! graph_events.read()) {
+  for event in graph_events.read() {
     match event {
       @asset.AssetEvent::Added(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs.set_changed()
-          thread_animation_graph_rebuild(
-            threaded_graphs_value,
-            handle.id(),
-            graph,
-          )
+          threaded_graphs.modify(fn(threaded_graphs_value) {
+            thread_animation_graph_rebuild(
+              threaded_graphs_value,
+              handle.id(),
+              graph,
+            )
+          })
         }
       @asset.AssetEvent::Modified(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs.set_changed()
-          thread_animation_graph_rebuild(
-            threaded_graphs_value,
-            handle.id(),
-            graph,
-          )
+          threaded_graphs.modify(fn(threaded_graphs_value) {
+            thread_animation_graph_rebuild(
+              threaded_graphs_value,
+              handle.id(),
+              graph,
+            )
+          })
         }
       @asset.AssetEvent::LoadedWithDependencies(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
-          threaded_graphs.set_changed()
-          thread_animation_graph_rebuild(
-            threaded_graphs_value,
-            handle.id(),
-            graph,
-          )
+          threaded_graphs.modify(fn(threaded_graphs_value) {
+            thread_animation_graph_rebuild(
+              threaded_graphs_value,
+              handle.id(),
+              graph,
+            )
+          })
         }
       @asset.AssetEvent::Removed(handle) =>
-        ignore(threaded_graphs_value.graphs.remove(handle.id()))
+        threaded_graphs.modify(fn(threaded_graphs_value) {
+          ignore(threaded_graphs_value.graphs.remove(handle.id()))
+        })
       @asset.AssetEvent::Unused(_) => ()
     }
   }

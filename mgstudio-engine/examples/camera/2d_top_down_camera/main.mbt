@@ -41,12 +41,15 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.peek()
-          |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F)),
+          meshes.modify(fn(meshes) {
+            meshes |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F))
+          }),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.peek()
-          |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
+          materials.modify(fn(materials) {
+            materials
+            |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F))
+          }),
         ),
       ),
     ),
@@ -56,11 +59,15 @@ fn setup_scene(
       (
         Player::{  },
         @sprite.Mesh2d::new(
-          meshes.peek() |> @sprite.add_mesh(@sprite.Circle::new(25.0F)),
+          meshes.modify(fn(meshes) {
+            meshes |> @sprite.add_mesh(@sprite.Circle::new(25.0F))
+          }),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.peek()
-          |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
+          materials.modify(fn(materials) {
+            materials
+            |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F))
+          }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
       ),

@@ -74,10 +74,10 @@ pub fn Checked::Checked() -> Checked {
 
 ///|
 fn update_accessibility_node(
+  world : @ecs.World,
   entity : @core.Entity,
   update : (@a11y.AccessibilityNode) -> Unit,
 ) -> Unit {
-  let world = @ecs.current_observer_world_abort_missing()
   match (try! world.get_by_key(entity, @a11y.ecs_key_accessibility_node)) {
     Some(accessibility) => {
       update(accessibility)
@@ -95,7 +95,7 @@ fn update_accessibility_node(
 pub fn on_add_disabled(
   add : @ecs.ComponentOn[@ecs.Add, InteractionDisabled],
 ) -> Unit {
-  update_accessibility_node(add.entity(), fn(accessibility) {
+  update_accessibility_node(add.world(), add.entity(), fn(accessibility) {
     accessibility.set_disabled()
   })
 }
@@ -104,31 +104,31 @@ pub fn on_add_disabled(
 pub fn on_remove_disabled(
   remove : @ecs.ComponentOn[@ecs.Remove, InteractionDisabled],
 ) -> Unit {
-  update_accessibility_node(remove.entity(), fn(accessibility) {
+  update_accessibility_node(remove.world(), remove.entity(), fn(accessibility) {
     accessibility.clear_disabled()
   })
 }
 
 ///|
 pub fn on_add_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
-  let world = @ecs.current_observer_world_abort_missing()
+  let world = add.world()
   let entity = add.entity()
   let checked = try! world.contains_by_key(entity, ecs_key_checked)
-  update_accessibility_node(entity, fn(accessibility) {
+  update_accessibility_node(world, entity, fn(accessibility) {
     accessibility.set_toggled(@moon_accesskit.Toggled::from_bool(checked))
   })
 }
 
 ///|
 pub fn on_remove_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
-  update_accessibility_node(add.entity(), fn(accessibility) {
+  update_accessibility_node(add.world(), add.entity(), fn(accessibility) {
     accessibility.clear_toggled()
   })
 }
 
 ///|
 pub fn on_add_checked(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
-  update_accessibility_node(add.entity(), fn(accessibility) {
+  update_accessibility_node(add.world(), add.entity(), fn(accessibility) {
     accessibility.set_toggled(@moon_accesskit.Toggled::True)
   })
 }
@@ -137,7 +137,7 @@ pub fn on_add_checked(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
 pub fn on_remove_checked(
   remove : @ecs.ComponentOn[@ecs.Remove, Checked],
 ) -> Unit {
-  update_accessibility_node(remove.entity(), fn(accessibility) {
+  update_accessibility_node(remove.world(), remove.entity(), fn(accessibility) {
     accessibility.set_toggled(@moon_accesskit.Toggled::False)
   })
 }

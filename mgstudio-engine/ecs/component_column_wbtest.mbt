@@ -18,9 +18,19 @@ struct ComponentColumnCacheValue {
 } derive(Debug, Eq)
 
 ///|
+struct ComponentColumnMigrationMarker {
+  y : Int
+} derive(Debug, Eq)
+
+///|
 let component_column_cache_value_key : ComponentKey[ComponentColumnCacheValue] = register_component(
   debug_name="tests.ecs.component_column.cache_value",
 )
+
+///|
+let component_column_migration_marker_key : ComponentKey[
+  ComponentColumnMigrationMarker,
+] = register_component(debug_name="tests.ecs.component_column.migration_marker")
 
 ///|
 pub impl Component for ComponentColumnCacheValue with component() {
@@ -28,7 +38,9 @@ pub impl Component for ComponentColumnCacheValue with component() {
 }
 
 ///|
-pub impl Mutable for ComponentColumnCacheValue
+pub impl Component for ComponentColumnMigrationMarker with component() {
+  component_column_migration_marker_key
+}
 
 ///|
 test "ecs component column: cached table values write through typed storage" {
@@ -61,6 +73,96 @@ test "ecs component column: cached table values write through typed storage" {
   )
   guard value_opt is Some(value) else { fail("expected typed component value") }
   debug_inspect(value, content="{ x: 2 }")
+}
+
+///|
+test "ecs component column: table migration moves canonical typed rows" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 10,
+  })
+  guard world.table_id_for_entity(entity) is Some(old_table_id) else {
+    fail("expected initial table entity")
+  }
+  guard world.entity_table_row(entity) is Some(old_table_row) else {
+    fail("expected initial table row")
+  }
+  debug_inspect(
+    component_column_cache_value_key.component_get_table_row(
+      world,
+      old_table_id,
+      old_table_row.index(),
+    ),
+    content="Some({ x: 10 })",
+  )
+
+  try! world.set_by_key(entity, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
+    y: 20,
+  })
+  guard world.table_id_for_entity(entity) is Some(new_table_id) else {
+    fail("expected migrated table entity")
+  }
+  guard world.entity_table_row(entity) is Some(new_table_row) else {
+    fail("expected migrated table row")
+  }
+  if new_table_id == old_table_id {
+    fail("expected adding a table component to migrate to a new table")
+  }
+
+  debug_inspect(
+    component_column_cache_value_key.component_get_table_row(
+      world,
+      old_table_id,
+      old_table_row.index(),
+    ),
+    content="None",
+  )
+  debug_inspect(
+    component_column_cache_value_key.component_get_table_row(
+      world,
+      new_table_id,
+      new_table_row.index(),
+    ),
+    content="Some({ x: 10 })",
+  )
+  debug_inspect(
+    component_column_migration_marker_key.component_get_table_row(
+      world,
+      new_table_id,
+      new_table_row.index(),
+    ),
+    content="Some({ y: 20 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, component_column_cache_value_key),
+    content="Some({ x: 10 })",
+  )
+}
+
+///|
+test "ecs component column: table storage iteration does not retain staged duplicates" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 30,
+  })
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 31,
+  })
+  try! world.set_by_key(entity, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
+    y: 32,
+  })
+  let seen : Array[(Int, Int)] = []
+  component_column_cache_value_key.component_for_each(world, fn(
+    seen_entity,
+    value,
+  ) {
+    if seen_entity.to_bits() == entity.to_bits() {
+      seen.push((seen_entity.id, value.x))
+    }
+  })
+  debug_inspect(seen, content="[(0, 31)]")
 }
 
 ///|

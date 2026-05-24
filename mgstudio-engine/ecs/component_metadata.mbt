@@ -52,68 +52,74 @@ pub struct ComponentMetadataBuilder[T] {
 }
 
 ///|
-let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] = @hashmap.HashMap([],
+let component_metadata_registry : @hashmap.HashMap[Int, ComponentMetadata] = @hashmap.HashMap([],
 )
 
 ///|
-let component_relationship_metadata_generation_ref : Ref[Int] = Ref(0)
+priv struct ComponentMetadataRuntimeState {
+  mut relationship_generation : Int
+  mut bootstrap_done : Bool
+}
 
 ///|
-let component_metadata_bootstrap_ref : Ref[Bool] = Ref(false)
+let component_metadata_runtime_state : ComponentMetadataRuntimeState = {
+  relationship_generation: 0,
+  bootstrap_done: false,
+}
 
 ///|
 fn component_relationship_metadata_generation() -> Int {
-  component_relationship_metadata_generation_ref.val
+  component_metadata_runtime_state.relationship_generation
 }
 
 ///|
 fn bump_component_relationship_metadata_generation() -> Unit {
-  component_relationship_metadata_generation_ref.val = component_relationship_metadata_generation_ref.val +
+  component_metadata_runtime_state.relationship_generation = component_metadata_runtime_state.relationship_generation +
     1
 }
 
 ///|
 fn bootstrap_component_metadata() -> Unit {
-  if component_metadata_bootstrap_ref.val {
+  if component_metadata_runtime_state.bootstrap_done {
     return
   }
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_add,
       debug_name="ecs::lifecycle::add",
     ),
   )
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_insert,
       debug_name="ecs::lifecycle::insert",
     ),
   )
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_replace,
       debug_name="ecs::lifecycle::replace",
     ),
   )
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_remove,
       debug_name="ecs::lifecycle::remove",
     ),
   )
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_despawn,
       debug_name="ecs::lifecycle::despawn",
     ),
   )
   ignore(
-    component_metadata_ref(
+    component_metadata_ensure(
       ecs_builtin_component_definition_is_resource,
       debug_name="ecs::resource::is_resource",
     ),
   )
-  component_metadata_bootstrap_ref.val = true
+  component_metadata_runtime_state.bootstrap_done = true
 }
 
 ///|
@@ -129,13 +135,26 @@ fn component_metadata_default(debug_name : String) -> ComponentMetadata {
 }
 
 ///|
-fn component_metadata_ref(
+fn component_metadata_ensure(
   component_id : Int,
   debug_name? : String = "",
-) -> Ref[ComponentMetadata] {
-  component_metadata_registry.get_or_init(component_id, fn() {
-    Ref(component_metadata_default(debug_name))
-  })
+) -> ComponentMetadata {
+  match component_metadata_registry.get(component_id) {
+    Some(metadata) => metadata
+    None => {
+      let metadata = component_metadata_default(debug_name)
+      component_metadata_registry.set(component_id, metadata)
+      metadata
+    }
+  }
+}
+
+///|
+fn component_metadata_set(
+  component_id : Int,
+  metadata : ComponentMetadata,
+) -> Unit {
+  component_metadata_registry.set(component_id, metadata)
 }
 
 ///|
@@ -143,14 +162,14 @@ fn component_metadata(
   component_id : Int,
   debug_name? : String = "",
 ) -> ComponentMetadata {
-  component_metadata_ref(component_id, debug_name~).val
+  component_metadata_ensure(component_id, debug_name~)
 }
 
 ///|
 pub fn[T] component_metadata_builder(
   key : ComponentKey[T],
 ) -> ComponentMetadataBuilder[T] {
-  ignore(component_metadata_ref(key.id(), debug_name=key.debug_name()))
+  ignore(component_metadata_ensure(key.id(), debug_name=key.debug_name()))
   ComponentMetadataBuilder::{ key, }
 }
 
@@ -174,8 +193,8 @@ fn component_metadata_register_hook(
   kind : ComponentHookKind,
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit {
-  let metadata_ref = component_metadata_ref(component_id, debug_name~)
-  let hooks = metadata_ref.val.hooks
+  let metadata = component_metadata_ensure(component_id, debug_name~)
+  let hooks = metadata.hooks
   if component_hooks_kind_registered(hooks, kind) {
     abort(
       "Duplicate static component hook registration for component `\{debug_name}` (\{component_id.to_string()})",
@@ -188,10 +207,10 @@ fn component_metadata_register_hook(
     OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
     OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
   }
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(component_id, ComponentMetadata::{
+    ..metadata,
     hooks: updated_hooks,
-  }
+  })
 }
 
 ///|
@@ -278,12 +297,12 @@ pub fn[T, R] ComponentMetadataBuilder::require_with(
   required_key : ComponentKey[R],
   init : () -> R,
 ) -> ComponentMetadataBuilder[T] {
-  let metadata_ref = component_metadata_ref(
+  let metadata = component_metadata_ensure(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
   if component_metadata_require_index(
-      metadata_ref.val.required_components,
+      metadata.required_components,
       required_key.id(),
     )
     is Some(_) {
@@ -291,15 +310,15 @@ pub fn[T, R] ComponentMetadataBuilder::require_with(
       "Duplicate static required-component registration for component `\{self.key.debug_name()}`",
     )
   }
-  let entries = metadata_ref.val.required_components
+  let entries = metadata.required_components.copy()
   entries.push({
     required_component_id: required_key.id(),
     init_value: fn() { component_writer_for_key(required_key, init()) },
   })
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(self.key.id(), ComponentMetadata::{
+    ..metadata,
     required_components: entries,
-  }
+  })
   self
 }
 
@@ -309,14 +328,14 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(
   target_entity : (World, @core.Entity) -> @core.Entity?,
   observer_parent_lookup? : Bool = false,
 ) -> ComponentMetadataBuilder[T] {
-  let metadata_ref = component_metadata_ref(
+  let metadata = component_metadata_ensure(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(self.key.id(), ComponentMetadata::{
+    ..metadata,
     relationship_source: Some({ target_entity, observer_parent_lookup }),
-  }
+  })
   bump_component_relationship_metadata_generation()
   self
 }
@@ -327,7 +346,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
   linked_spawn? : Bool = false,
   linked_entities? : ((T) -> Array[@core.Entity])? = None,
 ) -> ComponentMetadataBuilder[T] {
-  let metadata_ref = component_metadata_ref(
+  let metadata = component_metadata_ensure(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
@@ -351,13 +370,13 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
       "relationship_target(linked_spawn=true) requires linked_entities for component `\{self.key.debug_name()}`",
     )
   }
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(self.key.id(), ComponentMetadata::{
+    ..metadata,
     relationship_target: Some({
       linked_spawn,
       linked_entities: linked_entities_accessor,
     }),
-  }
+  })
   bump_component_relationship_metadata_generation()
   self
 }
@@ -366,14 +385,14 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
 pub fn[T] ComponentMetadataBuilder::storage_table(
   self : ComponentMetadataBuilder[T],
 ) -> ComponentMetadataBuilder[T] {
-  let metadata_ref = component_metadata_ref(
+  let metadata = component_metadata_ensure(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(self.key.id(), ComponentMetadata::{
+    ..metadata,
     storage_type: Table,
-  }
+  })
   self
 }
 
@@ -381,13 +400,13 @@ pub fn[T] ComponentMetadataBuilder::storage_table(
 pub fn[T] ComponentMetadataBuilder::storage_sparse_set(
   self : ComponentMetadataBuilder[T],
 ) -> ComponentMetadataBuilder[T] {
-  let metadata_ref = component_metadata_ref(
+  let metadata = component_metadata_ensure(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  metadata_ref.val = ComponentMetadata::{
-    ..metadata_ref.val,
+  component_metadata_set(self.key.id(), ComponentMetadata::{
+    ..metadata,
     storage_type: SparseSet,
-  }
+  })
   self
 }

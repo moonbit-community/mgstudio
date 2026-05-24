@@ -129,9 +129,6 @@ pub(all) enum Projection {
 }
 
 ///|
-pub impl @ecs.Mutable for Projection
-
-///|
 pub fn Projection::default() -> Projection {
   Perspective(@pbr_render.PerspectiveProjection3d::PerspectiveProjection3d())
 }

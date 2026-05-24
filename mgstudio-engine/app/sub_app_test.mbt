@@ -29,18 +29,20 @@ test "app: render sub app runs with main app update" {
 }
 
 ///|
-test "app: sub app mut accessor writes back to app" {
+test "app: sub app modifier writes back to app" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).insert_sub_app(
     RenderApp,
     SubApp::new(@ecs.World::new()).set_update_schedule(Some(Main)),
   )
-  if app.get_sub_app_mut(RenderApp) is Some(sub_app_ref) {
-    sub_app_ref.val = sub_app_ref.val.add_systems(
-      Update,
-      system(fn(_world : @ecs.World) { log.push(1) }),
-    )
-  }
+  ignore(
+    app.modify_sub_app(RenderApp, fn(sub_app) {
+      sub_app.add_systems(
+        Update,
+        system(fn(_world : @ecs.World) { log.push(1) }),
+      )
+    }),
+  )
   app.run_once() |> ignore
   debug_inspect(log.length(), content="1")
 }

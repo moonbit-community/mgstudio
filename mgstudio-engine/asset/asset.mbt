@@ -117,32 +117,34 @@ pub(all) enum RecursiveDependencyLoadState {
 
 ///|
 pub struct AssetServer {
-  paths : Ref[Array[String]]
-  path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_next_ids : Ref[@hashmap.HashMap[String, Int]]
-  typed_asset_load_states : Ref[@hashmap.HashMap[String, LoadState]]
-  typed_asset_dependency_load_states : Ref[
-    @hashmap.HashMap[String, DependencyLoadState],
+  paths : Array[String]
+  path_fingerprints : @hashmap.HashMap[String, Int]
+  typed_asset_paths : @hashmap.HashMap[String, Int]
+  typed_asset_next_ids : @hashmap.HashMap[String, Int]
+  typed_asset_load_states : @hashmap.HashMap[String, LoadState]
+  typed_asset_dependency_load_states : @hashmap.HashMap[
+    String,
+    DependencyLoadState,
   ]
-  typed_asset_recursive_dependency_load_states : Ref[
-    @hashmap.HashMap[String, RecursiveDependencyLoadState],
+  typed_asset_recursive_dependency_load_states : @hashmap.HashMap[
+    String,
+    RecursiveDependencyLoadState,
   ]
-  pending_load_failures : Ref[Array[UntypedAssetLoadFailedEvent]]
-  pending_processed_asset_loads : Ref[Array[PendingProcessedAssetLoad]]
-  pending_typed_asset_loads : Ref[Array[PendingTypedAssetLoad]]
-  pending_acquired_loads : Ref[Array[PendingAcquiredLoad]]
-  image_paths : Ref[Array[(String, Handle[Image])]]
-  pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
-  image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
-  image_render_asset_usages : Ref[Array[(Int, RenderAssetUsages)]]
-  image_srgb_settings : Ref[Array[(Int, Bool)]]
-  image_usage_settings : Ref[Array[(Int, Int)]]
-  gltf_loader_settings : Ref[Array[(String, ImageLoaderSettings)]]
-  default_sampler_nearest : Ref[Bool]
-  mode : Ref[AssetMode]
-  processed_file_path : Ref[String?]
-  owner_world : Ref[@ecs.World?]
+  pending_load_failures : Array[UntypedAssetLoadFailedEvent]
+  mut pending_processed_asset_loads : Array[PendingProcessedAssetLoad]
+  mut pending_typed_asset_loads : Array[PendingTypedAssetLoad]
+  pending_acquired_loads : Array[PendingAcquiredLoad]
+  image_paths : Array[(String, Handle[Image])]
+  pending_image_assets : @hashmap.HashMap[Int, Image]
+  mut image_array_layouts : Array[(Int, ImageArrayLayout)]
+  mut image_render_asset_usages : Array[(Int, RenderAssetUsages)]
+  mut image_srgb_settings : Array[(Int, Bool)]
+  mut image_usage_settings : Array[(Int, Int)]
+  mut gltf_loader_settings : Array[(String, ImageLoaderSettings)]
+  mut default_sampler_nearest : Bool
+  mut mode : AssetMode
+  mut processed_file_path : String?
+  mut owner_world : @ecs.World?
 }
 
 ///|
@@ -173,28 +175,28 @@ priv struct AssetLoaderEntry {
 ///|
 fn asset_server_standalone() -> AssetServer {
   AssetServer::{
-    paths: Ref([]),
-    path_fingerprints: Ref(@hashmap.HashMap([])),
-    typed_asset_paths: Ref(@hashmap.HashMap([])),
-    typed_asset_next_ids: Ref(@hashmap.HashMap([])),
-    typed_asset_load_states: Ref(@hashmap.HashMap([])),
-    typed_asset_dependency_load_states: Ref(@hashmap.HashMap([])),
-    typed_asset_recursive_dependency_load_states: Ref(@hashmap.HashMap([])),
-    pending_load_failures: Ref([]),
-    pending_processed_asset_loads: Ref([]),
-    pending_typed_asset_loads: Ref([]),
-    pending_acquired_loads: Ref([]),
-    image_paths: Ref([]),
-    pending_image_assets: Ref(@hashmap.HashMap([])),
-    image_array_layouts: Ref([]),
-    image_render_asset_usages: Ref([]),
-    image_srgb_settings: Ref([]),
-    image_usage_settings: Ref([]),
-    gltf_loader_settings: Ref([]),
-    default_sampler_nearest: Ref(false),
-    mode: Ref(AssetMode::Unprocessed),
-    processed_file_path: Ref(None),
-    owner_world: Ref(None),
+    paths: [],
+    path_fingerprints: @hashmap.HashMap([]),
+    typed_asset_paths: @hashmap.HashMap([]),
+    typed_asset_next_ids: @hashmap.HashMap([]),
+    typed_asset_load_states: @hashmap.HashMap([]),
+    typed_asset_dependency_load_states: @hashmap.HashMap([]),
+    typed_asset_recursive_dependency_load_states: @hashmap.HashMap([]),
+    pending_load_failures: [],
+    pending_processed_asset_loads: [],
+    pending_typed_asset_loads: [],
+    pending_acquired_loads: [],
+    image_paths: [],
+    pending_image_assets: @hashmap.HashMap([]),
+    image_array_layouts: [],
+    image_render_asset_usages: [],
+    image_srgb_settings: [],
+    image_usage_settings: [],
+    gltf_loader_settings: [],
+    default_sampler_nearest: false,
+    mode: AssetMode::Unprocessed,
+    processed_file_path: None,
+    owner_world: None,
   }
 }
 
@@ -204,7 +206,7 @@ fn[T : Asset] asset_registered_ready_check_option(
 ) -> AssetReadyCheck? {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  asset_ready_checker_registry_active().val.get(type_name)
+  asset_ready_checker_registry_active().get(type_name)
 }
 
 ///|
@@ -226,11 +228,11 @@ fn AssetServer::reserve_typed_asset_handle_id(
   self : AssetServer,
   asset_type_name : String,
 ) -> Int {
-  let next = match self.typed_asset_next_ids.val.get(asset_type_name) {
+  let next = match self.typed_asset_next_ids.get(asset_type_name) {
     Some(value) => value
     None => 0
   }
-  self.typed_asset_next_ids.val.set(asset_type_name, next + 1)
+  self.typed_asset_next_ids.set(asset_type_name, next + 1)
   next
 }
 
@@ -245,11 +247,22 @@ pub impl @app.Resource for AssetServer with resource() {
 }
 
 ///|
-let asset_world_override_ref : Ref[@ecs.World?] = Ref(None)
+priv struct AssetRuntimeState {
+  mut world_override : @ecs.World?
+  mut transparent_texture_handle : Handle[Image]?
+  mut white_texture_handle : Handle[Image]?
+}
+
+///|
+let asset_runtime_state : AssetRuntimeState = {
+  world_override: None,
+  transparent_texture_handle: None,
+  white_texture_handle: None,
+}
 
 ///|
 fn asset_current_world() -> @ecs.World? {
-  match asset_world_override_ref.val {
+  match asset_runtime_state.world_override {
     Some(world) => Some(world)
     None => @app.current_world()
   }
@@ -257,10 +270,10 @@ fn asset_current_world() -> @ecs.World? {
 
 ///|
 pub fn[T] asset_with_world(world : @ecs.World, f : () -> T) -> T {
-  let previous = asset_world_override_ref.val
-  asset_world_override_ref.val = Some(world)
+  let previous = asset_runtime_state.world_override
+  asset_runtime_state.world_override = Some(world)
   let result = f()
-  asset_world_override_ref.val = previous
+  asset_runtime_state.world_override = previous
   result
 }
 
@@ -269,7 +282,7 @@ fn[T] asset_with_server_world(asset_server : AssetServer, f : () -> T) -> T {
   match asset_current_world() {
     Some(_) => f()
     None =>
-      match asset_server.owner_world.val {
+      match asset_server.owner_world {
         Some(world) => asset_with_world(world, f)
         None => f()
       }
@@ -372,7 +385,7 @@ pub fn AssetServer::new() -> AssetServer {
         Some(world) => world
         None => @ecs.World::new()
       }
-      server.owner_world.val = Some(owner)
+      server.owner_world = Some(owner)
       asset_with_server_world(server, fn() { asset_register_builtin_loaders() })
       server
     }
@@ -461,13 +474,13 @@ pub fn asset_canonical_path(path : String) -> String {
 ///|
 fn AssetServer::record_path(self : AssetServer, path : String) -> Unit {
   let canonical_path = asset_canonical_path(path)
-  for existing_path in self.paths.val {
+  for existing_path in self.paths {
     if existing_path == canonical_path {
       return
     }
   }
-  self.paths.val.push(canonical_path)
-  self.path_fingerprints.val.set(
+  self.paths.push(canonical_path)
+  self.path_fingerprints.set(
     canonical_path,
     bytes_fingerprint(load_asset_file_bytes(canonical_path)),
   )
@@ -479,7 +492,7 @@ fn AssetServer::register_image_path(
   path : String,
   handle : Handle[Image],
 ) -> Unit {
-  self.image_paths.val.push((path, handle))
+  self.image_paths.push((path, handle))
 }
 
 ///|
@@ -498,7 +511,7 @@ fn AssetServer::set_image_array_layout(
   array_layout : ImageArrayLayout?,
 ) -> Unit {
   let next : Array[(Int, ImageArrayLayout)] = []
-  for pair in self.image_array_layouts.val {
+  for pair in self.image_array_layouts {
     if pair.0 != image.id() {
       next.push(pair)
     }
@@ -506,7 +519,7 @@ fn AssetServer::set_image_array_layout(
   if array_layout is Some(layout) {
     next.push((image.id(), layout))
   }
-  self.image_array_layouts.val = next
+  self.image_array_layouts = next
 }
 
 ///|
@@ -516,13 +529,13 @@ fn AssetServer::set_image_is_srgb(
   is_srgb : Bool,
 ) -> Unit {
   let next : Array[(Int, Bool)] = []
-  for pair in self.image_srgb_settings.val {
+  for pair in self.image_srgb_settings {
     if pair.0 != image.id() {
       next.push(pair)
     }
   }
   next.push((image.id(), is_srgb))
-  self.image_srgb_settings.val = next
+  self.image_srgb_settings = next
 }
 
 ///|
@@ -532,13 +545,13 @@ fn AssetServer::set_image_render_asset_usages(
   asset_usage : RenderAssetUsages,
 ) -> Unit {
   let next : Array[(Int, RenderAssetUsages)] = []
-  for pair in self.image_render_asset_usages.val {
+  for pair in self.image_render_asset_usages {
     if pair.0 != image.id() {
       next.push(pair)
     }
   }
   next.push((image.id(), asset_usage))
-  self.image_render_asset_usages.val = next
+  self.image_render_asset_usages = next
 }
 
 ///|
@@ -619,13 +632,13 @@ fn AssetServer::set_image_usage_bits(
 ) -> Unit {
   let safe_usage_bits = asset_image_usage_sanitize(usage_bits)
   let next : Array[(Int, Int)] = []
-  for pair in self.image_usage_settings.val {
+  for pair in self.image_usage_settings {
     if pair.0 != image.id() {
       next.push(pair)
     }
   }
   next.push((image.id(), safe_usage_bits))
-  self.image_usage_settings.val = next
+  self.image_usage_settings = next
 }
 
 ///|
@@ -660,13 +673,13 @@ fn AssetServer::set_gltf_loader_settings(
 ) -> Unit {
   let canonical_path = asset_canonical_path(asset_path)
   let next : Array[(String, ImageLoaderSettings)] = []
-  for entry in self.gltf_loader_settings.val {
+  for entry in self.gltf_loader_settings {
     if entry.0 != canonical_path {
       next.push(entry)
     }
   }
   next.push((canonical_path, image_loader_settings_clone(settings)))
-  self.gltf_loader_settings.val = next
+  self.gltf_loader_settings = next
 }
 
 ///|
@@ -675,7 +688,7 @@ pub fn AssetServer::gltf_loader_settings_for_asset_path(
   asset_path : String,
 ) -> ImageLoaderSettings {
   let canonical_path = asset_canonical_path(asset_path)
-  for entry in self.gltf_loader_settings.val {
+  for entry in self.gltf_loader_settings {
     if entry.0 == canonical_path {
       return image_loader_settings_clone(entry.1)
     }
@@ -692,9 +705,9 @@ fn AssetServer::set_pending_image_asset(
   if self
     .render_asset_usages_for_image(image)
     .contains(RenderAssetUsages::main_world()) {
-    self.pending_image_assets.val.set(image.id(), asset)
+    self.pending_image_assets.set(image.id(), asset)
   } else {
-    self.pending_image_assets.val.remove(image.id()) |> ignore
+    self.pending_image_assets.remove(image.id()) |> ignore
   }
 }
 
@@ -713,7 +726,7 @@ fn AssetServer::update_pending_image_asset_from_bytes(
       path, bytes, is_srgb, format_setting, texture_format_override,
     ) {
     Some(asset) => self.set_pending_image_asset(image, asset)
-    None => self.pending_image_assets.val.remove(image.id()) |> ignore
+    None => self.pending_image_assets.remove(image.id()) |> ignore
   }
 }
 
@@ -722,7 +735,7 @@ fn AssetServer::image_array_layout(
   self : AssetServer,
   image : Handle[Image],
 ) -> ImageArrayLayout? {
-  for pair in self.image_array_layouts.val {
+  for pair in self.image_array_layouts {
     if pair.0 == image.id() {
       return Some(pair.1)
     }
@@ -735,7 +748,7 @@ fn AssetServer::image_is_srgb(
   self : AssetServer,
   image : Handle[Image],
 ) -> Bool {
-  for pair in self.image_srgb_settings.val {
+  for pair in self.image_srgb_settings {
     if pair.0 == image.id() {
       return pair.1
     }
@@ -748,7 +761,7 @@ fn AssetServer::render_asset_usages_for_image(
   self : AssetServer,
   image : Handle[Image],
 ) -> RenderAssetUsages {
-  for pair in self.image_render_asset_usages.val {
+  for pair in self.image_render_asset_usages {
     if pair.0 == image.id() {
       return pair.1
     }
@@ -761,7 +774,7 @@ fn AssetServer::image_usage_bits(
   self : AssetServer,
   image : Handle[Image],
 ) -> Int {
-  for pair in self.image_usage_settings.val {
+  for pair in self.image_usage_settings {
     if pair.0 == image.id() {
       return pair.1
     }
@@ -824,9 +837,9 @@ pub fn[P : IntoAssetPath] AssetServer::get_handle(
   path : P,
 ) -> Handle[Image]? {
   let canonical = asset_canonical_path(asset_path_string(path))
-  let count = self.image_paths.val.length()
+  let count = self.image_paths.length()
   for i in 0..<count {
-    let entry = self.image_paths.val[i]
+    let entry = self.image_paths[i]
     if entry.0 == canonical {
       return Some(entry.1)
     }
@@ -835,15 +848,12 @@ pub fn[P : IntoAssetPath] AssetServer::get_handle(
 }
 
 ///|
-let asset_transparent_texture_handle : Ref[Handle[Image]?] = Ref(None)
-
-///|
 /// Returns a lazily-created 1x1 fully transparent texture handle.
 ///
 /// This is used to match Bevy's `TRANSPARENT_IMAGE_HANDLE` behavior in widgets
 /// (e.g. `ImageNode()`).
 pub fn asset_transparent_texture() -> Handle[Image] {
-  match asset_transparent_texture_handle.val {
+  match asset_runtime_state.transparent_texture_handle {
     Some(h) => h
     None => {
       let size = @math.UVec2::new(1, 1)
@@ -857,19 +867,16 @@ pub fn asset_transparent_texture() -> Handle[Image] {
       let b : Byte = u.to_byte()
       let bytes = Bytes::from_array([b, b, b, b])
       asset_update_texture_region_rgba8(handle, rect, bytes)
-      asset_transparent_texture_handle.val = Some(handle)
+      asset_runtime_state.transparent_texture_handle = Some(handle)
       handle
     }
   }
 }
 
 ///|
-let asset_white_texture_handle : Ref[Handle[Image]?] = Ref(None)
-
-///|
 /// Returns a lazily-created 1x1 opaque white texture handle.
 pub fn asset_white_texture() -> Handle[Image] {
-  match asset_white_texture_handle.val {
+  match asset_runtime_state.white_texture_handle {
     Some(h) => h
     None => {
       let size = @math.UVec2::new(1, 1)
@@ -882,7 +889,7 @@ pub fn asset_white_texture() -> Handle[Image] {
       let white_b : Byte = white_u.to_byte()
       let bytes = Bytes::from_array([white_b, white_b, white_b, white_b])
       asset_update_texture_region_rgba8(handle, rect, bytes)
-      asset_white_texture_handle.val = Some(handle)
+      asset_runtime_state.white_texture_handle = Some(handle)
       handle
     }
   }
@@ -1141,7 +1148,7 @@ fn AssetServer::image_sampler_uses_nearest(
   sampler : ImageSampler,
 ) -> Bool {
   match sampler {
-    ImageSampler::Default => self.default_sampler_nearest.val
+    ImageSampler::Default => self.default_sampler_nearest
     _ => image_sampler_is_nearest(sampler)
   }
 }
@@ -1232,7 +1239,7 @@ pub fn AssetServer::set_typed_load_state(
   handle_id : Int,
   state : LoadState,
 ) -> Unit {
-  self.typed_asset_load_states.val.set(
+  self.typed_asset_load_states.set(
     asset_load_state_key(type_name, handle_id),
     state,
   )
@@ -1245,7 +1252,7 @@ pub fn AssetServer::set_typed_dependency_load_state(
   handle_id : Int,
   state : DependencyLoadState,
 ) -> Unit {
-  self.typed_asset_dependency_load_states.val.set(
+  self.typed_asset_dependency_load_states.set(
     asset_load_state_key(type_name, handle_id),
     state,
   )
@@ -1258,7 +1265,7 @@ pub fn AssetServer::set_typed_recursive_dependency_load_state(
   handle_id : Int,
   state : RecursiveDependencyLoadState,
 ) -> Unit {
-  self.typed_asset_recursive_dependency_load_states.val.set(
+  self.typed_asset_recursive_dependency_load_states.set(
     asset_load_state_key(type_name, handle_id),
     state,
   )
@@ -1329,9 +1336,7 @@ fn AssetServer::typed_load_state(
   handle_id : Int,
 ) -> LoadState {
   match
-    self.typed_asset_load_states.val.get(
-      asset_load_state_key(type_name, handle_id),
-    ) {
+    self.typed_asset_load_states.get(asset_load_state_key(type_name, handle_id)) {
     Some(state) => state
     None => LoadState::NotLoaded
   }
@@ -1344,7 +1349,7 @@ fn AssetServer::typed_dependency_load_state(
   handle_id : Int,
 ) -> DependencyLoadState {
   match
-    self.typed_asset_dependency_load_states.val.get(
+    self.typed_asset_dependency_load_states.get(
       asset_load_state_key(type_name, handle_id),
     ) {
     Some(state) => state
@@ -1359,7 +1364,7 @@ fn AssetServer::typed_recursive_dependency_load_state(
   handle_id : Int,
 ) -> RecursiveDependencyLoadState {
   match
-    self.typed_asset_recursive_dependency_load_states.val.get(
+    self.typed_asset_recursive_dependency_load_states.get(
       asset_load_state_key(type_name, handle_id),
     ) {
     Some(state) => state
@@ -1415,7 +1420,7 @@ fn asset_enqueue_load_failure(
     failure.id,
     failure.error,
   )
-  asset_server.pending_load_failures.val.push(failure)
+  asset_server.pending_load_failures.push(failure)
   @app.log_error_once(
     "asset-load-failure:\{failure.type_name}:\{asset_format_path(failure.path)}",
     "\{failure.error}",
@@ -1430,14 +1435,14 @@ fn[T] AssetServer::reserve_missing_loader_handle(
   reason : String,
 ) -> Handle[T] {
   let cache_key = typed_asset_loader_path_key(asset_type_name, parsed_path)
-  if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
+  if self.typed_asset_paths.get(cache_key) is Some(handle_id) {
     return Handle::new(handle_id)
   }
   let handle : Handle[T] = Handle::new(
     self.reserve_typed_asset_handle_id(asset_type_name),
   )
   self.set_typed_loading_states(asset_type_name, handle.id())
-  self.typed_asset_paths.val.set(cache_key, handle.id())
+  self.typed_asset_paths.set(cache_key, handle.id())
   let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
   self.record_path(canonical_path)
   asset_enqueue_load_failure(
@@ -1467,7 +1472,7 @@ pub fn[T : Asset, P : IntoAssetPath] AssetServer::load(
     let formatted_path = asset_format_path(parsed_path)
     let probe : Handle[T] = Handle::new(0)
     let loader_type_name = asset_loader_type_name(probe)
-    match asset_loader_registry_active().val.get(loader_type_name) {
+    match asset_loader_registry_active().get(loader_type_name) {
       Some(entry) => Handle::new((entry.load)(self, formatted_path))
       None =>
         self.reserve_missing_loader_handle(
@@ -1514,7 +1519,7 @@ pub fn[T : Asset, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acqui
         if ready_or_failed(world, handle.id()) {
           release()
         } else {
-          self.pending_acquired_loads.val.push(PendingAcquiredLoad::{
+          self.pending_acquired_loads.push(PendingAcquiredLoad::{
             handle_id: handle.id(),
             is_ready: ready_or_failed,
             release,
@@ -1795,15 +1800,15 @@ pub fn asset_create_texture_mip_view(
 ///|
 fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
   let modified_paths : Array[String] = []
-  for path in asset_server.paths.val {
+  for path in asset_server.paths {
     let next_fingerprint = bytes_fingerprint(load_asset_file_bytes(path))
-    match asset_server.path_fingerprints.val.get(path) {
+    match asset_server.path_fingerprints.get(path) {
       Some(previous_fingerprint) =>
         if previous_fingerprint != next_fingerprint {
-          asset_server.path_fingerprints.val.set(path, next_fingerprint)
+          asset_server.path_fingerprints.set(path, next_fingerprint)
           modified_paths.push(path)
         }
-      None => asset_server.path_fingerprints.val.set(path, next_fingerprint)
+      None => asset_server.path_fingerprints.set(path, next_fingerprint)
     }
   }
   modified_paths
@@ -1819,7 +1824,7 @@ fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
     return
   }
   for path in modified_paths {
-    for hook in asset_reload_hook_registry_active().val {
+    for hook in asset_reload_hook_registry_active() {
       hook(world, asset_server, path)
     }
   }
@@ -1835,7 +1840,7 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
 
   let synced : Array[Int] = []
   asset_with_world(world, fn() {
-    for entry in asset_server.pending_image_assets.val.iter() {
+    for entry in asset_server.pending_image_assets.iter() {
       let (image_id, image) = entry
       if host_asset_is_texture_loaded(image_id) {
         let handle : Handle[Image] = Handle::new(image_id)
@@ -1857,7 +1862,7 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
   })
 
   for image_id in synced {
-    asset_server.pending_image_assets.val.remove(image_id) |> ignore
+    asset_server.pending_image_assets.remove(image_id) |> ignore
   }
 }
 
@@ -1880,16 +1885,16 @@ fn asset_release_ready_acquired_loads(
   asset_server : AssetServer,
 ) -> Unit {
   let remaining : Array[PendingAcquiredLoad] = []
-  for pending in asset_server.pending_acquired_loads.val {
+  for pending in asset_server.pending_acquired_loads {
     if (pending.is_ready)(world, pending.handle_id) {
       (pending.release)()
     } else {
       remaining.push(pending)
     }
   }
-  asset_server.pending_acquired_loads.val.clear()
+  asset_server.pending_acquired_loads.clear()
   for pending in remaining {
-    asset_server.pending_acquired_loads.val.push(pending)
+    asset_server.pending_acquired_loads.push(pending)
   }
 }
 
@@ -1898,13 +1903,13 @@ fn asset_dispatch_load_failed_messages(
   world : @ecs.World,
   asset_server : AssetServer,
 ) -> Unit {
-  if asset_server.pending_load_failures.val.length() == 0 {
+  if asset_server.pending_load_failures.length() == 0 {
     return
   }
-  for failure in asset_server.pending_load_failures.val {
+  for failure in asset_server.pending_load_failures {
     asset_dispatch_load_failed_event(world, failure)
   }
-  asset_server.pending_load_failures.val.clear()
+  asset_server.pending_load_failures.clear()
 }
 
 ///|
@@ -1945,7 +1950,7 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_with_world(world, fn() {
     let asset_server = asset_server_or_abort()
-    asset_server.owner_world.val = Some(world)
+    asset_server.owner_world = Some(world)
     asset_reload_modified_paths(world)
     asset_update_loaded_folders(world)
     asset_process_pending_processed_asset_loads(world, asset_server)

@@ -223,39 +223,39 @@ fn stress_metrics_system(
   state : @app.ResMut[StressMetricsState],
   time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
-  let state_value = state.peek()
-  state.set_changed()
-  let delta = time.get().delta()
-  let delta_seconds = time.get().delta_seconds()
-  if delta_seconds < 0.0F {
-    return
-  }
-  state_value.frame_count = state_value.frame_count + 1
-  state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
-  state_value.timer = state_value.timer.tick(delta)
-  if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
-    return
-  }
-  let frame_count = state_value.frame_count
-  let fps = Float::from_int(frame_count) / state_value.elapsed_seconds
-  let frame_time_ms = state_value.elapsed_seconds *
-    1000.0F /
-    Float::from_int(frame_count)
-  @app.log_record(
-    @app.Info,
-    message="fps: \{fps.to_string()} (avg \{fps.to_string()})",
-    target="mgstudio_diagnostic",
-  )
-  @app.log_record(
-    @app.Info,
-    message="frame_time: \{frame_time_ms.to_string()}ms (avg \{frame_time_ms.to_string()}ms)",
-    target="mgstudio_diagnostic",
-  )
-  @app.log_record(
-    @app.Info,
-    message="frame_count: \{frame_count.to_string()}",
-    target="mgstudio_diagnostic",
-  )
+  state.modify(fn(state_value) {
+    let delta = time.get().delta()
+    let delta_seconds = time.get().delta_seconds()
+    if delta_seconds < 0.0F {
+      return
+    }
+    state_value.frame_count = state_value.frame_count + 1
+    state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
+    state_value.timer = state_value.timer.tick(delta)
+    if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
+      return
+    }
+    let frame_count = state_value.frame_count
+    let fps = Float::from_int(frame_count) / state_value.elapsed_seconds
+    let frame_time_ms = state_value.elapsed_seconds *
+      1000.0F /
+      Float::from_int(frame_count)
+    @app.log_record(
+      @app.Info,
+      message="fps: \{fps.to_string()} (avg \{fps.to_string()})",
+      target="mgstudio_diagnostic",
+    )
+    @app.log_record(
+      @app.Info,
+      message="frame_time: \{frame_time_ms.to_string()}ms (avg \{frame_time_ms.to_string()}ms)",
+      target="mgstudio_diagnostic",
+    )
+    @app.log_record(
+      @app.Info,
+      message="frame_count: \{frame_count.to_string()}",
+      target="mgstudio_diagnostic",
+    )
+  })
 }
 
 ///|
@@ -502,21 +502,21 @@ fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
 
 ///|
 fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
-  guard world.get_resource_ref_mut(timeline_trace_state_resource_key)
-    is Some(state_ref) else {
+  guard world.get_resource_mut(timeline_trace_state_resource_key)
+    is Some(state_mut) else {
     return
   }
-  if !state_ref.val.config.enabled {
-    return
-  }
-  timeline_trace_append_pending_spans(state_ref.val)
-  state_ref.val.frame_count_since_flush = state_ref.val.frame_count_since_flush +
-    1
-  if state_ref.val.frame_count_since_flush >=
-    state_ref.val.config.flush_interval_frames {
-    timeline_trace_flush_to_disk(state_ref.val)
-    state_ref.val.frame_count_since_flush = 0
-  }
+  state_mut.modify(fn(state) {
+    if !state.config.enabled {
+      return
+    }
+    timeline_trace_append_pending_spans(state)
+    state.frame_count_since_flush = state.frame_count_since_flush + 1
+    if state.frame_count_since_flush >= state.config.flush_interval_frames {
+      timeline_trace_flush_to_disk(state)
+      state.frame_count_since_flush = 0
+    }
+  })
 }
 
 ///|

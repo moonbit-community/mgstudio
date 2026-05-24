@@ -153,8 +153,9 @@ fn setup(world : @ecs.World) -> Unit {
   player.play(animation_node).repeat() |> ignore
 
   let planet_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Sphere::new(0.5F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Sphere::new(0.5F))
+    }),
   )
   let planet_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
@@ -194,8 +195,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let satellite_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+    }),
   )
   let satellite_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.9F, 0.3F)),

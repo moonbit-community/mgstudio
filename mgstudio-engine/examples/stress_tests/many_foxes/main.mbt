@@ -209,31 +209,31 @@ fn stress_metrics_system(
   state : @app.ResMut[StressMetricsState],
   time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
-  let state_value = state.peek()
-  state.set_changed()
-  let delta = time.get().delta()
-  let delta_seconds = time.get().delta_seconds()
-  if delta_seconds < 0.0F {
-    return
-  }
-  state_value.frame_count = state_value.frame_count + 1
-  state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
-  state_value.timer = state_value.timer.tick(delta)
-  if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
-    return
-  }
-  let fps = Float::from_int(state_value.frame_count) /
-    state_value.elapsed_seconds
-  let frame_time_ms = state_value.elapsed_seconds *
-    1000.0F /
-    Float::from_int(state_value.frame_count)
-  let line = "many_foxes fps=\{fps.to_string()} frame_time=\{frame_time_ms.to_string()}ms samples=\{state_value.frame_count.to_string()}"
-  println(line)
-  @fs.write_string_to_file(STRESS_METRICS_OUTPUT_PATH, "\{line}\n") catch {
-    _ => ()
-  }
-  state_value.frame_count = 0
-  state_value.elapsed_seconds = 0.0F
+  state.modify(fn(state_value) {
+    let delta = time.get().delta()
+    let delta_seconds = time.get().delta_seconds()
+    if delta_seconds < 0.0F {
+      return
+    }
+    state_value.frame_count = state_value.frame_count + 1
+    state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
+    state_value.timer = state_value.timer.tick(delta)
+    if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
+      return
+    }
+    let fps = Float::from_int(state_value.frame_count) /
+      state_value.elapsed_seconds
+    let frame_time_ms = state_value.elapsed_seconds *
+      1000.0F /
+      Float::from_int(state_value.frame_count)
+    let line = "many_foxes fps=\{fps.to_string()} frame_time=\{frame_time_ms.to_string()}ms samples=\{state_value.frame_count.to_string()}"
+    println(line)
+    @fs.write_string_to_file(STRESS_METRICS_OUTPUT_PATH, "\{line}\n") catch {
+      _ => ()
+    }
+    state_value.frame_count = 0
+    state_value.elapsed_seconds = 0.0F
+  })
 }
 
 ///|
@@ -345,13 +345,15 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val
-          |> @pbr.add_mesh(
-            @math.Plane3d::new(
-              @math.Vec3::new(0.0F, 1.0F, 0.0F),
-              @math.Vec2::new(2500.0F, 2500.0F),
-            ),
-          ),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets
+            |> @pbr.add_mesh(
+              @math.Plane3d::new(
+                @math.Vec3::new(0.0F, 1.0F, 0.0F),
+                @math.Vec2::new(2500.0F, 2500.0F),
+              ),
+            )
+          }),
         ),
         @pbr.MeshMaterial3d::new(
           @pbr.standard_material_add(

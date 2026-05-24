@@ -50,17 +50,70 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-
-  let plane_mesh = mesh_assets
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-        @math.Vec2::new(26.0F, 10.0F),
-      ).build(),
+  let (
+    plane_mesh,
+    cuboid_mesh,
+    sphere_mesh,
+    capsule_mesh,
+    cylinder_mesh,
+    tetrahedron_mesh,
+    icosphere_mesh,
+  ) = meshes.modify(fn(mesh_assets) {
+    (
+      mesh_assets
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(26.0F, 10.0F),
+        ).build(),
+      ),
+      mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.2F, 1.2F, 1.2F)),
+      mesh_assets |> @pbr.add_mesh(@math.Sphere::new(0.7F)),
+      mesh_assets |> @pbr.add_mesh(@math.Capsule3d::new(0.45F, 0.65F)),
+      mesh_assets |> @pbr.add_mesh(@math.Cylinder::new(0.55F, 0.55F)),
+      mesh_assets
+      |> @pbr.add_mesh(
+        @math.Tetrahedron::new(
+          @math.Vec3::new(-0.7F, 0.0F, 0.45F),
+          @math.Vec3::new(0.7F, 0.0F, 0.45F),
+          @math.Vec3::new(0.0F, 0.0F, -0.85F),
+          @math.Vec3::new(0.0F, 1.2F, 0.0F),
+        ),
+      ),
+      mesh_assets
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.SphereMeshBuilder::new(
+          0.75F,
+          @mesh_primitives_dim3.SphereKind::ico(3),
+        ).build(),
+      ),
     )
-  let plane_material = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.09F, 0.10F, 0.13F))
+  })
+  let (
+    plane_material,
+    mat_red,
+    mat_orange,
+    mat_yellow,
+    mat_green,
+    mat_blue,
+    mat_purple,
+  ) = materials.modify(fn(material_assets) {
+    (
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.09F, 0.10F, 0.13F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.88F, 0.32F, 0.35F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.94F, 0.58F, 0.27F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.85F, 0.30F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.78F, 0.36F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.32F, 0.54F, 0.92F)),
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.73F, 0.44F, 0.86F)),
+    )
+  })
 
   ignore(
     commands.spawn(
@@ -71,43 +124,6 @@ fn setup(
       ),
     ),
   )
-
-  let cuboid_mesh = mesh_assets
-    |> @pbr.add_mesh(@math.Cuboid::new(1.2F, 1.2F, 1.2F))
-  let sphere_mesh = mesh_assets |> @pbr.add_mesh(@math.Sphere::new(0.7F))
-  let capsule_mesh = mesh_assets
-    |> @pbr.add_mesh(@math.Capsule3d::new(0.45F, 0.65F))
-  let cylinder_mesh = mesh_assets
-    |> @pbr.add_mesh(@math.Cylinder::new(0.55F, 0.55F))
-  let tetrahedron_mesh = mesh_assets
-    |> @pbr.add_mesh(
-      @math.Tetrahedron::new(
-        @math.Vec3::new(-0.7F, 0.0F, 0.45F),
-        @math.Vec3::new(0.7F, 0.0F, 0.45F),
-        @math.Vec3::new(0.0F, 0.0F, -0.85F),
-        @math.Vec3::new(0.0F, 1.2F, 0.0F),
-      ),
-    )
-  let icosphere_mesh = mesh_assets
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.SphereMeshBuilder::new(
-        0.75F,
-        @mesh_primitives_dim3.SphereKind::ico(3),
-      ).build(),
-    )
-
-  let mat_red = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.88F, 0.32F, 0.35F))
-  let mat_orange = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.94F, 0.58F, 0.27F))
-  let mat_yellow = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.85F, 0.30F))
-  let mat_green = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.78F, 0.36F))
-  let mat_blue = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.32F, 0.54F, 0.92F))
-  let mat_purple = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.73F, 0.44F, 0.86F))
 
   spawn_primitive(commands, cuboid_mesh, mat_red, -7.5F)
   spawn_primitive(commands, sphere_mesh, mat_orange, -4.5F)

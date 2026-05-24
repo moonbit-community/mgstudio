@@ -31,16 +31,17 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let cube_handle = mesh_assets
-    |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
-  let material = material_assets
+  let cube_handle = meshes.modify(fn(mesh_assets) {
+    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
+  })
+  let material = materials.modify(fn(material_assets) {
+    material_assets
     |> @pbr.add_material(
       @pbr.StandardMaterial::from_color(
         @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
       ),
     )
+  })
 
   let parent = commands.spawn(
     (

@@ -149,7 +149,7 @@ fn tint_from_readback(
     let updated = material.with_base_color(
       @sprite.Color::srgb(0.18F + value * 0.3F, 0.28F + value * 0.35F, 0.7F),
     )
-    materials.peek().set(handle, updated) |> ignore
+    materials.modify(fn(materials) { materials.set(handle, updated) |> ignore })
   })
 }
 

@@ -79,28 +79,29 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets
-          |> @pbr.add_mesh(
-            line_mesh_from_line_list(LineList::{
-              lines: [
-                (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
-                (
-                  @math.Vec3::new(1.0F, 1.0F, 0.0F),
-                  @math.Vec3::new(1.0F, 0.0F, 0.0F),
-                ),
-              ],
-            }),
-          ),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets
+            |> @pbr.add_mesh(
+              line_mesh_from_line_list(LineList::{
+                lines: [
+                  (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
+                  (
+                    @math.Vec3::new(1.0F, 1.0F, 0.0F),
+                    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                  ),
+                ],
+              }),
+            )
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets |> @pbr.add_material(line_material(color_green())),
+          materials.modify(fn(material_assets) {
+            material_assets |> @pbr.add_material(line_material(color_green()))
+          }),
         ),
         @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
       ),
@@ -111,19 +112,23 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets
-          |> @pbr.add_mesh(
-            line_mesh_from_line_strip(LineStrip::{
-              points: [
-                @math.Vec3::zero(),
-                @math.Vec3::new(1.0F, 1.0F, 0.0F),
-                @math.Vec3::new(1.0F, 0.0F, 0.0F),
-              ],
-            }),
-          ),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets
+            |> @pbr.add_mesh(
+              line_mesh_from_line_strip(LineStrip::{
+                points: [
+                  @math.Vec3::zero(),
+                  @math.Vec3::new(1.0F, 1.0F, 0.0F),
+                  @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                ],
+              }),
+            )
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets |> @pbr.add_material(line_material(color_blue())),
+          materials.modify(fn(material_assets) {
+            material_assets |> @pbr.add_material(line_material(color_blue()))
+          }),
         ),
         @transform.Transform::from_xyz(0.5F, 0.0F, 0.0F),
       ),

@@ -187,10 +187,6 @@ fn ldtk_apply_level_set_for_world(
   guard project_assets.get(project_handle.handle()) is Some(project) else {
     return false
   }
-  let runtime_ref = ldtk_runtime_state_ref_or_init(world)
-  runtime_ref.set_changed()
-  let spawned = runtime_ref.peek().world_spawned_levels(world_entity)
-  let mut spawned_any = false
   let desired_iid_lookup : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for level_iid in level_set.iids() {
     desired_iid_lookup.set(level_iid.get(), true)
@@ -208,43 +204,47 @@ fn ldtk_apply_level_set_for_world(
     }
   }
 
-  for level in spawnable_levels {
-    if spawned.contains(level.iid) {
-      continue
-    }
-    ldtk_send_level_event(world, SpawnTriggered(LevelIid::new(level.iid)))
-    let level_entity = ldtk_pre_spawn_level(
-      world, level, ldtk_settings, world_entity,
-    )
-    spawned.set(level.iid, level_entity)
-    spawned_any = true
-  }
-
-  let to_remove_iids : Array[String] = []
-  for entry in spawned.iter() {
-    let (iid, level_entity) = entry
-    if !desired_iid_lookup.contains(iid) {
-      if world.is_alive(level_entity) {
-        try! world.despawn(level_entity)
+  ldtk_runtime_state_ref_or_init(world).modify(fn(runtime) {
+    let spawned = runtime.world_spawned_levels(world_entity)
+    let mut spawned_any = false
+    for level in spawnable_levels {
+      if spawned.contains(level.iid) {
+        continue
       }
-      to_remove_iids.push(iid)
-      ldtk_send_level_event(world, Despawned(LevelIid::new(iid)))
+      ldtk_send_level_event(world, SpawnTriggered(LevelIid::new(level.iid)))
+      let level_entity = ldtk_pre_spawn_level(
+        world, level, ldtk_settings, world_entity,
+      )
+      spawned.set(level.iid, level_entity)
+      spawned_any = true
     }
-  }
-  for iid in to_remove_iids {
-    spawned.remove(iid)
-  }
-  spawned_any
+
+    let to_remove_iids : Array[String] = []
+    for entry in spawned.iter() {
+      let (iid, level_entity) = entry
+      if !desired_iid_lookup.contains(iid) {
+        if world.is_alive(level_entity) {
+          try! world.despawn(level_entity)
+        }
+        to_remove_iids.push(iid)
+        ldtk_send_level_event(world, Despawned(LevelIid::new(iid)))
+      }
+    }
+    for iid in to_remove_iids {
+      spawned.remove(iid)
+    }
+    spawned_any
+  })
 }
 
 ///|
 pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let ldtk_settings = ldtk_settings_or_default(world)
   let assets_ref = ldtk_project_assets_ref_or_abort(world)
-  assets_ref.set_changed()
+  let events = assets_ref.modify(fn(assets) { assets.drain_events() })
   let assets = assets_ref.peek()
   let changed_handles = @utils.IntBitSet::new()
-  for event in assets.drain_events() {
+  for event in events {
     match event {
       @asset.AssetEvent::Added(handle) => changed_handles.insert(handle.id())
       @asset.AssetEvent::Modified(handle) => changed_handles.insert(handle.id())
@@ -474,7 +474,7 @@ pub fn detect_level_spawned_events(
   spawned_level_iids : @app.ResMut[LdtkSpawnedLevelIids],
 ) -> Unit {
   let spawned_iids : Array[LevelIid] = []
-  let events = try! level_events.read()
+  let events = level_events.read()
   for event in events {
     match event {
       Spawned(iid) => spawned_iids.push(iid)

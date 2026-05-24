@@ -99,33 +99,35 @@ pub let ecs_builtin_component_definition_is_resource : Int = 6
 pub let ecs_builtin_component_definition_count : Int = 6
 
 ///|
-let next_component_id_ref : Ref[Int] = Ref(
-  ecs_builtin_component_definition_count + 1,
-)
+priv struct EcsIdAllocatorState {
+  mut next_component_id : Int
+  mut next_resource_id : Int
+  mut next_event_id : Int
+  mut next_world_id : Int
+}
 
 ///|
-let next_resource_id_ref : Ref[Int] = Ref(1)
-
-///|
-let next_event_id_ref : Ref[Int] = Ref(1)
-
-///|
-let next_world_id_ref : Ref[Int] = Ref(1)
+let ecs_id_allocator_state : EcsIdAllocatorState = {
+  next_component_id: ecs_builtin_component_definition_count + 1,
+  next_resource_id: 1,
+  next_event_id: 1,
+  next_world_id: 1,
+}
 
 ///|
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
-  let id = next_component_id_ref.val
-  next_component_id_ref.val = id + 1
-  ignore(component_metadata_ref(id, debug_name~))
-  let key = ComponentKey::{ id, debug_name, access: component_access_new() }
+  let id = ecs_id_allocator_state.next_component_id
+  ecs_id_allocator_state.next_component_id = id + 1
+  ignore(component_metadata_ensure(id, debug_name~))
+  let key = ComponentKey::{ id, debug_name, access: component_access_new(id) }
   key
 }
 
 ///|
 fn allocate_resource_id(debug_name? : String = "") -> Int {
   ignore(debug_name)
-  let id = next_resource_id_ref.val
-  next_resource_id_ref.val = id + 1
+  let id = ecs_id_allocator_state.next_resource_id
+  ecs_id_allocator_state.next_resource_id = id + 1
   id
 }
 
@@ -137,8 +139,8 @@ pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
 
 ///|
 pub fn[T] register_event(debug_name? : String = "") -> EventKey[T] {
-  let id = next_event_id_ref.val
-  next_event_id_ref.val = id + 1
+  let id = ecs_id_allocator_state.next_event_id
+  ecs_id_allocator_state.next_event_id = id + 1
   let key = EventKey::{ id, debug_name, access: event_access_ops_new() }
   register_event_ops(id, key)
   key
@@ -154,158 +156,6 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
-}
-
-///|
-struct ResourceSlot {
-  mut added_tick : @core.Tick?
-  mut changed_tick : @core.Tick?
-  mut changed_caller : String?
-}
-
-///|
-struct ComponentTickMetadata {
-  added_tick : @core.Tick?
-  changed_tick : @core.Tick?
-  changed_caller : String?
-}
-
-///|
-fn component_tick_metadata_empty() -> ComponentTickMetadata {
-  { added_tick: None, changed_tick: None, changed_caller: None }
-}
-
-///|
-fn component_tick_metadata_with_added(
-  previous : ComponentTickMetadata?,
-  tick : @core.Tick,
-  caller : String?,
-) -> ComponentTickMetadata {
-  let previous = previous.unwrap_or(component_tick_metadata_empty())
-  {
-    added_tick: Some(tick),
-    changed_tick: match previous.changed_tick {
-      Some(changed_tick) => Some(changed_tick)
-      None => Some(tick)
-    },
-    changed_caller: caller,
-  }
-}
-
-///|
-fn component_tick_metadata_with_changed(
-  previous : ComponentTickMetadata?,
-  tick : @core.Tick,
-  caller : String?,
-) -> ComponentTickMetadata {
-  let previous = previous.unwrap_or(component_tick_metadata_empty())
-  {
-    added_tick: previous.added_tick,
-    changed_tick: Some(tick),
-    changed_caller: caller,
-  }
-}
-
-///|
-fn component_tick_metadata_check_ticks(
-  metadata : ComponentTickMetadata,
-  present_tick : @core.Tick,
-) -> ComponentTickMetadata {
-  {
-    added_tick: match metadata.added_tick {
-      Some(tick) => Some(@core.tick_check(tick, present_tick))
-      None => None
-    },
-    changed_tick: match metadata.changed_tick {
-      Some(tick) => Some(@core.tick_check(tick, present_tick))
-      None => None
-    },
-    changed_caller: metadata.changed_caller,
-  }
-}
-
-///|
-priv struct PendingComponentWriteEntry {
-  local_component_id : Int
-  mut metadata : ComponentTickMetadata
-}
-
-///|
-priv struct PendingComponentWriteSet {
-  entries : Array[PendingComponentWriteEntry]
-  indices_by_local_component_id : Map[Int, Int]
-  presence : @utils.IntBitSet
-}
-
-///|
-fn pending_component_write_set_new() -> PendingComponentWriteSet {
-  {
-    entries: [],
-    indices_by_local_component_id: {},
-    presence: @utils.IntBitSet::new(),
-  }
-}
-
-///|
-fn PendingComponentWriteSet::index_of(
-  self : PendingComponentWriteSet,
-  local_component_id : Int,
-) -> Int? {
-  self.indices_by_local_component_id.get(local_component_id)
-}
-
-///|
-fn PendingComponentWriteSet::contains(
-  self : PendingComponentWriteSet,
-  local_component_id : Int,
-) -> Bool {
-  self.presence.contains(local_component_id)
-}
-
-///|
-fn PendingComponentWriteSet::metadata(
-  self : PendingComponentWriteSet,
-  local_component_id : Int,
-) -> ComponentTickMetadata? {
-  match self.index_of(local_component_id) {
-    Some(index) => Some(self.entries[index].metadata)
-    None => None
-  }
-}
-
-///|
-fn PendingComponentWriteSet::insert(
-  self : PendingComponentWriteSet,
-  local_component_id : Int,
-) -> Unit {
-  if self.contains(local_component_id) {
-    return
-  }
-  let index = self.entries.length()
-  self.entries.push({
-    local_component_id,
-    metadata: component_tick_metadata_empty(),
-  })
-  self.indices_by_local_component_id.set(local_component_id, index)
-  self.presence.insert(local_component_id)
-}
-
-///|
-fn PendingComponentWriteSet::set_metadata(
-  self : PendingComponentWriteSet,
-  local_component_id : Int,
-  metadata : ComponentTickMetadata,
-) -> Unit {
-  match self.index_of(local_component_id) {
-    Some(index) => self.entries[index].metadata = metadata
-    None => ()
-  }
-}
-
-///|
-struct PendingComponentWriteContext {
-  entity_id : Int
-  writes : PendingComponentWriteSet
 }
 
 ///|
@@ -339,19 +189,19 @@ pub struct World {
     ComponentRelationshipSourceMetadata,
   ]
   priv observer_parent_lookup_component_ids : Array[Int]
-  priv observer_registry : Ref[WorldObserverRegistry]
+  priv observer_registry : WorldObserverRegistry
   priv mut current_component_observer_context : ComponentObserverContext?
   priv mut current_trigger_observer_context : TriggerObserverContext?
   priv entities : @core.Entities
   priv mut change_tick : @core.Tick
   priv mut last_change_tick_check : @core.Tick
   priv mut system_tick_context : @core.SystemTickContext
-  priv mut pending_component_write_context : PendingComponentWriteContext?
-  priv mut active_query_iteration_count : Int
-  priv tables : Map[Int, Ref[RawTable]]
+  priv component_write_transactions : ComponentWriteTransactionState
+  priv query_iterations : WorldQueryIterationState
+  priv tables : Map[Int, RawTable]
   priv sparse_component_metadata : Map[
     Int,
-    Ref[@core.ComponentStore[ComponentTickMetadata]],
+    @core.ComponentStore[ComponentTickMetadata],
   ]
   priv mut next_archetype_id : Int
   priv mut next_table_id : Int
@@ -360,7 +210,7 @@ pub struct World {
   priv bundle_ids_by_signature : ArchetypeSignatureIndex
   priv bundle_infos : Map[Int, BundleInfo]
   priv component_column_table_plan_ids_by_signature : ArchetypeSignatureIndex
-  priv component_column_table_plans : Map[Int, Ref[ComponentColumnTablePlan]]
+  priv component_column_table_plans : Map[Int, ComponentColumnTablePlan]
   priv archetype_ids_by_signature : ArchetypeSignatureIndex
   priv table_ids_by_signature : ArchetypeSignatureIndex
   priv table_component_local_ids : Map[Int, Array[Int]]
@@ -379,28 +229,22 @@ pub struct World {
   priv mut non_empty_archetype_generation : Int
   priv component_membership_generations : Map[Int, Int]
   priv component_membership_counts : Map[Int, Int]
-  priv archetype_entities : Map[Int, Array[@core.Entity]]
-  priv entity_archetype_ids : Array[Int]
-  priv entity_table_ids : Array[Int]
-  priv entity_table_rows : Array[Int]
-  priv entity_archetype_rows : Array[Int]
-  priv entity_component_local_ids : Array[Array[Int]]
-  priv entity_component_local_id_presence : Array[@utils.IntBitSet]
-  priv required_components : Map[Int, Ref[RequiredComponentsState]]
+  priv entity_storage : WorldEntityStorageState
+  priv required_components : Map[Int, RequiredComponentsState]
   priv used_components : @utils.IntBitSet
-  priv added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  priv changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  priv removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  priv added_components : Map[Int, @core.Messages[@core.Entity]]
+  priv changed_components : Map[Int, @core.Messages[@core.Entity]]
+  priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
-  priv resources : Map[Int, ResourceSlot]
+  priv resource_tick_registry : WorldResourceTickRegistry
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
 }
 
 ///|
 pub fn World::new() -> World {
-  let world_id = next_world_id_ref.val
-  next_world_id_ref.val = world_id + 1
+  let world_id = ecs_id_allocator_state.next_world_id
+  ecs_id_allocator_state.next_world_id = world_id + 1
   let world = World::{
     world_id,
     structural_generation: 0,
@@ -410,15 +254,15 @@ pub fn World::new() -> World {
     components: world_components_new(),
     component_relationship_sources: {},
     observer_parent_lookup_component_ids: [],
-    observer_registry: Ref(world_observer_registry_new()),
+    observer_registry: world_observer_registry_new(),
     current_component_observer_context: None,
     current_trigger_observer_context: None,
     entities: @core.Entities::new(),
     change_tick: 0,
     last_change_tick_check: 0,
     system_tick_context: @core.SystemTickContext::new(),
-    pending_component_write_context: None,
-    active_query_iteration_count: 0,
+    component_write_transactions: component_write_transaction_state_new(),
+    query_iterations: world_query_iteration_state_new(),
     tables: {},
     sparse_component_metadata: {},
     next_archetype_id: 1,
@@ -447,20 +291,14 @@ pub fn World::new() -> World {
     non_empty_archetype_generation: 0,
     component_membership_generations: {},
     component_membership_counts: {},
-    archetype_entities: { 0: [] },
-    entity_archetype_ids: [],
-    entity_table_ids: [],
-    entity_table_rows: [],
-    entity_archetype_rows: [],
-    entity_component_local_ids: [],
-    entity_component_local_id_presence: [],
+    entity_storage: world_entity_storage_state_new(),
     required_components: {},
     used_components: @utils.IntBitSet::new(),
     added_components: {},
     changed_components: {},
     removed_components: {},
     component_hooks_registry: {},
-    resources: {},
+    resource_tick_registry: world_resource_tick_registry_new(),
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
@@ -520,42 +358,10 @@ pub fn World::despawn(
   self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  let removed_components : Array[Int] = []
-  let component_local_ids = self.entity_local_components(entity).copy()
-  for local_id in component_local_ids {
-    guard self.definition_component_id(local_id) is Some(key_id) else {
-      continue
-    }
-    if self.component_present_by_local_id(entity, local_id) {
-      removed_components.push(key_id)
-    }
-  }
-  for key_id in removed_components {
-    self.run_component_despawn_hooks(entity, key_id, caller~)
-    self.run_despawn_observers(entity, key_id)
-  }
-  for key_id in removed_components {
-    self.run_component_replace_hooks(entity, key_id, caller~)
-    self.run_replace_observers(entity, key_id)
-    self.run_component_remove_hooks(entity, key_id, caller~)
-  }
-  self.entities.despawn(entity) catch {
-    err => raise EntityStateError(err)
-  }
-  self.clear_entity_archetype_tracking(entity)
-  self.mark_entity_lifecycle_changed()
-  self.mark_structure_changed()
-  for key_id in removed_components {
-    if self.local_component_id(key_id) is Some(local_id) {
-      ignore(self.remove_component_write_by_local_id(entity, local_id))
-    }
-    self.run_remove_observers(entity, key_id)
-    self.ensure_removed_component_messages(key_id).val.send(
-      component_write_tick(self),
-      entity,
-    )
-    self.clear_component_tick_records(entity, key_id)
-  }
+  let transaction = self.component_remove_transaction_for_despawn(
+    entity, caller,
+  )
+  try! self.commit_component_despawn_transaction(transaction)
   self.end_deferred_hook_command_scope(outermost)
 }
 
@@ -624,27 +430,13 @@ pub fn[T] World::remove_by_key(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  guard self.component_present(key.id(), entity) else {
+  guard self.component_remove_transaction_for_key(entity, key.id(), caller)
+    is Some(transaction) else {
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
   self.ensure_query_iteration_can_change_structure("remove component")
-  let component_local_id = self.ensure_component_registered(key.id())
-  self.run_component_replace_hooks(entity, key.id(), caller~)
-  self.run_replace_observers(entity, key.id())
-  self.run_component_remove_hooks(entity, key.id(), caller~)
-  ignore(self.remove_component_write_by_local_id(entity, component_local_id))
-  self.entity_remove_component_local_id(entity, component_local_id)
-  self.refresh_entity_archetype_after_component_remove(
-    entity, component_local_id,
-  )
-  self.mark_structure_changed()
-  self.run_remove_observers(entity, key.id())
-  self.ensure_removed_component_messages(key.id()).val.send(
-    component_write_tick(self),
-    entity,
-  )
-  self.clear_component_tick_records(entity, key.id())
+  self.commit_component_remove_transaction(transaction)
   self.end_deferred_hook_command_scope(outermost)
   true
 }
@@ -714,43 +506,6 @@ fn World::mark_structure_changed(self : World) -> Unit {
 }
 
 ///|
-fn World::begin_query_iteration(self : World) -> Unit {
-  self.active_query_iteration_count = self.active_query_iteration_count + 1
-}
-
-///|
-fn World::end_query_iteration(self : World) -> Unit {
-  self.active_query_iteration_count = self.active_query_iteration_count - 1
-}
-
-///|
-fn World::has_active_query_iteration(self : World) -> Bool {
-  self.active_query_iteration_count > 0
-}
-
-///|
-fn World::ensure_query_iteration_can_change_structure(
-  self : World,
-  operation : String,
-) -> Unit raise EcsError {
-  if self.has_active_query_iteration() {
-    raise StructuralChangeDuringQueryIteration(operation)
-  }
-}
-
-///|
-fn World::abort_if_query_iteration_would_be_invalidated(
-  self : World,
-  operation : String,
-) -> Unit {
-  if self.has_active_query_iteration() {
-    abort(
-      "Structural ECS change during Query::view is not allowed: \{operation}",
-    )
-  }
-}
-
-///|
 fn World::entity_lifecycle_generation(self : World) -> Int {
   self.entity_lifecycle_generation
 }
@@ -764,14 +519,14 @@ fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
 fn World::ensure_removed_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]] {
+) -> @core.Messages[@core.Entity] {
   let local_id = self.ensure_component_registered(key_id)
   match self.removed_components.get(local_id) {
-    Some(messages_ref) => messages_ref
+    Some(messages) => messages
     None => {
-      let messages_ref = Ref(@core.Messages::new())
-      self.removed_components.set(local_id, messages_ref)
-      messages_ref
+      let messages = @core.Messages::new()
+      self.removed_components.set(local_id, messages)
+      messages
     }
   }
 }
@@ -780,14 +535,14 @@ fn World::ensure_removed_component_messages(
 fn World::ensure_added_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]] {
+) -> @core.Messages[@core.Entity] {
   let local_id = self.ensure_component_registered(key_id)
   match self.added_components.get(local_id) {
-    Some(messages_ref) => messages_ref
+    Some(messages) => messages
     None => {
-      let messages_ref = Ref(@core.Messages::new())
-      self.added_components.set(local_id, messages_ref)
-      messages_ref
+      let messages = @core.Messages::new()
+      self.added_components.set(local_id, messages)
+      messages
     }
   }
 }
@@ -796,7 +551,7 @@ fn World::ensure_added_component_messages(
 fn World::ensure_changed_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]] {
+) -> @core.Messages[@core.Entity] {
   let local_id = self.ensure_component_registered(key_id)
   self.ensure_changed_component_messages_by_local_id(local_id)
 }
@@ -805,13 +560,13 @@ fn World::ensure_changed_component_messages(
 fn World::ensure_changed_component_messages_by_local_id(
   self : World,
   local_id : Int,
-) -> Ref[@core.Messages[@core.Entity]] {
+) -> @core.Messages[@core.Entity] {
   match self.changed_components.get(local_id) {
-    Some(messages_ref) => messages_ref
+    Some(messages) => messages
     None => {
-      let messages_ref = Ref(@core.Messages::new())
-      self.changed_components.set(local_id, messages_ref)
-      messages_ref
+      let messages = @core.Messages::new()
+      self.changed_components.set(local_id, messages)
+      messages
     }
   }
 }
@@ -820,14 +575,14 @@ fn World::ensure_changed_component_messages_by_local_id(
 fn World::ensure_sparse_component_metadata_store_for_local_id(
   self : World,
   local_id : Int,
-) -> Ref[@core.ComponentStore[ComponentTickMetadata]] {
+) -> @core.ComponentStore[ComponentTickMetadata] {
   guard self.local_component_storage_type(local_id) == Some(SparseSet) else {
     abort(
       "Sparse component metadata store lookup is invalid for local component id \{local_id.to_string()}",
     )
   }
   self.sparse_component_metadata.get_or_init(local_id, fn() {
-    Ref(@core.ComponentStore::new())
+    @core.ComponentStore::new()
   })
 }
 
@@ -841,81 +596,8 @@ fn World::sparse_component_metadata_for_entity(
     return None
   }
   match self.sparse_component_metadata.get(local_component_id) {
-    Some(store_ref) => store_ref.val.get(entity)
+    Some(store) => store.get(entity)
     None => None
-  }
-}
-
-///|
-fn World::pending_component_tick_metadata(
-  self : World,
-  entity_id : Int,
-  local_component_id : Int,
-) -> ComponentTickMetadata? {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity_id {
-        context.writes.metadata(local_component_id)
-      } else {
-        None
-      }
-    None => None
-  }
-}
-
-///|
-fn World::record_pending_component_added_metadata(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-  tick : @core.Tick,
-  caller : String?,
-) -> Bool {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.writes.contains(local_component_id) {
-        context.writes.set_metadata(
-          local_component_id,
-          component_tick_metadata_with_added(
-            context.writes.metadata(local_component_id),
-            tick,
-            caller,
-          ),
-        )
-        true
-      } else {
-        false
-      }
-    None => false
-  }
-}
-
-///|
-fn World::record_pending_component_changed_metadata(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-  tick : @core.Tick,
-  caller : String?,
-) -> Bool {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.writes.contains(local_component_id) {
-        context.writes.set_metadata(
-          local_component_id,
-          component_tick_metadata_with_changed(
-            context.writes.metadata(local_component_id),
-            tick,
-            caller,
-          ),
-        )
-        true
-      } else {
-        false
-      }
-    None => false
   }
 }
 
@@ -941,7 +623,7 @@ fn World::record_component_added_with_caller(
   }
   if !recorded {
     ignore(
-      self.record_pending_component_added_metadata(
+      self.record_component_write_transaction_added_metadata(
         entity, local_id, tick, caller,
       ),
     )
@@ -960,9 +642,9 @@ fn World::record_component_changed_with_caller(
   self.record_component_changed_by_local_id_with_tick(
     entity, local_id, tick, caller,
   )
-  self.ensure_changed_component_messages_by_local_id(local_id).val.send(
-    tick, entity,
-  )
+  self
+  .ensure_changed_component_messages_by_local_id(local_id)
+  .send(tick, entity)
 }
 
 ///|
@@ -986,7 +668,7 @@ fn World::record_component_changed_by_local_id_with_tick(
   }
   if !recorded {
     ignore(
-      self.record_pending_component_changed_metadata(
+      self.record_component_write_transaction_changed_metadata(
         entity, local_id, tick, caller,
       ),
     )
@@ -1003,68 +685,7 @@ fn World::clear_component_tick_records(
   if self.local_component_storage_type(local_id) == Some(SparseSet) {
     self.clear_sparse_component_metadata_by_local_id(entity, local_id)
   }
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id {
-        context.writes.set_metadata(local_id, component_tick_metadata_empty())
-      }
-    None => ()
-  }
-}
-
-///|
-fn World::record_resource_added(self : World, key_id : Int) -> Unit {
-  self.record_resource_added_with_caller(key_id, None)
-}
-
-///|
-fn World::record_resource_changed(self : World, key_id : Int) -> Unit {
-  self.record_resource_changed_with_caller(key_id, None)
-}
-
-///|
-fn World::record_resource_added_with_caller(
-  self : World,
-  key_id : Int,
-  caller : String?,
-) -> Unit {
-  guard self.resources.get(key_id) is Some(slot) else { return }
-  let tick = resource_write_tick(self)
-  slot.added_tick = Some(tick)
-  if slot.changed_tick is None {
-    slot.changed_tick = Some(tick)
-  }
-  slot.changed_caller = caller
-}
-
-///|
-fn World::record_resource_changed_with_caller(
-  self : World,
-  key_id : Int,
-  caller : String?,
-) -> Unit {
-  guard self.resources.get(key_id) is Some(slot) else { return }
-  slot.changed_tick = Some(resource_write_tick(self))
-  slot.changed_caller = caller
-}
-
-///|
-fn World::resource_added_tick_by_id(self : World, key_id : Int) -> @core.Tick? {
-  match self.resources.get(key_id) {
-    Some(slot) => slot.added_tick
-    None => None
-  }
-}
-
-///|
-fn World::resource_changed_tick_by_id(
-  self : World,
-  key_id : Int,
-) -> @core.Tick? {
-  match self.resources.get(key_id) {
-    Some(slot) => slot.changed_tick
-    None => None
-  }
+  self.clear_component_write_transaction_metadata(entity, local_id)
 }
 
 ///|
@@ -1083,16 +704,8 @@ fn World::changed_component_caller_by_local_id(
       return Some(caller)
     }
   }
-  match self.pending_component_tick_metadata(entity_id, local_id) {
+  match self.active_component_write_metadata(entity_id, local_id) {
     Some(metadata) => metadata.changed_caller
-    None => None
-  }
-}
-
-///|
-fn World::resource_changed_caller(self : World, key_id : Int) -> String? {
-  match self.resources.get(key_id) {
-    Some(slot) => slot.changed_caller
     None => None
   }
 }
@@ -1101,7 +714,7 @@ fn World::resource_changed_caller(self : World, key_id : Int) -> String? {
 fn World::added_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]]? {
+) -> @core.Messages[@core.Entity]? {
   match self.local_component_id(key_id) {
     Some(local_id) => self.added_components.get(local_id)
     None => None
@@ -1134,7 +747,7 @@ fn World::added_component_tick_by_local_id(
       return Some(tick)
     }
   }
-  match self.pending_component_tick_metadata(entity_id, local_id) {
+  match self.active_component_write_metadata(entity_id, local_id) {
     Some(metadata) => metadata.added_tick
     None => None
   }
@@ -1144,7 +757,7 @@ fn World::added_component_tick_by_local_id(
 fn World::changed_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]]? {
+) -> @core.Messages[@core.Entity]? {
   match self.local_component_id(key_id) {
     Some(local_id) => self.changed_components.get(local_id)
     None => None
@@ -1177,7 +790,7 @@ fn World::changed_component_tick_by_local_id(
       return Some(tick)
     }
   }
-  match self.pending_component_tick_metadata(entity_id, local_id) {
+  match self.active_component_write_metadata(entity_id, local_id) {
     Some(metadata) => metadata.changed_tick
     None => None
   }
@@ -1187,7 +800,7 @@ fn World::changed_component_tick_by_local_id(
 fn World::removed_component_messages(
   self : World,
   key_id : Int,
-) -> Ref[@core.Messages[@core.Entity]]? {
+) -> @core.Messages[@core.Entity]? {
   match self.local_component_id(key_id) {
     Some(local_id) => self.removed_components.get(local_id)
     None => None
@@ -1236,22 +849,12 @@ pub fn World::set_tick_context(
 ///|
 pub fn World::check_change_ticks(self : World) -> Unit {
   let present_tick = self.read_change_tick()
-  for entry in self.resources.iter() {
-    let slot = entry.1
-    slot.added_tick = match slot.added_tick {
-      Some(tick) => Some(@core.tick_check(tick, present_tick))
-      None => None
-    }
-    slot.changed_tick = match slot.changed_tick {
-      Some(tick) => Some(@core.tick_check(tick, present_tick))
-      None => None
-    }
-  }
+  self.resource_tick_registry.check_change_ticks(present_tick)
   for entry in self.tables.iter() {
-    entry.1.val.check_change_ticks(present_tick)
+    entry.1.check_change_ticks(present_tick)
   }
   for entry in self.sparse_component_metadata.iter() {
-    let metadata_store = entry.1.val
+    let metadata_store = entry.1
     let len = metadata_store.len()
     for index in 0..<len {
       let entity = metadata_store.entity_at(index)

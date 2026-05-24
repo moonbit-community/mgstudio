@@ -334,9 +334,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(geometry),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
+    }),
   )
 }
 
@@ -519,12 +519,14 @@ fn setup(world : @ecs.World) -> Unit {
   register_material(white_material, false, true)
 
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-        @math.Vec2::new(2.0F, 2.0F),
-      ).build(),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(2.0F, 2.0F),
+        ).build(),
+      )
+    }),
   )
   for x in -3..<4 {
     for z in -3..<4 {

@@ -94,7 +94,7 @@ test "picking: pointer events use HoverMap as hit source" {
   picking_generate_events_system(world)
   let events_res = @app.get_picking_events_resource(world)
   let events = events_res.get().unwrap_or(@app.PickingEvents::PickingEvents())
-  let out = @app.PickingEvents::drain_all(events)
+  let out = @app.PickingEvents::drain(events)
   debug_inspect(out.length(), content="2")
   debug_inspect(out[1].target.unwrap().id == target.id, content="true")
 }
@@ -122,7 +122,7 @@ test "picking: pointer events can be generated from PointerInput messages" {
   picking_generate_events_system(world)
   let events_res = @app.get_picking_events_resource(world)
   let events = events_res.get().unwrap_or(@app.PickingEvents::PickingEvents())
-  let out = @app.PickingEvents::drain_all(events)
+  let out = @app.PickingEvents::drain(events)
   debug_inspect(out.length(), content="2")
   debug_inspect(
     out[0].kind == @pointer_events.PointerEventKind::Move,

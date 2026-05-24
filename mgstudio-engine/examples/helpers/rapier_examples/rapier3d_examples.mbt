@@ -105,9 +105,9 @@ pub fn rapier3d_spawn_body_mesh(
 ) -> @core.Entity {
   let entity = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(geometry),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets.add(@mesh.Mesh::from_3d_geometry(geometry))
+      }),
     ),
     rapier3d_unlit_material(color),
     transform,

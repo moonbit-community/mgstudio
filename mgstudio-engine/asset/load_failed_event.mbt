@@ -37,9 +37,10 @@ let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent]
 )
 
 ///|
-let asset_load_failed_dispatch_registry : Ref[
-  @hashmap.HashMap[String, AssetLoadFailedDispatch],
-] = Ref(@hashmap.HashMap([]))
+let asset_load_failed_dispatch_registry : @hashmap.HashMap[
+  String,
+  AssetLoadFailedDispatch,
+] = @hashmap.HashMap([])
 
 ///|
 fn[T : Asset] registered_asset_load_failed_message_key() -> @ecs.MessageKey[
@@ -53,7 +54,7 @@ fn[T : Asset] register_asset_load_failed_dispatch_for_type_name(
   type_name : String,
   _probe : Assets[T],
 ) -> Unit {
-  if asset_load_failed_dispatch_registry.val.contains(type_name) {
+  if asset_load_failed_dispatch_registry.contains(type_name) {
     return
   }
   let message_key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = registered_asset_load_failed_message_key()
@@ -69,7 +70,7 @@ fn[T : Asset] register_asset_load_failed_dispatch_for_type_name(
       }),
     )
   }
-  asset_load_failed_dispatch_registry.val.set(type_name, dispatch)
+  asset_load_failed_dispatch_registry.set(type_name, dispatch)
 }
 
 ///|
@@ -92,7 +93,7 @@ pub fn asset_dispatch_load_failed_event(
     world.init_message(untyped_key)
   }
   ignore(world.send_message(untyped_key, failure))
-  match asset_load_failed_dispatch_registry.val.get(failure.type_name) {
+  match asset_load_failed_dispatch_registry.get(failure.type_name) {
     Some(dispatch) => dispatch(world, failure)
     None => ()
   }

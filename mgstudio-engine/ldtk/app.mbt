@@ -109,11 +109,9 @@ pub fn register_ldtk_entity_for_layer_optional(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let entity_map = ldtk_ensure_entity_map(world)
-  entity_map.set_changed()
-  entity_map.peek().entries.set(
-    (layer_identifier, entity_identifier),
-    dispatcher,
-  )
+  entity_map.modify(fn(map) {
+    map.entries.set((layer_identifier, entity_identifier), dispatcher)
+  })
   app
 }
 
@@ -177,8 +175,9 @@ pub fn register_ldtk_int_cell_for_layer_optional(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let int_cell_map = ldtk_ensure_int_cell_map(world)
-  int_cell_map.set_changed()
-  int_cell_map.peek().entries.set((layer_identifier, value), dispatcher)
+  int_cell_map.modify(fn(map) {
+    map.entries.set((layer_identifier, value), dispatcher)
+  })
   app
 }
 

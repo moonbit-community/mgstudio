@@ -171,15 +171,17 @@ fn test_color_material_handle(
   color : Color,
 ) -> @asset.Handle[ColorMaterialAsset] {
   let materials = color_material_assets_mut_or_abort()
-  materials.set_changed()
-  materials.peek().add(ColorMaterialAsset::from_color(color))
+  materials.modify(fn(store) {
+    store.add(ColorMaterialAsset::from_color(color))
+  })
 }
 
 ///|
 fn test_image_material_handle(id : Int) -> @asset.Handle[ColorMaterialAsset] {
   let materials = color_material_assets_mut_or_abort()
-  materials.set_changed()
-  materials.peek().add(ColorMaterialAsset::from_image(@asset.Handle::new(id)))
+  materials.modify(fn(store) {
+    store.add(ColorMaterialAsset::from_image(@asset.Handle::new(id)))
+  })
 }
 
 ///|
@@ -1008,8 +1010,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     guard world.get_resource_mut(key) is Some(assets_ref) else {
       abort("expected DummyMaterialAsset asset store")
     }
-    assets_ref.set_changed()
-    assets_ref.peek().insert(handle, expected) |> ignore
+    assets_ref.modify(fn(assets) { assets.insert(handle, expected) |> ignore })
     let entity = world.spawn()
     entity_ref.val = Some(entity)
     let material_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()

@@ -72,13 +72,13 @@ test "diagnostics: system param buffers and keeps last value per path" {
 }
 
 ///|
-test "diagnostics store iter_mut exposes live diagnostic refs" {
+test "diagnostics store iter_mut exposes live diagnostics" {
   let store = DiagnosticsStore::DiagnosticsStore()
   let path = DiagnosticPath::new("test")
   store.add(Diagnostic::new(path))
   let diagnostics = store.iter_mut()
   debug_inspect(diagnostics.length(), content="1")
-  diagnostics[0].val.set_enabled(false)
+  diagnostics[0].set_enabled(false)
   debug_inspect(store.get(path).unwrap().is_enabled(), content="false")
 }
 

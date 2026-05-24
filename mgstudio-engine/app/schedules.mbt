@@ -208,6 +208,12 @@ priv enum ScheduleExecutionNode {
 }
 
 ///|
+priv struct ScheduleBatchBuildState {
+  mut current_batch : Array[ScheduleExecutionNode]
+  mut current_batch_layer : Int?
+}
+
+///|
 priv struct ScheduleBuildPassGraph[W] {
   systems : Array[SystemConfig[W]]
   system_accesses : Array[SystemAccess]
@@ -227,7 +233,7 @@ priv struct SystemSchedule[W] {
   system_dependencies : Array[Int]
   system_dependents : Array[Array[Int]]
   set_ids : Array[SystemSet]
-  set_run_conditions : Array[Ref[ScheduleSetRunConditions[W]]]
+  set_run_conditions : Array[ScheduleSetRunConditions[W]]
   sets_with_conditions_of_systems : Array[Array[Int]]
   systems_in_sets_with_conditions : Array[Array[Int]]
   execution_order : Array[ScheduleExecutionNode]
@@ -276,20 +282,18 @@ priv struct ScheduleExecutionPlan[W] {
   report_invalid_system_errors : Bool
   build_error : String?
   report_build_error : Bool
-  executor_state : Ref[SingleThreadedExecutorState]
+  executor_state : SingleThreadedExecutorState
 }
 
 ///|
 priv struct ScheduleSetRunConditions[W] {
-  run_ifs : Array[StatefulRunConditionFn[W]]
-  run_if_states : Array[Ref[Json]]
+  run_ifs : Array[RunConditionConfig[W]]
   run_if_last_run_ticks : Array[@core.Tick]
 }
 
 ///|
 priv struct ScheduleSystemRunConditions[W] {
-  run_ifs : Array[StatefulRunConditionFn[W]]
-  run_if_states : Array[Ref[Json]]
+  run_ifs : Array[RunConditionConfig[W]]
   run_if_last_run_ticks : Array[@core.Tick]
 }
 
@@ -299,10 +303,7 @@ priv struct ScheduleGraph[W] {
   set_edges : Array[(SystemSet, SystemSet)]
   set_edges_ignore_deferred : Array[(SystemSet, SystemSet)]
   set_hierarchy_edges : Array[(SystemSet, SystemSet)]
-  set_run_conditions : @hashmap.HashMap[
-    SystemSet,
-    Ref[ScheduleSetRunConditions[W]],
-  ]
+  set_run_conditions : @hashmap.HashMap[SystemSet, ScheduleSetRunConditions[W]]
   mut changed : Bool
   mut generation : Int
   mut settings : ScheduleBuildSettings
@@ -345,7 +346,7 @@ priv struct ScheduleEntry[W] {
   mut executor_initialized : Bool
   mut last_reported_build_error_generation : Int?
   mut last_reported_invalid_access_key : (Int, Int, Int, Int, Bool)?
-  executor_state : Ref[SingleThreadedExecutorState]
+  executor_state : SingleThreadedExecutorState
 }
 
 ///|
@@ -361,13 +362,13 @@ fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
     executor_initialized: false,
     last_reported_build_error_generation: None,
     last_reported_invalid_access_key: None,
-    executor_state: Ref(single_threaded_executor_state_new(0, 0, true)),
+    executor_state: single_threaded_executor_state_new(0, 0, true),
   }
 }
 
 ///|
 struct ScheduleRegistry[W] {
-  entries : @hashmap.HashMap[String, Ref[ScheduleEntry[W]]]
+  entries : @hashmap.HashMap[String, ScheduleEntry[W]]
 }
 
 ///|
@@ -420,17 +421,17 @@ fn default_schedule_labels() -> Array[ScheduleStage] {
 }
 
 ///|
-fn[W] schedule_entry_ref(
+fn[W] schedule_entry_for_stage(
   schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
-) -> Ref[ScheduleEntry[W]] {
+) -> ScheduleEntry[W] {
   let key = schedule_stage_storage_key(stage)
   match schedule_registry.entries.get(key) {
-    Some(entry_ref) => entry_ref
+    Some(entry) => entry
     None => {
-      let entry_ref = Ref(ScheduleEntry::new())
-      schedule_registry.entries.set(key, entry_ref)
-      entry_ref
+      let entry = ScheduleEntry::new()
+      schedule_registry.entries.set(key, entry)
+      entry
     }
   }
 }
@@ -439,15 +440,15 @@ fn[W] schedule_entry_ref(
 fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
   let schedule = ScheduleRegistry::{ entries: @hashmap.HashMap([]) }
   for stage in default_schedule_labels() {
-    ignore(schedule_entry_ref(schedule, stage))
+    ignore(schedule_entry_for_stage(schedule, stage))
   }
-  schedule_entry_ref(schedule, RunFixedMainLoop).val.graph.set_edges.push(
+  schedule_entry_for_stage(schedule, RunFixedMainLoop).graph.set_edges.push(
     (
       run_fixed_main_loop_system_set_name(BeforeFixedMainLoop),
       run_fixed_main_loop_system_set_name(FixedMainLoop),
     ),
   )
-  schedule_entry_ref(schedule, RunFixedMainLoop).val.graph.set_edges.push(
+  schedule_entry_for_stage(schedule, RunFixedMainLoop).graph.set_edges.push(
     (
       run_fixed_main_loop_system_set_name(FixedMainLoop),
       run_fixed_main_loop_system_set_name(AfterFixedMainLoop),
@@ -938,16 +939,16 @@ fn[W] schedule_build_graph_plan(
     push_unique(seen, set_order, edge.0)
     push_unique(seen, set_order, edge.1)
   }
-  let hierarchy_changed = Ref(true)
-  while hierarchy_changed.val {
-    hierarchy_changed.val = false
+  let mut hierarchy_changed = true
+  while hierarchy_changed {
+    hierarchy_changed = false
     for edge in schedule_entry.graph.set_hierarchy_edges {
       let (child_set, parent_set) = edge
       match membership_groups.get(child_set) {
         Some(child_groups) =>
           for group in child_groups {
             if add_membership_group(membership_groups, parent_set, group) {
-              hierarchy_changed.val = true
+              hierarchy_changed = true
             }
           }
         None => ()
@@ -1573,7 +1574,7 @@ fn[W] schedule_set_has_run_conditions(
   set : SystemSet,
 ) -> Bool {
   match schedule_entry.graph.set_run_conditions.get(set) {
-    Some(run_conditions_ref) => run_conditions_ref.val.run_ifs.length() > 0
+    Some(run_conditions) => run_conditions.run_ifs.length() > 0
     None => false
   }
 }
@@ -1631,19 +1632,15 @@ fn[W] schedule_system_has_run_conditions(
 fn[W] schedule_system_run_conditions_from_config(
   config : SystemConfig[W],
 ) -> ScheduleSystemRunConditions[W] {
-  let run_ifs : Array[StatefulRunConditionFn[W]] = []
+  let run_ifs : Array[RunConditionConfig[W]] = []
   for cond in config.run_ifs {
     run_ifs.push(cond)
-  }
-  let run_if_states : Array[Ref[Json]] = []
-  for state in config.run_if_states {
-    run_if_states.push(state)
   }
   let run_if_last_run_ticks : Array[@core.Tick] = []
   for tick in config.run_if_last_run_ticks {
     run_if_last_run_ticks.push(tick)
   }
-  { run_ifs, run_if_states, run_if_last_run_ticks }
+  { run_ifs, run_if_last_run_ticks }
 }
 
 ///|
@@ -1652,7 +1649,6 @@ fn[W] schedule_system_conditions_compatible(
   right : ScheduleSystemRunConditions[W],
 ) -> Bool {
   left.run_ifs.length() == right.run_ifs.length() &&
-  left.run_if_states.length() == right.run_if_states.length() &&
   left.run_if_last_run_ticks.length() == right.run_if_last_run_ticks.length()
 }
 
@@ -1701,13 +1697,13 @@ fn[W] schedule_build_access_plan(
     runnable_mask.push(true)
   }
   let set_ids : Array[SystemSet] = []
-  let set_run_conditions : Array[Ref[ScheduleSetRunConditions[W]]] = []
+  let set_run_conditions : Array[ScheduleSetRunConditions[W]] = []
   for set in graph_plan.hierarchy_set_order {
     match schedule_entry.graph.set_run_conditions.get(set) {
-      Some(run_conditions_ref) =>
-        if run_conditions_ref.val.run_ifs.length() > 0 {
+      Some(run_conditions) =>
+        if run_conditions.run_ifs.length() > 0 {
           set_ids.push(set)
-          set_run_conditions.push(run_conditions_ref)
+          set_run_conditions.push(run_conditions)
         }
       _ => ()
     }
@@ -1971,13 +1967,15 @@ fn[W] schedule_build_access_plan(
     single_threaded_batches.push([node])
   }
   let multi_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
-  let current_batch_ref : Ref[Array[ScheduleExecutionNode]] = Ref([])
-  let current_batch_layer_ref : Ref[Int?] = Ref(None)
+  let batch_build_state = ScheduleBatchBuildState::{
+    current_batch: [],
+    current_batch_layer: None,
+  }
   fn flush_current_batch() -> Unit {
-    if current_batch_ref.val.length() > 0 {
-      multi_threaded_batches.push(current_batch_ref.val)
-      current_batch_ref.val = []
-      current_batch_layer_ref.val = None
+    if batch_build_state.current_batch.length() > 0 {
+      multi_threaded_batches.push(batch_build_state.current_batch)
+      batch_build_state.current_batch = []
+      batch_build_state.current_batch_layer = None
     }
   }
   for node in ordered_execution_order {
@@ -1990,12 +1988,11 @@ fn[W] schedule_build_access_plan(
         }
         let system_layer = execution_system_layers[system_i]
         let access = execution_system_accesses[system_i]
-        let can_join_current_batch = Ref(
-          current_batch_ref.val.length() > 0 &&
-          current_batch_layer_ref.val == Some(system_layer),
-        )
-        if can_join_current_batch.val {
-          for existing_node in current_batch_ref.val {
+        let mut can_join_current_batch = batch_build_state.current_batch.length() >
+          0 &&
+          batch_build_state.current_batch_layer == Some(system_layer)
+        if can_join_current_batch {
+          for existing_node in batch_build_state.current_batch {
             match existing_node {
               ScheduledSystem(existing_i) =>
                 if !system_access_compatible(
@@ -2004,21 +2001,21 @@ fn[W] schedule_build_access_plan(
                     allowed_ambiguous_components,
                     allowed_ambiguous_resources~,
                   ) {
-                  can_join_current_batch.val = false
+                  can_join_current_batch = false
                   break
                 }
             }
           }
         }
-        if current_batch_ref.val.length() == 0 {
-          current_batch_ref.val = [node]
-          current_batch_layer_ref.val = Some(system_layer)
-        } else if can_join_current_batch.val {
-          current_batch_ref.val.push(node)
+        if batch_build_state.current_batch.length() == 0 {
+          batch_build_state.current_batch = [node]
+          batch_build_state.current_batch_layer = Some(system_layer)
+        } else if can_join_current_batch {
+          batch_build_state.current_batch.push(node)
         } else {
-          multi_threaded_batches.push(current_batch_ref.val)
-          current_batch_ref.val = [node]
-          current_batch_layer_ref.val = Some(system_layer)
+          multi_threaded_batches.push(batch_build_state.current_batch)
+          batch_build_state.current_batch = [node]
+          batch_build_state.current_batch_layer = Some(system_layer)
         }
       }
     }
@@ -2093,13 +2090,13 @@ fn[W] schedule_execution_plan(
   allowed_ambiguous_components : @utils.IntBitSet,
   allowed_ambiguous_resources : @utils.IntBitSet,
 ) -> ScheduleExecutionPlan[W] {
-  let schedule_entry = schedule_entry_ref(schedule_registry, stage).val
+  let schedule_entry = schedule_entry_for_stage(schedule_registry, stage)
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
-  let report_build_error = Ref(false)
+  let mut report_build_error = false
   if graph_plan.build_error is Some(_) &&
     schedule_entry.last_reported_build_error_generation !=
     Some(graph_plan.graph_generation) {
-    report_build_error.val = true
+    report_build_error = true
     schedule_entry.last_reported_build_error_generation = Some(
       graph_plan.graph_generation,
     )
@@ -2119,7 +2116,7 @@ fn[W] schedule_execution_plan(
   if resolved_build_error is Some(_) &&
     schedule_entry.last_reported_build_error_generation !=
     Some(graph_plan.graph_generation) {
-    report_build_error.val = true
+    report_build_error = true
     schedule_entry.last_reported_build_error_generation = Some(
       graph_plan.graph_generation,
     )
@@ -2129,14 +2126,14 @@ fn[W] schedule_execution_plan(
     schedule_entry.graph.changed = false
   }
   if !schedule_entry.executor_initialized {
-    schedule_entry.executor_state.val.init(
+    schedule_entry.executor_state.init(
       access_plan.schedule.systems.length(),
       access_plan.schedule.set_ids.length(),
       schedule_entry.apply_final_deferred,
     )
     schedule_entry.executor_initialized = true
   }
-  let report_invalid_system_errors = Ref(false)
+  let mut report_invalid_system_errors = false
   if access_plan.invalid_system_errors.length() > 0 {
     let access_key = (
       access_plan.graph_generation,
@@ -2146,7 +2143,7 @@ fn[W] schedule_execution_plan(
       access_plan.auto_insert_apply_deferred,
     )
     if schedule_entry.last_reported_invalid_access_key != Some(access_key) {
-      report_invalid_system_errors.val = true
+      report_invalid_system_errors = true
       schedule_entry.last_reported_invalid_access_key = Some(access_key)
     }
   }
@@ -2160,9 +2157,9 @@ fn[W] schedule_execution_plan(
     executor_kind: schedule_entry.executor_kind,
     apply_final_deferred: schedule_entry.apply_final_deferred,
     invalid_system_errors: access_plan.invalid_system_errors,
-    report_invalid_system_errors: report_invalid_system_errors.val,
+    report_invalid_system_errors,
     build_error: resolved_build_error,
-    report_build_error: report_build_error.val,
+    report_build_error,
     executor_state: schedule_entry.executor_state,
   }
 }
@@ -2197,19 +2194,12 @@ fn[W] schedule_chain_inherit_config(
       member_sets.push(set)
     }
   }
-  let run_ifs : Array[StatefulRunConditionFn[W]] = []
+  let run_ifs : Array[RunConditionConfig[W]] = []
   for cond in child.run_ifs {
     run_ifs.push(cond)
   }
   for cond in wrapper.run_ifs {
-    run_ifs.push(cond)
-  }
-  let run_if_states : Array[Ref[Json]] = []
-  for state in child.run_if_states {
-    run_if_states.push(state)
-  }
-  for state in wrapper.run_if_states {
-    run_if_states.push(Ref(state.val))
+    run_ifs.push(cond.clone())
   }
   let before : Array[SystemSet] = []
   for set in child.before {
@@ -2250,7 +2240,6 @@ fn[W] schedule_chain_inherit_config(
     ..child,
     error_handler: inherited_error_handler,
     run_ifs,
-    run_if_states,
     member_sets,
     before,
     after,
@@ -2281,15 +2270,14 @@ fn[W] schedule_push_config(
   stage : ScheduleStage,
   config : SystemConfig[W],
 ) -> Unit {
-  let entry_ref = schedule_entry_ref(schedule_registry, stage)
-  let graph_changed_ref = Ref(false)
+  let entry = schedule_entry_for_stage(schedule_registry, stage)
+  let mut graph_changed = false
   match config.chain_members {
     Some(_) => {
       let expanded_members : Array[SystemConfig[W]] = []
       let config_without_collective_conditions = SystemConfig::{
         ..config,
         run_ifs: [],
-        run_if_states: [],
         run_if_last_run_ticks: [],
       }
       schedule_collect_expanded_chain_members(
@@ -2300,7 +2288,7 @@ fn[W] schedule_push_config(
       }
       let collective_condition_set = if config.run_ifs.length() > 0 &&
         expanded_members.length() > 1 {
-        Some(schedule_next_chain_internal_set(entry_ref.val, stage))
+        Some(schedule_next_chain_internal_set(entry, stage))
       } else {
         None
       }
@@ -2326,14 +2314,10 @@ fn[W] schedule_push_config(
             }
           None => ()
         }
-        let run_ifs : Array[StatefulRunConditionFn[W]] = []
-        let run_if_states : Array[Ref[Json]] = []
+        let run_ifs : Array[RunConditionConfig[W]] = []
         let run_if_last_run_ticks : Array[@core.Tick] = []
         for cond in child_config.run_ifs {
           run_ifs.push(cond)
-        }
-        for state in child_config.run_if_states {
-          run_if_states.push(state)
         }
         for tick in child_config.run_if_last_run_ticks {
           run_if_last_run_ticks.push(tick)
@@ -2342,36 +2326,31 @@ fn[W] schedule_push_config(
           for cond in config.run_ifs {
             run_ifs.push(cond)
           }
-          for state in config.run_if_states {
-            run_if_states.push(state)
-          }
           for tick in config.run_if_last_run_ticks {
             run_if_last_run_ticks.push(tick)
           }
         }
         let normalized_member = SystemConfig::{
           ..child_config,
-          set: Some(schedule_next_chain_internal_set(entry_ref.val, stage)),
+          set: Some(schedule_next_chain_internal_set(entry, stage)),
           member_sets,
           run_ifs,
-          run_if_states,
           run_if_last_run_ticks,
         }
         normalized_members.push(normalized_member)
-        entry_ref.val.graph.systems.push(normalized_member)
+        entry.graph.systems.push(normalized_member)
       }
       match collective_condition_set {
         Some(condition_set) => {
           ignore(
             schedule_configure_set_run_conditions_from_refs(
-              entry_ref.val,
+              entry,
               condition_set,
               config.run_ifs,
-              config.run_if_states,
               config.run_if_last_run_ticks,
             ),
           )
-          graph_changed_ref.val = true
+          graph_changed = true
         }
         None => ()
       }
@@ -2383,24 +2362,22 @@ fn[W] schedule_push_config(
         guard normalized_members[i + 1].set is Some(right_set) else { continue }
         if left_set != right_set {
           if config.chain_ignore_deferred {
-            entry_ref.val.graph.set_edges_ignore_deferred.push(
-              (left_set, right_set),
-            )
+            entry.graph.set_edges_ignore_deferred.push((left_set, right_set))
           } else {
-            entry_ref.val.graph.set_edges.push((left_set, right_set))
+            entry.graph.set_edges.push((left_set, right_set))
           }
-          graph_changed_ref.val = true
+          graph_changed = true
         }
       }
-      graph_changed_ref.val = true
+      graph_changed = true
     }
     None => {
-      entry_ref.val.graph.systems.push(config)
-      graph_changed_ref.val = true
+      entry.graph.systems.push(config)
+      graph_changed = true
     }
   }
-  if graph_changed_ref.val {
-    schedule_entry_mark_graph_changed(entry_ref.val)
+  if graph_changed {
+    schedule_entry_mark_graph_changed(entry)
   }
 }
 
@@ -2409,7 +2386,7 @@ fn[W] schedule_systems(
   schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
 ) -> Array[SystemConfig[W]] {
-  schedule_entry_ref(schedule_registry, stage).val.graph.systems
+  schedule_entry_for_stage(schedule_registry, stage).graph.systems
 }
 
 ///|
@@ -2418,7 +2395,7 @@ fn[W] schedule_set_executor_kind(
   stage : ScheduleStage,
   executor_kind : ExecutorKind,
 ) -> Unit {
-  schedule_entry_ref(schedule_registry, stage).val.executor_kind = executor_kind
+  schedule_entry_for_stage(schedule_registry, stage).executor_kind = executor_kind
 }
 
 ///|
@@ -2427,14 +2404,14 @@ fn[W] schedule_replace_entry(
   schedule : Schedule,
 ) -> Unit {
   let key = schedule_stage_storage_key(schedule.label())
-  let entry_ref = Ref(ScheduleEntry::new())
-  entry_ref.val.executor_kind = schedule.get_executor_kind()
-  entry_ref.val.graph.settings = schedule.get_build_settings()
-  entry_ref.val.graph.build_passes = schedule_build_passes_for_settings(
+  let entry = ScheduleEntry::new()
+  entry.executor_kind = schedule.get_executor_kind()
+  entry.graph.settings = schedule.get_build_settings()
+  entry.graph.build_passes = schedule_build_passes_for_settings(
     schedule.get_build_settings(),
   )
-  entry_ref.val.apply_final_deferred = schedule.get_apply_final_deferred()
-  schedule_registry.entries.set(key, entry_ref)
+  entry.apply_final_deferred = schedule.get_apply_final_deferred()
+  schedule_registry.entries.set(key, entry)
 }
 
 ///|
@@ -2451,7 +2428,7 @@ pub fn[W] SubApp::get_schedule_executor_kind(
   self : SubApp[W],
   stage : ScheduleStage,
 ) -> ExecutorKind {
-  schedule_entry_ref(self.schedule, stage).val.executor_kind
+  schedule_entry_for_stage(self.schedule, stage).executor_kind
 }
 
 ///|
@@ -2459,36 +2436,29 @@ fn[W] schedule_configure_set_run_conditions(
   schedule_entry : ScheduleEntry[W],
   set : SystemSet,
   set_run_ifs : Array[RunConditionFn[W]],
-  set_run_if_statefuls : Array[(Json, StatefulRunConditionFn[W])],
+  set_run_if_statefuls : Array[RunConditionConfig[W]],
 ) -> Bool {
   guard set_run_ifs.length() > 0 || set_run_if_statefuls.length() > 0 else {
     return false
   }
-  let run_conditions_ref = match
-    schedule_entry.graph.set_run_conditions.get(set) {
-    Some(existing_ref) => existing_ref
+  let run_conditions = match schedule_entry.graph.set_run_conditions.get(set) {
+    Some(existing) => existing
     None => {
-      let created_ref = Ref(ScheduleSetRunConditions::{
+      let created = ScheduleSetRunConditions::{
         run_ifs: [],
-        run_if_states: [],
         run_if_last_run_ticks: [],
-      })
-      schedule_entry.graph.set_run_conditions.set(set, created_ref)
-      created_ref
+      }
+      schedule_entry.graph.set_run_conditions.set(set, created)
+      created
     }
   }
   for cond in set_run_ifs {
-    run_conditions_ref.val.run_ifs.push(fn(world : W, _state : Ref[Json]) {
-      cond(world)
-    })
-    run_conditions_ref.val.run_if_states.push(Ref(Json::null()))
-    run_conditions_ref.val.run_if_last_run_ticks.push(0)
+    run_conditions.run_ifs.push(run_condition(cond))
+    run_conditions.run_if_last_run_ticks.push(0)
   }
-  for entry in set_run_if_statefuls {
-    let (init_state, cond) = entry
-    run_conditions_ref.val.run_ifs.push(cond)
-    run_conditions_ref.val.run_if_states.push(Ref(init_state))
-    run_conditions_ref.val.run_if_last_run_ticks.push(0)
+  for cond in set_run_if_statefuls {
+    run_conditions.run_ifs.push(cond)
+    run_conditions.run_if_last_run_ticks.push(0)
   }
   true
 }
@@ -2497,32 +2467,26 @@ fn[W] schedule_configure_set_run_conditions(
 fn[W] schedule_configure_set_run_conditions_from_refs(
   schedule_entry : ScheduleEntry[W],
   set : SystemSet,
-  run_ifs : Array[StatefulRunConditionFn[W]],
-  run_if_states : Array[Ref[Json]],
+  run_ifs : Array[RunConditionConfig[W]],
   run_if_last_run_ticks : Array[@core.Tick],
 ) -> Bool {
   guard run_ifs.length() > 0 else { return false }
-  let run_conditions_ref = match
-    schedule_entry.graph.set_run_conditions.get(set) {
-    Some(existing_ref) => existing_ref
+  let run_conditions = match schedule_entry.graph.set_run_conditions.get(set) {
+    Some(existing) => existing
     None => {
-      let created_ref = Ref(ScheduleSetRunConditions::{
+      let created = ScheduleSetRunConditions::{
         run_ifs: [],
-        run_if_states: [],
         run_if_last_run_ticks: [],
-      })
-      schedule_entry.graph.set_run_conditions.set(set, created_ref)
-      created_ref
+      }
+      schedule_entry.graph.set_run_conditions.set(set, created)
+      created
     }
   }
   for cond in run_ifs {
-    run_conditions_ref.val.run_ifs.push(cond)
-  }
-  for state in run_if_states {
-    run_conditions_ref.val.run_if_states.push(state)
+    run_conditions.run_ifs.push(cond)
   }
   for tick in run_if_last_run_ticks {
-    run_conditions_ref.val.run_if_last_run_ticks.push(tick)
+    run_conditions.run_if_last_run_ticks.push(tick)
   }
   true
 }
@@ -2547,12 +2511,12 @@ pub fn[W] SubApp::configure_set(
   before_ignore_deferred? : Array[SystemSet] = [],
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
-  set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  set_run_if_statefuls? : Array[RunConditionConfig[W]] = [],
   in_sets? : Array[SystemSet] = [],
 ) -> SubApp[W] {
-  let entry_ref = schedule_entry_ref(self.schedule, stage)
-  let edges = entry_ref.val.graph.set_edges
-  let ignore_deferred_edges = entry_ref.val.graph.set_edges_ignore_deferred
+  let entry = schedule_entry_for_stage(self.schedule, stage)
+  let edges = entry.graph.set_edges
+  let ignore_deferred_edges = entry.graph.set_edges_ignore_deferred
   let mut graph_changed = false
   for other in before {
     edges.push((set, other))
@@ -2571,17 +2535,14 @@ pub fn[W] SubApp::configure_set(
     graph_changed = true
   }
   for parent_set in in_sets {
-    entry_ref.val.graph.set_hierarchy_edges.push((set, parent_set))
+    entry.graph.set_hierarchy_edges.push((set, parent_set))
     graph_changed = true
   }
   let access_changed = schedule_configure_set_run_conditions(
-    entry_ref.val,
-    set,
-    set_run_ifs,
-    set_run_if_statefuls,
+    entry, set, set_run_ifs, set_run_if_statefuls,
   )
   if graph_changed || access_changed {
-    schedule_entry_mark_graph_changed(entry_ref.val)
+    schedule_entry_mark_graph_changed(entry)
   }
   self
 }
@@ -2596,7 +2557,7 @@ pub fn[W] SubApp::configure_sets(
   before_ignore_deferred? : Array[SystemSet] = [],
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
-  set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  set_run_if_statefuls? : Array[RunConditionConfig[W]] = [],
   in_sets? : Array[SystemSet] = [],
 ) -> SubApp[W] {
   self.configure_set(
@@ -2646,7 +2607,7 @@ pub fn[W] App::configure_set(
   before_ignore_deferred? : Array[SystemSet] = [],
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
-  set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  set_run_if_statefuls? : Array[RunConditionConfig[W]] = [],
   in_sets? : Array[SystemSet] = [],
 ) -> App[W] {
   self.sub_apps.main = self.sub_apps.main.configure_set(
@@ -2673,7 +2634,7 @@ pub fn[W] App::configure_sets(
   before_ignore_deferred? : Array[SystemSet] = [],
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
-  set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  set_run_if_statefuls? : Array[RunConditionConfig[W]] = [],
   in_sets? : Array[SystemSet] = [],
 ) -> App[W] {
   self.configure_set(

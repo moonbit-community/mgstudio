@@ -16,21 +16,21 @@
 fn reset_text_ecs_test_state() -> Unit {
   text_ecs_entries.clear()
   ui_text_ecs_entries.clear()
-  text_runtime_world_id_ref.val = None
-  text_font_asset_events_cursor_ref.val = 0
-  text_state.val.next_text_id = 0
-  text_state.val.next_span_id = 0
+  text_ecs_runtime_state.world_id = None
+  text_font_asset_events_cursor.clear(@ecs.Messages::new())
+  text_state.next_text_id = 0
+  text_state.next_span_id = 0
   text_state_clear_instances()
-  cosmic_font_system_state.val = CosmicFontSystemState::{
+  text_pipeline_runtime_state.cosmic_font_system = CosmicFontSystemState::{
     font_system: @cosmic.FontSystem::new(),
     handle_to_font_id: [],
     font_id_to_handle_id: [],
     handle_to_family: [],
   }
-  font_atlas_set_state.val = FontAtlasSet::FontAtlasSet()
-  text_runtime_rem_size_ref.val = RemSize::RemSize().value()
+  text_pipeline_runtime_state.font_atlas_set = FontAtlasSet::FontAtlasSet()
+  text_runtime_state.rem_size = RemSize::RemSize().value()
   text_runtime_mark_layout_dirty()
-  text_debug_frame_state.val.draws.clear()
+  text_debug_frame_state.draws.clear()
 }
 
 ///|
@@ -73,8 +73,8 @@ test "font asset Added events force text rerender on next update" {
     panic()
   }
 
-  text_state.val.texts[index] = text_update_layout(text_state.val.texts[index])
-  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  text_state.texts[index] = text_update_layout(text_state.texts[index])
+  debug_inspect(text_state.texts[index].layout_dirty, content="false")
   text_runtime_clear_layout_dirty()
 
   let message_key : @ecs.MessageKey[@asset.AssetEvent[@asset.Font]] = @ecs.Message::message()
@@ -87,24 +87,21 @@ test "font asset Added events force text rerender on next update" {
   )
 
   text_sync_font_assets_system(world)
-  debug_inspect(text_state.val.texts[index].layout_dirty, content="true")
-  debug_inspect(
-    text_state.val.texts[index].computed.needs_rerender,
-    content="true",
-  )
+  debug_inspect(text_state.texts[index].layout_dirty, content="true")
+  debug_inspect(text_state.texts[index].computed.needs_rerender, content="true")
   debug_inspect(text_runtime_layout_dirty(), content="true")
 
-  text_state.val.texts[index] = TextInstance::{
-    ..text_state.val.texts[index],
+  text_state.texts[index] = TextInstance::{
+    ..text_state.texts[index],
     layout_dirty: false,
     computed: ComputedTextBlock::{
-      ..text_state.val.texts[index].computed,
+      ..text_state.texts[index].computed,
       needs_rerender: false,
     },
   }
   text_runtime_clear_layout_dirty()
   text_sync_font_assets_system(world)
-  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  debug_inspect(text_state.texts[index].layout_dirty, content="false")
 }
 
 ///|
@@ -124,12 +121,12 @@ test "font asset non-Added events follow Bevy and do not rerender text" {
     panic()
   }
 
-  text_state.val.texts[index] = text_update_layout(text_state.val.texts[index])
-  text_state.val.texts[index] = TextInstance::{
-    ..text_state.val.texts[index],
+  text_state.texts[index] = text_update_layout(text_state.texts[index])
+  text_state.texts[index] = TextInstance::{
+    ..text_state.texts[index],
     layout_dirty: false,
     computed: ComputedTextBlock::{
-      ..text_state.val.texts[index].computed,
+      ..text_state.texts[index].computed,
       needs_rerender: false,
     },
   }
@@ -157,9 +154,9 @@ test "font asset non-Added events follow Bevy and do not rerender text" {
   )
 
   text_sync_font_assets_system(world)
-  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  debug_inspect(text_state.texts[index].layout_dirty, content="false")
   debug_inspect(
-    text_state.val.texts[index].computed.needs_rerender,
+    text_state.texts[index].computed.needs_rerender,
     content="false",
   )
   debug_inspect(text_runtime_layout_dirty(), content="false")
@@ -513,7 +510,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   text_set_y_axis(entry.handle, YAxisOrientation::BottomToTop)
 
   let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [])
-  let instance = text_state.val.texts[0]
+  let instance = text_state.texts[0]
 
   debug_inspect(
     text_get_transform(synced.handle).unwrap().to_json(),

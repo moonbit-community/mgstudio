@@ -5,9 +5,7 @@ priv struct ParsedVirtualAssetPath {
 }
 
 ///|
-let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref(
-  @hashmap.HashMap([]),
-)
+let embedded_assets : @hashmap.HashMap[String, Bytes] = @hashmap.HashMap([])
 
 ///|
 fn string_last_index_of_char(input : String, code : Int) -> Int {
@@ -99,12 +97,12 @@ pub fn register_embedded_asset_virtual_bytes(
   path : String,
   bytes : Bytes,
 ) -> Unit {
-  embedded_assets_ref.val.set(canonical_virtual_asset_path(path), bytes)
+  embedded_assets.set(canonical_virtual_asset_path(path), bytes)
 }
 
 ///|
 pub fn embedded_asset_virtual_bytes(path : String) -> Bytes? {
-  embedded_assets_ref.val.get(canonical_virtual_asset_path(path))
+  embedded_assets.get(canonical_virtual_asset_path(path))
 }
 
 ///|

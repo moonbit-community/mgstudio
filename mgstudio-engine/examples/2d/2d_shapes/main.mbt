@@ -70,88 +70,100 @@ fn setup(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let shapes : Array[@asset.Handle[@mesh.Mesh]] = [
-    mesh_assets |> @sprite.add_mesh(@sprite.Circle::new(50.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.CircularSector::new(50.0F, 1.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.CircularSegment::new(50.0F, 1.25F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Ellipse::new(25.0F, 50.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Rectangle::new(50.0F, 100.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Triangle2d::new(
-        @math.Vec2::new(0.0F, 50.0F),
-        @math.Vec2::new(-50.0F, -50.0F),
-        @math.Vec2::new(50.0F, -50.0F),
+  let shapes : Array[@asset.Handle[@mesh.Mesh]] = meshes.modify(fn(
+    mesh_assets,
+  ) {
+    [
+      mesh_assets |> @sprite.add_mesh(@sprite.Circle::new(50.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.CircularSector::new(50.0F, 1.0F)),
+      mesh_assets
+      |> @sprite.add_mesh(@sprite.CircularSegment::new(50.0F, 1.25F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.Ellipse::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.Rectangle::new(50.0F, 100.0F)),
+      mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Triangle2d::new(
+          @math.Vec2::new(0.0F, 50.0F),
+          @math.Vec2::new(-50.0F, -50.0F),
+          @math.Vec2::new(50.0F, -50.0F),
+        ),
       ),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Segment2d::new(
-        @math.Vec2::new(-50.0F, 50.0F),
-        @math.Vec2::new(50.0F, -50.0F),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Segment2d::new(
+          @math.Vec2::new(-50.0F, 50.0F),
+          @math.Vec2::new(50.0F, -50.0F),
+        ),
       ),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Polyline2d::new([
-        @math.Vec2::new(-50.0F, 50.0F),
-        @math.Vec2::new(0.0F, -50.0F),
-        @math.Vec2::new(50.0F, 50.0F),
-      ]),
-    ),
-  ]
-  let rings : Array[@asset.Handle[@mesh.Mesh]] = [
-    mesh_assets
-    |> @sprite.add_mesh(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Ring::new(
-        @sprite.CircularSector::new(50.0F, 1.0F),
-        @sprite.CircularSector::new(45.0F, 1.0F),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Polyline2d::new([
+          @math.Vec2::new(-50.0F, 50.0F),
+          @math.Vec2::new(0.0F, -50.0F),
+          @math.Vec2::new(50.0F, 50.0F),
+        ]),
       ),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Ring::new(
-        @sprite.Ellipse::new(25.0F, 50.0F),
-        @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
+    ]
+  })
+  let rings : Array[@asset.Handle[@mesh.Mesh]] = meshes.modify(fn(mesh_assets) {
+    [
+      mesh_assets
+      |> @sprite.add_mesh(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Ring::new(
+          @sprite.CircularSector::new(50.0F, 1.0F),
+          @sprite.CircularSector::new(45.0F, 1.0F),
+        ),
       ),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Ring::new(@sprite.Circle::new(50.0F), @sprite.Circle::new(25.0F)),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F).to_ring(THICKNESS)),
-    mesh_assets
-    |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS)),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
-    ),
-    mesh_assets
-    |> @sprite.add_mesh(
-      @sprite.Triangle2d::new(
-        @math.Vec2::new(0.0F, 50.0F),
-        @math.Vec2::new(-50.0F, -50.0F),
-        @math.Vec2::new(50.0F, -50.0F),
-      ).to_ring(THICKNESS),
-    ),
-  ]
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Ring::new(
+          @sprite.Ellipse::new(25.0F, 50.0F),
+          @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
+        ),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Ring::new(
+          @sprite.Circle::new(50.0F),
+          @sprite.Circle::new(25.0F),
+        ),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Capsule2d::new(25.0F, 50.0F).to_ring(THICKNESS),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @sprite.Triangle2d::new(
+          @math.Vec2::new(0.0F, 50.0F),
+          @math.Vec2::new(-50.0F, -50.0F),
+          @math.Vec2::new(50.0F, -50.0F),
+        ).to_ring(THICKNESS),
+      ),
+    ]
+  })
 
   let num_shapes = shapes.length()
   for i in 0..<num_shapes {
@@ -161,7 +173,9 @@ fn setup(
         (
           @sprite.Mesh2d::new(shapes[i]),
           @sprite.MeshMaterial2d::new(
-            material_assets |> @sprite.add_material(color),
+            materials.modify(fn(material_assets) {
+              material_assets |> @sprite.add_material(color)
+            }),
           ),
           @transform.Transform::from_xyz(
             lane_x(i, num_shapes, X_EXTENT),
@@ -180,7 +194,9 @@ fn setup(
         (
           @sprite.Mesh2d::new(rings[i]),
           @sprite.MeshMaterial2d::new(
-            material_assets |> @sprite.add_material(color),
+            materials.modify(fn(material_assets) {
+              material_assets |> @sprite.add_material(color)
+            }),
           ),
           @transform.Transform::from_xyz(
             lane_x(i, num_rings, X_EXTENT),

@@ -53,27 +53,33 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-
-  let plane_mesh = mesh_assets
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-        @math.Vec2::new(16.0F, 16.0F),
-      ).build(),
+  let (plane_mesh, pyramid_mesh) = meshes.modify(fn(mesh_assets) {
+    (
+      mesh_assets
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(16.0F, 16.0F),
+        ).build(),
+      ),
+      mesh_assets |> @pbr.add_mesh(custom_pyramid_mesh()),
     )
-  let pyramid_mesh = mesh_assets |> @pbr.add_mesh(custom_pyramid_mesh())
-
-  let plane_material = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.13F, 0.14F, 0.16F))
-  let pyramid_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.88F, 0.18F, 0.36F),
-      )
-      .with_reflectance(0.28F)
-      .with_perceptual_roughness(0.48F),
+  })
+  let (plane_material, pyramid_material) = materials.modify(fn(
+    material_assets,
+  ) {
+    (
+      material_assets
+      |> @pbr.add_material(@sprite.Color::srgb(0.13F, 0.14F, 0.16F)),
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::srgb(0.88F, 0.18F, 0.36F),
+        )
+        .with_reflectance(0.28F)
+        .with_perceptual_roughness(0.48F),
+      ),
     )
+  })
 
   ignore(
     commands.spawn(

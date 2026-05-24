@@ -81,9 +81,9 @@ fn PickingHits::to_pointer_hits(self : PickingHits) -> Array[PointerHits] {
 fn drain_events(world : @ecs.World) -> Array[@pointer_events.PointerEvent] {
   let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return [] }
-  let events = Ref(events_value)
+  let events = events_value
   let out = @app.PickingEvents::drain(events)
-  events_res.insert(events.val)
+  events_res.insert(events)
   out
 }
 
@@ -128,9 +128,9 @@ fn send_test_pointer_inputs(world : @ecs.World, inputs : PointerInputs) -> Unit 
 ///|
 fn read_test_pointer_hits(
   world : @ecs.World,
-  cursor : Ref[Int],
+  cursor : @ecs.MessageCursor[PointerHits],
 ) -> Array[PointerHits] {
-  try! world.message_reader(pointer_hits_message_key(), cursor).read()
+  world.message_reader(pointer_hits_message_key(), cursor~).read()
 }
 
 ///|
@@ -449,7 +449,10 @@ test "picking: window backend populates fallback hit for active pointers" {
 
   })
   picking_window_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(world, Ref(0))
+  let pointer_hits = read_test_pointer_hits(
+    world,
+    @ecs.MessageCursor::MessageCursor(),
+  )
   debug_inspect(pointer_hits.length(), content="2")
   debug_inspect(pointer_hits[0].picks.length(), content="1")
   debug_inspect(
@@ -486,7 +489,10 @@ test "picking: window backend reads PointerLocation components" {
 
   })
   picking_window_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(world, Ref(0))
+  let pointer_hits = read_test_pointer_hits(
+    world,
+    @ecs.MessageCursor::MessageCursor(),
+  )
   debug_inspect(pointer_hits.length(), content="1")
   debug_inspect(
     pointer_hits[0].picks[0].0.id == window_entity.id,
@@ -585,7 +591,10 @@ test "picking: ui hit test respects transformed ui node" {
   @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(world, Ref(0))
+  let pointer_hits = read_test_pointer_hits(
+    world,
+    @ecs.MessageCursor::MessageCursor(),
+  )
   debug_inspect(
     pointer_hits.length() == 1 &&
     pointer_hits[0].picks.length() == 1 &&
@@ -641,7 +650,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
   let top_center = @math.Vec2::new(220.0F, 130.0F)
   let bottom_center = @math.Vec2::new(220.0F, 310.0F)
 
-  let cursor = Ref(0)
+  let cursor : @ecs.MessageCursor[PointerHits] = @ecs.MessageCursor::MessageCursor()
   send_test_pointer_inputs(
     world,
     PointerInputs::from_array([
@@ -721,7 +730,10 @@ test "picking: ui hit test still matches button with Interaction component" {
   @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(world, Ref(0))
+  let pointer_hits = read_test_pointer_hits(
+    world,
+    @ecs.MessageCursor::MessageCursor(),
+  )
   debug_inspect(
     pointer_hits.length() == 1 &&
     pointer_hits[0].picks.length() == 1 &&

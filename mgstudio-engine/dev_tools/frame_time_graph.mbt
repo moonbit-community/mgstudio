@@ -235,15 +235,20 @@ fn update_frame_time_values(world : @ecs.World) -> Unit {
     is Some(frame_time) else {
     return
   }
-  guard world.get_resource_ref_mut(frame_time_graph_values_resource_key)
-    is Some(values_ref) else {
+  guard world.get_resource_mut(frame_time_graph_values_resource_key)
+    is Some(values_mut) else {
     return
   }
-  values_ref.val.values.clear()
-  for value in frame_time.values() {
-    values_ref.val.values.push(value / 1000.0F)
-  }
-  frame_time_graph_update_material_buffers(world, values_ref.val.values)
+  let frame_times : Array[Float] = []
+  values_mut.modify(fn(values) {
+    values.values.clear()
+    for value in frame_time.values() {
+      let seconds = value / 1000.0F
+      values.values.push(seconds)
+      frame_times.push(seconds)
+    }
+  })
+  frame_time_graph_update_material_buffers(world, frame_times)
 }
 
 ///|
@@ -251,24 +256,28 @@ fn frame_time_graph_update_material_buffers(
   world : @ecs.World,
   frame_times : Array[Float],
 ) -> Unit {
-  guard world.get_resource_ref_mut(frame_time_graph_material_assets_key())
-    is Some(materials_ref) else {
+  guard world.get_resource_mut(frame_time_graph_material_assets_key())
+    is Some(materials_mut) else {
     return
   }
-  guard world.get_resource_ref_mut(frame_time_graph_buffer_assets_key())
-    is Some(buffers_ref) else {
+  guard world.get_resource_mut(frame_time_graph_buffer_assets_key())
+    is Some(buffers_mut) else {
     return
   }
-  for entry in materials_ref.val.iter_mut() {
-    let material = entry.1
-    match buffers_ref.val.get_mut(material.values) {
-      Some(buffer) => {
-        buffer.clear()
-        for value in frame_times {
-          buffer.push(value)
+  materials_mut.modify(fn(materials) {
+    buffers_mut.modify(fn(buffers) {
+      for entry in materials.iter_mut() {
+        let material = entry.1
+        match buffers.get_mut(material.values) {
+          Some(buffer) => {
+            buffer.clear()
+            for value in frame_times {
+              buffer.push(value)
+            }
+          }
+          None => ()
         }
       }
-      None => ()
-    }
-  }
+    })
+  })
 }

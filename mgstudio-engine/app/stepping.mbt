@@ -37,7 +37,7 @@ priv struct SteppingScheduleState {
 struct Stepping {
   mut action : SteppingAction
   schedules : Array[ScheduleStage]
-  schedule_states : @hashmap.HashMap[String, Ref[SteppingScheduleState]]
+  schedule_states : @hashmap.HashMap[String, SteppingScheduleState]
   mut cursor_schedule : Int
   mut cursor_system : Int
   mut continue_started : Bool
@@ -210,14 +210,14 @@ fn schedule_index(
 fn ensure_schedule_state(
   stepping : Stepping,
   schedule : ScheduleStage,
-) -> Ref[SteppingScheduleState] {
+) -> SteppingScheduleState {
   let key = stepping_schedule_key(schedule)
   match stepping.schedule_states.get(key) {
-    Some(state_ref) => state_ref
+    Some(state) => state
     None => {
-      let state_ref = Ref({ behaviors: @hashmap.HashMap([]) })
-      stepping.schedule_states.set(key, state_ref)
-      state_ref
+      let state = { behaviors: @hashmap.HashMap([]) }
+      stepping.schedule_states.set(key, state)
+      state
     }
   }
 }
@@ -225,8 +225,8 @@ fn ensure_schedule_state(
 ///|
 fn clear_schedule_state(stepping : Stepping, schedule : ScheduleStage) -> Unit {
   let key = stepping_schedule_key(schedule)
-  if stepping.schedule_states.get(key) is Some(state_ref) {
-    state_ref.val.behaviors.clear()
+  if stepping.schedule_states.get(key) is Some(state) {
+    state.behaviors.clear()
   }
 }
 
@@ -279,13 +279,13 @@ fn stepping_apply_updates(stepping : Stepping) -> Unit {
       }
       ClearSchedule(schedule) => clear_schedule_state(stepping, schedule)
       SetBehavior(schedule, system_name, behavior) => {
-        let state_ref = ensure_schedule_state(stepping, schedule)
-        state_ref.val.behaviors.set(system_name, behavior)
+        let state = ensure_schedule_state(stepping, schedule)
+        state.behaviors.set(system_name, behavior)
       }
       ClearBehavior(schedule, system_name) => {
         let key = stepping_schedule_key(schedule)
-        if stepping.schedule_states.get(key) is Some(state_ref) {
-          state_ref.val.behaviors.remove(system_name)
+        if stepping.schedule_states.get(key) is Some(state) {
+          state.behaviors.remove(system_name)
         }
       }
     }
@@ -318,8 +318,8 @@ fn stepping_behavior_for(
 ) -> SystemSteppingBehavior {
   let key = stepping_schedule_key(schedule)
   match stepping.schedule_states.get(key) {
-    Some(state_ref) =>
-      match state_ref.val.behaviors.get(system_name) {
+    Some(state) =>
+      match state.behaviors.get(system_name) {
         Some(behavior) => behavior
         None => Continue
       }

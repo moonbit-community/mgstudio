@@ -29,8 +29,8 @@ fn PlayerCount::value(self : PlayerCount) -> Int {
 struct PlayerCounter[P0, P1] {
   players : P0
   count : P1
-  players_state : Ref[Json]
-  count_state : Ref[Json]
+  players_state : @app.SystemParamState[P0]
+  count_state : @app.SystemParamState[P1]
 }
 
 ///|
@@ -60,20 +60,26 @@ impl @app.Resource for PlayerCount with resource() {
 }
 
 ///|
-fn player_counter_decode_state(state : Ref[Json]) -> (Json, Json) {
-  try @json.from_json(state.val) catch {
-    _ => (Json::null(), Json::null())
-  } noraise {
-    value => value
-  }
-}
-
-///|
 impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
   P0,
   P1,
 ] with init_state(world) {
-  (P0::init_state(world), P1::init_state(world)).to_json()
+  let players_state = P0::init_state(world)
+  let count_state = P1::init_state(world)
+  @app.SystemParamState::new(
+    fn() raise {
+      PlayerCounter::{
+        players: P0::get(players_state),
+        count: P1::get(count_state),
+        players_state,
+        count_state,
+      }
+    },
+    fn(value : PlayerCounter[P0, P1]) {
+      P0::store(value.players, value.players_state)
+      P1::store(value.count, value.count_state)
+    },
+  )
 }
 
 ///|
@@ -81,15 +87,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
   P0,
   P1,
 ] with get(state) {
-  let (players_state, count_state) = player_counter_decode_state(state)
-  let players_state_ref = Ref(players_state)
-  let count_state_ref = Ref(count_state)
-  PlayerCounter::{
-    players: P0::get(players_state_ref),
-    count: P1::get(count_state_ref),
-    players_state: players_state_ref,
-    count_state: count_state_ref,
-  }
+  state.get()
 }
 
 ///|
@@ -97,9 +95,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
   P0,
   P1,
 ] with store(self, state) {
-  P0::store(self.players, self.players_state)
-  P1::store(self.count, self.count_state)
-  state.val = (self.players_state.val, self.count_state.val).to_json()
+  state.store(self)
 }
 
 ///|

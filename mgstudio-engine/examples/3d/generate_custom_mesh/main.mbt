@@ -175,13 +175,17 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let custom_texture = asset_server.get().load("textures/array_texture.png")
-  let material = materials.peek()
+  let material = materials.modify(fn(materials) {
+    materials
     |> @pbr.add_material(
       @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
         Some(custom_texture),
       ),
     )
-  let cube_mesh_handle = meshes.peek().add(create_cube_mesh(true))
+  })
+  let cube_mesh_handle = meshes.modify(fn(meshes) {
+    meshes.add(create_cube_mesh(true))
+  })
 
   ignore(
     commands.spawn(
@@ -231,15 +235,18 @@ fn input_handler(
   query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
     guard (mesh_query.single() catch { _ => None }) is Some(mesh_handle_comp) else {
       return
     }
     let mesh_handle = mesh_handle_comp.value()
-    if mesh_assets.get(mesh_handle.mesh) is Some(mesh) {
-      mesh_assets.set(mesh_handle.mesh, toggle_texture(mesh)) |> ignore
-    }
+    meshes.modify(fn(mesh_assets) {
+      match mesh_assets.get(mesh_handle.mesh) {
+        Some(mesh) =>
+          mesh_assets.set(mesh_handle.mesh, toggle_texture(mesh)) |> ignore
+        None => ()
+      }
+    })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyX) {
     try! query.view(fn(_entity, transform) {

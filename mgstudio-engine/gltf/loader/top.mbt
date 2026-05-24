@@ -264,8 +264,8 @@ priv struct GltfLoaderPluginRuntimeState {
 ///|
 fn GltfLoaderPluginRuntimeState::from_bootstrap() -> GltfLoaderPluginRuntimeState {
   GltfLoaderPluginRuntimeState::{
-    registration: gltf_loader_registration_bootstrap_ref.val,
-    registered: gltf_loader_registered_bootstrap_ref.val,
+    registration: gltf_loader_bootstrap_state.registration,
+    registered: gltf_loader_bootstrap_state.registered,
   }
 }
 
@@ -284,38 +284,33 @@ fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
     custom_vertex_attributes.push(attribute)
   }
   GltfLoaderRuntimeState::{
-    default_image_sampler: gltf_default_image_sampler_bootstrap_ref.val,
-    default_convert_coordinates: gltf_default_convert_coordinates_bootstrap_ref.val,
-    default_skinned_mesh_bounds_policy: gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val,
+    default_image_sampler: gltf_loader_bootstrap_state.default_image_sampler,
+    default_convert_coordinates: gltf_loader_bootstrap_state.default_convert_coordinates,
+    default_skinned_mesh_bounds_policy: gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy,
     custom_vertex_attributes,
   }
 }
 
 ///|
-let gltf_loader_registration_bootstrap_ref : Ref[GltfLoaderRegistration?] = Ref(
-  None,
-)
+priv struct GltfLoaderBootstrapState {
+  mut registration : GltfLoaderRegistration?
+  mut registered : Bool
+  mut default_image_sampler : @image.ImageSamplerDescriptor
+  mut default_convert_coordinates : GltfConvertCoordinates
+  mut default_skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
+}
 
 ///|
-let gltf_loader_registered_bootstrap_ref : Ref[Bool] = Ref(false)
+let gltf_loader_bootstrap_state : GltfLoaderBootstrapState = {
+  registration: None,
+  registered: false,
+  default_image_sampler: @image.ImageSamplerDescriptor::linear(),
+  default_convert_coordinates: GltfConvertCoordinates::GltfConvertCoordinates(),
+  default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
+}
 
 ///|
 let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] = []
-
-///|
-let gltf_default_image_sampler_bootstrap_ref : Ref[
-  @image.ImageSamplerDescriptor,
-] = Ref(@image.ImageSamplerDescriptor::linear())
-
-///|
-let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref(
-  GltfConvertCoordinates::GltfConvertCoordinates(),
-)
-
-///|
-let gltf_default_skinned_mesh_bounds_policy_bootstrap_ref : Ref[
-  GltfSkinnedMeshBoundsPolicy,
-] = Ref(GltfSkinnedMeshBoundsPolicy::default())
 
 ///|
 let ecs_res_key_gltf_loader_plugin_runtime_state : @ecs.ResourceKey[
@@ -347,12 +342,12 @@ fn gltf_loader_plugin_runtime_plugin(
 }
 
 ///|
-fn gltf_loader_plugin_runtime_state_ref_if_present() -> Ref[
+fn gltf_loader_plugin_runtime_state_mut_if_present() -> @ecs.ResourceMut[
   GltfLoaderPluginRuntimeState,
 ]? {
   guard @app.current_world() is Some(world) else { return None }
   match world.get_resource_mut(ecs_res_key_gltf_loader_plugin_runtime_state) {
-    Some(state_ref) => Some(Ref(state_ref.peek()))
+    Some(state) => Some(state)
     None => None
   }
 }
@@ -369,18 +364,20 @@ pub fn gltf_loader_runtime_plugin(
       GltfLoaderRuntimeState::from_bootstrap(),
     )
     gltf_custom_vertex_attributes_bootstrap.clear()
-    gltf_default_image_sampler_bootstrap_ref.val = @image.ImageSamplerDescriptor::linear()
-    gltf_default_convert_coordinates_bootstrap_ref.val = GltfConvertCoordinates::GltfConvertCoordinates()
-    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = GltfSkinnedMeshBoundsPolicy::default()
+    gltf_loader_bootstrap_state.default_image_sampler = @image.ImageSamplerDescriptor::linear()
+    gltf_loader_bootstrap_state.default_convert_coordinates = GltfConvertCoordinates::GltfConvertCoordinates()
+    gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy = GltfSkinnedMeshBoundsPolicy::default()
     next
   }
 }
 
 ///|
-fn gltf_loader_runtime_state_ref_if_present() -> Ref[GltfLoaderRuntimeState]? {
+fn gltf_loader_runtime_state_mut_if_present() -> @ecs.ResourceMut[
+  GltfLoaderRuntimeState,
+]? {
   guard @app.current_world() is Some(world) else { return None }
   match world.get_resource_mut(ecs_res_key_gltf_loader_runtime_state) {
-    Some(state_ref) => Some(Ref(state_ref.peek()))
+    Some(state) => Some(state)
     None => None
   }
 }
@@ -420,12 +417,14 @@ pub fn gltf_add_custom_vertex_attribute(
   name : String,
   mapped_name : String,
 ) -> Unit {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    gltf_upsert_custom_vertex_attribute(
-      state_ref.val.custom_vertex_attributes,
-      name,
-      mapped_name,
-    )
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) {
+      gltf_upsert_custom_vertex_attribute(
+        value.custom_vertex_attributes,
+        name,
+        mapped_name,
+      )
+    })
   } else {
     gltf_upsert_custom_vertex_attribute(
       gltf_custom_vertex_attributes_bootstrap, name, mapped_name,
@@ -435,8 +434,8 @@ pub fn gltf_add_custom_vertex_attribute(
 
 ///|
 pub fn gltf_clear_custom_vertex_attributes() -> Unit {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.custom_vertex_attributes.clear()
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.custom_vertex_attributes.clear() })
   } else {
     gltf_custom_vertex_attributes_bootstrap.clear()
   }
@@ -444,8 +443,8 @@ pub fn gltf_clear_custom_vertex_attributes() -> Unit {
 
 ///|
 pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute] {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.custom_vertex_attributes
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.peek().custom_vertex_attributes
   } else {
     gltf_custom_vertex_attributes_bootstrap
   }
@@ -455,11 +454,13 @@ pub fn gltf_custom_vertex_attributes() -> Array[GltfCustomVertexAttribute] {
 pub fn gltf_install_loader_registration(
   registration : GltfLoaderRegistration,
 ) -> Unit {
-  gltf_loader_registration_bootstrap_ref.val = Some(registration)
-  gltf_loader_registered_bootstrap_ref.val = false
-  if gltf_loader_plugin_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.registration = Some(registration)
-    state_ref.val.registered = false
+  gltf_loader_bootstrap_state.registration = Some(registration)
+  gltf_loader_bootstrap_state.registered = false
+  if gltf_loader_plugin_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) {
+      value.registration = Some(registration)
+      value.registered = false
+    })
   }
 }
 
@@ -536,10 +537,10 @@ pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
 
 ///|
 pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_image_sampler
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.peek().default_image_sampler
   } else {
-    gltf_default_image_sampler_bootstrap_ref.val
+    gltf_loader_bootstrap_state.default_image_sampler
   }
 }
 
@@ -547,19 +548,19 @@ pub fn gltf_default_image_sampler() -> @image.ImageSamplerDescriptor {
 pub fn gltf_set_default_image_sampler(
   sampler : @image.ImageSamplerDescriptor,
 ) -> Unit {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_image_sampler = sampler
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.default_image_sampler = sampler })
   } else {
-    gltf_default_image_sampler_bootstrap_ref.val = sampler
+    gltf_loader_bootstrap_state.default_image_sampler = sampler
   }
 }
 
 ///|
 pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_skinned_mesh_bounds_policy
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.peek().default_skinned_mesh_bounds_policy
   } else {
-    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val
+    gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy
   }
 }
 
@@ -567,19 +568,19 @@ pub fn gltf_default_skinned_mesh_bounds_policy() -> GltfSkinnedMeshBoundsPolicy 
 pub fn gltf_set_default_skinned_mesh_bounds_policy(
   policy : GltfSkinnedMeshBoundsPolicy,
 ) -> Unit {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_skinned_mesh_bounds_policy = policy
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.default_skinned_mesh_bounds_policy = policy })
   } else {
-    gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = policy
+    gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy = policy
   }
 }
 
 ///|
 pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_convert_coordinates
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.peek().default_convert_coordinates
   } else {
-    gltf_default_convert_coordinates_bootstrap_ref.val
+    gltf_loader_bootstrap_state.default_convert_coordinates
   }
 }
 
@@ -587,20 +588,22 @@ pub fn gltf_default_convert_coordinates() -> GltfConvertCoordinates {
 pub fn gltf_set_default_convert_coordinates(
   convert_coordinates : GltfConvertCoordinates,
 ) -> Unit {
-  if gltf_loader_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.default_convert_coordinates = convert_coordinates
+  if gltf_loader_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) {
+      value.default_convert_coordinates = convert_coordinates
+    })
   } else {
-    gltf_default_convert_coordinates_bootstrap_ref.val = convert_coordinates
+    gltf_loader_bootstrap_state.default_convert_coordinates = convert_coordinates
   }
 }
 
 ///|
 fn gltf_register_asset_loaders_once() -> Unit {
-  if gltf_loader_plugin_runtime_state_ref_if_present() is Some(state_ref) {
-    if state_ref.val.registered {
+  if gltf_loader_plugin_runtime_state_mut_if_present() is Some(state) {
+    if state.peek().registered {
       return
     }
-    let register = match state_ref.val.registration {
+    let register = match state.peek().registration {
       Some(value) => value
       None =>
         abort(
@@ -608,14 +611,14 @@ fn gltf_register_asset_loaders_once() -> Unit {
         )
     }
     register()
-    state_ref.val.registered = true
-    gltf_loader_registered_bootstrap_ref.val = true
+    state.modify(fn(value) { value.registered = true })
+    gltf_loader_bootstrap_state.registered = true
     return
   }
-  if gltf_loader_registered_bootstrap_ref.val {
+  if gltf_loader_bootstrap_state.registered {
     return
   }
-  let register = match gltf_loader_registration_bootstrap_ref.val {
+  let register = match gltf_loader_bootstrap_state.registration {
     Some(value) => value
     None =>
       abort(
@@ -623,7 +626,7 @@ fn gltf_register_asset_loaders_once() -> Unit {
       )
   }
   register()
-  gltf_loader_registered_bootstrap_ref.val = true
+  gltf_loader_bootstrap_state.registered = true
 }
 
 ///|

@@ -33,11 +33,18 @@ pub impl @ecs.Component for Children with component() {
 }
 
 ///|
-let hierarchy_component_metadata_installed : Ref[Bool] = Ref(false)
+priv struct HierarchyEcsRuntimeState {
+  mut component_metadata_installed : Bool
+}
+
+///|
+let hierarchy_ecs_runtime_state : HierarchyEcsRuntimeState = {
+  component_metadata_installed: false,
+}
 
 ///|
 pub fn hierarchy_install_component_metadata() -> Unit {
-  if hierarchy_component_metadata_installed.val {
+  if hierarchy_ecs_runtime_state.component_metadata_installed {
     return
   }
   ignore(
@@ -82,5 +89,5 @@ pub fn hierarchy_install_component_metadata() -> Unit {
       linked_entities=Some(fn(children : Children) { children.entities() }),
     ),
   )
-  hierarchy_component_metadata_installed.val = true
+  hierarchy_ecs_runtime_state.component_metadata_installed = true
 }

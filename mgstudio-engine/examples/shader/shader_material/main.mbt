@@ -31,7 +31,9 @@ fn setup(
         @math.Vec2::new(7.0F, 7.0F),
       ).build(),
     )
-  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
+  let cube = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
+  })
 
   let plane_material = materials
     .peek()

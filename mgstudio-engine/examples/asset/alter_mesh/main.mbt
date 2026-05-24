@@ -188,17 +188,17 @@ fn alter_mesh(
     return
   }
   let mesh3d = mesh3d_comp.value()
-  let mesh_assets = meshes.peek()
-  guard mesh_assets.get_mut(mesh3d.mesh) is Some(mesh_asset) else { return }
-  guard mesh_asset.as_3d_geometry() is Some(geometry) else { return }
-
   let scale_factor = if is_mesh_scaled.get() { 0.5F } else { 2.0F }
-  for i in 0..<geometry.positions.length() {
-    geometry.positions[i] = geometry.positions[i].mul_scalar(scale_factor)
-  }
-  if mesh_asset.with_3d_geometry(geometry) is Some(updated) {
-    ignore(mesh_assets.set(mesh3d.mesh, updated))
-  }
+  meshes.modify(fn(mesh_assets) {
+    guard mesh_assets.get(mesh3d.mesh) is Some(mesh_asset) else { return }
+    guard mesh_asset.as_3d_geometry() is Some(geometry) else { return }
+    for i in 0..<geometry.positions.length() {
+      geometry.positions[i] = geometry.positions[i].mul_scalar(scale_factor)
+    }
+    if mesh_asset.with_3d_geometry(geometry) is Some(updated) {
+      ignore(mesh_assets.set(mesh3d.mesh, updated))
+    }
+  })
   is_mesh_scaled.set(!is_mesh_scaled.get())
 }
 

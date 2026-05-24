@@ -48,8 +48,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let ground = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(16.0F, 1.0F, 16.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(16.0F, 1.0F, 16.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
@@ -79,14 +80,16 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let a = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
-          @math.Sphere::new(0.4F),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+            @math.Sphere::new(0.4F),
+          )
+          .kind(@mesh_primitives_dim3.SphereKind::uv(16, 12))
+          .build(),
         )
-        .kind(@mesh_primitives_dim3.SphereKind::uv(16, 12))
-        .build(),
-      ),
+      }),
     ),
     @pbr.MeshMaterial3d::new(body_material_a),
     @transform.Transform::from_xyz(-1.5F, 2.0F, 0.0F),
@@ -104,14 +107,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   let b = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
-          @math.Sphere::new(0.4F),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+            @math.Sphere::new(0.4F),
+          )
+          .kind(@mesh_primitives_dim3.SphereKind::uv(16, 12))
+          .build(),
         )
-        .kind(@mesh_primitives_dim3.SphereKind::uv(16, 12))
-        .build(),
-      ),
+      }),
     ),
     @pbr.MeshMaterial3d::new(body_material_b),
     @transform.Transform::from_xyz(1.5F, 2.0F, 0.0F),

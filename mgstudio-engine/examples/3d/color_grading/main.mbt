@@ -956,7 +956,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn handle_button_presses(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(SelectedColorGradingOption::resource())
+  guard world.get_resource_mut(SelectedColorGradingOption::resource())
     is Some(selected_option) else {
     return
   }
@@ -971,8 +971,8 @@ fn handle_button_presses(world : @ecs.World) -> Unit {
     if widget.widget_type != ColorGradingOptionWidgetType::Button {
       return
     }
-    if selected_option.val != widget.option {
-      selected_option.val = widget.option
+    if selected_option.peek() != widget.option {
+      selected_option.set(widget.option)
     }
   })
 }

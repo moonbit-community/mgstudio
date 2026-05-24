@@ -80,9 +80,9 @@ impl @app.Resource for SceneGltfPendingRequestsState with resource() {
 ///|
 fn scene_gltf_pending_requests_state_ref_or_abort(
   world : @ecs.World,
-) -> Ref[SceneGltfPendingRequestsState] {
-  match world.get_resource_ref_mut(ecs_key_scene_gltf_pending_requests_state) {
-    Some(state_ref) => state_ref
+) -> @ecs.ResourceMut[SceneGltfPendingRequestsState] {
+  match world.get_resource_mut(ecs_key_scene_gltf_pending_requests_state) {
+    Some(state) => state
     None =>
       abort(
         "scene gltf pending state is missing; ScenePlugin must initialize SceneGltfPendingRequestsState before queueing or resolving gltf requests",
@@ -515,14 +515,15 @@ fn scene_pending_remove_scene_handle(
   world : @ecs.World,
   handle : @asset.Handle[Scene],
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
-  let filtered : Array[PendingGltfSceneRequest] = []
-  for req in state_ref.val.pending_scene_requests {
-    if req.scene_handle.id() != handle.id() {
-      filtered.push(req)
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    let filtered : Array[PendingGltfSceneRequest] = []
+    for req in state.pending_scene_requests {
+      if req.scene_handle.id() != handle.id() {
+        filtered.push(req)
+      }
     }
-  }
-  state_ref.val.pending_scene_requests = filtered
+    state.pending_scene_requests = filtered
+  })
 }
 
 ///|
@@ -530,14 +531,15 @@ fn scene_pending_remove_animation_handle(
   world : @ecs.World,
   handle : @asset.Handle[@animation.AnimationClip],
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
-  let filtered : Array[PendingGltfAnimationRequest] = []
-  for req in state_ref.val.pending_animation_requests {
-    if req.clip_handle.id() != handle.id() {
-      filtered.push(req)
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    let filtered : Array[PendingGltfAnimationRequest] = []
+    for req in state.pending_animation_requests {
+      if req.clip_handle.id() != handle.id() {
+        filtered.push(req)
+      }
     }
-  }
-  state_ref.val.pending_animation_requests = filtered
+    state.pending_animation_requests = filtered
+  })
 }
 
 ///|
@@ -545,14 +547,15 @@ fn scene_pending_remove_mesh_handle(
   world : @ecs.World,
   handle : @asset.Handle[@mesh.Mesh],
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
-  let filtered : Array[PendingGltfMeshRequest] = []
-  for req in state_ref.val.pending_mesh_requests {
-    if req.mesh_handle.id() != handle.id() {
-      filtered.push(req)
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    let filtered : Array[PendingGltfMeshRequest] = []
+    for req in state.pending_mesh_requests {
+      if req.mesh_handle.id() != handle.id() {
+        filtered.push(req)
+      }
     }
-  }
-  state_ref.val.pending_mesh_requests = filtered
+    state.pending_mesh_requests = filtered
+  })
 }
 
 ///|
@@ -562,24 +565,25 @@ fn scene_queue_gltf_request(
   scene_handle : @asset.Handle[Scene],
   scene_asset_path : String,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
   scene_pending_remove_scene_handle(world, scene_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
   let scene_index = match label {
     Some(GltfAssetLabel::Scene(index)) => index
     _ => 0
   }
-  state_ref.val.pending_scene_requests.push({
-    scene_handle,
-    gltf_path,
-    scene_index,
-    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
-      scene_asset_path,
-    ),
-    gltf_blob: asset_server.load_bytes(gltf_path),
-    doc: None,
-    buffer_blobs: [],
-    buffer_bytes: [],
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    state.pending_scene_requests.push({
+      scene_handle,
+      gltf_path,
+      scene_index,
+      loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+        scene_asset_path,
+      ),
+      gltf_blob: asset_server.load_bytes(gltf_path),
+      doc: None,
+      buffer_blobs: [],
+      buffer_bytes: [],
+    })
   })
 }
 
@@ -590,24 +594,25 @@ fn scene_queue_gltf_animation_request(
   clip_handle : @asset.Handle[@animation.AnimationClip],
   animation_asset_path : String,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
   scene_pending_remove_animation_handle(world, clip_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
   let animation_index = match label {
     Some(GltfAssetLabel::Animation(index)) => index
     _ => 0
   }
-  state_ref.val.pending_animation_requests.push({
-    clip_handle,
-    gltf_path,
-    animation_index,
-    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
-      animation_asset_path,
-    ),
-    gltf_blob: asset_server.load_bytes(gltf_path),
-    doc: None,
-    buffer_blobs: [],
-    buffer_bytes: [],
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    state.pending_animation_requests.push({
+      clip_handle,
+      gltf_path,
+      animation_index,
+      loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+        animation_asset_path,
+      ),
+      gltf_blob: asset_server.load_bytes(gltf_path),
+      doc: None,
+      buffer_blobs: [],
+      buffer_bytes: [],
+    })
   })
 }
 
@@ -618,7 +623,6 @@ fn scene_queue_gltf_mesh_request(
   mesh_handle : @asset.Handle[@mesh.Mesh],
   mesh_asset_path : String,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
   scene_pending_remove_mesh_handle(world, mesh_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
   let (mesh_index, primitive_index) = match label {
@@ -628,18 +632,20 @@ fn scene_queue_gltf_mesh_request(
         "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",
       )
   }
-  state_ref.val.pending_mesh_requests.push({
-    mesh_handle,
-    gltf_path,
-    mesh_index,
-    primitive_index,
-    loader_settings: asset_server.gltf_loader_settings_for_asset_path(
-      mesh_asset_path,
-    ),
-    gltf_blob: asset_server.load_bytes(gltf_path),
-    doc: None,
-    buffer_blobs: [],
-    buffer_bytes: [],
+  scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
+    state.pending_mesh_requests.push({
+      mesh_handle,
+      gltf_path,
+      mesh_index,
+      primitive_index,
+      loader_settings: asset_server.gltf_loader_settings_for_asset_path(
+        mesh_asset_path,
+      ),
+      gltf_blob: asset_server.load_bytes(gltf_path),
+      doc: None,
+      buffer_blobs: [],
+      buffer_bytes: [],
+    })
   })
 }
 
@@ -2675,19 +2681,26 @@ fn gltf_camera_projection_from_def(
 }
 
 ///|
+
+///|
+priv struct GltfSceneCameraLoadState {
+  mut active_camera_found : Bool
+}
+
+///|
 fn gltf_scene_node_camera_components(
   doc : ParsedGltfDocument,
   node : GltfNodeDef,
-  active_camera_found_ref : Ref[Bool],
+  camera_load_state : GltfSceneCameraLoadState,
 ) -> GltfNodeCameraComponents? {
   guard node.camera is Some(camera_index) else { return None }
   guard camera_index >= 0 && camera_index < doc.cameras.length() else {
     return None
   }
   let camera = @sprite.Camera::Camera().with_is_active(
-    !active_camera_found_ref.val,
+    !camera_load_state.active_camera_found,
   )
-  active_camera_found_ref.val = true
+  camera_load_state.active_camera_found = true
   let camera3d = @camera.Camera3d::Camera3d()
   let projection = gltf_camera_projection_from_def(
     doc.cameras[camera_index].projection,
@@ -3527,7 +3540,9 @@ fn scene_build_from_gltf(
   let should_load_materials = gltf_loader_should_load_materials(
     request.loader_settings,
   )
-  let active_camera_found_ref : Ref[Bool] = Ref(false)
+  let camera_load_state = GltfSceneCameraLoadState::{
+    active_camera_found: false,
+  }
 
   fn node_is_animation_root(node_index : Int) -> Bool {
     for root in animation_roots {
@@ -3575,13 +3590,15 @@ fn scene_build_from_gltf(
             normalized_values.push(@mesh.SkinningMat4::identity())
           }
         }
-        let inverse_bindposes_assets_ref : Ref[
+        let inverse_bindposes_assets : @ecs.ResourceMut[
           @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-        ] = Ref(@asset.asset_assets_ref_mut_or_abort().peek())
+        ] = @asset.asset_assets_ref_mut_or_abort()
         Some(
-          inverse_bindposes_assets_ref.val.add(
-            @mesh.SkinnedMeshInverseBindposes::new(normalized_values),
-          ),
+          inverse_bindposes_assets.modify(fn(assets) {
+            assets.add(
+              @mesh.SkinnedMeshInverseBindposes::new(normalized_values),
+            )
+          }),
         )
       }
       None => None
@@ -3625,7 +3642,7 @@ fn scene_build_from_gltf(
       None
     }
     let node_camera_components = if request.loader_settings.load_cameras {
-      gltf_scene_node_camera_components(doc, node, active_camera_found_ref)
+      gltf_scene_node_camera_components(doc, node, camera_load_state)
     } else {
       None
     }
@@ -3779,7 +3796,9 @@ fn scene_build_from_gltf(
         nodes.push(
           SceneNode3d::new(
             @mesh.Mesh3d::new(
-              @pbr.mesh_assets_mut_or_abort().val.add(mesh_asset),
+              @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+                assets.add(mesh_asset)
+              }),
             ),
             material_component,
             mesh_entity_transform,
@@ -4030,23 +4049,30 @@ fn scene_process_pending_scene_requests(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let state = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let pending = state.modify(fn(value) {
+    let pending = value.pending_scene_requests
+    value.pending_scene_requests = []
+    pending
+  })
   let remaining : Array[PendingGltfSceneRequest] = []
   let scene_assets = scene_assets_from_world_mut_or_abort(world)
 
-  for request in state_ref.val.pending_scene_requests {
+  for request in pending {
     let (updated_request, resolved_scene) = scene_try_resolve_scene_request(
       asset_server, request,
     )
 
     if resolved_scene is Some(scene) {
-      scene_assets.val.set(updated_request.scene_handle, scene) |> ignore
+      scene_assets.modify(fn(assets) {
+        ignore(assets.set(updated_request.scene_handle, scene))
+      })
     } else {
       remaining.push(updated_request)
     }
   }
 
-  state_ref.val.pending_scene_requests = remaining
+  state.modify(fn(value) { value.pending_scene_requests = remaining })
 }
 
 ///|
@@ -4054,10 +4080,15 @@ fn scene_process_pending_animation_requests(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let state = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let pending = state.modify(fn(value) {
+    let pending = value.pending_animation_requests
+    value.pending_animation_requests = []
+    pending
+  })
   let remaining : Array[PendingGltfAnimationRequest] = []
 
-  for request in state_ref.val.pending_animation_requests {
+  for request in pending {
     let (updated_request, resolved_clip) = scene_try_resolve_animation_request(
       asset_server, request,
     )
@@ -4069,7 +4100,7 @@ fn scene_process_pending_animation_requests(
     }
   }
 
-  state_ref.val.pending_animation_requests = remaining
+  state.modify(fn(value) { value.pending_animation_requests = remaining })
 }
 
 ///|
@@ -4077,23 +4108,30 @@ fn scene_process_pending_mesh_requests(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let state_ref = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let state = scene_gltf_pending_requests_state_ref_or_abort(world)
+  let pending = state.modify(fn(value) {
+    let pending = value.pending_mesh_requests
+    value.pending_mesh_requests = []
+    pending
+  })
   let remaining : Array[PendingGltfMeshRequest] = []
   let mesh_assets = scene_mesh_assets_from_world_mut_or_abort(world)
 
-  for request in state_ref.val.pending_mesh_requests {
+  for request in pending {
     let (updated_request, resolved_mesh) = scene_try_resolve_mesh_request(
       asset_server, request,
     )
 
     if resolved_mesh is Some(mesh) {
-      mesh_assets.val.set(updated_request.mesh_handle, mesh) |> ignore
+      mesh_assets.modify(fn(assets) {
+        ignore(assets.set(updated_request.mesh_handle, mesh))
+      })
     } else {
       remaining.push(updated_request)
     }
   }
 
-  state_ref.val.pending_mesh_requests = remaining
+  state.modify(fn(value) { value.pending_mesh_requests = remaining })
 }
 
 ///|

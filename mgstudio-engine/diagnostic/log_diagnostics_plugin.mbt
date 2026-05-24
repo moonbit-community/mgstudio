@@ -232,23 +232,23 @@ fn log_diagnostics_system(
   time : @app.Res[@time.Time[@time.Real]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
-  let state_value = state.peek()
-  state.set_changed()
-  state_value.timer = state_value.timer.tick(time.get().delta())
-  if !state_value.timer.is_finished() {
-    return
-  }
+  state.modify(fn(state_value) {
+    state_value.timer = state_value.timer.tick(time.get().delta())
+    if !state_value.timer.is_finished() {
+      return
+    }
 
-  for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
-    if !diagnostic.is_enabled ||
-      !log_diagnostics_state_allows(state_value, diagnostic.path()) {
-      continue
+    for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
+      if !diagnostic.is_enabled ||
+        !log_diagnostics_state_allows(state_value, diagnostic.path()) {
+        continue
+      }
+      let message = log_diagnostic_message(diagnostic)
+      if message != "" {
+        @app.log_record(@app.Info, message~, target="mgstudio_diagnostic")
+      }
     }
-    let message = log_diagnostic_message(diagnostic)
-    if message != "" {
-      @app.log_record(@app.Info, message~, target="mgstudio_diagnostic")
-    }
-  }
+  })
 }
 
 ///|
@@ -257,22 +257,22 @@ fn log_diagnostics_debug_system(
   time : @app.Res[@time.Time[@time.Real]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
-  let state_value = state.peek()
-  state.set_changed()
-  state_value.timer = state_value.timer.tick(time.get().delta())
-  if !state_value.timer.is_finished() {
-    return
-  }
-
-  for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
-    if !diagnostic.is_enabled ||
-      !log_diagnostics_state_allows(state_value, diagnostic.path()) {
-      continue
+  state.modify(fn(state_value) {
+    state_value.timer = state_value.timer.tick(time.get().delta())
+    if !state_value.timer.is_finished() {
+      return
     }
-    @app.log_record(
-      @app.Debug,
-      message=to_repr(diagnostic).to_string(),
-      target="mgstudio_diagnostic",
-    )
-  }
+
+    for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
+      if !diagnostic.is_enabled ||
+        !log_diagnostics_state_allows(state_value, diagnostic.path()) {
+        continue
+      }
+      @app.log_record(
+        @app.Debug,
+        message=to_repr(diagnostic).to_string(),
+        target="mgstudio_diagnostic",
+      )
+    }
+  })
 }

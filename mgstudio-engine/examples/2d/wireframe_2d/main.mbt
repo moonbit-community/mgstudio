@@ -113,7 +113,9 @@ fn setup(
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
+          materials.modify(fn(materials) {
+            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+          }),
         ),
         @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
         @sprite.NoWireframe2d::NoWireframe2d(),
@@ -134,7 +136,9 @@ fn setup(
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
+          materials.modify(fn(materials) {
+            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+          }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
@@ -152,7 +156,9 @@ fn setup(
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
+          materials.modify(fn(materials) {
+            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+          }),
         ),
         @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),
         @sprite.Wireframe2d::Wireframe2d(),

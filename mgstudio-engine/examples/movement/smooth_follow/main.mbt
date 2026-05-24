@@ -138,7 +138,9 @@ fn setup(
     ),
   )
 
-  let sphere_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.3F))
+  let sphere_mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(0.3F))
+  })
   ignore(
     commands.spawn(
       (

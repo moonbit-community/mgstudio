@@ -86,8 +86,7 @@ fn[T : @asset.Asset] animation_asset_store_mut_or_abort() -> @ecs.ResourceMut[
 ///|
 pub fn animation_clip_add(clip : AnimationClip) -> @asset.Handle[AnimationClip] {
   let assets = animation_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().add(clip)
+  assets.modify(fn(store) { store.add(clip) })
 }
 
 ///|
@@ -103,8 +102,7 @@ pub fn animation_clip_set(
   clip : AnimationClip,
 ) -> Bool {
   let assets = animation_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().set(handle, clip)
+  assets.modify(fn(store) { store.set(handle, clip) })
 }
 
 ///|
@@ -2052,287 +2050,287 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
 ///|
 pub fn animate_targets(world : @ecs.World) -> Unit {
   let runtime_scratch_ref = animation_runtime_scratch_ref_or_init(world)
-  runtime_scratch_ref.set_changed()
-  let runtime_scratch = runtime_scratch_ref.peek()
-  animation_runtime_scratch_clear(runtime_scratch)
-  let transform_updates = runtime_scratch.transform_updates
-  let weights_updates = runtime_scratch.weights_updates
-  let text_color_updates = runtime_scratch.text_color_updates
-  let target_mask_cache = runtime_scratch.target_mask_cache
-  let threaded_graphs = world.get_resource(threaded_animation_graphs_key)
-  let graph_cache = runtime_scratch.graph_cache
-  let clip_cache = runtime_scratch.clip_cache
-  let threaded_graph_cache = runtime_scratch.threaded_graph_cache
+  runtime_scratch_ref.modify(fn(runtime_scratch) {
+    animation_runtime_scratch_clear(runtime_scratch)
+    let transform_updates = runtime_scratch.transform_updates
+    let weights_updates = runtime_scratch.weights_updates
+    let text_color_updates = runtime_scratch.text_color_updates
+    let target_mask_cache = runtime_scratch.target_mask_cache
+    let threaded_graphs = world.get_resource(threaded_animation_graphs_key)
+    let graph_cache = runtime_scratch.graph_cache
+    let clip_cache = runtime_scratch.clip_cache
+    let threaded_graph_cache = runtime_scratch.threaded_graph_cache
 
-  let prepare_player = fn(
-    player_entity : @core.Entity,
-    player : AnimationPlayer,
-    graph_handle : AnimationGraphHandle,
-  ) {
-    let player_id = player_entity.id
-    if player_id < 0 {
-      return
-    }
-    let graph_handle_id = graph_handle.graph().id()
-    let graph = match graph_cache.get(graph_handle_id) {
-      Some(cached_graph) => cached_graph
-      None =>
-        match animation_graph_get(graph_handle.graph()) {
-          Some(loaded_graph) => {
-            graph_cache.set(graph_handle_id, loaded_graph)
-            loaded_graph
-          }
-          None => return
-        }
-    }
-    let threaded_graph = match threaded_graphs {
-      Some(threaded_graphs) =>
-        match threaded_graphs.graphs.get(graph_handle_id) {
-          Some(cached_threaded) => cached_threaded
-          None =>
-            match threaded_graph_cache.get(graph_handle_id) {
-              Some(cached_threaded) => cached_threaded
-              None => {
-                let built = animation_thread_graph_build(graph)
-                threaded_graph_cache.set(graph_handle_id, built)
-                built
-              }
-            }
-        }
-      None =>
-        match threaded_graph_cache.get(graph_handle_id) {
-          Some(cached_threaded) => cached_threaded
-          None => {
-            let built = animation_thread_graph_build(graph)
-            threaded_graph_cache.set(graph_handle_id, built)
-            built
-          }
-        }
-    }
-    let active_by_node = animation_prepared_active_by_node_into(
-      graph,
-      player,
-      animation_runtime_scratch_active_by_node_storage(
-        runtime_scratch, player_entity,
-      ),
-    )
-    animation_runtime_scratch_store_prepared_player(
-      runtime_scratch,
-      player_entity,
-      AnimationPreparedPlayer::{
-        graph_id: graph_handle_id,
-        graph,
-        active_by_node,
-        threaded_graph,
-      },
-    )
-  }
-  let player_column = world.component_column(ecs_key_animation_player)
-  let graph_handle_column = world.component_column(
-    ecs_key_animation_graph_handle,
-  )
-  if player_column is Some(player_column) &&
-    graph_handle_column is Some(graph_handle_column) {
-    player_column.for_each_with_fast_table_row(graph_handle_column, fn(
-      player_entity,
-      _table_id,
-      _row_index,
-      player,
-      graph_handle,
+    let prepare_player = fn(
+      player_entity : @core.Entity,
+      player : AnimationPlayer,
+      graph_handle : AnimationGraphHandle,
     ) {
-      prepare_player(player_entity, player, graph_handle)
-    })
-  } else {
-    let player_query : @ecs.Query[
-      (
-        @core.Entity,
-        @ecs.Comp[AnimationPlayer],
-        @ecs.Comp[AnimationGraphHandle],
-      ),
-      @ecs.All,
-    ] = @ecs.query(world)
-    try! player_query.view(fn(_entity, player_data) {
-      let (player_entity, player_comp, graph_handle_comp) = player_data
-      prepare_player(
-        player_entity,
-        player_comp.value(),
-        graph_handle_comp.value(),
-      )
-    })
-  }
-
-  let target_id_column = world.component_column(ecs_key_animation_target_id)
-  let animated_by_column = world.component_column(ecs_key_animated_by)
-  let transform_column = world.component_column(@transform.ecs_key_transform)
-  let weights_column = world.component_column(ecs_key_animation_weights)
-  let text_color_column = world.component_column(@text.ecs_key_text_color)
-  let evaluation_state = animation_evaluation_state_new()
-  let evaluation_output = animation_evaluation_output_new()
-  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_ticks().this_run,
-  )
-  let write_tick : @core.Tick = {
-    let tick = world.read_change_tick()
-    if tick > 0 {
-      tick
-    } else {
-      1
-    }
-  }
-  if target_id_column is Some(target_id_column) &&
-    animated_by_column is Some(animated_by_column) {
-    let process_target = fn(
-      entity : @core.Entity,
-      table_id : Int,
-      row_index : Int,
-      animated_by : AnimatedBy,
-      target_id : AnimationTargetId,
-      base_transform : @transform.Transform?,
-    ) -> Bool {
-      let player_entity = animated_by.player()
       let player_id = player_entity.id
       if player_id < 0 {
-        return false
+        return
       }
-      let prepared_player = match
-        animation_runtime_scratch_prepared_player(
-          runtime_scratch, player_entity,
-        ) {
-        Some(cached) => cached
-        None => return false
+      let graph_handle_id = graph_handle.graph().id()
+      let graph = match graph_cache.get(graph_handle_id) {
+        Some(cached_graph) => cached_graph
+        None =>
+          match animation_graph_get(graph_handle.graph()) {
+            Some(loaded_graph) => {
+              graph_cache.set(graph_handle_id, loaded_graph)
+              loaded_graph
+            }
+            None => return
+          }
       }
-      let target_mask = animation_target_mask_cached(
-        target_mask_cache,
-        prepared_player.graph_id,
-        prepared_player.graph,
-        target_id,
-      )
-      animation_apply_threaded_player_to_target(
-        world,
-        writer,
-        player_entity,
-        entity,
-        target_id,
-        target_mask,
-        prepared_player.active_by_node,
-        prepared_player.graph,
-        prepared_player.threaded_graph,
-        clip_cache,
-        runtime_scratch.frame_curve_cache,
-        evaluation_state,
-        base_transform,
-        evaluation_output,
-      )
-
-      let mut mark_transform_changed_at_current_row = false
-      if evaluation_output.has_transform {
-        let transform = evaluation_output.transform
-        let wrote = match transform_column {
-          Some(column) =>
-            if table_id >= 0 && row_index >= 0 {
-              match base_transform {
-                Some(_) => {
-                  mark_transform_changed_at_current_row = true
-                  true
+      let threaded_graph = match threaded_graphs {
+        Some(threaded_graphs) =>
+          match threaded_graphs.graphs.get(graph_handle_id) {
+            Some(cached_threaded) => cached_threaded
+            None =>
+              match threaded_graph_cache.get(graph_handle_id) {
+                Some(cached_threaded) => cached_threaded
+                None => {
+                  let built = animation_thread_graph_build(graph)
+                  threaded_graph_cache.set(graph_handle_id, built)
+                  built
                 }
-                None =>
-                  column.set_tick_only_hot_at_table_row_value(
-                    table_id, row_index, transform, write_tick,
-                  )
               }
-            } else {
-              column.set_tick_only_hot(entity, transform)
+          }
+        None =>
+          match threaded_graph_cache.get(graph_handle_id) {
+            Some(cached_threaded) => cached_threaded
+            None => {
+              let built = animation_thread_graph_build(graph)
+              threaded_graph_cache.set(graph_handle_id, built)
+              built
             }
-          None => false
-        }
-        if !wrote {
-          transform_updates.push((entity, transform))
-        }
+          }
       }
-      if evaluation_output.weights is Some(weights) {
-        let wrote = match weights_column {
-          Some(column) =>
-            if table_id >= 0 && row_index >= 0 {
-              column.set_tick_only_hot_at_table_row_value(
-                table_id, row_index, weights, write_tick,
-              )
-            } else {
-              column.set_tick_only_hot(entity, weights)
-            }
-          None => false
-        }
-        if !wrote {
-          weights_updates.push((entity, weights))
-        }
-      }
-      if evaluation_output.text_color is Some(text_color) {
-        let wrote = match text_color_column {
-          Some(column) =>
-            if table_id >= 0 && row_index >= 0 {
-              column.set_tick_only_hot_at_table_row_value(
-                table_id, row_index, text_color, write_tick,
-              )
-            } else {
-              column.set_tick_only_hot(entity, text_color)
-            }
-          None => false
-        }
-        if !wrote {
-          text_color_updates.push((entity, text_color))
-        }
-      }
-      mark_transform_changed_at_current_row
+      let active_by_node = animation_prepared_active_by_node_into(
+        graph,
+        player,
+        animation_runtime_scratch_active_by_node_storage(
+          runtime_scratch, player_entity,
+        ),
+      )
+      animation_runtime_scratch_store_prepared_player(
+        runtime_scratch,
+        player_entity,
+        AnimationPreparedPlayer::{
+          graph_id: graph_handle_id,
+          graph,
+          active_by_node,
+          threaded_graph,
+        },
+      )
     }
-    match transform_column {
-      Some(transform_column) =>
-        target_id_column.for_each3_fast_table_row_mark_third_changed(
-          animated_by_column,
-          transform_column,
-          write_tick,
-          fn(entity, table_id, row_index, target_id, animated_by, transform) {
-            process_target(
-              entity,
-              table_id,
-              row_index,
-              animated_by,
-              target_id,
-              Some(transform),
-            )
-          },
+    let player_column = world.component_column(ecs_key_animation_player)
+    let graph_handle_column = world.component_column(
+      ecs_key_animation_graph_handle,
+    )
+    if player_column is Some(player_column) &&
+      graph_handle_column is Some(graph_handle_column) {
+      player_column.for_each_with_fast_table_row(graph_handle_column, fn(
+        player_entity,
+        _table_id,
+        _row_index,
+        player,
+        graph_handle,
+      ) {
+        prepare_player(player_entity, player, graph_handle)
+      })
+    } else {
+      let player_query : @ecs.Query[
+        (
+          @core.Entity,
+          @ecs.Comp[AnimationPlayer],
+          @ecs.Comp[AnimationGraphHandle],
+        ),
+        @ecs.All,
+      ] = @ecs.query(world)
+      try! player_query.view(fn(_entity, player_data) {
+        let (player_entity, player_comp, graph_handle_comp) = player_data
+        prepare_player(
+          player_entity,
+          player_comp.value(),
+          graph_handle_comp.value(),
         )
-      None =>
-        animated_by_column.for_each_with_fast_table_row(target_id_column, fn(
-          entity,
-          table_id,
-          row_index,
-          animated_by,
-          target_id,
-        ) {
-          ignore(
-            process_target(
-              entity,
-              table_id,
-              row_index,
-              animated_by,
-              target_id,
-              None,
-            ),
-          )
-        })
+      })
     }
-  }
 
-  for update in transform_updates {
-    try! world.set_by_key(update.0, @transform.ecs_key_transform, update.1)
-  }
+    let target_id_column = world.component_column(ecs_key_animation_target_id)
+    let animated_by_column = world.component_column(ecs_key_animated_by)
+    let transform_column = world.component_column(@transform.ecs_key_transform)
+    let weights_column = world.component_column(ecs_key_animation_weights)
+    let text_color_column = world.component_column(@text.ecs_key_text_color)
+    let evaluation_state = animation_evaluation_state_new()
+    let evaluation_output = animation_evaluation_output_new()
+    let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
+      @app.current_system_ticks().this_run,
+    )
+    let write_tick : @core.Tick = {
+      let tick = world.read_change_tick()
+      if tick > 0 {
+        tick
+      } else {
+        1
+      }
+    }
+    if target_id_column is Some(target_id_column) &&
+      animated_by_column is Some(animated_by_column) {
+      let process_target = fn(
+        entity : @core.Entity,
+        table_id : Int,
+        row_index : Int,
+        animated_by : AnimatedBy,
+        target_id : AnimationTargetId,
+        base_transform : @transform.Transform?,
+      ) -> Bool {
+        let player_entity = animated_by.player()
+        let player_id = player_entity.id
+        if player_id < 0 {
+          return false
+        }
+        let prepared_player = match
+          animation_runtime_scratch_prepared_player(
+            runtime_scratch, player_entity,
+          ) {
+          Some(cached) => cached
+          None => return false
+        }
+        let target_mask = animation_target_mask_cached(
+          target_mask_cache,
+          prepared_player.graph_id,
+          prepared_player.graph,
+          target_id,
+        )
+        animation_apply_threaded_player_to_target(
+          world,
+          writer,
+          player_entity,
+          entity,
+          target_id,
+          target_mask,
+          prepared_player.active_by_node,
+          prepared_player.graph,
+          prepared_player.threaded_graph,
+          clip_cache,
+          runtime_scratch.frame_curve_cache,
+          evaluation_state,
+          base_transform,
+          evaluation_output,
+        )
 
-  for update in weights_updates {
-    try! world.set_by_key(update.0, ecs_key_animation_weights, update.1)
-  }
+        let mut mark_transform_changed_at_current_row = false
+        if evaluation_output.has_transform {
+          let transform = evaluation_output.transform
+          let wrote = match transform_column {
+            Some(column) =>
+              if table_id >= 0 && row_index >= 0 {
+                match base_transform {
+                  Some(_) => {
+                    mark_transform_changed_at_current_row = true
+                    true
+                  }
+                  None =>
+                    column.set_tick_only_hot_at_table_row_value(
+                      table_id, row_index, transform, write_tick,
+                    )
+                }
+              } else {
+                column.set_tick_only_hot(entity, transform)
+              }
+            None => false
+          }
+          if !wrote {
+            transform_updates.push((entity, transform))
+          }
+        }
+        if evaluation_output.weights is Some(weights) {
+          let wrote = match weights_column {
+            Some(column) =>
+              if table_id >= 0 && row_index >= 0 {
+                column.set_tick_only_hot_at_table_row_value(
+                  table_id, row_index, weights, write_tick,
+                )
+              } else {
+                column.set_tick_only_hot(entity, weights)
+              }
+            None => false
+          }
+          if !wrote {
+            weights_updates.push((entity, weights))
+          }
+        }
+        if evaluation_output.text_color is Some(text_color) {
+          let wrote = match text_color_column {
+            Some(column) =>
+              if table_id >= 0 && row_index >= 0 {
+                column.set_tick_only_hot_at_table_row_value(
+                  table_id, row_index, text_color, write_tick,
+                )
+              } else {
+                column.set_tick_only_hot(entity, text_color)
+              }
+            None => false
+          }
+          if !wrote {
+            text_color_updates.push((entity, text_color))
+          }
+        }
+        mark_transform_changed_at_current_row
+      }
+      match transform_column {
+        Some(transform_column) =>
+          target_id_column.for_each3_fast_table_row_mark_third_changed(
+            animated_by_column,
+            transform_column,
+            write_tick,
+            fn(entity, table_id, row_index, target_id, animated_by, transform) {
+              process_target(
+                entity,
+                table_id,
+                row_index,
+                animated_by,
+                target_id,
+                Some(transform),
+              )
+            },
+          )
+        None =>
+          animated_by_column.for_each_with_fast_table_row(target_id_column, fn(
+            entity,
+            table_id,
+            row_index,
+            animated_by,
+            target_id,
+          ) {
+            ignore(
+              process_target(
+                entity,
+                table_id,
+                row_index,
+                animated_by,
+                target_id,
+                None,
+              ),
+            )
+          })
+      }
+    }
 
-  for update in text_color_updates {
-    try! world.set_by_key(update.0, @text.ecs_key_text_color, update.1)
-  }
+    for update in transform_updates {
+      try! world.set_by_key(update.0, @transform.ecs_key_transform, update.1)
+    }
+
+    for update in weights_updates {
+      try! world.set_by_key(update.0, ecs_key_animation_weights, update.1)
+    }
+
+    for update in text_color_updates {
+      try! world.set_by_key(update.0, @text.ecs_key_text_color, update.1)
+    }
+  })
 }
 
 ///|

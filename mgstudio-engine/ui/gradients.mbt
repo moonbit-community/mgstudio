@@ -24,9 +24,6 @@ pub struct BoxShadow {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @ecs.Mutable for BoxShadow
-
-///|
 pub fn BoxShadow::new(
   color : @sprite.Color,
   x_offset : Val,
@@ -59,4 +56,3 @@ pub fn BackgroundColor::new(color : @sprite.Color) -> BackgroundColor {
 }
 
 ///|
-pub impl @ecs.Mutable for BackgroundColor

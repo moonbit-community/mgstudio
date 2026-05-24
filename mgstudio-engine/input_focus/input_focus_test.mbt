@@ -82,8 +82,8 @@ fn read_focused_mock_inputs(
   world : @ecs.World,
 ) -> Array[@input_focus.FocusedInput[MockInput]] {
   let key : @ecs.MessageKey[@input_focus.FocusedInput[MockInput]] = @input_focus.focused_input_message_key()
-  let reader = world.message_reader(key, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(key)
+  reader.read()
 }
 
 ///|

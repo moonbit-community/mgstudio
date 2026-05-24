@@ -28,7 +28,9 @@ fn setup(
         @math.Vec2::new(8.0F, 8.0F),
       ).build(),
     )
-  let torus_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.0F))
+  let torus_mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(1.0F))
+  })
   let floor_material = materials
     .peek()
     .add(

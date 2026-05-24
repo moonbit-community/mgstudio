@@ -42,34 +42,40 @@ priv struct FolderEvent {
 }
 
 ///|
-let next_id_ref : Ref[Int] = Ref(1)
+priv struct HostIoGlobalState {
+  mut next_id : Int
+  mut pending_folder_event : FolderEvent?
+}
 
 ///|
-let blobs_ref : Ref[Array[BlobRecord]] = Ref([])
+let host_io_global_state : HostIoGlobalState = {
+  next_id: 1,
+  pending_folder_event: None,
+}
 
 ///|
-let texture_pixels_ref : Ref[Array[BlobRecord]] = Ref([])
+let blobs : Array[BlobRecord] = []
 
 ///|
-let fonts_ref : Ref[Array[BlobRecord]] = Ref([])
+let texture_pixel_records : Array[BlobRecord] = []
 
 ///|
-let folders_ref : Ref[Array[FolderRecord]] = Ref([])
+let fonts : Array[BlobRecord] = []
 
 ///|
-let folder_events_ref : Ref[Array[FolderEvent]] = Ref([])
+let folders : Array[FolderRecord] = []
 
 ///|
-let pending_folder_event_ref : Ref[FolderEvent?] = Ref(None)
+let folder_events : Array[FolderEvent] = []
 
 ///|
 const DEFAULT_ASSETS_DIR : String = "./assets"
 
 ///|
 priv struct AssetIoRuntimeState {
-  assets_dir_override : Ref[String?]
-  source_dir_overrides : Ref[@hashmap.HashMap[String, String]]
-  source_readers : Ref[@hashmap.HashMap[String, AssetReader]]
+  mut assets_dir_override : String?
+  mut source_dir_overrides : @hashmap.HashMap[String, String]
+  mut source_readers : @hashmap.HashMap[String, AssetReader]
 }
 
 ///|
@@ -82,9 +88,9 @@ fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
   let key = asset_io_runtime_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetIoRuntimeState::{
-      assets_dir_override: Ref(None),
-      source_dir_overrides: Ref(@hashmap.HashMap([])),
-      source_readers: Ref(@hashmap.HashMap([])),
+      assets_dir_override: None,
+      source_dir_overrides: @hashmap.HashMap([]),
+      source_readers: @hashmap.HashMap([]),
     })
   }
   match world.get_resource(key) {
@@ -253,9 +259,15 @@ fn loader_default_extensions() -> Array[(String, Int)] {
 }
 
 ///|
-let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref(
-  loader_default_extensions(),
-)
+let loader_extensions : Array[(String, Int)] = loader_default_extensions()
+
+///|
+fn[T] array_replace(target : Array[T], source : Array[T]) -> Unit {
+  target.clear()
+  for item in source {
+    target.push(item)
+  }
+}
 
 ///|
 fn clamp_dim(value : Int) -> Int {
@@ -282,7 +294,7 @@ fn default_runtime_assets_dir() -> String {
 ///|
 fn runtime_assets_dir() -> String {
   let state = asset_io_runtime_state_active()
-  match state.assets_dir_override.val {
+  match state.assets_dir_override {
     Some(path) if path.length() > 0 => path
     _ => default_runtime_assets_dir()
   }
@@ -303,10 +315,8 @@ fn set_runtime_assets_dir_override(path : String?) -> Unit {
   let state = asset_io_runtime_state_active()
   match path {
     Some(value) if value.trim().to_owned() != "" =>
-      state.assets_dir_override.val = Some(
-        @path.Path::normalize(value).to_string(),
-      )
-    _ => state.assets_dir_override.val = None
+      state.assets_dir_override = Some(@path.Path::normalize(value).to_string())
+    _ => state.assets_dir_override = None
   }
 }
 
@@ -319,7 +329,7 @@ fn set_runtime_asset_source_dir_overrides(
   for entry in entries {
     next.set(entry.0, entry.1)
   }
-  state.source_dir_overrides.val = next
+  state.source_dir_overrides = next
 }
 
 ///|
@@ -395,14 +405,14 @@ fn set_runtime_asset_source_readers(
       reader,
     )
   }
-  state.source_readers.val = next
+  state.source_readers = next
 }
 
 ///|
 fn asset_source_reader_for_path(path : String) -> AssetReader? {
   let parsed = parse_virtual_asset_path(path)
   let state = asset_io_runtime_state_active()
-  state.source_readers.val.get(asset_source_reader_key(parsed.source_name))
+  state.source_readers.get(asset_source_reader_key(parsed.source_name))
 }
 
 ///|
@@ -510,7 +520,7 @@ fn source_root_dir(source_name : String?) -> String {
   let state = asset_io_runtime_state_active()
   match source_name {
     Some(name) if name.length() > 0 => {
-      if state.source_dir_overrides.val.get(name) is Some(override_root) {
+      if state.source_dir_overrides.get(name) is Some(override_root) {
         return override_root
       }
       let env_key = "MGSTUDIO_ASSET_SOURCE_\{source_env_suffix(name)}_DIR"
@@ -601,8 +611,8 @@ fn load_asset_file_bytes(path : String) -> Bytes {
 
 ///|
 fn next_id() -> Int {
-  let id = next_id_ref.val
-  next_id_ref.val = next_id_ref.val + 1
+  let id = host_io_global_state.next_id
+  host_io_global_state.next_id = host_io_global_state.next_id + 1
   id
 }
 
@@ -629,18 +639,18 @@ fn find_blob(records : Array[BlobRecord], blob_id : Int) -> BlobRecord? {
 
 ///|
 fn set_texture_pixels(texture_id : Int, bytes : Bytes) -> Unit {
-  for i in 0..<texture_pixels_ref.val.length() {
-    if texture_pixels_ref.val[i].id == texture_id {
-      texture_pixels_ref.val[i] = BlobRecord::{ id: texture_id, bytes }
+  for i in 0..<texture_pixel_records.length() {
+    if texture_pixel_records[i].id == texture_id {
+      texture_pixel_records[i] = BlobRecord::{ id: texture_id, bytes }
       return
     }
   }
-  texture_pixels_ref.val.push(BlobRecord::{ id: texture_id, bytes })
+  texture_pixel_records.push(BlobRecord::{ id: texture_id, bytes })
 }
 
 ///|
 fn texture_pixels(texture_id : Int) -> Bytes? {
-  if find_blob(texture_pixels_ref.val, texture_id) is Some(record) {
+  if find_blob(texture_pixel_records, texture_id) is Some(record) {
     Some(record.bytes)
   } else {
     None
@@ -2882,7 +2892,7 @@ fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit {
   let normalized = extension_normalize(extension)
   let next : Array[(String, Int)] = []
   let mut replaced = false
-  for item in loader_extensions_ref.val {
+  for item in loader_extensions {
     if item.0 == normalized {
       if !replaced {
         next.push((normalized, kind))
@@ -2895,25 +2905,25 @@ fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit {
   if !replaced {
     next.push((normalized, kind))
   }
-  loader_extensions_ref.val = next
+  array_replace(loader_extensions, next)
 }
 
 ///|
 fn remove_loader_extension(extension~ : String) -> Unit {
   let normalized = extension_normalize(extension)
   let next : Array[(String, Int)] = []
-  for item in loader_extensions_ref.val {
+  for item in loader_extensions {
     if item.0 != normalized {
       next.push(item)
     }
   }
-  loader_extensions_ref.val = next
+  array_replace(loader_extensions, next)
 }
 
 ///|
 fn loader_kind_for_path(path~ : String) -> Int {
   if path_extension(path) is Some(ext) {
-    for item in loader_extensions_ref.val {
+    for item in loader_extensions {
       if item.0 == ext {
         return item.1
       }
@@ -2969,7 +2979,7 @@ fn load_asset_meta_bytes(path : String) -> Bytes? {
 
 ///|
 fn folder_handles(folder_id : Int) -> Array[Int]? {
-  for folder in folders_ref.val {
+  for folder in folders {
     if folder.id == folder_id {
       let handles : Array[Int] = []
       for entry in folder.entries {
@@ -3079,7 +3089,7 @@ fn folder_collect_entries(folder : FolderRecord) -> (Array[FolderEntry], Bool) {
 ///|
 fn refresh_watched_folders() -> Unit {
   let next : Array[FolderRecord] = []
-  for folder in folders_ref.val {
+  for folder in folders {
     let (entries, changed) = folder_collect_entries(folder)
     let refreshed = FolderRecord::{
       id: folder.id,
@@ -3091,10 +3101,10 @@ fn refresh_watched_folders() -> Unit {
     }
     next.push(refreshed)
     if changed {
-      folder_events_ref.val.push(FolderEvent::{ kind: 1, folder_id: folder.id })
+      folder_events.push(FolderEvent::{ kind: 1, folder_id: folder.id })
     }
   }
-  folders_ref.val = next
+  array_replace(folders, next)
 }
 
 ///|
@@ -3220,14 +3230,14 @@ fn load_texture_bytes_with_container(
 ///|
 fn load_wgsl(path~ : String) -> Int {
   let id = next_id()
-  blobs_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  blobs.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
 fn load_bytes(path~ : String) -> Int {
   let id = next_id()
-  blobs_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  blobs.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
@@ -3251,7 +3261,7 @@ fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int {
 
 ///|
 fn bytes_len(blob_id : Int) -> Int {
-  if find_blob(blobs_ref.val, blob_id) is Some(record) {
+  if find_blob(blobs, blob_id) is Some(record) {
     record.bytes.length()
   } else {
     0
@@ -3260,7 +3270,7 @@ fn bytes_len(blob_id : Int) -> Int {
 
 ///|
 fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
-  if find_blob(blobs_ref.val, blob_id) is Some(record) {
+  if find_blob(blobs, blob_id) is Some(record) {
     blob_u32_at(record.bytes, index)
   } else {
     0
@@ -3372,9 +3382,9 @@ fn update_texture_region(
   height~ : Int,
   glyph_id~ : Int,
 ) -> Unit {
-  let source = if find_blob(blobs_ref.val, glyph_id) is Some(record) {
+  let source = if find_blob(blobs, glyph_id) is Some(record) {
     record.bytes
-  } else if find_blob(fonts_ref.val, glyph_id) is Some(record) {
+  } else if find_blob(fonts, glyph_id) is Some(record) {
     record.bytes
   } else {
     Bytes::makei(rgba8_len(width, height), _ => (0).to_byte())
@@ -3566,13 +3576,13 @@ fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
 ///|
 fn load_font(path~ : String) -> Int {
   let id = next_id()
-  fonts_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  fonts.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
 fn font_bytes_len(font_id : Int) -> Int {
-  if find_blob(fonts_ref.val, font_id) is Some(record) {
+  if find_blob(fonts, font_id) is Some(record) {
     record.bytes.length()
   } else {
     0
@@ -3581,7 +3591,7 @@ fn font_bytes_len(font_id : Int) -> Int {
 
 ///|
 fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
-  if find_blob(fonts_ref.val, font_id) is Some(record) {
+  if find_blob(fonts, font_id) is Some(record) {
     blob_u8_at(record.bytes, index)
   } else {
     0
@@ -3590,7 +3600,7 @@ fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
 
 ///|
 fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
-  if find_blob(fonts_ref.val, font_id) is Some(record) {
+  if find_blob(fonts, font_id) is Some(record) {
     blob_u32_at(record.bytes, index)
   } else {
     0
@@ -3616,7 +3626,7 @@ fn load_folder(path~ : String) -> Int {
     entries: [],
   }
   let (entries, _) = folder_collect_entries(seed_folder)
-  folders_ref.val.push(FolderRecord::{
+  folders.push(FolderRecord::{
     id: folder_id,
     virtual_path: folder_virtual,
     source_name: parsed.source_name,
@@ -3624,13 +3634,13 @@ fn load_folder(path~ : String) -> Int {
     absolute_path: folder_path,
     entries,
   })
-  folder_events_ref.val.push(FolderEvent::{ kind: 3, folder_id })
+  folder_events.push(FolderEvent::{ kind: 3, folder_id })
   folder_id
 }
 
 ///|
 fn pop_next_folder_event() -> FolderEvent? {
-  match folder_events_ref.val.pop() {
+  match folder_events.pop() {
     Some(value) => Some(value)
     None => None
   }
@@ -3638,13 +3648,13 @@ fn pop_next_folder_event() -> FolderEvent? {
 
 ///|
 fn poll_loaded_folder_event_kind() -> Int {
-  if pending_folder_event_ref.val is Some(event) {
+  if host_io_global_state.pending_folder_event is Some(event) {
     return event.kind
   }
   refresh_watched_folders()
   match pop_next_folder_event() {
     Some(event) => {
-      pending_folder_event_ref.val = Some(event)
+      host_io_global_state.pending_folder_event = Some(event)
       event.kind
     }
     None => -1
@@ -3653,8 +3663,8 @@ fn poll_loaded_folder_event_kind() -> Int {
 
 ///|
 fn poll_loaded_folder_event_id() -> Int {
-  if pending_folder_event_ref.val is Some(event) {
-    pending_folder_event_ref.val = None
+  if host_io_global_state.pending_folder_event is Some(event) {
+    host_io_global_state.pending_folder_event = None
     event.folder_id
   } else {
     -1

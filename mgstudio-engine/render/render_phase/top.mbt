@@ -38,9 +38,7 @@ let ecs_key_render_pass_trace_runtime_state : @ecs.ResourceKey[
 )
 
 ///|
-let render_pass_trace_fallback_state_ref : Ref[RenderPassTraceRuntimeState] = Ref(
-  render_pass_trace_runtime_state_default(),
-)
+let render_pass_trace_fallback_state : RenderPassTraceRuntimeState = render_pass_trace_runtime_state_default()
 
 ///|
 fn render_pass_trace_runtime_state() -> RenderPassTraceRuntimeState {
@@ -54,10 +52,10 @@ fn render_pass_trace_runtime_state() -> RenderPassTraceRuntimeState {
       }
       match world.get_resource(ecs_key_render_pass_trace_runtime_state) {
         Some(state) => state
-        None => render_pass_trace_fallback_state_ref.val
+        None => render_pass_trace_fallback_state
       }
     }
-    None => render_pass_trace_fallback_state_ref.val
+    None => render_pass_trace_fallback_state
   }
 }
 

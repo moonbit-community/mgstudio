@@ -126,25 +126,28 @@ test "dev_tools: frame time graph values mirror diagnostics history in seconds" 
       @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
     )
     .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
-  let store_ref = app
+  let store_mut = app
     .world()
-    .get_resource_ref_mut(@diagnostic.DiagnosticsStore::resource())
+    .get_resource_mut(@diagnostic.DiagnosticsStore::resource())
     .unwrap()
-  let frame_time_ref = store_ref.val
-    .get_ref(@diagnostic.frame_time_diagnostic_frame_time)
+  let frame_time = store_mut
+    .peek()
+    .get(@diagnostic.frame_time_diagnostic_frame_time)
     .unwrap()
-  frame_time_ref.val.add_measurement(
-    @diagnostic.DiagnosticMeasurement::new(
-      @core.Instant::from_secs_f32(1.0F),
-      16.0F,
-    ),
-  )
-  frame_time_ref.val.add_measurement(
-    @diagnostic.DiagnosticMeasurement::new(
-      @core.Instant::from_secs_f32(2.0F),
-      33.0F,
-    ),
-  )
+  store_mut.modify(fn(_store) {
+    frame_time.add_measurement(
+      @diagnostic.DiagnosticMeasurement::new(
+        @core.Instant::from_secs_f32(1.0F),
+        16.0F,
+      ),
+    )
+    frame_time.add_measurement(
+      @diagnostic.DiagnosticMeasurement::new(
+        @core.Instant::from_secs_f32(2.0F),
+        33.0F,
+      ),
+    )
+  })
   update_frame_time_values(app.world())
   let values = app
     .world()
@@ -164,39 +167,46 @@ test "dev_tools: frame time graph material buffers mirror diagnostics history" {
     )
     .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
   let buffer_handle = app
-  .world()
-  .get_resource_ref_mut(frame_time_graph_buffer_assets_key())
-  .unwrap().val.add(@render_resource.StorageBuffer::new())
+    .world()
+    .get_resource_mut(frame_time_graph_buffer_assets_key())
+    .unwrap()
+    .modify(fn(buffers) { buffers.add(@render_resource.StorageBuffer::new()) })
   ignore(
     app
     .world()
-    .get_resource_ref_mut(frame_time_graph_material_assets_key())
-    .unwrap().val.add(
-      FrametimeGraphMaterial::new(
-        buffer_handle,
-        FrameTimeGraphConfigUniform::new(60.0F, 30.0F, true),
-      ),
-    ),
+    .get_resource_mut(frame_time_graph_material_assets_key())
+    .unwrap()
+    .modify(fn(materials) {
+      materials.add(
+        FrametimeGraphMaterial::new(
+          buffer_handle,
+          FrameTimeGraphConfigUniform::new(60.0F, 30.0F, true),
+        ),
+      )
+    }),
   )
-  let store_ref = app
+  let store_mut = app
     .world()
-    .get_resource_ref_mut(@diagnostic.DiagnosticsStore::resource())
+    .get_resource_mut(@diagnostic.DiagnosticsStore::resource())
     .unwrap()
-  let frame_time_ref = store_ref.val
-    .get_ref(@diagnostic.frame_time_diagnostic_frame_time)
+  let frame_time = store_mut
+    .peek()
+    .get(@diagnostic.frame_time_diagnostic_frame_time)
     .unwrap()
-  frame_time_ref.val.add_measurement(
-    @diagnostic.DiagnosticMeasurement::new(
-      @core.Instant::from_secs_f32(1.0F),
-      20.0F,
-    ),
-  )
-  frame_time_ref.val.add_measurement(
-    @diagnostic.DiagnosticMeasurement::new(
-      @core.Instant::from_secs_f32(2.0F),
-      40.0F,
-    ),
-  )
+  store_mut.modify(fn(_store) {
+    frame_time.add_measurement(
+      @diagnostic.DiagnosticMeasurement::new(
+        @core.Instant::from_secs_f32(1.0F),
+        20.0F,
+      ),
+    )
+    frame_time.add_measurement(
+      @diagnostic.DiagnosticMeasurement::new(
+        @core.Instant::from_secs_f32(2.0F),
+        40.0F,
+      ),
+    )
+  })
   update_frame_time_values(app.world())
   let buffer = app
     .world()

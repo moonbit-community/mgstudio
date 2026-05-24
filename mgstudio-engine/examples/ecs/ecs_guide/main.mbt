@@ -306,9 +306,9 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
 
 ///|
 fn print_at_end_round(counter : @app.Local[Int]) -> Unit {
-  let counter_ref = counter.get_ref()
-  counter_ref.val = counter_ref.val + 1
-  println("In set 'Last' for the \{counter_ref.val.to_string()}th time")
+  let next = counter.get() + 1
+  counter.set(next)
+  println("In set 'Last' for the \{next.to_string()}th time")
   println("")
 }
 

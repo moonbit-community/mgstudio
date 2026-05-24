@@ -76,20 +76,22 @@ pub fn entity_count_diagnostics_plugin_with(
 
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
-  match world.get_resource_ref_mut(DiagnosticsStore::resource()) {
-    Some(store_ref) =>
-      match store_ref.val.get_ref(entity_count_diagnostic_path) {
-        Some(diagnostic_ref) => {
-          if !diagnostic_ref.val.is_enabled {
-            return
+  match world.get_resource_mut(DiagnosticsStore::resource()) {
+    Some(store_mut) =>
+      store_mut.modify(fn(store) {
+        match store.get(entity_count_diagnostic_path) {
+          Some(diagnostic) => {
+            if !diagnostic.is_enabled {
+              return
+            }
+            diagnostic.add_measurement(DiagnosticMeasurement::{
+              time: @core.Instant::now(),
+              value: Float::from_int(world.entity_count()),
+            })
           }
-          diagnostic_ref.val.add_measurement(DiagnosticMeasurement::{
-            time: @core.Instant::now(),
-            value: Float::from_int(world.entity_count()),
-          })
+          None => ()
         }
-        None => ()
-      }
+      })
     None => ()
   }
 }

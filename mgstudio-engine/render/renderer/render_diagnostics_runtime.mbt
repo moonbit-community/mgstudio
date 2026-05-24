@@ -164,13 +164,11 @@ fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
 }
 
 ///|
-let render_diagnostics_runtime_state_ref : Ref[RenderDiagnosticsRuntimeState] = Ref(
-  render_diagnostics_runtime_state_default(),
-)
+let render_diagnostics_runtime_state : RenderDiagnosticsRuntimeState = render_diagnostics_runtime_state_default()
 
 ///|
 fn render_pass_timing_reset_counters() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.pass_total_count = 0
   state.pass_2d_count = 0
   state.pass_3d_main_count = 0
@@ -194,7 +192,7 @@ fn render_pass_timing_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
 
 ///|
 fn render_pass_timing_end_active_pass() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   if state.active_pass_start_time is Some(start_time) {
     let elapsed_ms = (@time.host_time_now() - start_time) * 1000.0F
     state.pass_total_count = state.pass_total_count + 1
@@ -228,14 +226,14 @@ fn render_pass_timing_end_active_pass() -> Unit {
 
 ///|
 fn render_pass_timing_begin_active_pass(phase : Int) -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.active_pass_phase = phase
   state.active_pass_start_time = Some(@time.host_time_now())
 }
 
 ///|
 fn render_diagnostics_reset_debug_counters_if_needed() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_frame_counter = state.debug_frame_counter + 1
   if state.debug_frame_counter % 60 == 0 {
     state.debug_mesh2d_draw_calls = 0
@@ -256,7 +254,7 @@ fn render_diagnostics_reset_debug_counters_if_needed() -> Unit {
 
 ///|
 pub fn render_diagnostics_begin_frame() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.active_pass_phase = RENDER_PASS_PHASE_NONE
   state.active_pass_start_time = None
   state.current_frame_mesh2d_draw_calls = 0
@@ -274,7 +272,7 @@ pub fn render_diagnostics_end_frame() -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh2d_draw(mesh_id : Int) -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_draw_calls = state.debug_mesh2d_draw_calls + 1
   state.current_frame_mesh2d_draw_calls = state.current_frame_mesh2d_draw_calls +
     1
@@ -286,7 +284,7 @@ pub fn render_diagnostics_record_mesh2d_draw(mesh_id : Int) -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh3d_draw(mesh_id : Int) -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh3d_draw_calls = state.debug_mesh3d_draw_calls + 1
   state.current_frame_mesh3d_draw_calls = state.current_frame_mesh3d_draw_calls +
     1
@@ -298,7 +296,7 @@ pub fn render_diagnostics_record_mesh3d_draw(mesh_id : Int) -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh2d_executed_draw() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_executed_draw_calls = state.debug_mesh2d_executed_draw_calls +
     1
   state.current_frame_mesh2d_executed_draw_calls = state.current_frame_mesh2d_executed_draw_calls +
@@ -307,7 +305,7 @@ pub fn render_diagnostics_record_mesh2d_executed_draw() -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh3d_executed_draw() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh3d_executed_draw_calls = state.debug_mesh3d_executed_draw_calls +
     1
   state.current_frame_mesh3d_executed_draw_calls = state.current_frame_mesh3d_executed_draw_calls +
@@ -316,58 +314,58 @@ pub fn render_diagnostics_record_mesh3d_executed_draw() -> Unit {
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_frame() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_no_frame = state.debug_mesh2d_drop_no_frame + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pass() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_no_pass = state.debug_mesh2d_drop_no_pass + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pass_state() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_no_pass_state = state.debug_mesh2d_drop_no_pass_state +
     1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_missing_mesh() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_missing_mesh = state.debug_mesh2d_drop_missing_mesh +
     1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_bad_stride() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_bad_stride = state.debug_mesh2d_drop_bad_stride + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_pipeline() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_no_pipeline = state.debug_mesh2d_drop_no_pipeline + 1
 }
 
 ///|
 pub fn render_diagnostics_record_mesh2d_drop_no_uniform_buf() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.debug_mesh2d_drop_no_uniform_buf = state.debug_mesh2d_drop_no_uniform_buf +
     1
 }
 
 ///|
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
-  render_diagnostics_runtime_state_ref.val.last_frame_render_diagnostics_snapshot
+  render_diagnostics_runtime_state.last_frame_render_diagnostics_snapshot
 }
 
 ///|
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
   render_pass_timing_end_active_pass()
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::{
     mesh2d_draw_calls: state.current_frame_mesh2d_draw_calls,
     mesh2d_executed_draw_calls: state.current_frame_mesh2d_executed_draw_calls,
@@ -388,7 +386,7 @@ pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
 
 ///|
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
-  let state = render_diagnostics_runtime_state_ref.val
+  let state = render_diagnostics_runtime_state
   state.active_pass_phase = RENDER_PASS_PHASE_NONE
   state.active_pass_start_time = None
   state.current_frame_mesh2d_draw_calls = 0

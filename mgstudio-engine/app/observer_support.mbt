@@ -24,31 +24,41 @@ type SubAppObserverRegistrar = (SubApp[@ecs.World], ObserverRunner) -> SubApp[
 type EntityObserverRegistrar = (@ecs.World, @core.Entity, ObserverRunner) -> Unit
 
 ///|
-pub fn run_registered_observer_system(
+priv struct ObserverSystemRunState {
+  mut last_run_tick : @core.Tick
+}
+
+///|
+fn observer_system_run_state_new() -> ObserverSystemRunState {
+  { last_run_tick: 0 }
+}
+
+///|
+fn run_registered_observer_system(
   world : @ecs.World,
-  last_run_tick_ref : Ref[@core.Tick],
+  run_state : ObserverSystemRunState,
   observer_system : SystemFn[@ecs.World],
   context_kind? : ErrorContextKind = ErrorContextKind::Observer,
   source? : String = "<observer>",
 ) -> Unit {
   let this_run = world.increment_change_tick()
-  let sys_ticks = @core.SystemTicks::new(last_run_tick_ref.val, this_run)
+  let sys_ticks = @core.SystemTicks::new(run_state.last_run_tick, this_run)
   let ctx = world.get_tick_context()
   ctx.set(sys_ticks)
   world.set_tick_context(ctx)
-  let previous_world = current_world_ref.val
-  let previous_tick = current_system_ticks_ref.val
+  let previous_world = app_execution_context_state.current_world
+  let previous_tick = app_execution_context_state.current_system_ticks
   let previous_outcome = current_system_execution_outcome()
-  current_world_ref.val = Some(world)
-  current_system_ticks_ref.val = Some(sys_ticks)
+  app_execution_context_state.current_world = Some(world)
+  app_execution_context_state.current_system_ticks = Some(sys_ticks)
   reset_system_execution_outcome()
   observer_system(world)
   let outcome = current_system_execution_outcome()
-  current_system_execution_outcome_ref.val = previous_outcome
-  current_system_ticks_ref.val = previous_tick
-  current_world_ref.val = previous_world
+  system_execution_runtime_state.outcome = previous_outcome
+  app_execution_context_state.current_system_ticks = previous_tick
+  app_execution_context_state.current_world = previous_world
   match outcome {
-    Success => last_run_tick_ref.val = this_run
+    Success => run_state.last_run_tick = this_run
     Skipped(_) => ()
     Invalid(message) =>
       report_world_error(
@@ -61,7 +71,7 @@ pub fn run_registered_observer_system(
         ),
       )
     Error(err) => {
-      last_run_tick_ref.val = this_run
+      run_state.last_run_tick = this_run
       report_world_error(
         world,
         err,
@@ -79,14 +89,9 @@ fn register_observer_system_in_sub_app(
   system : SystemFn[@ecs.World],
 ) -> SubApp[@ecs.World] {
   let observer_system = system
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   register(sub_app, fn(world : @ecs.World) {
-    run_registered_observer_system(
-      world,
-      last_run_tick_ref,
-      observer_system,
-      source~,
-    )
+    run_registered_observer_system(world, run_state, observer_system, source~)
   })
 }
 
@@ -102,11 +107,11 @@ fn register_entity_observer_command(
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       let observer_system = system
-      let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+      let run_state = observer_system_run_state_new()
       register(world, entity, fn(observer_world : @ecs.World) {
         run_registered_observer_system(
           observer_world,
-          last_run_tick_ref,
+          run_state,
           observer_system,
           source~,
         )
@@ -127,7 +132,7 @@ pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with init_state(
 
 ///|
 pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with get(_state) {
-  @ecs.current_observer()
+  @ecs.World::current_observer(system_param_abort_missing_world())
 }
 
 ///|
@@ -151,7 +156,7 @@ pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @e
   E,
   C,
 ] with get(_state) {
-  @ecs.current_component_observer()
+  @ecs.World::current_component_observer(system_param_abort_missing_world())
 }
 
 ///|
@@ -174,9 +179,7 @@ pub fn[E : @ecs.TriggerEvent] SubApp::add_observer(
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -205,9 +208,7 @@ pub fn[E : @ecs.TriggerEvent] SubApp::add_observer_fallible(
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -236,9 +237,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] SubApp::add_observer2(
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -267,9 +266,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] SubApp::add_observer2_fallible(
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -298,9 +295,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] SubApp::add_ob
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -329,9 +324,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] SubApp::add_ob
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -365,9 +358,7 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -406,9 +397,7 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_observer(fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
-        }),
+        .add_observer(fn(event : @ecs.On[E]) { run(event.world()) }),
       )
       sub_app
     },
@@ -423,12 +412,12 @@ pub fn[E : @ecs.TriggerEvent] observe_entity(
   observer : (@ecs.On[E]) -> Unit,
 ) -> Unit {
   let observer_system = system_param(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity",
       )
@@ -443,12 +432,12 @@ pub fn[E : @ecs.TriggerEvent] observe_entity_fallible(
   observer : (@ecs.On[E]) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity_fallible",
       )
@@ -463,12 +452,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2(
   observer : (@ecs.On[E], P2) -> Unit,
 ) -> Unit {
   let observer_system = system_param2(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity2",
       )
@@ -483,12 +472,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2_fallible(
   observer : (@ecs.On[E], P2) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param2(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity2_fallible",
       )
@@ -503,12 +492,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit,
 ) -> Unit {
   let observer_system = system_param3(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity3",
       )
@@ -523,12 +512,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param3(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity3_fallible",
       )
@@ -548,12 +537,12 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit,
 ) -> Unit {
   let observer_system = system_param4(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity4",
       )
@@ -573,12 +562,12 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param4(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
+  let run_state = observer_system_run_state_new()
   ignore(
-    world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
+    world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
       run_registered_observer_system(
-        @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        event.world(),
+        run_state,
         observer_system,
         source="observe_entity4_fallible",
       )
@@ -612,8 +601,8 @@ pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_componen
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -643,8 +632,8 @@ pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_componen
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -676,8 +665,8 @@ pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] Su
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -707,8 +696,8 @@ pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] Su
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -745,8 +734,8 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -786,8 +775,8 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -830,8 +819,8 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -873,8 +862,8 @@ pub fn[
       ignore(
         sub_app
         .world()
-        .add_component_observer(fn(_event : @ecs.ComponentOn[E, C]) {
-          run(@ecs.current_observer_world_abort_missing())
+        .add_component_observer(fn(event : @ecs.ComponentOn[E, C]) {
+          run(event.world())
         }),
       )
       sub_app
@@ -910,8 +899,8 @@ pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(
     "EntityCommands::observe",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -929,8 +918,8 @@ pub fn[E : @ecs.TriggerEvent] EntityCommands::observe_fallible(
     "EntityCommands::observe_fallible",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -948,8 +937,8 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(
     "EntityCommands::observe2",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -967,8 +956,8 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2_fallibl
     "EntityCommands::observe2_fallible",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -986,8 +975,8 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands
     "EntityCommands::observe3",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -1005,8 +994,8 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands
     "EntityCommands::observe3_fallible",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -1029,8 +1018,8 @@ pub fn[
     "EntityCommands::observe4",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },
@@ -1053,8 +1042,8 @@ pub fn[
     "EntityCommands::observe4_fallible",
     fn(world, entity, run) {
       ignore(
-        world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
-          run(@ecs.current_observer_world_abort_missing())
+        world.add_entity_observer(entity, fn(event : @ecs.On[E]) {
+          run(event.world())
         }),
       )
     },

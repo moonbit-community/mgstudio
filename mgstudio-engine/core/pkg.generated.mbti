@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/core"
 import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -151,17 +150,6 @@ pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
 pub fn[T] Messages::send(Self[T], Int64, T) -> Unit
 pub fn[T] Messages::send_batch(Self[T], Int64, Array[T]) -> Unit
 pub fn[T] Messages::writer(Self[T], Int64) -> MessageWriter[T]
-
-pub struct Resource[T] {
-  mut cell : @ref.Ref[T]?
-}
-pub fn[T] Resource::get(Self[T]) -> T?
-pub fn[T] Resource::get_ref(Self[T]) -> @ref.Ref[T]?
-pub fn[T] Resource::get_ref_mut(Self[T]) -> @ref.Ref[T]?
-pub fn[T] Resource::insert(Self[T], T) -> Unit
-pub fn[T] Resource::is_present(Self[T]) -> Bool
-pub fn[T] Resource::new() -> Self[T]
-pub fn[T] Resource::remove(Self[T]) -> T?
 
 type SparseSet[T]
 pub fn[T] SparseSet::contains(Self[T], Entity) -> Bool

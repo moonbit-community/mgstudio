@@ -43,12 +43,10 @@ priv struct Physics3dDebugRenderState {
 }
 
 ///|
-let physics3d_debug_render_context : Ref[Physics3dDebugRenderContext] = Ref(
-  Physics3dDebugRenderContext::Physics3dDebugRenderContext(),
-)
+let physics3d_debug_render_context : Physics3dDebugRenderContext = Physics3dDebugRenderContext::Physics3dDebugRenderContext()
 
 ///|
-let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref({
+let physics3d_debug_render_state : Physics3dDebugRenderState = {
   line_mesh: None,
   dynamic_material: None,
   fixed_material: None,
@@ -56,7 +54,7 @@ let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref({
   parentless_material: None,
   sensor_material: None,
   line_entities: [],
-})
+}
 
 ///|
 const DEBUG_LINE_THICKNESS : Float = 0.04F
@@ -83,7 +81,7 @@ fn physics3d_debug_material_for(
   rb3d : RigidBody3d?,
   sensor : Bool,
 ) -> @pbr.MeshMaterial3d? {
-  let state = physics3d_debug_render_state.val
+  let state = physics3d_debug_render_state
   if sensor {
     return state.sensor_material
   }
@@ -103,14 +101,15 @@ fn physics3d_debug_material_for(
 
 ///|
 fn physics3d_debug_ensure_assets() -> Unit {
-  let state = physics3d_debug_render_state.val
+  let state = physics3d_debug_render_state
   if state.line_mesh is Some(_) {
     return
   }
   state.line_mesh = Some(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
   )
   state.dynamic_material = Some(
@@ -132,18 +131,18 @@ fn physics3d_debug_ensure_assets() -> Unit {
 
 ///|
 pub fn physics3d_debug_render_set_enabled(enabled : Bool) -> Unit {
-  physics3d_debug_render_context.val.enabled = enabled
+  physics3d_debug_render_context.enabled = enabled
 }
 
 ///|
 pub fn physics3d_debug_render_enabled() -> Bool {
-  physics3d_debug_render_context.val.enabled
+  physics3d_debug_render_context.enabled
 }
 
 ///|
 fn physics3d_debug_clear_lines(world : @ecs.World) -> Unit {
   let ecs_world = world
-  let state = physics3d_debug_render_state.val
+  let state = physics3d_debug_render_state
   while state.line_entities.length() > 0 {
     let entity = state.line_entities.pop().unwrap()
     try! (ecs_world.despawn(entity) |> ignore)
@@ -373,7 +372,7 @@ fn physics3d_debug_ensure_line_pool(
   desired_count : Int,
 ) -> Unit {
   let ecs_world = world
-  let state = physics3d_debug_render_state.val
+  let state = physics3d_debug_render_state
   guard state.line_mesh is Some(mesh) else { return }
   guard state.dynamic_material is Some(default_material) else { return }
   while state.line_entities.length() < desired_count {
@@ -393,8 +392,8 @@ fn physics3d_debug_ensure_line_pool(
 ///|
 pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
   physics3d_debug_ensure_assets()
-  let state = physics3d_debug_render_state.val
-  if !physics3d_debug_render_context.val.enabled {
+  let state = physics3d_debug_render_state
+  if !physics3d_debug_render_context.enabled {
     if state.line_entities.length() > 0 {
       physics3d_debug_clear_lines(world)
     }

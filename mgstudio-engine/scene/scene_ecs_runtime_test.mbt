@@ -16,7 +16,11 @@
 fn[P : @pbr.IntoPbrMeshAsset] scene_test_mesh3d_from_mesh_asset(
   value : P,
 ) -> @mesh.Mesh3d {
-  @mesh.Mesh3d::new(@pbr.mesh_assets_mut_or_abort().val |> @pbr.add_mesh(value))
+  @mesh.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(value)
+    }),
+  )
 }
 
 ///|

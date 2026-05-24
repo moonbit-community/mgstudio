@@ -89,15 +89,13 @@ fn update_virtual_time_resource(
   world : @ecs.World,
   update : (@time.Time[@time.Virtual]) -> @time.Time[@time.Virtual],
 ) -> Unit {
-  let virtual_ref = world
-    .get_resource_ref_mut(@time.virtual_time_resource_key)
+  let virtual_time = world
+    .get_resource_mut(@time.virtual_time_resource_key)
     .unwrap()
-  let time_ref = world
-    .get_resource_ref_mut(@time.default_time_resource_key)
-    .unwrap()
-  let next_virtual = update(virtual_ref.val)
-  virtual_ref.val = next_virtual
-  time_ref.val = next_virtual.as_generic()
+  let time = world.get_resource_mut(@time.default_time_resource_key).unwrap()
+  let next_virtual = update(virtual_time.peek())
+  virtual_time.set(next_virtual)
+  time.set(next_virtual.as_generic())
 }
 
 ///|

@@ -59,37 +59,37 @@ pub fn ensure_render3d_mesh_runtime_state_resource(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn render3d_mesh_runtime_state_ref_or_abort(
+pub fn render3d_mesh_runtime_state_mut_or_abort(
   world : @ecs.World,
-) -> Ref[Render3dMeshRuntimeState] {
+) -> @ecs.ResourceMut[Render3dMeshRuntimeState] {
   ensure_render3d_mesh_runtime_state_resource(world)
   match world.get_resource_mut(Render3dMeshRuntimeState::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dMeshRuntimeState resource in render world")
   }
 }
 
 ///|
 pub fn render3d_upload_mesh_handle_cached(
-  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> Int {
   let mesh_handle_id = mesh_handle.id()
   if mesh_handle_id < 0 {
     return -1
   }
-  match mesh_runtime_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
+  match mesh_runtime_state_value.mesh_upload_cache.get(mesh_handle_id) {
     Some(mesh_id) =>
       if mesh_id > 0 && @render_gpu.host_gpu_mesh_info(mesh_id) is Some(_) {
         mesh_id
       } else {
-        mesh_runtime_state_ref.val.mesh_preprocess_static_cache.remove(
+        mesh_runtime_state_value.mesh_preprocess_static_cache.remove(
           mesh_handle_id,
         )
         let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
           mesh_handle,
         )
-        mesh_runtime_state_ref.val.mesh_upload_cache.set(
+        mesh_runtime_state_value.mesh_upload_cache.set(
           mesh_handle_id, uploaded_mesh_id,
         )
         uploaded_mesh_id
@@ -98,7 +98,7 @@ pub fn render3d_upload_mesh_handle_cached(
       let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
         mesh_handle,
       )
-      mesh_runtime_state_ref.val.mesh_upload_cache.set(
+      mesh_runtime_state_value.mesh_upload_cache.set(
         mesh_handle_id, uploaded_mesh_id,
       )
       uploaded_mesh_id
@@ -125,9 +125,9 @@ pub fn render3d_mesh_upload_cache_state_after_clear(
 
 ///|
 pub fn render3d_clear_mesh_upload_cache(
-  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
 ) -> Unit {
-  mesh_runtime_state_ref.val.mesh_upload_cache.clear()
+  mesh_runtime_state_value.mesh_upload_cache.clear()
 }
 
 ///|
@@ -140,10 +140,10 @@ fn render3d_mesh_handle_alive(mesh_handle_id : Int) -> Bool {
 
 ///|
 pub fn render3d_sweep_mesh_runtime_caches(
-  mesh_runtime_state_ref : Ref[Render3dMeshRuntimeState],
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
 ) -> Unit {
   let stale_upload_cache_keys : Array[Int] = []
-  for entry in mesh_runtime_state_ref.val.mesh_upload_cache.iter() {
+  for entry in mesh_runtime_state_value.mesh_upload_cache.iter() {
     let (mesh_handle_id, _mesh_id) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_upload_cache_keys.push(mesh_handle_id)
@@ -151,29 +151,27 @@ pub fn render3d_sweep_mesh_runtime_caches(
     }
   }
   for mesh_handle_id in stale_upload_cache_keys {
-    mesh_runtime_state_ref.val.mesh_upload_cache.remove(mesh_handle_id)
+    mesh_runtime_state_value.mesh_upload_cache.remove(mesh_handle_id)
   }
   let stale_morph_target_texture_keys : Array[Int] = []
-  for entry in mesh_runtime_state_ref.val.morph_target_texture_cache.iter() {
+  for entry in mesh_runtime_state_value.morph_target_texture_cache.iter() {
     let (mesh_handle_id, _texture_id) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_morph_target_texture_keys.push(mesh_handle_id)
     }
   }
   for mesh_handle_id in stale_morph_target_texture_keys {
-    mesh_runtime_state_ref.val.morph_target_texture_cache.remove(mesh_handle_id)
+    mesh_runtime_state_value.morph_target_texture_cache.remove(mesh_handle_id)
   }
   let stale_preprocess_cache_keys : Array[Int] = []
-  for entry in mesh_runtime_state_ref.val.mesh_preprocess_static_cache.iter() {
+  for entry in mesh_runtime_state_value.mesh_preprocess_static_cache.iter() {
     let (mesh_handle_id, _metadata) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_preprocess_cache_keys.push(mesh_handle_id)
     }
   }
   for mesh_handle_id in stale_preprocess_cache_keys {
-    mesh_runtime_state_ref.val.mesh_preprocess_static_cache.remove(
-      mesh_handle_id,
-    )
+    mesh_runtime_state_value.mesh_preprocess_static_cache.remove(mesh_handle_id)
   }
 }
 

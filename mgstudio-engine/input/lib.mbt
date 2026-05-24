@@ -937,14 +937,18 @@ let touches_resource_key : @ecs.ResourceKey[Touches] = @ecs.register_resource(
 
 ///|
 priv struct InputEventCursors {
-  mouse_motion : Ref[Int]
-  mouse_wheel : Ref[Int]
-  window_focused : Ref[Int]
+  mouse_motion : @ecs.MessageCursor[MouseMotion]
+  mouse_wheel : @ecs.MessageCursor[MouseWheel]
+  window_focused : @ecs.MessageCursor[@window.WindowFocused]
 }
 
 ///|
 fn InputEventCursors::InputEventCursors() -> InputEventCursors {
-  { mouse_motion: Ref(0), mouse_wheel: Ref(0), window_focused: Ref(0) }
+  {
+    mouse_motion: @ecs.MessageCursor::MessageCursor(),
+    mouse_wheel: @ecs.MessageCursor::MessageCursor(),
+    window_focused: @ecs.MessageCursor::MessageCursor(),
+  }
 }
 
 ///|
@@ -958,18 +962,20 @@ impl @app.Resource for InputEventCursors with resource() {
 }
 
 ///|
-let input_last_mouse_position_ref : Ref[@math.Vec2?] = Ref(None)
+priv struct InputHostRuntimeState {
+  mut last_mouse_position : @math.Vec2?
+  mut active_touches : Array[Touch]
+  mut primary_pointer_position : @math.Vec2?
+  mut primary_pointer_delta : @math.Vec2
+}
 
 ///|
-let input_active_touches_ref : Ref[Array[Touch]] = Ref([])
-
-///|
-let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref(None)
-
-///|
-let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref(
-  @math.Vec2::new(0.0F, 0.0F),
-)
+let input_host_runtime_state : InputHostRuntimeState = {
+  last_mouse_position: None,
+  active_touches: [],
+  primary_pointer_position: None,
+  primary_pointer_delta: @math.Vec2::new(0.0F, 0.0F),
+}
 
 ///|
 fn host_input_is_key_down(code : String) -> Bool {
@@ -1482,7 +1488,7 @@ pub fn mouse_motion_delta_opt() -> @math.Vec2? {
 
 ///|
 pub fn primary_pointer_position() -> @math.Vec2? {
-  match input_primary_pointer_position_ref.val {
+  match input_host_runtime_state.primary_pointer_position {
     Some(position) => Some(position)
     None =>
       if input_resource_get(Touches::resource()) is Some(touches) {
@@ -1533,7 +1539,7 @@ pub fn primary_pointer_just_released() -> Bool {
 
 ///|
 pub fn primary_pointer_delta() -> @math.Vec2 {
-  input_primary_pointer_delta_ref.val
+  input_host_runtime_state.primary_pointer_delta
 }
 
 ///|
@@ -1709,13 +1715,9 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   let cursors = input_event_cursors(world)
   let focused_reader = world.message_reader(
     @window.WindowFocused::message(),
-    cursors.window_focused,
+    cursor=cursors.window_focused,
   )
-  let focused_events = try focused_reader.read() catch {
-    _ => []
-  } noraise {
-    value => value
-  }
+  let focused_events = focused_reader.read()
   let mut focus_gained = false
   let mut focus_lost = false
   for event in focused_events {
@@ -1944,7 +1946,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let current_position_opt = mouse_position()
   let cursor_host_window = host_input_cursor_window()
   if current_position_opt is Some(current_position) && cursor_host_window >= 0 {
-    let delta_opt = match input_last_mouse_position_ref.val {
+    let delta_opt = match input_host_runtime_state.last_mouse_position {
       Some(last_position) => {
         let delta = @math.Vec2::sub(current_position, last_position)
         if vec2_is_zero(delta) {
@@ -1967,7 +1969,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       @window.window_emit_mouse_motion(world, @window.MouseMotion::{ delta, })
     }
   }
-  input_last_mouse_position_ref.val = current_position_opt
+  input_host_runtime_state.last_mouse_position = current_position_opt
 
   let wheel_delta = mouse_wheel_delta()
   if !vec2_is_zero(wheel_delta) {
@@ -2005,7 +2007,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
 
   let touches = Touches::new()
   let active_touches : Array[Touch] = []
-  for touch in input_active_touches_ref.val {
+  for touch in input_host_runtime_state.active_touches {
     active_touches.push(touch)
   }
   let touch_event_count = host_input_touch_event_count()
@@ -2057,7 +2059,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   for touch in active_touches {
     touches.active.push(touch)
   }
-  input_active_touches_ref.val = active_touches
+  input_host_runtime_state.active_touches = active_touches
 
   if world.get_resource_mut(Touches::resource()) is Some(touches_ref) {
     touches_ref.set(touches)
@@ -2070,15 +2072,16 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   let primary_pointer_delta = match primary_pointer_position {
     Some(current_position) =>
-      if input_primary_pointer_position_ref.val is Some(last_position) {
+      if input_host_runtime_state.primary_pointer_position
+        is Some(last_position) {
         @math.Vec2::sub(current_position, last_position)
       } else {
         @math.Vec2::new(0.0F, 0.0F)
       }
     None => @math.Vec2::new(0.0F, 0.0F)
   }
-  input_primary_pointer_position_ref.val = primary_pointer_position
-  input_primary_pointer_delta_ref.val = primary_pointer_delta
+  input_host_runtime_state.primary_pointer_position = primary_pointer_position
+  input_host_runtime_state.primary_pointer_delta = primary_pointer_delta
 }
 
 ///|
@@ -2087,13 +2090,9 @@ pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
   let cursors = input_event_cursors(world)
   let reader = world.message_reader(
     mouse_motion_message_key(),
-    cursors.mouse_motion,
+    cursor=cursors.mouse_motion,
   )
-  let events = try reader.read() catch {
-    _ => []
-  } noraise {
-    value => value
-  }
+  let events = reader.read()
   let mut delta = @math.Vec2::new(0.0F, 0.0F)
   for event in events {
     delta = @math.Vec2::add(delta, event.delta)
@@ -2110,13 +2109,9 @@ pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
   let cursors = input_event_cursors(world)
   let reader = world.message_reader(
     mouse_wheel_message_key(),
-    cursors.mouse_wheel,
+    cursor=cursors.mouse_wheel,
   )
-  let events = try reader.read() catch {
-    _ => []
-  } noraise {
-    value => value
-  }
+  let events = reader.read()
   let mut unit = MouseScrollUnit::Line
   let mut delta = @math.Vec2::new(0.0F, 0.0F)
   for event in events {

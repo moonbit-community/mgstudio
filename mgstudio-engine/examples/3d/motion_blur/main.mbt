@@ -199,10 +199,14 @@ fn spawn_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn mesh3d_from_geometry(
-  meshes : @asset.Assets[@mesh.Mesh],
+  meshes : @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]],
   geometry : @mesh.Mesh3dGeometry,
 ) -> @mesh.Mesh3d {
-  @mesh.Mesh3d::new(meshes.add(@mesh.Mesh::from_3d_geometry(geometry)))
+  @mesh.Mesh3d::new(
+    meshes.modify(fn(assets) {
+      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
+    }),
+  )
 }
 
 ///|
@@ -484,7 +488,7 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
-  let mesh_assets = @pbr.mesh_assets_mut_or_abort().val
+  let mesh_assets = @pbr.mesh_assets_mut_or_abort()
   let image_assets_ref : @ecs.ResourceMut[@asset.Assets[@asset.Image]] = @asset.asset_assets_ref_mut_or_abort()
   let image_assets = image_assets_ref.peek()
 

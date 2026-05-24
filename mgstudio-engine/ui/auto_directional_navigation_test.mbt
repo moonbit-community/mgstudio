@@ -22,10 +22,7 @@ fn make_auto_directional_navigation_app() -> @app.App[@ecs.World] {
 ///|
 fn set_auto_navigation_focus(world : @ecs.World, entity : @core.Entity) -> Unit {
   match world.get_resource_mut(@input_focus.InputFocus::resource()) {
-    Some(focus_ref) => {
-      focus_ref.set_changed()
-      focus_ref.peek().set(entity)
-    }
+    Some(focus_ref) => focus_ref.modify(fn(focus) { focus.set(entity) })
     None => abort("missing InputFocus resource")
   }
 }
@@ -152,10 +149,10 @@ test "auto directional navigator respects manual override edges first" {
 
   match
     world.get_resource_mut(@input_focus.DirectionalNavigationMap::resource()) {
-    Some(map_ref) => {
-      map_ref.set_changed()
-      map_ref.peek().add_edge(origin, manual, @math.CompassOctant::East)
-    }
+    Some(map_ref) =>
+      map_ref.modify(fn(map) {
+        map.add_edge(origin, manual, @math.CompassOctant::East)
+      })
     None => abort("missing DirectionalNavigationMap resource")
   }
 

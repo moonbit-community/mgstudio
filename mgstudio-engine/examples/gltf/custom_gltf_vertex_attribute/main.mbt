@@ -113,9 +113,10 @@ fn spawn_converted_mesh(
   }
   guard mesh3d_to_mesh2d(source_mesh) is Some(converted) else { return }
 
-  let mesh_handle = meshes.peek().add(converted)
-  let material_handle = materials.peek()
-    |> @sprite.add_material(@sprite.Color::white())
+  let mesh_handle = meshes.modify(fn(meshes) { meshes.add(converted) })
+  let material_handle = materials.modify(fn(materials) {
+    materials |> @sprite.add_material(@sprite.Color::white())
+  })
   ignore(
     commands.spawn(
       (

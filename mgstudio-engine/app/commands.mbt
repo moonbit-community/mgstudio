@@ -207,15 +207,20 @@ pub struct EntityCommands {
 }
 
 ///|
-let deferred_command_batch_queue_ref : Ref[
-  Array[(@core.Tick, DeferredCommandEntry)]?,
-] = Ref(None)
+priv struct DeferredCommandRuntimeState {
+  mut batch_queue : Array[(@core.Tick, DeferredCommandEntry)]?
+}
+
+///|
+let deferred_command_runtime_state : DeferredCommandRuntimeState = {
+  batch_queue: None,
+}
 
 ///|
 fn begin_deferred_command_batch() -> Unit {
-  match deferred_command_batch_queue_ref.val {
+  match deferred_command_runtime_state.batch_queue {
     Some(_) => ()
-    None => deferred_command_batch_queue_ref.val = Some([])
+    None => deferred_command_runtime_state.batch_queue = Some([])
   }
 }
 
@@ -231,7 +236,7 @@ pub fn queue_deferred_world_action(
     error_handler: None,
     source,
   }
-  match deferred_command_batch_queue_ref.val {
+  match deferred_command_runtime_state.batch_queue {
     Some(entries) => entries.push((tick, entry))
     None => flush_deferred_command_entries(world, [(tick, entry)])
   }
@@ -239,7 +244,7 @@ pub fn queue_deferred_world_action(
 
 ///|
 fn deferred_command_batch_has_entries() -> Bool {
-  match deferred_command_batch_queue_ref.val {
+  match deferred_command_runtime_state.batch_queue {
     Some(entries) => entries.length() > 0
     None => false
   }
@@ -271,11 +276,11 @@ fn flush_deferred_command_entries(
 
 ///|
 fn end_deferred_command_batch(world : @ecs.World) -> Unit {
-  match deferred_command_batch_queue_ref.val {
+  match deferred_command_runtime_state.batch_queue {
     Some(entries) => flush_deferred_command_entries(world, entries)
     None => ()
   }
-  deferred_command_batch_queue_ref.val = None
+  deferred_command_runtime_state.batch_queue = None
 }
 
 ///|
@@ -741,7 +746,7 @@ pub impl SystemParam for Commands with get(_state) {
 
 ///|
 pub impl SystemParam for Commands with store(self, state) {
-  match deferred_command_batch_queue_ref.val {
+  match deferred_command_runtime_state.batch_queue {
     Some(entries) => {
       for entry in self.queue {
         entries.push((self.tick, entry))

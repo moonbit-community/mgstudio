@@ -142,11 +142,7 @@ pub impl QueryData for NestedVelocityData with matches(world, entity) {
 
 ///|
 pub impl QueryData for NestedVelocityData with fetch(world, entity) {
-  {
-    velocity: try! query_data_component_fetch(
-      world, entity, generic_velocity_key,
-    ),
-  }
+  { velocity: query_data_component_fetch(world, entity, generic_velocity_key) }
 }
 
 ///|
@@ -248,10 +244,8 @@ pub impl QueryData for ReadOnlyCustomQuery with matches(world, entity) {
 pub impl QueryData for ReadOnlyCustomQuery with fetch(world, entity) {
   {
     entity,
-    position: try! query_data_component_fetch(
-      world, entity, generic_position_key,
-    ),
-    maybe_velocity: try! query_data_component_optional(
+    position: query_data_component_fetch(world, entity, generic_position_key),
+    maybe_velocity: query_data_component_optional(
       world, entity, generic_velocity_key,
     ),
     has_disabled: query_data_component_has(world, entity, ecs_key_disabled),

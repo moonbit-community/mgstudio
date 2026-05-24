@@ -245,7 +245,7 @@ fn toggle_ime_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
 fn listen_ime_events_system(
   ime_reader : @ecs.MessageReader[@window.Ime],
 ) -> Unit {
-  for ime in (try! ime_reader.read()) {
+  for ime in ime_reader.read() {
     match ime {
       Enabled(_) => set_ime_active_text(true)
       Disabled(_) => set_ime_active_text(false)
@@ -265,7 +265,7 @@ fn listen_ime_events_system(
 fn listen_keyboard_input_events_system(
   keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
 ) -> Unit {
-  for keyboard_input in (try! keyboard_inputs.read()) {
+  for keyboard_input in keyboard_inputs.read() {
     if !keyboard_input.state.is_pressed() {
       continue
     }

@@ -90,9 +90,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(geometry),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
+    }),
   )
 }
 
@@ -153,20 +153,23 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_mesh = uv_sphere_mesh(0.5F, 16, 24)
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+    }),
   )
 
   // Opaque plane.
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(6.0F, 6.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(6.0F, 6.0F),
+          ).build(),
+        )
+      }),
     ),
     floor_material,
     @transform.Transform::identity(),

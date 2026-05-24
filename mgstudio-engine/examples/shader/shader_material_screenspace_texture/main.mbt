@@ -35,7 +35,9 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  let mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  })
   let material = materials
     .peek()
     .add(

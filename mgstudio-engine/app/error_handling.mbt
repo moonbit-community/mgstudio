@@ -157,9 +157,9 @@ pub fn App::set_error_handler(
   handler : ErrorHandler,
 ) -> App[@ecs.World] {
   set_default_error_handler(self.sub_apps.main.world, handler)
-  for sub_app_entry in self.sub_apps_mut() {
-    let (_, sub_app_ref) = sub_app_entry
-    set_default_error_handler(sub_app_ref.val.world, handler)
+  for sub_app_entry in self.sub_apps() {
+    let (_, sub_app) = sub_app_entry
+    set_default_error_handler(sub_app.world, handler)
   }
   self
 }
@@ -182,33 +182,38 @@ priv enum SystemExecutionOutcome {
 }
 
 ///|
-let current_system_execution_outcome_ref : Ref[SystemExecutionOutcome] = Ref(
-  Success,
-)
+priv struct SystemExecutionRuntimeState {
+  mut outcome : SystemExecutionOutcome
+}
+
+///|
+let system_execution_runtime_state : SystemExecutionRuntimeState = {
+  outcome: Success,
+}
 
 ///|
 fn reset_system_execution_outcome() -> Unit {
-  current_system_execution_outcome_ref.val = Success
+  system_execution_runtime_state.outcome = Success
 }
 
 ///|
 fn mark_system_execution_skipped(message : String) -> Unit {
-  current_system_execution_outcome_ref.val = Skipped(message)
+  system_execution_runtime_state.outcome = Skipped(message)
 }
 
 ///|
 fn mark_system_execution_invalid(message : String) -> Unit {
-  current_system_execution_outcome_ref.val = Invalid(message)
+  system_execution_runtime_state.outcome = Invalid(message)
 }
 
 ///|
 fn mark_system_execution_error(error : Error) -> Unit {
-  current_system_execution_outcome_ref.val = Error(error)
+  system_execution_runtime_state.outcome = Error(error)
 }
 
 ///|
 fn current_system_execution_outcome() -> SystemExecutionOutcome {
-  current_system_execution_outcome_ref.val
+  system_execution_runtime_state.outcome
 }
 
 ///|

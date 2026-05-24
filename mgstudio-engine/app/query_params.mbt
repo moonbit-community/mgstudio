@@ -78,66 +78,30 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) wi
 }
 
 ///|
-let query_param_next_slot_ref : Ref[Int] = Ref(1)
-
-///|
-let query_param_cache_by_slot : @hashmap.HashMap[Int, @ecs.QueryCache] = @hashmap.HashMap([],
-)
-
-///|
-fn query_param_allocate_slot() -> Int {
-  let slot = query_param_next_slot_ref.val
-  query_param_next_slot_ref.val = slot + 1
-  query_param_cache_by_slot.set(slot, @ecs.QueryCache::new())
-  slot
+priv struct QueryParamState {
+  mut cache : @ecs.QueryCache
 }
 
 ///|
-fn query_param_slot_from_state(state : Ref[Json]) -> Int {
-  try @json.from_json(state.val) catch {
-    _ => {
-      let slot = query_param_allocate_slot()
-      state.val = slot.to_json()
-      slot
-    }
-  } noraise {
-    value => value
-  }
-}
-
-///|
-fn query_param_cache_for_slot(slot : Int) -> @ecs.QueryCache {
-  match query_param_cache_by_slot.get(slot) {
-    Some(cache) => cache
-    None => {
-      let cache = @ecs.QueryCache::new()
-      query_param_cache_by_slot.set(slot, cache)
-      cache
-    }
-  }
+fn query_param_state_new() -> QueryParamState {
+  { cache: @ecs.QueryCache::new() }
 }
 
 ///|
 fn[D, F : FromWorld] query_param_query_from_state(
-  state : Ref[Json],
+  state : QueryParamState,
 ) -> @ecs.Query[D, F] {
   let world = system_param_abort_missing_world()
   let filter = F::from_world(world)
-  let slot = query_param_slot_from_state(state)
-  @ecs.query_filtered_with_cache(
-    world,
-    filter,
-    query_param_cache_for_slot(slot),
-  )
+  @ecs.query_filtered_with_cache(world, filter, state.cache)
 }
 
 ///|
 fn[D, F] query_param_store_query_state(
   query : @ecs.Query[D, F],
-  state : Ref[Json],
+  state : QueryParamState,
 ) -> Unit {
-  let slot = query_param_slot_from_state(state)
-  query_param_cache_by_slot.set(slot, query.cache_state())
+  state.cache = query.cache_state()
 }
 
 ///|
@@ -145,7 +109,12 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
   D,
   F,
 ] with init_state(_world) {
-  query_param_allocate_slot().to_json()
+  let state = query_param_state_new()
+  SystemParamState::new(fn() { query_param_query_from_state(state) }, fn(
+    query : @ecs.Query[D, F],
+  ) {
+    query_param_store_query_state(query, state)
+  })
 }
 
 ///|
@@ -153,7 +122,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
   D,
   F,
 ] with get(state) {
-  query_param_query_from_state(state)
+  state.get()
 }
 
 ///|
@@ -161,7 +130,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
   D,
   F,
 ] with store(self, state) {
-  query_param_store_query_state(self, state)
+  state.store(self)
 }
 
 ///|
@@ -207,7 +176,17 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   F,
 ] with init_state(world) {
   ignore(world)
-  query_param_allocate_slot().to_json()
+  let state = query_param_state_new()
+  SystemParamState::new(
+    fn() raise {
+      let query : @ecs.Query[D, F] = query_param_query_from_state(state)
+      let value = query.require_single()
+      Single::{ value, query }
+    },
+    fn(value : Single[D, F]) {
+      query_param_store_query_state(value.query, state)
+    },
+  )
 }
 
 ///|
@@ -215,9 +194,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   D,
   F,
 ] with get(state) {
-  let query : @ecs.Query[D, F] = query_param_query_from_state(state)
-  let value = query.require_single()
-  Single::{ value, query }
+  state.get()
 }
 
 ///|
@@ -225,7 +202,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   D,
   F,
 ] with store(self, state) {
-  query_param_store_query_state(self.query, state)
+  state.store(self)
 }
 
 ///|
@@ -250,7 +227,19 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   F,
 ] with init_state(world) {
   ignore(world)
-  query_param_allocate_slot().to_json()
+  let state = query_param_state_new()
+  SystemParamState::new(
+    fn() raise {
+      let query : @ecs.Query[D, F] = query_param_query_from_state(state)
+      if query.count() == 0 {
+        raise @ecs.Skipped("Expected at least one matching entity")
+      }
+      Populated::{ query, }
+    },
+    fn(value : Populated[D, F]) {
+      query_param_store_query_state(value.query, state)
+    },
+  )
 }
 
 ///|
@@ -258,11 +247,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   D,
   F,
 ] with get(state) {
-  let query : @ecs.Query[D, F] = query_param_query_from_state(state)
-  if query.count() == 0 {
-    raise @ecs.Skipped("Expected at least one matching entity")
-  }
-  Populated::{ query, }
+  state.get()
 }
 
 ///|
@@ -270,7 +255,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   D,
   F,
 ] with store(self, state) {
-  query_param_store_query_state(self.query, state)
+  state.store(self)
 }
 
 ///|

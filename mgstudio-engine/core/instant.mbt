@@ -18,7 +18,12 @@ pub struct Instant {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-let instant_start_timestamp_ref : Ref[@bench.Timestamp?] = Ref(None)
+priv struct InstantRuntimeState {
+  mut start_timestamp : @bench.Timestamp?
+}
+
+///|
+let instant_runtime_state : InstantRuntimeState = { start_timestamp: None }
 
 ///|
 fn instant_clamp_positive(value : Int64) -> Int64 {
@@ -56,13 +61,15 @@ pub fn Instant::from_nanos(nanos : Int64) -> Instant {
 
 ///|
 pub fn Instant::now() -> Instant {
-  match instant_start_timestamp_ref.val {
+  match instant_runtime_state.start_timestamp {
     Some(start_timestamp) =>
       Instant::from_secs_f64(
         @bench.monotonic_clock_end(start_timestamp) / 1_000_000.0,
       )
     None => {
-      instant_start_timestamp_ref.val = Some(@bench.monotonic_clock_start())
+      instant_runtime_state.start_timestamp = Some(
+        @bench.monotonic_clock_start(),
+      )
       Instant::from_nanos(0L)
     }
   }

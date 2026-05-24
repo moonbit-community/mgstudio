@@ -46,7 +46,7 @@ pub fn[T] World::removed_components(
   system : @core.SystemTicks,
 ) -> RemovedComponents[T] {
   let reader = match self.removed_component_messages(key.id()) {
-    Some(messages_ref) => messages_ref.val.reader(system)
+    Some(messages) => messages.reader(system)
     None => @core.Messages::new().reader(system)
   }
   RemovedComponents::{ reader, }

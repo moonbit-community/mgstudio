@@ -488,8 +488,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ground = world.spawn_empty()
   let ground_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cylinder::new(7.0F, 0.05F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cylinder::new(7.0F, 0.05F))
+    }),
   )
   let ground_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
@@ -672,10 +673,11 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
-  guard world.get_resource_ref_mut(animation_mask_setup_key) is Some(setup_ref) else {
+  guard world.get_resource_mut(animation_mask_setup_key) is Some(setup_mut) else {
     return
   }
-  if setup_ref.val.initialized {
+  let setup = setup_mut.peek()
+  if setup.initialized {
     return
   }
 
@@ -689,16 +691,14 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
   }
 
   player_mut.modify(fn(value) {
-    for node in setup_ref.val.nodes {
+    for node in setup.nodes {
       value.play(node).repeat() |> ignore
     }
   })
   ignore(
     try! world
     .entity_mut(player_entity)
-    .insert_component(
-      @animation.AnimationGraphHandle::new(setup_ref.val.graph_handle),
-    ),
+    .insert_component(@animation.AnimationGraphHandle::new(setup.graph_handle)),
   )
 
   let targets : @ecs.Query[
@@ -708,10 +708,7 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
   let targets_to_strip : Array[@core.Entity] = []
   try! targets.view(fn(_ignored, pair) {
     let (target_entity, target_id) = pair
-    if !array_contains_target_id(
-        setup_ref.val.included_targets,
-        target_id.value(),
-      ) {
+    if !array_contains_target_id(setup.included_targets, target_id.value()) {
       targets_to_strip.push(target_entity)
     }
   })
@@ -721,7 +718,7 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
     ignore(try! world.take(entity, @animation.AnimatedBy::component()))
   }
 
-  setup_ref.val.initialized = true
+  setup_mut.modify(fn(value) { value.initialized = true })
 }
 
 ///|
@@ -749,10 +746,10 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
   if !setup.initialized {
     return
   }
-  guard world.get_resource_ref_mut(animation_mask_state_key) is Some(state_ref) else {
+  guard world.get_resource_mut(animation_mask_state_key) is Some(state_mut) else {
     return
   }
-  guard world.get_resource_ref_mut(pressed_controls_key) is Some(pressed_ref) else {
+  guard world.get_resource_mut(pressed_controls_key) is Some(pressed_mut) else {
     return
   }
   guard @animation.animation_graph_get(setup.graph_handle) is Some(graph) else {
@@ -771,11 +768,13 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
     if is_pressed {
       next_pressed.push(entity)
     }
-    if !is_pressed || array_contains_entity(pressed_ref.val.entities, entity) {
+    if !is_pressed || array_contains_entity(pressed_mut.peek().entities, entity) {
       return
     }
     let resolved = animation_label_index(control.value().label)
-    state_ref.val.group_clips[control.value().group_id] = resolved
+    state_mut.modify(fn(value) {
+      value.group_clips[control.value().group_id] = resolved
+    })
     apply_group_selection(
       graph,
       setup.nodes,
@@ -785,10 +784,12 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
     graph_changed = true
   })
 
-  pressed_ref.val.entities.clear()
-  for entity in next_pressed {
-    pressed_ref.val.entities.push(entity)
-  }
+  pressed_mut.modify(fn(value) {
+    value.entities.clear()
+    for entity in next_pressed {
+      value.entities.push(entity)
+    }
+  })
   if graph_changed {
     @animation.animation_graph_set(setup.graph_handle, graph) |> ignore
   }

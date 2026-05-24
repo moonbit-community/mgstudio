@@ -20,8 +20,7 @@ pub fn physics3d_sync_joints_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ctx = ctx_ref.val
+  let ctx = current_ctx
 
   // Rebuild joint sets every fixed step from authoring components.
   let drop_impulse : Array[@core.Entity] = []
@@ -109,5 +108,5 @@ pub fn physics3d_sync_joints_system(world : @ecs.World) -> Unit {
       None => ()
     }
   })
-  ctx_res.insert(ctx_ref.val)
+  ctx_res.insert(ctx)
 }

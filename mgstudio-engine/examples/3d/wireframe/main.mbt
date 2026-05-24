@@ -179,8 +179,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let red_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color_red())),
@@ -195,8 +196,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -209,8 +211,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let green_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -232,12 +235,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let plane = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(5.0F, 5.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(5.0F, 5.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(

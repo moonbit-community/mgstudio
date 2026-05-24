@@ -118,7 +118,9 @@ fn setup_cursor_icon(
     10,
     padding=@math.UVec2::splat(5),
   )
-  let texture_atlas_layout = texture_atlas_layouts.peek().add(layout)
+  let texture_atlas_layout = texture_atlas_layouts.modify(fn(layouts) {
+    layouts.add(layout)
+  })
   let animation_config = animation_config_new(0, 199, 1, 4)
   let atlas = @asset.TextureAtlas::new(
     texture_atlas_layout,

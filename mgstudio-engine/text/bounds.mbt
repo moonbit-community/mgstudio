@@ -23,9 +23,6 @@ pub struct TextBounds {
 }
 
 ///|
-pub impl @ecs.Mutable for TextBounds
-
-///|
 pub fn TextBounds::TextBounds() -> TextBounds {
   TextBounds::{ width: None, height: None }
 }

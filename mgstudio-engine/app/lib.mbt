@@ -516,7 +516,80 @@ pub fn[W] PluginGroupBuilder::build_entries(
 pub type RunConditionFn[W] = (W) -> Bool
 
 ///|
-pub type StatefulRunConditionFn[W] = (W, Ref[Json]) -> Bool
+pub type StatefulRunConditionFn[W] = (W) -> Bool
+
+///|
+priv struct RunConditionStateCell[S] {
+  mut value : S
+}
+
+///|
+pub struct RunConditionState[S] {
+  priv cell : RunConditionStateCell[S]
+}
+
+///|
+pub fn[S] RunConditionState::get(self : RunConditionState[S]) -> S {
+  self.cell.value
+}
+
+///|
+pub fn[S] RunConditionState::set(
+  self : RunConditionState[S],
+  value : S,
+) -> Unit {
+  self.cell.value = value
+}
+
+///|
+pub fn[S] RunConditionState::update(
+  self : RunConditionState[S],
+  f : (S) -> S,
+) -> Unit {
+  self.cell.value = f(self.cell.value)
+}
+
+///|
+pub struct RunConditionConfig[W] {
+  priv condition : StatefulRunConditionFn[W]
+  priv clone_condition : () -> RunConditionConfig[W]
+}
+
+///|
+pub fn[W] RunConditionConfig::run(
+  self : RunConditionConfig[W],
+  world : W,
+) -> Bool {
+  (self.condition)(world)
+}
+
+///|
+pub fn[W] RunConditionConfig::clone(
+  self : RunConditionConfig[W],
+) -> RunConditionConfig[W] {
+  (self.clone_condition)()
+}
+
+///|
+pub fn[W] run_condition(cond : RunConditionFn[W]) -> RunConditionConfig[W] {
+  RunConditionConfig::{
+    condition: fn(world : W) { cond(world) },
+    clone_condition: fn() { run_condition(cond) },
+  }
+}
+
+///|
+pub fn[W, S] stateful_run_condition(
+  init_state : S,
+  cond : (W, RunConditionState[S]) -> Bool,
+) -> RunConditionConfig[W] {
+  let cell = RunConditionStateCell::{ value: init_state }
+  let state = RunConditionState::{ cell, }
+  RunConditionConfig::{
+    condition: fn(world : W) { cond(world, state) },
+    clone_condition: fn() { stateful_run_condition(init_state, cond) },
+  }
+}
 
 ///|
 pub type SystemSet = String
@@ -585,15 +658,74 @@ pub(all) enum ExecutorKind {
 
 ///|
 pub(open) trait SystemParam {
-  fn init_state(@ecs.World) -> Json
-  fn get(Ref[Json]) -> Self raise
-  fn store(Self, Ref[Json]) -> Unit
+  fn init_state(@ecs.World) -> SystemParamState[Self]
+  fn get(SystemParamState[Self]) -> Self raise
+  fn store(Self, SystemParamState[Self]) -> Unit
   fn access(@ecs.World) -> SystemAccess = _
 }
 
 ///|
 impl SystemParam with access(_world) {
   SystemAccess::new()
+}
+
+///|
+pub struct SystemParamState[P] {
+  priv get_param : () -> P raise
+  priv store_param : (P) -> Unit
+}
+
+///|
+pub fn[P] SystemParamState::new(
+  get_param : () -> P raise,
+  store_param : (P) -> Unit,
+) -> SystemParamState[P] {
+  { get_param, store_param }
+}
+
+///|
+pub fn[P] SystemParamState::stateless(
+  get_param : () -> P raise,
+) -> SystemParamState[P] {
+  { get_param, store_param: fn(_value : P) { () } }
+}
+
+///|
+pub fn[P] SystemParamState::get(self : SystemParamState[P]) -> P raise {
+  (self.get_param)()
+}
+
+///|
+pub fn[P] SystemParamState::store(
+  self : SystemParamState[P],
+  value : P,
+) -> Unit {
+  (self.store_param)(value)
+}
+
+///|
+priv struct SystemParamStateSlot[P] {
+  mut state : SystemParamState[P]?
+}
+
+///|
+fn[P] system_param_state_slot_new() -> SystemParamStateSlot[P] {
+  { state: None }
+}
+
+///|
+fn[P : SystemParam] SystemParamStateSlot::get_or_init(
+  self : SystemParamStateSlot[P],
+  world : @ecs.World,
+) -> SystemParamState[P] {
+  match self.state {
+    Some(state) => state
+    None => {
+      let state = P::init_state(world)
+      self.state = Some(state)
+      state
+    }
+  }
 }
 
 ///|
@@ -673,12 +805,13 @@ pub fn[T : Resource] Res::changed_by(self : Res[T]) -> String? {
 ///|
 pub struct ResMut[T] {
   world : @ecs.World?
-  key : @ecs.ResourceKey[T]?
+  inner : @ecs.ResourceMut[T]?
 }
 
 ///|
-pub fn[T : Resource] ResMut::get(self : ResMut[T]) -> T {
-  self.peek()
+#callsite(autofill(loc))
+pub fn[T] ResMut::get(self : ResMut[T], loc~ : SourceLoc) -> T {
+  self.peek(loc~)
 }
 
 ///|
@@ -690,9 +823,9 @@ fn[T] res_mut_world_or_abort(item : ResMut[T]) -> @ecs.World {
 }
 
 ///|
-fn[T] res_mut_key_id_or_abort(item : ResMut[T]) -> Int {
-  match item.key {
-    Some(key) => key.id()
+fn[T] res_mut_inner_or_abort(item : ResMut[T]) -> @ecs.ResourceMut[T] {
+  match item.inner {
+    Some(inner) => inner
     None => abort("ResMut expected a fetched system parameter")
   }
 }
@@ -700,132 +833,82 @@ fn[T] res_mut_key_id_or_abort(item : ResMut[T]) -> Int {
 ///|
 pub fn[T : Resource] ResMut::is_added(self : ResMut[T]) -> Bool {
   let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
   world.is_resource_added(T::resource(), current_system_ticks())
 }
 
 ///|
 pub fn[T : Resource] ResMut::is_changed(self : ResMut[T]) -> Bool {
   let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
   world.is_resource_changed(T::resource(), current_system_ticks())
 }
 
 ///|
-pub fn[T : Resource] ResMut::added(self : ResMut[T]) -> @core.Tick {
-  let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
-  match world.resource_added_tick(T::resource()) {
-    Some(tick) => tick
-    None => abort("ResMut::added expected resource tick metadata")
-  }
+pub fn[T] ResMut::added(self : ResMut[T]) -> @core.Tick {
+  res_mut_inner_or_abort(self).added()
 }
 
 ///|
-pub fn[T : Resource] ResMut::last_changed(self : ResMut[T]) -> @core.Tick {
-  let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
-  match world.resource_changed_tick(T::resource()) {
-    Some(tick) => tick
-    None => abort("ResMut::last_changed expected resource tick metadata")
-  }
+pub fn[T] ResMut::last_changed(self : ResMut[T]) -> @core.Tick {
+  res_mut_inner_or_abort(self).last_changed()
 }
 
 ///|
-pub fn[T : Resource] ResMut::changed_by(self : ResMut[T]) -> String? {
-  let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
-  world.resource_changed_by(T::resource())
+pub fn[T] ResMut::changed_by(self : ResMut[T]) -> String? {
+  res_mut_inner_or_abort(self).changed_by()
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set_changed(
-  self : ResMut[T],
-  loc~ : SourceLoc,
-) -> Unit {
-  let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
-  world.mark_resource_changed(T::resource(), caller=Some(loc.to_string()))
+pub fn[T] ResMut::set_changed(self : ResMut[T], loc~ : SourceLoc) -> Unit {
+  res_mut_inner_or_abort(self).set_changed(loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set_added(
-  self : ResMut[T],
-  loc~ : SourceLoc,
-) -> Unit {
-  let world = res_mut_world_or_abort(self)
-  ignore(res_mut_key_id_or_abort(self))
-  world.mark_resource_added(T::resource(), caller=Some(loc.to_string()))
-}
-
-///|
-fn[T : Resource] res_mut_value_or_abort(item : ResMut[T]) -> T {
-  let world = res_mut_world_or_abort(item)
-  match world.get_resource(T::resource()) {
-    Some(value) => value
-    None =>
-      abort(
-        "ResMut expected resource `\{T::resource().debug_name()}` to exist in the current world",
-      )
-  }
-}
-
-///|
-pub fn[T : Resource] ResMut::peek(self : ResMut[T]) -> T {
-  res_mut_value_or_abort(self)
+pub fn[T] ResMut::set_added(self : ResMut[T], loc~ : SourceLoc) -> Unit {
+  res_mut_inner_or_abort(self).set_added(loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource, R] ResMut::modify(
+pub fn[T] ResMut::peek(self : ResMut[T], loc~ : SourceLoc) -> T {
+  res_mut_inner_or_abort(self).peek(loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T, R] ResMut::modify(
   self : ResMut[T],
   f : (T) -> R,
   loc~ : SourceLoc,
 ) -> R {
-  let value = self.peek()
-  let result = f(value)
-  res_mut_world_or_abort(self).insert_resource(T::resource(), value)
-  self.set_changed(loc~)
-  result
+  res_mut_inner_or_abort(self).modify(f, loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::update(
+pub fn[T] ResMut::update(
   self : ResMut[T],
   f : (T) -> T,
   loc~ : SourceLoc,
 ) -> Unit {
-  self.set(f(self.peek()), loc~)
+  res_mut_inner_or_abort(self).update(f, loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource] ResMut::set(
-  self : ResMut[T],
-  value : T,
-  loc~ : SourceLoc,
-) -> Unit {
-  res_mut_world_or_abort(self).insert_resource(T::resource(), value)
-  self.set_changed(loc~)
+pub fn[T] ResMut::set(self : ResMut[T], value : T, loc~ : SourceLoc) -> Unit {
+  res_mut_inner_or_abort(self).set(value, loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Resource + Eq] ResMut::set_if_neq(
+pub fn[T : Eq] ResMut::set_if_neq(
   self : ResMut[T],
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let current = self.peek()
-  if current != value {
-    self.set(value, loc~)
-    true
-  } else {
-    false
-  }
+  res_mut_inner_or_abort(self).set_if_neq(value, loc~)
 }
 
 ///|
@@ -852,17 +935,24 @@ fn system_param_abort_missing_world() -> @ecs.World {
 }
 
 ///|
-pub fn system_param_empty_state(_world : @ecs.World) -> Json {
-  Json::null()
+pub fn[P] system_param_empty_state(_world : @ecs.World) -> SystemParamState[P] {
+  SystemParamState::stateless(fn() {
+    abort("SystemParamState::get called for an empty system parameter state")
+  })
 }
 
 ///|
-pub fn[T] system_param_store_no_state(_self : T, _state : Ref[Json]) -> Unit {
+pub fn[T] system_param_store_no_state(
+  _self : T,
+  _state : SystemParamState[T],
+) -> Unit {
   ()
 }
 
 ///|
-fn[P : SystemParam] system_param_get_or_record(state : Ref[Json]) -> P? {
+fn[P : SystemParam] system_param_get_or_record(
+  state : SystemParamState[P],
+) -> P? {
   try Some(P::get(state)) catch {
     @ecs.Skipped(message) => {
       mark_system_execution_skipped(message)
@@ -921,18 +1011,14 @@ pub fn[W, O] system_output(system : (W) -> O) -> OutputSystemConfig[W, O] {
 pub fn[W, P : SystemParam, O] system_param_output(
   system : (P) -> O,
 ) -> OutputSystemConfig[W, O] {
-  let state = Ref(Json::null())
-  let state_initialized = Ref(false)
+  let state = system_param_state_slot_new()
   OutputSystemConfig::{
     system: fn(_world : W) {
-      if !state_initialized.val {
-        state.val = P::init_state(system_param_abort_missing_world())
-        state_initialized.val = true
-      }
-      let param_opt : P? = system_param_get_or_record(state)
+      let param_state = state.get_or_init(system_param_abort_missing_world())
+      let param_opt : P? = system_param_get_or_record(param_state)
       guard param_opt is Some(param) else { return None }
       let output = system(param)
-      P::store(param, state)
+      P::store(param, param_state)
       Some(output)
     },
     access_factory: Some(fn(world : @ecs.World) {
@@ -977,20 +1063,16 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
   self : OutputSystemConfig[W, O],
   handler : (In[O], P) -> Unit,
 ) -> SystemConfig[W] {
-  let state = Ref(Json::null())
-  let state_initialized = Ref(false)
+  let state = system_param_state_slot_new()
   system_config_with_access(
     fn(world : W) {
       guard (self.system)(world) is Some(output) else { return }
       let current_world = system_param_abort_missing_world()
-      if !state_initialized.val {
-        state.val = P::init_state(current_world)
-        state_initialized.val = true
-      }
-      let param_opt : P? = system_param_get_or_record(state)
+      let param_state = state.get_or_init(current_world)
+      let param_opt : P? = system_param_get_or_record(param_state)
       guard param_opt is Some(param) else { return }
       handler(In::{ value: output }, param)
-      P::store(param, state)
+      P::store(param, param_state)
     },
     fn(world : @ecs.World) {
       let access = self.output_system_base_access(world)
@@ -1023,20 +1105,16 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
   self : OutputSystemConfig[W, O],
   handler : (O, P) -> Unit,
 ) -> SystemConfig[W] {
-  let state = Ref(Json::null())
-  let state_initialized = Ref(false)
+  let state = system_param_state_slot_new()
   system_config_with_access(
     fn(world : W) {
       guard (self.system)(world) is Some(output) else { return }
       let current_world = system_param_abort_missing_world()
-      if !state_initialized.val {
-        state.val = P::init_state(current_world)
-        state_initialized.val = true
-      }
-      let param_opt : P? = system_param_get_or_record(state)
+      let param_state = state.get_or_init(current_world)
+      let param_opt : P? = system_param_get_or_record(param_state)
       guard param_opt is Some(param) else { return }
       handler(output, param)
-      P::store(param, state)
+      P::store(param, param_state)
     },
     fn(world : @ecs.World) {
       let access = self.output_system_base_access(world)
@@ -1063,7 +1141,6 @@ fn[W] system_config_with_access(
     debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
-    run_if_states: [],
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
@@ -1332,7 +1409,6 @@ pub fn[W] fallible_system(
     debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
-    run_if_states: [],
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
@@ -1350,17 +1426,13 @@ pub fn[W] fallible_system(
 
 ///|
 pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
-  let state = Ref(Json::null())
-  let state_initialized = Ref(false)
+  let state = system_param_state_slot_new()
   fn(_world : W) {
-    if !state_initialized.val {
-      state.val = P::init_state(system_param_abort_missing_world())
-      state_initialized.val = true
-    }
-    let param_opt : P? = system_param_get_or_record(state)
+    let param_state = state.get_or_init(system_param_abort_missing_world())
+    let param_opt : P? = system_param_get_or_record(param_state)
     guard param_opt is Some(param) else { return }
     system(param)
-    P::store(param, state)
+    P::store(param, param_state)
   }
 }
 
@@ -1368,17 +1440,13 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
 pub fn[W, P : SystemParam] fallible_system_param(
   system : (P) -> Unit raise,
 ) -> SystemFn[W] {
-  let state = Ref(Json::null())
-  let state_initialized = Ref(false)
+  let state = system_param_state_slot_new()
   fn(_world : W) {
-    if !state_initialized.val {
-      state.val = P::init_state(system_param_abort_missing_world())
-      state_initialized.val = true
-    }
-    let param_opt : P? = system_param_get_or_record(state)
+    let param_state = state.get_or_init(system_param_abort_missing_world())
+    let param_opt : P? = system_param_get_or_record(param_state)
     guard param_opt is Some(param) else { return }
     run_fallible_system_body(() => system(param))
-    P::store(param, state)
+    P::store(param, param_state)
   }
 }
 
@@ -1386,27 +1454,19 @@ pub fn[W, P : SystemParam] fallible_system_param(
 pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
   system : (P1, P2) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
     system(p1, p2)
-    P1::store(p1, state1)
-    P2::store(p2, state2)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
   }
 }
 
@@ -1414,27 +1474,19 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
   system : (P1, P2) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
     run_fallible_system_body(() => system(p1, p2))
-    P1::store(p1, state1)
-    P2::store(p2, state2)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
   }
 }
 
@@ -1442,36 +1494,24 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
   system : (P1, P2, P3) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
     system(p1, p2, p3)
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
   }
 }
 
@@ -1479,36 +1519,24 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3(
   system : (P1, P2, P3) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
     run_fallible_system_body(() => system(p1, p2, p3))
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
   }
 }
 
@@ -1522,45 +1550,29 @@ pub fn[
 ] system_param4(
   system : (P1, P2, P3, P4) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
     system(p1, p2, p3, p4)
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
   }
 }
 
@@ -1574,45 +1586,29 @@ pub fn[
 ] fallible_system_param4(
   system : (P1, P2, P3, P4) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
     run_fallible_system_body(() => system(p1, p2, p3, p4))
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
   }
 }
 
@@ -1627,54 +1623,34 @@ pub fn[
 ] system_param5(
   system : (P1, P2, P3, P4, P5) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state5 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
-  let state5_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    if !state5_initialized.val {
-      state5.val = P5::init_state(world)
-      state5_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
-    let p5_opt : P5? = system_param_get_or_record(state5)
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
     guard p5_opt is Some(p5) else { return }
     system(p1, p2, p3, p4, p5)
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
-    P5::store(p5, state5)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
   }
 }
 
@@ -1689,54 +1665,34 @@ pub fn[
 ] fallible_system_param5(
   system : (P1, P2, P3, P4, P5) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state5 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
-  let state5_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    if !state5_initialized.val {
-      state5.val = P5::init_state(world)
-      state5_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
-    let p5_opt : P5? = system_param_get_or_record(state5)
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
     guard p5_opt is Some(p5) else { return }
     run_fallible_system_body(() => system(p1, p2, p3, p4, p5))
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
-    P5::store(p5, state5)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
   }
 }
 
@@ -1752,63 +1708,39 @@ pub fn[
 ] system_param6(
   system : (P1, P2, P3, P4, P5, P6) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state5 = Ref(Json::null())
-  let state6 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
-  let state5_initialized = Ref(false)
-  let state6_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    if !state5_initialized.val {
-      state5.val = P5::init_state(world)
-      state5_initialized.val = true
-    }
-    if !state6_initialized.val {
-      state6.val = P6::init_state(world)
-      state6_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
-    let p5_opt : P5? = system_param_get_or_record(state5)
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
     guard p5_opt is Some(p5) else { return }
-    let p6_opt : P6? = system_param_get_or_record(state6)
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
     guard p6_opt is Some(p6) else { return }
     system(p1, p2, p3, p4, p5, p6)
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
-    P5::store(p5, state5)
-    P6::store(p6, state6)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
   }
 }
 
@@ -1824,107 +1756,83 @@ pub fn[
 ] fallible_system_param6(
   system : (P1, P2, P3, P4, P5, P6) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref(Json::null())
-  let state2 = Ref(Json::null())
-  let state3 = Ref(Json::null())
-  let state4 = Ref(Json::null())
-  let state5 = Ref(Json::null())
-  let state6 = Ref(Json::null())
-  let state1_initialized = Ref(false)
-  let state2_initialized = Ref(false)
-  let state3_initialized = Ref(false)
-  let state4_initialized = Ref(false)
-  let state5_initialized = Ref(false)
-  let state6_initialized = Ref(false)
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
   fn(_world : W) {
     let world = system_param_abort_missing_world()
-    if !state1_initialized.val {
-      state1.val = P1::init_state(world)
-      state1_initialized.val = true
-    }
-    if !state2_initialized.val {
-      state2.val = P2::init_state(world)
-      state2_initialized.val = true
-    }
-    if !state3_initialized.val {
-      state3.val = P3::init_state(world)
-      state3_initialized.val = true
-    }
-    if !state4_initialized.val {
-      state4.val = P4::init_state(world)
-      state4_initialized.val = true
-    }
-    if !state5_initialized.val {
-      state5.val = P5::init_state(world)
-      state5_initialized.val = true
-    }
-    if !state6_initialized.val {
-      state6.val = P6::init_state(world)
-      state6_initialized.val = true
-    }
-    let p1_opt : P1? = system_param_get_or_record(state1)
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
     guard p1_opt is Some(p1) else { return }
-    let p2_opt : P2? = system_param_get_or_record(state2)
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
     guard p2_opt is Some(p2) else { return }
-    let p3_opt : P3? = system_param_get_or_record(state3)
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
     guard p3_opt is Some(p3) else { return }
-    let p4_opt : P4? = system_param_get_or_record(state4)
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
     guard p4_opt is Some(p4) else { return }
-    let p5_opt : P5? = system_param_get_or_record(state5)
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
     guard p5_opt is Some(p5) else { return }
-    let p6_opt : P6? = system_param_get_or_record(state6)
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
     guard p6_opt is Some(p6) else { return }
     run_fallible_system_body(() => system(p1, p2, p3, p4, p5, p6))
-    P1::store(p1, state1)
-    P2::store(p2, state2)
-    P3::store(p3, state3)
-    P4::store(p4, state4)
-    P5::store(p5, state5)
-    P6::store(p6, state6)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
   }
 }
 
 ///|
-let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref(None)
+priv struct AppExecutionContextState {
+  mut current_system_ticks : @core.SystemTicks?
+  mut current_schedule_stage : ScheduleStage?
+  mut current_world : @ecs.World?
+  mut current_app_schedule : ScheduleRegistry[@ecs.World]?
+  mut current_allowed_ambiguous_components : @utils.IntBitSet?
+  mut current_allowed_ambiguous_resources : @utils.IntBitSet?
+}
+
+///|
+let app_execution_context_state : AppExecutionContextState = {
+  current_system_ticks: None,
+  current_schedule_stage: None,
+  current_world: None,
+  current_app_schedule: None,
+  current_allowed_ambiguous_components: None,
+  current_allowed_ambiguous_resources: None,
+}
 
 ///|
 pub fn current_system_ticks() -> @core.SystemTicks {
-  match current_system_ticks_ref.val {
+  match app_execution_context_state.current_system_ticks {
     Some(tick) => tick
     None => @core.SystemTicks::new(0, 0)
   }
 }
 
 ///|
-let current_schedule_stage_ref : Ref[ScheduleStage?] = Ref(None)
-
-///|
 pub fn current_schedule_stage() -> ScheduleStage? {
-  current_schedule_stage_ref.val
+  app_execution_context_state.current_schedule_stage
 }
 
 ///|
-let current_world_ref : Ref[@ecs.World?] = Ref(None)
-
-///|
-let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref(None)
-
-///|
-let current_allowed_ambiguous_components_ref : Ref[@utils.IntBitSet?] = Ref(
-  None,
-)
-
-///|
-let current_allowed_ambiguous_resources_ref : Ref[@utils.IntBitSet?] = Ref(None)
-
-///|
 pub fn current_world() -> @ecs.World? {
-  current_world_ref.val
+  app_execution_context_state.current_world
 }
 
 ///|
 fn current_allowed_ambiguous_components() -> @utils.IntBitSet {
-  match current_allowed_ambiguous_components_ref.val {
+  match app_execution_context_state.current_allowed_ambiguous_components {
     Some(allowed) => allowed
     None => @utils.IntBitSet::new()
   }
@@ -1932,7 +1840,7 @@ fn current_allowed_ambiguous_components() -> @utils.IntBitSet {
 
 ///|
 fn current_allowed_ambiguous_resources() -> @utils.IntBitSet {
-  match current_allowed_ambiguous_resources_ref.val {
+  match app_execution_context_state.current_allowed_ambiguous_resources {
     Some(allowed) => allowed
     None => @utils.IntBitSet::new()
   }
@@ -1940,7 +1848,9 @@ fn current_allowed_ambiguous_resources() -> @utils.IntBitSet {
 
 ///|
 pub fn run_current_fixed_update_schedule(world : @ecs.World) -> Unit {
-  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  guard app_execution_context_state.current_app_schedule is Some(schedule) else {
+    return
+  }
   run_schedule_stage(world, schedule, FixedUpdate)
 }
 
@@ -1949,7 +1859,9 @@ pub fn run_current_schedule_stage(
   world : @ecs.World,
   stage : ScheduleStage,
 ) -> Unit {
-  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  guard app_execution_context_state.current_app_schedule is Some(schedule) else {
+    return
+  }
   run_schedule_stage(world, schedule, stage)
 }
 
@@ -2033,7 +1945,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
   let _resource : T = world_resource_value_or_raise(world)
-  ResMut::{ world: Some(world), key: Some(T::resource()) }
+  ResMut::{ world: Some(world), inner: world.get_resource_mut(T::resource()) }
 }
 
 ///|
@@ -2054,8 +1966,7 @@ pub struct SystemConfig[W] {
   name : String?
   debug_name : String?
   error_handler : ErrorHandler?
-  run_ifs : Array[StatefulRunConditionFn[W]]
-  run_if_states : Array[Ref[Json]]
+  run_ifs : Array[RunConditionConfig[W]]
   chain_members : Array[SystemConfig[W]]?
   chain_ignore_deferred : Bool
   set : SystemSet?
@@ -2079,7 +1990,6 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
     debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
-    run_if_states: [],
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
@@ -2116,19 +2026,18 @@ pub fn[W] SystemConfig::run_if(
   self : SystemConfig[W],
   cond : RunConditionFn[W],
 ) -> SystemConfig[W] {
-  self.run_if_stateful(Json::null(), fn(world : W, _state : Ref[Json]) {
-    cond(world)
-  })
+  self.run_ifs.push(run_condition(cond))
+  self.run_if_last_run_ticks.push(0)
+  self
 }
 
 ///|
-pub fn[W] SystemConfig::run_if_stateful(
+pub fn[W, S] SystemConfig::run_if_stateful(
   self : SystemConfig[W],
-  init_state : Json,
-  cond : StatefulRunConditionFn[W],
+  init_state : S,
+  cond : (W, RunConditionState[S]) -> Bool,
 ) -> SystemConfig[W] {
-  self.run_ifs.push(cond)
-  self.run_if_states.push(Ref(init_state))
+  self.run_ifs.push(stateful_run_condition(init_state, cond))
   self.run_if_last_run_ticks.push(0)
   self
 }
@@ -2517,11 +2426,22 @@ pub fn[W] App::get_sub_app(self : App[W], label : AppLabel) -> SubApp[W]? {
 }
 
 ///|
-pub fn[W] App::get_sub_app_mut(
+pub fn[W] App::replace_sub_app(
   self : App[W],
   label : AppLabel,
-) -> Ref[SubApp[W]]? {
-  self.sub_apps.get_mut(label)
+  sub_app : SubApp[W],
+) -> App[W] {
+  ignore(self.sub_apps.replace(label, sub_app))
+  self
+}
+
+///|
+pub fn[W] App::modify_sub_app(
+  self : App[W],
+  label : AppLabel,
+  update : (SubApp[W]) -> SubApp[W],
+) -> Bool {
+  self.sub_apps.modify(label, update)
 }
 
 ///|
@@ -2533,22 +2453,14 @@ pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
 }
 
 ///|
-pub fn[W] App::sub_app_mut(self : App[W], label : AppLabel) -> Ref[SubApp[W]] {
-  match self.get_sub_app_mut(label) {
-    Some(sub_app_ref) => sub_app_ref
-    None => abort("Missing sub app for label: \{to_repr(label).to_string()}")
-  }
-}
-
-///|
 pub fn[W] App::set_sub_app_extract(
   self : App[W],
   label : AppLabel,
   extract : SubAppExtractFn[W],
 ) -> App[W] {
-  if self.sub_apps.get_mut(label) is Some(sub_app_ref) {
-    sub_app_ref.val = sub_app_ref.val.set_extract(extract)
-  }
+  ignore(
+    self.sub_apps.modify(label, fn(sub_app) { sub_app.set_extract(extract) }),
+  )
   self
 }
 
@@ -2557,24 +2469,20 @@ pub fn[W] App::take_sub_app_extract(
   self : App[W],
   label : AppLabel,
 ) -> SubAppExtractFn[W]? {
-  match self.sub_apps.get_mut(label) {
-    Some(sub_app_ref) => {
-      let (next_sub_app, extract) = sub_app_ref.val.take_extract()
-      sub_app_ref.val = next_sub_app
-      extract
-    }
-    None => None
-  }
+  let mut extracted : SubAppExtractFn[W]? = None
+  ignore(
+    self.sub_apps.modify(label, fn(sub_app) {
+      let (next_sub_app, extract) = sub_app.take_extract()
+      extracted = extract
+      next_sub_app
+    }),
+  )
+  extracted
 }
 
 ///|
 pub fn[W] App::sub_apps(self : App[W]) -> Array[(AppLabel, SubApp[W])] {
   self.sub_apps.list()
-}
-
-///|
-pub fn[W] App::sub_apps_mut(self : App[W]) -> Array[(AppLabel, Ref[SubApp[W]])] {
-  self.sub_apps.list_mut()
 }
 
 ///|
@@ -3921,7 +3829,7 @@ fn run_schedule_stage(
     TimelineTraceCategory::ScheduleStage,
     to_repr(stage).to_string(),
   )
-  current_schedule_stage_ref.val = Some(stage)
+  app_execution_context_state.current_schedule_stage = Some(stage)
   let execution_plan = schedule_execution_plan(
     schedule,
     stage,
@@ -3942,7 +3850,7 @@ fn run_schedule_stage(
           ),
         )
       }
-      current_schedule_stage_ref.val = None
+      app_execution_context_state.current_schedule_stage = None
       timeline_trace_end_span(
         TimelineTraceCategory::ScheduleStage,
         to_repr(stage).to_string(),
@@ -3962,9 +3870,9 @@ fn run_schedule_stage(
     Some(stage),
     executor_kind=execution_plan.executor_kind,
     apply_final_deferred=execution_plan.apply_final_deferred,
-    executor_state_ref=Some(execution_plan.executor_state),
+    executor_state=Some(execution_plan.executor_state),
   )
-  current_schedule_stage_ref.val = None
+  app_execution_context_state.current_schedule_stage = None
   timeline_trace_end_span(
     TimelineTraceCategory::ScheduleStage,
     to_repr(stage).to_string(),

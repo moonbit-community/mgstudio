@@ -58,8 +58,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let decal = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(decal_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
@@ -105,12 +106,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(10.0F, 10.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(10.0F, 10.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(white_material),
     @transform.Transform::identity(),
@@ -127,8 +130,10 @@ fn setup(world : @ecs.World) -> Unit {
       )
       @pbr.MeshMaterial3dBundle::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val
-          |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets
+            |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE))
+          }),
         ),
         @pbr.MeshMaterial3d::new(white_material),
         transform,

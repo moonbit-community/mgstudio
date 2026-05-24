@@ -28,7 +28,9 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let texture_handle = asset_server.get().load("branding/banner.png")
-  let mesh_handle = meshes.peek().add(create_colored_quad_mesh())
+  let mesh_handle = meshes.modify(fn(meshes) {
+    meshes.add(create_colored_quad_mesh())
+  })
 
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 

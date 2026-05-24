@@ -78,7 +78,7 @@ fn play_pitch(
   play_pitch_reader : @ecs.MessageReader[PlayPitch],
   commands : @app.Commands,
 ) -> Unit {
-  for _ in (try! play_pitch_reader.read()) {
+  for _ in play_pitch_reader.read() {
     let current_frequency = frequency.get().value
     @app.log_info("playing pitch with frequency: \{current_frequency}")
     let handle = pitch_assets.modify(fn(value) {

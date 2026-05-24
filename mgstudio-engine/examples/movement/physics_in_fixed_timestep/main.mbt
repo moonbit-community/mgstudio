@@ -257,7 +257,9 @@ fn spawn_environment(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let sphere_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.3F))
+  let sphere_mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(0.3F))
+  })
   let sphere_material = materials
     .peek()
     .add(

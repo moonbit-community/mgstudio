@@ -20,8 +20,8 @@ pub struct ResourceAccess[T] {
 
 ///|
 pub struct ResourceMut[T] {
-  priv world : World?
-  priv key : ResourceKey[T]?
+  priv world : World
+  priv key : ResourceKey[T]
 }
 
 ///|
@@ -38,41 +38,19 @@ pub fn[T] World::get_resource_mut(
   key : ResourceKey[T],
 ) -> ResourceMut[T]? {
   match self.get_resource(key) {
-    Some(_) => Some(ResourceMut::{ world: Some(self), key: Some(key) })
-    None => None
-  }
-}
-
-///|
-pub fn[T] World::get_resource_ref_mut(
-  self : World,
-  key : ResourceKey[T],
-) -> Ref[T]? {
-  match self.get_resource_mut(key) {
-    Some(resource) => Some(Ref(resource.peek()))
-    None => None
-  }
-}
-
-///|
-pub fn[T] World::get_resource_ref(
-  self : World,
-  key : ResourceKey[T],
-) -> Ref[T]? {
-  match self.get_resource(key) {
-    Some(resource) => Some(Ref(resource))
+    Some(_) => Some(ResourceMut::{ world: self, key })
     None => None
   }
 }
 
 ///|
 pub fn[T] ResourceAccess::is_present(self : ResourceAccess[T]) -> Bool {
-  (self.key.access.contains)(self.world)
+  self.key.resource_contains(self.world)
 }
 
 ///|
 pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
-  (self.key.access.get)(self.world)
+  self.key.resource_get(self.world)
 }
 
 ///|
@@ -113,26 +91,8 @@ pub fn[T] ResourceAccess::update(
 }
 
 ///|
-fn[T] resource_mut_world_or_abort(item : ResourceMut[T]) -> World {
-  match item.world {
-    Some(world) => world
-    None => abort("ResourceMut expected a fetched resource")
-  }
-}
-
-///|
-fn[T] resource_mut_key_or_abort(item : ResourceMut[T]) -> ResourceKey[T] {
-  match item.key {
-    Some(key) => key
-    None => abort("ResourceMut expected a fetched resource")
-  }
-}
-
-///|
 fn[T] resource_mut_value_or_abort(item : ResourceMut[T]) -> T {
-  let world = resource_mut_world_or_abort(item)
-  let key = resource_mut_key_or_abort(item)
-  match (key.access.get)(world) {
+  match item.key.resource_get(item.world) {
     Some(value) => value
     None => abort("ResourceMut expected a fetched resource")
   }
@@ -143,47 +103,36 @@ fn[T] resource_mut_replace_value_or_abort(
   item : ResourceMut[T],
   value : T,
 ) -> Unit {
-  let world = resource_mut_world_or_abort(item)
-  let key = resource_mut_key_or_abort(item)
-  if (key.access.contains)(world) {
-    (key.access.set)(world, value)
+  if item.key.resource_contains(item.world) {
+    item.key.resource_set(item.world, value)
   } else {
     abort("ResourceMut expected a fetched resource")
   }
 }
 
 ///|
-pub fn[T] ResourceMut::peek(self : ResourceMut[T]) -> T {
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::peek(self : ResourceMut[T], loc~ : SourceLoc) -> T {
+  ignore(loc)
   resource_mut_value_or_abort(self)
 }
 
 ///|
-pub fn[T] ResourceMut::value(self : ResourceMut[T]) -> T {
-  self.peek()
-}
-
-///|
 pub fn[T] ResourceMut::is_added(self : ResourceMut[T]) -> Bool {
-  let world = resource_mut_world_or_abort(self)
-  world.is_resource_added(
-    resource_mut_key_or_abort(self),
-    world.get_tick_context().ticks(),
-  )
+  self.world.is_resource_added(self.key, self.world.get_tick_context().ticks())
 }
 
 ///|
 pub fn[T] ResourceMut::is_changed(self : ResourceMut[T]) -> Bool {
-  let world = resource_mut_world_or_abort(self)
-  world.is_resource_changed(
-    resource_mut_key_or_abort(self),
-    world.get_tick_context().ticks(),
+  self.world.is_resource_changed(
+    self.key,
+    self.world.get_tick_context().ticks(),
   )
 }
 
 ///|
 pub fn[T] ResourceMut::added(self : ResourceMut[T]) -> @core.Tick {
-  let world = resource_mut_world_or_abort(self)
-  match world.resource_added_tick(resource_mut_key_or_abort(self)) {
+  match self.world.resource_added_tick(self.key) {
     Some(tick) => tick
     None => abort("ResourceMut::added expected resource tick metadata")
   }
@@ -191,8 +140,7 @@ pub fn[T] ResourceMut::added(self : ResourceMut[T]) -> @core.Tick {
 
 ///|
 pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Tick {
-  let world = resource_mut_world_or_abort(self)
-  match world.resource_changed_tick(resource_mut_key_or_abort(self)) {
+  match self.world.resource_changed_tick(self.key) {
     Some(tick) => tick
     None => abort("ResourceMut::last_changed expected resource tick metadata")
   }
@@ -200,8 +148,7 @@ pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Tick {
 
 ///|
 pub fn[T] ResourceMut::changed_by(self : ResourceMut[T]) -> String? {
-  let world = resource_mut_world_or_abort(self)
-  world.resource_changed_by(resource_mut_key_or_abort(self))
+  self.world.resource_changed_by(self.key)
 }
 
 ///|
@@ -210,11 +157,7 @@ pub fn[T] ResourceMut::set_changed(
   self : ResourceMut[T],
   loc~ : SourceLoc,
 ) -> Unit {
-  let world = resource_mut_world_or_abort(self)
-  world.mark_resource_changed(
-    resource_mut_key_or_abort(self),
-    caller=Some(loc.to_string()),
-  )
+  self.world.mark_resource_changed(self.key, caller=Some(loc.to_string()))
 }
 
 ///|
@@ -223,11 +166,7 @@ pub fn[T] ResourceMut::set_added(
   self : ResourceMut[T],
   loc~ : SourceLoc,
 ) -> Unit {
-  let world = resource_mut_world_or_abort(self)
-  world.mark_resource_added(
-    resource_mut_key_or_abort(self),
-    caller=Some(loc.to_string()),
-  )
+  self.world.mark_resource_added(self.key, caller=Some(loc.to_string()))
 }
 
 ///|
@@ -237,7 +176,7 @@ pub fn[T, R] ResourceMut::modify(
   f : (T) -> R,
   loc~ : SourceLoc,
 ) -> R {
-  let value = self.peek()
+  let value = self.peek(loc~)
   let result = f(value)
   resource_mut_replace_value_or_abort(self, value)
   self.set_changed(loc~)
@@ -251,7 +190,7 @@ pub fn[T] ResourceMut::update(
   f : (T) -> T,
   loc~ : SourceLoc,
 ) -> Unit {
-  self.set(f(self.peek()), loc~)
+  self.set(f(self.peek(loc~)), loc~)
 }
 
 ///|
@@ -272,7 +211,7 @@ pub fn[T : Eq] ResourceMut::set_if_neq(
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let current = self.peek()
+  let current = self.peek(loc~)
   if current != value {
     self.set(value, loc~)
     true

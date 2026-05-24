@@ -109,10 +109,10 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
 ///|
 test "windowing_native wbtest: clear-all-keys resets pressed and transition state" {
   let key_id = input_key_id_from_key_code(KeyA)
-  bool_state_set(key_down_ref.val, key_id, true)
-  bool_state_set(key_just_pressed_ref.val, key_id, true)
-  bool_state_set(key_just_released_ref.val, key_id, true)
-  bool_state_set(key_repeated_ref.val, key_id, true)
+  bool_state_set(windowing_native_runtime_state.key_down, key_id, true)
+  bool_state_set(windowing_native_runtime_state.key_just_pressed, key_id, true)
+  bool_state_set(windowing_native_runtime_state.key_just_released, key_id, true)
+  bool_state_set(windowing_native_runtime_state.key_repeated, key_id, true)
 
   input_clear_all_keys()
 
@@ -124,10 +124,10 @@ test "windowing_native wbtest: clear-all-keys resets pressed and transition stat
 
 ///|
 test "windowing_native wbtest: any-thread preference is applied on event loop creation" {
-  match native_event_loop_ref.val {
+  match windowing_native_runtime_state.native_event_loop {
     Some(event_loop) => {
       event_loop.drop()
-      native_event_loop_ref.val = None
+      windowing_native_runtime_state.native_event_loop = None
     }
     None => ()
   }
@@ -137,10 +137,10 @@ test "windowing_native wbtest: any-thread preference is applied on event loop cr
   ignore(ensure_native_event_loop())
   debug_inspect(event_loop_any_thread_applied(), content="true")
 
-  match native_event_loop_ref.val {
+  match windowing_native_runtime_state.native_event_loop {
     Some(event_loop) => {
       event_loop.drop()
-      native_event_loop_ref.val = None
+      windowing_native_runtime_state.native_event_loop = None
     }
     None => ()
   }

@@ -76,12 +76,12 @@ fn main {
     @app.Update,
     @app.system(@app.system_param(print_input_counter))
     .run_if(@app.resource_exists(InputCounter::resource()))
-    .run_if_stateful(Json::null(), input_counter_changed),
+    .run_if_stateful(None, input_counter_changed),
   )
   .add_systems(
     @app.Update,
     @app.system(print_time_message)
-    .run_if_stateful(0.0F.to_json(), time_passed(2.0F))
+    .run_if_stateful(0.0F, time_passed(2.0F))
     .run_if(
       @app.run_condition_not(fn(world : @ecs.World) {
         world_time(world).elapsed_seconds() >= 2.5F
@@ -109,18 +109,18 @@ fn touches_any_just_pressed(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn input_counter_changed(world : @ecs.World, state : Ref[Json]) -> Bool {
-  let previous : Int? = match state.val {
-    Json::Null => None
-    _ => Some(try! @json.from_json(state.val))
-  }
+fn input_counter_changed(
+  world : @ecs.World,
+  state : @app.RunConditionState[Int?],
+) -> Bool {
+  let previous = state.get()
   match world.get_resource(InputCounter::resource()) {
     Some(counter) => {
       let changed = match previous {
         Some(last) => last != counter.value
         None => false
       }
-      state.val = counter.value.to_json()
+      state.set(Some(counter.value))
       changed
     }
     None => false
@@ -128,12 +128,14 @@ fn input_counter_changed(world : @ecs.World, state : Ref[Json]) -> Bool {
 }
 
 ///|
-fn time_passed(threshold : Float) -> @app.StatefulRunConditionFn[@ecs.World] {
-  fn(world : @ecs.World, state : Ref[Json]) {
-    let elapsed_seconds : Float = try! @json.from_json(state.val)
+fn time_passed(
+  threshold : Float,
+) -> (@ecs.World, @app.RunConditionState[Float]) -> Bool {
+  fn(world : @ecs.World, state : @app.RunConditionState[Float]) {
+    let elapsed_seconds = state.get()
     let updated_elapsed_seconds = elapsed_seconds +
       world_time(world).delta_seconds()
-    state.val = updated_elapsed_seconds.to_json()
+    state.set(updated_elapsed_seconds)
     updated_elapsed_seconds >= threshold
   }
 }

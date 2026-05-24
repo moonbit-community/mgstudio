@@ -80,8 +80,7 @@ fn picking_debug_log_system(
     return
   }
   events.modify(fn(value) {
-    let events_ref = Ref(value)
-    let captured_events = @app.PickingEvents::drain(events_ref)
+    let captured_events = @app.PickingEvents::drain(value)
     for event in captured_events {
       if picking_debug_should_log(debug_mode, event) {
         let target_label = match event.target {
@@ -94,7 +93,7 @@ fn picking_debug_log_system(
           "[picking_debug] pointer=\{event.pointer.to_string()} kind=\{to_repr(event.kind).to_string()} target=\{target_label} position=\{position_label}",
         )
       }
-      @app.PickingEvents::push(events_ref, event)
+      @app.PickingEvents::push(value, event)
     }
   })
 }

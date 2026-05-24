@@ -77,11 +77,11 @@ pub fn[W] SubApp::take_extract(
 
 ///|
 pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
-  current_app_schedule_ref.val = Some(self.schedule)
-  current_allowed_ambiguous_components_ref.val = Some(
+  app_execution_context_state.current_app_schedule = Some(self.schedule)
+  app_execution_context_state.current_allowed_ambiguous_components = Some(
     self.allowed_ambiguous_components,
   )
-  current_allowed_ambiguous_resources_ref.val = Some(
+  app_execution_context_state.current_allowed_ambiguous_resources = Some(
     self.allowed_ambiguous_resources,
   )
   match self.update_schedule {
@@ -89,19 +89,19 @@ pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
-  current_allowed_ambiguous_components_ref.val = None
-  current_allowed_ambiguous_resources_ref.val = None
-  current_app_schedule_ref.val = None
+  app_execution_context_state.current_allowed_ambiguous_components = None
+  app_execution_context_state.current_allowed_ambiguous_resources = None
+  app_execution_context_state.current_app_schedule = None
   self
 }
 
 ///|
 pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
-  current_app_schedule_ref.val = Some(self.schedule)
-  current_allowed_ambiguous_components_ref.val = Some(
+  app_execution_context_state.current_app_schedule = Some(self.schedule)
+  app_execution_context_state.current_allowed_ambiguous_components = Some(
     self.allowed_ambiguous_components,
   )
-  current_allowed_ambiguous_resources_ref.val = Some(
+  app_execution_context_state.current_allowed_ambiguous_resources = Some(
     self.allowed_ambiguous_resources,
   )
   stepping_begin_frame(self.world)
@@ -109,9 +109,9 @@ pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
-  current_allowed_ambiguous_components_ref.val = None
-  current_allowed_ambiguous_resources_ref.val = None
-  current_app_schedule_ref.val = None
+  app_execution_context_state.current_allowed_ambiguous_components = None
+  app_execution_context_state.current_allowed_ambiguous_resources = None
+  app_execution_context_state.current_app_schedule = None
   self
 }
 
@@ -157,7 +157,7 @@ pub fn[T : Resource] SubApp::is_ambiguous_resource_allowed(
 ///|
 pub struct SubApps[W] {
   mut main : SubApp[W]
-  sub_apps : @hashmap.HashMap[String, Ref[SubApp[W]]]
+  sub_apps : @hashmap.HashMap[String, SubApp[W]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
 }
 
@@ -177,7 +177,7 @@ pub fn[W] SubApps::insert(
   sub_app : SubApp[W],
 ) -> SubApps[W] {
   let key = app_label_storage_key(label)
-  self.sub_apps.set(key, Ref(sub_app))
+  self.sub_apps.set(key, sub_app)
   self.sub_app_labels.set(key, label)
   self
 }
@@ -188,50 +188,50 @@ pub fn[W] SubApps::remove(self : SubApps[W], label : AppLabel) -> SubApp[W]? {
   let removed = self.sub_apps.get(key)
   self.sub_apps.remove(key)
   self.sub_app_labels.remove(key)
-  removed.map(fn(sub_app_ref) { sub_app_ref.val })
+  removed
 }
 
 ///|
 pub fn[W] SubApps::get(self : SubApps[W], label : AppLabel) -> SubApp[W]? {
   let key = app_label_storage_key(label)
-  self.sub_apps.get(key).map(fn(sub_app_ref) { sub_app_ref.val })
+  self.sub_apps.get(key)
 }
 
 ///|
-pub fn[W] SubApps::get_mut(
+pub fn[W] SubApps::replace(
   self : SubApps[W],
   label : AppLabel,
-) -> Ref[SubApp[W]]? {
+  sub_app : SubApp[W],
+) -> Bool {
   let key = app_label_storage_key(label)
-  self.sub_apps.get(key)
+  guard self.sub_apps.contains(key) else { return false }
+  self.sub_apps.set(key, sub_app)
+  self.sub_app_labels.set(key, label)
+  true
+}
+
+///|
+pub fn[W] SubApps::modify(
+  self : SubApps[W],
+  label : AppLabel,
+  update : (SubApp[W]) -> SubApp[W],
+) -> Bool {
+  match self.get(label) {
+    Some(sub_app) => self.replace(label, update(sub_app))
+    None => false
+  }
 }
 
 ///|
 pub fn[W] SubApps::list(self : SubApps[W]) -> Array[(AppLabel, SubApp[W])] {
   let out : Array[(AppLabel, SubApp[W])] = []
   for entry in self.sub_apps.iter() {
-    let (key, sub_app_ref) = entry
+    let (key, sub_app) = entry
     let label = match self.sub_app_labels.get(key) {
       Some(stored) => stored
       None => Custom(key)
     }
-    out.push((label, sub_app_ref.val))
-  }
-  out
-}
-
-///|
-pub fn[W] SubApps::list_mut(
-  self : SubApps[W],
-) -> Array[(AppLabel, Ref[SubApp[W]])] {
-  let out : Array[(AppLabel, Ref[SubApp[W]])] = []
-  for entry in self.sub_apps.iter() {
-    let (key, sub_app_ref) = entry
-    let label = match self.sub_app_labels.get(key) {
-      Some(stored) => stored
-      None => Custom(key)
-    }
-    out.push((label, sub_app_ref))
+    out.push((label, sub_app))
   }
   out
 }
@@ -248,13 +248,14 @@ pub fn SubApps::run_startup(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
 pub fn SubApps::update(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
   self.main = self.main.update()
   for entry in self.sub_apps.iter() {
-    let (_key, sub_app_ref) = entry
-    if sub_app_ref.val.extract is Some(extract) {
-      let worlds = extract(self.main.world, sub_app_ref.val.world)
+    let (key, sub_app) = entry
+    let mut next_sub_app = sub_app
+    if next_sub_app.extract is Some(extract) {
+      let worlds = extract(self.main.world, next_sub_app.world)
       self.main.world = worlds.0
-      sub_app_ref.val = SubApp::{ ..sub_app_ref.val, world: worlds.1 }
+      next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
     }
-    sub_app_ref.val = sub_app_ref.val.update()
+    self.sub_apps.set(key, next_sub_app.update())
   }
   self
 }
@@ -265,13 +266,14 @@ pub fn SubApps::update_sub_app_by_label(
   label : AppLabel,
 ) -> SubApps[@ecs.World] {
   let key = app_label_storage_key(label)
-  if self.sub_apps.get(key) is Some(sub_app_ref) {
-    if sub_app_ref.val.extract is Some(extract) {
-      let worlds = extract(self.main.world, sub_app_ref.val.world)
+  if self.sub_apps.get(key) is Some(sub_app) {
+    let mut next_sub_app = sub_app
+    if next_sub_app.extract is Some(extract) {
+      let worlds = extract(self.main.world, next_sub_app.world)
       self.main.world = worlds.0
-      sub_app_ref.val = SubApp::{ ..sub_app_ref.val, world: worlds.1 }
+      next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
     }
-    sub_app_ref.val = sub_app_ref.val.update()
+    self.sub_apps.set(key, next_sub_app.update())
   }
   self
 }

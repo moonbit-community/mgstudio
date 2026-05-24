@@ -190,7 +190,7 @@ fn apply_life_visuals(
       .with_base_color(@sprite.Color::srgb(0.06F, 0.08F, 0.14F))
       .with_emissive(@sprite.Color::black())
     }
-    materials.peek().set(handle, next) |> ignore
+    materials.modify(fn(materials) { materials.set(handle, next) |> ignore })
   })
 }
 

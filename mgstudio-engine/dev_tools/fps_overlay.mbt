@@ -198,8 +198,10 @@ impl @ecs.Component for FrameTimeGraph with component() {
 }
 
 ///|
-fn fps_overlay_state_ref(world : @ecs.World) -> Ref[FpsOverlayState] {
-  match world.get_resource_ref_mut(fps_overlay_state_resource_key) {
+fn fps_overlay_state_mut(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[FpsOverlayState] {
+  match world.get_resource_mut(fps_overlay_state_resource_key) {
     Some(state) => state
     None => abort("Missing FpsOverlayState resource")
   }
@@ -447,8 +449,8 @@ fn fps_overlay_graph_bar_width(
 ///|
 fn fps_overlay_setup(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
-  let state_ref = fps_overlay_state_ref(world)
-  if state_ref.val.root_entity is Some(_) {
+  let state_mut = fps_overlay_state_mut(world)
+  if state_mut.peek().root_entity is Some(_) {
     return
   }
 
@@ -536,18 +538,20 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   .insert_component(@picking.pickable_ignore)
   |> ignore)
 
-  state_ref.val.root_entity = Some(root)
-  state_ref.val.text_entity = Some(text_entity)
-  state_ref.val.text_value_span_entity = Some(text_value_span_entity)
-  state_ref.val.graph_entity = Some(graph_entity)
+  state_mut.modify(fn(state) {
+    state.root_entity = Some(root)
+    state.text_entity = Some(text_entity)
+    state.text_value_span_entity = Some(text_value_span_entity)
+    state.graph_entity = Some(graph_entity)
+  })
   fps_overlay_customize_system(world)
 }
 
 ///|
 fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
-  let state_ref = fps_overlay_state_ref(world)
-  if state_ref.val.text_entity is Some(text_entity) {
+  let state = fps_overlay_state_mut(world).peek()
+  if state.text_entity is Some(text_entity) {
     ignore(
       try
         world.update(text_entity, fn(node : @ui.Node) {
@@ -561,7 +565,7 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
     )
   }
 
-  if state_ref.val.text_value_span_entity is Some(span_entity) {
+  if state.text_value_span_entity is Some(span_entity) {
     ignore(
       try
         world.entity_mut(span_entity).insert_component(config.text_config)
@@ -574,7 +578,7 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
     )
   }
 
-  if state_ref.val.text_entity is Some(text_entity) {
+  if state.text_entity is Some(text_entity) {
     ignore(
       try
         world.entity_mut(text_entity).insert_component(config.text_config)
@@ -600,7 +604,7 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
     )
   }
 
-  if state_ref.val.graph_entity is Some(graph_entity) {
+  if state.graph_entity is Some(graph_entity) {
     ignore(
       try
         world.update(graph_entity, fn(node : @ui.Node) {
@@ -621,11 +625,11 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
 ///|
 fn fps_overlay_resize_bars(
   world : @ecs.World,
-  state_ref : Ref[FpsOverlayState],
+  state : FpsOverlayState,
   graph_entity : @core.Entity,
   count : Int,
 ) -> Unit {
-  while state_ref.val.bar_entities.length() < count {
+  while state.bar_entities.length() < count {
     let bar = world.spawn_empty()
     try! (world
     .entity_mut(bar)
@@ -638,10 +642,10 @@ fn fps_overlay_resize_bars(
       @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
     )
     |> ignore)
-    state_ref.val.bar_entities.push(bar)
+    state.bar_entities.push(bar)
   }
-  while state_ref.val.bar_entities.length() > count {
-    guard state_ref.val.bar_entities.pop() is Some(bar) else { break }
+  while state.bar_entities.length() > count {
+    guard state.bar_entities.pop() is Some(bar) else { break }
     try! world.despawn(bar)
   }
 }
@@ -649,7 +653,8 @@ fn fps_overlay_resize_bars(
 ///|
 fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
-  let state_ref = fps_overlay_state_ref(world)
+  let state_mut = fps_overlay_state_mut(world)
+  let state = state_mut.peek()
   guard world.get_resource(@diagnostic.DiagnosticsStore::resource())
     is Some(store) else {
     return
@@ -660,7 +665,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     None => None
   }
   let next_text = fps_overlay_text_value_span(fps_value)
-  if state_ref.val.text_value_span_entity is Some(span_entity) {
+  if state.text_value_span_entity is Some(span_entity) {
     if (try! world.get_by_key(span_entity, @text.ecs_key_text_span))
       is Some(span_value) {
       span_value.content = next_text
@@ -670,14 +675,19 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     }
   }
 
-  guard state_ref.val.graph_entity is Some(graph_entity) else { return }
+  guard state.graph_entity is Some(graph_entity) else { return }
   guard store.get(@diagnostic.frame_time_diagnostic_frame_time)
     is Some(frame_time) else {
-    fps_overlay_resize_bars(world, state_ref, graph_entity, 0)
+    state_mut.modify(fn(state) {
+      fps_overlay_resize_bars(world, state, graph_entity, 0)
+    })
     return
   }
   let values = frame_time.values()
-  fps_overlay_resize_bars(world, state_ref, graph_entity, values.length())
+  state_mut.modify(fn(state) {
+    fps_overlay_resize_bars(world, state, graph_entity, values.length())
+  })
+  let state = state_mut.peek()
   if values.length() == 0 {
     return
   }
@@ -685,7 +695,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   let graph_width = fps_overlay_graph_width(config)
   let graph_height = fps_overlay_graph_height(config)
   for i in 0..<values.length() {
-    let bar_entity = state_ref.val.bar_entities[i]
+    let bar_entity = state.bar_entities[i]
     let height = graph_height *
       fps_overlay_graph_ratio(values[i], config.frame_time_graph_config)
     let width = fps_overlay_graph_bar_width(

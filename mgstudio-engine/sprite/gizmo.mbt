@@ -634,9 +634,10 @@ pub impl[Config] Default for GizmoStorage[Config] with default() {
 }
 
 ///|
-let gizmo_storage_drain_registry : Ref[
-  @hashmap.HashMap[String, (@ecs.World) -> Unit],
-] = Ref(@hashmap.HashMap([]))
+let gizmo_storage_drain_registry : @hashmap.HashMap[
+  String,
+  (@ecs.World) -> Unit,
+] = @hashmap.HashMap([])
 
 ///|
 fn[Config : GizmoConfigGroup] gizmo_storage_type_name_of(
@@ -664,7 +665,7 @@ fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
 ) -> Unit {
   let probe : GizmoStorage[Config] = GizmoStorage::new()
   let type_name = gizmo_storage_type_name_of(probe)
-  if gizmo_storage_drain_registry.val.contains(type_name) {
+  if gizmo_storage_drain_registry.contains(type_name) {
     return
   }
   let drain : (@ecs.World) -> Unit = fn(world) {
@@ -678,7 +679,7 @@ fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
       None => ()
     }
   }
-  gizmo_storage_drain_registry.val.set(type_name, drain)
+  gizmo_storage_drain_registry.set(type_name, drain)
 }
 
 ///|
@@ -1009,7 +1010,7 @@ fn gizmos_draw_grid_with_config(
 
 ///|
 fn gizmos_prepare(world : @ecs.World) -> Unit {
-  for entry in gizmo_storage_drain_registry.val.iter() {
+  for entry in gizmo_storage_drain_registry.iter() {
     let (_, drain) = entry
     drain(world)
   }

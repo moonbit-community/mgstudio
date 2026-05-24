@@ -32,7 +32,7 @@ let state_transition_registration_indices : @hashmap.HashMap[String, Int] = @has
 ///|
 priv struct StateTransitionHookRegistration {
   key : String
-  config_ref : Ref[SystemConfig[@ecs.World]]
+  mut config : SystemConfig[@ecs.World]
   matches : (@ecs.World) -> Bool
 }
 
@@ -210,8 +210,8 @@ fn run_registered_state_transitions(world : @ecs.World) -> Unit {
   }
   let root_to_leaf = sorted_state_transition_registration_indices(true)
   let leaf_to_root = sorted_state_transition_registration_indices(false)
-  let prev_stage = current_schedule_stage_ref.val
-  current_schedule_stage_ref.val = Some(StateTransition)
+  let prev_stage = app_execution_context_state.current_schedule_stage
+  app_execution_context_state.current_schedule_stage = Some(StateTransition)
   for index in root_to_leaf {
     (state_transition_registrations[index].apply)(world)
   }
@@ -227,7 +227,7 @@ fn run_registered_state_transitions(world : @ecs.World) -> Unit {
   for index in root_to_leaf {
     (state_transition_registrations[index].clear_pending)(world)
   }
-  current_schedule_stage_ref.val = prev_stage
+  app_execution_context_state.current_schedule_stage = prev_stage
 }
 
 ///|
@@ -237,7 +237,7 @@ fn register_state_transition_hook(
   config : SystemConfig[@ecs.World],
   matches : (@ecs.World) -> Bool,
 ) -> Unit {
-  hooks.push({ key, config_ref: Ref(config), matches })
+  hooks.push({ key, config, matches })
 }
 
 ///|
@@ -246,16 +246,17 @@ fn run_state_transition_hooks(
   hooks : Array[StateTransitionHookRegistration],
   key : String,
 ) -> Unit {
-  let matched_refs : Array[Ref[SystemConfig[@ecs.World]]] = []
-  for hook in hooks {
+  let matched_indices : Array[Int] = []
+  for i in 0..<hooks.length() {
+    let hook = hooks[i]
     if hook.key == key && (hook.matches)(world) {
-      matched_refs.push(hook.config_ref)
+      matched_indices.push(i)
     }
   }
-  guard matched_refs.length() > 0 else { return }
+  guard matched_indices.length() > 0 else { return }
   let matched_configs : Array[SystemConfig[@ecs.World]] = []
-  for config_ref in matched_refs {
-    matched_configs.push(config_ref.val)
+  for index in matched_indices {
+    matched_configs.push(hooks[index].config)
   }
   let execution_order : Array[ScheduleExecutionNode] = []
   let execution_batches : Array[Array[ScheduleExecutionNode]] = []
@@ -314,8 +315,8 @@ fn run_state_transition_hooks(
     multi_threaded_batches: execution_batches,
   }
   run_systems(world, schedule, execution_batches, current_schedule_stage())
-  for i in 0..<matched_refs.length() {
-    matched_refs[i].val = matched_configs[i]
+  for i in 0..<matched_indices.length() {
+    hooks[matched_indices[i]].config = matched_configs[i]
   }
 }
 

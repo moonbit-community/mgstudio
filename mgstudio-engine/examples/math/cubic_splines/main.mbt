@@ -447,7 +447,7 @@ fn handle_mouse_move(
   cursor_moved_reader : @ecs.MessageReader[@window.CursorMoved],
   mouse_position : @app.ResMut[MousePosition],
 ) -> Unit {
-  for event in (try! cursor_moved_reader.read()) {
+  for event in cursor_moved_reader.read() {
     mouse_position.set(MousePosition::{ position: Some(event.position) })
   }
 }
@@ -460,7 +460,7 @@ fn handle_mouse_press(
   control_points : @app.ResMut[ControlPoints],
 ) -> Unit {
   guard mouse_position.get().position is Some(mouse_pos) else { return }
-  for event in (try! mouse_button_input_reader.read()) {
+  for event in mouse_button_input_reader.read() {
     match event.button {
       Left =>
         match event.state {

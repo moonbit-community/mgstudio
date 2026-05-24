@@ -207,11 +207,18 @@ pub impl @app.Plugin for DlssPlugin with name(_self) {
 }
 
 ///|
-let dlss_required_components_installed : Ref[Bool] = Ref(false)
+priv struct DlssRequiredComponentsRuntimeState {
+  mut required_components_installed : Bool
+}
+
+///|
+let dlss_required_components_runtime_state : DlssRequiredComponentsRuntimeState = {
+  required_components_installed: false,
+}
 
 ///|
 pub fn install_dlss_required_components() -> Unit {
-  if dlss_required_components_installed.val {
+  if dlss_required_components_runtime_state.required_components_installed {
     return
   }
   ignore(
@@ -230,7 +237,7 @@ pub fn install_dlss_required_components() -> Unit {
     })
     .require_with(@core_pipeline.ecs_key_hdr, fn() { @core_pipeline.Hdr::Hdr() }),
   )
-  dlss_required_components_installed.val = true
+  dlss_required_components_runtime_state.required_components_installed = true
 }
 
 ///|

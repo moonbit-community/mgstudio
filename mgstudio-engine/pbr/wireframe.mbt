@@ -165,16 +165,16 @@ impl @app.Resource for Render3dWireframeMeshCache with resource() {
 }
 
 ///|
-fn render3d_wireframe_mesh_cache_ref_or_init(
+fn render3d_wireframe_mesh_cache_mut_or_init(
   world : @ecs.World,
-) -> Ref[Render3dWireframeMeshCache] {
+) -> @ecs.ResourceMut[Render3dWireframeMeshCache] {
   if world.get_resource(Render3dWireframeMeshCache::resource()) is None {
     world.insert_resource(Render3dWireframeMeshCache::resource(), {
       entries: [],
     })
   }
   match world.get_resource_mut(Render3dWireframeMeshCache::resource()) {
-    Some(cache) => Ref(cache.peek())
+    Some(cache) => cache
     None => abort("Missing Render3dWireframeMeshCache resource")
   }
 }
@@ -184,8 +184,8 @@ fn render3d_wireframe_mesh_cache_get(
   world : @ecs.World,
   source_mesh_handle_id : Int,
 ) -> Int? {
-  let cache_ref = render3d_wireframe_mesh_cache_ref_or_init(world)
-  for item in cache_ref.val.entries {
+  let cache = render3d_wireframe_mesh_cache_mut_or_init(world)
+  for item in cache.peek().entries {
     if item.source_mesh_handle_id == source_mesh_handle_id {
       return Some(item.wireframe_mesh_id)
     }
@@ -199,10 +199,10 @@ fn render3d_wireframe_mesh_cache_set(
   source_mesh_handle_id : Int,
   wireframe_mesh_id : Int,
 ) -> Unit {
-  let cache_ref = render3d_wireframe_mesh_cache_ref_or_init(world)
+  let cache = render3d_wireframe_mesh_cache_mut_or_init(world)
   let next : Array[WireframeMeshCacheEntry] = []
   let mut replaced = false
-  for item in cache_ref.val.entries {
+  for item in cache.peek().entries {
     if item.source_mesh_handle_id == source_mesh_handle_id {
       if !replaced {
         next.push({ source_mesh_handle_id, wireframe_mesh_id })
@@ -215,7 +215,7 @@ fn render3d_wireframe_mesh_cache_set(
   if !replaced {
     next.push({ source_mesh_handle_id, wireframe_mesh_id })
   }
-  cache_ref.val.entries = next
+  cache.modify(fn(value) { value.entries = next })
 }
 
 ///|

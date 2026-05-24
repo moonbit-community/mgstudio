@@ -6,31 +6,12 @@ import {
   "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
 pub fn[T] component_metadata_builder(ComponentKey[T]) -> ComponentMetadataBuilder[T]
 
 pub fn[T] component_writer(ComponentKey[T], T) -> ComponentWriter
-
-pub fn[C : Component] current_add_observer() -> ComponentOn[Add, C]
-
-pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -> ComponentOn[E, C]
-
-pub fn[C : Component] current_despawn_observer() -> ComponentOn[Despawn, C]
-
-pub fn[C : Component] current_insert_observer() -> ComponentOn[Insert, C]
-
-pub fn[E : TriggerEvent] current_observer() -> On[E]
-
-pub fn current_observer_world() -> World?
-
-pub fn current_observer_world_abort_missing() -> World
-
-pub fn[C : Component] current_remove_observer() -> ComponentOn[Remove, C]
-
-pub fn[C : Component] current_replace_observer() -> ComponentOn[Replace, C]
 
 pub let ecs_builtin_component_definition_add : Int
 
@@ -56,13 +37,13 @@ pub fn[D] query(World) -> Query[D, All]
 
 pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)
 
-pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
+pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T
 
 pub fn[T] query_data_component_has(World, @core.Entity, ComponentKey[T]) -> Bool
 
 pub fn[T] query_data_component_matches(World, @core.Entity, ComponentKey[T]) -> Bool
 
-pub fn[T] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T?
 
 pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
@@ -186,9 +167,8 @@ pub fn[T] Comp::added(Self[T]) -> Int64
 pub fn[T] Comp::changed_by(Self[T]) -> String?
 pub fn[T] Comp::is_added(Self[T]) -> Bool
 pub fn[T] Comp::is_changed(Self[T]) -> Bool
-pub fn[T : Component] Comp::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Comp::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Comp::last_changed(Self[T]) -> Int64
-pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
 
@@ -285,6 +265,7 @@ pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
 pub fn[E, C] ComponentOn::entity(Self[E, C]) -> @core.Entity
 pub fn[E, C] ComponentOn::marker_component(Self[E, C]) -> C?
 pub fn[E, C] ComponentOn::marker_event(Self[E, C]) -> E?
+pub fn[E, C] ComponentOn::world(Self[E, C]) -> World
 
 type ComponentOps
 
@@ -458,8 +439,8 @@ pub fn[T] MessageCursor::clear(Self[T], Messages[T]) -> Unit
 pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
 pub fn[T] MessageCursor::len(Self[T], Messages[T]) -> Int
 pub fn[T] MessageCursor::missed_messages(Self[T], Messages[T]) -> Int
-pub fn[T : Message] MessageCursor::read(Self[T], Messages[T]) -> Array[T] raise EcsError
-pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[T] raise EcsError
+pub fn[T] MessageCursor::read(Self[T], Messages[T]) -> Array[T]
+pub fn[T] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[T]
 pub impl[T] Default for MessageCursor[T]
 pub impl[T] ToJson for MessageCursor[T]
 pub impl[T] @json.FromJson for MessageCursor[T]
@@ -475,10 +456,10 @@ pub struct MessageMutator[T] {
   // private fields
 }
 pub fn[T] MessageMutator::clear(Self[T]) -> Unit
-pub fn[T] MessageMutator::cursor(Self[T]) -> Int
+pub fn[T] MessageMutator::cursor(Self[T]) -> MessageCursor[T]
 pub fn[T] MessageMutator::is_empty(Self[T]) -> Bool
 pub fn[T] MessageMutator::len(Self[T]) -> Int
-pub fn[T] MessageMutator::read(Self[T]) -> Array[T] raise EcsError
+pub fn[T] MessageMutator::read(Self[T]) -> Array[T]
 
 pub struct MessageQueueState[T] {
   // private fields
@@ -495,10 +476,10 @@ pub struct MessageReader[T] {
   // private fields
 }
 pub fn[T] MessageReader::clear(Self[T]) -> Unit
-pub fn[T] MessageReader::cursor(Self[T]) -> Int
+pub fn[T] MessageReader::cursor(Self[T]) -> MessageCursor[T]
 pub fn[T] MessageReader::is_empty(Self[T]) -> Bool
 pub fn[T] MessageReader::len(Self[T]) -> Int
-pub fn[T] MessageReader::read(Self[T]) -> Array[T] raise EcsError
+pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
 pub(all) struct MessageRegistryState {
   ids : Array[Int]
@@ -535,23 +516,24 @@ pub fn[T] Mut::added(Self[T]) -> Int64
 pub fn[T] Mut::changed_by(Self[T]) -> String?
 pub fn[T] Mut::is_added(Self[T]) -> Bool
 pub fn[T] Mut::is_changed(Self[T]) -> Bool
-pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Mut::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Mut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
 pub fn[T, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
-pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
-pub fn[T] Mut::peek(Self[T]) -> T
 #callsite(autofill(loc))
-pub fn[T : Mutable] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+pub fn[T] Mut::peek(Self[T], loc~ : SourceLoc) -> T
+#callsite(autofill(loc))
+pub fn[T] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Eq + Mutable] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T : Eq] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
-pub fn[T : Mutable] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
-pub fn[T] Mut::value(Self[T]) -> T
+pub fn[T] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T] Mut::value(Self[T], loc~ : SourceLoc) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
 pub struct Name {
@@ -576,6 +558,7 @@ pub fn[E] On::event(Self[E]) -> E
 pub fn[E] On::is_propagating(Self[E]) -> Bool
 pub fn[E, R] On::modify(Self[E], (E) -> R) -> R
 pub fn[E] On::propagate(Self[E], Bool) -> Unit
+pub fn[E] On::world(Self[E]) -> World
 
 pub struct Optional[T] {
   // private fields
@@ -590,8 +573,6 @@ pub struct Or[F] {
 }
 pub fn[F] Or::new(F) -> Self[F]
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
-
-type PendingComponentWriteContext
 
 pub struct Query[_, F] {
   // private fields
@@ -657,6 +638,18 @@ pub fn QueryDataAccess::read_components(Self) -> Array[Int]
 pub fn QueryDataAccess::write_components(Self) -> Array[Int]
 
 pub(all) struct QueryDataFetchPlan {
+  // private fields
+}
+
+pub(all) struct QueryDataPlannedFetch {
+  // private fields
+}
+
+pub(all) struct QueryDataSparseAnchorFetch {
+  // private fields
+}
+
+pub(all) struct QueryDataTableRowFetch {
   // private fields
 }
 
@@ -764,7 +757,8 @@ pub fn[T] ResourceMut::is_changed(Self[T]) -> Bool
 pub fn[T] ResourceMut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
 pub fn[T, R] ResourceMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
-pub fn[T] ResourceMut::peek(Self[T]) -> T
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::peek(Self[T], loc~ : SourceLoc) -> T
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
@@ -775,9 +769,6 @@ pub fn[T] ResourceMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 pub fn[T : Eq] ResourceMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
-pub fn[T] ResourceMut::value(Self[T]) -> T
-
-type ResourceSlot
 
 type TriggerObserverContext
 
@@ -835,6 +826,8 @@ pub fn World::components_registrator(Self) -> ComponentsRegistrator
 pub fn[T : Component] World::contains(Self, @core.Entity, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_by_key(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_message(Self, MessageKey[T]) -> Bool
+pub fn[E : ComponentObserverEvent, C : Component] World::current_component_observer(Self) -> ComponentOn[E, C]
+pub fn[E : TriggerEvent] World::current_observer(Self) -> On[E]
 #callsite(autofill(loc))
 pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
@@ -853,8 +846,6 @@ pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredCompo
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T?
 pub fn[T] World::get_resource_mut(Self, ResourceKey[T]) -> ResourceMut[T]?
-pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]?
-pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]?
 pub fn World::get_tick_context(Self) -> @core.SystemTickContext
 pub fn World::increment_change_tick(Self) -> Int64
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
@@ -868,8 +859,8 @@ pub fn[T] World::is_resource_changed(Self, ResourceKey[T], @core.SystemTicks) ->
 pub fn World::last_change_tick(Self) -> Int64
 pub fn[T] World::mark_resource_added(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::mark_resource_changed(Self, ResourceKey[T], caller? : String?) -> Unit
-pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
-pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
+pub fn[T] World::message_mutator(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageMutator[T]
+pub fn[T] World::message_reader(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self
 pub fn[D] World::query(Self) -> QueryState[D, All]
@@ -879,7 +870,7 @@ pub fn[T : Component] World::queue_register_component(Self, key? : ComponentKey[
 pub fn[T] World::queue_register_component_by_key(Self, ComponentKey[T]) -> Int
 pub fn World::queued_component_registration_count(Self) -> Int
 pub fn World::read_change_tick(Self) -> Int64
-pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T]
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_with(Self, ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
@@ -969,8 +960,6 @@ pub(open) trait Component {
 
 pub(open) trait ComponentObserverEvent {
   fn register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
-  fn current_observer_entity() -> @core.Entity
-  fn current_observer_component_id() -> Int
   fn marker() -> Self
   fn debug_name() -> String
 }
@@ -982,22 +971,15 @@ pub(open) trait Message {
   fn message() -> MessageKey[Self]
 }
 
-pub(open) trait Mutable {
-  fn set(Self, @ref.Ref[Self]) -> Unit = _
-}
-
 pub(open) trait QueryData {
   fn matches(World, @core.Entity) -> Bool
   fn fetch(World, @core.Entity) -> Self raise EcsError
   fn prepare_fetch_plan(World) -> QueryDataFetchPlan = _
   fn append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
   fn fetch_plan_size() -> Int = _
-  fn fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fn fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fn fetch_table_row_with_plan_offset(World, @core.Entity, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
-  fn fetch_sparse_anchor(World, @core.Entity, Int, Int, Int) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan(World, @core.Entity, Int, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
+  fn fetch_table_row(QueryDataTableRowFetch) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan_offset(QueryDataPlannedFetch) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan_offset(QueryDataSparseAnchorFetch) -> Self raise EcsError = _
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _

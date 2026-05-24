@@ -42,10 +42,10 @@ type AssetReloadHook = (@ecs.World, AssetServer, String) -> Unit
 
 ///|
 priv struct AssetLoaderRegistryState {
-  loaders : Ref[@hashmap.HashMap[String, AssetLoaderEntry]]
-  ready_checkers : Ref[@hashmap.HashMap[String, AssetReadyCheck]]
-  reload_hooks : Ref[Array[AssetReloadHook]]
-  builtin_registered : Ref[Bool]
+  loaders : @hashmap.HashMap[String, AssetLoaderEntry]
+  ready_checkers : @hashmap.HashMap[String, AssetReadyCheck]
+  reload_hooks : Array[AssetReloadHook]
+  mut builtin_registered : Bool
 }
 
 ///|
@@ -62,10 +62,10 @@ fn asset_loader_registry_state_for_world(
   let key = asset_loader_registry_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetLoaderRegistryState::{
-      loaders: Ref(@hashmap.HashMap([])),
-      ready_checkers: Ref(@hashmap.HashMap([])),
-      reload_hooks: Ref([]),
-      builtin_registered: Ref(false),
+      loaders: @hashmap.HashMap([]),
+      ready_checkers: @hashmap.HashMap([]),
+      reload_hooks: [],
+      builtin_registered: false,
     })
   }
   match world.get_resource(key) {
@@ -86,32 +86,31 @@ fn asset_loader_registry_state_active() -> AssetLoaderRegistryState {
 }
 
 ///|
-fn asset_loader_registry_active() -> Ref[
-  @hashmap.HashMap[String, AssetLoaderEntry],
-] {
+fn asset_loader_registry_active() -> @hashmap.HashMap[String, AssetLoaderEntry] {
   asset_loader_registry_state_active().loaders
 }
 
 ///|
-fn asset_ready_checker_registry_active() -> Ref[
-  @hashmap.HashMap[String, AssetReadyCheck],
+fn asset_ready_checker_registry_active() -> @hashmap.HashMap[
+  String,
+  AssetReadyCheck,
 ] {
   asset_loader_registry_state_active().ready_checkers
 }
 
 ///|
-fn asset_reload_hook_registry_active() -> Ref[Array[AssetReloadHook]] {
+fn asset_reload_hook_registry_active() -> Array[AssetReloadHook] {
   asset_loader_registry_state_active().reload_hooks
 }
 
 ///|
 fn asset_builtin_loaders_registered_active() -> Bool {
-  asset_loader_registry_state_active().builtin_registered.val
+  asset_loader_registry_state_active().builtin_registered
 }
 
 ///|
 fn asset_set_builtin_loaders_registered_active(value : Bool) -> Unit {
-  asset_loader_registry_state_active().builtin_registered.val = value
+  asset_loader_registry_state_active().builtin_registered = value
 }
 
 ///|
@@ -124,7 +123,7 @@ fn[T : Asset] asset_loader_type_name(probe : Handle[T]) -> String {
 pub fn asset_register_reload_hook(
   hook : (@ecs.World, AssetServer, String) -> Unit,
 ) -> Unit {
-  asset_reload_hook_registry_active().val.push(hook)
+  asset_reload_hook_registry_active().push(hook)
 }
 
 ///|
@@ -133,7 +132,7 @@ pub fn[T : Asset] asset_register_loader(
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  asset_loader_registry_active().val.set(type_name, AssetLoaderEntry::{
+  asset_loader_registry_active().set(type_name, AssetLoaderEntry::{
     load: fn(asset_server, path) { load(asset_server, path).id() },
   })
 }
@@ -144,10 +143,7 @@ pub fn[T : Asset] asset_register_ready_checker(
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  asset_ready_checker_registry_active().val.set(type_name, fn(
-    world,
-    handle_id,
-  ) {
+  asset_ready_checker_registry_active().set(type_name, fn(world, handle_id) {
     check_ready(world, Handle::new(handle_id))
   })
 }
@@ -215,5 +211,5 @@ pub fn asset_loader_kind_for_path(path : String) -> AssetLoaderKind {
 
 ///|
 pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
-  asset_server_or_abort().default_sampler_nearest.val = enabled
+  asset_server_or_abort().default_sampler_nearest = enabled
 }

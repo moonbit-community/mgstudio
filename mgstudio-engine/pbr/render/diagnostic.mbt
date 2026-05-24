@@ -43,9 +43,9 @@ impl @app.Resource for Render3dDiagnosticsState with resource() {
 }
 
 ///|
-fn render3d_diagnostics_state_ref_or_init(
+fn render3d_diagnostics_state_mut_or_init(
   world : @ecs.World,
-) -> Ref[Render3dDiagnosticsState] {
+) -> @ecs.ResourceMut[Render3dDiagnosticsState] {
   if world.get_resource(Render3dDiagnosticsState::resource()) is None {
     world.insert_resource(
       Render3dDiagnosticsState::resource(),
@@ -53,7 +53,7 @@ fn render3d_diagnostics_state_ref_or_init(
     )
   }
   match world.get_resource_mut(Render3dDiagnosticsState::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dDiagnosticsState resource")
   }
 }
@@ -63,7 +63,9 @@ pub fn render3d_set_runtime_initialized(
   world : @ecs.World,
   runtime_initialized : Bool,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(world).val.runtime_initialized = runtime_initialized
+  render3d_diagnostics_state_mut_or_init(world).modify(fn(state) {
+    state.runtime_initialized = runtime_initialized
+  })
 }
 
 ///|
@@ -71,7 +73,9 @@ pub fn render3d_set_diagnostic_queued_visible_mesh_count(
   world : @ecs.World,
   count : Int,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(world).val.queued_visible_mesh_count = count
+  render3d_diagnostics_state_mut_or_init(world).modify(fn(state) {
+    state.queued_visible_mesh_count = count
+  })
 }
 
 ///|
@@ -79,7 +83,9 @@ pub fn render3d_set_diagnostic_prepared_camera_count(
   world : @ecs.World,
   count : Int,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(world).val.prepared_camera_count = count
+  render3d_diagnostics_state_mut_or_init(world).modify(fn(state) {
+    state.prepared_camera_count = count
+  })
 }
 
 ///|
@@ -87,7 +93,9 @@ pub fn render3d_set_diagnostic_queue_cpu_ms(
   world : @ecs.World,
   queue_cpu_ms : Float,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(world).val.queue_cpu_ms = queue_cpu_ms
+  render3d_diagnostics_state_mut_or_init(world).modify(fn(state) {
+    state.queue_cpu_ms = queue_cpu_ms
+  })
 }
 
 ///|
@@ -95,32 +103,34 @@ pub fn render3d_set_diagnostic_execute_cpu_ms(
   world : @ecs.World,
   execute_cpu_ms : Float,
 ) -> Unit {
-  render3d_diagnostics_state_ref_or_init(world).val.execute_cpu_ms = execute_cpu_ms
+  render3d_diagnostics_state_mut_or_init(world).modify(fn(state) {
+    state.execute_cpu_ms = execute_cpu_ms
+  })
 }
 
 ///|
 pub fn render3d_diagnostic_queued_visible_mesh_count(world : @ecs.World) -> Int {
-  render3d_diagnostics_state_ref_or_init(world).val.queued_visible_mesh_count
+  render3d_diagnostics_state_mut_or_init(world).peek().queued_visible_mesh_count
 }
 
 ///|
 pub fn render3d_diagnostic_prepared_camera_count(world : @ecs.World) -> Int {
-  render3d_diagnostics_state_ref_or_init(world).val.prepared_camera_count
+  render3d_diagnostics_state_mut_or_init(world).peek().prepared_camera_count
 }
 
 ///|
 pub fn render3d_diagnostic_queue_cpu_ms(world : @ecs.World) -> Float {
-  render3d_diagnostics_state_ref_or_init(world).val.queue_cpu_ms
+  render3d_diagnostics_state_mut_or_init(world).peek().queue_cpu_ms
 }
 
 ///|
 pub fn render3d_diagnostic_execute_cpu_ms(world : @ecs.World) -> Float {
-  render3d_diagnostics_state_ref_or_init(world).val.execute_cpu_ms
+  render3d_diagnostics_state_mut_or_init(world).peek().execute_cpu_ms
 }
 
 ///|
 pub fn render3d_prepared_camera_count(world : @ecs.World) -> Int? {
-  let state = render3d_diagnostics_state_ref_or_init(world).val
+  let state = render3d_diagnostics_state_mut_or_init(world).peek()
   if !state.runtime_initialized {
     return Some(0)
   }
@@ -129,7 +139,7 @@ pub fn render3d_prepared_camera_count(world : @ecs.World) -> Int? {
 
 ///|
 pub fn render3d_queued_visible_mesh_count(world : @ecs.World) -> Int? {
-  let state = render3d_diagnostics_state_ref_or_init(world).val
+  let state = render3d_diagnostics_state_mut_or_init(world).peek()
   if !state.runtime_initialized {
     return Some(0)
   }

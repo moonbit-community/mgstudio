@@ -19,22 +19,17 @@ pub(open) trait FromWorld {
 
 ///|
 pub struct Local[T] {
-  value_ref : Ref[T]
+  priv mut value : T
 }
 
 ///|
 pub fn[T] Local::get(self : Local[T]) -> T {
-  self.value_ref.val
-}
-
-///|
-pub fn[T] Local::get_ref(self : Local[T]) -> Ref[T] {
-  self.value_ref
+  self.value
 }
 
 ///|
 pub fn[T] Local::set(self : Local[T], value : T) -> Unit {
-  self.value_ref.val = value
+  self.value = value
 }
 
 ///|
@@ -63,39 +58,24 @@ pub impl[T] FromWorld for Array[T] with from_world(_world) {
 }
 
 ///|
-fn[T : @json.FromJson] local_param_decode_state(state : Ref[Json]) -> T {
-  try @json.from_json(state.val) catch {
-    _ => abort("Failed to decode Local system parameter state")
-  } noraise {
-    value => value
-  }
+pub impl[T : FromWorld] SystemParam for Local[T] with init_state(world) {
+  let mut value = T::from_world(world)
+  SystemParamState::new(fn() { Local::{ value, } }, fn(local_value : Local[T]) {
+    value = local_value.value
+  })
 }
 
 ///|
-pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with init_state(
-  world,
-) {
-  T::from_world(world).to_json()
+pub impl[T : FromWorld] SystemParam for Local[T] with get(state) {
+  state.get()
 }
 
 ///|
-pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with get(
-  state,
-) {
-  Local::{ value_ref: Ref(local_param_decode_state(state)) }
+pub impl[T : FromWorld] SystemParam for Local[T] with store(self, state) {
+  state.store(self)
 }
 
 ///|
-pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with store(
-  self,
-  state,
-) {
-  state.val = self.value_ref.val.to_json()
-}
-
-///|
-pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with access(
-  _world,
-) {
+pub impl[T : FromWorld] SystemParam for Local[T] with access(_world) {
   SystemAccess::new()
 }

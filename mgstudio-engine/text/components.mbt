@@ -48,9 +48,6 @@ pub struct TextLayout {
 }
 
 ///|
-pub impl @ecs.Mutable for TextLayout
-
-///|
 pub fn TextLayout::TextLayout() -> TextLayout {
   TextLayout::{ justify: Justify::Left, linebreak: LineBreak::WordBoundary }
 }
@@ -708,9 +705,6 @@ pub fn TextColor::new(color : @sprite.Color) -> TextColor {
 }
 
 ///|
-pub impl @ecs.Mutable for TextColor
-
-///|
 pub fn TextColor::TextColor() -> TextColor {
   TextColor::new(@sprite.Color::white())
 }
@@ -729,9 +723,6 @@ pub fn TextColor::white() -> TextColor {
 pub(all) struct TextBackgroundColor {
   mut color : @sprite.Color
 }
-
-///|
-pub impl @ecs.Mutable for TextBackgroundColor
 
 ///|
 pub fn TextBackgroundColor::new(color : @sprite.Color) -> TextBackgroundColor {

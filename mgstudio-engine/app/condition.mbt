@@ -98,15 +98,15 @@ pub fn[S : States] in_state(state : S) -> RunConditionFn[@ecs.World] {
 ///|
 pub fn[S : States] state_changed(state : S) -> RunConditionFn[@ecs.World] {
   let key = state_resource_key(state)
-  let previous = Ref(None)
+  let mut previous = None
   fn(world : @ecs.World) {
     match world_state(world, state) {
       Some(current) => {
-        let changed = match previous.val {
+        let changed = match previous {
           Some(last) => last != current.get()
           None => true
         }
-        previous.val = Some(current.get())
+        previous = Some(current.get())
         changed
       }
       None => {

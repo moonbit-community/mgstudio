@@ -334,15 +334,21 @@ fn spawn_world(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
-  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  let cube = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  })
   let floor = meshes.peek()
     |> @pbr.add_mesh(
       @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
         @math.Vec2::new(10.0F, 10.0F),
       ).build(),
     )
-  let sphere = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.5F))
-  let wall = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.2F, 4.0F, 3.0F))
+  let sphere = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(0.5F))
+  })
+  let wall = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(0.2F, 4.0F, 3.0F))
+  })
 
   let blue_material = materials
     .peek()

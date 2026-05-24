@@ -46,7 +46,7 @@ pub fn[T] World::added_components(
   system : @core.SystemTicks,
 ) -> AddedComponents[T] {
   let reader = match self.added_component_messages(key.id()) {
-    Some(messages_ref) => messages_ref.val.reader(system)
+    Some(messages) => messages.reader(system)
     None => @core.Messages::new().reader(system)
   }
   AddedComponents::{ reader, }

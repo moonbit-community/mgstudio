@@ -13,18 +13,15 @@
 // limitations under the License.
 
 ///|
-let gilrs_ref : Ref[@gamepad.Gil?] = Ref(None)
-
-///|
-let connected_gamepad_ids_ref : Ref[Array[Int]] = Ref([])
+let connected_gamepad_ids : Array[Int] = []
 
 ///|
 fn ensure_gilrs() -> @gamepad.Gil {
-  match gilrs_ref.val {
+  match gilrs_runtime_state.gilrs {
     Some(gilrs) => gilrs
     None => {
       let gilrs = @gamepad.Gil::new()
-      gilrs_ref.val = Some(gilrs)
+      gilrs_runtime_state.gilrs = Some(gilrs)
       gilrs
     }
   }
@@ -45,7 +42,10 @@ fn refresh_gamepads() -> Unit {
     let (id, _gamepad) = pair
     connected_ids.push(id.value())
   }
-  connected_gamepad_ids_ref.val = connected_ids
+  connected_gamepad_ids.clear()
+  for id in connected_ids {
+    connected_gamepad_ids.push(id)
+  }
 }
 
 ///|
@@ -69,14 +69,21 @@ pub struct GamepadRumbleCommand {
 }
 
 ///|
-let record_gamepad_rumble_commands_ref : Ref[Bool] = Ref(false)
+priv struct GilrsRuntimeState {
+  mut gilrs : @gamepad.Gil?
+  mut record_commands : Bool
+  mut ff_supported_override : Bool?
+}
 
 ///|
-let gamepad_test_ff_supported_override_ref : Ref[Bool?] = Ref(None)
+let gilrs_runtime_state : GilrsRuntimeState = {
+  gilrs: None,
+  record_commands: false,
+  ff_supported_override: None,
+}
 
 ///|
-let recorded_gamepad_rumble_commands_ref : Ref[Array[GamepadRumbleCommand]] = Ref([],
-)
+let recorded_gamepad_rumble_commands : Array[GamepadRumbleCommand] = []
 
 ///|
 fn clamp_rumble_motor(value : Float) -> Double {
@@ -91,7 +98,7 @@ fn clamp_rumble_motor(value : Float) -> Double {
 
 ///|
 fn gamepad_ff_supported_for_rumble(gamepad : @gamepad.Gamepad) -> Bool {
-  match gamepad_test_ff_supported_override_ref.val {
+  match gilrs_runtime_state.ff_supported_override {
     Some(supported) => supported
     None => gamepad.is_ff_supported()
   }
@@ -116,8 +123,8 @@ pub fn gamepad_set_rumble(
   let weak = clamp_rumble_motor(weak_motor)
   let clamped_duration_ms = if duration_ms <= 0L { 0L } else { duration_ms }
 
-  if record_gamepad_rumble_commands_ref.val {
-    recorded_gamepad_rumble_commands_ref.val.push({
+  if gilrs_runtime_state.record_commands {
+    recorded_gamepad_rumble_commands.push({
       gamepad_id,
       strong_motor: Float::from_double(strong),
       weak_motor: Float::from_double(weak),
@@ -148,15 +155,15 @@ pub fn gamepad_set_rumble(
 
 ///|
 pub fn gamepad_test_use_mock_gilrs(gilrs : @gamepad.Gil) -> Unit {
-  gilrs_ref.val = Some(gilrs)
-  connected_gamepad_ids_ref.val = []
+  gilrs_runtime_state.gilrs = Some(gilrs)
+  connected_gamepad_ids.clear()
 }
 
 ///|
 pub fn gamepad_test_use_ff_mock(gamepad_count : Int) -> Unit {
   let gilrs = @gamepad.Gil::new_mock(gamepad_count)
   gamepad_test_use_mock_gilrs(gilrs)
-  gamepad_test_ff_supported_override_ref.val = Some(true)
+  gilrs_runtime_state.ff_supported_override = Some(true)
 }
 
 ///|
@@ -165,14 +172,14 @@ pub fn gamepad_test_set_mock_ff_supported(
   supported : Bool,
 ) -> Unit {
   ignore(gamepad_id)
-  gamepad_test_ff_supported_override_ref.val = Some(supported)
+  gilrs_runtime_state.ff_supported_override = Some(supported)
 }
 
 ///|
 pub fn gamepad_test_record_rumble_commands(enabled : Bool) -> Unit {
-  record_gamepad_rumble_commands_ref.val = enabled
+  gilrs_runtime_state.record_commands = enabled
   if !enabled {
-    recorded_gamepad_rumble_commands_ref.val.clear()
+    recorded_gamepad_rumble_commands.clear()
   }
 }
 
@@ -180,18 +187,18 @@ pub fn gamepad_test_record_rumble_commands(enabled : Bool) -> Unit {
 pub fn gamepad_test_take_recorded_rumble_commands() -> Array[
   GamepadRumbleCommand,
 ] {
-  let commands = recorded_gamepad_rumble_commands_ref.val
-  recorded_gamepad_rumble_commands_ref.val = []
+  let commands = recorded_gamepad_rumble_commands.copy()
+  recorded_gamepad_rumble_commands.clear()
   commands
 }
 
 ///|
 pub fn gamepad_test_reset_state() -> Unit {
-  gilrs_ref.val = None
-  connected_gamepad_ids_ref.val = []
-  record_gamepad_rumble_commands_ref.val = false
-  gamepad_test_ff_supported_override_ref.val = None
-  recorded_gamepad_rumble_commands_ref.val.clear()
+  gilrs_runtime_state.gilrs = None
+  connected_gamepad_ids.clear()
+  gilrs_runtime_state.record_commands = false
+  gilrs_runtime_state.ff_supported_override = None
+  recorded_gamepad_rumble_commands.clear()
 }
 
 ///|
@@ -242,15 +249,15 @@ pub fn gamepad_poll() -> Unit {
 
 ///|
 pub fn gamepad_count() -> Int {
-  connected_gamepad_ids_ref.val.length()
+  connected_gamepad_ids.length()
 }
 
 ///|
 pub fn gamepad_id(index : Int) -> Int {
-  if index < 0 || index >= connected_gamepad_ids_ref.val.length() {
+  if index < 0 || index >= connected_gamepad_ids.length() {
     -1
   } else {
-    connected_gamepad_ids_ref.val[index]
+    connected_gamepad_ids[index]
   }
 }
 

@@ -22,7 +22,14 @@ pub struct TerminalCtrlCHandlerPlugin {}
 const TERMINAL_CTRL_C_EXIT_CODE : Int = 130
 
 ///|
-let terminal_ctrl_c_close_count_ref : Ref[Int] = Ref(0)
+priv struct TerminalCtrlCRuntimeState {
+  mut close_count : Int
+}
+
+///|
+let terminal_ctrl_c_runtime_state : TerminalCtrlCRuntimeState = {
+  close_count: 0,
+}
 
 ///|
 pub fn TerminalCtrlCHandlerPlugin::TerminalCtrlCHandlerPlugin() -> TerminalCtrlCHandlerPlugin {
@@ -31,13 +38,14 @@ pub fn TerminalCtrlCHandlerPlugin::TerminalCtrlCHandlerPlugin() -> TerminalCtrlC
 
 ///|
 pub fn terminal_ctrl_c_gracefully_exit() -> Unit {
-  terminal_ctrl_c_close_count_ref.val = terminal_ctrl_c_close_count_ref.val + 1
+  terminal_ctrl_c_runtime_state.close_count = terminal_ctrl_c_runtime_state.close_count +
+    1
   host_app_request_close()
 }
 
 ///|
 pub fn terminal_ctrl_c_exit_on_flag(world : @ecs.World) -> Unit {
-  if terminal_ctrl_c_close_count_ref.val <= 0 {
+  if terminal_ctrl_c_runtime_state.close_count <= 0 {
     return
   }
   let key = app_exit_message_key()
@@ -59,7 +67,7 @@ pub fn terminal_ctrl_c_request_close() -> Unit {
 
 ///|
 pub fn terminal_ctrl_c_reset() -> Unit {
-  terminal_ctrl_c_close_count_ref.val = 0
+  terminal_ctrl_c_runtime_state.close_count = 0
   host_app_reset_close()
 }
 
@@ -67,5 +75,5 @@ pub fn terminal_ctrl_c_reset() -> Unit {
 pub fn terminal_ctrl_c_request_close_and_reset() -> Unit {
   terminal_ctrl_c_gracefully_exit()
   host_app_reset_close()
-  terminal_ctrl_c_close_count_ref.val = 0
+  terminal_ctrl_c_runtime_state.close_count = 0
 }

@@ -767,21 +767,21 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     Some(pipelines) => pipelines.get() is Some(_)
     None => false
   }
-  match
-    world.get_resource_ref_mut(ecs_key_meshlet_visibility_buffer_raster_state) {
-    Some(state_ref) => {
-      state_ref.val.enabled = meshlet_runtime_available()
-      meshlet_visibility_buffer_raster(
-        state_ref.val,
-        instance_count,
-        view_count~,
-        shadow_view_count~,
-        max_bvh_depth~,
-        rightmost_slot~,
-        material_depth_view_count~,
-        pipelines_ready~,
-      )
-    }
+  match world.get_resource_mut(ecs_key_meshlet_visibility_buffer_raster_state) {
+    Some(state) =>
+      state.modify(fn(value) {
+        value.enabled = meshlet_runtime_available()
+        meshlet_visibility_buffer_raster(
+          value,
+          instance_count,
+          view_count~,
+          shadow_view_count~,
+          max_bvh_depth~,
+          rightmost_slot~,
+          material_depth_view_count~,
+          pipelines_ready~,
+        )
+      })
     _ => ()
   }
 }

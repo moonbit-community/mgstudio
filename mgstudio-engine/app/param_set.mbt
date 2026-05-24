@@ -16,8 +16,8 @@
 pub struct ParamSet2[P0, P1] {
   param0 : P0
   param1 : P1
-  state0 : Ref[Json]
-  state1 : Ref[Json]
+  state0 : SystemParamState[P0]
+  state1 : SystemParamState[P1]
 }
 
 ///|
@@ -31,34 +31,32 @@ pub fn[P0, P1] ParamSet2::p1(self : ParamSet2[P0, P1]) -> P1 {
 }
 
 ///|
-fn param_set2_decode_state(state : Ref[Json]) -> (Json, Json) {
-  try @json.from_json(state.val) catch {
-    _ => (Json::null(), Json::null())
-  } noraise {
-    value => value
-  }
-}
-
-///|
 pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with init_state(
   world,
 ) {
-  (P0::init_state(world), P1::init_state(world)).to_json()
+  let state0 = P0::init_state(world)
+  let state1 = P1::init_state(world)
+  SystemParamState::new(
+    fn() raise {
+      ParamSet2::{
+        param0: P0::get(state0),
+        param1: P1::get(state1),
+        state0,
+        state1,
+      }
+    },
+    fn(value : ParamSet2[P0, P1]) {
+      P0::store(value.param0, value.state0)
+      P1::store(value.param1, value.state1)
+    },
+  )
 }
 
 ///|
 pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with get(
   state,
 ) {
-  let (state0, state1) = param_set2_decode_state(state)
-  let state0_ref = Ref(state0)
-  let state1_ref = Ref(state1)
-  ParamSet2::{
-    param0: P0::get(state0_ref),
-    param1: P1::get(state1_ref),
-    state0: state0_ref,
-    state1: state1_ref,
-  }
+  state.get()
 }
 
 ///|
@@ -66,9 +64,7 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
   self,
   state,
 ) {
-  P0::store(self.param0, self.state0)
-  P1::store(self.param1, self.state1)
-  state.val = (self.state0.val, self.state1.val).to_json()
+  state.store(self)
 }
 
 ///|

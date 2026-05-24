@@ -190,12 +190,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(50.0F, 50.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(50.0F, 50.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(

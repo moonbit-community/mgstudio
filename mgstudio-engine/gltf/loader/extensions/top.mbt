@@ -69,7 +69,14 @@ pub fn GltfExtensionHandlers::handlers(
 let gltf_extension_handlers_registry_bootstrap : Array[GltfExtensionHandler] = []
 
 ///|
-let gltf_pbr_material_handler_enabled_bootstrap_ref : Ref[Bool] = Ref(true)
+priv struct GltfExtensionBootstrapState {
+  mut pbr_material_handler_enabled : Bool
+}
+
+///|
+let gltf_extension_bootstrap_state : GltfExtensionBootstrapState = {
+  pbr_material_handler_enabled: true,
+}
 
 ///|
 pub struct GltfExtensionRuntimeState {
@@ -85,7 +92,7 @@ fn GltfExtensionRuntimeState::from_bootstrap() -> GltfExtensionRuntimeState {
   }
   GltfExtensionRuntimeState::{
     handlers,
-    pbr_material_handler_enabled: gltf_pbr_material_handler_enabled_bootstrap_ref.val,
+    pbr_material_handler_enabled: gltf_extension_bootstrap_state.pbr_material_handler_enabled,
   }
 }
 
@@ -111,35 +118,35 @@ pub fn gltf_extension_runtime_plugin(
       GltfExtensionRuntimeState::from_bootstrap(),
     )
     gltf_extension_handlers_registry_bootstrap.clear()
-    gltf_pbr_material_handler_enabled_bootstrap_ref.val = true
+    gltf_extension_bootstrap_state.pbr_material_handler_enabled = true
     next
   }
 }
 
 ///|
-fn gltf_extension_runtime_state_ref_if_present() -> Ref[
+fn gltf_extension_runtime_state_mut_if_present() -> @ecs.ResourceMut[
   GltfExtensionRuntimeState,
 ]? {
   guard @app.current_world() is Some(world) else { return None }
   let state = world.get_resource_mut(ecs_key_gltf_extension_runtime_state)
   match state {
-    Some(state_ref) => Some(Ref(state_ref.peek()))
+    Some(state) => Some(state)
     None => None
   }
 }
 
 ///|
 fn gltf_extension_runtime_handlers() -> Array[GltfExtensionHandler] {
-  if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
-    return state_ref.val.handlers
+  if gltf_extension_runtime_state_mut_if_present() is Some(state) {
+    return state.peek().handlers
   }
   gltf_extension_handlers_registry_bootstrap
 }
 
 ///|
 pub fn gltf_register_extension_handler(handler : GltfExtensionHandler) -> Unit {
-  if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.handlers.push(handler)
+  if gltf_extension_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.handlers.push(handler) })
   } else {
     gltf_extension_handlers_registry_bootstrap.push(handler)
   }
@@ -152,8 +159,8 @@ pub fn gltf_extension_handlers() -> GltfExtensionHandlers {
 
 ///|
 pub fn gltf_clear_extension_handlers() -> Unit {
-  if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.handlers.clear()
+  if gltf_extension_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.handlers.clear() })
   } else {
     gltf_extension_handlers_registry_bootstrap.clear()
   }
@@ -218,17 +225,17 @@ pub fn gltf_extension_notify_scene_completed(
 
 ///|
 pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
-  if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
-    state_ref.val.pbr_material_handler_enabled = enabled
+  if gltf_extension_runtime_state_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.pbr_material_handler_enabled = enabled })
   } else {
-    gltf_pbr_material_handler_enabled_bootstrap_ref.val = enabled
+    gltf_extension_bootstrap_state.pbr_material_handler_enabled = enabled
   }
 }
 
 ///|
 pub fn gltf_pbr_material_handler_enabled() -> Bool {
-  if gltf_extension_runtime_state_ref_if_present() is Some(state_ref) {
-    return state_ref.val.pbr_material_handler_enabled
+  if gltf_extension_runtime_state_mut_if_present() is Some(state) {
+    return state.peek().pbr_material_handler_enabled
   }
-  gltf_pbr_material_handler_enabled_bootstrap_ref.val
+  gltf_extension_bootstrap_state.pbr_material_handler_enabled
 }

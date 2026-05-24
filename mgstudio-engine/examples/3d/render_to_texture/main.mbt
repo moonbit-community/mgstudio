@@ -48,11 +48,8 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let image = images
-    .peek()
-    .add(
+  let image = images.modify(fn(images) {
+    images.add(
       @asset.Image::new_target_texture(
         512,
         512,
@@ -60,21 +57,29 @@ fn setup(
         Some(@asset.TextureFormat::Rgba8UnormSrgb),
       ),
     )
+  })
   let first_pass_layer = @sprite.RenderLayers::layer(1)
-  let cube_handle = mesh_assets
-    |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 4.0F))
-  let first_pass_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
-      ).with_reflectance(0.02F),
+  let cube_handle = meshes.modify(fn(mesh_assets) {
+    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 4.0F))
+  })
+  let (first_pass_material, main_pass_material) = materials.modify(fn(
+    material_assets,
+  ) {
+    (
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+        ).with_reflectance(0.02F),
+      ),
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white())
+        .with_base_color_texture(Some(image))
+        .with_reflectance(0.02F),
+      ),
     )
-  let main_pass_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white())
-      .with_base_color_texture(Some(image))
-      .with_reflectance(0.02F),
-    )
+  })
 
   ignore(
     commands.spawn(

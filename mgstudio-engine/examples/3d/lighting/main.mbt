@@ -121,11 +121,13 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   }
 
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+        ),
+      )
+    }),
   )
 }
 
@@ -147,11 +149,13 @@ fn rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh3d {
   ]
   let indices = [0, 1, 2, 0, 2, 3]
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+        ),
+      )
+    }),
   )
 }
 
@@ -206,12 +210,14 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(10.0F, 10.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(10.0F, 10.0F),
+          ).build(),
+        )
+      }),
     ),
     ground_material,
     @transform.Transform::identity(),
@@ -227,8 +233,9 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F))
+      }),
     ),
     wall_material,
     @transform.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
@@ -239,8 +246,9 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F))
+      }),
     ),
     wall_material,
     @transform.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
@@ -270,8 +278,9 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(
@@ -359,8 +368,9 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.125F, 0.1F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.125F, 0.1F))
+      }),
     ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(

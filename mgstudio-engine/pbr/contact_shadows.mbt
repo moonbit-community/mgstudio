@@ -278,26 +278,26 @@ pub fn contact_shadows_plugin_install_with(
 }
 
 ///|
-pub fn render3d_contact_shadows_buffer_ref(
+pub fn render3d_contact_shadows_buffer_mut(
   world : @ecs.World,
-) -> Ref[ContactShadowsBuffer]? {
+) -> @ecs.ResourceMut[ContactShadowsBuffer]? {
   match world.get_resource_mut(ContactShadowsBuffer::resource()) {
-    Some(buffer) => Some(Ref(buffer.peek()))
+    Some(buffer) => Some(buffer)
     None => None
   }
 }
 
 ///|
-pub fn render3d_contact_shadows_buffer_ref_or_init(
+pub fn render3d_contact_shadows_buffer_mut_or_init(
   world : @ecs.World,
-) -> Ref[ContactShadowsBuffer] {
-  if render3d_contact_shadows_buffer_ref(world) is None {
+) -> @ecs.ResourceMut[ContactShadowsBuffer] {
+  if render3d_contact_shadows_buffer_mut(world) is None {
     world.insert_resource(
       ContactShadowsBuffer::resource(),
       ContactShadowsBuffer::ContactShadowsBuffer(),
     )
   }
-  match render3d_contact_shadows_buffer_ref(world) {
+  match render3d_contact_shadows_buffer_mut(world) {
     Some(buffer) => buffer
     None =>
       abort(
@@ -351,11 +351,13 @@ pub fn render3d_apply_view_contact_shadows_uniform_offsets(
 ///|
 pub fn render3d_prepare_contact_shadows_system(world : @ecs.World) -> Unit {
   let sorted_cameras = @render.sorted_cameras_or_default(world)
-  let buffer_ref = render3d_contact_shadows_buffer_ref_or_init(world)
-  let offsets = render3d_prepare_contact_shadows_settings(
-    world,
-    sorted_cameras.entities,
-    buffer_ref.val,
-  )
+  let buffer = render3d_contact_shadows_buffer_mut_or_init(world)
+  let offsets = buffer.modify(fn(value) {
+    render3d_prepare_contact_shadows_settings(
+      world,
+      sorted_cameras.entities,
+      value,
+    )
+  })
   render3d_apply_view_contact_shadows_uniform_offsets(world, offsets)
 }

@@ -139,8 +139,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let sphere_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Sphere::new(0.4F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Sphere::new(0.4F))
+    }),
   )
   for xi in 0..<10 {
     let x = xi - 5

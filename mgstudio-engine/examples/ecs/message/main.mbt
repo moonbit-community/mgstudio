@@ -126,7 +126,7 @@ fn apply_armor_to_damage(
   dmg_messages : @ecs.MessageMutator[DealDamage],
   armor_messages : @ecs.MessageWriter[ArmorBlockedDamage],
 ) -> Unit {
-  for message in (try! dmg_messages.read()) {
+  for message in dmg_messages.read() {
     message.amount = message.amount - 1
     if message.amount <= 0 {
       ignore(armor_messages.write(ArmorBlockedDamage::{  }))
@@ -139,7 +139,7 @@ fn apply_damage_to_health(
   deal_damage_reader : @ecs.MessageReader[DealDamage],
   damaged_received_writer : @ecs.MessageWriter[DamageReceived],
 ) -> Unit {
-  for deal_damage in (try! deal_damage_reader.read()) {
+  for deal_damage in deal_damage_reader.read() {
     @app.log_info("Applying \{deal_damage.amount.to_string()} damage")
     if deal_damage.amount > 0 {
       ignore(damaged_received_writer.write_default())
@@ -151,7 +151,7 @@ fn apply_damage_to_health(
 fn play_damage_received_sound(
   damage_received_reader : @ecs.MessageReader[DamageReceived],
 ) -> Unit {
-  for _ in (try! damage_received_reader.read()) {
+  for _ in damage_received_reader.read() {
     @app.log_info("Playing a sound.")
   }
 }
@@ -160,7 +160,7 @@ fn play_damage_received_sound(
 fn play_damage_received_particle_effect(
   damage_received_reader : @ecs.MessageReader[DamageReceived],
 ) -> Unit {
-  for _ in (try! damage_received_reader.read()) {
+  for _ in damage_received_reader.read() {
     @app.log_info("Playing particle effect.")
   }
 }

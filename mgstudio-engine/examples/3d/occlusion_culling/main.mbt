@@ -145,10 +145,12 @@ fn spawn_small_cubes(
   material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
   let mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(
-      @math.Cuboid::new(SMALL_CUBE_SIZE, SMALL_CUBE_SIZE, SMALL_CUBE_SIZE),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets
+      |> @pbr.add_mesh(
+        @math.Cuboid::new(SMALL_CUBE_SIZE, SMALL_CUBE_SIZE, SMALL_CUBE_SIZE),
+      )
+    }),
   )
   let lat_steps = OUTER_SUBDIVISION_COUNT * 2
   let lon_steps = OUTER_SUBDIVISION_COUNT * 4
@@ -201,10 +203,12 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let large_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @math.Cuboid::new(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @math.Cuboid::new(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(large_cube_material),
     @transform.Transform::identity(),

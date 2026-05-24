@@ -38,9 +38,6 @@ priv enum Row {
 }
 
 ///|
-impl @ecs.Mutable for Row
-
-///|
 let row_key : @ecs.ComponentKey[Row] = @ecs.register_component(
   debug_name="examples.3d.3d_shapes.Row",
 )
@@ -205,73 +202,77 @@ fn setup(
   images : @app.ResMut[@asset.Assets[@asset.Image]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let image_assets = images.peek()
-  let material_assets = materials.peek()
-  let debug_material = material_assets.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
-      Some(uv_debug_texture(image_assets)),
-    ),
-  )
+  let debug_texture = images.modify(fn(image_assets) {
+    uv_debug_texture(image_assets)
+  })
+  let debug_material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+        Some(debug_texture),
+      ),
+    )
+  })
 
-  let shapes = [
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.CuboidMeshBuilder::new(1.0F, 1.0F, 1.0F).build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.TetrahedronMeshBuilder::TetrahedronMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.Capsule3dMeshBuilder::Capsule3dMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.TorusMeshBuilder::TorusMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.CylinderMeshBuilder::CylinderMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.ConeMeshBuilder::ConeMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.ConicalFrustumMeshBuilder::ConicalFrustumMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.SphereMeshBuilder::new(
-        0.5F,
-        @mesh_primitives_dim3.SphereKind::ico(5),
-      ).build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.SphereMeshBuilder::new(
-        0.5F,
-        @mesh_primitives_dim3.SphereKind::uv(32, 18),
-      ).build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.Segment3dMeshBuilder::Segment3dMeshBuilder().build(),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives_dim3.Polyline3dMeshBuilder::new(
-        @math.Polyline3d::new([
-          @math.Vec3::new(-0.5F, 0.0F, 0.0F),
-          @math.Vec3::new(0.5F, 0.0F, 0.0F),
-          @math.Vec3::new(0.0F, 0.5F, 0.0F),
-        ]),
-      ).build(),
-    ),
-  ]
+  let shapes = meshes.modify(fn(mesh_assets) {
+    [
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.CuboidMeshBuilder::new(1.0F, 1.0F, 1.0F).build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.TetrahedronMeshBuilder::TetrahedronMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.Capsule3dMeshBuilder::Capsule3dMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.TorusMeshBuilder::TorusMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.CylinderMeshBuilder::CylinderMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.ConeMeshBuilder::ConeMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.ConicalFrustumMeshBuilder::ConicalFrustumMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.SphereMeshBuilder::new(
+          0.5F,
+          @mesh_primitives_dim3.SphereKind::ico(5),
+        ).build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.SphereMeshBuilder::new(
+          0.5F,
+          @mesh_primitives_dim3.SphereKind::uv(32, 18),
+        ).build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.Segment3dMeshBuilder::Segment3dMeshBuilder().build(),
+      ),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives_dim3.Polyline3dMeshBuilder::new(
+          @math.Polyline3d::new([
+            @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+            @math.Vec3::new(0.5F, 0.0F, 0.0F),
+            @math.Vec3::new(0.0F, 0.5F, 0.0F),
+          ]),
+        ).build(),
+      ),
+    ]
+  })
 
   let shape_count = shapes.length()
   for i in 0..<shape_count {
@@ -284,50 +285,52 @@ fn setup(
     )
   }
 
-  let extrusions = [
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Rectangle::Rectangle(), 1.0F),
+  let extrusions = meshes.modify(fn(mesh_assets) {
+    [
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Rectangle::Rectangle(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Capsule2d::Capsule2d(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Capsule2d::Capsule2d(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Annulus::Annulus(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Annulus::Annulus(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Circle::Circle(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Circle::Circle(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Ellipse::Ellipse(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Ellipse::Ellipse(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.RegularPolygon::RegularPolygon(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.RegularPolygon::RegularPolygon(), 1.0F),
+        ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Triangle2d::Triangle2d(), 1.0F),
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Triangle2d::Triangle2d(), 1.0F),
+        ),
       ),
-    ),
-  ]
+    ]
+  })
 
   let extrusion_count = extrusions.length()
   for i in 0..<extrusion_count {
@@ -340,75 +343,77 @@ fn setup(
     )
   }
 
-  let ring_extrusions = [
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          @math.Rectangle::Rectangle().to_ring(THICKNESS),
-          1.0F,
+  let ring_extrusions = meshes.modify(fn(mesh_assets) {
+    [
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            @math.Rectangle::Rectangle().to_ring(THICKNESS),
+            1.0F,
+          ),
         ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          @math.Capsule2d::Capsule2d().to_ring(THICKNESS),
-          1.0F,
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            @math.Capsule2d::Capsule2d().to_ring(THICKNESS),
+            1.0F,
+          ),
         ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          @math.Ring::new(@math.Circle::new(1.0F), @math.Circle::new(0.5F)),
-          1.0F,
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            @math.Ring::new(@math.Circle::new(1.0F), @math.Circle::new(0.5F)),
+            1.0F,
+          ),
         ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Circle::Circle().to_ring(THICKNESS), 1.0F),
-      ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          {
-            let outer = @math.Ellipse::Ellipse()
-            let inner = @math.Ellipse::new(
-              outer.half_size.x - THICKNESS,
-              outer.half_size.y - THICKNESS,
-            )
-            @math.Ring::new(outer, inner)
-          },
-          1.0F,
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(@math.Circle::Circle().to_ring(THICKNESS), 1.0F),
         ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          @math.RegularPolygon::RegularPolygon().to_ring(THICKNESS),
-          1.0F,
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            {
+              let outer = @math.Ellipse::Ellipse()
+              let inner = @math.Ellipse::new(
+                outer.half_size.x - THICKNESS,
+                outer.half_size.y - THICKNESS,
+              )
+              @math.Ring::new(outer, inner)
+            },
+            1.0F,
+          ),
         ),
       ),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(
-          @math.Triangle2d::Triangle2d().to_ring(THICKNESS),
-          1.0F,
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            @math.RegularPolygon::RegularPolygon().to_ring(THICKNESS),
+            1.0F,
+          ),
         ),
       ),
-    ),
-  ]
+      mesh3d_from_geometry(
+        mesh_assets,
+        @mesh_primitives.extrusion_mesh(
+          @math.Extrusion::new(
+            @math.Triangle2d::Triangle2d().to_ring(THICKNESS),
+            1.0F,
+          ),
+        ),
+      ),
+    ]
+  })
 
   let ring_count = ring_extrusions.length()
   for i in 0..<ring_count {
@@ -439,22 +444,26 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-                @math.Vec2::new(50.0F, 50.0F),
-              )
-              .subdivisions(10)
-              .build(),
-            ),
-          ),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+                  @math.Vec2::new(50.0F, 50.0F),
+                )
+                .subdivisions(10)
+                .build(),
+              ),
+            )
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets.add(
-            @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
-            ),
-          ),
+          materials.modify(fn(material_assets) {
+            material_assets.add(
+              @pbr.StandardMaterial::from_color(
+                @sprite.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
+              ),
+            )
+          }),
         ),
         @transform.Transform::identity(),
       ),

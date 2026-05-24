@@ -617,12 +617,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(20.0F, 20.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(20.0F, 20.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -646,8 +648,9 @@ fn setup(world : @ecs.World) -> Unit {
     let i_f = Float::from_double(i.to_double())
     @pbr.MeshMaterial3dBundle::new(
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val
-        |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F)),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
+        }),
       ),
       @pbr.MeshMaterial3d::new(cube_material),
       @transform.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),
@@ -751,7 +754,7 @@ fn read_cas_character_shortcuts(
   let mut toggle = false
   let mut decrement = false
   let mut increment = false
-  for event in (try! keyboard_inputs.read()) {
+  for event in keyboard_inputs.read() {
     if event.state is Released || event.repeat {
       continue
     }

@@ -196,8 +196,9 @@ fn setup(world : @ecs.World) -> Unit {
     events_installed: false,
   })
 
-  let particle_mesh = @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Sphere::new(0.4F))
+  let particle_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    assets |> @pbr.add_mesh(@math.Sphere::new(0.4F))
+  })
   let particle_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
   )
@@ -223,8 +224,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let plane = world.spawn_empty()
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(500000.0F, 0.1F, 500000.0F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(500000.0F, 0.1F, 500000.0F))
+    }),
   )
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),

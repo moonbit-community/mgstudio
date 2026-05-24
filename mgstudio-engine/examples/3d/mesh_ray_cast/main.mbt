@@ -263,12 +263,14 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.origin_marker = None
 
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-        @math.Vec2::new(1.0F, 1.0F),
-      ).build(),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(1.0F, 1.0F),
+        ).build(),
+      )
+    }),
   )
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -354,12 +356,14 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let line_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+    }),
   )
   let marker_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+    }),
   )
 
   raycast_state.val.red_pool = Some(

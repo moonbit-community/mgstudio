@@ -84,7 +84,7 @@ fn animate_material_color(
     let updated = material.with_base_color(
       @sprite.Color::srgb(red, green, blue),
     )
-    materials.peek().set(handle, updated) |> ignore
+    materials.modify(fn(materials) { materials.set(handle, updated) |> ignore })
   })
 }
 

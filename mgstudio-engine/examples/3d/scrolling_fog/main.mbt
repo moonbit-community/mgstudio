@@ -88,8 +88,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(64.0F, 1.0F, 64.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(64.0F, 1.0F, 64.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(black_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
@@ -97,8 +98,9 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 9.0F, 2.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 9.0F, 2.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(black_material),
     @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),

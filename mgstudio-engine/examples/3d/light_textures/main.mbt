@@ -294,8 +294,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(cube_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
@@ -403,16 +404,18 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let spot_proxy = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(0.35F, 0.35F, 0.35F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(0.35F, 0.35F, 0.35F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(spot_proxy_material),
     @transform.Transform::from_xyz(6.0F, 1.0F, 2.0F),
   ).spawn(world)
   let point_proxy = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(point_proxy_material),
     @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F),

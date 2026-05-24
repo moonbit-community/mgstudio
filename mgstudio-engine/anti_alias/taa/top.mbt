@@ -74,11 +74,18 @@ pub impl @app.Plugin for TemporalAntiAliasPlugin with name(_self) {
 }
 
 ///|
-let temporal_anti_alias_required_components_installed : Ref[Bool] = Ref(false)
+priv struct TemporalAntiAliasRequiredComponentsRuntimeState {
+  mut required_components_installed : Bool
+}
+
+///|
+let temporal_anti_alias_required_components_runtime_state : TemporalAntiAliasRequiredComponentsRuntimeState = {
+  required_components_installed: false,
+}
 
 ///|
 pub fn install_temporal_anti_alias_required_components() -> Unit {
-  if temporal_anti_alias_required_components_installed.val {
+  if temporal_anti_alias_required_components_runtime_state.required_components_installed {
     return
   }
   ignore(
@@ -92,7 +99,8 @@ pub fn install_temporal_anti_alias_required_components() -> Unit {
       @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
     }),
   )
-  temporal_anti_alias_required_components_installed.val = true
+  temporal_anti_alias_required_components_runtime_state.required_components_installed
+  = true
 }
 
 ///|

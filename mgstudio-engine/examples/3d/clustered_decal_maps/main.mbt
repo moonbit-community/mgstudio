@@ -80,14 +80,14 @@ priv struct ClusteredDecalMapsState {
 }
 
 ///|
-let clustered_decal_maps_state : Ref[ClusteredDecalMapsState] = Ref({
+let clustered_decal_maps_state : ClusteredDecalMapsState = {
   spawn_accumulator: 0.0F,
   random_seed: 1_987_836_747,
   emissive_decals: true,
   decals: [],
   textures: None,
   help_text: None,
-})
+}
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -116,10 +116,10 @@ fn lcg_next(seed : Int) -> Int {
 
 ///|
 fn random_unit() -> Float {
-  clustered_decal_maps_state.val.random_seed = lcg_next(
-    clustered_decal_maps_state.val.random_seed,
+  clustered_decal_maps_state.random_seed = lcg_next(
+    clustered_decal_maps_state.random_seed,
   )
-  float_from_int(clustered_decal_maps_state.val.random_seed) /
+  float_from_int(clustered_decal_maps_state.random_seed) /
   float_from_int(LCG_MOD)
 }
 
@@ -130,17 +130,17 @@ fn random_range(min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn help_text_content() -> String {
-  let emissive_text = if clustered_decal_maps_state.val.emissive_decals {
+  let emissive_text = if clustered_decal_maps_state.emissive_decals {
     "On"
   } else {
     "Off"
   }
-  "Clustered Decal Maps (upstream-aligned behavior)\nE: Emissive On, R: Emissive Off (\{emissive_text})\nActive decals: \{clustered_decal_maps_state.val.decals.length().to_string()}\n"
+  "Clustered Decal Maps (upstream-aligned behavior)\nE: Emissive On, R: Emissive Off (\{emissive_text})\nActive decals: \{clustered_decal_maps_state.decals.length().to_string()}\n"
 }
 
 ///|
 fn update_help_text() -> Unit {
-  if clustered_decal_maps_state.val.help_text is Some(help_text) {
+  if clustered_decal_maps_state.help_text is Some(help_text) {
     @text.text_set_content(help_text, help_text_content())
   }
 }
@@ -162,12 +162,14 @@ fn spawn_plane(
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
@@ -207,12 +209,12 @@ fn spawn_camera(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  clustered_decal_maps_state.val.spawn_accumulator = 0.0F
-  clustered_decal_maps_state.val.random_seed = 1_987_836_747
-  clustered_decal_maps_state.val.emissive_decals = true
-  clustered_decal_maps_state.val.decals = []
-  clustered_decal_maps_state.val.textures = None
-  clustered_decal_maps_state.val.help_text = None
+  clustered_decal_maps_state.spawn_accumulator = 0.0F
+  clustered_decal_maps_state.random_seed = 1_987_836_747
+  clustered_decal_maps_state.emissive_decals = true
+  clustered_decal_maps_state.decals = []
+  clustered_decal_maps_state.textures = None
+  clustered_decal_maps_state.help_text = None
 
   let textures : AppTextures = {
     decal_base_color_texture: asset_server.load("branding/icon.png"),
@@ -226,7 +228,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     decal_emissive_texture: asset_server.load("branding/icon.png"),
   }
-  clustered_decal_maps_state.val.textures = Some(textures)
+  clustered_decal_maps_state.textures = Some(textures)
 
   spawn_plane(
     world,
@@ -256,15 +258,13 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
-  clustered_decal_maps_state.val.help_text = Some(help_text)
+  clustered_decal_maps_state.help_text = Some(help_text)
   update_help_text()
 }
 
 ///|
 fn spawn_decal(world : @ecs.World) -> Unit {
-  guard clustered_decal_maps_state.val.textures is Some(textures) else {
-    return
-  }
+  guard clustered_decal_maps_state.textures is Some(textures) else { return }
 
   let x = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
   let y = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
@@ -279,7 +279,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(0.25F)
-  if clustered_decal_maps_state.val.emissive_decals {
+  if clustered_decal_maps_state.emissive_decals {
     material = material
       .with_emissive_texture(Some(textures.decal_emissive_texture))
       .with_emissive(@sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
@@ -290,15 +290,16 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     .with_metallic_roughness_texture(
       Some(textures.decal_metallic_roughness_texture),
     )
-  if clustered_decal_maps_state.val.emissive_decals {
+  if clustered_decal_maps_state.emissive_decals {
     clustered_decal = clustered_decal.with_emissive_texture(
       Some(textures.decal_emissive_texture),
     )
   }
   let entity = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 0.02F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 0.02F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
     @transform.Transform::from_xyz(x, y, -0.01F)
@@ -306,11 +307,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
   try! world.set_by_key(entity, @pbr.ecs_key_clustered_decal, clustered_decal)
-  clustered_decal_maps_state.val.decals.push({
-    entity,
-    base_scale: size,
-    age: 0.0F,
-  })
+  clustered_decal_maps_state.decals.push({ entity, base_scale: size, age: 0.0F })
 }
 
 ///|
@@ -328,7 +325,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
     return
   }
   let alive : Array[ActiveDecal] = []
-  for decal in clustered_decal_maps_state.val.decals {
+  for decal in clustered_decal_maps_state.decals {
     let age = decal.age + delta
     let total_life = DECAL_ANIMATE_IN_DURATION +
       DECAL_IDLE_DURATION +
@@ -365,20 +362,20 @@ fn animate_decals(world : @ecs.World) -> Unit {
     }
     alive.push({ ..decal, age, })
   }
-  clustered_decal_maps_state.val.decals = alive
+  clustered_decal_maps_state.decals = alive
 }
 
 ///|
 fn controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyE) {
-    if !clustered_decal_maps_state.val.emissive_decals {
-      clustered_decal_maps_state.val.emissive_decals = true
+    if !clustered_decal_maps_state.emissive_decals {
+      clustered_decal_maps_state.emissive_decals = true
       update_help_text()
     }
   }
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    if clustered_decal_maps_state.val.emissive_decals {
-      clustered_decal_maps_state.val.emissive_decals = false
+    if clustered_decal_maps_state.emissive_decals {
+      clustered_decal_maps_state.emissive_decals = false
       update_help_text()
     }
   }
@@ -391,10 +388,10 @@ fn spawn_loop(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  clustered_decal_maps_state.val.spawn_accumulator = clustered_decal_maps_state.val.spawn_accumulator +
+  clustered_decal_maps_state.spawn_accumulator = clustered_decal_maps_state.spawn_accumulator +
     delta
-  while clustered_decal_maps_state.val.spawn_accumulator >= DECAL_SPAWN_INTERVAL {
-    clustered_decal_maps_state.val.spawn_accumulator = clustered_decal_maps_state.val.spawn_accumulator -
+  while clustered_decal_maps_state.spawn_accumulator >= DECAL_SPAWN_INTERVAL {
+    clustered_decal_maps_state.spawn_accumulator = clustered_decal_maps_state.spawn_accumulator -
       DECAL_SPAWN_INTERVAL
     spawn_decal(world)
   }

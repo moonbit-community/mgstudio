@@ -133,15 +133,15 @@ test "text: font hinting follows Bevy component and atlas-key semantics" {
       @transform.Transform::identity(),
     ).with_font_hinting(FontHinting::Enabled),
   )
-  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_state.val.texts[0].computed.font_hinting is FontHinting::Enabled,
+    text_state.texts[0].computed.font_hinting is FontHinting::Enabled,
     content="true",
   )
   text_set_font_hinting(handle, FontHinting::Disabled)
-  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_state.val.texts[0].computed.font_hinting is FontHinting::Disabled,
+    text_state.texts[0].computed.font_hinting is FontHinting::Disabled,
     content="true",
   )
 }
@@ -167,30 +167,24 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
       @transform.Transform::identity(),
     ),
   )
-  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  text_state.texts[0] = text_update_layout(text_state.texts[0])
+  debug_inspect(text_state.texts[0].layout_info.glyphs.length(), content="0")
   debug_inspect(
-    text_state.val.texts[0].layout_info.glyphs.length(),
-    content="0",
-  )
-  debug_inspect(
-    text_state.val.texts[0].computed.uses_viewport_sizes,
+    text_state.texts[0].computed.uses_viewport_sizes,
     content="true",
   )
   text_set_logical_viewport_size(
     viewport_handle,
     Some(@math.Vec2::new(300.0F, 200.0F)),
   )
-  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_state.val.texts[0].computed.uses_viewport_sizes,
+    text_state.texts[0].computed.uses_viewport_sizes,
     content="true",
   )
+  debug_inspect(text_state.texts[0].computed.uses_rem_sizes, content="false")
   debug_inspect(
-    text_state.val.texts[0].computed.uses_rem_sizes,
-    content="false",
-  )
-  debug_inspect(
-    text_state.val.texts[0].computed.buffer.font_size == 20.0F,
+    text_state.texts[0].computed.buffer.font_size == 20.0F,
     content="true",
   )
 
@@ -198,13 +192,10 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     viewport_handle,
     Some(@math.Vec2::new(300.0F, 400.0F)),
   )
+  debug_inspect(text_layout_needs_update(text_state.texts[0]), content="true")
+  text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_layout_needs_update(text_state.val.texts[0]),
-    content="true",
-  )
-  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
-  debug_inspect(
-    text_state.val.texts[0].computed.buffer.font_size == 40.0F,
+    text_state.texts[0].computed.buffer.font_size == 40.0F,
     content="true",
   )
 
@@ -216,25 +207,22 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     ),
   )
   text_set_runtime_rem_size(18.0F)
-  text_state.val.texts[1] = text_update_layout(text_state.val.texts[1])
+  text_state.texts[1] = text_update_layout(text_state.texts[1])
   debug_inspect(
-    text_state.val.texts[1].computed.uses_viewport_sizes,
+    text_state.texts[1].computed.uses_viewport_sizes,
     content="false",
   )
-  debug_inspect(text_state.val.texts[1].computed.uses_rem_sizes, content="true")
+  debug_inspect(text_state.texts[1].computed.uses_rem_sizes, content="true")
   debug_inspect(
-    text_state.val.texts[1].computed.buffer.font_size == 27.0F,
+    text_state.texts[1].computed.buffer.font_size == 27.0F,
     content="true",
   )
 
   text_set_runtime_rem_size(12.0F)
+  debug_inspect(text_layout_needs_update(text_state.texts[1]), content="true")
+  text_state.texts[1] = text_update_layout(text_state.texts[1])
   debug_inspect(
-    text_layout_needs_update(text_state.val.texts[1]),
-    content="true",
-  )
-  text_state.val.texts[1] = text_update_layout(text_state.val.texts[1])
-  debug_inspect(
-    text_state.val.texts[1].computed.buffer.font_size == 18.0F,
+    text_state.texts[1].computed.buffer.font_size == 18.0F,
     content="true",
   )
   debug_inspect(text_get_content(rem_handle), content="Some(\"Rem text\")")

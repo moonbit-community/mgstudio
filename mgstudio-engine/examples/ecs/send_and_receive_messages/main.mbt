@@ -90,7 +90,7 @@ fn read_and_write_different_message_types(
   a : @ecs.MessageWriter[A],
   b : @ecs.MessageReader[B],
 ) -> Unit {
-  for _ in (try! b.read()) {
+  for _ in b.read() {
 
   }
   ignore(a.write(A::{  }))
@@ -135,7 +135,7 @@ fn send_messages(
 
 ///|
 fn debug_messages(messages : @ecs.MessageReader[DebugMessage]) -> Unit {
-  for message in (try! messages.read()) {
+  for message in messages.read() {
     println(to_repr(message).to_string())
   }
 }
@@ -153,7 +153,7 @@ fn send_and_receive_param_set(
   )
 
   let messages_to_resend : Array[DebugMessage] = []
-  for message in (try! param_set.p0().read()) {
+  for message in param_set.p0().read() {
     if message.resend_from_param_set {
       messages_to_resend.push(message)
     }
@@ -183,7 +183,7 @@ fn send_and_receive_manual_message_reader(
   )
 
   let messages_to_resend : Array[DebugMessage] = []
-  for message in (try! local_message_reader.read(messages)) {
+  for message in local_message_reader.read(messages) {
     if message.resend_from_local_message_reader {
       messages_to_resend.push(message)
     }

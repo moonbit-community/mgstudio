@@ -134,12 +134,12 @@ pub(all) enum EntityRecord {
 
 ///|
 pub struct PendingSyncEntity {
-  records : Ref[Array[EntityRecord]]
+  records : Array[EntityRecord]
 }
 
 ///|
 pub fn PendingSyncEntity::PendingSyncEntity() -> PendingSyncEntity {
-  PendingSyncEntity::{ records: Ref([]) }
+  PendingSyncEntity::{ records: [] }
 }
 
 ///|
@@ -147,15 +147,15 @@ pub fn PendingSyncEntity::push(
   self : PendingSyncEntity,
   record : EntityRecord,
 ) -> Unit {
-  self.records.val.push(record)
+  self.records.push(record)
 }
 
 ///|
 pub fn PendingSyncEntity::drain(
   self : PendingSyncEntity,
 ) -> Array[EntityRecord] {
-  let out = self.records.val
-  self.records.val = []
+  let out = self.records.copy()
+  self.records.clear()
   out
 }
 

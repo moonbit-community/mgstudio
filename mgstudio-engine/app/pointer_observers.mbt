@@ -24,23 +24,14 @@ pub fn PickingEvents::PickingEvents() -> PickingEvents {
 
 ///|
 pub fn PickingEvents::push(
-  self : Ref[PickingEvents],
+  self : PickingEvents,
   event : @pointer_events.PointerEvent,
 ) -> Unit {
-  self.val.events = self.val.events + [event]
+  self.events.push(event)
 }
 
 ///|
 pub fn PickingEvents::drain(
-  self : Ref[PickingEvents],
-) -> Array[@pointer_events.PointerEvent] {
-  let out = self.val.events
-  self.val.events = []
-  out
-}
-
-///|
-pub fn PickingEvents::drain_all(
   self : PickingEvents,
 ) -> Array[@pointer_events.PointerEvent] {
   let out = self.events
@@ -181,11 +172,18 @@ pub fn[K] OnPointer::target(self : OnPointer[K]) -> @core.Entity? {
 }
 
 ///|
-let current_pointer_event_ref : Ref[@pointer_events.PointerEvent?] = Ref(None)
+priv struct PointerObserverRuntimeState {
+  mut current_pointer_event : @pointer_events.PointerEvent?
+}
+
+///|
+let pointer_observer_runtime_state : PointerObserverRuntimeState = {
+  current_pointer_event: None,
+}
 
 ///|
 fn current_pointer_event_abort_missing() -> @pointer_events.PointerEvent {
-  match current_pointer_event_ref.val {
+  match pointer_observer_runtime_state.current_pointer_event {
     Some(event) => event
     None => abort("OnPointer requires an active pointer event")
   }
@@ -212,7 +210,7 @@ priv struct PointerObserverEntry {
   source : String
   target : @core.Entity?
   system : SystemFn[@ecs.World]
-  last_run_tick_ref : Ref[@core.Tick]
+  run_state : ObserverSystemRunState
 }
 
 ///|
@@ -246,18 +244,21 @@ fn register_pointer_observer_entry_in_world(
   system : SystemFn[@ecs.World],
 ) -> Unit {
   let registry_res = get_pointer_observer_registry_resource(world)
-  let registry = match registry_res.get() {
-    Some(value) => Ref(value)
-    None => Ref(PointerObserverRegistry::PointerObserverRegistry())
-  }
-  registry.val.entries.push({
+  let entry = {
     kind,
     source,
     target,
     system,
-    last_run_tick_ref: Ref(0),
-  })
-  registry_res.insert(registry.val)
+    run_state: observer_system_run_state_new(),
+  }
+  match registry_res.get_mut() {
+    Some(registry) => registry.modify(fn(value) { value.entries.push(entry) })
+    None => {
+      let registry = PointerObserverRegistry::PointerObserverRegistry()
+      registry.entries.push(entry)
+      registry_res.insert(registry)
+    }
+  }
 }
 
 ///|
@@ -395,14 +396,14 @@ pub fn dispatch_pointer_observers_system(world : @ecs.World) -> Unit {
           }
           None => ()
         }
-        current_pointer_event_ref.val = Some(event)
+        pointer_observer_runtime_state.current_pointer_event = Some(event)
         run_registered_observer_system(
           world,
-          entry.last_run_tick_ref,
+          entry.run_state,
           entry.system,
           source=entry.source,
         )
-        current_pointer_event_ref.val = None
+        pointer_observer_runtime_state.current_pointer_event = None
       }
     }
   }

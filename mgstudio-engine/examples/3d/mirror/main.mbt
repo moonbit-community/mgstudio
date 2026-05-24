@@ -321,12 +321,14 @@ fn setup(world : @ecs.World) -> Unit {
   // Ground: current mgstudio render APIs use a large plane for this sample.
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(400.0F, 400.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(400.0F, 400.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -375,12 +377,14 @@ fn setup(world : @ecs.World) -> Unit {
   mirror_state.val.mirror_material = Some(mirror_material)
   let mirror_entity = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(300.0F, 150.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(300.0F, 150.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(mirror_material),
     mirror_transform,

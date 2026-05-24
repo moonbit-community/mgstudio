@@ -118,7 +118,9 @@ fn animate_materials(
       1.0F,
       0.5F,
     )
-    ignore(materials.peek().set(handle, material.with_base_color(color)))
+    materials.modify(fn(materials) {
+      ignore(materials.set(handle, material.with_base_color(color)))
+    })
   })
 }
 

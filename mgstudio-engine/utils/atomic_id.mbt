@@ -16,16 +16,21 @@
 // Bevy source: `bevy/crates/bevy_utils/src/atomic_id.rs`.
 
 ///|
-let atomic_id_counter : Ref[UInt] = Ref(1U)
+priv struct AtomicIdRuntimeState {
+  mut counter : UInt
+}
+
+///|
+let atomic_id_runtime_state : AtomicIdRuntimeState = { counter: 1U }
 
 ///|
 pub fn atomic_id_next() -> Int {
-  let next = atomic_id_counter.val
+  let next = atomic_id_runtime_state.counter
   let advanced = next + 1U
   if advanced == 0U {
     abort("The system ran out of unique atomic ids.")
   }
-  atomic_id_counter.val = advanced
+  atomic_id_runtime_state.counter = advanced
   next.reinterpret_as_int()
 }
 

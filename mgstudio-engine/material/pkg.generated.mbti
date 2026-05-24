@@ -285,7 +285,6 @@ pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
 pub fn MeshMaterial3d::with_extension_vertex_shader_path(Self, String?) -> Self
 pub impl @ecs.Component for MeshMaterial3d
-pub impl @ecs.Mutable for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
 

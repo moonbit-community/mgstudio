@@ -49,13 +49,11 @@ fn window_surface_runtime_state_default() -> WindowSurfaceRuntimeState {
 }
 
 ///|
-let window_surface_runtime_state_ref : Ref[WindowSurfaceRuntimeState] = Ref(
-  window_surface_runtime_state_default(),
-)
+let window_surface_runtime_state : WindowSurfaceRuntimeState = window_surface_runtime_state_default()
 
 ///|
 fn next_surface_id() -> NativeGpuSurface {
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   let id = state.next_surface_id
   state.next_surface_id = state.next_surface_id + 1
   id
@@ -63,7 +61,7 @@ fn next_surface_id() -> NativeGpuSurface {
 
 ///|
 fn next_frame_id() -> NativeGpuFrame {
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   let id = state.next_frame_id
   state.next_frame_id = state.next_frame_id + 1
   id
@@ -76,7 +74,7 @@ fn surface_target_id_from_surface_id(surface_id : NativeGpuSurface) -> Int {
 
 ///|
 fn find_surface_binding(surface_id : NativeGpuSurface) -> SurfaceBinding? {
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   for binding in state.surfaces {
     if binding.surface_id == surface_id {
       return Some(binding)
@@ -87,7 +85,7 @@ fn find_surface_binding(surface_id : NativeGpuSurface) -> SurfaceBinding? {
 
 ///|
 fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   for binding in state.surfaces {
     if binding.window == window {
       return Some(binding)
@@ -98,18 +96,18 @@ fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
 
 ///|
 fn remove_frame_binding(frame_id : NativeGpuFrame) -> NativeGpuSurface? {
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   let next : Array[FrameBinding] = []
-  let found : Ref[NativeGpuSurface?] = Ref(None)
+  let mut found : NativeGpuSurface? = None
   for binding in state.frames {
     if binding.frame_id == frame_id {
-      found.val = Some(binding.surface_id)
+      found = Some(binding.surface_id)
     } else {
       next.push(binding)
     }
   }
   state.frames = next
-  found.val
+  found
 }
 
 ///|
@@ -709,7 +707,7 @@ pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
 pub fn create_surface(window : Int) -> NativeGpuSurface {
   let surface_id = next_surface_id()
   let target_id = surface_target_id_from_surface_id(surface_id)
-  let state = window_surface_runtime_state_ref.val
+  let state = window_surface_runtime_state
   state.surfaces.push(SurfaceBinding::{ surface_id, window, target_id })
   if ensure_backend() is Some(backend) {
     backend.create_surface_binding(surface_id, target_id, window)
@@ -770,7 +768,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   if ensure_backend() is Some(backend) {
     backend.begin_frame_binding(surface)
     let frame_id = next_frame_id()
-    let state = window_surface_runtime_state_ref.val
+    let state = window_surface_runtime_state
     state.frames.push(FrameBinding::{ frame_id, surface_id: surface })
     return frame_id
   }

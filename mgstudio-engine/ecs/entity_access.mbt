@@ -26,29 +26,12 @@ pub struct EntityMut {
 
 ///|
 pub struct Mut[T] {
-  priv world : World?
-  priv entity : @core.Entity?
-  priv key : ComponentKey[T]?
-  priv table_id : Int?
-  priv row_index : Int?
-  priv local_component_id : Int?
-}
-
-///|
-/// Types that opt in to whole-value assignment through `Mut::set`.
-///
-/// ECS mutation should prefer `Mut::modify`, which mutates the stored component
-/// in place. Implement this trait only when a component has a well-defined
-/// assignment from a replacement value. The default implementation replaces the
-/// provided storage reference; types that need custom in-place assignment can
-/// override it.
-pub(open) trait Mutable {
-  fn set(Self, Ref[Self]) -> Unit = _
-}
-
-///|
-impl Mutable with set(self, value) {
-  value.val = self
+  priv world : World
+  priv entity : @core.Entity
+  priv key : ComponentKey[T]
+  priv table_id : Int
+  priv row_index : Int
+  priv local_component_id : Int
 }
 
 ///|
@@ -62,183 +45,157 @@ pub(open) trait Bundle {
 }
 
 ///|
-fn[T] mut_world_or_abort(item : Mut[T]) -> World {
-  match item.world {
-    Some(world) => world
-    None => abort("Mut expected a fetched query item")
-  }
-}
-
-///|
-fn[T] mut_entity_or_abort(item : Mut[T]) -> @core.Entity {
-  match item.entity {
-    Some(entity) => entity
-    None => abort("Mut expected a fetched query item")
-  }
-}
-
-///|
-fn[T] mut_key_id_or_abort(item : Mut[T]) -> Int {
-  match item.key {
-    Some(key) => key.id()
-    None => abort("Mut expected a fetched query item")
-  }
-}
-
-///|
-fn[T] mut_local_component_id_or_abort(item : Mut[T]) -> Int {
-  match item.local_component_id {
-    Some(local_component_id) => local_component_id
-    None => abort("Mut expected a fetched query item")
-  }
-}
-
-///|
-fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
-  match item.key {
-    Some(key) => key
-    None => abort("Mut expected a fetched query item")
-  }
-}
-
-///|
 fn[T] mut_value_or_abort(item : Mut[T]) -> T {
-  let world = mut_world_or_abort(item)
-  let key = mut_key_or_abort(item)
-  match (item.table_id, item.row_index, item.local_component_id) {
-    (Some(table_id), Some(row_index), Some(local_component_id)) =>
-      match
-        world.component_value_by_table_row_fast(
-          key, local_component_id, table_id, row_index,
-        ) {
-        Some(value) => return value
-        None => ()
+  match item.world.local_component_storage_type(item.local_component_id) {
+    Some(Table) => {
+      if item.table_id >= 0 && item.row_index >= 0 {
+        match
+          item.world.component_value_by_table_row_fast(
+            item.key,
+            item.local_component_id,
+            item.table_id,
+            item.row_index,
+          ) {
+          Some(value) => return value
+          None => abort("Mut expected table component value at fetched row")
+        }
       }
-    _ => ()
-  }
-  let entity = mut_entity_or_abort(item)
-  let result : Result[T?, EcsError] = try? world.component_value_by_key(
-    entity, key,
-  )
-  match result {
-    Ok(Some(value)) => value
-    Ok(None) => abort("Mut expected a fetched query item")
-    _ => abort("Mut expected a fetched query item")
+      guard item.world.component_write_transaction_contains(
+        item.entity,
+        item.local_component_id,
+      ) else {
+        abort("Mut expected table component location")
+      }
+      match item.world.component_value_by_key(item.entity, item.key) {
+        Some(value) => value
+        None => abort("Mut expected staged table component value")
+      }
+    }
+    Some(SparseSet) =>
+      match item.world.component_value_by_key(item.entity, item.key) {
+        Some(value) => value
+        None => abort("Mut expected sparse component value")
+      }
+    None => abort("Mut expected component storage type")
   }
 }
 
 ///|
 fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
-  let world = mut_world_or_abort(item)
-  let key = mut_key_or_abort(item)
-  match (item.table_id, item.row_index, item.local_component_id) {
-    (Some(table_id), Some(row_index), Some(local_component_id)) =>
-      if world.replace_component_value_at_table_row(
-          key, local_component_id, table_id, row_index, value,
-        ) {
+  match item.world.local_component_storage_type(item.local_component_id) {
+    Some(Table) => {
+      if item.table_id >= 0 && item.row_index >= 0 {
+        if !item.world.replace_component_value_at_table_row(
+            item.key,
+            item.local_component_id,
+            item.table_id,
+            item.row_index,
+            value,
+          ) {
+          abort("Mut expected writable table component row")
+        }
         return
       }
-    _ => ()
-  }
-  let entity = mut_entity_or_abort(item)
-  if !world.replace_component_value_by_key(entity, key, value) {
-    abort("Mut expected a fetched query item")
+      guard item.world.component_write_transaction_contains(
+        item.entity,
+        item.local_component_id,
+      ) else {
+        abort("Mut expected writable table component location")
+      }
+      if !item.world.replace_component_value_by_key(
+          item.entity,
+          item.key,
+          value,
+        ) {
+        abort("Mut expected writable staged table component value")
+      }
+    }
+    Some(SparseSet) =>
+      if !item.world.replace_component_value_by_key(
+          item.entity,
+          item.key,
+          value,
+        ) {
+        abort("Mut expected writable sparse component value")
+      }
+    None => abort("Mut expected component storage type")
   }
 }
 
 ///|
-fn[T : Mutable] mut_assign_value_or_abort(item : Mut[T], value : T) -> Unit {
-  let current = Ref(mut_value_or_abort(item))
-  Mutable::set(value, current)
-  mut_write_value_or_abort(item, current.val)
+fn[T] mut_assign_value_or_abort(item : Mut[T], value : T) -> Unit {
+  mut_write_value_or_abort(item, value)
 }
 
 ///|
 fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
-  guard item.world is Some(world) else { return }
-  guard item.entity is Some(entity) else { return }
-  match item.local_component_id {
-    Some(local_component_id) => {
-      let tick = component_write_tick(world)
-      let recorded = match (item.table_id, item.row_index) {
-        (Some(table_id), Some(row_index)) =>
-          world.record_table_component_changed_at_table_row(
-            local_component_id, table_id, row_index, tick, caller,
-          )
-        _ => false
-      }
-      if !recorded {
-        world.record_component_changed_by_local_id_with_tick(
-          entity, local_component_id, tick, caller,
-        )
-      }
-      world.ensure_changed_component_messages_by_local_id(local_component_id).val.send(
-        tick, entity,
-      )
-    }
-    None =>
-      if item.key is Some(key) {
-        world.record_component_changed_with_caller(entity, key.id(), caller)
-      }
+  let tick = component_write_tick(item.world)
+  let recorded = if item.table_id >= 0 && item.row_index >= 0 {
+    item.world.record_table_component_changed_at_table_row(
+      item.local_component_id,
+      item.table_id,
+      item.row_index,
+      tick,
+      caller,
+    )
+  } else {
+    false
   }
-}
-
-///|
-pub fn[T] Mut::new(key : ComponentKey[T]) -> Mut[T] {
-  ignore(key)
-  {
-    world: None,
-    entity: None,
-    key: None,
-    table_id: None,
-    row_index: None,
-    local_component_id: None,
+  if !recorded {
+    item.world.record_component_changed_by_local_id_with_tick(
+      item.entity,
+      item.local_component_id,
+      tick,
+      caller,
+    )
   }
+  item.world
+  .ensure_changed_component_messages_by_local_id(item.local_component_id)
+  .send(tick, item.entity)
 }
 
 ///|
-pub fn[T : Component] Mut::key(self : Mut[T]) -> ComponentKey[T] {
-  ignore(self)
-  Component::component()
+pub fn[T] Mut::key(self : Mut[T]) -> ComponentKey[T] {
+  self.key
 }
 
 ///|
-pub fn[T] Mut::peek(self : Mut[T]) -> T {
+#callsite(autofill(loc))
+pub fn[T] Mut::peek(self : Mut[T], loc~ : SourceLoc) -> T {
+  ignore(loc)
   mut_value_or_abort(self)
 }
 
 ///|
-pub fn[T] Mut::value(self : Mut[T]) -> T {
-  self.peek()
+#callsite(autofill(loc))
+pub fn[T] Mut::value(self : Mut[T], loc~ : SourceLoc) -> T {
+  self.peek(loc~)
 }
 
 ///|
 pub fn[T] Mut::is_added(self : Mut[T]) -> Bool {
-  let world = mut_world_or_abort(self)
-  world.is_added_by_local_id(
-    mut_entity_or_abort(self),
-    mut_local_component_id_or_abort(self),
-    world.get_tick_context().ticks(),
+  self.world.is_added_by_local_id(
+    self.entity,
+    self.local_component_id,
+    self.world.get_tick_context().ticks(),
   )
 }
 
 ///|
 pub fn[T] Mut::is_changed(self : Mut[T]) -> Bool {
-  let world = mut_world_or_abort(self)
-  world.is_changed_by_local_id(
-    mut_entity_or_abort(self),
-    mut_local_component_id_or_abort(self),
-    world.get_tick_context().ticks(),
+  self.world.is_changed_by_local_id(
+    self.entity,
+    self.local_component_id,
+    self.world.get_tick_context().ticks(),
   )
 }
 
 ///|
 pub fn[T] Mut::added(self : Mut[T]) -> @core.Tick {
-  let world = mut_world_or_abort(self)
   match
-    world.added_component_tick_by_local_id(
-      mut_local_component_id_or_abort(self),
-      mut_entity_or_abort(self).id,
+    self.world.added_component_tick_by_local_id(
+      self.local_component_id,
+      self.entity.id,
     ) {
     Some(tick) => tick
     None => abort("Mut::added expected component tick metadata")
@@ -247,11 +204,10 @@ pub fn[T] Mut::added(self : Mut[T]) -> @core.Tick {
 
 ///|
 pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Tick {
-  let world = mut_world_or_abort(self)
   match
-    world.changed_component_tick_by_local_id(
-      mut_local_component_id_or_abort(self),
-      mut_entity_or_abort(self).id,
+    self.world.changed_component_tick_by_local_id(
+      self.local_component_id,
+      self.entity.id,
     ) {
     Some(tick) => tick
     None => abort("Mut::last_changed expected component tick metadata")
@@ -260,10 +216,9 @@ pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Tick {
 
 ///|
 pub fn[T] Mut::changed_by(self : Mut[T]) -> String? {
-  let world = mut_world_or_abort(self)
-  world.changed_component_caller_by_local_id(
-    mut_local_component_id_or_abort(self),
-    mut_entity_or_abort(self).id,
+  self.world.changed_component_caller_by_local_id(
+    self.local_component_id,
+    self.entity.id,
   )
 }
 
@@ -278,15 +233,14 @@ pub fn[T : Component] Mut::set_changed(self : Mut[T], loc~ : SourceLoc) -> Unit 
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
   ignore(T::component())
-  let world = mut_world_or_abort(self)
-  let entity = mut_entity_or_abort(self)
-  let key_id = mut_key_id_or_abort(self)
+  let world = self.world
+  let entity = self.entity
+  let key_id = self.key.id()
   let caller = hook_caller_from_loc(loc)
   world.record_component_added_with_caller(entity, key_id, caller)
-  world.ensure_added_component_messages(key_id).val.send(
-    component_write_tick(world),
-    entity,
-  )
+  world
+  .ensure_added_component_messages(key_id)
+  .send(component_write_tick(world), entity)
   world.record_component_changed_with_caller(entity, key_id, caller)
 }
 
@@ -295,7 +249,7 @@ pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
 ///|
 #callsite(autofill(loc))
 pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
-  let value = self.peek()
+  let value = self.peek(loc~)
   let result = f(value)
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
   result
@@ -303,22 +257,18 @@ pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Mutable] Mut::update(
-  self : Mut[T],
-  f : (T) -> T,
-  loc~ : SourceLoc,
-) -> Unit {
-  self.set(f(self.peek()), loc~)
+pub fn[T] Mut::update(self : Mut[T], f : (T) -> T, loc~ : SourceLoc) -> Unit {
+  self.set(f(self.peek(loc~)), loc~)
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Eq + Mutable] Mut::set_if_neq(
+pub fn[T : Eq] Mut::set_if_neq(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let current = self.peek()
+  let current = self.peek(loc~)
   if current != value {
     self.set(value, loc~)
     true
@@ -329,13 +279,21 @@ pub fn[T : Eq + Mutable] Mut::set_if_neq(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Mutable] Mut::set(
-  self : Mut[T],
-  value : T,
-  loc~ : SourceLoc,
-) -> Unit {
+pub fn[T] Mut::set(self : Mut[T], value : T, loc~ : SourceLoc) -> Unit {
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
   mut_assign_value_or_abort(self, value)
+}
+
+///|
+fn[T] mut_from_component_location(
+  world : World,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  local_component_id : Int,
+  table_id : Int,
+  row_index : Int,
+) -> Mut[T] {
+  { world, entity, key, table_id, row_index, local_component_id }
 }
 
 ///|
@@ -346,20 +304,18 @@ fn[T] world_component_mut(
 ) -> Mut[T]? raise EcsError {
   world.ensure_entity_alive(entity)
   guard world.component_present(key.id(), entity) else { return None }
-  let local_component_id = world.local_component_id(key.id())
-  let table_id = world.table_id_for_entity(entity)
-  let row_index = match world.entity_table_row(entity) {
-    Some(row) => Some(row.index())
-    None => None
+  guard world.local_component_id(key.id()) is Some(local_component_id) else {
+    abort("component is present but has no local component id")
   }
-  Some({
-    world: Some(world),
-    entity: Some(entity),
-    key: Some(key),
-    table_id,
-    row_index,
-    local_component_id,
-  })
+  let (table_id, row_index) = match world.entity_table_location(entity) {
+    Some(location) => location
+    None => (-1, -1)
+  }
+  Some(
+    mut_from_component_location(
+      world, entity, key, local_component_id, table_id, row_index,
+    ),
+  )
 }
 
 ///|

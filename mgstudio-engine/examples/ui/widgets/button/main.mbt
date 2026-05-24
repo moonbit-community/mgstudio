@@ -49,18 +49,17 @@ fn main {
 fn button_system(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
-  let input_focus_ref = world.get_resource_ref_mut(
-    @input_focus.InputFocus::resource(),
-  )
+  let input_focus = world.get_resource_mut(@input_focus.InputFocus::resource())
   world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
     if !(try! world.contains_by_key(entity, @ui.ecs_key_button)) {
       return
     }
-    if input_focus_ref is Some(input_focus) {
+    if input_focus is Some(input_focus_mut) {
       match interaction {
         @ui.Interaction::Pressed | @ui.Interaction::Hovered =>
-          input_focus.val.set(entity)
-        @ui.Interaction::None => input_focus.val.clear()
+          input_focus_mut.modify(fn(value) { value.set(entity) })
+        @ui.Interaction::None =>
+          input_focus_mut.modify(fn(value) { value.clear() })
       }
     }
     let text = match interaction {

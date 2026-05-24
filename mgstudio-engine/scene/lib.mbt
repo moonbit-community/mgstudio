@@ -52,9 +52,9 @@ fn scene_current_world_or_abort() -> @ecs.World {
 ///|
 fn scene_assets_from_world_mut_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[Scene]] {
+) -> @ecs.ResourceMut[@asset.Assets[Scene]] {
   let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
-  match world.get_resource_ref_mut(key) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -78,9 +78,9 @@ fn scene_assets_from_world_or_abort(world : @ecs.World) -> @asset.Assets[Scene] 
 ///|
 fn scene_mesh_assets_from_world_mut_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[@mesh.Mesh]] {
+) -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  match world.get_resource_ref_mut(key) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -265,9 +265,9 @@ fn scene_clone_mesh_asset(mesh_asset : @mesh.Mesh) -> @mesh.Mesh {
 }
 
 ///|
-fn scene_registry_mut_or_abort() -> Ref[SceneAssetRegistryState] {
+fn scene_registry_mut_or_abort() -> @ecs.ResourceMut[SceneAssetRegistryState] {
   let world = scene_current_world_or_abort()
-  match world.get_resource_ref_mut(scene_asset_registry_resource_key) {
+  match world.get_resource_mut(scene_asset_registry_resource_key) {
     Some(state) => state
     None =>
       abort(
@@ -289,9 +289,9 @@ fn scene_registry_or_abort() -> SceneAssetRegistryState {
 }
 
 ///|
-fn scene_registry_mut_if_present() -> Ref[SceneAssetRegistryState]? {
+fn scene_registry_mut_if_present() -> @ecs.ResourceMut[SceneAssetRegistryState]? {
   guard @app.current_world() is Some(world) else { return None }
-  world.get_resource_ref_mut(scene_asset_registry_resource_key)
+  world.get_resource_mut(scene_asset_registry_resource_key)
 }
 
 ///|
@@ -302,15 +302,15 @@ fn scene_registry_if_present() -> SceneAssetRegistryState? {
 
 ///|
 priv struct SceneModifiedEventsCursorState {
-  modified_event_cursor : Ref[Int]
-  debounced_scene_asset_ages : Ref[Map[Int, Int]]
+  modified_event_cursor : @ecs.MessageCursor[@asset.AssetEvent[Scene]]
+  mut debounced_scene_asset_ages : Map[Int, Int]
 }
 
 ///|
 fn SceneModifiedEventsCursorState::SceneModifiedEventsCursorState() -> SceneModifiedEventsCursorState {
   SceneModifiedEventsCursorState::{
-    modified_event_cursor: Ref(0),
-    debounced_scene_asset_ages: Ref({}),
+    modified_event_cursor: @ecs.MessageCursor::MessageCursor(),
+    debounced_scene_asset_ages: {},
   }
 }
 
@@ -327,22 +327,12 @@ impl @app.Resource for SceneModifiedEventsCursorState with resource() {
 }
 
 ///|
-fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
-  match world.get_resource(scene_modified_events_cursor_state_resource_key) {
-    Some(state) => state.modified_event_cursor
-    None =>
-      abort(
-        "scene modified-events cursor resource is missing; ScenePlugin must initialize SceneModifiedEventsCursorState before running reload systems",
-      )
-  }
-}
-
-///|
-fn scene_debounced_scene_asset_ages_ref_or_abort(
+fn scene_modified_events_cursor_state_mut_or_abort(
   world : @ecs.World,
-) -> Ref[Map[Int, Int]] {
-  match world.get_resource(scene_modified_events_cursor_state_resource_key) {
-    Some(state) => state.debounced_scene_asset_ages
+) -> @ecs.ResourceMut[SceneModifiedEventsCursorState] {
+  match
+    world.get_resource_mut(scene_modified_events_cursor_state_resource_key) {
+    Some(state) => state
     None =>
       abort(
         "scene modified-events cursor resource is missing; ScenePlugin must initialize SceneModifiedEventsCursorState before running reload systems",
@@ -354,8 +344,8 @@ fn scene_debounced_scene_asset_ages_ref_or_abort(
 pub fn scene_set_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> Unit {
-  if scene_registry_mut_if_present() is Some(state_ref) {
-    state_ref.val.lod_visibility_policy = policy
+  if scene_registry_mut_if_present() is Some(state) {
+    state.modify(fn(value) { value.lod_visibility_policy = policy })
   }
 }
 
@@ -414,11 +404,17 @@ pub fn scene_register_gltf_scene(
   let world = scene_current_world_or_abort()
   if scene_registry_get(asset_path) is Some(handle) {
     scene_pending_remove_scene_handle(world, handle)
-    scene_assets_from_world_mut_or_abort(world).val.set(handle, scene) |> ignore
+    scene_assets_from_world_mut_or_abort(world).modify(fn(assets) {
+      ignore(assets.set(handle, scene))
+    })
     return handle
   }
-  let handle = scene_assets_from_world_mut_or_abort(world).val.add(scene)
-  scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
+  let handle = scene_assets_from_world_mut_or_abort(world).modify(fn(assets) {
+    assets.add(scene)
+  })
+  scene_registry_mut_or_abort().modify(fn(state) {
+    state.scene_registry.push((asset_path, handle))
+  })
   scene_pending_remove_scene_handle(world, handle)
   handle
 }
@@ -432,10 +428,12 @@ pub fn scene_load_gltf_scene(
   if scene_registry_get(asset_path) is Some(handle) {
     return handle
   }
-  let handle = scene_assets_from_world_mut_or_abort(world).val.add(
-    scene_pending(),
-  )
-  scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
+  let handle = scene_assets_from_world_mut_or_abort(world).modify(fn(assets) {
+    assets.add(scene_pending())
+  })
+  scene_registry_mut_or_abort().modify(fn(state) {
+    state.scene_registry.push((asset_path, handle))
+  })
   scene_queue_gltf_request(world, asset_server, handle, asset_path)
   handle
 }
@@ -450,9 +448,9 @@ pub fn scene_load_gltf_animation(
     return handle
   }
   let handle = @animation.animation_clip_add(@animation.AnimationClip::new())
-  scene_registry_mut_or_abort().val.animation_registry.push(
-    (asset_path, handle),
-  )
+  scene_registry_mut_or_abort().modify(fn(state) {
+    state.animation_registry.push((asset_path, handle))
+  })
   scene_queue_gltf_animation_request(world, asset_server, handle, asset_path)
   handle
 }
@@ -466,8 +464,14 @@ pub fn scene_load_gltf_mesh_primitive(
   if scene_mesh_registry_get(asset_path) is Some(handle) {
     return handle
   }
-  let handle = scene_mesh_assets_from_world_mut_or_abort(world).val.reserve_handle()
-  scene_registry_mut_or_abort().val.mesh_registry.push((asset_path, handle))
+  let handle = scene_mesh_assets_from_world_mut_or_abort(world).modify(fn(
+    assets,
+  ) {
+    assets.reserve_handle()
+  })
+  scene_registry_mut_or_abort().modify(fn(state) {
+    state.mesh_registry.push((asset_path, handle))
+  })
   scene_queue_gltf_mesh_request(world, asset_server, handle, asset_path)
   handle
 }

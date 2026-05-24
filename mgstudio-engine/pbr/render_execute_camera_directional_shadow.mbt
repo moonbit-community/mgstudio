@@ -404,9 +404,9 @@ impl @app.Resource for Render3dDirectionalLightShadowTargets with resource() {
 }
 
 ///|
-fn render3d_directional_light_shadow_targets_ref_or_init(
+fn render3d_directional_light_shadow_targets_mut_or_init(
   world : @ecs.World,
-) -> Ref[Render3dDirectionalLightShadowTargets] {
+) -> @ecs.ResourceMut[Render3dDirectionalLightShadowTargets] {
   if world.get_resource(Render3dDirectionalLightShadowTargets::resource())
     is None {
     world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
@@ -415,7 +415,7 @@ fn render3d_directional_light_shadow_targets_ref_or_init(
   }
   match
     world.get_resource_mut(Render3dDirectionalLightShadowTargets::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dDirectionalLightShadowTargets resource")
   }
 }
@@ -428,10 +428,10 @@ fn render3d_directional_light_shadow_target_get_or_create(
   size : Int,
   layers : Int,
 ) -> Int {
-  let shadow_targets_ref = render3d_directional_light_shadow_targets_ref_or_init(
+  let shadow_targets_mut = render3d_directional_light_shadow_targets_mut_or_init(
     world,
   )
-  let shadow_targets = shadow_targets_ref.val.entries
+  let shadow_targets = shadow_targets_mut.peek().entries
   let safe_size = if size <= 0 { 1 } else { size }
   let safe_layers = if layers <= 0 { 1 } else { layers }
   for item in shadow_targets {
@@ -478,6 +478,6 @@ fn render3d_directional_light_shadow_target_get_or_create(
       target_id,
     })
   }
-  shadow_targets_ref.val.entries = next
+  shadow_targets_mut.modify(fn(state) { state.entries = next })
   target_id
 }

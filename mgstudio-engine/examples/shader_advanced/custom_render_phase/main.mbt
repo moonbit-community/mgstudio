@@ -47,7 +47,9 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.8F, 0.8F))
+  let mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.8F, 0.8F))
+  })
   for i in 0..<16 {
     let x = Float::from_int(i % 4) - 1.5F
     let z = Float::from_int(i / 4) - 1.5F

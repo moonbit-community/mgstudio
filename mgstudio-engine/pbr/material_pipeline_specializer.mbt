@@ -829,18 +829,21 @@ fn pbr_material_base_specialize(
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
-  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
+  let state_value = state.peek()
   let specializer = PbrMaterialPipelineSpecializer::new(
     properties,
-    binding_arrays_are_usable=state_ref.val.binding_arrays_are_usable,
+    binding_arrays_are_usable=state_value.binding_arrays_are_usable,
   )
-  state_ref.val.specialized_material_pipelines.specialize(
+  let result = state_value.specialized_material_pipelines.specialize(
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)
     },
     key,
     layout,
   )
+  state.set(state_value)
+  result
 }
 
 ///|
@@ -850,18 +853,21 @@ fn pbr_material_prepass_specialize(
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
-  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
+  let state_value = state.peek()
   let specializer = PbrPrepassPipelineSpecializer::new(
     properties,
-    binding_arrays_are_usable=state_ref.val.binding_arrays_are_usable,
+    binding_arrays_are_usable=state_value.binding_arrays_are_usable,
   )
-  state_ref.val.specialized_prepass_material_pipelines.specialize(
+  let result = state_value.specialized_prepass_material_pipelines.specialize(
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)
     },
     key,
     layout,
   )
+  state.set(state_value)
+  result
 }
 
 ///|

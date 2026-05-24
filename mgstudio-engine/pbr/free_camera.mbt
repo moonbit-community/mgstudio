@@ -95,9 +95,9 @@ impl @app.Resource for FreeCameraSystemState with resource() {
 }
 
 ///|
-fn free_camera_system_state_ref_or_init(
+fn free_camera_system_state_mut_or_init(
   world : @ecs.World,
-) -> Ref[FreeCameraSystemState] {
+) -> @ecs.ResourceMut[FreeCameraSystemState] {
   if world.get_resource(FreeCameraSystemState::resource()) is None {
     world.insert_resource(FreeCameraSystemState::resource(), FreeCameraSystemState::{
       toggle_cursor_grab: false,
@@ -106,7 +106,7 @@ fn free_camera_system_state_ref_or_init(
     })
   }
   match world.get_resource_mut(FreeCameraSystemState::resource()) {
-    Some(state_ref) => Ref(state_ref.peek())
+    Some(state) => state
     None => abort("Missing FreeCameraSystemState resource")
   }
 }
@@ -145,8 +145,8 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = @pbr_render.render3d_default_time_or_default(world).delta_seconds()
-  let system_state_ref = free_camera_system_state_ref_or_init(world)
-  let mut system_state = system_state_ref.val
+  let system_state_mut = free_camera_system_state_mut_or_init(world)
+  let mut system_state = system_state_mut.peek()
 
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_free_camera, fn(entity, _config) {
@@ -197,7 +197,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
       @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
       @window.window_set_cursor_visible(visible=true)
     }
-    system_state_ref.val = system_state
+    system_state_mut.set(system_state)
     try! (world.replace(controlled_entity, ecs_key_free_camera_state, state)
     |> ignore)
     return
@@ -341,7 +341,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
     }
   }
 
-  system_state_ref.val = system_state
+  system_state_mut.set(system_state)
   try! (world.replace(
     controlled_entity, @transform.ecs_key_transform, transform,
   )

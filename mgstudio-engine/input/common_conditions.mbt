@@ -44,12 +44,12 @@ pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_toggle_active(
   initial_active : Bool,
   input : T,
 ) -> @app.RunConditionFn[@ecs.World] {
-  let active_ref = Ref(initial_active)
+  let mut active = initial_active
   fn(_world : @ecs.World) -> Bool {
     let button_input = T::read_button_input()
     if button_input.just_pressed(input) {
-      active_ref.val = !active_ref.val
+      active = !active
     }
-    active_ref.val
+    active
   }
 }

@@ -137,9 +137,7 @@ impl @ecs.QueryData for VolumeIntersectionData with matches(world, entity) {
 ///|
 impl @ecs.QueryData for VolumeIntersectionData with fetch(world, entity) {
   {
-    volume: try! @ecs.query_data_component_fetch(
-      world, entity, current_volume_key,
-    ),
+    volume: @ecs.query_data_component_fetch(world, entity, current_volume_key),
     intersects: (try! world.get_by_key(entity, intersects_key)).unwrap(),
   }
 }

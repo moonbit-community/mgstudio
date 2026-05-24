@@ -233,7 +233,7 @@ fn query_filter_table_added_matches(
   }
   guard TableRow::from_index(row_index) is Some(row) else { return false }
   guard world.table_storage(table_id) is Some(table_ref) else { return false }
-  match table_ref.val.added_tick_at_row(row, local_component_id) {
+  match table_ref.added_tick_at_row(row, local_component_id) {
     Some(tick) => world.get_tick_context().ticks().contains(tick)
     None => false
   }
@@ -254,7 +254,7 @@ fn query_filter_table_changed_matches(
   }
   guard TableRow::from_index(row_index) is Some(row) else { return false }
   guard world.table_storage(table_id) is Some(table_ref) else { return false }
-  match table_ref.val.changed_tick_at_row(row, local_component_id) {
+  match table_ref.changed_tick_at_row(row, local_component_id) {
     Some(tick) => world.get_tick_context().ticks().contains(tick)
     None => false
   }

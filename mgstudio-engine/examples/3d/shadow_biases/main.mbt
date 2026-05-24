@@ -206,8 +206,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let sphere_proxy_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+    }),
   )
 
   // Dense row of proxy meshes along the view direction.
@@ -224,12 +225,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(600.0F, 600.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(600.0F, 600.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(white_material),
     @transform.Transform::identity(),

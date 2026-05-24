@@ -317,11 +317,13 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   }
 
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+        ),
+      )
+    }),
   )
 }
 
@@ -334,8 +336,9 @@ fn spawn_probe_gizmo_box(
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(side, side, side)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(side, side, side))
+      }),
     ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, center_z),
@@ -496,8 +499,9 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let prism = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 2.0F, 20.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 2.0F, 20.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(reflective_material),
     @transform.Transform::from_xyz(0.0F, -4.0F, -5.5F),

@@ -50,11 +50,11 @@ fn scene_test_add_inverse_bindposes_asset(
   inverse_bindposes : Array[@mesh.SkinningMat4],
 ) -> @asset.Handle[@mesh.SkinnedMeshInverseBindposes] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.SkinnedMeshInverseBindposes]] = @asset.assets_resource_key()
-  match world.get_resource_ref_mut(key) {
-    Some(assets_ref) =>
-      assets_ref.val.add(
-        @mesh.SkinnedMeshInverseBindposes::new(inverse_bindposes),
-      )
+  match world.get_resource_mut(key) {
+    Some(assets) =>
+      assets.modify(fn(value) {
+        value.add(@mesh.SkinnedMeshInverseBindposes::new(inverse_bindposes))
+      })
     None =>
       abort(
         "scene test requires Assets<SkinnedMeshInverseBindposes>; MeshPlugin must be installed",
@@ -613,13 +613,15 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
     ),
     fn(world : @ecs.World) {
       let mesh = @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets.add(
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+              ),
             ),
-          ),
-        ),
+          )
+        }),
       )
       let material = @pbr.MeshMaterial3d::new(
         @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
@@ -697,13 +699,15 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
     ),
     fn(world : @ecs.World) {
       let mesh = @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets.add(
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+              ),
             ),
-          ),
-        ),
+          )
+        }),
       )
       let material = @pbr.MeshMaterial3d::new(
         @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
@@ -789,17 +793,19 @@ test "scene: SceneRoot propagates gltf extras metadata" {
       @scene.Scene::new([
         SceneNode3d::new(
           @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.triangle3d_mesh(
-                  @math.Triangle3d::new(
-                    @math.Vec3::new(0.0F, 0.0F, 0.0F),
-                    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-                    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+            @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+              assets.add(
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.triangle3d_mesh(
+                    @math.Triangle3d::new(
+                      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+                      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              )
+            }),
           ),
           @pbr.MeshMaterial3d::new(
             @pbr.standard_material_add(
@@ -983,13 +989,15 @@ test "scene: removing SceneRoot despawns spawned children" {
       @scene.Scene::new([
         @scene.SceneNode3d::new(
           @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.cuboid_mesh(
-                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+            @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+              assets.add(
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.cuboid_mesh(
+                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                  ),
                 ),
-              ),
-            ),
+              )
+            }),
           ),
           @pbr.MeshMaterial3d::new(
             @pbr.standard_material_add(
@@ -1064,13 +1072,15 @@ test "scene: SceneRoot spawns children and marks ready" {
     )
     let node = @scene.SceneNode3d::new(
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+          assets.add(
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+              ),
             ),
-          ),
-        ),
+          )
+        }),
       ),
       material,
       @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
@@ -1214,13 +1224,15 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
         @scene.Scene::new([
           @scene.SceneNode3d::new(
             @mesh.Mesh3d::new(
-              @pbr.mesh_assets_mut_or_abort().val.add(
-                @mesh.Mesh::from_3d_geometry(
-                  @mesh_primitives_dim3.cuboid_mesh(
-                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+              @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+                assets.add(
+                  @mesh.Mesh::from_3d_geometry(
+                    @mesh_primitives_dim3.cuboid_mesh(
+                      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                    ),
                   ),
-                ),
-              ),
+                )
+              }),
             ),
             @pbr.MeshMaterial3d::new(
               @pbr.standard_material_add(
@@ -1293,13 +1305,15 @@ test "scene: instance readiness and entity iteration follow Bevy semantics" {
         @scene.Scene::new([
           @scene.SceneNode3d::new(
             @mesh.Mesh3d::new(
-              @pbr.mesh_assets_mut_or_abort().val.add(
-                @mesh.Mesh::from_3d_geometry(
-                  @mesh_primitives_dim3.cuboid_mesh(
-                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+              @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+                assets.add(
+                  @mesh.Mesh::from_3d_geometry(
+                    @mesh_primitives_dim3.cuboid_mesh(
+                      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                    ),
                   ),
-                ),
-              ),
+                )
+              }),
             ),
             @pbr.MeshMaterial3d::new(
               @pbr.standard_material_add(
@@ -1365,13 +1379,15 @@ test "scene: SceneRoot propagates gltf material name" {
       @scene.Scene::new([
         @scene.SceneNode3d::new(
           @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.cuboid_mesh(
-                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+            @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+              assets.add(
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.cuboid_mesh(
+                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                  ),
                 ),
-              ),
-            ),
+              )
+            }),
           ),
           material,
           @transform.Transform::identity(),
@@ -1430,13 +1446,15 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
@@ -1447,13 +1465,15 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
@@ -1552,13 +1572,15 @@ test "scene: changed SceneRoot with same handle still respawns instance" {
       @scene.Scene::new([
         @scene.SceneNode3d::new(
           @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.cuboid_mesh(
-                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+            @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+              assets.add(
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.cuboid_mesh(
+                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                  ),
                 ),
-              ),
-            ),
+              )
+            }),
           ),
           @pbr.MeshMaterial3d::new(
             @pbr.standard_material_add(
@@ -1635,13 +1657,15 @@ test "scene: modified scene asset respawns SceneRoot children" {
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
@@ -1652,13 +1676,15 @@ test "scene: modified scene asset respawns SceneRoot children" {
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
@@ -1737,13 +1763,15 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
@@ -1754,13 +1782,15 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
@@ -1771,13 +1801,15 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     let third_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(7.0F, 8.0F, 9.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(7.0F, 8.0F, 9.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(17.0F, 16.0F, 15.0F),
@@ -1788,13 +1820,15 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     let fourth_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
         @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().val.add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.cuboid_mesh(
-                @math.Cuboid::new(10.0F, 11.0F, 12.0F),
+          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+            assets.add(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(10.0F, 11.0F, 12.0F),
+                ),
               ),
-            ),
-          ),
+            )
+          }),
         ),
         material,
         @transform.Transform::from_xyz(25.0F, 24.0F, 23.0F),

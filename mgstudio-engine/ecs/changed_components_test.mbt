@@ -28,9 +28,6 @@ pub impl Component for ChangedMarker with component() {
 }
 
 ///|
-pub impl Mutable for ChangedMarker
-
-///|
 test "ecs changed components: insert emits entity in tick range" {
   let world = World::new()
   let entity = world.spawn()
@@ -112,7 +109,7 @@ test "ecs changed components: Mut::modify marks changed on explicit mutation" {
 }
 
 ///|
-test "ecs changed components: Mut::value is read-only" {
+test "ecs changed components: Mut::value does not mark changed by itself" {
   let world = World::new()
   let entity = world.spawn()
 

@@ -166,8 +166,12 @@ fn alter_asset(
     return
   }
   let sprite = sprite_comp.value()
-  guard images.peek().get_mut(sprite.image) is Some(image) else { return }
-  image.pixels = invert_pixels(image.pixels)
+  images.modify(fn(images) {
+    match images.get_mut(sprite.image) {
+      Some(image) => image.pixels = invert_pixels(image.pixels)
+      None => ()
+    }
+  })
 }
 
 ///|

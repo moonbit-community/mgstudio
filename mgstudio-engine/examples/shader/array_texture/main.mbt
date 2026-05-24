@@ -22,7 +22,9 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
+  let mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
+  })
   let image = asset_server.get().load_image("branding/icon.png")
   for i in 0..<3 {
     let uv_transform = @transform.Affine2::from_scale_translation(

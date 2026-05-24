@@ -66,11 +66,18 @@ pub impl @ecs.TriggerEvent for SceneInstanceReady with debug_name() {
 }
 
 ///|
-let scene_component_metadata_installed : Ref[Bool] = Ref(false)
+priv struct SceneEcsRuntimeState {
+  mut component_metadata_installed : Bool
+}
+
+///|
+let scene_ecs_runtime_state : SceneEcsRuntimeState = {
+  component_metadata_installed: false,
+}
 
 ///|
 pub fn scene_install_component_metadata() -> Unit {
-  if scene_component_metadata_installed.val {
+  if scene_ecs_runtime_state.component_metadata_installed {
     return
   }
   ignore(
@@ -90,5 +97,5 @@ pub fn scene_install_component_metadata() -> Unit {
       scene_instance_on_remove,
     ),
   )
-  scene_component_metadata_installed.val = true
+  scene_ecs_runtime_state.component_metadata_installed = true
 }

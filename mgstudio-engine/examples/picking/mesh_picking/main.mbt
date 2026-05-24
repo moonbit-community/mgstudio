@@ -62,21 +62,28 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let normal = material_assets |> @pbr.add_material(@sprite.Color::white())
-  let hover = material_assets
+  let normal = materials.modify(fn(material_assets) {
+    material_assets |> @pbr.add_material(@sprite.Color::white())
+  })
+  let hover = materials.modify(fn(material_assets) {
+    material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.92F, 0.95F))
-  let pressed = material_assets
+  })
+  let pressed = materials.modify(fn(material_assets) {
+    material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.98F, 0.85F, 0.25F))
-  let ground = material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.8F, 0.8F, 0.8F))
+  })
+  let ground = materials.modify(fn(material_assets) {
+    material_assets |> @pbr.add_material(@sprite.Color::srgb(0.8F, 0.8F, 0.8F))
+  })
 
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(8.0F, 64)),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(8.0F, 64))
+          }),
         ),
         @pbr.MeshMaterial3d::new(ground),
         @transform.Transform::identity().with_rotation(
@@ -88,7 +95,9 @@ fn setup(
 
   spawn_pickable_shape(
     commands,
-    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F)),
+    meshes.modify(fn(mesh_assets) {
+      mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F))
+    }),
     @math.Vec3::new(-2.0F, 0.8F, 0.0F),
     normal,
     hover,
@@ -96,7 +105,9 @@ fn setup(
   )
   spawn_pickable_shape(
     commands,
-    mesh_assets |> @pbr.add_mesh(@math.Sphere::new(0.75F)),
+    meshes.modify(fn(mesh_assets) {
+      mesh_assets |> @pbr.add_mesh(@math.Sphere::new(0.75F))
+    }),
     @math.Vec3::new(0.0F, 0.8F, 0.0F),
     normal,
     hover,
@@ -104,7 +115,9 @@ fn setup(
   )
   spawn_pickable_shape(
     commands,
-    mesh_assets |> @pbr.add_mesh(@math.Capsule3d::new(0.45F, 1.1F)),
+    meshes.modify(fn(mesh_assets) {
+      mesh_assets |> @pbr.add_mesh(@math.Capsule3d::new(0.45F, 1.1F))
+    }),
     @math.Vec3::new(2.0F, 0.9F, 0.0F),
     normal,
     hover,

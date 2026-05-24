@@ -211,10 +211,9 @@ fn setup(
     ),
   )
 
-  let plane_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(8.0F, 0.1F, 8.0F),
-  )
+  let plane_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(8.0F, 0.1F, 8.0F))
+  })
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
   )
@@ -228,10 +227,9 @@ fn setup(
     ),
   )
 
-  let cube_mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
-  )
+  let cube_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  })
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
   )

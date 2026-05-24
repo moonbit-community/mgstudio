@@ -362,12 +362,6 @@ fn text_instance_has_run_overlays(instance : TextInstance) -> Bool {
 }
 
 ///|
-let font_atlas_set_state : Ref[FontAtlasSet] = Ref(FontAtlasSet::FontAtlasSet())
-
-///|
-let default_text_font_handle_ref : Ref[@asset.Handle[@asset.Font]?] = Ref(None)
-
-///|
 /// Global font system state for `moon_cosmic` (engine-side shaping/wrap/BiDi).
 priv struct CosmicFontSystemState {
   font_system : @cosmic.FontSystem
@@ -380,63 +374,63 @@ priv struct CosmicFontSystemState {
 }
 
 ///|
-let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref(CosmicFontSystemState::{
-  font_system: @cosmic.FontSystem::new(),
-  handle_to_font_id: [],
-  font_id_to_handle_id: [],
-  handle_to_family: [],
-})
+priv struct TextPipelineRuntimeState {
+  mut font_atlas_set : FontAtlasSet
+  mut default_text_font_handle : @asset.Handle[@asset.Font]?
+  mut cosmic_font_system : CosmicFontSystemState
+  mut diagnostic_update_cpu_ms : Float
+  mut diagnostic_update_pending_layout_count : Int
+  mut diagnostic_render_cpu_ms : Float
+  mut diagnostic_render_visible_text_count : Int
+  mut diagnostic_render_culled_text_count : Int
+  mut diagnostic_render_submitted_item_count : Int
+  overlay_sprites_cache : Array[@sprite.OverlaySpriteUvScissor]
+  overlay_sprite_slices_batches_cache : Array[
+    @sprite.OverlaySpriteUvScissorSlices,
+  ]
+  mut prepared_scene_overlay_sprites : Array[@sprite.OverlaySpriteUvScissor]
+  mut prepared_ui_overlay_sprites : Array[@sprite.OverlaySpriteUvScissor]
+  mut prepared_scene_overlay_sprite_slices_batches : Array[
+    @sprite.OverlaySpriteUvScissorSlices,
+  ]
+  mut prepared_ui_overlay_sprite_slices_batches : Array[
+    @sprite.OverlaySpriteUvScissorSlices,
+  ]
+}
 
 ///|
-let text_font_asset_events_cursor_ref : Ref[Int] = Ref(0)
+fn cosmic_font_system_state_new() -> CosmicFontSystemState {
+  {
+    font_system: @cosmic.FontSystem::new(),
+    handle_to_font_id: [],
+    font_id_to_handle_id: [],
+    handle_to_family: [],
+  }
+}
 
 ///|
-let text_diagnostic_update_cpu_ms_ref : Ref[Float] = Ref(0.0F)
+let text_pipeline_runtime_state : TextPipelineRuntimeState = {
+  font_atlas_set: FontAtlasSet::FontAtlasSet(),
+  default_text_font_handle: None,
+  cosmic_font_system: cosmic_font_system_state_new(),
+  diagnostic_update_cpu_ms: 0.0F,
+  diagnostic_update_pending_layout_count: 0,
+  diagnostic_render_cpu_ms: 0.0F,
+  diagnostic_render_visible_text_count: 0,
+  diagnostic_render_culled_text_count: 0,
+  diagnostic_render_submitted_item_count: 0,
+  overlay_sprites_cache: [],
+  overlay_sprite_slices_batches_cache: [],
+  prepared_scene_overlay_sprites: [],
+  prepared_ui_overlay_sprites: [],
+  prepared_scene_overlay_sprite_slices_batches: [],
+  prepared_ui_overlay_sprite_slices_batches: [],
+}
 
 ///|
-let text_diagnostic_update_pending_layout_count_ref : Ref[Int] = Ref(0)
-
-///|
-let text_diagnostic_render_cpu_ms_ref : Ref[Float] = Ref(0.0F)
-
-///|
-let text_diagnostic_render_visible_text_count_ref : Ref[Int] = Ref(0)
-
-///|
-let text_diagnostic_render_culled_text_count_ref : Ref[Int] = Ref(0)
-
-///|
-let text_diagnostic_render_submitted_item_count_ref : Ref[Int] = Ref(0)
-
-///|
-let text_render_overlay_sprites_cache_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissor],
-] = Ref([])
-
-///|
-let text_render_overlay_sprite_slices_batches_cache_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref([])
-
-///|
-let text_render_prepared_scene_overlay_sprites_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissor],
-] = Ref([])
-
-///|
-let text_render_prepared_ui_overlay_sprites_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissor],
-] = Ref([])
-
-///|
-let text_render_prepared_scene_overlay_sprite_slices_batches_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref([])
-
-///|
-let text_render_prepared_ui_overlay_sprite_slices_batches_ref : Ref[
-  Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref([])
+let text_font_asset_events_cursor : @ecs.MessageCursor[
+  @asset.AssetEvent[@asset.Font],
+] = @ecs.MessageCursor::MessageCursor()
 
 ///|
 priv struct OverlaySpriteSliceBatchBounds {
@@ -582,11 +576,11 @@ const DEFAULT_TEXT_FONT_PATH : String = "fonts/FiraMono-subset.ttf"
 
 ///|
 fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
-  match default_text_font_handle_ref.val {
+  match text_pipeline_runtime_state.default_text_font_handle {
     Some(cached) => cached
     None => {
       let loaded = @asset.AssetServer::new().load_font(DEFAULT_TEXT_FONT_PATH)
-      default_text_font_handle_ref.val = Some(loaded)
+      text_pipeline_runtime_state.default_text_font_handle = Some(loaded)
       loaded
     }
   }
@@ -594,13 +588,13 @@ fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
 
 ///|
 fn text_mark_all_instances_for_rerender() -> Unit {
-  let count = text_state.val.texts.length()
+  let count = text_state.texts.length()
   if count <= 0 {
     return
   }
   for i in 0..<count {
-    let instance = text_state.val.texts[i]
-    text_state.val.texts[i] = TextInstance::{
+    let instance = text_state.texts[i]
+    text_state.texts[i] = TextInstance::{
       ..instance,
       layout_dirty: true,
       computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
@@ -616,10 +610,11 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
     world.init_message(message_key)
   }
   let reader = world.message_reader(
-    message_key, text_font_asset_events_cursor_ref,
+    message_key,
+    cursor=text_font_asset_events_cursor,
   )
   let mut new_fonts_added = false
-  for event in (try! reader.read()) {
+  for event in reader.read() {
     match event {
       @asset.AssetEvent::Added(handle) => {
         new_fonts_added = true
@@ -649,7 +644,9 @@ fn text_sync_font_assets_system(world : @ecs.World) -> Unit {
 fn text_trim_shape_run_cache_system(_world : @ecs.World) -> Unit {
   // Bevy parity intent (`trim_source_cache`):
   // keep recently used shaping cache entries and prune stale runs each frame.
-  cosmic_font_system_state.val.font_system.shape_run_cache.trim(2UL)
+  text_pipeline_runtime_state.cosmic_font_system.font_system.shape_run_cache.trim(
+    2UL,
+  )
 }
 
 ///|
@@ -676,7 +673,7 @@ fn font_source_resolved_handle(
 fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
   let resolved_font = text_pipeline_resolve_default_font(font)
   let handle_id = resolved_font.id()
-  let state0 = cosmic_font_system_state.val
+  let state0 = text_pipeline_runtime_state.cosmic_font_system
   match find_int_pair_value(state0.handle_to_font_id, handle_id) {
     Some(id) => return Some(id)
     None => ()
@@ -715,7 +712,7 @@ fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
       handle_to_family.push((handle_id, family))
     }
   }
-  cosmic_font_system_state.val = CosmicFontSystemState::{
+  text_pipeline_runtime_state.cosmic_font_system = CosmicFontSystemState::{
     font_system,
     handle_to_font_id,
     font_id_to_handle_id,
@@ -728,14 +725,14 @@ fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
 fn cosmic_font_family_name(font : @asset.Handle[@asset.Font]) -> String? {
   let resolved_font = text_pipeline_resolve_default_font(font)
   let handle_id = resolved_font.id()
-  let state0 = cosmic_font_system_state.val
+  let state0 = text_pipeline_runtime_state.cosmic_font_system
   match find_str_pair_value(state0.handle_to_family, handle_id) {
     Some(v) => Some(v)
     None => {
       // Best-effort: ensure the font is loaded, then query again.
       cosmic_get_or_load_font_id(resolved_font) |> ignore
       find_str_pair_value(
-        cosmic_font_system_state.val.handle_to_family,
+        text_pipeline_runtime_state.cosmic_font_system.handle_to_family,
         handle_id,
       )
     }
@@ -862,7 +859,7 @@ fn text_layout_needs_update(instance : TextInstance) -> Bool {
     instance.logical_viewport_size,
   )
   let is_rem_size_changed = instance.computed.rem_size !=
-    text_runtime_rem_size_ref.val
+    text_runtime_state.rem_size
   let is_scale_factor_changed = text_absf(
       instance.computed.scale_factor -
       text_pipeline_safe_scale_factor(instance.scale_factor),
@@ -880,7 +877,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     return TextInstance::{ ..instance, layout_dirty: false }
   }
   let logical_viewport_size = text_current_logical_viewport_size(instance)
-  let rem_size = text_runtime_rem_size_ref.val
+  let rem_size = text_runtime_state.rem_size
   let scale_factor = text_pipeline_safe_scale_factor(instance.scale_factor)
   let inverse_scale_factor = 1.0F / scale_factor
   let buffer = build_text_buffer(
@@ -955,7 +952,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       },
     }
   }
-  let font_system = cosmic_font_system_state.val.font_system
+  let font_system = text_pipeline_runtime_state.cosmic_font_system.font_system
 
   // Build rich text spans for cosmic buffer.
   let spans : Array[(String, @cosmic.Attrs)] = []
@@ -1133,7 +1130,9 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         instance.font_hinting,
         font_smoothing,
       )
-      let atlases = font_atlas_set_state.val.get_or_insert(font_key)
+      let atlases = text_pipeline_runtime_state.font_atlas_set.get_or_insert(
+        font_key,
+      )
       let atlas_info = match get_glyph_atlas_info(atlases, cache_key) {
         Some(atlas_info) => atlas_info
         None => {
@@ -1574,30 +1573,35 @@ fn text_append_overlay_sprite_slice_batch(
 ///|
 pub fn text_update_system(world : @ecs.World) -> Unit {
   let update_start = @time.host_time_now()
-  text_diagnostic_update_pending_layout_count_ref.val = 0
+  text_pipeline_runtime_state.diagnostic_update_pending_layout_count = 0
   text_set_runtime_rem_size(text_runtime_resolve_rem_size(world))
   if text_runtime_layout_dirty() {
     text_runtime_clear_layout_dirty()
-    let count = text_state.val.texts.length()
-    let pending_layout_count = Ref(0)
+    let count = text_state.texts.length()
+    let mut pending_layout_count = 0
     for i in 0..<count {
-      let current = text_state.val.texts[i]
+      let current = text_state.texts[i]
       if !current.layout_dirty {
         continue
       }
       let instance = text_update_layout(current)
       if instance.layout_dirty {
-        pending_layout_count.val = pending_layout_count.val + 1
+        pending_layout_count = pending_layout_count + 1
       }
-      text_state.val.texts[i] = instance
+      text_state.texts[i] = instance
     }
-    text_diagnostic_update_pending_layout_count_ref.val = pending_layout_count.val
-    if pending_layout_count.val > 0 {
+    text_pipeline_runtime_state.diagnostic_update_pending_layout_count = pending_layout_count
+    if pending_layout_count > 0 {
       text_runtime_mark_layout_dirty()
     }
   }
-  world.insert_resource(FontAtlasSet::resource(), font_atlas_set_state.val)
-  text_diagnostic_update_cpu_ms_ref.val = (@time.host_time_now() - update_start) *
+  world.insert_resource(
+    FontAtlasSet::resource(),
+    text_pipeline_runtime_state.font_atlas_set,
+  )
+  text_pipeline_runtime_state.diagnostic_update_cpu_ms = (
+      @time.host_time_now() - update_start
+    ) *
     1000.0F
 }
 
@@ -1606,9 +1610,9 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
   let render_start = @time.host_time_now()
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
-  let overlay_sprites = text_render_overlay_sprites_cache_ref.val
+  let overlay_sprites = text_pipeline_runtime_state.overlay_sprites_cache
   overlay_sprites.clear()
-  let overlay_sprite_slices_batches = text_render_overlay_sprite_slices_batches_cache_ref.val
+  let overlay_sprite_slices_batches = text_pipeline_runtime_state.overlay_sprite_slices_batches_cache
   overlay_sprite_slices_batches.clear()
   let white_texture = @asset.asset_white_texture()
   let scene_cull_context = @sprite_render.render2d_primary_scene_cull_context(
@@ -1620,13 +1624,13 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       Some(@sprite_render.render2d_scene_cull_context_values(context))
     None => None
   }
-  let text_count = text_state.val.texts.length()
-  let visible_text_count = Ref(0)
-  let culled_text_count = Ref(0)
+  let text_count = text_state.texts.length()
+  let mut visible_text_count = 0
+  let mut culled_text_count = 0
   for i in 0..<text_count {
-    let instance = text_state.val.texts[i]
+    let instance = text_state.texts[i]
     if !instance.view_visible {
-      culled_text_count.val = culled_text_count.val + 1
+      culled_text_count = culled_text_count + 1
       continue
     }
     let layout_info = instance.layout_info
@@ -1659,10 +1663,10 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
     }
     if !scene_visible {
-      culled_text_count.val = culled_text_count.val + 1
+      culled_text_count = culled_text_count + 1
       continue
     }
-    visible_text_count.val = visible_text_count.val + 1
+    visible_text_count = visible_text_count + 1
     let bound_w = instance.bounds.width.unwrap_or(layout_info.size.x)
     let bound_h = instance.bounds.height.unwrap_or(layout_info.size.y)
     let scale = @math.Vec2::new(sx, sy)
@@ -2083,24 +2087,26 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       None => scene_overlay_sprite_slices_batches.push(batch)
     }
   }
-  text_render_prepared_scene_overlay_sprites_ref.val = scene_overlay_sprites
-  text_render_prepared_ui_overlay_sprites_ref.val = ui_overlay_sprites
-  text_render_prepared_scene_overlay_sprite_slices_batches_ref.val = scene_overlay_sprite_slices_batches
-  text_render_prepared_ui_overlay_sprite_slices_batches_ref.val = ui_overlay_sprite_slices_batches
-  text_diagnostic_render_visible_text_count_ref.val = visible_text_count.val
-  text_diagnostic_render_culled_text_count_ref.val = culled_text_count.val
-  text_diagnostic_render_submitted_item_count_ref.val = scene_overlay_sprites.length() +
+  text_pipeline_runtime_state.prepared_scene_overlay_sprites = scene_overlay_sprites
+  text_pipeline_runtime_state.prepared_ui_overlay_sprites = ui_overlay_sprites
+  text_pipeline_runtime_state.prepared_scene_overlay_sprite_slices_batches = scene_overlay_sprite_slices_batches
+  text_pipeline_runtime_state.prepared_ui_overlay_sprite_slices_batches = ui_overlay_sprite_slices_batches
+  text_pipeline_runtime_state.diagnostic_render_visible_text_count = visible_text_count
+  text_pipeline_runtime_state.diagnostic_render_culled_text_count = culled_text_count
+  text_pipeline_runtime_state.diagnostic_render_submitted_item_count = scene_overlay_sprites.length() +
     ui_overlay_sprites.length() +
     scene_overlay_sprite_slices_batches.length() +
     ui_overlay_sprite_slices_batches.length()
-  text_diagnostic_render_cpu_ms_ref.val = (@time.host_time_now() - render_start) *
+  text_pipeline_runtime_state.diagnostic_render_cpu_ms = (
+      @time.host_time_now() - render_start
+    ) *
     1000.0F
 }
 
 ///|
 pub fn text_render_transparent_2d_queue_system(world : @ecs.World) -> Unit {
-  let scene_overlay_sprites = text_render_prepared_scene_overlay_sprites_ref.val
-  let scene_overlay_sprite_slices_batches = text_render_prepared_scene_overlay_sprite_slices_batches_ref.val
+  let scene_overlay_sprites = text_pipeline_runtime_state.prepared_scene_overlay_sprites
+  let scene_overlay_sprite_slices_batches = text_pipeline_runtime_state.prepared_scene_overlay_sprite_slices_batches
   if scene_overlay_sprites.length() > 0 {
     @sprite_render.render2d_push_sprite_uv_scissor_batch(
       world, scene_overlay_sprites,
@@ -2111,14 +2117,14 @@ pub fn text_render_transparent_2d_queue_system(world : @ecs.World) -> Unit {
       world, scene_overlay_sprite_slices_batches,
     )
   }
-  text_render_prepared_scene_overlay_sprites_ref.val = []
-  text_render_prepared_scene_overlay_sprite_slices_batches_ref.val = []
+  text_pipeline_runtime_state.prepared_scene_overlay_sprites = []
+  text_pipeline_runtime_state.prepared_scene_overlay_sprite_slices_batches = []
 }
 
 ///|
 pub fn text_render_transparent_ui_queue_system(world : @ecs.World) -> Unit {
-  let ui_overlay_sprites = text_render_prepared_ui_overlay_sprites_ref.val
-  let ui_overlay_sprite_slices_batches = text_render_prepared_ui_overlay_sprite_slices_batches_ref.val
+  let ui_overlay_sprites = text_pipeline_runtime_state.prepared_ui_overlay_sprites
+  let ui_overlay_sprite_slices_batches = text_pipeline_runtime_state.prepared_ui_overlay_sprite_slices_batches
   if ui_overlay_sprites.length() > 0 {
     @sprite_render.render2d_push_sprite_uv_scissor_batch(
       world, ui_overlay_sprites,
@@ -2129,38 +2135,38 @@ pub fn text_render_transparent_ui_queue_system(world : @ecs.World) -> Unit {
       world, ui_overlay_sprite_slices_batches,
     )
   }
-  text_render_prepared_ui_overlay_sprites_ref.val = []
-  text_render_prepared_ui_overlay_sprite_slices_batches_ref.val = []
+  text_pipeline_runtime_state.prepared_ui_overlay_sprites = []
+  text_pipeline_runtime_state.prepared_ui_overlay_sprite_slices_batches = []
 }
 
 ///|
 pub fn text_diagnostic_update_cpu_ms() -> Float {
-  text_diagnostic_update_cpu_ms_ref.val
+  text_pipeline_runtime_state.diagnostic_update_cpu_ms
 }
 
 ///|
 pub fn text_diagnostic_update_pending_layout_count() -> Int {
-  text_diagnostic_update_pending_layout_count_ref.val
+  text_pipeline_runtime_state.diagnostic_update_pending_layout_count
 }
 
 ///|
 pub fn text_diagnostic_render_cpu_ms() -> Float {
-  text_diagnostic_render_cpu_ms_ref.val
+  text_pipeline_runtime_state.diagnostic_render_cpu_ms
 }
 
 ///|
 pub fn text_diagnostic_render_visible_text_count() -> Int {
-  text_diagnostic_render_visible_text_count_ref.val
+  text_pipeline_runtime_state.diagnostic_render_visible_text_count
 }
 
 ///|
 pub fn text_diagnostic_render_culled_text_count() -> Int {
-  text_diagnostic_render_culled_text_count_ref.val
+  text_pipeline_runtime_state.diagnostic_render_culled_text_count
 }
 
 ///|
 pub fn text_diagnostic_render_submitted_item_count() -> Int {
-  text_diagnostic_render_submitted_item_count_ref.val
+  text_pipeline_runtime_state.diagnostic_render_submitted_item_count
 }
 
 ///|

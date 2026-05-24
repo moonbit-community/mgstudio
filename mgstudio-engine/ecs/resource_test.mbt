@@ -116,6 +116,7 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
   debug_inspect(second_config.is_changed(), content="false")
 
   second_config.set(RuntimeConfig::{ fps: 75 })
+  debug_inspect(second_config.is_changed(), content="true")
   debug_inspect(second_config.last_changed(), content="2")
   second_config.set_changed()
   debug_inspect(second_config.last_changed(), content="2")
@@ -127,13 +128,14 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
 }
 
 ///|
-test "ecs resource: ResourceMut::peek is read-only" {
+test "ecs resource: ResourceMut acquisition and peek do not mark changed" {
   let world = World::new()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
-    debug_name="resource_mut_peek_runtime_config",
+    debug_name="resource_mut_acquire_runtime_config",
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
 
   let read_ctx = @core.SystemTickContext::new()

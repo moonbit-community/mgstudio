@@ -176,9 +176,8 @@ pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
   let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get() {
     Some(current_events) => {
-      let events = Ref(current_events)
-      events.val.clear()
-      ev_res.insert(events.val)
+      current_events.clear()
+      ev_res.insert(current_events)
     }
     None => ()
   }
@@ -189,8 +188,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ctx = ctx_ref.val
+  let ctx = current_ctx
 
   // 1) Remove handles/rapier state when the authoring component is removed.
   let remove_bodies : Array[@core.Entity] = []
@@ -409,7 +407,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
   // Keep query pipeline in sync with removals.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  ctx_res.insert(ctx_ref.val)
+  ctx_res.insert(ctx)
 }
 
 ///|
@@ -417,8 +415,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ctx = ctx_ref.val
+  let ctx = current_ctx
   let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
 
   // Insert rigid bodies.
@@ -665,7 +662,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
       @dynamics.RigidBodyHandle::from_raw_parts(id, gen),
     )
   }
-  ctx_res.insert(ctx_ref.val)
+  ctx_res.insert(ctx)
 }
 
 ///|
@@ -675,8 +672,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ctx = ctx_ref.val
+  let ctx = current_ctx
   let dt = match world.get_resource(@time.fixed_time_resource_key) {
     Some(fixed_time) => fixed_time.timestep_seconds()
     None => abort("Missing Time<Fixed> resource in physics2d systems")
@@ -912,7 +908,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(_entity, bh) {
     recompute_body_mass_properties(ctx, bh.handle)
   })
-  ctx_res.insert(ctx_ref.val)
+  ctx_res.insert(ctx)
 }
 
 ///|
@@ -924,15 +920,13 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(current_ctx) else { return }
   guard ev_res.get() is Some(current_events) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ev_ref = Ref(current_events)
-  let ctx = ctx_ref.val
-  let events = ev_ref.val
+  let ctx = current_ctx
+  let events = current_events
   let gravity = mg_vec2_to_rapier(cfg.gravity)
   if !cfg.physics_pipeline_active {
     ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-    ctx_res.insert(ctx_ref.val)
-    ev_res.insert(ev_ref.val)
+    ctx_res.insert(ctx)
+    ev_res.insert(events)
     return
   }
   physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
@@ -994,8 +988,8 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   // Update query pipeline after stepping so queries see current positions.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   physics2d_hooks_clear_current_collider_map()
-  ctx_res.insert(ctx_ref.val)
-  ev_res.insert(ev_ref.val)
+  ctx_res.insert(ctx)
+  ev_res.insert(events)
 }
 
 ///|

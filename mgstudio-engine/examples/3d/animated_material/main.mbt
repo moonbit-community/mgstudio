@@ -91,9 +91,9 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let cube = mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+  let cube = meshes.modify(fn(mesh_assets) {
+    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+  })
 
   ignore(
     commands.spawn(
@@ -128,7 +128,9 @@ fn setup(
           (
             @mesh.Mesh3d::new(cube),
             @pbr.MeshMaterial3d::new(
-              material_assets |> @pbr.add_material(color_from_hue_deg(hue)),
+              materials.modify(fn(material_assets) {
+                material_assets |> @pbr.add_material(color_from_hue_deg(hue))
+              }),
             ),
             @transform.Transform::from_xyz(
               float_from_int(x),
@@ -154,19 +156,20 @@ fn animate_materials(
   if delta <= 0.0F {
     return
   }
-  let material_assets = materials.peek()
-  try! material_handles.view(fn(_entity, material_handle) {
-    let handle = material_handle.value().material
-    if material_assets.get(handle) is Some(material) {
-      let next_hue = wrap_hue_deg(
-        color_hue_deg(material.base_color) + delta * HUE_SPEED_DEG_PER_SEC,
-      )
-      material_assets.set(
-        handle,
-        material.with_base_color(color_from_hue_deg(next_hue)),
-      )
-      |> ignore
-    }
+  materials.modify(fn(material_assets) {
+    try! material_handles.view(fn(_entity, material_handle) {
+      let handle = material_handle.value().material
+      if material_assets.get(handle) is Some(material) {
+        let next_hue = wrap_hue_deg(
+          color_hue_deg(material.base_color) + delta * HUE_SPEED_DEG_PER_SEC,
+        )
+        material_assets.set(
+          handle,
+          material.with_base_color(color_from_hue_deg(next_hue)),
+        )
+        |> ignore
+      }
+    })
   })
 }
 

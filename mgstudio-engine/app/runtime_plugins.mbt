@@ -90,50 +90,53 @@ fn default_render_error_handler(
 }
 
 ///|
-let render_error_handler_ref : Ref[RenderErrorHandler] = Ref(
-  default_render_error_handler,
-)
+priv struct RenderRuntimeState {
+  mut error_handler : RenderErrorHandler
+  mut runtime_error : RenderRuntimeError?
+  mut stopped : Bool
+}
 
 ///|
-let render_runtime_error_ref : Ref[RenderRuntimeError?] = Ref(None)
-
-///|
-let render_runtime_stopped_ref : Ref[Bool] = Ref(false)
+let render_runtime_state : RenderRuntimeState = {
+  error_handler: default_render_error_handler,
+  runtime_error: None,
+  stopped: false,
+}
 
 ///|
 pub fn render_runtime_error() -> RenderRuntimeError? {
-  render_runtime_error_ref.val
+  render_runtime_state.runtime_error
 }
 
 ///|
 pub fn app_rendering_enabled() -> Bool {
-  !render_runtime_stopped_ref.val
+  !render_runtime_state.stopped
 }
 
 ///|
 pub fn app_rendering_stop() -> Unit {
-  render_runtime_stopped_ref.val = true
+  render_runtime_state.stopped = true
 }
 
 ///|
 pub fn app_rendering_resume() -> Unit {
-  render_runtime_stopped_ref.val = false
+  render_runtime_state.stopped = false
 }
 
 ///|
 pub fn set_render_error_handler(handler : RenderErrorHandler) -> Unit {
-  render_error_handler_ref.val = handler
+  render_runtime_state.error_handler = handler
 }
 
 ///|
 pub fn reset_render_error_handler() -> Unit {
-  render_error_handler_ref.val = default_render_error_handler
+  render_runtime_state.error_handler = default_render_error_handler
 }
 
 ///|
 pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
-  render_runtime_error_ref.val = Some(error)
-  match (render_error_handler_ref.val)(error) {
+  render_runtime_state.runtime_error = Some(error)
+  match (render_runtime_state.error_handler)(error) {
     RenderErrorPolicy::Ignore => ()
     RenderErrorPolicy::Panic =>
       abort("render runtime error: \{to_repr(error).to_string()}")
@@ -145,18 +148,18 @@ pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
         }
         ignore(world.send_message(key, AppExit::error()))
       }
-      render_runtime_stopped_ref.val = true
+      render_runtime_state.stopped = true
     }
-    RenderErrorPolicy::StopRendering => render_runtime_stopped_ref.val = true
-    RenderErrorPolicy::Recover => render_runtime_stopped_ref.val = false
+    RenderErrorPolicy::StopRendering => render_runtime_state.stopped = true
+    RenderErrorPolicy::Recover => render_runtime_state.stopped = false
   }
 }
 
 ///|
 pub fn app_runtime_reset() -> Unit {
-  render_runtime_error_ref.val = None
-  render_runtime_stopped_ref.val = false
-  render_error_handler_ref.val = default_render_error_handler
+  render_runtime_state.runtime_error = None
+  render_runtime_state.stopped = false
+  render_runtime_state.error_handler = default_render_error_handler
   host_app_reset_close()
 }
 
@@ -166,8 +169,8 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
   if !self.world().contains_message(key) {
     return None
   }
-  let reader = self.world().message_reader(key, Ref(0))
-  let exits = reader.read() catch { _ => return None }
+  let reader = self.world().message_reader(key)
+  let exits = reader.read()
   if exits.length() == 0 {
     None
   } else {
@@ -210,13 +213,13 @@ priv struct ScheduleRunnerState {
 }
 
 ///|
-let schedule_runner_state_ref : Ref[ScheduleRunnerState] = Ref(ScheduleRunnerState::{
+let schedule_runner_state : ScheduleRunnerState = ScheduleRunnerState::{
   tick: None,
-})
+}
 
 ///|
 fn schedule_runner_tick() -> Unit {
-  if schedule_runner_state_ref.val.tick is Some(tick) {
+  if schedule_runner_state.tick is Some(tick) {
     tick()
   }
 }
@@ -227,16 +230,16 @@ fn schedule_runner_build(
   mode : ScheduleRunnerMode,
 ) -> RunnerFn {
   fn() {
-    let app_ref : Ref[App[@ecs.World]] = Ref(app.run_startup())
+    let mut app_state = app.run_startup()
     match mode {
-      RunOnce => app_ref.val = app_ref.val.run_once()
+      RunOnce => app_state = app_state.run_once()
       RunLoop(interval_seconds) => {
         host_app_reset_close()
-        schedule_runner_state_ref.val.tick = Some(fn() {
-          app_ref.val = app_ref.val.run_once()
-          if app_ref.val.should_exit() is Some(_) {
+        schedule_runner_state.tick = Some(fn() {
+          app_state = app_state.run_once()
+          if app_state.should_exit() is Some(_) {
             host_app_request_close()
-            schedule_runner_state_ref.val.tick = None
+            schedule_runner_state.tick = None
           }
         })
         let step : FuncRef[() -> Unit] = fn() { schedule_runner_tick() }
@@ -246,7 +249,7 @@ fn schedule_runner_build(
           (interval_seconds * 1000.0F).to_int()
         }
         host_app_run_loop(step, interval_ms~)
-        schedule_runner_state_ref.val.tick = None
+        schedule_runner_state.tick = None
       }
     }
   }
@@ -377,10 +380,10 @@ priv struct LogState {
 }
 
 ///|
-let log_state_ref : Ref[LogState] = Ref(LogState::{
+let log_state : LogState = LogState::{
   config: LogPlugin::LogPlugin(),
   once_keys: @hashmap.HashMap([]),
-})
+}
 
 ///|
 fn log_level_rank(level : LogLevel) -> Int {
@@ -470,7 +473,7 @@ pub fn log_record(
   target? : String = "",
   name? : String = "",
 ) -> Unit {
-  let config = log_state_ref.val.config
+  let config = log_state.config
   if log_level_rank(level) > log_level_rank(log_effective_level(config, target)) {
     return
   }
@@ -495,10 +498,10 @@ pub fn log_once(
   target? : String = "",
   name? : String = "",
 ) -> Unit {
-  if log_state_ref.val.once_keys.contains(callsite) {
+  if log_state.once_keys.contains(callsite) {
     return
   }
-  log_state_ref.val.once_keys.set(callsite, true)
+  log_state.once_keys.set(callsite, true)
   log_record(level, message~, target~, name~)
 }
 
@@ -510,10 +513,10 @@ pub fn log_once_with(
   target? : String = "",
   name? : String = "",
 ) -> Unit {
-  if log_state_ref.val.once_keys.contains(callsite) {
+  if log_state.once_keys.contains(callsite) {
     return
   }
-  log_state_ref.val.once_keys.set(callsite, true)
+  log_state.once_keys.set(callsite, true)
   let message = producer()
   log_record(level, message~, target~, name~)
 }
@@ -575,7 +578,7 @@ pub impl Plugin for LogPlugin with name(_self) {
 
 ///|
 pub impl Plugin for LogPlugin with build(self, app) {
-  log_state_ref.val.config = self
-  log_state_ref.val.once_keys = @hashmap.HashMap([])
+  log_state.config = self
+  log_state.once_keys = @hashmap.HashMap([])
   app
 }

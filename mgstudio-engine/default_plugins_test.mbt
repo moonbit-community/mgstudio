@@ -272,7 +272,7 @@ test "default plugins: set(AssetPlugin::nearest()) replaces default asset plugin
     None => abort("missing asset server resource")
   }
 
-  debug_inspect(asset_server.default_sampler_nearest.val, content="true")
+  debug_inspect(asset_server.default_sampler_nearest, content="true")
 }
 
 ///|

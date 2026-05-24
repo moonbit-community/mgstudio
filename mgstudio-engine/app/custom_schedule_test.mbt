@@ -663,10 +663,13 @@ test "app: system run_if evaluates all conditions without short-circuiting" {
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
     .run_if(fn(_world : @ecs.World) { false })
-    .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
-      let value : Int = try! @json.from_json(state.val)
+    .run_if_stateful(0, fn(
+      _world : @ecs.World,
+      state : RunConditionState[Int],
+    ) {
+      let value = state.get()
       second_condition_seen.push(value)
-      state.val = (value + 1).to_json()
+      state.set(value + 1)
       true
     }),
   )
@@ -700,15 +703,15 @@ test "app: set run_if evaluates all conditions without short-circuiting and cach
       set_a,
       set_run_ifs=[fn(_world : @ecs.World) { false }],
       set_run_if_statefuls=[
-        (
-          (0).to_json(),
-          fn(_world : @ecs.World, state : Ref[Json]) {
-            let value : Int = try! @json.from_json(state.val)
-            second_condition_seen.push(value)
-            state.val = (value + 1).to_json()
-            true
-          },
-        ),
+        stateful_run_condition(0, fn(
+          _world : @ecs.World,
+          state : RunConditionState[Int],
+        ) {
+          let value = state.get()
+          second_condition_seen.push(value)
+          state.set(value + 1)
+          true
+        }),
       ],
     )
 
@@ -735,13 +738,13 @@ test "app: failed set run_if does not skip other set or system conditions" {
       system(fn(_world : @ecs.World) { system_runs.push("body") })
       .in_set(set_a)
       .in_set(set_b)
-      .run_if_stateful((0).to_json(), fn(
+      .run_if_stateful(0, fn(
         _world : @ecs.World,
-        state : Ref[Json],
+        state : RunConditionState[Int],
       ) {
-        let value : Int = try! @json.from_json(state.val)
+        let value = state.get()
         system_condition_hits.push(value)
-        state.val = (value + 1).to_json()
+        state.set(value + 1)
         true
       }),
     )
@@ -749,15 +752,15 @@ test "app: failed set run_if does not skip other set or system conditions" {
       fn(_world : @ecs.World) { false },
     ])
     .configure_sets(stage, set_b, set_run_if_statefuls=[
-      (
-        (0).to_json(),
-        fn(_world : @ecs.World, state : Ref[Json]) {
-          let value : Int = try! @json.from_json(state.val)
-          set_b_condition_hits.push(value)
-          state.val = (value + 1).to_json()
-          true
-        },
-      ),
+      stateful_run_condition(0, fn(
+        _world : @ecs.World,
+        state : RunConditionState[Int],
+      ) {
+        let value = state.get()
+        set_b_condition_hits.push(value)
+        state.set(value + 1)
+        true
+      }),
     ])
 
   sub_app = sub_app.update()
@@ -782,13 +785,13 @@ test "app: failed set run_if marks remaining set systems completed" {
       stage,
       system(fn(_world : @ecs.World) { system_runs.push("first") })
       .in_set(set_a)
-      .run_if_stateful((0).to_json(), fn(
+      .run_if_stateful(0, fn(
         _world : @ecs.World,
-        state : Ref[Json],
+        state : RunConditionState[Int],
       ) {
-        let value : Int = try! @json.from_json(state.val)
+        let value = state.get()
         first_system_condition_hits.push(value)
-        state.val = (value + 1).to_json()
+        state.set(value + 1)
         true
       }),
     )
@@ -796,13 +799,13 @@ test "app: failed set run_if marks remaining set systems completed" {
       stage,
       system(fn(_world : @ecs.World) { system_runs.push("second") })
       .in_set(set_a)
-      .run_if_stateful((0).to_json(), fn(
+      .run_if_stateful(0, fn(
         _world : @ecs.World,
-        state : Ref[Json],
+        state : RunConditionState[Int],
       ) {
-        let value : Int = try! @json.from_json(state.val)
+        let value = state.get()
         second_system_condition_hits.push(value)
-        state.val = (value + 1).to_json()
+        state.set(value + 1)
         true
       }),
     )

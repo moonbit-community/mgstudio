@@ -233,8 +233,9 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
@@ -243,8 +244,9 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
@@ -253,8 +255,9 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
@@ -263,14 +266,16 @@ fn setup(
 
   let sphere = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
-          @math.Sphere::new(0.4F),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+            @math.Sphere::new(0.4F),
+          )
+          .kind(@mesh_primitives_dim3.SphereKind::uv(72, 36))
+          .build(),
         )
-        .kind(@mesh_primitives_dim3.SphereKind::uv(72, 36))
-        .build(),
-      ),
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       materials

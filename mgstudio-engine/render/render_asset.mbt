@@ -49,7 +49,7 @@ pub fn[A] ExtractedAssets::new() -> ExtractedAssets[A] {
 
 ///|
 pub struct RenderAssets[A] {
-  items : @hashmap.HashMap[Int, Ref[A]]
+  items : @hashmap.HashMap[Int, A]
 }
 
 ///|
@@ -112,14 +112,11 @@ pub fn[A] RenderAssets::contains(self : RenderAssets[A], id : Int) -> Bool {
 
 ///|
 pub fn[A] RenderAssets::get(self : RenderAssets[A], id : Int) -> A? {
-  match self.items.get(id) {
-    Some(value_ref) => Some(value_ref.val)
-    None => None
-  }
+  self.items.get(id)
 }
 
 ///|
-pub fn[A] RenderAssets::get_mut(self : RenderAssets[A], id : Int) -> Ref[A]? {
+pub fn[A] RenderAssets::get_mut(self : RenderAssets[A], id : Int) -> A? {
   self.items.get(id)
 }
 
@@ -129,14 +126,14 @@ pub fn[A] RenderAssets::insert(
   id : Int,
   value : A,
 ) -> Unit {
-  self.items.set(id, Ref(value))
+  self.items.set(id, value)
 }
 
 ///|
 pub fn[A] RenderAssets::remove(self : RenderAssets[A], id : Int) -> A? {
-  guard self.items.get(id) is Some(value_ref) else { return None }
+  guard self.items.get(id) is Some(value) else { return None }
   self.items.remove(id)
-  Some(value_ref.val)
+  Some(value)
 }
 
 ///|
@@ -145,9 +142,7 @@ pub fn[A] RenderAssets::clear(self : RenderAssets[A]) -> Unit {
 }
 
 ///|
-pub fn[A] RenderAssets::to_array(
-  self : RenderAssets[A],
-) -> Array[(Int, Ref[A])] {
+pub fn[A] RenderAssets::to_array(self : RenderAssets[A]) -> Array[(Int, A)] {
   self.items.to_array()
 }
 

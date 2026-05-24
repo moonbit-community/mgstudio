@@ -61,7 +61,9 @@ fn setup(
   )
   |> ignore
 
-  let offscreen_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  let offscreen_mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  })
   let offscreen_material = materials
     .peek()
     .add(

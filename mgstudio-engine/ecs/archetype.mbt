@@ -314,8 +314,8 @@ fn World::ensure_bundle_info_for_writes(
     )
     component_local_ids.push(component_local_id)
     match self.required_components_state(component_local_id) {
-      Some(state_ref) =>
-        for entry in state_ref.val.all {
+      Some(state) =>
+        for entry in state.all {
           component_local_ids.push(entry.component_id)
         }
       None => ()
@@ -341,11 +341,11 @@ fn World::ensure_bundle_info_for_writes(
 }
 
 ///|
-fn archetype_bundle_info_covers_pending_writes(
-  pending_writes : PendingComponentWriteSet,
+fn archetype_bundle_info_covers_component_writes(
+  component_writes : ComponentWriteSet,
   bundle_info : BundleInfo,
 ) -> Bool {
-  for entry in pending_writes.entries {
+  for entry in component_writes.entries {
     let component_local_id = entry.local_component_id
     if !bundle_info.component_local_id_presence.contains(component_local_id) {
       return false
@@ -430,23 +430,26 @@ fn World::ensure_entity_archetype_capacity(
   if entity_id < 0 {
     return
   }
-  while self.entity_archetype_ids.length() <= entity_id {
-    self.entity_archetype_ids.push(-1)
+  while self.entity_storage.entity_archetype_ids.length() <= entity_id {
+    self.entity_storage.entity_archetype_ids.push(-1)
   }
-  while self.entity_component_local_ids.length() <= entity_id {
-    self.entity_component_local_ids.push([])
+  while self.entity_storage.entity_component_local_ids.length() <= entity_id {
+    self.entity_storage.entity_component_local_ids.push([])
   }
-  while self.entity_component_local_id_presence.length() <= entity_id {
-    self.entity_component_local_id_presence.push(@utils.IntBitSet::new())
+  while self.entity_storage.entity_component_local_id_presence.length() <=
+        entity_id {
+    self.entity_storage.entity_component_local_id_presence.push(
+      @utils.IntBitSet::new(),
+    )
   }
-  while self.entity_table_ids.length() <= entity_id {
-    self.entity_table_ids.push(-1)
+  while self.entity_storage.entity_table_ids.length() <= entity_id {
+    self.entity_storage.entity_table_ids.push(-1)
   }
-  while self.entity_table_rows.length() <= entity_id {
-    self.entity_table_rows.push(-1)
+  while self.entity_storage.entity_table_rows.length() <= entity_id {
+    self.entity_storage.entity_table_rows.push(-1)
   }
-  while self.entity_archetype_rows.length() <= entity_id {
-    self.entity_archetype_rows.push(-1)
+  while self.entity_storage.entity_archetype_rows.length() <= entity_id {
+    self.entity_storage.entity_archetype_rows.push(-1)
   }
 }
 
@@ -520,9 +523,12 @@ fn World::archetype_add_entity(
   entity : @core.Entity,
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
-  let entities = self.archetype_entities.get_or_init(archetype_id, fn() { [] })
+  let entities = self.entity_storage.archetype_entities.get_or_init(
+    archetype_id,
+    fn() { [] },
+  )
   let previous_length = entities.length()
-  let current_row = self.entity_archetype_rows[entity.id]
+  let current_row = self.entity_storage.entity_archetype_rows[entity.id]
   if current_row >= 0 &&
     current_row < entities.length() &&
     entities[current_row].id == entity.id {
@@ -532,10 +538,10 @@ fn World::archetype_add_entity(
   match archetype_entity_index_by_id(entities, entity.id) {
     Some(index) => {
       entities[index] = entity
-      self.entity_archetype_rows[entity.id] = index
+      self.entity_storage.entity_archetype_rows[entity.id] = index
     }
     None => {
-      self.entity_archetype_rows[entity.id] = entities.length()
+      self.entity_storage.entity_archetype_rows[entity.id] = entities.length()
       entities.push(entity)
       if previous_length == 0 {
         self.mark_archetype_non_empty(archetype_id)
@@ -550,12 +556,13 @@ fn World::archetype_remove_entity_by_id(
   archetype_id : Int,
   entity_id : Int,
 ) -> Unit {
-  guard self.archetype_entities.get(archetype_id) is Some(entities) else {
+  guard self.entity_storage.archetype_entities.get(archetype_id)
+    is Some(entities) else {
     return
   }
   let index = if entity_id >= 0 &&
-    entity_id < self.entity_archetype_rows.length() {
-    let row = self.entity_archetype_rows[entity_id]
+    entity_id < self.entity_storage.entity_archetype_rows.length() {
+    let row = self.entity_storage.entity_archetype_rows[entity_id]
     if row >= 0 && row < entities.length() && entities[row].id == entity_id {
       Some(row)
     } else {
@@ -570,14 +577,15 @@ fn World::archetype_remove_entity_by_id(
     let swapped_entity = entities[last_index]
     entities[index] = swapped_entity
     self.ensure_entity_archetype_capacity(swapped_entity.id)
-    self.entity_archetype_rows[swapped_entity.id] = index
+    self.entity_storage.entity_archetype_rows[swapped_entity.id] = index
   }
   ignore(entities.pop())
   if entities.length() == 0 {
     self.mark_archetype_empty(archetype_id)
   }
-  if entity_id >= 0 && entity_id < self.entity_archetype_rows.length() {
-    self.entity_archetype_rows[entity_id] = -1
+  if entity_id >= 0 &&
+    entity_id < self.entity_storage.entity_archetype_rows.length() {
+    self.entity_storage.entity_archetype_rows[entity_id] = -1
   }
 }
 
@@ -660,7 +668,7 @@ fn World::ensure_archetype_for_local_components(
       self.archetype_component_definition_id_presence.set(
         archetype_id, definition_component_presence,
       )
-      self.archetype_entities.set(archetype_id, [])
+      self.entity_storage.archetype_entities.set(archetype_id, [])
       for component_local_id in normalized {
         let archetype_ids = self.archetype_ids_by_component_local_id.get_or_init(
           component_local_id,
@@ -931,17 +939,17 @@ fn World::bundle_migrate_same_archetype(
   entity : @core.Entity,
   archetype_id : Int,
 ) -> Unit {
-  self.entity_archetype_ids[entity.id] = archetype_id
-  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
+  self.entity_storage.entity_archetype_ids[entity.id] = archetype_id
+  self.entity_storage.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
     archetype_id,
   )
   if archetype_id < 0 {
-    self.entity_archetype_rows[entity.id] = -1
+    self.entity_storage.entity_archetype_rows[entity.id] = -1
     return
   }
-  if self.archetype_entities.get(archetype_id) is Some(entities) {
+  if self.entity_storage.archetype_entities.get(archetype_id) is Some(entities) {
     if archetype_entity_index_by_id(entities, entity.id) is Some(index) {
-      self.entity_archetype_rows[entity.id] = index
+      self.entity_storage.entity_archetype_rows[entity.id] = index
       return
     }
   }
@@ -958,14 +966,14 @@ fn World::bundle_migrate_new_archetype(
   if from_archetype_id >= 0 {
     self.archetype_remove_entity_by_id(from_archetype_id, entity.id)
   }
-  self.entity_archetype_ids[entity.id] = to_archetype_id
-  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
+  self.entity_storage.entity_archetype_ids[entity.id] = to_archetype_id
+  self.entity_storage.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
     to_archetype_id,
   )
   if to_archetype_id >= 0 {
     self.archetype_add_entity(to_archetype_id, entity)
   } else {
-    self.entity_archetype_rows[entity.id] = -1
+    self.entity_storage.entity_archetype_rows[entity.id] = -1
   }
 }
 
@@ -976,31 +984,32 @@ fn World::swap_remove_entity_from_table(
   table_id : Int,
 ) -> Unit {
   guard self.entity_table_row(entity) is Some(row) else {
-    if entity.id >= 0 && entity.id < self.entity_table_rows.length() {
-      self.entity_table_ids[entity.id] = -1
-      self.entity_table_rows[entity.id] = -1
+    if entity.id >= 0 &&
+      entity.id < self.entity_storage.entity_table_rows.length() {
+      self.entity_storage.entity_table_ids[entity.id] = -1
+      self.entity_storage.entity_table_rows[entity.id] = -1
     }
     return
   }
   guard self.table_storage(table_id) is Some(table_ref) else {
-    self.entity_table_ids[entity.id] = -1
-    self.entity_table_rows[entity.id] = -1
+    self.entity_storage.entity_table_ids[entity.id] = -1
+    self.entity_storage.entity_table_rows[entity.id] = -1
     return
   }
-  match table_ref.val.swap_remove_row(row) {
+  match table_ref.swap_remove_row(self, row) {
     Some(result) => {
       if result.swapped_entity is Some(swapped_entity) &&
         result.swapped_row is Some(swapped_row) {
         self.ensure_entity_archetype_capacity(swapped_entity.id)
-        self.entity_table_rows[swapped_entity.id] = swapped_row.index()
+        self.entity_storage.entity_table_rows[swapped_entity.id] = swapped_row.index()
       }
       self.ensure_entity_archetype_capacity(result.removed_entity.id)
-      self.entity_table_ids[result.removed_entity.id] = -1
-      self.entity_table_rows[result.removed_entity.id] = -1
+      self.entity_storage.entity_table_ids[result.removed_entity.id] = -1
+      self.entity_storage.entity_table_rows[result.removed_entity.id] = -1
     }
     None => {
-      self.entity_table_ids[entity.id] = -1
-      self.entity_table_rows[entity.id] = -1
+      self.entity_storage.entity_table_ids[entity.id] = -1
+      self.entity_storage.entity_table_rows[entity.id] = -1
     }
   }
 }
@@ -1011,10 +1020,10 @@ fn World::bundle_migrate_new_archetype_same_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> Unit {
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
-  self.write_pending_sparse_component_writes(entity, pending_writes)
+  self.commit_sparse_component_write_metadata(entity, component_writes)
 }
 
 ///|
@@ -1023,7 +1032,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> Unit {
   let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
   let to_table_id = self.archetype_table_id_or_invalid(to_archetype_id)
@@ -1041,8 +1050,10 @@ fn World::bundle_migrate_new_archetype_new_table(
   let target_row = if to_table_id >= 0 &&
     target_component_local_ids.length() > 0 {
     let appended_row = match
-      self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
-        entity, source_table, source_row, pending_writes,
+      self
+      .ensure_table_storage(to_table_id)
+      .append_row_from_source_table(
+        self, entity, source_table, source_row, component_writes,
       ) {
       Some(row) => Some(row)
       None =>
@@ -1056,30 +1067,31 @@ fn World::bundle_migrate_new_archetype_new_table(
   }
   if from_table_id >= 0 {
     self.swap_remove_entity_from_table(entity, from_table_id)
-  } else if entity.id >= 0 && entity.id < self.entity_table_rows.length() {
-    self.entity_table_ids[entity.id] = -1
-    self.entity_table_rows[entity.id] = -1
+  } else if entity.id >= 0 &&
+    entity.id < self.entity_storage.entity_table_rows.length() {
+    self.entity_storage.entity_table_ids[entity.id] = -1
+    self.entity_storage.entity_table_rows[entity.id] = -1
   }
   if from_archetype_id >= 0 {
     self.archetype_remove_entity_by_id(from_archetype_id, entity.id)
   }
-  self.entity_archetype_ids[entity.id] = to_archetype_id
+  self.entity_storage.entity_archetype_ids[entity.id] = to_archetype_id
   if to_archetype_id >= 0 {
     self.archetype_add_entity(to_archetype_id, entity)
   } else {
-    self.entity_archetype_rows[entity.id] = -1
+    self.entity_storage.entity_archetype_rows[entity.id] = -1
   }
-  self.entity_table_ids[entity.id] = if to_table_id >= 0 &&
+  self.entity_storage.entity_table_ids[entity.id] = if to_table_id >= 0 &&
     target_component_local_ids.length() > 0 {
     to_table_id
   } else {
     -1
   }
-  self.entity_table_rows[entity.id] = match target_row {
+  self.entity_storage.entity_table_rows[entity.id] = match target_row {
     Some(row) => row.index()
     None => -1
   }
-  self.write_pending_sparse_component_writes(entity, pending_writes)
+  self.commit_sparse_component_write_metadata(entity, component_writes)
 }
 
 ///|
@@ -1087,7 +1099,7 @@ fn World::execute_bundle_migration_plan(
   self : World,
   entity : @core.Entity,
   plan : ArchetypeBundleMigrationPlan,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> ArchetypeBundleMigrationPath {
   self.ensure_entity_archetype_capacity(entity.id)
   match plan.path {
@@ -1099,14 +1111,14 @@ fn World::execute_bundle_migration_plan(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_writes,
+          component_writes,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_writes,
+          component_writes,
         )
       }
     NewArchetypeNewTable =>
@@ -1115,14 +1127,14 @@ fn World::execute_bundle_migration_plan(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_writes,
+          component_writes,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_writes,
+          component_writes,
         )
       }
   }
@@ -1135,10 +1147,10 @@ fn World::migrate_entity_bundle(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
-  self.execute_bundle_migration_plan(entity, plan, pending_writes)
+  self.execute_bundle_migration_plan(entity, plan, component_writes)
 }
 
 ///|
@@ -1177,10 +1189,11 @@ fn World::entity_local_components(
   self : World,
   entity : @core.Entity,
 ) -> Array[Int] {
-  if entity.id < 0 || entity.id >= self.entity_component_local_ids.length() {
+  if entity.id < 0 ||
+    entity.id >= self.entity_storage.entity_component_local_ids.length() {
     return []
   }
-  self.entity_component_local_ids[entity.id]
+  self.entity_storage.entity_component_local_ids[entity.id]
 }
 
 ///|
@@ -1189,10 +1202,10 @@ fn World::entity_component_local_presence(
   entity : @core.Entity,
 ) -> @utils.IntBitSet? {
   if entity.id < 0 ||
-    entity.id >= self.entity_component_local_id_presence.length() {
+    entity.id >= self.entity_storage.entity_component_local_id_presence.length() {
     return None
   }
-  Some(self.entity_component_local_id_presence[entity.id])
+  Some(self.entity_storage.entity_component_local_id_presence[entity.id])
 }
 
 ///|
@@ -1214,8 +1227,8 @@ fn World::entity_replace_component_local_ids_without_membership_update(
   component_local_ids : Array[Int],
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
-  self.entity_component_local_ids[entity.id] = component_local_ids.copy()
-  let presence = self.entity_component_local_id_presence[entity.id]
+  self.entity_storage.entity_component_local_ids[entity.id] = component_local_ids.copy()
+  let presence = self.entity_storage.entity_component_local_id_presence[entity.id]
   presence.clear()
   for component_local_id in component_local_ids {
     presence.insert(component_local_id)
@@ -1228,14 +1241,14 @@ fn World::initialize_entity_archetype_tracking(
   entity : @core.Entity,
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
-  let previous_archetype_id = self.entity_archetype_ids[entity.id]
+  let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
   self.entity_replace_component_local_ids_without_membership_update(entity, [])
   ignore(
     self.migrate_entity_bundle(
       entity,
       previous_archetype_id,
       0,
-      pending_component_write_set_new(),
+      component_write_set_new(),
     ),
   )
 }
@@ -1245,11 +1258,12 @@ fn World::clear_entity_archetype_tracking(
   self : World,
   entity : @core.Entity,
 ) -> Unit {
-  if entity.id < 0 || entity.id >= self.entity_archetype_ids.length() {
+  if entity.id < 0 ||
+    entity.id >= self.entity_storage.entity_archetype_ids.length() {
     return
   }
-  let previous_archetype_id = self.entity_archetype_ids[entity.id]
-  let component_local_ids = self.entity_component_local_ids[entity.id]
+  let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
+  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
   for component_local_id in component_local_ids {
     self.decrement_component_membership_count_local(component_local_id)
     self.bump_component_membership_generation_local(component_local_id)
@@ -1259,7 +1273,7 @@ fn World::clear_entity_archetype_tracking(
       entity,
       previous_archetype_id,
       -1,
-      pending_component_write_set_new(),
+      component_write_set_new(),
     ),
   )
   self.entity_replace_component_local_ids_without_membership_update(entity, [])
@@ -1272,12 +1286,12 @@ fn World::entity_add_component_local_id(
   component_local_id : Int,
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
-  let component_local_ids = self.entity_component_local_ids[entity.id]
-  if !self.entity_component_local_id_presence[entity.id].contains(
+  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
+  if !self.entity_storage.entity_component_local_id_presence[entity.id].contains(
       component_local_id,
     ) {
     component_local_ids.push(component_local_id)
-    self.entity_component_local_id_presence[entity.id].insert(
+    self.entity_storage.entity_component_local_id_presence[entity.id].insert(
       component_local_id,
     )
     self.increment_component_membership_count_local(component_local_id)
@@ -1291,10 +1305,11 @@ fn World::entity_remove_component_local_id(
   entity : @core.Entity,
   component_local_id : Int,
 ) -> Unit {
-  if entity.id < 0 || entity.id >= self.entity_component_local_ids.length() {
+  if entity.id < 0 ||
+    entity.id >= self.entity_storage.entity_component_local_ids.length() {
     return
   }
-  let component_local_ids = self.entity_component_local_ids[entity.id]
+  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
   let mut remove_index : Int? = None
   for index in 0..<component_local_ids.length() {
     if component_local_ids[index] == component_local_id {
@@ -1308,7 +1323,9 @@ fn World::entity_remove_component_local_id(
     component_local_ids[index] = component_local_ids[last_index]
   }
   ignore(component_local_ids.pop())
-  self.entity_component_local_id_presence[entity.id].remove(component_local_id)
+  self.entity_storage.entity_component_local_id_presence[entity.id].remove(
+    component_local_id,
+  )
   self.decrement_component_membership_count_local(component_local_id)
   self.bump_component_membership_generation_local(component_local_id)
 }
@@ -1318,20 +1335,20 @@ fn World::refresh_entity_archetype_with_bundle_info(
   self : World,
   entity : @core.Entity,
   bundle_info : BundleInfo?,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> Unit {
   if !self.is_alive(entity) {
     return
   }
   self.ensure_entity_archetype_capacity(entity.id)
-  let previous_archetype_id = self.entity_archetype_ids[entity.id]
+  let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
   let current_component_local_ids = self.entity_local_components(entity)
   let mut next_archetype_id : Int? = None
   let mut normalized_components : Array[Int]? = None
   match bundle_info {
     Some(bundle_info) if previous_archetype_id >= 0 =>
-      if archetype_bundle_info_covers_pending_writes(
-          pending_writes, bundle_info,
+      if archetype_bundle_info_covers_component_writes(
+          component_writes, bundle_info,
         ) {
         next_archetype_id = Some(
           self.ensure_archetype_insert_bundle_edge_target(
@@ -1350,7 +1367,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
     let previous_presence = self.archetype_component_local_id_presence
       .get(previous_archetype_id)
       .unwrap_or(@utils.IntBitSet::new())
-    let current_presence = self.entity_component_local_id_presence[entity.id]
+    let current_presence = self.entity_storage.entity_component_local_id_presence[entity.id]
     if current_len == previous_len + 1 {
       match
         archetype_check_single_add(
@@ -1402,25 +1419,25 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   ignore(
     self.migrate_entity_bundle(
-      entity, previous_archetype_id, next_archetype_id, pending_writes,
+      entity, previous_archetype_id, next_archetype_id, component_writes,
     ),
   )
 }
 
 ///|
-fn World::refresh_entity_archetype_with_pending_writes(
+fn World::refresh_entity_archetype_with_component_writes(
   self : World,
   entity : @core.Entity,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> Unit {
-  self.refresh_entity_archetype_with_bundle_info(entity, None, pending_writes)
+  self.refresh_entity_archetype_with_bundle_info(entity, None, component_writes)
 }
 
 ///|
 fn World::refresh_entity_archetype(self : World, entity : @core.Entity) -> Unit {
-  self.refresh_entity_archetype_with_pending_writes(
+  self.refresh_entity_archetype_with_component_writes(
     entity,
-    pending_component_write_set_new(),
+    component_write_set_new(),
   )
 }
 
@@ -1434,7 +1451,7 @@ fn World::refresh_entity_archetype_after_component_remove(
     return
   }
   self.ensure_entity_archetype_capacity(entity.id)
-  let previous_archetype_id = self.entity_archetype_ids[entity.id]
+  let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
   if previous_archetype_id < 0 {
     self.refresh_entity_archetype(entity)
     return
@@ -1460,7 +1477,7 @@ fn World::refresh_entity_archetype_after_component_remove(
       entity,
       previous_archetype_id,
       next_archetype_id,
-      pending_component_write_set_new(),
+      component_write_set_new(),
     ),
   )
 }
@@ -1470,10 +1487,11 @@ pub fn World::entity_archetype_id(self : World, entity : @core.Entity) -> Int? {
   if !self.is_alive(entity) {
     return None
   }
-  if entity.id < 0 || entity.id >= self.entity_archetype_ids.length() {
+  if entity.id < 0 ||
+    entity.id >= self.entity_storage.entity_archetype_ids.length() {
     return None
   }
-  match self.entity_archetype_ids[entity.id] {
+  match self.entity_storage.entity_archetype_ids[entity.id] {
     archetype_id if archetype_id >= 0 => Some(archetype_id)
     _ => None
   }
@@ -1481,7 +1499,7 @@ pub fn World::entity_archetype_id(self : World, entity : @core.Entity) -> Int? {
 
 ///|
 pub fn World::archetype_entity_count(self : World, archetype_id : Int) -> Int {
-  match self.archetype_entities.get(archetype_id) {
+  match self.entity_storage.archetype_entities.get(archetype_id) {
     Some(entities) => entities.length()
     None => 0
   }
@@ -1503,7 +1521,7 @@ fn World::archetype_entities_view(
   self : World,
   archetype_id : Int,
 ) -> Array[@core.Entity]? {
-  self.archetype_entities.get(archetype_id)
+  self.entity_storage.archetype_entities.get(archetype_id)
 }
 
 ///|
@@ -1572,11 +1590,11 @@ fn World::archetype_definition_component_presence_view(
 
 ///|
 pub fn World::archetype_count(self : World) -> Int {
-  let count = Ref(0)
+  let mut count = 0
   for _ in self.archetype_component_local_ids.iter() {
-    count.val = count.val + 1
+    count = count + 1
   }
-  count.val
+  count
 }
 
 ///|

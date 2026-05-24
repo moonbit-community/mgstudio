@@ -23,12 +23,12 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 
 ///|
 priv struct PickingA11yActionReaderState {
-  mut cursor : Int
+  cursor : @ecs.MessageCursor[@a11y.ActionRequest]
 }
 
 ///|
 fn PickingA11yActionReaderState::PickingA11yActionReaderState() -> PickingA11yActionReaderState {
-  { cursor: 0 }
+  { cursor: @ecs.MessageCursor::MessageCursor() }
 }
 
 ///|
@@ -49,25 +49,27 @@ fn ensure_picking_a11y_action_reader_state(world : @ecs.World) -> Unit {
 ///|
 fn read_pending_a11y_actions(world : @ecs.World) -> Array[@a11y.ActionRequest] {
   ensure_picking_a11y_action_reader_state(world)
-  let state_res = world.resource(picking_a11y_action_reader_state_resource_key)
-  guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref(state_value)
-  let cursor = Ref(state_ref.val.cursor)
-  let reader = world.message_reader(@a11y.ecs_msg_key_action_request, cursor)
-  let actions = try! reader.read()
-  state_ref.val.cursor = cursor.val
-  state_res.insert(state_ref.val)
-  actions
+  guard world.get_resource_mut(picking_a11y_action_reader_state_resource_key)
+    is Some(state) else {
+    return []
+  }
+  state.modify(fn(state) {
+    let reader = world.message_reader(
+      @a11y.ecs_msg_key_action_request,
+      cursor=state.cursor,
+    )
+    reader.read()
+  })
 }
 
 ///|
 priv struct PickingPointerInputEventReaderState {
-  mut cursor : Int
+  cursor : @ecs.MessageCursor[PointerInput]
 }
 
 ///|
 fn PickingPointerInputEventReaderState::PickingPointerInputEventReaderState() -> PickingPointerInputEventReaderState {
-  { cursor: 0 }
+  { cursor: @ecs.MessageCursor::MessageCursor() }
 }
 
 ///|
@@ -95,26 +97,26 @@ fn read_pending_pointer_event_inputs(world : @ecs.World) -> Array[PointerInput] 
     return []
   }
   ensure_picking_pointer_input_event_reader_state(world)
-  let state_res = world.resource(
-    picking_pointer_input_event_reader_state_resource_key,
-  )
-  guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref(state_value)
-  let cursor = Ref(state_ref.val.cursor)
-  let reader = world.message_reader(pointer_input_message_key(), cursor)
-  let inputs = try! reader.read()
-  state_ref.val.cursor = cursor.val
-  state_res.insert(state_ref.val)
-  inputs
+  guard world.get_resource_mut(
+      picking_pointer_input_event_reader_state_resource_key,
+    )
+    is Some(state) else {
+    return []
+  }
+  state.modify(fn(state) {
+    let reader = world.message_reader(
+      pointer_input_message_key(),
+      cursor=state.cursor,
+    )
+    reader.read()
+  })
 }
 
 ///|
 fn picking_set_input_focus(world : @ecs.World, entity : @core.Entity) -> Unit {
-  let focus_ref = world.get_resource_ref_mut(
-    @input_focus.InputFocus::resource(),
-  )
-  guard focus_ref is Some(input_focus_ref) else { return }
-  input_focus_ref.val.set(entity)
+  let focus = world.get_resource_mut(@input_focus.InputFocus::resource())
+  guard focus is Some(input_focus) else { return }
+  input_focus.modify(fn(value) { value.set(entity) })
 }
 
 ///|
@@ -125,8 +127,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     return
   }
   let events_res = @app.get_picking_events_resource(world)
-  guard events_res.get() is Some(events_value) else { return }
-  let events = Ref(events_value)
+  guard events_res.get() is Some(events) else { return }
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
     guard (try! world.get_by_key(entity, @ui.ecs_key_node)) is Some(target_node) else {
@@ -317,7 +318,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
       _ => ()
     }
   }
-  events_res.insert(events.val)
+  events_res.insert(events)
 }
 
 ///|
@@ -329,11 +330,9 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   }
   let hover_map = get_hover_map_resource(world).get()
   let events_res = @app.get_picking_events_resource(world)
-  guard events_res.get() is Some(events_value) else { return }
-  let events = Ref(events_value)
+  guard events_res.get() is Some(events) else { return }
   let state_res = get_picking_state_resource(world)
-  guard state_res.get() is Some(state_value) else { return }
-  let picking_state = Ref(state_value)
+  guard state_res.get() is Some(picking_state) else { return }
   for input in inputs {
     let pointer_id = input.pointer
     let pos_opt = input.window_position
@@ -345,7 +344,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
     // Move.
     match pos_opt {
       Some(pos) => {
-        match PickingState::last_position(picking_state.val, pointer_id) {
+        match PickingState::last_position(picking_state, pointer_id) {
           Some(prev) =>
             if prev.x != pos.x || prev.y != pos.y {
               @app.PickingEvents::push(
@@ -375,7 +374,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
     }
 
     // Hover enter/leave.
-    let prev_hovered = PickingState::hovered(picking_state.val, pointer_id)
+    let prev_hovered = PickingState::hovered(picking_state, pointer_id)
     if !picking_option_entity_eq(prev_hovered, hit_top) {
       let pos = picking_window_position_or_origin(pos_opt)
       match prev_hovered {
@@ -424,7 +423,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
     }
     if input.just_released {
       let pos = picking_window_position_or_origin(pos_opt)
-      match PickingState::pressed(picking_state.val, pointer_id) {
+      match PickingState::pressed(picking_state, pointer_id) {
         Some(pressed_entity) => {
           @app.PickingEvents::push(
             events,
@@ -453,6 +452,6 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
       PickingState::set_pressed(picking_state, pointer_id, None)
     }
   }
-  events_res.insert(events.val)
-  state_res.insert(picking_state.val)
+  events_res.insert(events)
+  state_res.insert(picking_state)
 }

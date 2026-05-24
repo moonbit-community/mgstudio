@@ -425,9 +425,6 @@ pub fn Node::Node() -> Node {
 }
 
 ///|
-pub impl @ecs.Mutable for Node
-
-///|
 pub fn Node::with_position_type(
   self : Node,
   position_type : PositionType,
@@ -792,9 +789,6 @@ pub struct ImageNode {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @ecs.Mutable for ImageNode
-
-///|
 pub fn ImageNode::ImageNode() -> ImageNode {
   ImageNode::{
     color: @sprite.Color::white(),
@@ -1143,9 +1137,9 @@ fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
 }
 
 ///|
-fn create_white_texture_if_needed(ctx : Ref[UiContext]) -> Unit {
+fn create_white_texture_if_needed(ctx : UiContext) -> Unit {
   // In unit tests we may pre-seed a dummy handle; avoid touching host APIs then.
-  if ctx.val.white_texture.id() > 0 {
+  if ctx.white_texture.id() > 0 {
     return
   }
   let size = @math.UVec2::new(1, 1)
@@ -1156,7 +1150,7 @@ fn create_white_texture_if_needed(ctx : Ref[UiContext]) -> Unit {
   let b : Byte = u.to_byte()
   let bytes = Bytes::from_array([b, b, b, b])
   @asset.asset_update_texture_region_rgba8(handle, rect, bytes)
-  ctx.val.white_texture = handle
+  ctx.white_texture = handle
 }
 
 ///|
@@ -1493,7 +1487,7 @@ fn ui_propagate_target_camera_subtree(
 
 ///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
-  let ctx = Ref(ensure_ui_context_resource(world))
+  let ctx = ensure_ui_context_resource(world)
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
   let win_h = @window.window_height()
@@ -1534,24 +1528,24 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
       ui_pointer_pos_in_viewport(mouse, viewport_origin, viewport_size)
     None => None
   }
-  ctx.val.viewport_origin = viewport_origin
-  ctx.val.viewport_size = viewport_size
-  ctx.val.camera_entity = best_entity
-  ctx.val.camera_transform = camera_transform
-  ctx.val.camera_scale = camera_scale
-  ctx.val.pointer_pos = pointer_pos
-  ctx.val.pointer_down = @input.mouse_button_pressed(@window.MouseButton::Left)
-  ctx.val.pointer_just_pressed = @input.mouse_button_just_pressed(
+  ctx.viewport_origin = viewport_origin
+  ctx.viewport_size = viewport_size
+  ctx.camera_entity = best_entity
+  ctx.camera_transform = camera_transform
+  ctx.camera_scale = camera_scale
+  ctx.pointer_pos = pointer_pos
+  ctx.pointer_down = @input.mouse_button_pressed(@window.MouseButton::Left)
+  ctx.pointer_just_pressed = @input.mouse_button_just_pressed(
     @window.MouseButton::Left,
   )
-  ctx.val.pointer_just_released = @input.mouse_button_just_released(
+  ctx.pointer_just_released = @input.mouse_button_just_released(
     @window.MouseButton::Left,
   )
-  ctx.val.wheel_delta = match @input.mouse_wheel_delta_opt() {
+  ctx.wheel_delta = match @input.mouse_wheel_delta_opt() {
     Some(v) => v
     None => @math.Vec2::new(0.0F, 0.0F)
   }
-  get_ui_context_resource(world).insert(ctx.val)
+  get_ui_context_resource(world).insert(ctx)
 }
 
 ///|
@@ -1731,30 +1725,28 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     Float::from_double(v)
   }
 
-  let root_viewport_size = Ref(@math.Vec2::new(0.0F, 0.0F))
+  let mut root_viewport_size = @math.Vec2::new(0.0F, 0.0F)
 
   fn dim_for_val(val : Val) -> @taffy_style.Dimension {
     match val {
       Auto => @taffy_helpers.auto()
       Px(px) => @taffy_helpers.length(f2d(px))
       Percent(p) => @taffy_helpers.percent(f2d(p / 100.0F))
-      Vw(p) =>
-        @taffy_helpers.length(f2d(root_viewport_size.val.x * (p / 100.0F)))
-      Vh(p) =>
-        @taffy_helpers.length(f2d(root_viewport_size.val.y * (p / 100.0F)))
+      Vw(p) => @taffy_helpers.length(f2d(root_viewport_size.x * (p / 100.0F)))
+      Vh(p) => @taffy_helpers.length(f2d(root_viewport_size.y * (p / 100.0F)))
       VMin(p) => {
-        let m = if root_viewport_size.val.x < root_viewport_size.val.y {
-          root_viewport_size.val.x
+        let m = if root_viewport_size.x < root_viewport_size.y {
+          root_viewport_size.x
         } else {
-          root_viewport_size.val.y
+          root_viewport_size.y
         }
         @taffy_helpers.length(f2d(m * (p / 100.0F)))
       }
       VMax(p) => {
-        let m = if root_viewport_size.val.x > root_viewport_size.val.y {
-          root_viewport_size.val.x
+        let m = if root_viewport_size.x > root_viewport_size.y {
+          root_viewport_size.x
         } else {
-          root_viewport_size.val.y
+          root_viewport_size.y
         }
         @taffy_helpers.length(f2d(m * (p / 100.0F)))
       }
@@ -2153,8 +2145,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         .with_position(@taffy_helpers.position_relative())
         .with_size(
           @taffy_geometry.Size(
-            width=@taffy_helpers.length(f2d(root_viewport_size.val.x)),
-            height=@taffy_helpers.length(f2d(root_viewport_size.val.y)),
+            width=@taffy_helpers.length(f2d(root_viewport_size.x)),
+            height=@taffy_helpers.length(f2d(root_viewport_size.y)),
           ),
         )
     }
@@ -2163,7 +2155,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn layout_root(root : @core.Entity) -> Unit {
     let root_ctx = ui_root_resolved_camera_state(world, root, fallback_ctx)
-    root_viewport_size.val = root_ctx.viewport_size
+    root_viewport_size = root_ctx.viewport_size
     let explicit_root = try! world.contains_by_key(root, ecs_key_ui_root)
     let root_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
@@ -2862,7 +2854,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let res = get_ui_stack_resource(world)
-  let stack = Ref(res.get().unwrap_or(UiStack::UiStack()))
+  let stack = res.get().unwrap_or(UiStack::UiStack())
   UiStack::clear(stack)
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
@@ -2946,11 +2938,11 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     }
     cmp_int(a.3, b.3)
   })
-  fn visit(entity : @core.Entity, stack : Ref[UiStack]) -> Unit {
+  fn visit(entity : @core.Entity, stack : UiStack) -> Unit {
     guard (try! world.contains_by_key(entity, ecs_key_ui_layout)) else {
       return
     }
-    stack.val.uinodes.push(entity)
+    stack.uinodes.push(entity)
     let children = ui_collect_effective_children(world, entity)
     if children.length() == 0 {
       return
@@ -2980,17 +2972,17 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   }
 
   for root in roots {
-    let start = stack.val.uinodes.length()
+    let start = stack.uinodes.length()
     visit(root.0, stack)
-    let end = stack.val.uinodes.length()
-    stack.val.partition.push((start, end))
+    let end = stack.uinodes.length()
+    stack.partition.push((start, end))
   }
 
   // Convert the Bevy-style UiStack ordering into a stable render z for the
   // engine's 2D renderer. We reserve a high base z to keep UI on top of 2D
   // world sprites, and use a coarse step to allow per-node sublayers.
-  for i in 0..<stack.val.uinodes.length() {
-    let entity = stack.val.uinodes[i]
+  for i in 0..<stack.uinodes.length() {
+    let entity = stack.uinodes[i]
     match (try! world.get_by_key(entity, ecs_key_ui_layout)) {
       Some(layout0) =>
         if layout0.stack_index() != i {
@@ -3041,7 +3033,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       }
     }
   }
-  res.insert(stack.val)
+  res.insert(stack)
 }
 
 ///|
@@ -3097,17 +3089,14 @@ pub fn ui_build_a11y_tree_update(
       mark_required(required, entity)
     }
   }
-  fn push_nonempty(parts : Ref[Array[String]], text : String) -> Unit {
+  fn push_nonempty(parts : Array[String], text : String) -> Unit {
     let trimmed = text.trim()
     if trimmed != "" {
-      parts.val.push(trimmed.to_owned())
+      parts.push(trimmed.to_owned())
     }
   }
 
-  fn collect_subtree_text(
-    entity : @core.Entity,
-    out : Ref[Array[String]],
-  ) -> Unit {
+  fn collect_subtree_text(entity : @core.Entity, out : Array[String]) -> Unit {
     if (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_root) {
       push_nonempty(out, text_root.content)
     }
@@ -3146,10 +3135,9 @@ pub fn ui_build_a11y_tree_update(
     let mut name : String? = None
     for child in children {
       let parts : Array[String] = []
-      let out = Ref(parts)
-      collect_subtree_text(child, out)
-      if out.val.length() > 0 {
-        name = Some(join_with_space(out.val))
+      collect_subtree_text(child, parts)
+      if parts.length() > 0 {
+        name = Some(join_with_space(parts))
       }
     }
     name
@@ -3157,9 +3145,8 @@ pub fn ui_build_a11y_tree_update(
 
   fn calc_value_from_self(entity : @core.Entity) -> String {
     let parts : Array[String] = []
-    let out = Ref(parts)
-    collect_subtree_text(entity, out)
-    join_with_space(out.val)
+    collect_subtree_text(entity, parts)
+    join_with_space(parts)
   }
 
   // Root node.

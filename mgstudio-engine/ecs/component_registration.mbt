@@ -351,8 +351,8 @@ fn World::install_required_component_metadata(
   let required_local_id = self.ensure_component_registered(
     required.required_component_id,
   )
-  if self.required_components_state(requiree_local_id) is Some(state_ref) &&
-    state_ref.val.direct.get(required_local_id) is Some(_) {
+  if self.required_components_state(requiree_local_id) is Some(state) &&
+    state.direct.get(required_local_id) is Some(_) {
     return
   }
   let result : Result[Unit, RequiredComponentsError] = try? self.register_required_components_by_keys(

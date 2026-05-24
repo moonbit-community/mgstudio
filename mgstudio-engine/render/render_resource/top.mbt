@@ -72,9 +72,7 @@ fn render_resource_id_state_default() -> RenderResourceIdState {
 }
 
 ///|
-let render_resource_id_state_ref : Ref[RenderResourceIdState] = Ref(
-  render_resource_id_state_default(),
-)
+let render_resource_id_state : RenderResourceIdState = render_resource_id_state_default()
 
 ///|
 const RENDER_RESOURCE_ID_KIND_BUFFER : Int = 0
@@ -102,7 +100,7 @@ const RENDER_RESOURCE_ID_KIND_COMPUTE_PIPELINE : Int = 7
 
 ///|
 fn next_id(kind : Int) -> UInt64 {
-  let state = render_resource_id_state_ref.val
+  let state = render_resource_id_state
   match kind {
     RENDER_RESOURCE_ID_KIND_BUFFER => {
       let id = state.buffer_id_seed

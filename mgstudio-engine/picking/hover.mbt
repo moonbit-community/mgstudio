@@ -111,12 +111,12 @@ pub fn ensure_hover_maps_system(world : @ecs.World) -> Unit {
 
 ///|
 priv struct PickingPointerHitsReaderState {
-  mut cursor : Int
+  cursor : @ecs.MessageCursor[PointerHits]
 }
 
 ///|
 fn PickingPointerHitsReaderState::PickingPointerHitsReaderState() -> PickingPointerHitsReaderState {
-  { cursor: 0 }
+  { cursor: @ecs.MessageCursor::MessageCursor() }
 }
 
 ///|
@@ -140,15 +140,17 @@ fn read_pending_pointer_hits(world : @ecs.World) -> Array[PointerHits] {
     return []
   }
   ensure_picking_pointer_hits_reader_state(world)
-  let state_res = world.resource(picking_pointer_hits_reader_state_resource_key)
-  guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref(state_value)
-  let cursor = Ref(state_ref.val.cursor)
-  let reader = world.message_reader(pointer_hits_message_key(), cursor)
-  let messages = try! reader.read()
-  state_ref.val.cursor = cursor.val
-  state_res.insert(state_ref.val)
-  messages
+  guard world.get_resource_mut(picking_pointer_hits_reader_state_resource_key)
+    is Some(state) else {
+    return []
+  }
+  state.modify(fn(state) {
+    let reader = world.message_reader(
+      pointer_hits_message_key(),
+      cursor=state.cursor,
+    )
+    reader.read()
+  })
 }
 
 ///|
@@ -342,52 +344,52 @@ pub fn PickingState::last_position(
 
 ///|
 fn PickingState::ensure_capacity(
-  self : Ref[PickingState],
+  self : PickingState,
   pointer : @pointer_events.PointerId,
 ) -> Unit {
   if pointer < 0 {
     return
   }
   let need = pointer + 1
-  while self.val.hovered.length() < need {
-    self.val.hovered.push(None)
+  while self.hovered.length() < need {
+    self.hovered.push(None)
   }
-  while self.val.pressed.length() < need {
-    self.val.pressed.push(None)
+  while self.pressed.length() < need {
+    self.pressed.push(None)
   }
-  while self.val.last_position.length() < need {
-    self.val.last_position.push(None)
+  while self.last_position.length() < need {
+    self.last_position.push(None)
   }
 }
 
 ///|
 pub fn PickingState::set_pressed(
-  self : Ref[PickingState],
+  self : PickingState,
   pointer : @pointer_events.PointerId,
   pressed : @core.Entity?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
-  self.val.pressed[pointer] = pressed
+  self.pressed[pointer] = pressed
 }
 
 ///|
 pub fn PickingState::set_last_position(
-  self : Ref[PickingState],
+  self : PickingState,
   pointer : @pointer_events.PointerId,
   pos : @math.Vec2?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
-  self.val.last_position[pointer] = pos
+  self.last_position[pointer] = pos
 }
 
 ///|
 pub fn PickingState::set_hovered(
-  self : Ref[PickingState],
+  self : PickingState,
   pointer : @pointer_events.PointerId,
   hovered : @core.Entity?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
-  self.val.hovered[pointer] = hovered
+  self.hovered[pointer] = hovered
 }
 
 ///|

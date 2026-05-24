@@ -421,14 +421,14 @@ pub fn World::update_messages(self : World) -> Unit {
 pub struct MessageReader[T] {
   priv world : World
   priv key : MessageKey[T]
-  priv cursor_ref : Ref[Int]
+  priv cursor : MessageCursor[T]
 }
 
 ///|
 pub struct MessageMutator[T] {
   priv world : World
   priv key : MessageKey[T]
-  priv cursor_ref : Ref[Int]
+  priv cursor : MessageCursor[T]
 }
 
 ///|
@@ -514,14 +514,12 @@ pub fn[T] MessageCursor::clear(
 }
 
 ///|
-pub fn[T : Message] MessageCursor::read(
+pub fn[T] MessageCursor::read(
   self : MessageCursor[T],
   messages : Messages[T],
-) -> Array[T] raise EcsError {
-  let key : MessageKey[T] = Message::message()
+) -> Array[T] {
   let unread_values = messages.unread(self.last_message_count)
   let unread : Array[T] = []
-  ignore(key)
   for entry in unread_values {
     unread.push(entry.1)
   }
@@ -533,14 +531,12 @@ pub fn[T : Message] MessageCursor::read(
 }
 
 ///|
-pub fn[T : Message] MessageCursor::read_mut(
+pub fn[T] MessageCursor::read_mut(
   self : MessageCursor[T],
   messages : Messages[T],
-) -> Array[T] raise EcsError {
-  let key : MessageKey[T] = Message::message()
+) -> Array[T] {
   let unread_values = messages.unread(self.last_message_count)
   let unread : Array[T] = []
-  ignore(key)
   for entry in unread_values {
     unread.push(entry.1)
   }
@@ -555,24 +551,24 @@ pub fn[T : Message] MessageCursor::read_mut(
 pub fn[T] World::message_reader(
   self : World,
   key : MessageKey[T],
-  cursor_ref : Ref[Int],
+  cursor? : MessageCursor[T] = MessageCursor::MessageCursor(),
 ) -> MessageReader[T] {
   if !self.contains_message(key) {
     queue_missing_abort(key)
   }
-  MessageReader::{ world: self, key, cursor_ref }
+  MessageReader::{ world: self, key, cursor }
 }
 
 ///|
 pub fn[T] World::message_mutator(
   self : World,
   key : MessageKey[T],
-  cursor_ref : Ref[Int],
+  cursor? : MessageCursor[T] = MessageCursor::MessageCursor(),
 ) -> MessageMutator[T] {
   if !self.contains_message(key) {
     queue_missing_abort(key)
   }
-  MessageMutator::{ world: self, key, cursor_ref }
+  MessageMutator::{ world: self, key, cursor }
 }
 
 ///|
@@ -590,7 +586,7 @@ pub fn[T] World::message_writer(
 pub fn[T] MessageReader::len(self : MessageReader[T]) -> Int {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => queue.unread_len(self.cursor_ref.val)
+    Some(queue) => self.cursor.len(queue)
     None => 0
   }
 }
@@ -599,7 +595,7 @@ pub fn[T] MessageReader::len(self : MessageReader[T]) -> Int {
 pub fn[T] MessageMutator::len(self : MessageMutator[T]) -> Int {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => queue.unread_len(self.cursor_ref.val)
+    Some(queue) => self.cursor.len(queue)
     None => 0
   }
 }
@@ -618,8 +614,8 @@ pub fn[T] MessageMutator::is_empty(self : MessageMutator[T]) -> Bool {
 pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.state.message_count
-    None => self.cursor_ref.val = 0
+    Some(queue) => self.cursor.clear(queue)
+    None => self.cursor.last_message_count = 0
   }
 }
 
@@ -627,55 +623,33 @@ pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
 pub fn[T] MessageMutator::clear(self : MessageMutator[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.state.message_count
-    None => self.cursor_ref.val = 0
+    Some(queue) => self.cursor.clear(queue)
+    None => self.cursor.last_message_count = 0
   }
 }
 
 ///|
-pub fn[T] MessageReader::cursor(self : MessageReader[T]) -> Int {
-  self.cursor_ref.val
+pub fn[T] MessageReader::cursor(self : MessageReader[T]) -> MessageCursor[T] {
+  self.cursor
 }
 
 ///|
-pub fn[T] MessageMutator::cursor(self : MessageMutator[T]) -> Int {
-  self.cursor_ref.val
+pub fn[T] MessageMutator::cursor(self : MessageMutator[T]) -> MessageCursor[T] {
+  self.cursor
 }
 
 ///|
-pub fn[T] MessageReader::read(
-  self : MessageReader[T],
-) -> Array[T] raise EcsError {
+pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
   let queue_access = self.world.resource(self.key.queue_key())
   let queue = queue_access.get().unwrap_or(Messages::new())
-  let unread_values = queue.unread(self.cursor_ref.val)
-  let unread : Array[T] = []
-  for entry in unread_values {
-    unread.push(entry.1)
-  }
-  self.cursor_ref.val = message_cursor_advance_after_unread(
-    self.cursor_ref.val,
-    unread_values,
-  )
-  unread
+  self.cursor.read(queue)
 }
 
 ///|
-pub fn[T] MessageMutator::read(
-  self : MessageMutator[T],
-) -> Array[T] raise EcsError {
+pub fn[T] MessageMutator::read(self : MessageMutator[T]) -> Array[T] {
   let queue_access = self.world.resource(self.key.queue_key())
   let queue = queue_access.get().unwrap_or(Messages::new())
-  let unread_values = queue.unread(self.cursor_ref.val)
-  let unread : Array[T] = []
-  for entry in unread_values {
-    unread.push(entry.1)
-  }
-  self.cursor_ref.val = message_cursor_advance_after_unread(
-    self.cursor_ref.val,
-    unread_values,
-  )
-  unread
+  self.cursor.read_mut(queue)
 }
 
 ///|

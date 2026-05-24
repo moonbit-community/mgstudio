@@ -444,7 +444,7 @@ fn handle_app_setting_change(
 ) -> Unit {
   let should_regenerate = app_status.modify(fn(value) {
     let mut should_regenerate = false
-    for event in (try! events.read()) {
+    for event in events.read() {
       match event.get() {
         AppSetting::RegenerateTopMipLevel => should_regenerate = true
         AppSetting::EnableMipGeneration(enable_mip_generation) =>
@@ -477,7 +477,7 @@ fn handle_window_resize_events(
   resized_events : @ecs.MessageReader[@window.WindowResized],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {
-  for _event in (try! resized_events.read()) {
+  for _event in resized_events.read() {
     ignore(regenerate_writer.write(RegenerateImage::{  }))
   }
 }
@@ -494,7 +494,7 @@ fn regenerate_image_when_requested(
   app_assets : @app.Res[AppAssets],
   regenerate_reader : @ecs.MessageReader[RegenerateImage],
 ) -> Unit {
-  if (try! regenerate_reader.read()).length() == 0 {
+  if regenerate_reader.read().length() == 0 {
     return
   }
 

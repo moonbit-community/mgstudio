@@ -284,8 +284,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(0.08F, 0.08F, 0.08F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(0.08F, 0.08F, 0.08F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -298,12 +299,14 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(10.0F, 10.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(10.0F, 10.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -342,8 +345,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let main_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
@@ -352,8 +356,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let x_pos_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(45.0F, 0.0F, 0.0F),
@@ -362,8 +367,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let x_neg_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
@@ -372,8 +378,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let z_pos_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 45.0F),
@@ -382,8 +389,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let z_neg_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, -45.0F),

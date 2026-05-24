@@ -73,9 +73,7 @@ pub impl @ecs.QueryData for QueryGenericData with matches(world, entity) {
 pub impl @ecs.QueryData for QueryGenericData with fetch(world, entity) {
   {
     entity,
-    position: try! @ecs.query_data_component_fetch(
-      world, entity, query_position_key,
-    ),
+    position: @ecs.query_data_component_fetch(world, entity, query_position_key),
     has_disabled: @ecs.query_data_component_has(
       world, entity, @ecs.ecs_key_disabled,
     ),

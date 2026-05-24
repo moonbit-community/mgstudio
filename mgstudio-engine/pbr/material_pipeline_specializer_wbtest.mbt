@@ -462,18 +462,18 @@ test "pbr material base specialization caches descriptors from real material pro
   let second_id = try! @material.material_specialize_base(
     base_specialize, world, key, layout, properties,
   )
-  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
   inspect(first_id.id(), content="0")
   inspect(second_id.id(), content="0")
   inspect(
-    state_ref.val.specialized_material_pipelines.mesh_layout_cache_len(),
+    state.peek().specialized_material_pipelines.mesh_layout_cache_len(),
     content="1",
   )
   inspect(
-    state_ref.val.specialized_material_pipelines.vertex_layout_cache_len(),
+    state.peek().specialized_material_pipelines.vertex_layout_cache_len(),
     content="1",
   )
-  guard state_ref.val.specialized_material_pipelines.render_pipeline_descriptor(
+  guard state.peek().specialized_material_pipelines.render_pipeline_descriptor(
       first_id,
     )
     is Some(descriptor) else {
@@ -721,18 +721,18 @@ test "pbr material prepass specialization caches descriptors separately" {
   let second_id = try! @material.material_specialize_prepass(
     prepass_specialize, world, key, layout, properties,
   )
-  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
   inspect(first_id.id(), content="0")
   inspect(second_id.id(), content="0")
   inspect(
-    state_ref.val.specialized_material_pipelines.vertex_layout_cache_len(),
+    state.peek().specialized_material_pipelines.vertex_layout_cache_len(),
     content="0",
   )
   inspect(
-    state_ref.val.specialized_prepass_material_pipelines.mesh_layout_cache_len(),
+    state.peek().specialized_prepass_material_pipelines.mesh_layout_cache_len(),
     content="1",
   )
-  guard state_ref.val.specialized_prepass_material_pipelines.render_pipeline_descriptor(
+  guard state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
       first_id,
     )
     is Some(descriptor) else {

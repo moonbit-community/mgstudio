@@ -99,7 +99,6 @@ pub fn GlobalTransform::to_transform_approx(Self) -> Transform
 pub fn GlobalTransform::translation(Self) -> @math.Vec3
 pub impl @app.ValidateParentHasComponentTarget for GlobalTransform
 pub impl @ecs.Component for GlobalTransform
-pub impl @ecs.Mutable for GlobalTransform
 pub impl TransformPoint for GlobalTransform
 pub impl Default for GlobalTransform
 pub impl ToJson for GlobalTransform
@@ -152,7 +151,6 @@ pub fn Transform::with_rotation(Self, @math.Quat) -> Self
 pub fn Transform::with_scale(Self, @math.Vec3) -> Self
 pub fn Transform::with_translation(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for Transform
-pub impl @ecs.Mutable for Transform
 pub impl @math.Ease for Transform
 pub impl TransformPoint for Transform
 pub impl Default for Transform

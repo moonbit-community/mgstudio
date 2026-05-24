@@ -20,9 +20,6 @@ pub struct ScrollPosition {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @ecs.Mutable for ScrollPosition
-
-///|
 pub fn ScrollPosition::ScrollPosition() -> ScrollPosition {
   ScrollPosition::{ offset_x: 0.0F, offset_y: 0.0F }
 }

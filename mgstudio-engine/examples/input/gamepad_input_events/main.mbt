@@ -33,20 +33,20 @@ fn gamepad_events(
     @input.GamepadButtonStateChangedEvent,
   ],
 ) -> Unit {
-  for connection_event in (try! connection_events.read()) {
+  for connection_event in connection_events.read() {
     log_line(format_connection_event(connection_event))
   }
-  for axis_changed_event in (try! axis_changed_events.read()) {
+  for axis_changed_event in axis_changed_events.read() {
     log_line(
       "\{format_axis(axis_changed_event.axis)} of \{entity_text(axis_changed_event.entity)} is changed to \{axis_changed_event.value}",
     )
   }
-  for button_changed_event in (try! button_changed_events.read()) {
+  for button_changed_event in button_changed_events.read() {
     log_line(
       "\{format_button(button_changed_event.button)} of \{entity_text(button_changed_event.entity)} is changed to \{button_changed_event.value}",
     )
   }
-  for button_input_event in (try! button_input_events.read()) {
+  for button_input_event in button_input_events.read() {
     log_line(format_button_state_changed_event(button_input_event))
   }
 }
@@ -57,7 +57,7 @@ fn gamepad_events(
 fn gamepad_ordered_events(
   gamepad_events : @ecs.MessageReader[@input.GamepadEvent],
 ) -> Unit {
-  for gamepad_event in (try! gamepad_events.read()) {
+  for gamepad_event in gamepad_events.read() {
     match gamepad_event {
       Connection(connection_event) =>
         log_line(format_connection_event(connection_event))

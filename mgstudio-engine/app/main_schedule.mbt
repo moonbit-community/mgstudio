@@ -353,18 +353,24 @@ fn run_fixed_main_schedule(
 
 ///|
 fn run_main_schedule_driver_system(world : @ecs.World) -> Unit {
-  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  guard app_execution_context_state.current_app_schedule is Some(schedule) else {
+    return
+  }
   run_main_schedule_update(world, schedule)
 }
 
 ///|
 fn run_fixed_main_schedule_driver_system(world : @ecs.World) -> Unit {
-  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  guard app_execution_context_state.current_app_schedule is Some(schedule) else {
+    return
+  }
   run_fixed_main_schedule(world, schedule)
 }
 
 ///|
 pub fn run_current_fixed_main_schedule(world : @ecs.World) -> Unit {
-  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  guard app_execution_context_state.current_app_schedule is Some(schedule) else {
+    return
+  }
   run_fixed_main_schedule(world, schedule)
 }

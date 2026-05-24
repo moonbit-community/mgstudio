@@ -371,9 +371,6 @@ pub(all) struct ColorGrading {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @ecs.Mutable for ColorGrading
-
-///|
 pub fn ColorGrading::ColorGrading() -> ColorGrading {
   ColorGrading::{
     global: ColorGradingGlobal::ColorGradingGlobal(),
@@ -422,9 +419,6 @@ pub(all) enum Tonemapping {
   TonyMcMapface
   BlenderFilmic
 } derive(Eq, Hash, Debug, ToJson, FromJson)
-
-///|
-pub impl @ecs.Mutable for Tonemapping
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {

@@ -20,7 +20,7 @@ fn run_systems(
   stage : ScheduleStage?,
   executor_kind? : ExecutorKind = SingleThreaded,
   apply_final_deferred? : Bool = true,
-  executor_state_ref? : Ref[SingleThreadedExecutorState]? = None,
+  executor_state? : SingleThreadedExecutorState? = None,
 ) -> Unit {
   let systems = schedule.systems
   let system_conditions = schedule.system_conditions
@@ -31,8 +31,8 @@ fn run_systems(
   let sets_with_conditions_of_systems = schedule.sets_with_conditions_of_systems
   let systems_in_sets_with_conditions = schedule.systems_in_sets_with_conditions
   let timeline_enabled = timeline_trace_enabled()
-  current_system_ticks_ref.val = None
-  current_world_ref.val = None
+  app_execution_context_state.current_system_ticks = None
+  app_execution_context_state.current_world = None
   let stepping_ref = stepping_resource_mut(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
   fn system_default_trace_name(
@@ -87,14 +87,14 @@ fn run_systems(
     }
   }
   begin_deferred_command_batch()
-  let executor_state = match executor_state_ref {
-    Some(state_ref) => {
-      state_ref.val.prepare_run(
+  let executor_state = match executor_state {
+    Some(state) => {
+      state.prepare_run(
         systems.length(),
         set_ids.length(),
         apply_final_deferred,
       )
-      state_ref.val
+      state
     }
     None =>
       single_threaded_executor_state_new(
@@ -115,28 +115,25 @@ fn run_systems(
       executor_state.evaluated_sets[set_i] {
       return set_run_if_results[set_i]
     }
-    let run_conditions_ref = set_run_conditions[set_i]
+    let run_conditions = set_run_conditions[set_i]
     let mut matches = true
-    for cond_i in 0..<run_conditions_ref.val.run_ifs.length() {
-      let cond = run_conditions_ref.val.run_ifs[cond_i]
+    for cond_i in 0..<run_conditions.run_ifs.length() {
+      let cond = run_conditions.run_ifs[cond_i]
       let cond_this_run = world.increment_change_tick()
       let cond_ticks = @core.SystemTicks::new(
-        run_conditions_ref.val.run_if_last_run_ticks[cond_i],
+        run_conditions.run_if_last_run_ticks[cond_i],
         cond_this_run,
       )
       let cond_ctx = world.get_tick_context()
       cond_ctx.set(cond_ticks)
       world.set_tick_context(cond_ctx)
-      let prev_world = current_world_ref.val
-      current_world_ref.val = Some(world)
-      current_system_ticks_ref.val = Some(cond_ticks)
-      let cond_result = cond(
-        world,
-        run_conditions_ref.val.run_if_states[cond_i],
-      )
-      current_system_ticks_ref.val = None
-      current_world_ref.val = prev_world
-      run_conditions_ref.val.run_if_last_run_ticks[cond_i] = cond_this_run
+      let prev_world = app_execution_context_state.current_world
+      app_execution_context_state.current_world = Some(world)
+      app_execution_context_state.current_system_ticks = Some(cond_ticks)
+      let cond_result = cond.run(world)
+      app_execution_context_state.current_system_ticks = None
+      app_execution_context_state.current_world = prev_world
+      run_conditions.run_if_last_run_ticks[cond_i] = cond_this_run
       matches = matches && cond_result
     }
     set_run_if_results[set_i] = matches
@@ -186,12 +183,12 @@ fn run_systems(
             let cond_ctx = world.get_tick_context()
             cond_ctx.set(cond_ticks)
             world.set_tick_context(cond_ctx)
-            let prev_world = current_world_ref.val
-            current_world_ref.val = Some(world)
-            current_system_ticks_ref.val = Some(cond_ticks)
-            let should_run = cond(world, conditions.run_if_states[cond_i])
-            current_system_ticks_ref.val = None
-            current_world_ref.val = prev_world
+            let prev_world = app_execution_context_state.current_world
+            app_execution_context_state.current_world = Some(world)
+            app_execution_context_state.current_system_ticks = Some(cond_ticks)
+            let should_run = cond.run(world)
+            app_execution_context_state.current_system_ticks = None
+            app_execution_context_state.current_world = prev_world
             conditions.run_if_last_run_ticks[cond_i] = cond_this_run
             should_run_system = should_run_system && should_run
           }
@@ -238,17 +235,17 @@ fn run_systems(
         let ctx = world.get_tick_context()
         ctx.set(sys_ticks)
         world.set_tick_context(ctx)
-        let prev_world = current_world_ref.val
-        current_world_ref.val = Some(world)
-        let prev_ticks = current_system_ticks_ref.val
-        current_system_ticks_ref.val = Some(sys_ticks)
+        let prev_world = app_execution_context_state.current_world
+        app_execution_context_state.current_world = Some(world)
+        let prev_ticks = app_execution_context_state.current_system_ticks
+        app_execution_context_state.current_system_ticks = Some(sys_ticks)
         let prev_outcome = current_system_execution_outcome()
         reset_system_execution_outcome()
         (cfg.system)(world)
         let outcome = current_system_execution_outcome()
-        current_system_execution_outcome_ref.val = prev_outcome
-        current_system_ticks_ref.val = prev_ticks
-        current_world_ref.val = prev_world
+        system_execution_runtime_state.outcome = prev_outcome
+        app_execution_context_state.current_system_ticks = prev_ticks
+        app_execution_context_state.current_world = prev_world
         match outcome {
           Success => {
             if timeline_enabled && system_trace_start_us >= 0L {
@@ -323,20 +320,20 @@ fn run_systems(
       }
     }
   }
-  let execution_i_ref = Ref(0)
+  let mut execution_i = 0
   match executor_kind {
     SingleThreaded =>
       for system_i in 0..<systems.length() {
-        let execution_i = execution_i_ref.val
-        execution_i_ref.val = execution_i + 1
-        run_execution_node(ScheduledSystem(system_i), execution_i)
+        let current_execution_i = execution_i
+        execution_i = execution_i + 1
+        run_execution_node(ScheduledSystem(system_i), current_execution_i)
       }
     MultiThreaded =>
       for batch in execution_batches {
         for node in batch {
-          let execution_i = execution_i_ref.val
-          execution_i_ref.val = execution_i + 1
-          run_execution_node(node, execution_i)
+          let current_execution_i = execution_i
+          execution_i = execution_i + 1
+          run_execution_node(node, current_execution_i)
         }
       }
   }

@@ -160,7 +160,9 @@ fn setup(
     7,
     1,
   )
-  let texture_atlas_layout = texture_atlas_layouts.peek().add(layout)
+  let texture_atlas_layout = texture_atlas_layouts.modify(fn(layouts) {
+    layouts.add(layout)
+  })
 
   let animation_config_1 = AnimationConfig::new(
     FIRST_SPRITE_INDEX,

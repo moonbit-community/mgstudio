@@ -105,20 +105,69 @@ fn skin_test_set_global_x_tick_only(
 ///|
 fn skin_test_add_skin_direct(
   world : @ecs.World,
-  skin_uniforms_ref : Ref[SkinUniforms],
+  skin_uniforms : @ecs.ResourceMut[SkinUniforms],
   skin_entity : @core.Entity,
   handle : @asset.Handle[@mesh.SkinnedMeshInverseBindposes],
   joints : Array[@core.Entity],
 ) -> Unit {
-  render3d_add_skin(
-    world,
-    skin_uniforms_ref,
-    render3d_world_transform_cache_ref(world),
-    skin_entity,
-    @mesh.SkinnedMesh::new(handle, joints),
-    skin_test_inverse_assets_or_abort(world),
-    render3d_transform_columns(world),
-  )
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    let world_transform_cache = render3d_world_transform_cache_mut(world)
+    world_transform_cache.modify(fn(world_transform_cache) {
+      render3d_add_skin(
+        world,
+        skin_uniforms_value,
+        world_transform_cache,
+        skin_entity,
+        @mesh.SkinnedMesh::new(handle, joints),
+        skin_test_inverse_assets_or_abort(world),
+        render3d_transform_columns(world),
+      )
+    })
+  })
+}
+
+///|
+fn skin_test_prepared_binding_keys(
+  skin_uniforms : @ecs.ResourceMut[SkinUniforms],
+  entity : @core.Entity,
+) -> (Int, Int) {
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    render3d_prepared_skin_binding_keys(skin_uniforms_value, entity)
+  })
+}
+
+///|
+fn skin_test_phase_remove_skin(
+  skin_uniforms : @ecs.ResourceMut[SkinUniforms],
+  entity : @core.Entity,
+) -> Unit {
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    render3d_phase_remove_skin(skin_uniforms_value, entity)
+  })
+}
+
+///|
+fn skin_test_phase_begin_skin_frame(
+  skin_uniforms : @ecs.ResourceMut[SkinUniforms],
+) -> Unit {
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    render3d_phase_begin_skin_frame(skin_uniforms_value)
+  })
+}
+
+///|
+fn skin_test_extract_skin_bindings(
+  world : @ecs.World,
+  skin_uniforms : @ecs.ResourceMut[SkinUniforms],
+  world_transform_cache : @ecs.ResourceMut[Render3dWorldTransformCache],
+) -> Unit {
+  skin_uniforms.modify(fn(skin_uniforms_value) {
+    world_transform_cache.modify(fn(world_transform_cache) {
+      render3d_extract_skin_bindings(
+        world, skin_uniforms_value, world_transform_cache,
+      )
+    })
+  })
 }
 
 ///|
@@ -130,13 +179,11 @@ test "pbr render skin: add_skin falls back to cached local transform when Global
   let joint = world.spawn()
   skin_test_set_local_x(world, joint, 7.0F)
   let skin_entity = world.spawn()
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
 
-  skin_test_add_skin_direct(world, skin_uniforms_ref, skin_entity, handle, [
-    joint,
-  ])
+  skin_test_add_skin_direct(world, skin_uniforms, skin_entity, handle, [joint])
 
-  let rows = skin_uniforms_ref.val.current_staging_buffer
+  let rows = skin_uniforms.peek().current_staging_buffer
   debug_inspect(rows[3] == 7.0F, content="true")
 }
 
@@ -173,13 +220,13 @@ test "pbr render skin: add_skin writes staging rows and identity fallback" {
   skin_test_set_global_x(world, joint_with_bindpose, 2.0F)
   skin_test_set_global_x(world, joint_missing_bindpose, 3.0F)
   let skin_entity = world.spawn()
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
 
-  skin_test_add_skin_direct(world, skin_uniforms_ref, skin_entity, handle, [
+  skin_test_add_skin_direct(world, skin_uniforms, skin_entity, handle, [
     joint_with_bindpose, joint_missing_bindpose,
   ])
 
-  let rows = skin_uniforms_ref.val.current_staging_buffer
+  let rows = skin_uniforms.peek().current_staging_buffer
   debug_inspect(rows[3] == 2.0F, content="true")
   debug_inspect(rows[16] == 1.0F, content="true")
   debug_inspect(rows[19] == 0.0F, content="true")
@@ -198,17 +245,13 @@ test "pbr render skin: missing inverse bindpose asset initializes identity rows"
   let joint = world.spawn()
   skin_test_set_global_x(world, joint, 5.0F)
   let skin_entity = world.spawn()
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
 
-  skin_test_add_skin_direct(
-    world,
-    skin_uniforms_ref,
-    skin_entity,
-    missing_handle,
-    [joint],
-  )
+  skin_test_add_skin_direct(world, skin_uniforms, skin_entity, missing_handle, [
+    joint,
+  ])
 
-  let rows = skin_uniforms_ref.val.current_staging_buffer
+  let rows = skin_uniforms.peek().current_staging_buffer
   debug_inspect(rows[0] == 1.0F, content="true")
   debug_inspect(rows[3] == 0.0F, content="true")
 }
@@ -223,26 +266,20 @@ test "pbr render skin: remove and re-add reuses the same offset" {
   skin_test_set_global_x(world, joint, 1.0F)
   let first_skin = world.spawn()
   let second_skin = world.spawn()
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
 
-  skin_test_add_skin_direct(world, skin_uniforms_ref, first_skin, handle, [
-    joint,
-  ])
-  skin_test_add_skin_direct(world, skin_uniforms_ref, second_skin, handle, [
-    joint,
-  ])
-  let (first_offset, _) = render3d_prepared_skin_binding_keys(
-    skin_uniforms_ref, first_skin,
+  skin_test_add_skin_direct(world, skin_uniforms, first_skin, handle, [joint])
+  skin_test_add_skin_direct(world, skin_uniforms, second_skin, handle, [joint])
+  let (first_offset, _) = skin_test_prepared_binding_keys(
+    skin_uniforms, first_skin,
   )
-  let (second_offset, _) = render3d_prepared_skin_binding_keys(
-    skin_uniforms_ref, second_skin,
+  let (second_offset, _) = skin_test_prepared_binding_keys(
+    skin_uniforms, second_skin,
   )
-  render3d_phase_remove_skin(skin_uniforms_ref, first_skin)
-  skin_test_add_skin_direct(world, skin_uniforms_ref, first_skin, handle, [
-    joint,
-  ])
-  let (reused_offset, _) = render3d_prepared_skin_binding_keys(
-    skin_uniforms_ref, first_skin,
+  skin_test_phase_remove_skin(skin_uniforms, first_skin)
+  skin_test_add_skin_direct(world, skin_uniforms, first_skin, handle, [joint])
+  let (reused_offset, _) = skin_test_prepared_binding_keys(
+    skin_uniforms, first_skin,
   )
 
   debug_inspect(first_offset, content="0")
@@ -261,27 +298,23 @@ test "pbr render skin: invisible changed skin frees allocation" {
   let skin_entity = world.spawn()
   try! world.set(skin_entity, @visibility.ViewVisibility::new(true))
   try! world.set(skin_entity, @mesh.SkinnedMesh::new(handle, [joint]))
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
+  let world_transform_cache = render3d_world_transform_cache_mut(world)
   skin_test_set_ticks(world, 0, 1)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
 
   try! world.set(skin_entity, @visibility.ViewVisibility::new(false))
   skin_test_set_ticks(world, 1, 2)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
 
-  let (skin_offset, _) = render3d_prepared_skin_binding_keys(
-    skin_uniforms_ref, skin_entity,
+  let (skin_offset, _) = skin_test_prepared_binding_keys(
+    skin_uniforms, skin_entity,
   )
   debug_inspect(skin_offset, content="-1")
   debug_inspect(
-    skin_uniforms_ref.val.current_skins.contains(skin_entity_key(skin_entity)),
+    skin_uniforms.peek().current_skins.contains(skin_entity_key(skin_entity)),
     content="false",
   )
 }
@@ -313,22 +346,18 @@ test "pbr render skin: dirty joint extraction updates only mapped skins" {
     skin_b,
     @mesh.SkinnedMesh::new(handle, [skin_b_joint_0, skin_b_joint_1]),
   )
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
+  let world_transform_cache = render3d_world_transform_cache_mut(world)
   skin_test_set_ticks(world, 0, 1)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
 
   skin_test_set_global_x(world, skin_a_joint_0, 4.0F)
   skin_test_set_ticks(world, 1, 2)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
 
-  let rows = skin_uniforms_ref.val.current_staging_buffer
+  let rows = skin_uniforms.peek().current_staging_buffer
   debug_inspect(rows[3] == 4.0F, content="true")
   debug_inspect(rows[67] == 2.0F, content="true")
 }
@@ -344,20 +373,16 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
   let skin_entity = world.spawn()
   try! world.set(skin_entity, @visibility.ViewVisibility::new(true))
   try! world.set(skin_entity, @mesh.SkinnedMesh::new(handle, [joint]))
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
+  let world_transform_cache = render3d_world_transform_cache_mut(world)
   skin_test_set_ticks(world, 0, 1)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
 
   skin_test_set_global_x_tick_only(world, joint, 6.0F)
   skin_test_set_ticks(world, 1, 2)
-  render3d_extract_skin_bindings(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  skin_test_extract_skin_bindings(world, skin_uniforms, world_transform_cache)
 
   let changed_messages = world
     .changed_components(
@@ -365,7 +390,7 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
       @core.SystemTicks::new(1, 2),
     )
     .read()
-  let rows = skin_uniforms_ref.val.current_staging_buffer
+  let rows = skin_uniforms.peek().current_staging_buffer
   debug_inspect(changed_messages.contains(joint), content="false")
   debug_inspect(rows[3] == 6.0F, content="true")
 }
@@ -379,15 +404,13 @@ test "pbr render skin: frame begin captures previous-skin flags" {
   let joint = world.spawn()
   skin_test_set_global_x(world, joint, 1.0F)
   let skin_entity = world.spawn()
-  let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
-  skin_test_add_skin_direct(world, skin_uniforms_ref, skin_entity, handle, [
-    joint,
-  ])
+  let skin_uniforms = skin_uniforms_mut_or_abort(world)
+  skin_test_add_skin_direct(world, skin_uniforms, skin_entity, handle, [joint])
 
-  render3d_phase_begin_skin_frame(skin_uniforms_ref)
+  skin_test_phase_begin_skin_frame(skin_uniforms)
 
   debug_inspect(
-    skin_uniforms_ref.val.previous_skins.contains(skin_entity_key(skin_entity)),
+    skin_uniforms.peek().previous_skins.contains(skin_entity_key(skin_entity)),
     content="true",
   )
 }

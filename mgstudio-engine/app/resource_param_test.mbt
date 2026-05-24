@@ -61,7 +61,7 @@ test "app: Res parameter reads inserted resource value" {
 }
 
 ///|
-test "app: Res and ResMut expose change detection without eager writes" {
+test "app: ResMut access does not mark resources changed until mutation" {
   let observed_added : Array[Bool] = []
   let observed_changed : Array[Bool] = []
   let observed_values : Array[Int] = []
@@ -126,7 +126,7 @@ test "app: schedule rebuild preserves system last run for change detection" {
 }
 
 ///|
-test "app: ResMut::get is read-only until explicit mutation" {
+test "app: ResMut::get does not mark resources changed until mutation" {
   let observed_changed : Array[Bool] = []
   let observed_values : Array[Int] = []
   let mutate_set = system_set("app.resource_param_test.read_only_then_write")

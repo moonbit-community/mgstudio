@@ -159,14 +159,17 @@ fn setup(
   commands : @app.Commands,
   texts : @app.ResMut[@asset.Assets[Text]],
 ) -> Unit {
-  let text_assets = texts.peek()
-  commands.insert_resource(TextAssets::{
-    a: text_assets.add(Text::new(processed_cool_text_value("a"))),
-    b: text_assets.add(Text::new(processed_cool_text_value("b"))),
-    c: text_assets.add(Text::new(processed_cool_text_value("c"))),
-    d: text_assets.add(Text::new(processed_cool_text_value("d"))),
-    e: text_assets.add(Text::new(processed_cool_text_value("e"))),
-  })
+  commands.insert_resource(
+    texts.modify(fn(text_assets) {
+      TextAssets::{
+        a: text_assets.add(Text::new(processed_cool_text_value("a"))),
+        b: text_assets.add(Text::new(processed_cool_text_value("b"))),
+        c: text_assets.add(Text::new(processed_cool_text_value("c"))),
+        d: text_assets.add(Text::new(processed_cool_text_value("d"))),
+        e: text_assets.add(Text::new(processed_cool_text_value("e"))),
+      }
+    }),
+  )
 }
 
 ///|

@@ -75,23 +75,23 @@ fn convert_mesh_to_2d(
     is Some(mesh3d) else {
     return
   }
-  let mesh_assets_ref : Ref[@asset.Assets[@mesh.Mesh]] = match
-    world.get_resource_ref_mut(@asset.assets_resource_key()) {
+  let mesh_assets = match world.get_resource_mut(@asset.assets_resource_key()) {
     Some(value) => value
     None => return
   }
-  guard mesh_assets_ref.val.get(mesh3d.mesh()) is Some(source_mesh) else {
+  guard mesh_assets.peek().get(mesh3d.mesh()) is Some(source_mesh) else {
     return
   }
   guard mesh3d_to_mesh2d(source_mesh) is Some(mesh2d_asset) else { return }
-  let mesh2d_handle = mesh_assets_ref.val.add(mesh2d_asset)
-  let color_materials_ref : Ref[@asset.Assets[@sprite.ColorMaterialAsset]] = match
-    world.get_resource_ref_mut(@asset.assets_resource_key()) {
+  let mesh2d_handle = mesh_assets.modify(fn(value) { value.add(mesh2d_asset) })
+  let color_materials = match
+    world.get_resource_mut(@asset.assets_resource_key()) {
     Some(value) => value
     None => return
   }
-  let material_handle = color_materials_ref.val
-    |> @sprite.add_material(@sprite.Color::white())
+  let material_handle = color_materials.modify(fn(value) {
+    value |> @sprite.add_material(@sprite.Color::white())
+  })
   ignore(try! world.remove(entity, key=@mesh.Mesh3d::component()))
   ignore(try! world.remove(entity, key=@pbr.MeshMaterial3d::component()))
   ignore(

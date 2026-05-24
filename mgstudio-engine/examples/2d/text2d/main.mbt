@@ -244,14 +244,18 @@ fn spawn_wrapped_text_box(
   let box_entity = commands.spawn(
     (
       @sprite.Mesh2d::new(
-        meshes
-        .peek()
-        .add(
-          @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::from_size(size)).to_mesh(),
-        ),
+        meshes.modify(fn(meshes) {
+          meshes.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::from_size(size),
+            ).to_mesh(),
+          )
+        }),
       ),
       @sprite.MeshMaterial2d::new(
-        materials.peek().add(@sprite.ColorMaterialAsset::from_color(box_color)),
+        materials.modify(fn(materials) {
+          materials.add(@sprite.ColorMaterialAsset::from_color(box_color))
+        }),
       ),
       @transform.Transform::from_xyz(center.x, center.y, 0.0F),
     ),

@@ -74,10 +74,10 @@ fn render_world_with_material_resources(app : @app.App[@ecs.World]) -> Bool {
 ///|
 fn mesh_assets_mut_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[@mesh.Mesh]] {
+) -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  match world.get_resource_ref_mut(key) {
-    Some(assets_ref) => assets_ref
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
     None => abort("missing Assets<Mesh> resource")
   }
 }
@@ -94,9 +94,11 @@ fn pbr_app_with_mesh3d_entity() -> (
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
   let world = app.world()
-  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
-    @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(1.0F, 1.0F)),
-  )
+  let mesh_handle = mesh_assets_mut_or_abort(world).modify(fn(assets) {
+    assets.add(
+      @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(1.0F, 1.0F)),
+    )
+  })
   let entity = world.spawn()
   try! world.set(entity, @mesh.Mesh3d::new(mesh_handle))
   world.increment_change_tick() |> ignore
@@ -117,10 +119,14 @@ test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
   let before = app.world().read_change_tick()
 
   debug_inspect(
-    mesh_assets_mut_or_abort(app.world()).val.set(
-      mesh_handle,
-      @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(2.0F, 2.0F)),
-    ),
+    mesh_assets_mut_or_abort(app.world()).modify(fn(assets) {
+      assets.set(
+        mesh_handle,
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives.rectangle_mesh(2.0F, 2.0F),
+        ),
+      )
+    }),
     content="true",
   )
 

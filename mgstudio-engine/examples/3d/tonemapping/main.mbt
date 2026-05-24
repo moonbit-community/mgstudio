@@ -711,7 +711,7 @@ fn drag_drop_image(
   commands : @app.Commands,
 ) -> Unit {
   let mut new_image : @asset.Handle[@asset.Image]? = None
-  for event in (try! drag_and_drop_reader.read()) {
+  for event in drag_and_drop_reader.read() {
     match event {
       DroppedFile(_window, path) =>
         new_image = Some(asset_server.get().load(path))
@@ -756,7 +756,7 @@ fn resize_image(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let updated_images : Array[@asset.Handle[@asset.Image]] = []
-  for event in (try! image_event_reader.read()) {
+  for event in image_event_reader.read() {
     match event {
       Added(handle) => updated_images.push(handle)
       Modified(handle) => updated_images.push(handle)
@@ -823,7 +823,7 @@ fn update_ui(
   hide_ui : @app.Local[Bool],
 ) -> Unit {
   if keys.just_pressed(KeyH) {
-    hide_ui.get_ref().val = !hide_ui.get()
+    hide_ui.set(!hide_ui.get())
   }
   guard first2(ui_text_query) is Some((_entity, ui_text, _marker)) else {
     return

@@ -43,9 +43,6 @@ pub struct Wireframe2dColor {
 }
 
 ///|
-pub impl @ecs.Mutable for Wireframe2dColor
-
-///|
 pub fn Wireframe2dColor::Wireframe2dColor() -> Wireframe2dColor {
   Wireframe2dColor::{ color: Color::white() }
 }

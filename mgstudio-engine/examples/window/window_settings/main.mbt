@@ -250,19 +250,19 @@ fn cycle_cursor_icon(
   guard world.get_resource(cursor_icons_key) is Some(cursor_icons) else {
     return
   }
-  let index_ref = index.get_ref()
   if cursor_icons.icons.length() == 0 {
     return
   }
   let count = cursor_icons.icons.length()
+  let current_index = index.get()
   let next = if go_next {
-    (index_ref.val + 1) % count
-  } else if index_ref.val <= 0 {
+    (current_index + 1) % count
+  } else if current_index <= 0 {
     count - 1
   } else {
-    index_ref.val - 1
+    current_index - 1
   }
-  index_ref.val = next
+  index.set(next)
   set_primary_cursor_icon(world, cursor_icons.icons[next])
 }
 

@@ -61,9 +61,8 @@ pub fn[T] register_asset_resource_keys(
 type AssetEventDispatch = (@ecs.World) -> Unit
 
 ///|
-let asset_event_dispatch_registry : Ref[
-  @hashmap.HashMap[String, AssetEventDispatch],
-] = Ref(@hashmap.HashMap([]))
+let asset_event_dispatch_registry : @hashmap.HashMap[String, AssetEventDispatch] = @hashmap.HashMap([],
+)
 
 ///|
 fn[T : Asset] registered_asset_event_message_key() -> @ecs.MessageKey[
@@ -77,7 +76,7 @@ fn[T : Asset] register_asset_event_dispatch(
   type_name : String,
   key : @ecs.ResourceKey[Assets[T]],
 ) -> Unit {
-  if asset_event_dispatch_registry.val.contains(type_name) {
+  if asset_event_dispatch_registry.contains(type_name) {
     return
   }
 
@@ -96,7 +95,7 @@ fn[T : Asset] register_asset_event_dispatch(
       None => ()
     }
   }
-  asset_event_dispatch_registry.val.set(type_name, dispatch)
+  asset_event_dispatch_registry.set(type_name, dispatch)
 }
 
 ///|

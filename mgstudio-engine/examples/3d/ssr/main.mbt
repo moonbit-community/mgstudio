@@ -237,11 +237,13 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   }
 
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+        ),
+      )
+    }),
   )
 }
 
@@ -398,8 +400,9 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -479,12 +482,14 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let metallic = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(100.0F, 100.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(100.0F, 100.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(metallic_material),
     @transform.Transform::identity(),
@@ -506,12 +511,14 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let red = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(100.0F, 100.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(100.0F, 100.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(red_material),
     @transform.Transform::identity(),
@@ -546,12 +553,14 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let water = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(100.0F, 100.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(100.0F, 100.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(water_material),
     @transform.Transform::identity(),

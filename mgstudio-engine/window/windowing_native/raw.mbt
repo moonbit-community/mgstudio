@@ -258,119 +258,6 @@ fn contains_int(items : Array[Int], value : Int) -> Bool {
 }
 
 ///|
-let open_window_ids_ref : Ref[Array[Int]] = Ref([])
-
-///|
-let closed_window_ids_ref : Ref[Array[Int]] = Ref([])
-
-///|
-let key_down_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
-
-///|
-let key_just_pressed_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
-
-///|
-let key_just_released_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
-
-///|
-let key_repeated_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
-
-///|
-let mouse_down_ref : Ref[Array[Bool]] = Ref(new_bool_state(MOUSE_BUTTON_COUNT))
-
-///|
-let mouse_just_pressed_ref : Ref[Array[Bool]] = Ref(
-  new_bool_state(MOUSE_BUTTON_COUNT),
-)
-
-///|
-let mouse_just_released_ref : Ref[Array[Bool]] = Ref(
-  new_bool_state(MOUSE_BUTTON_COUNT),
-)
-
-///|
-let has_cursor_ref : Ref[Bool] = Ref(false)
-
-///|
-let cursor_window_ref : Ref[Int] = Ref(-1)
-
-///|
-let cursor_entered_window_ref : Ref[Int] = Ref(-1)
-
-///|
-let cursor_left_window_ref : Ref[Int] = Ref(-1)
-
-///|
-let mouse_x_ref : Ref[Float] = Ref(0.0)
-
-///|
-let mouse_y_ref : Ref[Float] = Ref(0.0)
-
-///|
-let wheel_x_ref : Ref[Float] = Ref(0.0)
-
-///|
-let wheel_y_ref : Ref[Float] = Ref(0.0)
-
-///|
-let text_events_ref : Ref[Array[Bytes]] = Ref([])
-
-///|
-let keyboard_events_ref : Ref[Array[KeyboardEvent]] = Ref([])
-
-///|
-let ime_events_ref : Ref[Array[ImeEvent]] = Ref([])
-
-///|
-let drag_events_ref : Ref[Array[DragEvent]] = Ref([])
-
-///|
-let drag_hovered_path_ref : Ref[Bytes?] = Ref(None)
-
-///|
-let drag_hovered_window_ref : Ref[Int] = Ref(-1)
-
-///|
-let window_theme_events_ref : Ref[Array[WindowThemeEvent]] = Ref([])
-
-///|
-let window_occluded_events_ref : Ref[Array[WindowOccludedEvent]] = Ref([])
-
-///|
-let app_lifecycle_events_ref : Ref[Array[Int]] = Ref([])
-
-///|
-let pinch_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref([])
-
-///|
-let rotation_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref([])
-
-///|
-let pan_gesture_events_ref : Ref[Array[PanGestureEvent]] = Ref([])
-
-///|
-let double_tap_gesture_events_ref : Ref[Array[DoubleTapGestureEvent]] = Ref([])
-
-///|
-let raw_winit_window_events_ref : Ref[Array[RawWinitWindowEventSnapshot]] = Ref([],
-)
-
-///|
-let detached_accessibility_requested_ref : Ref[Bool] = Ref(false)
-
-///|
-let bound_accessibility_requested_ref : Ref[Ref[Bool]?] = Ref(None)
-
-///|
-let pending_update_payload_ref : Ref[String?] = Ref(None)
-
-///|
-let last_update_payload_ref : Ref[String] = Ref("")
-
-///|
-let pending_actions_ref : Ref[Array[@moon_accesskit.ActionRequest]] = Ref([])
-
-///|
 priv struct NativeWindowEntry {
   id : Int
   window_ref : Ref[@window_macos.Window]
@@ -380,21 +267,94 @@ priv struct NativeWindowEntry {
 priv struct NativePumpHandler {}
 
 ///|
-let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref(None)
+priv struct WindowingNativeRuntimeState {
+  open_window_ids : Array[Int]
+  closed_window_ids : Array[Int]
+  key_down : Array[Bool]
+  key_just_pressed : Array[Bool]
+  key_just_released : Array[Bool]
+  key_repeated : Array[Bool]
+  mouse_down : Array[Bool]
+  mouse_just_pressed : Array[Bool]
+  mouse_just_released : Array[Bool]
+  mut has_cursor : Bool
+  mut cursor_window : Int
+  mut cursor_entered_window : Int
+  mut cursor_left_window : Int
+  mut mouse_x : Float
+  mut mouse_y : Float
+  mut wheel_x : Float
+  mut wheel_y : Float
+  text_events : Array[Bytes]
+  keyboard_events : Array[KeyboardEvent]
+  ime_events : Array[ImeEvent]
+  drag_events : Array[DragEvent]
+  mut drag_hovered_path : Bytes?
+  mut drag_hovered_window : Int
+  window_theme_events : Array[WindowThemeEvent]
+  window_occluded_events : Array[WindowOccludedEvent]
+  app_lifecycle_events : Array[Int]
+  pinch_gesture_events : Array[ScalarGestureEvent]
+  rotation_gesture_events : Array[ScalarGestureEvent]
+  pan_gesture_events : Array[PanGestureEvent]
+  double_tap_gesture_events : Array[DoubleTapGestureEvent]
+  mut raw_winit_window_events : Array[RawWinitWindowEventSnapshot]
+  mut detached_accessibility_requested : Bool
+  mut bound_accessibility_requested : Ref[Bool]?
+  mut pending_update_payload : String?
+  mut last_update_payload : String
+  mut pending_actions : Array[@moon_accesskit.ActionRequest]
+  mut native_event_loop : @window_macos.EventLoop?
+  mut event_loop_any_thread : Bool
+  mut event_loop_any_thread_applied : Bool
+  native_pump_handler : NativePumpHandler
+  native_windows : Array[NativeWindowEntry]
+}
 
 ///|
-let event_loop_any_thread_ref : Ref[Bool] = Ref(false)
-
-///|
-let event_loop_any_thread_applied_ref : Ref[Bool] = Ref(false)
-
-///|
-let native_pump_handler_ref : Ref[NativePumpHandler] = Ref(NativePumpHandler::{
-
-})
-
-///|
-let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref([])
+let windowing_native_runtime_state : WindowingNativeRuntimeState = {
+  open_window_ids: [],
+  closed_window_ids: [],
+  key_down: new_bool_state(KEY_COUNT),
+  key_just_pressed: new_bool_state(KEY_COUNT),
+  key_just_released: new_bool_state(KEY_COUNT),
+  key_repeated: new_bool_state(KEY_COUNT),
+  mouse_down: new_bool_state(MOUSE_BUTTON_COUNT),
+  mouse_just_pressed: new_bool_state(MOUSE_BUTTON_COUNT),
+  mouse_just_released: new_bool_state(MOUSE_BUTTON_COUNT),
+  has_cursor: false,
+  cursor_window: -1,
+  cursor_entered_window: -1,
+  cursor_left_window: -1,
+  mouse_x: 0.0,
+  mouse_y: 0.0,
+  wheel_x: 0.0,
+  wheel_y: 0.0,
+  text_events: [],
+  keyboard_events: [],
+  ime_events: [],
+  drag_events: [],
+  drag_hovered_path: None,
+  drag_hovered_window: -1,
+  window_theme_events: [],
+  window_occluded_events: [],
+  app_lifecycle_events: [],
+  pinch_gesture_events: [],
+  rotation_gesture_events: [],
+  pan_gesture_events: [],
+  double_tap_gesture_events: [],
+  raw_winit_window_events: [],
+  detached_accessibility_requested: false,
+  bound_accessibility_requested: None,
+  pending_update_payload: None,
+  last_update_payload: "",
+  pending_actions: [],
+  native_event_loop: None,
+  event_loop_any_thread: false,
+  event_loop_any_thread_applied: false,
+  native_pump_handler: NativePumpHandler::{  },
+  native_windows: [],
+}
 
 ///|
 fn remove_int(items : Array[Int], value : Int) -> Unit {
@@ -408,27 +368,27 @@ fn remove_int(items : Array[Int], value : Int) -> Unit {
 
 ///|
 fn mark_window_open(window : Int) -> Unit {
-  remove_int(closed_window_ids_ref.val, window)
-  if !contains_int(open_window_ids_ref.val, window) {
-    open_window_ids_ref.val.push(window)
+  remove_int(windowing_native_runtime_state.closed_window_ids, window)
+  if !contains_int(windowing_native_runtime_state.open_window_ids, window) {
+    windowing_native_runtime_state.open_window_ids.push(window)
   }
 }
 
 ///|
 fn mark_window_closed(window : Int) -> Unit {
-  if !contains_int(closed_window_ids_ref.val, window) {
-    closed_window_ids_ref.val.push(window)
+  if !contains_int(windowing_native_runtime_state.closed_window_ids, window) {
+    windowing_native_runtime_state.closed_window_ids.push(window)
   }
 }
 
 ///|
 fn is_window_closed(window : Int) -> Bool {
-  contains_int(closed_window_ids_ref.val, window)
+  contains_int(windowing_native_runtime_state.closed_window_ids, window)
 }
 
 ///|
 pub fn any_window_open() -> Bool {
-  for window in open_window_ids_ref.val {
+  for window in windowing_native_runtime_state.open_window_ids {
     if !is_window_closed(window) {
       return true
     }
@@ -437,28 +397,26 @@ pub fn any_window_open() -> Bool {
 }
 
 ///|
-fn requested_ref() -> Ref[Bool] {
-  match bound_accessibility_requested_ref.val {
-    Some(requested) => requested
-    None => detached_accessibility_requested_ref
-  }
-}
-
-///|
 pub fn bind_accessibility_requested(requested : Ref[Bool]) -> Unit {
-  bound_accessibility_requested_ref.val = Some(requested)
-  requested.val = detached_accessibility_requested_ref.val
+  windowing_native_runtime_state.bound_accessibility_requested = Some(requested)
+  requested.val = windowing_native_runtime_state.detached_accessibility_requested
 }
 
 ///|
 pub fn accessibility_requested() -> Bool {
-  requested_ref().val
+  match windowing_native_runtime_state.bound_accessibility_requested {
+    Some(requested) => requested.val
+    None => windowing_native_runtime_state.detached_accessibility_requested
+  }
 }
 
 ///|
 pub fn set_accessibility_requested(requested : Bool) -> Unit {
-  requested_ref().val = requested
-  detached_accessibility_requested_ref.val = requested
+  match windowing_native_runtime_state.bound_accessibility_requested {
+    Some(requested_ref) => requested_ref.val = requested
+    None => ()
+  }
+  windowing_native_runtime_state.detached_accessibility_requested = requested
 }
 
 ///|
@@ -468,16 +426,16 @@ pub fn queue_accessibility_update(update : @moon_accesskit.TreeUpdate) -> Unit {
 
 ///|
 pub fn queue_accessibility_update_payload(payload~ : String) -> Unit {
-  pending_update_payload_ref.val = Some(payload)
+  windowing_native_runtime_state.pending_update_payload = Some(payload)
 }
 
 ///|
 pub fn commit_pending_accessibility_update() -> Bool {
   guard accessibility_requested() else { return false }
-  match pending_update_payload_ref.val {
+  match windowing_native_runtime_state.pending_update_payload {
     Some(payload) => {
-      last_update_payload_ref.val = payload
-      pending_update_payload_ref.val = None
+      windowing_native_runtime_state.last_update_payload = payload
+      windowing_native_runtime_state.pending_update_payload = None
       true
     }
     None => false
@@ -486,28 +444,28 @@ pub fn commit_pending_accessibility_update() -> Bool {
 
 ///|
 pub fn last_accessibility_update_payload() -> String {
-  last_update_payload_ref.val
+  windowing_native_runtime_state.last_update_payload
 }
 
 ///|
 pub fn enqueue_accessibility_action(
   action : @moon_accesskit.ActionRequest,
 ) -> Unit {
-  pending_actions_ref.val.push(action)
+  windowing_native_runtime_state.pending_actions.push(action)
   set_accessibility_requested(true)
 }
 
 ///|
 pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest] {
-  let actions = pending_actions_ref.val
-  pending_actions_ref.val = []
+  let actions = windowing_native_runtime_state.pending_actions
+  windowing_native_runtime_state.pending_actions = []
   actions
 }
 
 ///|
 pub fn take_raw_winit_window_events() -> Array[RawWinitWindowEventSnapshot] {
-  let events = raw_winit_window_events_ref.val
-  raw_winit_window_events_ref.val = []
+  let events = windowing_native_runtime_state.raw_winit_window_events
+  windowing_native_runtime_state.raw_winit_window_events = []
   events
 }
 
@@ -529,30 +487,35 @@ fn push_text_event(text : Bytes) -> Unit {
   if !bytes_has_non_control(text) {
     return
   }
-  if text_events_ref.val.length() >= MAX_TEXT_EVENTS {
+  if windowing_native_runtime_state.text_events.length() >= MAX_TEXT_EVENTS {
     return
   }
-  text_events_ref.val.push(text)
+  windowing_native_runtime_state.text_events.push(text)
 }
 
 ///|
 fn push_drag_event(window : Int, kind : Int, text : Bytes) -> Unit {
-  if drag_events_ref.val.length() >= MAX_DRAG_EVENTS {
+  if windowing_native_runtime_state.drag_events.length() >= MAX_DRAG_EVENTS {
     return
   }
-  drag_events_ref.val.push(DragEvent::{ window, kind, text })
+  windowing_native_runtime_state.drag_events.push(DragEvent::{
+    window,
+    kind,
+    text,
+  })
 }
 
 ///|
 fn push_window_theme_event(window : Int, theme : @window_core.Theme) -> Unit {
-  if window_theme_events_ref.val.length() >= MAX_WINDOW_THEME_EVENTS {
+  if windowing_native_runtime_state.window_theme_events.length() >=
+    MAX_WINDOW_THEME_EVENTS {
     return
   }
   let encoded_theme = match theme {
     @window_core.Theme::Light => WINDOW_THEME_LIGHT
     @window_core.Theme::Dark => WINDOW_THEME_DARK
   }
-  window_theme_events_ref.val.push(WindowThemeEvent::{
+  windowing_native_runtime_state.window_theme_events.push(WindowThemeEvent::{
     window,
     theme: encoded_theme,
   })
@@ -560,10 +523,14 @@ fn push_window_theme_event(window : Int, theme : @window_core.Theme) -> Unit {
 
 ///|
 fn push_window_occluded_event(window : Int, occluded : Bool) -> Unit {
-  if window_occluded_events_ref.val.length() >= MAX_WINDOW_OCCLUDED_EVENTS {
+  if windowing_native_runtime_state.window_occluded_events.length() >=
+    MAX_WINDOW_OCCLUDED_EVENTS {
     return
   }
-  window_occluded_events_ref.val.push(WindowOccludedEvent::{ window, occluded })
+  windowing_native_runtime_state.window_occluded_events.push(WindowOccludedEvent::{
+    window,
+    occluded,
+  })
 }
 
 ///|
@@ -575,42 +542,59 @@ fn push_app_lifecycle_event(kind : Int) -> Unit {
     kind != APP_LIFECYCLE_WILL_RESUME {
     return
   }
-  if app_lifecycle_events_ref.val.length() >= MAX_APP_LIFECYCLE_EVENTS {
+  if windowing_native_runtime_state.app_lifecycle_events.length() >=
+    MAX_APP_LIFECYCLE_EVENTS {
     return
   }
-  app_lifecycle_events_ref.val.push(kind)
+  windowing_native_runtime_state.app_lifecycle_events.push(kind)
 }
 
 ///|
 fn push_pinch_gesture_event(window : Int, delta : Float) -> Unit {
-  if pinch_gesture_events_ref.val.length() >= MAX_PINCH_GESTURE_EVENTS {
+  if windowing_native_runtime_state.pinch_gesture_events.length() >=
+    MAX_PINCH_GESTURE_EVENTS {
     return
   }
-  pinch_gesture_events_ref.val.push(ScalarGestureEvent::{ window, delta })
+  windowing_native_runtime_state.pinch_gesture_events.push(ScalarGestureEvent::{
+    window,
+    delta,
+  })
 }
 
 ///|
 fn push_rotation_gesture_event(window : Int, delta : Float) -> Unit {
-  if rotation_gesture_events_ref.val.length() >= MAX_ROTATION_GESTURE_EVENTS {
+  if windowing_native_runtime_state.rotation_gesture_events.length() >=
+    MAX_ROTATION_GESTURE_EVENTS {
     return
   }
-  rotation_gesture_events_ref.val.push(ScalarGestureEvent::{ window, delta })
+  windowing_native_runtime_state.rotation_gesture_events.push(ScalarGestureEvent::{
+    window,
+    delta,
+  })
 }
 
 ///|
 fn push_pan_gesture_event(window : Int, x : Float, y : Float) -> Unit {
-  if pan_gesture_events_ref.val.length() >= MAX_PAN_GESTURE_EVENTS {
+  if windowing_native_runtime_state.pan_gesture_events.length() >=
+    MAX_PAN_GESTURE_EVENTS {
     return
   }
-  pan_gesture_events_ref.val.push(PanGestureEvent::{ window, x, y })
+  windowing_native_runtime_state.pan_gesture_events.push(PanGestureEvent::{
+    window,
+    x,
+    y,
+  })
 }
 
 ///|
 fn push_double_tap_gesture_event(window : Int) -> Unit {
-  if double_tap_gesture_events_ref.val.length() >= MAX_DOUBLE_TAP_GESTURE_EVENTS {
+  if windowing_native_runtime_state.double_tap_gesture_events.length() >=
+    MAX_DOUBLE_TAP_GESTURE_EVENTS {
     return
   }
-  double_tap_gesture_events_ref.val.push(DoubleTapGestureEvent::{ window, })
+  windowing_native_runtime_state.double_tap_gesture_events.push(DoubleTapGestureEvent::{
+    window,
+  })
 }
 
 ///|
@@ -658,10 +642,11 @@ fn push_raw_winit_window_events(
   events : Array[@window_core.WinitWindowEvent],
 ) -> Unit {
   for event in events {
-    if raw_winit_window_events_ref.val.length() >= MAX_RAW_WINIT_WINDOW_EVENTS {
+    if windowing_native_runtime_state.raw_winit_window_events.length() >=
+      MAX_RAW_WINIT_WINDOW_EVENTS {
       return
     }
-    raw_winit_window_events_ref.val.push(RawWinitWindowEventSnapshot::{
+    windowing_native_runtime_state.raw_winit_window_events.push(RawWinitWindowEventSnapshot::{
       window_id,
       event: raw_winit_window_event_data_from_winit_event(event),
     })
@@ -683,10 +668,10 @@ fn push_ime_event(
     kind != IME_EVENT_DELETE_SURROUNDING {
     return
   }
-  if ime_events_ref.val.length() >= MAX_IME_EVENTS {
+  if windowing_native_runtime_state.ime_events.length() >= MAX_IME_EVENTS {
     return
   }
-  ime_events_ref.val.push(ImeEvent::{
+  windowing_native_runtime_state.ime_events.push(ImeEvent::{
     window,
     kind,
     text,
@@ -705,10 +690,16 @@ fn push_keyboard_event(
   if state != ELEMENT_STATE_PRESSED && state != ELEMENT_STATE_RELEASED {
     return
   }
-  if keyboard_events_ref.val.length() >= MAX_KEYBOARD_EVENTS {
+  if windowing_native_runtime_state.keyboard_events.length() >=
+    MAX_KEYBOARD_EVENTS {
     return
   }
-  keyboard_events_ref.val.push(KeyboardEvent::{ key_id, state, repeat, text })
+  windowing_native_runtime_state.keyboard_events.push(KeyboardEvent::{
+    key_id,
+    state,
+    repeat,
+    text,
+  })
 }
 
 ///|
@@ -897,15 +888,15 @@ fn element_state_to_int(state : @window_core.ElementState) -> Int {
 
 ///|
 fn ensure_native_event_loop() -> @window_macos.EventLoop {
-  match native_event_loop_ref.val {
+  match windowing_native_runtime_state.native_event_loop {
     Some(event_loop) => event_loop
     None => {
       let event_loop = @window_macos.EventLoopBuilder()
-        .with_any_thread(event_loop_any_thread_ref.val)
+        .with_any_thread(windowing_native_runtime_state.event_loop_any_thread)
         .build()
       event_loop.set_control_flow(@window_core.ControlFlow::Poll)
-      event_loop_any_thread_applied_ref.val = event_loop_any_thread_ref.val
-      native_event_loop_ref.val = Some(event_loop)
+      windowing_native_runtime_state.event_loop_any_thread_applied = windowing_native_runtime_state.event_loop_any_thread
+      windowing_native_runtime_state.native_event_loop = Some(event_loop)
       event_loop
     }
   }
@@ -918,7 +909,7 @@ pub fn native_event_loop() -> @window_macos.EventLoop {
 
 ///|
 fn native_window_ref(window : Int) -> Ref[@window_macos.Window]? {
-  for entry in native_windows_ref.val {
+  for entry in windowing_native_runtime_state.native_windows {
     if entry.id == window {
       return Some(entry.window_ref)
     }
@@ -928,9 +919,9 @@ fn native_window_ref(window : Int) -> Ref[@window_macos.Window]? {
 
 ///|
 fn native_window_remove(window : Int) -> Unit {
-  for i, entry in native_windows_ref.val {
+  for i, entry in windowing_native_runtime_state.native_windows {
     if entry.id == window {
-      native_windows_ref.val.remove(i) |> ignore
+      windowing_native_runtime_state.native_windows.remove(i) |> ignore
       return
     }
   }
@@ -938,8 +929,8 @@ fn native_window_remove(window : Int) -> Unit {
 
 ///|
 fn set_pointer_position(position : @window_dpi.PhysicalPositionF64) -> Unit {
-  mouse_x_ref.val = Float::from_double(position.x())
-  mouse_y_ref.val = Float::from_double(position.y())
+  windowing_native_runtime_state.mouse_x = Float::from_double(position.x())
+  windowing_native_runtime_state.mouse_y = Float::from_double(position.y())
 }
 
 ///|
@@ -956,15 +947,23 @@ fn process_pointer_button(
   }
   let state_value = element_state_to_int(state)
   if state_value == ELEMENT_STATE_PRESSED {
-    if !bool_state_get(mouse_down_ref.val, button) {
-      bool_state_set(mouse_just_pressed_ref.val, button, true)
+    if !bool_state_get(windowing_native_runtime_state.mouse_down, button) {
+      bool_state_set(
+        windowing_native_runtime_state.mouse_just_pressed,
+        button,
+        true,
+      )
     }
-    bool_state_set(mouse_down_ref.val, button, true)
+    bool_state_set(windowing_native_runtime_state.mouse_down, button, true)
   } else if state_value == ELEMENT_STATE_RELEASED {
-    if bool_state_get(mouse_down_ref.val, button) {
-      bool_state_set(mouse_just_released_ref.val, button, true)
+    if bool_state_get(windowing_native_runtime_state.mouse_down, button) {
+      bool_state_set(
+        windowing_native_runtime_state.mouse_just_released,
+        button,
+        true,
+      )
     }
-    bool_state_set(mouse_down_ref.val, button, false)
+    bool_state_set(windowing_native_runtime_state.mouse_down, button, false)
   }
 }
 
@@ -982,19 +981,27 @@ fn process_keyboard_input(key_event : @window_core.KeyEvent) -> Unit {
       None => Bytes::from_array([])
     }
     if repeated {
-      bool_state_set(key_repeated_ref.val, key_id, true)
+      bool_state_set(windowing_native_runtime_state.key_repeated, key_id, true)
     }
-    if !bool_state_get(key_down_ref.val, key_id) {
-      bool_state_set(key_just_pressed_ref.val, key_id, true)
+    if !bool_state_get(windowing_native_runtime_state.key_down, key_id) {
+      bool_state_set(
+        windowing_native_runtime_state.key_just_pressed,
+        key_id,
+        true,
+      )
     }
-    bool_state_set(key_down_ref.val, key_id, true)
+    bool_state_set(windowing_native_runtime_state.key_down, key_id, true)
     push_text_event(text)
     push_keyboard_event(key_id, state, repeated, text)
   } else if state == ELEMENT_STATE_RELEASED {
-    if bool_state_get(key_down_ref.val, key_id) {
-      bool_state_set(key_just_released_ref.val, key_id, true)
+    if bool_state_get(windowing_native_runtime_state.key_down, key_id) {
+      bool_state_set(
+        windowing_native_runtime_state.key_just_released,
+        key_id,
+        true,
+      )
     }
-    bool_state_set(key_down_ref.val, key_id, false)
+    bool_state_set(windowing_native_runtime_state.key_down, key_id, false)
     push_keyboard_event(key_id, state, false, Bytes::from_array([]))
   }
 }
@@ -1042,12 +1049,12 @@ fn process_ime_event(window : Int, ime_event : @window_core.Ime) -> Unit {
 
 ///|
 fn process_drag_entered(window : Int, paths : Array[String]) -> Unit {
-  drag_hovered_path_ref.val = None
-  drag_hovered_window_ref.val = window
+  windowing_native_runtime_state.drag_hovered_path = None
+  windowing_native_runtime_state.drag_hovered_window = window
   for path in paths {
     let path_bytes = encode_utf8_bytes(path)
-    if drag_hovered_path_ref.val is None {
-      drag_hovered_path_ref.val = Some(path_bytes)
+    if windowing_native_runtime_state.drag_hovered_path is None {
+      windowing_native_runtime_state.drag_hovered_path = Some(path_bytes)
     }
     push_drag_event(window, 1, path_bytes)
   }
@@ -1055,8 +1062,8 @@ fn process_drag_entered(window : Int, paths : Array[String]) -> Unit {
 
 ///|
 fn process_drag_moved(window : Int) -> Unit {
-  drag_hovered_window_ref.val = window
-  match drag_hovered_path_ref.val {
+  windowing_native_runtime_state.drag_hovered_window = window
+  match windowing_native_runtime_state.drag_hovered_path {
     Some(path) => push_drag_event(window, 1, path)
     None => ()
   }
@@ -1064,8 +1071,9 @@ fn process_drag_moved(window : Int) -> Unit {
 
 ///|
 fn process_drag_dropped(window : Int, paths : Array[String]) -> Unit {
-  let hovered_window = if drag_hovered_window_ref.val >= 0 {
-    drag_hovered_window_ref.val
+  let hovered_window = if windowing_native_runtime_state.drag_hovered_window >=
+    0 {
+    windowing_native_runtime_state.drag_hovered_window
   } else {
     window
   }
@@ -1074,28 +1082,29 @@ fn process_drag_dropped(window : Int, paths : Array[String]) -> Unit {
       push_drag_event(window, 0, encode_utf8_bytes(path))
     }
   } else {
-    match drag_hovered_path_ref.val {
+    match windowing_native_runtime_state.drag_hovered_path {
       Some(path) => push_drag_event(hovered_window, 0, path)
       None => ()
     }
   }
-  drag_hovered_path_ref.val = None
-  drag_hovered_window_ref.val = -1
+  windowing_native_runtime_state.drag_hovered_path = None
+  windowing_native_runtime_state.drag_hovered_window = -1
 }
 
 ///|
 fn process_drag_left(window : Int) -> Unit {
-  let path = match drag_hovered_path_ref.val {
+  let path = match windowing_native_runtime_state.drag_hovered_path {
     Some(value) => value
     None => Bytes::from_array([])
   }
-  let hovered_window = if drag_hovered_window_ref.val >= 0 {
-    drag_hovered_window_ref.val
+  let hovered_window = if windowing_native_runtime_state.drag_hovered_window >=
+    0 {
+    windowing_native_runtime_state.drag_hovered_window
   } else {
     window
   }
-  drag_hovered_path_ref.val = None
-  drag_hovered_window_ref.val = -1
+  windowing_native_runtime_state.drag_hovered_path = None
+  windowing_native_runtime_state.drag_hovered_window = -1
   push_drag_event(hovered_window, 2, path)
 }
 
@@ -1106,21 +1115,21 @@ fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit 
     CloseRequested => mark_window_closed(window)
     Destroyed => mark_window_closed(window)
     PointerMoved(_, position, _is_primary, _source) => {
-      has_cursor_ref.val = true
-      cursor_window_ref.val = window
+      windowing_native_runtime_state.has_cursor = true
+      windowing_native_runtime_state.cursor_window = window
       set_pointer_position(position)
     }
     PointerEntered(_, position, _is_primary, _kind) => {
-      has_cursor_ref.val = true
-      cursor_window_ref.val = window
-      cursor_entered_window_ref.val = window
+      windowing_native_runtime_state.has_cursor = true
+      windowing_native_runtime_state.cursor_window = window
+      windowing_native_runtime_state.cursor_entered_window = window
       set_pointer_position(position)
     }
     PointerLeft(_, position, _is_primary, _kind) => {
-      has_cursor_ref.val = false
-      cursor_left_window_ref.val = window
-      if cursor_window_ref.val == window {
-        cursor_window_ref.val = -1
+      windowing_native_runtime_state.has_cursor = false
+      windowing_native_runtime_state.cursor_left_window = window
+      if windowing_native_runtime_state.cursor_window == window {
+        windowing_native_runtime_state.cursor_window = -1
       }
       match position {
         Some(value) => set_pointer_position(value)
@@ -1128,20 +1137,24 @@ fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit 
       }
     }
     PointerButton(_, state, position, _is_primary, source) => {
-      has_cursor_ref.val = true
-      cursor_window_ref.val = window
+      windowing_native_runtime_state.has_cursor = true
+      windowing_native_runtime_state.cursor_window = window
       set_pointer_position(position)
       process_pointer_button(state, source)
     }
     MouseWheel(_, delta, _phase) =>
       match delta {
         LineDelta(delta_x, delta_y) => {
-          wheel_x_ref.val = wheel_x_ref.val + Float::from_double(delta_x)
-          wheel_y_ref.val = wheel_y_ref.val + Float::from_double(delta_y)
+          windowing_native_runtime_state.wheel_x = windowing_native_runtime_state.wheel_x +
+            Float::from_double(delta_x)
+          windowing_native_runtime_state.wheel_y = windowing_native_runtime_state.wheel_y +
+            Float::from_double(delta_y)
         }
         PixelDelta(position) => {
-          wheel_x_ref.val = wheel_x_ref.val + Float::from_double(position.x())
-          wheel_y_ref.val = wheel_y_ref.val + Float::from_double(position.y())
+          windowing_native_runtime_state.wheel_x = windowing_native_runtime_state.wheel_x +
+            Float::from_double(position.x())
+          windowing_native_runtime_state.wheel_y = windowing_native_runtime_state.wheel_y +
+            Float::from_double(position.y())
         }
       }
     PinchGesture(_device_id, delta, _phase) =>
@@ -1216,9 +1229,13 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
 
 ///|
 fn pump_native_events() -> Unit {
-  match native_event_loop_ref.val {
+  match windowing_native_runtime_state.native_event_loop {
     Some(event_loop) =>
-      event_loop.pump_app_events(Some(0), native_pump_handler_ref.val) |> ignore
+      event_loop.pump_app_events(
+        Some(0),
+        windowing_native_runtime_state.native_pump_handler,
+      )
+      |> ignore
     None => ()
   }
 }
@@ -1320,7 +1337,7 @@ pub fn create_utf8(
   }
   let native_window = event_loop.create_window(attributes)
   let window = native_window.id().into_raw()
-  native_windows_ref.val.push(NativeWindowEntry::{
+  windowing_native_runtime_state.native_windows.push(NativeWindowEntry::{
     id: window,
     window_ref: Ref(native_window),
   })
@@ -1454,7 +1471,7 @@ pub fn should_close(window : Int) -> Bool {
     return true
   }
   native_window_ref(window) is None &&
-  contains_int(open_window_ids_ref.val, window)
+  contains_int(windowing_native_runtime_state.open_window_ids, window)
 }
 
 ///|
@@ -1878,53 +1895,53 @@ pub fn native_backend_available() -> Bool {
 
 ///|
 pub fn set_event_loop_any_thread(any_thread : Bool) -> Unit {
-  event_loop_any_thread_ref.val = any_thread
+  windowing_native_runtime_state.event_loop_any_thread = any_thread
 }
 
 ///|
 pub fn event_loop_any_thread_requested() -> Bool {
-  event_loop_any_thread_ref.val
+  windowing_native_runtime_state.event_loop_any_thread
 }
 
 ///|
 pub fn event_loop_any_thread_applied() -> Bool {
-  event_loop_any_thread_applied_ref.val
+  windowing_native_runtime_state.event_loop_any_thread_applied
 }
 
 ///|
 pub fn input_finish_frame() -> Unit {
-  clear_bool_state(key_just_pressed_ref.val)
-  clear_bool_state(key_just_released_ref.val)
-  clear_bool_state(key_repeated_ref.val)
-  clear_bool_state(mouse_just_pressed_ref.val)
-  clear_bool_state(mouse_just_released_ref.val)
-  wheel_x_ref.val = 0.0
-  wheel_y_ref.val = 0.0
-  text_events_ref.val.clear()
-  keyboard_events_ref.val.clear()
-  ime_events_ref.val.clear()
-  drag_events_ref.val.clear()
-  window_theme_events_ref.val.clear()
-  window_occluded_events_ref.val.clear()
-  app_lifecycle_events_ref.val.clear()
-  pinch_gesture_events_ref.val.clear()
-  rotation_gesture_events_ref.val.clear()
-  pan_gesture_events_ref.val.clear()
-  double_tap_gesture_events_ref.val.clear()
-  raw_winit_window_events_ref.val.clear()
-  cursor_entered_window_ref.val = -1
-  cursor_left_window_ref.val = -1
+  clear_bool_state(windowing_native_runtime_state.key_just_pressed)
+  clear_bool_state(windowing_native_runtime_state.key_just_released)
+  clear_bool_state(windowing_native_runtime_state.key_repeated)
+  clear_bool_state(windowing_native_runtime_state.mouse_just_pressed)
+  clear_bool_state(windowing_native_runtime_state.mouse_just_released)
+  windowing_native_runtime_state.wheel_x = 0.0
+  windowing_native_runtime_state.wheel_y = 0.0
+  windowing_native_runtime_state.text_events.clear()
+  windowing_native_runtime_state.keyboard_events.clear()
+  windowing_native_runtime_state.ime_events.clear()
+  windowing_native_runtime_state.drag_events.clear()
+  windowing_native_runtime_state.window_theme_events.clear()
+  windowing_native_runtime_state.window_occluded_events.clear()
+  windowing_native_runtime_state.app_lifecycle_events.clear()
+  windowing_native_runtime_state.pinch_gesture_events.clear()
+  windowing_native_runtime_state.rotation_gesture_events.clear()
+  windowing_native_runtime_state.pan_gesture_events.clear()
+  windowing_native_runtime_state.double_tap_gesture_events.clear()
+  windowing_native_runtime_state.raw_winit_window_events.clear()
+  windowing_native_runtime_state.cursor_entered_window = -1
+  windowing_native_runtime_state.cursor_left_window = -1
 }
 
 ///|
 pub fn input_has_cursor() -> Bool {
-  has_cursor_ref.val
+  windowing_native_runtime_state.has_cursor
 }
 
 ///|
 pub fn input_cursor_window() -> Int {
-  if has_cursor_ref.val {
-    cursor_window_ref.val
+  if windowing_native_runtime_state.has_cursor {
+    windowing_native_runtime_state.cursor_window
   } else {
     -1
   }
@@ -1932,75 +1949,75 @@ pub fn input_cursor_window() -> Int {
 
 ///|
 pub fn input_cursor_entered_window() -> Int {
-  cursor_entered_window_ref.val
+  windowing_native_runtime_state.cursor_entered_window
 }
 
 ///|
 pub fn input_cursor_left_window() -> Int {
-  cursor_left_window_ref.val
+  windowing_native_runtime_state.cursor_left_window
 }
 
 ///|
 pub fn input_mouse_x() -> Float {
-  mouse_x_ref.val
+  windowing_native_runtime_state.mouse_x
 }
 
 ///|
 pub fn input_mouse_y() -> Float {
-  mouse_y_ref.val
+  windowing_native_runtime_state.mouse_y
 }
 
 ///|
 pub fn input_wheel_x() -> Float {
-  wheel_x_ref.val
+  windowing_native_runtime_state.wheel_x
 }
 
 ///|
 pub fn input_wheel_y() -> Float {
-  wheel_y_ref.val
+  windowing_native_runtime_state.wheel_y
 }
 
 ///|
 pub fn input_is_key_down_by_id(key_id : Int) -> Bool {
-  bool_state_get(key_down_ref.val, key_id)
+  bool_state_get(windowing_native_runtime_state.key_down, key_id)
 }
 
 ///|
 pub fn input_is_key_just_pressed_by_id(key_id : Int) -> Bool {
-  bool_state_get(key_just_pressed_ref.val, key_id)
+  bool_state_get(windowing_native_runtime_state.key_just_pressed, key_id)
 }
 
 ///|
 pub fn input_is_key_just_released_by_id(key_id : Int) -> Bool {
-  bool_state_get(key_just_released_ref.val, key_id)
+  bool_state_get(windowing_native_runtime_state.key_just_released, key_id)
 }
 
 ///|
 pub fn input_is_key_repeated_by_id(key_id : Int) -> Bool {
-  bool_state_get(key_repeated_ref.val, key_id)
+  bool_state_get(windowing_native_runtime_state.key_repeated, key_id)
 }
 
 ///|
 pub fn input_clear_all_keys() -> Unit {
-  clear_bool_state(key_down_ref.val)
-  clear_bool_state(key_just_pressed_ref.val)
-  clear_bool_state(key_just_released_ref.val)
-  clear_bool_state(key_repeated_ref.val)
+  clear_bool_state(windowing_native_runtime_state.key_down)
+  clear_bool_state(windowing_native_runtime_state.key_just_pressed)
+  clear_bool_state(windowing_native_runtime_state.key_just_released)
+  clear_bool_state(windowing_native_runtime_state.key_repeated)
 }
 
 ///|
 pub fn input_is_mouse_button_down_by_id(button_id : Int) -> Bool {
-  bool_state_get(mouse_down_ref.val, button_id)
+  bool_state_get(windowing_native_runtime_state.mouse_down, button_id)
 }
 
 ///|
 pub fn input_is_mouse_button_just_pressed_by_id(button_id : Int) -> Bool {
-  bool_state_get(mouse_just_pressed_ref.val, button_id)
+  bool_state_get(windowing_native_runtime_state.mouse_just_pressed, button_id)
 }
 
 ///|
 pub fn input_is_mouse_button_just_released_by_id(button_id : Int) -> Bool {
-  bool_state_get(mouse_just_released_ref.val, button_id)
+  bool_state_get(windowing_native_runtime_state.mouse_just_released, button_id)
 }
 
 ///|
@@ -2098,23 +2115,25 @@ pub fn input_is_mouse_button_just_released(button : String) -> Bool {
 
 ///|
 pub fn input_text_event_count() -> Int {
-  text_events_ref.val.length()
+  windowing_native_runtime_state.text_events.length()
 }
 
 ///|
 pub fn input_text_event_len(index~ : Int) -> Int {
-  if index < 0 || index >= text_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.text_events.length() {
     return 0
   }
-  text_events_ref.val[index].length()
+  windowing_native_runtime_state.text_events[index].length()
 }
 
 ///|
 pub fn input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
-  if index < 0 || index >= text_events_ref.val.length() || offset < 0 {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.text_events.length() ||
+    offset < 0 {
     return 0
   }
-  let text = text_events_ref.val[index]
+  let text = windowing_native_runtime_state.text_events[index]
   if offset >= text.length() {
     return 0
   }
@@ -2123,47 +2142,53 @@ pub fn input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 
 ///|
 pub fn input_keyboard_event_count() -> Int {
-  keyboard_events_ref.val.length()
+  windowing_native_runtime_state.keyboard_events.length()
 }
 
 ///|
 pub fn input_keyboard_event_key_id(index~ : Int) -> Int {
-  if index < 0 || index >= keyboard_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.keyboard_events.length() {
     return -1
   }
-  keyboard_events_ref.val[index].key_id
+  windowing_native_runtime_state.keyboard_events[index].key_id
 }
 
 ///|
 pub fn input_keyboard_event_state(index~ : Int) -> Int {
-  if index < 0 || index >= keyboard_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.keyboard_events.length() {
     return 0
   }
-  keyboard_events_ref.val[index].state
+  windowing_native_runtime_state.keyboard_events[index].state
 }
 
 ///|
 pub fn input_keyboard_event_repeat(index~ : Int) -> Bool {
-  if index < 0 || index >= keyboard_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.keyboard_events.length() {
     return false
   }
-  keyboard_events_ref.val[index].repeat
+  windowing_native_runtime_state.keyboard_events[index].repeat
 }
 
 ///|
 pub fn input_keyboard_event_text_len(index~ : Int) -> Int {
-  if index < 0 || index >= keyboard_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.keyboard_events.length() {
     return 0
   }
-  keyboard_events_ref.val[index].text.length()
+  windowing_native_runtime_state.keyboard_events[index].text.length()
 }
 
 ///|
 pub fn input_keyboard_event_text_code_unit(index~ : Int, offset~ : Int) -> Int {
-  if index < 0 || index >= keyboard_events_ref.val.length() || offset < 0 {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.keyboard_events.length() ||
+    offset < 0 {
     return 0
   }
-  let text = keyboard_events_ref.val[index].text
+  let text = windowing_native_runtime_state.keyboard_events[index].text
   if offset >= text.length() {
     return 0
   }
@@ -2172,39 +2197,41 @@ pub fn input_keyboard_event_text_code_unit(index~ : Int, offset~ : Int) -> Int {
 
 ///|
 pub fn input_ime_event_count() -> Int {
-  ime_events_ref.val.length()
+  windowing_native_runtime_state.ime_events.length()
 }
 
 ///|
 pub fn input_ime_event_kind(index~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.ime_events.length() {
     return 0
   }
-  ime_events_ref.val[index].kind
+  windowing_native_runtime_state.ime_events[index].kind
 }
 
 ///|
 pub fn input_ime_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.ime_events.length() {
     return 0
   }
-  ime_events_ref.val[index].window
+  windowing_native_runtime_state.ime_events[index].window
 }
 
 ///|
 pub fn input_ime_event_len(index~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.ime_events.length() {
     return 0
   }
-  ime_events_ref.val[index].text.length()
+  windowing_native_runtime_state.ime_events[index].text.length()
 }
 
 ///|
 pub fn input_ime_event_code_unit(index~ : Int, offset~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() || offset < 0 {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.ime_events.length() ||
+    offset < 0 {
     return 0
   }
-  let text = ime_events_ref.val[index].text
+  let text = windowing_native_runtime_state.ime_events[index].text
   if offset >= text.length() {
     return 0
   }
@@ -2213,102 +2240,110 @@ pub fn input_ime_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 
 ///|
 pub fn input_ime_event_cursor_start(index~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.ime_events.length() {
     return -1
   }
-  ime_events_ref.val[index].cursor_start
+  windowing_native_runtime_state.ime_events[index].cursor_start
 }
 
 ///|
 pub fn input_ime_event_cursor_end(index~ : Int) -> Int {
-  if index < 0 || index >= ime_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.ime_events.length() {
     return -1
   }
-  ime_events_ref.val[index].cursor_end
+  windowing_native_runtime_state.ime_events[index].cursor_end
 }
 
 ///|
 pub fn input_pinch_gesture_event_count() -> Int {
-  pinch_gesture_events_ref.val.length()
+  windowing_native_runtime_state.pinch_gesture_events.length()
 }
 
 ///|
 pub fn input_pinch_gesture_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= pinch_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.pinch_gesture_events.length() {
     return -1
   }
-  pinch_gesture_events_ref.val[index].window
+  windowing_native_runtime_state.pinch_gesture_events[index].window
 }
 
 ///|
 pub fn input_pinch_gesture_event_delta(index~ : Int) -> Float {
-  if index < 0 || index >= pinch_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.pinch_gesture_events.length() {
     return 0.0
   }
-  pinch_gesture_events_ref.val[index].delta
+  windowing_native_runtime_state.pinch_gesture_events[index].delta
 }
 
 ///|
 pub fn input_rotation_gesture_event_count() -> Int {
-  rotation_gesture_events_ref.val.length()
+  windowing_native_runtime_state.rotation_gesture_events.length()
 }
 
 ///|
 pub fn input_rotation_gesture_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= rotation_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.rotation_gesture_events.length() {
     return -1
   }
-  rotation_gesture_events_ref.val[index].window
+  windowing_native_runtime_state.rotation_gesture_events[index].window
 }
 
 ///|
 pub fn input_rotation_gesture_event_delta(index~ : Int) -> Float {
-  if index < 0 || index >= rotation_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.rotation_gesture_events.length() {
     return 0.0
   }
-  rotation_gesture_events_ref.val[index].delta
+  windowing_native_runtime_state.rotation_gesture_events[index].delta
 }
 
 ///|
 pub fn input_pan_gesture_event_count() -> Int {
-  pan_gesture_events_ref.val.length()
+  windowing_native_runtime_state.pan_gesture_events.length()
 }
 
 ///|
 pub fn input_pan_gesture_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.pan_gesture_events.length() {
     return -1
   }
-  pan_gesture_events_ref.val[index].window
+  windowing_native_runtime_state.pan_gesture_events[index].window
 }
 
 ///|
 pub fn input_pan_gesture_event_x(index~ : Int) -> Float {
-  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.pan_gesture_events.length() {
     return 0.0
   }
-  pan_gesture_events_ref.val[index].x
+  windowing_native_runtime_state.pan_gesture_events[index].x
 }
 
 ///|
 pub fn input_pan_gesture_event_y(index~ : Int) -> Float {
-  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.pan_gesture_events.length() {
     return 0.0
   }
-  pan_gesture_events_ref.val[index].y
+  windowing_native_runtime_state.pan_gesture_events[index].y
 }
 
 ///|
 pub fn input_double_tap_gesture_event_count() -> Int {
-  double_tap_gesture_events_ref.val.length()
+  windowing_native_runtime_state.double_tap_gesture_events.length()
 }
 
 ///|
 pub fn input_double_tap_gesture_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= double_tap_gesture_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.double_tap_gesture_events.length() {
     return -1
   }
-  double_tap_gesture_events_ref.val[index].window
+  windowing_native_runtime_state.double_tap_gesture_events[index].window
 }
 
 ///|
@@ -2342,39 +2377,41 @@ pub fn input_touch_event_y(index~ : Int) -> Float {
 
 ///|
 pub fn input_drag_and_drop_event_count() -> Int {
-  drag_events_ref.val.length()
+  windowing_native_runtime_state.drag_events.length()
 }
 
 ///|
 pub fn input_drag_and_drop_event_kind(index~ : Int) -> Int {
-  if index < 0 || index >= drag_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.drag_events.length() {
     return 0
   }
-  drag_events_ref.val[index].kind
+  windowing_native_runtime_state.drag_events[index].kind
 }
 
 ///|
 pub fn input_drag_and_drop_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= drag_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.drag_events.length() {
     return -1
   }
-  drag_events_ref.val[index].window
+  windowing_native_runtime_state.drag_events[index].window
 }
 
 ///|
 pub fn input_drag_and_drop_event_len(index~ : Int) -> Int {
-  if index < 0 || index >= drag_events_ref.val.length() {
+  if index < 0 || index >= windowing_native_runtime_state.drag_events.length() {
     return 0
   }
-  drag_events_ref.val[index].text.length()
+  windowing_native_runtime_state.drag_events[index].text.length()
 }
 
 ///|
 pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
-  if index < 0 || index >= drag_events_ref.val.length() || offset < 0 {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.drag_events.length() ||
+    offset < 0 {
     return 0
   }
-  let text = drag_events_ref.val[index].text
+  let text = windowing_native_runtime_state.drag_events[index].text
   if offset >= text.length() {
     return 0
   }
@@ -2383,55 +2420,60 @@ pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 
 ///|
 pub fn input_window_theme_event_count() -> Int {
-  window_theme_events_ref.val.length()
+  windowing_native_runtime_state.window_theme_events.length()
 }
 
 ///|
 pub fn input_window_theme_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= window_theme_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.window_theme_events.length() {
     return -1
   }
-  window_theme_events_ref.val[index].window
+  windowing_native_runtime_state.window_theme_events[index].window
 }
 
 ///|
 pub fn input_window_theme_event_theme(index~ : Int) -> Int {
-  if index < 0 || index >= window_theme_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.window_theme_events.length() {
     return 0
   }
-  window_theme_events_ref.val[index].theme
+  windowing_native_runtime_state.window_theme_events[index].theme
 }
 
 ///|
 pub fn input_window_occluded_event_count() -> Int {
-  window_occluded_events_ref.val.length()
+  windowing_native_runtime_state.window_occluded_events.length()
 }
 
 ///|
 pub fn input_window_occluded_event_window(index~ : Int) -> Int {
-  if index < 0 || index >= window_occluded_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.window_occluded_events.length() {
     return -1
   }
-  window_occluded_events_ref.val[index].window
+  windowing_native_runtime_state.window_occluded_events[index].window
 }
 
 ///|
 pub fn input_window_occluded_event_occluded(index~ : Int) -> Bool {
-  if index < 0 || index >= window_occluded_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.window_occluded_events.length() {
     return false
   }
-  window_occluded_events_ref.val[index].occluded
+  windowing_native_runtime_state.window_occluded_events[index].occluded
 }
 
 ///|
 pub fn input_app_lifecycle_event_count() -> Int {
-  app_lifecycle_events_ref.val.length()
+  windowing_native_runtime_state.app_lifecycle_events.length()
 }
 
 ///|
 pub fn input_app_lifecycle_event_kind(index~ : Int) -> Int {
-  if index < 0 || index >= app_lifecycle_events_ref.val.length() {
+  if index < 0 ||
+    index >= windowing_native_runtime_state.app_lifecycle_events.length() {
     return APP_LIFECYCLE_IDLE
   }
-  app_lifecycle_events_ref.val[index]
+  windowing_native_runtime_state.app_lifecycle_events[index]
 }

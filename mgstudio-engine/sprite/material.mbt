@@ -660,9 +660,6 @@ pub struct MeshMaterial2d[M] {
 }
 
 ///|
-pub impl[M] @ecs.Mutable for MeshMaterial2d[M]
-
-///|
 pub fn[M] MeshMaterial2d::new(material : @asset.Handle[M]) -> MeshMaterial2d[M] {
   MeshMaterial2d::{ handle: material }
 }

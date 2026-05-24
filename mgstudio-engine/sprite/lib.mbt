@@ -29,8 +29,7 @@ let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @e
 )
 
 ///|
-let sprite_bounds_initialized_worlds_ref : Ref[@hashset.HashSet[Int]] = Ref(
-  @hashset.HashSet([]),
+let sprite_bounds_initialized_worlds : @hashset.HashSet[Int] = @hashset.HashSet([],
 )
 
 ///|
@@ -218,9 +217,9 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     return
   }
   let world_id = world.world_id()
-  let first_run = !sprite_bounds_initialized_worlds_ref.val.contains(world_id)
+  let first_run = !sprite_bounds_initialized_worlds.contains(world_id)
   if first_run {
-    sprite_bounds_initialized_worlds_ref.val.add(world_id)
+    sprite_bounds_initialized_worlds.add(world_id)
   }
   let pending_aabbs : Array[(@core.Entity, @camera_primitives.Aabb)] = []
   let changed_mesh2d_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([])

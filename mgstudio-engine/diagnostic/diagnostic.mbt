@@ -276,7 +276,7 @@ pub fn Diagnostic::add_measurement(
 
 ///|
 pub struct DiagnosticsStore {
-  diagnostics : @hashmap.HashMap[String, Ref[Diagnostic]]
+  diagnostics : @hashmap.HashMap[String, Diagnostic]
 }
 
 ///|
@@ -299,7 +299,7 @@ pub fn DiagnosticsStore::add(
   self : DiagnosticsStore,
   diagnostic : Diagnostic,
 ) -> Unit {
-  self.diagnostics.set(diagnostic.path().as_str(), Ref(diagnostic))
+  self.diagnostics.set(diagnostic.path().as_str(), diagnostic)
 }
 
 ///|
@@ -307,16 +307,6 @@ pub fn DiagnosticsStore::get(
   self : DiagnosticsStore,
   path : DiagnosticPath,
 ) -> Diagnostic? {
-  self.diagnostics
-  .get(path.as_str())
-  .map(fn(diagnostic_ref) { diagnostic_ref.val })
-}
-
-///|
-pub fn DiagnosticsStore::get_ref(
-  self : DiagnosticsStore,
-  path : DiagnosticPath,
-) -> Ref[Diagnostic]? {
   self.diagnostics.get(path.as_str())
 }
 
@@ -325,10 +315,10 @@ pub fn DiagnosticsStore::get_measurement(
   self : DiagnosticsStore,
   path : DiagnosticPath,
 ) -> DiagnosticMeasurement? {
-  match self.get_ref(path) {
-    Some(diagnostic_ref) =>
-      if diagnostic_ref.val.is_enabled {
-        diagnostic_ref.val.measurement()
+  match self.get(path) {
+    Some(diagnostic) =>
+      if diagnostic.is_enabled {
+        diagnostic.measurement()
       } else {
         None
       }
@@ -340,34 +330,20 @@ pub fn DiagnosticsStore::get_measurement(
 pub fn DiagnosticsStore::iter(self : DiagnosticsStore) -> Array[Diagnostic] {
   let diagnostics : Array[Diagnostic] = []
   for entry in self.diagnostics.iter() {
-    let (_path, diagnostic_ref) = entry
-    diagnostics.push(diagnostic_ref.val)
+    let (_path, diagnostic) = entry
+    diagnostics.push(diagnostic)
   }
   diagnostics
 }
 
 ///|
-pub fn DiagnosticsStore::iter_refs(
-  self : DiagnosticsStore,
-) -> Array[Ref[Diagnostic]] {
-  let diagnostics : Array[Ref[Diagnostic]] = []
-  for entry in self.diagnostics.iter() {
-    let (_path, diagnostic_ref) = entry
-    diagnostics.push(diagnostic_ref)
-  }
-  diagnostics
-}
-
-///|
-pub fn DiagnosticsStore::iter_mut(
-  self : DiagnosticsStore,
-) -> Array[Ref[Diagnostic]] {
-  self.iter_refs()
+pub fn DiagnosticsStore::iter_mut(self : DiagnosticsStore) -> Array[Diagnostic] {
+  self.iter()
 }
 
 ///|
 pub struct Diagnostics {
-  store_ref : Ref[DiagnosticsStore]
+  store : DiagnosticsStore
   buffer : @hashmap.HashMap[String, DiagnosticMeasurement]
 }
 
@@ -377,20 +353,22 @@ pub impl @app.SystemParam for Diagnostics with init_state(world) {
 }
 
 ///|
-fn diagnostics_store_ref_mut(world : @ecs.World) -> Ref[DiagnosticsStore]? {
-  world.get_resource_ref_mut(DiagnosticsStore::resource())
+fn diagnostics_store_mut(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[DiagnosticsStore]? {
+  world.get_resource_mut(DiagnosticsStore::resource())
 }
 
 ///|
-fn diagnostics_store_ref(world : @ecs.World) -> Ref[DiagnosticsStore]? {
-  world.get_resource_ref(DiagnosticsStore::resource())
+fn diagnostics_store(world : @ecs.World) -> DiagnosticsStore? {
+  world.get_resource(DiagnosticsStore::resource())
 }
 
 ///|
 pub impl @app.SystemParam for Diagnostics with get(_state) {
   let world = @app.current_world().unwrap()
-  match diagnostics_store_ref(world) {
-    Some(store_ref) => Diagnostics::{ store_ref, buffer: @hashmap.HashMap([]) }
+  match diagnostics_store(world) {
+    Some(store) => Diagnostics::{ store, buffer: @hashmap.HashMap([]) }
     None => abort("Missing DiagnosticsStore resource")
   }
 }
@@ -408,16 +386,18 @@ pub impl @app.SystemParam for Diagnostics with store(self, state) {
   self.buffer.clear()
   @app.queue_deferred_world_action(
     fn(world : @ecs.World) {
-      guard world.get_resource_ref_mut(DiagnosticsStore::resource())
-        is Some(store_ref) else {
+      guard world.get_resource_mut(DiagnosticsStore::resource())
+        is Some(store_mut) else {
         return
       }
-      for entry in entries {
-        let (path, measurement) = entry
-        if store_ref.val.diagnostics.get(path) is Some(diagnostic_ref) {
-          diagnostic_ref.val.add_measurement(measurement)
+      store_mut.modify(fn(store) {
+        for entry in entries {
+          let (path, measurement) = entry
+          if store.diagnostics.get(path) is Some(diagnostic) {
+            diagnostic.add_measurement(measurement)
+          }
         }
-      }
+      })
     },
     source="diagnostic::DiagnosticsBuffer",
   )
@@ -444,8 +424,8 @@ fn diagnostics_store_has_enabled_path(
   store : DiagnosticsStore,
   path : DiagnosticPath,
 ) -> Bool {
-  match store.get_ref(path) {
-    Some(diagnostic_ref) => diagnostic_ref.val.is_enabled
+  match store.get(path) {
+    Some(diagnostic) => diagnostic.is_enabled
     None => false
   }
 }
@@ -461,7 +441,7 @@ fn Diagnostics::buffer_measurement(
   path : DiagnosticPath,
   value : () -> Float,
 ) -> Unit {
-  if diagnostics_store_has_enabled_path(self.store_ref.val, path) {
+  if diagnostics_store_has_enabled_path(self.store, path) {
     diagnostics_measurement_buffer_set(
       self.buffer,
       path,
@@ -491,8 +471,8 @@ pub fn register_diagnostic(
       DiagnosticsStore::DiagnosticsStore(),
     )
   }
-  match diagnostics_store_ref_mut(world) {
-    Some(store_ref) => store_ref.val.add(diagnostic)
+  match diagnostics_store_mut(world) {
+    Some(store_mut) => store_mut.modify(fn(store) { store.add(diagnostic) })
     None => abort("Failed to access DiagnosticsStore resource")
   }
   app

@@ -46,7 +46,7 @@ pub fn[T] World::changed_components(
   system : @core.SystemTicks,
 ) -> ChangedComponents[T] {
   let reader = match self.changed_component_messages(key.id()) {
-    Some(messages_ref) => messages_ref.val.reader(system)
+    Some(messages) => messages.reader(system)
     None => @core.Messages::new().reader(system)
   }
   ChangedComponents::{ reader, }

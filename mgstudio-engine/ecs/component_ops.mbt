@@ -19,6 +19,9 @@ struct ComponentOps {
   contains : (World, @core.Entity) -> Bool
   for_each_entity : (World, (@core.Entity) -> Unit) -> Unit
   remove : (World, @core.Entity) -> Bool
+  move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
+  move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
+  swap_remove_table_row : (World, Int, Int) -> Unit
 }
 
 ///|
@@ -32,11 +35,29 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
   {
     definition_id,
     debug_name,
-    contains: key.access.contains,
+    contains: fn(world, entity) { key.component_contains(world, entity) },
     for_each_entity: fn(world, visit) {
-      (key.access.for_each)(world, fn(entity, _value) { visit(entity) })
+      key.component_for_each(world, fn(entity, _value) { visit(entity) })
     },
-    remove: fn(world, entity) { (key.access.remove)(world, entity) is Some(_) },
+    remove: fn(world, entity) { key.component_remove(world, entity) is Some(_) },
+    move_table_row: fn(
+      world,
+      entity,
+      source_table_id,
+      source_row_index,
+      target_table_id,
+      target_row_index,
+    ) {
+      key.component_move_table_row(
+        world, entity, source_table_id, source_row_index, target_table_id, target_row_index,
+      )
+    },
+    move_staged_to_table_row: fn(world, entity, table_id, row_index) {
+      key.component_move_staged_to_table_row(world, entity, table_id, row_index)
+    },
+    swap_remove_table_row: fn(world, table_id, row_index) {
+      key.component_swap_remove_table_row(world, table_id, row_index)
+    },
   }
 }
 

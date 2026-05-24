@@ -535,7 +535,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 
   let reader = world.message_reader(
     @app.check_parent_has_component_message_key(ecs_key_global_transform),
-    Ref(0),
+    cursor=@ecs.MessageCursor::MessageCursor(),
   )
   debug_inspect(reader.len(), content="1")
 }

@@ -290,7 +290,7 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
   ) {
     first_hits.val = first_hits.val + 1
     seen_entities.push(event.entity().id)
-    captured_world_id.val = current_observer_world_abort_missing().world_id()
+    captured_world_id.val = event.world().world_id()
   })
   ignore(
     world0.add_component_observer(fn(

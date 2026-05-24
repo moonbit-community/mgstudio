@@ -258,13 +258,13 @@ fn render3d_prewarm_shadow_material_pipeline(
     is Some(mesh_asset) else {
     return None
   }
-  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
   let render_mesh = @render_mesh.RenderMesh::from_mesh(
     mesh_asset,
-    state_ref.val.mesh_vertex_buffer_layouts,
+    state.peek().mesh_vertex_buffer_layouts,
   )
   let layout = render_mesh.host_vertex_buffer_layout(
-    state_ref.val.mesh_vertex_buffer_layouts,
+    state.peek().mesh_vertex_buffer_layouts,
   )
   let base_key = material_pipeline_key_for_standard_material_render_mesh(
     shadow_mesh.material_properties,
@@ -298,7 +298,7 @@ fn render3d_prewarm_shadow_material_pipeline(
   }
   let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
   match
-    state_ref.val.specialized_prepass_material_pipelines.render_pipeline_descriptor(
+    state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
       prepass_pipeline_id,
     ) {
     Some(descriptor) =>

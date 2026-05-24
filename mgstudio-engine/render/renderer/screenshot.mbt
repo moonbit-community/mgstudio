@@ -111,7 +111,7 @@ fn parity_capture_delay_frames_from_env() -> Int {
 
 ///|
 fn parity_capture_load_config() -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   if state.parity_capture_config_loaded {
     return
   }
@@ -178,7 +178,7 @@ fn parity_capture_write_blob(
 
 ///|
 fn parity_capture_maybe_request_surface_capture() -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   parity_capture_load_config()
   guard state.parity_capture_blob_path is Some(_) else { return }
   if state.parity_capture_written || state.parity_capture_request_id > 0 {
@@ -203,7 +203,7 @@ fn parity_capture_maybe_request_surface_capture() -> Unit {
 fn parity_capture_try_write_completed_capture(
   capture : ScreenshotCaptureResult,
 ) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   if state.parity_capture_request_id <= 0 ||
     capture.id != state.parity_capture_request_id {
     return
@@ -224,7 +224,7 @@ fn parity_capture_try_write_completed_capture(
 
 ///|
 fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   if backend.surface_capture_active {
     return
   }
@@ -336,13 +336,11 @@ fn screenshot_runtime_state_default() -> ScreenshotRuntimeState {
 }
 
 ///|
-let screenshot_runtime_state_ref : Ref[ScreenshotRuntimeState] = Ref(
-  screenshot_runtime_state_default(),
-)
+let screenshot_runtime_state : ScreenshotRuntimeState = screenshot_runtime_state_default()
 
 ///|
 fn next_screenshot_capture_id() -> Int {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   let id = state.next_screenshot_capture_id
   state.next_screenshot_capture_id = state.next_screenshot_capture_id + 1
   id
@@ -426,7 +424,7 @@ fn screenshot_enqueue_texture_capture(
   height : Int,
   format_raw : UInt,
 ) -> Int {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(_) else {
     return 0
   }
@@ -492,7 +490,7 @@ fn screenshot_enqueue_copy_to_buffer(
   height : Int,
   format_raw : UInt,
 ) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(bytes_per_pixel) else {
     return
   }
@@ -627,7 +625,7 @@ fn screenshot_encode_pending_texture_captures(
   backend : GpuBackend,
   frame : GpuFrameState,
 ) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   let pending = state.pending_screenshot_captures
   state.pending_screenshot_captures = []
   for capture in pending {
@@ -648,7 +646,7 @@ fn screenshot_encode_active_surface_captures(
   backend : GpuBackend,
   frame : GpuFrameState,
 ) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   if !backend.surface_capture_active {
     return
   }
@@ -699,7 +697,7 @@ fn screenshot_encode_active_surface_captures(
 
 ///|
 fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   if !backend.surface_capture_active {
     return
   }
@@ -714,7 +712,7 @@ fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit {
 
 ///|
 fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   let inflight = state.inflight_screenshot_captures
   state.inflight_screenshot_captures = []
   for capture in inflight {
@@ -748,7 +746,7 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
 
 ///|
 pub fn screenshot_capture_surface_request() -> Int {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
   state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
@@ -761,7 +759,7 @@ pub fn screenshot_capture_surface_request() -> Int {
 
 ///|
 pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   guard target_id > 0 else { return 0 }
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
@@ -792,7 +790,7 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
 pub fn screenshot_take_capture_result(
   capture_id : Int,
 ) -> ScreenshotCaptureResult? {
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   for i in 0..<state.completed_screenshot_captures.length() {
     let capture = state.completed_screenshot_captures[i]
     if capture.id == capture_id {
@@ -823,7 +821,7 @@ pub fn screenshot_capture_texture_sync(
 ///|
 pub fn screenshot_parity_capture_completed() -> Bool {
   parity_capture_load_config()
-  let state = screenshot_runtime_state_ref.val
+  let state = screenshot_runtime_state
   state.parity_capture_blob_path is Some(_) && state.parity_capture_written
 }
 

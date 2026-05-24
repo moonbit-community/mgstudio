@@ -351,43 +351,43 @@ priv struct TextState {
 }
 
 ///|
-let text_state : Ref[TextState] = Ref(TextState::{
+let text_state : TextState = TextState::{
   next_text_id: 0,
   next_span_id: 0,
   texts: [],
   text_index_by_id: {},
-})
+}
 
 ///|
 fn text_state_clear_instances() -> Unit {
-  text_state.val.texts.clear()
-  text_state.val.text_index_by_id.clear()
+  text_state.texts.clear()
+  text_state.text_index_by_id.clear()
 }
 
 ///|
 fn text_state_find_index_by_id(id : Int) -> Int? {
-  match text_state.val.text_index_by_id.get(id) {
+  match text_state.text_index_by_id.get(id) {
     Some(index) =>
       if index >= 0 &&
-        index < text_state.val.texts.length() &&
-        text_state.val.texts[index].id == id {
+        index < text_state.texts.length() &&
+        text_state.texts[index].id == id {
         Some(index)
       } else {
-        let count = text_state.val.texts.length()
+        let count = text_state.texts.length()
         for i in 0..<count {
-          if text_state.val.texts[i].id == id {
-            text_state.val.text_index_by_id.set(id, i)
+          if text_state.texts[i].id == id {
+            text_state.text_index_by_id.set(id, i)
             return Some(i)
           }
         }
-        ignore(text_state.val.text_index_by_id.remove(id))
+        ignore(text_state.text_index_by_id.remove(id))
         None
       }
     None => {
-      let count = text_state.val.texts.length()
+      let count = text_state.texts.length()
       for i in 0..<count {
-        if text_state.val.texts[i].id == id {
-          text_state.val.text_index_by_id.set(id, i)
+        if text_state.texts[i].id == id {
+          text_state.text_index_by_id.set(id, i)
           return Some(i)
         }
       }
@@ -417,24 +417,32 @@ pub fn text_compute_cull_margin(
 }
 
 ///|
-let text_runtime_rem_size_ref : Ref[Float] = Ref(20.0F)
+priv struct TextRuntimeState {
+  mut rem_size : Float
+  mut layout_dirty : Bool
+  mut debug_capture_enabled : Bool
+}
 
 ///|
-let text_layout_dirty_ref : Ref[Bool] = Ref(true)
+let text_runtime_state : TextRuntimeState = {
+  rem_size: 20.0F,
+  layout_dirty: true,
+  debug_capture_enabled: false,
+}
 
 ///|
 pub fn text_runtime_mark_layout_dirty() -> Unit {
-  text_layout_dirty_ref.val = true
+  text_runtime_state.layout_dirty = true
 }
 
 ///|
 pub fn text_runtime_layout_dirty() -> Bool {
-  text_layout_dirty_ref.val
+  text_runtime_state.layout_dirty
 }
 
 ///|
 pub fn text_runtime_clear_layout_dirty() -> Unit {
-  text_layout_dirty_ref.val = false
+  text_runtime_state.layout_dirty = false
 }
 
 ///|
@@ -459,35 +467,32 @@ priv struct TextDebugFrameState {
 }
 
 ///|
-let text_debug_frame_state : Ref[TextDebugFrameState] = Ref(TextDebugFrameState::{
+let text_debug_frame_state : TextDebugFrameState = TextDebugFrameState::{
   draws: [],
-})
-
-///|
-let text_debug_capture_enabled_state : Ref[Bool] = Ref(false)
+}
 
 ///|
 pub fn text_debug_capture_enabled() -> Bool {
-  text_debug_capture_enabled_state.val
+  text_runtime_state.debug_capture_enabled
 }
 
 ///|
 pub fn text_debug_set_capture_enabled(enabled : Bool) -> Unit {
-  text_debug_capture_enabled_state.val = enabled
+  text_runtime_state.debug_capture_enabled = enabled
   if !enabled {
-    text_debug_frame_state.val.draws.clear()
+    text_debug_frame_state.draws.clear()
   }
 }
 
 ///|
 pub fn text_debug_clear_frame() -> Unit {
-  if !text_debug_capture_enabled_state.val {
-    if text_debug_frame_state.val.draws.length() > 0 {
-      text_debug_frame_state.val.draws.clear()
+  if !text_runtime_state.debug_capture_enabled {
+    if text_debug_frame_state.draws.length() > 0 {
+      text_debug_frame_state.draws.clear()
     }
     return
   }
-  text_debug_frame_state.val.draws.clear()
+  text_debug_frame_state.draws.clear()
 }
 
 ///|
@@ -499,10 +504,10 @@ pub fn text_debug_push_glyph(
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
 ) -> Unit {
-  if !text_debug_capture_enabled_state.val {
+  if !text_runtime_state.debug_capture_enabled {
     return
   }
-  text_debug_frame_state.val.draws.push(TextDebugGlyphDraw::{
+  text_debug_frame_state.draws.push(TextDebugGlyphDraw::{
     text_id,
     bounds,
     scissor,
@@ -515,7 +520,7 @@ pub fn text_debug_push_glyph(
 ///|
 pub fn text_debug_draw_count(handle : TextHandle) -> Int {
   let mut count = 0
-  for draw in text_debug_frame_state.val.draws {
+  for draw in text_debug_frame_state.draws {
     if draw.text_id == handle.id {
       count = count + 1
     }
@@ -526,7 +531,7 @@ pub fn text_debug_draw_count(handle : TextHandle) -> Int {
 ///|
 pub fn text_debug_draws(handle : TextHandle) -> Array[TextDebugGlyphDraw] {
   let draws : Array[TextDebugGlyphDraw] = []
-  for draw in text_debug_frame_state.val.draws {
+  for draw in text_debug_frame_state.draws {
     if draw.text_id == handle.id {
       draws.push(draw)
     }
@@ -536,13 +541,13 @@ pub fn text_debug_draws(handle : TextHandle) -> Array[TextDebugGlyphDraw] {
 
 ///|
 pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw] {
-  text_debug_frame_state.val.draws
+  text_debug_frame_state.draws
 }
 
 ///|
 pub fn text_debug_text_infos() -> Array[TextDebugTextInfo] {
   let infos : Array[TextDebugTextInfo] = []
-  for instance in text_state.val.texts {
+  for instance in text_state.texts {
     infos.push(TextDebugTextInfo::{
       text_id: instance.id,
       content: instance.text.content,
@@ -594,11 +599,11 @@ fn text_debug_visible_bounds(draw : TextDebugGlyphDraw) -> @math.Rect? {
 ///|
 pub fn text_debug_overlap_count(lhs : TextHandle, rhs : TextHandle) -> Int {
   let mut overlap = 0
-  for a in text_debug_frame_state.val.draws {
+  for a in text_debug_frame_state.draws {
     if a.text_id != lhs.id {
       continue
     }
-    for b in text_debug_frame_state.val.draws {
+    for b in text_debug_frame_state.draws {
       if b.text_id != rhs.id {
         continue
       }
@@ -613,7 +618,7 @@ pub fn text_debug_overlap_count(lhs : TextHandle, rhs : TextHandle) -> Int {
 ///|
 pub fn text_debug_visible_draw_count(handle : TextHandle) -> Int {
   let mut count = 0
-  for draw in text_debug_frame_state.val.draws {
+  for draw in text_debug_frame_state.draws {
     if draw.text_id != handle.id {
       continue
     }
@@ -630,13 +635,13 @@ pub fn text_debug_visible_overlap_count(
   rhs : TextHandle,
 ) -> Int {
   let mut overlap = 0
-  for a in text_debug_frame_state.val.draws {
+  for a in text_debug_frame_state.draws {
     if a.text_id != lhs.id {
       continue
     }
     let visible_a = text_debug_visible_bounds(a)
     guard visible_a is Some(a_rect) else { continue }
-    for b in text_debug_frame_state.val.draws {
+    for b in text_debug_frame_state.draws {
       if b.text_id != rhs.id {
         continue
       }
@@ -652,11 +657,11 @@ pub fn text_debug_visible_overlap_count(
 
 ///|
 pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
-  let id = text_state.val.next_text_id
-  let index = text_state.val.texts.length()
-  text_state.val.next_text_id = id + 1
+  let id = text_state.next_text_id
+  let index = text_state.texts.length()
+  text_state.next_text_id = id + 1
   text_runtime_mark_layout_dirty()
-  text_state.val.texts.push(TextInstance::{
+  text_state.texts.push(TextInstance::{
     id,
     text: bundle.text,
     font: bundle.font,
@@ -692,7 +697,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     computed: ComputedTextBlock::ComputedTextBlock(),
     layout_info: TextLayoutInfo::TextLayoutInfo(),
   })
-  text_state.val.text_index_by_id.set(id, index)
+  text_state.text_index_by_id.set(id, index)
   TextHandle::{ id, }
 }
 
@@ -701,11 +706,11 @@ pub fn text_spawn_span(
   parent : TextHandle,
   bundle : TextSpanBundle,
 ) -> TextSpanHandle {
-  let span_id = text_state.val.next_span_id
-  text_state.val.next_span_id = span_id + 1
+  let span_id = text_state.next_span_id
+  text_state.next_span_id = span_id + 1
   text_runtime_mark_layout_dirty()
   if text_state_find_index_by_id(parent.id) is Some(index) {
-    let instance = text_state.val.texts[index]
+    let instance = text_state.texts[index]
     instance.spans.push(TextSpanInstance::{
       id: span_id,
       span: bundle.span,
@@ -718,7 +723,7 @@ pub fn text_spawn_span(
       strikethrough_color: bundle.strikethrough_color,
       line_height: bundle.line_height,
     })
-    text_state.val.texts[index] = TextInstance::{
+    text_state.texts[index] = TextInstance::{
       ..instance,
       spans: instance.spans,
       layout_dirty: true,
@@ -733,24 +738,24 @@ pub fn text_despawn(handle : TextHandle) -> Bool {
   guard text_state_find_index_by_id(handle.id) is Some(index) else {
     return false
   }
-  let last_index = text_state.val.texts.length() - 1
+  let last_index = text_state.texts.length() - 1
   if index != last_index {
-    let moved = text_state.val.texts[last_index]
-    text_state.val.texts[index] = moved
-    text_state.val.text_index_by_id.set(moved.id, index)
+    let moved = text_state.texts[last_index]
+    text_state.texts[index] = moved
+    text_state.text_index_by_id.set(moved.id, index)
   }
-  ignore(text_state.val.texts.pop())
-  ignore(text_state.val.text_index_by_id.remove(handle.id))
-  if text_debug_frame_state.val.draws.length() > 0 {
+  ignore(text_state.texts.pop())
+  ignore(text_state.text_index_by_id.remove(handle.id))
+  if text_debug_frame_state.draws.length() > 0 {
     let next_draws : Array[TextDebugGlyphDraw] = []
-    for draw in text_debug_frame_state.val.draws {
+    for draw in text_debug_frame_state.draws {
       if draw.text_id != handle.id {
         next_draws.push(draw)
       }
     }
-    text_debug_frame_state.val.draws.clear()
+    text_debug_frame_state.draws.clear()
     for draw in next_draws {
-      text_debug_frame_state.val.draws.push(draw)
+      text_debug_frame_state.draws.push(draw)
     }
   }
   true
@@ -762,7 +767,7 @@ fn text_update_instance(
   update : (TextInstance) -> TextInstance,
 ) -> Unit {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    text_state.val.texts[index] = update(text_state.val.texts[index])
+    text_state.texts[index] = update(text_state.texts[index])
   }
 }
 
@@ -987,7 +992,7 @@ pub fn text_set_transform(
 /// Get the current transform for a text handle.
 pub fn text_get_transform(handle : TextHandle) -> @transform.Transform? {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    return Some(text_state.val.texts[index].transform)
+    return Some(text_state.texts[index].transform)
   }
   None
 }
@@ -1171,7 +1176,7 @@ pub fn text_set_ui_scissor(handle : TextHandle, scissor : @math.Rect?) -> Unit {
 /// Get current optional UI clip rect for a text handle.
 pub fn text_get_ui_scissor(handle : TextHandle) -> @math.Rect? {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    return text_state.val.texts[index].ui_scissor
+    return text_state.texts[index].ui_scissor
   }
   None
 }
@@ -1180,29 +1185,29 @@ pub fn text_get_ui_scissor(handle : TextHandle) -> @math.Rect? {
 /// Get the last computed logical layout size (may lag by one frame).
 pub fn text_get_layout_size(handle : TextHandle) -> @math.Vec2? {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    return Some(text_state.val.texts[index].layout_info.size)
+    return Some(text_state.texts[index].layout_info.size)
   }
   None
 }
 
 ///|
 pub fn text_set_runtime_rem_size(rem_size : Float) -> Unit {
-  if text_runtime_rem_size_ref.val != rem_size {
-    let count = text_state.val.texts.length()
+  if text_runtime_state.rem_size != rem_size {
+    let count = text_state.texts.length()
     for i in 0..<count {
-      let instance = text_state.val.texts[i]
-      text_state.val.texts[i] = TextInstance::{ ..instance, layout_dirty: true }
+      let instance = text_state.texts[i]
+      text_state.texts[i] = TextInstance::{ ..instance, layout_dirty: true }
     }
     text_runtime_mark_layout_dirty()
   }
-  text_runtime_rem_size_ref.val = rem_size
+  text_runtime_state.rem_size = rem_size
 }
 
 ///|
 /// Get the current text content for a handle.
 pub fn text_get_content(handle : TextHandle) -> String? {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    return Some(text_state.val.texts[index].text.content)
+    return Some(text_state.texts[index].text.content)
   }
   None
 }
@@ -1235,7 +1240,7 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
   }
 
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    let instance = text_state.val.texts[index]
+    let instance = text_state.texts[index]
     let glyphs = instance.layout_info.glyphs
     if glyphs.length() == 0 {
       return None
@@ -1277,41 +1282,34 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       (YAxisOrientation::TopToBottom, None) => origin_offset_layout
       _ => to_y_up(instance.y_axis, origin_offset_layout)
     }
-    fn extend_with_point(
-      p : @math.Vec2,
-      min_x : Ref[Float],
-      min_y : Ref[Float],
-      max_x : Ref[Float],
-      max_y : Ref[Float],
-      initialized : Ref[Bool],
-    ) -> Unit {
-      if !initialized.val {
-        min_x.val = p.x
-        min_y.val = p.y
-        max_x.val = p.x
-        max_y.val = p.y
-        initialized.val = true
+    let mut min_x = 0.0F
+    let mut min_y = 0.0F
+    let mut max_x = 0.0F
+    let mut max_y = 0.0F
+    let mut initialized = false
+    fn extend_with_point(p : @math.Vec2) -> Unit {
+      if !initialized {
+        min_x = p.x
+        min_y = p.y
+        max_x = p.x
+        max_y = p.y
+        initialized = true
         return
       }
-      if p.x < min_x.val {
-        min_x.val = p.x
+      if p.x < min_x {
+        min_x = p.x
       }
-      if p.y < min_y.val {
-        min_y.val = p.y
+      if p.y < min_y {
+        min_y = p.y
       }
-      if p.x > max_x.val {
-        max_x.val = p.x
+      if p.x > max_x {
+        max_x = p.x
       }
-      if p.y > max_y.val {
-        max_y.val = p.y
+      if p.y > max_y {
+        max_y = p.y
       }
     }
 
-    let min_x_ref = Ref(0.0F)
-    let min_y_ref = Ref(0.0F)
-    let max_x_ref = Ref(0.0F)
-    let max_y_ref = Ref(0.0F)
-    let initialized_ref = Ref(false)
     for glyph in glyphs {
       let glyph_pos = to_y_up(instance.y_axis, glyph.position)
       let local_pos = @math.Vec2::new(
@@ -1333,46 +1331,18 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       let c1 = rotate_vec2(@math.Vec2::new(half_w, 0.0F - half_h), rot)
       let c2 = rotate_vec2(@math.Vec2::new(half_w, half_h), rot)
       let c3 = rotate_vec2(@math.Vec2::new(0.0F - half_w, half_h), rot)
-      extend_with_point(
-        @math.Vec2::new(center.x + c0.x, center.y + c0.y),
-        min_x_ref,
-        min_y_ref,
-        max_x_ref,
-        max_y_ref,
-        initialized_ref,
-      )
-      extend_with_point(
-        @math.Vec2::new(center.x + c1.x, center.y + c1.y),
-        min_x_ref,
-        min_y_ref,
-        max_x_ref,
-        max_y_ref,
-        initialized_ref,
-      )
-      extend_with_point(
-        @math.Vec2::new(center.x + c2.x, center.y + c2.y),
-        min_x_ref,
-        min_y_ref,
-        max_x_ref,
-        max_y_ref,
-        initialized_ref,
-      )
-      extend_with_point(
-        @math.Vec2::new(center.x + c3.x, center.y + c3.y),
-        min_x_ref,
-        min_y_ref,
-        max_x_ref,
-        max_y_ref,
-        initialized_ref,
-      )
+      extend_with_point(@math.Vec2::new(center.x + c0.x, center.y + c0.y))
+      extend_with_point(@math.Vec2::new(center.x + c1.x, center.y + c1.y))
+      extend_with_point(@math.Vec2::new(center.x + c2.x, center.y + c2.y))
+      extend_with_point(@math.Vec2::new(center.x + c3.x, center.y + c3.y))
     }
-    if !initialized_ref.val {
+    if !initialized {
       return None
     }
     return Some(
       @math.Rect::new(
-        @math.Vec2::new(min_x_ref.val, min_y_ref.val),
-        @math.Vec2::new(max_x_ref.val, max_y_ref.val),
+        @math.Vec2::new(min_x, min_y),
+        @math.Vec2::new(max_x, max_y),
       ),
     )
   }

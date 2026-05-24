@@ -79,7 +79,7 @@ pub fn[T] AssetEvent::is_unused(
 
 ///|
 pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
-  for entry in asset_event_dispatch_registry.val.iter() {
+  for entry in asset_event_dispatch_registry.iter() {
     let (_type_name, dispatch) = entry
     dispatch(world)
   }

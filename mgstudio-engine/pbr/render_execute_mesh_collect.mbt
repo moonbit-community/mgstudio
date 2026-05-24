@@ -132,10 +132,10 @@ priv struct Render3dExtractMeshRequiredComponents {
 fn render3d_extract_mesh_for_entity(
   source_world : @ecs.World,
   entity : @core.Entity,
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
-  morph_indices_ref : Ref[@pbr_render.MorphIndices],
-  skin_uniforms_ref : Ref[@pbr_render.SkinUniforms],
-  world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
+  morph_indices_value : @pbr_render.MorphIndices,
+  skin_uniforms_value : @pbr_render.SkinUniforms,
+  world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
   standard_material_frame_cache : Map[Int, StandardMaterial],
   resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial],
   needs_mesh_previous_transform : Bool,
@@ -220,7 +220,7 @@ fn render3d_extract_mesh_for_entity(
           }
           @transform.GlobalTransform::from_transform(
             @pbr_render.render3d_entity_world_transform_from_components(
-              source_world, entity, local_transform, world_transform_cache_ref,
+              source_world, entity, local_transform, world_transform_cache_value,
             ),
           )
         }
@@ -320,10 +320,10 @@ fn render3d_extract_mesh_for_entity(
   }
   let aabb = prefetched_aabb
   let entity_key = render3d_mesh_entity_key(entity)
-  let has_previous_skin = skin_uniforms_ref.val.previous_skins.contains(
+  let has_previous_skin = skin_uniforms_value.previous_skins.contains(
     entity_key,
   )
-  let has_previous_morph = morph_indices_ref.val.prev.get(entity_key) is Some(_)
+  let has_previous_morph = morph_indices_value.prev.get(entity_key) is Some(_)
   let motion_vector_enabled = if needs_mesh_previous_transform {
     let supports_motion = match
       render3d_mesh_draw_alpha(material.alpha_mode, material.base_color.a) {
@@ -358,15 +358,14 @@ fn render3d_extract_mesh_for_entity(
     None
   }
   let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
-    skin_uniforms_ref, entity,
+    skin_uniforms_value, entity,
   )
-  let morph_weights_index = match
-    morph_indices_ref.val.current.get(entity_key) {
+  let morph_weights_index = match morph_indices_value.current.get(entity_key) {
     Some(offset) => offset.reinterpret_as_int()
     None => -1
   }
   let previous_morph_weights_index = match
-    morph_indices_ref.val.prev.get(entity_key) {
+    morph_indices_value.prev.get(entity_key) {
     Some(offset) => offset.reinterpret_as_int()
     None => -1
   }
@@ -374,19 +373,19 @@ fn render3d_extract_mesh_for_entity(
     (try! source_world.get_by_key(entity, @mesh.MorphTargetMesh::component())) {
     Some(value) =>
       render3d_morph_target_texture_id(
-        mesh_runtime_state_ref,
+        mesh_runtime_state_value,
         value.source_mesh(),
       )
     None => -1
   }
   let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
-    mesh_runtime_state_ref,
+    mesh_runtime_state_value,
     mesh3d.mesh(),
   )
   let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
     mesh3d.mesh(),
     mesh_id,
-    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
+    mesh_runtime_state_value.mesh_preprocess_static_cache,
   )
   let lightmap = prefetched_lightmap
   let is_forward_decal = prefetched_is_forward_decal
@@ -451,10 +450,10 @@ fn render3d_extract_mesh_for_entity(
 fn render3d_execute_collect_meshes(
   world : @ecs.World,
   source_world : @ecs.World,
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
-  morph_indices_ref : Ref[@pbr_render.MorphIndices],
-  skin_uniforms_ref : Ref[@pbr_render.SkinUniforms],
-  world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
+  morph_indices_value : @pbr_render.MorphIndices,
+  skin_uniforms_value : @pbr_render.SkinUniforms,
+  world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
   needs_mesh_previous_transform : Bool,
 ) -> Array[ExtractedMesh3d] {
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
@@ -467,8 +466,8 @@ fn render3d_execute_collect_meshes(
     world,
   )
   let material_prepass_enabled = standard_material_prepass_enabled(world)
-  let render_material_instances_ref = match
-    world.get_resource_ref_mut(ecs_key_render_material_instances) {
+  let render_material_instances = match
+    world.get_resource_mut(ecs_key_render_material_instances) {
     Some(value) => value
     None => abort("missing RenderMaterialInstances resource in render world")
   }
@@ -540,18 +539,20 @@ fn render3d_execute_collect_meshes(
         (wireframe, no_wireframe, wireframe_color),
       ),
     ) = data
-    render_material_instances_ref.val.extract_mesh_material(
-      entity,
-      view_visibility.value().is_visible(),
-      material.value(),
-    )
+    render_material_instances.modify(fn(instances) {
+      instances.extract_mesh_material(
+        entity,
+        view_visibility.value().is_visible(),
+        material.value(),
+      )
+    })
     let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
       source_world,
       entity,
-      mesh_runtime_state_ref,
-      morph_indices_ref,
-      skin_uniforms_ref,
-      world_transform_cache_ref,
+      mesh_runtime_state_value,
+      morph_indices_value,
+      skin_uniforms_value,
+      world_transform_cache_value,
       standard_material_frame_cache,
       resolved_material_frame_cache,
       needs_mesh_previous_transform,
@@ -596,9 +597,13 @@ fn render3d_execute_collect_meshes(
     "execute_3d_collect_meshes",
     trace_collect_meshes_start_us,
   )
-  ignore(render_material_instances_ref.val.late_sweep_stale_mesh_materials())
+  ignore(
+    render_material_instances.modify(fn(instances) {
+      instances.late_sweep_stale_mesh_materials()
+    }),
+  )
   render3d_update_mesh_preprocess_static_cache(
-    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
+    mesh_runtime_state_value.mesh_preprocess_static_cache,
     meshes,
   )
   meshes

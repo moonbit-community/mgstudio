@@ -36,7 +36,9 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.6F, 0.6F, 0.6F))
+  let mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(0.6F, 0.6F, 0.6F))
+  })
   for i in 0..<48 {
     let phase = Float::from_int(i) * 0.21F
     let radius = 2.2F + Float::from_int(i % 4) * 0.35F

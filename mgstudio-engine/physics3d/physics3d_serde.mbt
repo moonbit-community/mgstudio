@@ -350,15 +350,26 @@ pub impl @json.FromJson for RapierColliderHandle3d with from_json(json, path) {
 }
 
 ///|
-let physics3d_config_serde_next_id : Ref[Int] = Ref(1)
+priv struct Physics3dSerdeRuntimeState {
+  mut config_next_id : Int
+  mut events_next_id : Int
+  mut context_next_id : Int
+}
+
+///|
+let physics3d_serde_runtime_state : Physics3dSerdeRuntimeState = {
+  config_next_id: 1,
+  events_next_id: 1,
+  context_next_id: 1,
+}
 
 ///|
 let physics3d_config_serde_values : Map[Int, Physics3dConfig] = {}
 
 ///|
 pub impl ToJson for Physics3dConfig with to_json(self) {
-  let id = physics3d_config_serde_next_id.val
-  physics3d_config_serde_next_id.val = id + 1
+  let id = physics3d_serde_runtime_state.config_next_id
+  physics3d_serde_runtime_state.config_next_id = id + 1
   physics3d_config_serde_values.set(id, self)
   id.to_json()
 }
@@ -372,15 +383,12 @@ pub impl @json.FromJson for Physics3dConfig with from_json(json, path) {
 }
 
 ///|
-let physics3d_events_serde_next_id : Ref[Int] = Ref(1)
-
-///|
 let physics3d_events_serde_values : Map[Int, Physics3dEvents] = {}
 
 ///|
 pub impl ToJson for Physics3dEvents with to_json(self) {
-  let id = physics3d_events_serde_next_id.val
-  physics3d_events_serde_next_id.val = id + 1
+  let id = physics3d_serde_runtime_state.events_next_id
+  physics3d_serde_runtime_state.events_next_id = id + 1
   physics3d_events_serde_values.set(id, self)
   id.to_json()
 }
@@ -392,15 +400,12 @@ pub impl @json.FromJson for Physics3dEvents with from_json(json, path) {
 }
 
 ///|
-let physics3d_context_serde_next_id : Ref[Int] = Ref(1)
-
-///|
 let physics3d_context_serde_values : Map[Int, Physics3dContext] = {}
 
 ///|
 pub impl ToJson for Physics3dContext with to_json(self) {
-  let id = physics3d_context_serde_next_id.val
-  physics3d_context_serde_next_id.val = id + 1
+  let id = physics3d_serde_runtime_state.context_next_id
+  physics3d_serde_runtime_state.context_next_id = id + 1
   physics3d_context_serde_values.set(id, self)
   id.to_json()
 }

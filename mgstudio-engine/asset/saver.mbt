@@ -147,21 +147,18 @@ pub fn[T : Asset, Settings, P : IntoAssetPath] save_using_saver(
   let bytes = writer.finish()
   host_asset_save_bytes(path=formatted_path, bytes~)
   let canonical_path = asset_canonical_path(formatted_path)
-  let seen = Ref(false)
-  for existing_path in asset_server.paths.val {
+  let mut seen = false
+  for existing_path in asset_server.paths {
     if existing_path == canonical_path {
-      seen.val = true
+      seen = true
       break
     }
   }
-  if !seen.val {
-    asset_server.paths.val.push(canonical_path)
+  if !seen {
+    asset_server.paths.push(canonical_path)
   }
-  asset_server.path_fingerprints.val.set(
-    canonical_path,
-    bytes_fingerprint(bytes),
-  )
+  asset_server.path_fingerprints.set(canonical_path, bytes_fingerprint(bytes))
   let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, asset_path)
-  asset_server.typed_asset_paths.val.remove(cache_key) |> ignore
+  asset_server.typed_asset_paths.remove(cache_key) |> ignore
 }

@@ -127,18 +127,19 @@ test "camera_driver runs core pipeline camera schedules" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
-  if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
-    let render_sub_app = render_sub_app_ref.val
-    render_sub_app
-    .world()
-    .insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
-      run_count: 0,
-    })
-    render_sub_app_ref.val = render_sub_app.add_systems(
-      @app.schedule_label(@core_pipeline.CORE_2D_SCHEDULE_LABEL),
-      @app.system(camera_driver_probe_tick),
-    )
-  }
+  ignore(
+    app.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      render_sub_app
+      .world()
+      .insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
+        run_count: 0,
+      })
+      render_sub_app.add_systems(
+        @app.schedule_label(@core_pipeline.CORE_2D_SCHEDULE_LABEL),
+        @app.system(camera_driver_probe_tick),
+      )
+    }),
+  )
   let app = app.update()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let probe = render_world

@@ -141,12 +141,14 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(12.0F, 12.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(12.0F, 12.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -168,8 +170,9 @@ fn setup(
     )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(2.9F, 2.9F, 2.9F)),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> @pbr.add_mesh(@math.Cuboid::new(2.9F, 2.9F, 2.9F))
+      }),
     ),
     @pbr.MeshMaterial3d::new(shape_material),
     @transform.Transform::identity(),
@@ -204,14 +207,16 @@ fn setup(
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
     mesh: @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
-          @math.Sphere::new(0.03F),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+            @math.Sphere::new(0.03F),
+          )
+          .kind(@mesh_primitives_dim3.SphereKind::ico(3))
+          .build(),
         )
-        .kind(@mesh_primitives_dim3.SphereKind::ico(3))
-        .build(),
-      ),
+      }),
     ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
@@ -401,27 +406,21 @@ fn handle_keypress(
   }
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(RandomSource::resource())
-    is Some(random_source_ref) else {
+  guard world.get_resource_mut(RandomSource::resource()) is Some(random_source) else {
     return
   }
 
   if keyboard.just_pressed(KeyS) {
-    let sample = sample_once(
-      current_mode,
-      sampled_shape.shape,
-      random_source_ref.val.rng,
-    )
+    let sample = random_source.modify(fn(value) {
+      sample_once(current_mode, sampled_shape.shape, value.rng)
+    })
     spawn_sample_point(world, point_mesh, point_material, sample)
   }
 
   if keyboard.just_pressed(KeyD) {
-    let samples = sample_many(
-      current_mode,
-      sampled_shape.shape,
-      random_source_ref.val.rng,
-      100,
-    )
+    let samples = random_source.modify(fn(value) {
+      sample_many(current_mode, sampled_shape.shape, value.rng, 100)
+    })
     for sample in samples {
       spawn_sample_point(world, point_mesh, point_material, sample)
     }
@@ -445,13 +444,12 @@ fn handle_mouse(
   let world = current_world_or_abort()
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard world.get_resource_ref_mut(MousePressed::resource())
-    is Some(mouse_pressed_ref) else {
+  guard world.get_resource_mut(MousePressed::resource()) is Some(mouse_pressed) else {
     return
   }
-  mouse_pressed_ref.val.value = mouse_buttons.pressed(Left)
+  mouse_pressed.modify(fn(value) { value.value = mouse_buttons.pressed(Left) })
 
-  if !mouse_pressed_ref.val.value {
+  if !mouse_pressed.peek().value {
     return
   }
 

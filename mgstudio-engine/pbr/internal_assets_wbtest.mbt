@@ -30,11 +30,13 @@ test "render3d: internal assets are stored per world resource" {
   init_mesh_render_resources(world_a)
   init_mesh_render_resources(world_b)
   debug_inspect(
-    render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh is None,
+    render3d_internal_assets_mut(world_a).unwrap().peek().skybox_proxy_mesh
+    is None,
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_b).unwrap().val.skybox_proxy_mesh is None,
+    render3d_internal_assets_mut(world_b).unwrap().peek().skybox_proxy_mesh
+    is None,
     content="true",
   )
   debug_inspect(
@@ -46,18 +48,19 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
 
-  render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh = Some(
-    @asset.Handle::new(17),
-  )
+  render3d_internal_assets_mut(world_a)
+  .unwrap()
+  .modify(fn(state) { state.skybox_proxy_mesh = Some(@asset.Handle::new(17)) })
   render3d_tonemapping_lut_handles(world_a) |> ignore
 
   debug_inspect(
-    render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh
+    render3d_internal_assets_mut(world_a).unwrap().peek().skybox_proxy_mesh
     is Some(_),
     content="true",
   )
   debug_inspect(
-    render3d_internal_assets_ref(world_b).unwrap().val.skybox_proxy_mesh is None,
+    render3d_internal_assets_mut(world_b).unwrap().peek().skybox_proxy_mesh
+    is None,
     content="true",
   )
   debug_inspect(

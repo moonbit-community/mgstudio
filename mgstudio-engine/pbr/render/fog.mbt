@@ -357,12 +357,14 @@ pub fn prepare_fog(
 }
 
 ///|
-pub fn render3d_fog_meta_ref_or_init(world : @ecs.World) -> Ref[FogMeta] {
+pub fn render3d_fog_meta_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[FogMeta] {
   if world.get_resource(FogMeta::resource()) is None {
     world.insert_resource(FogMeta::resource(), FogMeta::FogMeta())
   }
   match world.get_resource_mut(FogMeta::resource()) {
-    Some(value) => Ref(value.peek())
+    Some(value) => value
     None => abort("missing FogMeta resource")
   }
 }

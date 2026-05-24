@@ -772,22 +772,21 @@ pub impl @app.Plugin for SpriteMaterialPlugin with build(_self, app) {
 
 ///|
 fn sprite_mesh_quad_handle(world : @ecs.World) -> @asset.Handle[@mesh.Mesh] {
-  let quad_ref = world.get_resource_ref_mut(ecs_key_sprite_mesh_quad).unwrap()
-  if quad_ref.val.handle is Some(handle) {
+  let quad_mut = world.get_resource_mut(ecs_key_sprite_mesh_quad).unwrap()
+  if quad_mut.peek().handle is Some(handle) {
     return handle
   }
   let assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   guard world.get_resource_mut(assets_key) is Some(meshes_ref) else {
     abort("SpriteMeshPlugin requires Assets<Mesh>")
   }
-  meshes_ref.set_changed()
   let mesh = @mesh.Mesh::from_2d_geometry(
     mesh2d_geometry_rectangle(
       @math.Rectangle::from_size(@math.Vec2::new(1.0F, 1.0F)),
     ),
   )
-  let handle = meshes_ref.peek().add(mesh)
-  quad_ref.val.handle = Some(handle)
+  let handle = meshes_ref.modify(fn(meshes) { meshes.add(mesh) })
+  quad_mut.modify(fn(quad) { quad.handle = Some(handle) })
   handle
 }
 
@@ -831,10 +830,10 @@ fn sprite_mesh_material_handle(
   anchor : Anchor,
 ) -> @asset.Handle[SpriteMaterial] {
   let key = sprite_mesh_material_cache_key(sprite, anchor)
-  let cache_ref = world
-    .get_resource_ref_mut(ecs_key_sprite_mesh_material_cache)
+  let cache_mut = world
+    .get_resource_mut(ecs_key_sprite_mesh_material_cache)
     .unwrap()
-  if cache_ref.val.handles.get(key) is Some(handle) {
+  if cache_mut.peek().handles.get(key) is Some(handle) {
     return handle
   }
   let assets_key : @ecs.ResourceKey[@asset.Assets[SpriteMaterial]] = @asset.assets_resource_key()
@@ -855,9 +854,8 @@ fn sprite_mesh_material_handle(
     sprite.texture_atlas,
     atlas_assets,
   )
-  materials_ref.set_changed()
-  let handle = materials_ref.peek().add(material)
-  cache_ref.val.handles.set(key, handle)
+  let handle = materials_ref.modify(fn(materials) { materials.add(material) })
+  cache_mut.modify(fn(cache) { cache.handles.set(key, handle) })
   handle
 }
 
@@ -944,7 +942,7 @@ pub fn render_mesh_asset_set(
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   mesh_upload_cache_sync_with_asset_events()
   let mesh_handle_id = mesh.id()
-  if mesh_upload_cache.val.get(mesh_handle_id) is Some(mesh_id) {
+  if mesh_upload_cache.get(mesh_handle_id) is Some(mesh_id) {
     return mesh_id
   }
   let mut uploaded_mesh_radius = 1.0F
@@ -1006,8 +1004,8 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
     }
   }
   if uploaded_mesh_id > 0 {
-    mesh_upload_cache.val.set(mesh_handle_id, uploaded_mesh_id)
-    mesh_upload_radius_cache.val.set(uploaded_mesh_id, uploaded_mesh_radius)
+    mesh_upload_cache.set(mesh_handle_id, uploaded_mesh_id)
+    mesh_upload_radius_cache.set(uploaded_mesh_id, uploaded_mesh_radius)
   }
   uploaded_mesh_id
 }

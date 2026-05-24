@@ -29,10 +29,9 @@ pub impl @ecs.Component for Spin with component() {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let mesh = @pbr.add_mesh(
-    @pbr.mesh_assets_mut_or_abort().val,
-    @math.Cuboid::new(1.3F, 1.3F, 1.3F),
-  )
+  let mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    @pbr.add_mesh(assets, @math.Cuboid::new(1.3F, 1.3F, 1.3F))
+  })
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.45F, 0.78F, 0.95F)),
   )

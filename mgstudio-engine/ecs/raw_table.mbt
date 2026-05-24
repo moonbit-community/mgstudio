@@ -39,7 +39,7 @@ let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = @hashmap.Hash
 )
 
 ///|
-let raw_table_changed_callers_ref : Ref[Array[String?]] = Ref([None])
+let raw_table_changed_callers : Array[String?] = [None]
 
 ///|
 fn raw_table_store_changed_caller(caller : String?) -> Int {
@@ -48,9 +48,9 @@ fn raw_table_store_changed_caller(caller : String?) -> Int {
       match raw_table_changed_caller_ids.get(caller) {
         Some(id) => id
         None => {
-          let id = raw_table_changed_callers_ref.val.length()
+          let id = raw_table_changed_callers.length()
           raw_table_changed_caller_ids.set(caller, id)
-          raw_table_changed_callers_ref.val.push(Some(caller))
+          raw_table_changed_callers.push(Some(caller))
           id
         }
       }
@@ -63,7 +63,7 @@ fn raw_table_load_changed_caller(caller_id : Int) -> String? {
   if caller_id <= 0 {
     return None
   }
-  match raw_table_changed_callers_ref.val.get(caller_id) {
+  match raw_table_changed_callers.get(caller_id) {
     Some(caller) => caller
     None => None
   }
@@ -77,10 +77,11 @@ pub(all) struct RawTableColumn {
 
 ///|
 struct RawTable {
+  table_id : Int
   component_local_ids : Array[Int]
   component_indices : Map[Int, Int]
   rows : RawTableRowKernel
-  columns : Array[Ref[RawTableColumn]]
+  columns : Array[RawTableColumn]
 }
 
 ///|
@@ -233,17 +234,23 @@ fn RawTableColumn::check_change_ticks(
 
 ///|
 fn raw_table_column_swap_remove(
-  column_ref : Ref[RawTableColumn],
+  world : World,
+  table_id : Int,
+  column_ref : RawTableColumn,
   row_index : Int,
 ) -> Bool {
-  let column = column_ref.val
-  raw_table_column_kernel_swap_remove(column.storage, row_index)
+  (column_ref.component_ops.swap_remove_table_row)(world, table_id, row_index)
+  raw_table_column_kernel_swap_remove(column_ref.storage, row_index)
 }
 
 ///|
-fn raw_table_new(world : World, component_local_ids : Array[Int]) -> RawTable {
+fn raw_table_new(
+  world : World,
+  table_id : Int,
+  component_local_ids : Array[Int],
+) -> RawTable {
   let component_indices : Map[Int, Int] = {}
-  let columns : Array[Ref[RawTableColumn]] = []
+  let columns : Array[RawTableColumn] = []
   for index in 0..<component_local_ids.length() {
     let component_local_id = component_local_ids[index]
     component_indices.set(component_local_id, index)
@@ -256,9 +263,10 @@ fn raw_table_new(world : World, component_local_ids : Array[Int]) -> RawTable {
         )
     }
     let ops = component_ops(definition_id)
-    columns.push(Ref(raw_table_column_new(ops)))
+    columns.push(raw_table_column_new(ops))
   }
   {
+    table_id,
     component_local_ids: component_local_ids.copy(),
     component_indices,
     rows: raw_table_row_kernel_new(),
@@ -280,7 +288,7 @@ fn RawTable::component_index(self : RawTable, component_local_id : Int) -> Int? 
 fn RawTable::column(
   self : RawTable,
   component_local_id : Int,
-) -> Ref[RawTableColumn]? {
+) -> RawTableColumn? {
   guard self.component_index(component_local_id) is Some(component_index) else {
     return None
   }
@@ -299,7 +307,7 @@ fn RawTable::added_tick_at_row(
   component_local_id : Int,
 ) -> @core.Tick? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.added_tick_at_row(row.index())
+  column_ref.added_tick_at_row(row.index())
 }
 
 ///|
@@ -309,7 +317,7 @@ fn RawTable::changed_tick_at_row(
   component_local_id : Int,
 ) -> @core.Tick? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.changed_tick_at_row(row.index())
+  column_ref.changed_tick_at_row(row.index())
 }
 
 ///|
@@ -319,7 +327,7 @@ fn RawTable::changed_caller_at_row(
   component_local_id : Int,
 ) -> String? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.changed_caller_at_row(row.index())
+  column_ref.changed_caller_at_row(row.index())
 }
 
 ///|
@@ -333,7 +341,7 @@ fn RawTable::record_added_at_row(
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.record_added_at_row(row.index(), tick, caller)
+  column_ref.record_added_at_row(row.index(), tick, caller)
 }
 
 ///|
@@ -347,7 +355,7 @@ fn RawTable::record_changed_at_row(
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.record_changed_at_row(row.index(), tick, caller)
+  column_ref.record_changed_at_row(row.index(), tick, caller)
 }
 
 ///|
@@ -361,7 +369,7 @@ fn World::record_table_component_changed_at_table_row(
 ) -> Bool {
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard TableRow::from_index(row_index) is Some(row) else { return false }
-  table_ref.val.record_changed_at_row(row, local_component_id, tick, caller)
+  table_ref.record_changed_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
@@ -370,49 +378,51 @@ fn RawTable::check_change_ticks(
   present_tick : @core.Tick,
 ) -> Unit {
   for column_ref in self.columns {
-    column_ref.val.check_change_ticks(present_tick)
+    column_ref.check_change_ticks(present_tick)
   }
 }
 
 ///|
 fn RawTable::append_row_from_source_table(
   self : RawTable,
+  world : World,
   entity : @core.Entity,
-  source_table : Ref[RawTable]?,
+  source_table : RawTable?,
   source_row : TableRow?,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
   let row_index = row
   for column_index in 0..<self.columns.length() {
     let component_local_id = self.component_local_ids[column_index]
-    let column = self.columns[column_index].val
+    let column = self.columns[column_index]
     let mut added_tick : @core.Tick? = None
     let mut changed_tick : @core.Tick? = None
     let mut changed_caller : String? = None
+    let mut source_table_id : Int? = None
+    let mut source_row_index : Int? = None
     let appended = match source_table {
       Some(source_table_ref) =>
         match source_row {
           Some(source_row) =>
-            match source_table_ref.val.column(component_local_id) {
+            match source_table_ref.column(component_local_id) {
               Some(source_column_ref) => {
-                added_tick = source_column_ref.val.added_tick_at_row(
+                source_table_id = Some(source_table_ref.table_id)
+                source_row_index = Some(source_row.index())
+                added_tick = source_column_ref.added_tick_at_row(
                   source_row.index(),
                 )
-                changed_tick = source_column_ref.val.changed_tick_at_row(
+                changed_tick = source_column_ref.changed_tick_at_row(
                   source_row.index(),
                 )
-                changed_caller = source_column_ref.val.changed_caller_at_row(
+                changed_caller = source_column_ref.changed_caller_at_row(
                   source_row.index(),
                 )
-                column.append_from_row(
-                  source_column_ref.val,
-                  source_row.index(),
-                )
+                column.append_from_row(source_column_ref, source_row.index())
               }
               None =>
-                if pending_writes.contains(component_local_id) {
-                  match pending_writes.metadata(component_local_id) {
+                if component_writes.contains(component_local_id) {
+                  match component_writes.metadata(component_local_id) {
                     Some(metadata) => {
                       added_tick = metadata.added_tick
                       changed_tick = metadata.changed_tick
@@ -426,8 +436,8 @@ fn RawTable::append_row_from_source_table(
                 }
             }
           None =>
-            if pending_writes.contains(component_local_id) {
-              match pending_writes.metadata(component_local_id) {
+            if component_writes.contains(component_local_id) {
+              match component_writes.metadata(component_local_id) {
                 Some(metadata) => {
                   added_tick = metadata.added_tick
                   changed_tick = metadata.changed_tick
@@ -441,8 +451,8 @@ fn RawTable::append_row_from_source_table(
             }
         }
       None =>
-        if pending_writes.contains(component_local_id) {
-          match pending_writes.metadata(component_local_id) {
+        if component_writes.contains(component_local_id) {
+          match component_writes.metadata(component_local_id) {
             Some(metadata) => {
               added_tick = metadata.added_tick
               changed_tick = metadata.changed_tick
@@ -459,6 +469,8 @@ fn RawTable::append_row_from_source_table(
       for rollback_column_index in 0..<column_index {
         ignore(
           raw_table_column_swap_remove(
+            world,
+            self.table_id,
             self.columns[rollback_column_index],
             row_index,
           ),
@@ -473,6 +485,8 @@ fn RawTable::append_row_from_source_table(
       for rollback_column_index in 0..<(column_index + 1) {
         ignore(
           raw_table_column_swap_remove(
+            world,
+            self.table_id,
             self.columns[rollback_column_index],
             row_index,
           ),
@@ -481,6 +495,29 @@ fn RawTable::append_row_from_source_table(
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
       return None
     }
+    let moved_value = match (source_table_id, source_row_index) {
+      (Some(source_table_id), Some(source_row_index)) =>
+        (column.component_ops.move_table_row)(
+          world,
+          entity,
+          source_table_id,
+          source_row_index,
+          self.table_id,
+          row_index,
+        )
+      _ =>
+        (column.component_ops.move_staged_to_table_row)(
+          world,
+          entity,
+          self.table_id,
+          row_index,
+        )
+    }
+    if !moved_value {
+      abort(
+        "Missing typed component value while appending table row for component \{component_local_id.to_string()} in table \{self.table_id.to_string()}",
+      )
+    }
   }
   TableRow::from_index(row)
 }
@@ -488,6 +525,7 @@ fn RawTable::append_row_from_source_table(
 ///|
 fn RawTable::swap_remove_row(
   self : RawTable,
+  world : World,
   row : TableRow,
 ) -> RawTableSwapRemoveResult? {
   let row_index = row.index()
@@ -506,7 +544,9 @@ fn RawTable::swap_remove_row(
     raw_table_row_kernel_entity_at(self.rows, last_row_index)
   }
   for column_ref in self.columns {
-    ignore(raw_table_column_swap_remove(column_ref, row_index))
+    ignore(
+      raw_table_column_swap_remove(world, self.table_id, column_ref, row_index),
+    )
   }
   guard raw_table_row_kernel_swap_remove(self.rows, row_index) else {
     return None
@@ -523,17 +563,17 @@ fn RawTable::swap_remove_row(
 }
 
 ///|
-fn World::ensure_table_storage(self : World, table_id : Int) -> Ref[RawTable] {
+fn World::ensure_table_storage(self : World, table_id : Int) -> RawTable {
   let component_local_ids = self.table_component_local_ids
     .get(table_id)
     .unwrap_or([])
   self.tables.get_or_init(table_id, fn() {
-    Ref(raw_table_new(self, component_local_ids))
+    raw_table_new(self, table_id, component_local_ids)
   })
 }
 
 ///|
-fn World::table_storage(self : World, table_id : Int) -> Ref[RawTable]? {
+fn World::table_storage(self : World, table_id : Int) -> RawTable? {
   self.tables.get(table_id)
 }
 
@@ -543,45 +583,9 @@ fn World::table_entities_view(
   table_id : Int,
 ) -> Array[@core.Entity]? {
   match self.table_storage(table_id) {
-    Some(table_ref) => Some(table_ref.val.rows.entities)
+    Some(table_ref) => Some(table_ref.rows.entities)
     None => None
   }
-}
-
-///|
-fn World::pending_component_present(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-) -> Bool {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id {
-        context.writes.contains(local_component_id)
-      } else {
-        false
-      }
-    None => false
-  }
-}
-
-///|
-fn World::push_pending_component_write_context(
-  self : World,
-  entity : @core.Entity,
-  writes : PendingComponentWriteSet,
-) -> PendingComponentWriteContext? {
-  let previous = self.pending_component_write_context
-  self.pending_component_write_context = Some({ entity_id: entity.id, writes })
-  previous
-}
-
-///|
-fn World::restore_pending_component_write_context(
-  self : World,
-  previous : PendingComponentWriteContext?,
-) -> Unit {
-  self.pending_component_write_context = previous
 }
 
 ///|
@@ -591,10 +595,11 @@ fn World::table_id_for_entity(self : World, entity : @core.Entity) -> Int? {
 
 ///|
 fn World::table_id_for_entity_id(self : World, entity_id : Int) -> Int? {
-  guard entity_id >= 0 && entity_id < self.entity_table_ids.length() else {
+  guard entity_id >= 0 &&
+    entity_id < self.entity_storage.entity_table_ids.length() else {
     return None
   }
-  let table_id = self.entity_table_ids[entity_id]
+  let table_id = self.entity_storage.entity_table_ids[entity_id]
   if table_id < 0 {
     return None
   }
@@ -608,10 +613,11 @@ fn World::entity_table_row(self : World, entity : @core.Entity) -> TableRow? {
 
 ///|
 fn World::entity_table_row_by_id(self : World, entity_id : Int) -> TableRow? {
-  guard entity_id >= 0 && entity_id < self.entity_table_rows.length() else {
+  guard entity_id >= 0 &&
+    entity_id < self.entity_storage.entity_table_rows.length() else {
     return None
   }
-  TableRow::from_index(self.entity_table_rows[entity_id])
+  TableRow::from_index(self.entity_storage.entity_table_rows[entity_id])
 }
 
 ///|
@@ -620,12 +626,12 @@ pub fn World::entity_table_location_by_id(
   entity_id : Int,
 ) -> (Int, Int)? {
   guard entity_id >= 0 &&
-    entity_id < self.entity_table_ids.length() &&
-    entity_id < self.entity_table_rows.length() else {
+    entity_id < self.entity_storage.entity_table_ids.length() &&
+    entity_id < self.entity_storage.entity_table_rows.length() else {
     return None
   }
-  let table_id = self.entity_table_ids[entity_id]
-  let row_index = self.entity_table_rows[entity_id]
+  let table_id = self.entity_storage.entity_table_ids[entity_id]
+  let row_index = self.entity_storage.entity_table_rows[entity_id]
   guard table_id >= 0 && row_index >= 0 else { return None }
   Some((table_id, row_index))
 }
@@ -641,16 +647,17 @@ pub fn World::entity_table_location(
 
 ///|
 fn World::alive_entity_by_id(self : World, entity_id : Int) -> @core.Entity? {
-  guard entity_id >= 0 && entity_id < self.entity_archetype_ids.length() else {
+  guard entity_id >= 0 &&
+    entity_id < self.entity_storage.entity_archetype_ids.length() else {
     return None
   }
-  let archetype_id = self.entity_archetype_ids[entity_id]
+  let archetype_id = self.entity_storage.entity_archetype_ids[entity_id]
   guard archetype_id >= 0 else { return None }
   guard self.archetype_entities_view(archetype_id) is Some(entities) else {
     return None
   }
-  if entity_id < self.entity_archetype_rows.length() {
-    let row_index = self.entity_archetype_rows[entity_id]
+  if entity_id < self.entity_storage.entity_archetype_rows.length() {
+    let row_index = self.entity_storage.entity_archetype_rows[entity_id]
     if row_index >= 0 && row_index < entities.length() {
       let entity = entities[row_index]
       if entity.id == entity_id {
@@ -672,12 +679,12 @@ fn[T] World::component_value_by_local_id(
   entity : @core.Entity,
   key : ComponentKey[T],
   local_component_id : Int,
-) -> T? raise EcsError {
-  guard self.pending_component_present(entity, local_component_id) ||
+) -> T? {
+  guard self.component_write_transaction_contains(entity, local_component_id) ||
     self.entity_has_component_local_id(entity, local_component_id) else {
     return None
   }
-  (key.access.get)(self, entity)
+  key.component_get(self, entity)
 }
 
 ///|
@@ -685,7 +692,7 @@ fn[T] World::component_value_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> T? raise EcsError {
+) -> T? {
   match self.local_component_id(key.id()) {
     Some(local_component_id) =>
       self.component_value_by_local_id(entity, key, local_component_id)
@@ -701,19 +708,14 @@ fn[T] World::replace_component_value_by_local_id(
   local_component_id : Int,
   value : T,
 ) -> Bool {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.writes.contains(local_component_id) {
-        (key.access.set)(self, entity, value)
-        return true
-      }
-    None => ()
+  if self.component_write_transaction_contains(entity, local_component_id) {
+    key.component_set(self, entity, value)
+    return true
   }
   guard self.entity_has_component_local_id(entity, local_component_id) else {
     return false
   }
-  (key.access.set)(self, entity, value)
+  key.component_set(self, entity, value)
   true
 }
 
@@ -747,11 +749,11 @@ fn[T] World::replace_component_value_at_table_row(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard TableRow::from_index(row_index) is Some(row) else { return false }
-  guard table_ref.val.entity_at_row(row) is Some(entity) else { return false }
+  guard table_ref.entity_at_row(row) is Some(entity) else { return false }
   guard self.entity_has_component_local_id(entity, local_component_id) else {
     return false
   }
-  (key.access.set)(self, entity, value)
+  key.component_set_table_row(self, table_id, row_index, value)
   true
 }
 
@@ -769,7 +771,7 @@ fn World::table_component_added_tick_by_local_id(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
-  table_ref.val.added_tick_at_row(row, local_component_id)
+  table_ref.added_tick_at_row(row, local_component_id)
 }
 
 ///|
@@ -786,7 +788,7 @@ fn World::table_component_changed_tick_by_local_id(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
-  table_ref.val.changed_tick_at_row(row, local_component_id)
+  table_ref.changed_tick_at_row(row, local_component_id)
 }
 
 ///|
@@ -803,7 +805,7 @@ fn World::table_component_changed_caller_by_local_id(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
-  table_ref.val.changed_caller_at_row(row, local_component_id)
+  table_ref.changed_caller_at_row(row, local_component_id)
 }
 
 ///|
@@ -814,7 +816,7 @@ fn World::table_has_component_local_id(
 ) -> Bool {
   guard table_id >= 0 else { return false }
   match self.table_storage(table_id) {
-    Some(table_ref) => table_ref.val.column(local_component_id) is Some(_)
+    Some(table_ref) => table_ref.column(local_component_id) is Some(_)
     None => false
   }
 }
@@ -827,13 +829,17 @@ fn[T] World::component_value_by_table_row_fast(
   table_id : Int,
   row_index : Int,
 ) -> T? {
+  guard self.local_component_storage_type(local_component_id) == Some(Table) else {
+    return None
+  }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
+  guard table_ref.column(local_component_id) is Some(_) else { return None }
   guard TableRow::from_index(row_index) is Some(row) else { return None }
-  guard table_ref.val.entity_at_row(row) is Some(entity) else { return None }
+  guard table_ref.entity_at_row(row) is Some(entity) else { return None }
   guard self.entity_has_component_local_id(entity, local_component_id) else {
     return None
   }
-  (key.access.get)(self, entity)
+  key.component_get_table_row(self, table_id, row_index)
 }
 
 ///|
@@ -850,7 +856,7 @@ fn World::record_table_component_added_by_local_id(
   guard self.table_id_for_entity(entity) is Some(table_id) else { return false }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard self.entity_table_row(entity) is Some(row) else { return false }
-  table_ref.val.record_added_at_row(row, local_component_id, tick, caller)
+  table_ref.record_added_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
@@ -867,7 +873,7 @@ fn World::record_table_component_changed_by_local_id(
   guard self.table_id_for_entity(entity) is Some(table_id) else { return false }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard self.entity_table_row(entity) is Some(row) else { return false }
-  table_ref.val.record_changed_at_row(row, local_component_id, tick, caller)
+  table_ref.record_changed_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
@@ -922,19 +928,15 @@ fn World::record_sparse_component_added_by_local_id(
   }
   let ops = component_ops(definition_id)
   guard (ops.contains)(self, entity) else { return false }
-  let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
+  let metadata_store = self.ensure_sparse_component_metadata_store_for_local_id(
     local_component_id,
   )
-  metadata_store_ref.val.upsert(
+  metadata_store.upsert(
     entity,
-    component_tick_metadata_with_added(
-      metadata_store_ref.val.get(entity),
-      tick,
-      caller,
-    ),
+    component_tick_metadata_with_added(metadata_store.get(entity), tick, caller),
   )
   ignore(
-    self.record_pending_component_added_metadata(
+    self.record_component_write_transaction_added_metadata(
       entity, local_component_id, tick, caller,
     ),
   )
@@ -957,19 +959,19 @@ fn World::record_sparse_component_changed_by_local_id(
   }
   let ops = component_ops(definition_id)
   guard (ops.contains)(self, entity) else { return false }
-  let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
+  let metadata_store = self.ensure_sparse_component_metadata_store_for_local_id(
     local_component_id,
   )
-  metadata_store_ref.val.upsert(
+  metadata_store.upsert(
     entity,
     component_tick_metadata_with_changed(
-      metadata_store_ref.val.get(entity),
+      metadata_store.get(entity),
       tick,
       caller,
     ),
   )
   ignore(
-    self.record_pending_component_changed_metadata(
+    self.record_component_write_transaction_changed_metadata(
       entity, local_component_id, tick, caller,
     ),
   )
@@ -986,7 +988,7 @@ fn World::clear_sparse_component_metadata_by_local_id(
     return
   }
   match self.sparse_component_metadata.get(local_component_id) {
-    Some(store_ref) => ignore(store_ref.val.remove(entity))
+    Some(store) => ignore(store.remove(entity))
     None => ()
   }
 }
@@ -997,7 +999,7 @@ fn World::component_present_by_local_id(
   entity : @core.Entity,
   local_component_id : Int,
 ) -> Bool {
-  self.pending_component_present(entity, local_component_id) ||
+  self.component_write_transaction_contains(entity, local_component_id) ||
   self.entity_has_component_local_id(entity, local_component_id)
 }
 
@@ -1021,14 +1023,9 @@ fn World::replace_component_writer_by_local_id(
   local_component_id : Int,
   writer : ComponentWriter,
 ) -> Bool {
-  match self.pending_component_write_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.writes.contains(local_component_id) {
-        writer.apply(self, entity)
-        return true
-      }
-    None => ()
+  if self.component_write_transaction_contains(entity, local_component_id) {
+    writer.apply(self, entity)
+    return true
   }
   guard self.entity_has_component_local_id(entity, local_component_id) else {
     return false
@@ -1073,18 +1070,18 @@ fn World::remove_component_write_by_local_id(
 }
 
 ///|
-fn World::write_pending_sparse_component_writes(
+fn World::commit_sparse_component_write_metadata(
   self : World,
   entity : @core.Entity,
-  pending_writes : PendingComponentWriteSet,
+  component_writes : ComponentWriteSet,
 ) -> Unit {
-  for entry in pending_writes.entries {
+  for entry in component_writes.entries {
     let component_local_id = entry.local_component_id
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
-      let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
+      let metadata_store = self.ensure_sparse_component_metadata_store_for_local_id(
         component_local_id,
       )
-      metadata_store_ref.val.insert(entity, entry.metadata)
+      metadata_store.insert(entity, entry.metadata)
     }
   }
 }

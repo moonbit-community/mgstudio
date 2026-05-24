@@ -1027,8 +1027,7 @@ pub fn standard_material_add(
   material : StandardMaterial,
 ) -> @asset.Handle[StandardMaterial] {
   let assets = material_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().add(material)
+  assets.modify(fn(store) { store.add(material) })
 }
 
 ///|
@@ -1044,8 +1043,7 @@ pub fn standard_material_set(
   material : StandardMaterial,
 ) -> Bool {
   let assets = material_asset_store_mut_or_abort()
-  assets.set_changed()
-  assets.peek().set(handle, material)
+  assets.modify(fn(store) { store.set(handle, material) })
 }
 
 ///|
@@ -1223,9 +1221,6 @@ pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
   extended_material : ExtendedMaterialMetadata3d?
 }
-
-///|
-pub impl @ecs.Mutable for MeshMaterial3d
 
 ///|
 pub fn MeshMaterial3d::new(

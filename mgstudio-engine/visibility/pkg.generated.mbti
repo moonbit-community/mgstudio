@@ -91,7 +91,6 @@ pub fn Visibility::toggle_inherited_hidden(Self) -> Self
 pub fn Visibility::toggle_inherited_visible(Self) -> Self
 pub fn Visibility::toggle_visible_hidden(Self) -> Self
 pub impl @ecs.Component for Visibility
-pub impl @ecs.Mutable for Visibility
 pub impl ToJson for Visibility
 pub impl @json.FromJson for Visibility
 

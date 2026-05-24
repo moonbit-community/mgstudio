@@ -89,26 +89,28 @@ test "pbr render fog: prepare writes offsets and off mode for missing fog" {
 ///|
 test "pbr render fog: apply offsets writes component and meta resource initializes" {
   let world = @ecs.World::new()
-  let fog_meta_ref = render3d_fog_meta_ref_or_init(world)
-  inspect(fog_meta_ref.val.len(), content="0")
+  let fog_meta = render3d_fog_meta_mut_or_init(world)
+  inspect(fog_meta.peek().len(), content="0")
 
   let entity = world.spawn_empty()
-  let offsets = render3d_prepare_fog_uniforms(
-    [
-      (
-        entity,
-        Some(
-          Render3dViewFogData::new(
-            @sprite.Color::white(),
-            @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
-            8.0F,
-            Render3dFogFalloff::exponential(0.25F),
+  let offsets = fog_meta.modify(fn(value) {
+    render3d_prepare_fog_uniforms(
+      [
+        (
+          entity,
+          Some(
+            Render3dViewFogData::new(
+              @sprite.Color::white(),
+              @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+              8.0F,
+              Render3dFogFalloff::exponential(0.25F),
+            ),
           ),
         ),
-      ),
-    ],
-    fog_meta_ref.val,
-  )
+      ],
+      value,
+    )
+  })
   render3d_apply_view_fog_uniform_offsets(world, offsets)
   let inserted = match
     (try! world.get_by_key(entity, ecs_key_view_fog_uniform_offset)) {
@@ -116,5 +118,5 @@ test "pbr render fog: apply offsets writes component and meta resource initializ
     None => abort("missing view fog uniform offset component")
   }
   inspect(inserted.offset(), content="0")
-  inspect(fog_meta_ref.val.len(), content="1")
+  inspect(fog_meta.peek().len(), content="1")
 }

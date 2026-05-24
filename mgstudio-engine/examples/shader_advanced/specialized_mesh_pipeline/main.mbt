@@ -34,8 +34,12 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F))
-  let sphere = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.7F))
+  let cube = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F))
+  })
+  let sphere = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Sphere::new(0.7F))
+  })
   let matte = materials
     .peek()
     .add(

@@ -25,40 +25,44 @@ fn setup(
   let texture = asset_server.get().load("branding/bevy_logo_dark_big.png")
   let aspect = 0.25F
   let quad_width = 8.0F
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-  let quad_handle = mesh_assets
+  let quad_handle = meshes.modify(fn(mesh_assets) {
+    mesh_assets
     |> @pbr.add_mesh(
       @mesh_primitives.rectangle_mesh(quad_width, quad_width * aspect),
     )
+  })
 
-  let base_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::StandardMaterial()
-      .with_base_color_texture(Some(texture))
-      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-      .with_unlit(true),
+  let (base_material, red_material, blue_material) = materials.modify(fn(
+    material_assets,
+  ) {
+    (
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::StandardMaterial()
+        .with_base_color_texture(Some(texture))
+        .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+        .with_unlit(true),
+      ),
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+        )
+        .with_base_color_texture(Some(texture))
+        .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+        .with_unlit(true),
+      ),
+      material_assets
+      |> @pbr.add_material(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.5F),
+        )
+        .with_base_color_texture(Some(texture))
+        .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+        .with_unlit(true),
+      ),
     )
-
-  let red_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
-      )
-      .with_base_color_texture(Some(texture))
-      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-      .with_unlit(true),
-    )
-
-  let blue_material = material_assets
-    |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.5F),
-      )
-      .with_base_color_texture(Some(texture))
-      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-      .with_unlit(true),
-    )
+  })
 
   let rotation = @math.Quat::from_rotation_x(-PI / 5.0F)
 

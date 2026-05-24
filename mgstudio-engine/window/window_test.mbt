@@ -79,26 +79,26 @@ fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
 
 ///|
 fn read_window_closing(world : @ecs.World) -> Array[WindowClosing] {
-  let reader = world.message_reader(ecs_key_window_closing, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(ecs_key_window_closing)
+  reader.read()
 }
 
 ///|
 fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
-  let reader = world.message_reader(ecs_key_window_created, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(ecs_key_window_created)
+  reader.read()
 }
 
 ///|
 fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
-  let reader = world.message_reader(ecs_key_window_destroyed, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(ecs_key_window_destroyed)
+  reader.read()
 }
 
 ///|
 fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
-  let reader = world.message_reader(ecs_key_window_event, Ref(0))
-  try! reader.read()
+  let reader = world.message_reader(ecs_key_window_event)
+  reader.read()
 }
 
 ///|

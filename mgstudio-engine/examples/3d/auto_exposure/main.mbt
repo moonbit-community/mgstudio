@@ -170,10 +170,10 @@ fn update_display_text() -> Unit {
 ///|
 fn auto_exposure_curve_assets_ref_mut_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
+) -> @ecs.ResourceMut[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
-  match world.get_resource_ref_mut(key) {
-    Some(assets_ref) => assets_ref
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
     None =>
       abort(
         "Missing Assets<AutoExposureCompensationCurve> resource in auto_exposure example",
@@ -198,7 +198,9 @@ fn build_basic_compensation_curve(
         "Failed to build auto exposure compensation curve in example: \{auto_exposure_curve_error_message(err)}",
       )
   }
-  auto_exposure_curve_assets_ref_mut_or_abort(world).val.add(curve)
+  auto_exposure_curve_assets_ref_mut_or_abort(world).modify(fn(assets) {
+    assets.add(curve)
+  })
 }
 
 ///|
@@ -276,9 +278,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   auto_exposure_state.val.camera = Some(camera)
 
-  let wall_mesh = @pbr.mesh_assets_mut_or_abort().val.add(
-    @mesh.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
-  )
+  let wall_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    assets.add(
+      @mesh.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
+    )
+  })
 
   for level in [-1, 0, 1] {
     for

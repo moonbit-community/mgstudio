@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
-  "moonbitlang/core/ref",
 }
 
 // Values

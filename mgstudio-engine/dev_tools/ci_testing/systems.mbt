@@ -63,7 +63,7 @@ fn ci_testing_screenshot_path_for_name(name : String) -> String {
 fn ci_testing_queue_screenshot(
   world : @ecs.World,
   path : String,
-  state : Ref[CiTestingRuntimeState],
+  state : CiTestingRuntimeState,
   exit_after_capture? : Bool = false,
 ) -> Unit {
   let screenshot_entity = world.spawn()
@@ -79,7 +79,7 @@ fn ci_testing_queue_screenshot(
     @window.Screenshot::primary_window(),
   )
   if exit_after_capture {
-    state.val.pending_screenshot_exit_entities.push(screenshot_entity)
+    state.pending_screenshot_exit_entities.push(screenshot_entity)
   }
 }
 
@@ -107,14 +107,14 @@ fn ci_testing_apply_camera_pose(
 ///|
 fn ci_testing_try_exit_after_capture(
   world : @ecs.World,
-  state : Ref[CiTestingRuntimeState],
+  state : CiTestingRuntimeState,
 ) -> Unit {
-  if state.val.pending_screenshot_exit_entities.is_empty() {
+  if state.pending_screenshot_exit_entities.is_empty() {
     return
   }
   let remaining : Array[@core.Entity] = []
   let mut should_exit = false
-  for entity in state.val.pending_screenshot_exit_entities {
+  for entity in state.pending_screenshot_exit_entities {
     if (try! world.get_by_key(entity, @window.ecs_key_screenshot_captured))
       is Some(_) {
       should_exit = true
@@ -129,7 +129,7 @@ fn ci_testing_try_exit_after_capture(
       remaining.push(entity)
     }
   }
-  state.val.pending_screenshot_exit_entities = remaining
+  state.pending_screenshot_exit_entities = remaining
   if should_exit {
     ignore(world.send_message(@app.AppExit::message(), @app.AppExit::Success))
   }
@@ -137,64 +137,68 @@ fn ci_testing_try_exit_after_capture(
 
 ///|
 pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
-  guard world.get_resource_ref_mut(ci_testing_config_resource_key)
-    is Some(config) else {
+  guard world.get_resource_mut(ci_testing_config_resource_key)
+    is Some(config_mut) else {
     return
   }
-  guard world.get_resource_ref_mut(ci_testing_runtime_state_resource_key)
-    is Some(state) else {
+  guard world.get_resource_mut(ci_testing_runtime_state_resource_key)
+    is Some(state_mut) else {
     return
   }
 
-  ci_testing_try_exit_after_capture(world, state)
+  state_mut.modify(fn(state) {
+    ci_testing_try_exit_after_capture(world, state)
 
-  let frame = state.val.current_frame
-  let to_run : Array[CiTestingEvent] = []
-  let remaining : Array[CiTestingEventOnFrame] = []
-  for event_on_frame in config.val.events {
-    if event_on_frame.frame == frame {
-      to_run.push(event_on_frame.event)
-    } else {
-      remaining.push(event_on_frame)
-    }
-  }
-  config.val.events = remaining
+    let frame = state.current_frame
+    let to_run : Array[CiTestingEvent] = []
+    let remaining : Array[CiTestingEventOnFrame] = []
+    config_mut.modify(fn(config) {
+      for event_on_frame in config.events {
+        if event_on_frame.frame == frame {
+          to_run.push(event_on_frame.event)
+        } else {
+          remaining.push(event_on_frame)
+        }
+      }
+      config.events = remaining
+    })
 
-  for event in to_run {
-    match event {
-      Screenshot =>
-        ci_testing_queue_screenshot(
-          world,
-          ci_testing_screenshot_path_for_frame(frame),
-          state,
-        )
-      ScreenshotAndExit =>
-        ci_testing_queue_screenshot(
-          world,
-          ci_testing_screenshot_path_for_frame(frame),
-          state,
-          exit_after_capture=true,
-        )
-      NamedScreenshot(name) =>
-        ci_testing_queue_screenshot(
-          world,
-          ci_testing_screenshot_path_for_name(name),
-          state,
-        )
-      AppExit =>
-        ignore(
-          world.send_message(@app.AppExit::message(), @app.AppExit::Success),
-        )
-      MoveCamera(translation, rotation) =>
-        ci_testing_apply_camera_pose(world, translation, rotation)
-      Custom(payload) =>
-        ignore(
-          world.send_message(
-            ci_testing_custom_event_message_key,
-            CiTestingCustomEvent::new(payload),
-          ),
-        )
+    for event in to_run {
+      match event {
+        Screenshot =>
+          ci_testing_queue_screenshot(
+            world,
+            ci_testing_screenshot_path_for_frame(frame),
+            state,
+          )
+        ScreenshotAndExit =>
+          ci_testing_queue_screenshot(
+            world,
+            ci_testing_screenshot_path_for_frame(frame),
+            state,
+            exit_after_capture=true,
+          )
+        NamedScreenshot(name) =>
+          ci_testing_queue_screenshot(
+            world,
+            ci_testing_screenshot_path_for_name(name),
+            state,
+          )
+        AppExit =>
+          ignore(
+            world.send_message(@app.AppExit::message(), @app.AppExit::Success),
+          )
+        MoveCamera(translation, rotation) =>
+          ci_testing_apply_camera_pose(world, translation, rotation)
+        Custom(payload) =>
+          ignore(
+            world.send_message(
+              ci_testing_custom_event_message_key,
+              CiTestingCustomEvent::new(payload),
+            ),
+          )
+      }
     }
-  }
-  state.val.current_frame = frame + 1
+    state.current_frame = frame + 1
+  })
 }

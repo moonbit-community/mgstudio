@@ -53,13 +53,13 @@ fn current_stage_label() -> String {
 
 ///|
 fn reset_input_runtime_state() -> Unit {
-  current_gamepads_ref.val = []
-  previous_gamepads_ref.val = []
-  host_gamepad_entities_ref.val = []
-  input_last_mouse_position_ref.val = None
-  input_active_touches_ref.val = []
-  input_primary_pointer_position_ref.val = None
-  input_primary_pointer_delta_ref.val = @math.Vec2::new(0.0, 0.0)
+  gamepad_input_runtime_state.current_gamepads = []
+  gamepad_input_runtime_state.previous_gamepads = []
+  gamepad_input_runtime_state.host_gamepad_entities.clear()
+  input_host_runtime_state.last_mouse_position = None
+  input_host_runtime_state.active_touches = []
+  input_host_runtime_state.primary_pointer_position = None
+  input_host_runtime_state.primary_pointer_delta = @math.Vec2::new(0.0, 0.0)
   input_probe_before_ran_ref.val = false
   input_probe_before_stage_ref.val = "none"
   input_probe_after_stage_ref.val = "none"
@@ -78,15 +78,16 @@ fn input_probe_before_system(world : @ecs.World) -> Unit {
 ///|
 fn input_probe_after_system(world : @ecs.World) -> Unit {
   input_probe_after_stage_ref.val = current_stage_label()
-  input_probe_after_raw_event_count_ref.val = (try! world
-  .message_reader(raw_gamepad_event_message_key, Ref(0))
-  .read()).length()
+  input_probe_after_raw_event_count_ref.val = world
+    .message_reader(raw_gamepad_event_message_key)
+    .read()
+    .length()
 }
 
 ///|
 fn input_probe_update_system(_world : @ecs.World) -> Unit {
   input_probe_update_stage_ref.val = current_stage_label()
-  input_probe_update_previous_snapshot_count_ref.val = previous_gamepads_ref.val.length()
+  input_probe_update_previous_snapshot_count_ref.val = gamepad_input_runtime_state.previous_gamepads.length()
 }
 
 ///|
@@ -194,8 +195,10 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
   reset_input_runtime_state()
   @gilrs.gamepad_test_reset_state()
 
-  current_gamepads_ref.val = [synthetic_snapshot(@core.Entity::new(42, 1))]
-  previous_gamepads_ref.val = []
+  gamepad_input_runtime_state.current_gamepads = [
+    synthetic_snapshot(@core.Entity::new(42, 1)),
+  ]
+  gamepad_input_runtime_state.previous_gamepads = []
 
   let app = input_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
     .add_system(input_probe_update_system)
@@ -203,8 +206,14 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
 
   debug_inspect(input_probe_update_stage_ref.val, content="\"update\"")
   debug_inspect(input_probe_update_previous_snapshot_count_ref.val, content="1")
-  debug_inspect(current_gamepads_ref.val.length(), content="0")
-  debug_inspect(previous_gamepads_ref.val.length(), content="0")
+  debug_inspect(
+    gamepad_input_runtime_state.current_gamepads.length(),
+    content="0",
+  )
+  debug_inspect(
+    gamepad_input_runtime_state.previous_gamepads.length(),
+    content="0",
+  )
   app |> ignore
 }
 
@@ -239,18 +248,18 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key(), Ref(0))
-  debug_inspect((try! focus_lost_reader.read()).length(), content="1")
+    .message_reader(keyboard_focus_lost_message_key())
+  debug_inspect(focus_lost_reader.read().length(), content="1")
   let keyboard_input_reader = app
     .world()
-    .message_reader(keyboard_input_message_key(), Ref(0))
-  debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
+    .message_reader(keyboard_input_message_key())
+  debug_inspect(keyboard_input_reader.read().length(), content="0")
 
   let window_event_reader = app
     .world()
-    .message_reader(@window.WindowEvent::message(), Ref(0))
+    .message_reader(@window.WindowEvent::message())
   let mut aggregate_focus_lost_count = 0
-  let window_events = try! window_event_reader.read()
+  let window_events = window_event_reader.read()
   for event in window_events {
     if event is @window.WindowEvent::KeyboardFocusLost(_) {
       aggregate_focus_lost_count = aggregate_focus_lost_count + 1
@@ -295,18 +304,18 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key(), Ref(0))
-  debug_inspect((try! focus_lost_reader.read()).length(), content="0")
+    .message_reader(keyboard_focus_lost_message_key())
+  debug_inspect(focus_lost_reader.read().length(), content="0")
   let keyboard_input_reader = app
     .world()
-    .message_reader(keyboard_input_message_key(), Ref(0))
-  debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
+    .message_reader(keyboard_input_message_key())
+  debug_inspect(keyboard_input_reader.read().length(), content="0")
 
   let window_event_reader = app
     .world()
-    .message_reader(@window.WindowEvent::message(), Ref(0))
+    .message_reader(@window.WindowEvent::message())
   let mut aggregate_focus_lost_count = 0
-  let window_events = try! window_event_reader.read()
+  let window_events = window_event_reader.read()
   for event in window_events {
     if event is @window.WindowEvent::KeyboardFocusLost(_) {
       aggregate_focus_lost_count = aggregate_focus_lost_count + 1

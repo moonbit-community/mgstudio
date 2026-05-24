@@ -666,10 +666,12 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"cameras\":[{\"type\":\"perspective\",\"perspective\":{\"yfov\":1.0,\"znear\":0.1}}],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[{\"type\":\"point\",\"name\":\"Point\",\"intensity\":2.0,\"range\":6.0}]}} ,\"nodes\":[{\"name\":\"Root\",\"camera\":0,\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}},\"extras\":{\"node\":1}}],\"meshes\":[]}"
   let doc = gltf_parse_document(source).unwrap()
   let node = doc.nodes[0]
-  let active_camera_found = Ref(false)
+  let camera_load_state = GltfSceneCameraLoadState::{
+    active_camera_found: false,
+  }
 
   let enabled_camera = gltf_scene_node_camera_components(
-    doc, node, active_camera_found,
+    doc, node, camera_load_state,
   )
   debug_inspect(enabled_camera is Some(_), content="true")
   match enabled_camera {
@@ -684,7 +686,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
     None => abort("expected enabled camera components")
   }
   let next_camera = gltf_scene_node_camera_components(
-    doc, node, active_camera_found,
+    doc, node, camera_load_state,
   )
   match next_camera {
     Some(camera_components) =>
@@ -696,7 +698,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
   disabled_settings.load_cameras = false
   disabled_settings.load_lights = false
   let disabled_camera = if disabled_settings.load_cameras {
-    gltf_scene_node_camera_components(doc, node, active_camera_found)
+    gltf_scene_node_camera_components(doc, node, camera_load_state)
   } else {
     None
   }

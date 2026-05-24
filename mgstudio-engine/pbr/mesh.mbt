@@ -95,17 +95,15 @@ pub fn standard_material_set(
 }
 
 ///|
-pub fn standard_material_assets_mut_or_abort() -> Ref[
+pub fn standard_material_assets_mut_or_abort() -> @ecs.ResourceMut[
   @asset.Assets[StandardMaterial],
 ] {
-  let assets_ref = @asset.asset_assets_ref_mut_or_abort()
-  Ref(assets_ref.peek())
+  @asset.asset_assets_ref_mut_or_abort()
 }
 
 ///|
-pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
-  let assets_ref = @sprite.mesh_assets_mut_or_abort()
-  Ref(assets_ref.peek())
+pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
+  @sprite.mesh_assets_mut_or_abort()
 }
 
 ///|
@@ -119,26 +117,26 @@ fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
 }
 
 ///|
-fn render3d_internal_assets_ref(
+fn render3d_internal_assets_mut(
   world : @ecs.World,
-) -> Ref[Render3dInternalAssetsState]? {
+) -> @ecs.ResourceMut[Render3dInternalAssetsState]? {
   match world.get_resource_mut(ecs_key_internal_assets) {
-    Some(state) => Some(Ref(state.peek()))
+    Some(state) => Some(state)
     None => None
   }
 }
 
 ///|
-fn render3d_internal_assets_ref_or_abort(
+fn render3d_internal_assets_mut_or_abort(
   world : @ecs.World,
-) -> Ref[Render3dInternalAssetsState] {
-  if render3d_internal_assets_ref(world) is None {
+) -> @ecs.ResourceMut[Render3dInternalAssetsState] {
+  if render3d_internal_assets_mut(world) is None {
     world.insert_resource(
       ecs_key_internal_assets,
       Render3dInternalAssetsState::new(),
     )
   }
-  match render3d_internal_assets_ref(world) {
+  match render3d_internal_assets_mut(world) {
     Some(state) => state
     None =>
       abort(
@@ -149,16 +147,17 @@ fn render3d_internal_assets_ref_or_abort(
 
 ///|
 fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
-  let internal_assets = render3d_internal_assets_ref_or_abort(world)
-  let handle = match internal_assets.val.skybox_proxy_mesh {
+  let internal_assets = render3d_internal_assets_mut_or_abort(world)
+  let handle = match internal_assets.peek().skybox_proxy_mesh {
     Some(handle) => handle
     None => {
-      let mesh = @mesh.Mesh3d::new(
-        mesh_assets_mut_or_abort().val
-        |> add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F)),
-      )
-      internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh())
-      mesh.mesh()
+      let handle = mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets |> add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
+      })
+      internal_assets.modify(fn(state) {
+        state.skybox_proxy_mesh = Some(handle)
+      })
+      handle
     }
   }
   @sprite_render.render2d_upload_mesh_handle(handle)
@@ -608,7 +607,7 @@ fn render3d_morph_target_texture_components(
 
 ///|
 fn render3d_morph_target_texture_id(
-  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   source_mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> Int {
   let mesh_handle_id = source_mesh_handle.id()
@@ -616,7 +615,7 @@ fn render3d_morph_target_texture_id(
     return -1
   }
   match
-    mesh_runtime_state_ref.val.morph_target_texture_cache.get(mesh_handle_id) {
+    mesh_runtime_state_value.morph_target_texture_cache.get(mesh_handle_id) {
     Some(texture_id) if texture_id > 0 => texture_id
     _ => {
       guard @sprite.render_mesh_asset_get(source_mesh_handle)
@@ -635,7 +634,7 @@ fn render3d_morph_target_texture_id(
         components~,
       )
       if texture_id > 0 {
-        mesh_runtime_state_ref.val.morph_target_texture_cache.set(
+        mesh_runtime_state_value.morph_target_texture_cache.set(
           mesh_handle_id, texture_id,
         )
       }
@@ -647,11 +646,11 @@ fn render3d_morph_target_texture_id(
 ///|
 pub fn render3d_extract_morphs(
   source_world : @ecs.World,
-  morph_indices_ref : Ref[@pbr_render.MorphIndices],
-  morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
+  morph_indices_value : @pbr_render.MorphIndices,
+  morph_uniforms_value : @pbr_render.MorphUniforms,
 ) -> Unit {
-  @pbr_render.morph_indices_swap_and_reset(morph_indices_ref)
-  @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_ref)
+  @pbr_render.morph_indices_swap_and_reset(morph_indices_value)
+  @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_value)
   let mesh_query : @ecs.Query[
     (@core.Entity, @ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,
@@ -669,10 +668,10 @@ pub fn render3d_extract_morphs(
       morph_weight_updates.push((entity, weights))
     }
     let uniform_offset = render3d_push_morph_weights_to_uniform_buffer(
-      morph_uniforms_ref.val.current_buffer,
+      morph_uniforms_value.current_buffer,
       active_morph_weights,
     )
-    morph_indices_ref.val.current.set(
+    morph_indices_value.current.set(
       render3d_morph_entity_key(entity),
       uniform_offset,
     )
@@ -690,20 +689,24 @@ pub fn render3d_extract_morphs(
 ///|
 pub fn render3d_prepare_morphs(
   source_world : @ecs.World,
-  morph_indices_ref : Ref[@pbr_render.MorphIndices],
-  morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
+  morph_indices_value : @pbr_render.MorphIndices,
+  morph_uniforms_value : @pbr_render.MorphUniforms,
 ) -> Unit {
   source_world |> ignore
-  morph_indices_ref |> ignore
+  morph_indices_value |> ignore
   @render.host_gpu_prepare_mesh3d_morph_bindings(
-    morph_weights=morph_uniforms_ref.val.current_buffer,
+    morph_weights=morph_uniforms_value.current_buffer,
   )
 }
 
 ///|
 pub fn render3d_sync_and_apply_deformed_meshes(world : @ecs.World) -> Unit {
-  let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
-  let morph_uniforms_ref = @pbr_render.morph_uniforms_ref_or_abort(world)
-  render3d_extract_morphs(world, morph_indices_ref, morph_uniforms_ref)
-  render3d_prepare_morphs(world, morph_indices_ref, morph_uniforms_ref)
+  let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
+  let morph_uniforms = @pbr_render.morph_uniforms_mut_or_abort(world)
+  morph_indices.modify(fn(morph_indices_value) {
+    morph_uniforms.modify(fn(morph_uniforms_value) {
+      render3d_extract_morphs(world, morph_indices_value, morph_uniforms_value)
+      render3d_prepare_morphs(world, morph_indices_value, morph_uniforms_value)
+    })
+  })
 }

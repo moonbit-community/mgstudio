@@ -128,14 +128,17 @@ fn main {
 fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   let handle : @asset.Handle[CustomMaterialAsset] = @asset.Handle::new(1)
   let assets_key : @ecs.ResourceKey[@asset.Assets[CustomMaterialAsset]] = @asset.assets_resource_key()
-  guard world.get_resource_ref_mut(assets_key) is Some(assets_ref) else {
+  guard world.get_resource_mut(assets_key) is Some(assets) else {
     abort("missing CustomMaterialAsset store")
   }
-  assets_ref.val.insert(
-    handle,
-    custom_material_asset(@sprite.Color::srgb(0.15F, 0.8F, 1.0F)),
-  )
-  |> ignore
+  assets.modify(fn(value) {
+    ignore(
+      value.insert(
+        handle,
+        custom_material_asset(@sprite.Color::srgb(0.15F, 0.8F, 1.0F)),
+      ),
+    )
+  })
 
   let mesh = @sprite.Mesh2d::new(
     @sprite.mesh_assets_mut_or_abort()

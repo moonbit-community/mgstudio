@@ -45,7 +45,7 @@ pub impl @ecs.Component for Velocity with component() {
 ///|
 struct MovementParam[P] {
   query : P
-  state : Ref[Json]
+  state : @app.SystemParamState[P]
 }
 
 ///|
@@ -61,13 +61,17 @@ type MovementSystemParam = MovementParam[MovementQuery]
 impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with init_state(
   world,
 ) {
-  P::init_state(world)
+  let state = P::init_state(world)
+  @app.SystemParamState::new(fn() raise { { query: P::get(state), state } }, fn(
+    value : MovementParam[P],
+  ) {
+    P::store(value.query, value.state)
+  })
 }
 
 ///|
 impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with get(state) {
-  let query_state = Ref(state.val)
-  { query: P::get(query_state), state: query_state }
+  state.get()
 }
 
 ///|
@@ -75,8 +79,7 @@ impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with store(
   self,
   state,
 ) {
-  P::store(self.query, self.state)
-  state.val = self.state.val
+  state.store(self)
 }
 
 ///|

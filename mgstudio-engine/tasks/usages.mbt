@@ -30,30 +30,37 @@ pub struct IoTaskPool {
 }
 
 ///|
-let compute_task_pool_ref : Ref[ComputeTaskPool?] = Ref(None)
+priv struct TaskPoolRuntimeState {
+  mut compute_task_pool : ComputeTaskPool?
+  mut async_compute_task_pool : AsyncComputeTaskPool?
+  mut io_task_pool : IoTaskPool?
+}
 
 ///|
-let async_compute_task_pool_ref : Ref[AsyncComputeTaskPool?] = Ref(None)
-
-///|
-let io_task_pool_ref : Ref[IoTaskPool?] = Ref(None)
+let task_pool_runtime_state : TaskPoolRuntimeState = {
+  compute_task_pool: None,
+  async_compute_task_pool: None,
+  io_task_pool: None,
+}
 
 ///|
 pub fn ComputeTaskPool::get_or_init(init : () -> TaskPool) -> ComputeTaskPool {
-  if compute_task_pool_ref.val is None {
-    compute_task_pool_ref.val = Some(ComputeTaskPool::{ pool: init() })
+  if task_pool_runtime_state.compute_task_pool is None {
+    task_pool_runtime_state.compute_task_pool = Some(ComputeTaskPool::{
+      pool: init(),
+    })
   }
-  compute_task_pool_ref.val.unwrap()
+  task_pool_runtime_state.compute_task_pool.unwrap()
 }
 
 ///|
 pub fn ComputeTaskPool::try_get() -> ComputeTaskPool? {
-  compute_task_pool_ref.val
+  task_pool_runtime_state.compute_task_pool
 }
 
 ///|
 pub fn ComputeTaskPool::get() -> ComputeTaskPool {
-  match compute_task_pool_ref.val {
+  match task_pool_runtime_state.compute_task_pool {
     Some(pool) => pool
     None => abort("ComputeTaskPool is not initialized")
   }
@@ -68,22 +75,22 @@ pub fn ComputeTaskPool::task_pool(self : ComputeTaskPool) -> TaskPool {
 pub fn AsyncComputeTaskPool::get_or_init(
   init : () -> TaskPool,
 ) -> AsyncComputeTaskPool {
-  if async_compute_task_pool_ref.val is None {
-    async_compute_task_pool_ref.val = Some(AsyncComputeTaskPool::{
+  if task_pool_runtime_state.async_compute_task_pool is None {
+    task_pool_runtime_state.async_compute_task_pool = Some(AsyncComputeTaskPool::{
       pool: init(),
     })
   }
-  async_compute_task_pool_ref.val.unwrap()
+  task_pool_runtime_state.async_compute_task_pool.unwrap()
 }
 
 ///|
 pub fn AsyncComputeTaskPool::try_get() -> AsyncComputeTaskPool? {
-  async_compute_task_pool_ref.val
+  task_pool_runtime_state.async_compute_task_pool
 }
 
 ///|
 pub fn AsyncComputeTaskPool::get() -> AsyncComputeTaskPool {
-  match async_compute_task_pool_ref.val {
+  match task_pool_runtime_state.async_compute_task_pool {
     Some(pool) => pool
     None => abort("AsyncComputeTaskPool is not initialized")
   }
@@ -96,20 +103,20 @@ pub fn AsyncComputeTaskPool::task_pool(self : AsyncComputeTaskPool) -> TaskPool 
 
 ///|
 pub fn IoTaskPool::get_or_init(init : () -> TaskPool) -> IoTaskPool {
-  if io_task_pool_ref.val is None {
-    io_task_pool_ref.val = Some(IoTaskPool::{ pool: init() })
+  if task_pool_runtime_state.io_task_pool is None {
+    task_pool_runtime_state.io_task_pool = Some(IoTaskPool::{ pool: init() })
   }
-  io_task_pool_ref.val.unwrap()
+  task_pool_runtime_state.io_task_pool.unwrap()
 }
 
 ///|
 pub fn IoTaskPool::try_get() -> IoTaskPool? {
-  io_task_pool_ref.val
+  task_pool_runtime_state.io_task_pool
 }
 
 ///|
 pub fn IoTaskPool::get() -> IoTaskPool {
-  match io_task_pool_ref.val {
+  match task_pool_runtime_state.io_task_pool {
     Some(pool) => pool
     None => abort("IoTaskPool is not initialized")
   }

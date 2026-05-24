@@ -85,7 +85,10 @@ pub fn App::schedule_graph_dot(
   stage : ScheduleStage,
   settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
 ) -> String {
-  let schedule_entry = schedule_entry_ref(self.sub_apps.main.schedule, stage).val
+  let schedule_entry = schedule_entry_for_stage(
+    self.sub_apps.main.schedule,
+    stage,
+  )
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
   let systems = if graph_plan.build_error is Some(_) {
     schedule_systems(self.sub_apps.main.schedule, stage)

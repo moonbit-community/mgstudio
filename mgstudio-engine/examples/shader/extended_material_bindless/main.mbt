@@ -22,7 +22,9 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.2F, 1.2F, 1.2F))
+  let mesh = meshes.modify(fn(meshes) {
+    meshes |> @pbr.add_mesh(@math.Cuboid::new(1.2F, 1.2F, 1.2F))
+  })
   let textures : Array[@asset.Handle[@asset.Image]] = [
     asset_server.get().load_image("branding/icon.png"),
     asset_server.get().load_image("branding/banner.png"),

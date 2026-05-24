@@ -74,9 +74,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(@mesh_primitives.circle_mesh(4.0F, 32)),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets.add(
+          @mesh.Mesh::from_3d_geometry(@mesh_primitives.circle_mesh(4.0F, 32)),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_rotation(@math.Quat::from_rotation_x(-FRAC_PI_2)),
@@ -84,8 +86,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+    }),
   )
   for x in [-2.0F, 0.0F, 2.0F] {
     @pbr.MeshMaterial3dBundle::new(

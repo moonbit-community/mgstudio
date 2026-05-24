@@ -228,7 +228,7 @@ fn fit_canvas(
     @ecs.With[OuterCamera],
   ],
 ) -> Unit {
-  for window_resized in (try! resize_messages.read()) {
+  for window_resized in resize_messages.read() {
     let h_scale = window_resized.width /
       Float::from_double(RES_WIDTH.to_double())
     let v_scale = window_resized.height /

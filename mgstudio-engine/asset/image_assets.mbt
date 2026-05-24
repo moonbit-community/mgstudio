@@ -53,7 +53,7 @@ fn[T] image_asset_allocate_handle(
   assets : Assets[T],
   image : Image,
 ) -> Handle[T] {
-  let nearest = asset_server_or_abort().default_sampler_nearest.val
+  let nearest = asset_server_or_abort().default_sampler_nearest
   if image.is_target_texture() {
     let id = create_render_target_with_formats(
       width=image.width,

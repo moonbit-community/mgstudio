@@ -129,7 +129,7 @@ fn main {
   stepping.set(
     stepping.peek().clear_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME),
   )
-  stepping.set(stepping.peek().disable())
+  stepping.update(fn(value) { value.disable() })
   app = app.update()
 }
 

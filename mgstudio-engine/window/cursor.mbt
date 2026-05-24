@@ -190,9 +190,6 @@ pub(all) enum CursorIcon {
 }
 
 ///|
-pub impl @ecs.Mutable for CursorIcon
-
-///|
 pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
   System(icon)
 }
@@ -221,9 +218,6 @@ pub(all) struct CursorOptions {
   mut grab_mode : CursorGrabMode
   hit_test : Bool
 } derive(Eq, Debug)
-
-///|
-pub impl @ecs.Mutable for CursorOptions
 
 ///|
 pub fn CursorOptions::CursorOptions() -> CursorOptions {

@@ -16,7 +16,7 @@
 fn file_drag_and_drop_system(
   reader : @ecs.MessageReader[@window.FileDragAndDrop],
 ) -> Unit {
-  for event in (try! reader.read()) {
+  for event in reader.read() {
     match event {
       @window.FileDragAndDrop::DroppedFile(window, path) =>
         println("DroppedFile(window=\{window.id}, \"\{path}\")")

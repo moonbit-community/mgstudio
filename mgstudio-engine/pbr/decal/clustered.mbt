@@ -332,8 +332,10 @@ pub fn render3d_upload_decals(
 fn render3d_upload_decals_system(world : @ecs.World) -> Unit {
   let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
   let decals_buffer_ref = render3d_decals_buffer_ref_or_init(world)
-  decals_buffer_ref.set_changed()
-  render3d_upload_decals(render_decals_ref.peek(), decals_buffer_ref.peek())
+  let render_decals = render_decals_ref.peek()
+  decals_buffer_ref.modify(fn(decals_buffer) {
+    render3d_upload_decals(render_decals, decals_buffer)
+  })
 }
 
 ///|
@@ -498,15 +500,15 @@ fn clustered_decal_extract_directional_light_textures(
 pub fn render3d_extract_clustered_decals_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
-  render_decals_ref.set_changed()
-  let render_decals = render_decals_ref.peek()
-  render_decals.clear()
-  clustered_decal_extract_scene_decals(source_world, render_decals)
-  clustered_decal_extract_spot_light_textures(source_world, render_decals)
-  clustered_decal_extract_point_light_textures(source_world, render_decals)
-  clustered_decal_extract_directional_light_textures(
-    source_world, render_decals,
-  )
+  render_decals_ref.modify(fn(render_decals) {
+    render_decals.clear()
+    clustered_decal_extract_scene_decals(source_world, render_decals)
+    clustered_decal_extract_spot_light_textures(source_world, render_decals)
+    clustered_decal_extract_point_light_textures(source_world, render_decals)
+    clustered_decal_extract_directional_light_textures(
+      source_world, render_decals,
+    )
+  })
 }
 
 ///|

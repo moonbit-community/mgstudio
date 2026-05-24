@@ -194,8 +194,7 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref(current_ctx)
-  let ctx = ctx_ref.val
+  let ctx = current_ctx
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
@@ -296,5 +295,5 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
 
   // Colliders moved; keep query pipeline consistent.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  ctx_res.insert(ctx_ref.val)
+  ctx_res.insert(ctx)
 }

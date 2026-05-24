@@ -24,7 +24,7 @@ pub(all) suberror RegisteredSystemError {
 
 ///|
 priv struct RegisteredSystemsResource {
-  configs : Array[Ref[SystemConfig[@ecs.World]]]
+  configs : Array[SystemConfig[@ecs.World]]
 }
 
 ///|
@@ -54,59 +54,56 @@ fn registered_systems_ref(
 ///|
 fn run_registered_system_config(
   world : @ecs.World,
-  config_ref : Ref[SystemConfig[@ecs.World]],
+  config : SystemConfig[@ecs.World],
 ) -> Unit raise Error {
-  for cond_i in 0..<config_ref.val.run_ifs.length() {
-    let cond = config_ref.val.run_ifs[cond_i]
+  for cond_i in 0..<config.run_ifs.length() {
+    let cond = config.run_ifs[cond_i]
     let cond_this_run = world.increment_change_tick()
     let cond_ticks = @core.SystemTicks::new(
-      config_ref.val.run_if_last_run_ticks[cond_i],
+      config.run_if_last_run_ticks[cond_i],
       cond_this_run,
     )
     let cond_ctx = world.get_tick_context()
     cond_ctx.set(cond_ticks)
     world.set_tick_context(cond_ctx)
-    let prev_world = current_world_ref.val
-    current_world_ref.val = Some(world)
-    let prev_ticks = current_system_ticks_ref.val
-    current_system_ticks_ref.val = Some(cond_ticks)
-    let should_run = cond(world, config_ref.val.run_if_states[cond_i])
-    current_system_ticks_ref.val = prev_ticks
-    current_world_ref.val = prev_world
-    config_ref.val.run_if_last_run_ticks[cond_i] = cond_this_run
+    let prev_world = app_execution_context_state.current_world
+    app_execution_context_state.current_world = Some(world)
+    let prev_ticks = app_execution_context_state.current_system_ticks
+    app_execution_context_state.current_system_ticks = Some(cond_ticks)
+    let should_run = cond.run(world)
+    app_execution_context_state.current_system_ticks = prev_ticks
+    app_execution_context_state.current_world = prev_world
+    config.run_if_last_run_ticks[cond_i] = cond_this_run
     if !should_run {
       raise @ecs.Skipped("Registered system run condition returned false")
     }
   }
 
   let this_run = world.increment_change_tick()
-  let sys_ticks = @core.SystemTicks::new(config_ref.val.last_run_tick, this_run)
+  let sys_ticks = @core.SystemTicks::new(config.last_run_tick, this_run)
   let ctx = world.get_tick_context()
   ctx.set(sys_ticks)
   world.set_tick_context(ctx)
-  let prev_world = current_world_ref.val
-  current_world_ref.val = Some(world)
-  let prev_ticks = current_system_ticks_ref.val
-  current_system_ticks_ref.val = Some(sys_ticks)
+  let prev_world = app_execution_context_state.current_world
+  app_execution_context_state.current_world = Some(world)
+  let prev_ticks = app_execution_context_state.current_system_ticks
+  app_execution_context_state.current_system_ticks = Some(sys_ticks)
   let prev_outcome = current_system_execution_outcome()
   reset_system_execution_outcome()
-  (config_ref.val.system)(world)
+  (config.system)(world)
   let outcome = current_system_execution_outcome()
-  current_system_execution_outcome_ref.val = prev_outcome
-  current_system_ticks_ref.val = prev_ticks
-  current_world_ref.val = prev_world
+  system_execution_runtime_state.outcome = prev_outcome
+  app_execution_context_state.current_system_ticks = prev_ticks
+  app_execution_context_state.current_world = prev_world
   match outcome {
-    Success => config_ref.val.last_run_tick = this_run
+    Success => config.last_run_tick = this_run
     Skipped(message) => raise @ecs.Skipped(message)
     Invalid(message) => raise @ecs.Invalid(message)
     Error(err) => {
-      config_ref.val.last_run_tick = this_run
-      match config_ref.val.error_handler {
+      config.last_run_tick = this_run
+      match config.error_handler {
         Some(handler) =>
-          handler(
-            err,
-            system_context(config_ref.val, ErrorContextKind::System, None),
-          )
+          handler(err, system_context(config, ErrorContextKind::System, None))
         None => raise err
       }
     }
@@ -119,9 +116,11 @@ pub fn register_system(
   system : SystemConfig[@ecs.World],
 ) -> SystemId {
   let configs_ref = registered_systems_ref(world)
-  let system_id = SystemId::{ index: configs_ref.peek().configs.length() }
-  configs_ref.modify(fn(value) { value.configs.push(Ref(system)) })
-  system_id
+  configs_ref.modify(fn(value) {
+    let system_id = SystemId::{ index: value.configs.length() }
+    value.configs.push(system)
+    system_id
+  })
 }
 
 ///|
@@ -139,7 +138,7 @@ pub fn run_system_once(
   world : @ecs.World,
   system : SystemConfig[@ecs.World],
 ) -> Unit raise Error {
-  run_registered_system_config(world, Ref(system))
+  run_registered_system_config(world, system)
 }
 
 ///|

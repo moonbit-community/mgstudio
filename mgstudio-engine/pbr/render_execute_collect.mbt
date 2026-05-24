@@ -15,7 +15,7 @@
 ///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
-  world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
+  world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
   gpu_instance_buffer_builder_requested : Bool,
   gpu_culling_supported : Bool,
   prepass_enabled : Bool,
@@ -190,7 +190,7 @@ fn render3d_execute_collect_cameras(
       ))
       is Some(_)
     let transform = @pbr_render.render3d_entity_world_transform_cached(
-      source_world, entity, world_transform_cache_ref,
+      source_world, entity, world_transform_cache_value,
     )
     let previous_view_data = previous_view_data_opt.value()
     let previous_transform = match previous_view_data {

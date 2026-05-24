@@ -50,7 +50,9 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+          meshes.modify(fn(meshes) {
+            meshes |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+          }),
         ),
         @pbr.MeshMaterial3d::new(
           materials

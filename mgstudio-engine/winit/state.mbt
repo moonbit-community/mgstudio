@@ -212,16 +212,16 @@ priv struct WinitAppRunnerState {
   device : @render.HostGpuDevice
   primary_window : @window.HostWindow
   app_ref : Ref[@app.App[@ecs.World]]
-  runner_surfaces_ref : Ref[Array[RunnerSurfaceBinding]]
+  mut runner_surfaces : Array[RunnerSurfaceBinding]
   debug_screenshot_path : String?
   debug_screenshot_exit_on_save : Bool
   debug_screenshot_texture_id : Int
   debug_screenshot_frame : Int
   debug_screenshot_surface_index : Int
-  debug_screenshot_requested_ref : Ref[Bool]
-  debug_screenshot_saved_ref : Ref[Bool]
-  debug_screenshot_capture_id_ref : Ref[Int]
-  debug_screenshot_render_frame_ref : Ref[Int]
+  mut debug_screenshot_requested : Bool
+  mut debug_screenshot_saved : Bool
+  mut debug_screenshot_capture_id : Int
+  mut debug_screenshot_render_frame : Int
   frame_limit : Int
   frame_count_ref : Ref[Int]
 }
@@ -232,7 +232,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
   winit_window_backend_sync_system(world)
   let host_entries = @window.window_host_entries(world)
   let next_surfaces : Array[RunnerSurfaceBinding] = []
-  let previous_surfaces = self.runner_surfaces_ref.val
+  let previous_surfaces = self.runner_surfaces
   for entry in host_entries {
     let host_window = entry.host_window
     let window_component = try! world.get_by_key(
@@ -307,12 +307,12 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       desired_maximum_frame_latency,
     })
   }
-  self.runner_surfaces_ref.val = next_surfaces
+  self.runner_surfaces = next_surfaces
 
   if @app.app_rendering_enabled() {
-    let next_render_frame = self.debug_screenshot_render_frame_ref.val + 1
+    let next_render_frame = self.debug_screenshot_render_frame + 1
     let ordered_surface_bindings = runner_surface_binding_ordered(
-      self.runner_surfaces_ref.val,
+      self.runner_surfaces,
       self.primary_window,
     )
     let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
@@ -325,15 +325,15 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     }
     let frame_bindings : Array[RunnerFrameBinding] = []
     for i, binding in ordered_surface_bindings {
-      if !self.debug_screenshot_requested_ref.val &&
+      if !self.debug_screenshot_requested &&
         self.debug_screenshot_path is Some(_) &&
         self.debug_screenshot_texture_id <= 0 &&
         next_render_frame >= self.debug_screenshot_frame &&
         i == capture_surface_index {
         let capture_id = @render.screenshot_capture_surface_request()
         if capture_id > 0 {
-          self.debug_screenshot_requested_ref.val = true
-          self.debug_screenshot_capture_id_ref.val = capture_id
+          self.debug_screenshot_requested = true
+          self.debug_screenshot_capture_id = capture_id
         }
       }
       if binding.width <= 0 || binding.height <= 0 {
@@ -346,23 +346,20 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       }
     }
     self.app_ref.val = self.app_ref.val.run_once()
-    self.debug_screenshot_render_frame_ref.val = next_render_frame
+    self.debug_screenshot_render_frame = next_render_frame
     @window.screenshot_queue_capture_requests(self.app_ref.val.world())
     for frame_binding in frame_bindings {
       @render.host_gpu_end_frame(frame_binding.frame)
     }
     @window.screenshot_finalize_capture_requests(self.app_ref.val.world())
-    if !self.debug_screenshot_saved_ref.val &&
-      self.debug_screenshot_path is Some(path) {
+    if !self.debug_screenshot_saved && self.debug_screenshot_path is Some(path) {
       let capture0 = if self.debug_screenshot_texture_id > 0 &&
         next_render_frame >= self.debug_screenshot_frame {
         @render.screenshot_capture_texture_sync(
           texture_id=self.debug_screenshot_texture_id,
         )
-      } else if self.debug_screenshot_capture_id_ref.val > 0 {
-        @render.screenshot_take_capture_result(
-          self.debug_screenshot_capture_id_ref.val,
-        )
+      } else if self.debug_screenshot_capture_id > 0 {
+        @render.screenshot_take_capture_result(self.debug_screenshot_capture_id)
       } else {
         None
       }
@@ -378,7 +375,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
           pixels=capture.pixels,
           path~,
         )
-        self.debug_screenshot_saved_ref.val = true
+        self.debug_screenshot_saved = true
         if self.debug_screenshot_exit_on_save {
           @window.window_request_close_all_hosts(self.app_ref.val.world())
           return
@@ -525,24 +522,20 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         value
       }
     }
-    let debug_screenshot_requested_ref : Ref[Bool] = Ref(false)
-    let debug_screenshot_saved_ref : Ref[Bool] = Ref(false)
-    let debug_screenshot_capture_id_ref : Ref[Int] = Ref(0)
-    let debug_screenshot_render_frame_ref : Ref[Int] = Ref(0)
     let runner_state = WinitAppRunnerState::{
       device,
       primary_window,
       app_ref,
-      runner_surfaces_ref: Ref([]),
+      runner_surfaces: [],
       debug_screenshot_path,
       debug_screenshot_exit_on_save,
       debug_screenshot_texture_id,
       debug_screenshot_frame,
       debug_screenshot_surface_index,
-      debug_screenshot_requested_ref,
-      debug_screenshot_saved_ref,
-      debug_screenshot_capture_id_ref,
-      debug_screenshot_render_frame_ref,
+      debug_screenshot_requested: false,
+      debug_screenshot_saved: false,
+      debug_screenshot_capture_id: 0,
+      debug_screenshot_render_frame: 0,
       frame_limit: runner_frame_limit(),
       frame_count_ref: Ref(0),
     }

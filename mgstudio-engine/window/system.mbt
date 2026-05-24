@@ -18,11 +18,7 @@ pub fn close_when_requested(
   _closing : @ecs.Query[@core.Entity, @ecs.With[ClosingWindow]],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let events = try requested.read() catch {
-    _ => []
-  } noraise {
-    value => value
-  }
+  let events = requested.read()
   let closing_entities : Array[@core.Entity] = []
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_closing_window))
@@ -50,7 +46,7 @@ pub fn close_when_requested(
 }
 
 ///|
-let window_app_exit_event_cursor_ref : Ref[Int] = Ref(0)
+let window_app_exit_event_cursor : @ecs.MessageCursor[@app.AppExit] = @ecs.MessageCursor::MessageCursor()
 
 ///|
 fn window_has_app_exit_message(world : @ecs.World) -> Bool {
@@ -59,9 +55,9 @@ fn window_has_app_exit_message(world : @ecs.World) -> Bool {
   }
   let reader = world.message_reader(
     @app.AppExit::message(),
-    window_app_exit_event_cursor_ref,
+    cursor=window_app_exit_event_cursor,
   )
-  (try! reader.read()).length() > 0
+  reader.read().length() > 0
 }
 
 ///|

@@ -411,18 +411,17 @@ pub fn AutoDirectionalNavigator::navigate(
   guard auto_directional_navigation_focus_ref_mut(self.world) is Some(focus_ref) else {
     raise @input_focus.NoFocus
   }
-  let focus = focus_ref.peek()
-  guard focus.get() is Some(current_focus) else { raise @input_focus.NoFocus }
+  guard focus_ref.peek().get() is Some(current_focus) else {
+    raise @input_focus.NoFocus
+  }
   if !self.world.is_alive(current_focus) {
-    focus_ref.set_changed()
-    focus.clear()
+    focus_ref.modify(fn(focus) { focus.clear() })
     raise @input_focus.NoFocus
   }
 
   let manual_map = auto_directional_navigation_map(self.world)
   if manual_map.get_neighbor(current_focus, direction) is Some(new_focus) {
-    focus_ref.set_changed()
-    focus.set(new_focus)
+    focus_ref.modify(fn(focus) { focus.set(new_focus) })
     return new_focus
   }
 
@@ -441,8 +440,7 @@ pub fn AutoDirectionalNavigator::navigate(
     is Some(new_focus) else {
     raise @input_focus.NoNeighborInDirection(current_focus, direction)
   }
-  focus_ref.set_changed()
-  focus.set(new_focus)
+  focus_ref.modify(fn(focus) { focus.set(new_focus) })
   new_focus
 }
 

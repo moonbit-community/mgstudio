@@ -126,16 +126,16 @@ impl @app.Resource for Render3dPointLightShadowTargets with resource() {
 }
 
 ///|
-fn render3d_point_light_shadow_targets_ref_or_init(
+fn render3d_point_light_shadow_targets_mut_or_init(
   world : @ecs.World,
-) -> Ref[Render3dPointLightShadowTargets] {
+) -> @ecs.ResourceMut[Render3dPointLightShadowTargets] {
   if world.get_resource(Render3dPointLightShadowTargets::resource()) is None {
     world.insert_resource(Render3dPointLightShadowTargets::resource(), {
       entries: [],
     })
   }
   match world.get_resource_mut(Render3dPointLightShadowTargets::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dPointLightShadowTargets resource")
   }
 }
@@ -146,10 +146,10 @@ fn render3d_point_light_shadow_target_get_or_create(
   entity : @core.Entity,
   size : Int,
 ) -> Int {
-  let shadow_targets_ref = render3d_point_light_shadow_targets_ref_or_init(
+  let shadow_targets_mut = render3d_point_light_shadow_targets_mut_or_init(
     world,
   )
-  let shadow_targets = shadow_targets_ref.val.entries
+  let shadow_targets = shadow_targets_mut.peek().entries
   let safe_size = if size <= 0 { 1 } else { size }
   for item in shadow_targets {
     if item.entity.id == entity.id &&
@@ -177,6 +177,6 @@ fn render3d_point_light_shadow_target_get_or_create(
   if !replaced {
     next.push({ entity, size: safe_size, target_id })
   }
-  shadow_targets_ref.val.entries = next
+  shadow_targets_mut.modify(fn(state) { state.entries = next })
   target_id
 }

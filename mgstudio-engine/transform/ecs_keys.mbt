@@ -55,11 +55,18 @@ pub impl @ecs.Component for TransformTreeChanged with component() {
 }
 
 ///|
-let transform_component_metadata_installed : Ref[Bool] = Ref(false)
+priv struct TransformEcsRuntimeState {
+  mut component_metadata_installed : Bool
+}
+
+///|
+let transform_ecs_runtime_state : TransformEcsRuntimeState = {
+  component_metadata_installed: false,
+}
 
 ///|
 pub fn transform_install_component_metadata() -> Unit {
-  if transform_component_metadata_installed.val {
+  if transform_ecs_runtime_state.component_metadata_installed {
     return
   }
   ignore(
@@ -67,7 +74,7 @@ pub fn transform_install_component_metadata() -> Unit {
     .require_default(ecs_key_global_transform)
     .require_default(ecs_key_transform_tree_changed),
   )
-  transform_component_metadata_installed.val = true
+  transform_ecs_runtime_state.component_metadata_installed = true
 }
 
 ///|

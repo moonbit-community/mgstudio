@@ -111,7 +111,7 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
       Update,
       system(
         system_param(fn(reader : @ecs.MessageReader[TestAppMessage]) {
-          for message in (try! reader.read()) {
+          for message in reader.read() {
             seen.push(message.value)
           }
         }),
@@ -186,7 +186,7 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
       Update,
       system(
         system_param(fn(mutator : @ecs.MessageMutator[TestDefaultAppMessage]) {
-          for message in (try! mutator.read()) {
+          for message in mutator.read() {
             message.value = message.value + 4
           }
         }),
@@ -196,7 +196,7 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
       Update,
       system(
         system_param(fn(reader : @ecs.MessageReader[TestDefaultAppMessage]) {
-          for message in (try! reader.read()) {
+          for message in reader.read() {
             seen.push(message.value)
           }
         }),
@@ -244,7 +244,7 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
           cursor : Local[@ecs.MessageCursor[TestCursorAppMessage]],
           messages : ResMut[@ecs.Messages[TestCursorAppMessage]],
         ) {
-          for message in (try! cursor.read(messages)) {
+          for message in cursor.read(messages) {
             if message.resend {
               ignore(
                 messages.write(TestCursorAppMessage::{
@@ -261,7 +261,7 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
       Update,
       system(
         system_param(fn(reader : @ecs.MessageReader[TestCursorAppMessage]) {
-          for message in (try! reader.read()) {
+          for message in reader.read() {
             seen.push(message.times_sent)
           }
         }),

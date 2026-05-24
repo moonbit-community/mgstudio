@@ -19,16 +19,16 @@ priv struct RuntimeState {
 }
 
 ///|
-let runtime_state_ref : Ref[RuntimeState] = Ref(RuntimeState::{
+let runtime_state : RuntimeState = RuntimeState::{
   close_requested: false,
   stdin_line: None,
-})
+}
 
 ///|
 fn host_app_run_loop(step : FuncRef[() -> Unit], interval_ms~ : Int) -> Unit {
   interval_ms |> ignore
   let mut safety_limit = 0
-  while !runtime_state_ref.val.close_requested && safety_limit < 1000000 {
+  while !runtime_state.close_requested && safety_limit < 1000000 {
     step()
     safety_limit = safety_limit + 1
   }
@@ -36,17 +36,17 @@ fn host_app_run_loop(step : FuncRef[() -> Unit], interval_ms~ : Int) -> Unit {
 
 ///|
 fn host_app_request_close() -> Unit {
-  runtime_state_ref.val.close_requested = true
+  runtime_state.close_requested = true
 }
 
 ///|
 fn host_app_reset_close() -> Unit {
-  runtime_state_ref.val.close_requested = false
+  runtime_state.close_requested = false
 }
 
 ///|
 fn host_app_stdin_read_line_len() -> Int {
-  match runtime_state_ref.val.stdin_line {
+  match runtime_state.stdin_line {
     Some(line) => line.length()
     None => -1
   }
@@ -54,7 +54,7 @@ fn host_app_stdin_read_line_len() -> Int {
 
 ///|
 fn host_app_stdin_read_line_code_unit(offset~ : Int) -> Int {
-  match runtime_state_ref.val.stdin_line {
+  match runtime_state.stdin_line {
     Some(line) =>
       if offset < 0 || offset >= line.length() {
         0

@@ -247,7 +247,7 @@ fn on_add_mine(
   let entity = event.entity()
   let mine_comp = mines.get(entity) catch { _ => None }
   guard mine_comp is Some(mine_comp) else { return }
-  state.peek().insert(entity, mine_comp.value())
+  state.modify(fn(state) { state.insert(entity, mine_comp.value()) })
 }
 
 ///|

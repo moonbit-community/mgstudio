@@ -291,8 +291,6 @@ fn setup_scene(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let server = asset_server.get()
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
 
   commands.spawn(
     (
@@ -327,11 +325,15 @@ fn setup_scene(
   commands.spawn(
     (
       @mesh.Mesh3d::new(
-        mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(14.0F, 0.1F, 14.0F)),
+        meshes.modify(fn(mesh_assets) {
+          mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(14.0F, 0.1F, 14.0F))
+        }),
       ),
       @pbr.MeshMaterial3d::new(
-        material_assets
-        |> @pbr.add_material(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+        materials.modify(fn(material_assets) {
+          material_assets
+          |> @pbr.add_material(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
+        }),
       ),
       @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
     ),

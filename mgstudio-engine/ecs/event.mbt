@@ -18,8 +18,8 @@ struct EventAccessOps[T] {
   read : (World) -> Array[T]
   clear : (World) -> Unit
   advance : (World) -> Unit
-  current_trigger : (World) -> Ref[T]?
-  set_current_trigger : (World, Ref[T]) -> Unit
+  current_trigger : (World) -> T?
+  set_current_trigger : (World, T) -> Unit
   clear_current_trigger : (World) -> Unit
 }
 
@@ -40,7 +40,7 @@ let event_ops_registry : @hashmap.HashMap[Int, EventOps] = @hashmap.HashMap([])
 ///|
 fn[T] event_access_ops_new() -> EventAccessOps[T] {
   let slots_by_world : Map[Int, EventQueueSlot[T]] = {}
-  let current_trigger_by_world : Map[Int, Ref[T]] = {}
+  let current_trigger_by_world : Map[Int, T] = {}
   let slot = fn(world : World) -> EventQueueSlot[T] {
     match slots_by_world.get(world.world_id()) {
       Some(slot) => slot
@@ -77,8 +77,8 @@ fn[T] event_access_ops_new() -> EventAccessOps[T] {
     current_trigger: fn(world) {
       current_trigger_by_world.get(world.world_id())
     },
-    set_current_trigger: fn(world, event_ref) {
-      current_trigger_by_world.set(world.world_id(), event_ref)
+    set_current_trigger: fn(world, event) {
+      current_trigger_by_world.set(world.world_id(), event)
     },
     clear_current_trigger: fn(world) {
       current_trigger_by_world.remove(world.world_id())
@@ -101,10 +101,7 @@ pub fn[T] World::send_event(self : World, key : EventKey[T], event : T) -> Unit 
 }
 
 ///|
-pub fn[T] World::read_events(
-  self : World,
-  key : EventKey[T],
-) -> Array[T] raise EcsError {
+pub fn[T] World::read_events(self : World, key : EventKey[T]) -> Array[T] {
   (key.access.read)(self)
 }
 

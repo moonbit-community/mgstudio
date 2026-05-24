@@ -72,7 +72,7 @@ fn spawn_tab_button(
       _pointer : @app.OnPointer[@app.PointerClick],
       focus : @app.ResMut[@input_focus.InputFocus],
     ) {
-      focus.peek().set(button)
+      focus.modify(fn(focus) { focus.set(button) })
     }),
   )
 }

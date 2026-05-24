@@ -88,16 +88,18 @@ fn colorful_cube_mesh() -> @mesh.Mesh3d {
     )
   }
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new_with_colors(
-          positions,
-          uvs,
-          colors,
-          Some(indices),
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh.Mesh3dGeometry::new_with_colors(
+            positions,
+            uvs,
+            colors,
+            Some(indices),
+          ),
         ),
-      ),
-    ),
+      )
+    }),
   )
 }
 
@@ -105,12 +107,14 @@ fn colorful_cube_mesh() -> @mesh.Mesh3d {
 fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(5.0F, 5.0F),
-        ).build(),
-      ),
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets
+        |> @pbr.add_mesh(
+          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+            @math.Vec2::new(5.0F, 5.0F),
+          ).build(),
+        )
+      }),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(

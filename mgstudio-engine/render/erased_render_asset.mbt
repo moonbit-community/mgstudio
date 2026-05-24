@@ -34,7 +34,7 @@ pub fn ErasedAssetExtractionSystems::new() -> ErasedAssetExtractionSystems {
 
 ///|
 pub struct ErasedRenderAssets[A] {
-  items : @hashmap.HashMap[UntypedRenderAssetId, Ref[A]]
+  items : @hashmap.HashMap[UntypedRenderAssetId, A]
 }
 
 ///|
@@ -77,17 +77,14 @@ pub fn[A] ErasedRenderAssets::get(
   self : ErasedRenderAssets[A],
   id : UntypedRenderAssetId,
 ) -> A? {
-  match self.items.get(id) {
-    Some(value_ref) => Some(value_ref.val)
-    None => None
-  }
+  self.items.get(id)
 }
 
 ///|
 pub fn[A] ErasedRenderAssets::get_mut(
   self : ErasedRenderAssets[A],
   id : UntypedRenderAssetId,
-) -> Ref[A]? {
+) -> A? {
   self.items.get(id)
 }
 
@@ -97,7 +94,7 @@ pub fn[A] ErasedRenderAssets::insert(
   id : UntypedRenderAssetId,
   value : A,
 ) -> Unit {
-  self.items.set(id, Ref(value))
+  self.items.set(id, value)
 }
 
 ///|
@@ -105,9 +102,9 @@ pub fn[A] ErasedRenderAssets::remove(
   self : ErasedRenderAssets[A],
   id : UntypedRenderAssetId,
 ) -> A? {
-  guard self.items.get(id) is Some(value_ref) else { return None }
+  guard self.items.get(id) is Some(value) else { return None }
   self.items.remove(id)
-  Some(value_ref.val)
+  Some(value)
 }
 
 ///|
@@ -118,7 +115,7 @@ pub fn[A] ErasedRenderAssets::clear(self : ErasedRenderAssets[A]) -> Unit {
 ///|
 pub fn[A] ErasedRenderAssets::to_array(
   self : ErasedRenderAssets[A],
-) -> Array[(UntypedRenderAssetId, Ref[A])] {
+) -> Array[(UntypedRenderAssetId, A)] {
   self.items.to_array()
 }
 

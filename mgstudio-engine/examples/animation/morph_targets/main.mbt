@@ -141,7 +141,7 @@ fn name_morph_targets(
   if state.peek().named {
     return
   }
-  for event in (try! events.read()) {
+  for event in events.read() {
     let handle = match event {
       Added(handle) => Some(handle)
       LoadedWithDependencies(handle) => Some(handle)

@@ -33,7 +33,7 @@ priv struct TypedAssetLoaderEntry {
 
 ///|
 priv struct TypedAssetLoaderRegistryState {
-  loaders : Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]]
+  loaders : @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]
 }
 
 ///|
@@ -57,11 +57,11 @@ fn typed_asset_loader_clone_entries(
 ///|
 fn typed_asset_loader_registry_for_world(
   world : @ecs.World,
-) -> Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]] {
+) -> @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]] {
   let key = typed_asset_loader_registry_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, TypedAssetLoaderRegistryState::{
-      loaders: Ref(@hashmap.HashMap([])),
+      loaders: @hashmap.HashMap([]),
     })
   }
   match world.get_resource(key) {
@@ -71,8 +71,9 @@ fn typed_asset_loader_registry_for_world(
 }
 
 ///|
-fn typed_asset_loader_registry_active() -> Ref[
-  @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]],
+fn typed_asset_loader_registry_active() -> @hashmap.HashMap[
+  String,
+  Array[TypedAssetLoaderEntry],
 ] {
   match asset_current_world() {
     Some(world) => typed_asset_loader_registry_for_world(world)
@@ -85,7 +86,7 @@ fn typed_asset_loader_registry_active() -> Ref[
 
 ///|
 fn typed_asset_loader_is_registered(type_name : String) -> Bool {
-  match typed_asset_loader_registry_active().val.get(type_name) {
+  match typed_asset_loader_registry_active().get(type_name) {
     Some(entries) => entries.length() > 0
     None => false
   }
@@ -254,11 +255,11 @@ fn typed_asset_loader_warn_duplicate_extensions(
 
 ///|
 fn typed_asset_loader_entry_for_path(
-  registry : Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]],
+  registry : @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]],
   type_name : String,
   path : AssetPath,
 ) -> TypedAssetLoaderEntry? {
-  guard registry.val.get(type_name) is Some(entries) else { return None }
+  guard registry.get(type_name) is Some(entries) else { return None }
   if entries.length() == 0 {
     return None
   }
@@ -337,7 +338,7 @@ pub fn[T : Asset] LoadContext::add_labeled_asset(
   self.asset_server.record_path(canonical_path)
   let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, labeled_path)
-  self.asset_server.typed_asset_paths.val.set(cache_key, handle.id())
+  self.asset_server.typed_asset_paths.set(cache_key, handle.id())
   self.asset_server.set_typed_loaded_states(type_name, handle.id())
   handle
 }
@@ -353,7 +354,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
     handle_id : Int,
     path : AssetPath,
   ) -> Bool {
-    for pending in asset_server.pending_processed_asset_loads.val {
+    for pending in asset_server.pending_processed_asset_loads {
       if pending.type_name == type_name &&
         pending.handle_id == handle_id &&
         pending.path == path {
@@ -369,7 +370,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
     handle_id : Int,
     path : AssetPath,
   ) -> Bool {
-    for pending in asset_server.pending_typed_asset_loads.val {
+    for pending in asset_server.pending_typed_asset_loads {
       if pending.type_name == type_name &&
         pending.handle_id == handle_id &&
         pending.path == path {
@@ -387,7 +388,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
   ) -> Unit {
     if asset_should_process_registered_asset(asset_server, type_name, path) {
       if !pending_processed_contains(asset_server, type_name, handle.id(), path) {
-        asset_server.pending_processed_asset_loads.val.push(PendingProcessedAssetLoad::{
+        asset_server.pending_processed_asset_loads.push(PendingProcessedAssetLoad::{
           type_name,
           handle_id: handle.id(),
           path,
@@ -399,7 +400,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
         handle.id(),
         path,
       ) {
-      asset_server.pending_typed_asset_loads.val.push(PendingTypedAssetLoad::{
+      asset_server.pending_typed_asset_loads.push(PendingTypedAssetLoad::{
         type_name,
         handle_id: handle.id(),
         path,
@@ -411,7 +412,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
   let formatted_path = asset_format_path(parsed_path)
   let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, parsed_path)
-  if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
+  if self.typed_asset_paths.get(cache_key) is Some(handle_id) {
     let handle = Handle::new(handle_id)
     if !asset_assets_ref_or_abort().contains(handle) {
       self.set_typed_loading_states(type_name, handle.id())
@@ -427,7 +428,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
   )
   self.set_typed_loading_states(type_name, handle.id())
   self.record_path(asset_canonical_path(formatted_path))
-  self.typed_asset_paths.val.set(cache_key, handle.id())
+  self.typed_asset_paths.set(cache_key, handle.id())
   queue_registered_load(self, type_name, handle, parsed_path)
   handle
 }
@@ -459,7 +460,7 @@ pub fn[T : Asset] register_asset_loader(
   let normalized_extensions = typed_asset_loader_normalize_extensions(
     loader.extensions,
   )
-  let existing = match registry.val.get(type_name) {
+  let existing = match registry.get(type_name) {
     Some(entries) => entries
     None => []
   }
@@ -489,7 +490,7 @@ pub fn[T : Asset] register_asset_loader(
       )
     },
   })
-  registry.val.set(type_name, next_entries)
+  registry.set(type_name, next_entries)
   app
 }
 
@@ -548,7 +549,7 @@ fn asset_process_pending_typed_asset_loads(
 ) -> Unit {
   let remaining : Array[PendingTypedAssetLoad] = []
   let registry = typed_asset_loader_registry_for_world(world)
-  for pending in asset_server.pending_typed_asset_loads.val {
+  for pending in asset_server.pending_typed_asset_loads {
     match
       typed_asset_loader_entry_for_path(
         registry,
@@ -573,5 +574,5 @@ fn asset_process_pending_typed_asset_loads(
       None => remaining.push(pending)
     }
   }
-  asset_server.pending_typed_asset_loads.val = remaining
+  asset_server.pending_typed_asset_loads = remaining
 }

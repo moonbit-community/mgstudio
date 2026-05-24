@@ -148,24 +148,29 @@ priv struct TextureRecord {
 }
 
 ///|
-let asset_texture_backend_ref : Ref[AssetTextureBackend?] = Ref(None)
+priv struct AssetTextureBackendState {
+  mut backend : AssetTextureBackend?
+}
 
 ///|
-let texture_records_ref : Ref[Array[TextureRecord]] = Ref([])
+let asset_texture_backend_state : AssetTextureBackendState = { backend: None }
+
+///|
+let texture_records : Array[TextureRecord] = []
 
 ///|
 pub fn register_asset_texture_backend(backend : AssetTextureBackend) -> Unit {
-  asset_texture_backend_ref.val = Some(backend)
+  asset_texture_backend_state.backend = Some(backend)
 }
 
 ///|
 fn asset_texture_backend() -> AssetTextureBackend? {
-  asset_texture_backend_ref.val
+  asset_texture_backend_state.backend
 }
 
 ///|
 fn texture_record(texture_id : Int) -> TextureRecord? {
-  for record in texture_records_ref.val {
+  for record in texture_records {
     if record.id == texture_id {
       return Some(record)
     }
@@ -181,13 +186,13 @@ fn texture_record_set(
   loaded : Bool,
 ) -> Unit {
   let record = TextureRecord::{ id: texture_id, width, height, loaded }
-  for i in 0..<texture_records_ref.val.length() {
-    if texture_records_ref.val[i].id == texture_id {
-      texture_records_ref.val[i] = record
+  for i in 0..<texture_records.length() {
+    if texture_records[i].id == texture_id {
+      texture_records[i] = record
       return
     }
   }
-  texture_records_ref.val.push(record)
+  texture_records.push(record)
 }
 
 ///|

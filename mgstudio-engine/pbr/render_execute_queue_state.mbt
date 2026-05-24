@@ -57,11 +57,13 @@ fn render3d_queue_store_pending_frame(
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  state_ref.val.pending_frame = Some(Render3dPendingFrame::{
-    frame_config,
-    cameras,
-    meshes,
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    value.pending_frame = Some(Render3dPendingFrame::{
+      frame_config,
+      cameras,
+      meshes,
+    })
   })
 }
 
@@ -69,10 +71,12 @@ fn render3d_queue_store_pending_frame(
 fn render3d_queue_take_pending_frame(
   world : @ecs.World,
 ) -> Render3dPendingFrame? {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  let pending = state_ref.val.pending_frame
-  state_ref.val.pending_frame = None
-  pending
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    let pending = value.pending_frame
+    value.pending_frame = None
+    pending
+  })
 }
 
 ///|
@@ -96,12 +100,12 @@ fn ensure_render3d_execute_queue_state(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render3d_execute_queue_state_ref_or_abort(
+fn render3d_execute_queue_state_mut_or_abort(
   world : @ecs.World,
-) -> Ref[Render3dExecuteQueueState] {
+) -> @ecs.ResourceMut[Render3dExecuteQueueState] {
   ensure_render3d_execute_queue_state(world)
   match world.get_resource_mut(Render3dExecuteQueueState::resource()) {
-    Some(state) => Ref(state.peek())
+    Some(state) => state
     None => abort("Missing Render3dExecuteQueueState resource in render world")
   }
 }
@@ -120,35 +124,41 @@ fn render3d_queue_store_frame(
   } else {
     prepared_camera_queues.length()
   }
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  state_ref.val.queued_frame = Some(Render3dQueuedFrame::{
-    frame_config,
-    cameras,
-    meshes,
-    prepared_camera_queues,
-    prepared_camera_count,
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    value.queued_frame = Some(Render3dQueuedFrame::{
+      frame_config,
+      cameras,
+      meshes,
+      prepared_camera_queues,
+      prepared_camera_count,
+    })
   })
 }
 
 ///|
 fn render3d_queue_take_frame(world : @ecs.World) -> Render3dQueuedFrame? {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  let queued = state_ref.val.queued_frame
-  state_ref.val.queued_frame = None
-  queued
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    let queued = value.queued_frame
+    value.queued_frame = None
+    queued
+  })
 }
 
 ///|
 fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  state_ref.val.queued_frame
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.peek().queued_frame
 }
 
 ///|
 fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
-  let state_ref = render3d_execute_queue_state_ref_or_abort(world)
-  state_ref.val.pending_frame = None
-  state_ref.val.queued_frame = None
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    value.pending_frame = None
+    value.queued_frame = None
+  })
 }
 
 ///|

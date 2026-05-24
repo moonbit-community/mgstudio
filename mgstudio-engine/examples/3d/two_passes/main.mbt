@@ -18,23 +18,24 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.peek()
-  let material_assets = materials.peek()
-
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets
-          |> @pbr.add_mesh(
-            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-              @math.Vec2::new(5.0F, 5.0F),
-            ).build(),
-          ),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets
+            |> @pbr.add_mesh(
+              @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+                @math.Vec2::new(5.0F, 5.0F),
+              ).build(),
+            )
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets
-          |> @pbr.add_material(@sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F)),
+          materials.modify(fn(material_assets) {
+            material_assets
+            |> @pbr.add_material(@sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F))
+          }),
         ),
       ),
     ),
@@ -44,11 +45,15 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+          meshes.modify(fn(mesh_assets) {
+            mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+          }),
         ),
         @pbr.MeshMaterial3d::new(
-          material_assets
-          |> @pbr.add_material(@sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F)),
+          materials.modify(fn(material_assets) {
+            material_assets
+            |> @pbr.add_material(@sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F))
+          }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
       ),

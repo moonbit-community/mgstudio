@@ -96,7 +96,7 @@ fn check_textures(
   rpg_sprite_folder : @app.Res[RpgSpriteFolder],
   events : @ecs.MessageReader[@asset.AssetEvent[@asset.LoadedFolder]],
 ) -> Unit {
-  for event in (try! events.read()) {
+  for event in events.read() {
     match event {
       LoadedWithDependencies(handle) =>
         if handle.id() == rpg_sprite_folder.get().handle.id() {
@@ -253,7 +253,9 @@ fn create_texture_atlas(
   }
   let (texture_atlas_layout, texture_atlas_sources, texture) = texture_atlas_builder.build()
   (
-    texture_atlases.peek().add(texture_atlas_layout),
+    texture_atlases.modify(fn(texture_atlases) {
+      texture_atlases.add(texture_atlas_layout)
+    }),
     texture_atlas_sources,
     texture,
   )

@@ -237,18 +237,23 @@ fn window_update_component(
 }
 
 ///|
+priv struct WindowEntitySearchState {
+  mut entity : @core.Entity?
+}
+
+///|
 fn window_primary_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref(None)
+  let result = WindowEntitySearchState::{ entity: None }
   try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.With::new(ecs_key_primary_window)),
   )
   .view(fn(_query_entity, entity) {
-    if result.val is None {
-      result.val = Some(entity)
+    if result.entity is None {
+      result.entity = Some(entity)
     }
   })
-  result.val
+  result.entity
 }
 
 ///|
@@ -272,20 +277,20 @@ pub fn window_entity_for_host(
   world : @ecs.World,
   host_window : HostWindow,
 ) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref(None)
+  let result = WindowEntitySearchState::{ entity: None }
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
   .view(fn(_query_entity, entity) {
-    if result.val is Some(_) {
+    if result.entity is Some(_) {
       return
     }
     if (try! world.get_by_key(entity, ecs_key_window_runtime)) is Some(runtime) {
       if runtime.window == host_window {
-        result.val = Some(entity)
+        result.entity = Some(entity)
       }
     }
   })
-  result.val
+  result.entity
 }
 
 ///|
