@@ -88,11 +88,7 @@ const CENTIMETERS_PER_METER = 100.0;
 
 #ifdef MESHLET_INSTANCE_CULLING_PASS
 struct Constants { scene_instance_count: u32 }
-#ifdef MESHLET_FIRST_CULLING_PASS
-@group(0) @binding(13) var<uniform> constants: Constants;
-#else
-@group(0) @binding(12) var<uniform> constants: Constants;
-#endif
+var<immediate> constants: Constants;
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>;
@@ -123,11 +119,7 @@ struct Constants { scene_instance_count: u32 }
 
 #ifdef MESHLET_BVH_CULLING_PASS
 struct Constants { read_from_front: u32, rightmost_slot: u32 }
-#ifdef MESHLET_FIRST_CULLING_PASS
-@group(0) @binding(17) var<uniform> constants: Constants;
-#else
-@group(0) @binding(14) var<uniform> constants: Constants;
-#endif
+var<immediate> constants: Constants;
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>; // From the end of the last frame for the first culling pass, and from the first raster pass for the second culling pass
@@ -163,11 +155,7 @@ struct Constants { read_from_front: u32, rightmost_slot: u32 }
 
 #ifdef MESHLET_CLUSTER_CULLING_PASS
 struct Constants { rightmost_slot: u32 }
-#ifdef MESHLET_FIRST_CULLING_PASS
-@group(0) @binding(13) var<uniform> constants: Constants;
-#else
-@group(0) @binding(11) var<uniform> constants: Constants;
-#endif
+var<immediate> constants: Constants;
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>; // From the end of the last frame for the first culling pass, and from the first raster pass for the second culling pass
@@ -207,26 +195,12 @@ struct Constants { rightmost_slot: u32 }
 @group(0) @binding(4) var<storage, read> meshlet_instance_uniforms: array<Mesh>; // Per entity instance
 @group(0) @binding(5) var<storage, read> meshlet_previous_raster_counts: array<u32>;
 @group(0) @binding(6) var<storage, read> meshlet_software_raster_cluster_count: u32;
-@group(0) @binding(7) var<storage, read_write> meshlet_visibility_buffer: array<atomic<u32>>;
+#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
+@group(0) @binding(7) var meshlet_visibility_buffer: texture_storage_2d<r64uint, atomic>;
+#else
+@group(0) @binding(7) var meshlet_visibility_buffer: texture_storage_2d<r32uint, atomic>;
+#endif
 @group(0) @binding(8) var<uniform> view: View;
-
-const MGSTUDIO_PORTABLE_VISIBILITY_DEPTH_BITS = 10u;
-const MGSTUDIO_PORTABLE_VISIBILITY_ID_BITS = 22u;
-const MGSTUDIO_PORTABLE_VISIBILITY_ID_MASK = (1u << MGSTUDIO_PORTABLE_VISIBILITY_ID_BITS) - 1u;
-
-// TODO(meshlet): This portable visibility word replaces Bevy's
-// texture_storage_2d<r64uint, atomic> path because official webgpu.h cannot
-// express R64Uint storage textures or StorageTextureAccess::Atomic. Keep the
-// ROADMAP blocker active until wgpu-native/wgpu_mbt can expose Bevy's exact
-// 64-bit visibility buffer ABI, or until this 32-bit rewrite is proven visually
-// and behaviorally equivalent across the full cluster-buffer range.
-fn mgstudio_pack_portable_visibility(depth: u32, packed_ids: u32) -> u32 {
-    return (depth & ~MGSTUDIO_PORTABLE_VISIBILITY_ID_MASK) | (packed_ids & MGSTUDIO_PORTABLE_VISIBILITY_ID_MASK);
-}
-
-fn mgstudio_visibility_pixel_index(x: u32, y: u32) -> u32 {
-    return (y * u32(view.viewport.z)) + x;
-}
 
 // TODO: Load only twice, instead of 3x in cases where you load 3 indices per thread?
 fn get_meshlet_vertex_id(index_id: u32) -> u32 {
@@ -271,7 +245,7 @@ fn get_meshlet_vertex_position(meshlet: ptr<function, Meshlet>, vertex_id: u32) 
 #endif
 
 #ifdef MESHLET_MESH_MATERIAL_PASS
-@group(2) @binding(0) var<storage, read> meshlet_visibility_buffer: array<u32>;
+@group(2) @binding(0) var meshlet_visibility_buffer: texture_storage_2d<r64uint, read>;
 @group(2) @binding(1) var<storage, read> meshlet_raster_clusters: array<InstancedOffset>; // Per cluster
 @group(2) @binding(2) var<storage, read> meshlets: array<Meshlet>; // Per meshlet
 @group(2) @binding(3) var<storage, read> meshlet_indices: array<u32>; // Many per meshlet

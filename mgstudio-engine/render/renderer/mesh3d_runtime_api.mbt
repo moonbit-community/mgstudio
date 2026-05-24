@@ -608,7 +608,12 @@ pub fn read_only_binding_type_uniform(required_storage_buffers : Int) -> Bool {
 
 ///|
 pub fn meshlet_required_rust_features_u64() -> UInt64 {
-  @wgpu.FEATURES_SUBGROUP | @wgpu.FEATURES_DEPTH_CLIP_CONTROL
+  @wgpu.FEATURES_TEXTURE_INT64_ATOMIC |
+  @wgpu.FEATURES_TEXTURE_ATOMIC |
+  @wgpu.FEATURES_SHADER_INT64 |
+  @wgpu.FEATURES_SUBGROUP |
+  @wgpu.FEATURES_DEPTH_CLIP_CONTROL |
+  @wgpu.FEATURES_PUSH_CONSTANTS
 }
 
 ///|

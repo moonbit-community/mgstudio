@@ -22,18 +22,18 @@ test "pbr meshlet: runtime defaults to unavailable on current path" {
 }
 
 ///|
-test "pbr meshlet: portable visibility buffer drops texture atomics" {
+test "pbr meshlet: required features match Bevy meshlet gate" {
   let required = meshlet_required_wgpu_features()
   inspect(
     required == @renderer.meshlet_required_rust_features_u64(),
     content="true",
   )
-  inspect((required & 0x0000400000000000UL) == 0UL, content="true")
-  inspect((required & 0x0000000010000000UL) == 0UL, content="true")
-  inspect((required & 0x0000002000000000UL) == 0UL, content="true")
+  inspect((required & 0x0000400000000000UL) != 0UL, content="true")
+  inspect((required & 0x0000000010000000UL) != 0UL, content="true")
+  inspect((required & 0x0000002000000000UL) != 0UL, content="true")
   inspect((required & 0x0000004000000000UL) != 0UL, content="true")
   inspect((required & 0x0000000000000001UL) != 0UL, content="true")
-  inspect((required & 0x0000000000010000UL) == 0UL, content="true")
+  inspect((required & 0x0000000000010000UL) != 0UL, content="true")
 }
 
 ///|

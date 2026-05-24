@@ -8,8 +8,6 @@
         meshlet_previous_raster_counts,
         meshlet_software_raster_cluster_count,
         meshlet_visibility_buffer,
-        mgstudio_pack_portable_visibility,
-        mgstudio_visibility_pixel_index,
         view,
         get_meshlet_vertex_count,
         get_meshlet_triangle_count,
@@ -170,8 +168,12 @@ fn rasterize_cluster(
 
 fn write_visibility_buffer_pixel(x: f32, y: f32, z: f32, packed_ids: u32) {
     let depth = bitcast<u32>(z);
-    let visibility = mgstudio_pack_portable_visibility(depth, packed_ids);
-    atomicMax(&meshlet_visibility_buffer[mgstudio_visibility_pixel_index(u32(x), u32(y))], visibility);
+#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
+    let visibility = (u64(depth) << 32u) | u64(packed_ids);
+#else
+    let visibility = depth;
+#endif
+    textureAtomicMax(meshlet_visibility_buffer, vec2(u32(x), u32(y)), visibility);
 }
 
 fn edge_function(a: vec2<f32>, b: vec2<f32>, c: vec2<f32>) -> f32 {

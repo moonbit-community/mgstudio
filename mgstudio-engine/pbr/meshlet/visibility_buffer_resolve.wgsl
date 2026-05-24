@@ -103,9 +103,7 @@ struct VertexOutput {
 
 /// Load the visibility buffer texture and resolve it into a VertexOutput.
 fn resolve_vertex_output(frag_coord: vec4<f32>) -> VertexOutput {
-    let visibility_pixel = vec2<u32>(frag_coord.xy);
-    let visibility_index = visibility_pixel.y * u32(view.viewport.z) + visibility_pixel.x;
-    let packed_ids = meshlet_visibility_buffer[visibility_index] & 0x003fffffu;
+    let packed_ids = u32(textureLoad(meshlet_visibility_buffer, vec2<u32>(frag_coord.xy)).r);
     let cluster_id = packed_ids >> 7u;
     let instanced_offset = meshlet_raster_clusters[cluster_id];
     let meshlet_id = instanced_offset.offset;

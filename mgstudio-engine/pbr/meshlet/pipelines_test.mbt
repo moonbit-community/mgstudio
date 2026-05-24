@@ -46,10 +46,10 @@ test "pbr/meshlet: queued pipeline descriptors mirror bevy init order and labels
 }
 
 ///|
-test "pbr/meshlet: cull descriptors carry bevy shader defs and portable constants" {
+test "pbr/meshlet: cull descriptors carry bevy shader defs and immediates" {
   let descriptors = meshlet_pipeline_descriptors()
   let first_instance_cull = descriptors[2]
-  debug_inspect(first_instance_cull.immediate_size, content="0")
+  debug_inspect(first_instance_cull.immediate_size, content="4")
   inspect(first_instance_cull.shader_label, content="cull_instances.wgsl")
   debug_inspect(
     first_instance_cull.has_shader_def("MESHLET_INSTANCE_CULLING_PASS"),
@@ -60,7 +60,7 @@ test "pbr/meshlet: cull descriptors carry bevy shader defs and portable constant
     content="true",
   )
   let first_bvh_cull = descriptors[4]
-  debug_inspect(first_bvh_cull.immediate_size, content="0")
+  debug_inspect(first_bvh_cull.immediate_size, content="8")
   debug_inspect(
     first_bvh_cull.has_shader_def("MESHLET_BVH_CULLING_PASS"),
     content="true",
@@ -75,6 +75,7 @@ test "pbr/meshlet: raster and resolve descriptors expose render target depth sta
     hardware_raster.kind is MeshletPipelineKind::Render,
     content="true",
   )
+  debug_inspect(hardware_raster.immediate_size, content="4")
   debug_inspect(hardware_raster.color_target_r8uint, content="true")
   debug_inspect(hardware_raster.color_write_mask_empty, content="true")
   debug_inspect(
@@ -115,7 +116,7 @@ test "pbr/meshlet: remap dispatch flag follows bevy empty shader-def shape" {
   )
   let remap_with = descriptors_with_remap[21]
   debug_inspect(remap_with.enabled, content="true")
-  debug_inspect(remap_with.immediate_size, content="0")
+  debug_inspect(remap_with.immediate_size, content="4")
 }
 
 ///|
