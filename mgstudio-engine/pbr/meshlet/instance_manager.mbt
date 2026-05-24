@@ -245,6 +245,21 @@ pub fn InstanceManager::material_id_for_asset(
 }
 
 ///|
+pub fn InstanceManager::material_asset_id_for_id(
+  self : InstanceManager,
+  material_id : Int,
+) -> Int? {
+  let safe_material_id = non_negative(material_id)
+  for material_asset_id in self.material_id_lookup.keys() {
+    match self.material_id_lookup.get(material_asset_id) {
+      Some(id) if id == safe_material_id => return Some(material_asset_id)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 pub fn InstanceManager::present_material_asset_ids(
   self : InstanceManager,
 ) -> Array[Int] {

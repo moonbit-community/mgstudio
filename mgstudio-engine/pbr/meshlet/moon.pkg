@@ -10,8 +10,10 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/pbr/render" @pbr_render,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/pbr/prepass" @pbr_prepass,
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
@@ -20,6 +22,7 @@ import {
   "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/metis",
   "Milky2018/meshopt_mbt" @meshopt,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

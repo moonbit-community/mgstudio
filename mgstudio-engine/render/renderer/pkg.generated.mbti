@@ -192,6 +192,8 @@ pub fn execute_meshlet_first_instance_cull(view_entity_bits~ : UInt64, scene_ins
 
 pub fn execute_meshlet_first_meshlet_cull(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
 
+pub fn execute_meshlet_main_opaque_material_shade(view_entity_bits~ : UInt64, draws~ : Array[HostMeshletMaterialShadeDrawEntry]) -> Bool
+
 pub fn execute_meshlet_resolve_depth(view_entity_bits~ : UInt64) -> Bool
 
 pub fn execute_meshlet_resolve_material_depth(view_entity_bits~ : UInt64) -> Bool
@@ -237,6 +239,8 @@ pub fn host_gpu_request_device() -> Int
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
 
 pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, world_from_local? : Array[Float]?, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, emissive_exposure_weight? : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, attenuation_color_r? : Float, attenuation_color_g? : Float, attenuation_color_b? : Float, attenuation_distance? : Float, clearcoat? : Float, clearcoat_perceptual_roughness? : Float, alpha_cutoff~ : Float, material_flags~ : UInt, lightmap_exposure? : Float, lightmap_texture_id? : Int, lightmap_uv_min_x? : Float, lightmap_uv_min_y? : Float, lightmap_uv_max_x? : Float, lightmap_uv_max_y? : Float, deferred_lighting_pass_id? : Int, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, mesh_flags~ : UInt, skinning_key_hi~ : Int, morph_weights_index? : Int, previous_morph_weights_index? : Int, morph_targets_texture_id? : Int, first_vertex_index? : UInt) -> HostMesh3dMainPassDrawEntry
+
+pub fn host_meshlet_material_shade_draw_entry(material_id~ : Int, material_pipeline_id~ : UInt64, draw_entry~ : HostMesh3dMainPassDrawEntry) -> HostMeshletMaterialShadeDrawEntry
 
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
@@ -945,6 +949,7 @@ pub fn GpuBackend::execute_meshlet_fill_counts(Self, view_entity_bits~ : UInt64)
 pub fn GpuBackend::execute_meshlet_first_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_main_opaque_material_shade(Self, view_entity_bits~ : UInt64, draws~ : Array[HostMeshletMaterialShadeDrawEntry]) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_resolve_depth(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_resolve_material_depth(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_second_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
@@ -1423,6 +1428,12 @@ pub(all) struct HostMesh3dPreprocessView {
   main_pass_viewport_height : Float
   frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
   mip_bias : Float
+}
+
+pub struct HostMeshletMaterialShadeDrawEntry {
+  material_id : Int
+  material_pipeline_id : UInt64
+  draw_entry : HostMesh3dMainPassDrawEntry
 }
 
 type Mesh2dMaterialBindGroupCacheEntry

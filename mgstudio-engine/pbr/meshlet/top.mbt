@@ -836,6 +836,292 @@ fn meshlet_view_ready_for_material_shade_pass(
 }
 
 ///|
+fn meshlet_material_shade_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor {
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  let entries : Array[@render_resource.BindGroupLayoutEntry] = []
+  for binding in 0..<8 {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        binding,
+        fragment,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          0UL,
+        ),
+      ),
+    )
+  }
+  @render_resource.BindGroupLayoutDescriptor::new(
+    "meshlet_mesh_material_shade_bind_group_layout", entries,
+  )
+}
+
+///|
+fn meshlet_shader_defs_with_material_pass(
+  shader_defs : Array[@material.ShaderDefVal],
+) -> Array[@material.ShaderDefVal] {
+  let next = []
+  for shader_def in shader_defs {
+    next.push(shader_def)
+  }
+  next.push(@material.ShaderDefVal::Flag("MESHLET_MESH_MATERIAL_PASS"))
+  next
+}
+
+///|
+fn meshlet_material_pipeline_key_for_standard_material(
+  properties : @material.MaterialProperties,
+) -> @material.ErasedMaterialPipelineKey {
+  let mesh_bits = properties.mesh_pipeline_key_bits.bits() |
+    @mesh.BaseMeshPipelineKey::from_primitive_topology(
+      @mesh.Mesh3dPrimitiveTopology::TriangleList,
+    ).bits()
+  @material.ErasedMaterialPipelineKey::new(
+    @material.ErasedMeshPipelineKey::new(mesh_bits, "MeshPipelineKey"),
+    properties.material_key,
+    "StandardMaterial",
+  )
+}
+
+///|
+fn meshlet_main_opaque_standard_material_descriptor(
+  material : @material.StandardMaterial,
+  default_opaque_renderer_method : @material.OpaqueRendererMethod,
+) -> @material.RenderPipelineDescriptor? {
+  let properties = @pbr.render3d_material_properties_for_standard_material(
+    material,
+    None,
+    default_opaque_renderer_method,
+    false,
+  )
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let fake_layout = layouts.insert(meshlet_fake_vertex_buffer_layout())
+  let pipeline_key = meshlet_material_pipeline_key_for_standard_material(
+    properties,
+  )
+  let descriptor = @pbr.PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pipeline_key, fake_layout,
+  ) catch {
+    _ => return None
+  }
+  guard descriptor.fragment is Some(fragment) else { return None }
+  let shader_defs = meshlet_shader_defs_with_material_pass(fragment.shader_defs)
+  let layout = descriptor.layout
+  guard layout.length() >= 4 else { return None }
+  layout[2] = meshlet_material_shade_layout_descriptor()
+  Some(
+    descriptor
+    .with_layout(layout)
+    .with_vertex(
+      @material.VertexState::new(
+        Some("pbr/meshlet/meshlet_mesh_material.wgsl"),
+        shader_defs,
+        descriptor.vertex.entry_point,
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @material.FragmentState::new(
+          fragment.shader,
+          shader_defs,
+          fragment.entry_point,
+          fragment.targets,
+        ),
+      ),
+    )
+    .with_depth_stencil(
+      Some(
+        @material.DepthStencilState::new(
+          @wgpu.TEXTURE_FORMAT_DEPTH16_UNORM,
+          false,
+          @wgpu.COMPARE_FUNCTION_EQUAL,
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn meshlet_texture_id(texture : @asset.Handle[@asset.Image]?) -> Int {
+  match texture {
+    Some(handle) => handle.id()
+    None => -1
+  }
+}
+
+///|
+fn meshlet_clamp01(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn meshlet_maxf(left : Float, right : Float) -> Float {
+  if left > right {
+    left
+  } else {
+    right
+  }
+}
+
+///|
+fn meshlet_minf(left : Float, right : Float) -> Float {
+  if left < right {
+    left
+  } else {
+    right
+  }
+}
+
+///|
+fn meshlet_host_material_shade_draw_entry(
+  material_id : Int,
+  material_pipeline_id : UInt64,
+  material : @material.StandardMaterial,
+) -> @renderer.HostMeshletMaterialShadeDrawEntry {
+  let texture_id = meshlet_texture_id(material.base_color_texture)
+  let normal_texture_id = match
+    (material.normal_map_texture, material.clearcoat_normal_texture) {
+    (Some(texture), _) => texture.id()
+    (None, Some(texture)) => texture.id()
+    (None, None) => -1
+  }
+  let emissive_texture_id = meshlet_texture_id(material.emissive_texture)
+  let metallic_roughness_texture_id = meshlet_texture_id(
+    material.metallic_roughness_texture,
+  )
+  let occlusion_texture_id = meshlet_texture_id(material.occlusion_texture)
+  let depth_texture_id = meshlet_texture_id(material.depth_map)
+  let anisotropy_texture_id = meshlet_texture_id(material.anisotropy_texture)
+  let specular_tint_texture_id = meshlet_texture_id(
+    material.specular_tint_texture,
+  )
+  let anisotropy_strength = meshlet_clamp01(material.anisotropy_strength)
+  let max_relief_mapping_search_steps = Float::from_double(
+    material.parallax_mapping_method.max_steps().to_double(),
+  )
+  let clearcoat_reflectance = meshlet_maxf(
+    0.0F,
+    material.reflectance + material.clearcoat * 0.5F,
+  )
+  let clearcoat_roughness = meshlet_minf(
+    material.perceptual_roughness,
+    material.clearcoat_perceptual_roughness,
+  )
+  let draw_roughness = if material.clearcoat > 0.0F {
+    clearcoat_roughness
+  } else {
+    material.perceptual_roughness
+  }
+  let payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
+    -1,
+    0,
+    0,
+    -1,
+    0,
+    -1,
+    material,
+    @transform.Transform::identity(),
+    @transform.Transform::identity(),
+    material.base_color.r,
+    material.base_color.g,
+    material.base_color.b,
+    material.base_color.a,
+    texture_id,
+    normal_texture_id,
+    emissive_texture_id,
+    metallic_roughness_texture_id,
+    occlusion_texture_id,
+    depth_texture_id,
+    anisotropy_texture_id,
+    specular_tint_texture_id,
+    draw_roughness,
+    clearcoat_reflectance,
+    meshlet_clamp01(material.diffuse_transmission),
+    meshlet_clamp01(material.specular_transmission),
+    meshlet_maxf(0.0F, material.thickness),
+    meshlet_maxf(1.0F, material.ior),
+    -1,
+    0.0F,
+    0.0F,
+    -1,
+    0.0F,
+    0.0F,
+    -1,
+    -1,
+    0.0F,
+    @math.Quat::identity(),
+    material.specular_tint,
+    anisotropy_strength,
+    max_relief_mapping_search_steps,
+    0U,
+    0,
+    material_pipeline_id=Some(
+      @render_resource.CachedRenderPipelineId::new(material_pipeline_id),
+    ),
+  )
+  @renderer.host_meshlet_material_shade_draw_entry(
+    material_id~,
+    material_pipeline_id~,
+    draw_entry=@pbr_render.render3d_host_main_pass_draw_entry(payload),
+  )
+}
+
+///|
+fn meshlet_main_opaque_material_shade_draws(
+  materials : MeshletViewMaterialsMainOpaquePass,
+  instance_manager : InstanceManager,
+  standard_material_assets : @asset.Assets[@material.StandardMaterial]?,
+  default_opaque_renderer_method : @material.OpaqueRendererMethod,
+  has_material_depth : Bool,
+  has_material_shade_bind_group : Bool,
+) -> Array[@renderer.HostMeshletMaterialShadeDrawEntry] {
+  let draw_calls = meshlet_main_opaque_pass_draw_calls(
+    materials,
+    instance_manager,
+    has_material_depth~,
+    has_material_shade_bind_group~,
+  )
+  let draws : Array[@renderer.HostMeshletMaterialShadeDrawEntry] = []
+  for draw_call in draw_calls {
+    guard instance_manager.material_asset_id_for_id(draw_call.material_id)
+      is Some(material_asset_id) else {
+      continue
+    }
+    guard standard_material_assets is Some(assets) else { continue }
+    guard assets.get(@asset.Handle::new(material_asset_id)) is Some(material) else {
+      continue
+    }
+    guard meshlet_main_opaque_standard_material_descriptor(
+        material, default_opaque_renderer_method,
+      )
+      is Some(descriptor) else {
+      continue
+    }
+    let pipeline_id = draw_call.material_pipeline_id.to_uint64()
+    @renderer.register_mesh3d_material_pipeline_descriptor(
+      material_pipeline_id=pipeline_id,
+      descriptor~,
+    )
+    draws.push(
+      meshlet_host_material_shade_draw_entry(
+        draw_call.material_id,
+        pipeline_id,
+        material,
+      ),
+    )
+  }
+  draws
+}
+
+///|
 fn meshlet_prepass_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let mut draw_count = 0
@@ -899,6 +1185,10 @@ fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
 fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let mut draw_count = 0
+  let standard_material_assets = meshlet_standard_material_assets(source_world)
+  let default_opaque_renderer_method = meshlet_default_opaque_renderer_method(
+    source_world,
+  )
   match
     (
       world.get_resource(ecs_key_meshlet_instance_manager),
@@ -911,13 +1201,19 @@ fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
           let (has_material_depth, has_material_shade_bind_group) = meshlet_view_ready_for_material_shade_pass(
             resource_manager, view_entity,
           )
-          draw_count = draw_count +
-            meshlet_main_opaque_pass_materials(
-              materials,
-              instance_manager,
-              has_material_depth~,
-              has_material_shade_bind_group~,
+          let draws = meshlet_main_opaque_material_shade_draws(
+            materials, instance_manager, standard_material_assets, default_opaque_renderer_method,
+            has_material_depth, has_material_shade_bind_group,
+          )
+          draw_count = draw_count + draws.length()
+          if draws.length() > 0 {
+            ignore(
+              @renderer.execute_meshlet_main_opaque_material_shade(
+                view_entity_bits=view_entity.to_bits(),
+                draws~,
+              ),
             )
+          }
         },
       )
     _ => ()

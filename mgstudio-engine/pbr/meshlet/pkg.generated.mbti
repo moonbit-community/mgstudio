@@ -275,6 +275,7 @@ pub fn InstanceManager::instance_bvh_root_nodes(Self) -> Array[Int]
 pub fn InstanceManager::instance_count(Self) -> Int
 pub fn InstanceManager::instance_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
+pub fn InstanceManager::material_asset_id_for_id(Self, Int) -> Int?
 pub fn InstanceManager::material_id_for_asset(Self, Int) -> Int?
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int

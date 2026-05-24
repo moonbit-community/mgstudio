@@ -68,6 +68,26 @@ fn meshlet_non_zero_u64(value : UInt64) -> UInt64 {
 }
 
 ///|
+pub struct HostMeshletMaterialShadeDrawEntry {
+  material_id : Int
+  material_pipeline_id : UInt64
+  draw_entry : HostMesh3dMainPassDrawEntry
+}
+
+///|
+pub fn host_meshlet_material_shade_draw_entry(
+  material_id~ : Int,
+  material_pipeline_id~ : UInt64,
+  draw_entry~ : HostMesh3dMainPassDrawEntry,
+) -> HostMeshletMaterialShadeDrawEntry {
+  HostMeshletMaterialShadeDrawEntry::{
+    material_id,
+    material_pipeline_id,
+    draw_entry,
+  }
+}
+
+///|
 fn meshlet_reuse_or_create_buffer(
   backend : GpuBackend,
   current_buffer : @wgpu.Buffer?,
@@ -2530,6 +2550,450 @@ fn meshlet_create_fill_counts_bind_group(
 }
 
 ///|
+fn meshlet_create_material_shade_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_visibility_buffer_raster_clusters_buf
+    is Some(raster_clusters) else {
+    return None
+  }
+  guard backend.meshlet_meshlets_buf is Some(meshlets) else { return None }
+  guard backend.meshlet_indices_buf is Some(indices) else { return None }
+  guard backend.meshlet_vertex_positions_buf is Some(vertex_positions) else {
+    return None
+  }
+  guard backend.meshlet_vertex_normals_buf is Some(vertex_normals) else {
+    return None
+  }
+  guard backend.meshlet_vertex_uvs_buf is Some(vertex_uvs) else { return None }
+  guard backend.meshlet_instance_uniforms_buf is Some(instance_uniforms) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+  let ok = builder.add_buffer(0U, view_resources.buffer) &&
+    builder.add_buffer(1U, raster_clusters) &&
+    builder.add_buffer(2U, meshlets) &&
+    builder.add_buffer(3U, indices) &&
+    builder.add_buffer(4U, vertex_positions) &&
+    builder.add_buffer(5U, vertex_normals) &&
+    builder.add_buffer(6U, vertex_uvs) &&
+    builder.add_buffer(7U, instance_uniforms)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_material_shade_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_material_shade_pipeline_get_or_create(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  pass_state : GpuPassState,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  guard material_descriptor is Some(_) else { return None }
+  let color_format = match current_pass_color_format(backend) {
+    Some(format) => format.to_u32()
+    None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
+  }
+  let topology = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+  let cull_mode = 0
+  let blend_kind = MESH3D_PIPELINE_BLEND_OPAQUE
+  let skinned = false
+  let forward_decal = false
+  let tonemap_in_shader = pass_state.tonemap_in_shader
+  let tonemapping_mode = pass_state.tonemapping_mode
+  let deband_dither_enabled = pass_state.deband_dither_enabled
+  let shadow_filter_method = pass_kind_shadow_filter_method(
+    pass_state.pass_kind,
+  )
+  if mesh3d_pipeline_get(
+      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
+    )
+    is Some(pipeline) {
+    return Some(pipeline)
+  }
+  if mesh3d_pipeline_failed(
+      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
+    ) {
+    return None
+  }
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
+  let vertex_shader_path = mesh3d_vertex_shader_path_or_default(
+    mesh3d_descriptor_vertex_shader_path(material_descriptor),
+  )
+  let fragment_shader_path = mesh3d_fragment_shader_path_or_default(
+    mesh3d_descriptor_fragment_shader_path(material_descriptor),
+  )
+  let vertex_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
+    backend.assets_base,
+    material_descriptor,
+    skinned,
+    forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    vertex_shader_path,
+  )
+  let fragment_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
+    backend.assets_base,
+    material_descriptor,
+    skinned,
+    forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    fragment_shader_path,
+  )
+  let vertex_sm = mesh3d_create_forward_shader_module(
+    backend, vertex_wgsl, "wgpu: failed to create meshlet material shade vertex shader module",
+  )
+  let fragment_sm = mesh3d_create_forward_shader_module(
+    backend, fragment_wgsl, "wgpu: failed to create meshlet material shade fragment shader module",
+  ) catch {
+    err => {
+      vertex_sm.release()
+      raise err
+    }
+  }
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      vertex_sm,
+      layout=layout_entry.pipeline_layout,
+    )
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_fragment_module(fragment_sm)
+    builder.set_color_target_format(tf(color_format))
+    builder.disable_blend()
+    builder.set_topology_u32(topology)
+    builder.set_depth_stencil(
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH16_UNORM),
+      depth_write_enabled=false,
+      depth_compare_u32=@wgpu.COMPARE_FUNCTION_EQUAL,
+    )
+    builder.set_cull_mode_u32(@wgpu.CULL_MODE_NONE)
+    backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+    let created = builder.create_pipeline(backend.device)
+    let result = backend.device.pop_error_scope_sync_result(backend.instance)
+    if result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+      let message = mesh3d_error_scope_message(
+        result, "wgpu: failed to create meshlet material shade pipeline",
+      )
+      created.release()
+      builder.free()
+      mesh3d_pipeline_set_failed(
+        backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+        shadow_filter_method, message,
+      )
+      debug("[renderer] meshlet material shade pipeline failed: \{message}")
+      vertex_sm.release()
+      fragment_sm.release()
+      return None
+    }
+    builder.free()
+    created
+  } catch {
+    err => {
+      let message = "wgpu: failed to build meshlet material shade pipeline: \{err.message()}"
+      mesh3d_pipeline_set_failed(
+        backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+        shadow_filter_method, message,
+      )
+      debug("[renderer] meshlet material shade pipeline failed: \{message}")
+      vertex_sm.release()
+      fragment_sm.release()
+      return None
+    }
+  }
+  pipeline.set_label("mgstudio_meshlet_material_shade_pipeline")
+  mesh3d_pipeline_set(
+    backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    shadow_filter_method, pipeline,
+  )
+  vertex_sm.release()
+  fragment_sm.release()
+  Some(pipeline)
+}
+
+///|
+fn meshlet_bind_material_shade_draw(
+  backend : GpuBackend,
+  pass : @wgpu.RenderPass,
+  pass_state : GpuPassState,
+  material_shade_bind_group : @wgpu.BindGroup,
+  entry : HostMeshletMaterialShadeDrawEntry,
+) -> Bool raise GpuBackendError {
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    backend,
+    entry.material_pipeline_id,
+  )
+  guard meshlet_material_shade_pipeline_get_or_create(
+      backend,
+      entry.material_pipeline_id,
+      material_descriptor,
+      pass_state,
+    )
+    is Some(pipeline) else {
+    return false
+  }
+  let draw = entry.draw_entry
+  let resolved_base_texture_id = if draw.texture_id < 0 {
+    -1
+  } else {
+    draw.texture_id
+  }
+  let resolved_normal_texture_id = if draw.normal_texture_id < 0 {
+    ensure_normal_map_fallback_texture(backend).id
+  } else {
+    draw.normal_texture_id
+  }
+  let resolved_emissive_texture_id = if draw.emissive_texture_id < 0 {
+    -1
+  } else {
+    draw.emissive_texture_id
+  }
+  let resolved_metallic_roughness_texture_id = if draw.metallic_roughness_texture_id <
+    0 {
+    -1
+  } else {
+    draw.metallic_roughness_texture_id
+  }
+  let resolved_occlusion_texture_id = if draw.occlusion_texture_id < 0 {
+    -1
+  } else {
+    draw.occlusion_texture_id
+  }
+  let resolved_depth_texture_id = if draw.depth_texture_id < 0 {
+    -1
+  } else {
+    draw.depth_texture_id
+  }
+  let resolved_anisotropy_texture_id = if draw.anisotropy_texture_id < 0 {
+    -1
+  } else {
+    draw.anisotropy_texture_id
+  }
+  let resolved_specular_tint_texture_id = if draw.specular_tint_texture_id < 0 {
+    -1
+  } else {
+    draw.specular_tint_texture_id
+  }
+  let resolved_transmission_source_texture_id = if pass_state.transmission_source_texture_id <
+    0 {
+    -1
+  } else {
+    pass_state.transmission_source_texture_id
+  }
+  let resolved_point_shadow_texture_id = if pass_state.point_shadow_texture_id <
+    0 {
+    ensure_point_shadow_fallback_texture(backend).id
+  } else {
+    pass_state.point_shadow_texture_id
+  }
+  let resolved_directional_shadow_texture_id = if pass_state.directional_shadow_texture_id <
+    0 {
+    ensure_directional_shadow_fallback_texture(backend).id
+  } else {
+    pass_state.directional_shadow_texture_id
+  }
+  let environment_map_enabled = pass_state.environment_map_intensity > 0.0F
+  let resolved_environment_diffuse_texture_id = if environment_map_enabled {
+    if pass_state.environment_diffuse_texture_id >= 0 {
+      pass_state.environment_diffuse_texture_id
+    } else {
+      -1
+    }
+  } else {
+    -1
+  }
+  let resolved_environment_specular_texture_id = if environment_map_enabled {
+    if pass_state.environment_specular_texture_id >= 0 {
+      pass_state.environment_specular_texture_id
+    } else {
+      -1
+    }
+  } else {
+    -1
+  }
+  guard resolve_mesh3d_texture(backend, resolved_base_texture_id)
+    is Some(base_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_normal_texture_id)
+    is Some(normal_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_emissive_texture_id)
+    is Some(emissive_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_metallic_roughness_texture_id)
+    is Some(metallic_roughness_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_occlusion_texture_id)
+    is Some(occlusion_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_depth_texture_id)
+    is Some(depth_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_anisotropy_texture_id)
+    is Some(anisotropy_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_specular_tint_texture_id)
+    is Some(specular_tint_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_transmission_source_texture_id)
+    is Some(transmission_source_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_point_shadow_texture_id)
+    is Some(point_shadow_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_directional_shadow_texture_id)
+    is Some(directional_shadow_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_environment_diffuse_texture_id)
+    is Some(environment_diffuse_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(
+      backend, resolved_environment_specular_texture_id,
+    )
+    is Some(environment_specular_texture) else {
+    return false
+  }
+  let runtime_material_flags = mesh3d_runtime_material_flags(
+    draw.material_flags,
+    draw.normal_texture_id,
+    normal_texture,
+  )
+  guard mesh3d_pass_uniform_state_get_or_create(
+      backend,
+      pass_state,
+      0,
+      0,
+      pass_state.pass_kind,
+    )
+    is Some(pass_uniforms) else {
+    return false
+  }
+  let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
+    backend,
+    entry.material_pipeline_id,
+    material_descriptor,
+    pass_uniforms,
+    transmission_source_texture,
+    point_shadow_texture,
+    directional_shadow_texture,
+    environment_diffuse_texture,
+    environment_specular_texture,
+    pass_state.tonemapping_mode,
+    pass_state.tonemapping_agx_lut_texture_id,
+    pass_state.tonemapping_tony_lut_texture_id,
+    pass_state.tonemapping_blender_lut_texture_id,
+  )
+  let material_bg = mesh3d_material_cache_get_or_create(
+    backend,
+    entry.material_pipeline_id,
+    material_descriptor,
+    base_texture,
+    normal_texture,
+    emissive_texture,
+    metallic_roughness_texture,
+    occlusion_texture,
+    depth_texture,
+    anisotropy_texture,
+    specular_tint_texture,
+    mesh3d_standard_material_uniform_bytes(
+      draw.color_r,
+      draw.color_g,
+      draw.color_b,
+      draw.color_a,
+      draw.uv_transform_a,
+      draw.uv_transform_b,
+      draw.uv_transform_c,
+      draw.uv_transform_d,
+      draw.uv_transform_tx,
+      draw.uv_transform_ty,
+      draw.emissive_r,
+      draw.emissive_g,
+      draw.emissive_b,
+      draw.emissive_exposure_weight,
+      draw.metallic,
+      draw.roughness,
+      draw.reflectance,
+      draw.attenuation_color_r,
+      draw.attenuation_color_g,
+      draw.attenuation_color_b,
+      draw.attenuation_distance,
+      draw.clearcoat,
+      draw.clearcoat_perceptual_roughness,
+      draw.parallax_depth_scale,
+      draw.max_parallax_layer_count,
+      draw.max_relief_mapping_search_steps,
+      draw.anisotropy_strength,
+      draw.anisotropy_rotation,
+      draw.specular_tint_r,
+      draw.specular_tint_g,
+      draw.specular_tint_b,
+      draw.diffuse_transmission,
+      draw.specular_transmission,
+      draw.thickness,
+      draw.ior,
+      draw.alpha_cutoff,
+      runtime_material_flags,
+      draw.lightmap_exposure,
+      draw.deferred_lighting_pass_id,
+    ),
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(
+    0U,
+    view_bg,
+    mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
+  )
+  pass.set_bind_group(1U, binding_arrays_bg, [])
+  pass.set_bind_group(2U, material_shade_bind_group, [])
+  pass.set_bind_group(3U, material_bg, [])
+  let first_vertex = if entry.material_id < 0 {
+    0U
+  } else {
+    (entry.material_id * 3).reinterpret_as_uint()
+  }
+  pass.draw(3U, 1U, first_vertex, 0U)
+  render_diagnostics_record_mesh3d_executed_draw()
+  true
+}
+
+///|
 fn meshlet_end_active_render_pass_for_compute(backend : GpuBackend) -> Bool {
   guard backend.frame is Some(frame) else { return false }
   if frame.pass is Some(pass) {
@@ -3571,6 +4035,81 @@ pub fn GpuBackend::execute_meshlet_resolve_material_depth(
 }
 
 ///|
+pub fn GpuBackend::execute_meshlet_main_opaque_material_shade(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  draws~ : Array[HostMeshletMaterialShadeDrawEntry],
+) -> Bool raise GpuBackendError {
+  guard draws.length() > 0 else { return false }
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  guard view_resources.material_depth_view is Some(material_depth_view) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard target_view(self, pass_state.target_id, pass_state.target_layer)
+    is Some(color_view) else {
+    return false
+  }
+  let first_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self,
+    draws[0].material_pipeline_id,
+  )
+  let first_layout = mesh3d_material_pipeline_layout_get_or_create(
+    self,
+    draws[0].material_pipeline_id,
+    first_descriptor,
+  )
+  guard meshlet_create_material_shade_bind_group(
+      self,
+      frame,
+      view_resources,
+      first_layout.draw_bind_group_layout,
+    )
+    is Some(material_shade_bind_group) else {
+    return false
+  }
+  let pass = frame.encoder.begin_render_pass_color_depth_u32(
+    color_view,
+    material_depth_view,
+    color_load_op_u32=@wgpu.LOAD_OP_LOAD,
+    color_store_op_u32=@wgpu.STORE_OP_STORE,
+    color_clear_r_f32=0.0F,
+    color_clear_g_f32=0.0F,
+    color_clear_b_f32=0.0F,
+    color_clear_a_f32=1.0F,
+    depth_load_op_u32=@wgpu.LOAD_OP_LOAD,
+    depth_store_op_u32=@wgpu.STORE_OP_STORE,
+    depth_clear_value_f32=0.0F,
+    depth_read_only=false,
+    stencil_load_op_u32=@wgpu.LOAD_OP_LOAD,
+    stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+    stencil_clear_value_u32=0U,
+    stencil_read_only=true,
+  )
+  meshlet_set_resolve_render_targets_viewport(pass, pass_state)
+  let mut executed = false
+  for entry in draws {
+    if meshlet_bind_material_shade_draw(
+        self, pass, pass_state, material_shade_bind_group, entry,
+      ) {
+      executed = true
+    }
+  }
+  pass.end()
+  pass.release()
+  executed
+}
+
+///|
 pub fn execute_meshlet_clear_visibility_buffer(
   view_entity_bits~ : UInt64,
 ) -> Bool {
@@ -3901,6 +4440,26 @@ pub fn execute_meshlet_resolve_material_depth(
       backend.execute_meshlet_resolve_material_depth(view_entity_bits~) catch {
         err => {
           debug_runtime_error("execute_meshlet_resolve_material_depth", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn execute_meshlet_main_opaque_material_shade(
+  view_entity_bits~ : UInt64,
+  draws~ : Array[HostMeshletMaterialShadeDrawEntry],
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_main_opaque_material_shade(
+        view_entity_bits~,
+        draws~,
+      ) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_main_opaque_material_shade", err)
           false
         }
       }

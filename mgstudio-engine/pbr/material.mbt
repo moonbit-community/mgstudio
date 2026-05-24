@@ -358,7 +358,7 @@ fn material_pipeline_key_for_standard_material_render_mesh(
 }
 
 ///|
-fn render3d_material_properties_for_standard_material(
+pub fn render3d_material_properties_for_standard_material(
   material : StandardMaterial,
   extension : ExtendedMaterialMetadata3d?,
   default_opaque_renderer_method : OpaqueRendererMethod,

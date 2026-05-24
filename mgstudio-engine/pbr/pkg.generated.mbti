@@ -538,6 +538,8 @@ pub fn render3d_material_allocator_slabs_size_path(String) -> String
 
 pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators, String) -> MaterialAllocatorDiagnosticsSnapshot?
 
+pub fn render3d_material_properties_for_standard_material(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?, @material.OpaqueRendererMethod, Bool) -> @material.MaterialProperties
+
 pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
 
 pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
