@@ -407,6 +407,97 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
 }
 
 ///|
+fn wbtest_shader_defs_contains(
+  shader_defs : Array[String],
+  shader_def : String,
+) -> Bool {
+  mesh3d_shader_defs_to_bool_map(shader_defs).get(shader_def).unwrap_or(false)
+}
+
+///|
+test "renderer: mesh3d preprocess shader defines match bevy specialization keys" {
+  let direct = Mesh3dPreprocessPipelineKey::direct().shader_defs()
+  debug_inspect(direct.length(), content="1")
+  debug_inspect(
+    wbtest_shader_defs_contains(direct, "WRITE_INDIRECT_PARAMETERS_METADATA"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(direct, "INDIRECT"),
+    content="false",
+  )
+  let early_key = Mesh3dPreprocessPipelineKey::early_occlusion_culling()
+  let early = early_key.shader_defs()
+  debug_inspect(wbtest_shader_defs_contains(early, "INDIRECT"), content="true")
+  debug_inspect(
+    wbtest_shader_defs_contains(early, "FRUSTUM_CULLING"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(early, "OCCLUSION_CULLING"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(early, "EARLY_PHASE"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(early, "LATE_PHASE"),
+    content="false",
+  )
+}
+
+///|
+test "renderer: mesh3d build indirect shader defines match bevy specialization keys" {
+  let indexed_main = Mesh3dBuildIndirectParametersPipelineKey::main_occlusion_culling(
+    true, true,
+  ).shader_defs()
+  debug_inspect(
+    wbtest_shader_defs_contains(indexed_main, "INDEXED"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(
+      indexed_main, "MULTI_DRAW_INDIRECT_COUNT_SUPPORTED",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(indexed_main, "OCCLUSION_CULLING"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(indexed_main, "MAIN_PHASE"),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(indexed_main, "EARLY_PHASE"),
+    content="false",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(indexed_main, "LATE_PHASE"),
+    content="false",
+  )
+  let non_indexed_late = Mesh3dBuildIndirectParametersPipelineKey::late_occlusion_culling(
+    false, false,
+  ).shader_defs()
+  debug_inspect(
+    wbtest_shader_defs_contains(non_indexed_late, "INDEXED"),
+    content="false",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(
+      non_indexed_late, "MULTI_DRAW_INDIRECT_COUNT_SUPPORTED",
+    ),
+    content="false",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(non_indexed_late, "LATE_PHASE"),
+    content="true",
+  )
+}
+
+///|
 test "renderer: mesh3d preprocess mesh input bytes match bevy struct size" {
   let (current_bytes, previous_bytes) = mesh3d_preprocess_mesh_inputs_bytes(
     17U,

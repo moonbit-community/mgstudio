@@ -35,6 +35,19 @@ const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
 const ENVIRONMENT_LIGHT_INTENSITY : Float = 150.0F
 
 ///|
+struct BunnyWiggler {}
+
+///|
+let bunny_wiggler_key : @ecs.ComponentKey[BunnyWiggler] = @ecs.register_component(
+  debug_name="examples.3d.meshlet.BunnyWiggler",
+)
+
+///|
+pub impl @ecs.Component for BunnyWiggler with component() {
+  bunny_wiggler_key
+}
+
+///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -170,6 +183,12 @@ fn setup(world : @ecs.World) -> Unit {
         @math.Vec3::splat(0.2F),
       ),
     )
+    |> fn(entity) {
+      if x_int == 1 {
+        try! world.set_by_key(entity, bunny_wiggler_key, BunnyWiggler::{  })
+      }
+      entity
+    }
     |> ignore
   }
 
@@ -221,10 +240,24 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn bunny_wiggler(
+  bunnies : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[BunnyWiggler]],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let delta_z = @math.cos(time.get().elapsed_secs() * 10.0F) * 0.003F
+  try! bunnies.view(fn(_entity, transform) {
+    transform.modify(fn(value) {
+      value.translation.z = value.translation.z + delta_z
+    })
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr_meshlet.MeshletPlugin::new(16_384))
   .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(@app.system_param2(bunny_wiggler)))
   .run()
 }
