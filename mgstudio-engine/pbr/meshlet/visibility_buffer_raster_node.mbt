@@ -315,7 +315,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
           "clear_visibility_buffer"
         },
         bind_group="clear_visibility_buffer",
-        immediate_size=8,
       )
     FirstInstanceCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
@@ -324,7 +323,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
         pipeline_slot="first_instance_cull",
         bind_group="first_instance_cull",
-        immediate_size=4,
         dynamic_offset_count=2,
       )
     FirstBvhCull(_, ping) =>
@@ -338,7 +336,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         } else {
           "first_bvh_cull_pong"
         },
-        immediate_size=8,
         dynamic_offset_count=2,
       )
     FirstBvhCullClearCount(_, _) =>
@@ -360,7 +357,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
         pipeline_slot="first_meshlet_cull",
         bind_group="first_meshlet_cull",
-        immediate_size=4,
         dynamic_offset_count=2,
       )
     FirstRemap1dTo2d(_) =>
@@ -397,7 +393,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
           "visibility_buffer_hardware_raster"
         },
         bind_group="visibility_buffer_raster",
-        immediate_size=4,
         dynamic_offset_count=1,
         uses_camera_viewport=!shadow_view,
         uses_shadow_unclipped_pipeline=shadow_view && directional_shadow_view,
@@ -427,7 +422,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
           "downsample_depth_second"
         },
         bind_group="downsample_depth",
-        immediate_size=4,
       )
     SecondInstanceCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
@@ -436,7 +430,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
         pipeline_slot="second_instance_cull",
         bind_group="second_instance_cull",
-        immediate_size=4,
         dynamic_offset_count=2,
       )
     SecondBvhCull(_, ping) =>
@@ -450,7 +443,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         } else {
           "second_bvh_cull_pong"
         },
-        immediate_size=8,
         dynamic_offset_count=2,
       )
     SecondMeshletCull(_) =>
@@ -460,7 +452,6 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
         dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
         pipeline_slot="second_meshlet_cull",
         bind_group="second_meshlet_cull",
-        immediate_size=4,
         dynamic_offset_count=2,
       )
     SecondRemap1dTo2d(_) =>

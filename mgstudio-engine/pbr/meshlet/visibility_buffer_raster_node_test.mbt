@@ -129,7 +129,7 @@ test "pbr meshlet: visibility raster command descriptors mirror bevy dispatch mo
   )
   inspect(first_instance.pipeline_slot(), content="first_instance_cull")
   inspect(first_instance.bind_group(), content="first_instance_cull")
-  inspect(first_instance.immediate_size(), content="4")
+  inspect(first_instance.immediate_size(), content="0")
   inspect(first_instance.dynamic_offset_count(), content="2")
   let first_bvh_pong = meshlet_visibility_buffer_raster_op_command_descriptor(
     MeshletVisibilityBufferRasterOp::FirstBvhCull(false, false),
@@ -141,7 +141,7 @@ test "pbr meshlet: visibility raster command descriptors mirror bevy dispatch mo
   )
   inspect(first_bvh_pong.pipeline_slot(), content="first_bvh_cull")
   inspect(first_bvh_pong.bind_group(), content="first_bvh_cull_pong")
-  inspect(first_bvh_pong.immediate_size(), content="8")
+  inspect(first_bvh_pong.immediate_size(), content="0")
   inspect(first_bvh_pong.dynamic_offset_count(), content="2")
   let clear_count = meshlet_visibility_buffer_raster_op_command_descriptor(
     MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(false, true),
@@ -174,7 +174,7 @@ test "pbr meshlet: visibility raster command descriptors preserve render and sha
     content="visibility_buffer_hardware_raster",
   )
   inspect(hardware_camera.bind_group(), content="visibility_buffer_raster")
-  inspect(hardware_camera.immediate_size(), content="4")
+  inspect(hardware_camera.immediate_size(), content="0")
   inspect(hardware_camera.dynamic_offset_count(), content="1")
   inspect(hardware_camera.uses_camera_viewport(), content="true")
   let hardware_directional_shadow = meshlet_visibility_buffer_raster_op_command_descriptor(

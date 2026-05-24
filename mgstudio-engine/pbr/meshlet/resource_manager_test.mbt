@@ -47,18 +47,22 @@ test "pbr/meshlet: resource bind group layouts mirror bevy descriptor order" {
 test "pbr/meshlet: resource layouts use C ABI visibility buffer primitives" {
   let descriptors = meshlet_resource_bind_group_layout_descriptors()
   let clear_layout = descriptors[0]
-  debug_inspect(clear_layout.entry_count(), content="1")
+  debug_inspect(clear_layout.entry_count(), content="2")
   debug_inspect(
     clear_layout.count_binding_kind(
       MeshletResourceBindingKind::StorageBufferReadWrite,
     ),
     content="1",
   )
+  debug_inspect(
+    clear_layout.count_binding_kind(MeshletResourceBindingKind::UniformBuffer),
+    content="1",
+  )
   let camera_raster_layout = descriptors[10]
   debug_inspect(camera_raster_layout.compute_stage, content="true")
   debug_inspect(camera_raster_layout.vertex_stage, content="true")
   debug_inspect(camera_raster_layout.fragment_stage, content="true")
-  debug_inspect(camera_raster_layout.entry_count(), content="9")
+  debug_inspect(camera_raster_layout.entry_count(), content="10")
   debug_inspect(
     camera_raster_layout.count_binding_kind(
       MeshletResourceBindingKind::StorageBufferReadOnly,
@@ -70,6 +74,12 @@ test "pbr/meshlet: resource layouts use C ABI visibility buffer primitives" {
       MeshletResourceBindingKind::StorageBufferReadWrite,
     ),
     content="1",
+  )
+  debug_inspect(
+    camera_raster_layout.count_binding_kind(
+      MeshletResourceBindingKind::UniformBuffer,
+    ),
+    content="2",
   )
   debug_inspect(
     camera_raster_layout.uses_storage_texture(
@@ -92,7 +102,7 @@ test "pbr/meshlet: resource layouts use C ABI visibility buffer primitives" {
 test "pbr/meshlet: resource downsample and material shade layouts preserve bevy entry shape" {
   let descriptors = meshlet_resource_bind_group_layout_descriptors()
   let downsample = descriptors[8]
-  debug_inspect(downsample.entry_count(), content="14")
+  debug_inspect(downsample.entry_count(), content="15")
   debug_inspect(
     downsample.count_binding_kind(
       MeshletResourceBindingKind::StorageBufferReadOnly,
@@ -133,7 +143,7 @@ test "pbr/meshlet: resource fill counts layout follows remap dispatch branch" {
   let remap_fill_counts = remap[16]
   debug_inspect(remap_fill_counts.entry_count(), content="4")
   debug_inspect(remap[17].enabled, content="true")
-  debug_inspect(remap[17].entry_count(), content="2")
+  debug_inspect(remap[17].entry_count(), content="3")
 }
 
 ///|

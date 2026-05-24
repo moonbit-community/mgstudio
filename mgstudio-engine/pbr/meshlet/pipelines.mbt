@@ -152,7 +152,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_clear_visibility_buffer_pipeline",
       MeshletPipelineKind::Compute,
       "clear_visibility_buffer_bind_group_layout",
-      immediate_size=8,
       shader_label="clear_visibility_buffer.wgsl",
       compute_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT"],
     ),
@@ -161,7 +160,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_clear_visibility_buffer_shadow_view_pipeline",
       MeshletPipelineKind::Compute,
       "clear_visibility_buffer_shadow_view_bind_group_layout",
-      immediate_size=8,
       shader_label="clear_visibility_buffer.wgsl",
     ),
     meshlet_pipeline_descriptor(
@@ -169,7 +167,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_first_instance_cull_pipeline",
       MeshletPipelineKind::Compute,
       "first_instance_cull_bind_group_layout",
-      immediate_size=4,
       shader_label="cull_instances.wgsl",
       compute_shader_defs=[
         "MESHLET_INSTANCE_CULLING_PASS", "MESHLET_FIRST_CULLING_PASS",
@@ -180,7 +177,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_second_instance_cull_pipeline",
       MeshletPipelineKind::Compute,
       "second_instance_cull_bind_group_layout",
-      immediate_size=4,
       shader_label="cull_instances.wgsl",
       compute_shader_defs=[
         "MESHLET_INSTANCE_CULLING_PASS", "MESHLET_SECOND_CULLING_PASS",
@@ -191,7 +187,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_first_bvh_cull_pipeline",
       MeshletPipelineKind::Compute,
       "first_bvh_cull_bind_group_layout",
-      immediate_size=8,
       shader_label="cull_bvh.wgsl",
       compute_shader_defs=[
         "MESHLET_BVH_CULLING_PASS", "MESHLET_FIRST_CULLING_PASS",
@@ -202,7 +197,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_second_bvh_cull_pipeline",
       MeshletPipelineKind::Compute,
       "second_bvh_cull_bind_group_layout",
-      immediate_size=8,
       shader_label="cull_bvh.wgsl",
       compute_shader_defs=[
         "MESHLET_BVH_CULLING_PASS", "MESHLET_SECOND_CULLING_PASS",
@@ -213,7 +207,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_first_meshlet_cull_pipeline",
       MeshletPipelineKind::Compute,
       "first_meshlet_cull_bind_group_layout",
-      immediate_size=4,
       shader_label="cull_clusters.wgsl",
       compute_shader_defs=[
         "MESHLET_CLUSTER_CULLING_PASS", "MESHLET_FIRST_CULLING_PASS",
@@ -224,7 +217,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_second_meshlet_cull_pipeline",
       MeshletPipelineKind::Compute,
       "second_meshlet_cull_bind_group_layout",
-      immediate_size=4,
       shader_label="cull_clusters.wgsl",
       compute_shader_defs=[
         "MESHLET_CLUSTER_CULLING_PASS", "MESHLET_SECOND_CULLING_PASS",
@@ -235,7 +227,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_downsample_depth_first_pipeline",
       MeshletPipelineKind::Compute,
       "downsample_depth_bind_group_layout",
-      immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
       compute_shader_defs=[
         "MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT", "MESHLET",
@@ -247,7 +238,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_downsample_depth_second_pipeline",
       MeshletPipelineKind::Compute,
       "downsample_depth_bind_group_layout",
-      immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
       compute_shader_defs=[
         "MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT", "MESHLET",
@@ -259,7 +249,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_downsample_depth_first_pipeline",
       MeshletPipelineKind::Compute,
       "downsample_depth_shadow_view_bind_group_layout",
-      immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
       compute_shader_defs=["MESHLET"],
       entry_point=Some("downsample_depth_first"),
@@ -269,7 +258,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_downsample_depth_second_pipeline",
       MeshletPipelineKind::Compute,
       "downsample_depth_shadow_view_bind_group_layout",
-      immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
       compute_shader_defs=["MESHLET"],
       entry_point=Some("downsample_depth_second"),
@@ -301,7 +289,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_visibility_buffer_hardware_raster_pipeline",
       MeshletPipelineKind::Render,
       "visibility_buffer_raster_bind_group_layout",
-      immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
       vertex_shader_defs=[
         "MESHLET_VISIBILITY_BUFFER_RASTER_PASS", "MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT",
@@ -317,7 +304,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_visibility_buffer_hardware_raster_shadow_view_pipeline",
       MeshletPipelineKind::Render,
       "visibility_buffer_raster_shadow_view_bind_group_layout",
-      immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
       vertex_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS"],
       fragment_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS"],
@@ -329,7 +315,6 @@ pub fn meshlet_pipeline_descriptors(
       "meshlet_visibility_buffer_hardware_raster_shadow_view_unclipped_pipeline",
       MeshletPipelineKind::Render,
       "visibility_buffer_raster_shadow_view_bind_group_layout",
-      immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
       vertex_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS"],
       fragment_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS"],
@@ -386,7 +371,6 @@ pub fn meshlet_pipeline_descriptors(
       "remap_1d_to_2d_dispatch_bind_group_layout",
       optional=true,
       enabled=remap_dispatch_enabled,
-      immediate_size=4,
       shader_label="remap_1d_to_2d_dispatch.wgsl",
     ),
   ]

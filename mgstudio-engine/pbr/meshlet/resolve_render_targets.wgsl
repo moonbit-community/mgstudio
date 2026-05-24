@@ -4,10 +4,16 @@
 @group(0) @binding(0) var<storage, read> meshlet_visibility_buffer: array<u32>;
 @group(0) @binding(1) var<storage, read> meshlet_raster_clusters: array<InstancedOffset>;  // Per cluster
 @group(0) @binding(2) var<storage, read> meshlet_instance_material_ids: array<u32>; // Per entity instance
-var<immediate> view_size: vec2<u32>;
+
+struct MeshletResolveRenderTargetsConstants {
+    view_size: vec2<u32>,
+}
+
+@group(0) @binding(3) var<uniform> meshlet_resolve_render_targets_constants: MeshletResolveRenderTargetsConstants;
 
 fn mgstudio_visibility_pixel_index(position: vec4<f32>) -> u32 {
     let pixel = vec2<u32>(position.xy);
+    let view_size = meshlet_resolve_render_targets_constants.view_size;
     return (pixel.y * view_size.x) + pixel.x;
 }
 

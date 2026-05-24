@@ -1,9 +1,15 @@
 @group(0) @binding(0) var<storage, read_write> meshlet_visibility_buffer: array<atomic<u32>>;
-var<immediate> view_size: vec2<u32>;
+
+struct MeshletClearVisibilityBufferConstants {
+    view_size: vec2<u32>,
+}
+
+@group(0) @binding(1) var<uniform> meshlet_clear_visibility_buffer_constants: MeshletClearVisibilityBufferConstants;
 
 @compute
 @workgroup_size(16, 16, 1)
 fn clear_visibility_buffer(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let view_size = meshlet_clear_visibility_buffer_constants.view_size;
     if any(global_id.xy >= view_size) { return; }
     atomicStore(&meshlet_visibility_buffer[(global_id.y * view_size.x) + global_id.x], 0u);
 }

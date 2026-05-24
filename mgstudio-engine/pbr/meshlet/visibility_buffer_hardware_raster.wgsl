@@ -17,7 +17,12 @@
     mesh_functions::mesh_position_local_to_world,
 }
 #import bevy_render::maths::affine3_to_square
-var<immediate> meshlet_raster_cluster_rightmost_slot: u32;
+
+struct MeshletHardwareRasterConstants {
+    raster_cluster_rightmost_slot: u32,
+}
+
+@group(0) @binding(9) var<uniform> meshlet_hardware_raster_constants: MeshletHardwareRasterConstants;
 
 /// Vertex/fragment shader for rasterizing large clusters into a visibility buffer.
 
@@ -29,7 +34,7 @@ struct VertexOutput {
 @vertex
 fn vertex(@builtin(instance_index) instance_index: u32, @builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     let cluster_in_draw = meshlet_previous_raster_counts[1] + instance_index;
-    let cluster_id = meshlet_raster_cluster_rightmost_slot - cluster_in_draw;
+    let cluster_id = meshlet_hardware_raster_constants.raster_cluster_rightmost_slot - cluster_in_draw;
     let instanced_offset = meshlet_raster_clusters[cluster_id];
     var meshlet = meshlets[instanced_offset.offset];
 

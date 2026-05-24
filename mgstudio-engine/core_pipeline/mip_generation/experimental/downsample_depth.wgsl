@@ -1,8 +1,8 @@
 #ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
-@group(0) @binding(0) var mip_0: texture_storage_2d<r64uint, read>;
+@group(0) @binding(0) var<storage, read> mip_0: array<u32>;
 #else
 #ifdef MESHLET
-@group(0) @binding(0) var mip_0: texture_storage_2d<r32uint, read>;
+@group(0) @binding(0) var<storage, read> mip_0: array<u32>;
 #else   // MESHLET
 #ifdef MULTISAMPLE
 @group(0) @binding(0) var mip_0: texture_depth_multisampled_2d;
@@ -24,8 +24,19 @@
 @group(0) @binding(11) var mip_11: texture_storage_2d<r32float, write>;
 @group(0) @binding(12) var mip_12: texture_storage_2d<r32float, write>;
 @group(0) @binding(13) var samplr: sampler;
+#ifdef MESHLET
+struct MeshletDownsampleDepthConstants {
+    max_mip_level: u32,
+    visibility_width: u32,
+    visibility_height: u32,
+    _padding: u32,
+}
+
+@group(0) @binding(14) var<uniform> constants: MeshletDownsampleDepthConstants;
+#else
 struct Constants { max_mip_level: u32 }
 var<immediate> constants: Constants;
+#endif
 
 /// Generates a hierarchical depth buffer.
 /// Based on FidelityFX SPD v2.1 https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/d7531ae47d8b36a5d4025663e731a47a38be882f/sdk/include/FidelityFX/gpu/spd/ffx_spd.h#L528
@@ -319,7 +330,7 @@ fn reduce_load_mip_6(tex: vec2u) -> f32 {
 // See the comments in `ViewDepthPyramid::downsample_depth` for more
 // information.
 fn load_mip_0(x: u32, y: u32) -> f32 {
-    let actual_size = textureDimensions(mip_0).xy;
+    let actual_size = mip_0_actual_size();
     let virtual_size = vec2<u32>(
         next_power_of_two(actual_size.x),
         next_power_of_two(actual_size.y)
@@ -327,12 +338,12 @@ fn load_mip_0(x: u32, y: u32) -> f32 {
     let virtual_uv = (vec2<f32>(f32(x), f32(y)) + 0.5) / vec2<f32>(virtual_size);
 #ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
     let virtual_st = virtual_uv * vec2<f32>(actual_size);
-    let visibility = load_mip_0_meshlet(virtual_st, 32u);
+    let visibility = load_mip_0_meshlet(virtual_st);
     return reduce_4(visibility);
 #else   // MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
 #ifdef MESHLET
     let virtual_st = virtual_uv * vec2<f32>(actual_size);
-    let visibility = load_mip_0_meshlet(virtual_st, 0u);
+    let visibility = load_mip_0_meshlet(virtual_st);
     return reduce_4(visibility);
 #else   // MESHLET
     // Downsample the top level.
@@ -354,20 +365,38 @@ fn load_mip_0(x: u32, y: u32) -> f32 {
 }
 
 #ifdef MESHLET
+fn mip_0_actual_size() -> vec2<u32> {
+    return vec2(constants.visibility_width, constants.visibility_height);
+}
+#else
+fn mip_0_actual_size() -> vec2<u32> {
+    return textureDimensions(mip_0).xy;
+}
+#endif
+
+#ifdef MESHLET
 // Loads a single 2×2 square of texels at the given position from the source
 // image and returns all four (like `textureGather` does).
 //
 // `st` should be in texels, not in the [0, 1] range like UVs. That is, `st` is
 // `uv * textureDimensions(mip_0).xy`.
-fn load_mip_0_meshlet(st: vec2<f32>, shift: u32) -> vec4<f32> {
+fn load_mip_0_meshlet(st: vec2<f32>) -> vec4<f32> {
     let st0 = vec2<u32>(floor(st - 0.5));
     let st1 = st0 + 1u;
     return vec4<f32>(
-        bitcast<f32>(u32(textureLoad(mip_0, vec2<u32>(st0.x, st0.y)).r) >> shift),
-        bitcast<f32>(u32(textureLoad(mip_0, vec2<u32>(st0.x, st1.y)).r) >> shift),
-        bitcast<f32>(u32(textureLoad(mip_0, vec2<u32>(st1.x, st0.y)).r) >> shift),
-        bitcast<f32>(u32(textureLoad(mip_0, vec2<u32>(st1.x, st1.y)).r) >> shift)
+        bitcast<f32>(meshlet_visibility_depth_word(st0.x, st0.y)),
+        bitcast<f32>(meshlet_visibility_depth_word(st0.x, st1.y)),
+        bitcast<f32>(meshlet_visibility_depth_word(st1.x, st0.y)),
+        bitcast<f32>(meshlet_visibility_depth_word(st1.x, st1.y))
     );
+}
+
+fn meshlet_visibility_depth_word(x: u32, y: u32) -> u32 {
+    if x >= constants.visibility_width || y >= constants.visibility_height {
+        return 0u;
+    }
+    let visibility = mip_0[(y * constants.visibility_width) + x];
+    return visibility & 0xffc00000u;
 }
 #endif  // MESHLET
 

@@ -46,10 +46,10 @@ test "pbr/meshlet: queued pipeline descriptors mirror bevy init order and labels
 }
 
 ///|
-test "pbr/meshlet: cull descriptors carry bevy shader defs and immediates" {
+test "pbr/meshlet: cull descriptors carry bevy shader defs and portable constants" {
   let descriptors = meshlet_pipeline_descriptors()
   let first_instance_cull = descriptors[2]
-  debug_inspect(first_instance_cull.immediate_size, content="4")
+  debug_inspect(first_instance_cull.immediate_size, content="0")
   inspect(first_instance_cull.shader_label, content="cull_instances.wgsl")
   debug_inspect(
     first_instance_cull.has_shader_def("MESHLET_INSTANCE_CULLING_PASS"),
@@ -60,7 +60,7 @@ test "pbr/meshlet: cull descriptors carry bevy shader defs and immediates" {
     content="true",
   )
   let first_bvh_cull = descriptors[4]
-  debug_inspect(first_bvh_cull.immediate_size, content="8")
+  debug_inspect(first_bvh_cull.immediate_size, content="0")
   debug_inspect(
     first_bvh_cull.has_shader_def("MESHLET_BVH_CULLING_PASS"),
     content="true",
@@ -115,7 +115,7 @@ test "pbr/meshlet: remap dispatch flag follows bevy empty shader-def shape" {
   )
   let remap_with = descriptors_with_remap[21]
   debug_inspect(remap_with.enabled, content="true")
-  debug_inspect(remap_with.immediate_size, content="4")
+  debug_inspect(remap_with.immediate_size, content="0")
 }
 
 ///|

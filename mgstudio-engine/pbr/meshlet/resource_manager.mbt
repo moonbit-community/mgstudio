@@ -111,6 +111,11 @@ fn meshlet_resource_uniform_buffer_dynamic() -> MeshletResourceBindGroupLayoutEn
 }
 
 ///|
+fn meshlet_resource_uniform_buffer() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(MeshletResourceBindingKind::UniformBuffer)
+}
+
+///|
 fn meshlet_resource_storage_read_only() -> MeshletResourceBindGroupLayoutEntry {
   meshlet_resource_layout_entry(
     MeshletResourceBindingKind::StorageBufferReadOnly,
@@ -214,6 +219,7 @@ fn meshlet_resource_first_instance_cull_entries() -> Array[
   for _ in 0..<6 {
     entries.push(meshlet_resource_storage_read_write())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -231,6 +237,7 @@ fn meshlet_resource_second_instance_cull_entries() -> Array[
   for _ in 0..<2 {
     entries.push(meshlet_resource_storage_read_only())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -245,6 +252,7 @@ fn meshlet_resource_first_bvh_cull_entries() -> Array[
   for _ in 0..<11 {
     entries.push(meshlet_resource_storage_read_write())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -259,6 +267,7 @@ fn meshlet_resource_second_bvh_cull_entries() -> Array[
   for _ in 0..<8 {
     entries.push(meshlet_resource_storage_read_write())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -279,6 +288,7 @@ fn meshlet_resource_first_meshlet_cull_entries() -> Array[
   for _ in 0..<3 {
     entries.push(meshlet_resource_storage_read_write())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -298,6 +308,7 @@ fn meshlet_resource_second_meshlet_cull_entries() -> Array[
   for _ in 0..<2 {
     entries.push(meshlet_resource_storage_read_only())
   }
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -329,6 +340,7 @@ fn meshlet_resource_downsample_depth_entries(
     )
   }
   entries.push(meshlet_resource_sampler_non_filtering())
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -342,6 +354,7 @@ fn meshlet_resource_visibility_buffer_raster_entries(
   }
   entries.push(meshlet_resource_storage_read_write())
   entries.push(meshlet_resource_uniform_buffer_dynamic())
+  entries.push(meshlet_resource_uniform_buffer())
   entries
 }
 
@@ -368,12 +381,18 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_bind_group_layout",
       compute_stage=true,
-      entries=[meshlet_resource_storage_read_write()],
+      entries=[
+        meshlet_resource_storage_read_write(),
+        meshlet_resource_uniform_buffer(),
+      ],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_shadow_view_bind_group_layout",
       compute_stage=true,
-      entries=[meshlet_resource_storage_read_write()],
+      entries=[
+        meshlet_resource_storage_read_write(),
+        meshlet_resource_uniform_buffer(),
+      ],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_first_instance_culling_bind_group_layout",
@@ -440,12 +459,18 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_bind_group_layout",
       fragment_stage=true,
-      entries=[meshlet_resource_storage_read_only()],
+      entries=[
+        meshlet_resource_storage_read_only(),
+        meshlet_resource_uniform_buffer(),
+      ],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_shadow_view_bind_group_layout",
       fragment_stage=true,
-      entries=[meshlet_resource_storage_read_only()],
+      entries=[
+        meshlet_resource_storage_read_only(),
+        meshlet_resource_uniform_buffer(),
+      ],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_material_depth_bind_group_layout",
@@ -454,6 +479,7 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
         meshlet_resource_storage_read_only(),
         meshlet_resource_storage_read_only(),
         meshlet_resource_storage_read_only(),
+        meshlet_resource_uniform_buffer(),
       ],
     ),
     meshlet_resource_bind_group_layout_descriptor(
@@ -472,6 +498,7 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
       entries=[
         meshlet_resource_storage_read_write(),
         meshlet_resource_storage_read_write(),
+        meshlet_resource_uniform_buffer(),
       ],
       optional=true,
       enabled=needs_dispatch_remap,

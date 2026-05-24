@@ -88,7 +88,11 @@ const CENTIMETERS_PER_METER = 100.0;
 
 #ifdef MESHLET_INSTANCE_CULLING_PASS
 struct Constants { scene_instance_count: u32 }
-var<immediate> constants: Constants;
+#ifdef MESHLET_FIRST_CULLING_PASS
+@group(0) @binding(13) var<uniform> constants: Constants;
+#else
+@group(0) @binding(12) var<uniform> constants: Constants;
+#endif
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>;
@@ -119,7 +123,11 @@ var<immediate> constants: Constants;
 
 #ifdef MESHLET_BVH_CULLING_PASS
 struct Constants { read_from_front: u32, rightmost_slot: u32 }
-var<immediate> constants: Constants;
+#ifdef MESHLET_FIRST_CULLING_PASS
+@group(0) @binding(17) var<uniform> constants: Constants;
+#else
+@group(0) @binding(14) var<uniform> constants: Constants;
+#endif
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>; // From the end of the last frame for the first culling pass, and from the first raster pass for the second culling pass
@@ -155,7 +163,11 @@ var<immediate> constants: Constants;
 
 #ifdef MESHLET_CLUSTER_CULLING_PASS
 struct Constants { rightmost_slot: u32 }
-var<immediate> constants: Constants;
+#ifdef MESHLET_FIRST_CULLING_PASS
+@group(0) @binding(13) var<uniform> constants: Constants;
+#else
+@group(0) @binding(11) var<uniform> constants: Constants;
+#endif
 
 // Cull data
 @group(0) @binding(0) var depth_pyramid: texture_2d<f32>; // From the end of the last frame for the first culling pass, and from the first raster pass for the second culling pass
