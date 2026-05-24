@@ -363,6 +363,206 @@ pub fn Mesh3dGeometry::with_normals(
 }
 
 ///|
+fn mesh3d_duplicate_vec2_values(
+  values : Array[@math.Vec2]?,
+  indices : Array[Int],
+) -> Array[@math.Vec2]? {
+  guard values is Some(source) else { return None }
+  let out : Array[@math.Vec2] = []
+  for index in indices {
+    if index < 0 || index >= source.length() {
+      return None
+    }
+    out.push(source[index])
+  }
+  Some(out)
+}
+
+///|
+fn mesh3d_duplicate_vec3_values(
+  values : Array[@math.Vec3]?,
+  indices : Array[Int],
+) -> Array[@math.Vec3]? {
+  guard values is Some(source) else { return None }
+  let out : Array[@math.Vec3] = []
+  for index in indices {
+    if index < 0 || index >= source.length() {
+      return None
+    }
+    out.push(source[index])
+  }
+  Some(out)
+}
+
+///|
+fn mesh3d_duplicate_vec4_values(
+  values : Array[@math.Vec4]?,
+  indices : Array[Int],
+) -> Array[@math.Vec4]? {
+  guard values is Some(source) else { return None }
+  let out : Array[@math.Vec4] = []
+  for index in indices {
+    if index < 0 || index >= source.length() {
+      return None
+    }
+    out.push(source[index])
+  }
+  Some(out)
+}
+
+///|
+fn mesh3d_duplicate_joint_indices_values(
+  values : Array[MeshJointIndices]?,
+  indices : Array[Int],
+) -> Array[MeshJointIndices]? {
+  guard values is Some(source) else { return None }
+  let out : Array[MeshJointIndices] = []
+  for index in indices {
+    if index < 0 || index >= source.length() {
+      return None
+    }
+    out.push(source[index])
+  }
+  Some(out)
+}
+
+///|
+fn mesh3d_duplicate_morph_targets(
+  targets : Array[Array[@math.Vec3]]?,
+  indices : Array[Int],
+) -> Array[Array[@math.Vec3]]? {
+  guard targets is Some(source_targets) else { return None }
+  let out : Array[Array[@math.Vec3]] = []
+  for target in source_targets {
+    guard mesh3d_duplicate_vec3_values(Some(target), indices)
+      is Some(duplicated) else {
+      return None
+    }
+    out.push(duplicated)
+  }
+  Some(out)
+}
+
+///|
+fn mesh3d_duplicate_custom_attributes_vec3(
+  attributes : Array[MeshCustomAttributeVec3],
+  indices : Array[Int],
+) -> Array[MeshCustomAttributeVec3]? {
+  let out : Array[MeshCustomAttributeVec3] = []
+  for attribute in attributes {
+    guard mesh3d_duplicate_vec3_values(Some(attribute.values()), indices)
+      is Some(values) else {
+      return None
+    }
+    out.push(
+      MeshCustomAttributeVec3::new_with_attribute(attribute.attribute(), values),
+    )
+  }
+  Some(out)
+}
+
+///|
+pub fn Mesh3dGeometry::with_duplicated_vertices(
+  self : Mesh3dGeometry,
+) -> Mesh3dGeometry? {
+  guard self.indices is Some(indices) else { return Some(self) }
+  guard mesh3d_duplicate_vec3_values(Some(self.positions), indices)
+    is Some(positions) else {
+    return None
+  }
+  let normals = match self.normals {
+    Some(_) => mesh3d_duplicate_vec3_values(self.normals, indices)
+    None => None
+  }
+  let uvs = match self.uvs {
+    Some(_) => mesh3d_duplicate_vec2_values(self.uvs, indices)
+    None => None
+  }
+  let colors = match self.colors {
+    Some(_) => mesh3d_duplicate_vec4_values(self.colors, indices)
+    None => None
+  }
+  let joint_indices = match self.joint_indices {
+    Some(_) =>
+      mesh3d_duplicate_joint_indices_values(self.joint_indices, indices)
+    None => None
+  }
+  let joint_weights = match self.joint_weights {
+    Some(_) => mesh3d_duplicate_vec4_values(self.joint_weights, indices)
+    None => None
+  }
+  let morph_target_positions = match self.morph_target_positions {
+    Some(_) =>
+      mesh3d_duplicate_morph_targets(self.morph_target_positions, indices)
+    None => None
+  }
+  let morph_target_normals = match self.morph_target_normals {
+    Some(_) =>
+      mesh3d_duplicate_morph_targets(self.morph_target_normals, indices)
+    None => None
+  }
+  let morph_target_tangents = match self.morph_target_tangents {
+    Some(_) =>
+      mesh3d_duplicate_morph_targets(self.morph_target_tangents, indices)
+    None => None
+  }
+  guard mesh3d_duplicate_custom_attributes_vec3(
+      self.custom_attributes_vec3,
+      indices,
+    )
+    is Some(custom_attributes_vec3) else {
+    return None
+  }
+  let tangents = match self.tangents {
+    Some(_) => mesh3d_duplicate_vec4_values(self.tangents, indices)
+    None => None
+  }
+  Some(Mesh3dGeometry::{
+    positions,
+    normals,
+    uvs,
+    colors,
+    joint_indices,
+    joint_weights,
+    morph_target_positions,
+    morph_target_normals,
+    morph_target_tangents,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3,
+    tangents,
+    indices: None,
+    topology: self.topology,
+  })
+}
+
+///|
+pub fn Mesh3dGeometry::with_computed_flat_normals(
+  self : Mesh3dGeometry,
+) -> Mesh3dGeometry? {
+  if self.indices is Some(_) ||
+    self.topology != Mesh3dPrimitiveTopology::TriangleList {
+    return None
+  }
+  if self.positions.length() % 3 != 0 {
+    return None
+  }
+  let normals : Array[@math.Vec3] = []
+  let triangle_count = self.positions.length() / 3
+  for triangle in 0..<triangle_count {
+    let base = triangle * 3
+    let normal = mesh3d_triangle_face_normal(
+      self.positions[base],
+      self.positions[base + 1],
+      self.positions[base + 2],
+    )
+    normals.push(normal)
+    normals.push(normal)
+    normals.push(normal)
+  }
+  Some(Mesh3dGeometry::{ ..self, normals: Some(normals), tangents: None })
+}
+
+///|
 pub fn Mesh3dGeometry::replace_normals(
   self : Mesh3dGeometry,
   normals : Array[@math.Vec3]?,

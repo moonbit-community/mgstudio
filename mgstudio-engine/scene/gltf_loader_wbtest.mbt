@@ -573,6 +573,60 @@ test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
 }
 
 ///|
+test "scene gltf wb: mesh primitive builder computes missing flat normals like Bevy" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"TEXCOORD_0\":1},\"indices\":2}]}],\"buffers\":[{\"byteLength\":48},{\"byteLength\":32},{\"byteLength\":6}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":48},{\"buffer\":1,\"byteOffset\":0,\"byteLength\":32},{\"buffer\":2,\"byteOffset\":0,\"byteLength\":6}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":4,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":4,\"type\":\"VEC2\"},{\"bufferView\":2,\"componentType\":5121,\"count\":6,\"type\":\"SCALAR\"}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let positions : Array[Byte] = []
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  let uvs : Array[Byte] = []
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 1.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 1.0F)
+  push_f32_le(uvs, 1.0F)
+  push_f32_le(uvs, 1.0F)
+  let indices = Bytes::from_array([
+    (0).to_byte(),
+    (1).to_byte(),
+    (2).to_byte(),
+    (1).to_byte(),
+    (3).to_byte(),
+    (2).to_byte(),
+  ])
+  let mesh = scene_build_mesh_primitive_from_gltf(
+    doc,
+    [Bytes::from_array(positions), Bytes::from_array(uvs), indices],
+    0,
+    0,
+    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+  ).unwrap()
+  let geometry = mesh.as_3d_geometry().unwrap()
+  debug_inspect(geometry.positions.length(), content="6")
+  debug_inspect(geometry.has_indices(), content="false")
+  debug_inspect(geometry.has_normals(), content="true")
+  let normal = geometry.normal(0).unwrap()
+  debug_inspect(
+    (normal.x.to_double(), normal.y.to_double(), normal.z.to_double()),
+    content="(0, 0, 1)",
+  )
+  let uv = geometry.uv(3).unwrap()
+  debug_inspect((uv.x.to_double(), uv.y.to_double()), content="(1, 0)")
+}
+
+///|
 test "scene gltf wb: parse KHR_materials_clearcoat" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatFactor\":0.7,\"clearcoatRoughnessFactor\":0.2,\"clearcoatTexture\":{\"index\":3},\"clearcoatRoughnessTexture\":{\"index\":4},\"clearcoatNormalTexture\":{\"index\":5}}}}]}"
   let doc = gltf_parse_document(source).unwrap()

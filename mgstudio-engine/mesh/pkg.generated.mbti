@@ -272,7 +272,9 @@ pub fn Mesh3dGeometry::vertex_count(Self) -> Int
 pub fn Mesh3dGeometry::vertex_position(Self, Int) -> @math.Vec3?
 pub fn Mesh3dGeometry::vertex_uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
+pub fn Mesh3dGeometry::with_computed_flat_normals(Self) -> Self?
 pub fn Mesh3dGeometry::with_custom_attribute_vec3(Self, String, Array[@math.Vec3]) -> Self
+pub fn Mesh3dGeometry::with_duplicated_vertices(Self) -> Self?
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn Mesh3dGeometry::with_inserted_indices(Self, Array[Int]?) -> Self

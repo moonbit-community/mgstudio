@@ -114,6 +114,49 @@ test "mesh: Mesh3dGeometry vertex-order flatten preserves indexed source vertice
 }
 
 ///|
+test "mesh: Mesh3dGeometry duplicates indexed vertices before computing flat normals" {
+  let geometry = Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Vec3::new(1.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ],
+    Some([0, 1, 2, 1, 3, 2]),
+  )
+  guard geometry.with_duplicated_vertices() is Some(duplicated) else {
+    abort("expected duplicated mesh")
+  }
+  debug_inspect(duplicated.positions.length(), content="6")
+  debug_inspect(duplicated.has_indices(), content="false")
+  guard duplicated.uvs() is Some(uvs) else { abort("expected duplicated uvs") }
+  debug_inspect(uvs.length(), content="6")
+  debug_inspect((uvs[3].x.to_double(), uvs[3].y.to_double()), content="(1, 0)")
+  guard duplicated.with_computed_flat_normals() is Some(with_normals) else {
+    abort("expected computed flat normals")
+  }
+  debug_inspect(with_normals.has_normals(), content="true")
+  guard with_normals.normals() is Some(normals) else {
+    abort("expected normals")
+  }
+  debug_inspect(normals.length(), content="6")
+  debug_inspect(
+    (
+      normals[0].x.to_double(),
+      normals[0].y.to_double(),
+      normals[0].z.to_double(),
+    ),
+    content="(0, 0, 1)",
+  )
+}
+
+///|
 test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
   let geometry = Mesh3dGeometry::new_with_positions(
     [@math.Vec3::new(1.0F, 2.0F, 3.0F)],

@@ -59,6 +59,22 @@ fn test_cluster_offsets_has_point_light(
 }
 
 ///|
+fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
+  @hierarchy.hierarchy_install_component_metadata()
+  @transform.transform_install_component_metadata()
+  let tick = @core.SystemTicks::new(
+    world.get_tick_context().ticks().this_run,
+    world.increment_change_tick(),
+  )
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(tick)
+  world.set_tick_context(ctx)
+  @transform.mark_dirty_trees_ecs(world)
+  @transform.propagate_transforms_system_ecs(world)
+  @transform.sync_simple_transforms_world(world)
+}
+
+///|
 test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(
@@ -135,6 +151,7 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
   )
   |> ignore)
 
+  light_test_propagate_transforms(world)
   let extracted_directional = render3d_collect_extracted_directional_lights(
     world,
   )
@@ -164,6 +181,56 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
       1.0e-5F,
     ),
     content="true",
+  )
+}
+
+///|
+test "pbr render light: directional light uses propagated required GlobalTransform" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let transform = @transform.Transform::from_rotation(
+    @math.Quat::from_euler(
+      @math.EulerRot::ZYX,
+      0.0F,
+      1.0F,
+      -3.141592653589793F / 4.0F,
+    ),
+  )
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(entity, @transform.ecs_key_transform, transform)
+  |> ignore)
+
+  light_test_propagate_transforms(world)
+  let local_dir = transform.rotation
+    .mul_vec3(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+    .normalize_or_zero()
+  let lighting = render3d_collect_lighting(world)
+  inspect(
+    approx_eq(lighting.directional_dir.x, local_dir.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(lighting.directional_dir.y, local_dir.y, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(lighting.directional_dir.z, local_dir.z, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(
+      lighting.directional_dir.z,
+      @math.Quat::identity()
+      .mul_vec3(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+      .normalize_or_zero().z,
+      1.0e-5F,
+    ),
+    content="false",
   )
 }
 
@@ -795,6 +862,7 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
   )
   |> ignore)
 
+  light_test_propagate_transforms(world)
   @light_cluster.cluster_assign_lights_system(world)
   let lighting = render3d_collect_lighting(world)
   guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
@@ -851,6 +919,7 @@ test "pbr render light: point shadow clustered custom data matches Bevy projecti
     @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
   )
   |> ignore)
+  light_test_propagate_transforms(world)
   @light_cluster.cluster_assign_lights_system(world)
   let lighting = render3d_collect_lighting(world)
   guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
@@ -1049,6 +1118,7 @@ test "pbr render light: cluster far fallback includes camera view depth" {
     @light_cluster.VisibleClusterableObjects::from_lists([light_entity], [], []),
   )
   |> ignore)
+  light_test_propagate_transforms(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 35.0F, 24.0F, false,

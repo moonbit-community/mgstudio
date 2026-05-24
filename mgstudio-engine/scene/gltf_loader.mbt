@@ -3314,6 +3314,20 @@ fn scene_build_animation_clip_from_gltf(
 }
 
 ///|
+fn scene_compute_missing_gltf_flat_normals(
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3dGeometry? {
+  if geometry.has_normals() ||
+    geometry.primitive_topology() != @mesh.Mesh3dPrimitiveTopology::TriangleList {
+    return Some(geometry)
+  }
+  guard geometry.with_duplicated_vertices() is Some(duplicated) else {
+    return None
+  }
+  duplicated.with_computed_flat_normals()
+}
+
+///|
 fn scene_build_mesh_primitive_from_gltf(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
@@ -3465,6 +3479,11 @@ fn scene_build_mesh_primitive_from_gltf(
       }
       geometry = geometry.with_custom_attribute_vec3(mapped_name, values)
     }
+  }
+  guard geometry.validate() is None else { return None }
+  match scene_compute_missing_gltf_flat_normals(geometry) {
+    Some(value) => geometry = value
+    None => return None
   }
   guard geometry.validate() is None else { return None }
   Some(@mesh.Mesh::from_3d_geometry(geometry))
