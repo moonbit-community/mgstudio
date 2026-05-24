@@ -182,6 +182,8 @@ pub fn end_pass() -> Unit
 
 pub fn execute_meshlet_clear_visibility_buffer(view_entity_bits~ : UInt64) -> Bool
 
+pub fn execute_meshlet_downsample_depth(view_entity_bits~ : UInt64) -> Bool
+
 pub fn execute_meshlet_fill_counts(view_entity_bits~ : UInt64) -> Bool
 
 pub fn execute_meshlet_first_bvh_cull(view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool
@@ -251,6 +253,8 @@ pub fn mesh_info(Int) -> HostGpuMeshInfo?
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
 pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int
+
+pub fn meshlet_downsample_depth_dispatch_count() -> Int
 
 pub fn meshlet_fill_counts_dispatch_count() -> Int
 
@@ -729,6 +733,15 @@ pub struct GpuBackend {
   mut meshlet_resolve_render_targets_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_resolve_depth_dispatch_count : Int
   mut meshlet_resolve_material_depth_dispatch_count : Int
+  mut meshlet_downsample_depth_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_downsample_depth_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_downsample_depth_first_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_downsample_depth_second_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_downsample_depth_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_downsample_depth_sampler : @wgpu_mbt.Sampler?
+  mut meshlet_downsample_depth_dummy_texture : @wgpu_mbt.Texture?
+  mut meshlet_downsample_depth_dummy_view : @wgpu_mbt.TextureView?
+  mut meshlet_downsample_depth_dispatch_count : Int
   mut meshlet_fill_counts_bgl : @wgpu_mbt.BindGroupLayout?
   mut meshlet_fill_counts_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut meshlet_fill_counts_pipeline : @wgpu_mbt.ComputePipeline?
@@ -927,6 +940,7 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_downsample_depth(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_fill_counts(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
@@ -1487,6 +1501,10 @@ pub(all) struct MeshletViewVisibilityBuffer {
   material_depth_view : @wgpu_mbt.TextureView?
   depth_pyramid_texture : @wgpu_mbt.Texture
   depth_pyramid_view : @wgpu_mbt.TextureView
+  depth_pyramid_mip_views : Array[@wgpu_mbt.TextureView]
+  depth_pyramid_mip_count : Int
+  depth_pyramid_width : Int
+  depth_pyramid_height : Int
   mut instance_visibility_buf : @wgpu_mbt.Buffer
   mut instance_visibility_capacity : UInt64
   second_pass_count_buf : @wgpu_mbt.Buffer

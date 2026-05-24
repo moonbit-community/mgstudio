@@ -151,6 +151,10 @@ pub(all) struct MeshletViewVisibilityBuffer {
   material_depth_view : @wgpu.TextureView?
   depth_pyramid_texture : @wgpu.Texture
   depth_pyramid_view : @wgpu.TextureView
+  depth_pyramid_mip_views : Array[@wgpu.TextureView]
+  depth_pyramid_mip_count : Int
+  depth_pyramid_width : Int
+  depth_pyramid_height : Int
   mut instance_visibility_buf : @wgpu.Buffer
   mut instance_visibility_capacity : UInt64
   second_pass_count_buf : @wgpu.Buffer
@@ -323,6 +327,91 @@ fn meshlet_create_r32float_depth_pyramid_dummy(
 }
 
 ///|
+fn meshlet_previous_power_of_two(value : Int) -> Int {
+  let safe_value = if value <= 1 { 1 } else { value }
+  let mut power = 1
+  while power * 2 > 0 && power * 2 <= safe_value {
+    power = power * 2
+  }
+  power
+}
+
+///|
+fn meshlet_depth_pyramid_mip_count(width : Int, height : Int) -> Int {
+  let mut max_dim = if width > height { width } else { height }
+  if max_dim <= 0 {
+    return 1
+  }
+  let mut mip_count = 0
+  while max_dim > 0 && mip_count < 12 {
+    mip_count = mip_count + 1
+    max_dim = max_dim / 2
+  }
+  if mip_count <= 0 {
+    1
+  } else {
+    mip_count
+  }
+}
+
+///|
+fn meshlet_depth_pyramid_dispatch_size(size : Int) -> UInt {
+  let safe_value = if size <= 0 { 1 } else { size + 1 }
+  let mut power = 1
+  while power < safe_value {
+    power = power * 2
+  }
+  power.reinterpret_as_uint()
+}
+
+///|
+fn meshlet_create_depth_pyramid(
+  backend : GpuBackend,
+  view_width : Int,
+  view_height : Int,
+) -> (@wgpu.Texture, @wgpu.TextureView, Array[@wgpu.TextureView], Int, Int, Int) {
+  let width = meshlet_previous_power_of_two(view_width)
+  let height = meshlet_previous_power_of_two(view_height)
+  let mip_count = meshlet_depth_pyramid_mip_count(width, height)
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_STORAGE_BINDING,
+  )
+  let texture = backend.device.create_texture_u32(
+    width.reinterpret_as_uint(),
+    height.reinterpret_as_uint(),
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    mip_level_count=mip_count.reinterpret_as_uint(),
+  )
+  let all_mips_view = texture.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    0U,
+    mip_count.reinterpret_as_uint(),
+  )
+  let mip_views : Array[@wgpu.TextureView] = []
+  for mip_level in 0..<mip_count {
+    mip_views.push(
+      texture.create_view_u32(
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_ASPECT_ALL,
+        0U,
+        1U,
+        mip_level.reinterpret_as_uint(),
+        1U,
+      ),
+    )
+  }
+  (texture, all_mips_view, mip_views, mip_count, width, height)
+}
+
+///|
 fn meshlet_create_storage_buffer_with_bytes(
   backend : GpuBackend,
   required_size : UInt64,
@@ -366,9 +455,14 @@ fn meshlet_create_view_visibility_resources(
   } else {
     (None, None)
   }
-  let (depth_pyramid_texture, depth_pyramid_view) = meshlet_create_r32float_depth_pyramid_dummy(
-    backend,
-  )
+  let (
+    depth_pyramid_texture,
+    depth_pyramid_view,
+    depth_pyramid_mip_views,
+    depth_pyramid_mip_count,
+    depth_pyramid_width,
+    depth_pyramid_height,
+  ) = meshlet_create_depth_pyramid(backend, view_width, view_height)
   let storage_copy = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
   let storage_copy_indirect = storage_copy | @wgpu.BUFFER_USAGE_INDIRECT
   MeshletViewVisibilityBuffer::{
@@ -383,6 +477,10 @@ fn meshlet_create_view_visibility_resources(
     material_depth_view,
     depth_pyramid_texture,
     depth_pyramid_view,
+    depth_pyramid_mip_views,
+    depth_pyramid_mip_count,
+    depth_pyramid_width,
+    depth_pyramid_height,
     instance_visibility_buf: meshlet_create_storage_buffer_with_bytes(
       backend,
       4UL,
@@ -521,6 +619,9 @@ fn meshlet_release_view_visibility_resources(
     Some(texture) => texture.release()
     None => ()
   }
+  for view in resources.depth_pyramid_mip_views {
+    view.release()
+  }
   resources.depth_pyramid_view.release()
   resources.depth_pyramid_texture.release()
   resources.instance_visibility_buf.release()
@@ -557,7 +658,10 @@ pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
     "mgstudio_meshlet_shadow_visibility_buffer"
   }
   let next = match self.meshlet_view_visibility_buffers.get(view_entity_bits) {
-    Some(existing) if existing.capacity >= required_size =>
+    Some(existing) if existing.capacity >= required_size &&
+      existing.view_width == view_width &&
+      existing.view_height == view_height &&
+      existing.not_shadow_view == not_shadow_view =>
       MeshletViewVisibilityBuffer::{
         buffer: existing.buffer,
         capacity: existing.capacity,
@@ -570,6 +674,10 @@ pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
         material_depth_view: existing.material_depth_view,
         depth_pyramid_texture: existing.depth_pyramid_texture,
         depth_pyramid_view: existing.depth_pyramid_view,
+        depth_pyramid_mip_views: existing.depth_pyramid_mip_views,
+        depth_pyramid_mip_count: existing.depth_pyramid_mip_count,
+        depth_pyramid_width: existing.depth_pyramid_width,
+        depth_pyramid_height: existing.depth_pyramid_height,
         instance_visibility_buf: existing.instance_visibility_buf,
         instance_visibility_capacity: existing.instance_visibility_capacity,
         second_pass_count_buf: existing.second_pass_count_buf,
@@ -786,6 +894,14 @@ fn meshlet_visibility_buffer_raster_defines() -> @hashmap.HashMap[String, Bool] 
 ///|
 fn meshlet_fill_counts_defines() -> @hashmap.HashMap[String, Bool] {
   @hashmap.HashMap([])
+}
+
+///|
+fn meshlet_downsample_depth_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET", true)
+  defines.set("MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT", true)
+  defines
 }
 
 ///|
@@ -1283,6 +1399,58 @@ fn meshlet_create_resolve_pipeline(
 }
 
 ///|
+fn meshlet_create_downsample_depth_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=15UL)
+  let mut ok = builder.add_buffer(
+    0U,
+    compute,
+    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+  )
+  for binding_i in 1..<13 {
+    let binding = binding_i.reinterpret_as_uint()
+    let access = if binding == 6U {
+      @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE
+    } else {
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY
+    }
+    ok = ok &&
+      builder.add_storage_texture(
+        binding,
+        compute,
+        access,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+  }
+  ok = ok &&
+    builder.add_sampler(13U, compute, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING) &&
+    builder.add_buffer(14U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet downsample depth layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_downsample_depth_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_downsample_depth_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_downsample_depth_constants")
+  buffer
+}
+
+///|
 fn meshlet_create_fill_counts_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -1682,6 +1850,61 @@ fn ensure_meshlet_resolve_render_targets_resources(
     resolve_material_depth_pipeline,
   )
   backend.meshlet_resolve_render_targets_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn ensure_meshlet_downsample_depth_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_downsample_depth_bgl is Some(_) &&
+    backend.meshlet_downsample_depth_pipeline_layout is Some(_) &&
+    backend.meshlet_downsample_depth_first_pipeline is Some(_) &&
+    backend.meshlet_downsample_depth_second_pipeline is Some(_) &&
+    backend.meshlet_downsample_depth_constants_buf is Some(_) &&
+    backend.meshlet_downsample_depth_sampler is Some(_) &&
+    backend.meshlet_downsample_depth_dummy_view is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_downsample_depth_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
+    meshlet_downsample_depth_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let first_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "downsample_depth_first",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet downsample depth first pipeline: \{err.message()}",
+      )
+  }
+  let second_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "downsample_depth_second",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet downsample depth second pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let constants_buf = meshlet_create_downsample_depth_constants_buf(backend)
+  let (dummy_texture, dummy_view) = meshlet_create_r32float_depth_pyramid_dummy(
+    backend,
+  )
+  let sampler = backend.device.create_sampler_nearest_clamp()
+  backend.meshlet_downsample_depth_bgl = Some(bgl)
+  backend.meshlet_downsample_depth_pipeline_layout = Some(pipeline_layout)
+  backend.meshlet_downsample_depth_first_pipeline = Some(first_pipeline)
+  backend.meshlet_downsample_depth_second_pipeline = Some(second_pipeline)
+  backend.meshlet_downsample_depth_constants_buf = Some(constants_buf)
+  backend.meshlet_downsample_depth_sampler = Some(sampler)
+  backend.meshlet_downsample_depth_dummy_texture = Some(dummy_texture)
+  backend.meshlet_downsample_depth_dummy_view = Some(dummy_view)
   true
 }
 
@@ -2225,6 +2448,48 @@ fn meshlet_create_resolve_render_targets_bind_group(
     backend.device,
     bgl,
     label="mgstudio_meshlet_resolve_render_targets_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_create_downsample_depth_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  constants_buf : @wgpu.Buffer,
+  sampler : @wgpu.Sampler,
+  dummy_view : @wgpu.TextureView,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  let mip_or_dummy = fn(index : Int) -> @wgpu.TextureView {
+    if index >= 0 && index < view_resources.depth_pyramid_mip_views.length() {
+      view_resources.depth_pyramid_mip_views[index]
+    } else {
+      dummy_view
+    }
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=15UL)
+  let mut ok = builder.add_buffer(0U, view_resources.buffer)
+  for mip_index in 0..<12 {
+    ok = ok &&
+      builder.add_texture_view(
+        (mip_index + 1).reinterpret_as_uint(),
+        mip_or_dummy(mip_index),
+      )
+  }
+  ok = ok &&
+    builder.add_sampler(13U, sampler) &&
+    builder.add_buffer(14U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_downsample_depth_bind_group",
   )
   frame.transient_bind_groups.push(bind_group)
   Some(bind_group)
@@ -3072,6 +3337,78 @@ pub fn GpuBackend::execute_meshlet_fill_counts(
 }
 
 ///|
+pub fn GpuBackend::execute_meshlet_downsample_depth(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  guard view_resources.depth_pyramid_mip_count > 1 else { return false }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_downsample_depth_resources(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.meshlet_downsample_depth_bgl is Some(bgl) else { return false }
+  guard self.meshlet_downsample_depth_first_pipeline is Some(first_pipeline) else {
+    return false
+  }
+  guard self.meshlet_downsample_depth_second_pipeline is Some(second_pipeline) else {
+    return false
+  }
+  guard self.meshlet_downsample_depth_constants_buf is Some(constants_buf) else {
+    return false
+  }
+  guard self.meshlet_downsample_depth_sampler is Some(sampler) else {
+    return false
+  }
+  guard self.meshlet_downsample_depth_dummy_view is Some(dummy_view) else {
+    return false
+  }
+  self.queue.write_buffer(
+    constants_buf,
+    0UL,
+    u32le_pack([
+      meshlet_positive_u32(view_resources.depth_pyramid_mip_count),
+      meshlet_positive_u32(view_resources.view_width),
+      meshlet_positive_u32(view_resources.view_height),
+      0U,
+    ]),
+  )
+  guard meshlet_create_downsample_depth_bind_group(
+      self, frame, view_resources, constants_buf, sampler, dummy_view, bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  let dispatch_x = (
+      meshlet_depth_pyramid_dispatch_size(view_resources.view_width) + 63U
+    ) /
+    64U
+  let dispatch_y = (
+      meshlet_depth_pyramid_dispatch_size(view_resources.view_height) + 63U
+    ) /
+    64U
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(first_pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups(dispatch_x, dispatch_y, 1U)
+  if view_resources.depth_pyramid_mip_count >= 7 {
+    compute_pass.set_pipeline(second_pipeline)
+    compute_pass.dispatch_workgroups(1U, 1U, 1U)
+  }
+  compute_pass.end()
+  compute_pass.release()
+  self.meshlet_downsample_depth_dispatch_count = self.meshlet_downsample_depth_dispatch_count +
+    1
+  true
+}
+
+///|
 fn meshlet_set_resolve_render_targets_viewport(
   pass : @wgpu.RenderPass,
   pass_state : GpuPassState,
@@ -3507,6 +3844,28 @@ pub fn execute_meshlet_fill_counts(view_entity_bits~ : UInt64) -> Bool {
 pub fn meshlet_fill_counts_dispatch_count() -> Int {
   match ensure_backend() {
     Some(backend) => backend.meshlet_fill_counts_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_downsample_depth(view_entity_bits~ : UInt64) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_downsample_depth(view_entity_bits~) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_downsample_depth", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_downsample_depth_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_downsample_depth_dispatch_count
     None => 0
   }
 }

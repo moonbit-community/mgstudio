@@ -332,6 +332,15 @@ pub struct GpuBackend {
   mut meshlet_resolve_render_targets_constants_buf : @wgpu.Buffer?
   mut meshlet_resolve_depth_dispatch_count : Int
   mut meshlet_resolve_material_depth_dispatch_count : Int
+  mut meshlet_downsample_depth_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_downsample_depth_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_downsample_depth_first_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_downsample_depth_second_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_downsample_depth_constants_buf : @wgpu.Buffer?
+  mut meshlet_downsample_depth_sampler : @wgpu.Sampler?
+  mut meshlet_downsample_depth_dummy_texture : @wgpu.Texture?
+  mut meshlet_downsample_depth_dummy_view : @wgpu.TextureView?
+  mut meshlet_downsample_depth_dispatch_count : Int
   mut meshlet_fill_counts_bgl : @wgpu.BindGroupLayout?
   mut meshlet_fill_counts_pipeline_layout : @wgpu.PipelineLayout?
   mut meshlet_fill_counts_pipeline : @wgpu.ComputePipeline?

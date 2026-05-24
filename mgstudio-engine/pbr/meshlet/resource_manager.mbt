@@ -1184,6 +1184,24 @@ pub fn ResourceManager::execute_prepared_fill_counts(
 }
 
 ///|
+pub fn ResourceManager::execute_prepared_downsample_depth(
+  self : ResourceManager,
+) -> Int {
+  let mut dispatch_count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.meshlet_count <= 0 {
+      continue
+    }
+    if @renderer.execute_meshlet_downsample_depth(
+        view_entity_bits=resources.view_entity.to_bits(),
+      ) {
+      dispatch_count = dispatch_count + 1
+    }
+  }
+  dispatch_count
+}
+
+///|
 pub fn ResourceManager::execute_prepared_resolve_depth(
   self : ResourceManager,
 ) -> Int {

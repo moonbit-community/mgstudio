@@ -800,6 +800,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         ignore(manager.execute_prepared_visibility_buffer_software_raster())
         ignore(manager.execute_prepared_visibility_buffer_hardware_raster())
         ignore(manager.execute_prepared_fill_counts())
+        ignore(manager.execute_prepared_downsample_depth())
         ignore(manager.execute_prepared_second_instance_culls())
         ignore(manager.execute_prepared_second_bvh_culls())
         ignore(manager.execute_prepared_second_meshlet_culls())
@@ -808,6 +809,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         ignore(manager.execute_prepared_fill_counts())
         ignore(manager.execute_prepared_resolve_depth())
         ignore(manager.execute_prepared_resolve_material_depth())
+        ignore(manager.execute_prepared_downsample_depth())
       }
       None => ()
     }
