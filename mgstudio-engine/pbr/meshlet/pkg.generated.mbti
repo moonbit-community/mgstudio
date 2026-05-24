@@ -1072,6 +1072,7 @@ pub fn ResourceManager::clear_stale_prepared_view_resources(Self, Array[@core.En
 pub fn ResourceManager::clear_stale_previous_depth_pyramids(Self, Array[Int]) -> Unit
 pub fn ResourceManager::cluster_buffer_slots(Self) -> Int
 pub fn ResourceManager::cull_queue_rightmost_slot(Self) -> Int
+pub fn ResourceManager::execute_prepared_clear_visibility_buffers(Self) -> Int
 pub fn ResourceManager::frame_index(Self) -> Int
 pub fn ResourceManager::meshlet_buffer_count(Self) -> Int
 pub fn ResourceManager::new(Int) -> Self

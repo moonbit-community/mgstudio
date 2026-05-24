@@ -180,6 +180,8 @@ pub fn end_frame(Int) -> Unit
 
 pub fn end_pass() -> Unit
 
+pub fn execute_meshlet_clear_visibility_buffer(view_entity_bits~ : UInt64) -> Bool
+
 pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
@@ -225,6 +227,8 @@ pub fn mesh3d_preprocess_disabled() -> Bool
 pub fn mesh_info(Int) -> HostGpuMeshInfo?
 
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool
+
+pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int
 
 pub fn meshlet_frame_resource_revision() -> Int
 
@@ -630,6 +634,11 @@ pub struct GpuBackend {
   mut meshlet_frame_resource_revision : Int
   meshlet_view_visibility_buffers : Map[UInt64, MeshletViewVisibilityBuffer]
   mut meshlet_view_visibility_buffer_revision : Int
+  mut meshlet_clear_visibility_buffer_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_clear_visibility_buffer_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_clear_visibility_buffer_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_clear_visibility_buffer_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_clear_visibility_buffer_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -823,6 +832,7 @@ pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
+pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit

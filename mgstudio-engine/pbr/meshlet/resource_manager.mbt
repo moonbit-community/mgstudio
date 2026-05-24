@@ -995,6 +995,24 @@ pub fn ResourceManager::clear_stale_prepared_view_bind_groups(
 }
 
 ///|
+pub fn ResourceManager::execute_prepared_clear_visibility_buffers(
+  self : ResourceManager,
+) -> Int {
+  let mut dispatch_count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.meshlet_count <= 0 {
+      continue
+    }
+    if @renderer.execute_meshlet_clear_visibility_buffer(
+        view_entity_bits=resources.view_entity.to_bits(),
+      ) {
+      dispatch_count = dispatch_count + 1
+    }
+  }
+  dispatch_count
+}
+
+///|
 pub fn prepare_meshlet_per_frame_resources(
   manager : ResourceManager,
   meshlet_buffer_count : Int,

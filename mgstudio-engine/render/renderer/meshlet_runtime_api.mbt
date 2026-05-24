@@ -297,6 +297,230 @@ pub fn meshlet_view_visibility_buffer_count() -> Int {
 }
 
 ///|
+fn meshlet_dispatch_group_count_16(value : Int) -> UInt {
+  if value <= 0 {
+    1U
+  } else {
+    ((value + 15) / 16).reinterpret_as_uint()
+  }
+}
+
+///|
+fn meshlet_positive_u32(value : Int) -> UInt {
+  if value <= 0 {
+    1U
+  } else {
+    value.reinterpret_as_uint()
+  }
+}
+
+///|
+fn meshlet_clear_visibility_buffer_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT", true)
+  defines
+}
+
+///|
+fn meshlet_create_clear_visibility_buffer_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+  let ok = builder.add_buffer(
+      0U,
+      ss(@wgpu.SHADER_STAGE_COMPUTE),
+      @wgpu.BUFFER_BINDING_TYPE_STORAGE,
+    ) &&
+    builder.add_buffer(
+      1U,
+      ss(@wgpu.SHADER_STAGE_COMPUTE),
+      @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+    )
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet clear visibility buffer layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_clear_visibility_buffer_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_clear_visibility_buffer_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_clear_visibility_buffer_constants")
+  buffer
+}
+
+///|
+fn ensure_meshlet_clear_visibility_buffer_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_clear_visibility_buffer_bgl is Some(_) &&
+    backend.meshlet_clear_visibility_buffer_pipeline_layout is Some(_) &&
+    backend.meshlet_clear_visibility_buffer_pipeline is Some(_) &&
+    backend.meshlet_clear_visibility_buffer_constants_buf is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_clear_visibility_buffer_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/clear_visibility_buffer.wgsl",
+    meshlet_clear_visibility_buffer_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "clear_visibility_buffer",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet clear visibility buffer pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let constants_buf = meshlet_create_clear_visibility_buffer_constants_buf(
+    backend,
+  )
+  backend.meshlet_clear_visibility_buffer_bgl = Some(bgl)
+  backend.meshlet_clear_visibility_buffer_pipeline_layout = Some(
+    pipeline_layout,
+  )
+  backend.meshlet_clear_visibility_buffer_pipeline = Some(pipeline)
+  backend.meshlet_clear_visibility_buffer_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn meshlet_create_clear_visibility_buffer_bind_group(
+  backend : GpuBackend,
+  visibility_buffer : @wgpu.Buffer,
+  constants_buf : @wgpu.Buffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+  let ok = builder.add_buffer(0U, visibility_buffer) &&
+    builder.add_buffer(1U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(
+    builder.finish(
+      backend.device,
+      bgl,
+      label="mgstudio_meshlet_clear_visibility_buffer_bind_group",
+    ),
+  )
+}
+
+///|
+fn meshlet_end_active_render_pass_for_compute(backend : GpuBackend) -> Bool {
+  guard backend.frame is Some(frame) else { return false }
+  if frame.pass is Some(pass) {
+    render_pass_timing_end_active_pass()
+    pass.end()
+    pass.release()
+    frame.pass = None
+  }
+  true
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_clear_visibility_buffer_resources(self) else {
+    return false
+  }
+  guard self.frame is Some(frame) else { return false }
+  guard self.meshlet_clear_visibility_buffer_bgl is Some(bgl) else {
+    return false
+  }
+  guard self.meshlet_clear_visibility_buffer_pipeline is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_clear_visibility_buffer_constants_buf
+    is Some(constants_buf) else {
+    return false
+  }
+  self.queue.write_buffer(
+    constants_buf,
+    0UL,
+    u32le_pack([
+      meshlet_positive_u32(view_resources.view_width),
+      meshlet_positive_u32(view_resources.view_height),
+      0U,
+      0U,
+    ]),
+  )
+  guard meshlet_create_clear_visibility_buffer_bind_group(
+      self,
+      view_resources.buffer,
+      constants_buf,
+      bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups(
+    meshlet_dispatch_group_count_16(view_resources.view_width),
+    meshlet_dispatch_group_count_16(view_resources.view_height),
+    1U,
+  )
+  compute_pass.end()
+  compute_pass.release()
+  bind_group.release()
+  self.meshlet_clear_visibility_buffer_dispatch_count = self.meshlet_clear_visibility_buffer_dispatch_count +
+    1
+  true
+}
+
+///|
+pub fn execute_meshlet_clear_visibility_buffer(
+  view_entity_bits~ : UInt64,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_clear_visibility_buffer(view_entity_bits~) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_clear_visibility_buffer", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_clear_visibility_buffer_dispatch_count
+    None => 0
+  }
+}
+
+///|
 pub fn GpuBackend::prepare_meshlet_frame_resources(
   self : GpuBackend,
   cluster_buffer_slots~ : Int,

@@ -283,6 +283,11 @@ pub struct GpuBackend {
   mut meshlet_frame_resource_revision : Int
   meshlet_view_visibility_buffers : Map[UInt64, MeshletViewVisibilityBuffer]
   mut meshlet_view_visibility_buffer_revision : Int
+  mut meshlet_clear_visibility_buffer_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_clear_visibility_buffer_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_clear_visibility_buffer_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_clear_visibility_buffer_constants_buf : @wgpu.Buffer?
+  mut meshlet_clear_visibility_buffer_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?

@@ -784,6 +784,13 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
       })
     _ => ()
   }
+  if instance_count > 0 && meshlet_runtime_available() {
+    match world.get_resource(ecs_key_meshlet_resource_manager) {
+      Some(manager) =>
+        ignore(manager.execute_prepared_clear_visibility_buffers())
+      None => ()
+    }
+  }
 }
 
 ///|
