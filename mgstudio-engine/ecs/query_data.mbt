@@ -330,6 +330,12 @@ pub fn[T] Comp::key(self : Comp[T]) -> ComponentKey[T] {
 }
 
 ///|
+/// Returns the queried component value for read-only use.
+///
+/// `Comp[T]` is a read query item. If `T` contains mutable fields, mutating the
+/// returned value directly bypasses ECS change detection. Use `Mut[T]` in the
+/// query data and mutate through `Mut::modify`, `Mut::set`, or `Mut::update`
+/// when the query intends to write the component.
 pub fn[T] Comp::value(self : Comp[T]) -> T {
   self.value
 }

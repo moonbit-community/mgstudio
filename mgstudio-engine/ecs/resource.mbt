@@ -13,6 +13,10 @@
 // limitations under the License.
 
 ///|
+/// Inserts or replaces a resource through the ECS mutation path.
+///
+/// The first insertion records both added and changed metadata. Later
+/// replacements record changed metadata.
 pub fn[T] World::insert_resource(
   self : World,
   key : ResourceKey[T],
@@ -30,6 +34,12 @@ pub fn[T] World::insert_resource(
 }
 
 ///|
+/// Returns the resource value for read-only use.
+///
+/// MoonBit cannot prevent direct mutation through the returned value when `T`
+/// contains mutable fields. Use `World::get_resource_mut`,
+/// `World::update_resource`, or the `ResourceMut` write APIs for writes that
+/// must update resource change metadata.
 pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
   key.resource_get(self)
 }
@@ -42,6 +52,10 @@ pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
 }
 
 ///|
+/// Replaces an existing resource through the ECS mutation path.
+///
+/// The update closure receives the current value and must return the value to
+/// store. Missing resources return `false` and do not create a resource.
 pub fn[T] World::update_resource(
   self : World,
   key : ResourceKey[T],

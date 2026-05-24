@@ -65,11 +65,13 @@ position_mut.modify(fn(value) {
 })
 ```
 
-`get_by_key` returns a typed snapshot. `get_mut` returns a `Mut[T]` handle that
-keeps the exact key and table row that produced the fetch. Read methods such as
-`Mut::peek` and `Mut::value` do not mark the component changed. Mutation methods
-such as `Mut::set`, `Mut::modify`, `Mut::update`, and `Mut::set_changed` record
-change ticks.
+`get_by_key` returns a typed value for read-only use. MoonBit cannot enforce
+that a returned value with mutable fields is not modified through an alias, so
+callers must treat read APIs as read-only by contract. `get_mut` returns a
+`Mut[T]` handle that keeps the exact key and table row that produced the fetch.
+Read methods such as `Mut::peek` and `Mut::value` do not mark the component
+changed. Mutation methods such as `Mut::set`, `Mut::modify`, `Mut::update`, and
+`Mut::set_changed` record change ticks.
 
 For types implementing `Component`, the convenience methods without an explicit
 key use `T::component()`:
@@ -110,11 +112,12 @@ pub impl @app.Resource for FrameStats with resource() {
 }
 ```
 
-`ResourceMut::peek` is a read and does not mark the resource changed.
-`ResourceMut::set`, `ResourceMut::modify`, `ResourceMut::update`, and
-`ResourceMut::set_changed` update resource change metadata. Use
-`ResourceMut::set_if_neq` for `Eq` resources when unchanged writes should not
-produce change ticks.
+`get_resource` and `ResourceMut::peek` are reads and do not mark the resource
+changed. Callers must not mutate values returned by these read APIs when ECS
+change detection should observe the write. `ResourceMut::set`,
+`ResourceMut::modify`, `ResourceMut::update`, and `ResourceMut::set_changed`
+update resource change metadata. Use `ResourceMut::set_if_neq` for `Eq`
+resources when unchanged writes should not produce change ticks.
 
 ## Queries
 

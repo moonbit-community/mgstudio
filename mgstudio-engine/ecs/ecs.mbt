@@ -383,6 +383,13 @@ pub fn[T] World::set_by_key(
 }
 
 ///|
+/// Returns the component value for read-only use.
+///
+/// MoonBit cannot enforce that the returned value is not mutated through an
+/// alias. Code that wants ECS change detection, changed-component messages, or
+/// replacement hooks must use `World::get_mut`, `World::update_by_key`,
+/// `Mut::modify`, `Mut::set`, or `Mut::update` instead of mutating the value
+/// returned here.
 pub fn[T] World::get_by_key(
   self : World,
   entity : @core.Entity,
@@ -393,6 +400,11 @@ pub fn[T] World::get_by_key(
 }
 
 ///|
+/// Replaces an existing component through the ECS mutation path.
+///
+/// The update closure receives the current value and must return the value to
+/// store. This records component change metadata and runs the same replace and
+/// insert observer/hook path as a component replacement.
 #callsite(autofill(loc))
 pub fn[T] World::update_by_key(
   self : World,
@@ -442,6 +454,11 @@ pub fn[T] World::remove_by_key(
 }
 
 ///|
+/// Sets or replaces a component through the ECS mutation path.
+///
+/// This is the correct entry point when inserting a fresh value or replacing an
+/// existing value directly. It updates archetype/table storage and records the
+/// relevant ECS metadata.
 #callsite(autofill(loc))
 pub fn[T : Component] World::set(
   self : World,
@@ -454,6 +471,11 @@ pub fn[T : Component] World::set(
 }
 
 ///|
+/// Returns the component value for read-only use.
+///
+/// This convenience method has the same read-only contract as
+/// `World::get_by_key`: do not mutate the returned value directly when ECS
+/// change detection should observe the write.
 pub fn[T : Component] World::get(
   self : World,
   entity : @core.Entity,
@@ -463,6 +485,11 @@ pub fn[T : Component] World::get(
 }
 
 ///|
+/// Replaces an existing component through the ECS mutation path.
+///
+/// This convenience method has the same write contract as
+/// `World::update_by_key`: use it when the write should update component
+/// change metadata.
 #callsite(autofill(loc))
 pub fn[T : Component] World::update(
   self : World,

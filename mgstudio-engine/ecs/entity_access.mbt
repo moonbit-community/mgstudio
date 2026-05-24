@@ -160,6 +160,11 @@ pub fn[T] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 }
 
 ///|
+/// Returns the current component value for read-only use.
+///
+/// This method does not mark the component as changed. If the returned value
+/// contains mutable fields, mutating them directly bypasses ECS change
+/// detection. Use `Mut::modify`, `Mut::set`, or `Mut::update` for writes.
 #callsite(autofill(loc))
 pub fn[T] Mut::peek(self : Mut[T], loc~ : SourceLoc) -> T {
   ignore(loc)
@@ -167,6 +172,10 @@ pub fn[T] Mut::peek(self : Mut[T], loc~ : SourceLoc) -> T {
 }
 
 ///|
+/// Alias for `Mut::peek`; it has the same read-only contract.
+///
+/// Do not mutate the returned value directly if changed ticks, changed
+/// messages, filters, or observers should observe the write.
 #callsite(autofill(loc))
 pub fn[T] Mut::value(self : Mut[T], loc~ : SourceLoc) -> T {
   self.peek(loc~)
@@ -245,8 +254,12 @@ pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
 }
 
 ///|
-
-///|
+/// Runs an in-place mutation closure and marks the component changed.
+///
+/// Use this when the component value has mutable fields and the write should be
+/// visible to ECS change detection. The closure receives the current value; the
+/// caller must not keep using values obtained from read-only APIs as a write
+/// path.
 #callsite(autofill(loc))
 pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
   let value = self.peek(loc~)
@@ -256,6 +269,10 @@ pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
 }
 
 ///|
+/// Replaces the component with the value returned by the update closure.
+///
+/// Use this for value-style updates where the new component should be derived
+/// from the old component and recorded as a normal ECS change.
 #callsite(autofill(loc))
 pub fn[T] Mut::update(self : Mut[T], f : (T) -> T, loc~ : SourceLoc) -> Unit {
   self.set(f(self.peek(loc~)), loc~)
@@ -278,6 +295,11 @@ pub fn[T : Eq] Mut::set_if_neq(
 }
 
 ///|
+/// Replaces the component and marks it changed.
+///
+/// Prefer `Mut::set` or `Mut::update` over mutating values returned by
+/// read-only APIs. This keeps change ticks and changed-component messages in
+/// sync with the stored value.
 #callsite(autofill(loc))
 pub fn[T] Mut::set(self : Mut[T], value : T, loc~ : SourceLoc) -> Unit {
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
@@ -344,6 +366,11 @@ pub fn[T : Component] World::contains(
 }
 
 ///|
+/// Returns a mutable ECS access handle for an existing component.
+///
+/// Use this API, rather than `World::get`, when the caller may mutate the
+/// component. Mutating values returned by read-only APIs bypasses ECS change
+/// detection in MoonBit.
 pub fn[T : Component] World::get_mut(
   self : World,
   entity : @core.Entity,

@@ -49,11 +49,21 @@ pub fn[T] ResourceAccess::is_present(self : ResourceAccess[T]) -> Bool {
 }
 
 ///|
+/// Returns the resource value for read-only use.
+///
+/// MoonBit cannot prevent direct mutation through the returned value when `T`
+/// contains mutable fields. Use `ResourceAccess::get_mut`,
+/// `ResourceMut::modify`, `ResourceMut::set`, or `ResourceMut::update` for
+/// writes that must update ECS resource change metadata.
 pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
   self.key.resource_get(self.world)
 }
 
 ///|
+/// Returns a mutable ECS access handle for an existing resource.
+///
+/// Use this API when the caller may mutate the resource. Mutating values
+/// returned by read-only APIs bypasses resource changed ticks.
 pub fn[T] ResourceAccess::get_mut(self : ResourceAccess[T]) -> ResourceMut[T]? {
   self.world.get_resource_mut(self.key)
 }
@@ -111,6 +121,12 @@ fn[T] resource_mut_replace_value_or_abort(
 }
 
 ///|
+/// Returns the current resource value for read-only use.
+///
+/// This method does not mark the resource as changed. If the returned value has
+/// mutable fields, mutating them directly bypasses resource change detection.
+/// Use `ResourceMut::modify`, `ResourceMut::set`, or `ResourceMut::update` for
+/// writes.
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::peek(self : ResourceMut[T], loc~ : SourceLoc) -> T {
   ignore(loc)
@@ -170,6 +186,10 @@ pub fn[T] ResourceMut::set_added(
 }
 
 ///|
+/// Runs an in-place mutation closure and marks the resource changed.
+///
+/// Use this when the resource value has mutable fields and the write should be
+/// visible to ECS resource change detection.
 #callsite(autofill(loc))
 pub fn[T, R] ResourceMut::modify(
   self : ResourceMut[T],
@@ -184,6 +204,10 @@ pub fn[T, R] ResourceMut::modify(
 }
 
 ///|
+/// Replaces the resource with the value returned by the update closure.
+///
+/// Use this for value-style updates where the new resource should be derived
+/// from the old resource and recorded as a normal ECS resource change.
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::update(
   self : ResourceMut[T],
@@ -194,6 +218,11 @@ pub fn[T] ResourceMut::update(
 }
 
 ///|
+/// Replaces the resource and marks it changed.
+///
+/// Prefer `ResourceMut::set` or `ResourceMut::update` over mutating values
+/// returned by read-only APIs. This keeps resource change ticks in sync with
+/// the stored value.
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::set(
   self : ResourceMut[T],
