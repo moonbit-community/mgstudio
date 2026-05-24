@@ -576,7 +576,6 @@ pub struct GpuBackend {
   mut mesh3d_visibility_ranges_buf : @wgpu_mbt.Buffer?
   mut mesh3d_ssr_settings_buf : @wgpu_mbt.Buffer?
   mut mesh3d_contact_shadows_settings_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_environment_map_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_pass_uniform_states : Array[Mesh3dPassUniformState]
@@ -741,7 +740,6 @@ pub struct GpuBackend {
   mut meshlet_downsample_depth_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut meshlet_downsample_depth_first_pipeline : @wgpu_mbt.ComputePipeline?
   mut meshlet_downsample_depth_second_pipeline : @wgpu_mbt.ComputePipeline?
-  mut meshlet_downsample_depth_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_downsample_depth_sampler : @wgpu_mbt.Sampler?
   mut meshlet_downsample_depth_dummy_texture : @wgpu_mbt.Texture?
   mut meshlet_downsample_depth_dummy_view : @wgpu_mbt.TextureView?
@@ -885,7 +883,7 @@ pub fn GpuBackend::activate_auto_exposure_view_state(Self, Int, Int) -> Unit
 pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
-pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
+pub fn GpuBackend::begin_frame_binding(Self, Int) -> Bool
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Float, Array[Float], Bytes?, Bool, Int, Int, Int, Int, Bool, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_with_depth(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
@@ -1608,7 +1606,7 @@ pub fn RenderDevice::create_shader_module_wgsl(Self, String) -> @wgpu_mbt.Shader
 pub fn RenderDevice::from_backend(GpuBackend) -> Self
 pub fn RenderDevice::from_wgpu(@wgpu_mbt.Device) -> Self
 pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
-pub fn RenderDevice::limits_max_push_constant_size_u32(Self) -> UInt
+pub fn RenderDevice::limits_max_immediate_size_u32(Self) -> UInt
 pub fn RenderDevice::new(WgpuWrapper[@wgpu_mbt.Device]) -> Self
 pub fn RenderDevice::poll(Self, wait? : Bool) -> Bool
 pub fn RenderDevice::queue(Self) -> RenderQueue

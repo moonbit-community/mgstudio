@@ -100,10 +100,8 @@ pub fn RenderDevice::limits_max_bind_groups_u32(self : RenderDevice) -> UInt {
 }
 
 ///|
-pub fn RenderDevice::limits_max_push_constant_size_u32(
-  self : RenderDevice,
-) -> UInt {
-  self.wgpu_device().limits_max_push_constant_size_u32()
+pub fn RenderDevice::limits_max_immediate_size_u32(self : RenderDevice) -> UInt {
+  self.wgpu_device().limits_max_immediate_size_u32()
 }
 
 ///|

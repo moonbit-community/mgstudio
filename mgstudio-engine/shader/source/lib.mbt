@@ -95,7 +95,7 @@ pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[
 ] {
   let registry = @wgsl_resolver.WgslSourceRegistry::default()
   registry.register_source_files(embedded_shader_source_files())
-  registry.copy_import_module_paths()
+  @hashmap.HashMap(registry.copy_import_module_paths().to_array())
 }
 
 ///|

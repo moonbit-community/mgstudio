@@ -255,8 +255,8 @@ fn mesh3d_forward_value_defines(
 ) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
   let value_defines = default_wgsl_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
-  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(19))
-  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(20))
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(18))
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(19))
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
@@ -719,17 +719,6 @@ fn mesh3d_create_uniform_buffer(
 }
 
 ///|
-fn mesh3d_create_uniform_buffer_init(
-  backend : GpuBackend,
-  size : UInt64,
-  initial_bytes : Bytes,
-) -> @wgpu.Buffer {
-  let buffer = mesh3d_create_uniform_buffer(backend, size)
-  backend.queue.write_buffer(buffer, 0UL, initial_bytes)
-  buffer
-}
-
-///|
 fn mesh3d_create_storage_buffer(
   backend : GpuBackend,
   size : UInt64,
@@ -738,14 +727,6 @@ fn mesh3d_create_storage_buffer(
     size~,
     usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
   )
-}
-
-///|
-fn mesh3d_environment_map_identity_uniform_bytes() -> Bytes {
-  f32le_pack([
-    1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F,
-  ])
 }
 
 ///|
@@ -814,15 +795,6 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
       mesh3d_create_uniform_buffer(
         backend,
         MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
-      ),
-    )
-  }
-  if backend.mesh3d_environment_map_uniform_buf is None {
-    backend.mesh3d_environment_map_uniform_buf = Some(
-      mesh3d_create_uniform_buffer_init(
-        backend,
-        MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
-        mesh3d_environment_map_identity_uniform_bytes(),
       ),
     )
   }

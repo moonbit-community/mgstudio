@@ -78,8 +78,8 @@ fn preprocess_shader_imports(
       @wgsl_common.PreprocessorMetaData::PreprocessorMetaData(
         None,
         [],
-        @hashmap.HashMap([]),
-        @hashset.HashSet([]),
+        Map([]),
+        Set([]),
         @wgsl_common.WgslDirectives::default(),
         source,
       )

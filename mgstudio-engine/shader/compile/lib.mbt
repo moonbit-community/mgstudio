@@ -128,6 +128,27 @@ fn runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
 }
 
 ///|
+fn bool_hashmap_to_map(
+  source : @hashmap.HashMap[String, Bool],
+) -> Map[String, Bool] {
+  Map(source.to_array())
+}
+
+///|
+fn shader_def_hashmap_to_map(
+  source : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
+) -> Map[String, @wgsl_common.ShaderDefValue] {
+  Map(source.to_array())
+}
+
+///|
+fn shader_def_map_to_hashmap(
+  source : Map[String, @wgsl_common.ShaderDefValue],
+) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
+  @hashmap.HashMap(source.to_array())
+}
+
+///|
 pub fn clear_registered_shader_sources() -> Unit {
   @shader_source.clear_embedded_shader_sources()
   shader_compile_runtime_state.startup_sources_registered = false
@@ -168,7 +189,7 @@ pub fn default_shader_value_defines() -> @hashmap.HashMap[
   String,
   @wgsl_common.ShaderDefValue,
 ] {
-  @wgsl_common.default_wgsl_value_defines()
+  shader_def_map_to_hashmap(@wgsl_common.default_wgsl_value_defines())
 }
 
 ///|
@@ -179,8 +200,8 @@ fn compose_options(
 ) -> @wgsl_common.WgslComposeOptions {
   ignore(assets_base)
   @wgsl_common.WgslComposeOptions::{
-    defines,
-    value_defines,
+    defines: bool_hashmap_to_map(defines),
+    value_defines: shader_def_hashmap_to_map(value_defines),
     redirects: [],
     additional_imports: [],
   }

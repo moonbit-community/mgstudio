@@ -169,7 +169,6 @@ pub struct GpuBackend {
   mut mesh3d_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_ssr_settings_buf : @wgpu.Buffer?
   mut mesh3d_contact_shadows_settings_buf : @wgpu.Buffer?
-  mut mesh3d_environment_map_uniform_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_pass_uniform_states : Array[Mesh3dPassUniformState]
@@ -336,7 +335,6 @@ pub struct GpuBackend {
   mut meshlet_downsample_depth_pipeline_layout : @wgpu.PipelineLayout?
   mut meshlet_downsample_depth_first_pipeline : @wgpu.ComputePipeline?
   mut meshlet_downsample_depth_second_pipeline : @wgpu.ComputePipeline?
-  mut meshlet_downsample_depth_constants_buf : @wgpu.Buffer?
   mut meshlet_downsample_depth_sampler : @wgpu.Sampler?
   mut meshlet_downsample_depth_dummy_texture : @wgpu.Texture?
   mut meshlet_downsample_depth_dummy_view : @wgpu.TextureView?

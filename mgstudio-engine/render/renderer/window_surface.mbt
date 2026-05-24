@@ -571,9 +571,9 @@ pub fn GpuBackend::ensure_surface_configured(
 pub fn GpuBackend::begin_frame_binding(
   self : GpuBackend,
   surface_id : Int,
-) -> Unit {
+) -> Bool {
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
-    return
+    return false
   }
   for bind_group in self.frame_retired_bind_groups {
     bind_group.release()
@@ -607,8 +607,19 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh3d_prepared_draw_count = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0
-  let st = self.surfaces[index].surface.get_current_texture()
-  let tex = st.take_texture()
+  let st = self.surfaces[index].surface.get_current_texture_or_raise() catch {
+    err => {
+      debug("[renderer] begin_frame: \{err.message()}")
+      return false
+    }
+  }
+  let tex = st.take_texture_or_raise() catch {
+    err => {
+      st.release()
+      debug("[renderer] begin_frame: \{err.message()}")
+      return false
+    }
+  }
   let view = tex.create_view()
   view.set_label("mgstudio_surface_view")
   let encoder = self.device.create_command_encoder()
@@ -625,6 +636,7 @@ pub fn GpuBackend::begin_frame_binding(
     transient_bind_groups: [],
   })
   prepare_surface_capture_frame(self)
+  true
 }
 
 ///|
@@ -633,7 +645,7 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
   guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
     return
   }
-  self.begin_frame_binding(self.surfaces[index].surface_id)
+  ignore(self.begin_frame_binding(self.surfaces[index].surface_id))
 }
 
 ///|
@@ -766,7 +778,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   }
   render_diagnostics_begin_frame()
   if ensure_backend() is Some(backend) {
-    backend.begin_frame_binding(surface)
+    guard backend.begin_frame_binding(surface) else { return 0 }
     let frame_id = next_frame_id()
     let state = window_surface_runtime_state
     state.frames.push(FrameBinding::{ frame_id, surface_id: surface })

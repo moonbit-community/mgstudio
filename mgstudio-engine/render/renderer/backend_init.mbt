@@ -64,11 +64,21 @@ pub fn GpuBackend::new(
   if adapter.has_feature_native_vertex_writable_storage() {
     required_features.push(@wgpu.NATIVE_FEATURE_VERTEX_WRITABLE_STORAGE)
   }
-  if adapter.has_feature_native_immediates() {
+  let adapter_max_immediate_size_u32 = adapter.limits_max_immediate_size_u32()
+  let request_immediates = adapter.has_feature_native_immediates() &&
+    adapter_max_immediate_size_u32 >= 4U
+  if request_immediates {
     required_features.push(@wgpu.NATIVE_FEATURE_IMMEDIATES)
   }
+  let required_max_immediate_size_u32 = if request_immediates {
+    adapter_max_immediate_size_u32
+  } else {
+    0U
+  }
   let device = adapter.request_device_sync_with_features_and_limits(
-    instance, required_features,
+    instance,
+    required_features,
+    max_immediate_size_u32=required_max_immediate_size_u32,
   ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: \{err.message()}")
   }
@@ -229,7 +239,6 @@ pub fn GpuBackend::new(
     mesh3d_visibility_ranges_buf: None,
     mesh3d_ssr_settings_buf: None,
     mesh3d_contact_shadows_settings_buf: None,
-    mesh3d_environment_map_uniform_buf: None,
     mesh3d_motion_vector_pass_view_uniform_bytes: None,
     mesh3d_motion_vector_pass_previous_view_uniform_bytes: None,
     mesh3d_pass_uniform_states: [],
@@ -394,7 +403,6 @@ pub fn GpuBackend::new(
     meshlet_downsample_depth_pipeline_layout: None,
     meshlet_downsample_depth_first_pipeline: None,
     meshlet_downsample_depth_second_pipeline: None,
-    meshlet_downsample_depth_constants_buf: None,
     meshlet_downsample_depth_sampler: None,
     meshlet_downsample_depth_dummy_texture: None,
     meshlet_downsample_depth_dummy_view: None,

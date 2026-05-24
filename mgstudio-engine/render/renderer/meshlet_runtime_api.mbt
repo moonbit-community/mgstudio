@@ -925,14 +925,6 @@ fn meshlet_downsample_depth_defines() -> @hashmap.HashMap[String, Bool] {
 }
 
 ///|
-fn meshlet_downsample_depth_uniform_constants_source(source : String) -> String {
-  source.replace_all(
-    old="struct Constants { max_mip_level: u32 }\nvar<immediate> constants: Constants;",
-    new="struct MeshletDownsampleDepthConstants {\n    max_mip_level: u32,\n    visibility_width: u32,\n    visibility_height: u32,\n    _padding: u32,\n}\n\n@group(0) @binding(14) var<uniform> constants: MeshletDownsampleDepthConstants;",
-  )
-}
-
-///|
 fn meshlet_create_clear_visibility_buffer_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -1431,7 +1423,7 @@ fn meshlet_create_downsample_depth_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
   let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
-  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=15UL)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
   let mut ok = builder.add_buffer(
     0U,
     compute,
@@ -1454,8 +1446,7 @@ fn meshlet_create_downsample_depth_bgl(
       )
   }
   ok = ok &&
-    builder.add_sampler(13U, compute, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING) &&
-    builder.add_buffer(14U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    builder.add_sampler(13U, compute, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build meshlet downsample depth layout")
@@ -1464,18 +1455,6 @@ fn meshlet_create_downsample_depth_bgl(
     backend.device,
     label="mgstudio_meshlet_downsample_depth_bind_group_layout",
   )
-}
-
-///|
-fn meshlet_create_downsample_depth_constants_buf(
-  backend : GpuBackend,
-) -> @wgpu.Buffer {
-  let buffer = backend.device.create_buffer(
-    size=16UL,
-    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-  )
-  buffer.set_label("mgstudio_meshlet_downsample_depth_constants")
-  buffer
 }
 
 ///|
@@ -1889,20 +1868,21 @@ fn ensure_meshlet_downsample_depth_resources(
     backend.meshlet_downsample_depth_pipeline_layout is Some(_) &&
     backend.meshlet_downsample_depth_first_pipeline is Some(_) &&
     backend.meshlet_downsample_depth_second_pipeline is Some(_) &&
-    backend.meshlet_downsample_depth_constants_buf is Some(_) &&
     backend.meshlet_downsample_depth_sampler is Some(_) &&
     backend.meshlet_downsample_depth_dummy_view is Some(_) {
     return true
   }
   let bgl = meshlet_create_downsample_depth_bgl(backend)
-  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
-  let raw_wgsl = load_wgsl_preprocessed(
+  let pipeline_layout = backend.device.create_pipeline_layout_with_immediates(
+    [bgl],
+    [(ss(@wgpu.SHADER_STAGE_COMPUTE), 0U, 4U)],
+  )
+  let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
     meshlet_downsample_depth_defines(),
     default_wgsl_value_defines(),
   )
-  let wgsl = meshlet_downsample_depth_uniform_constants_source(raw_wgsl)
   let shader = backend.device.create_shader_module_wgsl(wgsl)
   let first_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
     pipeline_layout, shader, "downsample_depth_first",
@@ -1921,7 +1901,6 @@ fn ensure_meshlet_downsample_depth_resources(
       )
   }
   shader.release()
-  let constants_buf = meshlet_create_downsample_depth_constants_buf(backend)
   let (dummy_texture, dummy_view) = meshlet_create_r32float_depth_pyramid_dummy(
     backend,
   )
@@ -1930,7 +1909,6 @@ fn ensure_meshlet_downsample_depth_resources(
   backend.meshlet_downsample_depth_pipeline_layout = Some(pipeline_layout)
   backend.meshlet_downsample_depth_first_pipeline = Some(first_pipeline)
   backend.meshlet_downsample_depth_second_pipeline = Some(second_pipeline)
-  backend.meshlet_downsample_depth_constants_buf = Some(constants_buf)
   backend.meshlet_downsample_depth_sampler = Some(sampler)
   backend.meshlet_downsample_depth_dummy_texture = Some(dummy_texture)
   backend.meshlet_downsample_depth_dummy_view = Some(dummy_view)
@@ -2487,7 +2465,6 @@ fn meshlet_create_downsample_depth_bind_group(
   backend : GpuBackend,
   frame : GpuFrameState,
   view_resources : MeshletViewVisibilityBuffer,
-  constants_buf : @wgpu.Buffer,
   sampler : @wgpu.Sampler,
   dummy_view : @wgpu.TextureView,
   bgl : @wgpu.BindGroupLayout,
@@ -2499,7 +2476,7 @@ fn meshlet_create_downsample_depth_bind_group(
       dummy_view
     }
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=15UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
   let mut ok = builder.add_buffer(0U, view_resources.buffer)
   for mip_index in 0..<12 {
     ok = ok &&
@@ -2508,9 +2485,7 @@ fn meshlet_create_downsample_depth_bind_group(
         mip_or_dummy(mip_index),
       )
   }
-  ok = ok &&
-    builder.add_sampler(13U, sampler) &&
-    builder.add_buffer(14U, constants_buf)
+  ok = ok && builder.add_sampler(13U, sampler)
   if !ok {
     builder.free()
     return None
@@ -3833,27 +3808,14 @@ pub fn GpuBackend::execute_meshlet_downsample_depth(
   guard self.meshlet_downsample_depth_second_pipeline is Some(second_pipeline) else {
     return false
   }
-  guard self.meshlet_downsample_depth_constants_buf is Some(constants_buf) else {
-    return false
-  }
   guard self.meshlet_downsample_depth_sampler is Some(sampler) else {
     return false
   }
   guard self.meshlet_downsample_depth_dummy_view is Some(dummy_view) else {
     return false
   }
-  self.queue.write_buffer(
-    constants_buf,
-    0UL,
-    u32le_pack([
-      meshlet_positive_u32(view_resources.depth_pyramid_mip_count),
-      meshlet_positive_u32(view_resources.view_width),
-      meshlet_positive_u32(view_resources.view_height),
-      0U,
-    ]),
-  )
   guard meshlet_create_downsample_depth_bind_group(
-      self, frame, view_resources, constants_buf, sampler, dummy_view, bgl,
+      self, frame, view_resources, sampler, dummy_view, bgl,
     )
     is Some(bind_group) else {
     return false
@@ -3868,6 +3830,10 @@ pub fn GpuBackend::execute_meshlet_downsample_depth(
     64U
   let compute_pass = frame.encoder.begin_compute_pass()
   compute_pass.set_pipeline(first_pipeline)
+  compute_pass.set_immediates(
+    0U,
+    u32le_pack([meshlet_positive_u32(view_resources.depth_pyramid_mip_count)]),
+  )
   compute_pass.set_bind_group(0U, bind_group, [])
   compute_pass.dispatch_workgroups(dispatch_x, dispatch_y, 1U)
   if view_resources.depth_pyramid_mip_count >= 7 {

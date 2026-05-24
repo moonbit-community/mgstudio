@@ -38,10 +38,10 @@ test "pbr/render: mesh_view layout base bindings follow bevy slots" {
   debug_inspect(has_binding(main_entries, 2), content="true")
   debug_inspect(has_binding(main_entries, 10), content="true")
   debug_inspect(has_binding(main_entries, 16), content="true")
-  debug_inspect(has_binding(main_entries, 19), content="true")
-  debug_inspect(has_binding(main_entries, 25), content="true")
-  debug_inspect(has_binding(main_entries, 21), content="false")
-  debug_inspect(has_binding(main_entries, 27), content="false")
+  debug_inspect(has_binding(main_entries, 18), content="true")
+  debug_inspect(has_binding(main_entries, 24), content="true")
+  debug_inspect(has_binding(main_entries, 20), content="false")
+  debug_inspect(has_binding(main_entries, 26), content="false")
   debug_inspect(has_binding(binding_array_entries, 2), content="true")
   debug_inspect(has_binding(binding_array_entries, 7), content="true")
 }
@@ -55,14 +55,15 @@ test "pbr/render: mesh_view layout optional bindings gated by key flags" {
     true, true, key,
   )
 
+  debug_inspect(has_binding(main_entries, 20), content="true")
   debug_inspect(has_binding(main_entries, 21), content="true")
   debug_inspect(has_binding(main_entries, 22), content="true")
   debug_inspect(has_binding(main_entries, 23), content="true")
-  debug_inspect(has_binding(main_entries, 24), content="true")
-  debug_inspect(has_binding(main_entries, 27), content="true")
+  debug_inspect(has_binding(main_entries, 26), content="true")
+  debug_inspect(has_binding(main_entries, 30), content="true")
   debug_inspect(has_binding(main_entries, 31), content="true")
-  debug_inspect(has_binding(main_entries, 32), content="true")
-  debug_inspect(has_binding(main_entries, 35), content="true")
+  debug_inspect(has_binding(main_entries, 33), content="true")
+  debug_inspect(has_binding(main_entries, 34), content="true")
   debug_inspect(has_binding(binding_array_entries, 3), content="true")
   debug_inspect(has_binding(binding_array_entries, 5), content="true")
 }
@@ -81,7 +82,7 @@ test "pbr/render: mesh_view layout disables optional bind arrays when unusable" 
     oit_supported=false,
   )
 
-  debug_inspect(has_binding(main_entries, 27), content="false")
+  debug_inspect(has_binding(main_entries, 26), content="false")
   debug_inspect(has_binding(binding_array_entries, 3), content="false")
   debug_inspect(has_binding(binding_array_entries, 5), content="false")
 }

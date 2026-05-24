@@ -13,6 +13,13 @@
 // limitations under the License.
 
 ///|
+fn mesh3d_preprocess_set_late_indirect_offset_immediate(
+  pass : @wgpu.ComputePass,
+) -> Unit {
+  pass.set_immediates(0U, u32le_pack([0U]))
+}
+
+///|
 pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   self : GpuBackend,
   camera_key_hi : Int,
@@ -791,6 +798,7 @@ pub fn GpuBackend::preprocess_mesh3d(
       self.mesh3d_preprocess_indirect_early_occlusion_pipeline
       is Some(preprocess_pipeline) {
       compute_pass.set_pipeline(preprocess_pipeline)
+      mesh3d_preprocess_set_late_indirect_offset_immediate(compute_pass)
       compute_pass.set_bind_group(0U, bind_group, [])
       compute_pass.dispatch_workgroups(
         state.indexed_workgroup_count.reinterpret_as_uint(),
@@ -804,6 +812,7 @@ pub fn GpuBackend::preprocess_mesh3d(
       self.mesh3d_preprocess_indirect_late_occlusion_pipeline
       is Some(preprocess_pipeline) {
       compute_pass.set_pipeline(preprocess_pipeline)
+      mesh3d_preprocess_set_late_indirect_offset_immediate(compute_pass)
       compute_pass.set_bind_group(0U, bind_group, [])
       compute_pass.dispatch_workgroups_indirect(late_dispatch_buffer, 0UL)
     } else if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN &&
@@ -827,6 +836,7 @@ pub fn GpuBackend::preprocess_mesh3d(
       self.mesh3d_preprocess_indirect_early_occlusion_pipeline
       is Some(preprocess_pipeline) {
       compute_pass.set_pipeline(preprocess_pipeline)
+      mesh3d_preprocess_set_late_indirect_offset_immediate(compute_pass)
       compute_pass.set_bind_group(0U, bind_group, [])
       compute_pass.dispatch_workgroups(
         state.non_indexed_workgroup_count.reinterpret_as_uint(),
@@ -841,6 +851,7 @@ pub fn GpuBackend::preprocess_mesh3d(
       self.mesh3d_preprocess_indirect_late_occlusion_pipeline
       is Some(preprocess_pipeline) {
       compute_pass.set_pipeline(preprocess_pipeline)
+      mesh3d_preprocess_set_late_indirect_offset_immediate(compute_pass)
       compute_pass.set_bind_group(0U, bind_group, [])
       compute_pass.dispatch_workgroups_indirect(late_dispatch_buffer, 0UL)
     } else if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN &&
@@ -1042,8 +1053,12 @@ pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
     ) /
     64U
   let compute_pass = frame.encoder.begin_compute_pass()
-  compute_pass.set_bind_group0(bind_group)
   compute_pass.set_pipeline(first_pipeline)
+  compute_pass.set_immediates(
+    0U,
+    u32le_pack([state.depth_pyramid_mip_count.reinterpret_as_uint()]),
+  )
+  compute_pass.set_bind_group0(bind_group)
   compute_pass.dispatch_workgroups(dispatch_x, dispatch_y, 1U)
   if state.depth_pyramid_mip_count >= 7 {
     compute_pass.set_pipeline(second_pipeline)

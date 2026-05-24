@@ -13,6 +13,17 @@
 // limitations under the License.
 
 ///|
+fn mesh3d_preprocess_pipeline_layout_with_u32_immediate(
+  backend : GpuBackend,
+  bgl : @wgpu.BindGroupLayout,
+  compute : @wgpu.ShaderStage,
+) -> @wgpu.PipelineLayout {
+  backend.device.create_pipeline_layout_with_immediates([bgl], [
+    (compute, 0U, 4U),
+  ])
+}
+
+///|
 fn ensure_mesh3d_preprocess_indirect_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -174,7 +185,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       backend.device,
       label="mgstudio_mesh3d_preprocess_indirect_early_occlusion_bgl",
     )
-    let layout = backend.device.create_pipeline_layout_1(bgl)
+    let layout = mesh3d_preprocess_pipeline_layout_with_u32_immediate(
+      backend, bgl, compute,
+    )
     layout.set_label(
       "mgstudio_mesh3d_preprocess_indirect_early_occlusion_pipeline_layout",
     )
@@ -250,7 +263,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       backend.device,
       label="mgstudio_mesh3d_preprocess_indirect_late_occlusion_bgl",
     )
-    let layout = backend.device.create_pipeline_layout_1(bgl)
+    let layout = mesh3d_preprocess_pipeline_layout_with_u32_immediate(
+      backend, bgl, compute,
+    )
     layout.set_label(
       "mgstudio_mesh3d_preprocess_indirect_late_occlusion_pipeline_layout",
     )
@@ -462,7 +477,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       backend.device,
       label="mgstudio_mesh3d_preprocess_downsample_depth_bgl",
     )
-    let layout = backend.device.create_pipeline_layout_1(bgl)
+    let layout = mesh3d_preprocess_pipeline_layout_with_u32_immediate(
+      backend, bgl, compute,
+    )
     layout.set_label(
       "mgstudio_mesh3d_preprocess_downsample_depth_pipeline_layout",
     )
@@ -523,8 +540,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     guard backend.mesh3d_preprocess_direct_pipeline_layout is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_preprocess_direct(
+    let source = load_wgsl_required_mesh3d_preprocess(
       backend.assets_base,
+      Mesh3dPreprocessPipelineKey::direct(),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -543,8 +561,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     guard backend.mesh3d_preprocess_indirect_pipeline_layout is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_preprocess_indirect(
+    let source = load_wgsl_required_mesh3d_preprocess(
       backend.assets_base,
+      Mesh3dPreprocessPipelineKey::frustum_culling(),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -564,8 +583,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_preprocess_indirect_early_occlusion(
+    let source = load_wgsl_required_mesh3d_preprocess(
       backend.assets_base,
+      Mesh3dPreprocessPipelineKey::early_occlusion_culling(),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -585,8 +605,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_preprocess_indirect_late_occlusion(
+    let source = load_wgsl_required_mesh3d_preprocess(
       backend.assets_base,
+      Mesh3dPreprocessPipelineKey::late_occlusion_culling(),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -606,8 +627,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::frustum_culling(true),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -627,8 +649,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::early_occlusion_culling(true),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -652,8 +675,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_late(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::late_occlusion_culling(true),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -675,8 +699,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_main(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::main_occlusion_culling(true),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -698,8 +723,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::frustum_culling(false),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -721,8 +747,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::early_occlusion_culling(false),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -746,8 +773,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_late(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::late_occlusion_culling(false),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -771,8 +799,9 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_main(
+    let source = load_wgsl_required_mesh3d_build_indirect_params(
       backend.assets_base,
+      Mesh3dBuildIndirectParametersPipelineKey::main_occlusion_culling(false),
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
@@ -796,10 +825,7 @@ fn ensure_mesh3d_preprocess_indirect_resources(
       is Some(layout) else {
       return
     }
-    let source = load_wgsl_required_mesh3d_downsample_depth(
-      backend.assets_base,
-      12,
-    )
+    let source = load_wgsl_required_mesh3d_downsample_depth(backend.assets_base)
     let shader = backend.device.create_shader_module_wgsl(source)
     let first_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
       layout, shader, "downsample_depth_first",

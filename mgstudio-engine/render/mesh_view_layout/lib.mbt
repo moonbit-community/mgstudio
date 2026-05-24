@@ -237,12 +237,11 @@ fn mesh_view_layout_min_binding_size(binding : Int) -> UInt64 {
     9 => 65536UL
     10 => 131072UL
     11 => 16UL
-    12 => 64UL
-    13 => 2048UL
+    12 => 2048UL
+    13 => 64UL
     14 => 16UL
     15 => 64UL
     16 => 16UL
-    18 => 64UL
     _ => 0UL
   }
 }
@@ -571,8 +570,8 @@ pub fn render3d_mesh_view_layout_entries(
       "globals",
       stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
     ),
-    mesh_view_uniform_buffer_entry(12, "fog", has_dynamic_offset=true),
-    mesh_view_uniform_buffer_entry(13, "light_probes", has_dynamic_offset=true),
+    mesh_view_uniform_buffer_entry(12, "light_probes", has_dynamic_offset=true),
+    mesh_view_uniform_buffer_entry(13, "fog", has_dynamic_offset=true),
     mesh_view_storage_buffer_entry(
       14,
       "visibility_ranges",
@@ -591,30 +590,25 @@ pub fn render3d_mesh_view_layout_entries(
       MeshViewTextureSampleType::FloatNonFilterable,
       MeshViewTextureDimension::D2,
     ),
-    mesh_view_uniform_buffer_entry(
-      18,
-      "environment_map_uniform",
-      has_dynamic_offset=true,
-    ),
     mesh_view_texture_entry(
-      19,
+      18,
       "dt_lut_texture",
       MeshViewTextureSampleType::FloatFilterable,
       MeshViewTextureDimension::D3,
     ),
     mesh_view_sampler_entry(
-      20,
+      19,
       "dt_lut_sampler",
       MeshViewSamplerBindingType::Filtering,
     ),
     mesh_view_texture_entry(
-      25,
+      24,
       "view_transmission_texture",
       MeshViewTextureSampleType::FloatFilterable,
       MeshViewTextureDimension::D2,
     ),
     mesh_view_sampler_entry(
-      26,
+      25,
       "view_transmission_sampler",
       MeshViewSamplerBindingType::Filtering,
     ),
@@ -622,7 +616,7 @@ pub fn render3d_mesh_view_layout_entries(
   if layout_key.contains(MESH_VIEW_LAYOUT_DEPTH_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
-        21,
+        20,
         "depth_prepass_texture",
         MeshViewTextureSampleType::Depth,
         MeshViewTextureDimension::D2,
@@ -633,7 +627,7 @@ pub fn render3d_mesh_view_layout_entries(
   if layout_key.contains(MESH_VIEW_LAYOUT_NORMAL_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
-        22,
+        21,
         "normal_prepass_texture",
         MeshViewTextureSampleType::FloatNonFilterable,
         MeshViewTextureDimension::D2,
@@ -644,7 +638,7 @@ pub fn render3d_mesh_view_layout_entries(
   if layout_key.contains(MESH_VIEW_LAYOUT_MOTION_VECTOR_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
-        23,
+        22,
         "motion_vector_prepass_texture",
         MeshViewTextureSampleType::FloatNonFilterable,
         MeshViewTextureDimension::D2,
@@ -655,7 +649,7 @@ pub fn render3d_mesh_view_layout_entries(
   if layout_key.contains(MESH_VIEW_LAYOUT_DEFERRED_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
-        24,
+        23,
         "deferred_prepass_texture",
         MeshViewTextureSampleType::UInt,
         MeshViewTextureDimension::D2,
@@ -665,22 +659,22 @@ pub fn render3d_mesh_view_layout_entries(
   if layout_key.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) && oit_supported {
     main_entries.push(
       mesh_view_uniform_buffer_entry(
-        27,
+        26,
         "oit_settings",
         has_dynamic_offset=true,
       ),
     )
-    main_entries.push(mesh_view_uniform_buffer_entry(28, "oit_nodes_capacity"))
-    main_entries.push(mesh_view_storage_buffer_entry(29, "oit_nodes", false))
-    main_entries.push(mesh_view_storage_buffer_entry(30, "oit_heads", false))
+    main_entries.push(mesh_view_uniform_buffer_entry(27, "oit_nodes_capacity"))
+    main_entries.push(mesh_view_storage_buffer_entry(28, "oit_nodes", false))
+    main_entries.push(mesh_view_storage_buffer_entry(29, "oit_heads", false))
     main_entries.push(
-      mesh_view_storage_buffer_entry(31, "oit_atomic_counter", false),
+      mesh_view_storage_buffer_entry(30, "oit_atomic_counter", false),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_ATMOSPHERE) {
     main_entries.push(
       mesh_view_texture_entry(
-        32,
+        31,
         "atmosphere_transmittance_texture",
         MeshViewTextureSampleType::FloatFilterable,
         MeshViewTextureDimension::D2,
@@ -688,19 +682,19 @@ pub fn render3d_mesh_view_layout_entries(
     )
     main_entries.push(
       mesh_view_sampler_entry(
-        33,
+        32,
         "atmosphere_transmittance_sampler",
         MeshViewSamplerBindingType::Filtering,
       ),
     )
     main_entries.push(
-      mesh_view_storage_buffer_entry(34, "atmosphere_data", true),
+      mesh_view_storage_buffer_entry(33, "atmosphere_data", true),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_STBN) {
     main_entries.push(
       mesh_view_texture_entry(
-        35,
+        34,
         "blue_noise_texture",
         MeshViewTextureSampleType::FloatNonFilterable,
         MeshViewTextureDimension::D2Array,
