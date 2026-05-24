@@ -925,6 +925,14 @@ fn meshlet_downsample_depth_defines() -> @hashmap.HashMap[String, Bool] {
 }
 
 ///|
+fn meshlet_downsample_depth_uniform_constants_source(source : String) -> String {
+  source.replace_all(
+    old="struct Constants { max_mip_level: u32 }\nvar<immediate> constants: Constants;",
+    new="struct MeshletDownsampleDepthConstants {\n    max_mip_level: u32,\n    visibility_width: u32,\n    visibility_height: u32,\n    _padding: u32,\n}\n\n@group(0) @binding(14) var<uniform> constants: MeshletDownsampleDepthConstants;",
+  )
+}
+
+///|
 fn meshlet_create_clear_visibility_buffer_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -1888,12 +1896,13 @@ fn ensure_meshlet_downsample_depth_resources(
   }
   let bgl = meshlet_create_downsample_depth_bgl(backend)
   let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
-  let wgsl = load_wgsl_preprocessed(
+  let raw_wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
     meshlet_downsample_depth_defines(),
     default_wgsl_value_defines(),
   )
+  let wgsl = meshlet_downsample_depth_uniform_constants_source(raw_wgsl)
   let shader = backend.device.create_shader_module_wgsl(wgsl)
   let first_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
     pipeline_layout, shader, "downsample_depth_first",
@@ -4509,7 +4518,7 @@ pub fn GpuBackend::prepare_meshlet_frame_resources(
       self,
       self.meshlet_software_raster_cluster_count_buf,
       4UL,
-      storage,
+      storage_copy,
       "mgstudio_meshlet_software_raster_cluster_count",
       u32le_pack([0U]),
     ),
