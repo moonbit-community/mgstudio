@@ -274,6 +274,8 @@ pub fn meshlet_gpu_buffer_revision() -> Int
 
 pub fn meshlet_missing_native_immediates() -> Bool
 
+pub fn meshlet_missing_native_r64uint_storage_texture_api() -> Bool
+
 pub fn meshlet_missing_native_subgroup_barrier() -> Bool
 
 pub fn meshlet_missing_rust_features_u64() -> UInt64

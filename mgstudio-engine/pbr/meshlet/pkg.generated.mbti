@@ -679,6 +679,7 @@ pub struct MeshletPluginState {
   runtime_status : MeshletRuntimeStatus
   missing_required_features : UInt64
   missing_native_subgroup_barrier : Bool
+  missing_native_r64uint_storage_texture_api : Bool
   missing_native_immediates : Bool
   adapter_supports_mesh_shader : Bool
 }

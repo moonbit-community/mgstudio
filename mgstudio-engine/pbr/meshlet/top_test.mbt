@@ -75,6 +75,11 @@ test "pbr meshlet: plugin state includes missing feature mask" {
     content="true",
   )
   inspect(
+    state.missing_native_r64uint_storage_texture_api ==
+    @renderer.meshlet_missing_native_r64uint_storage_texture_api(),
+    content="true",
+  )
+  inspect(
     state.missing_native_immediates ==
     @renderer.meshlet_missing_native_immediates(),
     content="true",

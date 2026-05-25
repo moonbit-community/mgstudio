@@ -641,6 +641,9 @@ pub fn meshlet_required_features_supported() -> Bool {
     if meshlet_missing_native_subgroup_barrier() {
       return false
     }
+    if meshlet_missing_native_r64uint_storage_texture_api() {
+      return false
+    }
     return true
   }
   false
@@ -651,6 +654,15 @@ pub fn meshlet_missing_native_subgroup_barrier() -> Bool {
   if ensure_backend() is Some(backend) {
     return !backend.device.has_feature_native_subgroup_barrier()
   }
+  true
+}
+
+///|
+pub fn meshlet_missing_native_r64uint_storage_texture_api() -> Bool {
+  // Bevy's meshlet visibility buffer is `texture_storage_2d<r64uint, atomic>`.
+  // The current wgpu C ABI exposed through wgpu_mbt cannot create that exact
+  // texture format/access pair, so the meshlet renderer must stay unavailable
+  // instead of running a different visibility-buffer resource shape.
   true
 }
 
