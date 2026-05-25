@@ -26,6 +26,7 @@ const MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
 
 ///|
 pub(all) struct MeshletMaterialKey {
+  material_family : @material.Material3dFamily
   material_asset_id : Int
   extension : @material.ExtendedMaterialMetadata3d?
 }
@@ -33,16 +34,22 @@ pub(all) struct MeshletMaterialKey {
 ///|
 pub struct MeshletSceneMaterial {
   material_id : Int
+  material_family : @material.Material3dFamily
   material_asset_id : Int
   extension : @material.ExtendedMaterialMetadata3d?
 }
 
 ///|
 fn meshlet_material_key(
+  material_family : @material.Material3dFamily,
   material_asset_id : Int,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> MeshletMaterialKey {
-  MeshletMaterialKey::{ material_asset_id: non_negative(material_asset_id), extension }
+  MeshletMaterialKey::{
+    material_family,
+    material_asset_id: non_negative(material_asset_id),
+    extension,
+  }
 }
 
 ///|
@@ -57,8 +64,10 @@ fn meshlet_alpha_mode_equal(
     (@material.AlphaMode3d::Blend, @material.AlphaMode3d::Blend) => true
     (@material.AlphaMode3d::Premultiplied, @material.AlphaMode3d::Premultiplied) =>
       true
-    (@material.AlphaMode3d::AlphaToCoverage, @material.AlphaMode3d::AlphaToCoverage) =>
-      true
+    (
+      @material.AlphaMode3d::AlphaToCoverage,
+      @material.AlphaMode3d::AlphaToCoverage,
+    ) => true
     (@material.AlphaMode3d::Add, @material.AlphaMode3d::Add) => true
     (@material.AlphaMode3d::Multiply, @material.AlphaMode3d::Multiply) => true
     _ => false
@@ -98,7 +107,8 @@ fn meshlet_material_extension_equal(
       left.meshlet_deferred_fragment_shader_path ==
       right.meshlet_deferred_fragment_shader_path &&
       meshlet_alpha_mode_option_equal(
-        left.alpha_mode_override, right.alpha_mode_override,
+        left.alpha_mode_override,
+        right.alpha_mode_override,
       ) &&
       left.opaque_render_method_override == right.opaque_render_method_override &&
       left.requires_depth_prepass == right.requires_depth_prepass &&
@@ -113,6 +123,7 @@ fn meshlet_material_key_equal(
   left : MeshletMaterialKey,
   right : MeshletMaterialKey,
 ) -> Bool {
+  left.material_family == right.material_family &&
   left.material_asset_id == right.material_asset_id &&
   meshlet_material_extension_equal(left.extension, right.extension)
 }
@@ -238,6 +249,7 @@ pub fn InstanceManager::add_instance(
   world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   previous_world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   not_shadow_receiver? : Bool = false,
+  material_family? : @material.Material3dFamily = @material.Material3dFamily::Standard,
   material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Unit {
   self.instances.push(
@@ -262,7 +274,7 @@ pub fn InstanceManager::add_instance(
   self.instance_material_ids.push(0)
   self.instance_material_asset_ids.push(non_negative(material_asset_id))
   self.instance_material_keys.push(
-    meshlet_material_key(material_asset_id, material_extension),
+    meshlet_material_key(material_family, material_asset_id, material_extension),
   )
   self.instance_bvh_root_nodes.push(non_negative(root_bvh_node))
   self.scene_instance_count = self.instances.length()
@@ -345,7 +357,11 @@ pub fn InstanceManager::get_material_id(
   match self.material_id_lookup.get(key) {
     Some(id) => id
     None => {
-      let material_key = meshlet_material_key(key, None)
+      let material_key = meshlet_material_key(
+        @material.Material3dFamily::Standard,
+        key,
+        None,
+      )
       let id = match self.material_id_for_key(material_key) {
         Some(existing) => existing
         None => self.get_material_id_for_key(material_key)
@@ -362,11 +378,31 @@ pub fn InstanceManager::get_material_id_with_extension(
   material_asset_id : Int,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> Int {
-  let key = meshlet_material_key(material_asset_id, extension)
+  let key = meshlet_material_key(
+    @material.Material3dFamily::Standard,
+    material_asset_id,
+    extension,
+  )
   if extension is None {
     return self.get_material_id(material_asset_id)
   }
   self.get_material_id_for_key(key)
+}
+
+///|
+pub fn InstanceManager::get_material_id_for_material(
+  self : InstanceManager,
+  material_family : @material.Material3dFamily,
+  material_asset_id : Int,
+  extension : @material.ExtendedMaterialMetadata3d?,
+) -> Int {
+  if material_family is @material.Material3dFamily::Standard &&
+    extension is None {
+    return self.get_material_id(material_asset_id)
+  }
+  self.get_material_id_for_key(
+    meshlet_material_key(material_family, material_asset_id, extension),
+  )
 }
 
 ///|
@@ -390,7 +426,13 @@ pub fn InstanceManager::material_id_for_asset(
   self : InstanceManager,
   material_asset_id : Int,
 ) -> Int? {
-  self.material_id_for_key(meshlet_material_key(material_asset_id, None))
+  self.material_id_for_key(
+    meshlet_material_key(
+      @material.Material3dFamily::Standard,
+      material_asset_id,
+      None,
+    ),
+  )
 }
 
 ///|
@@ -403,6 +445,21 @@ pub fn InstanceManager::material_asset_id_for_id(
     let (key, id) = entry
     if id == safe_material_id {
       return Some(key.material_asset_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn InstanceManager::material_family_for_id(
+  self : InstanceManager,
+  material_id : Int,
+) -> @material.Material3dFamily? {
+  let safe_material_id = non_negative(material_id)
+  for entry in self.material_keys {
+    let (key, id) = entry
+    if id == safe_material_id {
+      return Some(key.material_family)
     }
   }
   None
@@ -437,7 +494,9 @@ pub fn InstanceManager::scene_material_asset_ids(
 }
 
 ///|
-pub fn InstanceManager::scene_materials(self : InstanceManager) -> Array[MeshletSceneMaterial] {
+pub fn InstanceManager::scene_materials(
+  self : InstanceManager,
+) -> Array[MeshletSceneMaterial] {
   let materials : Array[MeshletSceneMaterial] = []
   for key in self.instance_material_keys {
     let material_id = self.get_material_id_for_key(key)
@@ -450,6 +509,7 @@ pub fn InstanceManager::scene_materials(self : InstanceManager) -> Array[Meshlet
     if !exists {
       materials.push(MeshletSceneMaterial::{
         material_id,
+        material_family: key.material_family,
         material_asset_id: key.material_asset_id,
         extension: key.extension,
       })

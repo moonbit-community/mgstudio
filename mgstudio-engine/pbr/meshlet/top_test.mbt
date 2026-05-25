@@ -100,6 +100,22 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
     app.world().get_resource(meshlet_assets_key) is Some(_),
     content="true",
   )
+  let debug_materials_key : @ecs.ResourceKey[
+    @asset.Assets[MeshletDebugMaterial],
+  ] = @asset.assets_resource_key()
+  inspect(
+    app.world().get_resource(debug_materials_key) is Some(_),
+    content="true",
+  )
+  let debug_material = meshlet_debug_material_add(
+    app.world(),
+    MeshletDebugMaterial::MeshletDebugMaterial(),
+  )
+  let mesh_material = meshlet_debug_mesh_material3d(debug_material)
+  inspect(
+    mesh_material.material_family is @material.Material3dFamily::MeshletDebug,
+    content="true",
+  )
   let render_world = app.sub_app(@app.RenderApp).world()
   inspect(
     render_world.get_resource(ecs_key_meshlet_plugin_state) is Some(_),

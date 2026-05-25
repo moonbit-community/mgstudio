@@ -43,6 +43,26 @@ test "material boundary re-exports standard material APIs" {
 }
 
 ///|
+test "mesh material carries its Bevy material family identity" {
+  let standard = @material.MeshMaterial3d::new(@asset.Handle::new(42))
+  inspect(
+    standard.material_family is @material.Material3dFamily::Standard,
+    content="true",
+  )
+  inspect(standard.material_asset_id(), content="42")
+  let meshlet_debug = @material.MeshMaterial3d::from_erased_material_id(
+    @material.Material3dFamily::MeshletDebug,
+    7,
+  )
+  inspect(
+    meshlet_debug.material_family is @material.Material3dFamily::MeshletDebug,
+    content="true",
+  )
+  inspect(meshlet_debug.material_asset_id(), content="7")
+  inspect(meshlet_debug.is_standard_material(), content="false")
+}
+
+///|
 test "standard material defaults align with bevy clearcoat and alpha threshold" {
   let default_material = @material.StandardMaterial::StandardMaterial()
   debug_inspect(

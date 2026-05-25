@@ -106,6 +106,12 @@ pub const MESHLET_PREPASS_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletPrepassF
 pub const MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletDeferredFragmentShader"
 
 ///|
+pub(all) enum Material3dFamily {
+  Standard
+  MeshletDebug
+} derive(Eq, Debug)
+
+///|
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, FromJson)
@@ -252,6 +258,13 @@ pub fn MaterialProperties::add_shader(
   shader : String,
 ) -> MaterialProperties {
   let shaders = self.shaders
+  for index in 0..<shaders.length() {
+    let (entry_label, _) = shaders[index]
+    if entry_label == label {
+      shaders[index] = (label, shader)
+      return MaterialProperties::{ ..self, shaders, }
+    }
+  }
   shaders.push((label, shader))
   MaterialProperties::{ ..self, shaders, }
 }
@@ -1271,6 +1284,7 @@ pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
 ///|
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
+  material_family : Material3dFamily
   extended_material : ExtendedMaterialMetadata3d?
 }
 
@@ -1278,7 +1292,34 @@ pub struct MeshMaterial3d {
 pub fn MeshMaterial3d::new(
   material : @asset.Handle[StandardMaterial],
 ) -> MeshMaterial3d {
-  MeshMaterial3d::{ material, extended_material: None }
+  MeshMaterial3d::{
+    material,
+    material_family: Material3dFamily::Standard,
+    extended_material: None,
+  }
+}
+
+///|
+pub fn MeshMaterial3d::from_erased_material_id(
+  material_family : Material3dFamily,
+  material_id : Int,
+) -> MeshMaterial3d {
+  let safe_id = if material_id < 0 { 0 } else { material_id }
+  MeshMaterial3d::{
+    material: @asset.Handle::new(safe_id),
+    material_family,
+    extended_material: None,
+  }
+}
+
+///|
+pub fn MeshMaterial3d::material_asset_id(self : MeshMaterial3d) -> Int {
+  self.material.id()
+}
+
+///|
+pub fn MeshMaterial3d::is_standard_material(self : MeshMaterial3d) -> Bool {
+  self.material_family is Material3dFamily::Standard
 }
 
 ///|

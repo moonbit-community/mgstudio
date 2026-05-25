@@ -24,6 +24,9 @@ fn render3d_resolve_standard_material(
   material_handle : MeshMaterial3d,
   standard_material_frame_cache : Map[Int, StandardMaterial],
 ) -> StandardMaterial? {
+  if !material_handle.is_standard_material() {
+    return None
+  }
   let material_handle_id = material_handle.material.id()
   match standard_material_frame_cache.get(material_handle_id) {
     Some(cached_material) => Some(cached_material)

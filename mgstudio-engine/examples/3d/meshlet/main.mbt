@@ -29,9 +29,6 @@ const ENV_DIFFUSE_MAP_ASSET : String = "environment_maps/pisa_diffuse_rgb9e5_zst
 const ENV_SPECULAR_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_zstd.ktx2"
 
 ///|
-const MESHLET_DEBUG_FRAGMENT_SHADER : String = "pbr/meshlet/meshlet_mesh_material.wgsl"
-
-///|
 const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
 
 ///|
@@ -74,7 +71,7 @@ fn color_for_row(index : Int) -> @sprite.Color {
 fn spawn_meshlet_bunny(
   world : @ecs.World,
   meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh],
-  material : @asset.Handle[@pbr.StandardMaterial],
+  material : @pbr.MeshMaterial3d,
   transform : @transform.Transform,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
@@ -83,11 +80,7 @@ fn spawn_meshlet_bunny(
     @pbr_meshlet.ecs_key_meshlet_mesh3d,
     @pbr_meshlet.MeshletMesh3d::new(meshlet_mesh.id()),
   )
-  try! world.set_by_key(
-    entity,
-    @pbr.ecs_key_mesh_material3d,
-    @pbr.MeshMaterial3d::new(material),
-  )
+  try! world.set_by_key(entity, @pbr.ecs_key_mesh_material3d, material)
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_render_layers,
@@ -170,8 +163,9 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     BUNNY_MESHLET_ASSET,
   )
-  let debug_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::StandardMaterial(),
+  let debug_material = @pbr_meshlet.meshlet_debug_material_add(
+    world,
+    @pbr_meshlet.MeshletDebugMaterial::MeshletDebugMaterial(),
   )
   for i in 0..<5 {
     let x_int = i - 2
@@ -184,7 +178,7 @@ fn setup(world : @ecs.World) -> Unit {
     spawn_meshlet_bunny(
       world,
       meshlet_mesh,
-      material,
+      @pbr.MeshMaterial3d::new(material),
       @transform.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
         @math.Vec3::splat(0.2F),
       ),
@@ -204,19 +198,12 @@ fn setup(world : @ecs.World) -> Unit {
     let entity = spawn_meshlet_bunny(
       world,
       meshlet_mesh,
-      debug_material,
+      @pbr_meshlet.meshlet_debug_mesh_material3d(debug_material),
       @transform.Transform::from_xyz(x, 0.0F, 0.3F)
       .with_scale(@math.Vec3::splat(0.2F))
       .with_rotation(@math.Quat::from_rotation_y(PI)),
     )
-    try! world.set_by_key(
-      entity,
-      @pbr.ecs_key_mesh_material3d,
-      @pbr.MeshMaterial3d::new(debug_material)
-      .with_extension_meshlet_fragment_shader_path(
-        Some(MESHLET_DEBUG_FRAGMENT_SHADER),
-      ),
-    )
+    ignore(entity)
   }
 
   @pbr.MeshMaterial3dBundle::new(

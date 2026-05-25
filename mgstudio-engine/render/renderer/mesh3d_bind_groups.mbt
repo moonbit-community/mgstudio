@@ -713,6 +713,50 @@ fn mesh3d_material_cache_get_or_create(
   specular_tint_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
 ) -> @wgpu.BindGroup raise GpuBackendError {
+  if mesh3d_descriptor_material_layout(material_descriptor) is None {
+    let empty_bytes = Bytes::new(0)
+    for entry in backend.mesh3d_material_bg_cache {
+      if entry.material_pipeline_id == material_pipeline_id &&
+        entry.base_texture_id == -2 &&
+        entry.normal_texture_id == -2 &&
+        entry.emissive_texture_id == -2 &&
+        entry.metallic_roughness_texture_id == -2 &&
+        entry.occlusion_texture_id == -2 &&
+        entry.depth_texture_id == -2 &&
+        entry.anisotropy_texture_id == -2 &&
+        entry.specular_tint_texture_id == -2 &&
+        entry.material_uniform_bytes == empty_bytes {
+        return entry.bind_group
+      }
+    }
+    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+      backend, material_pipeline_id, material_descriptor,
+    )
+    let material_uniform_buf = backend.device.create_buffer(
+      size=4UL,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+    )
+    let bind_group = mesh3d_create_empty_bind_group(
+      backend,
+      layout_entry.material_bind_group_layout,
+      "mgstudio_mesh3d_empty_material_bg",
+    )
+    backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+      material_pipeline_id,
+      base_texture_id: -2,
+      normal_texture_id: -2,
+      emissive_texture_id: -2,
+      metallic_roughness_texture_id: -2,
+      occlusion_texture_id: -2,
+      depth_texture_id: -2,
+      anisotropy_texture_id: -2,
+      specular_tint_texture_id: -2,
+      material_uniform_bytes: empty_bytes,
+      material_uniform_buffer: material_uniform_buf,
+      bind_group,
+    })
+    return bind_group
+  }
   for entry in backend.mesh3d_material_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.base_texture_id == base_texture.id &&

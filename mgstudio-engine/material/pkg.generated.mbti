@@ -22,6 +22,12 @@ pub const MATERIAL_FRAGMENT_SHADER_LABEL : String = "MaterialFragmentShader"
 
 pub const MATERIAL_VERTEX_SHADER_LABEL : String = "MaterialVertexShader"
 
+pub const MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL : String = "MeshletDeferredFragmentShader"
+
+pub const MESHLET_FRAGMENT_SHADER_LABEL : String = "MeshletFragmentShader"
+
+pub const MESHLET_PREPASS_FRAGMENT_SHADER_LABEL : String = "MeshletPrepassFragmentShader"
+
 pub const PREPASS_FRAGMENT_SHADER_LABEL : String = "PrepassFragmentShader"
 
 pub const PREPASS_VERTEX_SHADER_LABEL : String = "PrepassVertexShader"
@@ -195,6 +201,9 @@ pub struct ExtendedMaterialMetadata3d {
   prepass_fragment_shader_path : String?
   deferred_vertex_shader_path : String?
   deferred_fragment_shader_path : String?
+  meshlet_fragment_shader_path : String?
+  meshlet_prepass_fragment_shader_path : String?
+  meshlet_deferred_fragment_shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -209,6 +218,9 @@ pub fn ExtendedMaterialMetadata3d::with_deferred_vertex_shader_path(Self, String
 pub fn ExtendedMaterialMetadata3d::with_disable_shadows(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_extension_tag(Self, Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_fragment_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_meshlet_deferred_fragment_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_meshlet_fragment_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_meshlet_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(Self, OpaqueRendererMethod?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(Self, String?) -> Self
@@ -229,6 +241,11 @@ pub fn ForwardDecalMaterialExt::ForwardDecalMaterialExt() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
+
+pub(all) enum Material3dFamily {
+  Standard
+  MeshletDebug
+} derive(Eq, @debug.Debug)
 
 pub struct MaterialProperties {
   render_method : OpaqueRendererMethod
@@ -272,13 +289,20 @@ pub impl Default for MaterialProperties
 #alias(MaterialMesh3dComponent)
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
+  material_family : Material3dFamily
   extended_material : ExtendedMaterialMetadata3d?
 }
+pub fn MeshMaterial3d::from_erased_material_id(Material3dFamily, Int) -> Self
+pub fn MeshMaterial3d::is_standard_material(Self) -> Bool
+pub fn MeshMaterial3d::material_asset_id(Self) -> Int
 pub fn MeshMaterial3d::new(@asset.Handle[StandardMaterial]) -> Self
 pub fn MeshMaterial3d::with_extended_material(Self, ExtendedMaterialMetadata3d?) -> Self
 pub fn MeshMaterial3d::with_extension_alpha_mode(Self, AlphaMode3d?) -> Self
 pub fn MeshMaterial3d::with_extension_disable_shadows(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_fragment_shader_path(Self, String?) -> Self
+pub fn MeshMaterial3d::with_extension_meshlet_deferred_fragment_shader_path(Self, String?) -> Self
+pub fn MeshMaterial3d::with_extension_meshlet_fragment_shader_path(Self, String?) -> Self
+pub fn MeshMaterial3d::with_extension_meshlet_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendererMethod?) -> Self
 pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self

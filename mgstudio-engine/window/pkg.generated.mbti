@@ -148,6 +148,8 @@ pub fn host_window_poll_events(Int) -> Unit
 
 pub fn host_window_request_close(Int) -> Unit
 
+pub fn host_window_request_redraw(Int) -> Unit
+
 pub fn host_window_set_cursor_grab_mode(Int, mode~ : CursorGrabMode) -> Bool
 
 pub fn host_window_set_cursor_hit_test(Int, hit_test~ : Bool) -> Bool

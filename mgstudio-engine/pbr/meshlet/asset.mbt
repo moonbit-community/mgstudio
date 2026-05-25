@@ -82,6 +82,38 @@ pub impl @asset.Asset for MeshletMesh with asset_resource_keys() {
 }
 
 ///|
+pub struct MeshletDebugMaterial {
+  dummy : Unit
+}
+
+///|
+pub fn MeshletDebugMaterial::MeshletDebugMaterial() -> MeshletDebugMaterial {
+  MeshletDebugMaterial::{ dummy: () }
+}
+
+///|
+pub impl @asset.Asset for MeshletDebugMaterial with asset_debug_name() {
+  "mgstudio_pbr::meshlet::MeshletDebugMaterial"
+}
+
+///|
+pub impl @asset.Asset for MeshletDebugMaterial with asset_as_image(_self) {
+  None
+}
+
+///|
+let meshlet_debug_material_asset_resource_keys : @asset.AssetResourceKeys[
+  MeshletDebugMaterial,
+] = @asset.register_asset_resource_keys(
+  MeshletDebugMaterial::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for MeshletDebugMaterial with asset_resource_keys() {
+  meshlet_debug_material_asset_resource_keys
+}
+
+///|
 pub fn MeshletMesh::new(
   meshlet_count : Int,
   bvh_node_count : Int,
@@ -921,6 +953,13 @@ pub fn init_meshlet_mesh_asset(
       meshlet_mesh_load_asset,
     ),
   )
+}
+
+///|
+pub fn init_meshlet_debug_material_asset(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @asset.init_asset(app, fn() { MeshletDebugMaterial::MeshletDebugMaterial() })
 }
 
 ///|

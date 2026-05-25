@@ -152,10 +152,7 @@ fn runner_update_mode_for_world(world : @ecs.World) -> UpdateMode {
   let mut focused = false
   for entry in @window.window_host_entries(world) {
     match (try! world.get_by_key(entry.entity, @window.Window::component())) {
-      Some(window) =>
-        if window.focused {
-          focused = true
-        }
+      Some(window) => if window.focused { focused = true }
       None => ()
     }
   }
@@ -170,10 +167,7 @@ fn runner_all_windows_invisible(world : @ecs.World) -> Bool {
   }
   for entry in entries {
     match (try! world.get_by_key(entry.entity, @window.Window::component())) {
-      Some(window) =>
-        if window.visible {
-          return false
-        }
+      Some(window) => if window.visible { return false }
       None => ()
     }
   }
@@ -204,9 +198,16 @@ fn runner_should_update(
 ) -> Bool {
   match mode {
     Continuous =>
-      wait_elapsed || user_event_received || window_event_received ||
+      wait_elapsed ||
+      user_event_received ||
+      window_event_received ||
       device_event_received
-    Reactive(_, react_to_device_events, react_to_user_events, react_to_window_events) =>
+    Reactive(
+      _,
+      react_to_device_events,
+      react_to_user_events,
+      react_to_window_events
+    ) =>
       wait_elapsed ||
       (react_to_device_events && device_event_received) ||
       (react_to_user_events && user_event_received) ||
@@ -607,8 +608,7 @@ fn WinitAppRunnerState::redraw_requested(
           None => begin_frame_ms
         }
         let control_flow = runner_next_reactive_control_flow(
-          start_time_ms,
-          wait,
+          start_time_ms, wait,
         )
         match control_flow {
           @window_core.ControlFlow::WaitUntil(next_ms) =>

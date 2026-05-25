@@ -112,6 +112,45 @@ test "render3d: extended material metadata is reflected into extracted propertie
 }
 
 ///|
+test "render3d: standard material properties carry Bevy meshlet shader labels" {
+  let props = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  debug_inspect(
+    props.get_shader(@material.MESHLET_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr.wgsl\")",
+  )
+  debug_inspect(
+    props.get_shader(@material.MESHLET_PREPASS_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr_prepass.wgsl\")",
+  )
+  debug_inspect(
+    props.get_shader(@material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr.wgsl\")",
+  )
+}
+
+///|
+test "render3d: material extension can override Bevy meshlet shader labels" {
+  let extension = @material.ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d().with_meshlet_fragment_shader_path(
+    Some("pbr/meshlet/meshlet_mesh_material.wgsl"),
+  )
+  let props = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(extension),
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  debug_inspect(
+    props.get_shader(@material.MESHLET_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/meshlet/meshlet_mesh_material.wgsl\")",
+  )
+}
+
+///|
 test "render3d: extracted material properties prepass flag follows plugin runtime state" {
   let material = @material.StandardMaterial::StandardMaterial()
   let enabled_props = render3d_material_properties_for_standard_material(

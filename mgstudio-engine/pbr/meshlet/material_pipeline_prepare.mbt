@@ -615,27 +615,21 @@ fn meshlet_material_pipeline_id(
   material_input : MeshletPreparedMaterialInput,
 ) -> Int {
   let key_bits = meshlet_view_key_bits(view_key)
-  let meshlet_shader_bits = (
-      if material_input.has_meshlet_fragment_shader_override {
-        1
-      } else {
-        0
-      }
-    ) |
-    (
-      if material_input.has_meshlet_prepass_fragment_shader_override {
-        2
-      } else {
-        0
-      }
-    ) |
-    (
-      if material_input.has_meshlet_deferred_fragment_shader_override {
-        4
-      } else {
-        0
-      }
-    )
+  let meshlet_shader_bits = (if material_input.has_meshlet_fragment_shader_override {
+      1
+    } else {
+      0
+    }) |
+    (if material_input.has_meshlet_prepass_fragment_shader_override {
+      2
+    } else {
+      0
+    }) |
+    (if material_input.has_meshlet_deferred_fragment_shader_override {
+      4
+    } else {
+      0
+    })
   pipeline_base +
   pass_variant * 1_000_000 +
   key_bits +
@@ -810,10 +804,7 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
       continue
     }
     let pipeline_id = meshlet_material_pipeline_id(
-      1000,
-      1,
-      view_key,
-      material_input,
+      1000, 1, view_key, material_input,
     )
     if queued_material_ids.contains(material_input.material_id) {
       continue

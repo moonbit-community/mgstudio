@@ -22,6 +22,9 @@ pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
 const MESHLET_PLUGIN_NAME : String = "mgstudio.pbr.meshlet.MeshletPlugin"
 
 ///|
+const MESHLET_MESH_MATERIAL_SHADER_PATH : String = "pbr/meshlet/meshlet_mesh_material.wgsl"
+
+///|
 priv struct MeshletPluginMarker {}
 
 ///|
@@ -171,6 +174,31 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 }
 
 ///|
+pub fn meshlet_debug_material_add(
+  world : @ecs.World,
+  material : MeshletDebugMaterial,
+) -> @asset.Handle[MeshletDebugMaterial] {
+  let key : @ecs.ResourceKey[@asset.Assets[MeshletDebugMaterial]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets.modify(fn(store) { store.add(material) })
+    None =>
+      abort(
+        "Assets<MeshletDebugMaterial> is missing; add MeshletPlugin before creating MeshletDebugMaterial assets",
+      )
+  }
+}
+
+///|
+pub fn meshlet_debug_mesh_material3d(
+  material : @asset.Handle[MeshletDebugMaterial],
+) -> @material.MeshMaterial3d {
+  @material.MeshMaterial3d::from_erased_material_id(
+    @material.Material3dFamily::MeshletDebug,
+    material.id(),
+  )
+}
+
+///|
 fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
   match world.get_resource(ecs_key_meshlet_mesh_manager) {
     Some(manager) => ignore(perform_pending_meshlet_mesh_writes(manager))
@@ -252,6 +280,7 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
                     previous_world_from_local~,
                     not_shadow_caster~,
                     not_shadow_receiver~,
+                    material_family=mesh_material.material_family,
                     material_extension=mesh_material.extended_material,
                   )
                 }
@@ -496,25 +525,103 @@ fn meshlet_material_family_hash_string(hash : Int, value : String?) -> Int {
 
 ///|
 fn meshlet_material_pipeline_family_id(
+  material_family : @material.Material3dFamily,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> Int {
-  guard extension is Some(extension) else { return 0 }
+  let family_id = match material_family {
+    @material.Material3dFamily::Standard => 0
+    @material.Material3dFamily::MeshletDebug => 1
+  }
+  guard extension is Some(extension) else { return family_id }
   let mut hash = 1 + extension.extension_tag % 8191
   hash = meshlet_material_family_hash_string(hash, extension.vertex_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.fragment_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.prepass_vertex_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.prepass_fragment_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.deferred_vertex_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.deferred_fragment_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.meshlet_fragment_shader_path)
-  hash = meshlet_material_family_hash_string(hash, extension.meshlet_prepass_fragment_shader_path)
   hash = meshlet_material_family_hash_string(
-    hash, extension.meshlet_deferred_fragment_shader_path,
+    hash,
+    extension.fragment_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.prepass_vertex_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.prepass_fragment_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.deferred_vertex_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.deferred_fragment_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.meshlet_fragment_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.meshlet_prepass_fragment_shader_path,
+  )
+  hash = meshlet_material_family_hash_string(
+    hash,
+    extension.meshlet_deferred_fragment_shader_path,
   )
   if hash <= 0 {
-    1
+    family_id * 8192 + 1
   } else {
-    hash
+    family_id * 8192 + hash
+  }
+}
+
+///|
+fn meshlet_collect_standard_material_input(
+  material_input : MeshletPreparedMaterialInput,
+  assets : @asset.Assets[@material.StandardMaterial],
+  scene_material : MeshletSceneMaterial,
+  default_opaque_renderer_method : @material.OpaqueRendererMethod,
+) -> MeshletPreparedMaterialInput {
+  match assets.get(@asset.Handle::new(scene_material.material_asset_id)) {
+    Some(material) => {
+      let material = @pbr_render.render3d_apply_extended_material_metadata(
+        material,
+        scene_material.extension,
+      )
+      let material_properties = @pbr.render3d_material_properties_for_standard_material(
+        material,
+        scene_material.extension,
+        default_opaque_renderer_method,
+        false,
+      )
+      let mut next = material_input
+        .with_opaque_render_method(
+          @pbr.standard_material_opaque_render_method(
+            material, default_opaque_renderer_method,
+          ),
+        )
+        .with_alpha_mode(material.alpha_mode)
+        .with_reads_view_transmission_texture(
+          meshlet_material_reads_view_transmission_texture(material),
+        )
+      if material_properties.get_shader(@material.MESHLET_FRAGMENT_SHADER_LABEL)
+        is Some(_) {
+        next = next.with_meshlet_fragment_shader_override()
+      }
+      if material_properties.get_shader(
+          @material.MESHLET_PREPASS_FRAGMENT_SHADER_LABEL,
+        )
+        is Some(_) {
+        next = next.with_meshlet_prepass_fragment_shader_override()
+      }
+      if material_properties.get_shader(
+          @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
+        )
+        is Some(_) {
+        next = next.with_meshlet_deferred_fragment_shader_override()
+      }
+      next
+    }
+    None => material_input
   }
 }
 
@@ -530,52 +637,24 @@ fn meshlet_collect_material_inputs(
   )
   for scene_material in instance_manager.scene_materials() {
     let mut material_input = MeshletPreparedMaterialInput::new(
-      scene_material.material_id, scene_material.material_asset_id,
+      scene_material.material_id,
+      scene_material.material_asset_id,
     ).with_material_layout_id(
-      meshlet_material_pipeline_family_id(scene_material.extension),
+      meshlet_material_pipeline_family_id(
+        scene_material.material_family,
+        scene_material.extension,
+      ),
     )
-    match standard_material_assets {
-      Some(assets) =>
-        match assets.get(@asset.Handle::new(scene_material.material_asset_id)) {
-          Some(material) => {
-            let material = @pbr_render.render3d_apply_extended_material_metadata(
-              material,
-              scene_material.extension,
+    match scene_material.material_family {
+      @material.Material3dFamily::Standard =>
+        match standard_material_assets {
+          Some(assets) =>
+            material_input = meshlet_collect_standard_material_input(
+              material_input, assets, scene_material, default_opaque_renderer_method,
             )
-            let material_properties = @pbr.render3d_material_properties_for_standard_material(
-              material,
-              scene_material.extension,
-              default_opaque_renderer_method,
-              false,
-            )
-            material_input = material_input.with_opaque_render_method(
-              @pbr.standard_material_opaque_render_method(
-                material, default_opaque_renderer_method,
-              ),
-            )
-            material_input = material_input.with_alpha_mode(material.alpha_mode)
-            material_input = material_input.with_reads_view_transmission_texture(
-              meshlet_material_reads_view_transmission_texture(material),
-            )
-            if material_properties.get_shader(@material.MESHLET_FRAGMENT_SHADER_LABEL) is Some(_) {
-              material_input = material_input.with_meshlet_fragment_shader_override()
-            }
-            if material_properties.get_shader(
-                @material.MESHLET_PREPASS_FRAGMENT_SHADER_LABEL,
-              )
-              is Some(_) {
-              material_input = material_input.with_meshlet_prepass_fragment_shader_override()
-            }
-            if material_properties.get_shader(
-                @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
-              )
-              is Some(_) {
-              material_input = material_input.with_meshlet_deferred_fragment_shader_override()
-            }
-          }
           None => ()
         }
-      None => ()
+      @material.Material3dFamily::MeshletDebug => ()
     }
     material_inputs.push(material_input)
   }
@@ -914,6 +993,13 @@ fn meshlet_material_shade_layout_descriptor() -> @render_resource.BindGroupLayou
 }
 
 ///|
+fn meshlet_empty_material_layout_descriptor(
+  label : String,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  @render_resource.BindGroupLayoutDescriptor::new(label, [])
+}
+
+///|
 fn meshlet_shader_defs_with_material_pass(
   shader_defs : Array[@material.ShaderDefVal],
 ) -> Array[@material.ShaderDefVal] {
@@ -994,14 +1080,10 @@ fn meshlet_main_opaque_standard_material_descriptor(
   view_key : MeshletViewMaterialPipelineKey,
 ) -> @material.RenderPipelineDescriptor? {
   let material = @pbr_render.render3d_apply_extended_material_metadata(
-    material,
-    extension,
+    material, extension,
   )
   let properties = @pbr.render3d_material_properties_for_standard_material(
-    material,
-    extension,
-    default_opaque_renderer_method,
-    false,
+    material, extension, default_opaque_renderer_method, false,
   )
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let fake_layout = layouts.insert(meshlet_fake_vertex_buffer_layout())
@@ -1018,7 +1100,7 @@ fn meshlet_main_opaque_standard_material_descriptor(
   let fragment_shader = match
     properties.get_shader(@material.MESHLET_FRAGMENT_SHADER_LABEL) {
     Some(shader) => Some(shader)
-    None => Some("pbr/meshlet/meshlet_mesh_material.wgsl")
+    None => Some(MESHLET_MESH_MATERIAL_SHADER_PATH)
   }
   let layout = descriptor.layout
   guard layout.length() >= 4 else { return None }
@@ -1028,7 +1110,7 @@ fn meshlet_main_opaque_standard_material_descriptor(
     .with_layout(layout)
     .with_vertex(
       @material.VertexState::new(
-        Some("pbr/meshlet/meshlet_mesh_material.wgsl"),
+        Some(MESHLET_MESH_MATERIAL_SHADER_PATH),
         shader_defs,
         descriptor.vertex.entry_point,
         [],
@@ -1050,6 +1132,39 @@ fn meshlet_main_opaque_standard_material_descriptor(
           @wgpu.TEXTURE_FORMAT_DEPTH16_UNORM,
           false,
           @wgpu.COMPARE_FUNCTION_EQUAL,
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn meshlet_main_opaque_debug_material_descriptor(
+  default_opaque_renderer_method : @material.OpaqueRendererMethod,
+  view_key : MeshletViewMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor? {
+  let descriptor = meshlet_main_opaque_standard_material_descriptor(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    default_opaque_renderer_method,
+    view_key,
+  )
+  guard descriptor is Some(descriptor) else { return None }
+  guard descriptor.fragment is Some(fragment) else { return None }
+  let layout = descriptor.layout
+  guard layout.length() >= 4 else { return None }
+  layout[3] = meshlet_empty_material_layout_descriptor("MeshletDebugMaterial")
+  Some(
+    descriptor
+    .with_label(Some("meshlet_debug_material"))
+    .with_layout(layout)
+    .with_fragment(
+      Some(
+        @material.FragmentState::new(
+          Some(MESHLET_MESH_MATERIAL_SHADER_PATH),
+          fragment.shader_defs,
+          fragment.entry_point,
+          fragment.targets,
         ),
       ),
     ),
@@ -1222,29 +1337,48 @@ fn meshlet_main_opaque_material_shade_draws(
       is Some(material_asset_id) else {
       continue
     }
-    guard standard_material_assets is Some(assets) else { continue }
-    guard assets.get(@asset.Handle::new(material_asset_id)) is Some(base_material) else {
+    guard instance_manager.material_family_for_id(draw_call.material_id)
+      is Some(material_family) else {
       continue
     }
-    let material_extension = instance_manager.material_extension_for_id(
-      draw_call.material_id,
-    )
-    let material = @pbr_render.render3d_apply_extended_material_metadata(
-      base_material,
-      material_extension,
-    )
     guard meshlet_main_opaque_material_entry_for_draw_call(materials, draw_call)
       is Some(material_entry) else {
       continue
     }
-    guard meshlet_main_opaque_standard_material_descriptor(
-        base_material,
-        material_extension,
-        default_opaque_renderer_method,
-        material_entry.descriptor.view_key,
-      )
-      is Some(descriptor) else {
-      continue
+    let (material, descriptor) = match material_family {
+      @material.Material3dFamily::Standard => {
+        guard standard_material_assets is Some(assets) else { continue }
+        guard assets.get(@asset.Handle::new(material_asset_id))
+          is Some(base_material) else {
+          continue
+        }
+        let material_extension = instance_manager.material_extension_for_id(
+          draw_call.material_id,
+        )
+        let material = @pbr_render.render3d_apply_extended_material_metadata(
+          base_material, material_extension,
+        )
+        guard meshlet_main_opaque_standard_material_descriptor(
+            base_material,
+            material_extension,
+            default_opaque_renderer_method,
+            material_entry.descriptor.view_key,
+          )
+          is Some(descriptor) else {
+          continue
+        }
+        (material, descriptor)
+      }
+      @material.Material3dFamily::MeshletDebug => {
+        guard meshlet_main_opaque_debug_material_descriptor(
+            default_opaque_renderer_method,
+            material_entry.descriptor.view_key,
+          )
+          is Some(descriptor) else {
+          continue
+        }
+        (@material.StandardMaterial::StandardMaterial(), descriptor)
+      }
     }
     let pipeline_id = draw_call.material_pipeline_id.to_uint64()
     @renderer.register_mesh3d_material_pipeline_descriptor(
@@ -1544,7 +1678,10 @@ pub impl @app.Plugin for MeshletPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for MeshletPlugin with build(self, app) {
   register_embedded_wgsl_sources()
-  meshlet_plugin_with(init_meshlet_mesh_asset(app), self)
+  meshlet_plugin_with(
+    init_meshlet_debug_material_asset(init_meshlet_mesh_asset(app)),
+    self,
+  )
 }
 
 ///|

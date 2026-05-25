@@ -212,6 +212,8 @@ pub fn queue_accessibility_update_payload(payload~ : String) -> Unit
 
 pub fn request_close(Int) -> Unit
 
+pub fn request_redraw(Int) -> Unit
+
 pub fn runner_handle_resumed() -> Unit
 
 pub fn runner_handle_suspended() -> Unit

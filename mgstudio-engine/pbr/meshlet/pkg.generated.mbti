@@ -56,6 +56,8 @@ pub fn extract_meshlet_mesh_entities(Int) -> InstanceManager
 
 pub fn extract_meshlet_mesh_entities_from_instances(Array[ExtractedMeshletInstance]) -> InstanceManager
 
+pub fn init_meshlet_debug_material_asset(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn init_meshlet_mesh_asset(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn init_meshlet_pipelines(Int, Int, Int) -> MeshletPipelines
@@ -71,6 +73,10 @@ pub fn meshlet_compute_pipeline_count(MeshletPipelines) -> Int
 pub fn meshlet_conversion_error_for_counts(Int, Int, MeshToMeshletMeshConversionConfig) -> MeshToMeshletMeshConversionError?
 
 pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversionError
+
+pub fn meshlet_debug_material_add(@ecs.World, MeshletDebugMaterial) -> @asset.Handle[MeshletDebugMaterial]
+
+pub fn meshlet_debug_mesh_material3d(@asset.Handle[MeshletDebugMaterial]) -> @material.MeshMaterial3d
 
 pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
 
@@ -258,20 +264,26 @@ pub struct InstanceManager {
   mut instance_aabbs : Array[MeshletAabb]
   mut instance_material_ids : Array[Int]
   mut instance_material_asset_ids : Array[Int]
+  mut instance_material_keys : Array[MeshletMaterialKey]
   mut instance_bvh_root_nodes : Array[Int]
   mut view_instance_visibility : Map[UInt64, Array[Int]]
   mut next_material_id : Int
   material_id_lookup : Map[Int, Int]
+  mut material_keys : Array[(MeshletMaterialKey, Int)]
   material_ids_present_in_scene : @utils.IntBitSet
 }
 pub fn InstanceManager::InstanceManager() -> Self
-pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int, world_from_local? : @math.Affine3, previous_world_from_local? : @math.Affine3, not_shadow_receiver? : Bool) -> Unit
+pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int, world_from_local? : @math.Affine3, previous_world_from_local? : @math.Affine3, not_shadow_receiver? : Bool, material_family? : @material.Material3dFamily, material_extension? : @material.ExtendedMaterialMetadata3d?) -> Unit
 pub fn InstanceManager::get_material_id(Self, Int) -> Int
+pub fn InstanceManager::get_material_id_for_material(Self, @material.Material3dFamily, Int, @material.ExtendedMaterialMetadata3d?) -> Int
+pub fn InstanceManager::get_material_id_with_extension(Self, Int, @material.ExtendedMaterialMetadata3d?) -> Int
 pub fn InstanceManager::instance_bvh_root_nodes(Self) -> Array[Int]
 pub fn InstanceManager::instance_count(Self) -> Int
 pub fn InstanceManager::instance_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
 pub fn InstanceManager::material_asset_id_for_id(Self, Int) -> Int?
+pub fn InstanceManager::material_extension_for_id(Self, Int) -> @material.ExtendedMaterialMetadata3d?
+pub fn InstanceManager::material_family_for_id(Self, Int) -> @material.Material3dFamily?
 pub fn InstanceManager::material_id_for_asset(Self, Int) -> Int?
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int
@@ -280,6 +292,7 @@ pub fn InstanceManager::present_material_count(Self) -> Int
 pub fn InstanceManager::present_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::reset(Self, active_views? : Array[@core.Entity]) -> Unit
 pub fn InstanceManager::scene_material_asset_ids(Self) -> Array[Int]
+pub fn InstanceManager::scene_materials(Self) -> Array[MeshletSceneMaterial]
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
 pub fn InstanceManager::set_view_instance_visibility(Self, @core.Entity, Array[Int]) -> Unit
@@ -385,6 +398,12 @@ pub struct MeshletCullData {
 }
 pub fn MeshletCullData::MeshletCullData() -> Self
 
+pub struct MeshletDebugMaterial {
+  dummy : Unit
+}
+pub fn MeshletDebugMaterial::MeshletDebugMaterial() -> Self
+pub impl @asset.Asset for MeshletDebugMaterial
+
 pub struct MeshletInstanceUniform {
   world_from_local : @math.Affine3
   previous_world_from_local : @math.Affine3
@@ -406,6 +425,12 @@ pub(all) enum MeshletMaterialFragmentShaderKind {
   MeshletFragmentOverride
   MeshletPrepassFragmentOverride
   MeshletDeferredFragmentOverride
+}
+
+pub(all) struct MeshletMaterialKey {
+  material_family : @material.Material3dFamily
+  material_asset_id : Int
+  extension : @material.ExtendedMaterialMetadata3d?
 }
 
 pub(all) enum MeshletMaterialPassVariant {
@@ -760,6 +785,13 @@ pub(all) enum MeshletResourceTextureFormat {
 pub(all) enum MeshletRuntimeStatus {
   Enabled
   RuntimeUnavailable
+}
+
+pub struct MeshletSceneMaterial {
+  material_id : Int
+  material_family : @material.Material3dFamily
+  material_asset_id : Int
+  extension : @material.ExtendedMaterialMetadata3d?
 }
 
 pub struct MeshletSourceVertex {

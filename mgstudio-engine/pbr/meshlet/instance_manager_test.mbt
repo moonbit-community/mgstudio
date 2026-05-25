@@ -141,3 +141,36 @@ test "pbr/meshlet: queue writes per-instance material ids" {
   debug_inspect(queue_material_meshlet_meshes(manager), content="2")
   debug_inspect(manager.instance_material_ids(), content="[2, 1, 2]")
 }
+
+///|
+test "pbr/meshlet: material ids include Bevy material family" {
+  let manager = InstanceManager::InstanceManager()
+  manager.add_instance(
+    @core.Entity::new(0, 1),
+    7,
+    1,
+    MeshletAabb::MeshletAabb(),
+    1,
+    material_family=@material.Material3dFamily::Standard,
+  )
+  manager.add_instance(
+    @core.Entity::new(0, 2),
+    7,
+    2,
+    MeshletAabb::MeshletAabb(),
+    1,
+    material_family=@material.Material3dFamily::MeshletDebug,
+  )
+  debug_inspect(queue_material_meshlet_meshes(manager), content="2")
+  debug_inspect(manager.instance_material_ids(), content="[1, 2]")
+  let materials = manager.scene_materials()
+  inspect(materials.length(), content="2")
+  inspect(
+    materials[0].material_family is @material.Material3dFamily::Standard,
+    content="true",
+  )
+  inspect(
+    materials[1].material_family is @material.Material3dFamily::MeshletDebug,
+    content="true",
+  )
+}
