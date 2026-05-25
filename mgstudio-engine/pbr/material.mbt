@@ -502,6 +502,18 @@ pub fn render3d_material_properties_for_standard_material(
       @material.DEFERRED_FRAGMENT_SHADER_LABEL,
       PBR_MESH_FRAGMENT_SHADER_PATH,
     )
+    .add_shader(
+      @material.MESHLET_FRAGMENT_SHADER_LABEL,
+      PBR_MESH_FRAGMENT_SHADER_PATH,
+    )
+    .add_shader(
+      @material.MESHLET_PREPASS_FRAGMENT_SHADER_LABEL,
+      PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH,
+    )
+    .add_shader(
+      @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
+      PBR_MESH_FRAGMENT_SHADER_PATH,
+    )
   if extension is Some(metadata) {
     if metadata.vertex_shader_path is Some(shader_path) {
       properties = properties.add_shader(
@@ -536,6 +548,24 @@ pub fn render3d_material_properties_for_standard_material(
     if metadata.deferred_fragment_shader_path is Some(shader_path) {
       properties = properties.add_shader(
         @material.DEFERRED_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.meshlet_fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.MESHLET_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.meshlet_prepass_fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.MESHLET_PREPASS_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.meshlet_deferred_fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
         shader_path,
       )
     }

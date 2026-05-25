@@ -25,6 +25,99 @@ const MESHLET_MESH_FLAGS_SHADOW_RECEIVER : UInt = 1U << 29
 const MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
 
 ///|
+pub(all) struct MeshletMaterialKey {
+  material_asset_id : Int
+  extension : @material.ExtendedMaterialMetadata3d?
+}
+
+///|
+pub struct MeshletSceneMaterial {
+  material_id : Int
+  material_asset_id : Int
+  extension : @material.ExtendedMaterialMetadata3d?
+}
+
+///|
+fn meshlet_material_key(
+  material_asset_id : Int,
+  extension : @material.ExtendedMaterialMetadata3d?,
+) -> MeshletMaterialKey {
+  MeshletMaterialKey::{ material_asset_id: non_negative(material_asset_id), extension }
+}
+
+///|
+fn meshlet_alpha_mode_equal(
+  left : @material.AlphaMode3d,
+  right : @material.AlphaMode3d,
+) -> Bool {
+  match (left, right) {
+    (@material.AlphaMode3d::Opaque, @material.AlphaMode3d::Opaque) => true
+    (@material.AlphaMode3d::Mask(left), @material.AlphaMode3d::Mask(right)) =>
+      left == right
+    (@material.AlphaMode3d::Blend, @material.AlphaMode3d::Blend) => true
+    (@material.AlphaMode3d::Premultiplied, @material.AlphaMode3d::Premultiplied) =>
+      true
+    (@material.AlphaMode3d::AlphaToCoverage, @material.AlphaMode3d::AlphaToCoverage) =>
+      true
+    (@material.AlphaMode3d::Add, @material.AlphaMode3d::Add) => true
+    (@material.AlphaMode3d::Multiply, @material.AlphaMode3d::Multiply) => true
+    _ => false
+  }
+}
+
+///|
+fn meshlet_alpha_mode_option_equal(
+  left : @material.AlphaMode3d?,
+  right : @material.AlphaMode3d?,
+) -> Bool {
+  match (left, right) {
+    (None, None) => true
+    (Some(left), Some(right)) => meshlet_alpha_mode_equal(left, right)
+    _ => false
+  }
+}
+
+///|
+fn meshlet_material_extension_equal(
+  left : @material.ExtendedMaterialMetadata3d?,
+  right : @material.ExtendedMaterialMetadata3d?,
+) -> Bool {
+  match (left, right) {
+    (None, None) => true
+    (Some(left), Some(right)) =>
+      left.extension_tag == right.extension_tag &&
+      left.vertex_shader_path == right.vertex_shader_path &&
+      left.fragment_shader_path == right.fragment_shader_path &&
+      left.prepass_vertex_shader_path == right.prepass_vertex_shader_path &&
+      left.prepass_fragment_shader_path == right.prepass_fragment_shader_path &&
+      left.deferred_vertex_shader_path == right.deferred_vertex_shader_path &&
+      left.deferred_fragment_shader_path == right.deferred_fragment_shader_path &&
+      left.meshlet_fragment_shader_path == right.meshlet_fragment_shader_path &&
+      left.meshlet_prepass_fragment_shader_path ==
+      right.meshlet_prepass_fragment_shader_path &&
+      left.meshlet_deferred_fragment_shader_path ==
+      right.meshlet_deferred_fragment_shader_path &&
+      meshlet_alpha_mode_option_equal(
+        left.alpha_mode_override, right.alpha_mode_override,
+      ) &&
+      left.opaque_render_method_override == right.opaque_render_method_override &&
+      left.requires_depth_prepass == right.requires_depth_prepass &&
+      left.requires_deferred_prepass == right.requires_deferred_prepass &&
+      left.disable_shadows == right.disable_shadows
+    _ => false
+  }
+}
+
+///|
+fn meshlet_material_key_equal(
+  left : MeshletMaterialKey,
+  right : MeshletMaterialKey,
+) -> Bool {
+  left.material_asset_id == right.material_asset_id &&
+  meshlet_material_extension_equal(left.extension, right.extension)
+}
+
+///|
 pub struct MeshletInstanceUniform {
   world_from_local : @math.Affine3
   previous_world_from_local : @math.Affine3
@@ -54,10 +147,12 @@ pub struct InstanceManager {
   mut instance_aabbs : Array[MeshletAabb]
   mut instance_material_ids : Array[Int]
   mut instance_material_asset_ids : Array[Int]
+  mut instance_material_keys : Array[MeshletMaterialKey]
   mut instance_bvh_root_nodes : Array[Int]
   mut view_instance_visibility : Map[UInt64, Array[Int]]
   mut next_material_id : Int
   material_id_lookup : Map[Int, Int]
+  mut material_keys : Array[(MeshletMaterialKey, Int)]
   material_ids_present_in_scene : @utils.IntBitSet
 }
 
@@ -84,10 +179,12 @@ pub fn InstanceManager::InstanceManager() -> InstanceManager {
     instance_aabbs: [],
     instance_material_ids: [],
     instance_material_asset_ids: [],
+    instance_material_keys: [],
     instance_bvh_root_nodes: [],
     view_instance_visibility: {},
     next_material_id: 0,
     material_id_lookup: {},
+    material_keys: [],
     material_ids_present_in_scene: @utils.IntBitSet::new(),
   }
 }
@@ -141,6 +238,7 @@ pub fn InstanceManager::add_instance(
   world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   previous_world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   not_shadow_receiver? : Bool = false,
+  material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Unit {
   self.instances.push(
     (instance.to_bits(), render_layer_mask, not_shadow_caster),
@@ -163,6 +261,9 @@ pub fn InstanceManager::add_instance(
   self.instance_aabbs.push(aabb)
   self.instance_material_ids.push(0)
   self.instance_material_asset_ids.push(non_negative(material_asset_id))
+  self.instance_material_keys.push(
+    meshlet_material_key(material_asset_id, material_extension),
+  )
   self.instance_bvh_root_nodes.push(non_negative(root_bvh_node))
   self.scene_instance_count = self.instances.length()
   let safe_depth = non_negative(bvh_depth)
@@ -196,11 +297,43 @@ pub fn InstanceManager::reset(
   self.instance_aabbs = []
   self.instance_material_ids = []
   self.instance_material_asset_ids = []
+  self.instance_material_keys = []
   self.instance_bvh_root_nodes = []
   self.view_instance_visibility = retained_visibility
   self.next_material_id = 0
   self.material_id_lookup.clear()
+  self.material_keys = []
   self.material_ids_present_in_scene.clear()
+}
+
+///|
+fn InstanceManager::material_id_for_key(
+  self : InstanceManager,
+  key : MeshletMaterialKey,
+) -> Int? {
+  for entry in self.material_keys {
+    let (stored_key, material_id) = entry
+    if meshlet_material_key_equal(stored_key, key) {
+      return Some(material_id)
+    }
+  }
+  None
+}
+
+///|
+fn InstanceManager::get_material_id_for_key(
+  self : InstanceManager,
+  key : MeshletMaterialKey,
+) -> Int {
+  match self.material_id_for_key(key) {
+    Some(id) => id
+    None => {
+      self.next_material_id = self.next_material_id + 1
+      let id = self.next_material_id
+      self.material_keys.push((key, id))
+      id
+    }
+  }
 }
 
 ///|
@@ -212,12 +345,28 @@ pub fn InstanceManager::get_material_id(
   match self.material_id_lookup.get(key) {
     Some(id) => id
     None => {
-      self.next_material_id = self.next_material_id + 1
-      let id = self.next_material_id
+      let material_key = meshlet_material_key(key, None)
+      let id = match self.material_id_for_key(material_key) {
+        Some(existing) => existing
+        None => self.get_material_id_for_key(material_key)
+      }
       self.material_id_lookup.set(key, id)
       id
     }
   }
+}
+
+///|
+pub fn InstanceManager::get_material_id_with_extension(
+  self : InstanceManager,
+  material_asset_id : Int,
+  extension : @material.ExtendedMaterialMetadata3d?,
+) -> Int {
+  let key = meshlet_material_key(material_asset_id, extension)
+  if extension is None {
+    return self.get_material_id(material_asset_id)
+  }
+  self.get_material_id_for_key(key)
 }
 
 ///|
@@ -241,7 +390,7 @@ pub fn InstanceManager::material_id_for_asset(
   self : InstanceManager,
   material_asset_id : Int,
 ) -> Int? {
-  self.material_id_lookup.get(non_negative(material_asset_id))
+  self.material_id_for_key(meshlet_material_key(material_asset_id, None))
 }
 
 ///|
@@ -250,10 +399,25 @@ pub fn InstanceManager::material_asset_id_for_id(
   material_id : Int,
 ) -> Int? {
   let safe_material_id = non_negative(material_id)
-  for material_asset_id in self.material_id_lookup.keys() {
-    match self.material_id_lookup.get(material_asset_id) {
-      Some(id) if id == safe_material_id => return Some(material_asset_id)
-      _ => ()
+  for entry in self.material_keys {
+    let (key, id) = entry
+    if id == safe_material_id {
+      return Some(key.material_asset_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn InstanceManager::material_extension_for_id(
+  self : InstanceManager,
+  material_id : Int,
+) -> @material.ExtendedMaterialMetadata3d? {
+  let safe_material_id = non_negative(material_id)
+  for entry in self.material_keys {
+    let (key, id) = entry
+    if id == safe_material_id {
+      return key.extension
     }
   }
   None
@@ -270,6 +434,29 @@ pub fn InstanceManager::scene_material_asset_ids(
   let ids = id_set.to_array()
   ids.sort()
   ids
+}
+
+///|
+pub fn InstanceManager::scene_materials(self : InstanceManager) -> Array[MeshletSceneMaterial] {
+  let materials : Array[MeshletSceneMaterial] = []
+  for key in self.instance_material_keys {
+    let material_id = self.get_material_id_for_key(key)
+    let mut exists = false
+    for material in materials {
+      if material.material_id == material_id {
+        exists = true
+      }
+    }
+    if !exists {
+      materials.push(MeshletSceneMaterial::{
+        material_id,
+        material_asset_id: key.material_asset_id,
+        extension: key.extension,
+      })
+    }
+  }
+  materials.sort_by(fn(left, right) { left.material_id - right.material_id })
+  materials
 }
 
 ///|
@@ -640,15 +827,12 @@ pub fn queue_material_meshlet_meshes(instance_manager : InstanceManager) -> Int 
   for index in 0..<instance_manager.instance_material_ids.length() {
     instance_manager.instance_material_ids[index] = 0
   }
-  for index in 0..<instance_manager.instance_material_asset_ids.length() {
-    let material_asset_id = instance_manager.instance_material_asset_ids[index]
-    match instance_manager.material_id_lookup.get(material_asset_id) {
-      Some(material_id) => {
-        instance_manager.mark_material_present_in_scene(material_id)
-        instance_manager.instance_material_ids[index] = material_id
-      }
-      None => ()
-    }
+  for index in 0..<instance_manager.instance_material_keys.length() {
+    let material_id = instance_manager.get_material_id_for_key(
+      instance_manager.instance_material_keys[index],
+    )
+    instance_manager.mark_material_present_in_scene(material_id)
+    instance_manager.instance_material_ids[index] = material_id
   }
   instance_manager.present_material_count()
 }

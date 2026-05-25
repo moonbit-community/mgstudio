@@ -29,6 +29,9 @@ const ENV_DIFFUSE_MAP_ASSET : String = "environment_maps/pisa_diffuse_rgb9e5_zst
 const ENV_SPECULAR_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_zstd.ktx2"
 
 ///|
+const MESHLET_DEBUG_FRAGMENT_SHADER : String = "pbr/meshlet/meshlet_mesh_material.wgsl"
+
+///|
 const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
 
 ///|
@@ -167,6 +170,9 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     BUNNY_MESHLET_ASSET,
   )
+  let debug_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::StandardMaterial(),
+  )
   for i in 0..<5 {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
@@ -195,25 +201,22 @@ fn setup(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
-    let shade = 0.2F + float_from_int(i) * 0.18F
-    let material = @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(shade, shade, shade, 1.0F),
-      )
-      .with_unlit(true)
-      .with_emissive(
-        @sprite.Color::new(shade * 0.2F, shade * 0.2F, shade * 0.2F, 1.0F),
-      ),
-    )
-    spawn_meshlet_bunny(
+    let entity = spawn_meshlet_bunny(
       world,
       meshlet_mesh,
-      material,
+      debug_material,
       @transform.Transform::from_xyz(x, 0.0F, 0.3F)
       .with_scale(@math.Vec3::splat(0.2F))
       .with_rotation(@math.Quat::from_rotation_y(PI)),
     )
-    |> ignore
+    try! world.set_by_key(
+      entity,
+      @pbr.ecs_key_mesh_material3d,
+      @pbr.MeshMaterial3d::new(debug_material)
+      .with_extension_meshlet_fragment_shader_path(
+        Some(MESHLET_DEBUG_FRAGMENT_SHADER),
+      ),
+    )
   }
 
   @pbr.MeshMaterial3dBundle::new(

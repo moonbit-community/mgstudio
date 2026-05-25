@@ -425,7 +425,7 @@ pub fn MeshletPreparedMaterialInput::new(
     alpha_mode: @material.AlphaMode3d::Opaque,
     reads_view_transmission_texture: false,
     material_bind_group_id: meshlet_material_non_negative(material_id),
-    material_layout_id: meshlet_material_non_negative(material_id),
+    material_layout_id: 0,
     material_shader_def_count: 0,
     has_material_layout: true,
     has_material_bind_group_allocator: true,
@@ -612,11 +612,35 @@ fn meshlet_material_pipeline_id(
   pipeline_base : Int,
   pass_variant : Int,
   view_key : MeshletViewMaterialPipelineKey,
-  material_asset_id : Int,
+  material_input : MeshletPreparedMaterialInput,
 ) -> Int {
   let key_bits = meshlet_view_key_bits(view_key)
-  let _safe_asset_id = meshlet_material_non_negative(material_asset_id)
-  pipeline_base + pass_variant * 1_000_000 + key_bits
+  let meshlet_shader_bits = (
+      if material_input.has_meshlet_fragment_shader_override {
+        1
+      } else {
+        0
+      }
+    ) |
+    (
+      if material_input.has_meshlet_prepass_fragment_shader_override {
+        2
+      } else {
+        0
+      }
+    ) |
+    (
+      if material_input.has_meshlet_deferred_fragment_shader_override {
+        4
+      } else {
+        0
+      }
+    )
+  pipeline_base +
+  pass_variant * 1_000_000 +
+  key_bits +
+  (meshlet_material_non_negative(material_input.material_layout_id) << 24) +
+  (meshlet_shader_bits << 21)
 }
 
 ///|
@@ -789,7 +813,7 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
       1000,
       1,
       view_key,
-      material_input.material_asset_id,
+      material_input,
     )
     if queued_material_ids.contains(material_input.material_id) {
       continue
@@ -878,7 +902,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
         2
       },
       working_view_key,
-      material_input.material_asset_id,
+      material_input,
     )
     let entry = MeshletViewMaterialEntry::new(
       material_input.material_id,

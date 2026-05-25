@@ -97,6 +97,15 @@ pub const DEFERRED_VERTEX_SHADER_LABEL : ShaderLabel = "DeferredVertexShader"
 pub const DEFERRED_FRAGMENT_SHADER_LABEL : ShaderLabel = "DeferredFragmentShader"
 
 ///|
+pub const MESHLET_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletFragmentShader"
+
+///|
+pub const MESHLET_PREPASS_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletPrepassFragmentShader"
+
+///|
+pub const MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletDeferredFragmentShader"
+
+///|
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, FromJson)
@@ -1059,6 +1068,9 @@ pub struct ExtendedMaterialMetadata3d {
   prepass_fragment_shader_path : String?
   deferred_vertex_shader_path : String?
   deferred_fragment_shader_path : String?
+  meshlet_fragment_shader_path : String?
+  meshlet_prepass_fragment_shader_path : String?
+  meshlet_deferred_fragment_shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -1076,6 +1088,9 @@ pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMater
     prepass_fragment_shader_path: None,
     deferred_vertex_shader_path: None,
     deferred_fragment_shader_path: None,
+    meshlet_fragment_shader_path: None,
+    meshlet_prepass_fragment_shader_path: None,
+    meshlet_deferred_fragment_shader_path: None,
     alpha_mode_override: None,
     opaque_render_method_override: None,
     requires_depth_prepass: false,
@@ -1173,6 +1188,43 @@ pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(
   ExtendedMaterialMetadata3d::{
     ..self,
     deferred_fragment_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_meshlet_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    meshlet_fragment_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_meshlet_prepass_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    meshlet_prepass_fragment_shader_path: normalize_material_shader_path(
+      shader_path,
+    ),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_meshlet_deferred_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    meshlet_deferred_fragment_shader_path: normalize_material_shader_path(
+      shader_path,
+    ),
   }
 }
 
@@ -1290,6 +1342,57 @@ pub fn MeshMaterial3d::with_extension_fragment_shader_path(
   MeshMaterial3d::{
     ..self,
     extended_material: Some(extension.with_fragment_shader_path(shader_path)),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_meshlet_fragment_shader_path(
+  self : MeshMaterial3d,
+  shader_path : String?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_meshlet_fragment_shader_path(shader_path),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_meshlet_prepass_fragment_shader_path(
+  self : MeshMaterial3d,
+  shader_path : String?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_meshlet_prepass_fragment_shader_path(shader_path),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_meshlet_deferred_fragment_shader_path(
+  self : MeshMaterial3d,
+  shader_path : String?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_meshlet_deferred_fragment_shader_path(shader_path),
+    ),
   }
 }
 
