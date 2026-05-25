@@ -360,6 +360,150 @@ fn surface_target_size(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
 }
 
 ///|
+pub(all) enum SurfaceAcquireResult {
+  SurfaceAcquired(@wgpu.SurfaceTexture, @wgpu.Texture)
+  SurfaceOutdated
+  SurfaceOccluded
+  SurfaceAcquireFailed(UInt)
+}
+
+///|
+fn surface_texture_status_is_success(status : UInt) -> Bool {
+  status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL ||
+  status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL
+}
+
+///|
+fn surface_texture_status_name(status : UInt) -> String {
+  if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL {
+    "SuccessOptimal"
+  } else if status ==
+    @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL {
+    "SuccessSuboptimal"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_TIMEOUT {
+    "Timeout"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
+    "Outdated"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_LOST {
+    "Lost"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED {
+    "Occluded"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_DEVICE_LOST {
+    "DeviceLost"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_ERROR {
+    "Error"
+  } else {
+    "Unknown"
+  }
+}
+
+///|
+fn GpuBackend::configure_surface_state_resolved(
+  self : GpuBackend,
+  index : Int,
+  width : Int,
+  height : Int,
+  present_mode_u32 : UInt,
+  alpha_mode_u32 : UInt,
+  desired_maximum_frame_latency_u32 : UInt,
+) -> Unit {
+  let state = self.surfaces[index]
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  // Surface textures cannot be used as sampled textures (`texture_binding`).
+  // Requesting RESOURCE usage triggers a wgpu-native validation error.
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let format = match state.surface_format {
+    Some(surface_format) => surface_format
+    None => surface_preferred_format(state.surface, self.adapter)
+  }
+  let configured = state.surface.configure_u32(
+    self.adapter,
+    self.device,
+    w,
+    h,
+    usage,
+    format,
+    present_mode_u32,
+    alpha_mode_u32,
+    desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
+  )
+  let configured_format = if configured {
+    format
+  } else {
+    state.surface.configure_default(
+      self.adapter,
+      self.device,
+      w,
+      h,
+      usage,
+      desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
+    )
+  }
+  self.surfaces[index].configured_width = width
+  self.surfaces[index].configured_height = height
+  self.surfaces[index].configured_present_mode = present_mode_u32
+  self.surfaces[index].configured_alpha_mode = alpha_mode_u32
+  self.surfaces[index].configured_desired_maximum_frame_latency = desired_maximum_frame_latency_u32
+  self.surfaces[index].surface_format = Some(configured_format)
+  if self.active_surface_target_id >= 0 {
+    self.active_surface_target_id = state.target_id
+  }
+  sync_active_surface_state(self)
+}
+
+///|
+fn GpuBackend::reconfigure_surface_state_with_existing_config(
+  self : GpuBackend,
+  index : Int,
+) -> Unit {
+  let state = self.surfaces[index]
+  if state.configured_width <= 0 || state.configured_height <= 0 {
+    return
+  }
+  self.configure_surface_state_resolved(
+    index,
+    state.configured_width,
+    state.configured_height,
+    state.configured_present_mode,
+    state.configured_alpha_mode,
+    state.configured_desired_maximum_frame_latency,
+  )
+}
+
+///|
+fn GpuBackend::acquire_surface_texture_once(
+  self : GpuBackend,
+  index : Int,
+) -> SurfaceAcquireResult {
+  let st = self.surfaces[index].surface.get_current_texture()
+  let status = st.status()
+  if surface_texture_status_is_success(status) {
+    let tex = st.take_texture_or_raise() catch {
+      err => {
+        st.release()
+        debug("[renderer] begin_frame: \{err.message()}")
+        return SurfaceAcquireFailed(status)
+      }
+    }
+    return SurfaceAcquired(st, tex)
+  }
+  st.release()
+  if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
+    SurfaceOutdated
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED {
+    SurfaceOccluded
+  } else {
+    debug(
+      "[renderer] begin_frame: wgpuSurfaceGetCurrentTexture failed (status=\{surface_texture_status_name(status)}, u32=\{status.to_string()})",
+    )
+    SurfaceAcquireFailed(status)
+  }
+}
+
+///|
 pub fn GpuBackend::set_active_surface_target(
   self : GpuBackend,
   target_id : Int,
@@ -451,50 +595,9 @@ pub fn GpuBackend::configure_surface_binding(
     state.configured_desired_maximum_frame_latency {
     return
   }
-  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
-  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  // Surface textures cannot be used as sampled textures (`texture_binding`).
-  // Requesting RESOURCE usage triggers a wgpu-native validation error.
-  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
-  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
-  let format = match state.surface_format {
-    Some(surface_format) => surface_format
-    None => surface_preferred_format(state.surface, self.adapter)
-  }
-  let configured = state.surface.configure_u32(
-    self.adapter,
-    self.device,
-    w,
-    h,
-    usage,
-    format,
-    present_mode_u32,
-    alpha_mode_u32,
-    desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
+  self.configure_surface_state_resolved(
+    index, width, height, present_mode_u32, alpha_mode_u32, desired_maximum_frame_latency_u32,
   )
-  let configured_format = if configured {
-    format
-  } else {
-    state.surface.configure_default(
-      self.adapter,
-      self.device,
-      w,
-      h,
-      usage,
-      desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
-    )
-  }
-  self.surfaces[index].configured_width = width
-  self.surfaces[index].configured_height = height
-  self.surfaces[index].configured_present_mode = present_mode_u32
-  self.surfaces[index].configured_alpha_mode = alpha_mode_u32
-  self.surfaces[index].configured_desired_maximum_frame_latency = desired_maximum_frame_latency_u32
-  self.surfaces[index].surface_format = Some(configured_format)
-  if self.active_surface_target_id >= 0 {
-    self.active_surface_target_id = state.target_id
-  }
-  sync_active_surface_state(self)
 }
 
 ///|
@@ -607,19 +710,31 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh3d_prepared_draw_count = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0
-  let st = self.surfaces[index].surface.get_current_texture_or_raise() catch {
-    err => {
-      debug("[renderer] begin_frame: \{err.message()}")
-      return false
+  let acquired = match self.acquire_surface_texture_once(index) {
+    SurfaceAcquired(st, tex) => Some((st, tex))
+    SurfaceOutdated => {
+      self.reconfigure_surface_state_with_existing_config(index)
+      match self.acquire_surface_texture_once(index) {
+        SurfaceAcquired(st, tex) => Some((st, tex))
+        SurfaceOccluded => None
+        SurfaceOutdated => {
+          debug(
+            "[renderer] begin_frame: could not get swap chain texture after configuring. Cause: Outdated",
+          )
+          None
+        }
+        SurfaceAcquireFailed(status) => {
+          debug(
+            "[renderer] begin_frame: could not get swap chain texture after configuring. Cause: \{surface_texture_status_name(status)}",
+          )
+          None
+        }
+      }
     }
+    SurfaceOccluded => None
+    SurfaceAcquireFailed(_) => None
   }
-  let tex = st.take_texture_or_raise() catch {
-    err => {
-      st.release()
-      debug("[renderer] begin_frame: \{err.message()}")
-      return false
-    }
-  }
+  guard acquired is Some((st, tex)) else { return false }
   let view = tex.create_view()
   view.set_label("mgstudio_surface_view")
   let encoder = self.device.create_command_encoder()

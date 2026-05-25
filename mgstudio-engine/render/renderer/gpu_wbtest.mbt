@@ -1732,6 +1732,40 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
 }
 
 ///|
+test "renderer: surface acquire status follows Bevy window prepare semantics" {
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    surface_texture_status_name(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED,
+    ),
+    content="\"Occluded\"",
+  )
+  debug_inspect(
+    surface_texture_status_name(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED,
+    ),
+    content="\"Outdated\"",
+  )
+}
+
+///|
 test "renderer: motion-vector mesh layout keeps morph dynamic offsets after current skin" {
   let descriptor = mesh3d_motion_vector_mesh_layout_descriptor(
     true, true, true, true,

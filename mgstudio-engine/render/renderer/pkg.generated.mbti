@@ -1682,6 +1682,13 @@ pub struct SpriteBatch {
   mut instance_count : UInt
 }
 
+pub(all) enum SurfaceAcquireResult {
+  SurfaceAcquired(@wgpu_mbt.SurfaceTexture, @wgpu_mbt.Texture)
+  SurfaceOutdated
+  SurfaceOccluded
+  SurfaceAcquireFailed(UInt)
+}
+
 pub struct TonemappingPipelineCacheEntry {
   key : String
   state : RenderPipelineCacheState
