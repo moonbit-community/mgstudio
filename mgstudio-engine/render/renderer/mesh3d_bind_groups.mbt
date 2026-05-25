@@ -287,11 +287,7 @@ fn mesh3d_build_view_bind_group_from_descriptor(
     }
   }
   mesh3d_finish_bind_group_checked(
-    backend,
-    builder,
-    layout,
-    "mgstudio_mesh3d_view_bg",
-    error_message,
+    backend, builder, layout, "mgstudio_mesh3d_view_bg", error_message,
   )
 }
 
@@ -350,11 +346,7 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
     }
   }
   mesh3d_finish_bind_group_checked(
-    backend,
-    builder,
-    layout,
-    "mgstudio_mesh3d_binding_arrays_bg",
-    error_message,
+    backend, builder, layout, "mgstudio_mesh3d_binding_arrays_bg", error_message,
   )
 }
 
@@ -772,11 +764,7 @@ fn mesh3d_material_cache_get_or_create(
     fatal("wgpu: failed to build mesh3d material bind group")
   }
   let bind_group = mesh3d_finish_bind_group_checked(
-    backend,
-    builder,
-    layout,
-    "mgstudio_mesh3d_material_bg",
-    "wgpu: failed to build mesh3d material bind group",
+    backend, builder, layout, "mgstudio_mesh3d_material_bg", "wgpu: failed to build mesh3d material bind group",
   )
   backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
     material_pipeline_id,

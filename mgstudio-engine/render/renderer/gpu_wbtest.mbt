@@ -1587,6 +1587,25 @@ test "renderer: bloom intermediate format prefers canonical rg11b10 when rendera
 }
 
 ///|
+test "renderer: rgb9e5 3d texture upload preserves 3d dimension" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let bytes = Bytes::makei(4 * 4 * 4 * 4, _ => (0).to_byte())
+  let texture_id = backend.create_texture_3d_with_format(
+    4,
+    4,
+    4,
+    @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+    [bytes],
+  )
+  let ok = match find_texture(backend, texture_id) {
+    Some(texture) =>
+      texture.texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_3D
+    None => false
+  }
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "renderer: bloom mip texture allocates requested mip count" {
   let backend = GpuBackend::new(assets_base="assets")
   let ok = try {

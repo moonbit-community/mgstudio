@@ -691,3 +691,26 @@ test "asset host io: texture dimensions parse gif/webp/tiff headers" {
     content="Some((7, 5))",
   )
 }
+
+///|
+test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
+  let path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("textures/tonemapping/tony_mc_mapface.ktx2")
+  })
+  let bytes = @fs.read_file_to_bytes(path)
+  debug_inspect(ktx2_is_3d_texture(bytes), content="true")
+  debug_inspect(
+    blob_u32_at(bytes, 44) == KTX2_SUPERCOMPRESSION_ZSTD,
+    content="true",
+  )
+  debug_inspect(ktx2_decode_2d_payload(bytes) is None, content="true")
+  let payload = ktx2_decode_3d_payload(bytes).unwrap()
+  debug_inspect(payload.width, content="48")
+  debug_inspect(payload.height, content="48")
+  debug_inspect(payload.depth, content="48")
+  debug_inspect(
+    payload.format_raw == WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+    content="true",
+  )
+  debug_inspect(payload.pixels.length(), content="442368")
+}

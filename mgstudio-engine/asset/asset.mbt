@@ -599,8 +599,7 @@ fn image_from_loaded_texture_bytes(
     !image_container_supports_rgba_decode(container) {
     return None
   }
-  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) ||
-    ktx2_decode_2d_payload(bytes) is Some(_) {
+  if ktx2_is_3d_texture(bytes) || ktx2_decode_2d_payload(bytes) is Some(_) {
     return None
   }
   let (width, height, pixels) = if decode_texture_image_with_container(

@@ -2318,18 +2318,7 @@ fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
   if bytes.length() < 28 {
     return None
   }
-  if blob_u8_at(bytes, 0) != 0xAB ||
-    blob_u8_at(bytes, 1) != 0x4B ||
-    blob_u8_at(bytes, 2) != 0x54 ||
-    blob_u8_at(bytes, 3) != 0x58 ||
-    blob_u8_at(bytes, 4) != 0x20 ||
-    blob_u8_at(bytes, 5) != 0x32 ||
-    blob_u8_at(bytes, 6) != 0x30 ||
-    blob_u8_at(bytes, 7) != 0xBB ||
-    blob_u8_at(bytes, 8) != 0x0D ||
-    blob_u8_at(bytes, 9) != 0x0A ||
-    blob_u8_at(bytes, 10) != 0x1A ||
-    blob_u8_at(bytes, 11) != 0x0A {
+  if !ktx2_has_identifier(bytes) {
     return None
   }
   let width = blob_u32_at(bytes, 20)
@@ -2339,6 +2328,28 @@ fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
   } else {
     return Some((width, height))
   }
+}
+
+///|
+fn ktx2_has_identifier(bytes : Bytes) -> Bool {
+  bytes.length() >= KTX2_HEADER_SIZE &&
+  blob_u8_at(bytes, 0) == 0xAB &&
+  blob_u8_at(bytes, 1) == 0x4B &&
+  blob_u8_at(bytes, 2) == 0x54 &&
+  blob_u8_at(bytes, 3) == 0x58 &&
+  blob_u8_at(bytes, 4) == 0x20 &&
+  blob_u8_at(bytes, 5) == 0x32 &&
+  blob_u8_at(bytes, 6) == 0x30 &&
+  blob_u8_at(bytes, 7) == 0xBB &&
+  blob_u8_at(bytes, 8) == 0x0D &&
+  blob_u8_at(bytes, 9) == 0x0A &&
+  blob_u8_at(bytes, 10) == 0x1A &&
+  blob_u8_at(bytes, 11) == 0x0A
+}
+
+///|
+fn ktx2_is_3d_texture(bytes : Bytes) -> Bool {
+  ktx2_has_identifier(bytes) && blob_u32_at(bytes, 28) > 1
 }
 
 ///|
@@ -2496,8 +2507,11 @@ fn ktx2_decode_level_payload(
 }
 
 ///|
-fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
+fn ktx2_decode_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   if bytes.length() < KTX2_HEADER_SIZE {
+    return None
+  }
+  if !ktx2_has_identifier(bytes) {
     return None
   }
   let width = blob_u32_at(bytes, 20)
@@ -2505,11 +2519,11 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   let depth = blob_u32_at(bytes, 28)
   let level_count = blob_u32_at(bytes, 40)
   let supercompression_scheme = blob_u32_at(bytes, 44)
-  if width <= 0 ||
-    height <= 0 ||
-    depth <= 1 ||
-    level_count < 1 ||
-    supercompression_scheme != 0 {
+  if width <= 0 || height <= 0 || depth <= 1 || level_count < 1 {
+    return None
+  }
+  if supercompression_scheme != KTX2_SUPERCOMPRESSION_NONE &&
+    supercompression_scheme != KTX2_SUPERCOMPRESSION_ZSTD {
     return None
   }
   guard ktx2_vulkan_format_info(blob_u32_at(bytes, 12)) is Some(format_info) else {
@@ -2517,18 +2531,33 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   }
   let level0_offset = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE)
   let level0_length = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE + 8)
+  let level0_uncompressed_length = blob_u64_at_as_int(
+    bytes,
+    KTX2_HEADER_SIZE + 16,
+  )
   if level0_offset < 0 || level0_length < 0 {
+    return None
+  }
+  guard ktx2_decode_level_payload(
+      bytes, level0_offset, level0_length, level0_uncompressed_length, supercompression_scheme,
+    )
+    is Some(level_bytes) else {
     return None
   }
   guard ktx2_expected_level_bytes(format_info, width, height, depth)
     is Some(expected_bytes) else {
     return None
   }
-  if level0_length < expected_bytes {
+  if level_bytes.length() < expected_bytes {
     return None
   }
-  guard bytes_slice_copy(bytes, level0_offset, expected_bytes) is Some(pixels) else {
-    return None
+  let pixels = if level_bytes.length() == expected_bytes {
+    level_bytes
+  } else {
+    guard bytes_slice_copy(level_bytes, 0, expected_bytes) is Some(clipped) else {
+      return None
+    }
+    clipped
   }
   Some(Ktx2TexturePayload::{
     width,
@@ -3156,7 +3185,8 @@ fn load_texture_bytes_with_container(
   container : @image.ImageContainerFormat?,
 ) -> Int {
   let loaded = bytes.length() > 0
-  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(payload) {
+  let is_ktx2_3d = ktx2_is_3d_texture(bytes)
+  if ktx2_decode_3d_payload(bytes) is Some(payload) {
     let texture_id = asset_texture_backend_create_texture_3d_with_format(
       width=payload.width,
       height=payload.height,
@@ -3168,6 +3198,9 @@ fn load_texture_bytes_with_container(
       sync_texture_record(texture_id, payload.width, payload.height, loaded)
       return texture_id
     }
+  }
+  if is_ktx2_3d {
+    return 0
   }
   if ktx2_decode_2d_payload(bytes) is Some(payload) {
     let texture_id = if payload.is_cube && payload.slice_count == 6 {
