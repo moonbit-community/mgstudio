@@ -786,6 +786,9 @@ fn window_create_runtime_for_entity(
     WindowWrapper::new(host_window),
   )
   host_window_set_visible(host_window, visible=window.visible)
+  if window.visible && window.focused {
+    host_window_focus(host_window)
+  }
   window_apply_position(world, host_window, window.position, window.resolution)
   host_window_set_resizable(host_window, resizable=window.resizable)
   host_window_set_resize_constraints(host_window, window.resize_constraints)

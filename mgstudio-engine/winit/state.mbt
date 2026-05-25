@@ -139,6 +139,96 @@ fn runner_surface_physical_height(window : @window.Window?) -> Int {
 }
 
 ///|
+fn runner_now_millis() -> Int64 {
+  @core.Instant::now().as_millis()
+}
+
+///|
+fn runner_update_mode_for_world(world : @ecs.World) -> UpdateMode {
+  let settings = match world.get_resource(WinitSettings::resource()) {
+    Some(value) => value
+    None => WinitSettings::WinitSettings()
+  }
+  let mut focused = false
+  for entry in @window.window_host_entries(world) {
+    match (try! world.get_by_key(entry.entity, @window.Window::component())) {
+      Some(window) =>
+        if window.focused {
+          focused = true
+        }
+      None => ()
+    }
+  }
+  settings.update_mode(focused)
+}
+
+///|
+fn runner_all_windows_invisible(world : @ecs.World) -> Bool {
+  let entries = @window.window_host_entries(world)
+  if entries.length() == 0 {
+    return true
+  }
+  for entry in entries {
+    match (try! world.get_by_key(entry.entity, @window.Window::component())) {
+      Some(window) =>
+        if window.visible {
+          return false
+        }
+      None => ()
+    }
+  }
+  true
+}
+
+///|
+fn runner_wait_elapsed_from_start_cause(
+  cause : @window_core.StartCause,
+) -> Bool {
+  match cause {
+    WaitCancelled(_, requested_resume) =>
+      match requested_resume {
+        Some(resume_time_ms) => resume_time_ms <= runner_now_millis()
+        None => false
+      }
+    _ => true
+  }
+}
+
+///|
+fn runner_should_update(
+  mode : UpdateMode,
+  wait_elapsed : Bool,
+  window_event_received : Bool,
+  device_event_received : Bool,
+  user_event_received : Bool,
+) -> Bool {
+  match mode {
+    Continuous =>
+      wait_elapsed || user_event_received || window_event_received ||
+      device_event_received
+    Reactive(_, react_to_device_events, react_to_user_events, react_to_window_events) =>
+      wait_elapsed ||
+      (react_to_device_events && device_event_received) ||
+      (react_to_user_events && user_event_received) ||
+      (react_to_window_events && window_event_received)
+  }
+}
+
+///|
+fn runner_next_reactive_control_flow(
+  start_time_ms : Int64,
+  wait : @core.Duration,
+) -> @window_core.ControlFlow {
+  let wait_ms64 = wait.as_millis()
+  let wait_ms = if wait_ms64 > 2147483647L {
+    2147483647
+  } else {
+    wait_ms64.to_int()
+  }
+  @window_core.ControlFlow::wait_duration(start_time_ms, wait_ms)
+}
+
+///|
 fn env_flag_enabled(key : String) -> Bool {
   match @sys.get_env_var(key) {
     Some("1") => true
@@ -210,7 +300,7 @@ fn screenshot_try_non_black_texture_capture(
 ///|
 priv struct WinitAppRunnerState {
   device : @render.HostGpuDevice
-  primary_window : @window.HostWindow
+  mut primary_window : @window.HostWindow
   app_ref : Ref[@app.App[@ecs.World]]
   mut runner_surfaces : Array[RunnerSurfaceBinding]
   debug_screenshot_path : String?
@@ -224,11 +314,77 @@ priv struct WinitAppRunnerState {
   mut debug_screenshot_render_frame : Int
   frame_limit : Int
   frame_count_ref : Ref[Int]
+  mut update_mode : UpdateMode
+  mut window_event_received : Bool
+  mut device_event_received : Bool
+  mut user_event_received : Bool
+  mut redraw_requested : Bool
+  mut ran_update_since_last_redraw : Bool
+  mut wait_elapsed : Bool
+  mut startup_forced_updates : Int
+  mut scheduled_tick_start_ms : Int64?
+  request_redraw_cursor : @ecs.MessageCursor[@window.RequestRedraw]
+}
+
+///|
+fn WinitAppRunnerState::reset_on_update(self : WinitAppRunnerState) -> Unit {
+  self.window_event_received = false
+  self.device_event_received = false
+  self.user_event_received = false
+}
+
+///|
+fn WinitAppRunnerState::request_redraw_for_windows(
+  self : WinitAppRunnerState,
+) -> Unit {
+  let world = self.app_ref.val.world()
+  let entries = @window.window_host_entries(world)
+  if entries.length() == 0 && self.primary_window > 0 {
+    @window.host_window_request_redraw(self.primary_window)
+    return
+  }
+  for entry in entries {
+    @window.host_window_request_redraw(entry.host_window)
+  }
+}
+
+///|
+fn WinitAppRunnerState::read_app_redraw_requests(
+  self : WinitAppRunnerState,
+) -> Bool {
+  let world = self.app_ref.val.world()
+  if !world.contains_message(@window.RequestRedraw::message()) {
+    return false
+  }
+  let reader = world.message_reader(
+    @window.RequestRedraw::message(),
+    cursor=self.request_redraw_cursor,
+  )
+  reader.read().length() > 0
+}
+
+///|
+fn WinitAppRunnerState::mark_app_update_complete(
+  self : WinitAppRunnerState,
+) -> Unit {
+  if self.frame_limit > 0 {
+    self.frame_count_ref.val = self.frame_count_ref.val + 1
+    if self.frame_count_ref.val >= self.frame_limit {
+      @window.window_request_close_all_hosts(self.app_ref.val.world())
+    }
+  }
 }
 
 ///|
 fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
+  self.reset_on_update()
   let world = self.app_ref.val.world()
+  if self.primary_window <= 0 {
+    match @window.window_ensure_primary_host(world) {
+      Some(primary_window) => self.primary_window = primary_window
+      None => ()
+    }
+  }
   winit_window_backend_sync_system(world)
   let host_entries = @window.window_host_entries(world)
   let next_surfaces : Array[RunnerSurfaceBinding] = []
@@ -393,19 +549,122 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     @window.window_request_close_all_hosts(self.app_ref.val.world())
     return
   }
-  if @window.host_window_should_close(self.primary_window) {
+  if self.primary_window > 0 &&
+    @window.host_window_should_close(self.primary_window) {
     @window.window_request_close_all_hosts(self.app_ref.val.world())
   }
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with window_event(
-  _self,
+fn WinitAppRunnerState::redraw_requested(
+  self : WinitAppRunnerState,
+  event_loop : @window_macos.ActiveEventLoop,
+) -> Unit {
+  let begin_frame_ms = runner_now_millis()
+  let mode = runner_update_mode_for_world(self.app_ref.val.world())
+  let mut should_update = runner_should_update(
+    mode,
+    self.wait_elapsed,
+    self.window_event_received,
+    self.device_event_received,
+    self.user_event_received,
+  )
+  if self.startup_forced_updates > 0 {
+    self.startup_forced_updates = self.startup_forced_updates - 1
+    should_update = true
+  }
+  if should_update {
+    if !self.ran_update_since_last_redraw ||
+      runner_all_windows_invisible(self.app_ref.val.world()) {
+      self.run_tick()
+      self.mark_app_update_complete()
+      self.ran_update_since_last_redraw = true
+    } else {
+      self.redraw_requested = true
+    }
+    if self.read_app_redraw_requests() {
+      self.redraw_requested = true
+    }
+  }
+
+  if mode != self.update_mode {
+    self.redraw_requested = true
+    self.wait_elapsed = true
+    self.scheduled_tick_start_ms = None
+    self.update_mode = mode
+  }
+
+  match mode {
+    Continuous => {
+      event_loop.set_control_flow(@window_core.ControlFlow::Wait)
+      self.redraw_requested = true
+    }
+    Reactive(wait, _, _, _) =>
+      if self.wait_elapsed {
+        self.redraw_requested = true
+        let start_time_ms = match self.scheduled_tick_start_ms {
+          Some(value) => value
+          None => begin_frame_ms
+        }
+        let control_flow = runner_next_reactive_control_flow(
+          start_time_ms,
+          wait,
+        )
+        match control_flow {
+          @window_core.ControlFlow::WaitUntil(next_ms) =>
+            self.scheduled_tick_start_ms = Some(next_ms)
+          _ => self.scheduled_tick_start_ms = Some(begin_frame_ms)
+        }
+        event_loop.set_control_flow(control_flow)
+      }
+  }
+
+  if self.redraw_requested {
+    self.request_redraw_for_windows()
+    self.redraw_requested = false
+  }
+
+  if self.app_ref.val.should_exit() is Some(_) {
+    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    event_loop.exit()
+  }
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with new_events(
+  self,
   _event_loop,
+  cause,
+) {
+  self.wait_elapsed = runner_wait_elapsed_from_start_cause(cause)
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with window_event(
+  self,
+  event_loop,
   window_id,
   event,
 ) {
+  self.window_event_received = true
   @windowing.runner_process_window_event(window_id.into_raw(), event)
+  match event {
+    RedrawRequested => {
+      self.ran_update_since_last_redraw = false
+      self.redraw_requested(event_loop)
+    }
+    _ => ()
+  }
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with device_event(
+  self,
+  _event_loop,
+  _device_id,
+  _event,
+) {
+  self.device_event_received = true
 }
 
 ///|
@@ -414,6 +673,17 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with resumed(
   _event_loop,
 ) {
   @windowing.runner_handle_resumed()
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with can_create_surfaces(
+  self,
+  _event_loop,
+) {
+  match @window.window_ensure_primary_host(self.app_ref.val.world()) {
+    Some(primary_window) => self.primary_window = primary_window
+    None => ()
+  }
 }
 
 ///|
@@ -429,14 +699,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with about_to_wait
   self,
   event_loop,
 ) {
-  event_loop.set_control_flow(@window_core.ControlFlow::Poll)
-  self.run_tick()
-  if self.frame_limit > 0 {
-    self.frame_count_ref.val = self.frame_count_ref.val + 1
-    if self.frame_count_ref.val >= self.frame_limit {
-      @window.window_request_close_all_hosts(self.app_ref.val.world())
-    }
-  }
+  self.redraw_requested(event_loop)
   if !@windowing.any_window_open() {
     event_loop.exit()
   }
@@ -481,11 +744,6 @@ fn screenshot_capture_with_texture_fallback(
 ///|
 pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
-    guard @window.window_ensure_primary_host(app.world())
-      is Some(primary_window) else {
-      app.run_startup().update() |> ignore
-      return
-    }
     let device = @render.host_gpu_request_device()
     let app_ref : Ref[@app.App[@ecs.World]] = Ref(app.run_startup())
     let debug_screenshot_path = match
@@ -524,7 +782,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     }
     let runner_state = WinitAppRunnerState::{
       device,
-      primary_window,
+      primary_window: 0,
       app_ref,
       runner_surfaces: [],
       debug_screenshot_path,
@@ -538,6 +796,16 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       debug_screenshot_render_frame: 0,
       frame_limit: runner_frame_limit(),
       frame_count_ref: Ref(0),
+      update_mode: UpdateMode::Continuous,
+      window_event_received: false,
+      device_event_received: false,
+      user_event_received: false,
+      redraw_requested: false,
+      ran_update_since_last_redraw: false,
+      wait_elapsed: false,
+      startup_forced_updates: 5,
+      scheduled_tick_start_ms: None,
+      request_redraw_cursor: @ecs.MessageCursor::MessageCursor(),
     }
     @windowing.native_event_loop().run_app(runner_state)
   }

@@ -136,6 +136,11 @@ pub fn host_window_request_close(window : HostWindow) -> Unit {
 }
 
 ///|
+pub fn host_window_request_redraw(window : HostWindow) -> Unit {
+  @windowing.request_redraw(window)
+}
+
+///|
 pub fn host_window_set_title(window : HostWindow, title~ : String) -> Unit {
   @windowing.set_title(window, title~)
 }

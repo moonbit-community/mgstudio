@@ -1485,6 +1485,14 @@ pub fn request_close(window : Int) -> Unit {
 }
 
 ///|
+pub fn request_redraw(window : Int) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.request_redraw()
+    None => ()
+  }
+}
+
+///|
 pub fn set_title_utf8(window : Int, title : Bytes, _title_len : UInt64) -> Unit {
   set_title(window, title=decode_utf8_lossy(title))
 }
