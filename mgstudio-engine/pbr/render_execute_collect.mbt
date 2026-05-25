@@ -142,6 +142,18 @@ fn render3d_execute_collect_cameras(
     let atmosphere_environment_map_light = try! source_world.get_by_key(
       entity, ecs_key_atmosphere_environment_map_light,
     )
+    let irradiance_volume = try! source_world.get_by_key(
+      entity, ecs_key_irradiance_volume,
+    )
+    let screen_space_ambient_occlusion = try! source_world.get_by_key(
+      entity, ecs_key_screen_space_ambient_occlusion,
+    )
+    let screen_space_reflections = try! source_world.get_by_key(
+      entity, ecs_key_screen_space_reflections,
+    )
+    let contact_shadows = try! source_world.get_by_key(
+      entity, ecs_key_contact_shadows,
+    )
     let hdr_enabled = (try! source_world.get_by_key(entity, ecs_key_hdr))
       is Some(_)
     let fxaa = try! source_world.get_by_key(entity, ecs_key_fxaa)
@@ -150,6 +162,8 @@ fn render3d_execute_collect_cameras(
     )
     let depth_prepass_enabled = prepass_enabled &&
       (try! source_world.get_by_key(entity, ecs_key_depth_prepass)) is Some(_)
+    let normal_prepass_enabled = prepass_enabled &&
+      (try! source_world.get_by_key(entity, ecs_key_normal_prepass)) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
       (try! source_world.get_by_key(entity, ecs_key_deferred_prepass))
       is Some(_)
@@ -264,7 +278,12 @@ fn render3d_execute_collect_cameras(
             environment_map_light,
             generated_environment_map_light,
             atmosphere_environment_map_light,
+            irradiance_volume,
+            screen_space_ambient_occlusion,
+            screen_space_reflections,
+            contact_shadows,
             depth_prepass_enabled,
+            normal_prepass_enabled,
             deferred_prepass_enabled,
             no_indirect_drawing,
             gpu_occlusion_culling_enabled,

@@ -159,6 +159,19 @@ fn pbr_material_specializer_shader_defs_contain_uint(
 }
 
 ///|
+fn pbr_material_specializer_layout_has_binding(
+  layout : @render_resource.BindGroupLayoutDescriptor,
+  binding : Int,
+) -> Bool {
+  for entry in layout.entries() {
+    if entry.binding() == binding {
+      return true
+    }
+  }
+  false
+}
+
+///|
 test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(
@@ -381,6 +394,67 @@ test "pbr material pipeline key carries mesh-owned lightmap bits" {
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
     content="8192",
+  )
+}
+
+///|
+test "pbr material pipeline key carries bevy view bits into descriptor layout" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let view_key_bits = mesh_pipeline_key_msaa_bits(4) |
+    MESH_PIPELINE_KEY_TONEMAP_IN_SHADER |
+    MESH_PIPELINE_KEY_DEBAND_DITHER |
+    MESH_PIPELINE_KEY_NORMAL_PREPASS |
+    (6UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS) |
+    (1UL << MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS) |
+    (1UL << MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS)
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+    view_key_bits~,
+    msaa_samples=4,
+  )
+  debug_inspect(
+    (pipeline_key.mesh_key().bits() & view_key_bits) == view_key_bits,
+    content="true",
+  )
+  let specializer = PbrMaterialPipelineSpecializer::new(properties)
+  let descriptor = try! specializer.specialize(
+    pipeline_key,
+    pbr_material_specializer_test_layout(),
+  )
+  inspect(
+    descriptor.layout[0].label(),
+    content="mesh_view_layout:multisampled,normal_prepass,tonemap_in_shader",
+  )
+  debug_inspect(
+    pbr_material_specializer_layout_has_binding(descriptor.layout[0], 18),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_layout_has_binding(descriptor.layout[0], 19),
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "TONEMAP_IN_SHADER",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "TONEMAP_METHOD_TONY_MC_MAPFACE",
+    ),
+    content="true",
   )
 }
 

@@ -116,6 +116,25 @@ fn mesh3d_add_sampler_for_layout_entry(
 }
 
 ///|
+fn mesh3d_finish_bind_group_checked(
+  backend : GpuBackend,
+  builder : @wgpu.BindGroupBuilder,
+  layout : @wgpu.BindGroupLayout,
+  label : String,
+  error_message : String,
+) -> @wgpu.BindGroup raise GpuBackendError {
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  let bind_group = builder.finish(backend.device, layout, label~)
+  let result = backend.device.pop_error_scope_sync_result(backend.instance)
+  if result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(result, error_message)
+    bind_group.release()
+    fatal(message)
+  }
+  bind_group
+}
+
+///|
 fn mesh3d_add_view_bind_group_layout_entry(
   builder : @wgpu.BindGroupBuilder,
   entry : @render_resource.BindGroupLayoutEntry,
@@ -267,7 +286,13 @@ fn mesh3d_build_view_bind_group_from_descriptor(
       )
     }
   }
-  builder.finish(backend.device, layout, label="mgstudio_mesh3d_view_bg")
+  mesh3d_finish_bind_group_checked(
+    backend,
+    builder,
+    layout,
+    "mgstudio_mesh3d_view_bg",
+    error_message,
+  )
 }
 
 ///|
@@ -324,10 +349,12 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
       )
     }
   }
-  builder.finish(
-    backend.device,
+  mesh3d_finish_bind_group_checked(
+    backend,
+    builder,
     layout,
-    label="mgstudio_mesh3d_binding_arrays_bg",
+    "mgstudio_mesh3d_binding_arrays_bg",
+    error_message,
   )
 }
 
@@ -744,10 +771,12 @@ fn mesh3d_material_cache_get_or_create(
     material_uniform_buf.release()
     fatal("wgpu: failed to build mesh3d material bind group")
   }
-  let bind_group = builder.finish(
-    backend.device,
+  let bind_group = mesh3d_finish_bind_group_checked(
+    backend,
+    builder,
     layout,
-    label="mgstudio_mesh3d_material_bg",
+    "mgstudio_mesh3d_material_bg",
+    "wgpu: failed to build mesh3d material bind group",
   )
   backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
     material_pipeline_id,

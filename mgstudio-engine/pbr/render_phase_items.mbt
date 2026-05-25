@@ -100,7 +100,12 @@ priv struct Camera3dViewPayload {
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   atmosphere_environment_map_light : AtmosphereEnvironmentMapLight?
+  irradiance_volume : IrradianceVolume?
+  screen_space_ambient_occlusion : ScreenSpaceAmbientOcclusion?
+  screen_space_reflections : ScreenSpaceReflections?
+  contact_shadows : ContactShadows?
   depth_prepass_enabled : Bool
+  normal_prepass_enabled : Bool
   deferred_prepass_enabled : Bool
   no_indirect_drawing : Bool
   gpu_occlusion_culling_enabled : Bool

@@ -301,10 +301,92 @@ fn render3d_material_shader_paths_for_extracted_mesh(
 }
 
 ///|
+fn render3d_camera_msaa_samples(camera : Camera3dViewPayload) -> Int {
+  match camera.msaa {
+    Some(msaa) => msaa.samples()
+    None => Msaa::default().samples()
+  }
+}
+
+///|
+fn render3d_camera_has_environment_map(camera : Camera3dViewPayload) -> Bool {
+  camera.environment_map_light is Some(_) ||
+  camera.generated_environment_map_light is Some(_) ||
+  camera.atmosphere_environment_map_light is Some(_)
+}
+
+///|
+fn render3d_camera_mesh_pipeline_view_key_bits(
+  camera : Camera3dViewPayload,
+) -> UInt64 {
+  let mut bits = mesh_pipeline_key_msaa_bits(
+    render3d_camera_msaa_samples(camera),
+  )
+  if camera.depth_prepass_enabled {
+    bits = bits | MESH_PIPELINE_KEY_DEPTH_PREPASS
+  }
+  if camera.normal_prepass_enabled {
+    bits = bits | MESH_PIPELINE_KEY_NORMAL_PREPASS
+  }
+  if camera.motion_vector_prepass_enabled {
+    bits = bits | MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
+  }
+  if camera.deferred_prepass_enabled {
+    bits = bits | MESH_PIPELINE_KEY_DEFERRED_PREPASS
+  }
+  if camera.temporal_jitter is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_TEMPORAL_JITTER
+  }
+  if render3d_camera_has_environment_map(camera) {
+    bits = bits | MESH_PIPELINE_KEY_ENVIRONMENT_MAP
+  }
+  if camera.irradiance_volume is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_IRRADIANCE_VOLUME
+  }
+  if camera.screen_space_reflections is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS
+  }
+  if camera.oit_settings is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_OIT_ENABLED
+  }
+  if camera.atmosphere is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_ATMOSPHERE
+  }
+  if camera.contact_shadows is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_CONTACT_SHADOWS
+  }
+  bits = bits | mesh_pipeline_key_projection_bits(camera.projection)
+  bits = bits |
+    mesh_pipeline_key_shadow_filter_method_bits(
+      match camera.shadow_filtering_method {
+        Some(filter_method) => filter_method
+        None => ShadowFilteringMethod::default()
+      },
+    )
+  if !camera.hdr_enabled {
+    if camera.tonemapping is Some(tonemapping) {
+      bits = bits | MESH_PIPELINE_KEY_TONEMAP_IN_SHADER
+      bits = bits | mesh_pipeline_key_tonemapping_bits(tonemapping)
+    }
+    if camera.deband_dither is Some(Enabled) {
+      bits = bits | MESH_PIPELINE_KEY_DEBAND_DITHER
+    }
+  }
+  if camera.screen_space_ambient_occlusion is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_SCREEN_SPACE_AMBIENT_OCCLUSION
+  }
+  if camera.distance_fog is Some(_) {
+    bits = bits | MESH_PIPELINE_KEY_DISTANCE_FOG
+  }
+  bits
+}
+
+///|
 fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   mesh : Mesh3dExtractedPayload,
+  camera : Camera3dViewPayload,
   view_entity : @core.Entity,
   visible_entity : @core.Entity,
   specialization_tick : @core.Tick,
@@ -333,6 +415,13 @@ fn render3d_prewarm_material_pipeline(
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
     render_mesh,
+    view_key_bits=render3d_camera_mesh_pipeline_view_key_bits(camera),
+    msaa_samples=render3d_camera_msaa_samples(camera),
+    has_previous_skin=camera.motion_vector_prepass_enabled &&
+      mesh.has_previous_skin,
+    has_previous_morph=camera.motion_vector_prepass_enabled &&
+      mesh.previous_morph_weights_index >= 0,
+    visibility_range_dither=mesh.visibility_range is Some(_),
     lightmapped=match mesh.lightmap {
       Some(lightmap) => lightmap.image.id() > 0
       None => false
@@ -400,6 +489,7 @@ fn render3d_prewarm_mesh_pipelines(
         world,
         mesh_runtime_state_value,
         mesh,
+        camera.payload,
         camera.entity.main_entity,
         extracted_mesh.entity.main_entity,
         specialization_tick,
@@ -596,6 +686,9 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
         world,
       )
+      let specialized_material_pipeline_cache = world.get_resource(
+        ecs_key_specialized_material_pipeline_cache,
+      )
       let prepared_camera_queues = mesh_runtime_state.modify(fn(
         mesh_runtime_state_value,
       ) {
@@ -605,6 +698,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.meshes,
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
+          specialized_material_pipeline_cache~,
         )
       })
       render3d_queue_store_frame(

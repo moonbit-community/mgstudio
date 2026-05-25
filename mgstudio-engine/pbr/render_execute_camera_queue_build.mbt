@@ -43,11 +43,13 @@ fn render3d_camera_exposure_value_for_preprocess(
 ///|
 fn render3d_build_camera_queue_entry(
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
+  view_entity : @core.Entity,
   camera : Camera3dViewPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -70,6 +72,8 @@ fn render3d_build_camera_queue_entry(
       camera_frustum_planes,
       camera.has_no_cpu_culling,
       camera_indirect_enabled,
+      view_entity=Some(view_entity),
+      specialized_material_pipeline_cache~,
     ),
     meshes,
     mesh_runtime_state_value.mesh_preprocess_static_cache,
@@ -267,6 +271,7 @@ fn render3d_prepare_camera_queue_entry(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Render3dPreparedCameraQueue? {
   let camera = extracted_camera.payload
   guard render3d_execute_camera_viewport_state(camera) is Some(viewport_state) else {
@@ -284,8 +289,14 @@ fn render3d_prepare_camera_queue_entry(
     camera.transform,
   )
   let queue_build_result = render3d_build_camera_queue_entry(
-    mesh_runtime_state_value, camera, camera_frustum_planes, meshes, gpu_instance_buffer_builder_enabled,
+    mesh_runtime_state_value,
+    extracted_camera.entity.main_entity,
+    camera,
+    camera_frustum_planes,
+    meshes,
+    gpu_instance_buffer_builder_enabled,
     gpu_culling_supported,
+    specialized_material_pipeline_cache~,
   )
   Some(Render3dPreparedCameraQueue::{
     draw_queue_entry: queue_build_result.draw_queue_entry,
@@ -305,13 +316,18 @@ fn render3d_prepare_camera_queue_entries(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[Render3dPreparedCameraQueue?] {
   let prepared : Array[Render3dPreparedCameraQueue?] = []
   for camera in cameras {
     prepared.push(
       render3d_prepare_camera_queue_entry(
-        mesh_runtime_state_value, camera, meshes, gpu_instance_buffer_builder_enabled,
+        mesh_runtime_state_value,
+        camera,
+        meshes,
+        gpu_instance_buffer_builder_enabled,
         gpu_culling_supported,
+        specialized_material_pipeline_cache~,
       ),
     )
   }

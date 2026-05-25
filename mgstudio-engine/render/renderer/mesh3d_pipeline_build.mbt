@@ -1518,7 +1518,11 @@ fn mesh3d_material_pipeline_layout_get_or_create(
         "default_binding_arrays_" + view_layout_key_bits.to_string(),
       )
       let pipeline_layout = create_pipeline_layout_4(
-        backend.device, view_bgl, binding_arrays_bgl, draw_bgl, material_bgl,
+        backend.device,
+        view_bgl,
+        binding_arrays_bgl,
+        draw_bgl,
+        material_bgl,
       )
       let entry = {
         material_pipeline_id,
@@ -1564,7 +1568,9 @@ fn mesh3d_material_pipeline_layout_get_or_create(
       pipeline_layout,
     }
   }
-  if mesh3d_material_pipeline_layout_cache_get(backend, material_pipeline_id, 0U)
+  if mesh3d_material_pipeline_layout_cache_get(
+      backend, material_pipeline_id, 0U,
+    )
     is Some(entry) {
     return entry
   }

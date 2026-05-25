@@ -78,12 +78,30 @@ pub fn render3d_should_apply_cpu_frustum_culling_flags(
 }
 
 ///|
+fn render3d_mesh_pipeline_id_for_view(
+  mesh : ExtractedMesh3d,
+  view_entity : @core.Entity?,
+  specialized_material_pipeline_cache : SpecializedMaterialPipelineCache?,
+) -> @material.CachedRenderPipelineId? {
+  match (view_entity, specialized_material_pipeline_cache) {
+    (Some(view), Some(cache)) =>
+      match cache.pipeline_id(view, mesh.entity.main_entity) {
+        Some(pipeline_id) => Some(pipeline_id)
+        None => mesh.payload.material_pipeline_id
+      }
+    _ => mesh.payload.material_pipeline_id
+  }
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
+  view_entity? : @core.Entity? = None,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -122,7 +140,9 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: payload.material_pipeline_id,
+      pipeline_id: render3d_mesh_pipeline_id_for_view(
+        mesh, view_entity, specialized_material_pipeline_cache,
+      ),
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
@@ -164,6 +184,8 @@ fn render3d_collect_meshes_for_gpu_building(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
+  view_entity? : @core.Entity? = None,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
@@ -201,7 +223,9 @@ fn render3d_collect_meshes_for_gpu_building(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: payload.material_pipeline_id,
+      pipeline_id: render3d_mesh_pipeline_id_for_view(
+        mesh, view_entity, specialized_material_pipeline_cache,
+      ),
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
@@ -1452,11 +1476,19 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
+  view_entity? : @core.Entity? = None,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
-    meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
+    meshes,
+    layers,
+    camera_transform,
+    camera_frustum_planes,
+    camera_has_no_cpu_culling,
+    view_entity~,
+    specialized_material_pipeline_cache~,
   )
   render3d_write_batched_instance_buffers(work_items)
 }
@@ -1469,13 +1501,27 @@ fn render3d_queue_mesh_phase_items(
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
   use_gpu_instance_buffer_builder : Bool,
+  view_entity? : @core.Entity? = None,
+  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
-      meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
+      meshes,
+      layers,
+      camera_transform,
+      camera_frustum_planes,
+      camera_has_no_cpu_culling,
+      view_entity~,
+      specialized_material_pipeline_cache~,
     )
   }
   render3d_queue_mesh_phase_items_cpu_builder(
-    meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
+    meshes,
+    layers,
+    camera_transform,
+    camera_frustum_planes,
+    camera_has_no_cpu_culling,
+    view_entity~,
+    specialized_material_pipeline_cache~,
   )
 }

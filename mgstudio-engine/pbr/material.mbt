@@ -305,7 +305,10 @@ const MESH_PIPELINE_KEY_BLEND_ALPHA : UInt64 = 805306368UL
 const MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE : UInt64 = 1073741824UL
 
 ///|
-fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
+fn alpha_mode_pipeline_key(
+  alpha_mode : @material.AlphaMode3d,
+  msaa_samples? : Int = 1,
+) -> UInt64 {
   match alpha_mode {
     @material.AlphaMode3d::Premultiplied =>
       MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
@@ -314,8 +317,70 @@ fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
     @material.AlphaMode3d::Multiply => MESH_PIPELINE_KEY_BLEND_MULTIPLY
     @material.AlphaMode3d::Mask(_) => MESH_PIPELINE_KEY_MAY_DISCARD
     @material.AlphaMode3d::AlphaToCoverage =>
-      MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE
+      if msaa_samples <= 1 {
+        MESH_PIPELINE_KEY_MAY_DISCARD
+      } else {
+        MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE
+      }
     _ => 0UL
+  }
+}
+
+///|
+fn mesh_pipeline_key_msaa_bits(msaa_samples : Int) -> UInt64 {
+  let log2_samples = if msaa_samples <= 1 {
+    0UL
+  } else if msaa_samples <= 2 {
+    1UL
+  } else if msaa_samples <= 4 {
+    2UL
+  } else if msaa_samples <= 8 {
+    3UL
+  } else if msaa_samples <= 16 {
+    4UL
+  } else if msaa_samples <= 32 {
+    5UL
+  } else if msaa_samples <= 64 {
+    6UL
+  } else {
+    7UL
+  }
+  (log2_samples & MESH_PIPELINE_KEY_MSAA_MASK_BITS) <<
+  MESH_PIPELINE_KEY_MSAA_SHIFT_BITS
+}
+
+///|
+fn mesh_pipeline_key_tonemapping_bits(tonemapping : Tonemapping) -> UInt64 {
+  match tonemapping {
+    None => 0UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    Reinhard => 1UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    ReinhardLuminance => 2UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    AcesFitted => 3UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    AgX => 4UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    SomewhatBoringDisplayTransform =>
+      5UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    TonyMcMapface => 6UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    BlenderFilmic => 7UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+  }
+}
+
+///|
+fn mesh_pipeline_key_shadow_filter_method_bits(
+  filter_method : ShadowFilteringMethod,
+) -> UInt64 {
+  match filter_method {
+    Hardware2x2 => 0UL << MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+    Gaussian => 1UL << MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+    Temporal => 2UL << MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+  }
+}
+
+///|
+fn mesh_pipeline_key_projection_bits(projection : Projection) -> UInt64 {
+  match projection {
+    Custom(_) => 0UL << MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+    Perspective(_) => 1UL << MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+    Orthographic(_) => 2UL << MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
   }
 }
 
@@ -323,17 +388,32 @@ fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
 fn material_mesh_pipeline_key_for_render_mesh(
   properties : @material.MaterialProperties,
   render_mesh : @render_mesh.RenderMesh,
+  view_key_bits? : UInt64 = 0UL,
+  msaa_samples? : Int = 1,
+  has_previous_skin? : Bool = false,
+  has_previous_morph? : Bool = false,
+  visibility_range_dither? : Bool = false,
   lightmapped? : Bool = false,
   lightmap_bicubic_sampling? : Bool = false,
 ) -> @material.ErasedMeshPipelineKey {
-  let mut bits = properties.mesh_pipeline_key_bits.bits() |
+  let mut bits = view_key_bits |
+    properties.mesh_pipeline_key_bits.bits() |
     render_mesh.key_bits().bits() |
-    alpha_mode_pipeline_key(properties.alpha_mode)
+    alpha_mode_pipeline_key(properties.alpha_mode, msaa_samples~)
   if lightmapped {
     bits = bits | MESH_PIPELINE_KEY_LIGHTMAPPED
   }
   if lightmap_bicubic_sampling {
     bits = bits | MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING
+  }
+  if has_previous_skin {
+    bits = bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+  }
+  if has_previous_morph {
+    bits = bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
+  }
+  if visibility_range_dither {
+    bits = bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
   }
   @material.ErasedMeshPipelineKey::new(bits, "MeshPipelineKey")
 }
@@ -342,6 +422,11 @@ fn material_mesh_pipeline_key_for_render_mesh(
 fn material_pipeline_key_for_standard_material_render_mesh(
   properties : @material.MaterialProperties,
   render_mesh : @render_mesh.RenderMesh,
+  view_key_bits? : UInt64 = 0UL,
+  msaa_samples? : Int = 1,
+  has_previous_skin? : Bool = false,
+  has_previous_morph? : Bool = false,
+  visibility_range_dither? : Bool = false,
   lightmapped? : Bool = false,
   lightmap_bicubic_sampling? : Bool = false,
 ) -> @material.ErasedMaterialPipelineKey {
@@ -349,6 +434,11 @@ fn material_pipeline_key_for_standard_material_render_mesh(
     material_mesh_pipeline_key_for_render_mesh(
       properties,
       render_mesh,
+      view_key_bits~,
+      msaa_samples~,
+      has_previous_skin~,
+      has_previous_morph~,
+      visibility_range_dither~,
       lightmapped~,
       lightmap_bicubic_sampling~,
     ),
