@@ -63,40 +63,37 @@ pub fn ErasedMeshPipelineKey::downcast_u64(
 }
 
 ///|
-fn erased_material_key_hash(type_tag : String, value_json : String) -> UInt64 {
-  (type_tag + ":" + value_json).hash().to_uint64()
+fn erased_material_key_hash(type_tag : String, bits : UInt64) -> UInt64 {
+  (type_tag + ":" + bits.to_string()).hash().to_uint64()
 }
 
 ///|
 pub struct ErasedMaterialKey {
   type_tag : String
   hash : UInt64
-  value_json : String
+  bits : UInt64
 } derive(Eq, Debug)
 
 ///|
-pub fn[T : ToJson] ErasedMaterialKey::new(
-  material_key : T,
+pub fn ErasedMaterialKey::new(
+  bits : UInt64,
   type_tag : String,
 ) -> ErasedMaterialKey {
-  let value_json = material_key.to_json().stringify()
   ErasedMaterialKey::{
     type_tag,
-    hash: erased_material_key_hash(type_tag, value_json),
-    value_json,
+    hash: erased_material_key_hash(type_tag, bits),
+    bits,
   }
 }
 
 ///|
-pub fn[T : ToJson] ErasedMaterialKey::new_untyped(
-  material_key : T,
-) -> ErasedMaterialKey {
-  ErasedMaterialKey::new(material_key, "<unknown>")
+pub fn ErasedMaterialKey::new_untyped(bits : UInt64) -> ErasedMaterialKey {
+  ErasedMaterialKey::new(bits, "<unknown>")
 }
 
 ///|
 pub fn ErasedMaterialKey::ErasedMaterialKey() -> ErasedMaterialKey {
-  ErasedMaterialKey::new((), "()")
+  ErasedMaterialKey::new(0UL, "()")
 }
 
 ///|
@@ -110,13 +107,8 @@ pub fn ErasedMaterialKey::hash(self : ErasedMaterialKey) -> UInt64 {
 }
 
 ///|
-pub fn ErasedMaterialKey::value_json(self : ErasedMaterialKey) -> String {
-  self.value_json
-}
-
-///|
-pub fn ErasedMaterialKey::to_key_json(self : ErasedMaterialKey) -> Json raise {
-  @json.parse(self.value_json)
+pub fn ErasedMaterialKey::bits(self : ErasedMaterialKey) -> UInt64 {
+  self.bits
 }
 
 ///|

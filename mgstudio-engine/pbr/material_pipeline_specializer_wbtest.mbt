@@ -123,7 +123,7 @@ fn pbr_material_specializer_test_key(
 ) -> @material.ErasedMaterialPipelineKey {
   @material.ErasedMaterialPipelineKey::new(
     @material.ErasedMeshPipelineKey::new(mesh_bits, "MeshPipelineKey"),
-    @material.ErasedMaterialKey::new(3, "StandardMaterialKey"),
+    @material.ErasedMaterialKey::new(3UL, "StandardMaterialKey"),
     "MaterialPipelineKey",
   )
 }

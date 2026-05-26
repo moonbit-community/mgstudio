@@ -78,7 +78,7 @@ pub struct QueryCache {
   priv mut cached_dependency_component_ids : Array[Int]
   priv mut cached_dependency_world_id : Int
   priv mut cached_dependency_component_registration_generation : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 pub struct QueryCacheSnapshot {
@@ -87,30 +87,16 @@ pub struct QueryCacheSnapshot {
   priv cached_filter_anchor_component_id : Int?
   priv cached_candidate_anchor_component_id : Int?
   priv cached_candidate_archetype_generation : Int
-  priv cached_matching_entities : Array[@core.Entity]
   priv cached_matching_archetypes : Array[Int]
-  priv cached_matching_archetype_bits : @utils.IntBitSet
   priv cached_matching_archetype_generation : Int
   priv cached_matching_entities_generation : Int
   priv cached_matching_entities_tick : Int
-  priv cached_matching_anchor_component_id : Int?
-  priv cached_matching_filter_anchor_component_id : Int?
-  priv cached_matching_candidate_anchor_component_id : Int?
-  priv cached_matching_generation : Int
-  priv cached_matching_tick : Int
   priv cached_matching_entities_valid : Bool
   priv cached_matching_tables : Array[Int]
   priv cached_matching_table_bits : @utils.IntBitSet
   priv cached_matching_tables_generation : Int
-  priv cached_matching_tables_valid : Bool
   priv cached_is_dense : Bool
-  priv cached_default_filter_component_ids : Array[Int]
-  priv cached_default_filter_local_component_ids : Array[Int]
-  priv cached_default_filters_world_id : Int
-  priv cached_dependency_component_ids : Array[Int]
-  priv cached_dependency_world_id : Int
-  priv cached_dependency_component_registration_generation : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 pub fn QueryCacheSnapshot::cached_candidate_archetype_generation(
@@ -216,29 +202,15 @@ fn QueryCache::snapshot(self : QueryCache) -> QueryCacheSnapshot {
     cached_filter_anchor_component_id: self.cached_filter_anchor_component_id,
     cached_candidate_anchor_component_id: self.cached_candidate_anchor_component_id,
     cached_candidate_archetype_generation: self.cached_candidate_archetype_generation,
-    cached_matching_entities: self.cached_matching_entities,
     cached_matching_archetypes: self.cached_matching_archetypes,
-    cached_matching_archetype_bits: self.cached_matching_archetype_bits,
     cached_matching_archetype_generation: self.cached_matching_archetype_generation,
     cached_matching_entities_generation: self.cached_matching_entities_generation,
     cached_matching_entities_tick: self.cached_matching_entities_tick,
-    cached_matching_anchor_component_id: self.cached_matching_anchor_component_id,
-    cached_matching_filter_anchor_component_id: self.cached_matching_filter_anchor_component_id,
-    cached_matching_candidate_anchor_component_id: self.cached_matching_candidate_anchor_component_id,
-    cached_matching_generation: self.cached_matching_generation,
-    cached_matching_tick: self.cached_matching_tick,
     cached_matching_entities_valid: self.cached_matching_entities_valid,
     cached_matching_tables: self.cached_matching_tables,
     cached_matching_table_bits: self.cached_matching_table_bits,
     cached_matching_tables_generation: self.cached_matching_tables_generation,
-    cached_matching_tables_valid: self.cached_matching_tables_valid,
     cached_is_dense: self.cached_is_dense,
-    cached_default_filter_component_ids: self.cached_default_filter_component_ids,
-    cached_default_filter_local_component_ids: self.cached_default_filter_local_component_ids,
-    cached_default_filters_world_id: self.cached_default_filters_world_id,
-    cached_dependency_component_ids: self.cached_dependency_component_ids,
-    cached_dependency_world_id: self.cached_dependency_world_id,
-    cached_dependency_component_registration_generation: self.cached_dependency_component_registration_generation,
   }
 }
 
@@ -505,29 +477,15 @@ pub fn[D, F] QueryState::cache_snapshot(
     cached_filter_anchor_component_id: self.cached_filter_anchor_component_id,
     cached_candidate_anchor_component_id: self.cached_candidate_anchor_component_id,
     cached_candidate_archetype_generation: self.cached_candidate_archetype_generation,
-    cached_matching_entities: self.cached_matching_entities,
     cached_matching_archetypes: self.cached_matching_archetypes,
-    cached_matching_archetype_bits: self.cached_matching_archetype_bits,
     cached_matching_archetype_generation: self.cached_matching_archetype_generation,
     cached_matching_entities_generation: self.cached_matching_entities_generation,
     cached_matching_entities_tick: self.cached_matching_entities_tick,
-    cached_matching_anchor_component_id: self.cached_matching_anchor_component_id,
-    cached_matching_filter_anchor_component_id: self.cached_matching_filter_anchor_component_id,
-    cached_matching_candidate_anchor_component_id: self.cached_matching_candidate_anchor_component_id,
-    cached_matching_generation: self.cached_matching_generation,
-    cached_matching_tick: self.cached_matching_tick,
     cached_matching_entities_valid: self.cached_matching_entities_valid,
     cached_matching_tables: self.cached_matching_tables,
     cached_matching_table_bits: self.cached_matching_table_bits,
     cached_matching_tables_generation: self.cached_matching_tables_generation,
-    cached_matching_tables_valid: self.cached_matching_tables_valid,
     cached_is_dense: self.cached_is_dense,
-    cached_default_filter_component_ids: self.cached_default_filter_component_ids,
-    cached_default_filter_local_component_ids: self.cached_default_filter_local_component_ids,
-    cached_default_filters_world_id: self.cached_default_filters_world_id,
-    cached_dependency_component_ids: self.cached_dependency_component_ids,
-    cached_dependency_world_id: self.cached_dependency_world_id,
-    cached_dependency_component_registration_generation: self.cached_dependency_component_registration_generation,
   }
 }
 

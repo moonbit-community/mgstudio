@@ -161,15 +161,14 @@ pub fn DynamicBindGroupLayoutEntries::new(UInt) -> Self
 pub struct ErasedMaterialKey {
   type_tag : String
   hash : UInt64
-  value_json : String
+  bits : UInt64
 } derive(Eq, @debug.Debug)
 pub fn ErasedMaterialKey::ErasedMaterialKey() -> Self
+pub fn ErasedMaterialKey::bits(Self) -> UInt64
 pub fn ErasedMaterialKey::hash(Self) -> UInt64
-pub fn[T : ToJson] ErasedMaterialKey::new(T, String) -> Self
-pub fn[T : ToJson] ErasedMaterialKey::new_untyped(T) -> Self
-pub fn ErasedMaterialKey::to_key_json(Self) -> Json raise
+pub fn ErasedMaterialKey::new(UInt64, String) -> Self
+pub fn ErasedMaterialKey::new_untyped(UInt64) -> Self
 pub fn ErasedMaterialKey::type_tag(Self) -> String
-pub fn ErasedMaterialKey::value_json(Self) -> String
 
 pub struct ErasedMaterialPipelineKey {
   mesh_key : ErasedMeshPipelineKey

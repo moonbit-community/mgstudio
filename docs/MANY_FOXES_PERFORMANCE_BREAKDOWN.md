@@ -5,6 +5,13 @@ between `mgstudio` and the local Bevy 0.19.0-dev checkout, then maps the
 measured gaps back to source-level divergences that still need evidence before
 they are treated as root causes.
 
+Historical note: this document captures the May 12, 2026 runtime shape.
+References to erased component columns, payload conversion, or payload decoding
+are evidence labels from that profile snapshot. They do not override the current
+typed-storage boundary: JSON-backed runtime payloads are forbidden by ADR 0002,
+and current performance work must re-verify whether a historical payload-related
+candidate still exists in the current code.
+
 Per the project glossary, any comparable runtime path slower than Bevy by more
 than `4x` is a severe performance gap. This document does not attempt to fix
 those gaps. It records observed gaps, source-level candidate causes, and the
@@ -134,8 +141,10 @@ Required evidence before calling this a root cause:
   target scan, and target mutation cost.
 - Add Bevy-side comparable spans for player lookup, target query iteration, and
   target mutation inside `animate_targets`.
-- Confirm allocation/copy counts or payload encode/decode counts for the
-  mgstudio target mutation path.
+- For this historical snapshot, confirm allocation/copy counts or payload
+  encode/decode counts for the mgstudio target mutation path. For current work,
+  first re-verify whether that payload path still exists after the typed-storage
+  refactor.
 
 Candidate alignment target:
 
@@ -195,7 +204,8 @@ Candidate causes:
 Required evidence before calling this a root cause:
 
 - Add mgstudio counters for child visits, `transform_dense_entity_slot` calls,
-  component-column decodes, and unchanged `GlobalTransform` rewrites.
+  historical component-column decodes if still present, and unchanged
+  `GlobalTransform` rewrites.
 - Add Bevy-side counters or trace spans for root scans, descendant fetches, and
   `set_if_neq` writes in the same scene.
 - Run an A/B measurement with only the `GlobalTransform` unchanged-write behavior
@@ -258,7 +268,8 @@ Candidate causes:
 Required evidence before calling this a root cause:
 
 - Add mgstudio counters for skins processed, joints processed, joint transform
-  lookups, payload decodes, and inverse-bindpose accesses.
+  lookups, historical payload decodes if still present, and inverse-bindpose
+  accesses.
 - Add Bevy-side counters for the same skin and joint counts under the same
   `many_foxes` count.
 - Measure whether replacing only the joint transform lookup path changes the

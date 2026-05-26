@@ -44,6 +44,10 @@ _Avoid_: file-location ownership, bridge-owned behavior
 A parity blocker caused by missing or insufficient capability in an upstream MoonBit dependency or ecosystem package rather than mgstudio's own implementation.
 _Avoid_: mgstudio parity gap, local workaround target
 
+**Language Expressibility Blocker**:
+A parity blocker caused by MoonBit being unable to express the typed engine shape required by a Bevy source owner.
+_Avoid_: dependency blocker, local workaround, JSON payload workaround
+
 **External Blocker Reproduction**:
 The minimum evidence package that lets a community dependency maintainer implement and verify the missing Bevy-required capability.
 _Avoid_: vague upstream note, dependency complaint
@@ -51,6 +55,14 @@ _Avoid_: vague upstream note, dependency complaint
 **Recorded External-Blocker Workaround**:
 A temporary mgstudio-side unblock path for an external blocker that is explicitly recorded, does not count as completed parity, and has a dependency-resolution deletion condition.
 _Avoid_: silent workaround, completed parity claim, permanent compatibility layer
+
+**JSON-Backed Runtime Payload**:
+An in-engine typed runtime value represented as JSON or generated codec data so it can be stored and later recovered as its original type.
+_Avoid_: JSON payload, erased payload, codec-backed runtime state
+
+**External Boundary Serialization**:
+A representation used only to cross a file, asset, scene, native IPC, window, or tooling boundary before being decoded into typed engine data.
+_Avoid_: runtime payload, engine storage format, generic state container
 
 **Blocked Parity Subtarget**:
 A portion of a Bevy source owner whose parity work cannot continue until an external blocker is resolved.
@@ -87,8 +99,11 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 - A **Bevy Source Owner** may map to many **Implementation Fragments**, but those fragments remain one parity unit unless Bevy itself defines separate owners.
 - **Runtime Owner Semantics** takes priority over matching Bevy file placement when MoonBit package or dependency constraints require bridge packages.
 - An **External Blocker** is tracked separately from mgstudio implementation parity and can become community dependency work.
+- A **Language Expressibility Blocker** is tracked separately from dependency blockers because its resolution path is a MoonBit language/toolchain or project-design decision.
 - Every **External Blocker** requires an **External Blocker Reproduction** before it is actionable for the community.
 - A **Recorded External-Blocker Workaround** may exist for an **External Blocker**, but it must not be counted as completed parity.
+- A **JSON-Backed Runtime Payload** is never a valid implementation fragment for **Bevy Replication**.
+- **External Boundary Serialization** may use JSON only until data crosses into typed engine runtime state.
 - A **Blocked Parity Subtarget** may still receive tests, documentation, reproduction work, or unrelated cleanup, but not local substitute behavior for the blocked dependency capability.
 - A **Cause Unverified Performance Gap** remains unresolved until one candidate cause becomes an **Evidence-Based Parity Cause**.
 - **Trace-First Performance Diagnosis** applies before refactoring any **Cause Unverified Performance Gap**.
@@ -122,11 +137,20 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 > **Dev:** "If `moon_taffy` lacks a Bevy-required layout capability, is that a mgstudio parity gap?"
 > **Domain expert:** "No — that is an **External Blocker** and should be tracked so the community can build the missing dependency capability."
 >
+> **Dev:** "If MoonBit cannot express the typed system parameter shape Bevy uses, can we encode the state as JSON?"
+> **Domain expert:** "No — record a **Language Expressibility Blocker** or ask for a project-design decision."
+>
 > **Dev:** "Can we just say the dependency is missing a feature?"
 > **Domain expert:** "No — an **External Blocker** needs an **External Blocker Reproduction** with the dependency, Bevy requirement, blocked owner, and verification expectation."
 >
 > **Dev:** "Can mgstudio temporarily unblock an external blocker while waiting for the dependency?"
 > **Domain expert:** "Yes, but only as a **Recorded External-Blocker Workaround** with a deletion condition, and it must not count as completed parity."
+>
+> **Dev:** "Can we store generic system state as JSON and decode it when the system runs?"
+> **Domain expert:** "No — that is a **JSON-Backed Runtime Payload**, not Bevy replication."
+>
+> **Dev:** "Can a native window bridge send an accessibility update as serialized JSON?"
+> **Domain expert:** "Yes, if it is **External Boundary Serialization** and the engine runtime consumes typed data after the boundary."
 >
 > **Dev:** "Can we keep working near a blocked owner?"
 > **Domain expert:** "Yes, but only around the **Blocked Parity Subtarget**: add evidence, tests, docs, or unrelated cleanup without adding substitute behavior."
@@ -157,8 +181,11 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 - "fragment" could imply an independent parity target; resolved: an **Implementation Fragment** is part of its **Bevy Source Owner** unless Bevy defines a separate owner.
 - "owner" could mean the file where code currently lives; resolved: **Runtime Owner Semantics** follows the **Bevy Source Owner**, with bridges and re-exports used only for MoonBit constraints.
 - "dependency limitation" could be counted as a local engine gap; resolved: missing upstream MoonBit package capability is an **External Blocker**.
+- "language limitation" could be treated like a dependency issue; resolved: it is a **Language Expressibility Blocker** because it needs a MoonBit language/toolchain or project-design decision.
 - "external blocker" could be a vague note; resolved: it must include an **External Blocker Reproduction** to be actionable.
 - "temporary compatibility layer" could look like completed parity; resolved: it must be a **Recorded External-Blocker Workaround** and remain tied to the external blocker.
+- "JSON payload" could mean both boundary serialization and in-engine runtime storage; resolved: only **JSON-Backed Runtime Payload** is forbidden by the ECS/runtime boundary.
+- "boundary serialization" could be mistaken for an engine storage format; resolved: **External Boundary Serialization** ends before typed runtime state.
 - "blocked" could imply no work is allowed nearby; resolved: a **Blocked Parity Subtarget** only forbids substitute behavior for the missing dependency capability.
 - "diagnosed performance gap" could mean plausible explanation; resolved: severe gaps with only candidate causes are **Cause Unverified Performance Gap** entries.
 - "performance fix" could start with refactoring; resolved: **Trace-First Performance Diagnosis** comes before restructuring cause-unverified gaps.

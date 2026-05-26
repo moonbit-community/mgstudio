@@ -442,8 +442,6 @@ pub fn[T] MessageCursor::missed_messages(Self[T], Messages[T]) -> Int
 pub fn[T] MessageCursor::read(Self[T], Messages[T]) -> Array[T]
 pub fn[T] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[T]
 pub impl[T] Default for MessageCursor[T]
-pub impl[T] ToJson for MessageCursor[T]
-pub impl[T] @json.FromJson for MessageCursor[T]
 
 pub struct MessageKey[T] {
   // private fields
@@ -595,12 +593,12 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D)
 
 pub struct QueryCache {
   // private fields
-} derive(ToJson, @json.FromJson)
+}
 pub fn QueryCache::new() -> Self
 
 pub struct QueryCacheSnapshot {
   // private fields
-} derive(ToJson, @json.FromJson)
+}
 pub fn QueryCacheSnapshot::cached_anchor_component_id(Self) -> Int?
 pub fn QueryCacheSnapshot::cached_candidate_anchor_component_id(Self) -> Int?
 pub fn QueryCacheSnapshot::cached_candidate_archetype_generation(Self) -> Int

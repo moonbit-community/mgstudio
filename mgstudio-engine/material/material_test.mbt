@@ -259,10 +259,7 @@ test "material boundary defaults mirror bevy derived MaterialProperties default"
 ///|
 test "material boundary exposes bevy-shaped erased key + properties helpers" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(7UL, "MeshKey")
-  let material_key = @material.ErasedMaterialKey::new(
-    ("albedo", 1),
-    "MaterialKey",
-  )
+  let material_key = @material.ErasedMaterialKey::new(1UL, "MaterialKey")
   let pipeline_key = @material.ErasedMaterialPipelineKey::new(
     mesh_key, material_key, "PipelineKey",
   )
@@ -418,7 +415,7 @@ fn material_test_mesh_vertex_layout(
 ///|
 test "material boundary carries bevy specialize callbacks in material properties" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(9UL, "MeshKey")
-  let material_key = @material.ErasedMaterialKey::new(3, "MaterialKey")
+  let material_key = @material.ErasedMaterialKey::new(3UL, "MaterialKey")
   let pipeline_key = @material.ErasedMaterialPipelineKey::new(
     mesh_key, material_key, "PipelineKey",
   )
@@ -487,7 +484,7 @@ fn material_test_specialized_mesh_pipeline(
 ///|
 test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(13UL, "MeshKey")
-  let material_key = @material.ErasedMaterialKey::new(5, "MaterialKey")
+  let material_key = @material.ErasedMaterialKey::new(5UL, "MaterialKey")
   let pipeline_key = @material.ErasedMaterialPipelineKey::new(
     mesh_key, material_key, "PipelineKey",
   )

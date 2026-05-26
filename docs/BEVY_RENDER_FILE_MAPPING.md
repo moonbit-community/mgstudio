@@ -1,5 +1,7 @@
 This file tracks Bevy-first render source mapping and must be kept in sync with actual code layout.
 
+Terminology note: Bevy paths containing `erased_render_asset` are source-owner names from Bevy's typed render asset pipeline. They are distinct from the banned JSON-backed runtime payload pattern; see ADR 0002.
+
 - [x] `bevy/crates/bevy_render/src/lib.rs` -> `mgstudio-engine/render/lib.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_render/src/extract_plugin.rs` -> `mgstudio-engine/render/extract_plugin.mbt` (`Rewrite`)
 - [x] `bevy/crates/bevy_render/src/renderer/mod.rs` -> `mgstudio-engine/render/renderer/mod.mbt` (`Rewrite`)

@@ -2,6 +2,8 @@ This file must not exceed 200 lines. Excessive done issues should be moved to AR
 
 The table below is the current authoritative score. Criteria are source-level 1:1 parity: directory/API topology, runtime semantics, upstream test/example coverage, and visual/performance parity. Bands: 95%+ near source-level parity; 80-94% strong but incomplete; 60-79% substantial partial port; 40-59% partial; <40% major gap.
 
+Terminology note: `erased render asset` refers to Bevy's typed `ErasedRenderAsset` source owner. It does not allow JSON-backed runtime payloads, which are forbidden by ADR 0002.
+
 | Scope | Structure | Runtime | Overall | Status | Strict Reassessment |
 |---|---:|---:|---:|---|---|
 | `app` | 75% | 70% | 70% | 🟡 In Progress | Plugin/schedule surface is useful, but full Bevy scheduler/build-pass/source topology parity is not proven. |

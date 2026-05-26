@@ -128,6 +128,37 @@ This keeps registration local to the concrete type that knows the full `T` and
 lets generic systems use the typed key without a registry lookup or runtime
 type recovery.
 
+JSON-backed runtime payloads are forbidden. Runtime values must not be encoded
+to `Json`, a JSON string, or generated codec data so they can be stored in ECS
+live storage, `SystemParamState`, query caches, generic component/resource
+containers, render runtime stores, or asset runtime stores and later decoded back
+to their original type.
+
+JSON serialization remains valid at explicit external boundaries such as file
+formats, scene or asset data, native/window IPC payloads, and tests that verify a
+serialization boundary. It must not be used as an in-engine type-erasure or
+generic-storage mechanism.
+
+Boundary code that uses JSON must make the boundary visible in the API shape and
+name. Prefer names that include `serialize`, `deserialize`, `ipc`, `external`, or
+the concrete file/native boundary. Once data enters ECS resources, components,
+queries, render stores, app system state, or other engine runtime structures, it
+must be represented as typed MoonBit values rather than `Json` or JSON strings.
+
+`ToJson` and `FromJson` derives are allowed on component, resource, event, asset,
+and helper types when they serve an explicit serialization boundary such as a
+scene/asset/file/native/debug/test surface. Those derives must not become ECS
+storage capabilities. No ECS, app, render, asset-runtime, query, or system-param
+API may require `T : ToJson + FromJson` in order to store, fetch, cache, or
+persist runtime state. New derives should not be added speculatively; add them
+only when a concrete boundary needs serialization.
+
+Language expressibility blockers must not be hidden behind JSON-backed runtime
+payloads. If MoonBit cannot express the typed ECS/runtime shape required by the
+Bevy source owner, stop the implementation work and either ask the project owner
+for a design decision or record a Language Expressibility Blocker. Do not add a
+temporary JSON-backed runtime payload to keep the port moving.
+
 ## Custom Projection
 
 Custom 3D projections also follow the same rule. `CustomProjection3d` stores
@@ -147,4 +178,8 @@ The migration is considered complete only when:
 - no generated public interface exposes the removed payload codec surface;
 - no source code calls erased component/resource registration or typed-key
   recovery from raw ids;
+- no source package uses JSON-backed runtime payloads for ECS live storage,
+  system state, query cache state, or generic runtime containers;
+- no runtime storage, query, or system-param API requires `ToJson`/`FromJson`
+  bounds as a condition for ordinary engine state;
 - `moon check --target native`, `moon fmt`, and `moon info` succeed.

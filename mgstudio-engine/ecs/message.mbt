@@ -218,19 +218,8 @@ pub fn[T] MessageCursor::MessageCursor() -> MessageCursor[T] {
 }
 
 ///|
-pub impl[T] Default for MessageCursor[T] with default() {
+pub impl[T] Default for MessageCursor[T] with fn default() {
   MessageCursor::MessageCursor()
-}
-
-///|
-pub impl[T] ToJson for MessageCursor[T] with to_json(self) {
-  self.last_message_count.to_json()
-}
-
-///|
-pub impl[T] @json.FromJson for MessageCursor[T] with from_json(json, path) {
-  let last_message_count : Int = @json.FromJson::from_json(json, path)
-  { last_message_count, }
 }
 
 ///|
