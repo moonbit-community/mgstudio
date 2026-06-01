@@ -1192,9 +1192,10 @@ test "render2d: MeshMaterial2d component keys are registered per material type" 
 }
 
 ///|
-test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
+test "render2d: ColorMaterialAsset constructors match Bevy alpha modes" {
   let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
   let blend_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
+  let default_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
@@ -1208,6 +1209,9 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
     blend_alpha_mode.val = Some(
       ColorMaterialAsset::from_color(Color::new(0.25F, 0.5F, 0.75F, 0.4F)).alpha_mode(),
     )
+    default_alpha_mode.val = Some(
+      ColorMaterialAsset::ColorMaterialAsset().alpha_mode(),
+    )
   })
   .run_once()
   |> ignore
@@ -1218,6 +1222,10 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   )
   debug_inspect(
     blend_alpha_mode.val.map(fn(mode) { mode is Blend }),
+    content="Some(true)",
+  )
+  debug_inspect(
+    default_alpha_mode.val.map(fn(mode) { mode is Blend }),
     content="Some(true)",
   )
 }

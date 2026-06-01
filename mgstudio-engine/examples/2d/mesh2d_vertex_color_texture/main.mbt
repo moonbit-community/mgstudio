@@ -39,9 +39,7 @@ fn setup(
       (
         @sprite.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(
-          materials
-          .peek()
-          .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::white())),
+          materials.peek().add(@sprite.ColorMaterialAsset::ColorMaterialAsset()),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(-96.0F, 0.0F, 0.0F),

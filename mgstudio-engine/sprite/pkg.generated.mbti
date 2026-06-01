@@ -432,6 +432,7 @@ pub struct ColorMaterialAsset {
   texture : @asset.Handle[@image.Image]?
   uv_transform : @transform.Affine2
 }
+pub fn ColorMaterialAsset::ColorMaterialAsset() -> Self
 pub fn ColorMaterialAsset::from_color(@color.Color) -> Self
 pub fn ColorMaterialAsset::from_image(@asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterialAsset::new(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self

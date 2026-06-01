@@ -90,6 +90,16 @@ pub fn ColorMaterialAsset::from_image(
 }
 
 ///|
+pub fn ColorMaterialAsset::ColorMaterialAsset() -> ColorMaterialAsset {
+  ColorMaterialAsset::new(
+    Color::white(),
+    AlphaMode2d::Blend,
+    texture=None,
+    uv_transform=@transform.Affine2::identity(),
+  )
+}
+
+///|
 pub impl IntoColorMaterialAsset for Color with fn into_color_material_asset(
   self,
 ) {
