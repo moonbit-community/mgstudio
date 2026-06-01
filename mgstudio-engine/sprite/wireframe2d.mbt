@@ -68,6 +68,111 @@ pub struct Wireframe2dConfig {
 } derive(ToJson, FromJson)
 
 ///|
+pub struct Wireframe2dMaterial {
+  mut color : Color
+}
+
+///|
+pub fn Wireframe2dMaterial::Wireframe2dMaterial() -> Wireframe2dMaterial {
+  Wireframe2dMaterial::{ color: Color::white() }
+}
+
+///|
+pub fn Wireframe2dMaterial::new(color : Color) -> Wireframe2dMaterial {
+  Wireframe2dMaterial::{ color, }
+}
+
+///|
+pub fn Wireframe2dMaterial::color(self : Wireframe2dMaterial) -> Color {
+  self.color
+}
+
+///|
+pub impl @asset.Asset for Wireframe2dMaterial with fn asset_debug_name() {
+  "mgstudio_sprite_render::Wireframe2dMaterial"
+}
+
+///|
+pub impl @asset.Asset for Wireframe2dMaterial with fn asset_as_image(_self) {
+  None
+}
+
+///|
+let wireframe2d_material_asset_resource_keys : @asset.AssetResourceKeys[
+  Wireframe2dMaterial,
+] = @asset.register_asset_resource_keys(Wireframe2dMaterial::asset_debug_name())
+
+///|
+pub impl @asset.Asset for Wireframe2dMaterial with fn asset_resource_keys() {
+  wireframe2d_material_asset_resource_keys
+}
+
+///|
+pub struct Mesh2dWireframe {
+  handle : @asset.Handle[Wireframe2dMaterial]
+}
+
+///|
+pub fn Mesh2dWireframe::new(
+  handle : @asset.Handle[Wireframe2dMaterial],
+) -> Mesh2dWireframe {
+  Mesh2dWireframe::{ handle, }
+}
+
+///|
+pub fn Mesh2dWireframe::handle(
+  self : Mesh2dWireframe,
+) -> @asset.Handle[Wireframe2dMaterial] {
+  self.handle
+}
+
+///|
+pub struct WireframeEntitiesNeedingSpecialization {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+}
+
+///|
+pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> WireframeEntitiesNeedingSpecialization {
+  WireframeEntitiesNeedingSpecialization::{ changed: [], removed: [] }
+}
+
+///|
+struct GlobalWireframeMaterial {
+  handle : @asset.Handle[Wireframe2dMaterial]
+}
+
+///|
+fn GlobalWireframeMaterial::new(
+  handle : @asset.Handle[Wireframe2dMaterial],
+) -> GlobalWireframeMaterial {
+  GlobalWireframeMaterial::{ handle, }
+}
+
+///|
+pub impl @app.Resource for GlobalWireframeMaterial with fn resource() {
+  ecs_key_global_wireframe_material
+}
+
+///|
+pub struct Wireframe2dPlugin {}
+
+///|
+pub fn Wireframe2dPlugin::Wireframe2dPlugin() -> Wireframe2dPlugin {
+  Wireframe2dPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for Wireframe2dPlugin with fn name(_self) {
+  "mgstudio.sprite_render.Wireframe2dPlugin"
+}
+
+///|
+pub impl @app.Plugin for Wireframe2dPlugin with fn build(_self, app) {
+  wireframe2d_plugin_install(app)
+}
+
+///|
 pub fn Wireframe2dConfig::Wireframe2dConfig() -> Wireframe2dConfig {
   Wireframe2dConfig::{ global: false, default_color: Color::white() }
 }
@@ -97,49 +202,239 @@ pub fn Wireframe2dConfig::with_default_color(
 }
 
 ///|
-pub impl @app.Resource for Wireframe2dConfig with resource() {
+pub impl @app.Resource for Wireframe2dConfig with fn resource() {
   ecs_key_wireframe2d_config
 }
 
 ///|
-fn init_wireframe2d_resources(world : @ecs.World) -> Unit {
+pub impl @app.Resource for WireframeEntitiesNeedingSpecialization with fn resource() {
+  ecs_key_wireframe_entities_needing_specialization
+}
+
+///|
+fn wireframe2d_material_assets_mut(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[Wireframe2dMaterial]]? {
+  let key : @ecs.ResourceKey[@asset.Assets[Wireframe2dMaterial]] = @asset.assets_resource_key()
+  world.get_resource_mut(key)
+}
+
+///|
+fn wireframe2d_material_assets(
+  world : @ecs.World,
+) -> @asset.Assets[Wireframe2dMaterial]? {
+  let key : @ecs.ResourceKey[@asset.Assets[Wireframe2dMaterial]] = @asset.assets_resource_key()
+  world.get_resource(key)
+}
+
+///|
+fn setup_global_wireframe_material(world : @ecs.World) -> Unit {
   let wireframe_config = get_wireframe2d_config_resource(world)
   if !wireframe_config.is_present() {
     wireframe_config.insert(Wireframe2dConfig::Wireframe2dConfig())
   }
+  if world.get_resource(WireframeEntitiesNeedingSpecialization::resource())
+    is None {
+    world.insert_resource(
+      WireframeEntitiesNeedingSpecialization::resource(),
+      WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+    )
+  }
+  let config = wireframe_config
+    .get()
+    .unwrap_or(Wireframe2dConfig::Wireframe2dConfig())
+  guard wireframe2d_material_assets_mut(world) is Some(materials) else {
+    return
+  }
+  let handle = materials.modify(fn(assets) {
+    assets.add(Wireframe2dMaterial::new(config.default_color))
+  })
+  world.insert_resource(
+    GlobalWireframeMaterial::resource(),
+    GlobalWireframeMaterial::new(handle),
+  )
 }
 
 ///|
-pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_startup_system(init_wireframe2d_resources)
-}
-
-///|
-fn wireframe2d_mesh_should_draw(
-  has_wireframe : Bool,
-  has_no_wireframe : Bool,
-  wireframe_config : Wireframe2dConfig?,
-) -> Bool {
-  guard wireframe_config is Some(config) else { return false }
-  if has_no_wireframe {
-    false
-  } else if has_wireframe {
-    true
+fn get_wireframe_material(
+  maybe_color : Wireframe2dColor?,
+  materials : @asset.Assets[Wireframe2dMaterial],
+  global_material : GlobalWireframeMaterial,
+) -> @asset.Handle[Wireframe2dMaterial] {
+  if maybe_color is Some(wireframe_color) {
+    materials.add(Wireframe2dMaterial::new(wireframe_color.color))
   } else {
-    config.global
+    global_material.handle
   }
 }
 
 ///|
-fn wireframe2d_mesh_color(
-  mesh_color : Wireframe2dColor?,
-  wireframe_config : Wireframe2dConfig?,
+fn sync_global_wireframe_material(world : @ecs.World) -> Unit {
+  guard get_wireframe2d_config_resource(world).get() is Some(config) else {
+    return
+  }
+  guard world.get_resource(GlobalWireframeMaterial::resource())
+    is Some(global_material) else {
+    return
+  }
+  guard wireframe2d_material_assets_mut(world) is Some(materials) else {
+    return
+  }
+  ignore(
+    materials.modify(fn(assets) {
+      guard assets.get_mut(global_material.handle) is Some(material) else {
+        return false
+      }
+      material.color = config.default_color
+      true
+    }),
+  )
+}
+
+///|
+fn[T] wireframe2d_has_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  key : @ecs.ComponentKey[T],
+) -> Bool {
+  (try! world.get_by_key(entity, key)) is Some(_)
+}
+
+///|
+fn remove_mesh2d_wireframe_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  if wireframe2d_has_component(world, entity, ecs_key_mesh2d_wireframe) {
+    try! (world.remove_by_key(entity, ecs_key_mesh2d_wireframe) |> ignore)
+    if world.get_resource_mut(
+        WireframeEntitiesNeedingSpecialization::resource(),
+      )
+      is Some(needs) {
+      needs.modify(fn(value) { value.removed.push(entity) })
+    }
+  }
+}
+
+///|
+fn set_mesh2d_wireframe_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  handle : @asset.Handle[Wireframe2dMaterial],
+) -> Unit {
+  let next = Mesh2dWireframe::new(handle)
+  let current_wireframe = try! world.get_by_key(
+    entity, ecs_key_mesh2d_wireframe,
+  )
+  let changed = match current_wireframe {
+    Some(current) => current.handle.id() != handle.id()
+    None => true
+  }
+  try! (world.set_by_key(entity, ecs_key_mesh2d_wireframe, next) |> ignore)
+  if changed {
+    if world.get_resource_mut(
+        WireframeEntitiesNeedingSpecialization::resource(),
+      )
+      is Some(needs) {
+      needs.modify(fn(value) { value.changed.push(entity) })
+    }
+  }
+}
+
+///|
+fn apply_wireframe_material(world : @ecs.World) -> Unit {
+  guard world.get_resource(GlobalWireframeMaterial::resource())
+    is Some(global_material) else {
+    return
+  }
+  guard wireframe2d_material_assets_mut(world) is Some(materials_ref) else {
+    return
+  }
+  let material_key = ecs_key_mesh2d_wireframe
+  let query : @ecs.Query[@ecs.Comp[Wireframe2d], @ecs.All] = @ecs.query(world)
+  let no_wireframe_entities : Array[@core.Entity] = []
+  world.for_each_component(ecs_key_no_wireframe2d, fn(entity, _value) {
+    no_wireframe_entities.push(entity)
+  })
+  for entity in no_wireframe_entities {
+    remove_mesh2d_wireframe_component(world, entity)
+  }
+  try! query.view(fn(entity, _wireframe) {
+    let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe2d_color)
+    let handle = materials_ref.modify(fn(materials) {
+      get_wireframe_material(maybe_color, materials, global_material)
+    })
+    set_mesh2d_wireframe_component(world, entity, handle)
+  })
+  world.for_each_component(material_key, fn(entity, _value) {
+    if !wireframe2d_has_component(world, entity, ecs_key_wireframe2d) &&
+      !wireframe2d_has_component(world, entity, ecs_key_mesh2d) {
+      remove_mesh2d_wireframe_component(world, entity)
+    }
+  })
+}
+
+///|
+fn apply_global_wireframe_material(world : @ecs.World) -> Unit {
+  guard get_wireframe2d_config_resource(world).get() is Some(config) else {
+    return
+  }
+  guard world.get_resource(GlobalWireframeMaterial::resource())
+    is Some(global_material) else {
+    return
+  }
+  guard wireframe2d_material_assets_mut(world) is Some(materials_ref) else {
+    return
+  }
+  let mesh_entities : Array[@core.Entity] = []
+  world.for_each_component(ecs_key_mesh2d, fn(entity, _mesh) {
+    mesh_entities.push(entity)
+  })
+  for entity in mesh_entities {
+    if wireframe2d_has_component(world, entity, ecs_key_wireframe2d) ||
+      wireframe2d_has_component(world, entity, ecs_key_no_wireframe2d) {
+      continue
+    }
+    if config.global {
+      let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe2d_color)
+      let handle = materials_ref.modify(fn(materials) {
+        get_wireframe_material(maybe_color, materials, global_material)
+      })
+      set_mesh2d_wireframe_component(world, entity, handle)
+    } else {
+      remove_mesh2d_wireframe_component(world, entity)
+    }
+  }
+}
+
+///|
+fn wireframe2d_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @asset.init_asset(app, fn() { Wireframe2dMaterial::Wireframe2dMaterial() })
+  .add_startup_system(setup_global_wireframe_material)
+  .add_systems(
+    @app.Update,
+    (
+      @app.system(sync_global_wireframe_material),
+      @app.system(apply_wireframe_material),
+      @app.system(apply_global_wireframe_material),
+    )
+    |> @app.chain(),
+  )
+}
+
+///|
+fn wireframe2d_material_color(
+  world : @ecs.World,
+  wireframe : Mesh2dWireframe,
 ) -> Color {
-  if mesh_color is Some(component) {
-    component.color
-  } else if wireframe_config is Some(config) {
-    config.default_color
-  } else {
-    Color::white()
+  match wireframe2d_material_assets(world) {
+    Some(materials) =>
+      match materials.get(wireframe.handle) {
+        Some(material) => material.color
+        None => Color::white()
+      }
+    None => Color::white()
   }
 }

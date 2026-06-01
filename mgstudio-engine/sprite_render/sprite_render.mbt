@@ -58,6 +58,15 @@ pub type Wireframe2dColor = @sprite.Wireframe2dColor
 pub type Wireframe2dConfig = @sprite.Wireframe2dConfig
 
 ///|
+pub type Wireframe2dMaterial = @sprite.Wireframe2dMaterial
+
+///|
+pub type Mesh2dWireframe = @sprite.Mesh2dWireframe
+
+///|
+pub type Wireframe2dPlugin = @sprite.Wireframe2dPlugin
+
+///|
 pub type TileData = @sprite.TileData
 
 ///|
@@ -342,6 +351,3 @@ pub fn color_material_plugin(
 }
 
 ///|
-pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.wireframe2d_plugin(app)
-}

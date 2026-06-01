@@ -21,17 +21,15 @@ let wireframe_help_text_key : @ecs.ComponentKey[WireframeHelpText] = @ecs.regist
 )
 
 ///|
-pub impl @ecs.Component for WireframeHelpText with component() {
+pub impl @ecs.Component for WireframeHelpText with fn component() {
   wireframe_help_text_key
 }
 
 ///|
 fn main {
-  @sprite.wireframe2d_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::DefaultPlugins(),
-    ),
-  )
+  @app.App::new(@ecs.World::new())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@sprite.Wireframe2dPlugin::Wireframe2dPlugin())
   .insert_resource(@sprite.Wireframe2dConfig::new(true, color_default_white()))
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(update_colors)))

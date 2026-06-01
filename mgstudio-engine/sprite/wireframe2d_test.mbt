@@ -33,3 +33,36 @@ test "sprite: Wireframe2dConfig can be accessed through ResMut" {
     content="Some(true)",
   )
 }
+
+///|
+test "sprite: Wireframe2dPlugin applies Mesh2dWireframe material handles" {
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(Wireframe2dConfig::new(true, Color::white()))
+    .add_plugins(Wireframe2dPlugin::Wireframe2dPlugin())
+    .add_system(fn(world : @ecs.World) {
+      if entity_ref.val is Some(_) {
+        return
+      }
+      let entity = world.spawn()
+      entity_ref.val = Some(entity)
+      try! (world.set_by_key(
+        entity,
+        @mesh.ecs_key_mesh2d,
+        Mesh2d::new(@asset.Handle::new(7)),
+      )
+      |> ignore)
+    })
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  let entity = entity_ref.val.unwrap()
+  let wireframe = (try! app
+  .world()
+  .get_by_key(entity, Mesh2dWireframe::component())).unwrap()
+  let material_key : @ecs.ResourceKey[@asset.Assets[Wireframe2dMaterial]] = @asset.assets_resource_key()
+  let materials = app.world().get_resource(material_key).unwrap()
+  debug_inspect(wireframe.handle().id() >= 0, content="true")
+  debug_inspect(materials.get(wireframe.handle()) is Some(_), content="true")
+}

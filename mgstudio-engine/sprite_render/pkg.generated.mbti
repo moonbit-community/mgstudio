@@ -89,8 +89,6 @@ pub fn sprite_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn sprite_render_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
 // Errors
 
 // Types and methods
@@ -117,6 +115,8 @@ pub using @sprite {type Material2dPlugin}
 pub using @mesh {type Mesh2d}
 
 pub using @sprite {type Mesh2dBundle}
+
+pub using @sprite {type Mesh2dWireframe}
 
 pub using @sprite {type MeshMaterial2d}
 
@@ -147,6 +147,10 @@ pub using @sprite {type Wireframe2d}
 pub using @sprite {type Wireframe2dColor}
 
 pub using @sprite {type Wireframe2dConfig}
+
+pub using @sprite {type Wireframe2dMaterial}
+
+pub using @sprite {type Wireframe2dPlugin}
 
 // Traits
 

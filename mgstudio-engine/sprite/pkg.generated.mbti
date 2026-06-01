@@ -55,9 +55,13 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
+pub let ecs_key_global_wireframe_material : @ecs.ResourceKey[GlobalWireframeMaterial]
+
 pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
+
+pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe]
 
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]]
 
@@ -90,6 +94,8 @@ pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d]
 pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor]
 
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
+
+pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[WireframeEntitiesNeedingSpecialization]
 
 pub let ecs_resources : Array[String]
 
@@ -266,8 +272,6 @@ pub fn sprite_stroke_text_emit_3d(GizmoConfig, @math.Isometry3d, String, Float, 
 pub fn sprite_stroke_text_measure(String, Float) -> @math.Vec2
 
 pub let sprite_systems_compute_slices : String
-
-pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -610,6 +614,9 @@ pub fn[Config] Gizmos::text_2d(Self[Config], Isometry2d, String, Float, @math.Ve
 pub fn[Config] Gizmos::text_3d(Self[Config], @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]
 
+type GlobalWireframeMaterial
+pub impl @app.Resource for GlobalWireframeMaterial
+
 pub struct Grid2dBuilder {
   id : Int
   state : @ref.Ref[GizmoState]
@@ -727,6 +734,13 @@ pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[
 pub fn Mesh2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for Mesh2dBundle
 pub impl @ecs.Bundle for Mesh2dBundle
+
+pub struct Mesh2dWireframe {
+  handle : @asset.Handle[Wireframe2dMaterial]
+}
+pub fn Mesh2dWireframe::handle(Self) -> @asset.Handle[Wireframe2dMaterial]
+pub fn Mesh2dWireframe::new(@asset.Handle[Wireframe2dMaterial]) -> Self
+pub impl @ecs.Component for Mesh2dWireframe
 
 pub struct MeshMaterial2d[M] {
   handle : @asset.Handle[M]
@@ -1255,6 +1269,26 @@ pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for Wireframe2dConfig
+
+pub struct Wireframe2dMaterial {
+  mut color : @color.Color
+}
+pub fn Wireframe2dMaterial::Wireframe2dMaterial() -> Self
+pub fn Wireframe2dMaterial::color(Self) -> @color.Color
+pub fn Wireframe2dMaterial::new(@color.Color) -> Self
+pub impl @asset.Asset for Wireframe2dMaterial
+
+pub struct Wireframe2dPlugin {
+}
+pub fn Wireframe2dPlugin::Wireframe2dPlugin() -> Self
+pub impl @app.Plugin for Wireframe2dPlugin
+
+pub struct WireframeEntitiesNeedingSpecialization {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+}
+pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> Self
+pub impl @app.Resource for WireframeEntitiesNeedingSpecialization
 
 // Type aliases
 pub using @math {type Annulus}

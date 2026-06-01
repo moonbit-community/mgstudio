@@ -106,6 +106,11 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @ecs.r
 )
 
 ///|
+pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @ecs.register_component(
+  debug_name="render2d.mesh2d_wireframe",
+)
+
+///|
 pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig] = @ecs.register_component(
   debug_name="render2d.clear_color_config",
 )
@@ -193,6 +198,11 @@ pub impl @ecs.Component for NoWireframe2d with fn component() {
 ///|
 pub impl @ecs.Component for Wireframe2dColor with fn component() {
   ecs_key_wireframe2d_color
+}
+
+///|
+pub impl @ecs.Component for Mesh2dWireframe with fn component() {
+  ecs_key_mesh2d_wireframe
 }
 
 ///|
@@ -305,6 +315,18 @@ pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_res
 ///|
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @ecs.register_resource(
   debug_name="render2d.wireframe2d_config",
+)
+
+///|
+pub let ecs_key_global_wireframe_material : @ecs.ResourceKey[
+  GlobalWireframeMaterial,
+] = @ecs.register_resource(debug_name="render2d.global_wireframe_material")
+
+///|
+pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[
+  WireframeEntitiesNeedingSpecialization,
+] = @ecs.register_resource(
+  debug_name="render2d.wireframe_entities_needing_specialization",
 )
 
 ///|

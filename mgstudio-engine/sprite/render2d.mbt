@@ -5551,13 +5551,6 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         })
       }
     })
-    let wireframe_config = if get_wireframe2d_config_resource(source_world).get()
-      is Some(config) {
-      Some(config)
-    } else {
-      None
-    }
-
     // ECS mesh components.
     let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
       source_world,
@@ -5579,16 +5572,14 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         RenderLayers::RenderLayers(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
-      let wireframe = wireframe2d_mesh_should_draw(
-        (try! source_world.get_by_key(entity, ecs_key_wireframe2d)) is Some(_),
-        (try! source_world.get_by_key(entity, ecs_key_no_wireframe2d))
-        is Some(_),
-        wireframe_config,
+      let wireframe_component = try! source_world.get_by_key(
+        entity, ecs_key_mesh2d_wireframe,
       )
-      let wireframe_color = wireframe2d_mesh_color(
-        try! source_world.get_by_key(entity, ecs_key_wireframe2d_color),
-        wireframe_config,
-      )
+      let wireframe = wireframe_component is Some(_)
+      let wireframe_color = match wireframe_component {
+        Some(component) => wireframe2d_material_color(source_world, component)
+        None => Color::white()
+      }
       let mesh2d = mesh2d.value()
       rs.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
