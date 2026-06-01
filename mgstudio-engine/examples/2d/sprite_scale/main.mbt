@@ -57,7 +57,7 @@ let animation_indices_key : @ecs.ComponentKey[AnimationIndices] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for AnimationIndices with component() {
+pub impl @ecs.Component for AnimationIndices with fn component() {
   animation_indices_key
 }
 
@@ -72,7 +72,7 @@ let animation_timer_key : @ecs.ComponentKey[AnimationTimer] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for AnimationTimer with component() {
+pub impl @ecs.Component for AnimationTimer with fn component() {
   animation_timer_key
 }
 
@@ -402,17 +402,15 @@ fn spawn_rect(
   rect : Rect,
   text_style : @text.TextFont,
 ) -> Unit {
-  ignore(
-    commands.spawn(
-      (
-        @sprite.Sprite::from_image(rect.texture)
-        .with_custom_size(Some(rect.size))
-        .with_image_mode(rect.image_mode),
-        @transform.Transform::from_translation(rect.translation),
-      ),
+  let entity = commands.spawn(
+    (
+      @sprite.Sprite::from_image(rect.texture)
+      .with_custom_size(Some(rect.size))
+      .with_image_mode(rect.image_mode),
+      @transform.Transform::from_translation(rect.translation),
     ),
   )
-  spawn_scale_label(rect.text, text_style, rect.translation, rect.size)
+  spawn_scale_label(commands, entity, rect.text, text_style, rect.size)
 }
 
 ///|
@@ -421,50 +419,49 @@ fn spawn_sprite_sheet(
   sprite_sheet : SpriteSheet,
   text_style : @text.TextFont,
 ) -> Unit {
-  ignore(
-    commands.spawn(
-      (
-        @sprite.Sprite::from_atlas_image(
-          sprite_sheet.texture,
-          sprite_sheet.atlas,
-        )
-        .with_custom_size(Some(sprite_sheet.size))
-        .with_image_mode(sprite_sheet.image_mode),
-        sprite_sheet.indices,
-        sprite_sheet.timer,
-        @transform.Transform::from_translation(sprite_sheet.translation),
-      ),
+  let entity = commands.spawn(
+    (
+      @sprite.Sprite::from_atlas_image(sprite_sheet.texture, sprite_sheet.atlas)
+      .with_custom_size(Some(sprite_sheet.size))
+      .with_image_mode(sprite_sheet.image_mode),
+      sprite_sheet.indices,
+      sprite_sheet.timer,
+      @transform.Transform::from_translation(sprite_sheet.translation),
     ),
   )
   spawn_scale_label(
+    commands,
+    entity,
     sprite_sheet.text,
     text_style,
-    sprite_sheet.translation,
     sprite_sheet.size,
   )
 }
 
 ///|
 fn spawn_scale_label(
+  commands : @app.Commands,
+  parent : @core.Entity,
   label : String,
   text_style : @text.TextFont,
-  sprite_translation : @math.Vec3,
   sprite_size : @math.Vec2,
 ) -> Unit {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(label),
-    text_style,
-    @transform.Transform::from_xyz(
-      sprite_translation.x,
-      sprite_translation.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
-      sprite_translation.z,
+  ignore(
+    commands.spawn(
+      (
+        @text.Text2d::new(label),
+        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        text_style,
+        @transform.Transform::from_xyz(
+          0.0F,
+          -0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
+          0.0F,
+        ),
+        @sprite.Anchor::top_center(),
+        @hierarchy.Parent::new(parent),
+      ),
     ),
   )
-  .with_color(@text.TextColor::new(@sprite.Color::white()))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .with_anchor(@sprite.Anchor::top_center())
-  .spawn()
-  |> ignore
 }
 
 ///|
