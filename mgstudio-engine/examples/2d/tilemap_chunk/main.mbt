@@ -57,7 +57,7 @@ pub impl @ecs.Component for MovePlayer with fn component() {
 
 ///|
 struct SeededRng {
-  rng : @random.Rand
+  rng : @example_rng.ChaCha8Rng
 }
 
 ///|
@@ -93,12 +93,12 @@ fn main {
 
 ///|
 fn build_initial_tile_data(
-  rng : @random.Rand,
+  rng : @example_rng.ChaCha8Rng,
   tile_count : Int,
 ) -> Array[@sprite.TileData?] {
   let tile_data : Array[@sprite.TileData?] = []
   for _ in 0..<tile_count {
-    let value = rng.int(limit=TILESET_RANDOM_RANGE)
+    let value = rng.random_range(TILESET_RANDOM_RANGE)
     tile_data.push(
       if value == 0 {
         None
@@ -115,7 +115,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let rng = @random.Rand::chacha8(seed=b"bevy-tilemap-chunk-seed-00000042")
+  let rng = @example_rng.ChaCha8Rng::seed_from_u64(42UL)
   let chunk = @sprite.TilemapChunk::new(
     @math.UVec2::splat(CHUNK_SIDE),
     @math.UVec2::splat(TILE_SIZE),
@@ -172,11 +172,7 @@ fn spawn_player(
   let player_material = @sprite.MeshMaterial2d::new(
     materials
     .peek()
-    .add(
-      @sprite.ColorMaterialAsset::from_color(
-        @sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
-      ),
-    ),
+    .add(@sprite.ColorMaterialAsset::from_color(@palettes.tailwind_red_400())),
   )
 
   if moving {
@@ -262,10 +258,10 @@ fn update_tilemap(
           }
           rng.modify(fn(random_source) {
             for _ in 0..<UPDATE_BATCH_COUNT {
-              let index = random_source.rng.int(limit=tile_count)
+              let index = random_source.rng.random_range(tile_count)
               value.tile_data[index] = Some(
                 @sprite.TileData::from_tileset_index(
-                  random_source.rng.int(limit=TILESET_RANDOM_RANGE),
+                  random_source.rng.random_range(TILESET_RANDOM_RANGE),
                 ),
               )
             }

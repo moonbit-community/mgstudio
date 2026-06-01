@@ -86,3 +86,8 @@ pub fn tailwind_rose_500() -> @color.Color {
 pub fn tailwind_rose_700() -> @color.Color {
   @color.Color::srgba(0.745098F, 0.129412F, 0.235294F, 1.0F)
 }
+
+///|
+pub fn tailwind_red_400() -> @color.Color {
+  @color.Color::srgba(0.972549F, 0.44313726F, 0.44313726F, 1.0F)
+}

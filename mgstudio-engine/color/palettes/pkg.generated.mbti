@@ -92,6 +92,8 @@ pub fn tailwind_emerald_700() -> @color.Color
 
 pub fn tailwind_palette() -> Array[@color.Color]
 
+pub fn tailwind_red_400() -> @color.Color
+
 pub fn tailwind_rose_300() -> @color.Color
 
 pub fn tailwind_rose_500() -> @color.Color
