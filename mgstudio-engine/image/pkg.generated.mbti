@@ -279,6 +279,8 @@ pub struct TextureAtlasRegion {
 pub(all) enum TextureFormat {
   Rgba8Unorm
   Rgba8UnormSrgb
+  Bgra8Unorm
+  Bgra8UnormSrgb
   Rgba16Uint
   Rgba16Float
   Rg16Float

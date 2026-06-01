@@ -33,7 +33,7 @@ let canvas_key : @ecs.ComponentKey[Canvas] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Canvas with component() {
+pub impl @ecs.Component for Canvas with fn component() {
   canvas_key
 }
 
@@ -46,7 +46,7 @@ let in_game_camera_key : @ecs.ComponentKey[InGameCamera] = @ecs.register_compone
 )
 
 ///|
-pub impl @ecs.Component for InGameCamera with component() {
+pub impl @ecs.Component for InGameCamera with fn component() {
   in_game_camera_key
 }
 
@@ -59,7 +59,7 @@ let outer_camera_key : @ecs.ComponentKey[OuterCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for OuterCamera with component() {
+pub impl @ecs.Component for OuterCamera with fn component() {
   outer_camera_key
 }
 
@@ -72,7 +72,7 @@ let rotate_key : @ecs.ComponentKey[Rotate] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Rotate with component() {
+pub impl @ecs.Component for Rotate with fn component() {
   rotate_key
 }
 
@@ -89,7 +89,7 @@ fn high_res_layers() -> @sprite.RenderLayers {
 ///|
 fn main {
   let setup_camera_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(setup_camera),
+    @app.system_param2(setup_camera),
   )
   let setup_sprite_system : @app.SystemConfig[@ecs.World] = @app.system(
     @app.system_param2(setup_sprite),
@@ -172,12 +172,20 @@ fn setup_mesh(
 }
 
 ///|
-fn setup_camera(commands : @app.Commands) -> Unit {
-  let image_handle = @sprite_render.render2d_create_render_target_ecs(
-    RES_WIDTH,
-    RES_HEIGHT,
-    true,
-  )
+fn setup_camera(
+  commands : @app.Commands,
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+) -> Unit {
+  let image_handle = images.modify(fn(images) {
+    images.add(
+      @asset.Image::new_target_texture(
+        RES_WIDTH,
+        RES_HEIGHT,
+        @asset.TextureFormat::Bgra8UnormSrgb,
+        None,
+      ),
+    )
+  })
 
   ignore(
     commands.spawn(
@@ -185,7 +193,9 @@ fn setup_camera(commands : @app.Commands) -> Unit {
         @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera()
         .with_order(-1)
-        .with_clear_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
+        .with_clear_color(
+          @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
+        ),
         @sprite.RenderTarget::Image(image_handle),
         InGameCamera::{  },
         pixel_perfect_layers(),

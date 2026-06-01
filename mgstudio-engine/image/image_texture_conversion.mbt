@@ -30,6 +30,8 @@ pub fn image_with_srgb_view(image : Image) -> Image {
   let view_format = match image.format {
     TextureFormat::Rgba8Unorm => Some(TextureFormat::Rgba8UnormSrgb)
     TextureFormat::Rgba8UnormSrgb => Some(TextureFormat::Rgba8UnormSrgb)
+    TextureFormat::Bgra8Unorm => Some(TextureFormat::Bgra8UnormSrgb)
+    TextureFormat::Bgra8UnormSrgb => Some(TextureFormat::Bgra8UnormSrgb)
     _ => image.view_format
   }
   Image::{

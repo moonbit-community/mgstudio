@@ -170,6 +170,14 @@ test "image wb: compressed saver quality clamp and format eligibility" {
     content="true",
   )
   debug_inspect(
+    !image_can_use_compressed_saver(TextureFormat::Bgra8Unorm),
+    content="true",
+  )
+  debug_inspect(
+    !image_can_use_compressed_saver(TextureFormat::Bgra8UnormSrgb),
+    content="true",
+  )
+  debug_inspect(
     !image_can_use_compressed_saver(TextureFormat::Rgba16Float),
     content="true",
   )

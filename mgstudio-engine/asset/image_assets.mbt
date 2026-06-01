@@ -27,7 +27,10 @@ fn image_asset_usage_bits(image : Image) -> Int {
 fn image_asset_is_srgb(image : Image) -> Bool {
   match image.view_format {
     Some(TextureFormat::Rgba8UnormSrgb) => true
-    _ => image.format == TextureFormat::Rgba8UnormSrgb
+    Some(TextureFormat::Bgra8UnormSrgb) => true
+    _ =>
+      image.format == TextureFormat::Rgba8UnormSrgb ||
+      image.format == TextureFormat::Bgra8UnormSrgb
   }
 }
 

@@ -45,6 +45,16 @@ test "image texture formats follow current wgpu constants" {
     content="true",
   )
   debug_inspect(
+    @image.texture_format(@image.TextureFormat::Bgra8Unorm).to_u32() ==
+    @wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+    content="true",
+  )
+  debug_inspect(
+    @image.texture_format(@image.TextureFormat::Bgra8UnormSrgb).to_u32() ==
+    @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
+    content="true",
+  )
+  debug_inspect(
     @image.texture_format(@image.TextureFormat::Rgba16Uint).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA16_UINT,
     content="true",

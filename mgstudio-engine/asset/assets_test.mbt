@@ -1443,18 +1443,15 @@ test "Image::new_target_texture preserves Bevy-style target texture descriptor" 
   let image = Image::new_target_texture(
     512,
     512,
-    TextureFormat::Rgba8Unorm,
-    Some(TextureFormat::Rgba8UnormSrgb),
+    TextureFormat::Bgra8UnormSrgb,
+    None,
   )
   debug_inspect(image.width, content="512")
   debug_inspect(image.height, content="512")
   debug_inspect(image.pixels.length(), content="0")
   debug_inspect(image.is_target_texture(), content="true")
-  debug_inspect(image.format == TextureFormat::Rgba8Unorm, content="true")
-  debug_inspect(
-    image.view_format == Some(TextureFormat::Rgba8UnormSrgb),
-    content="true",
-  )
+  debug_inspect(image.format == TextureFormat::Bgra8UnormSrgb, content="true")
+  debug_inspect(image.view_format == None, content="true")
 }
 
 ///|
@@ -1485,9 +1482,10 @@ test "Assets<Image>::add creates a target texture image asset" {
           .unwrap_or(false),
           asset_image_has_usage(handle, IMAGE_USAGE_RENDER_ATTACHMENT),
           asset_image_has_usage(handle, IMAGE_USAGE_TEXTURE_BINDING),
+          asset_image_is_srgb(handle),
         )
       }
-      None => (false, false, false, false)
+      None => (false, false, false, false, false)
     }
   })
 
@@ -1495,6 +1493,7 @@ test "Assets<Image>::add creates a target texture image asset" {
   debug_inspect(result.1, content="true")
   debug_inspect(result.2, content="true")
   debug_inspect(result.3, content="true")
+  debug_inspect(result.4, content="true")
 }
 
 ///|

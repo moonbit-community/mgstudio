@@ -63,6 +63,8 @@ pub fn Image::height(self : Image) -> Int {
 pub(all) enum TextureFormat {
   Rgba8Unorm
   Rgba8UnormSrgb
+  Bgra8Unorm
+  Bgra8UnormSrgb
   Rgba16Uint
   Rgba16Float
   Rg16Float
@@ -108,6 +110,10 @@ pub fn texture_format(format : TextureFormat) -> @wgpu.TextureFormat {
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
     TextureFormat::Rgba8UnormSrgb =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB)
+    TextureFormat::Bgra8Unorm =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM)
+    TextureFormat::Bgra8UnormSrgb =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB)
     TextureFormat::Rgba16Uint =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_UINT)
     TextureFormat::Rgba16Float =>
