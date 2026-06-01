@@ -263,7 +263,7 @@ fn ensure_effect_stack_default_lut_view(
     3,
     1,
     1,
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     [lut_bytes],
     false,
   )

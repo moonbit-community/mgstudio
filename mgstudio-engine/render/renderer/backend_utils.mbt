@@ -241,7 +241,8 @@ fn alloc_id(backend : GpuBackend) -> Int {
 }
 
 ///|
-fn texture_view_aspect_for_format(format_raw : UInt) -> UInt {
+fn texture_view_aspect_for_format(format : @wgpu.TextureFormat) -> UInt {
+  let format_raw = format.to_u32()
   if format_raw == @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT {
     @wgpu.TEXTURE_ASPECT_DEPTH_ONLY
   } else {

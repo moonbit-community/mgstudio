@@ -1040,7 +1040,7 @@ fn bloom_final_composite_pipeline_for_scene_texture(
   bloom_final_composite_pipeline_for_format(
     backend,
     composite_mode,
-    tf(scene_texture.format_raw),
+    scene_texture.format,
   )
 }
 

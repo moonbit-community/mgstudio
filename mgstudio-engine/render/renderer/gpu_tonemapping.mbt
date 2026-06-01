@@ -897,7 +897,7 @@ fn ensure_tonemapping_fallback_lut_texture(
     1,
     1,
     1,
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     [bytes],
   )
   backend.tonemapping_fallback_lut_texture_id = texture_id

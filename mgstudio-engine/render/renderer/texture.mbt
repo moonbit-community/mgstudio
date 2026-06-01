@@ -80,7 +80,7 @@ fn ensure_default_texture(
       height: h.reinterpret_as_int(),
       mip_level_count: 1,
       base_mip_level: 0,
-      format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+      format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
       texture: tex,
       view,
       sample_view: None,
@@ -134,7 +134,7 @@ fn ensure_normal_map_fallback_texture(
     height: 1,
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     texture: tex,
     view,
     sample_view: None,
@@ -237,7 +237,7 @@ fn ensure_environment_map_fallback_texture(
     height: 1,
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_view),
@@ -300,7 +300,7 @@ pub fn GpuBackend::create_texture_rgba8(
     height: h.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     texture: tex,
     view,
     sample_view: None,
@@ -319,7 +319,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   width : Int,
   height_per_slice : Int,
   slice_count : Int,
-  format_raw : UInt,
+  format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
 ) -> Int raise GpuBackendError {
@@ -327,6 +327,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   if levels.length() == 0 {
     fatal("wgpu: no mip levels provided for texture upload")
   }
+  let format_raw = format.to_u32()
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
       "wgpu: unsupported texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
@@ -352,7 +353,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     1U,
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(format_raw),
+    format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
   let view = tex.create_view()
@@ -440,7 +441,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     height: total_height,
     mip_level_count: levels.length(),
     base_mip_level: 0,
-    format_raw,
+    format,
     texture: tex,
     view,
     sample_view: None,
@@ -459,13 +460,14 @@ pub fn GpuBackend::create_texture_3d_with_format(
   width : Int,
   height : Int,
   depth : Int,
-  format_raw : UInt,
+  format : @wgpu.TextureFormat,
   levels : Array[Bytes],
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   if levels.length() == 0 {
     fatal("wgpu: no mip levels provided for 3D texture upload")
   }
+  let format_raw = format.to_u32()
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
       "wgpu: unsupported 3D texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
@@ -486,13 +488,13 @@ pub fn GpuBackend::create_texture_3d_with_format(
     d.reinterpret_as_uint(),
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_3D),
-    tf(format_raw),
+    format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
   let view = tex.create_view_u32(
-    tf(format_raw),
+    format,
     @wgpu.TEXTURE_VIEW_DIMENSION_3D,
-    texture_view_aspect_for_format(format_raw),
+    texture_view_aspect_for_format(format),
     0U,
     1U,
     0U,
@@ -584,7 +586,7 @@ pub fn GpuBackend::create_texture_3d_with_format(
     height: h,
     mip_level_count: levels.length(),
     base_mip_level: 0,
-    format_raw,
+    format,
     texture: tex,
     view,
     sample_view: None,
@@ -856,9 +858,9 @@ pub fn GpuBackend::create_texture_mip_view(
     }
   }
   let view = source.texture.create_view_u32(
-    tf(source.format_raw),
+    source.format,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-    texture_view_aspect_for_format(source.format_raw),
+    texture_view_aspect_for_format(source.format),
     0U,
     1U,
     absolute_mip.reinterpret_as_uint(),
@@ -872,7 +874,7 @@ pub fn GpuBackend::create_texture_mip_view(
     height,
     mip_level_count: 1,
     base_mip_level: absolute_mip,
-    format_raw: source.format_raw,
+    format: source.format,
     texture: source.texture,
     view,
     sample_view: None,
@@ -957,7 +959,7 @@ pub fn GpuBackend::set_texture_sampler(
         height: info.height,
         mip_level_count: info.mip_level_count,
         base_mip_level: info.base_mip_level,
-        format_raw: info.format_raw,
+        format: info.format,
         texture: info.texture,
         view: info.view,
         sample_view: info.sample_view,
@@ -982,7 +984,7 @@ pub fn GpuBackend::create_render_target(
     width,
     height,
     nearest,
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
   )
 }
 
@@ -997,7 +999,7 @@ pub fn GpuBackend::create_render_target_rgba16f(
     width,
     height,
     nearest,
-    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
   )
 }
 
@@ -1012,7 +1014,7 @@ pub fn GpuBackend::create_render_target_rg16f(
     width,
     height,
     nearest,
-    @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+    tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT),
   )
 }
 
@@ -1076,7 +1078,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
     height: safe_size.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    format: tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_array_view),
@@ -1140,7 +1142,7 @@ pub fn GpuBackend::create_directional_light_shadow_target(
     height: safe_size.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    format: tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
     texture: tex,
     view: array_view,
     sample_view: Some(array_view),
@@ -1158,7 +1160,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   self : GpuBackend,
   width : Int,
   height : Int,
-  format_raw : UInt,
+  format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
 ) -> Int raise GpuBackendError {
@@ -1166,6 +1168,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   if levels.length() == 0 {
     fatal("wgpu: no mip levels provided for cube texture upload")
   }
+  let format_raw = format.to_u32()
   guard texture_block_info(format_raw) is Some(block_info) else {
     fatal(
       "wgpu: unsupported cube texture format for upload: \{format_raw.reinterpret_as_int().to_string()}",
@@ -1185,7 +1188,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     6U,
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(format_raw),
+    format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
 
@@ -1260,9 +1263,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
   }
 
   let face0_view = tex.create_view_u32(
-    tf(format_raw),
+    format,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-    texture_view_aspect_for_format(format_raw),
+    texture_view_aspect_for_format(format),
     0U,
     1U,
     0U,
@@ -1272,9 +1275,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
   for face in 0..<6 {
     layer_views.push(
       tex.create_view_u32(
-        tf(format_raw),
+        format,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-        texture_view_aspect_for_format(format_raw),
+        texture_view_aspect_for_format(format),
         face.reinterpret_as_uint(),
         1U,
         0U,
@@ -1283,9 +1286,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
     )
   }
   let cube_view = tex.create_view_u32(
-    tf(format_raw),
+    format,
     @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-    texture_view_aspect_for_format(format_raw),
+    texture_view_aspect_for_format(format),
     0U,
     6U,
     0U,
@@ -1303,7 +1306,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     height: h,
     mip_level_count: levels.length(),
     base_mip_level: 0,
-    format_raw,
+    format,
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_view),
@@ -1322,10 +1325,12 @@ pub fn GpuBackend::create_render_target_with_formats(
   width : Int,
   height : Int,
   nearest : Bool,
-  format_raw : UInt,
-  sample_format_raw : UInt?,
+  format : @wgpu.TextureFormat,
+  sample_format : @wgpu.TextureFormat?,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
+  let format_raw = format.to_u32()
+  let sample_format_raw = sample_format.map(fn(format) { format.to_u32() })
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
@@ -1344,13 +1349,13 @@ pub fn GpuBackend::create_render_target_with_formats(
     1U,
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(format_raw),
+    format,
     view_formats~,
   )
   let view = tex.create_view_u32(
-    tf(format_raw),
+    format,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-    texture_view_aspect_for_format(format_raw),
+    texture_view_aspect_for_format(format),
     0U,
     1U,
     0U,
@@ -1362,7 +1367,7 @@ pub fn GpuBackend::create_render_target_with_formats(
         tex.create_view_u32(
           tf(raw),
           @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-          texture_view_aspect_for_format(raw),
+          texture_view_aspect_for_format(tf(raw)),
           0U,
           1U,
           0U,
@@ -1386,7 +1391,7 @@ pub fn GpuBackend::create_render_target_with_formats(
     height: h.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
-    format_raw,
+    format,
     texture: tex,
     view,
     sample_view,
@@ -1405,15 +1410,9 @@ fn GpuBackend::create_render_target_with_format(
   width : Int,
   height : Int,
   nearest : Bool,
-  format_raw : UInt,
+  format : @wgpu.TextureFormat,
 ) -> Int raise GpuBackendError {
-  self.create_render_target_with_formats(
-    width,
-    height,
-    nearest,
-    format_raw,
-    None,
-  )
+  self.create_render_target_with_formats(width, height, nearest, format, None)
 }
 
 ///|
@@ -1454,7 +1453,7 @@ fn current_pass_color_format(backend : GpuBackend) -> @wgpu.TextureFormat? {
         surface_target_format(backend, pass_state.target_id)
       } else {
         match find_texture(backend, pass_state.target_id) {
-          Some(texture) => Some(tf(texture.format_raw))
+          Some(texture) => Some(texture.format)
           None => None
         }
       }
@@ -1625,11 +1624,7 @@ pub fn create_render_target_with_formats(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_render_target_with_formats(
-        width,
-        height,
-        nearest,
-        format.to_u32(),
-        sample_format.map(fn(format) { format.to_u32() }),
+        width, height, nearest, format, sample_format,
       )
     } catch {
       _ => ()
@@ -1697,7 +1692,7 @@ pub fn asset_create_texture_empty(
         safe_width,
         safe_height,
         1,
-        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+        tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
         levels,
         nearest,
       )
@@ -1723,11 +1718,7 @@ pub fn asset_create_texture_3d_with_format(
     try {
       let levels = [pixels]
       return backend.create_texture_3d_with_format(
-        safe_width,
-        safe_height,
-        safe_depth,
-        format.to_u32(),
-        levels,
+        safe_width, safe_height, safe_depth, format, levels,
       )
     } catch {
       _ => ()
@@ -1755,12 +1746,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_texture_stacked_2d_with_format(
-        safe_width,
-        safe_height_per_slice,
-        safe_slice_count,
-        format.to_u32(),
-        levels,
-        nearest,
+        safe_width, safe_height_per_slice, safe_slice_count, format, levels, nearest,
       )
     } catch {
       _ => ()
@@ -1782,11 +1768,7 @@ pub fn asset_create_texture_cube_with_format(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_texture_cube_with_format(
-        safe_width,
-        safe_height,
-        format.to_u32(),
-        levels,
-        nearest,
+        safe_width, safe_height, format, levels, nearest,
       )
     } catch {
       _ => ()

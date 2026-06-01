@@ -19,7 +19,7 @@ pub struct GpuTextureInfo {
   height : Int
   mip_level_count : Int
   base_mip_level : Int
-  format_raw : UInt
+  format : @wgpu.TextureFormat
   texture : @wgpu.Texture
   view : @wgpu.TextureView
   sample_view : @wgpu.TextureView?

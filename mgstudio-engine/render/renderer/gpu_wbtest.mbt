@@ -873,7 +873,7 @@ test "renderer: mesh3d normal map fallback texture is flat normal blue" {
   render_context_set_backend_for_test(Some(backend))
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
   debug_inspect(
-    fallback_texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    fallback_texture.format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     content="true",
   )
   let capture = screenshot_capture_texture_sync(texture_id=fallback_texture.id)
@@ -899,7 +899,7 @@ test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let two_component_texture = GpuTextureInfo::{
     ..fallback_texture,
     id: 42,
-    format_raw: @wgpu.TEXTURE_FORMAT_RG8_UNORM,
+    format: tf(@wgpu.TEXTURE_FORMAT_RG8_UNORM),
   }
   let flags = mesh3d_runtime_material_flags(0U, 42, two_component_texture)
   debug_inspect((flags & (1U << 6)) != 0U, content="true")
@@ -1401,7 +1401,7 @@ test "renderer: rg16f render target preserves Bevy motion-vector texture format"
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rg16f(128, 128, false)
   let ok = match find_texture(backend, target_id) {
-    Some(texture) => texture.format_raw == @wgpu.TEXTURE_FORMAT_RG16_FLOAT
+    Some(texture) => texture.format == tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
     None => false
   }
   debug_inspect(ok, content="true")
@@ -1414,12 +1414,12 @@ test "renderer: render target keeps an sRGB sampled view distinct from attachmen
     128,
     128,
     false,
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
-    Some(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB),
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    Some(tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB)),
   )
   let ok = match find_texture(backend, target_id) {
     Some(texture) =>
-      texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM &&
+      texture.format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) &&
       texture.sample_view is Some(_)
     None => false
   }
@@ -1594,7 +1594,7 @@ test "renderer: rgb9e5 3d texture upload preserves 3d dimension" {
     4,
     4,
     4,
-    @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+    tf(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
     [bytes],
   )
   let ok = match find_texture(backend, texture_id) {

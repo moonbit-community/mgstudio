@@ -782,7 +782,7 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
     texture.texture,
     texture.width,
     texture.height,
-    texture.format_raw,
+    texture.format.to_u32(),
   )
 }
 
@@ -814,7 +814,7 @@ pub fn screenshot_capture_texture_sync(
     texture.texture,
     texture.width,
     texture.height,
-    texture.format_raw,
+    texture.format.to_u32(),
   )
 }
 

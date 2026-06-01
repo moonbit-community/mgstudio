@@ -907,7 +907,10 @@ fn mesh3d_draw_uniform_write(
 }
 
 ///|
-fn mesh3d_normal_map_is_two_component_format(format_raw : UInt) -> Bool {
+fn mesh3d_normal_map_is_two_component_format(
+  format : @wgpu.TextureFormat,
+) -> Bool {
+  let format_raw = format.to_u32()
   format_raw == @wgpu.TEXTURE_FORMAT_RG8_UNORM ||
   format_raw == @wgpu.TEXTURE_FORMAT_BC5_RG_UNORM ||
   format_raw == @wgpu.TEXTURE_FORMAT_EACRG11_UNORM
@@ -923,7 +926,7 @@ fn mesh3d_runtime_material_flags(
     return material_flags
   }
   let mut runtime_flags = material_flags
-  if mesh3d_normal_map_is_two_component_format(normal_texture.format_raw) {
+  if mesh3d_normal_map_is_two_component_format(normal_texture.format) {
     runtime_flags = runtime_flags | (1U << 6)
   }
   runtime_flags

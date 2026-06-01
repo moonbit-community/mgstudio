@@ -122,7 +122,7 @@ pub fn GpuBackend::create_mesh3d_morph_target_texture(
     width,
     height,
     depth,
-    @wgpu.TEXTURE_FORMAT_R32_FLOAT,
+    tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
     [mesh3d_morph_bytes(components)],
   )
 }
