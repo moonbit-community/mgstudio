@@ -9231,7 +9231,7 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .add_post_update_system_config(
       @app.system(@app.system_param3(compute_slices_on_asset_event_system))
       .in_set(sprite_systems_compute_slices)
-      .after(@asset.asset_event_system_set()),
+      .before(@asset.asset_event_system_set()),
     )
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -9272,7 +9272,7 @@ fn render2d_plugin_ecs_install(
     .add_post_update_system_config(
       @app.system(@app.system_param3(compute_slices_on_asset_event_system))
       .in_set(sprite_systems_compute_slices)
-      .after(@asset.asset_event_system_set()),
+      .before(@asset.asset_event_system_set()),
     )
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

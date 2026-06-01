@@ -210,17 +210,18 @@ fn apply_sprite_image_mode(
   image_mode : SpriteImageMode,
   has_custom_size : Bool,
 ) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
-  match image_mode {
-    SpriteImageMode::Scale(scaling_mode) =>
-      if has_custom_size {
+  if has_custom_size {
+    match image_mode.scale() {
+      Some(scaling_mode) => {
         let (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset) = apply_scale_sprite_image_mode(
           uv_min, uv_max, draw_scale, region_size, scaling_mode,
         )
         (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset, false)
-      } else {
-        (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
       }
-    _ => (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
+      None => (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
+    }
+  } else {
+    (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
   }
 }
 

@@ -57,6 +57,17 @@ test "sprite: default trait mirrors bevy component defaults" {
 }
 
 ///|
+test "sprite: image mode scale accessor mirrors bevy" {
+  let scaled = SpriteImageMode::Scale(SpriteScalingMode::FitEnd)
+  let auto = SpriteImageMode::Auto
+  debug_inspect(
+    scaled.scale() is Some(SpriteScalingMode::FitEnd),
+    content="true",
+  )
+  debug_inspect(auto.scale() is None, content="true")
+}
+
+///|
 struct DummyMaterialAsset {
   color : Color
   color_texture : @asset.Handle[@asset.Image]?

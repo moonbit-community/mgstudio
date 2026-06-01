@@ -998,7 +998,7 @@ pub(all) enum SpriteImageMode {
   Sliced(TextureSlicer)
   Tiled(SpriteTiling)
 }
-pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
+pub fn SpriteImageMode::scale(Self) -> SpriteScalingMode?
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
 pub fn SpriteImageMode::uses_slices(Self) -> Bool
 pub impl Default for SpriteImageMode

@@ -35,7 +35,7 @@ pub(all) enum SpriteScalingMode {
 }
 
 ///|
-pub impl Default for SpriteScalingMode with default() {
+pub impl Default for SpriteScalingMode with fn default() {
   SpriteScalingMode::FillCenter
 }
 
@@ -61,7 +61,7 @@ pub fn SpriteTiling::SpriteTiling() -> SpriteTiling {
 }
 
 ///|
-pub impl Default for SpriteTiling with default() {
+pub impl Default for SpriteTiling with fn default() {
   SpriteTiling::SpriteTiling()
 }
 
@@ -98,15 +98,16 @@ pub(all) enum SpriteImageMode {
 }
 
 ///|
-pub impl Default for SpriteImageMode with default() {
+pub impl Default for SpriteImageMode with fn default() {
   SpriteImageMode::Auto
 }
 
 ///|
-pub fn SpriteImageMode::scale(
-  scaling_mode? : SpriteScalingMode = SpriteScalingMode::FillCenter,
-) -> SpriteImageMode {
-  SpriteImageMode::Scale(scaling_mode)
+pub fn SpriteImageMode::scale(self : SpriteImageMode) -> SpriteScalingMode? {
+  match self {
+    SpriteImageMode::Scale(mode) => Some(mode)
+    _ => None
+  }
 }
 
 ///|
@@ -133,7 +134,7 @@ pub fn Sprite::Sprite() -> Sprite {
 }
 
 ///|
-pub impl Default for Sprite with default() {
+pub impl Default for Sprite with fn default() {
   Sprite::Sprite()
 }
 
