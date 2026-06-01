@@ -709,8 +709,17 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
   debug_inspect(payload.height, content="48")
   debug_inspect(payload.depth, content="48")
   debug_inspect(
-    payload.format_raw == WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+    payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT,
     content="true",
   )
   debug_inspect(payload.pixels.length(), content="442368")
+
+  let agx_path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("textures/tonemapping/AgX-default_contrast.ktx2")
+  })
+  let agx_payload = ktx2_decode_3d_payload(@fs.read_file_to_bytes(agx_path)).unwrap()
+  debug_inspect(
+    agx_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    content="true",
+  )
 }

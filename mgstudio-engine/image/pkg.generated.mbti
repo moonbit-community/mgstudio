@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/image"
 
 import {
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
 }
 
@@ -60,7 +61,7 @@ pub fn image_with_srgb_view(Image) -> Image
 
 pub fn ktx2_default_texture_format() -> TextureFormat
 
-pub fn texture_format_raw(TextureFormat) -> Int
+pub fn texture_format(TextureFormat) -> @wgpu_mbt.TextureFormat
 
 // Errors
 pub(all) suberror ImageLoaderError {

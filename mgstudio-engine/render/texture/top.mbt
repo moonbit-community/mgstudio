@@ -44,15 +44,15 @@ pub fn asset_create_render_target_with_formats(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
-  format_raw~ : Int,
-  sample_format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
+  sample_format~ : @wgpu.TextureFormat?,
 ) -> Int {
   @renderer.create_render_target_with_formats(
     width~,
     height~,
     nearest~,
-    format_raw~,
-    sample_format_raw~,
+    format~,
+    sample_format~,
   )
 }
 
@@ -89,14 +89,14 @@ pub fn asset_create_texture_3d_with_format(
   width~ : Int,
   height~ : Int,
   depth~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   pixels~ : Bytes,
 ) -> Int {
   @renderer.asset_create_texture_3d_with_format(
     width~,
     height~,
     depth~,
-    format_raw~,
+    format~,
     pixels~,
   )
 }
@@ -106,7 +106,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   width~ : Int,
   height_per_slice~ : Int,
   slice_count~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
 ) -> Int {
@@ -114,7 +114,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
     width~,
     height_per_slice~,
     slice_count~,
-    format_raw~,
+    format~,
     levels~,
     nearest~,
   )
@@ -124,14 +124,14 @@ pub fn asset_create_texture_stacked_2d_with_format(
 pub fn asset_create_texture_cube_with_format(
   width~ : Int,
   height~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
 ) -> Int {
   @renderer.asset_create_texture_cube_with_format(
     width~,
     height~,
-    format_raw~,
+    format~,
     levels~,
     nearest~,
   )
@@ -259,15 +259,15 @@ pub fn register_asset_texture_backend() -> Unit {
         width,
         height,
         nearest,
-        format_raw,
-        sample_format_raw,
+        format,
+        sample_format,
       ) {
         asset_create_render_target_with_formats(
           width~,
           height~,
           nearest~,
-          format_raw~,
-          sample_format_raw~,
+          format~,
+          sample_format~,
         )
       },
       create_texture_empty_fn=fn(width, height, mip_level_count, nearest) {
@@ -277,14 +277,14 @@ pub fn register_asset_texture_backend() -> Unit {
         width,
         height,
         depth,
-        format_raw,
+        format,
         pixels,
       ) {
         asset_create_texture_3d_with_format(
           width~,
           height~,
           depth~,
-          format_raw~,
+          format~,
           pixels~,
         )
       },
@@ -292,7 +292,7 @@ pub fn register_asset_texture_backend() -> Unit {
         width,
         height_per_slice,
         slice_count,
-        format_raw,
+        format,
         levels,
         nearest,
       ) {
@@ -300,7 +300,7 @@ pub fn register_asset_texture_backend() -> Unit {
           width~,
           height_per_slice~,
           slice_count~,
-          format_raw~,
+          format~,
           levels~,
           nearest~,
         )
@@ -308,14 +308,14 @@ pub fn register_asset_texture_backend() -> Unit {
       create_texture_cube_with_format_fn=fn(
         width,
         height,
-        format_raw,
+        format,
         levels,
         nearest,
       ) {
         asset_create_texture_cube_with_format(
           width~,
           height~,
-          format_raw~,
+          format~,
           levels~,
           nearest~,
         )

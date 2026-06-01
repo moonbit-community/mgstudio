@@ -67,12 +67,31 @@ pub fn TonemappingLuts::from_asset_server(
 }
 
 ///|
+fn TonemappingLuts::from_world(world : @ecs.World) -> TonemappingLuts {
+  let asset_server = match
+    world.get_resource(@asset.asset_server_resource_key) {
+    Some(server) => server
+    None => @asset.AssetServer::new()
+  }
+  @asset.asset_with_world(world, fn() {
+    TonemappingLuts::from_asset_server(asset_server)
+  })
+}
+
+///|
+fn TonemappingLuts::has_valid_handles(self : TonemappingLuts) -> Bool {
+  self.blender_filmic.id() > 0 &&
+  self.agx.id() > 0 &&
+  self.tony_mc_mapface.id() > 0
+}
+
+///|
 pub let ecs_key_tonemapping_luts : @ecs.ResourceKey[TonemappingLuts] = @ecs.register_resource(
   debug_name="mgstudio_core_pipeline::TonemappingLuts",
 )
 
 ///|
-pub impl @app.Resource for TonemappingLuts with resource() {
+pub impl @app.Resource for TonemappingLuts with fn resource() {
   ecs_key_tonemapping_luts
 }
 
@@ -81,9 +100,9 @@ pub fn tonemapping_luts_from_world_or_init(
   world : @ecs.World,
 ) -> TonemappingLuts {
   match world.get_resource(ecs_key_tonemapping_luts) {
-    Some(luts) => luts
-    None => {
-      let luts = TonemappingLuts::from_asset_server(@asset.AssetServer::new())
+    Some(luts) if luts.has_valid_handles() => luts
+    Some(_) | None => {
+      let luts = TonemappingLuts::from_world(world)
       world.insert_resource(ecs_key_tonemapping_luts, luts)
       luts
     }
@@ -186,12 +205,12 @@ pub fn tonemapping_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for TonemappingPlugin with name(_self) {
+pub impl @app.Plugin for TonemappingPlugin with fn name(_self) {
   TONEMAPPING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for TonemappingPlugin with build(self, app) {
+pub impl @app.Plugin for TonemappingPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   tonemapping_plugin_install_with(app, self)
 }
@@ -211,11 +230,13 @@ fn tonemapping_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let world = app.world()
-  if world.get_resource(ecs_key_tonemapping_luts) is None {
-    world.insert_resource(
-      ecs_key_tonemapping_luts,
-      TonemappingLuts::from_asset_server(@asset.AssetServer::new()),
-    )
+  match world.get_resource(ecs_key_tonemapping_luts) {
+    Some(luts) if luts.has_valid_handles() => ()
+    Some(_) | None =>
+      world.insert_resource(
+        ecs_key_tonemapping_luts,
+        TonemappingLuts::from_world(world),
+      )
   }
   app.init_resource(fn() { TonemappingPipelineKey::TonemappingPipelineKey() })
 }
@@ -226,6 +247,6 @@ pub let ecs_key_tonemapping_pipeline_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="core_pipeline.tonemapping.pipeline_key")
 
 ///|
-pub impl @app.Resource for TonemappingPipelineKey with resource() {
+pub impl @app.Resource for TonemappingPipelineKey with fn resource() {
   ecs_key_tonemapping_pipeline_key
 }

@@ -59,8 +59,8 @@ fn[T] image_asset_allocate_handle(
       width=image.width,
       height=image.height,
       nearest~,
-      format_raw=@image.texture_format_raw(image.format),
-      image.view_format.map(fn(format) { @image.texture_format_raw(format) }),
+      format=@image.texture_format(image.format),
+      image.view_format.map(fn(format) { @image.texture_format(format) }),
     )
     if id > 0 {
       return Handle::new(id)
@@ -84,7 +84,7 @@ fn image_asset_create_gpu_texture(image : Image, nearest : Bool) -> Int {
     width=image.width,
     height_per_slice=image.height,
     slice_count=1,
-    format_raw=@image.texture_format_raw(image.format),
+    format=@image.texture_format(image.format),
     levels=[image.pixels],
     nearest~,
   )

@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
@@ -470,11 +471,11 @@ pub(all) enum AssetSourceId {
 pub fn AssetSourceId::from(String) -> Self
 
 pub(all) struct AssetTextureBackend {
-  create_render_target_with_formats_fn : (Int, Int, Bool, Int, Int) -> Int
+  create_render_target_with_formats_fn : (Int, Int, Bool, @wgpu_mbt.TextureFormat, @wgpu_mbt.TextureFormat?) -> Int
   create_texture_empty_fn : (Int, Int, Int, Bool) -> Int
-  create_texture_3d_with_format_fn : (Int, Int, Int, Int, Bytes) -> Int
-  create_texture_stacked_2d_with_format_fn : (Int, Int, Int, Int, Array[Bytes], Bool) -> Int
-  create_texture_cube_with_format_fn : (Int, Int, Int, Array[Bytes], Bool) -> Int
+  create_texture_3d_with_format_fn : (Int, Int, Int, @wgpu_mbt.TextureFormat, Bytes) -> Int
+  create_texture_stacked_2d_with_format_fn : (Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool) -> Int
+  create_texture_cube_with_format_fn : (Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool) -> Int
   write_texture_region_rgba8_fn : (Int, Int, Int, Int, Int, Bytes) -> Unit
   write_texture_region_rgba8_mip_fn : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit
   create_texture_mip_view_fn : (Int, Int) -> Int
@@ -486,7 +487,7 @@ pub(all) struct AssetTextureBackend {
   set_texture_sampler_fn : (Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit
   capture_texture_rgba8_fn : (Int) -> AssetTextureCapture?
 }
-pub fn AssetTextureBackend::new(create_render_target_with_formats_fn~ : (Int, Int, Bool, Int, Int) -> Int, create_texture_empty_fn~ : (Int, Int, Int, Bool) -> Int, create_texture_3d_with_format_fn~ : (Int, Int, Int, Int, Bytes) -> Int, create_texture_stacked_2d_with_format_fn~ : (Int, Int, Int, Int, Array[Bytes], Bool) -> Int, create_texture_cube_with_format_fn~ : (Int, Int, Int, Array[Bytes], Bool) -> Int, write_texture_region_rgba8_fn~ : (Int, Int, Int, Int, Int, Bytes) -> Unit, write_texture_region_rgba8_mip_fn~ : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit, create_texture_mip_view_fn~ : (Int, Int) -> Int, texture_width_fn~ : (Int) -> Int, texture_height_fn~ : (Int) -> Int, is_texture_loaded_fn~ : (Int) -> Bool, supported_compressed_image_formats_fn~ : () -> Int, copy_texture_to_texture_fn~ : (Int, Int, Int, Int) -> Unit, set_texture_sampler_fn~ : (Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit, capture_texture_rgba8_fn~ : (Int) -> AssetTextureCapture?) -> Self
+pub fn AssetTextureBackend::new(create_render_target_with_formats_fn~ : (Int, Int, Bool, @wgpu_mbt.TextureFormat, @wgpu_mbt.TextureFormat?) -> Int, create_texture_empty_fn~ : (Int, Int, Int, Bool) -> Int, create_texture_3d_with_format_fn~ : (Int, Int, Int, @wgpu_mbt.TextureFormat, Bytes) -> Int, create_texture_stacked_2d_with_format_fn~ : (Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool) -> Int, create_texture_cube_with_format_fn~ : (Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool) -> Int, write_texture_region_rgba8_fn~ : (Int, Int, Int, Int, Int, Bytes) -> Unit, write_texture_region_rgba8_mip_fn~ : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit, create_texture_mip_view_fn~ : (Int, Int) -> Int, texture_width_fn~ : (Int) -> Int, texture_height_fn~ : (Int) -> Int, is_texture_loaded_fn~ : (Int) -> Bool, supported_compressed_image_formats_fn~ : () -> Int, copy_texture_to_texture_fn~ : (Int, Int, Int, Int) -> Unit, set_texture_sampler_fn~ : (Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit, capture_texture_rgba8_fn~ : (Int) -> AssetTextureCapture?) -> Self
 
 pub(all) struct AssetTextureCapture {
   width : Int

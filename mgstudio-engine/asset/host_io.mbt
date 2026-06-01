@@ -133,7 +133,7 @@ priv struct Ktx2TexturePayload {
   width : Int
   height : Int
   depth : Int
-  format_raw : Int
+  format : @wgpu.TextureFormat
   pixels : Bytes
 }
 
@@ -143,13 +143,13 @@ priv struct Ktx2Texture2dPayload {
   height : Int
   is_cube : Bool
   slice_count : Int
-  format_raw : Int
+  format : @wgpu.TextureFormat
   levels : Array[Bytes]
 }
 
 ///|
 priv struct Ktx2FormatInfo {
-  format_raw : Int
+  format : @wgpu.TextureFormat
   block_width : Int
   block_height : Int
   block_bytes : Int
@@ -202,42 +202,6 @@ const KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK : Int = 157
 
 ///|
 const KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK : Int = 158
-
-///|
-const WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT : Int = 0x1C
-
-///|
-const WGPU_TEXTURE_FORMAT_RGBA16_FLOAT : Int = 0x22
-
-///|
-const WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM : Int = 0x38
-
-///|
-const WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB : Int = 0x39
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM : Int = 0x3A
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB : Int = 0x3B
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM : Int = 0x3C
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB : Int = 0x3D
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM : Int = 0x3E
-
-///|
-const WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB : Int = 0x3F
-
-///|
-const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM : Int = 0x44
-
-///|
-const WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB : Int = 0x45
 
 ///|
 fn loader_default_texture_extensions() -> Array[(String, Int)] {
@@ -2356,7 +2320,7 @@ fn ktx2_is_3d_texture(bytes : Bytes) -> Bool {
 fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_RGBA16_FLOAT,
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
       block_width: 1,
       block_height: 1,
       block_bytes: 8,
@@ -2364,7 +2328,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
@@ -2372,7 +2336,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_UNORM_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM,
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2380,7 +2344,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_SRGB_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2388,7 +2354,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
@@ -2396,7 +2364,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
@@ -2404,7 +2374,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
@@ -2412,7 +2384,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
@@ -2420,7 +2394,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2428,7 +2404,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2436,7 +2414,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM,
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2444,7 +2422,9 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK {
     return Some(Ktx2FormatInfo::{
-      format_raw: WGPU_TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB,
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB,
+      ),
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
@@ -2563,7 +2543,7 @@ fn ktx2_decode_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
     width,
     height,
     depth,
-    format_raw: format_info.format_raw,
+    format: format_info.format,
     pixels,
   })
 }
@@ -2654,7 +2634,7 @@ fn ktx2_decode_2d_payload(bytes : Bytes) -> Ktx2Texture2dPayload? {
     height,
     is_cube,
     slice_count,
-    format_raw: format_info.format_raw,
+    format: format_info.format,
     levels,
   })
 }
@@ -3191,7 +3171,7 @@ fn load_texture_bytes_with_container(
       width=payload.width,
       height=payload.height,
       depth=payload.depth,
-      format_raw=payload.format_raw,
+      format=payload.format,
       pixels=payload.pixels,
     )
     if texture_id > 0 {
@@ -3207,7 +3187,7 @@ fn load_texture_bytes_with_container(
       asset_texture_backend_create_texture_cube_with_format(
         width=payload.width,
         height=payload.height,
-        format_raw=payload.format_raw,
+        format=payload.format,
         levels=payload.levels,
         nearest~,
       )
@@ -3216,7 +3196,7 @@ fn load_texture_bytes_with_container(
         width=payload.width,
         height_per_slice=payload.height,
         slice_count=payload.slice_count,
-        format_raw=payload.format_raw,
+        format=payload.format,
         levels=payload.levels,
         nearest~,
       )
@@ -3383,21 +3363,17 @@ fn create_render_target_with_formats(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
-  format_raw~ : Int,
-  sample_format_raw : Int?,
+  format~ : @wgpu.TextureFormat,
+  sample_format : @wgpu.TextureFormat?,
 ) -> Int {
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let sample_format = match sample_format_raw {
-    Some(raw) => raw
-    None => -1
-  }
   let texture_id = asset_texture_backend_create_render_target_with_formats(
     width=safe_width,
     height=safe_height,
     nearest~,
-    format_raw~,
-    sample_format_raw=sample_format,
+    format~,
+    sample_format~,
   )
   if texture_id <= 0 {
     return 0

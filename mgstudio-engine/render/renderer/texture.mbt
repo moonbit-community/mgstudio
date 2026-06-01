@@ -1619,22 +1619,17 @@ pub fn create_render_target_with_formats(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
-  format_raw~ : Int,
-  sample_format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
+  sample_format~ : @wgpu.TextureFormat?,
 ) -> Int {
   if ensure_backend() is Some(backend) {
     try {
-      let sample_format = if sample_format_raw < 0 {
-        None
-      } else {
-        Some(sample_format_raw.reinterpret_as_uint())
-      }
       return backend.create_render_target_with_formats(
         width,
         height,
         nearest,
-        format_raw.reinterpret_as_uint(),
-        sample_format,
+        format.to_u32(),
+        sample_format.map(fn(format) { format.to_u32() }),
       )
     } catch {
       _ => ()
@@ -1718,7 +1713,7 @@ pub fn asset_create_texture_3d_with_format(
   width~ : Int,
   height~ : Int,
   depth~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   pixels~ : Bytes,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
@@ -1731,7 +1726,7 @@ pub fn asset_create_texture_3d_with_format(
         safe_width,
         safe_height,
         safe_depth,
-        format_raw.reinterpret_as_uint(),
+        format.to_u32(),
         levels,
       )
     } catch {
@@ -1746,7 +1741,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   width~ : Int,
   height_per_slice~ : Int,
   slice_count~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
 ) -> Int {
@@ -1763,7 +1758,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
         safe_width,
         safe_height_per_slice,
         safe_slice_count,
-        format_raw.reinterpret_as_uint(),
+        format.to_u32(),
         levels,
         nearest,
       )
@@ -1778,7 +1773,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
 pub fn asset_create_texture_cube_with_format(
   width~ : Int,
   height~ : Int,
-  format_raw~ : Int,
+  format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
 ) -> Int {
@@ -1789,7 +1784,7 @@ pub fn asset_create_texture_cube_with_format(
       return backend.create_texture_cube_with_format(
         safe_width,
         safe_height,
-        format_raw.reinterpret_as_uint(),
+        format.to_u32(),
         levels,
         nearest,
       )

@@ -91,12 +91,16 @@ pub fn Image::is_target_texture(self : Image) -> Bool {
 }
 
 ///|
-pub fn texture_format_raw(format : TextureFormat) -> Int {
+pub fn texture_format(format : TextureFormat) -> @wgpu.TextureFormat {
   match format {
-    TextureFormat::Rgba8Unorm => 0x12
-    TextureFormat::Rgba8UnormSrgb => 0x13
-    TextureFormat::Rgba16Float => 0x22
-    TextureFormat::Rg16Float => 0x11
+    TextureFormat::Rgba8Unorm =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+    TextureFormat::Rgba8UnormSrgb =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB)
+    TextureFormat::Rgba16Float =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    TextureFormat::Rg16Float =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
   }
 }
 

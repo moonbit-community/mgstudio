@@ -11,6 +11,7 @@ import {
   "moonbitlang/core/ref",
   "moonbitlang/core/encoding/utf8",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/wgpu_mbt" @wgpu,
   "gmlewis/image" @gm_image,
   "gmlewis/image/color" @gm_color,
   "gmlewis/image/jpeg" @gm_jpeg,
