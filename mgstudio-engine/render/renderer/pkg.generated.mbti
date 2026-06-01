@@ -101,7 +101,7 @@ pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : 
 
 pub fn create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
 
-pub fn create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], primitive_topology~ : Int, vertex_layout~ : @Milky2018/mgstudio/mesh.VertexBufferLayout) -> Int
+pub fn create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], primitive_topology~ : Int, mesh_vertex_layout~ : @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
 
 pub fn create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
@@ -901,7 +901,7 @@ pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, c
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_directional_light_shadow_target(Self, Int, Int) -> Int raise GpuBackendError
-pub fn GpuBackend::create_mesh2d_vertex_buffer(Self, Bytes, Int, Array[Int], Int, @Milky2018/mgstudio/mesh.VertexBufferLayout) -> Int
+pub fn GpuBackend::create_mesh2d_vertex_buffer(Self, Bytes, Int, Array[Int], Int, @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
 pub fn GpuBackend::create_mesh3d_morph_target_texture(Self, Int, Int, Int, Array[Float]) -> Int raise GpuBackendError
 pub fn GpuBackend::create_mesh3d_xyznuvrgba(Self, Array[Float], Int) -> Int
 pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(Self, Array[Float], Array[Int], Int) -> Int
@@ -1037,6 +1037,7 @@ pub struct GpuMeshInfo {
   vertex_slab_id : Int
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
+  mesh_vertex_layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
   vertex_layout : @Milky2018/mgstudio/mesh.VertexBufferLayout?
   index_stride_bytes : UInt64
   uses_u32_indices : Bool

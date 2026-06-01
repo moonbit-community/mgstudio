@@ -345,9 +345,13 @@ test "renderer: mesh2d color material uniform bytes match Bevy size" {
 
 ///|
 test "renderer: mesh2d pipeline key records custom material shader paths" {
+  let mesh_layout = mesh2d_default_mesh_vertex_buffer_layout()
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
   let key = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
     false,
     false,
     false,
@@ -374,9 +378,13 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
 
 ///|
 test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline" {
+  let mesh_layout = mesh2d_default_mesh_vertex_buffer_layout()
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
   let fill = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
     false,
     false,
     false,
@@ -390,6 +398,8 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
   let wireframe = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
     false,
     false,
     false,

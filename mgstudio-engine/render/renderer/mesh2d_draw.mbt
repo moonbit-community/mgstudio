@@ -221,6 +221,13 @@ priv struct Mesh2dPipelineKey {
   may_discard : Bool
   wireframe : Bool
   material_layout_key : String
+  vertex_layout_key : String
+  vertex_positions : Bool
+  vertex_normals : Bool
+  vertex_uvs : Bool
+  vertex_tangents : Bool
+  vertex_colors : Bool
+  vertex_buffer_layout : @mesh.VertexBufferLayout
   vertex_shader_path : String
   fragment_shader_path : String
 }
@@ -249,12 +256,27 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   let deband_bits = if key.deband_dither { "1" } else { "0" }
   let discard_bits = if key.may_discard { "1" } else { "0" }
   let wireframe_bits = if key.wireframe { "1" } else { "0" }
-  "\{format_bits}_\{topology_bits}_\{blend_bits}\{depth_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
+  "\{format_bits}_\{topology_bits}_\{blend_bits}\{depth_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
 }
 
 ///|
 fn mesh2d_pipeline_define_keys(key : Mesh2dPipelineKey) -> Array[String] {
-  let defines = ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"]
+  let defines : Array[String] = []
+  if key.vertex_positions {
+    defines.push("VERTEX_POSITIONS")
+  }
+  if key.vertex_normals {
+    defines.push("VERTEX_NORMALS")
+  }
+  if key.vertex_uvs {
+    defines.push("VERTEX_UVS")
+  }
+  if key.vertex_tangents {
+    defines.push("VERTEX_TANGENTS")
+  }
+  if key.vertex_colors {
+    defines.push("VERTEX_COLORS")
+  }
   if key.tonemap_in_shader {
     defines.push("TONEMAP_IN_SHADER")
     defines.push("TONEMAP_METHOD_NONE")
@@ -266,6 +288,187 @@ fn mesh2d_pipeline_define_keys(key : Mesh2dPipelineKey) -> Array[String] {
     defines.push("MAY_DISCARD")
   }
   defines
+}
+
+///|
+fn mesh2d_vertex_attribute_descriptor(
+  attribute : @mesh.MeshVertexAttribute,
+  shader_location : Int,
+) -> @mesh.VertexAttributeDescriptor {
+  @mesh.VertexAttributeDescriptor::new(
+    shader_location~,
+    id=attribute.id(),
+    name=attribute.name(),
+  )
+}
+
+///|
+fn mesh2d_default_mesh_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout {
+  @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[
+      @mesh.MeshVertexAttribute::position().id(),
+      @mesh.MeshVertexAttribute::uv_0().id(),
+      @mesh.MeshVertexAttribute::color().id(),
+    ],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=MESH2D_VERTEX_STRIDE_BYTES.to_int(),
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=@mesh.MeshVertexFormat::Float32x2,
+          shader_location=2,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=20,
+          format=@mesh.MeshVertexFormat::Float32x4,
+          shader_location=4,
+        ),
+      ],
+    ),
+  )
+}
+
+///|
+fn mesh2d_material_vertex_attribute_descriptors(
+  layout : @mesh.MeshVertexBufferLayout,
+) -> Array[@mesh.VertexAttributeDescriptor] {
+  let descriptors : Array[@mesh.VertexAttributeDescriptor] = []
+  if layout.contains(@mesh.MeshVertexAttribute::position().id()) {
+    descriptors.push(
+      mesh2d_vertex_attribute_descriptor(
+        @mesh.MeshVertexAttribute::position(),
+        0,
+      ),
+    )
+  }
+  if layout.contains(@mesh.MeshVertexAttribute::normal().id()) {
+    descriptors.push(
+      mesh2d_vertex_attribute_descriptor(@mesh.MeshVertexAttribute::normal(), 1),
+    )
+  }
+  if layout.contains(@mesh.MeshVertexAttribute::uv_0().id()) {
+    descriptors.push(
+      mesh2d_vertex_attribute_descriptor(@mesh.MeshVertexAttribute::uv_0(), 2),
+    )
+  }
+  if layout.contains(@mesh.MeshVertexAttribute::tangent().id()) {
+    descriptors.push(
+      mesh2d_vertex_attribute_descriptor(
+        @mesh.MeshVertexAttribute::tangent(),
+        3,
+      ),
+    )
+  }
+  if layout.contains(@mesh.MeshVertexAttribute::color().id()) {
+    descriptors.push(
+      mesh2d_vertex_attribute_descriptor(@mesh.MeshVertexAttribute::color(), 4),
+    )
+  }
+  descriptors
+}
+
+///|
+fn mesh2d_material_vertex_buffer_layout(
+  layout : @mesh.MeshVertexBufferLayout,
+) -> @mesh.VertexBufferLayout? {
+  match
+    layout.get_layout(mesh2d_material_vertex_attribute_descriptors(layout)) {
+    Ok(vertex_buffer_layout) => Some(vertex_buffer_layout)
+    Err(_) => None
+  }
+}
+
+///|
+fn mesh2d_material_vertex_layout_cache_key(
+  layout : @mesh.MeshVertexBufferLayout,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
+) -> String {
+  let mut key = mesh2d_vertex_layout_cache_key(vertex_buffer_layout)
+  for id in layout.attribute_ids() {
+    key = key + ";\{id.value().to_string()}"
+  }
+  key
+}
+
+///|
+test "mesh2d material vertex layout follows Bevy attribute descriptors" {
+  let mesh_layout = @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[
+      @mesh.MeshVertexAttribute::position().id(),
+      @mesh.MeshVertexAttribute::uv_0().id(),
+    ],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=20,
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=@mesh.MeshVertexFormat::Float32x2,
+          shader_location=1,
+        ),
+      ],
+    ),
+  )
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
+  debug_inspect(vertex_layout.array_stride, content="20")
+  debug_inspect(vertex_layout.attributes.length(), content="2")
+  debug_inspect(vertex_layout.attributes[0].shader_location, content="0")
+  debug_inspect(vertex_layout.attributes[1].shader_location, content="2")
+  let key = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "default",
+    None,
+    None,
+  )
+  let defines = mesh2d_pipeline_define_keys(key)
+  debug_inspect(defines.contains("VERTEX_POSITIONS"), content="true")
+  debug_inspect(defines.contains("VERTEX_UVS"), content="true")
+  debug_inspect(defines.contains("VERTEX_COLORS"), content="false")
+}
+
+///|
+test "mesh2d material vertex layout enables colors only when present" {
+  let mesh_layout = mesh2d_default_mesh_vertex_buffer_layout()
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
+  debug_inspect(vertex_layout.attributes.length(), content="3")
+  debug_inspect(vertex_layout.attributes[2].shader_location, content="4")
+  let key = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "default",
+    None,
+    None,
+  )
+  let defines = mesh2d_pipeline_define_keys(key)
+  debug_inspect(defines.contains("VERTEX_COLORS"), content="true")
 }
 
 ///|
@@ -927,13 +1130,10 @@ fn create_mesh2d_pipeline(
         depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
       )
     }
-    builder.set_vertex_buffer_layout(
-      MESH2D_VERTEX_STRIDE_BYTES,
-      @wgpu.VERTEX_STEP_MODE_VERTEX,
+    mesh2d_render_pipeline_builder_set_vertex_layout(
+      builder,
+      key.vertex_buffer_layout,
     )
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 12UL, 2U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 20UL, 4U)
     builder.create_pipeline(backend.device)
   } catch {
     err => {
@@ -1413,6 +1613,8 @@ fn mesh2d_material_bind_group_for_draw(
 fn mesh2d_pipeline_key_for_format(
   format : @wgpu.TextureFormat,
   primitive_topology : UInt,
+  mesh_vertex_layout : @mesh.MeshVertexBufferLayout,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
   blend_alpha : Bool,
   with_depth : Bool,
   tonemap_in_shader : Bool,
@@ -1435,6 +1637,25 @@ fn mesh2d_pipeline_key_for_format(
     may_discard,
     wireframe,
     material_layout_key,
+    vertex_layout_key: mesh2d_material_vertex_layout_cache_key(
+      mesh_vertex_layout, vertex_buffer_layout,
+    ),
+    vertex_positions: mesh_vertex_layout.contains(
+      @mesh.MeshVertexAttribute::position().id(),
+    ),
+    vertex_normals: mesh_vertex_layout.contains(
+      @mesh.MeshVertexAttribute::normal().id(),
+    ),
+    vertex_uvs: mesh_vertex_layout.contains(
+      @mesh.MeshVertexAttribute::uv_0().id(),
+    ),
+    vertex_tangents: mesh_vertex_layout.contains(
+      @mesh.MeshVertexAttribute::tangent().id(),
+    ),
+    vertex_colors: mesh_vertex_layout.contains(
+      @mesh.MeshVertexAttribute::color().id(),
+    ),
+    vertex_buffer_layout,
     vertex_shader_path: mesh2d_vertex_shader_path_or_default(vertex_shader_path),
     fragment_shader_path: mesh2d_fragment_shader_path_or_default(
       fragment_shader_path,
@@ -1521,11 +1742,18 @@ fn mesh_pipeline_for_draw(
     is Some((_, material_pipeline_layout)) else {
     return None
   }
+  guard mesh.mesh_vertex_layout is Some(mesh_vertex_layout) else { return None }
+  guard mesh2d_material_vertex_buffer_layout(mesh_vertex_layout)
+    is Some(vertex_buffer_layout) else {
+    return None
+  }
   mesh2d_get_or_create_pipeline(
     backend,
     mesh2d_pipeline_key_for_format(
       format,
       mesh.primitive_topology,
+      mesh_vertex_layout,
+      vertex_buffer_layout,
       mesh2d_pipeline_blend_alpha(alpha_mode_kind),
       backend.pass_has_depth,
       false,
@@ -1617,7 +1845,7 @@ fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
     mesh2d_reset_pending_batch(backend)
     return
   }
-  if mesh.vertex_stride_bytes != MESH2D_VERTEX_STRIDE_BYTES {
+  if mesh.mesh_vertex_layout is None {
     mesh2d_reset_pending_batch(backend)
     return
   }
@@ -1690,6 +1918,7 @@ pub fn GpuBackend::create_mesh_rectangle(
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib_bytes = u16le_pack(indices_u16)
   let ib = self.device.create_buffer_init(usage=ib_usage, ib_bytes)
+  let mesh_vertex_layout = mesh2d_default_mesh_vertex_buffer_layout()
   let info = GpuMeshInfo::{
     id,
     index_count: 6U,
@@ -1700,7 +1929,8 @@ pub fn GpuBackend::create_mesh_rectangle(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
-    vertex_layout: None,
+    mesh_vertex_layout: Some(mesh_vertex_layout),
+    vertex_layout: Some(mesh_vertex_layout.layout()),
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1781,6 +2011,7 @@ pub fn GpuBackend::create_mesh_capsule(
   let vb = self.device.create_buffer_init(usage=vb_usage, f32le_pack(verts))
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(inds))
+  let mesh_vertex_layout = mesh2d_default_mesh_vertex_buffer_layout()
   let info = GpuMeshInfo::{
     id,
     index_count: inds.length().reinterpret_as_uint(),
@@ -1791,7 +2022,8 @@ pub fn GpuBackend::create_mesh_capsule(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
-    vertex_layout: None,
+    mesh_vertex_layout: Some(mesh_vertex_layout),
+    vertex_layout: Some(mesh_vertex_layout.layout()),
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1915,6 +2147,7 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     usage=ib_usage,
     u16le_pack(indices_u16),
   )
+  let mesh_vertex_layout = mesh2d_default_mesh_vertex_buffer_layout()
   let info = GpuMeshInfo::{
     id,
     index_count: indices_u16.length().reinterpret_as_uint(),
@@ -1925,7 +2158,8 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
-    vertex_layout: None,
+    mesh_vertex_layout: Some(mesh_vertex_layout),
+    vertex_layout: Some(mesh_vertex_layout.layout()),
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1951,8 +2185,9 @@ pub fn GpuBackend::create_mesh2d_vertex_buffer(
   vertex_count : Int,
   indices : Array[Int],
   primitive_topology_kind : Int,
-  vertex_layout : @mesh.VertexBufferLayout,
+  mesh_vertex_layout : @mesh.MeshVertexBufferLayout,
 ) -> Int {
+  let vertex_layout = mesh_vertex_layout.layout()
   if vertex_layout.array_stride <= 0 || vertex_count <= 0 {
     return 0
   }
@@ -2011,6 +2246,7 @@ pub fn GpuBackend::create_mesh2d_vertex_buffer(
     vertex_slab_id: -1,
     primitive_topology,
     vertex_stride_bytes: vertex_layout.array_stride.to_uint64(),
+    mesh_vertex_layout: Some(mesh_vertex_layout),
     vertex_layout: Some(vertex_layout),
     index_stride_bytes,
     uses_u32_indices,
@@ -2097,7 +2333,7 @@ fn GpuBackend::draw_mesh_material_with_options(
     render_diagnostics_record_mesh2d_drop_missing_mesh()
     return
   }
-  if mesh.vertex_stride_bytes != MESH2D_VERTEX_STRIDE_BYTES {
+  if mesh.mesh_vertex_layout is None {
     render_diagnostics_record_mesh2d_drop_bad_stride()
     return
   }

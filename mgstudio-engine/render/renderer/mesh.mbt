@@ -263,11 +263,11 @@ pub fn create_mesh2d_vertex_buffer(
   vertex_count~ : Int,
   indices~ : Array[Int],
   primitive_topology~ : Int,
-  vertex_layout~ : @mesh.VertexBufferLayout,
+  mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
 ) -> Int {
   if ensure_backend() is Some(backend) {
     let mesh_id = backend.create_mesh2d_vertex_buffer(
-      vertex_bytes, vertex_count, indices, primitive_topology, vertex_layout,
+      vertex_bytes, vertex_count, indices, primitive_topology, mesh_vertex_layout,
     )
     if mesh_id <= 0 {
       debug(

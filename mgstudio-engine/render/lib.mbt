@@ -1905,14 +1905,14 @@ pub fn host_gpu_create_mesh2d_vertex_buffer(
   vertex_count~ : Int,
   indices~ : Array[Int],
   primitive_topology~ : Int,
-  vertex_layout~ : @mesh.VertexBufferLayout,
+  mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
 ) -> Int {
   @renderer.create_mesh2d_vertex_buffer(
     vertex_bytes~,
     vertex_count~,
     indices~,
     primitive_topology~,
-    vertex_layout~,
+    mesh_vertex_layout~,
   )
 }
 

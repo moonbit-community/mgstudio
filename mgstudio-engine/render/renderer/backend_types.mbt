@@ -39,6 +39,7 @@ pub struct GpuMeshInfo {
   vertex_slab_id : Int
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
+  mesh_vertex_layout : @mesh.MeshVertexBufferLayout?
   vertex_layout : @mesh.VertexBufferLayout?
   index_stride_bytes : UInt64
   uses_u32_indices : Bool

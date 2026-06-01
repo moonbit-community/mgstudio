@@ -939,17 +939,9 @@ pub fn render_mesh_asset_set(
 }
 
 ///|
-fn mesh2d_geometry_uses_default_upload(geometry : @mesh.Mesh2dGeometry) -> Bool {
-  geometry.uvs is Some(_) && geometry.custom_attributes.length() == 0
-}
-
-///|
 fn render2d_upload_typed_mesh2d(mesh : @mesh.Mesh) -> Int {
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
-  let vertex_layout = mesh
-    .get_mesh_vertex_buffer_layout(layouts)
-    .layout()
-    .layout()
+  let mesh_vertex_layout = mesh.get_mesh_vertex_buffer_layout(layouts).layout()
   let indices = match mesh.indices() {
     Some(values) => values
     None => []
@@ -963,7 +955,7 @@ fn render2d_upload_typed_mesh2d(mesh : @mesh.Mesh) -> Int {
     vertex_count=mesh.count_vertices(),
     indices~,
     primitive_topology~,
-    vertex_layout~,
+    mesh_vertex_layout~,
   )
 }
 
@@ -980,25 +972,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
       match mesh_asset.geometry {
         @mesh.MeshGeometry::Geometry2d(geometry2d) => {
           uploaded_mesh_radius = mesh2d_geometry_base_radius(geometry2d)
-          if !mesh2d_geometry_uses_default_upload(geometry2d) {
-            render2d_upload_typed_mesh2d(mesh_asset)
-          } else {
-            match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
-              Some(vertices_csv) =>
-                @render.host_gpu_create_mesh_triangles_xyuvrgba(
-                  vertices_xyuvrgba_csv=vertices_csv,
-                )
-              None => {
-                let message = match geometry2d.validate() {
-                  Some(err) =>
-                    "Mesh2dGeometry validation failed: \{to_repr(err).to_string()}"
-                  None => "Mesh2dGeometry flatten failed"
-                }
-                @window.host_debug_string(value=message)
-                0
-              }
-            }
-          }
+          render2d_upload_typed_mesh2d(mesh_asset)
         }
         @mesh.MeshGeometry::Geometry3d(geometry3d) => {
           uploaded_mesh_radius = 64.0F
