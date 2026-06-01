@@ -425,7 +425,7 @@ pub fn Anchor::Anchor() -> Anchor {
 }
 
 ///|
-pub impl Default for Anchor with default() {
+pub impl Default for Anchor with fn default() {
   Anchor::Anchor()
 }
 
@@ -449,7 +449,7 @@ pub fn ClearColor::ClearColor() -> ClearColor {
 }
 
 ///|
-pub impl Default for ClearColor with default() {
+pub impl Default for ClearColor with fn default() {
   ClearColor::ClearColor()
 }
 
@@ -464,7 +464,7 @@ let clear_color_resource_key : @ecs.ResourceKey[ClearColor] = @ecs.register_reso
 )
 
 ///|
-pub impl @app.Resource for ClearColor with resource() {
+pub impl @app.Resource for ClearColor with fn resource() {
   clear_color_resource_key
 }
 
@@ -879,7 +879,7 @@ fn PanCamera::key_to_string(key : @window.KeyCode?) -> String {
 }
 
 ///|
-pub impl Show for PanCamera with output(self, logger) {
+pub impl Show for PanCamera with fn output(self, logger) {
   logger.write_string(
     "\nPanCamera Controls:\n  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
   )
@@ -3224,7 +3224,7 @@ fn RenderState::new() -> RenderState {
 let render_state_serde_values : Map[Int, RenderState] = {}
 
 ///|
-pub impl ToJson for RenderState with to_json(self) {
+pub impl ToJson for RenderState with fn to_json(self) {
   let id = render2d_runtime_state.render_state_serde_next_id
   render2d_runtime_state.render_state_serde_next_id = id + 1
   render_state_serde_values.set(id, self)
@@ -3232,7 +3232,7 @@ pub impl ToJson for RenderState with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for RenderState with from_json(json, path) {
+pub impl @json.FromJson for RenderState with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   render_state_serde_values.get(id).unwrap_or(RenderState::new())
 }
@@ -3512,12 +3512,13 @@ fn sprite_anchor_offset(
   anchor : Anchor,
   rotation : Float,
   draw_scale : @math.Vec2,
+  region_size : @math.Vec2,
   local_offset : @math.Vec2,
 ) -> @math.Vec2 {
   let a = anchor.as_vec()
   let offset_local = @math.Vec2::new(
-    -a.x * draw_scale.x + local_offset.x,
-    -a.y * draw_scale.y + local_offset.y,
+    -a.x * draw_scale.x * region_size.x + local_offset.x,
+    -a.y * draw_scale.y * region_size.y + local_offset.y,
   )
   let cosv = @math.cos(rotation)
   let sinv = @math.sin(rotation)
@@ -3533,7 +3534,10 @@ fn swap_float_pair(a : Float, b : Float) -> (Float, Float) {
 }
 
 ///|
-fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
+fn sprite_uv_from_sprite(
+  sprite : Sprite,
+  texture_atlas_layouts : @asset.Assets[@asset.TextureAtlasLayout]?,
+) -> SpriteUvInfo? {
   let texture_id = sprite.image.id()
   let mut image_width = @asset.host_asset_texture_width(texture_id)
   let mut image_height = @asset.host_asset_texture_height(texture_id)
@@ -3551,14 +3555,13 @@ fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
   )
   let atlas_rect = match sprite.texture_atlas {
     Some(atlas) =>
-      match @asset.asset_get_texture_atlas_layout(atlas.layout) {
-        Some(layout_value) =>
-          if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
-            Some(layout_value.textures[atlas.index].as_rect())
-          } else {
-            None
-          }
-        None => None
+      match texture_atlas_layouts {
+        Some(layouts) =>
+          atlas.texture_rect(layouts).map(fn(value) { value.as_rect() })
+        None =>
+          abort(
+            "TextureAtlasLayout assets resource is missing; add AssetPlugin before extracting atlas sprites",
+          )
       }
     None => None
   }
@@ -3787,7 +3790,7 @@ pub fn SpriteBundle::spawn(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
+pub impl @app.CommandSpawnComponents for SpriteBundle with fn spawn_components(
   self,
   world,
   entity,
@@ -3798,7 +3801,7 @@ pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for SpriteBundle with insert_into(
+pub impl @ecs.Bundle for SpriteBundle with fn insert_into(
   self,
   world,
   entity,
@@ -3835,7 +3838,7 @@ fn camera2d_bundle_insert(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
+pub impl @app.CommandSpawnComponents for Camera2dBundle with fn spawn_components(
   self,
   world,
   entity,
@@ -3846,7 +3849,7 @@ pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for Camera2dBundle with insert_into(
+pub impl @ecs.Bundle for Camera2dBundle with fn insert_into(
   self,
   world,
   entity,
@@ -3909,7 +3912,7 @@ pub fn Mesh2dBundle::spawn(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
+pub impl @app.CommandSpawnComponents for Mesh2dBundle with fn spawn_components(
   self,
   world,
   entity,
@@ -3920,7 +3923,7 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for Mesh2dBundle with insert_into(
+pub impl @ecs.Bundle for Mesh2dBundle with fn insert_into(
   self,
   world,
   entity,
@@ -5022,6 +5025,12 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     render2d_prune_postprocess_intermediate_targets(rs)
 
     // ECS sprite components.
+    let texture_atlas_layouts_key : @ecs.ResourceKey[
+      @asset.Assets[@asset.TextureAtlasLayout],
+    ] = @asset.assets_resource_key()
+    let texture_atlas_layouts = source_world.get_resource(
+      texture_atlas_layouts_key,
+    )
     let sprite_query : @ecs.Query[@ecs.Comp[Sprite], @ecs.All] = @ecs.query(
       source_world,
     )
@@ -5040,7 +5049,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       let mut uv_min = default_uv_min()
       let mut uv_max = default_uv_max()
       let mut region_size = @math.Vec2::new(1.0F, 1.0F)
-      if sprite_uv_from_sprite(sprite) is Some(info) {
+      if sprite_uv_from_sprite(sprite, texture_atlas_layouts) is Some(info) {
         uv_min = info.uv_min
         uv_max = info.uv_max
         region_size = info.region_size
@@ -5077,6 +5086,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         anchor,
         transform.rotation_z(),
         draw_scale_for_host,
+        region_size,
         local_offset,
       )
       if needs_repeat_sampler {
@@ -6971,6 +6981,71 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 }
 
 ///|
+fn render2d_close(a : Float, b : Float) -> Bool {
+  let delta = a - b
+  let abs_delta = if delta < 0.0F { -delta } else { delta }
+  abs_delta < 0.0001F
+}
+
+///|
+test "render2d: sprite scale fill start and end keep Bevy crop direction" {
+  let region_size = @math.Vec2::new(100.0F, 100.0F)
+  let draw_scale = @math.Vec2::new(3.0F, 1.0F)
+  let (start_uv_min, start_uv_max, _, _) = apply_scale_sprite_image_mode(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    draw_scale,
+    region_size,
+    SpriteScalingMode::FillStart,
+  )
+  let (end_uv_min, end_uv_max, _, _) = apply_scale_sprite_image_mode(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    draw_scale,
+    region_size,
+    SpriteScalingMode::FillEnd,
+  )
+  let ok = render2d_close(start_uv_min.y, 0.0F) &&
+    render2d_close(start_uv_max.y, 1.0F / 3.0F) &&
+    render2d_close(end_uv_min.y, 2.0F / 3.0F) &&
+    render2d_close(end_uv_max.y, 1.0F)
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "render2d: sprite scale fit start offsets quad center like Bevy" {
+  let region_size = @math.Vec2::new(200.0F, 100.0F)
+  let draw_scale = @math.Vec2::new(0.5F, 2.0F)
+  let (_, _, scaled_draw_scale, local_offset) = apply_scale_sprite_image_mode(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    draw_scale,
+    region_size,
+    SpriteScalingMode::FitStart,
+  )
+  let center_offset = sprite_anchor_offset(
+    Anchor::center(),
+    0.0F,
+    scaled_draw_scale,
+    region_size,
+    local_offset,
+  )
+  let top_offset = sprite_anchor_offset(
+    Anchor::top_center(),
+    0.0F,
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(100.0F, 50.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  let ok = render2d_close(scaled_draw_scale.x, 0.5F) &&
+    render2d_close(scaled_draw_scale.y, 0.5F) &&
+    render2d_close(center_offset.x, 0.0F) &&
+    render2d_close(center_offset.y, 75.0F) &&
+    render2d_close(top_offset.y, -25.0F)
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let layers = RenderLayers::RenderLayers()
   let masked_low_entity = @core.Entity::new(1, 0)
@@ -8676,24 +8751,24 @@ pub fn Render2dEcsPlugin::Render2dEcsPlugin() -> Render2dEcsPlugin {
 }
 
 ///|
-pub impl @app.Plugin for Render2dPlugin with name(_self) {
+pub impl @app.Plugin for Render2dPlugin with fn name(_self) {
   "mgstudio.sprite.Render2dPlugin"
 }
 
 ///|
-pub impl @app.Plugin for Render2dPlugin with build(_self, app) {
+pub impl @app.Plugin for Render2dPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
   @cas.cas_register_camera_component_key(ecs_key_camera)
   render2d_plugin_install(app)
 }
 
 ///|
-pub impl @app.Plugin for Render2dEcsPlugin with name(_self) {
+pub impl @app.Plugin for Render2dEcsPlugin with fn name(_self) {
   "mgstudio.sprite.Render2dEcsPlugin"
 }
 
 ///|
-pub impl @app.Plugin for Render2dEcsPlugin with build(_self, app) {
+pub impl @app.Plugin for Render2dEcsPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
   @cas.cas_register_camera_component_key(ecs_key_camera)
   render2d_plugin_ecs_install(app)

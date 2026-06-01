@@ -88,9 +88,7 @@ fn apply_scale_sprite_image_mode(
       if quad_ratio > texture_ratio {
         uv_offset_scale = @math.Vec4::new(
           uv_offset_scale.x,
-          uv_offset_scale.y +
-          uv_offset_scale.w -
-          uv_offset_scale.w * tex_quad_scale,
+          uv_offset_scale.y,
           uv_offset_scale.z,
           uv_offset_scale.w * tex_quad_scale,
         )
@@ -106,7 +104,9 @@ fn apply_scale_sprite_image_mode(
       if quad_ratio > texture_ratio {
         uv_offset_scale = @math.Vec4::new(
           uv_offset_scale.x,
-          uv_offset_scale.y,
+          uv_offset_scale.y +
+          uv_offset_scale.w -
+          uv_offset_scale.w * tex_quad_scale,
           uv_offset_scale.z,
           uv_offset_scale.w * tex_quad_scale,
         )
@@ -187,8 +187,8 @@ fn apply_scale_sprite_image_mode(
     draw_sign_y * target_size.y / region_h,
   )
   let local_offset = @math.Vec2::new(
-    local_offset_target.x / region_w,
-    local_offset_target.y / region_h,
+    -0.5F * local_offset_target.x * draw_sign_x,
+    -0.5F * local_offset_target.y * draw_sign_y,
   )
   (
     @math.Vec2::new(uv_offset_scale.x, uv_offset_scale.y),
