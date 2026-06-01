@@ -19,7 +19,6 @@ pub(all) enum AssetLoaderKind {
   Wgsl
   Bytes
   Font
-  Folder
 }
 
 ///|
@@ -33,9 +32,6 @@ const NATIVE_LOADER_KIND_BYTES : Int = 2
 
 ///|
 const NATIVE_LOADER_KIND_FONT : Int = 3
-
-///|
-const NATIVE_LOADER_KIND_FOLDER : Int = 4
 
 ///|
 type AssetReloadHook = (@ecs.World, AssetServer, String) -> Unit
@@ -155,7 +151,6 @@ fn asset_loader_kind_to_raw(kind : AssetLoaderKind) -> Int {
     AssetLoaderKind::Wgsl => NATIVE_LOADER_KIND_WGSL
     AssetLoaderKind::Bytes => NATIVE_LOADER_KIND_BYTES
     AssetLoaderKind::Font => NATIVE_LOADER_KIND_FONT
-    AssetLoaderKind::Folder => NATIVE_LOADER_KIND_FOLDER
   }
 }
 
@@ -169,9 +164,6 @@ fn asset_loader_kind_from_raw(raw : Int) -> AssetLoaderKind {
   }
   if raw == NATIVE_LOADER_KIND_FONT {
     return AssetLoaderKind::Font
-  }
-  if raw == NATIVE_LOADER_KIND_FOLDER {
-    return AssetLoaderKind::Folder
   }
   AssetLoaderKind::Bytes
 }

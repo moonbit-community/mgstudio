@@ -91,7 +91,7 @@ pub fn winit_create_monitors_system(world : @ecs.World) -> Unit {
         seen_entries[index] = true
         let existing_entry = monitors.monitors[index]
         if world.is_alive(existing_entry.entity) {
-          winit_sync_monitor_entity(
+          winit_sync_primary_monitor_marker(
             world,
             existing_entry.entity,
             monitor,

@@ -118,7 +118,7 @@ pub(all) enum RecursiveDependencyLoadState {
 ///|
 pub struct AssetServer {
   paths : Array[String]
-  path_fingerprints : @hashmap.HashMap[String, Int]
+  pending_reload_paths : Array[String]
   typed_asset_paths : @hashmap.HashMap[String, Int]
   typed_asset_next_ids : @hashmap.HashMap[String, Int]
   typed_asset_load_states : @hashmap.HashMap[String, LoadState]
@@ -133,6 +133,7 @@ pub struct AssetServer {
   pending_load_failures : Array[UntypedAssetLoadFailedEvent]
   mut pending_processed_asset_loads : Array[PendingProcessedAssetLoad]
   mut pending_typed_asset_loads : Array[PendingTypedAssetLoad]
+  pending_loaded_folder_loads : Array[PendingLoadedFolderLoad]
   pending_acquired_loads : Array[PendingAcquiredLoad]
   image_paths : Array[(String, Handle[Image])]
   pending_image_assets : @hashmap.HashMap[Int, Image]
@@ -176,7 +177,7 @@ priv struct AssetLoaderEntry {
 fn asset_server_standalone() -> AssetServer {
   AssetServer::{
     paths: [],
-    path_fingerprints: @hashmap.HashMap([]),
+    pending_reload_paths: [],
     typed_asset_paths: @hashmap.HashMap([]),
     typed_asset_next_ids: @hashmap.HashMap([]),
     typed_asset_load_states: @hashmap.HashMap([]),
@@ -185,6 +186,7 @@ fn asset_server_standalone() -> AssetServer {
     pending_load_failures: [],
     pending_processed_asset_loads: [],
     pending_typed_asset_loads: [],
+    pending_loaded_folder_loads: [],
     pending_acquired_loads: [],
     image_paths: [],
     pending_image_assets: @hashmap.HashMap([]),
@@ -480,10 +482,6 @@ fn AssetServer::record_path(self : AssetServer, path : String) -> Unit {
     }
   }
   self.paths.push(canonical_path)
-  self.path_fingerprints.set(
-    canonical_path,
-    bytes_fingerprint(load_asset_file_bytes(canonical_path)),
-  )
 }
 
 ///|
@@ -1802,19 +1800,38 @@ pub fn asset_create_texture_mip_view(
 
 ///|
 fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
-  let modified_paths : Array[String] = []
-  for path in asset_server.paths {
-    let next_fingerprint = bytes_fingerprint(load_asset_file_bytes(path))
-    match asset_server.path_fingerprints.get(path) {
-      Some(previous_fingerprint) =>
-        if previous_fingerprint != next_fingerprint {
-          asset_server.path_fingerprints.set(path, next_fingerprint)
-          modified_paths.push(path)
+  let paths : Array[String] = []
+  for path in asset_server.pending_reload_paths {
+    paths.push(path)
+  }
+  asset_server.pending_reload_paths.clear()
+  paths
+}
+
+///|
+fn AssetServer::queue_reload_path(self : AssetServer, path : String) -> Unit {
+  let canonical_path = asset_canonical_path(path)
+  for loaded_path in self.paths {
+    if loaded_path == canonical_path {
+      for pending in self.pending_reload_paths {
+        if pending == canonical_path {
+          return
         }
-      None => asset_server.path_fingerprints.set(path, next_fingerprint)
+      }
+      self.pending_reload_paths.push(canonical_path)
+      return
     }
   }
-  modified_paths
+}
+
+///|
+pub fn[P : IntoAssetPath] AssetServer::reload(
+  self : AssetServer,
+  path : P,
+) -> Unit {
+  asset_with_server_world(self, fn() {
+    self.queue_reload_path(asset_path_string(path))
+  })
 }
 
 ///|

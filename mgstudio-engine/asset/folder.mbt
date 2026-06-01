@@ -18,12 +18,18 @@ pub struct LoadedFolder {
 }
 
 ///|
-pub impl Asset for LoadedFolder with asset_debug_name() {
+struct PendingLoadedFolderLoad {
+  handle_id : Int
+  handles : Array[Handle[Image]]
+}
+
+///|
+pub impl Asset for LoadedFolder with fn asset_debug_name() {
   "mgstudio_asset::LoadedFolder"
 }
 
 ///|
-pub impl Asset for LoadedFolder with asset_as_image(_self) {
+pub impl Asset for LoadedFolder with fn asset_as_image(_self) {
   None
 }
 
@@ -33,7 +39,7 @@ pub let loaded_folder_asset_resource_keys : AssetResourceKeys[LoadedFolder] = re
 )
 
 ///|
-pub impl Asset for LoadedFolder with asset_resource_keys() {
+pub impl Asset for LoadedFolder with fn asset_resource_keys() {
   loaded_folder_asset_resource_keys
 }
 
@@ -43,31 +49,68 @@ pub let loaded_folder_assets_resource_key : @ecs.ResourceKey[
 ] = registered_assets_resource_key()
 
 ///|
-pub fn host_asset_load_folder(path~ : String) -> Int {
-  load_folder(path~)
+fn folder_collect_image_asset_paths_recursive(
+  source_name : String?,
+  relative_path : String,
+  virtual_path : String,
+  out : Array[String],
+) -> Unit {
+  if !asset_path_is_directory(virtual_path) {
+    return
+  }
+  let entries = asset_read_directory_entries(virtual_path)
+  for entry_name in entries {
+    let child_relative = @path.Path::join(relative_path, entry_name).to_string()
+    let child_virtual = compose_virtual_asset_path(
+      source_name,
+      child_relative,
+      None,
+    )
+    if asset_path_is_directory(child_virtual) {
+      folder_collect_image_asset_paths_recursive(
+        source_name, child_relative, child_virtual, out,
+      )
+      continue
+    }
+    if loader_kind_for_path(path=child_virtual) == LOADER_KIND_TEXTURE {
+      out.push(child_virtual)
+    }
+  }
 }
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_kind() -> Int {
-  poll_loaded_folder_event_kind()
+fn folder_collect_image_asset_paths(path : String) -> Array[String] {
+  let parsed = parse_virtual_asset_path(path)
+  let folder_virtual = compose_virtual_asset_path(
+    parsed.source_name,
+    parsed.relative_path,
+    None,
+  )
+  let paths : Array[String] = []
+  folder_collect_image_asset_paths_recursive(
+    parsed.source_name,
+    parsed.relative_path,
+    folder_virtual,
+    paths,
+  )
+  paths
 }
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_id() -> Int {
-  poll_loaded_folder_event_id()
-}
-
-///|
-pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int {
-  loaded_folder_handles_len(folder_id)
-}
-
-///|
-pub fn host_asset_loaded_folder_handles_get(
-  folder_id~ : Int,
-  index~ : Int,
-) -> Int {
-  loaded_folder_handles_get(folder_id~, index~)
+fn AssetServer::enqueue_loaded_folder(
+  self : AssetServer,
+  handle : Handle[LoadedFolder],
+  handles : Array[Handle[Image]],
+) -> Unit {
+  for pending in self.pending_loaded_folder_loads {
+    if pending.handle_id == handle.id() {
+      return
+    }
+  }
+  self.pending_loaded_folder_loads.push(PendingLoadedFolderLoad::{
+    handle_id: handle.id(),
+    handles,
+  })
 }
 
 ///|
@@ -76,10 +119,24 @@ pub fn AssetServer::load_folder(
   path : String,
 ) -> Handle[LoadedFolder] {
   asset_with_server_world(self, fn() {
-    let canonical_path = asset_canonical_path(path)
-    let host_id = host_asset_load_folder(path=canonical_path)
+    let parsed_path = asset_parse_path(path)
+    let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
+    let type_name = assets_type_name((None : LoadedFolder?))
+    let cache_key = typed_asset_loader_path_key(type_name, parsed_path)
+    if self.typed_asset_paths.get(cache_key) is Some(handle_id) {
+      return Handle::new(handle_id)
+    }
+    let handle : Handle[LoadedFolder] = Handle::new(
+      self.reserve_typed_asset_handle_id(type_name),
+    )
+    self.set_typed_loading_states(type_name, handle.id())
+    self.typed_asset_paths.set(cache_key, handle.id())
     self.record_path(canonical_path)
-    let handle = Handle::new(host_id)
+    let handles : Array[Handle[Image]] = []
+    for image_path in folder_collect_image_asset_paths(canonical_path) {
+      handles.push(self.load_image(image_path))
+    }
+    self.enqueue_loaded_folder(handle, handles)
     handle
   })
 }
@@ -135,43 +192,52 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
 
 ///|
 pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
+  guard world.get_resource(asset_server_resource_key) is Some(asset_server) else {
+    return
+  }
   let assets = loaded_folder_assets_mut_or_abort(world)
+  let type_name = assets_type_name((None : LoadedFolder?))
+  let remaining : Array[PendingLoadedFolderLoad] = []
   assets.modify(fn(store) {
-    while true {
-      let kind = host_asset_poll_loaded_folder_event_kind()
-      if kind < 0 {
-        break
+    for pending in asset_server.pending_loaded_folder_loads {
+      let mut loaded = true
+      let mut failed : String? = None
+      for image in pending.handles {
+        match asset_server.load_state(image) {
+          LoadState::Failed(error) => {
+            loaded = false
+            failed = Some(error)
+            break
+          }
+          _ =>
+            if !asset_server.is_loaded_with_dependencies(image) {
+              loaded = false
+              break
+            }
+        }
       }
-      let host_id = host_asset_poll_loaded_folder_event_id()
-      let handle = Handle::new(host_id)
-      if kind == 3 {
-        let n = host_asset_loaded_folder_handles_len(host_id)
-        let handles : Array[Handle[Image]] = []
-        for j in 0..<n {
-          handles.push(
-            Handle::new(
-              host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
-            ),
+      let handle : Handle[LoadedFolder] = Handle::new(pending.handle_id)
+      match failed {
+        Some(error) =>
+          asset_server.set_typed_failed_states(
+            type_name,
+            handle.id(),
+            "Failed to load folder dependency: \{error}",
           )
-        }
-        store.push_event(LoadedWithDependencies(handle))
-        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
-      } else if kind == 0 {
-        store.insert(handle, LoadedFolder::{ handles: [] }) |> ignore
-      } else if kind == 1 {
-        let n = host_asset_loaded_folder_handles_len(host_id)
-        let handles : Array[Handle[Image]] = []
-        for j in 0..<n {
-          handles.push(
-            Handle::new(
-              host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
-            ),
-          )
-        }
-        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
-      } else if kind == 2 {
-        store.remove(handle) |> ignore
+        None =>
+          if loaded {
+            store.push_event(LoadedWithDependencies(handle))
+            store.insert(handle, LoadedFolder::{ handles: pending.handles })
+            |> ignore
+            asset_server.set_typed_loaded_states(type_name, handle.id())
+          } else {
+            remaining.push(pending)
+          }
       }
     }
   })
+  asset_server.pending_loaded_folder_loads.clear()
+  for pending in remaining {
+    asset_server.pending_loaded_folder_loads.push(pending)
+  }
 }

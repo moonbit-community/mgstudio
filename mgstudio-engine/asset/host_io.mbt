@@ -19,39 +19,12 @@ priv struct BlobRecord {
 }
 
 ///|
-priv struct FolderRecord {
-  id : Int
-  virtual_path : String
-  source_name : String?
-  relative_path : String
-  absolute_path : String
-  entries : Array[FolderEntry]
-}
-
-///|
-priv struct FolderEntry {
-  relative_path : String
-  fingerprint : Int
-  handle_id : Int
-}
-
-///|
-priv struct FolderEvent {
-  kind : Int
-  folder_id : Int
-}
-
-///|
 priv struct HostIoGlobalState {
   mut next_id : Int
-  mut pending_folder_event : FolderEvent?
 }
 
 ///|
-let host_io_global_state : HostIoGlobalState = {
-  next_id: 1,
-  pending_folder_event: None,
-}
+let host_io_global_state : HostIoGlobalState = { next_id: 1 }
 
 ///|
 let blobs : Array[BlobRecord] = []
@@ -61,12 +34,6 @@ let texture_pixel_records : Array[BlobRecord] = []
 
 ///|
 let fonts : Array[BlobRecord] = []
-
-///|
-let folders : Array[FolderRecord] = []
-
-///|
-let folder_events : Array[FolderEvent] = []
 
 ///|
 const DEFAULT_ASSETS_DIR : String = "./assets"
@@ -124,9 +91,6 @@ const LOADER_KIND_BYTES : Int = 2
 
 ///|
 const LOADER_KIND_FONT : Int = 3
-
-///|
-const LOADER_KIND_FOLDER : Int = 4
 
 ///|
 priv struct Ktx2TexturePayload {
@@ -341,7 +305,7 @@ fn default_asset_source_reader(source_id : AssetSourceId) -> AssetReader {
       let virtual_path = compose_virtual_asset_path(source_name, path, None)
       let absolute_path = resolve_asset_path(virtual_path)
       if path_is_dir(absolute_path) {
-        Some(sorted_directory_entries(absolute_path))
+        Some(directory_entries(absolute_path))
       } else {
         None
       }
@@ -2942,12 +2906,8 @@ fn loader_kind_for_path(path~ : String) -> Int {
 }
 
 ///|
-fn sorted_directory_entries(path : String) -> Array[String] {
-  try {
-    let entries = @fs.read_dir(path)
-    entries.sort()
-    entries
-  } catch {
+fn directory_entries(path : String) -> Array[String] {
+  @fs.read_dir(path) catch {
     _ => []
   }
 }
@@ -2967,7 +2927,7 @@ fn asset_read_directory_entries(path : String) -> Array[String] {
     let parsed = parse_virtual_asset_path(path)
     return reader.read_directory(parsed.relative_path).unwrap_or([])
   }
-  sorted_directory_entries(resolve_asset_path(path))
+  directory_entries(resolve_asset_path(path))
 }
 
 ///|
@@ -2984,136 +2944,6 @@ fn load_asset_meta_bytes(path : String) -> Bytes? {
     return read_file_bytes(input_path)
   }
   None
-}
-
-///|
-fn folder_handles(folder_id : Int) -> Array[Int]? {
-  for folder in folders {
-    if folder.id == folder_id {
-      let handles : Array[Int] = []
-      for entry in folder.entries {
-        handles.push(entry.handle_id)
-      }
-      return Some(handles)
-    }
-  }
-  None
-}
-
-///|
-fn bytes_fingerprint(bytes : Bytes) -> Int {
-  let mut hash = 2166136261U
-  for byte in bytes {
-    hash = hash ^ (byte.to_int() & 0xFF).reinterpret_as_uint()
-    hash = hash * 16777619U
-  }
-  hash.reinterpret_as_int()
-}
-
-///|
-fn folder_entry_find_by_relative(
-  entries : Array[FolderEntry],
-  relative_path : String,
-) -> FolderEntry? {
-  for entry in entries {
-    if entry.relative_path == relative_path {
-      return Some(entry)
-    }
-  }
-  None
-}
-
-///|
-fn folder_collect_entries(folder : FolderRecord) -> (Array[FolderEntry], Bool) {
-  let next_entries : Array[FolderEntry] = []
-  let mut changed = false
-  if asset_path_is_directory(folder.virtual_path) {
-    let entries = asset_read_directory_entries(folder.virtual_path)
-    for entry_name in entries {
-      let child_relative = @path.Path::join(folder.relative_path, entry_name).to_string()
-      let child_virtual = compose_virtual_asset_path(
-        folder.source_name,
-        child_relative,
-        None,
-      )
-      if asset_path_is_directory(child_virtual) {
-        continue
-      }
-      if loader_kind_for_path(path=child_virtual) != LOADER_KIND_TEXTURE {
-        continue
-      }
-      if asset_source_reader_for_path(child_virtual) is Some(_) {
-        let bytes = load_asset_file_bytes(child_virtual)
-        if bytes.length() == 0 {
-          continue
-        }
-        let fingerprint = bytes_fingerprint(bytes)
-        if folder_entry_find_by_relative(folder.entries, child_relative)
-          is Some(previous) {
-          if previous.fingerprint == fingerprint {
-            next_entries.push(previous)
-            continue
-          }
-        }
-        let handle_id = load_texture(path=child_virtual, nearest=false)
-        next_entries.push(FolderEntry::{
-          relative_path: child_relative,
-          fingerprint,
-          handle_id,
-        })
-      } else if read_file_bytes(path_join(folder.absolute_path, entry_name))
-        is Some(bytes) {
-        let fingerprint = bytes_fingerprint(bytes)
-        if folder_entry_find_by_relative(folder.entries, child_relative)
-          is Some(previous) {
-          if previous.fingerprint == fingerprint {
-            next_entries.push(previous)
-            continue
-          }
-        }
-        let handle_id = load_texture(path=child_virtual, nearest=false)
-        next_entries.push(FolderEntry::{
-          relative_path: child_relative,
-          fingerprint,
-          handle_id,
-        })
-      }
-    }
-  }
-  if next_entries.length() != folder.entries.length() {
-    changed = true
-  } else {
-    for i in 0..<next_entries.length() {
-      if next_entries[i].relative_path != folder.entries[i].relative_path ||
-        next_entries[i].fingerprint != folder.entries[i].fingerprint ||
-        next_entries[i].handle_id != folder.entries[i].handle_id {
-        changed = true
-        break
-      }
-    }
-  }
-  (next_entries, changed)
-}
-
-///|
-fn refresh_watched_folders() -> Unit {
-  let next : Array[FolderRecord] = []
-  for folder in folders {
-    let (entries, changed) = folder_collect_entries(folder)
-    let refreshed = FolderRecord::{
-      id: folder.id,
-      virtual_path: folder.virtual_path,
-      source_name: folder.source_name,
-      relative_path: folder.relative_path,
-      absolute_path: folder.absolute_path,
-      entries,
-    }
-    next.push(refreshed)
-    if changed {
-      folder_events.push(FolderEvent::{ kind: 1, folder_id: folder.id })
-    }
-  }
-  array_replace(folders, next)
 }
 
 ///|
@@ -3265,9 +3095,6 @@ fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int {
   }
   if loader_kind == LOADER_KIND_FONT {
     return load_font(path~)
-  }
-  if loader_kind == LOADER_KIND_FOLDER {
-    return load_folder(path~)
   }
   load_bytes(path~)
 }
@@ -3613,91 +3440,5 @@ fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
     blob_u32_at(record.bytes, index)
   } else {
     0
-  }
-}
-
-///|
-fn load_folder(path~ : String) -> Int {
-  let parsed = parse_virtual_asset_path(path)
-  let folder_virtual = compose_virtual_asset_path(
-    parsed.source_name,
-    parsed.relative_path,
-    None,
-  )
-  let folder_path = resolve_asset_path(folder_virtual)
-  let folder_id = next_id()
-  let seed_folder = FolderRecord::{
-    id: folder_id,
-    virtual_path: folder_virtual,
-    source_name: parsed.source_name,
-    relative_path: parsed.relative_path,
-    absolute_path: folder_path,
-    entries: [],
-  }
-  let (entries, _) = folder_collect_entries(seed_folder)
-  folders.push(FolderRecord::{
-    id: folder_id,
-    virtual_path: folder_virtual,
-    source_name: parsed.source_name,
-    relative_path: parsed.relative_path,
-    absolute_path: folder_path,
-    entries,
-  })
-  folder_events.push(FolderEvent::{ kind: 3, folder_id })
-  folder_id
-}
-
-///|
-fn pop_next_folder_event() -> FolderEvent? {
-  match folder_events.pop() {
-    Some(value) => Some(value)
-    None => None
-  }
-}
-
-///|
-fn poll_loaded_folder_event_kind() -> Int {
-  if host_io_global_state.pending_folder_event is Some(event) {
-    return event.kind
-  }
-  refresh_watched_folders()
-  match pop_next_folder_event() {
-    Some(event) => {
-      host_io_global_state.pending_folder_event = Some(event)
-      event.kind
-    }
-    None => -1
-  }
-}
-
-///|
-fn poll_loaded_folder_event_id() -> Int {
-  if host_io_global_state.pending_folder_event is Some(event) {
-    host_io_global_state.pending_folder_event = None
-    event.folder_id
-  } else {
-    -1
-  }
-}
-
-///|
-fn loaded_folder_handles_len(folder_id : Int) -> Int {
-  if folder_handles(folder_id) is Some(handles) {
-    handles.length()
-  } else {
-    0
-  }
-}
-
-///|
-fn loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int {
-  if folder_handles(folder_id) is Some(handles) {
-    if index < 0 || index >= handles.length() {
-      -1
-    } else {
-      handles[index]
-    }
-  } else {
-    -1
   }
 }

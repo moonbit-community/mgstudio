@@ -19,17 +19,17 @@ pub(all) enum AppState {
 } derive(Eq, Debug)
 
 ///|
-impl Default for AppState with default() {
+impl Default for AppState with fn default() {
   AppState::Setup
 }
 
 ///|
-impl @app.States for AppState with type_debug_name() {
+impl @app.States for AppState with fn type_debug_name() {
   "examples.2d.texture_atlas.AppState"
 }
 
 ///|
-impl @app.States for AppState with debug_name(self) {
+impl @app.States for AppState with fn debug_name(self) {
   ignore(self)
   "examples.2d.texture_atlas.AppState"
 }
@@ -40,7 +40,7 @@ let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_s
 )
 
 ///|
-impl @app.States for AppState with state_resource_keys() {
+impl @app.States for AppState with fn state_resource_keys() {
   app_state_resource_keys
 }
 
@@ -55,7 +55,7 @@ let rpg_sprite_folder_key : @ecs.ResourceKey[RpgSpriteFolder] = @ecs.register_re
 )
 
 ///|
-pub impl @app.Resource for RpgSpriteFolder with resource() {
+pub impl @app.Resource for RpgSpriteFolder with fn resource() {
   rpg_sprite_folder_key
 }
 
@@ -115,9 +115,11 @@ fn setup(
   texture_atlases : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
   loaded_folders : @app.Res[@asset.Assets[@asset.LoadedFolder]],
 ) -> Unit {
-  guard loaded_folders.get().get(rpg_sprite_handles.get().handle)
-    is Some(loaded_folder) else {
-    return
+  let loaded_folder = match
+    loaded_folders.get().get(rpg_sprite_handles.get().handle) {
+    Some(value) => value
+    None =>
+      abort("LoadedFolder resource was not available after AppState::Finished")
   }
 
   let (atlas_linear_handle, linear_sources, linear_texture) = create_texture_atlas(
@@ -175,18 +177,23 @@ fn setup(
   let text_style = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(42.0F)
-  create_label((-250.0F, 250.0F, 0.0F), "No padding", text_style)
+  create_label(commands, (-250.0F, 250.0F, 0.0F), "No padding", text_style)
   create_label(
+    commands,
     (250.0F, 250.0F, 0.0F),
     "Padding",
     @text.TextFont::TextFont().with_font(font).with_font_size(42.0F),
   )
 
-  guard asset_server
+  let vendor_handle = match
+    asset_server
     .get()
-    .get_handle("textures/rpg/chars/vendor/generic-rpg-vendor.png")
-    is Some(vendor_handle) else {
-    return
+    .get_handle("textures/rpg/chars/vendor/generic-rpg-vendor.png") {
+    Some(value) => value
+    None =>
+      abort(
+        "textures/rpg/chars/vendor/generic-rpg-vendor.png was not loaded with the rpg folder",
+      )
   }
 
   let sampling_label_style = @text.TextFont::TextFont()
@@ -227,7 +234,7 @@ fn setup(
       atlas_handle,
       vendor_handle,
     )
-    create_label((x, 190.0F, 0.0F), sampling, sampling_label_style)
+    create_label(commands, (x, 190.0F, 0.0F), sampling, sampling_label_style)
   }
 }
 
@@ -251,7 +258,11 @@ fn create_texture_atlas(
   for handle in folder.handles {
     texture_atlas_builder = texture_atlas_builder.add_texture(handle)
   }
-  let (texture_atlas_layout, texture_atlas_sources, texture) = texture_atlas_builder.build()
+  let (texture_atlas_layout, texture_atlas_sources, texture) = match
+    texture_atlas_builder.try_build() {
+    Some(value) => value
+    None => abort("TextureAtlasBuilder failed to build the rpg texture atlas")
+  }
   (
     texture_atlases.modify(fn(texture_atlases) {
       texture_atlases.add(texture_atlas_layout)
@@ -270,8 +281,12 @@ fn create_sprite_from_atlas(
   atlas_handle : @asset.Handle[@asset.TextureAtlasLayout],
   vendor_handle : @asset.Handle[@asset.Image],
 ) -> Unit {
-  guard atlas_sources.handle(atlas_handle, vendor_handle) is Some(vendor_sprite) else {
-    return
+  let vendor_sprite = match atlas_sources.handle(atlas_handle, vendor_handle) {
+    Some(value) => value
+    None =>
+      abort(
+        "TextureAtlasSources did not contain textures/rpg/chars/vendor/generic-rpg-vendor.png",
+      )
   }
   ignore(
     commands.spawn(
@@ -289,21 +304,23 @@ fn create_sprite_from_atlas(
 
 ///|
 fn create_label(
+  commands : @app.Commands,
   translation : (Float, Float, Float),
   text : String,
   text_style : @text.TextFont,
 ) -> Unit {
   ignore(
-    @text.Text2dBundle::new(
-      @text.Text2d::new(text),
-      text_style,
-      @transform.Transform::from_xyz(
-        translation.0,
-        translation.1,
-        translation.2,
+    commands.spawn(
+      (
+        @text.Text2d::new(text),
+        text_style,
+        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @transform.Transform::from_xyz(
+          translation.0,
+          translation.1,
+          translation.2,
+        ),
       ),
-    )
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-    .spawn(),
+    ),
   )
 }

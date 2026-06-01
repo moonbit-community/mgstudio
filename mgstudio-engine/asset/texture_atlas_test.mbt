@@ -103,3 +103,106 @@ test "dynamic texture atlas: stress non-overlap with varied sizes" {
   }
   debug_inspect(layout.len(), content=rects.length().to_string())
 }
+
+///|
+fn atlas_test_rect(layout : TextureAtlasLayout, index : Int) -> @math.URect {
+  match layout.texture(index) {
+    Some(rect) => rect
+    None => abort("missing texture atlas rect")
+  }
+}
+
+///|
+fn atlas_expect_rect(
+  layout : TextureAtlasLayout,
+  index : Int,
+  min_x : Int,
+  min_y : Int,
+  max_x : Int,
+  max_y : Int,
+) -> Unit raise {
+  let rect = atlas_test_rect(layout, index)
+  debug_inspect(rect.min.x, content=min_x.to_string())
+  debug_inspect(rect.min.y, content=min_y.to_string())
+  debug_inspect(rect.max.x, content=max_x.to_string())
+  debug_inspect(rect.max.y, content=max_y.to_string())
+}
+
+///|
+fn atlas_expect_source(
+  sources : TextureAtlasSources,
+  texture : Handle[Image],
+  index : Int,
+) -> Unit raise {
+  debug_inspect(
+    sources.texture_index(texture).unwrap_or(-1),
+    content=index.to_string(),
+  )
+}
+
+///|
+test "texture atlas builder: matches Bevy rectangle_pack placements without padding" {
+  let a = asset_create_dynamic_texture(@math.UVec2::new(100, 40), false)
+  let b = asset_create_dynamic_texture(@math.UVec2::new(20, 120), false)
+  let c = asset_create_dynamic_texture(@math.UVec2::new(60, 60), false)
+  let d = asset_create_dynamic_texture(@math.UVec2::new(30, 30), false)
+  let builder = TextureAtlasBuilder::TextureAtlasBuilder()
+    .initial_size(@math.UVec2::new(128, 128))
+    .max_size(@math.UVec2::new(256, 256))
+    .add_texture(a)
+    .add_texture(b)
+    .add_texture(c)
+    .add_texture(d)
+  let (layout, sources, atlas_texture) = match builder.try_build() {
+    Some(value) => value
+    None => abort("expected texture atlas build")
+  }
+  debug_inspect(layout.size().x, content="256")
+  debug_inspect(layout.size().y, content="256")
+  debug_inspect(asset_texture_width(atlas_texture), content="256")
+  debug_inspect(asset_texture_height(atlas_texture), content="256")
+  atlas_expect_rect(layout, 0, 0, 0, 100, 40)
+  atlas_expect_rect(layout, 1, 0, 100, 20, 220)
+  atlas_expect_rect(layout, 2, 0, 40, 60, 100)
+  atlas_expect_rect(layout, 3, 20, 100, 50, 130)
+  atlas_expect_source(sources, a, 0)
+  atlas_expect_source(sources, b, 1)
+  atlas_expect_source(sources, c, 2)
+  atlas_expect_source(sources, d, 3)
+}
+
+///|
+test "texture atlas builder: matches Bevy rectangle_pack placements with padding" {
+  let a = asset_create_dynamic_texture(@math.UVec2::new(64, 32), false)
+  let b = asset_create_dynamic_texture(@math.UVec2::new(32, 64), false)
+  let c = asset_create_dynamic_texture(@math.UVec2::new(16, 16), false)
+  let d = asset_create_dynamic_texture(@math.UVec2::new(48, 20), false)
+  let e = asset_create_dynamic_texture(@math.UVec2::new(20, 48), false)
+  let builder = TextureAtlasBuilder::TextureAtlasBuilder()
+    .initial_size(@math.UVec2::new(128, 128))
+    .max_size(@math.UVec2::new(256, 256))
+    .padding(@math.UVec2::new(6, 6))
+    .add_texture(a)
+    .add_texture(b)
+    .add_texture(c)
+    .add_texture(d)
+    .add_texture(e)
+  let (layout, sources, atlas_texture) = match builder.try_build() {
+    Some(value) => value
+    None => abort("expected padded texture atlas build")
+  }
+  debug_inspect(layout.size().x, content="128")
+  debug_inspect(layout.size().y, content="128")
+  debug_inspect(asset_texture_width(atlas_texture), content="128")
+  debug_inspect(asset_texture_height(atlas_texture), content="128")
+  atlas_expect_rect(layout, 0, 0, 0, 64, 32)
+  atlas_expect_rect(layout, 1, 0, 38, 32, 102)
+  atlas_expect_rect(layout, 2, 64, 64, 80, 80)
+  atlas_expect_rect(layout, 3, 38, 38, 86, 58)
+  atlas_expect_rect(layout, 4, 38, 64, 58, 112)
+  atlas_expect_source(sources, a, 0)
+  atlas_expect_source(sources, b, 1)
+  atlas_expect_source(sources, c, 2)
+  atlas_expect_source(sources, d, 3)
+  atlas_expect_source(sources, e, 4)
+}

@@ -511,6 +511,448 @@ pub fn TextureAtlasBuilder::add_texture(
 }
 
 ///|
+priv struct TextureAtlasPackSection {
+  x : Int
+  y : Int
+  z : Int
+  width : Int
+  height : Int
+  depth : Int
+}
+
+///|
+priv struct TextureAtlasPackedLocation {
+  x : Int
+  y : Int
+}
+
+///|
+fn texture_atlas_pack_section(
+  x : Int,
+  y : Int,
+  z : Int,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  TextureAtlasPackSection::{ x, y, z, width, height, depth }
+}
+
+///|
+fn texture_atlas_pack_section_volume(section : TextureAtlasPackSection) -> Int {
+  section.width * section.height * section.depth
+}
+
+///|
+fn texture_atlas_pack_compare_int(left : Int, right : Int) -> Int {
+  if left < right {
+    -1
+  } else if left > right {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn texture_atlas_pack_compare_container_sets(
+  left : Array[TextureAtlasPackSection],
+  right : Array[TextureAtlasPackSection],
+) -> Int {
+  let left_sorted : Array[TextureAtlasPackSection] = []
+  let right_sorted : Array[TextureAtlasPackSection] = []
+  for section in left {
+    left_sorted.push(section)
+  }
+  for section in right {
+    right_sorted.push(section)
+  }
+  left_sorted.sort_by(fn(a, b) {
+    texture_atlas_pack_section_volume(a) - texture_atlas_pack_section_volume(b)
+  })
+  right_sorted.sort_by(fn(a, b) {
+    texture_atlas_pack_section_volume(a) - texture_atlas_pack_section_volume(b)
+  })
+  let first = texture_atlas_pack_compare_int(
+    texture_atlas_pack_section_volume(right_sorted[0]),
+    texture_atlas_pack_section_volume(left_sorted[0]),
+  )
+  if first != 0 {
+    return first
+  }
+  texture_atlas_pack_compare_int(
+    texture_atlas_pack_section_volume(right_sorted[1]),
+    texture_atlas_pack_section_volume(left_sorted[1]),
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_above(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(width)
+  ignore(depth)
+  texture_atlas_pack_section(
+    self.x,
+    self.y + height,
+    self.z,
+    self.width,
+    self.height - height,
+    self.depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_right(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(height)
+  ignore(depth)
+  texture_atlas_pack_section(
+    self.x + width,
+    self.y,
+    self.z,
+    self.width - width,
+    self.height,
+    self.depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_behind(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(width)
+  ignore(height)
+  texture_atlas_pack_section(
+    self.x,
+    self.y,
+    self.z + depth,
+    self.width,
+    self.height,
+    self.depth - depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::empty_space_directly_above(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  texture_atlas_pack_section(
+    self.x,
+    self.y + height,
+    self.z,
+    width,
+    self.height - height,
+    depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::empty_space_directly_right(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  texture_atlas_pack_section(
+    self.x + width,
+    self.y,
+    self.z,
+    self.width - width,
+    height,
+    depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::empty_space_directly_behind(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  texture_atlas_pack_section(
+    self.x,
+    self.y,
+    self.z + depth,
+    width,
+    height,
+    self.depth - depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_above_excluding_right(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(depth)
+  texture_atlas_pack_section(
+    self.x,
+    self.y + height,
+    self.z,
+    width,
+    self.height - height,
+    self.depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_above_excluding_behind(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(width)
+  texture_atlas_pack_section(
+    self.x,
+    self.y + height,
+    self.z,
+    self.width,
+    self.height - height,
+    depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_right_excluding_above(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(height)
+  ignore(depth)
+  texture_atlas_pack_section(
+    self.x + width,
+    self.y,
+    self.z,
+    self.width - width,
+    height,
+    self.depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_right_excluding_behind(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(height)
+  texture_atlas_pack_section(
+    self.x + width,
+    self.y,
+    self.z,
+    self.width - width,
+    self.height,
+    depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_behind_excluding_above(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(width)
+  texture_atlas_pack_section(
+    self.x,
+    self.y,
+    self.z + depth,
+    self.width,
+    height,
+    self.depth - depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::all_empty_space_behind_excluding_right(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> TextureAtlasPackSection {
+  ignore(height)
+  texture_atlas_pack_section(
+    self.x,
+    self.y,
+    self.z + depth,
+    width,
+    self.height,
+    self.depth - depth,
+  )
+}
+
+///|
+fn TextureAtlasPackSection::try_place(
+  self : TextureAtlasPackSection,
+  width : Int,
+  height : Int,
+  depth : Int,
+) -> (TextureAtlasPackedLocation, Array[TextureAtlasPackSection])? {
+  if width > self.width || height > self.height || depth > self.depth {
+    return None
+  }
+  let combinations : Array[Array[TextureAtlasPackSection]] = [
+    [
+      self.all_empty_space_right(width, height, depth),
+      self.all_empty_space_above_excluding_right(width, height, depth),
+      self.empty_space_directly_behind(width, height, depth),
+    ],
+    [
+      self.all_empty_space_right_excluding_above(width, height, depth),
+      self.all_empty_space_above(width, height, depth),
+      self.empty_space_directly_behind(width, height, depth),
+    ],
+    [
+      self.all_empty_space_right(width, height, depth),
+      self.empty_space_directly_above(width, height, depth),
+      self.all_empty_space_behind_excluding_right(width, height, depth),
+    ],
+    [
+      self.all_empty_space_right_excluding_behind(width, height, depth),
+      self.empty_space_directly_above(width, height, depth),
+      self.all_empty_space_behind(width, height, depth),
+    ],
+    [
+      self.empty_space_directly_right(width, height, depth),
+      self.all_empty_space_above(width, height, depth),
+      self.all_empty_space_behind_excluding_above(width, height, depth),
+    ],
+    [
+      self.empty_space_directly_right(width, height, depth),
+      self.all_empty_space_above_excluding_behind(width, height, depth),
+      self.all_empty_space_behind(width, height, depth),
+    ],
+  ]
+  combinations.sort_by(texture_atlas_pack_compare_container_sets)
+  Some((TextureAtlasPackedLocation::{ x: self.x, y: self.y }, combinations[5]))
+}
+
+///|
+fn texture_atlas_pack_remove_section(
+  sections : Array[TextureAtlasPackSection],
+  index : Int,
+) -> Unit {
+  if index < 0 || index >= sections.length() {
+    return
+  }
+  sections.remove(index) |> ignore
+}
+
+///|
+fn texture_atlas_pack_place(
+  sections : Array[TextureAtlasPackSection],
+  width : Int,
+  height : Int,
+) -> TextureAtlasPackedLocation? {
+  if sections.length() == 0 {
+    return None
+  }
+  let candidates : Array[TextureAtlasPackSection] = []
+  for section in sections {
+    candidates.push(section)
+  }
+  let last_section_index = candidates.length() - 1
+  let mut sections_tried = 0
+  while candidates.length() > 0 {
+    let section = candidates.pop().unwrap()
+    match section.try_place(width, height, 1) {
+      Some((location, new_sections)) => {
+        new_sections.sort_by(fn(left, right) {
+          texture_atlas_pack_section_volume(right) -
+          texture_atlas_pack_section_volume(left)
+        })
+        texture_atlas_pack_remove_section(
+          sections,
+          last_section_index - sections_tried,
+        )
+        for new_section in new_sections {
+          if texture_atlas_pack_section_volume(new_section) > 0 {
+            sections.push(new_section)
+          }
+        }
+        return Some(location)
+      }
+      None => sections_tried = sections_tried + 1
+    }
+  }
+  None
+}
+
+///|
+fn texture_atlas_pack_texture_rects(
+  textures : Array[Handle[Image]],
+  atlas_size : @math.UVec2,
+  padding : @math.UVec2,
+) -> Array[@math.URect?]? {
+  let texture_count = textures.length()
+  let rects : Array[@math.URect?] = []
+  let placement_order : Array[Int] = []
+  for i in 0..<texture_count {
+    rects.push(None)
+    placement_order.push(i)
+  }
+  placement_order.sort_by(fn(left, right) {
+    let left_width = asset_texture_width(textures[left]) + padding.x
+    let left_height = asset_texture_height(textures[left]) + padding.y
+    let right_width = asset_texture_width(textures[right]) + padding.x
+    let right_height = asset_texture_height(textures[right]) + padding.y
+    let area_cmp = right_width * right_height - left_width * left_height
+    if area_cmp != 0 {
+      return area_cmp
+    }
+    left - right
+  })
+  let sections = [
+    texture_atlas_pack_section(0, 0, 0, atlas_size.x, atlas_size.y, 1),
+  ]
+  for order_index in 0..<texture_count {
+    let texture_index = placement_order[order_index]
+    let texture = textures[texture_index]
+    let width = asset_texture_width(texture)
+    let height = asset_texture_height(texture)
+    if width <= 0 || height <= 0 {
+      return None
+    }
+    let packed_width = width + padding.x
+    let packed_height = height + padding.y
+    let location = match
+      texture_atlas_pack_place(sections, packed_width, packed_height) {
+      Some(value) => value
+      None => return None
+    }
+    rects[texture_index] = Some(
+      @math.URect::new(
+        @math.UVec2::new(location.x, location.y),
+        @math.UVec2::new(location.x + width, location.y + height),
+      ),
+    )
+  }
+  Some(rects)
+}
+
+///|
 fn texture_atlas_layout_assets_mut_or_abort() -> @ecs.ResourceMut[
   Assets[TextureAtlasLayout],
 ] {
@@ -593,11 +1035,6 @@ pub fn TextureAtlasBuilder::try_build(
   if texture_count <= 0 {
     return None
   }
-  let padding_value = if self.padding.x > self.padding.y {
-    self.padding.x
-  } else {
-    self.padding.y
-  }
   let mut current_size = @math.UVec2::new(
     if self.initial_size.x > 0 {
       self.initial_size.x
@@ -627,45 +1064,34 @@ pub fn TextureAtlasBuilder::try_build(
     if current_size.x > max_size.x || current_size.y > max_size.y {
       break
     }
-    let allocator = DynamicTextureAtlasBuilder::new(current_size, padding_value)
     let layout = TextureAtlasLayout::new_empty(current_size)
     let sources = TextureAtlasSources::{ texture_ids: [] }
-    let rects : Array[@math.URect] = []
-    let mut ok = true
-    for i in 0..<texture_count {
-      let texture = self.textures[i]
-      let width = asset_texture_width(texture)
-      let height = asset_texture_height(texture)
-      if width <= 0 || height <= 0 {
-        ok = false
-        break
-      }
-      let size = @math.UVec2::new(width, height)
-      let allocation = allocator.add_texture(layout, size)
-      if allocation is None {
-        ok = false
-        break
-      }
-      let index = if allocation is Some(value) { value.0 } else { 0 }
-      let rect = if allocation is Some(value) {
-        value.1
-      } else {
-        ok = false
-        break
-      }
-      sources.texture_ids.push((texture, index))
-      rects.push(rect)
-    }
-    if ok {
+    let packed_rects = texture_atlas_pack_texture_rects(
+      self.textures,
+      current_size,
+      self.padding,
+    )
+    if packed_rects is Some(rects) {
+      let mut ok = true
       let atlas_texture = asset_create_dynamic_texture(
         current_size,
         self.nearest,
       )
-      for i in 0..<rects.length() {
-        let rect = rects[i]
+      for i in 0..<texture_count {
+        let rect = match rects[i] {
+          Some(value) => value
+          None => {
+            ok = false
+            break
+          }
+        }
+        let index = layout.add_texture(rect)
+        sources.texture_ids.push((self.textures[i], index))
         asset_copy_texture_to_texture(atlas_texture, rect.min, self.textures[i])
       }
-      return Some((layout, sources, atlas_texture))
+      if ok {
+        return Some((layout, sources, atlas_texture))
+      }
     }
     let next_w = if current_size.x < max_size.x {
       int_clamp_max(current_size.x * 2, max_size.x)
@@ -693,8 +1119,6 @@ pub fn TextureAtlasBuilder::build(
   if self.try_build() is Some(value) {
     value
   } else {
-    let layout = TextureAtlasLayout::new_empty(@math.UVec2::zero())
-    let sources = TextureAtlasSources::{ texture_ids: [] }
-    (layout, sources, Handle::new(-1))
+    abort("TextureAtlasBuilder failed to build a texture atlas")
   }
 }

@@ -205,8 +205,6 @@ pub fn host_asset_is_texture_loaded(Int) -> Bool
 
 pub fn host_asset_load_bytes(path~ : String) -> Int
 
-pub fn host_asset_load_folder(path~ : String) -> Int
-
 pub fn host_asset_load_font(path~ : String) -> Int
 
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int
@@ -217,15 +215,7 @@ pub fn host_asset_load_wgsl(path~ : String) -> Int
 
 pub fn host_asset_load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int
 
-pub fn host_asset_loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int
-
-pub fn host_asset_loaded_folder_handles_len(Int) -> Int
-
 pub fn host_asset_loader_kind_for_path(path~ : String) -> Int
-
-pub fn host_asset_poll_loaded_folder_event_id() -> Int
-
-pub fn host_asset_poll_loaded_folder_event_kind() -> Int
 
 pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) -> Unit
 
@@ -350,7 +340,6 @@ pub(all) enum AssetLoaderKind {
   Wgsl
   Bytes
   Font
-  Folder
 }
 
 pub(all) enum AssetMode {
@@ -408,7 +397,7 @@ pub fn[T, Settings] AssetSaver::new((Writer, SavedAsset[T], Settings) -> Unit ra
 
 pub struct AssetServer {
   paths : Array[String]
-  path_fingerprints : @hashmap.HashMap[String, Int]
+  pending_reload_paths : Array[String]
   typed_asset_paths : @hashmap.HashMap[String, Int]
   typed_asset_next_ids : @hashmap.HashMap[String, Int]
   typed_asset_load_states : @hashmap.HashMap[String, LoadState]
@@ -417,6 +406,7 @@ pub struct AssetServer {
   pending_load_failures : Array[UntypedAssetLoadFailedEvent]
   mut pending_processed_asset_loads : Array[PendingProcessedAssetLoad]
   mut pending_typed_asset_loads : Array[PendingTypedAssetLoad]
+  pending_loaded_folder_loads : Array[PendingLoadedFolderLoad]
   pending_acquired_loads : Array[PendingAcquiredLoad]
   image_paths : Array[(String, Handle[@image.Image])]
   pending_image_assets : @hashmap.HashMap[Int, @image.Image]
@@ -449,6 +439,7 @@ pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_with_settings(Self, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 pub fn AssetServer::new() -> Self
 pub fn[T : Asset] AssetServer::recursive_dependency_load_state(Self, Handle[T]) -> RecursiveDependencyLoadState
+pub fn[P : IntoAssetPath] AssetServer::reload(Self, P) -> Unit
 pub fn AssetServer::set_typed_dependency_load_state(Self, String, Int, DependencyLoadState) -> Unit
 pub fn AssetServer::set_typed_failed_states(Self, String, Int, String) -> Unit
 pub fn AssetServer::set_typed_load_state(Self, String, Int, LoadState) -> Unit
@@ -609,6 +600,8 @@ pub struct LoadedFolder {
 pub impl Asset for LoadedFolder
 
 type PendingAcquiredLoad
+
+type PendingLoadedFolderLoad
 
 type PendingProcessedAssetLoad
 

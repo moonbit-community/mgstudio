@@ -23,7 +23,7 @@ struct StoreTestAsset {
 }
 
 ///|
-pub impl AssetLoadGuard for CountingLoadGuard with release(self) {
+pub impl AssetLoadGuard for CountingLoadGuard with fn release(self) {
   self.releases.val = self.releases.val + 1
 }
 
@@ -171,15 +171,26 @@ test "asset app: registering loader does not initialize Assets resource" {
 ///|
 test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   let world = @ecs.World::new()
+  let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
+  world.insert_resource(image_assets_key, Assets::new())
   let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
   let folder_handle = asset_server.load_folder("textures/rpg")
 
-  asset_with_world(world, fn() { asset_system(world) })
+  for _ in 0..<240 {
+    asset_with_world(world, fn() { asset_system(world) })
+    let loaded = match world.get_resource(loaded_folder_assets_resource_key) {
+      Some(assets) => assets.get(folder_handle) is Some(_)
+      None => false
+    }
+    if loaded {
+      break
+    }
+  }
 
   let loaded_folders = match
     world.get_resource(loaded_folder_assets_resource_key) {
@@ -187,6 +198,32 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
     None => abort("expected Assets<LoadedFolder> resource")
   }
   debug_inspect(loaded_folders.get(folder_handle) is Some(_), content="true")
+  let vendor_handle = match
+    asset_server.get_handle("textures/rpg/chars/vendor/generic-rpg-vendor.png") {
+    Some(handle) => handle
+    None =>
+      abort("expected folder-loaded vendor image handle to be path-addressable")
+  }
+  let loaded_folder = match loaded_folders.get(folder_handle) {
+    Some(value) => value
+    None => abort("expected LoadedFolder asset")
+  }
+  let mut found_vendor = false
+  for handle in loaded_folder.handles {
+    if handle.id() == vendor_handle.id() {
+      found_vendor = true
+      break
+    }
+  }
+  debug_inspect(loaded_folder.handles.length() > 0, content="true")
+  debug_inspect(found_vendor, content="true")
+  debug_inspect(
+    match world.get_resource(image_assets_key) {
+      Some(images) => images.get(vendor_handle) is Some(_)
+      None => false
+    },
+    content="true",
+  )
 }
 
 ///|
@@ -362,6 +399,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     path=reload_probe_path,
     bytes=Bytes::from_array([(2).to_byte()]),
   )
+  asset_with_world(world_a, fn() { server_a.reload(reload_probe_path) })
   asset_with_world(world_a, fn() { asset_system(world_a) })
   debug_inspect(reload_calls_a.val.length(), content="1")
 
@@ -404,6 +442,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     path=reload_probe_path,
     bytes=Bytes::from_array([(4).to_byte()]),
   )
+  asset_with_world(world_b, fn() { server_b.reload(reload_probe_path) })
   asset_with_world(world_b, fn() { asset_system(world_b) })
   debug_inspect(reload_calls_a.val.length(), content="1")
 }
@@ -1469,12 +1508,12 @@ struct MultiLoaderAsset {
 }
 
 ///|
-impl Asset for StoreTestAsset with asset_debug_name() {
+impl Asset for StoreTestAsset with fn asset_debug_name() {
   "mgstudio_asset_test::StoreTestAsset"
 }
 
 ///|
-impl Asset for StoreTestAsset with asset_as_image(_self) {
+impl Asset for StoreTestAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1484,17 +1523,17 @@ let store_test_asset_resource_keys : AssetResourceKeys[StoreTestAsset] = registe
 )
 
 ///|
-impl Asset for StoreTestAsset with asset_resource_keys() {
+impl Asset for StoreTestAsset with fn asset_resource_keys() {
   store_test_asset_resource_keys
 }
 
 ///|
-impl Asset for MissingLoaderAsset with asset_debug_name() {
+impl Asset for MissingLoaderAsset with fn asset_debug_name() {
   "mgstudio_asset_test::MissingLoaderAsset"
 }
 
 ///|
-impl Asset for MissingLoaderAsset with asset_as_image(_self) {
+impl Asset for MissingLoaderAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1504,17 +1543,17 @@ let missing_loader_asset_resource_keys : AssetResourceKeys[MissingLoaderAsset] =
 )
 
 ///|
-impl Asset for MissingLoaderAsset with asset_resource_keys() {
+impl Asset for MissingLoaderAsset with fn asset_resource_keys() {
   missing_loader_asset_resource_keys
 }
 
 ///|
-impl Asset for RegistryScopedLegacyAsset with asset_debug_name() {
+impl Asset for RegistryScopedLegacyAsset with fn asset_debug_name() {
   "mgstudio_asset_test::RegistryScopedLegacyAsset"
 }
 
 ///|
-impl Asset for RegistryScopedLegacyAsset with asset_as_image(_self) {
+impl Asset for RegistryScopedLegacyAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1524,17 +1563,17 @@ let registry_scoped_legacy_asset_resource_keys : AssetResourceKeys[
 ] = register_asset_resource_keys(RegistryScopedLegacyAsset::asset_debug_name())
 
 ///|
-impl Asset for RegistryScopedLegacyAsset with asset_resource_keys() {
+impl Asset for RegistryScopedLegacyAsset with fn asset_resource_keys() {
   registry_scoped_legacy_asset_resource_keys
 }
 
 ///|
-impl Asset for ProcessorScopeAsset with asset_debug_name() {
+impl Asset for ProcessorScopeAsset with fn asset_debug_name() {
   "mgstudio_asset_test::ProcessorScopeAsset"
 }
 
 ///|
-impl Asset for ProcessorScopeAsset with asset_as_image(_self) {
+impl Asset for ProcessorScopeAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1544,17 +1583,17 @@ let processor_scope_asset_resource_keys : AssetResourceKeys[ProcessorScopeAsset]
 )
 
 ///|
-impl Asset for ProcessorScopeAsset with asset_resource_keys() {
+impl Asset for ProcessorScopeAsset with fn asset_resource_keys() {
   processor_scope_asset_resource_keys
 }
 
 ///|
-impl Asset for NamedProcessorScopeAsset with asset_debug_name() {
+impl Asset for NamedProcessorScopeAsset with fn asset_debug_name() {
   "mgstudio_asset_test::NamedProcessorScopeAsset"
 }
 
 ///|
-impl Asset for NamedProcessorScopeAsset with asset_as_image(_self) {
+impl Asset for NamedProcessorScopeAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1564,17 +1603,17 @@ let named_processor_scope_asset_resource_keys : AssetResourceKeys[
 ] = register_asset_resource_keys(NamedProcessorScopeAsset::asset_debug_name())
 
 ///|
-impl Asset for NamedProcessorScopeAsset with asset_resource_keys() {
+impl Asset for NamedProcessorScopeAsset with fn asset_resource_keys() {
   named_processor_scope_asset_resource_keys
 }
 
 ///|
-impl Asset for TestCustomAsset with asset_debug_name() {
+impl Asset for TestCustomAsset with fn asset_debug_name() {
   "mgstudio_asset_test::TestCustomAsset"
 }
 
 ///|
-impl Asset for TestCustomAsset with asset_as_image(_self) {
+impl Asset for TestCustomAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1584,17 +1623,17 @@ let test_custom_asset_resource_keys : AssetResourceKeys[TestCustomAsset] = regis
 )
 
 ///|
-impl Asset for TestCustomAsset with asset_resource_keys() {
+impl Asset for TestCustomAsset with fn asset_resource_keys() {
   test_custom_asset_resource_keys
 }
 
 ///|
-impl Asset for MultiLoaderAsset with asset_debug_name() {
+impl Asset for MultiLoaderAsset with fn asset_debug_name() {
   "mgstudio_asset_test::MultiLoaderAsset"
 }
 
 ///|
-impl Asset for MultiLoaderAsset with asset_as_image(_self) {
+impl Asset for MultiLoaderAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1604,7 +1643,7 @@ let multi_loader_asset_resource_keys : AssetResourceKeys[MultiLoaderAsset] = reg
 )
 
 ///|
-impl Asset for MultiLoaderAsset with asset_resource_keys() {
+impl Asset for MultiLoaderAsset with fn asset_resource_keys() {
   multi_loader_asset_resource_keys
 }
 
