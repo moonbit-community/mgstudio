@@ -7423,10 +7423,10 @@ test "render2d: sprite scale fill start and end keep Bevy crop direction" {
     region_size,
     SpriteScalingMode::FillEnd,
   )
-  let ok = render2d_close(start_uv_min.y, 0.0F) &&
-    render2d_close(start_uv_max.y, 1.0F / 3.0F) &&
-    render2d_close(end_uv_min.y, 2.0F / 3.0F) &&
-    render2d_close(end_uv_max.y, 1.0F)
+  let ok = render2d_close(start_uv_min.y, 2.0F / 3.0F) &&
+    render2d_close(start_uv_max.y, 1.0F) &&
+    render2d_close(end_uv_min.y, 0.0F) &&
+    render2d_close(end_uv_max.y, 1.0F / 3.0F)
   debug_inspect(ok, content="true")
 }
 
