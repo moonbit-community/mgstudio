@@ -922,6 +922,10 @@ pub using @renderer {type HostMaterial2dBinding}
 
 pub using @renderer {type HostMaterial2dBindingValue}
 
+pub using @renderer {type HostMaterial2dTextureSampleType}
+
+pub using @renderer {type HostMaterial2dTextureViewDimension}
+
 pub using @renderer {type HostMesh3dMainPassDrawEntry}
 
 pub using @renderer {type HostMesh3dPreprocessCameraPayload}

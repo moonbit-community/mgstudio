@@ -471,11 +471,13 @@ pub impl @app.Resource for ClearColor with fn resource() {
 ///|
 fn clear_color_current_value() -> Color {
   match @app.current_world() {
-    Some(world) =>
-      match world.get_resource(ClearColor::resource()) {
+    Some(world) => {
+      let source_world = @render.render_source_world(world)
+      match source_world.get_resource(ClearColor::resource()) {
         Some(clear_color) => clear_color.color
         None => clear_color_default_value()
       }
+    }
     None => clear_color_default_value()
   }
 }
@@ -2229,14 +2231,169 @@ pub fn Mesh2dBundle::new_with_mesh_material_layers(
 }
 
 ///|
+pub(all) enum TileOrientation {
+  Default
+  Rotate90
+  Rotate180
+  Rotate270
+  MirrorH
+  MirrorHRotate90
+  MirrorHRotate180
+  MirrorHRotate270
+} derive(Eq, Debug)
+
+///|
+pub fn TileOrientation::from_bools(
+  mirror_h : Bool,
+  mirror_v : Bool,
+  mirror_d : Bool,
+) -> TileOrientation {
+  match (mirror_h, mirror_v, mirror_d) {
+    (false, false, false) => TileOrientation::Default
+    (false, true, true) => TileOrientation::Rotate90
+    (true, true, false) => TileOrientation::Rotate180
+    (true, false, true) => TileOrientation::Rotate270
+    (true, false, false) => TileOrientation::MirrorH
+    (false, false, true) => TileOrientation::MirrorHRotate90
+    (false, true, false) => TileOrientation::MirrorHRotate180
+    (true, true, true) => TileOrientation::MirrorHRotate270
+  }
+}
+
+///|
+pub fn TileOrientation::to_int(self : TileOrientation) -> Int {
+  match self {
+    TileOrientation::Default => 0
+    TileOrientation::Rotate90 => 3
+    TileOrientation::Rotate180 => 6
+    TileOrientation::Rotate270 => 5
+    TileOrientation::MirrorH => 4
+    TileOrientation::MirrorHRotate90 => 1
+    TileOrientation::MirrorHRotate180 => 2
+    TileOrientation::MirrorHRotate270 => 7
+  }
+}
+
+///|
+pub fn TileOrientation::mirror_h(self : TileOrientation) -> Bool {
+  (self.to_int() & 0b100) != 0
+}
+
+///|
+pub fn TileOrientation::mirror_v(self : TileOrientation) -> Bool {
+  (self.to_int() & 0b010) != 0
+}
+
+///|
+pub fn TileOrientation::mirror_d(self : TileOrientation) -> Bool {
+  (self.to_int() & 0b001) != 0
+}
+
+///|
+pub fn TileOrientation::inverse(self : TileOrientation) -> TileOrientation {
+  match self {
+    TileOrientation::Default => TileOrientation::Default
+    TileOrientation::Rotate90 => TileOrientation::Rotate270
+    TileOrientation::Rotate180 => TileOrientation::Rotate180
+    TileOrientation::Rotate270 => TileOrientation::Rotate90
+    TileOrientation::MirrorH => TileOrientation::MirrorH
+    TileOrientation::MirrorHRotate90 => TileOrientation::MirrorHRotate90
+    TileOrientation::MirrorHRotate180 => TileOrientation::MirrorHRotate180
+    TileOrientation::MirrorHRotate270 => TileOrientation::MirrorHRotate270
+  }
+}
+
+///|
+pub fn TileOrientation::apply_to_ivec2(
+  self : TileOrientation,
+  pos : @math.IVec2,
+) -> @math.IVec2 {
+  let mut x = pos.x
+  let mut y = -pos.y
+  if self.mirror_d() {
+    let previous_x = x
+    x = y
+    y = previous_x
+  }
+  if self.mirror_h() {
+    x = -x
+  }
+  if self.mirror_v() {
+    y = -y
+  }
+  @math.IVec2::new(x, -y)
+}
+
+///|
+pub fn TileOrientation::and_then(
+  self : TileOrientation,
+  then : TileOrientation,
+) -> TileOrientation {
+  let mut mirror_h = self.mirror_h()
+  let mut mirror_v = self.mirror_v()
+  let mut mirror_d = self.mirror_d()
+  if then.mirror_d() {
+    mirror_d = !mirror_d
+    let previous_h = mirror_h
+    mirror_h = mirror_v
+    mirror_v = previous_h
+  }
+  if then.mirror_h() {
+    mirror_h = !mirror_h
+  }
+  if then.mirror_v() {
+    mirror_v = !mirror_v
+  }
+  TileOrientation::from_bools(mirror_h, mirror_v, mirror_d)
+}
+
+///|
+pub fn TileOrientation::to_string(self : TileOrientation) -> String {
+  match self {
+    TileOrientation::Default => "Default"
+    TileOrientation::Rotate90 => "Rotate90"
+    TileOrientation::Rotate180 => "Rotate180"
+    TileOrientation::Rotate270 => "Rotate270"
+    TileOrientation::MirrorH => "MirrorX"
+    TileOrientation::MirrorHRotate90 => "MirrorXRotate90"
+    TileOrientation::MirrorHRotate180 => "MirrorXRotate180"
+    TileOrientation::MirrorHRotate270 => "MirrorXRotate270"
+  }
+}
+
+///|
 pub struct TileData {
   tileset_index : Int
+  color : Color
+  visible : Bool
+  orientation : TileOrientation
+}
+
+///|
+pub fn TileData::TileData() -> TileData {
+  TileData::{
+    tileset_index: 0,
+    color: Color::white(),
+    visible: true,
+    orientation: TileOrientation::Default,
+  }
 }
 
 ///|
 pub fn TileData::from_tileset_index(tileset_index : Int) -> TileData {
   let value = if tileset_index < 0 { 0 } else { tileset_index }
-  TileData::{ tileset_index: value }
+  TileData::{ ..TileData::TileData(), tileset_index: value }
+}
+
+///|
+pub fn TileData::new(
+  tileset_index : Int,
+  color? : Color = Color::white(),
+  visible? : Bool = true,
+  orientation? : TileOrientation = TileOrientation::Default,
+) -> TileData {
+  let value = if tileset_index < 0 { 0 } else { tileset_index }
+  TileData::{ tileset_index: value, color, visible, orientation }
 }
 
 ///|
@@ -2244,7 +2401,7 @@ pub struct TilemapChunk {
   chunk_size : @math.UVec2
   tile_display_size : @math.UVec2
   tileset : @asset.Handle[@asset.Image]
-  tileset_grid : @math.UVec2
+  alpha_mode : AlphaMode2d
 }
 
 ///|
@@ -2252,9 +2409,9 @@ pub fn TilemapChunk::new(
   chunk_size : @math.UVec2,
   tile_display_size : @math.UVec2,
   tileset : @asset.Handle[@asset.Image],
-  tileset_grid : @math.UVec2,
+  alpha_mode? : AlphaMode2d = AlphaMode2d::Blend,
 ) -> TilemapChunk {
-  TilemapChunk::{ chunk_size, tile_display_size, tileset, tileset_grid }
+  TilemapChunk::{ chunk_size, tile_display_size, tileset, alpha_mode }
 }
 
 ///|
@@ -2290,9 +2447,9 @@ fn tilemap_chunk_local_center(
   let chunk_w = Float::from_double(safe_chunk_size.x.to_double()) * tile_w
   let chunk_h = Float::from_double(safe_chunk_size.y.to_double()) * tile_h
   let origin_x = -chunk_w / 2.0F + tile_w / 2.0F
-  let origin_y = chunk_h / 2.0F - tile_h / 2.0F
+  let origin_y = -chunk_h / 2.0F + tile_h / 2.0F
   let x = origin_x + Float::from_double(tile_pos.x.to_double()) * tile_w
-  let y = origin_y - Float::from_double(tile_pos.y.to_double()) * tile_h
+  let y = origin_y + Float::from_double(tile_pos.y.to_double()) * tile_h
   @math.Vec2::new(x, y)
 }
 
@@ -2376,79 +2533,145 @@ pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(
 }
 
 ///|
-fn render2d_transform_point_2d(
-  transform : @transform.Transform,
-  point : @math.Vec2,
-) -> @math.Vec2 {
-  let scaled = @math.Vec2::new(
-    point.x * transform.scale.x,
-    point.y * transform.scale.y,
-  )
-  let rotation = transform.rotation_z()
-  let cosv = @math.cos(rotation)
-  let sinv = @math.sin(rotation)
-  let rotated_x = scaled.x * cosv - scaled.y * sinv
-  let rotated_y = scaled.x * sinv + scaled.y * cosv
-  @math.Vec2::new(
-    rotated_x + transform.translation.x,
-    rotated_y + transform.translation.y,
+pub struct TilemapChunkMaterial {
+  alpha_mode : AlphaMode2d
+  tileset : @asset.Handle[@asset.Image]
+  tile_data : @asset.Handle[@asset.Image]
+}
+
+///|
+pub fn TilemapChunkMaterial::new(
+  tileset : @asset.Handle[@asset.Image],
+  tile_data : @asset.Handle[@asset.Image],
+  alpha_mode : AlphaMode2d,
+) -> TilemapChunkMaterial {
+  TilemapChunkMaterial::{ alpha_mode, tileset, tile_data }
+}
+
+///|
+pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> TilemapChunkMaterial {
+  TilemapChunkMaterial::new(
+    @asset.Handle::new(0),
+    @asset.Handle::new(0),
+    AlphaMode2d::Blend,
   )
 }
 
 ///|
-fn tilemap_chunk_uv_rect(
-  tileset_index : Int,
-  tileset_grid : @math.UVec2,
-) -> (@math.Vec2, @math.Vec2)? {
-  let safe_grid = tilemap_chunk_safe_uvec2(tileset_grid, @math.UVec2::new(1, 1))
-  let tile_count = safe_grid.x * safe_grid.y
-  if tileset_index < 0 || tileset_index >= tile_count {
-    return None
-  }
-  let col = tileset_index % safe_grid.x
-  let row = tileset_index / safe_grid.x
-  let inv_w = 1.0F / Float::from_double(safe_grid.x.to_double())
-  let inv_h = 1.0F / Float::from_double(safe_grid.y.to_double())
-  let uv_min = @math.Vec2::new(
-    Float::from_double(col.to_double()) * inv_w,
-    Float::from_double(row.to_double()) * inv_h,
-  )
-  let uv_max = @math.Vec2::new(uv_min.x + inv_w, uv_min.y + inv_h)
-  Some((uv_min, uv_max))
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_debug_name() {
+  "mgstudio_sprite::TilemapChunkMaterial"
 }
 
 ///|
-fn tilemap_chunk_resolve_tileset_grid(chunk : TilemapChunk) -> @math.UVec2 {
-  if @asset.asset_image_array_layout(chunk.tileset) is Some(array_layout) {
-    match array_layout {
-      @asset.ImageArrayLayout::RowCount(rows) => {
-        let safe_rows = if rows <= 0 { 1 } else { rows }
-        return @math.UVec2::new(1, safe_rows)
-      }
-      @asset.ImageArrayLayout::RowHeight(row_height) => {
-        let safe_row_height = if row_height <= 0 { 1 } else { row_height }
-        let texture_height = @asset.asset_texture_height(chunk.tileset)
-        let rows = if texture_height <= 0 {
-          1
-        } else {
-          texture_height / safe_row_height
-        }
-        let safe_rows = if rows <= 0 { 1 } else { rows }
-        return @math.UVec2::new(1, safe_rows)
-      }
-    }
-  }
-  tilemap_chunk_safe_uvec2(chunk.tileset_grid, @math.UVec2::new(1, 1))
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_as_image(_self) {
+  None
 }
 
 ///|
-pub fn render2d_draw_tilemap_chunk(
-  world : @ecs.World,
-  chunk : TilemapChunk,
-  tile_data : TilemapChunkTileData,
-  transform : @transform.Transform,
-  layers : RenderLayers,
-) -> Unit {
+let tilemap_chunk_material_asset_resource_keys : @asset.AssetResourceKeys[
+  TilemapChunkMaterial,
+] = @asset.register_asset_resource_keys(
+  TilemapChunkMaterial::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_resource_keys() {
+  tilemap_chunk_material_asset_resource_keys
+}
+
+///|
+pub fn Material2dBindGroup::tilemap_chunk_material(
+  tileset : @asset.Handle[@asset.Image],
+  tile_data : @asset.Handle[@asset.Image],
+) -> Material2dBindGroup {
+  Material2dBindGroup::new([
+    Material2dBinding::texture_with_layout(
+      0,
+      Some(tileset),
+      Material2dTextureSampleType::Float,
+      Material2dTextureViewDimension::D2Array,
+    ),
+    Material2dBinding::sampler(1, Some(tileset)),
+    Material2dBinding::texture_with_layout(
+      2,
+      Some(tile_data),
+      Material2dTextureSampleType::UInt,
+      Material2dTextureViewDimension::D2,
+    ),
+  ])
+}
+
+///|
+pub impl Material2d for TilemapChunkMaterial with fn alpha_mode(self) {
+  self.alpha_mode
+}
+
+///|
+pub impl Material2d for TilemapChunkMaterial with fn material2d_debug_name() {
+  "mgstudio_sprite::TilemapChunkMaterial"
+}
+
+///|
+let tilemap_chunk_material_material2d_keys : Material2dKeys[
+  TilemapChunkMaterial,
+] = register_material2d_keys(TilemapChunkMaterial::material2d_debug_name())
+
+///|
+pub impl Material2d for TilemapChunkMaterial with fn material2d_keys() {
+  tilemap_chunk_material_material2d_keys
+}
+
+///|
+pub impl Material2d for TilemapChunkMaterial with fn bind_group(self) {
+  Material2dBindGroup::tilemap_chunk_material(self.tileset, self.tile_data)
+}
+
+///|
+pub struct TilemapChunkMaterialPlugin {}
+
+///|
+pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> TilemapChunkMaterialPlugin {
+  TilemapChunkMaterialPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for TilemapChunkMaterialPlugin with fn name(_self) {
+  "mgstudio.sprite_render.TilemapChunkMaterialPlugin"
+}
+
+///|
+pub impl @app.Plugin for TilemapChunkMaterialPlugin with fn build(_self, app) {
+  let plugin : Material2dPlugin[TilemapChunkMaterial] = Material2dPlugin::Material2dPlugin()
+    .with_asset_init(fn() { TilemapChunkMaterial::TilemapChunkMaterial() })
+    .with_vertex_shader(MESH2D_SHADER_PATH)
+    .with_fragment_shader(
+      "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
+    )
+  app.add_plugins(plugin)
+}
+
+///|
+struct TilemapChunkMeshCache {
+  handles : @hashmap.HashMap[String, @asset.Handle[@mesh.Mesh]]
+}
+
+///|
+pub fn TilemapChunkMeshCache::TilemapChunkMeshCache() -> TilemapChunkMeshCache {
+  TilemapChunkMeshCache::{ handles: @hashmap.HashMap([]) }
+}
+
+///|
+pub impl @app.Resource for TilemapChunkMeshCache with fn resource() {
+  tilemap_chunk_mesh_cache_key
+}
+
+///|
+let tilemap_chunk_mesh_cache_key : @ecs.ResourceKey[TilemapChunkMeshCache] = @ecs.register_resource(
+  debug_name="mgstudio_sprite_render::TilemapChunkMeshCache",
+)
+
+///|
+fn tilemap_chunk_mesh_size(chunk : TilemapChunk) -> @math.UVec2 {
   let safe_chunk_size = tilemap_chunk_safe_uvec2(
     chunk.chunk_size,
     @math.UVec2::new(1, 1),
@@ -2457,75 +2680,310 @@ pub fn render2d_draw_tilemap_chunk(
     chunk.tile_display_size,
     @math.UVec2::new(1, 1),
   )
-  let resolved_tileset_grid = tilemap_chunk_resolve_tileset_grid(chunk)
-  let texture_width = @asset.asset_texture_width(chunk.tileset)
-  let texture_height = @asset.asset_texture_height(chunk.tileset)
-  let tileset_columns = Float::from_double(resolved_tileset_grid.x.to_double())
-  let tileset_rows = Float::from_double(resolved_tileset_grid.y.to_double())
-  let region_width = if texture_width > 0 {
-    Float::from_double(texture_width.to_double()) / tileset_columns
-  } else {
-    Float::from_double(safe_tile_size.x.to_double())
+  @math.UVec2::new(
+    safe_chunk_size.x * safe_tile_size.x,
+    safe_chunk_size.y * safe_tile_size.y,
+  )
+}
+
+///|
+fn tilemap_chunk_mesh_cache_string(size : @math.UVec2) -> String {
+  "\{size.x.to_string()}x\{size.y.to_string()}"
+}
+
+///|
+fn tilemap_chunk_mesh_handle(
+  world : @ecs.World,
+  chunk : TilemapChunk,
+) -> @asset.Handle[@mesh.Mesh] {
+  let size = tilemap_chunk_mesh_size(chunk)
+  let key = tilemap_chunk_mesh_cache_string(size)
+  let cache_ref = world
+    .get_resource_mut(TilemapChunkMeshCache::resource())
+    .unwrap()
+  if cache_ref.peek().handles.get(key) is Some(handle) {
+    return handle
   }
-  let region_height = if texture_height > 0 {
-    Float::from_double(texture_height.to_double()) / tileset_rows
-  } else {
-    Float::from_double(safe_tile_size.y.to_double())
-  }
-  let safe_region_width = if region_width == 0.0F { 1.0F } else { region_width }
-  let safe_region_height = if region_height == 0.0F {
+  let mesh = @mesh.Mesh::from_2d_geometry(
+    mesh2d_geometry_rectangle(
+      @math.Rectangle::from_size(
+        @math.Vec2::new(
+          Float::from_double(size.x.to_double()),
+          Float::from_double(size.y.to_double()),
+        ),
+      ),
+    ),
+  )
+  let handle = mesh_assets_mut_or_abort().modify(fn(meshes) { meshes.add(mesh) })
+  cache_ref.modify(fn(cache) { cache.handles.set(key, handle) })
+  handle
+}
+
+///|
+fn tilemap_chunk_color_u8(value : Float) -> Int {
+  let clamped = if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
     1.0F
   } else {
-    region_height
+    value
   }
-  let target_tile_width = Float::from_double(safe_tile_size.x.to_double()) *
-    transform.scale.x
-  let target_tile_height = Float::from_double(safe_tile_size.y.to_double()) *
-    transform.scale.y
-  // `render2d_push_sprite_uv` consumes host scale factors. Convert from desired
-  // tile world size to host scale based on the UV region's pixel size.
-  let tile_scale = @math.Vec2::new(
-    target_tile_width / safe_region_width,
-    target_tile_height / safe_region_height,
+  (clamped * 255.0F + 0.5F).to_int()
+}
+
+///|
+fn tilemap_chunk_u16_bytes(value : Int) -> (Byte, Byte) {
+  let clamped = if value < 0 {
+    0U
+  } else if value > 0xFFFF {
+    0xFFFFU
+  } else {
+    value.reinterpret_as_uint()
+  }
+  (
+    (clamped & 0xFFU).reinterpret_as_int().to_byte(),
+    ((clamped >> 8) & 0xFFU).reinterpret_as_int().to_byte(),
   )
-  for y in 0..<safe_chunk_size.y {
-    for x in 0..<safe_chunk_size.x {
-      let tile_pos = @math.UVec2::new(x, y)
-      guard tile_data.tile_data_from_tile_pos(safe_chunk_size, tile_pos)
-        is Some(tile) else {
-        continue
-      }
-      guard tilemap_chunk_uv_rect(tile.tileset_index, resolved_tileset_grid)
-        is Some((uv_min, uv_max)) else {
-        continue
-      }
-      let world_pos = render2d_transform_point_2d(
-        transform,
-        tilemap_chunk_local_center(
-          TilemapChunk::{
-            chunk_size: safe_chunk_size,
-            tile_display_size: safe_tile_size,
-            tileset: chunk.tileset,
-            tileset_grid: resolved_tileset_grid,
-          },
-          tile_pos,
+}
+
+///|
+fn tilemap_chunk_empty_packed_tile_bytes(out : Array[Byte]) -> Unit {
+  let (lo, hi) = tilemap_chunk_u16_bytes(0xFFFF)
+  out.push(lo)
+  out.push(hi)
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+  out.push((0).to_byte())
+}
+
+///|
+fn tilemap_chunk_push_packed_tile_bytes(
+  out : Array[Byte],
+  tile : TileData,
+) -> Unit {
+  let (index_lo, index_hi) = tilemap_chunk_u16_bytes(tile.tileset_index)
+  let (r, g, b, a) = tile.color.to_srgba_tuple()
+  let flags = (if tile.visible { 1 } else { 0 }) |
+    (tile.orientation.to_int() << 1)
+  let (flags_lo, flags_hi) = tilemap_chunk_u16_bytes(flags)
+  out.push(index_lo)
+  out.push(index_hi)
+  out.push(tilemap_chunk_color_u8(r).to_byte())
+  out.push(tilemap_chunk_color_u8(g).to_byte())
+  out.push(tilemap_chunk_color_u8(b).to_byte())
+  out.push(tilemap_chunk_color_u8(a).to_byte())
+  out.push(flags_lo)
+  out.push(flags_hi)
+}
+
+///|
+fn tilemap_chunk_packed_tile_data_bytes(
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+) -> Bytes? {
+  let expected_len = chunk.tile_capacity()
+  if expected_len <= 0 || tile_data.tile_data.length() != expected_len {
+    return None
+  }
+  let out : Array[Byte] = []
+  for maybe_tile in tile_data.tile_data {
+    match maybe_tile {
+      Some(tile) => tilemap_chunk_push_packed_tile_bytes(out, tile)
+      None => tilemap_chunk_empty_packed_tile_bytes(out)
+    }
+  }
+  Some(Bytes::from_array(out))
+}
+
+///|
+fn tilemap_chunk_tile_data_image(
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+) -> @asset.Image? {
+  guard tilemap_chunk_packed_tile_data_bytes(chunk, tile_data) is Some(bytes) else {
+    return None
+  }
+  let safe_chunk_size = tilemap_chunk_safe_uvec2(
+    chunk.chunk_size,
+    @math.UVec2::new(1, 1),
+  )
+  Some(
+    @asset.Image::new(safe_chunk_size.x, safe_chunk_size.y, bytes).with_format(
+      @asset.TextureFormat::Rgba16Uint,
+    ),
+  )
+}
+
+///|
+fn tilemap_chunk_update_tile_data_image(
+  world : @ecs.World,
+  handle : @asset.Handle[@asset.Image],
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+) -> Bool {
+  guard tilemap_chunk_tile_data_image(chunk, tile_data) is Some(image) else {
+    return false
+  }
+  let images_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+  guard world.get_resource_mut(images_key) is Some(images_ref) else {
+    return false
+  }
+  images_ref.modify(fn(images) { images.set(handle, image) })
+}
+
+///|
+fn tilemap_chunk_create_material(
+  world : @ecs.World,
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+) -> @asset.Handle[TilemapChunkMaterial]? {
+  guard tilemap_chunk_tile_data_image(chunk, tile_data) is Some(image) else {
+    return None
+  }
+  let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+  let material_assets_key : @ecs.ResourceKey[
+    @asset.Assets[TilemapChunkMaterial],
+  ] = @asset.assets_resource_key()
+  guard world.get_resource_mut(image_assets_key) is Some(images_ref) else {
+    return None
+  }
+  let tile_data_handle = images_ref.modify(fn(images) { images.add(image) })
+  guard world.get_resource_mut(material_assets_key) is Some(materials_ref) else {
+    return None
+  }
+  Some(
+    materials_ref.modify(fn(materials) {
+      materials.add(
+        TilemapChunkMaterial::new(
+          chunk.tileset,
+          tile_data_handle,
+          chunk.alpha_mode,
         ),
       )
-      let tile_transform = @transform.Transform::from_xy_rotation_scale(
-        world_pos,
-        transform.rotation_z(),
-        tile_scale,
-        z=transform.translation.z,
-      )
-      render2d_push_sprite_uv(
-        world,
+    }),
+  )
+}
+
+///|
+fn tilemap_chunk_sync_existing_material(
+  world : @ecs.World,
+  handle : @asset.Handle[TilemapChunkMaterial],
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+) -> Bool {
+  let material_assets_key : @ecs.ResourceKey[
+    @asset.Assets[TilemapChunkMaterial],
+  ] = @asset.assets_resource_key()
+  guard world.get_resource_mut(material_assets_key) is Some(materials_ref) else {
+    return false
+  }
+  guard materials_ref.peek().get(handle) is Some(material) else { return false }
+  if !tilemap_chunk_update_tile_data_image(
+      world,
+      material.tile_data,
+      chunk,
+      tile_data,
+    ) {
+    return false
+  }
+  materials_ref.modify(fn(materials) {
+    materials.set(
+      handle,
+      TilemapChunkMaterial::new(
         chunk.tileset,
-        tile_transform,
-        uv_min,
-        uv_max,
-        Color::white(),
-        layers,
+        material.tile_data,
+        chunk.alpha_mode,
+      ),
+    )
+  })
+}
+
+///|
+fn tilemap_chunk_prepare_materials_system(world : @ecs.World) -> Unit {
+  if world.component_count(ecs_key_tilemap_chunk) == 0 {
+    return
+  }
+  let tick = world.get_tick_context().ticks()
+  let changed : @hashset.HashSet[UInt64] = @hashset.HashSet([])
+  for entity in world.added_components(ecs_key_tilemap_chunk, tick).read() {
+    sprite_insert_entity_key(changed, entity)
+  }
+  for entity in world.changed_components(ecs_key_tilemap_chunk, tick).read() {
+    sprite_insert_entity_key(changed, entity)
+  }
+  for
+    entity in world
+    .added_components(ecs_key_tilemap_chunk_tile_data, tick)
+    .read() {
+    sprite_insert_entity_key(changed, entity)
+  }
+  for
+    entity in world
+    .changed_components(ecs_key_tilemap_chunk_tile_data, tick)
+    .read() {
+    sprite_insert_entity_key(changed, entity)
+  }
+  let material_key : @ecs.ComponentKey[MeshMaterial2d[TilemapChunkMaterial]] = MeshMaterial2d::component()
+  let query : @ecs.Query[
+    (@ecs.Comp[TilemapChunk], @ecs.Comp[TilemapChunkTileData]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  let updates : Array[
+    (@core.Entity, TilemapChunk, TilemapChunkTileData, Bool, Bool),
+  ] = []
+  try! query.view(fn(entity, data) {
+    let missing_mesh = (try! world.get_by_key(entity, @mesh.ecs_key_mesh2d))
+      is None
+    let missing_material = (try! world.get_by_key(entity, material_key)) is None
+    if !missing_mesh &&
+      !missing_material &&
+      !changed.contains(sprite_entity_key(entity)) {
+      return
+    }
+    let (chunk, tile_data) = data
+    updates.push(
+      (entity, chunk.value(), tile_data.value(), missing_mesh, missing_material),
+    )
+  })
+  for update in updates {
+    let (entity, chunk, tile_data, missing_mesh, missing_material) = update
+    if missing_mesh || changed.contains(sprite_entity_key(entity)) {
+      let mesh = tilemap_chunk_mesh_handle(world, chunk)
+      try! world.set_by_key(
+        entity,
+        @mesh.ecs_key_mesh2d,
+        @mesh.Mesh2d::new(mesh),
       )
+    }
+    if missing_material {
+      guard tilemap_chunk_create_material(world, chunk, tile_data)
+        is Some(material) else {
+        continue
+      }
+      try! world.set_by_key(entity, material_key, MeshMaterial2d::new(material))
+    } else if changed.contains(sprite_entity_key(entity)) {
+      guard (try! world.get_by_key(entity, material_key)) is Some(material) else {
+        continue
+      }
+      if !tilemap_chunk_sync_existing_material(
+          world,
+          material.handle,
+          chunk,
+          tile_data,
+        ) {
+        guard tilemap_chunk_create_material(world, chunk, tile_data)
+          is Some(next_material) else {
+          continue
+        }
+        try! world.set_by_key(
+          entity,
+          material_key,
+          MeshMaterial2d::new(next_material),
+        )
+      }
     }
   }
 }
@@ -4955,33 +5413,6 @@ fn render2d_sorted_camera_indices(
 }
 
 ///|
-fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
-  let chunk_query : @ecs.Query[
-    (@ecs.Comp[TilemapChunk], @ecs.Comp[TilemapChunkTileData]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  @asset.asset_with_world(world, fn() {
-    try! chunk_query.view(fn(entity, data) {
-      let (chunk, tile_data) = data
-      if !render2d_entity_visible_ecs(world, entity) {
-        return
-      }
-      let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::RenderLayers(),
-      )
-      let transform = render2d_resolve_transform_ecs(world, entity)
-      render2d_draw_tilemap_chunk(
-        world,
-        chunk.value(),
-        tile_data.value(),
-        transform,
-        layers,
-      )
-    })
-  })
-}
-
-///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
   render_extract_system_ecs(world)
 }
@@ -5116,8 +5547,6 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         })
       }
     })
-    render2d_extract_tilemap_chunks(source_world)
-
     let wireframe_config = if get_wireframe2d_config_resource(source_world).get()
       is Some(config) {
       Some(config)
@@ -7239,75 +7668,70 @@ test "render2d: shape geometry builders validate" {
 }
 
 ///|
-priv struct TilemapChunkExtractionProbe {
-  mut extracted_count : Int
-  mut first_uv_min_y : Double
-  mut first_uv_max_y : Double
-  mut second_uv_min_y : Double
-  mut second_uv_max_y : Double
+test "render2d: tile orientation bit flags match Bevy" {
+  let cases : Array[(TileOrientation, Bool, Bool, Bool, Int)] = [
+    (TileOrientation::Default, false, false, false, 0),
+    (TileOrientation::Rotate90, false, true, true, 3),
+    (TileOrientation::Rotate180, true, true, false, 6),
+    (TileOrientation::Rotate270, true, false, true, 5),
+    (TileOrientation::MirrorH, true, false, false, 4),
+    (TileOrientation::MirrorHRotate90, false, false, true, 1),
+    (TileOrientation::MirrorHRotate180, false, true, false, 2),
+    (TileOrientation::MirrorHRotate270, true, true, true, 7),
+  ]
+  let mut ok = true
+  for entry in cases {
+    let (orientation, mirror_h, mirror_v, mirror_d, raw) = entry
+    ok = ok &&
+      TileOrientation::from_bools(mirror_h, mirror_v, mirror_d) == orientation &&
+      orientation.mirror_h() == mirror_h &&
+      orientation.mirror_v() == mirror_v &&
+      orientation.mirror_d() == mirror_d &&
+      orientation.to_int() == raw
+  }
+  debug_inspect(ok, content="true")
 }
 
 ///|
-test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra sprites" {
-  let tileset = @asset.Handle::new(41)
-  let probe = TilemapChunkExtractionProbe::{
-    extracted_count: 0,
-    first_uv_min_y: -1.0,
-    first_uv_max_y: -1.0,
-    second_uv_min_y: -1.0,
-    second_uv_max_y: -1.0,
+test "render2d: tile orientation inverse composes to default" {
+  let cases : Array[TileOrientation] = [
+    TileOrientation::Default,
+    TileOrientation::Rotate90,
+    TileOrientation::Rotate180,
+    TileOrientation::Rotate270,
+    TileOrientation::MirrorH,
+    TileOrientation::MirrorHRotate90,
+    TileOrientation::MirrorHRotate180,
+    TileOrientation::MirrorHRotate270,
+  ]
+  let mut ok = true
+  for orientation in cases {
+    ok = ok &&
+      orientation.and_then(orientation.inverse()) == TileOrientation::Default &&
+      orientation.inverse().and_then(orientation) == TileOrientation::Default
   }
-  let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::AssetPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(Render2dPlugin::Render2dPlugin())
+  debug_inspect(ok, content="true")
+}
 
-  app = app.add_system(fn(world : @ecs.World) {
-    ensure_render_state_resource(world)
-    if world.get_resource(@asset.asset_server_resource_key) is None {
-      world.insert_resource(
-        @asset.asset_server_resource_key,
-        @asset.AssetServer::new(),
-      )
-    }
-    let entity = world.spawn_empty()
-    try! (world.set_by_key(
-      entity,
-      ecs_key_tilemap_chunk,
-      TilemapChunk::new(
-        @math.UVec2::new(2, 2),
-        @math.UVec2::splat(8),
-        tileset,
-        @math.UVec2::new(1, 4),
-      ),
-    )
-    |> ignore)
-    try! (world.set_by_key(
-      entity,
-      ecs_key_tilemap_chunk_tile_data,
-      TilemapChunkTileData::new([
-        Some(TileData::from_tileset_index(0)),
-        None,
-        Some(TileData::from_tileset_index(3)),
-        None,
-      ]),
-    )
-    |> ignore)
-    @asset.asset_with_world(world, fn() { render_extract_system_ecs(world) })
-    let extra_sprites = render_state_ref(world).unwrap().extra_sprites
-    probe.extracted_count = extra_sprites.length()
-    probe.first_uv_min_y = extra_sprites[0].payload.uv_min.y.to_double()
-    probe.first_uv_max_y = extra_sprites[0].payload.uv_max.y.to_double()
-    probe.second_uv_min_y = extra_sprites[1].payload.uv_min.y.to_double()
-    probe.second_uv_max_y = extra_sprites[1].payload.uv_max.y.to_double()
-  })
-  app = app.run_once()
-
-  debug_inspect(probe.extracted_count, content="2")
-  debug_inspect(probe.first_uv_min_y, content="0")
-  debug_inspect(probe.first_uv_max_y, content="0.25")
-  debug_inspect(probe.second_uv_min_y, content="0.75")
-  debug_inspect(probe.second_uv_max_y, content="1")
+///|
+test "render2d: tile orientation transforms integer coordinates like Bevy" {
+  let cases : Array[(TileOrientation, @math.IVec2)] = [
+    (TileOrientation::Default, @math.IVec2::new(1, 2)),
+    (TileOrientation::Rotate90, @math.IVec2::new(-2, 1)),
+    (TileOrientation::Rotate180, @math.IVec2::new(-1, -2)),
+    (TileOrientation::Rotate270, @math.IVec2::new(2, -1)),
+    (TileOrientation::MirrorH, @math.IVec2::new(-1, 2)),
+    (TileOrientation::MirrorHRotate90, @math.IVec2::new(-2, -1)),
+    (TileOrientation::MirrorHRotate180, @math.IVec2::new(1, -2)),
+    (TileOrientation::MirrorHRotate270, @math.IVec2::new(2, 1)),
+  ]
+  let mut ok = true
+  for entry in cases {
+    let (orientation, expected) = entry
+    let actual = orientation.apply_to_ivec2(@math.IVec2::new(1, 2))
+    ok = ok && actual.x == expected.x && actual.y == expected.y
+  }
+  debug_inspect(ok, content="true")
 }
 
 ///|
@@ -8791,8 +9215,14 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     )
     .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
+    .add_plugins(TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin())
     .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
+    .init_resource(fn() { TilemapChunkMeshCache::TilemapChunkMeshCache() })
     .add_startup_system(register_render2d_shader_sources)
+    .add_systems(
+      @app.Update,
+      @app.system(tilemap_chunk_prepare_materials_system),
+    )
     .add_post_update_system_config(
       @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
         sprite_systems_compute_slices,
@@ -8826,8 +9256,14 @@ fn render2d_plugin_ecs_install(
     )
     .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
+    .add_plugins(TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin())
     .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
+    .init_resource(fn() { TilemapChunkMeshCache::TilemapChunkMeshCache() })
     .add_startup_system(register_render2d_shader_sources)
+    .add_systems(
+      @app.Update,
+      @app.system(tilemap_chunk_prepare_materials_system),
+    )
     .add_post_update_system_config(
       @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
         sprite_systems_compute_slices,

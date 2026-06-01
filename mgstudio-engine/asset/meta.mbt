@@ -139,6 +139,9 @@ fn meta_texture_format_setting(content : String) -> TextureFormat? {
   if string_contains(content, "texture_format: Some(Rgba8Unorm)") {
     return Some(TextureFormat::Rgba8Unorm)
   }
+  if string_contains(content, "texture_format: Some(Rgba16Uint)") {
+    return Some(TextureFormat::Rgba16Uint)
+  }
   if string_contains(content, "texture_format: Some(Rgba16Float)") {
     return Some(TextureFormat::Rgba16Float)
   }

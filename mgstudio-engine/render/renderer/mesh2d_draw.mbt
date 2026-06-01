@@ -57,9 +57,25 @@ fn host_material2d_f32le_pack(xs : Array[Float]) -> Bytes {
 ///|
 pub(all) enum HostMaterial2dBindingValue {
   Uniform(Bytes)
-  Texture(Int)
+  Texture(
+    Int,
+    HostMaterial2dTextureSampleType,
+    HostMaterial2dTextureViewDimension
+  )
   Sampler(Int)
 }
+
+///|
+pub(all) enum HostMaterial2dTextureSampleType {
+  Float
+  UInt
+} derive(Eq, Debug)
+
+///|
+pub(all) enum HostMaterial2dTextureViewDimension {
+  D2
+  D2Array
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct HostMaterial2dBinding {
@@ -79,8 +95,13 @@ pub fn HostMaterial2dBinding::uniform(
 pub fn HostMaterial2dBinding::texture(
   binding : UInt,
   texture_id : Int,
+  sample_type? : HostMaterial2dTextureSampleType = HostMaterial2dTextureSampleType::Float,
+  view_dimension? : HostMaterial2dTextureViewDimension = HostMaterial2dTextureViewDimension::D2,
 ) -> HostMaterial2dBinding {
-  HostMaterial2dBinding::{ binding, value: Texture(texture_id) }
+  HostMaterial2dBinding::{
+    binding,
+    value: Texture(texture_id, sample_type, view_dimension),
+  }
 }
 
 ///|
@@ -325,7 +346,26 @@ fn host_material2d_binding_layout_kind_key(
 ) -> Int {
   match value {
     Uniform(_) => 1
-    Texture(_) => 2
+    Texture(
+      _,
+      HostMaterial2dTextureSampleType::Float,
+      HostMaterial2dTextureViewDimension::D2
+    ) => 2
+    Texture(
+      _,
+      HostMaterial2dTextureSampleType::Float,
+      HostMaterial2dTextureViewDimension::D2Array
+    ) => 4
+    Texture(
+      _,
+      HostMaterial2dTextureSampleType::UInt,
+      HostMaterial2dTextureViewDimension::D2
+    ) => 5
+    Texture(
+      _,
+      HostMaterial2dTextureSampleType::UInt,
+      HostMaterial2dTextureViewDimension::D2Array
+    ) => 6
     Sampler(_) => 3
   }
 }
@@ -416,11 +456,19 @@ fn host_material2d_bind_group_hash(
           hash = mesh2d_cache_hash_mix(hash, byte.to_uint64())
         }
       }
-      Texture(texture_id) => {
+      Texture(texture_id, sample_type, view_dimension) => {
         hash = mesh2d_cache_hash_mix(hash, 2UL)
         hash = mesh2d_cache_hash_mix(
           hash,
           texture_id.reinterpret_as_uint().to_uint64(),
+        )
+        hash = mesh2d_cache_hash_mix(
+          hash,
+          host_material2d_texture_sample_type_key(sample_type),
+        )
+        hash = mesh2d_cache_hash_mix(
+          hash,
+          host_material2d_texture_view_dimension_key(view_dimension),
         )
       }
       Sampler(texture_id) => {
@@ -433,6 +481,26 @@ fn host_material2d_bind_group_hash(
     }
   }
   hash
+}
+
+///|
+fn host_material2d_texture_sample_type_key(
+  sample_type : HostMaterial2dTextureSampleType,
+) -> UInt64 {
+  match sample_type {
+    HostMaterial2dTextureSampleType::Float => 1UL
+    HostMaterial2dTextureSampleType::UInt => 2UL
+  }
+}
+
+///|
+fn host_material2d_texture_view_dimension_key(
+  view_dimension : HostMaterial2dTextureViewDimension,
+) -> UInt64 {
+  match view_dimension {
+    HostMaterial2dTextureViewDimension::D2 => 1UL
+    HostMaterial2dTextureViewDimension::D2Array => 2UL
+  }
 }
 
 ///|
@@ -455,7 +523,11 @@ fn host_material2d_binding_value_eq(
 ) -> Bool {
   match (lhs, rhs) {
     (Uniform(lhs), Uniform(rhs)) => bytes_eq(lhs, rhs)
-    (Texture(lhs), Texture(rhs)) => lhs == rhs
+    (
+      Texture(lhs, lhs_sample, lhs_dimension),
+      Texture(rhs, rhs_sample, rhs_dimension),
+    ) =>
+      lhs == rhs && lhs_sample == rhs_sample && lhs_dimension == rhs_dimension
     (Sampler(lhs), Sampler(rhs)) => lhs == rhs
     _ => false
   }
@@ -488,7 +560,8 @@ fn host_material2d_bind_group_cache_key(
   for binding in bind_group.bindings {
     let cloned_value = match binding.value {
       Uniform(bytes) => Uniform(bytes)
-      Texture(texture_id) => Texture(texture_id)
+      Texture(texture_id, sample_type, view_dimension) =>
+        Texture(texture_id, sample_type, view_dimension)
       Sampler(texture_id) => Sampler(texture_id)
     }
     cloned.push(HostMaterial2dBinding::{
@@ -766,13 +839,13 @@ fn mesh2d_material_layout_for_bind_group(
             @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
             min_binding_size=bytes.length().to_uint64(),
           )
-      Texture(_) =>
+      Texture(_, sample_type, view_dimension) =>
         ok = ok &&
           builder.add_texture(
             binding_index,
             fragment_stage,
-            @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-            @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+            host_material2d_texture_sample_type_to_wgpu(sample_type),
+            host_material2d_texture_view_dimension_to_wgpu(view_dimension),
           )
       Sampler(_) =>
         ok = ok &&
@@ -1008,6 +1081,52 @@ fn resolve_mesh2d_material_texture(
 }
 
 ///|
+fn host_material2d_texture_sample_type_to_wgpu(
+  sample_type : HostMaterial2dTextureSampleType,
+) -> UInt {
+  match sample_type {
+    HostMaterial2dTextureSampleType::Float => @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT
+    HostMaterial2dTextureSampleType::UInt => @wgpu.TEXTURE_SAMPLE_TYPE_UINT
+  }
+}
+
+///|
+fn host_material2d_texture_view_dimension_to_wgpu(
+  view_dimension : HostMaterial2dTextureViewDimension,
+) -> UInt {
+  match view_dimension {
+    HostMaterial2dTextureViewDimension::D2 => @wgpu.TEXTURE_VIEW_DIMENSION_2D
+    HostMaterial2dTextureViewDimension::D2Array =>
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY
+  }
+}
+
+///|
+fn mesh2d_material_texture_view_for_binding(
+  texture : GpuTextureInfo,
+  view_dimension : HostMaterial2dTextureViewDimension,
+) -> @wgpu.TextureView {
+  match view_dimension {
+    HostMaterial2dTextureViewDimension::D2 =>
+      match texture.sample_view {
+        Some(sampled) =>
+          if texture.format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) ||
+            texture.format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB) {
+            texture.view
+          } else {
+            sampled
+          }
+        None => texture.view
+      }
+    HostMaterial2dTextureViewDimension::D2Array =>
+      match texture.sample_view {
+        Some(sampled) => sampled
+        None => texture.view
+      }
+  }
+}
+
+///|
 fn mesh2d_material_bind_group_cache_insert_index(
   backend : GpuBackend,
   bind_group_hash : UInt64,
@@ -1070,9 +1189,13 @@ fn mesh2d_material_bind_group_for_draw(
             size=bytes.length().to_uint64(),
           )
       }
-      Texture(texture_id) => {
+      Texture(texture_id, _sample_type, view_dimension) => {
         let texture = resolve_mesh2d_material_texture(backend, texture_id)
-        ok = ok && builder.add_texture_view(binding.binding, texture.view)
+        ok = ok &&
+          builder.add_texture_view(
+            binding.binding,
+            mesh2d_material_texture_view_for_binding(texture, view_dimension),
+          )
       }
       Sampler(texture_id) => {
         let texture = resolve_mesh2d_material_texture(backend, texture_id)

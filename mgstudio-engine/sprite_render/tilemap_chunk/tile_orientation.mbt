@@ -12,4 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Bevy source-shape anchor: bevy/crates/bevy_sprite_render/src/tilemap_chunk/tile_orientation.rs
+// Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tile_orientation.rs`.
+
+///|
+pub using @sprite_render {type TileOrientation}

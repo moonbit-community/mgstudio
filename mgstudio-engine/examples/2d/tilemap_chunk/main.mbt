@@ -38,7 +38,7 @@ let update_timer_key : @ecs.ComponentKey[UpdateTimer] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for UpdateTimer with component() {
+pub impl @ecs.Component for UpdateTimer with fn component() {
   update_timer_key
 }
 
@@ -51,7 +51,7 @@ let move_player_key : @ecs.ComponentKey[MovePlayer] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for MovePlayer with component() {
+pub impl @ecs.Component for MovePlayer with fn component() {
   move_player_key
 }
 
@@ -66,7 +66,7 @@ let seeded_rng_key : @ecs.ResourceKey[SeededRng] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for SeededRng with resource() {
+pub impl @app.Resource for SeededRng with fn resource() {
   seeded_rng_key
 }
 
@@ -124,7 +124,6 @@ fn setup(
     .load_with_settings("textures/array_texture.png", fn(settings) {
       settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
     }),
-    @math.UVec2::new(1, 1),
   )
   let tile_data = build_initial_tile_data(rng, chunk.tile_capacity())
 

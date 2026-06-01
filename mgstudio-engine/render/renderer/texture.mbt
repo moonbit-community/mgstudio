@@ -338,26 +338,44 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   let w = if width <= 0 { 1 } else { width }
   let h_per_slice = if height_per_slice <= 0 { 1 } else { height_per_slice }
   let slices = if slice_count <= 0 { 1 } else { slice_count }
-  let total_height = h_per_slice * slices
-  if total_height <= 0 {
-    fatal("wgpu: stacked texture height overflow")
-  }
-
   let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_DST |
     @wgpu.TEXTURE_USAGE_COPY_SRC
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
-    total_height.reinterpret_as_uint(),
-    1U,
+    h_per_slice.reinterpret_as_uint(),
+    slices.reinterpret_as_uint(),
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
-  let view = tex.create_view()
-  view.set_label("mgstudio_render_target_\{id}")
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    levels.length().reinterpret_as_uint(),
+  )
+  let sample_view = if slices > 1 {
+    Some(
+      tex.create_view_u32(
+        format,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY,
+        texture_view_aspect_for_format(format),
+        0U,
+        slices.reinterpret_as_uint(),
+        0U,
+        levels.length().reinterpret_as_uint(),
+      ),
+    )
+  } else {
+    None
+  }
+  view.set_label("mgstudio_stacked_2d_texture_layer0_\{id}")
   let sampler = if nearest {
     self.device.create_sampler_nearest_clamp()
   } else {
@@ -382,13 +400,13 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
         v
       }
     }
-    let mip_height = mip_height_per_slice * slices
-    if mip_height <= 0 {
-      fatal("wgpu: stacked mip height overflow")
-    }
-    guard texture_layout_for_level(block_info, mip_width, mip_height)
-      is Some((bytes_per_row, rows_per_image, expected_bytes)) else {
+    guard texture_layout_for_level(block_info, mip_width, mip_height_per_slice)
+      is Some((bytes_per_row, rows_per_image, bytes_per_slice)) else {
       fatal("wgpu: failed to compute texture upload layout")
+    }
+    let expected_bytes = bytes_per_slice * slices
+    if expected_bytes <= 0 {
+      fatal("wgpu: invalid stacked texture upload size")
     }
     let level_data = levels[level_index]
     if level_data.length() < expected_bytes {
@@ -420,8 +438,8 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     )
     let extent = @wgpu_c.extent3d_new(
       mip_width.reinterpret_as_uint(),
-      mip_height.reinterpret_as_uint(),
-      1U,
+      mip_height_per_slice.reinterpret_as_uint(),
+      slices.reinterpret_as_uint(),
     )
     self.queue.write_texture_ptr(
       tex_info,
@@ -438,13 +456,13 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   let info = GpuTextureInfo::{
     id,
     width: w,
-    height: total_height,
+    height: h_per_slice,
     mip_level_count: levels.length(),
     base_mip_level: 0,
     format,
     texture: tex,
     view,
-    sample_view: None,
+    sample_view,
     layer_views: [],
     sampler,
     bind_group: bg,
@@ -616,7 +634,7 @@ pub fn GpuBackend::texture_height(self : GpuBackend, texture_id : Int) -> Int {
 }
 
 ///|
-/// Update a sub-rectangle of an RGBA8 2D texture.
+/// Update a sub-rectangle of a 2D texture.
 ///
 /// Note: WGPU requires `bytes_per_row` to be 256-byte aligned, so we may need to
 /// pad each row before calling `Queue::write_texture_ptr`.
@@ -635,27 +653,42 @@ pub fn GpuBackend::write_texture_region_rgba8(
       if width <= 0 || height <= 0 {
         return
       }
+      guard texture_block_info(info.format.to_u32()) is Some(block_info) else {
+        return
+      }
+      if x < 0 || y < 0 {
+        return
+      }
+      if x + width > info.width || y + height > info.height {
+        return
+      }
+      if x % block_info.block_width != 0 ||
+        y % block_info.block_height != 0 ||
+        width % block_info.block_width != 0 ||
+        height % block_info.block_height != 0 {
+        return
+      }
       let w = width.reinterpret_as_uint()
       let h = height.reinterpret_as_uint()
-      let origin_x = if x < 0 { 0U } else { x.reinterpret_as_uint() }
-      let origin_y = if y < 0 { 0U } else { y.reinterpret_as_uint() }
-      let bytes_per_row = width * 4
-      if bytes_per_row <= 0 {
+      let origin_x = x.reinterpret_as_uint()
+      let origin_y = y.reinterpret_as_uint()
+      guard texture_layout_for_level(block_info, width, height)
+        is Some((bytes_per_row, rows_per_image, expected)) else {
         return
       }
       let mut aligned = bytes_per_row
       if aligned % 256 != 0 {
         aligned = (aligned / 256 + 1) * 256
       }
-      let expected = bytes_per_row * height
       if pixels_rgba8.length() != expected {
         return
       }
       let src = pixels_rgba8
+      let upload_size = aligned * rows_per_image
       let upload = if aligned == bytes_per_row {
         src
       } else {
-        Bytes::makei(aligned * height, i => {
+        Bytes::makei(upload_size, i => {
           let row = i / aligned
           let col = i % aligned
           if col < bytes_per_row {
@@ -679,10 +712,16 @@ pub fn GpuBackend::write_texture_region_rgba8(
       let layout = @wgpu_c.texel_copy_buffer_layout_new(
         0UL,
         aligned.reinterpret_as_uint(),
-        h,
+        rows_per_image.reinterpret_as_uint(),
       )
       let extent = @wgpu_c.extent3d_new(w, h, 1U)
-      self.queue.write_texture_ptr(tex_info, upload, layout, extent)
+      self.queue.write_texture_ptr(
+        tex_info,
+        upload,
+        layout,
+        extent,
+        data_size=upload_size.to_uint64(),
+      )
       @wgpu_c.extent3d_free(extent)
       @wgpu_c.texel_copy_buffer_layout_free(layout)
       @wgpu_c.texel_copy_texture_info_free(tex_info)
@@ -710,6 +749,9 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
       if mip_level >= info.mip_level_count {
         return
       }
+      guard texture_block_info(info.format.to_u32()) is Some(block_info) else {
+        return
+      }
       let target_width = {
         let shifted = info.width >> mip_level
         if shifted <= 0 {
@@ -732,13 +774,18 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
         origin_y_i + height > target_height {
         return
       }
-      let w = width.reinterpret_as_uint()
-      let h = height.reinterpret_as_uint()
-      let bytes_per_row = width * 4
-      if bytes_per_row <= 0 {
+      if origin_x_i % block_info.block_width != 0 ||
+        origin_y_i % block_info.block_height != 0 ||
+        width % block_info.block_width != 0 ||
+        height % block_info.block_height != 0 {
         return
       }
-      let expected = bytes_per_row * height
+      let w = width.reinterpret_as_uint()
+      let h = height.reinterpret_as_uint()
+      guard texture_layout_for_level(block_info, width, height)
+        is Some((bytes_per_row, rows_per_image, expected)) else {
+        return
+      }
       if pixels_rgba8.length() != expected {
         return
       }
@@ -746,10 +793,11 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
       if aligned % 256 != 0 {
         aligned = (aligned / 256 + 1) * 256
       }
+      let upload_size = aligned * rows_per_image
       let upload = if aligned == bytes_per_row {
         pixels_rgba8
       } else {
-        Bytes::makei(aligned * height, i => {
+        Bytes::makei(upload_size, i => {
           let row = i / aligned
           let col = i % aligned
           if col < bytes_per_row {
@@ -774,10 +822,16 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
       let layout = @wgpu_c.texel_copy_buffer_layout_new(
         0UL,
         aligned.reinterpret_as_uint(),
-        h,
+        rows_per_image.reinterpret_as_uint(),
       )
       let extent = @wgpu_c.extent3d_new(w, h, 1U)
-      self.queue.write_texture_ptr(tex_info, upload, layout, extent)
+      self.queue.write_texture_ptr(
+        tex_info,
+        upload,
+        layout,
+        extent,
+        data_size=upload_size.to_uint64(),
+      )
       @wgpu_c.extent3d_free(extent)
       @wgpu_c.texel_copy_buffer_layout_free(layout)
       @wgpu_c.texel_copy_texture_info_free(tex_info)

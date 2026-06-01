@@ -121,92 +121,92 @@ pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="render2d.tilemap_chunk_tile_data")
 
 ///|
-pub impl @ecs.Component for Sprite with component() {
+pub impl @ecs.Component for Sprite with fn component() {
   ecs_key_sprite
 }
 
 ///|
-pub impl @ecs.Component for SpriteMesh with component() {
+pub impl @ecs.Component for SpriteMesh with fn component() {
   ecs_key_sprite_mesh
 }
 
 ///|
-pub impl @ecs.Component for Anchor with component() {
+pub impl @ecs.Component for Anchor with fn component() {
   ecs_key_anchor
 }
 
 ///|
-pub impl @ecs.Component for RenderLayers with component() {
+pub impl @ecs.Component for RenderLayers with fn component() {
   ecs_key_render_layers
 }
 
 ///|
-pub impl @ecs.Component for Camera2d with component() {
+pub impl @ecs.Component for Camera2d with fn component() {
   ecs_key_camera2d
 }
 
 ///|
-pub impl @ecs.Component for Camera with component() {
+pub impl @ecs.Component for Camera with fn component() {
   ecs_key_camera
 }
 
 ///|
-pub impl @ecs.Component for Projection with component() {
+pub impl @ecs.Component for Projection with fn component() {
   ecs_key_projection
 }
 
 ///|
-pub impl @ecs.Component for PanCamera with component() {
+pub impl @ecs.Component for PanCamera with fn component() {
   ecs_key_pan_camera
 }
 
 ///|
-pub impl @ecs.Component for RenderTarget with component() {
+pub impl @ecs.Component for RenderTarget with fn component() {
   ecs_key_render_target
 }
 
 ///|
-pub impl @ecs.Component for ColorMaterial with component() {
+pub impl @ecs.Component for ColorMaterial with fn component() {
   ecs_key_color_material
 }
 
 ///|
-pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M] with component() {
+pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M] with fn component() {
   M::material2d_keys().mesh_material2d_component
 }
 
 ///|
-pub impl @ecs.Component for ScissorRect with component() {
+pub impl @ecs.Component for ScissorRect with fn component() {
   ecs_key_scissor_rect
 }
 
 ///|
-pub impl @ecs.Component for Wireframe2d with component() {
+pub impl @ecs.Component for Wireframe2d with fn component() {
   ecs_key_wireframe2d
 }
 
 ///|
-pub impl @ecs.Component for NoWireframe2d with component() {
+pub impl @ecs.Component for NoWireframe2d with fn component() {
   ecs_key_no_wireframe2d
 }
 
 ///|
-pub impl @ecs.Component for Wireframe2dColor with component() {
+pub impl @ecs.Component for Wireframe2dColor with fn component() {
   ecs_key_wireframe2d_color
 }
 
 ///|
-pub impl @ecs.Component for ClearColorConfig with component() {
+pub impl @ecs.Component for ClearColorConfig with fn component() {
   ecs_key_clear_color_config
 }
 
 ///|
-pub impl @ecs.Component for TilemapChunk with component() {
+pub impl @ecs.Component for TilemapChunk with fn component() {
   ecs_key_tilemap_chunk
 }
 
 ///|
-pub impl @ecs.Component for TilemapChunkTileData with component() {
+pub impl @ecs.Component for TilemapChunkTileData with fn component() {
   ecs_key_tilemap_chunk_tile_data
 }
 
@@ -514,8 +514,18 @@ fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
 }
 
 ///|
+fn encode_tile_orientation(orientation : TileOrientation) -> Json {
+  orientation.to_int().to_json()
+}
+
+///|
 fn encode_tile_data(tile_data : TileData) -> Json {
-  tile_data.tileset_index.to_json()
+  (
+    tile_data.tileset_index,
+    tile_data.color,
+    tile_data.visible,
+    encode_tile_orientation(tile_data.orientation),
+  ).to_json()
 }
 
 ///|
@@ -524,7 +534,7 @@ fn encode_tilemap_chunk(tilemap_chunk : TilemapChunk) -> Json {
     encode_uvec2(tilemap_chunk.chunk_size),
     encode_uvec2(tilemap_chunk.tile_display_size),
     encode_image_handle(tilemap_chunk.tileset),
-    encode_uvec2(tilemap_chunk.tileset_grid),
+    tilemap_chunk.alpha_mode,
   ).to_json()
 }
 
@@ -785,22 +795,43 @@ fn[M] decode_mesh_material2d(json : Json) -> MeshMaterial2d[M] {
 
 ///|
 fn decode_tile_data(json : Json) -> TileData {
-  TileData::from_tileset_index(try! @json.from_json(json))
+  let (tileset_index, color, visible, orientation_json) : (
+    Int,
+    Color,
+    Bool,
+    Json,
+  ) = try! @json.from_json(json)
+  TileData::new(
+    tileset_index,
+    color~,
+    visible~,
+    orientation=decode_tile_orientation(orientation_json),
+  )
+}
+
+///|
+fn decode_tile_orientation(json : Json) -> TileOrientation {
+  let raw : Int = try! @json.from_json(json)
+  TileOrientation::from_bools(
+    (raw & 0b100) != 0,
+    (raw & 0b010) != 0,
+    (raw & 0b001) != 0,
+  )
 }
 
 ///|
 fn decode_tilemap_chunk(json : Json) -> TilemapChunk {
-  let (chunk_size_json, tile_display_size_json, tileset_json, tileset_grid_json) : (
+  let (chunk_size_json, tile_display_size_json, tileset_json, alpha_mode) : (
     Json,
     Json,
     Json,
-    Json,
+    AlphaMode2d,
   ) = try! @json.from_json(json)
   TilemapChunk::new(
     decode_uvec2(chunk_size_json),
     decode_uvec2(tile_display_size_json),
     decode_image_handle(tileset_json),
-    decode_uvec2(tileset_grid_json),
+    alpha_mode~,
   )
 }
 
@@ -840,174 +871,174 @@ fn decode_wireframe2d_color(json : Json) -> Wireframe2dColor {
 }
 
 ///|
-pub impl ToJson for Sprite with to_json(self) {
+pub impl ToJson for Sprite with fn to_json(self) {
   encode_sprite(self)
 }
 
 ///|
-pub impl @json.FromJson for Sprite with from_json(json, _path) {
+pub impl @json.FromJson for Sprite with fn from_json(json, _path) {
   decode_sprite(json)
 }
 
 ///|
-pub impl ToJson for Anchor with to_json(self) {
+pub impl ToJson for Anchor with fn to_json(self) {
   encode_anchor(self)
 }
 
 ///|
-pub impl @json.FromJson for Anchor with from_json(json, _path) {
+pub impl @json.FromJson for Anchor with fn from_json(json, _path) {
   decode_anchor(json)
 }
 
 ///|
-pub impl ToJson for RenderLayers with to_json(self) {
+pub impl ToJson for RenderLayers with fn to_json(self) {
   encode_render_layers(self)
 }
 
 ///|
-pub impl @json.FromJson for RenderLayers with from_json(json, _path) {
+pub impl @json.FromJson for RenderLayers with fn from_json(json, _path) {
   decode_render_layers(json)
 }
 
 ///|
-pub impl ToJson for ScissorRect with to_json(self) {
+pub impl ToJson for ScissorRect with fn to_json(self) {
   encode_rect(self.rect)
 }
 
 ///|
-pub impl @json.FromJson for ScissorRect with from_json(json, _path) {
+pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
   decode_scissor_rect(json)
 }
 
 ///|
-pub impl ToJson for ClearColorConfig with to_json(self) {
+pub impl ToJson for ClearColorConfig with fn to_json(self) {
   encode_clear_color_config(self)
 }
 
 ///|
-pub impl @json.FromJson for ClearColorConfig with from_json(json, _path) {
+pub impl @json.FromJson for ClearColorConfig with fn from_json(json, _path) {
   decode_clear_color_config(json)
 }
 
 ///|
-pub impl ToJson for Camera with to_json(self) {
+pub impl ToJson for Camera with fn to_json(self) {
   encode_camera(self)
 }
 
 ///|
-pub impl @json.FromJson for Camera with from_json(json, _path) {
+pub impl @json.FromJson for Camera with fn from_json(json, _path) {
   decode_camera(json)
 }
 
 ///|
-pub impl ToJson for Camera2d with to_json(self) {
+pub impl ToJson for Camera2d with fn to_json(self) {
   encode_camera2d(self)
 }
 
 ///|
-pub impl @json.FromJson for Camera2d with from_json(json, _path) {
+pub impl @json.FromJson for Camera2d with fn from_json(json, _path) {
   decode_camera2d(json)
 }
 
 ///|
-pub impl ToJson for Projection with to_json(self) {
+pub impl ToJson for Projection with fn to_json(self) {
   encode_projection(self)
 }
 
 ///|
-pub impl @json.FromJson for Projection with from_json(json, _path) {
+pub impl @json.FromJson for Projection with fn from_json(json, _path) {
   decode_projection(json)
 }
 
 ///|
-pub impl ToJson for RenderTarget with to_json(self) {
+pub impl ToJson for RenderTarget with fn to_json(self) {
   encode_render_target(self)
 }
 
 ///|
-pub impl @json.FromJson for RenderTarget with from_json(json, _path) {
+pub impl @json.FromJson for RenderTarget with fn from_json(json, _path) {
   decode_render_target(json)
 }
 
 ///|
-pub impl ToJson for ColorMaterial with to_json(self) {
+pub impl ToJson for ColorMaterial with fn to_json(self) {
   encode_color_material(self)
 }
 
 ///|
-pub impl @json.FromJson for ColorMaterial with from_json(json, _path) {
+pub impl @json.FromJson for ColorMaterial with fn from_json(json, _path) {
   decode_color_material(json)
 }
 
 ///|
-pub impl[M] ToJson for MeshMaterial2d[M] with to_json(self) {
+pub impl[M] ToJson for MeshMaterial2d[M] with fn to_json(self) {
   encode_mesh_material2d(self)
 }
 
 ///|
-pub impl[M] @json.FromJson for MeshMaterial2d[M] with from_json(json, _path) {
+pub impl[M] @json.FromJson for MeshMaterial2d[M] with fn from_json(json, _path) {
   decode_mesh_material2d(json)
 }
 
 ///|
-pub impl ToJson for TileData with to_json(self) {
+pub impl ToJson for TileData with fn to_json(self) {
   encode_tile_data(self)
 }
 
 ///|
-pub impl @json.FromJson for TileData with from_json(json, _path) {
+pub impl @json.FromJson for TileData with fn from_json(json, _path) {
   decode_tile_data(json)
 }
 
 ///|
-pub impl ToJson for TilemapChunk with to_json(self) {
+pub impl ToJson for TilemapChunk with fn to_json(self) {
   encode_tilemap_chunk(self)
 }
 
 ///|
-pub impl @json.FromJson for TilemapChunk with from_json(json, _path) {
+pub impl @json.FromJson for TilemapChunk with fn from_json(json, _path) {
   decode_tilemap_chunk(json)
 }
 
 ///|
-pub impl ToJson for TilemapChunkTileData with to_json(self) {
+pub impl ToJson for TilemapChunkTileData with fn to_json(self) {
   encode_tilemap_chunk_tile_data(self)
 }
 
 ///|
-pub impl @json.FromJson for TilemapChunkTileData with from_json(json, _path) {
+pub impl @json.FromJson for TilemapChunkTileData with fn from_json(json, _path) {
   decode_tilemap_chunk_tile_data(json)
 }
 
 ///|
-pub impl ToJson for Wireframe2d with to_json(self) {
+pub impl ToJson for Wireframe2d with fn to_json(self) {
   self |> ignore
   (0).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Wireframe2d with from_json(json, _path) {
+pub impl @json.FromJson for Wireframe2d with fn from_json(json, _path) {
   decode_wireframe2d(json)
 }
 
 ///|
-pub impl ToJson for NoWireframe2d with to_json(self) {
+pub impl ToJson for NoWireframe2d with fn to_json(self) {
   self |> ignore
   (0).to_json()
 }
 
 ///|
-pub impl @json.FromJson for NoWireframe2d with from_json(json, _path) {
+pub impl @json.FromJson for NoWireframe2d with fn from_json(json, _path) {
   decode_no_wireframe2d(json)
 }
 
 ///|
-pub impl ToJson for Wireframe2dColor with to_json(self) {
+pub impl ToJson for Wireframe2dColor with fn to_json(self) {
   encode_color(self.color)
 }
 
 ///|
-pub impl @json.FromJson for Wireframe2dColor with from_json(json, _path) {
+pub impl @json.FromJson for Wireframe2dColor with fn from_json(json, _path) {
   decode_wireframe2d_color(json)
 }
 

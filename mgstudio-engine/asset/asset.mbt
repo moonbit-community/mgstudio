@@ -52,12 +52,12 @@ pub type ImageSamplerDescriptor = @image.ImageSamplerDescriptor
 pub struct Blob {}
 
 ///|
-pub impl Asset for Image with asset_debug_name() {
+pub impl Asset for Image with fn asset_debug_name() {
   "mgstudio_asset::Image"
 }
 
 ///|
-pub impl Asset for Image with asset_as_image(self) {
+pub impl Asset for Image with fn asset_as_image(self) {
   Some(self)
 }
 
@@ -67,17 +67,17 @@ pub let image_asset_resource_keys : AssetResourceKeys[Image] = register_asset_re
 )
 
 ///|
-pub impl Asset for Image with asset_resource_keys() {
+pub impl Asset for Image with fn asset_resource_keys() {
   image_asset_resource_keys
 }
 
 ///|
-pub impl Asset for Blob with asset_debug_name() {
+pub impl Asset for Blob with fn asset_debug_name() {
   "mgstudio_asset::Blob"
 }
 
 ///|
-pub impl Asset for Blob with asset_as_image(_self) {
+pub impl Asset for Blob with fn asset_as_image(_self) {
   None
 }
 
@@ -87,7 +87,7 @@ pub let blob_asset_resource_keys : AssetResourceKeys[Blob] = register_asset_reso
 )
 
 ///|
-pub impl Asset for Blob with asset_resource_keys() {
+pub impl Asset for Blob with fn asset_resource_keys() {
   blob_asset_resource_keys
 }
 
@@ -242,7 +242,7 @@ pub let asset_server_resource_key : @ecs.ResourceKey[AssetServer] = @ecs.registe
 )
 
 ///|
-pub impl @app.Resource for AssetServer with resource() {
+pub impl @app.Resource for AssetServer with fn resource() {
   asset_server_resource_key
 }
 
@@ -1173,7 +1173,11 @@ fn AssetServer::load_image_with_settings(
     )
     let id = match decoded_image {
       Some(image) => {
-        let created = image_asset_create_gpu_texture(image, nearest)
+        let created = image_asset_create_gpu_texture_with_array_layout(
+          image,
+          settings.array_layout,
+          nearest,
+        )
         if created > 0 {
           created
         } else {

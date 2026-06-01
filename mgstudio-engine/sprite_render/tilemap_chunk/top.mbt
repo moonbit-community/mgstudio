@@ -11,17 +11,3 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-///|
-// Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/mod.rs`.
-pub fn render2d_draw_tilemap_chunk(
-  world : @ecs.World,
-  chunk : @sprite_render.TilemapChunk,
-  tile_data : @sprite_render.TilemapChunkTileData,
-  transform : @transform.Transform,
-  layers : @sprite.RenderLayers,
-) -> Unit {
-  @sprite_render.render2d_draw_tilemap_chunk(
-    world, chunk, tile_data, transform, layers,
-  )
-}

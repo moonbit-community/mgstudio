@@ -55,8 +55,6 @@ pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @transform.Transform, @sprite.RenderLayers) -> Unit
-
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullContext?
@@ -130,7 +128,13 @@ pub using @sprite {type SceneCullContext}
 
 pub using @sprite {type TileData}
 
+pub using @sprite {type TileOrientation}
+
 pub using @sprite {type TilemapChunk}
+
+pub using @sprite {type TilemapChunkMaterial}
+
+pub using @sprite {type TilemapChunkMaterialPlugin}
 
 pub using @sprite {type TilemapChunkTileData}
 

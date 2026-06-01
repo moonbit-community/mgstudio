@@ -77,13 +77,30 @@ fn[T] image_asset_allocate_handle(
 
 ///|
 fn image_asset_create_gpu_texture(image : Image, nearest : Bool) -> Int {
+  image_asset_create_gpu_texture_with_array_layout(image, None, nearest)
+}
+
+///|
+fn image_asset_create_gpu_texture_with_array_layout(
+  image : Image,
+  array_layout : ImageArrayLayout?,
+  nearest : Bool,
+) -> Int {
   if image.is_target_texture() {
     return 0
   }
+  let (height_per_slice, slice_count) = match array_layout {
+    Some(layout) =>
+      match @image.image_array_layout_layers(image.height, layout) {
+        Some(layers) if layers > 1 => (image.height / layers, layers)
+        _ => (image.height, 1)
+      }
+    None => (image.height, 1)
+  }
   let id = asset_texture_backend_create_texture_stacked_2d_with_format(
     width=image.width,
-    height_per_slice=image.height,
-    slice_count=1,
+    height_per_slice~,
+    slice_count~,
     format=@image.texture_format(image.format),
     levels=[image.pixels],
     nearest~,
@@ -113,14 +130,14 @@ fn image_asset_sync_dirty(handle : Handle[Image], image : Image) -> Unit {
     asset_texture_height(handle) != image.height {
     return
   }
-  update_texture_region_mip_bytes(
+  asset_texture_backend_write_texture_region_rgba8_mip(
     texture_id=handle.id(),
     x=0,
     y=0,
     width=image.width,
     height=image.height,
     mip_level=0,
-    bytes=image.pixels,
+    pixels_rgba8=image.pixels,
   )
 }
 
@@ -141,14 +158,14 @@ fn[T : Asset] image_asset_sync_on_set(
   }
   let image_handle : Handle[Image] = Handle::new(handle.id())
   if !next_image.is_target_texture() && handle.id() > 0 {
-    update_texture_region_mip_bytes(
+    asset_texture_backend_write_texture_region_rgba8_mip(
       texture_id=handle.id(),
       x=0,
       y=0,
       width=next_image.width,
       height=next_image.height,
       mip_level=0,
-      bytes=next_image.pixels,
+      pixels_rgba8=next_image.pixels,
     )
   }
   image_asset_sync_metadata(image_handle, next_image)

@@ -1194,14 +1194,24 @@ pub(all) struct HostMaterial2dBinding {
   value : HostMaterial2dBindingValue
 }
 pub fn HostMaterial2dBinding::sampler(UInt, Int) -> Self
-pub fn HostMaterial2dBinding::texture(UInt, Int) -> Self
+pub fn HostMaterial2dBinding::texture(UInt, Int, sample_type? : HostMaterial2dTextureSampleType, view_dimension? : HostMaterial2dTextureViewDimension) -> Self
 pub fn HostMaterial2dBinding::uniform(UInt, Bytes) -> Self
 
 pub(all) enum HostMaterial2dBindingValue {
   Uniform(Bytes)
-  Texture(Int)
+  Texture(Int, HostMaterial2dTextureSampleType, HostMaterial2dTextureViewDimension)
   Sampler(Int)
 }
+
+pub(all) enum HostMaterial2dTextureSampleType {
+  Float
+  UInt
+} derive(Eq, @debug.Debug)
+
+pub(all) enum HostMaterial2dTextureViewDimension {
+  D2
+  D2Array
+} derive(Eq, @debug.Debug)
 
 pub struct HostMesh3dMainPassDrawEntry {
   draw_storage_index : Int

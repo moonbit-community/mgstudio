@@ -17,6 +17,12 @@
 pub using @sprite_render {type TileData}
 
 ///|
+pub using @sprite_render {type TilemapChunkMaterial}
+
+///|
+pub using @sprite_render {type TilemapChunkMaterialPlugin}
+
+///|
 pub using @sprite_render {type TilemapChunk}
 
 ///|

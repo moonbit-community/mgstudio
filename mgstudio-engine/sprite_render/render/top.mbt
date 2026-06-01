@@ -95,19 +95,6 @@ pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
 }
 
 ///|
-pub fn render2d_draw_tilemap_chunk(
-  world : @ecs.World,
-  chunk : @sprite_render.TilemapChunk,
-  tile_data : @sprite_render.TilemapChunkTileData,
-  transform : @transform.Transform,
-  layers : @sprite.RenderLayers,
-) -> Unit {
-  @sprite_render.render2d_draw_tilemap_chunk(
-    world, chunk, tile_data, transform, layers,
-  )
-}
-
-///|
 pub fn render2d_primary_scene_cull_context(
   world : @ecs.World,
 ) -> @sprite_render.SceneCullContext? {

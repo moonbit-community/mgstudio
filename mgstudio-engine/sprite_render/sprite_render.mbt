@@ -61,7 +61,16 @@ pub type Wireframe2dConfig = @sprite.Wireframe2dConfig
 pub type TileData = @sprite.TileData
 
 ///|
+pub type TileOrientation = @sprite.TileOrientation
+
+///|
 pub type TilemapChunk = @sprite.TilemapChunk
+
+///|
+pub type TilemapChunkMaterial = @sprite.TilemapChunkMaterial
+
+///|
+pub type TilemapChunkMaterialPlugin = @sprite.TilemapChunkMaterialPlugin
 
 ///|
 pub type TilemapChunkTileData = @sprite.TilemapChunkTileData
@@ -261,19 +270,6 @@ pub fn render2d_diagnostic_execute_cpu_ms() -> Float {
 ///|
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   @sprite.render2d_upload_mesh_handle(mesh)
-}
-
-///|
-pub fn render2d_draw_tilemap_chunk(
-  world : @ecs.World,
-  chunk : TilemapChunk,
-  tile_data : TilemapChunkTileData,
-  transform : @transform.Transform,
-  layers : @sprite.RenderLayers,
-) -> Unit {
-  @sprite.render2d_draw_tilemap_chunk(
-    world, chunk, tile_data, transform, layers,
-  )
 }
 
 ///|

@@ -63,12 +63,12 @@ struct DummyMaterialAsset {
 }
 
 ///|
-impl @asset.Asset for DummyMaterialAsset with asset_debug_name() {
+impl @asset.Asset for DummyMaterialAsset with fn asset_debug_name() {
   "mgstudio_sprite_test::DummyMaterialAsset"
 }
 
 ///|
-impl @asset.Asset for DummyMaterialAsset with asset_as_image(_self) {
+impl @asset.Asset for DummyMaterialAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -78,7 +78,7 @@ let dummy_material_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(DummyMaterialAsset::asset_debug_name())
 
 ///|
-impl @asset.Asset for DummyMaterialAsset with asset_resource_keys() {
+impl @asset.Asset for DummyMaterialAsset with fn asset_resource_keys() {
   dummy_material_asset_resource_keys
 }
 
@@ -112,19 +112,19 @@ fn material2d_bind_group_texture_id(
 ) -> Int? {
   guard bind_group.binding(binding) is Some(entry) else { return None }
   match entry.value {
-    Texture(Some(texture)) => Some(texture.id())
+    Texture(Some(texture), _, _) => Some(texture.id())
     _ => None
   }
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
+pub impl Material2d for DummyMaterialAsset with fn alpha_mode(self) {
   self |> ignore
   Blend
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with material2d_debug_name() {
+pub impl Material2d for DummyMaterialAsset with fn material2d_debug_name() {
   "mgstudio_sprite_test::DummyMaterialAsset"
 }
 
@@ -134,12 +134,12 @@ let dummy_material_asset_material2d_keys : Material2dKeys[DummyMaterialAsset] = 
 )
 
 ///|
-pub impl Material2d for DummyMaterialAsset with material2d_keys() {
+pub impl Material2d for DummyMaterialAsset with fn material2d_keys() {
   dummy_material_asset_material2d_keys
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with bind_group(self) {
+pub impl Material2d for DummyMaterialAsset with fn bind_group(self) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_white_texture()
@@ -1040,7 +1040,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   debug_inspect(prepared.source.id() == handle.id(), content="true")
   debug_inspect(
     prepared.bind_group.layout_key(),
-    content="\"0:uniform;1:texture;2:sampler\"",
+    content="\"0:uniform;1:texture(float,2d);2:sampler\"",
   )
   debug_inspect(
     prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),

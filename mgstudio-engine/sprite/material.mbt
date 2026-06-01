@@ -83,7 +83,7 @@ pub fn[M : Material2d] render_material2d_instances_resource_key_of(
 }
 
 ///|
-pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M] with resource() {
+pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M] with fn resource() {
   M::material2d_keys().render_material2d_instances
 }
 
@@ -144,8 +144,44 @@ fn material2d_bytes_bind_group_data(bytes : Bytes) -> String {
 ///|
 pub(all) enum Material2dBindingValue {
   Uniform(Bytes)
-  Texture(@asset.Handle[@asset.Image]?)
+  Texture(
+    @asset.Handle[@asset.Image]?,
+    Material2dTextureSampleType,
+    Material2dTextureViewDimension
+  )
   Sampler(@asset.Handle[@asset.Image]?)
+}
+
+///|
+pub(all) enum Material2dTextureSampleType {
+  Float
+  UInt
+} derive(Eq, Debug)
+
+///|
+pub(all) enum Material2dTextureViewDimension {
+  D2
+  D2Array
+} derive(Eq, Debug)
+
+///|
+fn material2d_texture_sample_type_key(
+  sample_type : Material2dTextureSampleType,
+) -> String {
+  match sample_type {
+    Material2dTextureSampleType::Float => "float"
+    Material2dTextureSampleType::UInt => "uint"
+  }
+}
+
+///|
+fn material2d_texture_view_dimension_key(
+  view_dimension : Material2dTextureViewDimension,
+) -> String {
+  match view_dimension {
+    Material2dTextureViewDimension::D2 => "2d"
+    Material2dTextureViewDimension::D2Array => "2d_array"
+  }
 }
 
 ///|
@@ -167,7 +203,27 @@ pub fn Material2dBinding::texture(
   binding : Int,
   texture : @asset.Handle[@asset.Image]?,
 ) -> Material2dBinding {
-  Material2dBinding::{ binding, value: Texture(texture) }
+  Material2dBinding::{
+    binding,
+    value: Texture(
+      texture,
+      Material2dTextureSampleType::Float,
+      Material2dTextureViewDimension::D2,
+    ),
+  }
+}
+
+///|
+pub fn Material2dBinding::texture_with_layout(
+  binding : Int,
+  texture : @asset.Handle[@asset.Image]?,
+  sample_type : Material2dTextureSampleType,
+  view_dimension : Material2dTextureViewDimension,
+) -> Material2dBinding {
+  Material2dBinding::{
+    binding,
+    value: Texture(texture, sample_type, view_dimension),
+  }
 }
 
 ///|
@@ -182,7 +238,8 @@ pub fn Material2dBinding::sampler(
 fn material2d_binding_layout_kind_key(value : Material2dBindingValue) -> String {
   match value {
     Uniform(_) => "uniform"
-    Texture(_) => "texture"
+    Texture(_, sample_type, view_dimension) =>
+      "texture(\{material2d_texture_sample_type_key(sample_type)},\{material2d_texture_view_dimension_key(view_dimension)})"
     Sampler(_) => "sampler"
   }
 }
@@ -191,12 +248,12 @@ fn material2d_binding_layout_kind_key(value : Material2dBindingValue) -> String 
 fn material2d_binding_data_key(value : Material2dBindingValue) -> String {
   match value {
     Uniform(bytes) => "uniform(\{material2d_bytes_bind_group_data(bytes)})"
-    Texture(texture) => {
+    Texture(texture, sample_type, view_dimension) => {
       let texture_id = match texture {
         Some(value) => value.id().to_string()
         None => "none"
       }
-      "texture(\{texture_id})"
+      "texture(\{texture_id},\{material2d_texture_sample_type_key(sample_type)},\{material2d_texture_view_dimension_key(view_dimension)})"
     }
     Sampler(texture) => {
       let texture_id = match texture {
@@ -391,12 +448,12 @@ pub struct PreparedMaterial2d[M] {
 }
 
 ///|
-pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with render_asset_resource_debug_name() {
+pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with fn render_asset_resource_debug_name() {
   "mgstudio_sprite::PreparedMaterial2d<\{M::material2d_debug_name()}>"
 }
 
 ///|
-pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with render_asset_resource_keys() {
+pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with fn render_asset_resource_keys() {
   M::material2d_keys().prepared_render_asset
 }
 
@@ -426,7 +483,7 @@ pub fn[M] PreparedMaterial2d::prepared_handle(
 }
 
 ///|
-pub impl[M : Material2d] @app.Resource for Material2dPipeline[M] with resource() {
+pub impl[M : Material2d] @app.Resource for Material2dPipeline[M] with fn resource() {
   M::material2d_keys().material2d_pipeline
 }
 
@@ -524,7 +581,7 @@ pub fn[M] Material2dPlugin::with_asset_init(
 }
 
 ///|
-pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with build(
+pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with fn build(
   self,
   app,
 ) {
@@ -532,7 +589,7 @@ pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with
 }
 
 ///|
-pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with name(
+pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with fn name(
   _self,
 ) {
   "mgstudio.sprite.Material2dPlugin<\{M::asset_debug_name()}>"
@@ -740,12 +797,24 @@ fn material2d_binding_to_host(
         binding.binding.reinterpret_as_uint(),
         bytes,
       )
-    Texture(texture) =>
+    Texture(texture, sample_type, view_dimension) =>
       @render.HostMaterial2dBinding::texture(
         binding.binding.reinterpret_as_uint(),
         match texture {
           Some(value) => value.id()
           None => -1
+        },
+        sample_type=match sample_type {
+          Material2dTextureSampleType::Float =>
+            @render.HostMaterial2dTextureSampleType::Float
+          Material2dTextureSampleType::UInt =>
+            @render.HostMaterial2dTextureSampleType::UInt
+        },
+        view_dimension=match view_dimension {
+          Material2dTextureViewDimension::D2 =>
+            @render.HostMaterial2dTextureViewDimension::D2
+          Material2dTextureViewDimension::D2Array =>
+            @render.HostMaterial2dTextureViewDimension::D2Array
         },
       )
     Sampler(texture) =>
@@ -876,7 +945,7 @@ pub fn Material2dRuntimeRegistry::new() -> Material2dRuntimeRegistry {
 }
 
 ///|
-pub impl @app.Resource for Material2dRuntimeRegistry with resource() {
+pub impl @app.Resource for Material2dRuntimeRegistry with fn resource() {
   material2d_runtime_registry_key
 }
 

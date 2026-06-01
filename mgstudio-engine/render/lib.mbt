@@ -22,6 +22,12 @@ pub type HostGpuQueue = Int
 pub type HostMaterial2dBindingValue = @renderer.HostMaterial2dBindingValue
 
 ///|
+pub type HostMaterial2dTextureSampleType = @renderer.HostMaterial2dTextureSampleType
+
+///|
+pub type HostMaterial2dTextureViewDimension = @renderer.HostMaterial2dTextureViewDimension
+
+///|
 pub type HostMaterial2dBinding = @renderer.HostMaterial2dBinding
 
 ///|

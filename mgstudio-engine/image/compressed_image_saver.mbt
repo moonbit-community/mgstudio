@@ -54,6 +54,7 @@ pub fn image_can_use_compressed_saver(format : TextureFormat) -> Bool {
   match format {
     TextureFormat::Rgba8Unorm => true
     TextureFormat::Rgba8UnormSrgb => true
+    TextureFormat::Rgba16Uint => false
     TextureFormat::Rgba16Float => false
     TextureFormat::Rg16Float => false
   }

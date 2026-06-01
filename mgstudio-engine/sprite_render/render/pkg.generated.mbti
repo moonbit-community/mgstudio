@@ -36,8 +36,6 @@ pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @transform.Transform, @sprite.RenderLayers) -> Unit
-
 pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullContext?
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit

@@ -165,6 +165,13 @@ fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
       block_bytes: 4,
     })
   }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_UINT {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 8,
+    })
+  }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT {
     return Some(TextureBlockInfo::{
       block_width: 1,

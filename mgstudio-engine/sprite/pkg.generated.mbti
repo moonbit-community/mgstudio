@@ -187,8 +187,6 @@ pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
 pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, RenderLayers) -> Unit
 
-pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @transform.Transform, RenderLayers) -> Unit
-
 pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -625,6 +623,7 @@ pub fn Material2dBindGroup::color_material(@color.Color, AlphaMode2d, texture? :
 pub fn Material2dBindGroup::layout_key(Self) -> String
 pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
 pub fn Material2dBindGroup::sprite_material(SpriteMaterial) -> Self
+pub fn Material2dBindGroup::tilemap_chunk_material(@asset.Handle[@image.Image], @asset.Handle[@image.Image]) -> Self
 
 pub struct Material2dBinding {
   binding : Int
@@ -632,11 +631,12 @@ pub struct Material2dBinding {
 }
 pub fn Material2dBinding::sampler(Int, @asset.Handle[@image.Image]?) -> Self
 pub fn Material2dBinding::texture(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn Material2dBinding::texture_with_layout(Int, @asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension) -> Self
 pub fn Material2dBinding::uniform(Int, Bytes) -> Self
 
 pub(all) enum Material2dBindingValue {
   Uniform(Bytes)
-  Texture(@asset.Handle[@image.Image]?)
+  Texture(@asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension)
   Sampler(@asset.Handle[@image.Image]?)
 }
 
@@ -685,6 +685,16 @@ pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
 pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
 pub fn Material2dRuntimeRegistry::new() -> Self
 pub impl @app.Resource for Material2dRuntimeRegistry
+
+pub(all) enum Material2dTextureSampleType {
+  Float
+  UInt
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Material2dTextureViewDimension {
+  D2
+  D2Array
+} derive(Eq, @debug.Debug)
 
 pub struct Mesh2dBundle {
   mesh : @mesh.Mesh2d
@@ -1100,23 +1110,69 @@ pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
 
 pub struct TileData {
   tileset_index : Int
+  color : @color.Color
+  visible : Bool
+  orientation : TileOrientation
 }
+pub fn TileData::TileData() -> Self
 pub fn TileData::from_tileset_index(Int) -> Self
+pub fn TileData::new(Int, color? : @color.Color, visible? : Bool, orientation? : TileOrientation) -> Self
 pub impl ToJson for TileData
 pub impl @json.FromJson for TileData
+
+pub(all) enum TileOrientation {
+  Default
+  Rotate90
+  Rotate180
+  Rotate270
+  MirrorH
+  MirrorHRotate90
+  MirrorHRotate180
+  MirrorHRotate270
+} derive(Eq, @debug.Debug)
+pub fn TileOrientation::and_then(Self, Self) -> Self
+pub fn TileOrientation::apply_to_ivec2(Self, @math.IVec2) -> @math.IVec2
+pub fn TileOrientation::from_bools(Bool, Bool, Bool) -> Self
+pub fn TileOrientation::inverse(Self) -> Self
+pub fn TileOrientation::mirror_d(Self) -> Bool
+pub fn TileOrientation::mirror_h(Self) -> Bool
+pub fn TileOrientation::mirror_v(Self) -> Bool
+pub fn TileOrientation::to_int(Self) -> Int
+pub fn TileOrientation::to_string(Self) -> String
 
 pub struct TilemapChunk {
   chunk_size : @math.UVec2
   tile_display_size : @math.UVec2
   tileset : @asset.Handle[@image.Image]
-  tileset_grid : @math.UVec2
+  alpha_mode : AlphaMode2d
 }
 pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @transform.Transform
-pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], @math.UVec2) -> Self
+pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], alpha_mode? : AlphaMode2d) -> Self
 pub fn TilemapChunk::tile_capacity(Self) -> Int
 pub impl @ecs.Component for TilemapChunk
 pub impl ToJson for TilemapChunk
 pub impl @json.FromJson for TilemapChunk
+
+pub struct TilemapChunkMaterial {
+  alpha_mode : AlphaMode2d
+  tileset : @asset.Handle[@image.Image]
+  tile_data : @asset.Handle[@image.Image]
+}
+pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> Self
+pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], AlphaMode2d) -> Self
+pub impl @asset.Asset for TilemapChunkMaterial
+pub impl Material2d for TilemapChunkMaterial
+
+pub struct TilemapChunkMaterialPlugin {
+}
+pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> Self
+pub impl @app.Plugin for TilemapChunkMaterialPlugin
+
+pub struct TilemapChunkMeshCache {
+  // private fields
+}
+pub fn TilemapChunkMeshCache::TilemapChunkMeshCache() -> Self
+pub impl @app.Resource for TilemapChunkMeshCache
 
 pub struct TilemapChunkTileData {
   tile_data : Array[TileData?]
