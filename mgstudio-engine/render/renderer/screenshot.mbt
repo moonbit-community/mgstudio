@@ -517,9 +517,10 @@ fn screenshot_enqueue_copy_to_buffer(
 }
 
 ///|
-fn screenshot_to_screen_source_required(backend : GpuBackend) -> String {
-  backend |> ignore
-  screenshot_to_screen_wgsl_source
+fn screenshot_to_screen_source_required(
+  backend : GpuBackend,
+) -> String raise GpuBackendError {
+  load_wgsl_from_assets_required(backend, "render/view/window/screenshot.wgsl")
 }
 
 ///|
