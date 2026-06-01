@@ -828,9 +828,6 @@ pub struct GpuBackend {
   mut fxaa_sampler : @wgpu_mbt.Sampler?
   mut bloom_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut bloom_final_composite_bgl : @wgpu_mbt.BindGroupLayout?
-  mut bloom_final_composite_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut bloom_final_composite_uniform_buf : @wgpu_mbt.Buffer?
   mut tonemapping_bgl : @wgpu_mbt.BindGroupLayout?
   mut tonemapping_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping_view_buf : @wgpu_mbt.Buffer?
@@ -844,8 +841,9 @@ pub struct GpuBackend {
   mut bloom_downsample_uniform_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom_upsample_pipeline_energy : @wgpu_mbt.RenderPipeline?
   mut bloom_upsample_pipeline_additive : @wgpu_mbt.RenderPipeline?
-  mut bloom_final_composite_pipeline : @wgpu_mbt.RenderPipeline?
-  mut bloom_final_composite_pipeline_format : @wgpu_mbt.TextureFormat?
+  mut bloom_upsample_final_pipeline_energy : @wgpu_mbt.RenderPipeline?
+  mut bloom_upsample_final_pipeline_additive : @wgpu_mbt.RenderPipeline?
+  mut bloom_upsample_final_pipeline_format : @wgpu_mbt.TextureFormat?
   mut bloom_settings_buf : @wgpu_mbt.Buffer?
   mut bloom_sampler : @wgpu_mbt.Sampler?
   mut bloom_mip_texture : @wgpu_mbt.Texture?

@@ -8441,6 +8441,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         if camera_postprocess_plan.apply_bloom_before_tonemapping {
           let bloom_target = allocate_postprocess_target()
           begin_postprocess_pass(bloom_target, true, true)
+          render2d_draw_camera_blit(postprocess_source)
           render2d_apply_camera_bloom_from_source(
             camera, postprocess_source, viewport_width, viewport_height,
           )
