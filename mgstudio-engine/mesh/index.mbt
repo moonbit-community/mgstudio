@@ -80,7 +80,7 @@ pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
 ///|
 pub fn Mesh::primitive_topology(self : Mesh) -> Mesh3dPrimitiveTopology? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry2d(_) => Some(Mesh3dPrimitiveTopology::TriangleList)
     MeshGeometry::Geometry3d(geometry) => Some(geometry.primitive_topology())
   }
 }

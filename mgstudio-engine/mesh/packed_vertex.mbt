@@ -126,10 +126,59 @@ pub fn Mesh3dGeometry::attributes(
 }
 
 ///|
+fn mesh2d_positions_as_float32x3(
+  positions : Array[@math.Vec2],
+) -> Array[@math.Vec3] {
+  let values : Array[@math.Vec3] = []
+  for position in positions {
+    values.push(@math.Vec3::new(position.x, position.y, 0.0F))
+  }
+  values
+}
+
+///|
+pub fn Mesh2dGeometry::attributes(
+  self : Mesh2dGeometry,
+) -> Array[MeshAttributeData] {
+  let attributes : Array[MeshAttributeData] = []
+  mesh_attribute_data_insert_sorted(
+    attributes,
+    MeshAttributeData::new(
+      MeshVertexAttribute::position(),
+      VertexAttributeValues::Float32x3(
+        mesh2d_positions_as_float32x3(self.positions),
+      ),
+    ),
+  )
+  if self.uvs is Some(uvs) {
+    mesh_attribute_data_insert_sorted(
+      attributes,
+      MeshAttributeData::new(
+        MeshVertexAttribute::uv_0(),
+        VertexAttributeValues::Float32x2(uvs),
+      ),
+    )
+  }
+  if self.colors is Some(colors) {
+    mesh_attribute_data_insert_sorted(
+      attributes,
+      MeshAttributeData::new(
+        MeshVertexAttribute::color(),
+        VertexAttributeValues::Float32x4(colors),
+      ),
+    )
+  }
+  for custom_attribute in self.custom_attributes {
+    mesh_attribute_data_insert_sorted(attributes, custom_attribute)
+  }
+  attributes
+}
+
+///|
 pub fn Mesh::attributes(self : Mesh) -> Array[MeshAttributeData] {
   match self.geometry {
     MeshGeometry::Geometry3d(geometry) => geometry.attributes()
-    MeshGeometry::Geometry2d(_) => []
+    MeshGeometry::Geometry2d(geometry) => geometry.attributes()
   }
 }
 

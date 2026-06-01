@@ -1,11 +1,21 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/mesh2d_manual"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type ColoredMesh2d
+pub impl @ecs.Component for ColoredMesh2d
+
+type ColoredMesh2dPlugin
+pub impl @app.Plugin for ColoredMesh2dPlugin
 
 // Type aliases
 

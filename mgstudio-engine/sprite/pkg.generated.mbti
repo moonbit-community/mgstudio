@@ -145,6 +145,8 @@ pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn[T] register_custom_mesh2d_pipeline_world(@ecs.World, type_name~ : String, component_key~ : @ecs.ComponentKey[T], descriptor~ : CustomMesh2dPipelineDescriptor) -> Unit
+
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn[M] register_material2d_keys(String) -> Material2dKeys[M]
@@ -446,6 +448,23 @@ pub struct ColorMaterialPlugin {
 }
 pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> Self
 pub impl @app.Plugin for ColorMaterialPlugin
+
+pub struct CustomMesh2dPipelineDescriptor {
+  pipeline_id : UInt64
+  shader_path : String
+  phase : Int
+}
+pub fn CustomMesh2dPipelineDescriptor::new(String, phase? : Int) -> Self
+pub fn CustomMesh2dPipelineDescriptor::phase(Self) -> Int
+pub fn CustomMesh2dPipelineDescriptor::pipeline_id(Self) -> UInt64
+pub fn CustomMesh2dPipelineDescriptor::shader_path(Self) -> String
+
+type CustomMesh2dRuntimeRegistry
+pub fn CustomMesh2dRuntimeRegistry::contains_entity(Self, @ecs.World, @core.Entity) -> Bool
+pub fn CustomMesh2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
+pub fn CustomMesh2dRuntimeRegistry::entry_count(Self) -> Int
+pub fn CustomMesh2dRuntimeRegistry::new() -> Self
+pub impl @app.Resource for CustomMesh2dRuntimeRegistry
 
 pub struct DefaultGizmoConfigGroup {
 }

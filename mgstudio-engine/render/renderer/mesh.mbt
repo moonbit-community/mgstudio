@@ -258,6 +258,28 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
 }
 
 ///|
+pub fn create_mesh2d_vertex_buffer(
+  vertex_bytes~ : Bytes,
+  vertex_count~ : Int,
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+  vertex_layout~ : @mesh.VertexBufferLayout,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    let mesh_id = backend.create_mesh2d_vertex_buffer(
+      vertex_bytes, vertex_count, indices, primitive_topology, vertex_layout,
+    )
+    if mesh_id <= 0 {
+      debug(
+        "[renderer] create_mesh2d_vertex_buffer failed: bytes=\{vertex_bytes.length().to_string()}, vertices=\{vertex_count.to_string()}, indices=\{indices.length().to_string()}, topology=\{primitive_topology.to_string()}",
+      )
+    }
+    return mesh_id
+  }
+  0
+}
+
+///|
 pub fn create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,

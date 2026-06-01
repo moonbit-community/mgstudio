@@ -58,12 +58,12 @@ pub struct SpriteMaterial {
 }
 
 ///|
-pub impl @asset.Asset for SpriteMaterial with asset_debug_name() {
+pub impl @asset.Asset for SpriteMaterial with fn asset_debug_name() {
   "mgstudio_sprite::SpriteMaterial"
 }
 
 ///|
-pub impl @asset.Asset for SpriteMaterial with asset_as_image(_self) {
+pub impl @asset.Asset for SpriteMaterial with fn asset_as_image(_self) {
   None
 }
 
@@ -73,7 +73,7 @@ let sprite_material_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(SpriteMaterial::asset_debug_name())
 
 ///|
-pub impl @asset.Asset for SpriteMaterial with asset_resource_keys() {
+pub impl @asset.Asset for SpriteMaterial with fn asset_resource_keys() {
   sprite_material_asset_resource_keys
 }
 
@@ -190,12 +190,12 @@ let ecs_key_sprite_mesh_material_cache : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for SpriteMeshQuad with resource() {
+impl @app.Resource for SpriteMeshQuad with fn resource() {
   ecs_key_sprite_mesh_quad
 }
 
 ///|
-impl @app.Resource for SpriteMeshMaterialCache with resource() {
+impl @app.Resource for SpriteMeshMaterialCache with fn resource() {
   ecs_key_sprite_mesh_material_cache
 }
 
@@ -732,12 +732,12 @@ pub fn Material2dBindGroup::sprite_material(
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with alpha_mode(self) {
+pub impl Material2d for SpriteMaterial with fn alpha_mode(self) {
   self.alpha_mode
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with material2d_debug_name() {
+pub impl Material2d for SpriteMaterial with fn material2d_debug_name() {
   "mgstudio_sprite::SpriteMaterial"
 }
 
@@ -747,22 +747,22 @@ let sprite_material_material2d_keys : Material2dKeys[SpriteMaterial] = register_
 )
 
 ///|
-pub impl Material2d for SpriteMaterial with material2d_keys() {
+pub impl Material2d for SpriteMaterial with fn material2d_keys() {
   sprite_material_material2d_keys
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with bind_group(self) {
+pub impl Material2d for SpriteMaterial with fn bind_group(self) {
   Material2dBindGroup::sprite_material(self)
 }
 
 ///|
-pub impl @app.Plugin for SpriteMaterialPlugin with name(_self) {
+pub impl @app.Plugin for SpriteMaterialPlugin with fn name(_self) {
   "mgstudio.sprite_render.SpriteMaterialPlugin"
 }
 
 ///|
-pub impl @app.Plugin for SpriteMaterialPlugin with build(_self, app) {
+pub impl @app.Plugin for SpriteMaterialPlugin with fn build(_self, app) {
   let plugin : Material2dPlugin[SpriteMaterial] = Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { SpriteMaterial::SpriteMaterial() })
     .with_vertex_shader("sprite_render/sprite_mesh/sprite_material.wgsl")
@@ -900,12 +900,12 @@ fn sprite_mesh_add_material_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl @app.Plugin for SpriteMeshPlugin with name(_self) {
+pub impl @app.Plugin for SpriteMeshPlugin with fn name(_self) {
   "mgstudio.sprite_render.SpriteMeshPlugin"
 }
 
 ///|
-pub impl @app.Plugin for SpriteMeshPlugin with build(_self, app) {
+pub impl @app.Plugin for SpriteMeshPlugin with fn build(_self, app) {
   app
   .add_plugins(SpriteMaterialPlugin::SpriteMaterialPlugin())
   .init_resource(fn() { SpriteMeshQuad::SpriteMeshQuad() })
@@ -939,6 +939,35 @@ pub fn render_mesh_asset_set(
 }
 
 ///|
+fn mesh2d_geometry_uses_default_upload(geometry : @mesh.Mesh2dGeometry) -> Bool {
+  geometry.uvs is Some(_) && geometry.custom_attributes.length() == 0
+}
+
+///|
+fn render2d_upload_typed_mesh2d(mesh : @mesh.Mesh) -> Int {
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let vertex_layout = mesh
+    .get_mesh_vertex_buffer_layout(layouts)
+    .layout()
+    .layout()
+  let indices = match mesh.indices() {
+    Some(values) => values
+    None => []
+  }
+  let primitive_topology = match mesh.primitive_topology() {
+    Some(topology) => topology.to_int()
+    None => 0
+  }
+  @render.host_gpu_create_mesh2d_vertex_buffer(
+    vertex_bytes=mesh.create_packed_vertex_buffer_data(),
+    vertex_count=mesh.count_vertices(),
+    indices~,
+    primitive_topology~,
+    vertex_layout~,
+  )
+}
+
+///|
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   mesh_upload_cache_sync_with_asset_events()
   let mesh_handle_id = mesh.id()
@@ -951,19 +980,23 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
       match mesh_asset.geometry {
         @mesh.MeshGeometry::Geometry2d(geometry2d) => {
           uploaded_mesh_radius = mesh2d_geometry_base_radius(geometry2d)
-          match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
-            Some(vertices_csv) =>
-              @render.host_gpu_create_mesh_triangles_xyuvrgba(
-                vertices_xyuvrgba_csv=vertices_csv,
-              )
-            None => {
-              let message = match geometry2d.validate() {
-                Some(err) =>
-                  "Mesh2dGeometry validation failed: \{to_repr(err).to_string()}"
-                None => "Mesh2dGeometry flatten failed"
+          if !mesh2d_geometry_uses_default_upload(geometry2d) {
+            render2d_upload_typed_mesh2d(mesh_asset)
+          } else {
+            match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
+              Some(vertices_csv) =>
+                @render.host_gpu_create_mesh_triangles_xyuvrgba(
+                  vertices_xyuvrgba_csv=vertices_csv,
+                )
+              None => {
+                let message = match geometry2d.validate() {
+                  Some(err) =>
+                    "Mesh2dGeometry validation failed: \{to_repr(err).to_string()}"
+                  None => "Mesh2dGeometry flatten failed"
+                }
+                @window.host_debug_string(value=message)
+                0
               }
-              @window.host_debug_string(value=message)
-              0
             }
           }
         }
@@ -1087,7 +1120,7 @@ pub(open) trait IntoSpriteMeshAsset {
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Circle with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Circle with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1095,7 +1128,7 @@ pub impl IntoSpriteRingMeshGeometry for Circle with into_sprite_ring_mesh_geomet
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for CircularSector with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for CircularSector with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1103,7 +1136,7 @@ pub impl IntoSpriteRingMeshGeometry for CircularSector with into_sprite_ring_mes
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for CircularSegment with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for CircularSegment with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1111,7 +1144,7 @@ pub impl IntoSpriteRingMeshGeometry for CircularSegment with into_sprite_ring_me
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Ellipse with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Ellipse with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1119,7 +1152,7 @@ pub impl IntoSpriteRingMeshGeometry for Ellipse with into_sprite_ring_mesh_geome
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Capsule2d with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Capsule2d with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1127,7 +1160,7 @@ pub impl IntoSpriteRingMeshGeometry for Capsule2d with into_sprite_ring_mesh_geo
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Rhombus with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Rhombus with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1135,7 +1168,7 @@ pub impl IntoSpriteRingMeshGeometry for Rhombus with into_sprite_ring_mesh_geome
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Rectangle with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Rectangle with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1143,7 +1176,7 @@ pub impl IntoSpriteRingMeshGeometry for Rectangle with into_sprite_ring_mesh_geo
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for RegularPolygon with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for RegularPolygon with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1151,7 +1184,7 @@ pub impl IntoSpriteRingMeshGeometry for RegularPolygon with into_sprite_ring_mes
 }
 
 ///|
-pub impl IntoSpriteRingMeshGeometry for Triangle2d with into_sprite_ring_mesh_geometry(
+pub impl IntoSpriteRingMeshGeometry for Triangle2d with fn into_sprite_ring_mesh_geometry(
   self,
   inner_shape,
 ) {
@@ -1167,81 +1200,81 @@ pub fn[S : IntoSpriteMeshAsset] add_mesh(
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Mesh2dGeometry with into_sprite_mesh_asset(
+pub impl IntoSpriteMeshAsset for Mesh2dGeometry with fn into_sprite_mesh_asset(
   self,
 ) {
   self.to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Capsule2d with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Capsule2d with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_capsule(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for CircularSector with into_sprite_mesh_asset(
+pub impl IntoSpriteMeshAsset for CircularSector with fn into_sprite_mesh_asset(
   self,
 ) {
   mesh2d_geometry_circular_sector(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for CircularSegment with into_sprite_mesh_asset(
+pub impl IntoSpriteMeshAsset for CircularSegment with fn into_sprite_mesh_asset(
   self,
 ) {
   mesh2d_geometry_circular_segment(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Circle with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Circle with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_circle(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Ellipse with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Ellipse with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_ellipse(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Annulus with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Annulus with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_annulus(self).to_mesh()
 }
 
 ///|
-pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for Ring[P] with into_sprite_mesh_asset(
+pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for Ring[P] with fn into_sprite_mesh_asset(
   self,
 ) {
   self.outer_shape.into_sprite_ring_mesh_geometry(self.inner_shape).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Rhombus with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Rhombus with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_rhombus(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for RegularPolygon with into_sprite_mesh_asset(
+pub impl IntoSpriteMeshAsset for RegularPolygon with fn into_sprite_mesh_asset(
   self,
 ) {
   mesh2d_geometry_regular_polygon(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Triangle2d with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Triangle2d with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_triangle(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Segment2d with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Segment2d with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_segment(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Polyline2d with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Polyline2d with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_polyline(self).to_mesh()
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Rectangle with into_sprite_mesh_asset(self) {
+pub impl IntoSpriteMeshAsset for Rectangle with fn into_sprite_mesh_asset(self) {
   mesh2d_geometry_rectangle(self).to_mesh()
 }

@@ -57,6 +57,19 @@ fn sprite_test_close(a : Float, b : Float) -> Bool {
 }
 
 ///|
+struct TestCustomMesh2d {}
+
+///|
+let test_custom_mesh2d_key : @ecs.ComponentKey[TestCustomMesh2d] = @ecs.register_component(
+  debug_name="mgstudio_sprite_test::TestCustomMesh2d",
+)
+
+///|
+pub impl @ecs.Component for TestCustomMesh2d with fn component() {
+  test_custom_mesh2d_key
+}
+
+///|
 test "sprite: default trait mirrors bevy component defaults" {
   let sprite = @sprite.Sprite::Sprite()
   let image_mode = SpriteImageMode::default()
@@ -1012,6 +1025,35 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     registry.contains_type_name(material2d_runtime_type_name(probe)),
     content="true",
   )
+}
+
+///|
+test "render2d: custom Mesh2d runtime registry matches marker components" {
+  let source_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  let descriptor = CustomMesh2dPipelineDescriptor::new(
+    "examples/2d/mesh2d_manual/colored_mesh2d.wgsl",
+  )
+  register_custom_mesh2d_pipeline_world(
+    render_world,
+    type_name="mgstudio_sprite_test::TestCustomMesh2d",
+    component_key=test_custom_mesh2d_key,
+    descriptor~,
+  )
+  let entity = source_world.spawn()
+  try! (source_world.set_by_key(entity, test_custom_mesh2d_key, TestCustomMesh2d::{
+
+  })
+  |> ignore)
+  let registry = render_world
+    .get_resource(CustomMesh2dRuntimeRegistry::resource())
+    .unwrap()
+  debug_inspect(registry.entry_count(), content="1")
+  debug_inspect(
+    registry.contains_type_name("mgstudio_sprite_test::TestCustomMesh2d"),
+    content="true",
+  )
+  debug_inspect(registry.contains_entity(source_world, entity), content="true")
 }
 
 ///|

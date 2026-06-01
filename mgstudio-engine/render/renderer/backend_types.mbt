@@ -39,6 +39,7 @@ pub struct GpuMeshInfo {
   vertex_slab_id : Int
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
+  vertex_layout : @mesh.VertexBufferLayout?
   index_stride_bytes : UInt64
   uses_u32_indices : Bool
   vertex_buf : @wgpu.Buffer
@@ -173,6 +174,12 @@ struct Mesh3dMotionVectorViewBindGroupCacheEntry {
 pub struct Mesh2dPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline
+}
+
+///|
+pub struct Mesh2dRegisteredPipelineDescriptor {
+  pipeline_id : UInt64
+  shader_path : String
 }
 
 ///|

@@ -100,6 +100,7 @@ pub struct GpuBackend {
   ui_slice_batches : Array[UiBatch]
   mut ui_slice_vertex_count : UInt
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh2d_pipeline_layout_without_material : @wgpu.PipelineLayout?
   mut mesh_pipeline : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
@@ -131,6 +132,7 @@ pub struct GpuBackend {
   mut mesh2d_batch_material_bg : @wgpu.BindGroup?
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mesh2d_pipeline_cache_index : @hashmap.HashMap[String, Int]
+  mesh2d_pipeline_descriptors : Map[UInt64, Mesh2dRegisteredPipelineDescriptor]
   mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
   mesh2d_material_layout_cache_index : Map[UInt64, Array[Int]]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]

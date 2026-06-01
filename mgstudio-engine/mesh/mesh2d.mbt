@@ -18,13 +18,14 @@
 /// Notes:
 /// - Only triangle list is supported for now.
 /// - `indices=None` means the vertex arrays are already laid out as triangles.
-/// - UVs are required (matching Bevy mesh conventions) even if a pipeline does
-///   not use them yet.
+/// - UVs are optional; custom pipelines can provide a Bevy-style typed vertex
+///   layout that only includes the attributes used by their shader.
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
-  uvs : Array[@math.Vec2]
-  colors : Array[@math.Vec4]?
-  indices : Array[Int]?
+  mut uvs : Array[@math.Vec2]?
+  mut colors : Array[@math.Vec4]?
+  mut custom_attributes : Array[MeshAttributeData]
+  mut indices : Array[Int]?
 }
 
 ///|
@@ -32,6 +33,7 @@ pub(all) enum Mesh2dValidationError {
   EmptyVertices
   AttributeLengthMismatch(Int, Int)
   ColorAttributeLengthMismatch(Int, Int)
+  CustomAttributeLengthMismatch(String, Int, Int)
   NonIndexedVertexCountNotMultipleOf3(Int)
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
@@ -44,7 +46,13 @@ pub fn Mesh2dGeometry::new(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{ positions, uvs, colors: None, indices }
+  Mesh2dGeometry::{
+    positions,
+    uvs: Some(uvs),
+    colors: None,
+    custom_attributes: [],
+    indices,
+  }
 }
 
 ///|
@@ -54,7 +62,116 @@ pub fn Mesh2dGeometry::new_with_colors(
   colors : Array[@math.Vec4],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{ positions, uvs, colors: Some(colors), indices }
+  Mesh2dGeometry::{
+    positions,
+    uvs: Some(uvs),
+    colors: Some(colors),
+    custom_attributes: [],
+    indices,
+  }
+}
+
+///|
+pub fn Mesh2dGeometry::new_with_positions(
+  positions : Array[@math.Vec2],
+  indices : Array[Int]?,
+) -> Mesh2dGeometry {
+  Mesh2dGeometry::{
+    positions,
+    uvs: None,
+    colors: None,
+    custom_attributes: [],
+    indices,
+  }
+}
+
+///|
+pub fn Mesh2dGeometry::new_empty() -> Mesh2dGeometry {
+  Mesh2dGeometry::new_with_positions([], None)
+}
+
+///|
+pub fn Mesh2dGeometry::insert_indices(
+  self : Mesh2dGeometry,
+  indices : Array[Int]?,
+) -> Unit {
+  self.indices = indices
+}
+
+///|
+pub fn Mesh2dGeometry::with_inserted_indices(
+  self : Mesh2dGeometry,
+  indices : Array[Int]?,
+) -> Mesh2dGeometry {
+  self.insert_indices(indices)
+  self
+}
+
+///|
+fn mesh2d_assign_positions_from_vec3(
+  positions : Array[@math.Vec2],
+  values : Array[@math.Vec3],
+) -> Unit {
+  positions.clear()
+  for value in values {
+    positions.push(@math.Vec2::new(value.x, value.y))
+  }
+}
+
+///|
+pub fn Mesh2dGeometry::insert_attribute(
+  self : Mesh2dGeometry,
+  attribute : MeshVertexAttribute,
+  values : VertexAttributeValues,
+) -> Bool {
+  if values.format() != attribute.format() {
+    return false
+  }
+  let id = attribute.id()
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::position().id()) {
+    guard values is VertexAttributeValues::Float32x3(positions) else {
+      return false
+    }
+    mesh2d_assign_positions_from_vec3(self.positions, positions)
+    return true
+  }
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_0().id()) {
+    guard values is VertexAttributeValues::Float32x2(uvs) else { return false }
+    self.uvs = Some(uvs)
+    return true
+  }
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::color().id()) {
+    guard values is VertexAttributeValues::Float32x4(colors) else {
+      return false
+    }
+    self.colors = Some(colors)
+    return true
+  }
+  let next : Array[MeshAttributeData] = []
+  let mut replaced = false
+  for custom_attribute in self.custom_attributes {
+    if mesh_vertex_attribute_id_eq(custom_attribute.attribute().id(), id) {
+      next.push(MeshAttributeData::new(attribute, values))
+      replaced = true
+    } else {
+      next.push(custom_attribute)
+    }
+  }
+  if !replaced {
+    next.push(MeshAttributeData::new(attribute, values))
+  }
+  self.custom_attributes = next
+  true
+}
+
+///|
+pub fn Mesh2dGeometry::with_inserted_attribute(
+  self : Mesh2dGeometry,
+  attribute : MeshVertexAttribute,
+  values : VertexAttributeValues,
+) -> Mesh2dGeometry {
+  ignore(self.insert_attribute(attribute, values))
+  self
 }
 
 ///|
@@ -65,11 +182,16 @@ pub fn Mesh2dGeometry::validate(
   if vertex_count <= 0 {
     return Some(Mesh2dValidationError::EmptyVertices)
   }
-  let uv_count = self.uvs.length()
-  if uv_count != vertex_count {
-    return Some(
-      Mesh2dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
-    )
+  match self.uvs {
+    Some(uvs) => {
+      let uv_count = uvs.length()
+      if uv_count != vertex_count {
+        return Some(
+          Mesh2dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
+        )
+      }
+    }
+    None => ()
   }
   if self.colors is Some(colors) {
     let color_count = colors.length()
@@ -77,6 +199,18 @@ pub fn Mesh2dGeometry::validate(
       return Some(
         Mesh2dValidationError::ColorAttributeLengthMismatch(
           vertex_count, color_count,
+        ),
+      )
+    }
+  }
+  for custom_attribute in self.custom_attributes {
+    let attribute_count = custom_attribute.values().len()
+    if attribute_count != vertex_count {
+      return Some(
+        Mesh2dValidationError::CustomAttributeLengthMismatch(
+          custom_attribute.attribute().name(),
+          vertex_count,
+          attribute_count,
         ),
       )
     }
@@ -152,11 +286,12 @@ pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(
   if self.validate() is Some(_) {
     return None
   }
+  guard self.uvs is Some(uvs) else { return None }
   let out : Array[Double] = []
   let n = self.positions.length()
   for i in 0..<n {
     let p = self.positions[i]
-    let uv = self.uvs[i]
+    let uv = uvs[i]
     out.push(p.x.to_double())
     out.push(p.y.to_double())
     out.push(uv.x.to_double())
@@ -184,13 +319,14 @@ pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(
   if self.validate() is Some(_) {
     return None
   }
+  guard self.uvs is Some(uvs) else { return None }
   let out : Array[Double] = []
   match self.indices {
     None => {
       let n = self.positions.length()
       for i in 0..<n {
         let p = self.positions[i]
-        let uv = self.uvs[i]
+        let uv = uvs[i]
         let color = mesh2d_vertex_color_or_white(self.colors, i)
         out.push(p.x.to_double())
         out.push(p.y.to_double())
@@ -205,7 +341,7 @@ pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(
     Some(indices) =>
       for idx in indices {
         let p = self.positions[idx]
-        let uv = self.uvs[idx]
+        let uv = uvs[idx]
         let color = mesh2d_vertex_color_or_white(self.colors, idx)
         out.push(p.x.to_double())
         out.push(p.y.to_double())

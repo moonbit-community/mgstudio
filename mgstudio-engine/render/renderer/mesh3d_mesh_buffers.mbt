@@ -408,6 +408,7 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
     vertex_slab_id: vertex_slice.slab_id(),
     primitive_topology,
     vertex_stride_bytes: MESH3D_VERTEX_STRIDE_BYTES,
+    vertex_layout: None,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -486,6 +487,7 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(
     vertex_slab_id: vertex_slice.slab_id(),
     primitive_topology,
     vertex_stride_bytes: MESH3D_VERTEX_STRIDE_BYTES,
+    vertex_layout: None,
     index_stride_bytes: if uses_u32_indices {
       4UL
     } else {

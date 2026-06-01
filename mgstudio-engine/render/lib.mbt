@@ -1189,6 +1189,35 @@ pub fn host_gpu_draw_mesh_material(
 }
 
 ///|
+pub fn host_gpu_register_mesh2d_pipeline_descriptor(
+  pipeline_id~ : UInt64,
+  shader_path~ : String,
+) -> Unit {
+  @renderer.register_mesh2d_pipeline_descriptor(pipeline_id~, shader_path~)
+}
+
+///|
+pub fn host_gpu_draw_mesh2d_pipeline(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  pipeline_id~ : UInt64,
+) -> Unit {
+  @renderer.draw_mesh2d_pipeline(
+    mesh_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    pipeline_id~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_mesh_wireframe(
   mesh_id~ : Int,
   x~ : Float,
@@ -1868,6 +1897,23 @@ pub fn host_gpu_create_mesh_triangles_xyuvrgba(
   vertices_xyuvrgba_csv~ : String,
 ) -> Int {
   @renderer.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
+}
+
+///|
+pub fn host_gpu_create_mesh2d_vertex_buffer(
+  vertex_bytes~ : Bytes,
+  vertex_count~ : Int,
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+  vertex_layout~ : @mesh.VertexBufferLayout,
+) -> Int {
+  @renderer.create_mesh2d_vertex_buffer(
+    vertex_bytes~,
+    vertex_count~,
+    indices~,
+    primitive_topology~,
+    vertex_layout~,
+  )
 }
 
 ///|

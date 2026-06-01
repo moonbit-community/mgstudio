@@ -3570,6 +3570,7 @@ priv enum DrawKind {
   UiBoxShadowExtra(Int)
   UiTextureSliceExtra(Int)
   Mesh(Int)
+  CustomMesh(Int)
 }
 
 ///|
@@ -5421,6 +5422,9 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
 pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
+  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
+    world,
+  )
   render_state_update(world, fn(rs) {
     rs.draw_enabled = true
     rs.primary_camera = @core.Entity::placeholder()
@@ -5562,9 +5566,13 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
-      if !material2d_runtime_registry_contains_entity(
-          source_world, material_runtime_registry, entity,
-        ) {
+      let has_material2d = material2d_runtime_registry_contains_entity(
+        source_world, material_runtime_registry, entity,
+      )
+      let has_custom_mesh2d = custom_mesh2d_runtime_registry_contains_entity(
+        source_world, custom_mesh2d_runtime_registry, entity,
+      )
+      if !has_material2d && !has_custom_mesh2d {
         return
       }
       let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
@@ -5624,11 +5632,15 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
     "queue_2d",
   )
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
+  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
+    world,
+  )
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
   )
   let use_color_material_fast_path = material_runtime_registry.entry_count() ==
     1 &&
+    custom_mesh2d_runtime_registry.entry_count() == 0 &&
     material_runtime_registry.contains_type_name(
       material2d_runtime_type_name(color_material_probe),
     )
@@ -5665,6 +5677,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       let item = build_camera_draw_items(
         world,
         material_runtime_registry,
+        custom_mesh2d_runtime_registry,
         rs.sprites,
         rs.extra_sprites,
         rs.extra_sprite_slice_batches,
@@ -6070,6 +6083,59 @@ fn append_registered_material2d_mesh_draw_items(
 }
 
 ///|
+fn append_registered_custom_mesh2d_draw_items(
+  world : @ecs.World,
+  registry : CustomMesh2dRuntimeRegistry,
+  opaque_items : Array[DrawItem],
+  transparent_items : Array[DrawItem],
+  meshes : Array[ExtractedMesh2d],
+  layers : RenderLayers,
+  tie : Int,
+  scene_cull_context? : SceneCullContext? = None,
+) -> Int {
+  let source_world = @render.render_source_world(world)
+  let mut next_tie = tie
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    if !mesh.payload.layers.matches(layers) {
+      continue
+    }
+    if scene_cull_context is Some(context) {
+      let transform = mesh.payload.transform
+      let base_radius = uploaded_mesh_base_radius(mesh.payload.mesh_id)
+      if !scene_item_visible_in_context(
+          context,
+          transform.translation.x,
+          transform.translation.y,
+          scene_cull_radius_from_mesh_scale(transform.scale, base_radius),
+        ) {
+        continue
+      }
+    }
+    guard custom_mesh2d_runtime_phase_for_draw(source_world, registry, mesh)
+      is Some((runtime_index, phase)) else {
+      continue
+    }
+    let item = DrawItem::{
+      kind: CustomMesh(i),
+      entity: mesh.entity,
+      z: mesh.payload.transform.translation.z,
+      phase,
+      tie: next_tie,
+      material_handle_id: -1,
+      material_runtime_index: runtime_index,
+    }
+    if phase == 0 {
+      opaque_items.push(item)
+    } else {
+      transparent_items.push(item)
+    }
+    next_tie = next_tie + 1
+  }
+  next_tie
+}
+
+///|
 fn[M] draw_material2d_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
@@ -6177,14 +6243,15 @@ fn sort_transparent_scene_draw_items(
 fn draw_kind_opaque_batch_group(kind : DrawKind) -> Int {
   match kind {
     Mesh(_) => 0
-    SpriteMain(_) => 1
-    SpriteExtra(_) => 2
-    SpriteSliceBatchExtra(_) => 3
-    UiSpriteExtra(_) => 4
-    UiSpriteSliceBatchExtra(_) => 5
-    UiRectExtra(_) => 6
-    UiBoxShadowExtra(_) => 7
-    UiTextureSliceExtra(_) => 8
+    CustomMesh(_) => 1
+    SpriteMain(_) => 2
+    SpriteExtra(_) => 3
+    SpriteSliceBatchExtra(_) => 4
+    UiSpriteExtra(_) => 5
+    UiSpriteSliceBatchExtra(_) => 6
+    UiRectExtra(_) => 7
+    UiBoxShadowExtra(_) => 8
+    UiTextureSliceExtra(_) => 9
   }
 }
 
@@ -6407,6 +6474,7 @@ fn draw_scene_items_for_layers(
 fn draw_registered_scene_phase_items_for_layers(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
+  custom_registry : CustomMesh2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
@@ -6423,6 +6491,16 @@ fn draw_registered_scene_phase_items_for_layers(
     extra_sprite_slice_batches.length(),
   )
   let mut tie = 0
+  tie = append_registered_custom_mesh2d_draw_items(
+    world,
+    custom_registry,
+    opaque_items,
+    transparent_items,
+    meshes,
+    layers,
+    tie,
+    scene_cull_context~,
+  )
   tie = append_registered_material2d_mesh_draw_items(
     world,
     registry,
@@ -6568,6 +6646,7 @@ fn has_wireframe_meshes_for_layers(
 fn build_camera_draw_items(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
+  custom_registry : CustomMesh2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
@@ -6601,6 +6680,7 @@ fn build_camera_draw_items(
     draw_registered_scene_phase_items_for_layers(
       world,
       registry,
+      custom_registry,
       sprites,
       extra_sprites,
       extra_sprite_slice_batches,
@@ -7778,11 +7858,15 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     "execute_2d",
   )
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
+  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
+    world,
+  )
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
   )
   let use_color_material_fast_path = material_runtime_registry.entry_count() ==
     1 &&
+    custom_mesh2d_runtime_registry.entry_count() == 0 &&
     material_runtime_registry.contains_type_name(
       material2d_runtime_type_name(color_material_probe),
     )
@@ -8021,6 +8105,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           let built = build_camera_draw_items(
             world,
             material_runtime_registry,
+            custom_mesh2d_runtime_registry,
             sprites,
             extra_sprites,
             extra_sprite_slice_batches,
@@ -8274,6 +8359,14 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                   mesh,
                 )
               }
+            }
+            CustomMesh(i) => {
+              apply_scissor(None)
+              draw_registered_custom_mesh2d_item(
+                custom_mesh2d_runtime_registry,
+                item.material_runtime_index,
+                meshes[i],
+              )
             }
             UiRectExtra(i) => {
               let rect = extra_ui_rects[i].payload

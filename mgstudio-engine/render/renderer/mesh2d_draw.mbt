@@ -948,6 +948,190 @@ fn create_mesh2d_pipeline(
 }
 
 ///|
+fn mesh2d_vertex_layout_cache_key(layout : @mesh.VertexBufferLayout) -> String {
+  let mut key = "\{layout.array_stride.to_string()}:\{to_repr(layout.step_mode).to_string()}"
+  for attribute in layout.attributes {
+    key = key +
+      "|\{attribute.offset.to_string()}:\{to_repr(attribute.format).to_string()}:\{attribute.shader_location.to_string()}"
+  }
+  key
+}
+
+///|
+fn mesh2d_render_pipeline_builder_set_vertex_layout(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  layout : @mesh.VertexBufferLayout,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  builder.set_vertex_buffer_layout(
+    layout.array_stride.to_uint64(),
+    mesh_vertex_step_mode_to_wgpu(layout.step_mode),
+  )
+  for attribute in layout.attributes {
+    builder.add_vertex_attribute(
+      mesh_vertex_format_to_wgpu(attribute.format),
+      attribute.offset.to_uint64(),
+      attribute.shader_location.reinterpret_as_uint(),
+    )
+  }
+}
+
+///|
+fn mesh2d_registered_pipeline_cache_key(
+  format : @wgpu.TextureFormat,
+  topology : UInt,
+  with_depth : Bool,
+  descriptor : Mesh2dRegisteredPipelineDescriptor,
+  layout : @mesh.VertexBufferLayout,
+) -> String {
+  let depth_bits = if with_depth { "1" } else { "0" }
+  "mesh2d-pipeline:\{descriptor.pipeline_id.to_string()}:\{format.raw.to_string()}:\{topology.to_string()}:\{depth_bits}:\{descriptor.shader_path}:\{mesh2d_vertex_layout_cache_key(layout)}"
+}
+
+///|
+fn mesh2d_pipeline_layout_without_material(
+  backend : GpuBackend,
+) -> @wgpu.PipelineLayout? raise GpuBackendError {
+  ensure_mesh2d_resources(backend)
+  match backend.mesh2d_pipeline_layout_without_material {
+    Some(layout) => Some(layout)
+    None => {
+      guard backend.mesh2d_view_bgl is Some(view_bgl) else { return None }
+      guard backend.mesh2d_mesh_bgl is Some(mesh_bgl) else { return None }
+      let layout = backend.device.create_pipeline_layout_many([
+        view_bgl, mesh_bgl,
+      ])
+      layout.set_label("mgstudio_mesh2d_pipeline_layout_without_material")
+      backend.mesh2d_pipeline_layout_without_material = Some(layout)
+      Some(layout)
+    }
+  }
+}
+
+///|
+fn create_mesh2d_registered_pipeline(
+  backend : GpuBackend,
+  format : @wgpu.TextureFormat,
+  topology : UInt,
+  with_depth : Bool,
+  descriptor : Mesh2dRegisteredPipelineDescriptor,
+  layout : @mesh.VertexBufferLayout,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  guard mesh2d_pipeline_layout_without_material(backend)
+    is Some(pipeline_layout) else {
+    return None
+  }
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    descriptor.shader_path,
+    @hashmap.HashMap([]),
+    default_wgsl_value_defines(),
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      sm,
+      layout=pipeline_layout,
+    )
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_color_target_format(format)
+    builder.enable_alpha_blend()
+    builder.set_topology_u32(topology)
+    builder.set_cull_mode_u32(@wgpu.CULL_MODE_BACK)
+    if with_depth {
+      builder.set_depth_stencil(
+        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+        depth_write_enabled=false,
+        depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      )
+    }
+    mesh2d_render_pipeline_builder_set_vertex_layout(builder, layout)
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      err |> ignore
+      sm.release()
+      return None
+    }
+  }
+  pipeline.set_label("mgstudio_mesh2d_registered_pipeline")
+  sm.release()
+  Some(pipeline)
+}
+
+///|
+fn mesh2d_registered_pipeline_for_draw(
+  backend : GpuBackend,
+  mesh : GpuMeshInfo,
+  descriptor : Mesh2dRegisteredPipelineDescriptor,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  guard mesh.vertex_layout is Some(vertex_layout) else { return None }
+  let format = match current_pass_color_format(backend) {
+    Some(v) => v
+    None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  let cache_key = mesh2d_registered_pipeline_cache_key(
+    format,
+    mesh.primitive_topology,
+    backend.pass_has_depth,
+    descriptor,
+    vertex_layout,
+  )
+  match backend.mesh2d_pipeline_cache_index.get(cache_key) {
+    Some(index) =>
+      if index >= 0 && index < backend.mesh2d_pipeline_cache.length() {
+        let entry = backend.mesh2d_pipeline_cache[index]
+        if entry.key == cache_key {
+          return Some(entry.pipeline)
+        }
+      }
+    None => ()
+  }
+  guard create_mesh2d_registered_pipeline(
+      backend,
+      format,
+      mesh.primitive_topology,
+      backend.pass_has_depth,
+      descriptor,
+      vertex_layout,
+    )
+    is Some(pipeline) else {
+    return None
+  }
+  backend.mesh2d_pipeline_cache.push(Mesh2dPipelineCacheEntry::{
+    key: cache_key,
+    pipeline,
+  })
+  backend.mesh2d_pipeline_cache_index.set(
+    cache_key,
+    backend.mesh2d_pipeline_cache.length() - 1,
+  )
+  Some(pipeline)
+}
+
+///|
+pub fn GpuBackend::register_mesh2d_pipeline_descriptor(
+  self : GpuBackend,
+  pipeline_id : UInt64,
+  shader_path : String,
+) -> Unit {
+  if pipeline_id == 0UL {
+    return
+  }
+  self.mesh2d_pipeline_descriptors[pipeline_id] = Mesh2dRegisteredPipelineDescriptor::{
+    pipeline_id,
+    shader_path,
+  }
+}
+
+///|
+fn GpuBackend::mesh2d_pipeline_descriptor(
+  self : GpuBackend,
+  pipeline_id : UInt64,
+) -> Mesh2dRegisteredPipelineDescriptor? {
+  self.mesh2d_pipeline_descriptors.get(pipeline_id)
+}
+
+///|
 fn mesh2d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let safe_width = if pass_state.width_logical <= 0.0F {
     1.0F
@@ -1516,6 +1700,7 @@ pub fn GpuBackend::create_mesh_rectangle(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
+    vertex_layout: None,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1606,6 +1791,7 @@ pub fn GpuBackend::create_mesh_capsule(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
+    vertex_layout: None,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1739,8 +1925,95 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
+    vertex_layout: None,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
+    vertex_buf: vb,
+    index_buf: ib,
+  }
+  self.meshes.push(info)
+  id
+}
+
+///|
+fn mesh2d_prefix_bytes(bytes : Bytes, byte_len : Int) -> Bytes {
+  if byte_len >= bytes.length() {
+    bytes
+  } else {
+    Bytes::makei(byte_len, i => bytes[i])
+  }
+}
+
+///|
+pub fn GpuBackend::create_mesh2d_vertex_buffer(
+  self : GpuBackend,
+  vertex_bytes : Bytes,
+  vertex_count : Int,
+  indices : Array[Int],
+  primitive_topology_kind : Int,
+  vertex_layout : @mesh.VertexBufferLayout,
+) -> Int {
+  if vertex_layout.array_stride <= 0 || vertex_count <= 0 {
+    return 0
+  }
+  let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
+  let vertex_count_from_bytes = vertex_bytes.length() /
+    vertex_layout.array_stride
+  let clamped_vertex_count = vertex_count.min(vertex_count_from_bytes)
+  if clamped_vertex_count <= 0 {
+    return 0
+  }
+  let indexed = indices.length() > 0
+  let usable_vertex_count = if indexed {
+    clamped_vertex_count
+  } else {
+    mesh3d_usable_non_indexed_vertex_count(
+      clamped_vertex_count, primitive_topology,
+    )
+  }
+  if usable_vertex_count <= 0 {
+    return 0
+  }
+  if indexed && !mesh3d_indices_valid(indices, usable_vertex_count) {
+    return 0
+  }
+  let id = alloc_id(self)
+  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
+  let vb = self.device.create_buffer_init(
+    usage=vb_usage,
+    mesh2d_prefix_bytes(
+      vertex_bytes,
+      usable_vertex_count * vertex_layout.array_stride,
+    ),
+  )
+  let uses_u32_indices = indexed && mesh3d_indices_use_u32(indices)
+  let index_stride_bytes = if uses_u32_indices { 4UL } else { 2UL }
+  let ib = if indexed {
+    let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
+    self.device.create_buffer_init(
+      usage=ib_usage,
+      mesh3d_index_bytes(indices, uses_u32_indices),
+    )
+  } else {
+    self.create_mesh3d_empty_index_buffer()
+  }
+  let info = GpuMeshInfo::{
+    id,
+    index_count: if indexed {
+      indices.length().reinterpret_as_uint()
+    } else {
+      0U
+    },
+    vertex_count: usable_vertex_count.reinterpret_as_uint(),
+    index_start: 0U,
+    vertex_start: 0U,
+    index_slab_id: -1,
+    vertex_slab_id: -1,
+    primitive_topology,
+    vertex_stride_bytes: vertex_layout.array_stride.to_uint64(),
+    vertex_layout: Some(vertex_layout),
+    index_stride_bytes,
+    uses_u32_indices,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -1991,6 +2264,103 @@ pub fn draw_mesh(
 }
 
 ///|
+pub fn GpuBackend::draw_mesh2d_pipeline(
+  self : GpuBackend,
+  mesh_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  pipeline_id : UInt64,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else {
+    render_diagnostics_record_mesh2d_drop_no_frame()
+    return
+  }
+  guard frame.pass is Some(pass) else {
+    render_diagnostics_record_mesh2d_drop_no_pass()
+    return
+  }
+  guard self.pass_state is Some(_) else {
+    render_diagnostics_record_mesh2d_drop_no_pass_state()
+    return
+  }
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_ui_batches(self)
+  flush_sprite_batches(self)
+  flush_mesh2d_batches(self)
+  guard find_mesh(self, mesh_id) is Some(mesh) else {
+    render_diagnostics_record_mesh2d_drop_missing_mesh()
+    return
+  }
+  guard mesh.vertex_layout is Some(_) else {
+    render_diagnostics_record_mesh2d_drop_bad_stride()
+    return
+  }
+  ensure_mesh2d_resources(self)
+  guard self.mesh2d_pipeline_descriptor(pipeline_id) is Some(descriptor) else {
+    render_diagnostics_record_mesh2d_drop_no_pipeline()
+    return
+  }
+  guard mesh2d_registered_pipeline_for_draw(self, mesh, descriptor)
+    is Some(pipeline) else {
+    render_diagnostics_record_mesh2d_drop_no_pipeline()
+    return
+  }
+  guard self.mesh2d_view_bg is Some(view_bg) else {
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
+    return
+  }
+  let uniform_base_offset = mesh2d_align_up(
+    self.mesh2d_instance_used.to_uint64(),
+    MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
+  ).to_int()
+  let next_instance_used = uniform_base_offset +
+    MESH2D_UNIFORM_STRIDE_BYTES.to_int()
+  if next_instance_used < 0 {
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
+    return
+  }
+  guard ensure_mesh2d_instance_uniform_binding(
+      self,
+      next_instance_used.to_uint64(),
+    )
+    is Some((instance_uniform_buf, instance_uniform_bg)) else {
+    render_diagnostics_record_mesh2d_drop_no_uniform_buf()
+    return
+  }
+  if next_instance_used > self.mesh2d_instance_used {
+    self.mesh2d_instance_used = next_instance_used
+  }
+  self.queue.write_buffer(
+    instance_uniform_buf,
+    uniform_base_offset.to_uint64(),
+    mesh2d_instance_uniform_bytes(x, y, rotation, scale_x, scale_y, 0U, 0U),
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, view_bg, [0U])
+  pass.set_bind_group(1U, instance_uniform_bg, [
+    uniform_base_offset.reinterpret_as_uint(),
+  ])
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
+  render_diagnostics_record_mesh2d_executed_draw()
+  if mesh.index_count == 0U {
+    pass.draw(mesh.vertex_count, 1U, mesh.vertex_start, 0U)
+  } else {
+    gpu_mesh_bind_index_buffer(pass, mesh)
+    pass.draw_indexed(
+      mesh.index_count,
+      1U,
+      mesh.index_start,
+      mesh.vertex_start.reinterpret_as_int(),
+      0U,
+    )
+  }
+}
+
+///|
 pub fn draw_mesh_wireframe(
   mesh_id~ : Int,
   x~ : Float,
@@ -2059,6 +2429,36 @@ pub fn draw_mesh_material(
       fragment_shader_path~,
     ) catch {
       err => debug_runtime_error("draw_mesh_material", err)
+    }
+  }
+}
+
+///|
+pub fn register_mesh2d_pipeline_descriptor(
+  pipeline_id~ : UInt64,
+  shader_path~ : String,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.register_mesh2d_pipeline_descriptor(pipeline_id, shader_path)
+  }
+}
+
+///|
+pub fn draw_mesh2d_pipeline(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  pipeline_id~ : UInt64,
+) -> Unit {
+  render_diagnostics_record_mesh2d_draw(mesh_id)
+  if ensure_backend() is Some(backend) {
+    backend.draw_mesh2d_pipeline(
+      mesh_id, x, y, rotation, scale_x, scale_y, pipeline_id,
+    ) catch {
+      err => debug_runtime_error("draw_mesh2d_pipeline", err)
     }
   }
 }

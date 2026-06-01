@@ -142,10 +142,12 @@ pub impl @json.FromJson for Mesh2d
 
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
-  uvs : Array[@math.Vec2]
-  colors : Array[@math.Vec4]?
-  indices : Array[Int]?
+  mut uvs : Array[@math.Vec2]?
+  mut colors : Array[@math.Vec4]?
+  mut custom_attributes : Array[MeshAttributeData]
+  mut indices : Array[Int]?
 }
+pub fn Mesh2dGeometry::attributes(Self) -> Array[MeshAttributeData]
 pub fn Mesh2dGeometry::encode_triangle_interleaved_xy_uv_rgba_csv(Self) -> String?
 pub fn Mesh2dGeometry::encode_triangle_positions_csv(Self) -> String?
 pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(Self) -> Array[Double]?
@@ -154,8 +156,12 @@ pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(Self) -> Array[Do
 pub fn Mesh2dGeometry::flatten_triangle_positions_xy(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::has_indices(Self) -> Bool
 pub fn Mesh2dGeometry::indices_or_sequential(Self) -> Array[Int]
+pub fn Mesh2dGeometry::insert_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Bool
+pub fn Mesh2dGeometry::insert_indices(Self, Array[Int]?) -> Unit
 pub fn Mesh2dGeometry::new(Array[@math.Vec2], Array[@math.Vec2], Array[Int]?) -> Self
+pub fn Mesh2dGeometry::new_empty() -> Self
 pub fn Mesh2dGeometry::new_with_colors(Array[@math.Vec2], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
+pub fn Mesh2dGeometry::new_with_positions(Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh2dGeometry::to_mesh(Self) -> Mesh
 pub fn Mesh2dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh2dGeometry::validate(Self) -> Mesh2dValidationError?
@@ -164,12 +170,15 @@ pub fn Mesh2dGeometry::vertex_count(Self) -> Int
 pub fn Mesh2dGeometry::vertex_position(Self, Int) -> @math.Vec2?
 pub fn Mesh2dGeometry::vertex_uv(Self, Int) -> @math.Vec2?
 pub fn Mesh2dGeometry::wireframe_segments(Self) -> Array[(@math.Vec2, @math.Vec2)]?
+pub fn Mesh2dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
+pub fn Mesh2dGeometry::with_inserted_indices(Self, Array[Int]?) -> Self
 pub impl IntoMeshAsset for Mesh2dGeometry
 
 pub(all) enum Mesh2dValidationError {
   EmptyVertices
   AttributeLengthMismatch(Int, Int)
   ColorAttributeLengthMismatch(Int, Int)
+  CustomAttributeLengthMismatch(String, Int, Int)
   NonIndexedVertexCountNotMultipleOf3(Int)
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)

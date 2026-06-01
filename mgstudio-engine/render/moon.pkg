@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/embedded_asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/post_process/bloom" @post_process_bloom,
   "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,

@@ -50,10 +50,11 @@ pub fn Mesh2dGeometry::vertex_uv(
   self : Mesh2dGeometry,
   index : Int,
 ) -> @math.Vec2? {
-  if index < 0 || index >= self.uvs.length() {
+  guard self.uvs is Some(uvs) else { return None }
+  if index < 0 || index >= uvs.length() {
     None
   } else {
-    Some(self.uvs[index])
+    Some(uvs[index])
   }
 }
 
