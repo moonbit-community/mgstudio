@@ -47,7 +47,7 @@ let animation_config_key : @ecs.ComponentKey[AnimationConfig] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for AnimationConfig with component() {
+pub impl @ecs.Component for AnimationConfig with fn component() {
   animation_config_key
 }
 
@@ -82,7 +82,7 @@ let left_sprite_key : @ecs.ComponentKey[LeftSprite] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for LeftSprite with component() {
+pub impl @ecs.Component for LeftSprite with fn component() {
   left_sprite_key
 }
 
@@ -95,7 +95,7 @@ let right_sprite_key : @ecs.ComponentKey[RightSprite] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for RightSprite with component() {
+pub impl @ecs.Component for RightSprite with fn component() {
   right_sprite_key
 }
 
@@ -121,25 +121,19 @@ fn main {
 }
 
 ///|
-fn spawn_help_overlay(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+fn spawn_help_overlay(commands : @app.Commands) -> Unit {
   ignore(
-    @text.Text2dBundle::new(
-      @text.Text2d::new(
-        "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
+    commands.spawn(
+      (
+        @text.Text::new(
+          "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
+        ),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
       ),
-      @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-620.0F, 340.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=10.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .spawn(),
+    ),
   )
 }
 
@@ -150,7 +144,7 @@ fn setup(
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
-  spawn_help_overlay(asset_server)
+  spawn_help_overlay(commands)
 
   let texture = asset_server
     .get()
@@ -197,7 +191,7 @@ fn setup(
     commands.spawn(
       (
         @sprite.Sprite::from_atlas_image(
-          asset_server.get().load("textures/rpg/chars/gabe/gabe-idle-run.png"),
+          texture,
           @asset.TextureAtlas::new(
             texture_atlas_layout,
             animation_config_2.first_sprite_index,
