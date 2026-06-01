@@ -245,7 +245,6 @@ fn ComputedTextureSlices::extract_slices(
   self : ComputedTextureSlices,
   sprite : Sprite,
   anchor : Anchor,
-  transform_scale : @math.Vec2,
 ) -> Array[TextureSlice] {
   let flip = @math.Vec2::new(
     if sprite.flip_x {
@@ -267,27 +266,18 @@ fn ComputedTextureSlices::extract_slices(
         None => @math.Vec2::zero()
       }
   }
-  let scaled_size = @math.Vec2::new(
-    anchor_size.x * sprite_abs_float(transform_scale.x),
-    anchor_size.y * sprite_abs_float(transform_scale.y),
-  )
   let anchor_offset = @math.Vec2::new(
-    anchor.as_vec().x * scaled_size.x,
-    anchor.as_vec().y * scaled_size.y,
+    anchor.as_vec().x * anchor_size.x,
+    anchor.as_vec().y * anchor_size.y,
   )
   let extracted : Array[TextureSlice] = []
   for slice in self.slices {
     extracted.push(TextureSlice::{
       texture_rect: slice.texture_rect,
-      draw_size: @math.Vec2::new(
-        slice.draw_size.x * sprite_abs_float(transform_scale.x),
-        slice.draw_size.y * sprite_abs_float(transform_scale.y),
-      ),
+      draw_size: slice.draw_size,
       offset: @math.Vec2::new(
-        slice.offset.x * flip.x * sprite_abs_float(transform_scale.x) -
-        anchor_offset.x,
-        slice.offset.y * flip.y * sprite_abs_float(transform_scale.y) -
-        anchor_offset.y,
+        slice.offset.x * flip.x - anchor_offset.x,
+        slice.offset.y * flip.y - anchor_offset.y,
       ),
     })
   }

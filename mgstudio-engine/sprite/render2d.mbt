@@ -3420,9 +3420,28 @@ priv struct SpriteSliceBatchDrawPayload {
 }
 
 ///|
+priv struct ComputedSpriteSlicesDrawPayload {
+  transform : @transform.Transform
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  flip_x : Bool
+  flip_y : Bool
+  scissor : @math.Rect?
+  image_size : @math.Vec2
+  slices : Array[TextureSlice]
+}
+
+///|
 priv struct ExtractedSprite {
   entity : PhaseEntityRef
   payload : SpriteDrawPayload
+}
+
+///|
+priv struct ExtractedComputedSpriteSlices {
+  entity : PhaseEntityRef
+  payload : ComputedSpriteSlicesDrawPayload
 }
 
 ///|
@@ -3562,6 +3581,7 @@ priv struct ExtractedMesh2d {
 ///|
 priv enum DrawKind {
   SpriteMain(Int)
+  SpriteSliceBatchMain(Int)
   SpriteExtra(Int)
   SpriteSliceBatchExtra(Int)
   UiSpriteExtra(Int)
@@ -3621,6 +3641,7 @@ struct RenderState {
   mut draw_enabled : Bool
   mut primary_camera : @core.Entity
   sprites : Array[ExtractedSprite]
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices]
   extra_sprites : Array[ExtractedSprite]
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch]
   extra_ui_sprites : Array[ExtractedUiSprite]
@@ -3664,6 +3685,7 @@ fn RenderState::new() -> RenderState {
     draw_enabled: false,
     primary_camera: @core.Entity::placeholder(),
     sprites: [],
+    sprite_slice_batches: [],
     extra_sprites: [],
     extra_sprite_slice_batches: [],
     extra_ui_sprites: [],
@@ -4073,15 +4095,6 @@ fn sprite_uv_from_sprite(
 }
 
 ///|
-fn sprite_sign(value : Float) -> Float {
-  if value < 0.0F {
-    -1.0F
-  } else {
-    1.0F
-  }
-}
-
-///|
 fn sprite_rotate_offset(offset : @math.Vec2, rotation : Float) -> @math.Vec2 {
   let cosv = @math.cos(rotation)
   let sinv = @math.sin(rotation)
@@ -4093,7 +4106,7 @@ fn sprite_rotate_offset(offset : @math.Vec2, rotation : Float) -> @math.Vec2 {
 
 ///|
 fn append_computed_sprite_slices(
-  sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   entity : @core.Entity,
   sprite : Sprite,
   computed_slices : ComputedTextureSlices?,
@@ -4104,75 +4117,20 @@ fn append_computed_sprite_slices(
   image_size : @math.Vec2,
 ) -> Bool {
   guard computed_slices is Some(computed_slices) else { return false }
-  let extracted_slices = computed_slices.extract_slices(
-    sprite,
-    anchor,
-    @math.Vec2::new(transform.scale.x, transform.scale.y),
-  )
-  let rotation = transform.rotation_z()
-  let sign_x = sprite_sign(transform.scale.x)
-  let sign_y = sprite_sign(transform.scale.y)
-  let image_size_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
-  let image_size_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
-  for slice in extracted_slices {
-    let slice_size = @math.Vec2::new(
-      slice.texture_rect.max.x - slice.texture_rect.min.x,
-      slice.texture_rect.max.y - slice.texture_rect.min.y,
-    )
-    let mut slice_uv_min = @math.Vec2::new(
-      slice.texture_rect.min.x / image_size_x,
-      slice.texture_rect.min.y / image_size_y,
-    )
-    let mut slice_uv_max = @math.Vec2::new(
-      slice.texture_rect.max.x / image_size_x,
-      slice.texture_rect.max.y / image_size_y,
-    )
-    if sprite.flip_x {
-      let pair = swap_float_pair(slice_uv_min.x, slice_uv_max.x)
-      slice_uv_min = @math.Vec2::new(pair.0, slice_uv_min.y)
-      slice_uv_max = @math.Vec2::new(pair.1, slice_uv_max.y)
-    }
-    if sprite.flip_y {
-      let pair = swap_float_pair(slice_uv_min.y, slice_uv_max.y)
-      slice_uv_min = @math.Vec2::new(slice_uv_min.x, pair.0)
-      slice_uv_max = @math.Vec2::new(slice_uv_max.x, pair.1)
-    }
-    let world_offset = sprite_rotate_offset(slice.offset, rotation)
-    let draw_scale = @math.Vec2::new(
-      if slice_size.x == 0.0F {
-        1.0F * sign_x
-      } else {
-        sign_x * slice.draw_size.x / slice_size.x
-      },
-      if slice_size.y == 0.0F {
-        1.0F * sign_y
-      } else {
-        sign_y * slice.draw_size.y / slice_size.y
-      },
-    )
-    sprites.push(
-      extracted_sprite_item(
-        entity,
-        @transform.Transform::from_xy_rotation_scale(
-          @math.Vec2::new(
-            transform.translation.x + world_offset.x,
-            transform.translation.y + world_offset.y,
-          ),
-          rotation,
-          @math.Vec2::new(1.0F, 1.0F),
-          z=transform.translation.z,
-        ),
-        @math.Vec2::new(0.0F, 0.0F),
-        draw_scale,
-        sprite.color,
-        sprite.image,
-        layers,
-        slice_uv_min,
-        slice_uv_max,
-        scissor,
-      ),
-    )
-  }
+  sprite_slice_batches.push(ExtractedComputedSpriteSlices::{
+    entity: phase_entity_ref_for_main(entity),
+    payload: ComputedSpriteSlicesDrawPayload::{
+      transform,
+      color: sprite.color,
+      texture: sprite.image,
+      layers,
+      flip_x: sprite.flip_x,
+      flip_y: sprite.flip_y,
+      scissor,
+      image_size,
+      slices: computed_slices.extract_slices(sprite, anchor),
+    },
+  })
   true
 }
 
@@ -5429,6 +5387,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     rs.draw_enabled = true
     rs.primary_camera = @core.Entity::placeholder()
     rs.sprites.clear()
+    rs.sprite_slice_batches.clear()
     rs.cameras.clear()
     rs.meshes.clear()
     // ECS camera components.
@@ -5525,7 +5484,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         )
       }
       if !append_computed_sprite_slices(
-          rs.sprites,
+          rs.sprite_slice_batches,
           entity,
           sprite,
           try! source_world.get_by_key(entity, ecs_key_computed_texture_slices),
@@ -5670,6 +5629,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         material_runtime_registry,
         custom_mesh2d_runtime_registry,
         rs.sprites,
+        rs.sprite_slice_batches,
         rs.extra_sprites,
         rs.extra_sprite_slice_batches,
         rs.extra_ui_sprites,
@@ -5835,6 +5795,35 @@ fn scene_cull_batch_radius(half_size : @math.Vec2, scale : @math.Vec2) -> Float 
     batch_half_extent
   } else {
     sprite_radius
+  }
+}
+
+///|
+fn scene_cull_radius_from_computed_sprite_slices(
+  payload : ComputedSpriteSlicesDrawPayload,
+) -> Float {
+  let mut half_x = 0.0F
+  let mut half_y = 0.0F
+  for slice in payload.slices {
+    let slice_half_x = scene_cull_abs_float(slice.draw_size.x) * 0.5F
+    let slice_half_y = scene_cull_abs_float(slice.draw_size.y) * 0.5F
+    let extent_x = scene_cull_abs_float(slice.offset.x) + slice_half_x
+    let extent_y = scene_cull_abs_float(slice.offset.y) + slice_half_y
+    if extent_x > half_x {
+      half_x = extent_x
+    }
+    if extent_y > half_y {
+      half_y = extent_y
+    }
+  }
+  let scale_x = scene_cull_abs_float(payload.transform.scale.x)
+  let scale_y = scene_cull_abs_float(payload.transform.scale.y)
+  let scaled_half_x = half_x * scale_x
+  let scaled_half_y = half_y * scale_y
+  if scaled_half_x > scaled_half_y {
+    scaled_half_x + 8.0F
+  } else {
+    scaled_half_y + 8.0F
   }
 }
 
@@ -6129,6 +6118,7 @@ fn append_registered_custom_mesh2d_draw_items(
 ///|
 fn[M] draw_material2d_items_for_layers(
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
@@ -6145,6 +6135,7 @@ fn[M] draw_material2d_items_for_layers(
   let items : Array[DrawItem] = []
   items.reserve_capacity(
     sprites.length() +
+    sprite_slice_batches.length() +
     extra_sprites.length() +
     extra_sprite_slice_batches.length() +
     extra_ui_sprites.length() +
@@ -6156,8 +6147,8 @@ fn[M] draw_material2d_items_for_layers(
   )
   for
     item in draw_material2d_scene_items_for_layers(
-      sprites, extra_sprites, extra_sprite_slice_batches, meshes, prepared_materials,
-      material_instances, layers,
+      sprites, sprite_slice_batches, extra_sprites, extra_sprite_slice_batches, meshes,
+      prepared_materials, material_instances, layers,
     ) {
     items.push(item)
   }
@@ -6174,6 +6165,7 @@ fn[M] draw_material2d_items_for_layers(
 ///|
 fn draw_items_for_layers(
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
@@ -6190,9 +6182,9 @@ fn draw_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_items_for_layers(
-    sprites, extra_sprites, extra_sprite_slice_batches, extra_ui_sprites, extra_ui_sprite_slice_batches,
-    extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices, meshes, prepared_materials,
-    material_instances, camera_entity, layers,
+    sprites, sprite_slice_batches, extra_sprites, extra_sprite_slice_batches, extra_ui_sprites,
+    extra_ui_sprite_slice_batches, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
+    meshes, prepared_materials, material_instances, camera_entity, layers,
   )
 }
 
@@ -6236,13 +6228,14 @@ fn draw_kind_opaque_batch_group(kind : DrawKind) -> Int {
     Mesh(_) => 0
     CustomMesh(_) => 1
     SpriteMain(_) => 2
-    SpriteExtra(_) => 3
-    SpriteSliceBatchExtra(_) => 4
-    UiSpriteExtra(_) => 5
-    UiSpriteSliceBatchExtra(_) => 6
-    UiRectExtra(_) => 7
-    UiBoxShadowExtra(_) => 8
-    UiTextureSliceExtra(_) => 9
+    SpriteSliceBatchMain(_) => 3
+    SpriteExtra(_) => 4
+    SpriteSliceBatchExtra(_) => 5
+    UiSpriteExtra(_) => 6
+    UiSpriteSliceBatchExtra(_) => 7
+    UiRectExtra(_) => 8
+    UiBoxShadowExtra(_) => 9
+    UiTextureSliceExtra(_) => 10
   }
 }
 
@@ -6291,6 +6284,7 @@ fn scene_phase_draw_items_concat(
 ///|
 fn[M] draw_material2d_scene_phase_items_for_layers(
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
@@ -6304,6 +6298,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
   opaque_items.reserve_capacity(meshes.length())
   transparent_items.reserve_capacity(
     sprites.length() +
+    sprite_slice_batches.length() +
     extra_sprites.length() +
     extra_sprite_slice_batches.length(),
   )
@@ -6342,6 +6337,33 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
+      phase: 1,
+      tie,
+      material_handle_id: -1,
+      material_runtime_index: -1,
+    })
+    tie = tie + 1
+  }
+  for i in 0..<sprite_slice_batches.length() {
+    let batch = sprite_slice_batches[i]
+    if !batch.payload.layers.matches(layers) {
+      continue
+    }
+    if scene_cull_context is Some(context) {
+      let transform = batch.payload.transform
+      if !scene_item_visible_in_context(
+          context,
+          transform.translation.x,
+          transform.translation.y,
+          scene_cull_radius_from_computed_sprite_slices(batch.payload),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
+      kind: SpriteSliceBatchMain(i),
+      entity: batch.entity,
+      z: batch.payload.transform.translation.z,
       phase: 1,
       tie,
       material_handle_id: -1,
@@ -6415,6 +6437,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
 ///|
 fn[M] draw_material2d_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
@@ -6425,6 +6448,7 @@ fn[M] draw_material2d_scene_items_for_layers(
 ) -> Array[DrawItem] {
   let phase_items = draw_material2d_scene_phase_items_for_layers(
     sprites,
+    sprite_slice_batches,
     extra_sprites,
     extra_sprite_slice_batches,
     meshes,
@@ -6439,6 +6463,7 @@ fn[M] draw_material2d_scene_items_for_layers(
 ///|
 fn draw_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
@@ -6451,6 +6476,7 @@ fn draw_scene_items_for_layers(
 ) -> Array[DrawItem] {
   draw_material2d_scene_items_for_layers(
     sprites,
+    sprite_slice_batches,
     extra_sprites,
     extra_sprite_slice_batches,
     meshes,
@@ -6467,6 +6493,7 @@ fn draw_registered_scene_phase_items_for_layers(
   registry : Material2dRuntimeRegistry,
   custom_registry : CustomMesh2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
@@ -6478,6 +6505,7 @@ fn draw_registered_scene_phase_items_for_layers(
   opaque_items.reserve_capacity(meshes.length())
   transparent_items.reserve_capacity(
     sprites.length() +
+    sprite_slice_batches.length() +
     extra_sprites.length() +
     extra_sprite_slice_batches.length(),
   )
@@ -6524,6 +6552,33 @@ fn draw_registered_scene_phase_items_for_layers(
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
+      phase: 1,
+      tie,
+      material_handle_id: -1,
+      material_runtime_index: -1,
+    })
+    tie = tie + 1
+  }
+  for i in 0..<sprite_slice_batches.length() {
+    let batch = sprite_slice_batches[i]
+    if !batch.payload.layers.matches(layers) {
+      continue
+    }
+    if scene_cull_context is Some(context) {
+      let transform = batch.payload.transform
+      if !scene_item_visible_in_context(
+          context,
+          transform.translation.x,
+          transform.translation.y,
+          scene_cull_radius_from_computed_sprite_slices(batch.payload),
+        ) {
+        continue
+      }
+    }
+    transparent_items.push(DrawItem::{
+      kind: SpriteSliceBatchMain(i),
+      entity: batch.entity,
+      z: batch.payload.transform.translation.z,
       phase: 1,
       tie,
       material_handle_id: -1,
@@ -6639,6 +6694,7 @@ fn build_camera_draw_items(
   registry : Material2dRuntimeRegistry,
   custom_registry : CustomMesh2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
+  sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   extra_ui_sprites : Array[ExtractedUiSprite],
@@ -6659,6 +6715,7 @@ fn build_camera_draw_items(
   let scene_phase_items = if use_color_material_fast_path {
     draw_material2d_scene_phase_items_for_layers(
       sprites,
+      sprite_slice_batches,
       extra_sprites,
       extra_sprite_slice_batches,
       meshes,
@@ -6673,6 +6730,7 @@ fn build_camera_draw_items(
       registry,
       custom_registry,
       sprites,
+      sprite_slice_batches,
       extra_sprites,
       extra_sprite_slice_batches,
       meshes,
@@ -6862,6 +6920,82 @@ fn extracted_sprite_item(
 }
 
 ///|
+fn computed_sprite_slice_draw_payload(
+  payload : ComputedSpriteSlicesDrawPayload,
+  slice : TextureSlice,
+) -> SpriteDrawPayload {
+  let image_size_x = if payload.image_size.x == 0.0F {
+    1.0F
+  } else {
+    payload.image_size.x
+  }
+  let image_size_y = if payload.image_size.y == 0.0F {
+    1.0F
+  } else {
+    payload.image_size.y
+  }
+  let slice_size = @math.Vec2::new(
+    slice.texture_rect.max.x - slice.texture_rect.min.x,
+    slice.texture_rect.max.y - slice.texture_rect.min.y,
+  )
+  let mut slice_uv_min = @math.Vec2::new(
+    slice.texture_rect.min.x / image_size_x,
+    slice.texture_rect.min.y / image_size_y,
+  )
+  let mut slice_uv_max = @math.Vec2::new(
+    slice.texture_rect.max.x / image_size_x,
+    slice.texture_rect.max.y / image_size_y,
+  )
+  if payload.flip_x {
+    let pair = swap_float_pair(slice_uv_min.x, slice_uv_max.x)
+    slice_uv_min = @math.Vec2::new(pair.0, slice_uv_min.y)
+    slice_uv_max = @math.Vec2::new(pair.1, slice_uv_max.y)
+  }
+  if payload.flip_y {
+    let pair = swap_float_pair(slice_uv_min.y, slice_uv_max.y)
+    slice_uv_min = @math.Vec2::new(slice_uv_min.x, pair.0)
+    slice_uv_max = @math.Vec2::new(slice_uv_max.x, pair.1)
+  }
+  let rotation = payload.transform.rotation_z()
+  let scaled_offset = @math.Vec2::new(
+    slice.offset.x * payload.transform.scale.x,
+    slice.offset.y * payload.transform.scale.y,
+  )
+  let world_offset = sprite_rotate_offset(scaled_offset, rotation)
+  let draw_scale = @math.Vec2::new(
+    if slice_size.x == 0.0F {
+      payload.transform.scale.x
+    } else {
+      payload.transform.scale.x * slice.draw_size.x / slice_size.x
+    },
+    if slice_size.y == 0.0F {
+      payload.transform.scale.y
+    } else {
+      payload.transform.scale.y * slice.draw_size.y / slice_size.y
+    },
+  )
+  SpriteDrawPayload::{
+    transform: @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(
+        payload.transform.translation.x + world_offset.x,
+        payload.transform.translation.y + world_offset.y,
+      ),
+      rotation,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=payload.transform.translation.z,
+    ),
+    anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+    draw_scale,
+    color: payload.color,
+    texture: payload.texture,
+    layers: payload.layers,
+    uv_min: slice_uv_min,
+    uv_max: slice_uv_max,
+    scissor: payload.scissor,
+  }
+}
+
+///|
 fn extracted_ui_rect_item(
   entity : @core.Entity,
   extracted_camera_entity : @core.Entity,
@@ -7009,6 +7143,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   ])
   let items = draw_items_for_layers(
     sprites,
+    [],
     extra,
     [],
     extra_ui_sprites,
@@ -7080,6 +7215,7 @@ test "render2d: UI overlay draw items route by target camera" {
   let meshes : Array[ExtractedMesh2d] = []
   let items = draw_items_for_layers(
     sprites,
+    [],
     extra,
     [],
     extra_ui_sprites,
@@ -7106,6 +7242,7 @@ test "render2d: scene draw items exclude UI overlays" {
   let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(
+    [],
     [],
     [],
     [],
@@ -7396,6 +7533,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   ])
   let items = draw_items_for_layers(
     sprites,
+    [],
     extra,
     [],
     extra_ui_sprites,
@@ -7456,6 +7594,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   ])
   let items = draw_scene_items_for_layers(
     sprites,
+    [],
     [],
     [],
     meshes,
@@ -7584,6 +7723,7 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   ])
   let items = draw_items_for_layers(
     sprites,
+    [],
     extra,
     [],
     extra_ui_sprites,
@@ -7642,9 +7782,9 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     debug_inspect(false, content="true")
     return
   }
-  let sprites : Array[ExtractedSprite] = []
+  let sprite_slice_batches : Array[ExtractedComputedSpriteSlices] = []
   let appended = append_computed_sprite_slices(
-    sprites,
+    sprite_slice_batches,
     @core.Entity::new(1, 0),
     sprite,
     Some(computed_slices),
@@ -7655,10 +7795,11 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     @math.Vec2::new(32.0F, 32.0F),
   )
   let ok = appended &&
-    sprites.length() == 9 &&
-    sprites[0].payload.texture.id() == 1 &&
-    sprites[0].payload.uv_min.x == 0.0F &&
-    sprites[0].payload.uv_max.x == 0.25F
+    sprite_slice_batches.length() == 1 &&
+    sprite_slice_batches[0].payload.texture.id() == 1 &&
+    sprite_slice_batches[0].payload.slices.length() == 9 &&
+    sprite_slice_batches[0].payload.slices[0].texture_rect.min.x == 0.0F &&
+    sprite_slice_batches[0].payload.slices[0].texture_rect.max.x == 8.0F
   debug_inspect(ok, content="true")
 }
 
@@ -7896,6 +8037,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       return
     }
     let sprites = rs.sprites
+    let sprite_slice_batches = rs.sprite_slice_batches
     let extra_sprites = rs.extra_sprites
     let extra_sprite_slice_batches = rs.extra_sprite_slice_batches
     let extra_ui_sprites = rs.extra_ui_sprites
@@ -8098,6 +8240,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             material_runtime_registry,
             custom_mesh2d_runtime_registry,
             sprites,
+            sprite_slice_batches,
             extra_sprites,
             extra_sprite_slice_batches,
             extra_ui_sprites,
@@ -8212,6 +8355,43 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
 
         let merged_slice_xy_uv : Array[Float] = []
 
+        fn draw_sprite_payload_after_scissor(
+          sprite : SpriteDrawPayload,
+        ) -> Unit {
+          let transform = sprite.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + sprite.anchor_offset.x,
+            transform.translation.y + sprite.anchor_offset.y,
+          )
+          @render.host_gpu_draw_sprite_uv(
+            texture_id=sprite.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=sprite.draw_scale.x,
+            scale_y=sprite.draw_scale.y,
+            color_r=sprite.color.r,
+            color_g=sprite.color.g,
+            color_b=sprite.color.b,
+            color_a=sprite.color.a,
+            uv_min_x=sprite.uv_min.x,
+            uv_min_y=sprite.uv_min.y,
+            uv_max_x=sprite.uv_max.x,
+            uv_max_y=sprite.uv_max.y,
+          )
+        }
+
+        fn draw_computed_sprite_slices(
+          payload : ComputedSpriteSlicesDrawPayload,
+        ) -> Unit {
+          apply_scissor(payload.scissor)
+          for slice in payload.slices {
+            draw_sprite_payload_after_scissor(
+              computed_sprite_slice_draw_payload(payload, slice),
+            )
+          }
+        }
+
         fn draw_camera_item(item : DrawItem) -> Unit {
           match item.kind {
             SpriteMain(i) => {
@@ -8239,6 +8419,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 uv_max_y=sprite.uv_max.y,
               )
             }
+            SpriteSliceBatchMain(i) =>
+              draw_computed_sprite_slices(sprite_slice_batches[i].payload)
             SpriteExtra(i) => {
               let sprite = extra_sprites[i].payload
               apply_scissor(sprite.scissor)
