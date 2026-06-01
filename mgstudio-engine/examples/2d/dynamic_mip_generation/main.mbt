@@ -51,7 +51,7 @@ priv enum AppSetting {
 }
 
 ///|
-impl @widgets_lib.WidgetValue for AppSetting with widget_debug_name() {
+impl @widgets_lib.WidgetValue for AppSetting with fn widget_debug_name() {
   "examples.2d.dynamic_mip_generation.AppSetting"
 }
 
@@ -63,7 +63,7 @@ let app_setting_widget_click_event_key : @ecs.MessageKey[
 )
 
 ///|
-impl @widgets_lib.WidgetValue for AppSetting with widget_click_event_key() {
+impl @widgets_lib.WidgetValue for AppSetting with fn widget_click_event_key() {
   app_setting_widget_click_event_key
 }
 
@@ -75,7 +75,7 @@ let app_setting_widget_click_sender_key : @ecs.ComponentKey[
 )
 
 ///|
-impl @widgets_lib.WidgetValue for AppSetting with widget_click_sender_key() {
+impl @widgets_lib.WidgetValue for AppSetting with fn widget_click_sender_key() {
   app_setting_widget_click_sender_key
 }
 
@@ -84,7 +84,7 @@ priv struct AppStatus {
   mut enable_mip_generation : EnableMipGeneration
   mut image_width : ImageSize
   mut image_height : ImageSize
-  rng : @random.Rand
+  rng : @example_rng.ChaCha8Rng
 }
 
 ///|
@@ -93,7 +93,7 @@ let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resour
 )
 
 ///|
-impl @app.Resource for AppStatus with resource() {
+impl @app.Resource for AppStatus with fn resource() {
   app_status_resource_key
 }
 
@@ -202,7 +202,7 @@ let app_assets_resource_key : @ecs.ResourceKey[AppAssets] = @ecs.register_resour
 )
 
 ///|
-impl @app.Resource for AppAssets with resource() {
+impl @app.Resource for AppAssets with fn resource() {
   app_assets_resource_key
 }
 
@@ -225,7 +225,7 @@ let animated_image_key : @ecs.ComponentKey[AnimatedImage] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for AnimatedImage with component() {
+pub impl @ecs.Component for AnimatedImage with fn component() {
   animated_image_key
 }
 
@@ -238,7 +238,7 @@ let image_view_key : @ecs.ComponentKey[ImageView] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for ImageView with component() {
+pub impl @ecs.Component for ImageView with fn component() {
   image_view_key
 }
 
@@ -251,7 +251,7 @@ let regenerate_image_key : @ecs.MessageKey[RegenerateImage] = @ecs.register_mess
 )
 
 ///|
-pub impl @ecs.Message for RegenerateImage with message() {
+pub impl @ecs.Message for RegenerateImage with fn message() {
   regenerate_image_key
 }
 
@@ -781,17 +781,13 @@ fn primary_window_size(
 }
 
 ///|
-fn random_rgb_color(rng : @random.Rand) -> (Byte, Byte, Byte) {
-  (
-    rng.int(limit=256).to_byte(),
-    rng.int(limit=256).to_byte(),
-    rng.int(limit=256).to_byte(),
-  )
+fn random_rgb_color(rng : @example_rng.ChaCha8Rng) -> (Byte, Byte, Byte) {
+  (rng.random_u8(), rng.random_u8(), rng.random_u8())
 }
 
 ///|
-fn seeded_rng() -> @random.Rand {
-  @random.Rand::chacha8(seed=b"bevy-dynmip-seed-x19878367467713")
+fn seeded_rng() -> @example_rng.ChaCha8Rng {
+  @example_rng.ChaCha8Rng::seed_from_u64(19878367467713UL)
 }
 
 ///|

@@ -48,3 +48,15 @@ test "chacha8 seed_from_u64 matches source f32 stream" {
     assert_true(diff > -0.0000001F && diff < 0.0000001F)
   }
 }
+
+///|
+test "chacha8 seed_from_u64 matches source u8 stream" {
+  let rng = @chacha_rng.ChaCha8Rng::seed_from_u64(19878367467713UL)
+  let expected = [
+    54, 210, 19, 46, 86, 235, 248, 114, 189, 71, 203, 187, 101, 247, 221, 91, 138,
+    29, 233, 154, 236, 193, 67, 149,
+  ]
+  for i in 0..<expected.length() {
+    assert_eq(rng.random_u8().to_int(), expected[i])
+  }
+}

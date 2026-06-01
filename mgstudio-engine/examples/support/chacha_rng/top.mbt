@@ -165,6 +165,11 @@ pub fn ChaCha8Rng::random_float(self : ChaCha8Rng) -> Float {
 }
 
 ///|
+pub fn ChaCha8Rng::random_u8(self : ChaCha8Rng) -> Byte {
+  (self.next_u32() & 0xFFU).reinterpret_as_int().to_byte()
+}
+
+///|
 pub fn ChaCha8Rng::random_range(self : ChaCha8Rng, upper : Int) -> Int {
   if upper <= 0 {
     abort("random range must be non-empty")
