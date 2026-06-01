@@ -13,22 +13,10 @@
 // limitations under the License.
 
 ///|
-const LABEL_FONT_SIZE : Float = 15.0F
-
-///|
-const LABEL_VERTICAL_GAP : Float = 10.0F
-
-///|
-const ATLAS_FIRST_FRAME : Int = 0
-
-///|
-const ATLAS_LAST_FRAME : Int = 6
-
-///|
 struct Rect {
   size : @math.Vec2
   text : String
-  translation : @math.Vec3
+  transform : @transform.Transform
   texture : @asset.Handle[@asset.Image]
   image_mode : @sprite.SpriteImageMode
 }
@@ -37,7 +25,7 @@ struct Rect {
 struct SpriteSheet {
   size : @math.Vec2
   text : String
-  translation : @math.Vec3
+  transform : @transform.Transform
   texture : @asset.Handle[@asset.Image]
   image_mode : @sprite.SpriteImageMode
   atlas : @asset.TextureAtlas
@@ -102,22 +90,23 @@ fn setup_sprites(
 ) -> Unit {
   let square = asset_server.get().load("textures/slice_square_2.png")
   let banner = asset_server.get().load("branding/banner.png")
-  let text_style = @text.TextFont::from_font_size(LABEL_FONT_SIZE).with_font(
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-  )
 
   let rects : Array[Rect] = [
     Rect::{
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Stretched",
-      translation: @math.Vec3::new(-570.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-570.0F, 230.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Auto,
     },
     Rect::{
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill Center",
-      translation: @math.Vec3::new(-450.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-450.0F, 230.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillCenter,
@@ -126,7 +115,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill Start",
-      translation: @math.Vec3::new(-330.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-330.0F, 230.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillStart,
@@ -135,7 +126,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill End",
-      translation: @math.Vec3::new(-210.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-210.0F, 230.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillEnd,
@@ -144,7 +137,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(300.0F, 100.0F),
       text: "Fill Start Horizontal",
-      translation: @math.Vec3::new(10.0F, 290.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(10.0F, 290.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillStart,
@@ -153,7 +148,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(300.0F, 100.0F),
       text: "Fill End Horizontal",
-      translation: @math.Vec3::new(10.0F, 155.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(10.0F, 155.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillEnd,
@@ -162,7 +159,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fill Center",
-      translation: @math.Vec3::new(280.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(280.0F, 230.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillCenter,
@@ -171,7 +170,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(200.0F, 100.0F),
       text: "Fill Center",
-      translation: @math.Vec3::new(500.0F, 230.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(500.0F, 230.0F, 0.0F),
+      ),
       texture: square,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillCenter,
@@ -180,14 +181,18 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(100.0F, 100.0F),
       text: "Stretched",
-      translation: @math.Vec3::new(-570.0F, -40.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-570.0F, -40.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Auto,
     },
     Rect::{
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit Center",
-      translation: @math.Vec3::new(-400.0F, -40.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-400.0F, -40.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitCenter,
@@ -196,7 +201,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit Start",
-      translation: @math.Vec3::new(-180.0F, -40.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-180.0F, -40.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitStart,
@@ -205,7 +212,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit End",
-      translation: @math.Vec3::new(40.0F, -40.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(40.0F, -40.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitEnd,
@@ -214,7 +223,9 @@ fn setup_sprites(
     Rect::{
       size: @math.Vec2::new(100.0F, 200.0F),
       text: "Fit Center",
-      translation: @math.Vec3::new(210.0F, -40.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(210.0F, -40.0F, 0.0F),
+      ),
       texture: banner,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitCenter,
@@ -223,7 +234,30 @@ fn setup_sprites(
   ]
 
   for rect in rects {
-    spawn_rect(commands, rect, text_style)
+    let entity = commands.spawn(
+      (
+        @sprite.Sprite::from_image(rect.texture)
+        .with_custom_size(Some(rect.size))
+        .with_image_mode(rect.image_mode),
+        rect.transform,
+      ),
+    )
+    ignore(
+      commands.spawn(
+        (
+          @hierarchy.Parent::new(entity),
+          @text.Text2d::new(rect.text),
+          @text.TextLayout::new_with_justify(@text.Justify::Center),
+          @text.TextFont::from_font_size(15.0F),
+          @transform.Transform::from_xyz(
+            0.0F,
+            -0.5F * rect.size.y - 10.0F,
+            0.0F,
+          ),
+          @sprite.Anchor::top_center(),
+        ),
+      ),
+    )
   }
 }
 
@@ -236,17 +270,11 @@ fn setup_texture_atlas(
   let gabe = asset_server
     .get()
     .load("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let text_style = @text.TextFont::from_font_size(LABEL_FONT_SIZE).with_font(
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-  )
-  let animation_indices = AnimationIndices::{
-    first: ATLAS_FIRST_FRAME,
-    last: ATLAS_LAST_FRAME,
-  }
+  let animation_indices = AnimationIndices::{ first: 0, last: 6 }
   let gabe_atlas = @asset.TextureAtlas::new(
     texture_atlas_layouts
     .peek()
-    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1)),
+    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1)),
     animation_indices.first,
   )
 
@@ -254,7 +282,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Stretched",
-      translation: @math.Vec3::new(-570.0F, -200.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-570.0F, -200.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Auto,
       atlas: gabe_atlas,
@@ -266,7 +296,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill Center",
-      translation: @math.Vec3::new(-570.0F, -300.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-570.0F, -300.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillCenter,
@@ -280,7 +312,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill Start",
-      translation: @math.Vec3::new(-430.0F, -200.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-430.0F, -200.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillStart,
@@ -294,7 +328,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill End",
-      translation: @math.Vec3::new(-430.0F, -300.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-430.0F, -300.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillEnd,
@@ -308,7 +344,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill Center",
-      translation: @math.Vec3::new(-300.0F, -250.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-300.0F, -250.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillCenter,
@@ -322,7 +360,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill Start",
-      translation: @math.Vec3::new(-190.0F, -250.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-190.0F, -250.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillStart,
@@ -336,7 +376,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill End",
-      translation: @math.Vec3::new(-90.0F, -250.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(-90.0F, -250.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FillEnd,
@@ -350,7 +392,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit Center",
-      translation: @math.Vec3::new(20.0F, -200.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(20.0F, -200.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitCenter,
@@ -364,7 +408,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit Start",
-      translation: @math.Vec3::new(20.0F, -300.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(20.0F, -300.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitStart,
@@ -378,7 +424,9 @@ fn setup_texture_atlas(
     SpriteSheet::{
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit End",
-      translation: @math.Vec3::new(160.0F, -200.0F, 0.0F),
+      transform: @transform.Transform::from_translation(
+        @math.Vec3::new(160.0F, -200.0F, 0.0F),
+      ),
       texture: gabe,
       image_mode: @sprite.SpriteImageMode::Scale(
         @sprite.SpriteScalingMode::FitEnd,
@@ -392,76 +440,36 @@ fn setup_texture_atlas(
   ]
 
   for sprite_sheet in sprite_sheets {
-    spawn_sprite_sheet(commands, sprite_sheet, text_style)
-  }
-}
-
-///|
-fn spawn_rect(
-  commands : @app.Commands,
-  rect : Rect,
-  text_style : @text.TextFont,
-) -> Unit {
-  let entity = commands.spawn(
-    (
-      @sprite.Sprite::from_image(rect.texture)
-      .with_custom_size(Some(rect.size))
-      .with_image_mode(rect.image_mode),
-      @transform.Transform::from_translation(rect.translation),
-    ),
-  )
-  spawn_scale_label(commands, entity, rect.text, text_style, rect.size)
-}
-
-///|
-fn spawn_sprite_sheet(
-  commands : @app.Commands,
-  sprite_sheet : SpriteSheet,
-  text_style : @text.TextFont,
-) -> Unit {
-  let entity = commands.spawn(
-    (
-      @sprite.Sprite::from_atlas_image(sprite_sheet.texture, sprite_sheet.atlas)
-      .with_custom_size(Some(sprite_sheet.size))
-      .with_image_mode(sprite_sheet.image_mode),
-      sprite_sheet.indices,
-      sprite_sheet.timer,
-      @transform.Transform::from_translation(sprite_sheet.translation),
-    ),
-  )
-  spawn_scale_label(
-    commands,
-    entity,
-    sprite_sheet.text,
-    text_style,
-    sprite_sheet.size,
-  )
-}
-
-///|
-fn spawn_scale_label(
-  commands : @app.Commands,
-  parent : @core.Entity,
-  label : String,
-  text_style : @text.TextFont,
-  sprite_size : @math.Vec2,
-) -> Unit {
-  ignore(
-    commands.spawn(
+    let entity = commands.spawn(
       (
-        @text.Text2d::new(label),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
-        text_style,
-        @transform.Transform::from_xyz(
-          0.0F,
-          -0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
-          0.0F,
-        ),
-        @sprite.Anchor::top_center(),
-        @hierarchy.Parent::new(parent),
+        @sprite.Sprite::from_atlas_image(
+          sprite_sheet.texture,
+          sprite_sheet.atlas,
+        )
+        .with_custom_size(Some(sprite_sheet.size))
+        .with_image_mode(sprite_sheet.image_mode),
+        sprite_sheet.indices,
+        sprite_sheet.timer,
+        sprite_sheet.transform,
       ),
-    ),
-  )
+    )
+    ignore(
+      commands.spawn(
+        (
+          @hierarchy.Parent::new(entity),
+          @text.Text2d::new(sprite_sheet.text),
+          @text.TextLayout::new_with_justify(@text.Justify::Center),
+          @text.TextFont::from_font_size(15.0F),
+          @transform.Transform::from_xyz(
+            0.0F,
+            -0.5F * sprite_sheet.size.y - 10.0F,
+            0.0F,
+          ),
+          @sprite.Anchor::top_center(),
+        ),
+      ),
+    )
+  }
 }
 
 ///|
