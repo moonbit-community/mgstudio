@@ -230,12 +230,21 @@ priv struct ComputedTextureSlices {
 }
 
 ///|
+let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices] = @ecs.register_component(
+  debug_name="mgstudio.sprite_render.ComputedTextureSlices",
+)
+
+///|
+impl @ecs.Component for ComputedTextureSlices with fn component() {
+  ecs_key_computed_texture_slices
+}
+
+///|
 fn ComputedTextureSlices::extract_slices(
   self : ComputedTextureSlices,
   sprite : Sprite,
   anchor : Anchor,
   transform_scale : @math.Vec2,
-  base_size : @math.Vec2,
 ) -> Array[TextureSlice] {
   let flip = @math.Vec2::new(
     if sprite.flip_x {
@@ -249,9 +258,17 @@ fn ComputedTextureSlices::extract_slices(
       1.0F
     },
   )
+  let anchor_size = match sprite.custom_size {
+    Some(size) => size
+    None =>
+      match sprite.rect {
+        Some(rect) => rect.size()
+        None => @math.Vec2::zero()
+      }
+  }
   let scaled_size = @math.Vec2::new(
-    base_size.x * sprite_abs_float(transform_scale.x),
-    base_size.y * sprite_abs_float(transform_scale.y),
+    anchor_size.x * sprite_abs_float(transform_scale.x),
+    anchor_size.y * sprite_abs_float(transform_scale.y),
   )
   let anchor_offset = @math.Vec2::new(
     anchor.as_vec().x * scaled_size.x,
@@ -279,19 +296,52 @@ fn ComputedTextureSlices::extract_slices(
 ///|
 fn compute_sprite_slices(
   sprite : Sprite,
+  images : @asset.Assets[@asset.Image],
+  texture_atlas_layouts : @asset.Assets[@asset.TextureAtlasLayout],
+) -> ComputedTextureSlices? {
+  let (image_size, texture_rect) = match sprite.texture_atlas {
+    Some(atlas) =>
+      match texture_atlas_layouts.get(atlas.layout()) {
+        Some(layout) =>
+          match atlas.texture_rect(texture_atlas_layouts) {
+            Some(rect) => (layout.size().to_vec2(), rect.as_rect())
+            None => return None
+          }
+        None => return None
+      }
+    None =>
+      match images.get(sprite.image) {
+        Some(image) => {
+          let size = @math.Vec2::new(
+            Float::from_int(image.width()),
+            Float::from_int(image.height()),
+          )
+          let rect = match sprite.rect {
+            Some(rect) => rect
+            None => sprite_rect_from_size(size)
+          }
+          (size, rect)
+        }
+        None => return None
+      }
+  }
+  compute_sprite_slices_from_rect(sprite, image_size, texture_rect)
+}
+
+///|
+fn compute_sprite_slices_from_rect(
+  sprite : Sprite,
   image_size : @math.Vec2,
+  texture_rect : @math.Rect,
 ) -> ComputedTextureSlices? {
   match sprite.image_mode {
     SpriteImageMode::Sliced(slicer) =>
       Some(ComputedTextureSlices::{
-        slices: slicer.compute_slices(
-          sprite_rect_from_size(image_size),
-          sprite.custom_size,
-        ),
+        slices: slicer.compute_slices(texture_rect, sprite.custom_size),
       })
     SpriteImageMode::Tiled(tiling) => {
       let slice = TextureSlice::{
-        texture_rect: sprite_rect_from_size(image_size),
+        texture_rect,
         draw_size: match sprite.custom_size {
           Some(size) => size
           None => image_size
@@ -307,4 +357,128 @@ fn compute_sprite_slices(
     }
     _ => None
   }
+}
+
+///|
+pub let sprite_systems_compute_slices : @app.SystemSet = @app.system_set(
+  "mgstudio.sprite_render.SpriteSystems.ComputeSlices",
+)
+
+///|
+fn insert_computed_texture_slices_for_sprite(
+  commands : @app.Commands,
+  entity : @core.Entity,
+  sprite : Sprite,
+  images : @asset.Assets[@asset.Image],
+  texture_atlas_layouts : @asset.Assets[@asset.TextureAtlasLayout],
+) -> Unit {
+  match compute_sprite_slices(sprite, images, texture_atlas_layouts) {
+    Some(slices) => commands.entity(entity).insert_component(slices)
+    None => ()
+  }
+}
+
+///|
+type ComputedSlicesAssetParams = @app.ParamSet2[
+  @app.Res[@asset.Assets[@asset.Image]],
+  @app.Res[@asset.Assets[@asset.TextureAtlasLayout]],
+]
+
+///|
+type ComputedSlicesChangedSpritesQuery = @ecs.Query[
+  @ecs.Comp[Sprite],
+  @ecs.Changed[Sprite],
+]
+
+///|
+type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.All]
+
+///|
+type ComputedSlicesAssetEventParams = @app.ParamSet2[
+  @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
+  ComputedSlicesAllSpritesQuery,
+]
+
+///|
+fn compute_slices_on_sprite_change_system(
+  commands : @app.Commands,
+  assets : ComputedSlicesAssetParams,
+  changed_sprites : ComputedSlicesChangedSpritesQuery,
+) -> Unit {
+  let images = assets.p0().get()
+  let texture_atlas_layouts = assets.p1().get()
+  try! changed_sprites.view(fn(entity, sprite_comp) {
+    let sprite = sprite_comp.value()
+    if !sprite.image_mode.uses_slices() {
+      return
+    }
+    insert_computed_texture_slices_for_sprite(
+      commands, entity, sprite, images, texture_atlas_layouts,
+    )
+  })
+}
+
+///|
+fn compute_slices_on_asset_event_system(
+  commands : @app.Commands,
+  assets : ComputedSlicesAssetParams,
+  params : ComputedSlicesAssetEventParams,
+) -> Unit {
+  let changed_handles : @hashset.HashSet[Int] = @hashset.HashSet([])
+  for event in params.p0().read() {
+    match event {
+      Added(handle) | Modified(handle) => changed_handles.add(handle.id())
+      _ => ()
+    }
+  }
+  if changed_handles.is_empty() {
+    return
+  }
+  let images = assets.p0().get()
+  let texture_atlas_layouts = assets.p1().get()
+  let sprites = params.p1()
+  try! sprites.view(fn(entity, sprite_comp) {
+    let sprite = sprite_comp.value()
+    if !sprite.image_mode.uses_slices() {
+      return
+    }
+    if !changed_handles.contains(sprite.image.id()) {
+      return
+    }
+    insert_computed_texture_slices_for_sprite(
+      commands, entity, sprite, images, texture_atlas_layouts,
+    )
+  })
+}
+
+///|
+test "sprite: computed texture slice insertion is deferred until after sprite query" {
+  let spawned : Ref[@core.Entity?] = Ref(None)
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_startup_system_param2(fn(
+      commands : @app.Commands,
+      images : @app.ResMut[@asset.Assets[@asset.Image]],
+    ) {
+      let image = images.modify(fn(value) {
+        value.add(@asset.Image::new(32, 32, Bytes::new(32 * 32 * 4)))
+      })
+      let sprite = Sprite::from_image(image)
+        .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
+        .with_image_mode(
+          SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
+        )
+      spawned.val = Some(commands.spawn_component(sprite))
+    })
+    .add_system_param3(compute_slices_on_sprite_change_system)
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected sliced sprite entity")
+  }
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_computed_texture_slices))
+    is Some(_),
+    content="true",
+  )
 }

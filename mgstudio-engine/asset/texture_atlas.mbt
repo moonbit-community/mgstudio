@@ -19,12 +19,12 @@ pub struct TextureAtlasLayout {
 }
 
 ///|
-pub impl Asset for TextureAtlasLayout with asset_debug_name() {
+pub impl Asset for TextureAtlasLayout with fn asset_debug_name() {
   "mgstudio_asset::TextureAtlasLayout"
 }
 
 ///|
-pub impl Asset for TextureAtlasLayout with asset_as_image(_self) {
+pub impl Asset for TextureAtlasLayout with fn asset_as_image(_self) {
   None
 }
 
@@ -34,7 +34,7 @@ pub let texture_atlas_layout_asset_resource_keys : AssetResourceKeys[
 ] = register_asset_resource_keys("mgstudio_asset::TextureAtlasLayout")
 
 ///|
-pub impl Asset for TextureAtlasLayout with asset_resource_keys() {
+pub impl Asset for TextureAtlasLayout with fn asset_resource_keys() {
   texture_atlas_layout_asset_resource_keys
 }
 
@@ -43,6 +43,11 @@ pub fn TextureAtlasLayout::new_empty(
   dimensions : @math.UVec2,
 ) -> TextureAtlasLayout {
   TextureAtlasLayout::{ size: dimensions, textures: [] }
+}
+
+///|
+pub fn TextureAtlasLayout::size(self : TextureAtlasLayout) -> @math.UVec2 {
+  self.size
 }
 
 ///|
@@ -132,12 +137,12 @@ pub struct TextureAtlas {
 }
 
 ///|
-pub impl ToJson for TextureAtlas with to_json(self) {
+pub impl ToJson for TextureAtlas with fn to_json(self) {
   (self.layout, self.index).to_json()
 }
 
 ///|
-pub impl @json.FromJson for TextureAtlas with from_json(json, path) {
+pub impl @json.FromJson for TextureAtlas with fn from_json(json, path) {
   let (layout, index) : (Handle[TextureAtlasLayout], Int) = @json.from_json(
     json,
     path~,

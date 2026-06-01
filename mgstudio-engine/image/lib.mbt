@@ -50,6 +50,16 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
 }
 
 ///|
+pub fn Image::width(self : Image) -> Int {
+  self.width
+}
+
+///|
+pub fn Image::height(self : Image) -> Int {
+  self.height
+}
+
+///|
 pub(all) enum TextureFormat {
   Rgba8Unorm
   Rgba8UnormSrgb

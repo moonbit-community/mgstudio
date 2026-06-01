@@ -694,6 +694,7 @@ pub fn TextureAtlasLayout::from_grid(@math.UVec2, Int, Int, padding? : @math.UVe
 pub fn TextureAtlasLayout::is_empty(Self) -> Bool
 pub fn TextureAtlasLayout::len(Self) -> Int
 pub fn TextureAtlasLayout::new_empty(@math.UVec2) -> Self
+pub fn TextureAtlasLayout::size(Self) -> @math.UVec2
 pub fn TextureAtlasLayout::texture(Self, Int) -> @math.URect?
 pub impl Asset for TextureAtlasLayout
 

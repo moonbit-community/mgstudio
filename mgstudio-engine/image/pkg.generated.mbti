@@ -119,9 +119,11 @@ pub(all) struct Image {
   view_format : TextureFormat?
   kind : ImageKind
 }
+pub fn Image::height(Self) -> Int
 pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
+pub fn Image::width(Self) -> Int
 pub fn Image::with_format(Self, TextureFormat) -> Self
 
 pub(all) enum ImageAddressMode {

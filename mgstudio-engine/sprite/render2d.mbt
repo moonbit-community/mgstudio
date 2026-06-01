@@ -3469,6 +3469,7 @@ fn default_uv_max() -> @math.Vec2 {
 priv struct SpriteUvInfo {
   uv_min : @math.Vec2
   uv_max : @math.Vec2
+  image_size : @math.Vec2
   // Pixel size of the resolved sprite region (image rect / atlas rect / sprite rect).
   // This is used to interpret `Sprite.custom_size` as a final size (Bevy-style),
   // while the host expects a scale factor.
@@ -3604,7 +3605,12 @@ fn sprite_uv_from_sprite(
     uv_min = @math.Vec2::new(uv_min.x, pair.0)
     uv_max = @math.Vec2::new(uv_max.x, pair.1)
   }
-  Some(SpriteUvInfo::{ uv_min, uv_max, region_size })
+  Some(SpriteUvInfo::{
+    uv_min,
+    uv_max,
+    image_size: @math.Vec2::new(denom_x, denom_y),
+    region_size,
+  })
 }
 
 ///|
@@ -3627,72 +3633,51 @@ fn sprite_rotate_offset(offset : @math.Vec2, rotation : Float) -> @math.Vec2 {
 }
 
 ///|
-fn sprite_slice_uv_axis(
-  uv_min : Float,
-  uv_max : Float,
-  slice_min : Float,
-  slice_max : Float,
-  region_extent : Float,
-) -> (Float, Float) {
-  if region_extent == 0.0F {
-    (uv_min, uv_max)
-  } else {
-    let span = uv_max - uv_min
-    (
-      uv_min + span * (slice_min / region_extent),
-      uv_min + span * (slice_max / region_extent),
-    )
-  }
-}
-
-///|
 fn append_computed_sprite_slices(
   sprites : Array[ExtractedSprite],
   entity : @core.Entity,
   sprite : Sprite,
+  computed_slices : ComputedTextureSlices?,
   anchor : Anchor,
   transform : @transform.Transform,
   layers : RenderLayers,
   scissor : @math.Rect?,
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-  region_size : @math.Vec2,
+  image_size : @math.Vec2,
 ) -> Bool {
-  guard compute_sprite_slices(sprite, region_size) is Some(computed_slices) else {
-    return false
-  }
-  let base_size = match sprite.custom_size {
-    Some(size) => size
-    None => region_size
-  }
+  guard computed_slices is Some(computed_slices) else { return false }
   let extracted_slices = computed_slices.extract_slices(
     sprite,
     anchor,
     @math.Vec2::new(transform.scale.x, transform.scale.y),
-    base_size,
   )
   let rotation = transform.rotation_z()
   let sign_x = sprite_sign(transform.scale.x)
   let sign_y = sprite_sign(transform.scale.y)
+  let image_size_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
+  let image_size_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
   for slice in extracted_slices {
     let slice_size = @math.Vec2::new(
       slice.texture_rect.max.x - slice.texture_rect.min.x,
       slice.texture_rect.max.y - slice.texture_rect.min.y,
     )
-    let (slice_uv_min_x, slice_uv_max_x) = sprite_slice_uv_axis(
-      uv_min.x,
-      uv_max.x,
-      slice.texture_rect.min.x,
-      slice.texture_rect.max.x,
-      region_size.x,
+    let mut slice_uv_min = @math.Vec2::new(
+      slice.texture_rect.min.x / image_size_x,
+      slice.texture_rect.min.y / image_size_y,
     )
-    let (slice_uv_min_y, slice_uv_max_y) = sprite_slice_uv_axis(
-      uv_min.y,
-      uv_max.y,
-      slice.texture_rect.min.y,
-      slice.texture_rect.max.y,
-      region_size.y,
+    let mut slice_uv_max = @math.Vec2::new(
+      slice.texture_rect.max.x / image_size_x,
+      slice.texture_rect.max.y / image_size_y,
     )
+    if sprite.flip_x {
+      let pair = swap_float_pair(slice_uv_min.x, slice_uv_max.x)
+      slice_uv_min = @math.Vec2::new(pair.0, slice_uv_min.y)
+      slice_uv_max = @math.Vec2::new(pair.1, slice_uv_max.y)
+    }
+    if sprite.flip_y {
+      let pair = swap_float_pair(slice_uv_min.y, slice_uv_max.y)
+      slice_uv_min = @math.Vec2::new(slice_uv_min.x, pair.0)
+      slice_uv_max = @math.Vec2::new(slice_uv_max.x, pair.1)
+    }
     let world_offset = sprite_rotate_offset(slice.offset, rotation)
     let draw_scale = @math.Vec2::new(
       if slice_size.x == 0.0F {
@@ -3723,8 +3708,8 @@ fn append_computed_sprite_slices(
         sprite.color,
         sprite.image,
         layers,
-        @math.Vec2::new(slice_uv_min_x, slice_uv_min_y),
-        @math.Vec2::new(slice_uv_max_x, slice_uv_max_y),
+        slice_uv_min,
+        slice_uv_max,
         scissor,
       ),
     )
@@ -5052,9 +5037,11 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       let mut uv_min = default_uv_min()
       let mut uv_max = default_uv_max()
       let mut region_size = @math.Vec2::new(1.0F, 1.0F)
+      let mut image_size = @math.Vec2::new(1.0F, 1.0F)
       if sprite_uv_from_sprite(sprite, texture_atlas_layouts) is Some(info) {
         uv_min = info.uv_min
         uv_max = info.uv_max
+        image_size = info.image_size
         region_size = info.region_size
       }
       let draw_scale = sprite_draw_scale(
@@ -5106,13 +5093,12 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
           rs.sprites,
           entity,
           sprite,
+          try! source_world.get_by_key(entity, ecs_key_computed_texture_slices),
           anchor,
           transform,
           layers,
           scissor,
-          uv_min,
-          uv_max,
-          region_size,
+          image_size,
         ) {
         rs.sprites.push(ExtractedSprite::{
           entity: phase_entity_ref_for_main(entity),
@@ -7124,7 +7110,11 @@ test "render2d: tiled sprite mode computes repeated slices" {
       SpriteImageMode::tiled(tile_x=true, tile_y=false, stretch_value=0.5F),
     )
     .with_custom_size(Some(@math.Vec2::new(64.0F, 32.0F)))
-  guard compute_sprite_slices(sprite, @math.Vec2::new(32.0F, 32.0F))
+  guard compute_sprite_slices_from_rect(
+      sprite,
+      @math.Vec2::new(32.0F, 32.0F),
+      @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(32.0F, 32.0F)),
+    )
     is Some(slices) else {
     debug_inspect(false, content="true")
     return
@@ -7143,17 +7133,25 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
       SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
     )
     .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
+  guard compute_sprite_slices_from_rect(
+      sprite,
+      @math.Vec2::new(32.0F, 32.0F),
+      @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(32.0F, 32.0F)),
+    )
+    is Some(computed_slices) else {
+    debug_inspect(false, content="true")
+    return
+  }
   let sprites : Array[ExtractedSprite] = []
   let appended = append_computed_sprite_slices(
     sprites,
     @core.Entity::new(1, 0),
     sprite,
+    Some(computed_slices),
     Anchor::center(),
     @transform.Transform::identity(),
     RenderLayers::RenderLayers(),
     None,
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
     @math.Vec2::new(32.0F, 32.0F),
   )
   let ok = appended &&
@@ -8791,9 +8789,20 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       app.init_resource(fn() { ClearColor::ClearColor() }),
       DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
+    .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
     .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
     .add_startup_system(register_render2d_shader_sources)
+    .add_post_update_system_config(
+      @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
+        sprite_systems_compute_slices,
+      ),
+    )
+    .add_post_update_system_config(
+      @app.system(@app.system_param3(compute_slices_on_asset_event_system))
+      .in_set(sprite_systems_compute_slices)
+      .after(@asset.asset_event_system_set()),
+    )
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
     )
@@ -8815,9 +8824,20 @@ fn render2d_plugin_ecs_install(
       app.init_resource(fn() { ClearColor::ClearColor() }),
       DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
+    .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
     .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
     .add_startup_system(register_render2d_shader_sources)
+    .add_post_update_system_config(
+      @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
+        sprite_systems_compute_slices,
+      ),
+    )
+    .add_post_update_system_config(
+      @app.system(@app.system_param3(compute_slices_on_asset_event_system))
+      .in_set(sprite_systems_compute_slices)
+      .after(@asset.asset_event_system_set()),
+    )
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
     )

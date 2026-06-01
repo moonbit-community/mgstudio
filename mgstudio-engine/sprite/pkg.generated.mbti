@@ -265,6 +265,8 @@ pub fn sprite_stroke_text_emit_3d(GizmoConfig, @math.Isometry3d, String, Float, 
 
 pub fn sprite_stroke_text_measure(String, Float) -> @math.Vec2
 
+pub let sprite_systems_compute_slices : String
+
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
