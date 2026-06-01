@@ -21,51 +21,40 @@ fn main {
 }
 
 ///|
-fn spawn_logo_sprite(
-  commands : @app.Commands,
-  image : @asset.Handle[@asset.Image],
-  position : @math.Vec2,
-  color : @sprite.Color,
-  z : Float,
-) -> Unit {
-  ignore(
-    commands.spawn(
-      (
-        @sprite.Sprite::from_image(image).with_color(color),
-        @transform.Transform::from_xyz(position.x, position.y, z),
-      ),
-    ),
-  )
-}
-
-///|
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
-  let icon = asset_server.get().load("branding/icon.png")
+  let sprite_handle = asset_server.get().load("branding/icon.png")
 
-  spawn_logo_sprite(
-    commands,
-    icon,
-    @math.Vec2::new(-100.0F, 0.0F),
-    @sprite.Color::white(),
-    0.0F,
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(sprite_handle),
+        @transform.Transform::from_xyz(-100.0F, 0.0F, 0.0F),
+      ),
+    ),
   )
-  spawn_logo_sprite(
-    commands,
-    icon,
-    @math.Vec2::new(0.0F, 0.0F),
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.7F),
-    0.1F,
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(sprite_handle).with_color(
+          @sprite.Color::srgba(0.0F, 0.0F, 1.0F, 0.7F),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.1F),
+      ),
+    ),
   )
-  spawn_logo_sprite(
-    commands,
-    icon,
-    @math.Vec2::new(100.0F, 0.0F),
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.3F),
-    0.2F,
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(sprite_handle).with_color(
+          @sprite.Color::srgba(0.0F, 1.0F, 0.0F, 0.3F),
+        ),
+        @transform.Transform::from_xyz(100.0F, 0.0F, 0.2F),
+      ),
+    ),
   )
 }
