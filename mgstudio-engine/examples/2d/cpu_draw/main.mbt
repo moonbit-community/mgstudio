@@ -44,7 +44,7 @@ struct LinearColor {
 } derive(ToJson, FromJson)
 
 ///|
-impl @app.FromWorld for LinearColor with from_world(world) {
+impl @app.FromWorld for LinearColor with fn from_world(world) {
   ignore(world)
   LinearColor::{ r: 0.0F, g: 0.0F, b: 0.0F }
 }
@@ -60,13 +60,13 @@ let my_proc_gen_image_key : @ecs.ResourceKey[MyProcGenImage] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for MyProcGenImage with resource() {
+pub impl @app.Resource for MyProcGenImage with fn resource() {
   my_proc_gen_image_key
 }
 
 ///|
 struct SeededRng {
-  rng : @random.Rand
+  rng : @example_rng.ChaCha8Rng
 }
 
 ///|
@@ -75,7 +75,7 @@ let seeded_rng_key : @ecs.ResourceKey[SeededRng] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for SeededRng with resource() {
+pub impl @app.Resource for SeededRng with fn resource() {
   seeded_rng_key
 }
 
@@ -170,13 +170,17 @@ fn draw(
 }
 
 ///|
-fn seeded_rng() -> @random.Rand {
-  @random.Rand::chacha8(seed=b"bevy-cpu-draw-seed19878367467712")
+fn seeded_rng() -> @example_rng.ChaCha8Rng {
+  @example_rng.ChaCha8Rng::seed_from_u64(19878367467712UL)
 }
 
 ///|
-fn next_random_color(rng : @random.Rand) -> LinearColor {
-  LinearColor::{ r: rng.float(), g: rng.float(), b: rng.float() }
+fn next_random_color(rng : @example_rng.ChaCha8Rng) -> LinearColor {
+  LinearColor::{
+    r: rng.random_float(),
+    g: rng.random_float(),
+    b: rng.random_float(),
+  }
 }
 
 ///|

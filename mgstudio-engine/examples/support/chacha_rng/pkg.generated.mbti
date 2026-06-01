@@ -10,6 +10,7 @@ pub struct ChaCha8Rng {
   // private fields
 }
 pub fn ChaCha8Rng::next_u64(Self) -> UInt64
+pub fn ChaCha8Rng::random_float(Self) -> Float
 pub fn ChaCha8Rng::random_range(Self, Int) -> Int
 pub fn ChaCha8Rng::seed_from_u64(UInt64) -> Self
 

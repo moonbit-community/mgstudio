@@ -158,6 +158,13 @@ pub fn ChaCha8Rng::next_u64(self : ChaCha8Rng) -> UInt64 {
 }
 
 ///|
+pub fn ChaCha8Rng::random_float(self : ChaCha8Rng) -> Float {
+  let precision_bits = 24
+  let value = self.next_u32() >> (32 - precision_bits)
+  Float::from_uint(value) / Float::from_uint(1U << precision_bits)
+}
+
+///|
 pub fn ChaCha8Rng::random_range(self : ChaCha8Rng, upper : Int) -> Int {
   if upper <= 0 {
     abort("random range must be non-empty")
