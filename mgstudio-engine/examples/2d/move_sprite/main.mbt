@@ -17,7 +17,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(sprite_movement)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(sprite_movement)))
   .run()
 }
 
@@ -33,7 +33,7 @@ let direction_key : @ecs.ComponentKey[Direction] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Direction with component() {
+pub impl @ecs.Component for Direction with fn component() {
   direction_key
 }
 
@@ -62,15 +62,14 @@ fn setup(
 
 ///|
 fn sprite_movement(
-  commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Comp[Direction], @ecs.Mut[@transform.Transform]),
+    (@ecs.Mut[Direction], @ecs.Mut[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
   let delta = SPEED * time.get().delta_seconds()
-  try! query.for_each(fn(entity, data) {
+  try! query.for_each(fn(_entity, data) {
     let (direction, transform) = data
     let next_x = transform.modify(fn(value) {
       if direction.value() is Right {
@@ -81,9 +80,9 @@ fn sprite_movement(
       value.translation.x
     })
     if next_x > EDGE_LIMIT {
-      commands.entity(entity).insert_component(Direction::Left)
+      direction.set(Direction::Left)
     } else if next_x < 0.0F - EDGE_LIMIT {
-      commands.entity(entity).insert_component(Direction::Right)
+      direction.set(Direction::Right)
     }
   })
 }
