@@ -21,7 +21,7 @@ let animate_translation_key : @ecs.ComponentKey[AnimateTranslation] = @ecs.regis
 )
 
 ///|
-impl @ecs.Component for AnimateTranslation with component() {
+impl @ecs.Component for AnimateTranslation with fn component() {
   animate_translation_key
 }
 
@@ -34,7 +34,7 @@ let animate_rotation_key : @ecs.ComponentKey[AnimateRotation] = @ecs.register_co
 )
 
 ///|
-impl @ecs.Component for AnimateRotation with component() {
+impl @ecs.Component for AnimateRotation with fn component() {
   animate_rotation_key
 }
 
@@ -47,7 +47,7 @@ let animate_scale_key : @ecs.ComponentKey[AnimateScale] = @ecs.register_componen
 )
 
 ///|
-impl @ecs.Component for AnimateScale with component() {
+impl @ecs.Component for AnimateScale with fn component() {
   animate_scale_key
 }
 
@@ -55,7 +55,7 @@ impl @ecs.Component for AnimateScale with component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,
     @app.system(@app.system_param2(animate_translation)),
@@ -69,8 +69,6 @@ fn main {
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let large_font = @text.TextFont::TextFont()
@@ -81,7 +79,7 @@ fn setup(
     .with_font_size(35.0F)
   let text_justification = @text.Justify::Center
   let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
-  let text_shadow_color = color_darker(box_color, 0.05F)
+  let text_shadow_color = box_color.darker(0.05F)
 
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -91,9 +89,7 @@ fn setup(
         @text.Text2d::new(" translation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
-        @text.TextBackgroundColor::new(
-          @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
-        ),
+        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateTranslation::{  },
       ),
@@ -106,9 +102,7 @@ fn setup(
         @text.Text2d::new(" rotation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
-        @text.TextBackgroundColor::new(
-          @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
-        ),
+        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateRotation::{  },
       ),
@@ -122,9 +116,7 @@ fn setup(
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
         @transform.Transform::from_xyz(400.0F, 0.0F, 0.0F),
-        @text.TextBackgroundColor::new(
-          @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
-        ),
+        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateScale::{  },
       ),
@@ -133,8 +125,6 @@ fn setup(
 
   spawn_wrapped_text_box(
     commands,
-    meshes,
-    materials,
     medium_font,
     @math.Vec2::new(0.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
@@ -146,8 +136,6 @@ fn setup(
   )
   spawn_wrapped_text_box(
     commands,
-    meshes,
-    materials,
     medium_font,
     @math.Vec2::new(320.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
@@ -175,23 +163,9 @@ fn setup(
   let anchor_origin = @math.Vec2::new(0.0F, 250.0F)
   let anchor_marker = commands.spawn(
     (
-      @sprite.Mesh2d::new(
-        meshes
-        .peek()
-        .add(
-          @sprite.mesh2d_geometry_rectangle(
-            @sprite.Rectangle::new(10.0F, 10.0F),
-          ).to_mesh(),
-        ),
-      ),
-      @sprite.MeshMaterial2d::new(
-        materials
-        .peek()
-        .add(
-          @sprite.ColorMaterialAsset::from_color(
-            @sprite.Color::srgb(0.68F, 0.97F, 0.97F),
-          ),
-        ),
+      @sprite.Sprite::from_color(
+        @sprite.Color::srgb(0.878F, 1.0F, 1.0F),
+        @math.Vec2::new(10.0F, 10.0F),
       ),
       @transform.Transform::from_xyz(anchor_origin.x, anchor_origin.y, 0.0F),
     ),
@@ -202,36 +176,34 @@ fn setup(
     anchor_marker,
     medium_font,
     @sprite.Anchor::top_left(),
-    @sprite.Color::srgb(1.0F, 0.63F, 0.48F),
+    @sprite.Color::srgb(1.0F, 0.627F, 0.478F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::top_right(),
-    @sprite.Color::srgb(0.67F, 0.90F, 0.60F),
+    @sprite.Color::srgb(0.565F, 0.933F, 0.565F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::bottom_right(),
-    @sprite.Color::srgb(0.53F, 0.81F, 0.98F),
+    @sprite.Color::srgb(0.678F, 0.847F, 0.902F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::bottom_left(),
-    @sprite.Color::srgb(1.0F, 0.93F, 0.55F),
+    @sprite.Color::srgb(1.0F, 1.0F, 0.878F),
   )
 }
 
 ///|
 fn spawn_wrapped_text_box(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
   font : @text.TextFont,
   center : @math.Vec2,
   size : @math.Vec2,
@@ -243,20 +215,7 @@ fn spawn_wrapped_text_box(
 ) -> Unit {
   let box_entity = commands.spawn(
     (
-      @sprite.Mesh2d::new(
-        meshes.modify(fn(meshes) {
-          meshes.add(
-            @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::from_size(size),
-            ).to_mesh(),
-          )
-        }),
-      ),
-      @sprite.MeshMaterial2d::new(
-        materials.modify(fn(materials) {
-          materials.add(@sprite.ColorMaterialAsset::from_color(box_color))
-        }),
-      ),
+      @sprite.Sprite::from_color(box_color, size),
       @transform.Transform::from_xyz(center.x, center.y, 0.0F),
     ),
   )
@@ -291,7 +250,7 @@ fn spawn_anchor_label(
       @text.Text2d::new(" Anchor"),
       font,
       anchor,
-      @text.TextBackgroundColor::new(@sprite.Color::srgb(0.2F, 0.2F, 0.2F)),
+      @text.TextBackgroundColor::new(@sprite.Color::white().darker(0.8F)),
       @transform.Transform::from_xyz(0.0F, 0.0F, -1.0F),
     ),
   )
@@ -301,8 +260,8 @@ fn spawn_anchor_label(
         @hierarchy.Parent::new(label_entity),
         @text.TextSpan::new("::"),
         font,
-        @text.TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)),
-        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F)),
+        @text.TextColor::new(@sprite.Color::srgb(0.827F, 0.827F, 0.827F)),
+        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.545F)),
       ),
     ),
   )
@@ -313,26 +272,9 @@ fn spawn_anchor_label(
         @text.TextSpan::new("\{anchor_name(anchor)} "),
         font,
         @text.TextColor::new(color),
-        @text.TextBackgroundColor::new(color_darker(color, 0.3F)),
+        @text.TextBackgroundColor::new(color.darker(0.3F)),
       ),
     ),
-  )
-}
-
-///|
-fn color_darker(color : @sprite.Color, factor : Float) -> @sprite.Color {
-  let safe = if factor < 0.0F {
-    0.0F
-  } else if factor > 1.0F {
-    1.0F
-  } else {
-    factor
-  }
-  @sprite.Color::new(
-    color.r * (1.0F - safe),
-    color.g * (1.0F - safe),
-    color.b * (1.0F - safe),
-    color.a,
   )
 }
 
