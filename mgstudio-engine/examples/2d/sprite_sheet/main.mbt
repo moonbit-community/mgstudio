@@ -30,7 +30,7 @@ let animation_indices_key : @ecs.ComponentKey[AnimationIndices] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for AnimationIndices with component() {
+pub impl @ecs.Component for AnimationIndices with fn component() {
   animation_indices_key
 }
 
@@ -45,7 +45,7 @@ let animation_timer_key : @ecs.ComponentKey[AnimationTimer] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for AnimationTimer with component() {
+pub impl @ecs.Component for AnimationTimer with fn component() {
   animation_timer_key
 }
 
@@ -73,24 +73,22 @@ fn animate_sprite(
   try! query.for_each(fn(_entity, data) {
     let (indices, timer, sprite) = data
     let indices = indices.value()
-    let mut next_atlas = None
     timer.modify(fn(value) {
       value.timer = value.timer.tick(time.get().delta())
       guard value.timer.just_finished() else { return }
-      guard sprite.value().texture_atlas is Some(atlas) else { return }
-      next_atlas = Some(
-        atlas.with_index(
-          if atlas.index == indices.last {
-            indices.first
-          } else {
-            atlas.index + 1
-          },
-        ),
-      )
+      sprite.modify(fn(value) {
+        guard value.texture_atlas is Some(atlas) else { return }
+        value.texture_atlas = Some(
+          atlas.with_index(
+            if atlas.index == indices.last {
+              indices.first
+            } else {
+              atlas.index + 1
+            },
+          ),
+        )
+      })
     })
-    if next_atlas is Some(next_atlas) {
-      sprite.set(sprite.value().with_texture_atlas(Some(next_atlas)))
-    }
   })
 }
 

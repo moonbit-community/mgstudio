@@ -239,21 +239,20 @@ fn execute_animations(
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (config, sprite) = data
-    let mut next_atlas = None
     config.modify(fn(value) {
       value.frame_timer = value.frame_timer.tick(time.get().delta())
       guard value.frame_timer.just_finished() else { return }
-      guard sprite.value().texture_atlas is Some(atlas) else { return }
-
-      if atlas.index == value.last_sprite_index {
-        next_atlas = Some(atlas.with_index(value.first_sprite_index))
-      } else {
-        next_atlas = Some(atlas.with_index(atlas.index + 1))
-        value.frame_timer = AnimationConfig::timer_from_fps(value.fps)
-      }
+      sprite.modify(fn(sprite_value) {
+        guard sprite_value.texture_atlas is Some(atlas) else { return }
+        if atlas.index == value.last_sprite_index {
+          sprite_value.texture_atlas = Some(
+            atlas.with_index(value.first_sprite_index),
+          )
+        } else {
+          sprite_value.texture_atlas = Some(atlas.with_index(atlas.index + 1))
+          value.frame_timer = AnimationConfig::timer_from_fps(value.fps)
+        }
+      })
     })
-    if next_atlas is Some(next_atlas) {
-      sprite.set(sprite.value().with_texture_atlas(Some(next_atlas)))
-    }
   })
 }
