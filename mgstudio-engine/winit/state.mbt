@@ -631,7 +631,7 @@ fn WinitAppRunnerState::redraw_requested(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with new_events(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn new_events(
   self,
   _event_loop,
   cause,
@@ -640,7 +640,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with new_events(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with window_event(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn window_event(
   self,
   event_loop,
   window_id,
@@ -658,7 +658,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with window_event(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with device_event(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn device_event(
   self,
   _event_loop,
   _device_id,
@@ -668,7 +668,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with device_event(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with resumed(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn resumed(
   _self,
   _event_loop,
 ) {
@@ -676,7 +676,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with resumed(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with can_create_surfaces(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn can_create_surfaces(
   self,
   _event_loop,
 ) {
@@ -687,7 +687,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with can_create_su
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with suspended(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn suspended(
   _self,
   _event_loop,
 ) {
@@ -695,7 +695,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with suspended(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for WinitAppRunnerState with about_to_wait(
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn about_to_wait(
   self,
   event_loop,
 ) {

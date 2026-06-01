@@ -115,40 +115,41 @@ fn spawn_sprites(
     let image_mode = item.2
     cursor.x = cursor.x + 0.5F * size.x
     let translation = @math.Vec3::new(cursor.x, cursor.y, cursor.z)
-    ignore(
-      commands.spawn(
-        (
-          @sprite.Sprite::from_image(texture_handle)
-          .with_custom_size(Some(size))
-          .with_image_mode(image_mode),
-          @transform.Transform::from_translation(translation),
-        ),
+    let entity = commands.spawn(
+      (
+        @sprite.Sprite::from_image(texture_handle)
+        .with_custom_size(Some(size))
+        .with_image_mode(image_mode),
+        @transform.Transform::from_translation(translation),
       ),
     )
-    spawn_slice_label(label, style, translation, size)
+    spawn_slice_label(commands, entity, label, style, size)
     cursor.x = cursor.x + 0.5F * size.x + gap
   }
 }
 
 ///|
 fn spawn_slice_label(
+  commands : @app.Commands,
+  parent : @core.Entity,
   label : String,
   style : @text.TextFont,
-  sprite_translation : @math.Vec3,
   sprite_size : @math.Vec2,
 ) -> Unit {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(label),
-    style,
-    @transform.Transform::from_xyz(
-      sprite_translation.x,
-      sprite_translation.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
-      sprite_translation.z,
+  ignore(
+    commands.spawn(
+      (
+        @text.Text2d::new(label),
+        style,
+        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @transform.Transform::from_xyz(
+          0.0F,
+          -0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
+          0.0F,
+        ),
+        @sprite.Anchor::top_center(),
+        @hierarchy.Parent::new(parent),
+      ),
     ),
   )
-  .with_color(@text.TextColor::new(@sprite.Color::white()))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .with_anchor(@sprite.Anchor::top_center())
-  .spawn()
-  |> ignore
 }
