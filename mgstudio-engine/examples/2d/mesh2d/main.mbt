@@ -43,7 +43,7 @@ fn setup(
           .peek()
           .add(
             @sprite.ColorMaterialAsset::from_color(
-              @sprite.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
+              @sprite.Color::srgba(0.5019608F, 0.0F, 0.5019608F, 1.0F),
             ),
           ),
         ),

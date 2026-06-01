@@ -48,12 +48,12 @@ let segment_bounds_component_key : @ecs.ComponentKey[SegmentBounds] = @ecs.regis
 )
 
 ///|
-impl @ecs.Component for SectorBounds with component() {
+impl @ecs.Component for SectorBounds with fn component() {
   sector_bounds_component_key
 }
 
 ///|
-impl @ecs.Component for SegmentBounds with component() {
+impl @ecs.Component for SegmentBounds with fn component() {
   segment_bounds_component_key
 }
 
@@ -107,7 +107,7 @@ fn setup(
       (
         @sprite.Camera2d::Camera2d(),
         @sprite.Camera::new(
-          @sprite.Color::new(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
+          @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),
       ),
     ),
@@ -175,8 +175,8 @@ fn[T : @math.Bounded2d] draw_bounds_for_shape(
   transform : @transform.GlobalTransform,
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
-  let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-  let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+  let red = @sprite.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
+  let blue = @sprite.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
   let world_transform = transform.to_transform_approx()
   let translation = @math.Vec2::new(
     world_transform.translation.x,
