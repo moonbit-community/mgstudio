@@ -33,7 +33,7 @@ let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
@@ -46,7 +46,7 @@ let snap_to_player_key : @ecs.ComponentKey[SnapToPlayer] = @ecs.register_compone
 )
 
 ///|
-pub impl @ecs.Component for SnapToPlayer with component() {
+pub impl @ecs.Component for SnapToPlayer with fn component() {
   snap_to_player_key
 }
 
@@ -61,7 +61,7 @@ let rotate_to_player_key : @ecs.ComponentKey[RotateToPlayer] = @ecs.register_com
 )
 
 ///|
-pub impl @ecs.Component for RotateToPlayer with component() {
+pub impl @ecs.Component for RotateToPlayer with fn component() {
   rotate_to_player_key
 }
 
@@ -138,31 +138,15 @@ fn vec2_normalize_or_zero(v : @math.Vec2) -> @math.Vec2 {
 }
 
 ///|
-fn spawn_help_overlay(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-    ),
-  )
+fn spawn_help_overlay(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
+        @text.Text::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
         @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
-        @text.Text::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
-        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
       ),
     ),
   )
@@ -195,7 +179,7 @@ fn setup(
     .load("textures/simplespace/enemy_B.png")
 
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
-  spawn_help_overlay(commands, asset_server)
+  spawn_help_overlay(commands)
 
   let horizontal_margin = BOUNDS_X / 4.0F
   let vertical_margin = BOUNDS_Y / 4.0F
@@ -221,9 +205,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Sprite::from_image(
-          asset_server.get().load("textures/simplespace/enemy_A.png"),
-        ),
+        @sprite.Sprite::from_image(enemy_a_handle),
         @transform.Transform::from_xyz(0.0F, -vertical_margin, 0.0F),
         SnapToPlayer::{  },
       ),
@@ -242,9 +224,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Sprite::from_image(
-          asset_server.get().load("textures/simplespace/enemy_B.png"),
-        ),
+        @sprite.Sprite::from_image(enemy_b_handle),
         @transform.Transform::from_xyz(0.0F, vertical_margin, 0.0F),
         RotateToPlayer::{ rotation_speed: 1.57079632679F },
       ),
