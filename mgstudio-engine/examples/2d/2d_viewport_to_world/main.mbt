@@ -21,7 +21,7 @@ let main_camera_key : @ecs.ComponentKey[MainCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for MainCamera with component() {
+pub impl @ecs.Component for MainCamera with fn component() {
   main_camera_key
 }
 
@@ -32,7 +32,7 @@ fn main {
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.FixedUpdate, @app.system(@app.system_param6(controls)))
   .add_systems(@app.PostUpdate, draw_cursor_system)
   .run()
@@ -53,33 +53,17 @@ fn viewport_default(width : Int, height : Int) -> @sprite.Viewport {
 }
 
 ///|
-fn spawn_help_overlay(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-    ),
-  )
+fn spawn_help_overlay(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
-        @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(
           "Move the mouse to see the circle follow your cursor.\nUse the arrow keys to move the camera.\nUse the comma and period keys to zoom in and out.\nUse the WASD keys to move the viewport.\nUse the IJKL keys to resize the viewport.",
         ),
-        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
       ),
     ),
   )
@@ -90,7 +74,6 @@ fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let viewport = viewport_default(
     @window.window_width(),
@@ -106,7 +89,7 @@ fn setup(
     ),
   )
 
-  spawn_help_overlay(commands, asset_server)
+  spawn_help_overlay(commands)
 
   ignore(
     commands.spawn(
