@@ -22,17 +22,57 @@ const RECTANGLE_SIDE : Float = 200.0F
 const LABEL_OFFSET : Float = 125.0F
 
 ///|
-fn spawn_panel(
+fn setup(
   commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  x : Float,
-  texture : @asset.Handle[@asset.Image],
-  uv_scale : @math.Vec2,
-  label : String,
-  font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let panel = commands.spawn(
+  let image_with_default_sampler = asset_server
+    .get()
+    .load("textures/fantasy_ui_borders/panel-border-010.png")
+  let image_with_repeated_sampler = asset_server
+    .get()
+    .load_with_settings(
+      "textures/fantasy_ui_borders/panel-border-010-repeated.png",
+      fn(settings) {
+        let descriptor = @asset.ImageSamplerDescriptor::ImageSamplerDescriptor()
+        descriptor.address_mode_u = @asset.ImageAddressMode::Repeat
+        descriptor.address_mode_v = @asset.ImageAddressMode::Repeat
+        settings.sampler = @asset.ImageSampler::Descriptor(descriptor)
+      },
+    )
+
+  let center_panel = commands.spawn(
+    (
+      @sprite.Mesh2d::new(
+        meshes
+        .peek()
+        .add(
+          @sprite.mesh2d_geometry_rectangle(
+            @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+          ).to_mesh(),
+        ),
+      ),
+      @sprite.MeshMaterial2d::new(
+        materials
+        .peek()
+        .add(@sprite.ColorMaterialAsset::from_image(image_with_default_sampler)),
+      ),
+      @transform.Transform::from_translation(@math.Vec3::zero()),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(center_panel),
+        @text.Text2d::new("Control"),
+        @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
+      ),
+    ),
+  )
+
+  let left_panel = commands.spawn(
     (
       @sprite.Mesh2d::new(
         meshes
@@ -47,85 +87,55 @@ fn spawn_panel(
         materials
         .peek()
         .add(
-          @sprite.ColorMaterialAsset::from_image(texture).with_uv_scale(
-            uv_scale,
+          @sprite.ColorMaterialAsset::from_image(image_with_repeated_sampler).with_uv_transform(
+            @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
           ),
         ),
       ),
-      @transform.Transform::from_xyz(x, 0.0F, 0.0F),
+      @transform.Transform::from_xyz(-RECTANGLE_OFFSET, 0.0F, 0.0F),
     ),
   )
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(panel),
-        @text.Text2d::new(label),
-        @text.TextFont::TextFont().with_font(font),
-        @text.TextBounds::new_horizontal(RECTANGLE_SIDE),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @hierarchy.Parent::new(left_panel),
+        @text.Text2d::new("Repeat On"),
         @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
       ),
     ),
   )
-}
 
-///|
-fn setup(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-) -> Unit {
-  let image_with_default_sampler = asset_server
-    .get()
-    .load_with_settings("textures/fantasy_ui_borders/panel-border-010.png", fn(
-      _settings,
-    ) {
-
-    })
-  let image_with_repeated_sampler = asset_server
-    .get()
-    .load_with_settings(
-      "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-      fn(settings) {
-        settings.sampler = @asset.ImageSampler::Descriptor(
-          @asset.ImageSamplerDescriptor::linear().set_address_mode(
-            @asset.ImageAddressMode::Repeat,
+  let right_panel = commands.spawn(
+    (
+      @sprite.Mesh2d::new(
+        meshes
+        .peek()
+        .add(
+          @sprite.mesh2d_geometry_rectangle(
+            @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+          ).to_mesh(),
+        ),
+      ),
+      @sprite.MeshMaterial2d::new(
+        materials
+        .peek()
+        .add(
+          @sprite.ColorMaterialAsset::from_image(image_with_default_sampler).with_uv_transform(
+            @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
           ),
-        )
-      },
-    )
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-
-  spawn_panel(
-    commands,
-    meshes,
-    materials,
-    0.0F,
-    image_with_default_sampler,
-    @math.Vec2::new(1.0F, 1.0F),
-    "Control",
-    font,
+        ),
+      ),
+      @transform.Transform::from_xyz(RECTANGLE_OFFSET, 0.0F, 0.0F),
+    ),
   )
-  spawn_panel(
-    commands,
-    meshes,
-    materials,
-    -RECTANGLE_OFFSET,
-    image_with_repeated_sampler,
-    @math.Vec2::new(2.0F, 3.0F),
-    "Repeat On",
-    font,
-  )
-  spawn_panel(
-    commands,
-    meshes,
-    materials,
-    RECTANGLE_OFFSET,
-    image_with_default_sampler,
-    @math.Vec2::new(2.0F, 3.0F),
-    "Repeat Off",
-    font,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(right_panel),
+        @text.Text2d::new("Repeat Off"),
+        @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
+      ),
+    ),
   )
 
   ignore(

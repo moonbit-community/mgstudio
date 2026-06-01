@@ -42,6 +42,21 @@ fn dummy_f32_bits(x : Float) -> UInt {
 }
 
 ///|
+fn sprite_test_u32le_word(bytes : Bytes, index : Int) -> UInt {
+  let offset = index * 4
+  bytes[offset].to_uint() |
+  (bytes[offset + 1].to_uint() << 8) |
+  (bytes[offset + 2].to_uint() << 16) |
+  (bytes[offset + 3].to_uint() << 24)
+}
+
+///|
+fn sprite_test_close(a : Float, b : Float) -> Bool {
+  let delta = a - b
+  delta > -0.0001F && delta < 0.0001F
+}
+
+///|
 test "sprite: default trait mirrors bevy component defaults" {
   let sprite = @sprite.Sprite::Sprite()
   let image_mode = SpriteImageMode::default()
@@ -1204,5 +1219,66 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   debug_inspect(
     blend_alpha_mode.val.map(fn(mode) { mode is Blend }),
     content="Some(true)",
+  )
+}
+
+///|
+test "render2d: ColorMaterialAsset stores full affine uv transform" {
+  let uv_transform = @transform.Affine2::from_translation(
+    @math.Vec2::new(0.25F, -0.5F),
+  ).mul(@transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)))
+  let material = ColorMaterialAsset::from_image(@asset.Handle::new(7)).with_uv_transform(
+    uv_transform,
+  )
+  let point = material.uv_transform.transform_point2(
+    @math.Vec2::new(0.5F, 0.25F),
+  )
+
+  debug_inspect(sprite_test_close(point.x, 1.25F), content="true")
+  debug_inspect(sprite_test_close(point.y, 0.25F), content="true")
+}
+
+///|
+test "render2d: ColorMaterialAsset bind group uploads full affine uv transform" {
+  let uv_transform = @transform.Affine2::from_cols(
+    @math.Vec2::new(2.0F, 0.5F),
+    @math.Vec2::new(-0.25F, 3.0F),
+    @math.Vec2::new(0.25F, -0.5F),
+  )
+  let bind_group = ColorMaterialAsset::from_image(@asset.Handle::new(7))
+    .with_uv_transform(uv_transform)
+    .bind_group()
+
+  guard bind_group.binding(0) is Some(binding) else {
+    abort("missing color material uniform binding")
+  }
+  guard binding.value is Uniform(bytes) else {
+    abort("color material binding 0 is not uniform data")
+  }
+
+  debug_inspect(bytes.length(), content="80")
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 4) == dummy_f32_bits(2.0F),
+    content="true",
+  )
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 5) == dummy_f32_bits(0.5F),
+    content="true",
+  )
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 8) == dummy_f32_bits(-0.25F),
+    content="true",
+  )
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 9) == dummy_f32_bits(3.0F),
+    content="true",
+  )
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 12) == dummy_f32_bits(0.25F),
+    content="true",
+  )
+  debug_inspect(
+    sprite_test_u32le_word(bytes, 13) == dummy_f32_bits(-0.5F),
+    content="true",
   )
 }

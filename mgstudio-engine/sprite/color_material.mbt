@@ -29,17 +29,16 @@ pub struct ColorMaterialAsset {
   color : Color
   alpha_mode : AlphaMode2d
   texture : @asset.Handle[@asset.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
+  uv_transform : @transform.Affine2
 }
 
 ///|
-pub impl @asset.Asset for ColorMaterialAsset with asset_debug_name() {
+pub impl @asset.Asset for ColorMaterialAsset with fn asset_debug_name() {
   "mgstudio_sprite::ColorMaterialAsset"
 }
 
 ///|
-pub impl @asset.Asset for ColorMaterialAsset with asset_as_image(_self) {
+pub impl @asset.Asset for ColorMaterialAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -49,7 +48,7 @@ let color_material_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(ColorMaterialAsset::asset_debug_name())
 
 ///|
-pub impl @asset.Asset for ColorMaterialAsset with asset_resource_keys() {
+pub impl @asset.Asset for ColorMaterialAsset with fn asset_resource_keys() {
   color_material_asset_resource_keys
 }
 
@@ -63,10 +62,9 @@ pub fn ColorMaterialAsset::new(
   color : Color,
   alpha_mode : AlphaMode2d,
   texture? : @asset.Handle[@asset.Image]? = None,
-  uv_offset? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
-  uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
+  uv_transform? : @transform.Affine2 = @transform.Affine2::identity(),
 ) -> ColorMaterialAsset {
-  ColorMaterialAsset::{ color, alpha_mode, texture, uv_offset, uv_scale }
+  ColorMaterialAsset::{ color, alpha_mode, texture, uv_transform }
 }
 
 ///|
@@ -75,8 +73,7 @@ pub fn ColorMaterialAsset::from_color(color : Color) -> ColorMaterialAsset {
     color,
     color_material_alpha_mode_for_color(color),
     texture=None,
-    uv_offset=@math.Vec2::new(0.0F, 0.0F),
-    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+    uv_transform=@transform.Affine2::identity(),
   )
 }
 
@@ -88,18 +85,19 @@ pub fn ColorMaterialAsset::from_image(
     Color::white(),
     AlphaMode2d::Blend,
     texture=Some(texture),
-    uv_offset=@math.Vec2::new(0.0F, 0.0F),
-    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+    uv_transform=@transform.Affine2::identity(),
   )
 }
 
 ///|
-pub impl IntoColorMaterialAsset for Color with into_color_material_asset(self) {
+pub impl IntoColorMaterialAsset for Color with fn into_color_material_asset(
+  self,
+) {
   ColorMaterialAsset::from_color(self)
 }
 
 ///|
-pub impl IntoColorMaterialAsset for @asset.Handle[@asset.Image] with into_color_material_asset(
+pub impl IntoColorMaterialAsset for @asset.Handle[@asset.Image] with fn into_color_material_asset(
   self,
 ) {
   ColorMaterialAsset::from_image(self)
@@ -130,19 +128,11 @@ pub fn ColorMaterialAsset::with_texture(
 }
 
 ///|
-pub fn ColorMaterialAsset::with_uv_offset(
+pub fn ColorMaterialAsset::with_uv_transform(
   self : ColorMaterialAsset,
-  uv_offset : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> ColorMaterialAsset {
-  ColorMaterialAsset::{ ..self, uv_offset, }
-}
-
-///|
-pub fn ColorMaterialAsset::with_uv_scale(
-  self : ColorMaterialAsset,
-  uv_scale : @math.Vec2,
-) -> ColorMaterialAsset {
-  ColorMaterialAsset::{ ..self, uv_scale, }
+  ColorMaterialAsset::{ ..self, uv_transform, }
 }
 
 ///|
@@ -156,8 +146,7 @@ fn default_color_material_asset() -> ColorMaterialAsset {
     Color::srgb(1.0F, 0.0F, 1.0F),
     AlphaMode2d::Blend,
     texture=None,
-    uv_offset=@math.Vec2::new(0.0F, 0.0F),
-    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+    uv_transform=@transform.Affine2::identity(),
   )
 }
 
@@ -187,18 +176,11 @@ fn color_material_add(
   color : Color,
   alpha_mode : AlphaMode2d,
   texture : @asset.Handle[@asset.Image]?,
-  uv_offset : @math.Vec2,
-  uv_scale : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> ColorMaterial {
   let handle = color_material_assets_mut_or_abort().modify(fn(assets) {
     assets.add(
-      ColorMaterialAsset::new(
-        color,
-        alpha_mode,
-        texture~,
-        uv_offset~,
-        uv_scale~,
-      ),
+      ColorMaterialAsset::new(color, alpha_mode, texture~, uv_transform~),
     )
   })
   ColorMaterial::{ handle, }
@@ -221,8 +203,7 @@ pub fn ColorMaterial::with_alpha_mode(
     self.color(),
     alpha_mode,
     self.texture(),
-    self.uv_offset(),
-    self.uv_scale(),
+    self.uv_transform(),
   )
 }
 
@@ -245,18 +226,10 @@ pub fn ColorMaterial::texture(
 }
 
 ///|
-pub fn ColorMaterial::uv_offset(self : ColorMaterial) -> @math.Vec2 {
+pub fn ColorMaterial::uv_transform(self : ColorMaterial) -> @transform.Affine2 {
   match color_material_get(self.handle) {
-    Some(mat) => mat.uv_offset
-    None => @math.Vec2::new(0.0F, 0.0F)
-  }
-}
-
-///|
-pub fn ColorMaterial::uv_scale(self : ColorMaterial) -> @math.Vec2 {
-  match color_material_get(self.handle) {
-    Some(mat) => mat.uv_scale
-    None => @math.Vec2::new(1.0F, 1.0F)
+    Some(mat) => mat.uv_transform
+    None => @transform.Affine2::identity()
   }
 }
 
@@ -266,7 +239,7 @@ pub fn ColorMaterial::ColorMaterial() -> ColorMaterial {
 }
 
 ///|
-pub impl Default for ColorMaterial with default() {
+pub impl Default for ColorMaterial with fn default() {
   ColorMaterial::ColorMaterial()
 }
 
@@ -279,36 +252,20 @@ pub fn ColorMaterial::with_texture(
     self.color(),
     self.alpha_mode(),
     Some(texture),
-    self.uv_offset(),
-    self.uv_scale(),
+    self.uv_transform(),
   )
 }
 
 ///|
-pub fn ColorMaterial::with_uv_offset(
+pub fn ColorMaterial::with_uv_transform(
   self : ColorMaterial,
-  uv_offset : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> ColorMaterial {
   color_material_add(
     self.color(),
     self.alpha_mode(),
     self.texture(),
-    uv_offset,
-    self.uv_scale(),
-  )
-}
-
-///|
-pub fn ColorMaterial::with_uv_scale(
-  self : ColorMaterial,
-  uv_scale : @math.Vec2,
-) -> ColorMaterial {
-  color_material_add(
-    self.color(),
-    self.alpha_mode(),
-    self.texture(),
-    self.uv_offset(),
-    uv_scale,
+    uv_transform,
   )
 }
 
@@ -317,8 +274,7 @@ fn material2d_color_material_uniform_bytes(
   color : Color,
   alpha_mode : AlphaMode2d,
   texture_enabled : Bool,
-  uv_offset : @math.Vec2,
-  uv_scale : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> Bytes {
   let texture_bit = if texture_enabled { 1U } else { 0U }
   let alpha_cutoff = mesh_alpha_cutoff(alpha_mode)
@@ -328,16 +284,16 @@ fn material2d_color_material_uniform_bytes(
     material2d_f32_bits(color.g),
     material2d_f32_bits(color.b),
     material2d_f32_bits(color.a),
-    material2d_f32_bits(uv_scale.x),
+    material2d_f32_bits(uv_transform.a),
+    material2d_f32_bits(uv_transform.b),
     material2d_f32_bits(0.0F),
     material2d_f32_bits(0.0F),
+    material2d_f32_bits(uv_transform.c),
+    material2d_f32_bits(uv_transform.d),
     material2d_f32_bits(0.0F),
     material2d_f32_bits(0.0F),
-    material2d_f32_bits(uv_scale.y),
-    material2d_f32_bits(0.0F),
-    material2d_f32_bits(0.0F),
-    material2d_f32_bits(uv_offset.x),
-    material2d_f32_bits(uv_offset.y),
+    material2d_f32_bits(uv_transform.tx),
+    material2d_f32_bits(uv_transform.ty),
     material2d_f32_bits(1.0F),
     material2d_f32_bits(0.0F),
     flags,
@@ -352,8 +308,7 @@ pub fn Material2dBindGroup::color_material(
   color : Color,
   alpha_mode : AlphaMode2d,
   texture? : @asset.Handle[@asset.Image]? = None,
-  uv_offset? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
-  uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
+  uv_transform? : @transform.Affine2 = @transform.Affine2::identity(),
 ) -> Material2dBindGroup {
   let bindings : Array[Material2dBinding] = [
     Material2dBinding::uniform(
@@ -362,8 +317,7 @@ pub fn Material2dBindGroup::color_material(
         color,
         alpha_mode,
         texture is Some(_),
-        uv_offset,
-        uv_scale,
+        uv_transform,
       ),
     ),
   ]
@@ -373,12 +327,12 @@ pub fn Material2dBindGroup::color_material(
 }
 
 ///|
-pub impl Material2d for ColorMaterial with alpha_mode(self) {
+pub impl Material2d for ColorMaterial with fn alpha_mode(self) {
   ColorMaterial::alpha_mode(self)
 }
 
 ///|
-pub impl Material2d for ColorMaterial with material2d_debug_name() {
+pub impl Material2d for ColorMaterial with fn material2d_debug_name() {
   "mgstudio_sprite::ColorMaterial"
 }
 
@@ -388,28 +342,27 @@ let color_material_material2d_keys : Material2dKeys[ColorMaterial] = register_ma
 )
 
 ///|
-pub impl Material2d for ColorMaterial with material2d_keys() {
+pub impl Material2d for ColorMaterial with fn material2d_keys() {
   color_material_material2d_keys
 }
 
 ///|
-pub impl Material2d for ColorMaterial with bind_group(self) {
+pub impl Material2d for ColorMaterial with fn bind_group(self) {
   Material2dBindGroup::color_material(
     ColorMaterial::color(self),
     ColorMaterial::alpha_mode(self),
     texture=ColorMaterial::texture(self),
-    uv_offset=ColorMaterial::uv_offset(self),
-    uv_scale=ColorMaterial::uv_scale(self),
+    uv_transform=ColorMaterial::uv_transform(self),
   )
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with alpha_mode(self) {
+pub impl Material2d for ColorMaterialAsset with fn alpha_mode(self) {
   self.alpha_mode
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with material2d_debug_name() {
+pub impl Material2d for ColorMaterialAsset with fn material2d_debug_name() {
   "mgstudio_sprite::ColorMaterialAsset"
 }
 
@@ -419,18 +372,17 @@ let color_material_asset_material2d_keys : Material2dKeys[ColorMaterialAsset] = 
 )
 
 ///|
-pub impl Material2d for ColorMaterialAsset with material2d_keys() {
+pub impl Material2d for ColorMaterialAsset with fn material2d_keys() {
   color_material_asset_material2d_keys
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with bind_group(self) {
+pub impl Material2d for ColorMaterialAsset with fn bind_group(self) {
   Material2dBindGroup::color_material(
     self.color,
     self.alpha_mode,
     texture=self.texture,
-    uv_offset=self.uv_offset,
-    uv_scale=self.uv_scale,
+    uv_transform=self.uv_transform,
   )
 }
 
@@ -470,12 +422,12 @@ pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> ColorMaterialPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ColorMaterialPlugin with name(_self) {
+pub impl @app.Plugin for ColorMaterialPlugin with fn name(_self) {
   "mgstudio.sprite.ColorMaterialPlugin"
 }
 
 ///|
-pub impl @app.Plugin for ColorMaterialPlugin with build(_self, app) {
+pub impl @app.Plugin for ColorMaterialPlugin with fn build(_self, app) {
   let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::Material2dPlugin()
     .with_asset_init(default_color_material_asset)
     .with_vertex_shader(MESH2D_SHADER_PATH)
@@ -525,32 +477,24 @@ pub fn MeshMaterial2d::with_texture(
 }
 
 ///|
-pub fn MeshMaterial2d::with_uv_offset(
+pub fn MeshMaterial2d::with_uv_transform(
   self : MeshMaterial2d[ColorMaterialAsset],
-  uv_offset : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::from_color_material(
-    self.to_color_material().with_uv_offset(uv_offset),
+    self.to_color_material().with_uv_transform(uv_transform),
   )
 }
 
 ///|
-pub fn MeshMaterial2d::with_uv_scale(
-  self : MeshMaterial2d[ColorMaterialAsset],
-  uv_scale : @math.Vec2,
-) -> MeshMaterial2d[ColorMaterialAsset] {
-  MeshMaterial2d::from_color_material(
-    self.to_color_material().with_uv_scale(uv_scale),
-  )
-}
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with alpha_mode(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn alpha_mode(
+  self,
+) {
   self.to_color_material().alpha_mode()
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with material2d_debug_name() {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn material2d_debug_name() {
   "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>"
 }
 
@@ -562,12 +506,14 @@ let mesh_color_material_asset_material2d_keys : Material2dKeys[
 )
 
 ///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with material2d_keys() {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn material2d_keys() {
   mesh_color_material_asset_material2d_keys
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with bind_group(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn bind_group(
+  self,
+) {
   self.to_color_material().bind_group()
 }
 

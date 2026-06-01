@@ -48,6 +48,22 @@ pub fn Affine2::from_translation(translation : @math.Vec2) -> Affine2 {
 }
 
 ///|
+pub fn Affine2::from_cols(
+  x_axis : @math.Vec2,
+  y_axis : @math.Vec2,
+  translation : @math.Vec2,
+) -> Affine2 {
+  Affine2::{
+    a: x_axis.x,
+    b: x_axis.y,
+    c: y_axis.x,
+    d: y_axis.y,
+    tx: translation.x,
+    ty: translation.y,
+  }
+}
+
+///|
 pub fn Affine2::from_scale_translation(
   scale : @math.Vec2,
   translation : @math.Vec2,
@@ -102,12 +118,12 @@ pub fn GlobalTransform::GlobalTransform() -> GlobalTransform {
 }
 
 ///|
-pub impl Default for GlobalTransform with default() {
+pub impl Default for GlobalTransform with fn default() {
   GlobalTransform::GlobalTransform()
 }
 
 ///|
-pub impl ToJson for GlobalTransform with to_json(self) {
+pub impl ToJson for GlobalTransform with fn to_json(self) {
   (
     self.affine.a,
     self.affine.b,
@@ -120,7 +136,7 @@ pub impl ToJson for GlobalTransform with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
+pub impl @json.FromJson for GlobalTransform with fn from_json(json, path) {
   let (a, b, c, d, tx, ty, z) : (
     Float,
     Float,
@@ -230,7 +246,7 @@ pub fn TransformTreeChanged::TransformTreeChanged() -> TransformTreeChanged {
 }
 
 ///|
-pub impl Default for TransformTreeChanged with default() {
+pub impl Default for TransformTreeChanged with fn default() {
   TransformTreeChanged::TransformTreeChanged()
 }
 
@@ -263,7 +279,7 @@ pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> StaticTra
 }
 
 ///|
-pub impl Default for StaticTransformOptimizations with default() {
+pub impl Default for StaticTransformOptimizations with fn default() {
   StaticTransformOptimizations::StaticTransformOptimizations()
 }
 
@@ -275,6 +291,6 @@ pub let static_transform_optimizations_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for StaticTransformOptimizations with resource() {
+pub impl @app.Resource for StaticTransformOptimizations with fn resource() {
   static_transform_optimizations_resource_key
 }

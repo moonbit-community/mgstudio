@@ -41,7 +41,7 @@ let animation_timer_key : @ecs.ComponentKey[AnimationTimer] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for AnimationTimer with component() {
+pub impl @ecs.Component for AnimationTimer with fn component() {
   animation_timer_key
 }
 
@@ -56,7 +56,7 @@ let atlas_frame_key : @ecs.ComponentKey[AtlasFrame] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for AtlasFrame with component() {
+pub impl @ecs.Component for AtlasFrame with fn component() {
   atlas_frame_key
 }
 
@@ -71,7 +71,7 @@ let animation_materials_key : @ecs.ResourceKey[AnimationMaterials] = @ecs.regist
 )
 
 ///|
-impl @app.Resource for AnimationMaterials with resource() {
+impl @app.Resource for AnimationMaterials with fn resource() {
   animation_materials_key
 }
 
@@ -86,7 +86,7 @@ let print_timer_key : @ecs.ResourceKey[PrintTimer] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for PrintTimer with resource() {
+impl @app.Resource for PrintTimer with fn resource() {
   print_timer_key
 }
 
@@ -127,8 +127,13 @@ fn setup(
       .add(
         @sprite.ColorMaterialAsset::from_image(texture)
         .with_alpha_mode(@sprite.AlphaMode2d::Mask(0.5F))
-        .with_uv_scale(@math.Vec2::new(uv_scale_x, 1.0F))
-        .with_uv_offset(@math.Vec2::new(uv_offset_x, 0.0F)),
+        .with_uv_transform(
+          @transform.Affine2::from_translation(
+            @math.Vec2::new(uv_offset_x, 0.0F),
+          ).mul(
+            @transform.Affine2::from_scale(@math.Vec2::new(uv_scale_x, 1.0F)),
+          ),
+        ),
       )
     atlas_materials.push(material)
   }
