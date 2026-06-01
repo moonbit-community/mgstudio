@@ -195,6 +195,7 @@ pub fn tonemapping_pipeline_key_shader_defs(
       shader_defs.push("TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM")
     TonyMcMapface => shader_defs.push("TONEMAP_METHOD_TONY_MC_MAPFACE")
     BlenderFilmic => shader_defs.push("TONEMAP_METHOD_BLENDER_FILMIC")
+    PbrNeutral => shader_defs.push("TONEMAP_METHOD_PBR_NEUTRAL")
   }
   shader_defs
 }

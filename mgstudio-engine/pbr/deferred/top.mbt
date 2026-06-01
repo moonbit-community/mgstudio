@@ -232,12 +232,12 @@ pub struct DeferredLightingPassPlan {
 }
 
 ///|
-pub impl @app.Plugin for DeferredPbrLightingPlugin with name(_self) {
+pub impl @app.Plugin for DeferredPbrLightingPlugin with fn name(_self) {
   DEFERRED_PBR_LIGHTING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DeferredPbrLightingPlugin with build(_self, app) {
+pub impl @app.Plugin for DeferredPbrLightingPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
   deferred_pbr_lighting_plugin(app)
 }
@@ -300,17 +300,17 @@ pub fn PbrDeferredLightingDepthId::get(
 }
 
 ///|
-pub impl @ecs.Component for PbrDeferredLightingDepthId with component() {
+pub impl @ecs.Component for PbrDeferredLightingDepthId with fn component() {
   ecs_key_pbr_deferred_lighting_depth_id
 }
 
 ///|
-pub impl @ecs.Component for DeferredLightingPipeline with component() {
+pub impl @ecs.Component for DeferredLightingPipeline with fn component() {
   ecs_key_deferred_lighting_pipeline
 }
 
 ///|
-pub impl @ecs.Component for SkipDeferredLighting with component() {
+pub impl @ecs.Component for SkipDeferredLighting with fn component() {
   ecs_key_skip_deferred_lighting
 }
 
@@ -375,6 +375,7 @@ fn deferred_lighting_tonemapping_shader_def(
       "TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM"
     Tonemapping::TonyMcMapface => "TONEMAP_METHOD_TONY_MC_MAPFACE"
     Tonemapping::BlenderFilmic => "TONEMAP_METHOD_BLENDER_FILMIC"
+    Tonemapping::PbrNeutral => "TONEMAP_METHOD_PBR_NEUTRAL"
   }
 }
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const KEY_COUNT : Int = 64
+const KEY_COUNT : Int = 74
 
 ///|
 const MOUSE_BUTTON_COUNT : Int = 3
@@ -739,6 +739,8 @@ fn key_id_from_key_code(key_code : @window_core.KeyCode) -> Int {
     Digit6 => 31
     Digit7 => 32
     Digit8 => 33
+    Digit9 => 72
+    Digit0 => 73
     F1 => 34
     F2 => 35
     F3 => 36
@@ -826,6 +828,8 @@ fn key_code_from_name(code : String) -> @window_core.KeyCode? {
     "Digit6" => Some(Digit6)
     "Digit7" => Some(Digit7)
     "Digit8" => Some(Digit8)
+    "Digit9" => Some(Digit9)
+    "Digit0" => Some(Digit0)
     "F1" => Some(F1)
     "F2" => Some(F2)
     "F3" => Some(F3)
@@ -1202,7 +1206,7 @@ pub fn runner_handle_suspended() -> Unit {
 }
 
 ///|
-impl @window_macos.ApplicationHandler for NativePumpHandler with window_event(
+impl @window_macos.ApplicationHandler for NativePumpHandler with fn window_event(
   _self,
   _event_loop,
   window_id,
@@ -1212,7 +1216,7 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with window_event(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for NativePumpHandler with resumed(
+impl @window_macos.ApplicationHandler for NativePumpHandler with fn resumed(
   _self,
   _event_loop,
 ) {
@@ -1220,7 +1224,7 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with resumed(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
+impl @window_macos.ApplicationHandler for NativePumpHandler with fn suspended(
   _self,
   _event_loop,
 ) {

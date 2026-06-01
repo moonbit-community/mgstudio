@@ -103,6 +103,8 @@ fn format_keycode(code : @window.KeyCode) -> String {
     Digit6 => "Digit6"
     Digit7 => "Digit7"
     Digit8 => "Digit8"
+    Digit9 => "Digit9"
+    Digit0 => "Digit0"
     F1 => "F1"
     F2 => "F2"
     F3 => "F3"

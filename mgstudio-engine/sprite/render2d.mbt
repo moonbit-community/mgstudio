@@ -829,6 +829,8 @@ fn pan_camera_keycode_to_string(code : @window.KeyCode) -> String {
     @window.KeyCode::Digit6 => "Digit6"
     @window.KeyCode::Digit7 => "Digit7"
     @window.KeyCode::Digit8 => "Digit8"
+    @window.KeyCode::Digit9 => "Digit9"
+    @window.KeyCode::Digit0 => "Digit0"
     @window.KeyCode::F1 => "F1"
     @window.KeyCode::F2 => "F2"
     @window.KeyCode::F3 => "F3"
@@ -4588,6 +4590,7 @@ fn render2d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
     SomewhatBoringDisplayTransform => 5
     TonyMcMapface => 6
     BlenderFilmic => 7
+    PbrNeutral => 8
   }
 }
 

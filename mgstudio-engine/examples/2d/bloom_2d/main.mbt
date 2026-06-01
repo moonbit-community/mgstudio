@@ -69,6 +69,7 @@ fn tonemapping_text(mode : @sprite.Tonemapping) -> String {
     ReinhardLuminance => "ReinhardLuminance"
     SomewhatBoringDisplayTransform => "SomewhatBoringDisplayTransform"
     TonyMcMapface => "TonyMcMapface"
+    PbrNeutral => "PbrNeutral"
   }
 }
 
@@ -82,7 +83,8 @@ fn next_tonemap(mode : @sprite.Tonemapping) -> @sprite.Tonemapping {
     Reinhard => ReinhardLuminance
     ReinhardLuminance => SomewhatBoringDisplayTransform
     SomewhatBoringDisplayTransform => TonyMcMapface
-    TonyMcMapface => None
+    TonyMcMapface => PbrNeutral
+    PbrNeutral => None
   }
 }
 

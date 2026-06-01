@@ -677,6 +677,7 @@ fn meshlet_tonemapping_mode_key(
         @pbr.Tonemapping::SomewhatBoringDisplayTransform => 5
         @pbr.Tonemapping::TonyMcMapface => 6
         @pbr.Tonemapping::BlenderFilmic => 7
+        @pbr.Tonemapping::PbrNeutral => 8
       }
     None => 0
   }
@@ -1671,12 +1672,12 @@ pub fn meshlet_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for MeshletPlugin with name(_self) {
+pub impl @app.Plugin for MeshletPlugin with fn name(_self) {
   MESHLET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MeshletPlugin with build(self, app) {
+pub impl @app.Plugin for MeshletPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   meshlet_plugin_with(
     init_meshlet_debug_material_asset(init_meshlet_mesh_asset(app)),
@@ -1732,6 +1733,6 @@ pub fn MeshletMesh3d::id(self : MeshletMesh3d) -> Int {
 }
 
 ///|
-pub impl @ecs.Component for MeshletMesh3d with component() {
+pub impl @ecs.Component for MeshletMesh3d with fn component() {
   ecs_key_meshlet_mesh3d
 }

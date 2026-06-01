@@ -55,6 +55,8 @@ fn key_id_mapping_cases() -> Array[KeyIdMappingCase] {
     KeyIdMappingCase::{ name: "Digit6", key_code: Digit6 },
     KeyIdMappingCase::{ name: "Digit7", key_code: Digit7 },
     KeyIdMappingCase::{ name: "Digit8", key_code: Digit8 },
+    KeyIdMappingCase::{ name: "Digit9", key_code: Digit9 },
+    KeyIdMappingCase::{ name: "Digit0", key_code: Digit0 },
     KeyIdMappingCase::{ name: "Tab", key_code: Tab },
     KeyIdMappingCase::{ name: "Enter", key_code: Enter },
     KeyIdMappingCase::{ name: "Backspace", key_code: Backspace },
@@ -96,8 +98,6 @@ test "windowing_native: input key lookup stays aligned with keycode ids" {
 
 ///|
 test "windowing_native: unsupported key names stay unmapped" {
-  assert_eq(input_key_id("Digit9"), -1)
-  assert_eq(input_key_id("Digit0"), -1)
   assert_eq(input_key_id("Backquote"), -1)
   assert_eq(input_key_id("Backslash"), -1)
   assert_eq(input_key_id("Unknown"), -1)

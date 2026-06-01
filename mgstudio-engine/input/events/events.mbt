@@ -48,6 +48,8 @@ pub(all) enum KeyCode {
   Digit6
   Digit7
   Digit8
+  Digit9
+  Digit0
   F1
   F2
   F3
@@ -258,56 +260,56 @@ pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput] = @ecs.register_messag
 )
 
 ///|
-pub impl @ecs.Message for KeyboardInput with message() {
+pub impl @ecs.Message for KeyboardInput with fn message() {
   ecs_key_keyboard_input
 }
 
 ///|
-pub impl @ecs.Message for KeyboardCharacter with message() {
+pub impl @ecs.Message for KeyboardCharacter with fn message() {
   ecs_key_keyboard_character
 }
 
 ///|
-pub impl @ecs.Message for KeyboardFocusLost with message() {
+pub impl @ecs.Message for KeyboardFocusLost with fn message() {
   ecs_key_keyboard_focus_lost
 }
 
 ///|
-pub impl @ecs.Message for MouseButtonInput with message() {
+pub impl @ecs.Message for MouseButtonInput with fn message() {
   ecs_key_mouse_button_input
 }
 
 ///|
-pub impl @ecs.Message for MouseMotion with message() {
+pub impl @ecs.Message for MouseMotion with fn message() {
   ecs_key_mouse_motion
 }
 
 ///|
-pub impl @ecs.Message for MouseWheel with message() {
+pub impl @ecs.Message for MouseWheel with fn message() {
   ecs_key_mouse_wheel
 }
 
 ///|
-pub impl @ecs.Message for PinchGesture with message() {
+pub impl @ecs.Message for PinchGesture with fn message() {
   ecs_key_pinch_gesture
 }
 
 ///|
-pub impl @ecs.Message for RotationGesture with message() {
+pub impl @ecs.Message for RotationGesture with fn message() {
   ecs_key_rotation_gesture
 }
 
 ///|
-pub impl @ecs.Message for DoubleTapGesture with message() {
+pub impl @ecs.Message for DoubleTapGesture with fn message() {
   ecs_key_double_tap_gesture
 }
 
 ///|
-pub impl @ecs.Message for PanGesture with message() {
+pub impl @ecs.Message for PanGesture with fn message() {
   ecs_key_pan_gesture
 }
 
 ///|
-pub impl @ecs.Message for TouchInput with message() {
+pub impl @ecs.Message for TouchInput with fn message() {
   ecs_key_touch_input
 }

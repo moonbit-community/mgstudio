@@ -114,12 +114,12 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl @app.Plugin for MaterialsPlugin with name(_self) {
+pub impl @app.Plugin for MaterialsPlugin with fn name(_self) {
   MATERIALS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MaterialsPlugin with build(_self, app) {
+pub impl @app.Plugin for MaterialsPlugin with fn build(_self, app) {
   materials_plugin_install(app)
 }
 
@@ -361,6 +361,7 @@ fn mesh_pipeline_key_tonemapping_bits(tonemapping : Tonemapping) -> UInt64 {
       5UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
     TonyMcMapface => 6UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
     BlenderFilmic => 7UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+    PbrNeutral => 8UL << MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
   }
 }
 

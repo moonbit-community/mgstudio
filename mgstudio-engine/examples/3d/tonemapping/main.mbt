@@ -103,42 +103,42 @@ let tonemapping_ui_text_component_key : @ecs.ComponentKey[TonemappingUiText] = @
 )
 
 ///|
-impl @app.Resource for CameraTransform with resource() {
+impl @app.Resource for CameraTransform with fn resource() {
   camera_transform_resource_key
 }
 
 ///|
-impl @app.Resource for CurrentScene with resource() {
+impl @app.Resource for CurrentScene with fn resource() {
   current_scene_resource_key
 }
 
 ///|
-impl @app.Resource for SelectedParameter with resource() {
+impl @app.Resource for SelectedParameter with fn resource() {
   selected_parameter_resource_key
 }
 
 ///|
-impl @app.Resource for PerMethodSettings with resource() {
+impl @app.Resource for PerMethodSettings with fn resource() {
   per_method_settings_resource_key
 }
 
 ///|
-impl @ecs.Component for SceneNumber with component() {
+impl @ecs.Component for SceneNumber with fn component() {
   scene_number_component_key
 }
 
 ///|
-impl @ecs.Component for HDRViewer with component() {
+impl @ecs.Component for HDRViewer with fn component() {
   hdr_viewer_component_key
 }
 
 ///|
-impl @ecs.Component for TonemappingUiRoot with component() {
+impl @ecs.Component for TonemappingUiRoot with fn component() {
   tonemapping_ui_root_component_key
 }
 
 ///|
-impl @ecs.Component for TonemappingUiText with component() {
+impl @ecs.Component for TonemappingUiText with fn component() {
   tonemapping_ui_text_component_key
 }
 
@@ -183,6 +183,7 @@ fn method_name(tonemapper : @post_process.Tonemapping) -> String {
     SomewhatBoringDisplayTransform => "SomewhatBoringDisplayTransform"
     TonyMcMapface => "TonyMcMapface"
     BlenderFilmic => "Blender Filmic"
+    PbrNeutral => "PBR Neutral"
   }
 }
 
@@ -197,6 +198,7 @@ fn tonemapping_methods() -> Array[@post_process.Tonemapping] {
     @post_process.Tonemapping::SomewhatBoringDisplayTransform,
     @post_process.Tonemapping::TonyMcMapface,
     @post_process.Tonemapping::BlenderFilmic,
+    @post_process.Tonemapping::PbrNeutral,
   ]
 }
 
@@ -312,7 +314,7 @@ fn ui_text_content(
   let some_marker = selected_marker(
     tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
   )
-  let mut content = "(H) Hide UI\n\nTest Scene:\n(Q) \{selected_marker(scene == 1)}Basic Scene\n(W) \{selected_marker(scene == 2)}Color Sweep\n(E) \{selected_marker(scene == 3)}Image Viewer\n\nTonemapping Method:\n(1) \{selected_marker(tonemapping == @post_process.Tonemapping::None)}Disabled\n(2) \{selected_marker(tonemapping == @post_process.Tonemapping::Reinhard)}Reinhard\n(3) \{selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance)}Reinhard Luminance\n(4) \{selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted)}ACES Fitted\n(5) \{selected_marker(tonemapping == @post_process.Tonemapping::AgX)}AgX\n(6) \{some_marker}SomewhatBoringDisplayTransform\n(7) \{selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface)}TonyMcMapface\n(8) \{selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic)}Blender Filmic\n\nColor Grading:\n(arrow keys)\n\{selected_marker(selected_parameter == 0)}Exposure: \{color_grading.global.exposure}\n\{selected_marker(selected_parameter == 1)}Gamma: \{color_grading.shadows.gamma}\n\{selected_marker(selected_parameter == 2)}PreSaturation: \{color_grading.shadows.saturation}\n\{selected_marker(selected_parameter == 3)}PostSaturation: \{color_grading.global.post_saturation}\n(Space) Reset all to default\n"
+  let mut content = "(H) Hide UI\n\nTest Scene:\n(Q) \{selected_marker(scene == 1)}Basic Scene\n(W) \{selected_marker(scene == 2)}Color Sweep\n(E) \{selected_marker(scene == 3)}Image Viewer\n\nTonemapping Method:\n(1) \{selected_marker(tonemapping == @post_process.Tonemapping::None)}Disabled\n(2) \{selected_marker(tonemapping == @post_process.Tonemapping::Reinhard)}Reinhard\n(3) \{selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance)}Reinhard Luminance\n(4) \{selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted)}ACES Fitted\n(5) \{selected_marker(tonemapping == @post_process.Tonemapping::AgX)}AgX\n(6) \{some_marker}SomewhatBoringDisplayTransform\n(7) \{selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface)}TonyMcMapface\n(8) \{selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic)}Blender Filmic\n(9) \{selected_marker(tonemapping == @post_process.Tonemapping::PbrNeutral)}PBR Neutral\n\nColor Grading:\n(arrow keys)\n\{selected_marker(selected_parameter == 0)}Exposure: \{color_grading.global.exposure}\n\{selected_marker(selected_parameter == 1)}Gamma: \{color_grading.shadows.gamma}\n\{selected_marker(selected_parameter == 2)}PreSaturation: \{color_grading.shadows.saturation}\n\{selected_marker(selected_parameter == 3)}PostSaturation: \{color_grading.global.post_saturation}\n(Space) Reset all to default\n"
 
   if scene == 1 {
     content = "\{content}(Enter) Reset all to scene recommendation\n"
@@ -594,6 +596,8 @@ fn toggle_tonemapping_method(
     Some(@post_process.Tonemapping::TonyMcMapface)
   } else if keys.just_pressed(Digit8) {
     Some(@post_process.Tonemapping::BlenderFilmic)
+  } else if keys.just_pressed(Digit9) {
+    Some(@post_process.Tonemapping::PbrNeutral)
   } else {
     None
   }

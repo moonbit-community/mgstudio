@@ -418,6 +418,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
+  PbrNeutral
 } derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
@@ -1038,56 +1039,56 @@ pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Fxaa with component() {
+pub impl @ecs.Component for Fxaa with fn component() {
   ecs_key_fxaa
 }
 
 ///|
-pub impl @ecs.Component for Bloom with component() {
+pub impl @ecs.Component for Bloom with fn component() {
   ecs_key_bloom
 }
 
 ///|
-pub impl @ecs.Component for CustomPostProcess3d with component() {
+pub impl @ecs.Component for CustomPostProcess3d with fn component() {
   ecs_key_custom_post_process3d
 }
 
 ///|
-pub impl @ecs.Component for Tonemapping with component() {
+pub impl @ecs.Component for Tonemapping with fn component() {
   ecs_key_tonemapping
 }
 
 ///|
-pub impl @ecs.Component for ColorGrading with component() {
+pub impl @ecs.Component for ColorGrading with fn component() {
   ecs_key_color_grading
 }
 
 ///|
-pub impl @ecs.Component for DebandDither with component() {
+pub impl @ecs.Component for DebandDither with fn component() {
   ecs_key_deband_dither
 }
 
 ///|
-pub impl @ecs.Component for TemporalJitter with component() {
+pub impl @ecs.Component for TemporalJitter with fn component() {
   ecs_key_temporal_jitter
 }
 
 ///|
-pub impl @ecs.Component for MipBias with component() {
+pub impl @ecs.Component for MipBias with fn component() {
   ecs_key_mip_bias
 }
 
 ///|
-pub impl @ecs.Component for TemporalAntiAliasing with component() {
+pub impl @ecs.Component for TemporalAntiAliasing with fn component() {
   ecs_key_temporal_anti_aliasing
 }
 
 ///|
-pub impl @ecs.Component for ScreenSpaceReflections with component() {
+pub impl @ecs.Component for ScreenSpaceReflections with fn component() {
   ecs_key_screen_space_reflections
 }
 
 ///|
-pub impl @ecs.Component for ScreenSpaceAmbientOcclusion with component() {
+pub impl @ecs.Component for ScreenSpaceAmbientOcclusion with fn component() {
   ecs_key_screen_space_ambient_occlusion
 }

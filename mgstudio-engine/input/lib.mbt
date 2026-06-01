@@ -49,6 +49,8 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     Digit6 => "Digit6"
     Digit7 => "Digit7"
     Digit8 => "Digit8"
+    Digit9 => "Digit9"
+    Digit0 => "Digit0"
     F1 => "F1"
     F2 => "F2"
     F3 => "F3"
@@ -126,6 +128,8 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
   Digit6,
   Digit7,
   Digit8,
+  Digit9,
+  Digit0,
   F1,
   F2,
   F3,
@@ -200,17 +204,17 @@ pub fn[T] ButtonInput::ButtonInput() -> ButtonInput[T] {
 }
 
 ///|
-pub impl[T] Default for ButtonInput[T] with default() {
+pub impl[T] Default for ButtonInput[T] with fn default() {
   ButtonInput::ButtonInput()
 }
 
 ///|
-pub impl[T : ToJson] ToJson for ButtonInput[T] with to_json(self) {
+pub impl[T : ToJson] ToJson for ButtonInput[T] with fn to_json(self) {
   (self.pressed, self.just_pressed, self.just_released).to_json()
 }
 
 ///|
-pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T] with from_json(
+pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T] with fn from_json(
   json,
   path,
 ) {
@@ -244,17 +248,17 @@ pub fn[T] Axis::Axis() -> Axis[T] {
 }
 
 ///|
-pub impl[T] Default for Axis[T] with default() {
+pub impl[T] Default for Axis[T] with fn default() {
   Axis::Axis()
 }
 
 ///|
-pub impl[T : ToJson] ToJson for Axis[T] with to_json(self) {
+pub impl[T : ToJson] ToJson for Axis[T] with fn to_json(self) {
   self.axis_data.to_json()
 }
 
 ///|
-pub impl[T : @json.FromJson] @json.FromJson for Axis[T] with from_json(
+pub impl[T : @json.FromJson] @json.FromJson for Axis[T] with fn from_json(
   json,
   path,
 ) {
@@ -957,7 +961,7 @@ let input_event_cursors_resource_key : @ecs.ResourceKey[InputEventCursors] = @ec
 )
 
 ///|
-impl @app.Resource for InputEventCursors with resource() {
+impl @app.Resource for InputEventCursors with fn resource() {
   input_event_cursors_resource_key
 }
 
@@ -1299,6 +1303,8 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     Digit6 => Character("6")
     Digit7 => Character("7")
     Digit8 => Character("8")
+    Digit9 => Character("9")
+    Digit0 => Character("0")
     F1 => Key::Function(1)
     F2 => Key::Function(2)
     F3 => Key::Function(3)
@@ -1415,6 +1421,8 @@ fn keycode_from_key_id(key_id : Int) -> @window.KeyCode? {
     69 => Some(Quote)
     70 => Some(NumpadAdd)
     71 => Some(NumpadSubtract)
+    72 => Some(Digit9)
+    73 => Some(Digit0)
     _ => None
   }
 }
@@ -2131,17 +2139,17 @@ pub fn[W] input_finish_system(_world : W) -> Unit {
 }
 
 ///|
-pub impl ButtonInputButton for @window.KeyCode with button_id(self) {
+pub impl ButtonInputButton for @window.KeyCode with fn button_id(self) {
   keycode_to_string(self)
 }
 
 ///|
-pub impl ButtonInputButton for @window.MouseButton with button_id(self) {
+pub impl ButtonInputButton for @window.MouseButton with fn button_id(self) {
   mouse_button_to_string(self)
 }
 
 ///|
-pub impl ButtonInputButton for Key with button_id(self) {
+pub impl ButtonInputButton for Key with fn button_id(self) {
   self.to_json().stringify()
 }
 
@@ -2198,36 +2206,36 @@ fn read_logical_key_button_input() -> ButtonInput[Key] {
 }
 
 ///|
-pub impl ButtonInputSnapshotProvider for @window.KeyCode with read_button_input() {
+pub impl ButtonInputSnapshotProvider for @window.KeyCode with fn read_button_input() {
   read_keycode_button_input()
 }
 
 ///|
-pub impl ButtonInputSnapshotProvider for @window.MouseButton with read_button_input() {
+pub impl ButtonInputSnapshotProvider for @window.MouseButton with fn read_button_input() {
   read_mouse_button_input()
 }
 
 ///|
-pub impl ButtonInputSnapshotProvider for Key with read_button_input() {
+pub impl ButtonInputSnapshotProvider for Key with fn read_button_input() {
   read_logical_key_button_input()
 }
 
 ///|
-pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with init_state(
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with fn init_state(
   world,
 ) {
   @app.system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with get(
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with fn get(
   _state,
 ) {
   ButtonInputSnapshotProvider::read_button_input()
 }
 
 ///|
-pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with store(
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with fn store(
   self,
   state,
 ) {
@@ -2235,17 +2243,17 @@ pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] wi
 }
 
 ///|
-pub impl @app.Resource for AccumulatedMouseMotion with resource() {
+pub impl @app.Resource for AccumulatedMouseMotion with fn resource() {
   accumulated_mouse_motion_resource_key
 }
 
 ///|
-pub impl @app.Resource for AccumulatedMouseScroll with resource() {
+pub impl @app.Resource for AccumulatedMouseScroll with fn resource() {
   accumulated_mouse_scroll_resource_key
 }
 
 ///|
-pub impl @app.Resource for Touches with resource() {
+pub impl @app.Resource for Touches with fn resource() {
   touches_resource_key
 }
 
@@ -2266,12 +2274,12 @@ pub fn InputPlugin::InputPlugin() -> InputPlugin {
 }
 
 ///|
-pub impl @app.Plugin for InputPlugin with name(_self) {
+pub impl @app.Plugin for InputPlugin with fn name(_self) {
   INPUT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for InputPlugin with build(self, app) {
+pub impl @app.Plugin for InputPlugin with fn build(self, app) {
   input_plugin_with(app, self)
 }
 

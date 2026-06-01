@@ -97,6 +97,8 @@ pub(all) enum KeyCode {
   Digit6
   Digit7
   Digit8
+  Digit9
+  Digit0
   F1
   F2
   F3

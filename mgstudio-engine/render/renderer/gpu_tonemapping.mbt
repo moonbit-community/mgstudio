@@ -692,8 +692,8 @@ fn tonemapping_write_view_uniform(
 fn tonemapping_mode_clamped(tonemapping_mode : Int) -> Int {
   if tonemapping_mode < 0 {
     0
-  } else if tonemapping_mode > 7 {
-    7
+  } else if tonemapping_mode > 8 {
+    8
   } else {
     tonemapping_mode
   }
@@ -709,7 +709,8 @@ fn tonemapping_method_define(tonemapping_mode : Int) -> String {
     4 => "TONEMAP_METHOD_AGX"
     5 => "TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM"
     6 => "TONEMAP_METHOD_TONY_MC_MAPFACE"
-    _ => "TONEMAP_METHOD_BLENDER_FILMIC"
+    7 => "TONEMAP_METHOD_BLENDER_FILMIC"
+    _ => "TONEMAP_METHOD_PBR_NEUTRAL"
   }
 }
 

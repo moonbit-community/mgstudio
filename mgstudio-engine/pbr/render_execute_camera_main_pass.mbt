@@ -23,6 +23,7 @@ fn render3d_main_pass_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
     SomewhatBoringDisplayTransform => 5
     TonyMcMapface => 6
     BlenderFilmic => 7
+    PbrNeutral => 8
   }
 }
 

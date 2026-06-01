@@ -268,6 +268,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
+  PbrNeutral
 } derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
