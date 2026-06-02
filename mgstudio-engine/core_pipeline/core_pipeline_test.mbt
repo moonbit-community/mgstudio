@@ -30,17 +30,22 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
 ///|
 test "mip_generation plugin initializes downsample shader registry resource" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let shaders = render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
     .unwrap()
-  debug_inspect(
-    shaders.depth_shader_path(),
-    content="\"core_pipeline/mip_generation/experimental/downsample_depth.wgsl\"",
-  )
+  debug_inspect(shaders.depth().id() >= 0, content="true")
   debug_inspect(shaders.general_shader_count(), content="40")
+  let rgba8 = shaders.general_shader("Rgba8Unorm").unwrap()
+  debug_inspect(rgba8.id() >= 0, content="true")
+  let shader_assets_key : @ecs.ResourceKey[@asset.Assets[@shader.Shader]] = @asset.assets_resource_key()
+  let shader_assets = app.world().get_resource(shader_assets_key).unwrap()
+  debug_inspect(shader_assets.contains(shaders.depth()), content="true")
+  debug_inspect(shader_assets.contains(rgba8), content="true")
 }
 
 ///|
@@ -57,6 +62,8 @@ test "mip_generation texture format table follows bevy list shape" {
 ///|
 test "mip_generation plugin initializes finish-stage resources in render sub-app" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
     .finish()
@@ -73,6 +80,8 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
 ///|
 test "core_2d plugin initializes phase resources in render sub-app only" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   let main_world = app.world()
@@ -125,6 +134,8 @@ fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
 ///|
 test "camera_driver runs core pipeline camera schedules" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   ignore(

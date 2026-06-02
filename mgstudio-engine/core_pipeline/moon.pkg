@@ -15,4 +15,9 @@ import {
   "Milky2018/mgstudio/render",
 }
 
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/shader",
+} for "test"
+
 supported_targets = "native"

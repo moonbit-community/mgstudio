@@ -35,18 +35,18 @@ pub fn mip_generation_plugin(
 }
 
 ///|
-pub impl @app.Plugin for MipGenerationPlugin with name(_self) {
+pub impl @app.Plugin for MipGenerationPlugin with fn name(_self) {
   MIP_GENERATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MipGenerationPlugin with build(self, app) {
+pub impl @app.Plugin for MipGenerationPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   mip_generation_plugin_install_with(app, self)
 }
 
 ///|
-pub impl @app.Plugin for MipGenerationPlugin with finish(self, app) {
+pub impl @app.Plugin for MipGenerationPlugin with fn finish(self, app) {
   mip_generation_plugin_finish_with(app, self)
 }
 
@@ -66,7 +66,11 @@ fn mip_generation_plugin_install_with(
   let next = app.add_plugins(
     @experimental.ExperimentalMipGeneration::ExperimentalMipGeneration(),
   )
-  @render.with_render_app(next, mip_generation_configure_render_sub_app)
+  let downsample_shaders = downsample_shaders_from_world(next.world())
+  next.world().insert_resource(ecs_key_downsample_shaders, downsample_shaders)
+  @render.with_render_app(next, fn(sub_app) {
+    mip_generation_configure_render_sub_app(sub_app, downsample_shaders)
+  })
 }
 
 ///|
@@ -89,13 +93,11 @@ fn mip_generation_plugin_finish_with(
 ///|
 fn mip_generation_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
+  downsample_shaders : DownsampleShaders,
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
   if !world.resource(ecs_key_downsample_shaders).is_present() {
-    world.insert_resource(
-      ecs_key_downsample_shaders,
-      DownsampleShaders::DownsampleShaders(),
-    )
+    world.insert_resource(ecs_key_downsample_shaders, downsample_shaders)
   }
   if !world.resource(ecs_key_mip_generation_jobs).is_present() {
     world.insert_resource(
@@ -119,6 +121,12 @@ fn mip_generation_configure_render_sub_app(
 
 ///|
 pub const REQUIRED_STORAGE_TEXTURES : Int = 12
+
+///|
+const DOWNSAMPLE_SHADER_PATH : String = "core_pipeline/mip_generation/downsample.wgsl"
+
+///|
+const DOWNSAMPLE_DEPTH_SHADER_PATH : String = "core_pipeline/mip_generation/experimental/downsample_depth.wgsl"
 
 ///|
 pub struct MipGenerationResources {
@@ -172,7 +180,7 @@ pub let ecs_key_mip_generation_resources : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="core_pipeline.mip_generation.resources")
 
 ///|
-pub impl @app.Resource for MipGenerationResources with resource() {
+pub impl @app.Resource for MipGenerationResources with fn resource() {
   ecs_key_mip_generation_resources
 }
 
@@ -225,39 +233,61 @@ pub fn downsample_texture_formats() -> Array[(String, String)] {
 }
 
 ///|
-pub struct DownsampleShaders {
-  depth_shader_path : String
-  general_shader_count : Int
+fn downsample_specialized_wgsl_source(identifier : String) -> String {
+  downsample_wgsl_source.replace_all(old="##TEXTURE_FORMAT##", new=identifier)
 }
 
 ///|
-pub fn DownsampleShaders::DownsampleShaders() -> DownsampleShaders {
-  DownsampleShaders::new(
-    general_shader_count=downsample_texture_formats().length(),
+fn downsample_shaders_from_world(world : @ecs.World) -> DownsampleShaders {
+  let depth : @asset.Handle[@shader.Shader] = @asset.asset_world_load(
+    world,
+    DOWNSAMPLE_DEPTH_SHADER_PATH,
   )
+  let general : Map[String, @asset.Handle[@shader.Shader]] = {}
+  for entry in downsample_texture_formats() {
+    let (target_format, identifier) = entry
+    let source = downsample_specialized_wgsl_source(identifier)
+    let handle = @asset.asset_world_add(
+      world,
+      @shader.Shader::from_wgsl(source, DOWNSAMPLE_SHADER_PATH),
+    )
+    general.set(target_format, handle)
+  }
+  DownsampleShaders::new(depth~, general~)
+}
+
+///|
+pub struct DownsampleShaders {
+  depth : @asset.Handle[@shader.Shader]
+  general : Map[String, @asset.Handle[@shader.Shader]]
 }
 
 ///|
 pub fn DownsampleShaders::new(
-  depth_shader_path? : String = "core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
-  general_shader_count? : Int = 0,
+  depth~ : @asset.Handle[@shader.Shader],
+  general~ : Map[String, @asset.Handle[@shader.Shader]],
 ) -> DownsampleShaders {
-  let general_shader_count = if general_shader_count < 0 {
-    0
-  } else {
-    general_shader_count
-  }
-  DownsampleShaders::{ depth_shader_path, general_shader_count }
+  DownsampleShaders::{ depth, general }
 }
 
 ///|
-pub fn DownsampleShaders::depth_shader_path(self : DownsampleShaders) -> String {
-  self.depth_shader_path
+pub fn DownsampleShaders::depth(
+  self : DownsampleShaders,
+) -> @asset.Handle[@shader.Shader] {
+  self.depth
 }
 
 ///|
 pub fn DownsampleShaders::general_shader_count(self : DownsampleShaders) -> Int {
-  self.general_shader_count
+  self.general.length()
+}
+
+///|
+pub fn DownsampleShaders::general_shader(
+  self : DownsampleShaders,
+  target_format : String,
+) -> @asset.Handle[@shader.Shader]? {
+  self.general.get(target_format)
 }
 
 ///|
@@ -266,7 +296,7 @@ pub let ecs_key_downsample_shaders : @ecs.ResourceKey[DownsampleShaders] = @ecs.
 )
 
 ///|
-pub impl @app.Resource for DownsampleShaders with resource() {
+pub impl @app.Resource for DownsampleShaders with fn resource() {
   ecs_key_downsample_shaders
 }
 
@@ -422,7 +452,7 @@ pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs] = @ecs
 )
 
 ///|
-pub impl @app.Resource for MipGenerationJobs with resource() {
+pub impl @app.Resource for MipGenerationJobs with fn resource() {
   ecs_key_mip_generation_jobs
 }
 
@@ -508,7 +538,7 @@ pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="core_pipeline.mip_generation.pipelines")
 
 ///|
-pub impl @app.Resource for MipGenerationPipelines with resource() {
+pub impl @app.Resource for MipGenerationPipelines with fn resource() {
   ecs_key_mip_generation_pipelines
 }
 

@@ -4,6 +4,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/core_pipeline/mip_generation/experimental",
+  "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }
 

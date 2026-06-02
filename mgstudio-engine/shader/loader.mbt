@@ -95,7 +95,7 @@ let shader_asset_paths_resource_key : @ecs.ResourceKey[ShaderAssetPaths] = @ecs.
 )
 
 ///|
-pub impl @app.Resource for ShaderAssetPaths with resource() {
+pub impl @app.Resource for ShaderAssetPaths with fn resource() {
   shader_asset_paths_resource_key
 }
 
@@ -224,12 +224,6 @@ fn shader_load_registered(
   asset_server : @asset.AssetServer,
   path : String,
 ) -> @asset.Handle[Shader] {
-  if @app.current_world() is None {
-    abort(
-      "AssetServer::load[Shader] requires an active app world; load the shader plugin and call it from a scheduled system",
-    )
-  }
-
   let canonical_path = @asset.asset_canonical_path(path)
   let registry = shader_asset_paths_mut_or_abort()
   match registry.peek().find(canonical_path) {
