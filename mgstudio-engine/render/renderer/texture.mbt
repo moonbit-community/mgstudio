@@ -18,6 +18,52 @@
 /// Split from gpu.mbt to keep subsystems cohesive and closer to Bevy's module layout.
 
 ///|
+const IMAGE_USAGE_TEXTURE_BINDING_BIT : Int = 1
+
+///|
+const IMAGE_USAGE_COPY_DST_BIT : Int = 2
+
+///|
+const IMAGE_USAGE_COPY_SRC_BIT : Int = 4
+
+///|
+const IMAGE_USAGE_RENDER_ATTACHMENT_BIT : Int = 8
+
+///|
+const IMAGE_USAGE_STORAGE_BINDING_BIT : Int = 16
+
+///|
+const IMAGE_USAGE_DEFAULT_SAMPLED_BITS : Int = IMAGE_USAGE_TEXTURE_BINDING_BIT |
+  IMAGE_USAGE_COPY_DST_BIT |
+  IMAGE_USAGE_COPY_SRC_BIT
+
+///|
+fn texture_usage_bits_to_wgpu(usage_bits : Int) -> UInt64 {
+  let usage = usage_bits.reinterpret_as_uint()
+  let mut bits : UInt64 = 0UL
+  if (usage & IMAGE_USAGE_TEXTURE_BINDING_BIT.reinterpret_as_uint()) != 0U {
+    bits = bits | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  }
+  if (usage & IMAGE_USAGE_COPY_DST_BIT.reinterpret_as_uint()) != 0U {
+    bits = bits | @wgpu.TEXTURE_USAGE_COPY_DST
+  }
+  if (usage & IMAGE_USAGE_COPY_SRC_BIT.reinterpret_as_uint()) != 0U {
+    bits = bits | @wgpu.TEXTURE_USAGE_COPY_SRC
+  }
+  if (usage & IMAGE_USAGE_RENDER_ATTACHMENT_BIT.reinterpret_as_uint()) != 0U {
+    bits = bits | @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT
+  }
+  if (usage & IMAGE_USAGE_STORAGE_BINDING_BIT.reinterpret_as_uint()) != 0U {
+    bits = bits | @wgpu.TEXTURE_USAGE_STORAGE_BINDING
+  }
+  if bits == 0UL {
+    texture_usage_bits_to_wgpu(IMAGE_USAGE_DEFAULT_SAMPLED_BITS)
+  } else {
+    bits
+  }
+}
+
+///|
 fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
   for t in backend.textures {
     if t.id == id {
@@ -270,15 +316,15 @@ pub fn GpuBackend::create_texture_rgba8(
   height : Int,
   pixels_rgba8 : Bytes,
   nearest : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
-    @wgpu.TEXTURE_USAGE_COPY_DST |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
-  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let usage = @wgpu.TextureUsage::from_u64(
+    texture_usage_bits_to_wgpu(usage_bits),
+  )
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
   let sampler = if nearest {
@@ -322,6 +368,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   if levels.length() == 0 {
@@ -338,10 +385,9 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   let w = if width <= 0 { 1 } else { width }
   let h_per_slice = if height_per_slice <= 0 { 1 } else { height_per_slice }
   let slices = if slice_count <= 0 { 1 } else { slice_count }
-  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
-    @wgpu.TEXTURE_USAGE_COPY_DST |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
-  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let usage = @wgpu.TextureUsage::from_u64(
+    texture_usage_bits_to_wgpu(usage_bits),
+  )
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
     h_per_slice.reinterpret_as_uint(),
@@ -1720,6 +1766,7 @@ pub fn asset_create_texture_empty(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
@@ -1731,7 +1778,11 @@ pub fn asset_create_texture_empty(
           (0).to_byte()
         })
         return backend.create_texture_rgba8(
-          safe_width, safe_height, bytes, nearest,
+          safe_width,
+          safe_height,
+          bytes,
+          nearest,
+          usage_bits~,
         )
       }
       let levels : Array[Bytes] = []
@@ -1749,6 +1800,7 @@ pub fn asset_create_texture_empty(
         tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
         levels,
         nearest,
+        usage_bits~,
       )
     } catch {
       _ => ()
@@ -1789,6 +1841,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height_per_slice = if height_per_slice <= 0 {
@@ -1800,7 +1853,13 @@ pub fn asset_create_texture_stacked_2d_with_format(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_texture_stacked_2d_with_format(
-        safe_width, safe_height_per_slice, safe_slice_count, format, levels, nearest,
+        safe_width,
+        safe_height_per_slice,
+        safe_slice_count,
+        format,
+        levels,
+        nearest,
+        usage_bits~,
       )
     } catch {
       _ => ()

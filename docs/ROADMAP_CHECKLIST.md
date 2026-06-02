@@ -30,7 +30,7 @@ Terminology note: `erased render asset` refers to Bevy's typed `ErasedRenderAsse
 | `picking` | 60% | 50% | 50% | 🟠 Partial | Main components exist, but pointer-state/event-generation/backend ordering still diverge. |
 | `input` | 75% | 70% | 70% | 🟡 In Progress | Event resources are close for common paths, and numeric key coverage now includes Bevy's `Digit0` through `Digit9` surface; platform/event-order long tail still needs upstream-test parity. |
 | `window` + `winit` | 65% | 55% | 55% | 🟠 Partial | Window lifecycle/cursor work progressed, but backend/platform parity is not broad enough for high score. |
-| `asset` | 55% | 45% | 45% | 🔴 Major Gap | Asset events and loader slices exist, but source/processor/reload/ready-checker parity remains shallow. |
+| `asset` | 55% | 45% | 45% | 🔴 Major Gap | Asset events and loader slices exist, and `Image` now carries Bevy-shaped mip-level count plus texture usage bits through asset metadata and GPU texture creation, including storage texture usage needed by runtime mip generation. Source/processor/reload/ready-checker parity remains shallow. |
 | `log` + `diagnostic` + `dev_tools` | 60% | 55% | 55% | 🟠 Partial | Useful diagnostics exist; generic deferred diagnostics/material UI paths are not Bevy-equivalent. |
 | `anti_alias` | 55% | 40% | 40% | 🔴 Major Gap | Shader assets and components are present, but SMAA/TAA/DLSS runtime pass parity is incomplete. |
 | `light` | 55% | 45% | 45% | 🔴 Major Gap | Component ownership moved closer, but clustering/shadow/probe behavior is still materially divergent. |

@@ -3029,6 +3029,7 @@ fn load_texture_bytes_with_container(
         format=payload.format,
         levels=payload.levels,
         nearest~,
+        usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED,
       )
     }
     if texture_id > 0 {
@@ -3053,6 +3054,7 @@ fn load_texture_bytes_with_container(
     height=safe_height,
     mip_level_count=1,
     nearest~,
+    usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED,
   )
   if texture_id <= 0 {
     return 0
@@ -3126,6 +3128,7 @@ fn create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int {
     height=safe_height,
     mip_level_count=1,
     nearest~,
+    usage_bits=IMAGE_USAGE_DEFAULT_DYNAMIC,
   )
   if texture_id <= 0 {
     return 0
@@ -3152,6 +3155,7 @@ fn create_dynamic_texture_mipped(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits~ : Int,
 ) -> Int {
   let safe_mip_level_count = if mip_level_count <= 0 {
     1
@@ -3165,6 +3169,7 @@ fn create_dynamic_texture_mipped(
     height=safe_height,
     mip_level_count=safe_mip_level_count,
     nearest~,
+    usage_bits~,
   )
   if texture_id <= 0 {
     return 0

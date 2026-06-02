@@ -14,13 +14,7 @@
 
 ///|
 fn image_asset_usage_bits(image : Image) -> Int {
-  if image.is_target_texture() {
-    IMAGE_USAGE_TEXTURE_BINDING |
-    IMAGE_USAGE_COPY_DST |
-    IMAGE_USAGE_RENDER_ATTACHMENT
-  } else {
-    IMAGE_USAGE_TEXTURE_BINDING | IMAGE_USAGE_COPY_DST | IMAGE_USAGE_COPY_SRC
-  }
+  image.texture_usage_bits()
 }
 
 ///|
@@ -79,6 +73,58 @@ fn[T] image_asset_allocate_handle(
 }
 
 ///|
+fn image_asset_pixel_size(format : TextureFormat) -> Int {
+  match format {
+    TextureFormat::Rgba8Unorm => 4
+    TextureFormat::Rgba8UnormSrgb => 4
+    TextureFormat::Bgra8Unorm => 4
+    TextureFormat::Bgra8UnormSrgb => 4
+    TextureFormat::Rgba16Uint => 8
+    TextureFormat::Rgba16Float => 8
+    TextureFormat::Rg16Float => 4
+  }
+}
+
+///|
+fn image_asset_mip_dim(size : Int, level : Int) -> Int {
+  let shifted = size >> level
+  if shifted <= 0 {
+    1
+  } else {
+    shifted
+  }
+}
+
+///|
+fn image_asset_mip_levels(
+  image : Image,
+  height_per_slice : Int,
+  slice_count : Int,
+) -> Array[Bytes] {
+  let mip_count = image.mip_level_count()
+  if mip_count <= 1 {
+    return [image.pixels]
+  }
+  let pixel_size = image_asset_pixel_size(image.format)
+  let levels : Array[Bytes] = []
+  let mut offset = 0
+  for level in 0..<mip_count {
+    let width = image_asset_mip_dim(image.width, level)
+    let height = image_asset_mip_dim(height_per_slice, level)
+    let byte_len = width * height * slice_count * pixel_size
+    let level_bytes = Bytes::makei(byte_len, i => {
+      match image.pixels.get(offset + i) {
+        Some(byte) => byte
+        None => (0).to_byte()
+      }
+    })
+    levels.push(level_bytes)
+    offset = offset + byte_len
+  }
+  levels
+}
+
+///|
 fn image_asset_create_gpu_texture(image : Image, nearest : Bool) -> Int {
   image_asset_create_gpu_texture_with_array_layout(image, None, nearest)
 }
@@ -105,8 +151,9 @@ fn image_asset_create_gpu_texture_with_array_layout(
     height_per_slice~,
     slice_count~,
     format=@image.texture_format(image.format),
-    levels=[image.pixels],
+    levels=image_asset_mip_levels(image, height_per_slice, slice_count),
     nearest~,
+    usage_bits=image_asset_usage_bits(image),
   )
   if id > 0 {
     set_texture_pixels(id, image.pixels)
@@ -120,7 +167,9 @@ fn image_asset_can_update_in_place(previous : Image, next : Image) -> Bool {
   previous.height == next.height &&
   previous.format == next.format &&
   previous.view_format == next.view_format &&
-  previous.kind == next.kind
+  previous.kind == next.kind &&
+  previous.mip_level_count() == next.mip_level_count() &&
+  previous.texture_usage_bits() == next.texture_usage_bits()
 }
 
 ///|

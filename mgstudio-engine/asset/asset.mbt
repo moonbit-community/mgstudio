@@ -419,7 +419,10 @@ pub const IMAGE_USAGE_COPY_SRC : Int = 4
 pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
 
 ///|
-const IMAGE_USAGE_ALL_MASK : Int = 15
+pub const IMAGE_USAGE_STORAGE_BINDING : Int = 16
+
+///|
+const IMAGE_USAGE_ALL_MASK : Int = 31
 
 ///|
 const IMAGE_USAGE_DEFAULT_SAMPLED : Int = 3
@@ -963,8 +966,15 @@ pub fn host_asset_create_dynamic_texture_mipped(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_DYNAMIC,
 ) -> Int {
-  create_dynamic_texture_mipped(width~, height~, mip_level_count~, nearest~)
+  create_dynamic_texture_mipped(
+    width~,
+    height~,
+    mip_level_count~,
+    nearest~,
+    usage_bits~,
+  )
 }
 
 ///|
@@ -1194,7 +1204,13 @@ fn AssetServer::load_image_with_settings(
     }
     self.set_image_array_layout(handle, settings.array_layout)
     self.set_image_is_srgb(handle, settings.is_srgb)
-    self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+    self.set_image_usage_bits(
+      handle,
+      match decoded_image {
+        Some(image) => image_asset_usage_bits(image)
+        None => IMAGE_USAGE_DEFAULT_SAMPLED
+      },
+    )
     self.set_image_render_asset_usages(handle, settings.asset_usage)
     match decoded_image {
       Some(image) => self.set_pending_image_asset(handle, image)
@@ -1587,7 +1603,13 @@ pub fn AssetServer::load_texture_bytes(
   let handle = Handle::new(id)
   self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
   self.track_image_handle(handle)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.set_image_usage_bits(
+    handle,
+    match decoded_image {
+      Some(image) => image_asset_usage_bits(image)
+      None => IMAGE_USAGE_DEFAULT_SAMPLED
+    },
+  )
   self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
   match decoded_image {
     Some(image) => self.set_pending_image_asset(handle, image)
@@ -1708,17 +1730,20 @@ pub fn asset_create_dynamic_texture_with_mips(
   size : @math.UVec2,
   mip_level_count : Int,
   nearest : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_DYNAMIC,
 ) -> Handle[Image] {
   let safe_mip_level_count = if mip_level_count <= 0 {
     1
   } else {
     mip_level_count
   }
+  let safe_usage_bits = asset_image_usage_sanitize(usage_bits)
   let id = host_asset_create_dynamic_texture_mipped(
     width=size.x,
     height=size.y,
     mip_level_count=safe_mip_level_count,
     nearest~,
+    usage_bits=safe_usage_bits,
   )
   let handle = Handle::new(id)
   let asset_server = AssetServer::new()
@@ -1727,7 +1752,7 @@ pub fn asset_create_dynamic_texture_with_mips(
     handle.id(),
   )
   asset_server.track_image_handle(handle)
-  asset_server.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
+  asset_server.set_image_usage_bits(handle, safe_usage_bits)
   handle
 }
 

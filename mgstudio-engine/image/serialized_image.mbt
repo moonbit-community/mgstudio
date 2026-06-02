@@ -21,6 +21,10 @@ pub struct SerializedImage {
   height : Int
   pixels : Bytes
   format : TextureFormat
+  view_format : TextureFormat?
+  kind : ImageKind
+  mip_level_count : Int
+  usage_bits : Int
 }
 
 ///|
@@ -30,6 +34,10 @@ pub fn SerializedImage::from_image(image : Image) -> SerializedImage {
     height: image.height,
     pixels: image.pixels,
     format: image.format,
+    view_format: image.view_format,
+    kind: image.kind,
+    mip_level_count: image.mip_level_count,
+    usage_bits: image.usage_bits,
   }
 }
 
@@ -40,7 +48,9 @@ pub fn SerializedImage::into_image(self : SerializedImage) -> Image {
     height: self.height,
     pixels: self.pixels,
     format: self.format,
-    view_format: None,
-    kind: ImageKind::Data,
+    view_format: self.view_format,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
   }
 }

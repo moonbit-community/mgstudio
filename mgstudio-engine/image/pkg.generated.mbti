@@ -7,6 +7,16 @@ import {
 }
 
 // Values
+pub const IMAGE_USAGE_COPY_DST : Int = 2
+
+pub const IMAGE_USAGE_COPY_SRC : Int = 4
+
+pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
+
+pub const IMAGE_USAGE_STORAGE_BINDING : Int = 16
+
+pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
+
 pub fn basis_requires_transcode(BasisContainer) -> Bool
 
 pub fn dds_default_texture_format() -> TextureFormat
@@ -118,13 +128,20 @@ pub(all) struct Image {
   format : TextureFormat
   view_format : TextureFormat?
   kind : ImageKind
+  mip_level_count : Int
+  usage_bits : Int
 }
 pub fn Image::height(Self) -> Int
 pub fn Image::is_target_texture(Self) -> Bool
+pub fn Image::mip_level_count(Self) -> Int
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
+pub fn Image::texture_usage_bits(Self) -> Int
 pub fn Image::width(Self) -> Int
+pub fn Image::with_added_texture_usage(Self, Int) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
+pub fn Image::with_mip_level_count(Self, Int) -> Self
+pub fn Image::with_texture_usage_bits(Self, Int) -> Self
 
 pub(all) enum ImageAddressMode {
   ClampToEdge
@@ -247,6 +264,10 @@ pub struct SerializedImage {
   height : Int
   pixels : Bytes
   format : TextureFormat
+  view_format : TextureFormat?
+  kind : ImageKind
+  mip_level_count : Int
+  usage_bits : Int
 }
 pub fn SerializedImage::from_image(Image) -> Self
 pub fn SerializedImage::into_image(Self) -> Image

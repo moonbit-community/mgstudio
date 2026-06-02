@@ -1452,6 +1452,25 @@ test "Image::new_target_texture preserves Bevy-style target texture descriptor" 
   debug_inspect(image.is_target_texture(), content="true")
   debug_inspect(image.format == TextureFormat::Bgra8UnormSrgb, content="true")
   debug_inspect(image.view_format == None, content="true")
+  debug_inspect(image.mip_level_count(), content="1")
+  debug_inspect(
+    asset_usage_has_bits(
+      image.texture_usage_bits(),
+      IMAGE_USAGE_RENDER_ATTACHMENT,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    asset_usage_has_bits(image.texture_usage_bits(), IMAGE_USAGE_COPY_SRC),
+    content="false",
+  )
+}
+
+///|
+fn asset_usage_has_bits(usage_bits : Int, required_bits : Int) -> Bool {
+  let usage = usage_bits.reinterpret_as_uint()
+  let required = required_bits.reinterpret_as_uint()
+  (usage & required) == required
 }
 
 ///|
@@ -1494,6 +1513,40 @@ test "Assets<Image>::add creates a target texture image asset" {
   debug_inspect(result.2, content="true")
   debug_inspect(result.3, content="true")
   debug_inspect(result.4, content="true")
+}
+
+///|
+test "Assets<Image>::add preserves explicit storage texture usage" {
+  let world = @ecs.World::new()
+  let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(key, Assets::new())
+
+  let result = asset_with_world(world, fn() {
+    match world.get_resource_mut(key) {
+      Some(images) => {
+        let handle = images.modify(fn(value) {
+          value.add(
+            Image::new(4, 4, Bytes::new(4 * 4 * 4))
+            .with_added_texture_usage(IMAGE_USAGE_STORAGE_BINDING)
+            .with_mip_level_count(3),
+          )
+        })
+        (
+          asset_image_has_usage(handle, IMAGE_USAGE_TEXTURE_BINDING),
+          asset_image_has_usage(handle, IMAGE_USAGE_COPY_DST),
+          asset_image_has_usage(handle, IMAGE_USAGE_COPY_SRC),
+          asset_image_has_usage(handle, IMAGE_USAGE_STORAGE_BINDING),
+        )
+      }
+      None => (false, false, false, false)
+    }
+  })
+
+  debug_inspect(result.0, content="true")
+  debug_inspect(result.1, content="true")
+  debug_inspect(result.2, content="true")
+  debug_inspect(result.3, content="true")
 }
 
 ///|

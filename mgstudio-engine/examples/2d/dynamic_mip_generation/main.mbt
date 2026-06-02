@@ -661,6 +661,10 @@ fn regenerate_mipmap_source_image(
     base_size,
     levels.length(),
     false,
+    usage_bits=@asset.IMAGE_USAGE_TEXTURE_BINDING |
+      @asset.IMAGE_USAGE_COPY_DST |
+      @asset.IMAGE_USAGE_COPY_SRC |
+      @asset.IMAGE_USAGE_STORAGE_BINDING,
   )
 
   for i in 0..<levels.length() {

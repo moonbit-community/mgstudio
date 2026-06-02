@@ -52,7 +52,7 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat,
     @wgpu.TextureFormat?,
   ) -> Int
-  create_texture_empty_fn : (Int, Int, Int, Bool) -> Int
+  create_texture_empty_fn : (Int, Int, Int, Bool, Int) -> Int
   create_texture_3d_with_format_fn : (Int, Int, Int, @wgpu.TextureFormat, Bytes) -> Int
   create_texture_stacked_2d_with_format_fn : (
     Int,
@@ -61,6 +61,7 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
   ) -> Int
   create_texture_cube_with_format_fn : (
     Int,
@@ -103,7 +104,7 @@ pub fn AssetTextureBackend::new(
     @wgpu.TextureFormat,
     @wgpu.TextureFormat?,
   ) -> Int,
-  create_texture_empty_fn~ : (Int, Int, Int, Bool) -> Int,
+  create_texture_empty_fn~ : (Int, Int, Int, Bool, Int) -> Int,
   create_texture_3d_with_format_fn~ : (
     Int,
     Int,
@@ -118,6 +119,7 @@ pub fn AssetTextureBackend::new(
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
   ) -> Int,
   create_texture_cube_with_format_fn~ : (
     Int,
@@ -258,12 +260,16 @@ fn asset_texture_backend_create_texture_empty(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits~ : Int,
 ) -> Int {
   mip_level_count |> ignore
   nearest |> ignore
+  usage_bits |> ignore
   match asset_texture_backend() {
     Some(backend) =>
-      (backend.create_texture_empty_fn)(width, height, mip_level_count, nearest)
+      (backend.create_texture_empty_fn)(
+        width, height, mip_level_count, nearest, usage_bits,
+      )
     None => asset_texture_cpu_allocate(width, height, true)
   }
 }
@@ -299,14 +305,16 @@ fn asset_texture_backend_create_texture_stacked_2d_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits~ : Int,
 ) -> Int {
   slice_count |> ignore
   format |> ignore
   nearest |> ignore
+  usage_bits |> ignore
   match asset_texture_backend() {
     Some(backend) =>
       (backend.create_texture_stacked_2d_with_format_fn)(
-        width, height_per_slice, slice_count, format, levels, nearest,
+        width, height_per_slice, slice_count, format, levels, nearest, usage_bits,
       )
     None => {
       let id = asset_texture_cpu_allocate(width, height_per_slice, true)

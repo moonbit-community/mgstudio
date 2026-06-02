@@ -23,6 +23,52 @@ pub(all) struct Image {
   format : TextureFormat
   view_format : TextureFormat?
   kind : ImageKind
+  mip_level_count : Int
+  usage_bits : Int
+}
+
+///|
+pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
+
+///|
+pub const IMAGE_USAGE_COPY_DST : Int = 2
+
+///|
+pub const IMAGE_USAGE_COPY_SRC : Int = 4
+
+///|
+pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
+
+///|
+pub const IMAGE_USAGE_STORAGE_BINDING : Int = 16
+
+///|
+const IMAGE_USAGE_ALL_MASK : Int = 31
+
+///|
+const IMAGE_USAGE_DEFAULT_SAMPLED : Int = IMAGE_USAGE_TEXTURE_BINDING |
+  IMAGE_USAGE_COPY_DST |
+  IMAGE_USAGE_COPY_SRC
+
+///|
+const IMAGE_USAGE_DEFAULT_TARGET : Int = IMAGE_USAGE_TEXTURE_BINDING |
+  IMAGE_USAGE_COPY_DST |
+  IMAGE_USAGE_RENDER_ATTACHMENT
+
+///|
+fn image_usage_sanitize(usage_bits : Int) -> Int {
+  let usage = usage_bits.reinterpret_as_uint()
+  let mask = IMAGE_USAGE_ALL_MASK.reinterpret_as_uint()
+  (usage & mask).reinterpret_as_int()
+}
+
+///|
+fn image_mip_count_sanitize(mip_level_count : Int) -> Int {
+  if mip_level_count <= 0 {
+    1
+  } else {
+    mip_level_count
+  }
 }
 
 ///|
@@ -34,6 +80,8 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
     format: TextureFormat::Rgba8Unorm,
     view_format: None,
     kind: ImageKind::Data,
+    mip_level_count: 1,
+    usage_bits: IMAGE_USAGE_DEFAULT_SAMPLED,
   }
 }
 
@@ -46,7 +94,47 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
     format,
     view_format: self.view_format,
     kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
   }
+}
+
+///|
+pub fn Image::with_mip_level_count(
+  self : Image,
+  mip_level_count : Int,
+) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    kind: self.kind,
+    mip_level_count: image_mip_count_sanitize(mip_level_count),
+    usage_bits: self.usage_bits,
+  }
+}
+
+///|
+pub fn Image::with_texture_usage_bits(self : Image, usage_bits : Int) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: image_usage_sanitize(usage_bits),
+  }
+}
+
+///|
+pub fn Image::with_added_texture_usage(self : Image, usage_bits : Int) -> Image {
+  let current = self.usage_bits.reinterpret_as_uint()
+  let add = image_usage_sanitize(usage_bits).reinterpret_as_uint()
+  self.with_texture_usage_bits((current | add).reinterpret_as_int())
 }
 
 ///|
@@ -57,6 +145,16 @@ pub fn Image::width(self : Image) -> Int {
 ///|
 pub fn Image::height(self : Image) -> Int {
   self.height
+}
+
+///|
+pub fn Image::mip_level_count(self : Image) -> Int {
+  self.mip_level_count
+}
+
+///|
+pub fn Image::texture_usage_bits(self : Image) -> Int {
+  self.usage_bits
 }
 
 ///|
@@ -95,6 +193,8 @@ pub fn Image::new_target_texture(
     format,
     view_format,
     kind: ImageKind::TargetTexture,
+    mip_level_count: 1,
+    usage_bits: IMAGE_USAGE_DEFAULT_TARGET,
   }
 }
 

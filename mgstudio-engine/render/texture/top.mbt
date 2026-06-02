@@ -75,12 +75,16 @@ pub fn asset_create_texture_empty(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits? : Int = @asset.IMAGE_USAGE_TEXTURE_BINDING |
+    @asset.IMAGE_USAGE_COPY_DST |
+    @asset.IMAGE_USAGE_COPY_SRC,
 ) -> Int {
   @renderer.asset_create_texture_empty(
     width~,
     height~,
     mip_level_count~,
     nearest~,
+    usage_bits~,
   )
 }
 
@@ -109,6 +113,9 @@ pub fn asset_create_texture_stacked_2d_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = @asset.IMAGE_USAGE_TEXTURE_BINDING |
+    @asset.IMAGE_USAGE_COPY_DST |
+    @asset.IMAGE_USAGE_COPY_SRC,
 ) -> Int {
   @renderer.asset_create_texture_stacked_2d_with_format(
     width~,
@@ -117,6 +124,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
   )
 }
 
@@ -270,8 +278,20 @@ pub fn register_asset_texture_backend() -> Unit {
           sample_format~,
         )
       },
-      create_texture_empty_fn=fn(width, height, mip_level_count, nearest) {
-        asset_create_texture_empty(width~, height~, mip_level_count~, nearest~)
+      create_texture_empty_fn=fn(
+        width,
+        height,
+        mip_level_count,
+        nearest,
+        usage_bits,
+      ) {
+        asset_create_texture_empty(
+          width~,
+          height~,
+          mip_level_count~,
+          nearest~,
+          usage_bits~,
+        )
       },
       create_texture_3d_with_format_fn=fn(
         width,
@@ -295,6 +315,7 @@ pub fn register_asset_texture_backend() -> Unit {
         format,
         levels,
         nearest,
+        usage_bits,
       ) {
         asset_create_texture_stacked_2d_with_format(
           width~,
@@ -303,6 +324,7 @@ pub fn register_asset_texture_backend() -> Unit {
           format~,
           levels~,
           nearest~,
+          usage_bits~,
         )
       },
       create_texture_cube_with_format_fn=fn(

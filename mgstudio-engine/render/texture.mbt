@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+const IMAGE_USAGE_DEFAULT_SAMPLED_BITS : Int = 7
+
+///|
 pub fn host_gpu_create_render_target(
   width~ : Int,
   height~ : Int,
@@ -75,12 +78,14 @@ pub fn asset_create_texture_empty(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int {
   @renderer.asset_create_texture_empty(
     width~,
     height~,
     mip_level_count~,
     nearest~,
+    usage_bits~,
   )
 }
 
@@ -109,6 +114,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Int {
   @renderer.asset_create_texture_stacked_2d_with_format(
     width~,
@@ -117,6 +123,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
   )
 }
 

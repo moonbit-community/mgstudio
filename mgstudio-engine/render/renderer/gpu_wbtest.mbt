@@ -1633,6 +1633,30 @@ test "renderer: bloom mip texture allocates requested mip count" {
 }
 
 ///|
+test "renderer: texture usage bits map storage binding to WebGPU usage" {
+  let usage = texture_usage_bits_to_wgpu(
+    IMAGE_USAGE_TEXTURE_BINDING_BIT |
+    IMAGE_USAGE_COPY_DST_BIT |
+    IMAGE_USAGE_COPY_SRC_BIT |
+    IMAGE_USAGE_STORAGE_BINDING_BIT,
+  )
+  debug_inspect(
+    (usage & @wgpu.TEXTURE_USAGE_TEXTURE_BINDING) != 0UL,
+    content="true",
+  )
+  debug_inspect((usage & @wgpu.TEXTURE_USAGE_COPY_DST) != 0UL, content="true")
+  debug_inspect((usage & @wgpu.TEXTURE_USAGE_COPY_SRC) != 0UL, content="true")
+  debug_inspect(
+    (usage & @wgpu.TEXTURE_USAGE_STORAGE_BINDING) != 0UL,
+    content="true",
+  )
+  debug_inspect(
+    (usage & @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT) != 0UL,
+    content="false",
+  )
+}
+
+///|
 test "renderer: sampler cache key includes compare anisotropy and lod" {
   let key0 = image_sampler_cache_key(
     IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
