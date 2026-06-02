@@ -74,6 +74,12 @@ fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
 }
 
 ///|
+pub fn asset_texture_info(texture_id~ : Int) -> GpuTextureInfo? {
+  guard ensure_backend() is Some(backend) else { return None }
+  find_texture(backend, texture_id)
+}
+
+///|
 fn create_cached_texture_bind_group(
   backend : GpuBackend,
   sampler : @wgpu.Sampler,

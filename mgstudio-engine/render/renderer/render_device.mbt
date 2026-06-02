@@ -42,6 +42,14 @@ pub fn RenderDevice::from_backend(backend : GpuBackend) -> RenderDevice {
 }
 
 ///|
+pub fn primary_render_device() -> RenderDevice? {
+  match ensure_backend() {
+    Some(backend) => Some(RenderDevice::from_backend(backend))
+    None => None
+  }
+}
+
+///|
 pub fn RenderDevice::wgpu_device(self : RenderDevice) -> @wgpu.Device {
   self.device.get()
 }
@@ -133,6 +141,14 @@ pub fn RenderQueue::from_backend(backend : GpuBackend) -> RenderQueue {
 }
 
 ///|
+pub fn primary_render_queue() -> RenderQueue? {
+  match ensure_backend() {
+    Some(backend) => Some(RenderQueue::from_backend(backend))
+    None => None
+  }
+}
+
+///|
 pub fn RenderQueue::wgpu_queue(self : RenderQueue) -> @wgpu.Queue {
   self.queue.get()
 }
@@ -182,6 +198,14 @@ pub fn RenderAdapter::from_backend(backend : GpuBackend) -> RenderAdapter {
 }
 
 ///|
+pub fn primary_render_adapter() -> RenderAdapter? {
+  match ensure_backend() {
+    Some(backend) => Some(RenderAdapter::from_backend(backend))
+    None => None
+  }
+}
+
+///|
 pub fn RenderAdapter::wgpu_adapter(self : RenderAdapter) -> @wgpu.Adapter {
   self.adapter.get()
 }
@@ -225,6 +249,14 @@ pub fn RenderInstance::from_backend(backend : GpuBackend) -> RenderInstance {
 }
 
 ///|
+pub fn primary_render_instance() -> RenderInstance? {
+  match ensure_backend() {
+    Some(backend) => Some(RenderInstance::from_backend(backend))
+    None => None
+  }
+}
+
+///|
 pub fn RenderInstance::wgpu_instance(self : RenderInstance) -> @wgpu.Instance {
   self.instance.get()
 }
@@ -261,6 +293,14 @@ pub fn RenderAdapterInfo::from_backend(
   backend : GpuBackend,
 ) -> RenderAdapterInfo {
   RenderAdapterInfo::from_adapter(RenderAdapter::from_backend(backend))
+}
+
+///|
+pub fn primary_render_adapter_info() -> RenderAdapterInfo? {
+  match ensure_backend() {
+    Some(backend) => Some(RenderAdapterInfo::from_backend(backend))
+    None => None
+  }
 }
 
 ///|

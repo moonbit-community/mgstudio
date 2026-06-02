@@ -75,6 +75,8 @@ pub fn asset_supported_compressed_image_formats() -> Int
 
 pub fn asset_texture_height(texture_id~ : Int) -> Int
 
+pub fn asset_texture_info(texture_id~ : Int) -> GpuTextureInfo?
+
 pub fn asset_texture_width(texture_id~ : Int) -> Int
 
 pub fn asset_write_texture_region_rgba8(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, pixels_rgba8~ : Bytes) -> Unit
@@ -328,6 +330,16 @@ pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_w
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, vertex_shader_path~ : String?, fragment_shader_path~ : String?, forward_decal~ : Bool) -> Unit
+
+pub fn primary_render_adapter() -> RenderAdapter?
+
+pub fn primary_render_adapter_info() -> RenderAdapterInfo?
+
+pub fn primary_render_device() -> RenderDevice?
+
+pub fn primary_render_instance() -> RenderInstance?
+
+pub fn primary_render_queue() -> RenderQueue?
 
 pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
 

@@ -3,12 +3,15 @@ package "Milky2018/mgstudio/render"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/texture",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -87,6 +90,10 @@ pub let ecs_key_render_entity : @ecs.ComponentKey[RenderEntity]
 pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld]
 
 pub let ecs_key_temporary_render_entity : @ecs.ComponentKey[TemporaryRenderEntity]
+
+pub fn ensure_gpu_image_render_assets_resource(@ecs.World) -> Unit
+
+pub fn ensure_primary_render_resources(@ecs.World, @ecs.World) -> Unit
 
 pub fn ensure_sorted_cameras_resource(@ecs.World) -> Unit
 
@@ -303,6 +310,8 @@ pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, ErasedPrepareAssetError], (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
+
+pub fn prepare_gpu_image_render_asset(@ecs.World, @asset.AssetId[@image.Image]) -> Unit
 
 pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
@@ -968,4 +977,5 @@ pub(open) trait RenderAssetResource {
   fn render_asset_resource_debug_name() -> String
   fn render_asset_resource_keys() -> RenderAssetResourceKeys[Self]
 }
+pub impl RenderAssetResource for @texture.GpuImage
 

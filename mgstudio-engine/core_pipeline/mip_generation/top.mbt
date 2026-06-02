@@ -111,7 +111,14 @@ fn mip_generation_configure_render_sub_app(
       MipGenerationPipelines::MipGenerationPipelines(),
     )
   }
-  @render.configure_base_render_sets(sub_app).add_systems(
+  @render.configure_base_render_sets(sub_app)
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_mip_generator_pipelines).in_set(
+      @render.render_system_set_prepare_resources,
+    ),
+  )
+  .add_systems(
     @render.render_schedule_stage(),
     @app.system(reset_mip_generation_jobs).in_set(
       @render.render_system_set_cleanup,
@@ -134,7 +141,8 @@ pub struct MipGenerationResources {
   mag_filter : String
   min_filter : String
   mipmap_filter : String
-} derive(Eq, Debug)
+  mut sampler : @wgpu.Sampler?
+}
 
 ///|
 pub fn MipGenerationResources::MipGenerationResources() -> MipGenerationResources {
@@ -143,6 +151,7 @@ pub fn MipGenerationResources::MipGenerationResources() -> MipGenerationResource
     mag_filter: "Linear",
     min_filter: "Linear",
     mipmap_filter: "Nearest",
+    sampler: None,
   }
 }
 
@@ -172,6 +181,31 @@ pub fn MipGenerationResources::mipmap_filter(
   self : MipGenerationResources,
 ) -> String {
   self.mipmap_filter
+}
+
+///|
+fn MipGenerationResources::ensure_sampler(
+  self : MipGenerationResources,
+  render_device : @renderer.RenderDevice,
+) -> @wgpu.Sampler {
+  match self.sampler {
+    Some(sampler) => sampler
+    None => {
+      let sampler = render_device
+        .wgpu_device()
+        .create_sampler_u32(
+          @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+          @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+          @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+          @wgpu.FILTER_MODE_LINEAR,
+          @wgpu.FILTER_MODE_LINEAR,
+          @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+        )
+      sampler.set_label(self.sampler_label)
+      self.sampler = Some(sampler)
+      sampler
+    }
+  }
 }
 
 ///|
@@ -466,55 +500,44 @@ fn reset_mip_generation_jobs(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub(all) struct MipGenerationTextureFormatPipelines {
+  format_raw : UInt
+  bind_group_layout_pass_1 : @wgpu.BindGroupLayout
+  bind_group_layout_pass_2 : @wgpu.BindGroupLayout
+  pipeline_layout_pass_1 : @wgpu.PipelineLayout
+  pipeline_layout_pass_2 : @wgpu.PipelineLayout
+  pipeline_pass_1 : @wgpu.ComputePipeline
+  pipeline_pass_2 : @wgpu.ComputePipeline
+}
+
+///|
+pub(all) struct MipGenerationStorageView {
+  view : @wgpu.TextureView
+  dummy_texture : @wgpu.Texture?
+}
+
+///|
+pub(all) struct MipGenerationJobBindGroups {
+  bind_group_pass_1 : @wgpu.BindGroup
+  bind_group_pass_2 : @wgpu.BindGroup
+  constants_buffer : @wgpu.Buffer
+  input_view_pass_1 : @wgpu.TextureView
+  input_view_pass_2 : @wgpu.TextureView
+  storage_views_pass_1 : Array[MipGenerationStorageView]
+  storage_views_pass_2 : Array[MipGenerationStorageView]
+}
+
+///|
 pub struct MipGenerationPipelines {
-  texture_format_pipeline_count : Int
-  bind_group_cache_count : Int
-} derive(Eq, Debug)
+  pipelines : @hashmap.HashMap[UInt, MipGenerationTextureFormatPipelines]
+  bind_groups : @hashmap.HashMap[Int, MipGenerationJobBindGroups]
+}
 
 ///|
 pub fn MipGenerationPipelines::MipGenerationPipelines() -> MipGenerationPipelines {
   MipGenerationPipelines::{
-    texture_format_pipeline_count: 0,
-    bind_group_cache_count: 0,
-  }
-}
-
-///|
-pub fn MipGenerationPipelines::new(
-  texture_format_pipeline_count? : Int = 0,
-  bind_group_cache_count? : Int = 0,
-) -> MipGenerationPipelines {
-  MipGenerationPipelines::{
-    texture_format_pipeline_count: if texture_format_pipeline_count < 0 {
-      0
-    } else {
-      texture_format_pipeline_count
-    },
-    bind_group_cache_count: if bind_group_cache_count < 0 {
-      0
-    } else {
-      bind_group_cache_count
-    },
-  }
-}
-
-///|
-pub fn MipGenerationPipelines::register_texture_format_pipeline(
-  self : MipGenerationPipelines,
-) -> MipGenerationPipelines {
-  MipGenerationPipelines::{
-    ..self,
-    texture_format_pipeline_count: self.texture_format_pipeline_count + 1,
-  }
-}
-
-///|
-pub fn MipGenerationPipelines::cache_bind_group(
-  self : MipGenerationPipelines,
-) -> MipGenerationPipelines {
-  MipGenerationPipelines::{
-    ..self,
-    bind_group_cache_count: self.bind_group_cache_count + 1,
+    pipelines: @hashmap.HashMap([]),
+    bind_groups: @hashmap.HashMap([]),
   }
 }
 
@@ -522,7 +545,11 @@ pub fn MipGenerationPipelines::cache_bind_group(
 pub fn MipGenerationPipelines::reset_bind_group_cache(
   self : MipGenerationPipelines,
 ) -> MipGenerationPipelines {
-  MipGenerationPipelines::{ ..self, bind_group_cache_count: 0 }
+  for entry in self.bind_groups.to_array() {
+    entry.1.release()
+  }
+  self.bind_groups.clear()
+  self
 }
 
 ///|
@@ -540,45 +567,6 @@ pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[
 ///|
 pub impl @app.Resource for MipGenerationPipelines with fn resource() {
   ecs_key_mip_generation_pipelines
-}
-
-///|
-pub struct MipGenerationJob {
-  phase : MipGenerationPhaseId
-  image_asset_id : @asset.AssetId[@asset.Image]
-}
-
-///|
-pub fn MipGenerationJob::new(
-  phase : MipGenerationPhaseId,
-  image_asset_id~ : @asset.AssetId[@asset.Image],
-) -> MipGenerationJob {
-  MipGenerationJob::{ phase, image_asset_id }
-}
-
-///|
-pub struct MipGenerationPipelinesState {
-  texture_format_pipeline_count : Int
-  bind_group_cache_count : Int
-}
-
-///|
-pub fn MipGenerationPipelinesState::new(
-  texture_format_pipeline_count? : Int = 0,
-  bind_group_cache_count? : Int = 0,
-) -> MipGenerationPipelinesState {
-  MipGenerationPipelinesState::{
-    texture_format_pipeline_count: if texture_format_pipeline_count < 0 {
-      0
-    } else {
-      texture_format_pipeline_count
-    },
-    bind_group_cache_count: if bind_group_cache_count < 0 {
-      0
-    } else {
-      bind_group_cache_count
-    },
-  }
 }
 
 ///|

@@ -38,6 +38,7 @@ fn render_sub_app_extract(
   let synced = sync_world(main_world, render_world)
   let main_world = synced.0
   let render_world = synced.1
+  ensure_primary_render_resources(main_world, render_world)
   render_world.insert_resource(ecs_key_render_main_world, RenderMainWorld::{
     world: main_world,
   })
@@ -107,6 +108,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       .add_systems(
         render_schedule_stage(),
         @app.system(reset_render_asset_bytes_per_frame).in_set(
+          render_system_set_cleanup,
+        ),
+      )
+      .add_systems(
+        render_schedule_stage(),
+        @app.system(flush_pending_command_buffers).in_set(
           render_system_set_cleanup,
         ),
       )

@@ -18,11 +18,56 @@
 ///|
 pub struct GpuImage {
   texture_id : Int
+  width : Int
+  height : Int
+  mip_level_count : Int
+  base_mip_level : Int
+  format : @wgpu.TextureFormat?
+  texture : @wgpu.Texture?
+  view : @wgpu.TextureView?
+  sampler : @wgpu.Sampler?
 }
 
 ///|
 pub fn GpuImage::new(texture_id : Int) -> GpuImage {
-  GpuImage::{ texture_id, }
+  match GpuImage::from_texture_id(texture_id) {
+    Some(image) => image
+    None =>
+      GpuImage::{
+        texture_id,
+        width: @renderer.asset_texture_width(texture_id~),
+        height: @renderer.asset_texture_height(texture_id~),
+        mip_level_count: 1,
+        base_mip_level: 0,
+        format: None,
+        texture: None,
+        view: None,
+        sampler: None,
+      }
+  }
+}
+
+///|
+pub fn GpuImage::from_texture_info(info : @renderer.GpuTextureInfo) -> GpuImage {
+  GpuImage::{
+    texture_id: info.id,
+    width: info.width,
+    height: info.height,
+    mip_level_count: info.mip_level_count,
+    base_mip_level: info.base_mip_level,
+    format: Some(info.format),
+    texture: Some(info.texture),
+    view: Some(info.view),
+    sampler: Some(info.sampler),
+  }
+}
+
+///|
+pub fn GpuImage::from_texture_id(texture_id : Int) -> GpuImage? {
+  match @renderer.asset_texture_info(texture_id~) {
+    Some(info) => Some(GpuImage::from_texture_info(info))
+    None => None
+  }
 }
 
 ///|
@@ -32,16 +77,47 @@ pub fn GpuImage::texture_id(self : GpuImage) -> Int {
 
 ///|
 pub fn GpuImage::width(self : GpuImage) -> Int {
-  @renderer.asset_texture_width(texture_id=self.texture_id)
+  self.width
 }
 
 ///|
 pub fn GpuImage::height(self : GpuImage) -> Int {
-  @renderer.asset_texture_height(texture_id=self.texture_id)
+  self.height
+}
+
+///|
+pub fn GpuImage::mip_level_count(self : GpuImage) -> Int {
+  self.mip_level_count
+}
+
+///|
+pub fn GpuImage::base_mip_level(self : GpuImage) -> Int {
+  self.base_mip_level
+}
+
+///|
+pub fn GpuImage::format(self : GpuImage) -> @wgpu.TextureFormat? {
+  self.format
+}
+
+///|
+pub fn GpuImage::texture(self : GpuImage) -> @wgpu.Texture? {
+  self.texture
+}
+
+///|
+pub fn GpuImage::view(self : GpuImage) -> @wgpu.TextureView? {
+  self.view
+}
+
+///|
+pub fn GpuImage::sampler(self : GpuImage) -> @wgpu.Sampler? {
+  self.sampler
 }
 
 ///|
 pub fn GpuImage::is_loaded(self : GpuImage) -> Bool {
+  self.texture is Some(_) &&
   @renderer.asset_is_texture_loaded(texture_id=self.texture_id)
 }
 

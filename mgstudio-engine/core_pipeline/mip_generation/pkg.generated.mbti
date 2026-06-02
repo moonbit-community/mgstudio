@@ -7,7 +7,9 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/shader",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -22,6 +24,8 @@ pub let ecs_key_mip_generation_jobs : @ecs.ResourceKey[MipGenerationJobs]
 pub let ecs_key_mip_generation_pipelines : @ecs.ResourceKey[MipGenerationPipelines]
 
 pub let ecs_key_mip_generation_resources : @ecs.ResourceKey[MipGenerationResources]
+
+pub fn generate_mips_for_phase(MipGenerationPhaseId, @ecs.World) -> Unit
 
 pub fn mip_generation_job_should_run(Int, Int) -> Bool
 
@@ -46,11 +50,15 @@ pub fn DownsampleShaders::general_shader_count(Self) -> Int
 pub fn DownsampleShaders::new(depth~ : @asset.Handle[@shader.Shader], general~ : Map[String, @asset.Handle[@shader.Shader]]) -> Self
 pub impl @app.Resource for DownsampleShaders
 
-pub struct MipGenerationJob {
-  phase : MipGenerationPhaseId
-  image_asset_id : @asset.AssetId[@image.Image]
+pub(all) struct MipGenerationJobBindGroups {
+  bind_group_pass_1 : @wgpu_mbt.BindGroup
+  bind_group_pass_2 : @wgpu_mbt.BindGroup
+  constants_buffer : @wgpu_mbt.Buffer
+  input_view_pass_1 : @wgpu_mbt.TextureView
+  input_view_pass_2 : @wgpu_mbt.TextureView
+  storage_views_pass_1 : Array[MipGenerationStorageView]
+  storage_views_pass_2 : Array[MipGenerationStorageView]
 }
-pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : @asset.AssetId[@image.Image]) -> Self
 
 pub struct MipGenerationJobs {
   phases : Map[UInt, MipGenerationPhase]
@@ -83,22 +91,13 @@ pub fn MipGenerationPhaseId::new(value~ : UInt) -> Self
 pub fn MipGenerationPhaseId::value(Self) -> UInt
 
 pub struct MipGenerationPipelines {
-  texture_format_pipeline_count : Int
-  bind_group_cache_count : Int
-} derive(Eq, @debug.Debug)
+  pipelines : @hashmap.HashMap[UInt, MipGenerationTextureFormatPipelines]
+  bind_groups : @hashmap.HashMap[Int, MipGenerationJobBindGroups]
+}
 pub fn MipGenerationPipelines::MipGenerationPipelines() -> Self
-pub fn MipGenerationPipelines::cache_bind_group(Self) -> Self
 pub fn MipGenerationPipelines::clear(Self) -> Self
-pub fn MipGenerationPipelines::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
-pub fn MipGenerationPipelines::register_texture_format_pipeline(Self) -> Self
 pub fn MipGenerationPipelines::reset_bind_group_cache(Self) -> Self
 pub impl @app.Resource for MipGenerationPipelines
-
-pub struct MipGenerationPipelinesState {
-  texture_format_pipeline_count : Int
-  bind_group_cache_count : Int
-}
-pub fn MipGenerationPipelinesState::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
 
 pub struct MipGenerationPlugin {
 }
@@ -110,13 +109,29 @@ pub struct MipGenerationResources {
   mag_filter : String
   min_filter : String
   mipmap_filter : String
-} derive(Eq, @debug.Debug)
+  mut sampler : @wgpu_mbt.Sampler?
+}
 pub fn MipGenerationResources::MipGenerationResources() -> Self
 pub fn MipGenerationResources::mag_filter(Self) -> String
 pub fn MipGenerationResources::min_filter(Self) -> String
 pub fn MipGenerationResources::mipmap_filter(Self) -> String
 pub fn MipGenerationResources::sampler_label(Self) -> String
 pub impl @app.Resource for MipGenerationResources
+
+pub(all) struct MipGenerationStorageView {
+  view : @wgpu_mbt.TextureView
+  dummy_texture : @wgpu_mbt.Texture?
+}
+
+pub(all) struct MipGenerationTextureFormatPipelines {
+  format_raw : UInt
+  bind_group_layout_pass_1 : @wgpu_mbt.BindGroupLayout
+  bind_group_layout_pass_2 : @wgpu_mbt.BindGroupLayout
+  pipeline_layout_pass_1 : @wgpu_mbt.PipelineLayout
+  pipeline_layout_pass_2 : @wgpu_mbt.PipelineLayout
+  pipeline_pass_1 : @wgpu_mbt.ComputePipeline
+  pipeline_pass_2 : @wgpu_mbt.ComputePipeline
+}
 
 // Type aliases
 

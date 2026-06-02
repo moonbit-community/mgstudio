@@ -286,6 +286,73 @@ pub fn RenderResources::unpack_into(
 }
 
 ///|
+pub fn ensure_primary_render_resources(
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  let device = match @renderer.primary_render_device() {
+    Some(value) => value
+    None => return
+  }
+  let queue = match @renderer.primary_render_queue() {
+    Some(value) => value
+    None => return
+  }
+  let adapter_info = match @renderer.primary_render_adapter_info() {
+    Some(value) => value
+    None => return
+  }
+  let render_adapter = match @renderer.primary_render_adapter() {
+    Some(value) => value
+    None => return
+  }
+  let instance = match @renderer.primary_render_instance() {
+    Some(value) => value
+    None => return
+  }
+
+  if !render_world_resource_present(main_world, render_device_resource_key) {
+    main_world.insert_resource(render_device_resource_key, device)
+  }
+  if !render_world_resource_present(main_world, render_queue_resource_key) {
+    main_world.insert_resource(render_queue_resource_key, queue)
+  }
+  if !render_world_resource_present(
+      main_world, render_adapter_info_resource_key,
+    ) {
+    main_world.insert_resource(render_adapter_info_resource_key, adapter_info)
+  }
+  if !render_world_resource_present(main_world, render_adapter_resource_key) {
+    main_world.insert_resource(render_adapter_resource_key, render_adapter)
+  }
+
+  if !render_world_resource_present(render_world, render_instance_resource_key) {
+    render_world.insert_resource(render_instance_resource_key, instance)
+  }
+  if !render_world_resource_present(render_world, pipeline_cache_resource_key) {
+    render_world.insert_resource(
+      pipeline_cache_resource_key,
+      @render_resource.PipelineCache::new(),
+    )
+  }
+  init_renderer_context_resources(render_world)
+  if !render_world_resource_present(render_world, render_device_resource_key) {
+    render_world.insert_resource(render_device_resource_key, device)
+  }
+  if !render_world_resource_present(render_world, render_queue_resource_key) {
+    render_world.insert_resource(render_queue_resource_key, queue)
+  }
+  if !render_world_resource_present(render_world, render_adapter_resource_key) {
+    render_world.insert_resource(render_adapter_resource_key, render_adapter)
+  }
+  if !render_world_resource_present(
+      render_world, render_adapter_info_resource_key,
+    ) {
+    render_world.insert_resource(render_adapter_info_resource_key, adapter_info)
+  }
+}
+
+///|
 pub(all) enum RenderCreation {
   Manual(RenderResources)
   Automatic(WgpuSettings)

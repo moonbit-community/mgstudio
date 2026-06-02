@@ -51,7 +51,7 @@ pub fn VertexState::new(
 }
 
 ///|
-pub impl Default for VertexState with default() {
+pub impl Default for VertexState with fn default() {
   VertexState::VertexState()
 }
 
@@ -98,7 +98,7 @@ pub fn FragmentState::new(
 }
 
 ///|
-pub impl Default for FragmentState with default() {
+pub impl Default for FragmentState with fn default() {
   FragmentState::FragmentState()
 }
 
@@ -119,7 +119,7 @@ pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
 }
 
 ///|
-pub impl Default for PrimitiveState with default() {
+pub impl Default for PrimitiveState with fn default() {
   PrimitiveState::PrimitiveState()
 }
 
@@ -149,7 +149,7 @@ pub fn DepthStencilState::new(
 }
 
 ///|
-pub impl Default for DepthStencilState with default() {
+pub impl Default for DepthStencilState with fn default() {
   DepthStencilState::DepthStencilState()
 }
 
@@ -170,7 +170,7 @@ pub fn MultisampleState::MultisampleState() -> MultisampleState {
 }
 
 ///|
-pub impl Default for MultisampleState with default() {
+pub impl Default for MultisampleState with fn default() {
   MultisampleState::MultisampleState()
 }
 
@@ -203,7 +203,7 @@ pub fn RenderPipelineDescriptor::RenderPipelineDescriptor() -> RenderPipelineDes
 }
 
 ///|
-pub impl Default for RenderPipelineDescriptor with default() {
+pub impl Default for RenderPipelineDescriptor with fn default() {
   RenderPipelineDescriptor::RenderPipelineDescriptor()
 }
 
@@ -287,7 +287,7 @@ pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> ComputePipeline
 }
 
 ///|
-pub impl Default for ComputePipelineDescriptor with default() {
+pub impl Default for ComputePipelineDescriptor with fn default() {
   ComputePipelineDescriptor::ComputePipelineDescriptor()
 }
 

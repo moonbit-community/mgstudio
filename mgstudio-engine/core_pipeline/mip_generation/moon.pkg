@@ -1,11 +1,17 @@
 import {
+  "moonbitlang/core/float",
+  "moonbitlang/core/hashmap",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/texture" @render_texture,
   "Milky2018/mgstudio/core_pipeline/mip_generation/experimental",
   "Milky2018/mgstudio/shader",
+  "Milky2018/mgstudio/shader/compile" @shader_compile,
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

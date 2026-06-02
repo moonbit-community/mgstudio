@@ -28,6 +28,11 @@ const MIP_SLICES_WIDTH : Float = 0.16666667F
 const FONT_SIZE : Float = 16.0F
 
 ///|
+let mip_generation_phase_id : @mip_generation.MipGenerationPhaseId = @mip_generation.MipGenerationPhaseId::new(
+  value=0U,
+)
+
+///|
 priv enum EnableMipGeneration {
   On
   Off
@@ -256,6 +261,28 @@ pub impl @ecs.Message for RegenerateImage with fn message() {
 }
 
 ///|
+priv struct MipmapSourceImage {
+  handle : @asset.Handle[@asset.Image]
+}
+
+///|
+let mipmap_source_image_resource_key : @ecs.ResourceKey[MipmapSourceImage] = @ecs.register_resource(
+  debug_name="examples.2d.dynamic_mip_generation.MipmapSourceImage",
+)
+
+///|
+impl @app.Resource for MipmapSourceImage with fn resource() {
+  mipmap_source_image_resource_key
+}
+
+///|
+fn MipmapSourceImage::new(
+  handle : @asset.Handle[@asset.Image],
+) -> MipmapSourceImage {
+  MipmapSourceImage::{ handle, }
+}
+
+///|
 fn main {
   let widget_click_message_key : @ecs.MessageKey[
     @widgets_lib.WidgetClickEvent[AppSetting],
@@ -282,25 +309,40 @@ fn main {
     @app.system_param4(animate_image_scale),
   )
 
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .init_resource(fn() { AppStatus::AppStatus() })
-  .add_message(regenerate_image_key)
-  .add_message(widget_click_message_key)
-  .add_systems(@app.Startup, setup_system)
-  .add_systems(
-    @app.Update,
-    (
-      handle_widget_interactions_system, handle_app_setting_change_system, update_radio_buttons_system,
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .init_resource(fn() { AppStatus::AppStatus() })
+    .add_message(regenerate_image_key)
+    .add_message(widget_click_message_key)
+    .add_systems(@app.Startup, setup_system)
+    .add_systems(
+      @app.Update,
+      (
+        handle_widget_interactions_system, handle_app_setting_change_system, update_radio_buttons_system,
+      )
+      |> @app.chain(),
     )
-    |> @app.chain(),
-  )
-  .add_systems(
-    @app.Update,
-    (handle_resize_system, regenerate_system) |> @app.chain(),
-  )
-  .add_systems(@app.Update, animate_system)
-  .run()
+    .add_systems(
+      @app.Update,
+      (handle_resize_system, regenerate_system) |> @app.chain(),
+    )
+    .add_systems(@app.Update, animate_system)
+  let app = @render.with_render_app(app, fn(render_app) {
+    render_app
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(extract_mipmap_source_image).in_set(
+        @render.render_system_set_extract_commands,
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(generate_mips_for_example).in_set(
+        @render.render_system_set_render,
+      ),
+    )
+  })
+  app.run()
 }
 
 ///|
@@ -450,7 +492,6 @@ fn handle_app_setting_change(
         AppSetting::EnableMipGeneration(enable_mip_generation) =>
           if value.enable_mip_generation != enable_mip_generation {
             value.enable_mip_generation = enable_mip_generation
-            should_regenerate = true
           }
         AppSetting::ImageWidth(image_size) =>
           if value.image_width != image_size {
@@ -509,10 +550,8 @@ fn regenerate_image_when_requested(
     return
   }
 
-  let (source_texture, mip_views) = regenerate_mipmap_source_image(
-    levels,
-    status.enable_mip_generation,
-  )
+  let (source_texture, mip_views) = regenerate_mipmap_source_image(levels)
+  commands.insert_resource(MipmapSourceImage::new(source_texture))
 
   let window_size = primary_window_size(windows)
   spawn_animated_mesh(commands, status, window_size, source_texture)
@@ -652,7 +691,6 @@ fn generate_image_levels(app_status : AppStatus) -> Array[(Int, Int, Bytes)] {
 ///|
 fn regenerate_mipmap_source_image(
   levels : Array[(Int, Int, Bytes)],
-  enable_mip_generation : EnableMipGeneration,
 ) -> (@asset.Handle[@asset.Image], Array[@asset.Handle[@asset.Image]]) {
   let mip_views : Array[@asset.Handle[@asset.Image]] = []
   let base_level = levels[0]
@@ -670,21 +708,47 @@ fn regenerate_mipmap_source_image(
   for i in 0..<levels.length() {
     let level = levels[i]
     let size = @math.UVec2::new(level.0, level.1)
-    let pixels = if i == 0 || enable_mip_generation == On {
-      level.2
-    } else {
-      Bytes::make(level.0 * level.1 * 4, (0).to_byte())
+    if i == 0 {
+      @asset.asset_update_texture_region_rgba8_mip(
+        source_texture,
+        @math.URect::new(@math.UVec2::zero(), size),
+        i,
+        level.2,
+      )
     }
-    @asset.asset_update_texture_region_rgba8_mip(
-      source_texture,
-      @math.URect::new(@math.UVec2::zero(), size),
-      i,
-      pixels,
-    )
     mip_views.push(@asset.asset_create_texture_mip_view(source_texture, i))
   }
 
   (source_texture, mip_views)
+}
+
+///|
+fn extract_mipmap_source_image(render_world : @ecs.World) -> Unit {
+  let main_world = @render.render_source_world(render_world)
+  let source_image = match
+    main_world.get_resource(mipmap_source_image_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  let status = match main_world.get_resource(app_status_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  if status.enable_mip_generation != On {
+    return
+  }
+  ignore(
+    render_world
+    .resource(@mip_generation.ecs_key_mip_generation_jobs)
+    .update(fn(jobs) {
+      jobs.add_handle(mip_generation_phase_id, source_image.handle)
+    }),
+  )
+}
+
+///|
+fn generate_mips_for_example(render_world : @ecs.World) -> Unit {
+  @mip_generation.generate_mips_for_phase(mip_generation_phase_id, render_world)
 }
 
 ///|

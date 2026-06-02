@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/render/texture"
 
 import {
+  "Milky2018/mgstudio/render/renderer",
   "Milky2018/wgpu_mbt",
 }
 
@@ -59,12 +60,28 @@ pub fn register_asset_texture_backend() -> Unit
 // Types and methods
 pub struct GpuImage {
   texture_id : Int
+  width : Int
+  height : Int
+  mip_level_count : Int
+  base_mip_level : Int
+  format : @wgpu_mbt.TextureFormat?
+  texture : @wgpu_mbt.Texture?
+  view : @wgpu_mbt.TextureView?
+  sampler : @wgpu_mbt.Sampler?
 }
+pub fn GpuImage::base_mip_level(Self) -> Int
 pub fn GpuImage::create_mip_view(Self, Int) -> Int
+pub fn GpuImage::format(Self) -> @wgpu_mbt.TextureFormat?
+pub fn GpuImage::from_texture_id(Int) -> Self?
+pub fn GpuImage::from_texture_info(@renderer.GpuTextureInfo) -> Self
 pub fn GpuImage::height(Self) -> Int
 pub fn GpuImage::is_loaded(Self) -> Bool
+pub fn GpuImage::mip_level_count(Self) -> Int
 pub fn GpuImage::new(Int) -> Self
+pub fn GpuImage::sampler(Self) -> @wgpu_mbt.Sampler?
+pub fn GpuImage::texture(Self) -> @wgpu_mbt.Texture?
 pub fn GpuImage::texture_id(Self) -> Int
+pub fn GpuImage::view(Self) -> @wgpu_mbt.TextureView?
 pub fn GpuImage::width(Self) -> Int
 
 pub struct ManualTextureView {

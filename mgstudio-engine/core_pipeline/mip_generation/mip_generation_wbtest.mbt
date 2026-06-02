@@ -27,3 +27,17 @@ test "mip_generation specializes downsample wgsl exactly before shader asset ins
   )
   debug_inspect(last.contains("##TEXTURE_FORMAT##"), content="false")
 }
+
+///|
+test "mip_generation downsampling constants follow WGSL uniform layout" {
+  let bytes = mip_generation_downsampling_constants_bytes(9, 128, 64)
+  debug_inspect(bytes.length(), content="16")
+  debug_inspect(bytes[0].to_int(), content="9")
+  debug_inspect(bytes[1].to_int(), content="0")
+  debug_inspect(bytes[2].to_int(), content="0")
+  debug_inspect(bytes[3].to_int(), content="0")
+  debug_inspect(bytes[4].to_int(), content="0")
+  debug_inspect(bytes[5].to_int(), content="0")
+  debug_inspect(bytes[6].to_int(), content="0")
+  debug_inspect(bytes[7].to_int(), content="0")
+}
