@@ -176,6 +176,7 @@ fn configure_mesh_render_sub_app(
   @pbr_render.ensure_morph_resources(sub_app.world())
   @pbr_render.ensure_skin_uniforms_resource(sub_app.world())
   let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   @render.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
@@ -238,7 +239,7 @@ fn configure_mesh_render_sub_app(
     ),
   )
   .add_systems(
-    stage,
+    graph_stage,
     @app.system(render3d_execute_system_in_render_app).in_set(
       render3d_set_render,
     ),
@@ -246,12 +247,12 @@ fn configure_mesh_render_sub_app(
 }
 
 ///|
-pub impl @app.Plugin for MeshRenderPlugin with name(_self) {
+pub impl @app.Plugin for MeshRenderPlugin with fn name(_self) {
   MESH_RENDER_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MeshRenderPlugin with build(self, app) {
+pub impl @app.Plugin for MeshRenderPlugin with fn build(self, app) {
   mesh_render_plugin_with(app, self)
 }
 

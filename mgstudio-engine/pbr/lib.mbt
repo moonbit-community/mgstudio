@@ -220,7 +220,7 @@ pub let render3d_set_queue : @app.SystemSet = @render.render_system_set_queue
 pub let render3d_set_prepare : @app.SystemSet = @render.render_system_set_prepare
 
 ///|
-pub let render3d_set_render : @app.SystemSet = @render.render_system_set_render
+pub let render3d_set_render : @app.SystemSet = @render.render_graph_system_set_render
 
 ///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -228,12 +228,12 @@ pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for PbrPlugin with name(_self) {
+pub impl @app.Plugin for PbrPlugin with fn name(_self) {
   PBR_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for PbrPlugin with build(self, app) {
+pub impl @app.Plugin for PbrPlugin with fn build(self, app) {
   @pbr_render.register_embedded_wgsl_sources()
   @transmission.register_embedded_wgsl_sources()
   @cas.cas_register_camera_component_key(@sprite.ecs_key_camera)

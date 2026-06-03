@@ -54,7 +54,7 @@ pub fn core_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 fn core_3d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
-  let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   let core_3d_stage = @app.schedule_label("mgstudio.core_pipeline.core_3d")
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
     @app.Schedule::new(core_3d_stage),
@@ -66,23 +66,27 @@ fn core_3d_configure_render_sub_app(
   .configure_set(core_3d_stage, core_3d_set_main_pass, before=[
     core_3d_set_post_process,
   ])
-  .configure_set(stage, @render.render_system_set_render, before=[
+  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
     core_3d_set_prepass,
   ])
-  .configure_set(stage, core_3d_set_prepass, before=[core_3d_set_main_pass])
-  .configure_set(stage, core_3d_set_main_pass, before=[core_3d_set_post_process])
-  .configure_set(stage, core_3d_set_post_process, before=[
-    @render.render_system_set_cleanup,
+  .configure_set(graph_stage, core_3d_set_prepass, before=[
+    core_3d_set_main_pass,
+  ])
+  .configure_set(graph_stage, core_3d_set_main_pass, before=[
+    core_3d_set_post_process,
+  ])
+  .configure_set(graph_stage, core_3d_set_post_process, before=[
+    @render.render_graph_system_set_submit,
   ])
 }
 
 ///|
-pub impl @app.Plugin for Core3dPlugin with name(_self) {
+pub impl @app.Plugin for Core3dPlugin with fn name(_self) {
   CORE_3D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for Core3dPlugin with build(self, app) {
+pub impl @app.Plugin for Core3dPlugin with fn build(self, app) {
   core_3d_plugin_with(app, self)
 }
 
@@ -157,12 +161,12 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Hdr with component() {
+pub impl @ecs.Component for Hdr with fn component() {
   ecs_key_hdr
 }
 
 ///|
-pub impl @ecs.Component for Msaa with component() {
+pub impl @ecs.Component for Msaa with fn component() {
   ecs_key_msaa
 }
 
@@ -479,16 +483,16 @@ pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase] = @ec
 )
 
 ///|
-pub impl @app.Resource for Opaque3dPhase with resource() {
+pub impl @app.Resource for Opaque3dPhase with fn resource() {
   ecs_key_opaque3d_phase
 }
 
 ///|
-pub impl @app.Resource for AlphaMask3dPhase with resource() {
+pub impl @app.Resource for AlphaMask3dPhase with fn resource() {
   ecs_key_alpha_mask3d_phase
 }
 
 ///|
-pub impl @app.Resource for Transparent3dPhase with resource() {
+pub impl @app.Resource for Transparent3dPhase with fn resource() {
   ecs_key_transparent3d_phase
 }

@@ -75,6 +75,8 @@ pub fn asset_write_texture_region_rgba8_mip(texture_id~ : Int, x~ : Int, y~ : In
 
 pub fn clear_registered_wgsl_source_registry() -> Unit
 
+pub fn configure_base_render_graph_sets(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
+
 pub fn configure_base_render_sets(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
 pub let current_view_resource_key : @ecs.ResourceKey[CurrentView]
@@ -342,6 +344,16 @@ pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
 pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
 
 pub fn render_extract_app_label() -> @app.AppLabel
+
+pub fn render_graph_schedule_stage() -> @app.ScheduleStage
+
+pub let render_graph_system_set_begin : String
+
+pub let render_graph_system_set_finish : String
+
+pub let render_graph_system_set_render : String
+
+pub let render_graph_system_set_submit : String
 
 pub let render_instance_resource_key : @ecs.ResourceKey[@renderer.RenderInstance]
 

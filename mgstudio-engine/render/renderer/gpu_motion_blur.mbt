@@ -49,7 +49,7 @@ fn ensure_motion_blur_layouts(
       builder.add_texture(
         2U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
       builder.add_sampler(3U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&

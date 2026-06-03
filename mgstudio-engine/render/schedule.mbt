@@ -26,13 +26,34 @@ pub fn RenderGraph::RenderGraph() -> RenderGraph {
 
 ///|
 pub fn RenderGraph::schedule() -> @app.ScheduleStage {
-  render_schedule_stage()
+  render_graph_schedule_stage()
 }
 
 ///|
 pub fn RenderGraph::base_schedule() -> @app.Schedule {
   @app.Schedule::new(RenderGraph::schedule())
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/renderer/mod.rs` (`RenderGraphSystems`).
+pub let render_graph_system_set_begin : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.begin",
+)
+
+///|
+pub let render_graph_system_set_render : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.render",
+)
+
+///|
+pub let render_graph_system_set_submit : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.submit",
+)
+
+///|
+pub let render_graph_system_set_finish : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.finish",
+)
 
 ///|
 // Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderStartup`).
@@ -131,6 +152,33 @@ pub fn render_schedule_stage() -> @app.ScheduleStage {
   @app.schedule_label("mgstudio.render")
   // Keep one canonical render-subapp schedule label so all render packages
   // target the same stage instead of relying on main-world stage names.
+}
+
+///|
+pub fn render_graph_schedule_stage() -> @app.ScheduleStage {
+  @app.schedule_label("mgstudio.render.graph")
+}
+
+///|
+fn render_graph_driver_system(world : @ecs.World) -> Unit {
+  @app.run_current_schedule_stage(world, RenderGraph::schedule())
+}
+
+///|
+pub fn configure_base_render_graph_sets(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let stage = RenderGraph::schedule()
+  sub_app
+  .configure_set(stage, render_graph_system_set_begin, before=[
+    render_graph_system_set_render,
+  ])
+  .configure_set(stage, render_graph_system_set_render, before=[
+    render_graph_system_set_submit,
+  ])
+  .configure_set(stage, render_graph_system_set_submit, before=[
+    render_graph_system_set_finish,
+  ])
 }
 
 ///|

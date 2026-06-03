@@ -336,9 +336,9 @@ fn main {
       ),
     )
     .add_systems(
-      @render.render_schedule_stage(),
+      @render.RenderGraph::schedule(),
       @app.system(generate_mips_for_example).in_set(
-        @render.render_system_set_render,
+        @render.render_graph_system_set_render,
       ),
     )
   })

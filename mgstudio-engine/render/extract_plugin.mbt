@@ -71,7 +71,11 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_schedule_stage()),
     )
-    let render_sub_app = configure_base_render_sets(render_sub_app)
+    let render_sub_app = configure_base_render_sets(
+      configure_base_render_graph_sets(
+        render_sub_app.add_schedule(RenderGraph::base_schedule()),
+      ),
+    )
     let render_sub_app = render_sub_app.add_schedule(
       @app.Schedule::new(render_startup_schedule_stage()),
     )
@@ -113,8 +117,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(render_graph_driver_system).in_set(render_system_set_render),
+      )
+      .add_systems(
+        RenderGraph::schedule(),
         @app.system(flush_pending_command_buffers).in_set(
-          render_system_set_cleanup,
+          render_graph_system_set_submit,
         ),
       )
     }),

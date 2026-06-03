@@ -9324,6 +9324,7 @@ fn configure_render2d_render_sub_app(
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
   let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   @render.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
@@ -9338,7 +9339,7 @@ fn configure_render2d_render_sub_app(
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
   .add_systems(
-    stage,
+    graph_stage,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(stage, render2d_set_extract_materials, before=[
@@ -9360,15 +9361,17 @@ fn configure_render2d_render_sub_app(
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
+  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
+    render2d_set_render,
+  ])
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_queue,
   ])
   .configure_set(stage, render2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
-  .configure_set(stage, @render.render_system_set_render, before=[
-    render2d_set_render,
+  .configure_set(graph_stage, render2d_set_render, before=[
+    @render.render_graph_system_set_submit,
   ])
 }
 
@@ -9378,6 +9381,7 @@ fn configure_render2d_render_sub_app_ecs(
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
   let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   @render.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
@@ -9392,7 +9396,7 @@ fn configure_render2d_render_sub_app_ecs(
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
   .add_systems(
-    stage,
+    graph_stage,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(stage, render2d_set_extract_materials, before=[
@@ -9414,15 +9418,17 @@ fn configure_render2d_render_sub_app_ecs(
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
+  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
+    render2d_set_render,
+  ])
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_queue,
   ])
   .configure_set(stage, render2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
-  .configure_set(stage, @render.render_system_set_render, before=[
-    render2d_set_render,
+  .configure_set(graph_stage, render2d_set_render, before=[
+    @render.render_graph_system_set_submit,
   ])
 }
 

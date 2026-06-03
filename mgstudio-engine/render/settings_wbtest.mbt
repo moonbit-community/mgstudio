@@ -41,17 +41,65 @@ test "render settings: bevy renderer resources use distinct world keys" {
 }
 
 ///|
-test "render schedule: render graph aliases canonical render schedule" {
+test "render schedule: render graph is a distinct root graph schedule" {
   let graph = RenderGraph::RenderGraph()
   ignore(graph)
   debug_inspect(
-    RenderGraph::schedule() == render_schedule_stage(),
+    RenderGraph::schedule() != render_schedule_stage(),
     content="true",
   )
   debug_inspect(
-    RenderGraph::base_schedule().label() == render_schedule_stage(),
+    RenderGraph::base_schedule().label() == RenderGraph::schedule(),
     content="true",
   )
+}
+
+///|
+test "render schedule: render system drives render graph phases once" {
+  let log : Array[String] = []
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(render_schedule_stage()))
+    .add_schedule(RenderGraph::base_schedule())
+  let render_sub_app = configure_base_render_sets(
+    configure_base_render_graph_sets(render_sub_app),
+  )
+  let render_sub_app = render_sub_app
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("prepare") }).in_set(
+        render_system_set_prepare_bind_groups,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(render_graph_driver_system).in_set(render_system_set_render),
+    )
+    .add_systems(
+      RenderGraph::schedule(),
+      @app.system(fn(_world : @ecs.World) { log.push("begin") }).in_set(
+        render_graph_system_set_begin,
+      ),
+    )
+    .add_systems(
+      RenderGraph::schedule(),
+      @app.system(fn(_world : @ecs.World) { log.push("render") }).in_set(
+        render_graph_system_set_render,
+      ),
+    )
+    .add_systems(
+      RenderGraph::schedule(),
+      @app.system(fn(_world : @ecs.World) { log.push("submit") }).in_set(
+        render_graph_system_set_submit,
+      ),
+    )
+    .add_systems(
+      RenderGraph::schedule(),
+      @app.system(fn(_world : @ecs.World) { log.push("finish") }).in_set(
+        render_graph_system_set_finish,
+      ),
+    )
+  ignore(render_sub_app.update())
+  debug_inspect(log.join(","), content="\"prepare,begin,render,submit,finish\"")
 }
 
 ///|

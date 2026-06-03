@@ -101,6 +101,7 @@ fn core_2d_configure_render_sub_app(
     )
   }
   let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   let core_2d_stage = @app.schedule_label("mgstudio.core_pipeline.core_2d")
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
     @app.Schedule::new(core_2d_stage),
@@ -124,22 +125,24 @@ fn core_2d_configure_render_sub_app(
   .configure_set(stage, core_2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
-  .configure_set(stage, core_2d_set_main_pass, before=[core_2d_set_post_process])
-  .configure_set(stage, @render.render_system_set_render, before=[
+  .configure_set(graph_stage, core_2d_set_main_pass, before=[
+    core_2d_set_post_process,
+  ])
+  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
     core_2d_set_main_pass,
   ])
-  .configure_set(stage, core_2d_set_post_process, before=[
-    @render.render_system_set_cleanup,
+  .configure_set(graph_stage, core_2d_set_post_process, before=[
+    @render.render_graph_system_set_submit,
   ])
 }
 
 ///|
-pub impl @app.Plugin for Core2dPlugin with name(_self) {
+pub impl @app.Plugin for Core2dPlugin with fn name(_self) {
   CORE_2D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for Core2dPlugin with build(self, app) {
+pub impl @app.Plugin for Core2dPlugin with fn build(self, app) {
   core_2d_plugin_with(app, self)
 }
 
@@ -471,16 +474,16 @@ pub let ecs_key_transparent2d_phase : @ecs.ResourceKey[Transparent2dPhase] = @ec
 )
 
 ///|
-pub impl @app.Resource for Opaque2dPhase with resource() {
+pub impl @app.Resource for Opaque2dPhase with fn resource() {
   ecs_key_opaque2d_phase
 }
 
 ///|
-pub impl @app.Resource for AlphaMask2dPhase with resource() {
+pub impl @app.Resource for AlphaMask2dPhase with fn resource() {
   ecs_key_alpha_mask2d_phase
 }
 
 ///|
-pub impl @app.Resource for Transparent2dPhase with resource() {
+pub impl @app.Resource for Transparent2dPhase with fn resource() {
   ecs_key_transparent2d_phase
 }

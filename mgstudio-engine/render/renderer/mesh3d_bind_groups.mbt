@@ -152,6 +152,7 @@ fn mesh3d_add_view_bind_group_layout_entry(
   point_shadow_sample_view : @wgpu.TextureView,
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
+  depth_prepass_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -226,6 +227,14 @@ fn mesh3d_add_view_bind_group_layout_entry(
       mesh3d_add_sampler_for_layout_entry(
         builder, binding, dt_lut_sampler, entry,
       )
+    20 =>
+      match depth_prepass_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => false
+      }
     24 =>
       mesh3d_add_texture_view_for_layout_entry(
         builder,
@@ -263,6 +272,7 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   point_shadow_sample_view : @wgpu.TextureView,
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
+  depth_prepass_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -277,8 +287,8 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         builder, entry, view_buf, lights_buf, clustered_lights_buf, clusterable_object_index_lists_buf,
         cluster_offsets_and_counts_buf, globals_buf, fog_buf, light_probes_buf, visibility_ranges_buf,
         ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
-        point_shadow_compare_sampler, directional_shadow_sample_view, transmission_source_texture,
-        dt_lut_sample_view, dt_lut_sampler,
+        point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
+        transmission_source_texture, dt_lut_sample_view, dt_lut_sampler,
       ) {
       builder.free()
       fatal(
@@ -492,6 +502,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     point_shadow_sample_view,
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
+    None,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
@@ -560,6 +571,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   guard backend.frame is Some(frame) else {
     fatal("wgpu: missing active frame for mesh3d view bind group")
   }
+  let depth_prepass_view = backend.depth_view
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend,
     material_pipeline_id,
@@ -663,6 +675,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     point_shadow_sample_view,
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
+    depth_prepass_view,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
