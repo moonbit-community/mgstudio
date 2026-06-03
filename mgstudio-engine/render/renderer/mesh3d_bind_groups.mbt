@@ -153,6 +153,9 @@ fn mesh3d_add_view_bind_group_layout_entry(
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
   depth_prepass_view : @wgpu.TextureView?,
+  normal_prepass_view : @wgpu.TextureView?,
+  motion_vector_prepass_view : @wgpu.TextureView?,
+  deferred_prepass_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -235,6 +238,30 @@ fn mesh3d_add_view_bind_group_layout_entry(
           )
         None => false
       }
+    21 =>
+      match normal_prepass_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => false
+      }
+    22 =>
+      match motion_vector_prepass_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => false
+      }
+    23 =>
+      match deferred_prepass_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => false
+      }
     24 =>
       mesh3d_add_texture_view_for_layout_entry(
         builder,
@@ -273,6 +300,9 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
   depth_prepass_view : @wgpu.TextureView?,
+  normal_prepass_view : @wgpu.TextureView?,
+  motion_vector_prepass_view : @wgpu.TextureView?,
+  deferred_prepass_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -288,7 +318,8 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         cluster_offsets_and_counts_buf, globals_buf, fog_buf, light_probes_buf, visibility_ranges_buf,
         ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
         point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
-        transmission_source_texture, dt_lut_sample_view, dt_lut_sampler,
+        normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, transmission_source_texture,
+        dt_lut_sample_view, dt_lut_sampler,
       ) {
       builder.free()
       fatal(
@@ -358,6 +389,20 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   mesh3d_finish_bind_group_checked(
     backend, builder, layout, "mgstudio_mesh3d_binding_arrays_bg", error_message,
   )
+}
+
+///|
+fn mesh3d_prepass_texture_view_for_id(
+  backend : GpuBackend,
+  texture_id : Int,
+) -> @wgpu.TextureView? {
+  if texture_id < 0 {
+    return None
+  }
+  match find_texture(backend, texture_id) {
+    Some(texture) => Some(texture.view)
+    None => None
+  }
 }
 
 ///|
@@ -503,6 +548,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
     None,
+    None,
+    None,
+    None,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
@@ -544,6 +592,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
+  prepass_normal_texture_id : Int,
+  prepass_motion_vector_texture_id : Int,
+  prepass_deferred_texture_id : Int,
   tonemapping_mode : Int,
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
@@ -564,6 +615,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.prepass_normal_texture_id == prepass_normal_texture_id &&
+      entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
+      entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
@@ -657,6 +711,15 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     Some(view) => view
     None => fallback_environment_sample_view
   }
+  let normal_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_normal_texture_id,
+  )
+  let motion_vector_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_motion_vector_texture_id,
+  )
+  let deferred_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_deferred_texture_id,
+  )
   let bind_group = mesh3d_build_view_bind_group_from_descriptor(
     backend,
     layout,
@@ -676,6 +739,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
     depth_prepass_view,
+    normal_prepass_view,
+    motion_vector_prepass_view,
+    deferred_prepass_view,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
@@ -704,6 +770,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
+    prepass_normal_texture_id,
+    prepass_motion_vector_texture_id,
+    prepass_deferred_texture_id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     bind_group,
     binding_arrays_bind_group,

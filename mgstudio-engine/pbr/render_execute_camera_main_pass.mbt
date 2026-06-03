@@ -168,6 +168,7 @@ fn render3d_execute_camera_main_pass(
   transmission_steps : Int,
   transmission_blur_taps : Int,
   wireframe_config : WireframeConfig?,
+  prepass_motion_vector_texture_id~ : Int,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
   let point_shadow_binding = shadow_bindings.point
@@ -243,6 +244,7 @@ fn render3d_execute_camera_main_pass(
     tonemapping_tony_lut_texture_id=tony_lut_texture_id,
     tonemapping_blender_lut_texture_id=blender_lut_texture_id,
     deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
+    prepass_motion_vector_texture_id~,
     point_shadow_near~,
     pass_kind=scene_pass_kind,
     clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(

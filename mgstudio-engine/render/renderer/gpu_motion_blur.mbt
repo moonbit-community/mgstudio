@@ -70,7 +70,7 @@ fn ensure_motion_blur_layouts(
   }
   if backend.motion_blur_sampler is None {
     backend.motion_blur_sampler = Some(
-      backend.device.create_sampler_nearest_clamp(),
+      backend.device.create_sampler_linear_clamp(),
     )
   }
 }

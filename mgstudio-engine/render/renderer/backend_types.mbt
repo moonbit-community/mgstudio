@@ -157,6 +157,9 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   directional_shadow_texture_id : Int
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
+  prepass_normal_texture_id : Int
+  prepass_motion_vector_texture_id : Int
+  prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
