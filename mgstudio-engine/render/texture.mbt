@@ -29,8 +29,14 @@ pub fn host_gpu_create_render_target_rgba16f(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
+  sample_count? : Int = 1,
 ) -> Int {
-  @renderer.create_render_target_rgba16f(width~, height~, nearest~)
+  @renderer.create_render_target_rgba16f(
+    width~,
+    height~,
+    nearest~,
+    sample_count~,
+  )
 }
 
 ///|
@@ -38,8 +44,18 @@ pub fn host_gpu_create_render_target_rg16f(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
+  sample_count? : Int = 1,
 ) -> Int {
-  @renderer.create_render_target_rg16f(width~, height~, nearest~)
+  @renderer.create_render_target_rg16f(width~, height~, nearest~, sample_count~)
+}
+
+///|
+pub fn host_gpu_create_depth_prepass_target(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  @renderer.create_depth_prepass_target(width~, height~, sample_count~)
 }
 
 ///|
@@ -49,6 +65,7 @@ pub fn asset_create_render_target_with_formats(
   nearest~ : Bool,
   format~ : @wgpu.TextureFormat,
   sample_format~ : @wgpu.TextureFormat?,
+  sample_count? : Int = 1,
 ) -> Int {
   @renderer.create_render_target_with_formats(
     width~,
@@ -56,6 +73,7 @@ pub fn asset_create_render_target_with_formats(
     nearest~,
     format~,
     sample_format~,
+    sample_count~,
   )
 }
 

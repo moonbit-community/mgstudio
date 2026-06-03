@@ -31,8 +31,8 @@ fn motion_blur_debug_log(message : String) -> Unit {
 fn ensure_motion_blur_layouts(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
+  let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
   if backend.motion_blur_bgl is None {
-    let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
     let ok = builder.add_texture(
         0U,
@@ -68,6 +68,44 @@ fn ensure_motion_blur_layouts(
     backend.motion_blur_bgl = Some(bgl)
     backend.motion_blur_pipeline_layout = Some(pipeline_layout)
   }
+  if backend.motion_blur_bgl_msaa is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
+    let ok = builder.add_texture(
+        0U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        1U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        multisampled=true,
+      ) &&
+      builder.add_texture(
+        2U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        multisampled=true,
+      ) &&
+      builder.add_sampler(3U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_buffer(4U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build motion blur MSAA bind group layout")
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_motion_blur_layout_msaa",
+    )
+    let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+    pipeline_layout.set_label("mgstudio_motion_blur_pipeline_layout_msaa")
+    backend.motion_blur_bgl_msaa = Some(bgl)
+    backend.motion_blur_pipeline_layout_msaa = Some(pipeline_layout)
+  }
   if backend.motion_blur_sampler is None {
     backend.motion_blur_sampler = Some(
       backend.device.create_sampler_linear_clamp(),
@@ -78,6 +116,7 @@ fn ensure_motion_blur_layouts(
 ///|
 fn ensure_motion_blur_pipeline_rgba8(
   backend : GpuBackend,
+  multisampled : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_motion_blur_layouts(backend)
   if backend.motion_blur_settings_buf is None {
@@ -92,16 +131,21 @@ fn ensure_motion_blur_pipeline_rgba8(
       backend.device.create_buffer(size=16UL, usage~),
     )
   }
-  if backend.motion_blur_pipeline is Some(_) {
+  if multisampled && backend.motion_blur_pipeline_msaa is Some(_) {
     return
   }
-  guard backend.motion_blur_pipeline_layout is Some(pipeline_layout) else {
+  if !multisampled && backend.motion_blur_pipeline is Some(_) {
     return
   }
+  let pipeline_layout_opt = if multisampled {
+    backend.motion_blur_pipeline_layout_msaa
+  } else {
+    backend.motion_blur_pipeline_layout
+  }
+  guard pipeline_layout_opt is Some(pipeline_layout) else { return }
+  let define_keys = if multisampled { ["MULTISAMPLED"] } else { [] }
   let sources = load_fullscreen_postprocess_wgsl_modules_with_defines_required(
-    backend,
-    "post_process/motion_blur/motion_blur.wgsl",
-    [],
+    backend, "post_process/motion_blur/motion_blur.wgsl", define_keys,
   )
   let pipeline = create_postprocess_pipeline_split_modules(
     backend,
@@ -111,35 +155,56 @@ fn ensure_motion_blur_pipeline_rgba8(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_motion_blur_rgba8",
+    if multisampled {
+      "mgstudio_motion_blur_rgba8_msaa"
+    } else {
+      "mgstudio_motion_blur_rgba8"
+    },
   )
-  backend.motion_blur_pipeline = Some(pipeline)
+  if multisampled {
+    backend.motion_blur_pipeline_msaa = Some(pipeline)
+  } else {
+    backend.motion_blur_pipeline = Some(pipeline)
+  }
 }
 
 ///|
 fn ensure_motion_blur_pipeline_surface(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
+  multisampled : Bool,
 ) -> Unit raise GpuBackendError {
-  ensure_motion_blur_pipeline_rgba8(backend)
+  ensure_motion_blur_pipeline_rgba8(backend, multisampled)
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
-  if backend.motion_blur_pipeline_surface_format is Some(prev) &&
+  if multisampled &&
+    backend.motion_blur_pipeline_surface_msaa_format is Some(prev) &&
+    prev == format &&
+    backend.motion_blur_pipeline_surface_msaa is Some(_) {
+    return
+  }
+  if !multisampled &&
+    backend.motion_blur_pipeline_surface_format is Some(prev) &&
     prev == format &&
     backend.motion_blur_pipeline_surface is Some(_) {
     return
   }
-  if backend.motion_blur_pipeline_surface is Some(old) {
+  if multisampled && backend.motion_blur_pipeline_surface_msaa is Some(old) {
     old.release()
   }
-  guard backend.motion_blur_pipeline_layout is Some(pipeline_layout) else {
-    return
+  if !multisampled && backend.motion_blur_pipeline_surface is Some(old) {
+    old.release()
   }
+  let pipeline_layout_opt = if multisampled {
+    backend.motion_blur_pipeline_layout_msaa
+  } else {
+    backend.motion_blur_pipeline_layout
+  }
+  guard pipeline_layout_opt is Some(pipeline_layout) else { return }
+  let define_keys = if multisampled { ["MULTISAMPLED"] } else { [] }
   let sources = load_fullscreen_postprocess_wgsl_modules_with_defines_required(
-    backend,
-    "post_process/motion_blur/motion_blur.wgsl",
-    [],
+    backend, "post_process/motion_blur/motion_blur.wgsl", define_keys,
   )
   let pipeline = create_postprocess_pipeline_split_modules(
     backend,
@@ -149,25 +214,43 @@ fn ensure_motion_blur_pipeline_surface(
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_motion_blur_surface",
+    if multisampled {
+      "mgstudio_motion_blur_surface_msaa"
+    } else {
+      "mgstudio_motion_blur_surface"
+    },
   )
-  backend.motion_blur_pipeline_surface = Some(pipeline)
-  backend.motion_blur_pipeline_surface_format = Some(format)
+  if multisampled {
+    backend.motion_blur_pipeline_surface_msaa = Some(pipeline)
+    backend.motion_blur_pipeline_surface_msaa_format = Some(format)
+  } else {
+    backend.motion_blur_pipeline_surface = Some(pipeline)
+    backend.motion_blur_pipeline_surface_format = Some(format)
+  }
 }
 
 ///|
 fn motion_blur_pipeline_for_current_pass(
   backend : GpuBackend,
+  multisampled : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-      ensure_motion_blur_pipeline_surface(backend, format)
-      return backend.motion_blur_pipeline_surface
+      ensure_motion_blur_pipeline_surface(backend, format, multisampled)
+      return if multisampled {
+        backend.motion_blur_pipeline_surface_msaa
+      } else {
+        backend.motion_blur_pipeline_surface
+      }
     }
     _ => ()
   }
-  ensure_motion_blur_pipeline_rgba8(backend)
-  backend.motion_blur_pipeline
+  ensure_motion_blur_pipeline_rgba8(backend, multisampled)
+  if multisampled {
+    backend.motion_blur_pipeline_msaa
+  } else {
+    backend.motion_blur_pipeline
+  }
 }
 
 ///|
@@ -191,20 +274,12 @@ pub fn GpuBackend::draw_motion_blur(
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
-  guard motion_blur_pipeline_for_current_pass(self) is Some(pipeline) else {
-    motion_blur_debug_log("skip: no pipeline")
-    return
-  }
   guard self.motion_blur_settings_buf is Some(settings_buf) else {
     motion_blur_debug_log("skip: no settings buffer")
     return
   }
   guard self.motion_blur_globals_buf is Some(globals_buf) else {
     motion_blur_debug_log("skip: no globals buffer")
-    return
-  }
-  guard self.motion_blur_bgl is Some(material_bgl) else {
-    motion_blur_debug_log("skip: no bind group layout")
     return
   }
   guard self.motion_blur_sampler is Some(sampler) else {
@@ -227,6 +302,21 @@ pub fn GpuBackend::draw_motion_blur(
     motion_blur_debug_log(
       "skip: velocity texture not found id=\{velocity_texture_id}",
     )
+    return
+  }
+  let multisampled = velocity_texture.texture.sample_count_u32() > 1U
+  guard motion_blur_pipeline_for_current_pass(self, multisampled)
+    is Some(pipeline) else {
+    motion_blur_debug_log("skip: no pipeline")
+    return
+  }
+  let material_bgl_opt = if multisampled {
+    self.motion_blur_bgl_msaa
+  } else {
+    self.motion_blur_bgl
+  }
+  guard material_bgl_opt is Some(material_bgl) else {
+    motion_blur_debug_log("skip: no bind group layout")
     return
   }
   guard self.depth_view is Some(depth_view) else {
@@ -272,7 +362,7 @@ pub fn GpuBackend::draw_motion_blur(
     label="mgstudio_motion_blur_bg",
   )
   motion_blur_debug_log(
-    "draw: scene=\{scene_texture_id}, velocity=\{velocity_texture_id}, samples=\{clamped_samples}",
+    "draw: scene=\{scene_texture_id}, velocity=\{velocity_texture_id}, samples=\{clamped_samples}, msaa=\{multisampled}",
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, material_bg, [])

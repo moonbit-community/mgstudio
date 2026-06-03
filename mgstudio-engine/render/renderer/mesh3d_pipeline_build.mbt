@@ -680,16 +680,7 @@ fn mesh3d_descriptor_fragment_targets(
         builder.set_color_target_format_at(index_u, tf(target.format))
         builder.set_color_target_write_mask_at(index_u, target.write_mask)
       }
-      None => {
-        builder.set_color_target_format_at(
-          index_u,
-          tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
-        )
-        builder.set_color_target_write_mask_at(
-          index_u,
-          @wgpu.COLOR_WRITE_MASK_NONE,
-        )
-      }
+      None => builder.set_color_target_unused_at(index_u)
     }
   }
 }
@@ -1746,6 +1737,7 @@ fn ensure_mesh3d_shadow_pipeline_layout_resources(
 ///|
 fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
@@ -1762,16 +1754,16 @@ fn ensure_mesh3d_pipeline_rgba8(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ) {
     return
@@ -1793,9 +1785,9 @@ fn ensure_mesh3d_pipeline_rgba8(
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
-        backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
+        safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -1822,6 +1814,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
       material_descriptor,
     ),
+    sample_count=msaa_sample_count,
   )
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
@@ -1841,8 +1834,8 @@ fn ensure_mesh3d_pipeline_rgba8(
     pipeline.release()
     modules.release()
     mesh3d_pipeline_set_failed(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method, message,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
@@ -1858,8 +1851,8 @@ fn ensure_mesh3d_pipeline_rgba8(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     shadow_filter_method, pipeline,
   )
   modules.release()
@@ -1869,6 +1862,7 @@ fn ensure_mesh3d_pipeline_rgba8(
 fn ensure_mesh3d_pipeline_surface(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
@@ -1890,16 +1884,16 @@ fn ensure_mesh3d_pipeline_surface(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ) {
     return
@@ -1921,9 +1915,9 @@ fn ensure_mesh3d_pipeline_surface(
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
-        backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
+        safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -1950,6 +1944,7 @@ fn ensure_mesh3d_pipeline_surface(
     vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
       material_descriptor,
     ),
+    sample_count=msaa_sample_count,
   )
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
@@ -1969,8 +1964,8 @@ fn ensure_mesh3d_pipeline_surface(
     pipeline.release()
     modules.release()
     mesh3d_pipeline_set_failed(
-      backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method, message,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
@@ -1986,8 +1981,8 @@ fn ensure_mesh3d_pipeline_surface(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, material_pipeline_id, safe_cull_mode, blend_kind,
-    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
+    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     shadow_filter_method, pipeline,
   )
   modules.release()
@@ -2030,6 +2025,10 @@ fn mesh3d_pipeline_for_current_pass(
   let blend_kind = mesh3d_blend_kind_from_material_flags(
     material_flags, transparent,
   )
+  let msaa_sample_count = match backend.pass_state {
+    Some(pass_state) => pass_state.msaa_sample_count
+    None => 1
+  }
   if resolved_vertex_shader_path != MESH3D_FORWARD_VERTEX_SHADER_PATH ||
     resolved_fragment_shader_path != MESH3D_FORWARD_SHADER_PATH {
     let custom_surface_format = match current_pass_color_format(backend) {
@@ -2045,13 +2044,14 @@ fn mesh3d_pipeline_for_current_pass(
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
-        backend, format, topology, material_pipeline_id, material_descriptor, cull_mode,
-        blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        backend, format, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
+        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
         deband_dither_enabled, shadow_filter_method,
       )
       return mesh3d_pipeline_get(
         backend,
         format.to_u32(),
+        msaa_sample_count,
         topology,
         material_pipeline_id,
         cull_mode,
@@ -2067,13 +2067,14 @@ fn mesh3d_pipeline_for_current_pass(
     _ => ()
   }
   ensure_mesh3d_pipeline_rgba8(
-    backend, topology, material_pipeline_id, material_descriptor, cull_mode, blend_kind,
-    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method,
+    backend, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
+    cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method,
   )
   mesh3d_pipeline_get(
     backend,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32(),
+    msaa_sample_count,
     topology,
     material_pipeline_id,
     cull_mode,
@@ -2359,6 +2360,7 @@ fn mesh3d_build_motion_vector_pipeline(
   backend : GpuBackend,
   pipeline_layout : @wgpu.PipelineLayout,
   topology : UInt,
+  msaa_sample_count : Int,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
   cull_mode : Int,
   skinned : Bool,
@@ -2490,6 +2492,7 @@ fn mesh3d_build_motion_vector_pipeline(
       }
     }
     builder.set_topology_u32(topology)
+    builder.set_multisample(msaa_sample_count.reinterpret_as_uint())
     builder.set_depth_stencil(
       tf(mesh3d_descriptor_depth_format(material_descriptor)),
       depth_write_enabled=mesh3d_descriptor_depth_write_enabled(
@@ -2682,6 +2685,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
       backend,
       pipeline_layout,
       @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      1,
       None,
       2,
       false,
@@ -2696,6 +2700,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
       backend,
       pipeline_layout,
       @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      1,
       None,
       2,
       true,
@@ -2710,6 +2715,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
       backend,
       pipeline_layout,
       @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      1,
       None,
       2,
       true,
@@ -2725,6 +2731,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
 fn mesh3d_motion_vector_pipeline_entry_get_or_create(
   backend : GpuBackend,
   topology : UInt,
+  msaa_sample_count : Int,
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
   cull_mode : Int,
@@ -2735,8 +2742,8 @@ fn mesh3d_motion_vector_pipeline_entry_get_or_create(
 ) -> Mesh3dMotionVectorPipelineCacheEntry? raise GpuBackendError {
   ensure_mesh3d_motion_vector_pipeline(backend)
   if mesh3d_motion_vector_pipeline_get(
-      backend, topology, material_pipeline_id, cull_mode, skinned, has_previous_skin,
-      morphed, has_previous_morph,
+      backend, topology, material_pipeline_id, msaa_sample_count, cull_mode, skinned,
+      has_previous_skin, morphed, has_previous_morph,
     )
     is Some(entry) {
     return Some(entry)
@@ -2786,12 +2793,13 @@ fn mesh3d_motion_vector_pipeline_entry_get_or_create(
   )
   let label = "mgstudio_motion_vector_prepass_layout_\{layout_mask}"
   let pipeline = mesh3d_build_motion_vector_pipeline(
-    backend, pipeline_layout, topology, material_descriptor, safe_cull_mode, skinned,
-    has_previous_skin, morphed, has_previous_morph, label,
+    backend, pipeline_layout, topology, msaa_sample_count, material_descriptor, safe_cull_mode,
+    skinned, has_previous_skin, morphed, has_previous_morph, label,
   )
   let entry = Mesh3dMotionVectorPipelineCacheEntry::{
     topology,
     material_pipeline_id,
+    msaa_sample_count,
     cull_mode: safe_cull_mode,
     skinned,
     has_previous_skin,

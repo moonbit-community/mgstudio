@@ -94,7 +94,7 @@ pub fn render3d_target_info(
       let surface_target_id = @render_gpu.host_gpu_surface_target_id_for_window(
         host_window,
       )
-      if surface_target_id >= 0 {
+      if surface_target_id == 0 {
         return None
       }
       let width = @window.window_physical_width_for(world, window_ref)

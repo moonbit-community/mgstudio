@@ -95,9 +95,11 @@ pub fn GpuBackend::begin_pass(
     target_id,
     target_layer: -1,
     secondary_target_id: -1,
+    prepass_depth_texture_id: -1,
     prepass_normal_texture_id: -1,
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
+    msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: false,
@@ -264,7 +266,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     clear_enabled
   }
   guard target_view(self, target_id, -1) is Some(view) else { return }
-  guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
+  guard ensure_depth_view_for_target(self, target_id, 1) is Some(depth_view) else {
     return
   }
   let color_load_op_u32 = if effective_clear_enabled == 0 {
@@ -334,9 +336,11 @@ pub fn GpuBackend::begin_pass_with_depth(
     target_id,
     target_layer: -1,
     secondary_target_id: -1,
+    prepass_depth_texture_id: -1,
     prepass_normal_texture_id: -1,
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
+    msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: false,
@@ -596,9 +600,11 @@ pub fn GpuBackend::begin_pass_3d(
   tonemapping_tony_lut_texture_id : Int,
   tonemapping_blender_lut_texture_id : Int,
   deband_dither_enabled : Bool,
+  prepass_depth_texture_id : Int,
   prepass_normal_texture_id : Int,
   prepass_motion_vector_texture_id : Int,
   prepass_deferred_texture_id : Int,
+  msaa_sample_count : Int,
   pass_kind : Int,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
@@ -616,6 +622,11 @@ pub fn GpuBackend::begin_pass_3d(
     frame.pass = None
   }
   let base_kind = pass_kind_base_kind(pass_kind)
+  let safe_msaa_sample_count = if msaa_sample_count <= 1 {
+    1
+  } else {
+    msaa_sample_count
+  }
   let is_shadow_depth_pass = base_kind == PASS_KIND_BASE_POINT_SHADOW ||
     base_kind == PASS_KIND_BASE_DIRECTIONAL_SHADOW
   let (color_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
@@ -642,16 +653,21 @@ pub fn GpuBackend::begin_pass_3d(
     if primary_w != secondary_w || primary_h != secondary_h {
       return
     }
-    guard ensure_depth_view_for_target(self, target_id)
-      is Some(scene_depth_view) else {
+    guard find_prepass_depth_texture(self, prepass_depth_texture_id)
+      is Some(prepass_depth_texture) else {
       return
     }
-    (Some(primary_view), Some(velocity_view), scene_depth_view)
+    if prepass_depth_texture.width != primary_w ||
+      prepass_depth_texture.height != primary_h ||
+      prepass_depth_texture.sample_count != safe_msaa_sample_count {
+      return
+    }
+    (Some(primary_view), Some(velocity_view), prepass_depth_texture.view)
   } else {
     guard target_view(self, target_id, target_layer) is Some(view) else {
       return
     }
-    guard ensure_depth_view_for_target(self, target_id)
+    guard ensure_depth_view_for_target(self, target_id, safe_msaa_sample_count)
       is Some(scene_depth_view) else {
       return
     }
@@ -696,32 +712,54 @@ pub fn GpuBackend::begin_pass_3d(
     Some(color0_view) =>
       match secondary_color_view {
         Some(color1_view) =>
-          frame.encoder.begin_render_pass_color2_depth_u32(
-            color0_view,
-            color1_view,
-            depth_view,
-            color0_load_op_u32=color_load_op_u32,
-            color0_store_op_u32=@wgpu.STORE_OP_STORE,
-            color0_clear_r_f32=clear_r,
-            color0_clear_g_f32=clear_g,
-            color0_clear_b_f32=clear_b,
-            color0_clear_a_f32=clear_a,
-            color1_load_op_u32=color_load_op_u32,
-            color1_store_op_u32=@wgpu.STORE_OP_STORE,
-            color1_clear_r_f32=0.0F,
-            color1_clear_g_f32=0.0F,
-            color1_clear_b_f32=0.0F,
-            color1_clear_a_f32=0.0F,
-            depth_load_op_u32~,
-            depth_store_op_u32=@wgpu.STORE_OP_STORE,
-            depth_clear_value_f32=0.0F,
-            depth_read_only=false,
-            // Bevy-aligned reverse-Z: clear depth to far plane.
-            stencil_load_op_u32~,
-            stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-            stencil_clear_value_u32=0U,
-            stencil_read_only=true,
-          )
+          if base_kind == PASS_KIND_BASE_MOTION_VECTOR {
+            frame.encoder.begin_render_pass_color1_depth_u32(
+              color1_view,
+              depth_view,
+              color1_load_op_u32=color_load_op_u32,
+              color1_store_op_u32=@wgpu.STORE_OP_STORE,
+              color1_clear_r_f32=0.0F,
+              color1_clear_g_f32=0.0F,
+              color1_clear_b_f32=0.0F,
+              color1_clear_a_f32=0.0F,
+              depth_load_op_u32~,
+              depth_store_op_u32=@wgpu.STORE_OP_STORE,
+              depth_clear_value_f32=0.0F,
+              depth_read_only=false,
+              // Bevy-aligned reverse-Z: clear depth to far plane.
+              stencil_load_op_u32~,
+              stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+              stencil_clear_value_u32=0U,
+              stencil_read_only=true,
+            )
+          } else {
+            frame.encoder.begin_render_pass_color2_depth_u32(
+              color0_view,
+              color1_view,
+              depth_view,
+              color0_load_op_u32=color_load_op_u32,
+              color0_store_op_u32=@wgpu.STORE_OP_STORE,
+              color0_clear_r_f32=clear_r,
+              color0_clear_g_f32=clear_g,
+              color0_clear_b_f32=clear_b,
+              color0_clear_a_f32=clear_a,
+              color1_load_op_u32=color_load_op_u32,
+              color1_store_op_u32=@wgpu.STORE_OP_STORE,
+              color1_clear_r_f32=0.0F,
+              color1_clear_g_f32=0.0F,
+              color1_clear_b_f32=0.0F,
+              color1_clear_a_f32=0.0F,
+              depth_load_op_u32~,
+              depth_store_op_u32=@wgpu.STORE_OP_STORE,
+              depth_clear_value_f32=0.0F,
+              depth_read_only=false,
+              // Bevy-aligned reverse-Z: clear depth to far plane.
+              stencil_load_op_u32~,
+              stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+              stencil_clear_value_u32=0U,
+              stencil_read_only=true,
+            )
+          }
         None =>
           frame.encoder.begin_render_pass_color_depth_u32(
             color0_view,
@@ -810,9 +848,11 @@ pub fn GpuBackend::begin_pass_3d(
     target_id,
     target_layer,
     secondary_target_id,
+    prepass_depth_texture_id,
     prepass_normal_texture_id,
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
+    msaa_sample_count: safe_msaa_sample_count,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: true,
@@ -1148,9 +1188,11 @@ pub fn begin_pass_3d(
   tonemapping_tony_lut_texture_id? : Int = -1,
   tonemapping_blender_lut_texture_id? : Int = -1,
   deband_dither_enabled? : Bool = false,
+  prepass_depth_texture_id? : Int = -1,
   prepass_normal_texture_id? : Int = -1,
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
+  msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -1190,8 +1232,8 @@ pub fn begin_pass_3d(
       directional_shadow_cascade_count, directional_shadow_cascade_overlap, directional_shadow_cascade_data,
       mesh3d_lights_uniform_bytes, tonemap_in_shader, tonemapping_mode, tonemapping_agx_lut_texture_id,
       tonemapping_tony_lut_texture_id, tonemapping_blender_lut_texture_id, deband_dither_enabled,
-      prepass_normal_texture_id, prepass_motion_vector_texture_id, prepass_deferred_texture_id,
-      pass_kind, clear_enabled,
+      prepass_depth_texture_id, prepass_normal_texture_id, prepass_motion_vector_texture_id,
+      prepass_deferred_texture_id, msaa_sample_count, pass_kind, clear_enabled,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)
     }

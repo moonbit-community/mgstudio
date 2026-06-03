@@ -310,6 +310,9 @@ fn activate_surface_frame_for_target(
       is Some(index) else {
       return false
     }
+    if backend.surfaces[index].frame is None {
+      ignore(backend.begin_frame_binding(backend.surfaces[index].surface_id))
+    }
     guard backend.surfaces[index].frame is Some(frame) else { return false }
     backend.surfaces[index].frame = None
     backend.frame = Some(frame)

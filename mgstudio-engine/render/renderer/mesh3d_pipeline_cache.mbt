@@ -36,6 +36,7 @@ pub(all) enum RenderPipelineCacheState {
 ///|
 struct Mesh3dPipelineCacheEntry {
   color_format : UInt
+  msaa_sample_count : Int
   topology : UInt
   material_pipeline_id : UInt64
   cull_mode : Int
@@ -53,6 +54,7 @@ struct Mesh3dPipelineCacheEntry {
 fn mesh3d_pipeline_get(
   backend : GpuBackend,
   color_format : UInt,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   cull_mode : Int,
@@ -67,6 +69,7 @@ fn mesh3d_pipeline_get(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
+      entry.msaa_sample_count == msaa_sample_count &&
       entry.topology == topology &&
       entry.material_pipeline_id == material_pipeline_id &&
       entry.cull_mode == safe_cull_mode &&
@@ -93,6 +96,7 @@ fn mesh3d_pipeline_get(
 fn mesh3d_pipeline_failed(
   backend : GpuBackend,
   color_format : UInt,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   cull_mode : Int,
@@ -107,6 +111,7 @@ fn mesh3d_pipeline_failed(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
+      entry.msaa_sample_count == msaa_sample_count &&
       entry.topology == topology &&
       entry.material_pipeline_id == material_pipeline_id &&
       entry.cull_mode == safe_cull_mode &&
@@ -133,6 +138,7 @@ fn mesh3d_pipeline_failed(
 fn mesh3d_pipeline_set(
   backend : GpuBackend,
   color_format : UInt,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   cull_mode : Int,
@@ -147,6 +153,7 @@ fn mesh3d_pipeline_set(
 ) -> Unit {
   backend.mesh3d_pipeline_cache.push({
     color_format,
+    msaa_sample_count,
     topology,
     material_pipeline_id,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
@@ -165,6 +172,7 @@ fn mesh3d_pipeline_set(
 fn mesh3d_pipeline_set_failed(
   backend : GpuBackend,
   color_format : UInt,
+  msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
   cull_mode : Int,
@@ -178,22 +186,23 @@ fn mesh3d_pipeline_set_failed(
   message : String,
 ) -> Unit {
   if mesh3d_pipeline_get(
-      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ) {
     return
   }
   backend.mesh3d_pipeline_cache.push({
     color_format,
+    msaa_sample_count,
     topology,
     material_pipeline_id,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
@@ -246,6 +255,7 @@ struct Mesh3dShadowPipelineCacheEntry {
 struct Mesh3dMotionVectorPipelineCacheEntry {
   topology : UInt
   material_pipeline_id : UInt64
+  msaa_sample_count : Int
   cull_mode : Int
   skinned : Bool
   has_previous_skin : Bool
@@ -307,6 +317,7 @@ fn mesh3d_motion_vector_pipeline_get(
   backend : GpuBackend,
   topology : UInt,
   material_pipeline_id : UInt64,
+  msaa_sample_count : Int,
   cull_mode : Int,
   skinned : Bool,
   has_previous_skin : Bool,
@@ -317,6 +328,7 @@ fn mesh3d_motion_vector_pipeline_get(
   for entry in backend.mesh3d_motion_vector_pipeline_cache {
     if entry.topology == topology &&
       entry.material_pipeline_id == material_pipeline_id &&
+      entry.msaa_sample_count == msaa_sample_count &&
       entry.cull_mode == safe_cull_mode &&
       entry.skinned == skinned &&
       entry.has_previous_skin == has_previous_skin &&

@@ -592,6 +592,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
+  prepass_depth_texture_id : Int,
   prepass_normal_texture_id : Int,
   prepass_motion_vector_texture_id : Int,
   prepass_deferred_texture_id : Int,
@@ -615,6 +616,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.prepass_depth_texture_id == prepass_depth_texture_id &&
       entry.prepass_normal_texture_id == prepass_normal_texture_id &&
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
       entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
@@ -625,7 +627,11 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   guard backend.frame is Some(frame) else {
     fatal("wgpu: missing active frame for mesh3d view bind group")
   }
-  let depth_prepass_view = backend.depth_view
+  let depth_prepass_view = match
+    find_prepass_depth_texture(backend, prepass_depth_texture_id) {
+    Some(texture) => Some(texture.view)
+    None => None
+  }
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend,
     material_pipeline_id,
@@ -770,6 +776,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
+    prepass_depth_texture_id,
     prepass_normal_texture_id,
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,

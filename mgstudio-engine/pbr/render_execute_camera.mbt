@@ -92,24 +92,31 @@ fn render3d_execute_camera(
   let motion_vector_pass_kind = pass_config.motion_vector_pass_kind
   let point_shadow_pass_kind = pass_config.point_shadow_pass_kind
   let directional_shadow_pass_kind = pass_config.directional_shadow_pass_kind
+  let msaa_sample_count = render3d_camera_msaa_samples(camera)
   let mut scene_target_id = camera.target_id
   let mut velocity_target_id = -1
+  let mut prepass_depth_target_id = -1
   let mut shadow_bindings = render3d_view_shadow_bindings_none()
   let point_shadow_near = pass_config.point_shadow_near
   let draw_queue_entry = prepared_queue.draw_queue_entry
   let opaque_alpha_draw_item_indices = prepared_queue.opaque_alpha_draw_item_indices
   let indexed_indirect_parameter_indices = prepared_queue.indexed_indirect_parameter_indices
   let non_indexed_indirect_parameter_indices = prepared_queue.non_indexed_indirect_parameter_indices
-  let (scene_target_id_next, velocity_target_id_next) = render3d_execute_camera_motion_vector_pass(
+  let (
+    scene_target_id_next,
+    velocity_target_id_next,
+    prepass_depth_target_id_next,
+  ) = render3d_execute_camera_motion_vector_pass(
     world, camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
     indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, motion_vector_prepass_enabled,
     motion_blur_active, scene_target_id, velocity_target_id, view_width, view_height,
-    view_width_logical, view_height_logical, viewport_x, viewport_y, viewport_width,
-    viewport_height, camera_pass_projection, pass_lighting, camera_exposure_value,
+    msaa_sample_count, view_width_logical, view_height_logical, viewport_x, viewport_y,
+    viewport_width, viewport_height, camera_pass_projection, pass_lighting, camera_exposure_value,
     point_shadow_near, motion_vector_pass_kind,
   )
   scene_target_id = scene_target_id_next
   velocity_target_id = velocity_target_id_next
+  prepass_depth_target_id = prepass_depth_target_id_next
   ignore(
     @render.host_gpu_reserve_mesh3d_draw_storage(
       count=draw_queue_entry.draw_items.length(),
@@ -142,8 +149,8 @@ fn render3d_execute_camera(
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
     ) {
-    let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
-      world, camera_entity, view_width, view_height,
+    let (scene_id, _velocity_id, _depth_id) = render3d_motion_blur_targets_get_or_create(
+      world, camera_entity, view_width, view_height, msaa_sample_count,
     )
     scene_target_id = scene_id
   }
@@ -166,6 +173,7 @@ fn render3d_execute_camera(
     scene_target_id,
     view_width,
     view_height,
+    msaa_sample_count,
     view_width_logical,
     view_height_logical,
     clear_color,
@@ -193,6 +201,7 @@ fn render3d_execute_camera(
     transmission_steps,
     transmission_blur_taps,
     wireframe_config,
+    prepass_depth_texture_id=prepass_depth_target_id,
     prepass_motion_vector_texture_id=velocity_target_id,
   )
   @app.timeline_trace_end_span(

@@ -305,9 +305,11 @@ pub fn host_gpu_begin_pass_3d(
   tonemapping_tony_lut_texture_id? : Int = -1,
   tonemapping_blender_lut_texture_id? : Int = -1,
   deband_dither_enabled? : Bool = false,
+  prepass_depth_texture_id? : Int = -1,
   prepass_normal_texture_id? : Int = -1,
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
+  msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -443,9 +445,11 @@ pub fn host_gpu_begin_pass_3d(
     tonemapping_tony_lut_texture_id~,
     tonemapping_blender_lut_texture_id~,
     deband_dither_enabled~,
+    prepass_depth_texture_id~,
     prepass_normal_texture_id~,
     prepass_motion_vector_texture_id~,
     prepass_deferred_texture_id~,
+    msaa_sample_count~,
     pass_kind~,
     clear_enabled~,
   )

@@ -116,6 +116,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   vertex_entry? : String = "vs_main",
   fragment_entry? : String = "fs_main",
   vertex_buffer_layout? : @mesh.VertexBufferLayout? = None,
+  sample_count? : Int = 1,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -264,6 +265,18 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       @wgpu_c.render_pipeline_desc_builder_free(builder)
       fatal("wgpu: failed to configure mesh pipeline depth-stencil state")
     }
+  }
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let set_multisample_err = @wgpu_c.render_pipeline_desc_builder_set_multisample(
+    builder, safe_sample_count, 0xFFFFFFFFU, false,
+  )
+  if set_multisample_err != 0U {
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal("wgpu: failed to configure mesh pipeline multisample state")
   }
   let desc = @wgpu_c.render_pipeline_desc_builder_finish(builder)
   if @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {

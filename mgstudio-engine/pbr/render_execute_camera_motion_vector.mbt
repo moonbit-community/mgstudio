@@ -98,6 +98,7 @@ fn render3d_execute_camera_motion_vector_pass(
   velocity_target_id : Int,
   view_width : Int,
   view_height : Int,
+  msaa_sample_count : Int,
   view_width_logical : Int,
   view_height_logical : Int,
   viewport_x : Int,
@@ -109,14 +110,14 @@ fn render3d_execute_camera_motion_vector_pass(
   camera_exposure_value : Float,
   point_shadow_near : Float,
   motion_vector_pass_kind : Int,
-) -> (Int, Int) {
+) -> (Int, Int, Int) {
   if !motion_vector_prepass_enabled {
-    return (scene_target_id, velocity_target_id)
+    return (scene_target_id, velocity_target_id, -1)
   }
   let mut next_scene_target_id = scene_target_id
   let mut next_velocity_target_id = velocity_target_id
-  let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
-    world, camera_entity, view_width, view_height,
+  let (shared_scene_id, shared_velocity_id, shared_depth_id) = render3d_motion_blur_targets_get_or_create(
+    world, camera_entity, view_width, view_height, msaa_sample_count,
   )
   if motion_blur_active {
     next_scene_target_id = shared_scene_id
@@ -153,8 +154,10 @@ fn render3d_execute_camera_motion_vector_pass(
     pass_lighting,
     camera_exposure=camera_exposure_value,
     previous_clip_from_world=camera.previous_clip_from_world,
+    prepass_depth_texture_id=shared_depth_id,
     point_shadow_near~,
     pass_kind=motion_vector_pass_kind,
+    msaa_sample_count~,
     clear_enabled=1,
   )
   let draw_items = draw_queue_entry.draw_items
@@ -248,5 +251,5 @@ fn render3d_execute_camera_motion_vector_pass(
     )
   }
   @render.host_gpu_end_pass()
-  (next_scene_target_id, next_velocity_target_id)
+  (next_scene_target_id, next_velocity_target_id, shared_depth_id)
 }

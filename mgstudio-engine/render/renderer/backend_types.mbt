@@ -29,6 +29,16 @@ pub struct GpuTextureInfo {
 }
 
 ///|
+struct GpuPrepassDepthTextureInfo {
+  id : Int
+  width : Int
+  height : Int
+  sample_count : Int
+  texture : @wgpu.Texture
+  view : @wgpu.TextureView
+}
+
+///|
 pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
@@ -157,6 +167,7 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   directional_shadow_texture_id : Int
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
+  prepass_depth_texture_id : Int
   prepass_normal_texture_id : Int
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int

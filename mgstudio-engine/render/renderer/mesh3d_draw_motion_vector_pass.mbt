@@ -191,6 +191,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   guard mesh3d_motion_vector_pipeline_entry_get_or_create(
       self,
       mesh.primitive_topology,
+      ps.msaa_sample_count,
       material_pipeline_id,
       material_descriptor,
       cull_mode,

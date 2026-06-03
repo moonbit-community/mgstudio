@@ -2598,20 +2598,21 @@ fn meshlet_material_shade_pipeline_get_or_create(
   let tonemap_in_shader = pass_state.tonemap_in_shader
   let tonemapping_mode = pass_state.tonemapping_mode
   let deband_dither_enabled = pass_state.deband_dither_enabled
+  let msaa_sample_count = pass_state.msaa_sample_count
   let shadow_filter_method = pass_kind_shadow_filter_method(
     pass_state.pass_kind,
   )
   if mesh3d_pipeline_get(
-      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
+      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ) {
     return None
@@ -2668,6 +2669,7 @@ fn meshlet_material_shade_pipeline_get_or_create(
     builder.set_color_target_format(tf(color_format))
     builder.disable_blend()
     builder.set_topology_u32(topology)
+    builder.set_multisample(msaa_sample_count.reinterpret_as_uint())
     builder.set_depth_stencil(
       tf(@wgpu.TEXTURE_FORMAT_DEPTH16_UNORM),
       depth_write_enabled=false,
@@ -2684,9 +2686,9 @@ fn meshlet_material_shade_pipeline_get_or_create(
       created.release()
       builder.free()
       mesh3d_pipeline_set_failed(
-        backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
+        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2699,9 +2701,9 @@ fn meshlet_material_shade_pipeline_get_or_create(
     err => {
       let message = "wgpu: failed to build meshlet material shade pipeline: \{err.message()}"
       mesh3d_pipeline_set_failed(
-        backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-        skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
+        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2711,8 +2713,8 @@ fn meshlet_material_shade_pipeline_get_or_create(
   }
   pipeline.set_label("mgstudio_meshlet_material_shade_pipeline")
   mesh3d_pipeline_set(
-    backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
-    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
+    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     shadow_filter_method, pipeline,
   )
   vertex_sm.release()
@@ -2900,6 +2902,7 @@ fn meshlet_bind_material_shade_draw(
     directional_shadow_texture,
     environment_diffuse_texture,
     environment_specular_texture,
+    pass_state.prepass_depth_texture_id,
     pass_state.prepass_normal_texture_id,
     pass_state.prepass_motion_vector_texture_id,
     pass_state.prepass_deferred_texture_id,
@@ -3891,7 +3894,11 @@ pub fn GpuBackend::execute_meshlet_resolve_depth(
   }
   guard self.frame is Some(frame) else { return false }
   guard self.pass_state is Some(pass_state) else { return false }
-  guard ensure_depth_view_for_target(self, pass_state.target_id)
+  guard ensure_depth_view_for_target(
+      self,
+      pass_state.target_id,
+      pass_state.msaa_sample_count,
+    )
     is Some(depth_view) else {
     return false
   }

@@ -17,8 +17,10 @@ priv struct MotionBlurTargetsEntry {
   entity : @core.Entity
   width : Int
   height : Int
+  sample_count : Int
   scene_target_id : Int
   velocity_target_id : Int
+  depth_target_id : Int
 }
 
 ///|
@@ -41,7 +43,7 @@ let render3d_scene_targets_state_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio.render3d.scene_targets_state")
 
 ///|
-impl @app.Resource for Render3dSceneTargetsState with resource() {
+impl @app.Resource for Render3dSceneTargetsState with fn resource() {
   render3d_scene_targets_state_key
 }
 
@@ -67,26 +69,40 @@ fn render3d_motion_blur_targets_get_or_create(
   entity : @core.Entity,
   width : Int,
   height : Int,
-) -> (Int, Int) {
+  sample_count : Int,
+) -> (Int, Int, Int) {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let motion_blur_targets = scene_targets_state.peek().motion_blur_targets
+  let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
   for item in motion_blur_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.width == width &&
-      item.height == height {
-      return (item.scene_target_id, item.velocity_target_id)
+      item.height == height &&
+      item.sample_count == safe_sample_count {
+      return (
+        item.scene_target_id,
+        item.velocity_target_id,
+        item.depth_target_id,
+      )
     }
   }
   let scene_target_id = @render.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
+    sample_count=safe_sample_count,
   )
   let velocity_target_id = @render.host_gpu_create_render_target_rg16f(
     width~,
     height~,
     nearest=false,
+    sample_count=safe_sample_count,
+  )
+  let depth_target_id = @render.host_gpu_create_depth_prepass_target(
+    width~,
+    height~,
+    sample_count=safe_sample_count,
   )
   let next : Array[MotionBlurTargetsEntry] = []
   let mut replaced = false
@@ -94,7 +110,15 @@ fn render3d_motion_blur_targets_get_or_create(
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
-        next.push({ entity, width, height, scene_target_id, velocity_target_id })
+        next.push({
+          entity,
+          width,
+          height,
+          sample_count: safe_sample_count,
+          scene_target_id,
+          velocity_target_id,
+          depth_target_id,
+        })
         replaced = true
       }
     } else {
@@ -102,10 +126,18 @@ fn render3d_motion_blur_targets_get_or_create(
     }
   }
   if !replaced {
-    next.push({ entity, width, height, scene_target_id, velocity_target_id })
+    next.push({
+      entity,
+      width,
+      height,
+      sample_count: safe_sample_count,
+      scene_target_id,
+      velocity_target_id,
+      depth_target_id,
+    })
   }
   scene_targets_state.modify(fn(state) { state.motion_blur_targets = next })
-  (scene_target_id, velocity_target_id)
+  (scene_target_id, velocity_target_id, depth_target_id)
 }
 
 ///|

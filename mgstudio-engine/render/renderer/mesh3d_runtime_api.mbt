@@ -856,6 +856,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
           ensure_mesh3d_pipeline_surface(
             backend,
             format,
+            1,
             topology,
             MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
             None,
@@ -876,6 +877,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
           ensure_mesh3d_pipeline_surface(
             backend,
             format,
+            1,
             topology,
             MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
             None,

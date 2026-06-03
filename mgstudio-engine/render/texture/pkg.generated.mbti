@@ -11,7 +11,7 @@ pub const FALLBACK_TEXTURE_ID : Int = -1
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
-pub fn asset_create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?) -> Int
+pub fn asset_create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format~ : @wgpu_mbt.TextureFormat, pixels~ : Bytes) -> Int
 
@@ -41,15 +41,17 @@ pub fn fallback_image_is_default(Int) -> Bool
 
 pub fn fallback_image_texture_id() -> Int
 
+pub fn host_gpu_create_depth_prepass_target(width~ : Int, height~ : Int, sample_count? : Int) -> Int
+
 pub fn host_gpu_create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
 
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
-pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
-pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
 pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
 

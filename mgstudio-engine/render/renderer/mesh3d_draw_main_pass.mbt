@@ -460,6 +460,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     directional_shadow_texture,
     environment_diffuse_texture,
     environment_specular_texture,
+    ps.prepass_depth_texture_id,
     ps.prepass_normal_texture_id,
     ps.prepass_motion_vector_texture_id,
     ps.prepass_deferred_texture_id,

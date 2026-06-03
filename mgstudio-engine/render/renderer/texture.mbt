@@ -74,6 +74,20 @@ fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
 }
 
 ///|
+fn find_prepass_depth_texture(
+  backend : GpuBackend,
+  id : Int,
+) -> GpuPrepassDepthTextureInfo? {
+  for t in backend.prepass_depth_textures {
+    if t.id == id {
+      ignore(t.texture)
+      return Some(t)
+    }
+  }
+  None
+}
+
+///|
 pub fn asset_texture_info(texture_id~ : Int) -> GpuTextureInfo? {
   guard ensure_backend() is Some(backend) else { return None }
   find_texture(backend, texture_id)
@@ -1100,12 +1114,14 @@ pub fn GpuBackend::create_render_target_rgba16f(
   width : Int,
   height : Int,
   nearest : Bool,
+  sample_count? : Int = 1,
 ) -> Int raise GpuBackendError {
   self.create_render_target_with_format(
     width,
     height,
     nearest,
     tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    sample_count~,
   )
 }
 
@@ -1115,13 +1131,66 @@ pub fn GpuBackend::create_render_target_rg16f(
   width : Int,
   height : Int,
   nearest : Bool,
+  sample_count? : Int = 1,
 ) -> Int raise GpuBackendError {
   self.create_render_target_with_format(
     width,
     height,
     nearest,
     tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT),
+    sample_count~,
   )
+}
+
+///|
+pub fn GpuBackend::create_depth_prepass_target(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_COPY_DST |
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+  )
+  let format = tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT)
+  let tex = self.device.create_texture_u32(
+    w,
+    h,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=safe_sample_count,
+  )
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  self.prepass_depth_textures.push(GpuPrepassDepthTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    sample_count: safe_sample_count.reinterpret_as_int(),
+    texture: tex,
+    view,
+  })
+  mesh3d_material_cache_clear(self)
+  id
 }
 
 ///|
@@ -1433,6 +1502,7 @@ pub fn GpuBackend::create_render_target_with_formats(
   nearest : Bool,
   format : @wgpu.TextureFormat,
   sample_format : @wgpu.TextureFormat?,
+  sample_count? : Int = 1,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   let format_raw = format.to_u32()
@@ -1440,10 +1510,19 @@ pub fn GpuBackend::create_render_target_with_formats(
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let usage_bits = if safe_sample_count > 1U {
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  } else {
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_SRC |
     @wgpu.TEXTURE_USAGE_COPY_DST
+  }
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let view_formats = match sample_format_raw {
     Some(raw) if raw != format_raw => [tf(raw)]
@@ -1457,6 +1536,7 @@ pub fn GpuBackend::create_render_target_with_formats(
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     format,
     view_formats~,
+    sample_count=safe_sample_count,
   )
   let view = tex.create_view_u32(
     format,
@@ -1517,8 +1597,16 @@ fn GpuBackend::create_render_target_with_format(
   height : Int,
   nearest : Bool,
   format : @wgpu.TextureFormat,
+  sample_count? : Int = 1,
 ) -> Int raise GpuBackendError {
-  self.create_render_target_with_formats(width, height, nearest, format, None)
+  self.create_render_target_with_formats(
+    width,
+    height,
+    nearest,
+    format,
+    None,
+    sample_count~,
+  )
 }
 
 ///|
@@ -1622,15 +1710,18 @@ fn clamp_scissor_to_target(
 fn ensure_depth_view_for_target(
   backend : GpuBackend,
   target_id : Int,
+  sample_count : Int,
 ) -> @wgpu.TextureView? {
   guard target_size_for_pass(backend, target_id) is Some((raw_w, raw_h)) else {
     return None
   }
   let width = if raw_w <= 0 { 1 } else { raw_w }
   let height = if raw_h <= 0 { 1 } else { raw_h }
+  let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
   if backend.depth_target_id == target_id &&
     backend.depth_width == width &&
-    backend.depth_height == height {
+    backend.depth_height == height &&
+    backend.depth_sample_count == safe_sample_count {
     if backend.depth_view is Some(view) {
       return Some(view)
     }
@@ -1651,6 +1742,7 @@ fn ensure_depth_view_for_target(
     ),
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+    sample_count=safe_sample_count.reinterpret_as_uint(),
   )
   let depth_view = depth_tex.create_view()
   backend.depth_texture = Some(depth_tex)
@@ -1658,6 +1750,7 @@ fn ensure_depth_view_for_target(
   backend.depth_target_id = target_id
   backend.depth_width = width
   backend.depth_height = height
+  backend.depth_sample_count = safe_sample_count
   Some(depth_view)
 }
 
@@ -1692,10 +1785,16 @@ pub fn create_render_target_rgba16f(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
+  sample_count? : Int = 1,
 ) -> Int {
   if ensure_backend() is Some(backend) {
     try {
-      return backend.create_render_target_rgba16f(width, height, nearest)
+      return backend.create_render_target_rgba16f(
+        width,
+        height,
+        nearest,
+        sample_count~,
+      )
     } catch {
       _ => ()
     }
@@ -1708,15 +1807,33 @@ pub fn create_render_target_rg16f(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
+  sample_count? : Int = 1,
 ) -> Int {
   if ensure_backend() is Some(backend) {
     try {
-      return backend.create_render_target_rg16f(width, height, nearest)
+      return backend.create_render_target_rg16f(
+        width,
+        height,
+        nearest,
+        sample_count~,
+      )
     } catch {
       _ => ()
     }
   }
   0
+}
+
+///|
+pub fn create_depth_prepass_target(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_depth_prepass_target(width, height, sample_count~)
+  }
+  -1
 }
 
 ///|
@@ -1726,11 +1843,17 @@ pub fn create_render_target_with_formats(
   nearest~ : Bool,
   format~ : @wgpu.TextureFormat,
   sample_format~ : @wgpu.TextureFormat?,
+  sample_count? : Int = 1,
 ) -> Int {
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_render_target_with_formats(
-        width, height, nearest, format, sample_format,
+        width,
+        height,
+        nearest,
+        format,
+        sample_format,
+        sample_count~,
       )
     } catch {
       _ => ()

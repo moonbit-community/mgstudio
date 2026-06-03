@@ -87,7 +87,7 @@ pub fn begin_frame(Int) -> Int
 
 pub fn begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
-pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], mesh3d_lights_uniform_bytes? : Bytes?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, deband_dither_enabled? : Bool, prepass_normal_texture_id? : Int, prepass_motion_vector_texture_id? : Int, prepass_deferred_texture_id? : Int, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], mesh3d_lights_uniform_bytes? : Bytes?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, deband_dither_enabled? : Bool, prepass_depth_texture_id? : Int, prepass_normal_texture_id? : Int, prepass_motion_vector_texture_id? : Int, prepass_deferred_texture_id? : Int, msaa_sample_count? : Int, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
@@ -100,6 +100,8 @@ pub fn clear_scissor() -> Unit
 pub fn clear_stale_meshlet_view_visibility_buffers(Array[UInt64]) -> Unit
 
 pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
+
+pub fn create_depth_prepass_target(width~ : Int, height~ : Int, sample_count? : Int) -> Int
 
 pub fn create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
 
@@ -125,11 +127,11 @@ pub fn create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
-pub fn create_render_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+pub fn create_render_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
-pub fn create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+pub fn create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
-pub fn create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?) -> Int
+pub fn create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int
 
 pub fn create_surface(Int) -> Int
 
@@ -466,6 +468,7 @@ pub struct GpuBackend {
   mut depth_target_id : Int
   mut depth_width : Int
   mut depth_height : Int
+  mut depth_sample_count : Int
   mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
   mut sprite_bgl_globals : @wgpu_mbt.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
@@ -799,10 +802,15 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_instance_mesh_morph_target_texture_id : Int
   mut mesh3d_motion_vector_instance_mesh_layout_mask : Int
   mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
+  mut motion_blur_bgl_msaa : @wgpu_mbt.BindGroupLayout?
   mut motion_blur_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut motion_blur_pipeline_layout_msaa : @wgpu_mbt.PipelineLayout?
   mut motion_blur_pipeline : @wgpu_mbt.RenderPipeline?
+  mut motion_blur_pipeline_msaa : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut motion_blur_pipeline_surface_msaa : @wgpu_mbt.RenderPipeline?
+  mut motion_blur_pipeline_surface_msaa_format : @wgpu_mbt.TextureFormat?
   mut motion_blur_sampler : @wgpu_mbt.Sampler?
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
@@ -894,6 +902,7 @@ pub struct GpuBackend {
   surfaces : Array[GpuSurfaceState]
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
+  prepass_depth_textures : Array[GpuPrepassDepthTextureInfo]
   meshes : Array[GpuMeshInfo]
   mesh_allocator : @Milky2018/mgstudio/render/mesh.MeshAllocator
   mesh_allocator_buffers : Array[GpuMeshAllocatorBuffer]
@@ -904,7 +913,7 @@ pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Flo
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_frame_binding(Self, Int) -> Bool
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Float, Array[Float], Bytes?, Bool, Int, Int, Int, Int, Bool, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Float, Array[Float], Bytes?, Bool, Int, Int, Int, Int, Bool, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_with_depth(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::build_mesh3d_indirect_parameters(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
@@ -912,6 +921,7 @@ pub fn GpuBackend::clear_stale_meshlet_view_visibility_buffers(Self, Array[UInt6
 pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
+pub fn GpuBackend::create_depth_prepass_target(Self, Int, Int, sample_count? : Int) -> Int
 pub fn GpuBackend::create_directional_light_shadow_target(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_mesh2d_vertex_buffer(Self, Bytes, Int, Array[Int], Int, @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
 pub fn GpuBackend::create_mesh3d_morph_target_texture(Self, Int, Int, Int, Array[Float]) -> Int raise GpuBackendError
@@ -924,9 +934,9 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_point_light_shadow_target(Self, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, @wgpu_mbt.TextureFormat, @wgpu_mbt.TextureFormat?) -> Int raise GpuBackendError
+pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
+pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
+pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, @wgpu_mbt.TextureFormat, @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, Int) -> Unit
 pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes]) -> Int raise GpuBackendError
@@ -1062,9 +1072,11 @@ pub struct GpuPassState {
   target_id : Int
   target_layer : Int
   secondary_target_id : Int
+  prepass_depth_texture_id : Int
   prepass_normal_texture_id : Int
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
+  msaa_sample_count : Int
   width_logical : Float
   height_logical : Float
   is_3d : Bool
@@ -1161,6 +1173,8 @@ pub fn GpuPassState::secondary_target_id(Self) -> Int
 pub fn GpuPassState::target_id(Self) -> Int
 pub fn GpuPassState::target_layer(Self) -> Int
 pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
+
+type GpuPrepassDepthTextureInfo
 
 type GpuStorageSlot
 

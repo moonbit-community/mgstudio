@@ -36,6 +36,7 @@ pub struct GpuBackend {
   mut depth_target_id : Int
   mut depth_width : Int
   mut depth_height : Int
+  mut depth_sample_count : Int
   mut sprite_bgl_tex : @wgpu.BindGroupLayout?
   mut sprite_bgl_globals : @wgpu.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu.PipelineLayout?
@@ -379,10 +380,15 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_instance_mesh_morph_target_texture_id : Int
   mut mesh3d_motion_vector_instance_mesh_layout_mask : Int
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
+  mut motion_blur_bgl_msaa : @wgpu.BindGroupLayout?
   mut motion_blur_pipeline_layout : @wgpu.PipelineLayout?
+  mut motion_blur_pipeline_layout_msaa : @wgpu.PipelineLayout?
   mut motion_blur_pipeline : @wgpu.RenderPipeline?
+  mut motion_blur_pipeline_msaa : @wgpu.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu.RenderPipeline?
   mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
+  mut motion_blur_pipeline_surface_msaa : @wgpu.RenderPipeline?
+  mut motion_blur_pipeline_surface_msaa_format : @wgpu.TextureFormat?
   mut motion_blur_sampler : @wgpu.Sampler?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
@@ -476,6 +482,7 @@ pub struct GpuBackend {
   surfaces : Array[GpuSurfaceState]
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
+  prepass_depth_textures : Array[GpuPrepassDepthTextureInfo]
   meshes : Array[GpuMeshInfo]
   mesh_allocator : @render_mesh.MeshAllocator
   mesh_allocator_buffers : Array[GpuMeshAllocatorBuffer]
