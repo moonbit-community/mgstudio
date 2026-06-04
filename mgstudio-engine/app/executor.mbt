@@ -86,7 +86,7 @@ fn run_systems(
       None
     }
   }
-  begin_deferred_command_batch()
+  begin_deferred_command_batch(world)
   let executor_state = match executor_state {
     Some(state) => {
       state.prepare_run(

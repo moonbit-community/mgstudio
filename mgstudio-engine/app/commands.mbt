@@ -57,16 +57,47 @@ priv struct DeferredCommandRuntimeState {
 }
 
 ///|
-let deferred_command_runtime_state : DeferredCommandRuntimeState = {
-  batch_queue: None,
+let deferred_command_runtime_state_resource_key : @ecs.ResourceKey[
+  DeferredCommandRuntimeState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_app::DeferredCommandRuntimeState",
+)
+
+///|
+fn deferred_command_runtime_state_new() -> DeferredCommandRuntimeState {
+  DeferredCommandRuntimeState::{ batch_queue: None }
 }
 
 ///|
-fn begin_deferred_command_batch() -> Unit {
-  match deferred_command_runtime_state.batch_queue {
-    Some(_) => ()
-    None => deferred_command_runtime_state.batch_queue = Some([])
+fn ensure_deferred_command_runtime_state(world : @ecs.World) -> Unit {
+  if world.get_resource(deferred_command_runtime_state_resource_key) is None {
+    world.insert_resource(
+      deferred_command_runtime_state_resource_key,
+      deferred_command_runtime_state_new(),
+    )
   }
+}
+
+///|
+fn[R] modify_deferred_command_runtime_state(
+  world : @ecs.World,
+  f : (DeferredCommandRuntimeState) -> R,
+) -> R {
+  ensure_deferred_command_runtime_state(world)
+  match world.get_resource_mut(deferred_command_runtime_state_resource_key) {
+    Some(state) => state.modify(f)
+    None => abort("deferred command runtime state resource is missing")
+  }
+}
+
+///|
+fn begin_deferred_command_batch(world : @ecs.World) -> Unit {
+  modify_deferred_command_runtime_state(world, fn(state) {
+    match state.batch_queue {
+      Some(_) => ()
+      None => state.batch_queue = Some([])
+    }
+  })
 }
 
 ///|
@@ -81,16 +112,17 @@ pub fn queue_deferred_world_action(
     error_handler: None,
     source,
   }
-  match deferred_command_runtime_state.batch_queue {
-    Some(entries) => entries.push((tick, entry))
-    None => flush_deferred_command_entries(world, [(tick, entry)])
-  }
+  append_deferred_command_entries(world, [(tick, entry)])
 }
 
 ///|
-fn deferred_command_batch_has_entries() -> Bool {
-  match deferred_command_runtime_state.batch_queue {
-    Some(entries) => entries.length() > 0
+fn deferred_command_batch_has_entries(world : @ecs.World) -> Bool {
+  match world.get_resource(deferred_command_runtime_state_resource_key) {
+    Some(state) =>
+      match state.batch_queue {
+        Some(entries) => entries.length() > 0
+        None => false
+      }
     None => false
   }
 }
@@ -120,12 +152,39 @@ fn flush_deferred_command_entries(
 }
 
 ///|
+fn append_deferred_command_entries(
+  world : @ecs.World,
+  entries : Array[(@core.Tick, DeferredCommandEntry)],
+) -> Unit {
+  if entries.length() == 0 {
+    return
+  }
+  let should_flush_now : Ref[Bool] = Ref(false)
+  modify_deferred_command_runtime_state(world, fn(state) {
+    match state.batch_queue {
+      Some(batch) =>
+        for entry in entries {
+          batch.push(entry)
+        }
+      None => should_flush_now.val = true
+    }
+  })
+  if should_flush_now.val {
+    flush_deferred_command_entries(world, entries)
+  }
+}
+
+///|
 fn end_deferred_command_batch(world : @ecs.World) -> Unit {
-  match deferred_command_runtime_state.batch_queue {
+  let entries_ref : Ref[Array[(@core.Tick, DeferredCommandEntry)]?] = Ref(None)
+  modify_deferred_command_runtime_state(world, fn(state) {
+    entries_ref.val = state.batch_queue
+    state.batch_queue = None
+  })
+  match entries_ref.val {
     Some(entries) => flush_deferred_command_entries(world, entries)
     None => ()
   }
-  deferred_command_runtime_state.batch_queue = None
 }
 
 ///|
@@ -588,16 +647,6 @@ pub fn[
 }
 
 ///|
-fn Commands::flush(self : Commands) -> Unit {
-  let entries : Array[(@core.Tick, DeferredCommandEntry)] = []
-  for entry in self.queue {
-    entries.push((self.tick, entry))
-  }
-  flush_deferred_command_entries(self.world, entries)
-  self.queue.clear()
-}
-
-///|
 pub impl SystemParam for Commands with fn init_state(world) {
   system_param_empty_state(world)
 }
@@ -613,15 +662,12 @@ pub impl SystemParam for Commands with fn get(_state) {
 
 ///|
 pub impl SystemParam for Commands with fn store(self, state) {
-  match deferred_command_runtime_state.batch_queue {
-    Some(entries) => {
-      for entry in self.queue {
-        entries.push((self.tick, entry))
-      }
-      self.queue.clear()
-    }
-    None => self.flush()
+  let entries : Array[(@core.Tick, DeferredCommandEntry)] = []
+  for entry in self.queue {
+    entries.push((self.tick, entry))
   }
+  append_deferred_command_entries(self.world, entries)
+  self.queue.clear()
   system_param_store_no_state(self, state)
 }
 

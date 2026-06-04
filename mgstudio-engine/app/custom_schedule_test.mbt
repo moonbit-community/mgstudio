@@ -324,6 +324,49 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
 }
 
 ///|
+test "app: deferred command batches are scoped to the executing world" {
+  let outer_stage = schedule_label("DeferredBatchOuterWorld")
+  let inner_stage = schedule_label("DeferredBatchInnerWorld")
+  let nested_ref : Ref[SubApp[@ecs.World]] = Ref(
+    SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(inner_stage))
+    .add_schedule(Schedule::new(inner_stage).set_executor_kind(SingleThreaded))
+    .add_systems(inner_stage, system(fn(_world : @ecs.World) { () })),
+  )
+  let mut outer_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(outer_stage))
+    .add_schedule(Schedule::new(outer_stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      outer_stage,
+      system(fn(_world : @ecs.World) {
+        queue_deferred_world_action(
+          fn(world) {
+            let entity = world.spawn_empty()
+            world.set_by_key(entity, schedule_batch_marker_key, ScheduleBatchMarker::{
+
+            }) catch {
+              _ => abort("failed to insert deferred schedule batch marker")
+            }
+          },
+          source="test::deferred_command_batches_are_world_scoped",
+        )
+        nested_ref.val = nested_ref.val.update()
+      }),
+    )
+
+  outer_app = outer_app.update()
+
+  let outer_query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    outer_app.world(),
+  )
+  let inner_query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    nested_ref.val.world(),
+  )
+  debug_inspect(outer_query.count(), content="1")
+  debug_inspect(inner_query.count(), content="0")
+}
+
+///|
 test "app: configure_sets before_ignore_deferred preserves order without forcing sync" {
   let stage = schedule_label("SetIgnoreDeferredUpdate")
   let observed : Array[Int] = []

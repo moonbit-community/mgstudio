@@ -2579,7 +2579,7 @@ pub fn[W] SystemConfig::after_ignore_deferred(
 pub fn apply_deferred_system() -> SystemConfig[@ecs.World] {
   let config = system(fn(world : @ecs.World) {
     end_deferred_command_batch(world)
-    begin_deferred_command_batch()
+    begin_deferred_command_batch(world)
   })
   SystemConfig::{
     ..config,
@@ -2594,7 +2594,7 @@ fn[W] auto_apply_deferred_system(sync_i : Int) -> SystemConfig[W] {
   let config = system(fn(_world : W) {
     let world = current_world_or_abort()
     end_deferred_command_batch(world)
-    begin_deferred_command_batch()
+    begin_deferred_command_batch(world)
   })
   SystemConfig::{
     ..config,

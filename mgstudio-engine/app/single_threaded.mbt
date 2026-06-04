@@ -142,13 +142,13 @@ fn SingleThreadedExecutorState::apply_deferred(
       break
     }
   }
-  if has_unapplied || deferred_command_batch_has_entries() {
+  if has_unapplied || deferred_command_batch_has_entries(world) {
     end_deferred_command_batch(world)
   }
   for i in 0..<self.unapplied_systems.length() {
     self.unapplied_systems[i] = false
   }
   if restart_batch {
-    begin_deferred_command_batch()
+    begin_deferred_command_batch(world)
   }
 }
