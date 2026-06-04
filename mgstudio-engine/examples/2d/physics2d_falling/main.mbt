@@ -44,9 +44,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(8.0F, 0.5F),
     z=0.0F,
   )
-  let floor = @sprite.SpriteBundle::new(floor_sprite, floor_transform).spawn(
-    world,
-  )
+  let floor = try! world.spawn_bundle((floor_sprite, floor_transform))
   try! world.set_by_key(
     floor,
     @physics2d.ecs_key_rigid_body2d,
@@ -74,7 +72,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.3F, 0.3F),
     z=1.0F,
   )
-  let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
+  let ball = try! world.spawn_bundle((ball_sprite, ball_transform))
   try! world.set_by_key(
     ball,
     @physics2d.ecs_key_rigid_body2d,

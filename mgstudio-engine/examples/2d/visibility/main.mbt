@@ -59,10 +59,9 @@ fn visibility_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @sprite.Sprite::from_image(texture)
-  let child = @sprite.SpriteBundle::new(
-    sprite,
-    @transform.Transform::identity(),
-  ).spawn(world)
+  let child = try! world.spawn_bundle(
+    (sprite, @transform.Transform::identity()),
+  )
   try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,

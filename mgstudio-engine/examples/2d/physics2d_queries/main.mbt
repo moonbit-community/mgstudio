@@ -77,9 +77,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(8.0F, 0.5F),
     z=0.0F,
   )
-  let floor = @sprite.SpriteBundle::new(floor_sprite, floor_transform).spawn(
-    world,
-  )
+  let floor = try! world.spawn_bundle((floor_sprite, floor_transform))
   try! world.set_by_key(
     floor,
     @physics2d.ecs_key_rigid_body2d,
@@ -101,7 +99,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.3F, 0.3F),
     z=1.0F,
   )
-  let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
+  let ball = try! world.spawn_bundle((ball_sprite, ball_transform))
   try! world.set_by_key(
     ball,
     @physics2d.ecs_key_rigid_body2d,
@@ -135,9 +133,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
     z=2.0F,
   )
-  let ray_line = @sprite.SpriteBundle::new(ray_line_sprite, ray_line_transform).spawn(
-    world,
-  )
+  let ray_line = try! world.spawn_bundle((ray_line_sprite, ray_line_transform))
 
   // Visible hit marker.
   let hit_marker_sprite = @sprite.Sprite::from_image(texture).with_color(
@@ -149,9 +145,9 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.14F, 0.14F),
     z=3.0F,
   )
-  let hit_marker = @sprite.SpriteBundle::new(
-    hit_marker_sprite, hit_marker_transform,
-  ).spawn(world)
+  let hit_marker = try! world.spawn_bundle(
+    (hit_marker_sprite, hit_marker_transform),
+  )
 
   query_state.val.phase = 0.0F
   query_state.val.ray_line = Some(ray_line)

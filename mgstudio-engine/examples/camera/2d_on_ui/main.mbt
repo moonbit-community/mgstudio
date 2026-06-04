@@ -65,7 +65,7 @@ fn setup(
 
   ignore(
     commands.spawn(
-      @sprite.SpriteBundle::new_with_layers(
+      (
         @sprite.Sprite::from_image(
           asset_server.get().load("textures/rpg/chars/sensei/sensei.png"),
         ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),

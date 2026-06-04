@@ -108,7 +108,7 @@ fn ldtk_spawn_background_image(
       1.0F,
     ),
   )
-  let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
+  let entity = try! world.spawn_bundle((sprite, transform))
   try! world.set_by_key(
     entity,
     @hierarchy.ecs_key_parent,
@@ -133,7 +133,7 @@ fn ldtk_spawn_level_background(
     layer_z,
   )
   let sprite = @sprite.Sprite::sized(size).with_color(level.bg_color)
-  let background = @sprite.SpriteBundle::new(sprite, translation).spawn(world)
+  let background = try! world.spawn_bundle((sprite, translation))
   try! world.set_by_key(
     background,
     @hierarchy.ecs_key_parent,
@@ -280,10 +280,12 @@ fn ldtk_spawn_tile_entities(
       @math.IVec2::new(safe_grid_size, safe_grid_size),
     )
     let sprite = ldtk_tile_sprite(tile, layer_instance, tileset)
-    let tile_entity = @sprite.SpriteBundle::new(
-      sprite,
-      @transform.Transform::from_xyz(translation.x, translation.y, z_offset),
-    ).spawn(world)
+    let tile_entity = try! world.spawn_bundle(
+      (
+        sprite,
+        @transform.Transform::from_xyz(translation.x, translation.y, z_offset),
+      ),
+    )
     try! world.set_by_key(tile_entity, ecs_key_grid_coords, grid_coords)
     try! world.set_by_key(
       tile_entity,
@@ -387,10 +389,9 @@ fn ldtk_spawn_int_grid_entities(
               ldtk_int_grid_color(layer_definition_map, layer_instance, value),
             )
         }
-        let sprite_entity = @sprite.SpriteBundle::new(
-          sprite,
-          @transform.Transform::identity(),
-        ).spawn(world)
+        let sprite_entity = try! world.spawn_bundle(
+          (sprite, @transform.Transform::identity()),
+        )
         try! world.set_by_key(
           sprite_entity,
           @hierarchy.ecs_key_parent,

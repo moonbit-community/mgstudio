@@ -599,7 +599,7 @@ fn spawn_animated_mesh(
   let area_size = app_status.animated_mesh_area_size(window_size)
   let image_size = app_status.animated_mesh_size(window_size)
   let entity = commands.spawn(
-    @sprite.SpriteBundle::new(
+    (
       @sprite.Sprite::from_image(source_texture).with_custom_size(
         Some(@math.Vec2::new(1.0F, 1.0F)),
       ),
@@ -644,7 +644,7 @@ fn spawn_mip_level_views(
     let y_center = y_origin - y_spacing * int_to_float(i)
 
     let sprite_entity = commands.spawn(
-      @sprite.SpriteBundle::new(
+      (
         @sprite.Sprite::from_image(textures[i]).with_custom_size(
           Some(@math.Vec2::new(1.0F, 1.0F)),
         ),

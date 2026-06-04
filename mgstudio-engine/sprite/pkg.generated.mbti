@@ -938,21 +938,6 @@ pub(all) enum SpriteAlphaMode {
 } derive(Eq, @debug.Debug)
 pub fn SpriteAlphaMode::default() -> Self
 
-pub struct SpriteBundle {
-  sprite : Sprite
-  anchor : Anchor
-  transform : @transform.Transform
-  layers : @render_layers.RenderLayers
-  visibility : @visibility.Visibility
-  inherited_visibility : @visibility.InheritedVisibility
-  view_visibility : @visibility.ViewVisibility
-}
-pub fn SpriteBundle::new(Sprite, @transform.Transform) -> Self
-pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, @render_layers.RenderLayers) -> Self
-#callsite(autofill(loc))
-pub fn SpriteBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
-pub impl @ecs.Bundle for SpriteBundle
-
 pub(all) enum SpriteImageMode {
   Auto
   Scale(SpriteScalingMode)

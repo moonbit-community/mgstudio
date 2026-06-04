@@ -77,29 +77,33 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
     let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
     let index_a = sources.texture_index(texture_a).unwrap_or(-1)
     let index_b = sources.texture_index(texture_b).unwrap_or(-1)
-    let entity_a = @sprite.SpriteBundle::new(
-      @sprite.Sprite::from_atlas_image(
-        atlas_texture,
-        @asset.TextureAtlas::new(layout_handle, index_a),
+    let entity_a = try! world.spawn_bundle(
+      (
+        @sprite.Sprite::from_atlas_image(
+          atlas_texture,
+          @asset.TextureAtlas::new(layout_handle, index_a),
+        ),
+        @transform.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(-160.0F, 0.0F),
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
       ),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-160.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
-    ).spawn(world)
+    )
     entity_a |> ignore
-    let entity_b = @sprite.SpriteBundle::new(
-      @sprite.Sprite::from_atlas_image(
-        atlas_texture,
-        @asset.TextureAtlas::new(layout_handle, index_b),
+    let entity_b = try! world.spawn_bundle(
+      (
+        @sprite.Sprite::from_atlas_image(
+          atlas_texture,
+          @asset.TextureAtlas::new(layout_handle, index_b),
+        ),
+        @transform.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(160.0F, 0.0F),
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
       ),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(160.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
-    ).spawn(world)
+    )
     entity_b |> ignore
     builder_state.val.built = true
   }

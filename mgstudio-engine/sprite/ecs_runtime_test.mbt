@@ -224,14 +224,15 @@ fn test_image_material_handle(id : Int) -> @asset.Handle[ColorMaterialAsset] {
 }
 
 ///|
-test "render2d: SpriteBundle::spawn inserts expected components" {
-  let world = @ecs.World::new()
-  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
-  let bundle = SpriteBundle::new(
-    Sprite::from_image(image),
-    @transform.Transform::identity(),
+test "render2d: Sprite tuple spawn inserts required components" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @visibility.VisibilityPlugin::VisibilityPlugin(),
   )
-  let entity = bundle.spawn(world)
+  let world = app.world()
+  ensure_render2d_required_components(world)
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
+  let transform = @transform.Transform::identity()
+  let entity = try! world.spawn_bundle((Sprite::from_image(image), transform))
 
   debug_inspect(world.is_alive(entity), content="true")
   debug_inspect(
@@ -240,12 +241,6 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_anchor),
-    content="true",
-  )
-  debug_inspect(
-    ecs_has_non_null_payload(
-      world, entity, @camera_render_layers.ecs_key_render_layers,
-    ),
     content="true",
   )
   debug_inspect(
@@ -263,9 +258,12 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_transform_matches(world, entity, bundle.transform),
+    ecs_has_non_null_payload(
+      world, entity, @render.ecs_key_sync_to_render_world,
+    ),
     content="true",
   )
+  debug_inspect(ecs_transform_matches(world, entity, transform), content="true")
 }
 
 ///|
@@ -282,23 +280,28 @@ test "render2d: Sprite::sized uses the white texture handle" {
 }
 
 ///|
-test "render2d: Commands can spawn SpriteBundle" {
+test "render2d: Commands can spawn Sprite component tuples" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let bundle = SpriteBundle::new_with_layers(
-    Sprite::from_image(@asset.Handle::new(7)),
-    @transform.Transform::identity(),
-    @camera_render_layers.RenderLayers::layer(2),
+  let transform = @transform.Transform::identity()
+  let layers = @camera_render_layers.RenderLayers::layer(2)
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    @visibility.VisibilityPlugin::VisibilityPlugin(),
   )
-  let mut app = @app.App::new(@ecs.World::new()).add_system_param(fn(
-    commands : @app.Commands,
-  ) {
-    spawned.val = Some(commands.spawn(bundle))
+  ensure_render2d_required_components(app.world())
+  app = app.add_system_param(fn(commands : @app.Commands) {
+    spawned.val = Some(
+      commands.spawn(
+        (Sprite::from_image(@asset.Handle::new(7)), transform, layers),
+      ),
+    )
   })
 
   app = app.run_once()
 
   guard spawned.val is Some(entity) else {
-    abort("expected Commands::spawn(SpriteBundle) to return an entity")
+    abort(
+      "expected Commands::spawn((Sprite, Transform, RenderLayers)) to return an entity",
+    )
   }
   debug_inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_sprite),
@@ -313,7 +316,7 @@ test "render2d: Commands can spawn SpriteBundle" {
     content="true",
   )
   debug_inspect(
-    ecs_transform_matches(app.world(), entity, bundle.transform),
+    ecs_transform_matches(app.world(), entity, transform),
     content="true",
   )
 }

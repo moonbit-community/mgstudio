@@ -687,50 +687,6 @@ fn mesh_asset_set(
 }
 
 ///|
-pub struct SpriteBundle {
-  sprite : Sprite
-  anchor : Anchor
-  transform : @transform.Transform
-  layers : RenderLayers
-  visibility : @visibility.Visibility
-  inherited_visibility : @visibility.InheritedVisibility
-  view_visibility : @visibility.ViewVisibility
-}
-
-///|
-pub fn SpriteBundle::new(
-  sprite : Sprite,
-  transform : @transform.Transform,
-) -> SpriteBundle {
-  SpriteBundle::{
-    sprite,
-    anchor: Anchor::Anchor(),
-    transform,
-    layers: RenderLayers::RenderLayers(),
-    visibility: @visibility.Visibility::Inherited,
-    inherited_visibility: @visibility.InheritedVisibility::new(true),
-    view_visibility: @visibility.ViewVisibility::new(true),
-  }
-}
-
-///|
-pub fn SpriteBundle::new_with_layers(
-  sprite : Sprite,
-  transform : @transform.Transform,
-  layers : RenderLayers,
-) -> SpriteBundle {
-  SpriteBundle::{
-    sprite,
-    anchor: Anchor::Anchor(),
-    transform,
-    layers,
-    visibility: @visibility.Visibility::Inherited,
-    inherited_visibility: @visibility.InheritedVisibility::new(true),
-    view_visibility: @visibility.ViewVisibility::new(true),
-  }
-}
-
-///|
 pub struct Camera2dBundle {
   camera : Camera
   projection : Projection
@@ -2539,57 +2495,6 @@ pub fn render2d_create_render_target(
     res.insert(rs)
   }
   @asset.Handle::new(id)
-}
-
-///|
-fn sprite_bundle_insert(
-  bundle : SpriteBundle,
-  world : @ecs.World,
-  entity : @core.Entity,
-  loc~ : SourceLoc,
-) -> Unit raise @ecs.EcsError {
-  world.set_by_key(entity, ecs_key_sprite, bundle.sprite, loc~)
-  world.set_by_key(entity, ecs_key_anchor, bundle.anchor, loc~)
-  world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    bundle.visibility,
-    loc~,
-  )
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_inherited_visibility,
-    bundle.inherited_visibility,
-    loc~,
-  )
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    bundle.view_visibility,
-    loc~,
-  )
-  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
-}
-
-///|
-#callsite(autofill(loc))
-pub fn SpriteBundle::spawn(
-  self : SpriteBundle,
-  world : @ecs.World,
-  loc~ : SourceLoc,
-) -> @core.Entity {
-  try! world.spawn_bundle(self, loc~)
-}
-
-///|
-pub impl @ecs.Bundle for SpriteBundle with fn insert_into(
-  self,
-  world,
-  entity,
-  loc~,
-) {
-  sprite_bundle_insert(self, world, entity, loc~)
 }
 
 ///|

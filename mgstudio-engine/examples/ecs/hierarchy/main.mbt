@@ -39,33 +39,39 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let parent = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture),
-    @transform.Transform::identity().with_scale(@math.Vec3::splat(0.75F)),
-  ).spawn(world)
+  let parent = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture),
+      @transform.Transform::identity().with_scale(@math.Vec3::splat(0.75F)),
+    ),
+  )
 
-  let first_child = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture).with_color(
-      @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+  let first_child = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture).with_color(
+        @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+      ),
+      @transform.Transform::from_xyz(250.0F, 0.0F, 0.0F).with_scale(
+        @math.Vec3::splat(0.75F),
+      ),
     ),
-    @transform.Transform::from_xyz(250.0F, 0.0F, 0.0F).with_scale(
-      @math.Vec3::splat(0.75F),
-    ),
-  ).spawn(world)
+  )
   try! world.set_by_key(
     first_child,
     @mg_hierarchy.ecs_key_parent,
     @mg_hierarchy.Parent::new(parent),
   )
 
-  let second_child = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture).with_color(
-      @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+  let second_child = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture).with_color(
+        @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+      ),
+      @transform.Transform::from_xyz(0.0F, 250.0F, 0.0F).with_scale(
+        @math.Vec3::splat(0.75F),
+      ),
     ),
-    @transform.Transform::from_xyz(0.0F, 250.0F, 0.0F).with_scale(
-      @math.Vec3::splat(0.75F),
-    ),
-  ).spawn(world)
+  )
   try! world.set_by_key(
     second_child,
     @mg_hierarchy.ecs_key_parent,

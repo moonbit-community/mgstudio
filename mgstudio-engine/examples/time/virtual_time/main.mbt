@@ -135,28 +135,32 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let real_sprite = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture).with_custom_size(
-      Some(@math.Vec2::new(256.0F, 256.0F)),
+  let real_sprite = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture).with_custom_size(
+        Some(@math.Vec2::new(256.0F, 256.0F)),
+      ),
+      @transform.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(0.5F, 0.5F),
+      ),
     ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(0.5F, 0.5F),
-    ),
-  ).spawn(world)
+  )
   try! world.set_by_key(real_sprite, RealTime::component(), RealTime::{  })
 
-  let virtual_sprite = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
-    .with_custom_size(Some(@math.Vec2::new(256.0F, 256.0F))),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, -160.0F),
-      0.0F,
-      @math.Vec2::new(0.5F, 0.5F),
+  let virtual_sprite = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture)
+      .with_color(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
+      .with_custom_size(Some(@math.Vec2::new(256.0F, 256.0F))),
+      @transform.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, -160.0F),
+        0.0F,
+        @math.Vec2::new(0.5F, 0.5F),
+      ),
     ),
-  ).spawn(world)
+  )
   try! world.set_by_key(virtual_sprite, VirtualTime::component(), VirtualTime::{
 
   })

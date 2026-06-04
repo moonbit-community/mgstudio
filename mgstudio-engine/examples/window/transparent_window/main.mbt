@@ -48,9 +48,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
   let asset_server = @asset.AssetServer::new()
-  @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(asset_server.load("branding/icon.png")),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(asset_server.load("branding/icon.png")),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 }

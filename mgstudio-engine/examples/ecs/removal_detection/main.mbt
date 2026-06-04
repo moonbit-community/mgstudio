@@ -43,10 +43,12 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let sprite = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(asset_server.load_image("branding/icon.png")),
-    @transform.Transform::identity(),
-  ).spawn(world)
+  let sprite = try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(asset_server.load_image("branding/icon.png")),
+      @transform.Transform::identity(),
+    ),
+  )
   try! world.set_by_key(sprite, my_component_key, MyComponent::{  })
 }
 

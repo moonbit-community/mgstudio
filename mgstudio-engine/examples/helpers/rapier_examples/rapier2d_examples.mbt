@@ -55,19 +55,21 @@ pub fn rapier2d_spawn_sprite_box(
   z : Float,
   color : @sprite.Color,
 ) -> @core.Entity {
-  @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture)
-    .with_color(color)
-    .with_custom_size(
-      Some(@math.Vec2::new(half_size.x * 2.0F, half_size.y * 2.0F)),
+  try! world.spawn_bundle(
+    (
+      @sprite.Sprite::from_image(texture)
+      .with_color(color)
+      .with_custom_size(
+        Some(@math.Vec2::new(half_size.x * 2.0F, half_size.y * 2.0F)),
+      ),
+      @transform.Transform::from_xy_rotation_scale(
+        position,
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z~,
+      ),
     ),
-    @transform.Transform::from_xy_rotation_scale(
-      position,
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z~,
-    ),
-  ).spawn(world)
+  )
 }
 
 ///|
