@@ -1,12 +1,12 @@
 import {
   "Milky2018/mgstudio/camera/computed_camera_values" @camera_computed,
+  "Milky2018/mgstudio/camera/clear_color" @camera_clear_color,
   "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/core_pipeline",
-  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/camera/visibility" @camera_visibility,
   "Milky2018/mgstudio/math",

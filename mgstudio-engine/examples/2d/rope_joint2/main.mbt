@@ -25,9 +25,11 @@ fn rapier2d_rope_joint2_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   world
-  .resource(@sprite.ClearColor::resource())
+  .resource(@camera_clear_color.ClearColor::resource())
   .insert(
-    @sprite.ClearColor::new(@sprite.Color::new(0.87F, 0.92F, 0.96F, 1.0F)),
+    @camera_clear_color.ClearColor::new(
+      @sprite.Color::new(0.87F, 0.92F, 0.96F, 1.0F),
+    ),
   )
   @sprite.Camera2dBundle::new(
     @sprite.Camera::Camera(),

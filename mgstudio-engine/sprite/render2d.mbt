@@ -64,6 +64,12 @@ type RenderTargetInfo = @camera_computed.RenderTargetInfo
 type ComputedCameraValues = @camera_computed.ComputedCameraValues
 
 ///|
+type ClearColor = @camera_clear_color.ClearColor
+
+///|
+type ClearColorConfig = @camera_clear_color.ClearColorConfig
+
+///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
 /// camera's view (top-left origin).
 ///
@@ -200,59 +206,6 @@ pub impl Default for Anchor with fn default() {
 }
 
 ///|
-pub struct ClearColor {
-  color : Color
-}
-
-///|
-pub fn ClearColor::new(color : Color) -> ClearColor {
-  ClearColor::{ color, }
-}
-
-///|
-pub fn ClearColor::ClearColor() -> ClearColor {
-  // Match Bevy's default `ClearColor` (`bevy_camera::clear_color`):
-  // Color::srgb_u8(43, 44, 47)
-  ClearColor::{
-    color: Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
-  }
-}
-
-///|
-pub impl Default for ClearColor with fn default() {
-  ClearColor::ClearColor()
-}
-
-///|
-fn clear_color_default_value() -> Color {
-  ClearColor::ClearColor().color
-}
-
-///|
-let clear_color_resource_key : @ecs.ResourceKey[ClearColor] = @ecs.register_resource(
-  debug_name="mgstudio_render::ClearColor",
-)
-
-///|
-pub impl @app.Resource for ClearColor with fn resource() {
-  clear_color_resource_key
-}
-
-///|
-fn clear_color_current_value() -> Color {
-  match @app.current_world() {
-    Some(world) => {
-      let source_world = @render.render_source_world(world)
-      match source_world.get_resource(ClearColor::resource()) {
-        Some(clear_color) => clear_color.color
-        None => clear_color_default_value()
-      }
-    }
-    None => clear_color_default_value()
-  }
-}
-
-///|
 fn render2d_current_world_or_abort() -> @ecs.World {
   match @app.current_world() {
     Some(world) => world
@@ -302,28 +255,6 @@ pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 }
 
 ///|
-/// Mirrors Bevy's `ClearColorConfig` for per-camera clear behavior.
-pub(all) enum ClearColorConfig {
-  Default
-  Custom(Color)
-  None
-}
-
-///|
-pub fn ClearColorConfig::default() -> ClearColorConfig {
-  Default
-}
-
-///|
-pub fn ClearColorConfig::resolve(self : ClearColorConfig) -> (Bool, Color) {
-  match self {
-    Default => (true, clear_color_current_value())
-    Custom(color) => (true, color)
-    None => (false, Color::new(0.0F, 0.0F, 0.0F, 0.0F))
-  }
-}
-
-///|
 pub struct Camera {
   viewport : Viewport?
   order : Int
@@ -339,7 +270,7 @@ pub fn Camera::new(clear_color : Color) -> Camera {
     order: 0,
     is_active: true,
     computed: ComputedCameraValues::ComputedCameraValues(),
-    clear_color: Custom(clear_color),
+    clear_color: ClearColorConfig::Custom(clear_color),
   }
 }
 
@@ -371,7 +302,7 @@ pub fn Camera::clear_viewport(self : Camera) -> Camera {
 
 ///|
 pub fn Camera::with_clear_color(self : Camera, clear_color : Color) -> Camera {
-  Camera::{ ..self, clear_color: Custom(clear_color) }
+  Camera::{ ..self, clear_color: ClearColorConfig::Custom(clear_color) }
 }
 
 ///|
@@ -384,7 +315,7 @@ pub fn Camera::with_clear_color_config(
 
 ///|
 pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
-  Camera::{ ..self, clear_color: None }
+  Camera::{ ..self, clear_color: ClearColorConfig::None }
 }
 
 ///|

@@ -35,12 +35,12 @@ pub fn CameraProjectionPlugin::CameraProjectionPlugin() -> CameraProjectionPlugi
 }
 
 ///|
-pub impl @app.Plugin for CameraProjectionPlugin with name(_self) {
+pub impl @app.Plugin for CameraProjectionPlugin with fn name(_self) {
   CAMERA_PROJECTION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CameraProjectionPlugin with build(_self, app) {
+pub impl @app.Plugin for CameraProjectionPlugin with fn build(_self, app) {
   camera_projection_plugin(app)
 }
 
@@ -53,12 +53,12 @@ pub fn CameraPlugin::CameraPlugin() -> CameraPlugin {
 }
 
 ///|
-pub impl @app.Plugin for CameraPlugin with name(_self) {
+pub impl @app.Plugin for CameraPlugin with fn name(_self) {
   CAMERA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CameraPlugin with build(_self, app) {
+pub impl @app.Plugin for CameraPlugin with fn build(_self, app) {
   camera_plugin(app)
 }
 
@@ -77,7 +77,7 @@ pub fn camera_projection_plugin(
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { @sprite.ClearColor::ClearColor() })
+  .init_resource(fn() { @camera_clear_color.ClearColor::ClearColor() })
   .add_plugins(CameraProjectionPlugin::CameraProjectionPlugin())
   .add_plugins(@camera_visibility.VisibilityPlugin::VisibilityPlugin())
   .add_plugins(

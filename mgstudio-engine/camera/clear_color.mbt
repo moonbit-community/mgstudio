@@ -16,28 +16,24 @@
 // Bevy source: `bevy/crates/bevy_camera/src/clear_color.rs`.
 
 ///|
-pub fn camera_clear_color_default() -> @sprite.ClearColor {
-  @sprite.ClearColor::ClearColor()
-}
+pub using @camera_clear_color {type ClearColor}
 
 ///|
-pub fn camera_clear_color_config_default() -> @sprite.ClearColorConfig {
-  @sprite.ClearColorConfig::default()
-}
+pub using @camera_clear_color {type ClearColorConfig}
+
+///|
+pub using @camera_clear_color {clear_color_current_value}
+
+///|
+pub using @camera_clear_color {ecs_key_clear_color_config}
+
+///|
+pub using @camera_clear_color {encode_clear_color_config}
+
+///|
+pub using @camera_clear_color {decode_clear_color_config}
 
 ///|
 pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback {
   @post_process.MsaaWriteback::default()
-}
-
-///|
-pub fn camera_clear_color_new(color : @color.Color) -> @sprite.ClearColor {
-  @sprite.ClearColor::new(color)
-}
-
-///|
-pub fn camera_clear_color_config_resolve(
-  config : @sprite.ClearColorConfig,
-) -> (Bool, @color.Color) {
-  config.resolve()
 }

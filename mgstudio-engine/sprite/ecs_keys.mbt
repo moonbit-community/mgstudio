@@ -109,11 +109,6 @@ pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @ecs.reg
 )
 
 ///|
-pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig] = @ecs.register_component(
-  debug_name="render2d.clear_color_config",
-)
-
-///|
 pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @ecs.register_component(
   debug_name="render2d.tilemap_chunk",
 )
@@ -196,11 +191,6 @@ pub impl @ecs.Component for Wireframe2dColor with fn component() {
 ///|
 pub impl @ecs.Component for Mesh2dWireframe with fn component() {
   ecs_key_mesh2d_wireframe
-}
-
-///|
-pub impl @ecs.Component for ClearColorConfig with fn component() {
-  ecs_key_clear_color_config
 }
 
 ///|
@@ -454,11 +444,7 @@ fn encode_computed_camera_values(computed : ComputedCameraValues) -> Json {
 
 ///|
 fn encode_clear_color_config(clear_color : ClearColorConfig) -> Json {
-  match clear_color {
-    Default => (0, Json::null()).to_json()
-    Custom(color) => (1, encode_color(color)).to_json()
-    None => (2, Json::null()).to_json()
-  }
+  @camera_clear_color.encode_clear_color_config(clear_color)
 }
 
 ///|
@@ -687,13 +673,7 @@ fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
 
 ///|
 fn decode_clear_color_config(json : Json) -> ClearColorConfig {
-  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
-  match tag {
-    0 => Default
-    1 => Custom(decode_color(payload))
-    2 => None
-    _ => Default
-  }
+  @camera_clear_color.decode_clear_color_config(json)
 }
 
 ///|
@@ -855,16 +835,6 @@ pub impl ToJson for ScissorRect with fn to_json(self) {
 ///|
 pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
   decode_scissor_rect(json)
-}
-
-///|
-pub impl ToJson for ClearColorConfig with fn to_json(self) {
-  encode_clear_color_config(self)
-}
-
-///|
-pub impl @json.FromJson for ClearColorConfig with fn from_json(json, _path) {
-  decode_clear_color_config(json)
 }
 
 ///|

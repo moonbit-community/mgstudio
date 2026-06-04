@@ -23,7 +23,7 @@ let context_menu_state_resource_key : @ecs.ResourceKey[ContextMenuState] = @ecs.
 )
 
 ///|
-pub impl @app.Resource for ContextMenuState with resource() {
+pub impl @app.Resource for ContextMenuState with fn resource() {
   context_menu_state_resource_key
 }
 
@@ -75,7 +75,7 @@ fn spawn_menu_item(
       commands : @app.Commands,
       state : @app.ResMut[ContextMenuState],
     ) {
-      commands.insert_resource(@sprite.ClearColor::new(clear_color))
+      commands.insert_resource(@camera_clear_color.ClearColor::new(clear_color))
       close_existing_menu(commands, state)
     }),
   )

@@ -16,7 +16,9 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(
-    @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
+    @camera_clear_color.ClearColor::new(
+      @sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F),
+    ),
   )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
@@ -39,11 +41,13 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn change_clear_color_system(
   input : @input.ButtonInput[@window.KeyCode],
-  clear_color : @app.ResMut[@sprite.ClearColor],
+  clear_color : @app.ResMut[@camera_clear_color.ClearColor],
 ) -> Unit {
   if input.just_pressed(Space) {
     clear_color.set(
-      @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F)),
+      @camera_clear_color.ClearColor::new(
+        @sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
+      ),
     )
   }
 }

@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
@@ -49,8 +50,6 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 
 pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
-
-pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
@@ -331,7 +330,7 @@ pub struct Camera {
   order : Int
   is_active : Bool
   computed : @computed_camera_values.ComputedCameraValues
-  clear_color : ClearColorConfig
+  clear_color : @clear_color.ClearColorConfig
 }
 pub fn Camera::Camera() -> Self
 pub fn Camera::clear_viewport(Self) -> Self
@@ -343,7 +342,7 @@ pub fn Camera::physical_viewport_size(Self) -> @math.IVec2?
 pub fn Camera::target_scaling_factor(Self) -> Float?
 pub fn Camera::to_logical(Self, @math.IVec2) -> @math.Vec2?
 pub fn Camera::with_clear_color(Self, @color.Color) -> Self
-pub fn Camera::with_clear_color_config(Self, ClearColorConfig) -> Self
+pub fn Camera::with_clear_color_config(Self, @clear_color.ClearColorConfig) -> Self
 pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
@@ -382,25 +381,6 @@ pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> 
 pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub impl @ecs.Bundle for Camera2dBundle
-
-pub struct ClearColor {
-  color : @color.Color
-}
-pub fn ClearColor::ClearColor() -> Self
-pub fn ClearColor::new(@color.Color) -> Self
-pub impl @app.Resource for ClearColor
-pub impl Default for ClearColor
-
-pub(all) enum ClearColorConfig {
-  Default
-  Custom(@color.Color)
-  None
-}
-pub fn ClearColorConfig::default() -> Self
-pub fn ClearColorConfig::resolve(Self) -> (Bool, @color.Color)
-pub impl @ecs.Component for ClearColorConfig
-pub impl ToJson for ClearColorConfig
-pub impl @json.FromJson for ClearColorConfig
 
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]

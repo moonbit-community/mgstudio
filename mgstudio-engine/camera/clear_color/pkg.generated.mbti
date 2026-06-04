@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/clear_color"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
+
+pub fn clear_color_current_value() -> @color.Color
+
+pub fn decode_clear_color_config(Json) -> ClearColorConfig
+
+pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig]
+
+pub fn encode_clear_color_config(ClearColorConfig) -> Json
+
+// Errors
+
+// Types and methods
+pub struct ClearColor {
+  color : @color.Color
+}
+pub fn ClearColor::ClearColor() -> Self
+pub fn ClearColor::new(@color.Color) -> Self
+pub impl @app.Resource for ClearColor
+pub impl Default for ClearColor
+
+pub(all) enum ClearColorConfig {
+  Default
+  Custom(@color.Color)
+  None
+}
+pub fn ClearColorConfig::default() -> Self
+pub fn ClearColorConfig::resolve(Self) -> (Bool, @color.Color)
+pub impl @ecs.Component for ClearColorConfig
+pub impl ToJson for ClearColorConfig
+pub impl @json.FromJson for ClearColorConfig
+
+// Type aliases
+
+// Traits
+

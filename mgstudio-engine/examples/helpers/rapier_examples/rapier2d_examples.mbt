@@ -27,8 +27,8 @@ pub fn rapier2d_set_clear_color(
   color : @sprite.Color,
 ) -> Unit {
   world.insert_resource(
-    @sprite.ClearColor::resource(),
-    @sprite.ClearColor::new(color),
+    @camera_clear_color.ClearColor::resource(),
+    @camera_clear_color.ClearColor::new(color),
   )
 }
 

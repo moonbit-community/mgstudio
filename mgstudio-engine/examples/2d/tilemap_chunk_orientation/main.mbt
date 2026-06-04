@@ -17,7 +17,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .insert_resource(
-    @sprite.ClearColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.9F)),
+    @camera_clear_color.ClearColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.9F)),
   )
   .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()

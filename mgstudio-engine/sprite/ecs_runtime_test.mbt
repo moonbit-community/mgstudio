@@ -75,7 +75,7 @@ test "sprite: default trait mirrors bevy component defaults" {
   let image_mode = SpriteImageMode::default()
   let scaling_mode = SpriteScalingMode::default()
   let anchor = @sprite.Anchor::Anchor()
-  let clear_color = @sprite.ClearColor::ClearColor()
+  let clear_color = @camera_clear_color.ClearColor::ClearColor()
   debug_inspect(sprite.image.id(), content="0")
   debug_inspect(image_mode is SpriteImageMode::Auto, content="true")
   debug_inspect(scaling_mode is SpriteScalingMode::FillCenter, content="true")

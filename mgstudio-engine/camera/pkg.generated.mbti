@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/camera"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/viewport",
@@ -28,14 +29,6 @@ pub fn camera_2d_bundle_new_with_projection(@sprite.Camera, @sprite.Projection, 
 
 pub fn camera_2d_bundle_new_with_target(@sprite.Camera, @transform.Transform, @sprite.RenderTarget) -> @sprite.Camera2dBundle
 
-pub fn camera_clear_color_config_default() -> @sprite.ClearColorConfig
-
-pub fn camera_clear_color_config_resolve(@sprite.ClearColorConfig) -> (Bool, @color.Color)
-
-pub fn camera_clear_color_default() -> @sprite.ClearColor
-
-pub fn camera_clear_color_new(@color.Color) -> @sprite.ClearColor
-
 pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
 
 pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -50,13 +43,21 @@ pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection,
 
 pub fn camera_world_to_viewport(@math.Vec3, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn clear_color_current_value() -> @color.Color
+
+pub fn decode_clear_color_config(Json) -> @clear_color.ClearColorConfig
+
 pub let ecs_key_aabb : @ecs.ComponentKey[@primitives.Aabb]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
 
+pub let ecs_key_clear_color_config : @ecs.ComponentKey[@clear_color.ClearColorConfig]
+
 pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
+
+pub fn encode_clear_color_config(@clear_color.ClearColorConfig) -> Json
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> @primitives.Aabb?
 
@@ -109,6 +110,10 @@ pub using @pbr {type DecalRenderMode3d as CameraDecalRenderMode3d}
 pub using @pbr {type CameraDeferredConfig3d}
 
 pub using @pbr {type CameraDeferredMode3d}
+
+pub using @clear_color {type ClearColor}
+
+pub using @clear_color {type ClearColorConfig}
 
 pub using @computed_camera_values {type ComputedCameraValues}
 

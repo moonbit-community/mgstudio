@@ -32,7 +32,9 @@ fn main {
     }),
   )
   .insert_resource(
-    @sprite.ClearColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
+    @camera_clear_color.ClearColor::new(
+      @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    ),
   )
   .add_systems(@app.Startup, @app.system(setup))
   .run()
