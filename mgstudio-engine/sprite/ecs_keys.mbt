@@ -31,17 +31,13 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
 let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
 
 ///|
-pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d] = @ecs.register_component(
-  debug_name="render2d.camera2d",
-)
+pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d] = @camera_components2d.ecs_key_camera2d
 
 ///|
 pub let ecs_key_camera : @ecs.ComponentKey[Camera] = @camera_camera.ecs_key_camera
 
 ///|
-pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
-  debug_name="render2d.projection",
-)
+pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @camera_projection2d.ecs_key_projection
 
 ///|
 pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_component(
@@ -98,16 +94,6 @@ pub impl @ecs.Component for SpriteMesh with fn component() {
 ///|
 pub impl @ecs.Component for Anchor with fn component() {
   ecs_key_anchor
-}
-
-///|
-pub impl @ecs.Component for Camera2d with fn component() {
-  ecs_key_camera2d
-}
-
-///|
-pub impl @ecs.Component for Projection with fn component() {
-  ecs_key_projection
 }
 
 ///|
@@ -321,18 +307,6 @@ fn encode_anchor(anchor : Anchor) -> Json {
 }
 
 ///|
-fn encode_camera2d(_camera2d : Camera2d) -> Json {
-  (0).to_json()
-}
-
-///|
-fn encode_projection(projection : Projection) -> Json {
-  match projection {
-    Orthographic(orthographic) => (0, orthographic.scale).to_json()
-  }
-}
-
-///|
 fn decode_color(json : Json) -> Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
   Color::new(r, g, b, a)
@@ -462,20 +436,6 @@ fn decode_anchor(json : Json) -> Anchor {
 }
 
 ///|
-fn decode_camera2d(_json : Json) -> Camera2d {
-  Camera2d::Camera2d()
-}
-
-///|
-fn decode_projection(json : Json) -> Projection {
-  let (tag, payload) : (Int, Float) = try! @json.from_json(json)
-  match tag {
-    0 => Orthographic(OrthographicProjection::new(payload))
-    _ => Projection::orthographic_2d()
-  }
-}
-
-///|
 fn decode_scissor_rect(json : Json) -> ScissorRect {
   ScissorRect::new(decode_rect(json))
 }
@@ -508,26 +468,6 @@ pub impl ToJson for ScissorRect with fn to_json(self) {
 ///|
 pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
   decode_scissor_rect(json)
-}
-
-///|
-pub impl ToJson for Camera2d with fn to_json(self) {
-  encode_camera2d(self)
-}
-
-///|
-pub impl @json.FromJson for Camera2d with fn from_json(json, _path) {
-  decode_camera2d(json)
-}
-
-///|
-pub impl ToJson for Projection with fn to_json(self) {
-  encode_projection(self)
-}
-
-///|
-pub impl @json.FromJson for Projection with fn from_json(json, _path) {
-  decode_projection(json)
 }
 
 ///|

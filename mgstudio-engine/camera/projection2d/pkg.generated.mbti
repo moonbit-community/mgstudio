@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/projection2d"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+// Errors
+
+// Types and methods
+pub struct OrthographicProjection {
+  scale : Float
+} derive(ToJson, @json.FromJson)
+pub fn OrthographicProjection::default_2d() -> Self
+pub fn OrthographicProjection::new(Float) -> Self
+pub fn OrthographicProjection::with_scale(Self, Float) -> Self
+
+pub(all) enum Projection {
+  Orthographic(OrthographicProjection)
+}
+pub fn Projection::orthographic_2d() -> Self
+pub impl @ecs.Component for Projection
+pub impl ToJson for Projection
+pub impl @json.FromJson for Projection
+
+// Type aliases
+
+// Traits
+

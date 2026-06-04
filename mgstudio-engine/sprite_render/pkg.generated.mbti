@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -37,9 +38,9 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@wireframe2d.Wireframe2dCo
 
 pub fn[M] material2d_plugin(@material.Material2dPlugin[M]) -> @material.Material2dPlugin[M]
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
 

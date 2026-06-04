@@ -19,7 +19,7 @@
 pub type Camera = @camera_camera.Camera
 
 ///|
-pub type Camera2d = @sprite.Camera2d
+pub type Camera2d = @camera_components2d.Camera2d
 
 ///|
 pub type Hdr = @core_pipeline.Hdr

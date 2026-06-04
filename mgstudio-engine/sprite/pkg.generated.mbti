@@ -5,6 +5,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/components2d",
+  "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -37,7 +39,7 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera : @ecs.ComponentKey[@camera.Camera]
 
-pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
+pub let ecs_key_camera2d : @ecs.ComponentKey[@components2d.Camera2d]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
@@ -49,7 +51,7 @@ pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@co
 
 pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
 
-pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+pub let ecs_key_projection : @ecs.ComponentKey[@projection2d.Projection]
 
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
 
@@ -123,9 +125,9 @@ pub fn render2d_camera_system(@ecs.World) -> Unit
 
 pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
@@ -276,13 +278,6 @@ pub struct BorderRect {
 pub fn BorderRect::BorderRect() -> Self
 pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
-
-pub struct Camera2d {
-}
-pub fn Camera2d::Camera2d() -> Self
-pub impl @ecs.Component for Camera2d
-pub impl ToJson for Camera2d
-pub impl @json.FromJson for Camera2d
 
 pub struct CustomMesh2dPipelineDescriptor {
   pipeline_id : UInt64
@@ -464,13 +459,6 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
-pub struct OrthographicProjection {
-  scale : Float
-} derive(ToJson, @json.FromJson)
-pub fn OrthographicProjection::default_2d() -> Self
-pub fn OrthographicProjection::new(Float) -> Self
-pub fn OrthographicProjection::with_scale(Self, Float) -> Self
-
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@image.Image]
   transform : @transform.Transform
@@ -563,14 +551,6 @@ pub(all) struct PendingRoundedRect {
   mut arc_resolution : Int
   config : GizmoConfig
 }
-
-pub(all) enum Projection {
-  Orthographic(OrthographicProjection)
-}
-pub fn Projection::orthographic_2d() -> Self
-pub impl @ecs.Component for Projection
-pub impl ToJson for Projection
-pub impl @json.FromJson for Projection
 
 pub struct Render2dEcsPlugin {
 }
@@ -828,6 +808,8 @@ pub using @post_process {type BloomPrefilter}
 
 pub using @camera {type Camera}
 
+pub using @components2d {type Camera2d}
+
 pub using @math {type Capsule2d}
 
 pub using @math {type Circle}
@@ -862,11 +844,15 @@ pub using @mesh {type Mesh}
 
 pub using @mesh {type Mesh2dGeometry}
 
+pub using @projection2d {type OrthographicProjection}
+
 pub using @math {type Plane2d}
 
 pub using @math {type Polygon}
 
 pub using @math {type Polyline2d}
+
+pub using @projection2d {type Projection}
 
 pub using @math {type Rectangle}
 

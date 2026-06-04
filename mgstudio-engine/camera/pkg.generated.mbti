@@ -4,8 +4,10 @@ package "Milky2018/mgstudio/camera"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/clear_color",
+  "Milky2018/mgstudio/camera/components2d",
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/primitives",
+  "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline/core_3d",
@@ -15,7 +17,6 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/post_process",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
 }
 
@@ -52,9 +53,9 @@ pub fn encode_clear_color_config(@clear_color.ClearColorConfig) -> Json
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> @primitives.Aabb?
 
-pub fn orthographic_projection_2d_default() -> @sprite.OrthographicProjection
+pub fn orthographic_projection_2d_default() -> @projection2d.OrthographicProjection
 
-pub fn orthographic_projection_2d_with_scale(Float) -> @sprite.OrthographicProjection
+pub fn orthographic_projection_2d_with_scale(Float) -> @projection2d.OrthographicProjection
 
 pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
 
@@ -86,7 +87,7 @@ pub using @pbr {type AutoExposure}
 
 pub using @Milky2018/mgstudio/camera/camera {type Camera}
 
-pub using @sprite {type Camera2d}
+pub using @components2d {type Camera2d}
 
 pub using @pbr {type Camera3d}
 
@@ -116,7 +117,7 @@ pub using @render {type Frustum}
 
 pub using @core_3d {type Hdr}
 
-pub using @sprite {type OrthographicProjection as OrthographicProjection2d}
+pub using @projection2d {type OrthographicProjection as OrthographicProjection2d}
 
 pub using @render {type OrthographicProjection3d}
 

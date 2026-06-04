@@ -73,6 +73,15 @@ pub type Camera = @camera_camera.Camera
 pub type RenderTarget = @camera_camera.RenderTarget
 
 ///|
+pub type OrthographicProjection = @camera_projection2d.OrthographicProjection
+
+///|
+pub type Projection = @camera_projection2d.Projection
+
+///|
+pub type Camera2d = @camera_components2d.Camera2d
+
+///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
 /// camera's view (top-left origin).
 ///
@@ -185,53 +194,6 @@ pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
 ///|
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
   render2d_asset_store_mut_or_abort()
-}
-
-///|
-/// The projection parameters for an orthographic camera.
-/// Stored inside `Projection` (mirrors Bevy's `Projection::Orthographic`).
-pub struct OrthographicProjection {
-  scale : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn OrthographicProjection::new(scale : Float) -> OrthographicProjection {
-  let safe = if scale == 0.0F { 1.0F } else { scale }
-  OrthographicProjection::{ scale: safe }
-}
-
-///|
-pub fn OrthographicProjection::default_2d() -> OrthographicProjection {
-  OrthographicProjection::new(1.0F)
-}
-
-///|
-pub fn OrthographicProjection::with_scale(
-  self : OrthographicProjection,
-  scale : Float,
-) -> OrthographicProjection {
-  self |> ignore
-  OrthographicProjection::new(scale)
-}
-
-///|
-/// Camera projection type (mirrors Bevy's `Projection` component).
-pub(all) enum Projection {
-  Orthographic(OrthographicProjection)
-}
-
-///|
-pub fn Projection::orthographic_2d() -> Projection {
-  Orthographic(OrthographicProjection::default_2d())
-}
-
-///|
-/// Marker component that enables 2D camera semantics (mirrors Bevy's `Camera2d`).
-pub struct Camera2d {}
-
-///|
-pub fn Camera2d::Camera2d() -> Camera2d {
-  Camera2d::{  }
 }
 
 ///|

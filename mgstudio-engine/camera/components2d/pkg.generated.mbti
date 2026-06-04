@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/components2d"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
+
+// Errors
+
+// Types and methods
+pub struct Camera2d {
+}
+pub fn Camera2d::Camera2d() -> Self
+pub impl @ecs.Component for Camera2d
+pub impl ToJson for Camera2d
+pub impl @json.FromJson for Camera2d
+
+// Type aliases
+
+// Traits
+

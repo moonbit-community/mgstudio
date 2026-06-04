@@ -73,7 +73,7 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr.ec
 ///|
 pub fn camera_viewport_to_world_ray(
   viewport_position : @math.Vec2,
-  camera : @sprite.Camera,
+  camera : Camera,
   projection : Projection,
   camera_transform : @transform.Transform,
   viewport_size : @math.IVec2,
@@ -87,7 +87,7 @@ pub fn camera_viewport_to_world_ray(
 ///|
 pub fn camera_world_to_viewport(
   world_position : @math.Vec3,
-  camera : @sprite.Camera,
+  camera : Camera,
   projection : Projection,
   camera_transform : @transform.Transform,
   viewport_size : @math.IVec2,

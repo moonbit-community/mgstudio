@@ -37,18 +37,18 @@ pub type Projection = @pbr.Projection
 pub type PerspectiveProjection = PerspectiveProjection3d
 
 ///|
-pub type OrthographicProjection2d = @sprite.OrthographicProjection
+pub type OrthographicProjection2d = @camera_projection2d.OrthographicProjection
 
 ///|
 pub fn orthographic_projection_2d_default() -> OrthographicProjection2d {
-  @sprite.OrthographicProjection::default_2d()
+  @camera_projection2d.OrthographicProjection::default_2d()
 }
 
 ///|
 pub fn orthographic_projection_2d_with_scale(
   scale : Float,
 ) -> OrthographicProjection2d {
-  @sprite.OrthographicProjection::new(scale)
+  @camera_projection2d.OrthographicProjection::new(scale)
 }
 
 ///|

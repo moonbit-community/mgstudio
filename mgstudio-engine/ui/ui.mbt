@@ -1011,7 +1011,7 @@ fn ui_viewport_point_to_world(
         } noraise {
           value => value
         }) {
-        Some(@sprite.Orthographic(orthographic)) => orthographic
+        Some(@sprite.Projection::Orthographic(orthographic)) => orthographic
         _ => @sprite.OrthographicProjection::default_2d()
       }
       let target_size = match camera.physical_target_size() {
@@ -1252,7 +1252,7 @@ fn ui_camera_transform_for_entity(
   camera_entity : @core.Entity,
 ) -> @transform.Transform {
   match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-    Some(@sprite.Orthographic(_)) => ()
+    Some(@sprite.Projection::Orthographic(_)) => ()
     _ => return @transform.Transform::identity()
   }
   match
@@ -1273,7 +1273,7 @@ fn ui_camera_scale_for_entity(
   camera_entity : @core.Entity,
 ) -> Float {
   match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-    Some(@sprite.Orthographic(projection)) =>
+    Some(@sprite.Projection::Orthographic(projection)) =>
       safe_camera_scale(projection.scale)
     _ => 1.0F
   }
