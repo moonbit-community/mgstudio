@@ -102,6 +102,7 @@ graph TD
   ISS_038["ISS-038: Move deferred command state into world and schedule execution context"]
   ISS_039["ISS-039: Standardize generic ECS key-family conventions"]
   ISS_040["ISS-040: Document read-only ECS access as an API contract"]
+  ISS_041["ISS-041: Expose Bevy-shaped stage system param APIs"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_002 --> ISS_005

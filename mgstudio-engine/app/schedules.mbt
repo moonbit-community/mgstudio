@@ -2502,6 +2502,118 @@ pub fn[W] SubApp::add_systems(
 }
 
 ///|
+pub fn[W, P : SystemParam] SubApp::add_systems_param(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param(system_fn))
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] SubApp::add_systems_param2(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param2(system_fn))
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] SubApp::add_systems_param3(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param3(system_fn))
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] SubApp::add_systems_param4(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param4(system_fn))
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] SubApp::add_systems_param5(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param5(system_fn))
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] SubApp::add_systems_param6(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param6(system_fn))
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] SubApp::add_systems_param7(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param7(system_fn))
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] SubApp::add_systems_param8(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_param8(system_fn))
+}
+
+///|
 pub fn[W] SubApp::configure_set(
   self : SubApp[W],
   stage : ScheduleStage,
@@ -2594,6 +2706,140 @@ pub fn[W] App::add_systems(
   config : SystemConfig[W],
 ) -> App[W] {
   self.sub_apps.main = self.sub_apps.main.add_systems(schedule, config)
+  self
+}
+
+///|
+pub fn[W, P : SystemParam] App::add_systems_param(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param(schedule, system_fn)
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_systems_param2(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param2(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_systems_param3(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param3(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_systems_param4(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param4(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] App::add_systems_param5(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param5(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] App::add_systems_param6(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param6(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] App::add_systems_param7(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param7(
+    schedule, system_fn,
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] App::add_systems_param8(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_param8(
+    schedule, system_fn,
+  )
   self
 }
 

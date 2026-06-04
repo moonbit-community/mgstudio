@@ -1403,6 +1403,62 @@ test "app: add_system_param8 injects parameters in order" {
 }
 
 ///|
+test "app: add_systems_param8 injects parameters for explicit stages" {
+  let log : Array[String] = []
+  let mut app = App::new(@ecs.World::new())
+    .add_systems_param8(Startup, fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+    ) {
+      log.push(
+        "startup:\{p1.value},\{p2.value},\{p3.value},\{p4.value},\{p5.value},\{p6.value},\{p7.value},\{p8.value}",
+      )
+    })
+    .add_systems_param8(PostUpdate, fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+    ) {
+      log.push(
+        "post_update:\{p1.value},\{p2.value},\{p3.value},\{p4.value},\{p5.value},\{p6.value},\{p7.value},\{p8.value}",
+      )
+    })
+    .add_systems_param8(Last, fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+    ) {
+      log.push(
+        "last:\{p1.value},\{p2.value},\{p3.value},\{p4.value},\{p5.value},\{p6.value},\{p7.value},\{p8.value}",
+      )
+    })
+
+  app = app.run_startup()
+  app.run_once() |> ignore
+
+  debug_inspect(
+    log.join(";"),
+    content="\"startup:1,2,3,4,5,6,7,8;post_update:1,2,3,4,5,6,7,8;last:1,2,3,4,5,6,7,8\"",
+  )
+}
+
+///|
 test "app: system param can read current system tick" {
   let log : Array[(@core.Tick, @core.Tick)] = []
   let app = App::new(@ecs.World::new())
