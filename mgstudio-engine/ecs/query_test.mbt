@@ -530,6 +530,53 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   debug_inspect(hits_ref.val, content="1")
   debug_inspect(score_ref.val, content="36")
 
+  let wide_hits_ref : Ref[Int] = Ref(0)
+  let wide_score_ref : Ref[Int] = Ref(0)
+  let wide_read_query : Query[
+    (
+      Comp[Position],
+      Comp[Velocity],
+      Comp[Acceleration],
+      Comp[Position],
+      Comp[Velocity],
+      Comp[Acceleration],
+      Comp[Position],
+      Comp[Velocity],
+    ),
+    All,
+  ] = query(world)
+  try! wide_read_query.view(fn(_entity, data) {
+    let (p0, v0, a0, p1, v1, a1, p2, v2) = data
+    let p0 = p0.value()
+    let v0 = v0.value()
+    let a0 = a0.value()
+    let p1 = p1.value()
+    let v1 = v1.value()
+    let a1 = a1.value()
+    let p2 = p2.value()
+    let v2 = v2.value()
+    wide_hits_ref.val = wide_hits_ref.val + 1
+    wide_score_ref.val = wide_score_ref.val +
+      p0.x +
+      p0.y +
+      v0.dx +
+      v0.dy +
+      a0.ax +
+      a0.ay +
+      p1.x +
+      p1.y +
+      v1.dx +
+      v1.dy +
+      a1.ax +
+      a1.ay +
+      p2.x +
+      p2.y +
+      v2.dx +
+      v2.dy
+  })
+  debug_inspect(wide_hits_ref.val, content="1")
+  debug_inspect(wide_score_ref.val, content="91")
+
   let write_query : Query[
     (Mut[Position], Mut[Velocity], Mut[Acceleration]),
     All,

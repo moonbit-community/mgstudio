@@ -993,6 +993,10 @@ pub impl QueryData for @core.Entity
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B)
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C)
 pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (A, B, C, D)
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData, E : QueryData] QueryData for (A, B, C, D, E)
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData, E : QueryData, F : QueryData] QueryData for (A, B, C, D, E, F)
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData, E : QueryData, F : QueryData, G : QueryData] QueryData for (A, B, C, D, E, F, G)
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData, E : QueryData, F : QueryData, G : QueryData, H : QueryData] QueryData for (A, B, C, D, E, F, G, H)
 
 pub(open) trait QueryFilter {
   fn matches(Self, World, @core.Entity) -> Bool

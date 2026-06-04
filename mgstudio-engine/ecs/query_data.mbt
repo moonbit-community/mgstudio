@@ -232,44 +232,44 @@ pub(open) trait QueryData {
 }
 
 ///|
-impl QueryData with collect_access(_access) {
+impl QueryData with fn collect_access(_access) {
   ()
 }
 
 ///|
-impl QueryData with is_dense(_world) {
+impl QueryData with fn is_dense(_world) {
   false
 }
 
 ///|
-impl QueryData with prepare_fetch_plan(world) {
+impl QueryData with fn prepare_fetch_plan(world) {
   let plan = QueryDataFetchPlan::new()
   Self::append_fetch_plan(world, plan)
   plan
 }
 
 ///|
-impl QueryData with append_fetch_plan(_world, _plan) {
+impl QueryData with fn append_fetch_plan(_world, _plan) {
   ()
 }
 
 ///|
-impl QueryData with fetch_plan_size() {
+impl QueryData with fn fetch_plan_size() {
   0
 }
 
 ///|
-impl QueryData with fetch_table_row(fetch) {
+impl QueryData with fn fetch_table_row(fetch) {
   Self::fetch(fetch.world, fetch.entity)
 }
 
 ///|
-impl QueryData with fetch_table_row_with_plan_offset(fetch) {
+impl QueryData with fn fetch_table_row_with_plan_offset(fetch) {
   Self::fetch_table_row(fetch.row)
 }
 
 ///|
-impl QueryData with fetch_sparse_anchor_with_plan_offset(fetch) {
+impl QueryData with fn fetch_sparse_anchor_with_plan_offset(fetch) {
   Self::fetch_table_row_with_plan_offset({
     row: fetch.row,
     plan: fetch.plan,
@@ -278,7 +278,7 @@ impl QueryData with fetch_sparse_anchor_with_plan_offset(fetch) {
 }
 
 ///|
-impl QueryData with iteration_anchor_components() {
+impl QueryData with fn iteration_anchor_components() {
   []
 }
 
@@ -798,62 +798,64 @@ pub fn[T] query_data_component_has(
 }
 
 ///|
-pub impl QueryData for @core.Entity with matches(_world, _entity) {
+pub impl QueryData for @core.Entity with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl QueryData for @core.Entity with fetch(_world, entity) {
+pub impl QueryData for @core.Entity with fn fetch(_world, entity) {
   entity
 }
 
 ///|
-pub impl QueryData for @core.Entity with fetch_table_row(fetch) {
+pub impl QueryData for @core.Entity with fn fetch_table_row(fetch) {
   fetch.entity
 }
 
 ///|
-pub impl QueryData for @core.Entity with mentions_component(_component_id) {
+pub impl QueryData for @core.Entity with fn mentions_component(_component_id) {
   false
 }
 
 ///|
-pub impl QueryData for @core.Entity with matches_component_set(_set_contains_id) {
+pub impl QueryData for @core.Entity with fn matches_component_set(
+  _set_contains_id,
+) {
   true
 }
 
 ///|
-pub impl QueryData for @core.Entity with collect_access(_access) {
+pub impl QueryData for @core.Entity with fn collect_access(_access) {
   ()
 }
 
 ///|
-pub impl QueryData for @core.Entity with requires_entity_check() {
+pub impl QueryData for @core.Entity with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for @core.Entity with is_dense(_world) {
+pub impl QueryData for @core.Entity with fn is_dense(_world) {
   true
 }
 
 ///|
-pub impl QueryData for @core.Entity with iteration_anchor_component() {
+pub impl QueryData for @core.Entity with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl QueryData for @core.Entity with contiguous_compatible() {
+pub impl QueryData for @core.Entity with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
+pub impl[T : Component] QueryData for Comp[T] with fn matches(world, entity) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
+pub impl[T : Component] QueryData for Comp[T] with fn fetch(world, entity) {
   let key = T::component()
   query_data_comp_from_value(
     query_data_table_row_fetch(world, entity, -1, -1),
@@ -864,7 +866,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
+pub impl[T : Component] QueryData for Comp[T] with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -872,12 +874,12 @@ pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Comp[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   let local_component_id = query_data_component_local_id_or_abort(
     fetch.world.local_component_id(key.id()),
@@ -889,7 +891,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -903,7 +905,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_off
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Comp[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -927,71 +929,74 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with mentions_component(
+pub impl[T : Component] QueryData for Comp[T] with fn mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with matches_component_set(
+pub impl[T : Component] QueryData for Comp[T] with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with collect_access(access) {
+pub impl[T : Component] QueryData for Comp[T] with fn collect_access(access) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Comp[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with is_dense(world) {
+pub impl[T : Component] QueryData for Comp[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Comp[T] with fn iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_components() {
+pub impl[T : Component] QueryData for Comp[T] with fn iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Comp[T] with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with matches(world, entity) {
+pub impl[T : Component] QueryData for Mut[T] with fn matches(world, entity) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch(world, entity) {
+pub impl[T : Component] QueryData for Mut[T] with fn fetch(world, entity) {
   query_data_require_component_mut(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with append_fetch_plan(world, plan) {
+pub impl[T : Component] QueryData for Mut[T] with fn append_fetch_plan(
+  world,
+  plan,
+) {
   plan.push_component_id(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Mut[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   mut_from_component_location(
     fetch.world,
@@ -1006,7 +1011,7 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -1023,7 +1028,7 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_table_row_with_plan_offs
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Mut[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   Mut::fetch_table_row_with_plan_offset({
@@ -1034,156 +1039,156 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor_with_plan_
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with mentions_component(
+pub impl[T : Component] QueryData for Mut[T] with fn mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with matches_component_set(
+pub impl[T : Component] QueryData for Mut[T] with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with collect_access(access) {
+pub impl[T : Component] QueryData for Mut[T] with fn collect_access(access) {
   access.add_write_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Mut[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with is_dense(world) {
+pub impl[T : Component] QueryData for Mut[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Mut[T] with fn iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with iteration_anchor_components() {
+pub impl[T : Component] QueryData for Mut[T] with fn iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Mut[T] with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl QueryData for EntityRef with matches(_world, _entity) {
+pub impl QueryData for EntityRef with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl QueryData for EntityRef with fetch(world, entity) {
+pub impl QueryData for EntityRef with fn fetch(world, entity) {
   try! world.entity(entity)
 }
 
 ///|
-pub impl QueryData for EntityRef with fetch_table_row(fetch) {
+pub impl QueryData for EntityRef with fn fetch_table_row(fetch) {
   EntityRef::{ world: fetch.world, entity: fetch.entity }
 }
 
 ///|
-pub impl QueryData for EntityRef with mentions_component(_component_id) {
+pub impl QueryData for EntityRef with fn mentions_component(_component_id) {
   false
 }
 
 ///|
-pub impl QueryData for EntityRef with matches_component_set(_set_contains_id) {
+pub impl QueryData for EntityRef with fn matches_component_set(_set_contains_id) {
   true
 }
 
 ///|
-pub impl QueryData for EntityRef with collect_access(_access) {
+pub impl QueryData for EntityRef with fn collect_access(_access) {
   ()
 }
 
 ///|
-pub impl QueryData for EntityRef with requires_entity_check() {
+pub impl QueryData for EntityRef with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for EntityRef with is_dense(_world) {
+pub impl QueryData for EntityRef with fn is_dense(_world) {
   true
 }
 
 ///|
-pub impl QueryData for EntityRef with iteration_anchor_component() {
+pub impl QueryData for EntityRef with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl QueryData for EntityRef with contiguous_compatible() {
+pub impl QueryData for EntityRef with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl QueryData for EntityMut with matches(_world, _entity) {
+pub impl QueryData for EntityMut with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl QueryData for EntityMut with fetch(world, entity) {
+pub impl QueryData for EntityMut with fn fetch(world, entity) {
   try! world.entity_mut(entity)
 }
 
 ///|
-pub impl QueryData for EntityMut with fetch_table_row(fetch) {
+pub impl QueryData for EntityMut with fn fetch_table_row(fetch) {
   EntityMut::{ world: fetch.world, entity: fetch.entity }
 }
 
 ///|
-pub impl QueryData for EntityMut with mentions_component(_component_id) {
+pub impl QueryData for EntityMut with fn mentions_component(_component_id) {
   false
 }
 
 ///|
-pub impl QueryData for EntityMut with matches_component_set(_set_contains_id) {
+pub impl QueryData for EntityMut with fn matches_component_set(_set_contains_id) {
   true
 }
 
 ///|
-pub impl QueryData for EntityMut with collect_access(_access) {
+pub impl QueryData for EntityMut with fn collect_access(_access) {
   ()
 }
 
 ///|
-pub impl QueryData for EntityMut with requires_entity_check() {
+pub impl QueryData for EntityMut with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for EntityMut with is_dense(_world) {
+pub impl QueryData for EntityMut with fn is_dense(_world) {
   true
 }
 
 ///|
-pub impl QueryData for EntityMut with iteration_anchor_component() {
+pub impl QueryData for EntityMut with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl QueryData for EntityMut with contiguous_compatible() {
+pub impl QueryData for EntityMut with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with matches(_world, _entity) {
+pub impl[T : QueryData] QueryData for T? with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch(world, entity) {
+pub impl[T : QueryData] QueryData for T? with fn fetch(world, entity) {
   if T::matches(world, entity) {
     Some(T::fetch(world, entity))
   } else {
@@ -1192,17 +1197,17 @@ pub impl[T : QueryData] QueryData for T? with fetch(world, entity) {
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with append_fetch_plan(world, plan) {
+pub impl[T : QueryData] QueryData for T? with fn append_fetch_plan(world, plan) {
   T::append_fetch_plan(world, plan)
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch_plan_size() {
+pub impl[T : QueryData] QueryData for T? with fn fetch_plan_size() {
   T::fetch_plan_size()
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch_table_row(fetch) {
+pub impl[T : QueryData] QueryData for T? with fn fetch_table_row(fetch) {
   if T::matches(fetch.world, fetch.entity) {
     Some(T::fetch_table_row(fetch))
   } else {
@@ -1211,7 +1216,7 @@ pub impl[T : QueryData] QueryData for T? with fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch_table_row_with_plan_offset(
+pub impl[T : QueryData] QueryData for T? with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   if T::matches(fetch.row.world, fetch.row.entity) {
@@ -1222,7 +1227,7 @@ pub impl[T : QueryData] QueryData for T? with fetch_table_row_with_plan_offset(
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : QueryData] QueryData for T? with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   if T::matches(fetch.row.world, fetch.row.entity) {
@@ -1233,64 +1238,69 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offs
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with mentions_component(component_id) {
+pub impl[T : QueryData] QueryData for T? with fn mentions_component(
+  component_id,
+) {
   T::mentions_component(component_id)
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with matches_component_set(
+pub impl[T : QueryData] QueryData for T? with fn matches_component_set(
   _set_contains_id,
 ) {
   true
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with collect_access(access) {
+pub impl[T : QueryData] QueryData for T? with fn collect_access(access) {
   T::collect_access(access)
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with requires_entity_check() {
+pub impl[T : QueryData] QueryData for T? with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with is_dense(world) {
+pub impl[T : QueryData] QueryData for T? with fn is_dense(world) {
   T::is_dense(world)
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with iteration_anchor_component() {
+pub impl[T : QueryData] QueryData for T? with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with contiguous_compatible() {
+pub impl[T : QueryData] QueryData for T? with fn contiguous_compatible() {
   T::contiguous_compatible()
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with matches(_world, _entity) {
+pub impl[T : Component] QueryData for Has[T] with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch(world, entity) {
+pub impl[T : Component] QueryData for Has[T] with fn fetch(world, entity) {
   { present: entity_has_component_id(world, T::component().id(), entity) }
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with append_fetch_plan(world, plan) {
+pub impl[T : Component] QueryData for Has[T] with fn append_fetch_plan(
+  world,
+  plan,
+) {
   plan.push_component_id(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Has[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Has[T] with fn fetch_table_row(fetch) {
   let present = match fetch.world.local_component_id(T::component().id()) {
     Some(local_component_id) =>
       if fetch.world.local_component_storage_type(local_component_id) ==
@@ -1308,7 +1318,7 @@ pub impl[T : Component] QueryData for Has[T] with fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Has[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let present = match
@@ -1333,7 +1343,7 @@ pub impl[T : Component] QueryData for Has[T] with fetch_table_row_with_plan_offs
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Has[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let present = match
@@ -1361,51 +1371,54 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with mentions_component(
+pub impl[T : Component] QueryData for Has[T] with fn mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with matches_component_set(
+pub impl[T : Component] QueryData for Has[T] with fn matches_component_set(
   _set_contains_id,
 ) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with collect_access(_access) {
+pub impl[T : Component] QueryData for Has[T] with fn collect_access(_access) {
   ()
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Has[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with is_dense(world) {
+pub impl[T : Component] QueryData for Has[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Has[T] with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl[T : Component] QueryData for Has[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Has[T] with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) {
+pub impl[T : Component] QueryData for Optional[T] with fn matches(
+  _world,
+  _entity,
+) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
+pub impl[T : Component] QueryData for Optional[T] with fn fetch(world, entity) {
   {
     value: query_data_optional_component_value_by_entity(
       world,
@@ -1416,7 +1429,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
+pub impl[T : Component] QueryData for Optional[T] with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -1424,18 +1437,18 @@ pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Optional[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Optional[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   { value: query_data_optional_component_value_at_fetch_location(fetch, key) }
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Optional[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -1447,7 +1460,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Optional[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -1473,96 +1486,96 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with mentions_component(
+pub impl[T : Component] QueryData for Optional[T] with fn mentions_component(
   _component_id,
 ) {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with matches_component_set(
+pub impl[T : Component] QueryData for Optional[T] with fn matches_component_set(
   _set_contains_id,
 ) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with collect_access(access) {
+pub impl[T : Component] QueryData for Optional[T] with fn collect_access(access) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Optional[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with is_dense(world) {
+pub impl[T : Component] QueryData for Optional[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Optional[T] with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Optional[T] with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl QueryData for Unit with matches(_world, _entity) {
+pub impl QueryData for Unit with fn matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl QueryData for Unit with fetch(_world, _entity) {
+pub impl QueryData for Unit with fn fetch(_world, _entity) {
   ()
 }
 
 ///|
-pub impl QueryData for Unit with fetch_table_row(_fetch) {
+pub impl QueryData for Unit with fn fetch_table_row(_fetch) {
   ()
 }
 
 ///|
-pub impl QueryData for Unit with mentions_component(_component_id) {
+pub impl QueryData for Unit with fn mentions_component(_component_id) {
   false
 }
 
 ///|
-pub impl QueryData for Unit with matches_component_set(_set_contains_id) {
+pub impl QueryData for Unit with fn matches_component_set(_set_contains_id) {
   true
 }
 
 ///|
-pub impl QueryData for Unit with collect_access(_access) {
+pub impl QueryData for Unit with fn collect_access(_access) {
   ()
 }
 
 ///|
-pub impl QueryData for Unit with requires_entity_check() {
+pub impl QueryData for Unit with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for Unit with is_dense(_world) {
+pub impl QueryData for Unit with fn is_dense(_world) {
   true
 }
 
 ///|
-pub impl QueryData for Unit with iteration_anchor_component() {
+pub impl QueryData for Unit with fn iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl QueryData for Unit with contiguous_compatible() {
+pub impl QueryData for Unit with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn matches(
   world,
   entity,
 ) {
@@ -1570,7 +1583,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches(
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch(
   world,
   entity,
 ) {
@@ -1578,7 +1591,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch(
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with append_fetch_plan(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -1587,19 +1600,19 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with append_fetch_pl
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_plan_size() {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_plan_size() {
   A::fetch_plan_size() + B::fetch_plan_size()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_table_row(
   fetch,
 ) {
   (A::fetch_table_row(fetch), B::fetch_table_row(fetch))
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row_with_plan_offset(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let b_offset = fetch.offset + A::fetch_plan_size()
@@ -1610,7 +1623,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_anchor_with_plan_offset(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let b_offset = fetch.offset + A::fetch_plan_size()
@@ -1621,14 +1634,14 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with mentions_component(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn mentions_component(
   component_id,
 ) {
   A::mentions_component(component_id) || B::mentions_component(component_id)
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches_component_set(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn matches_component_set(
   set_contains_id,
 ) {
   A::matches_component_set(set_contains_id) &&
@@ -1636,7 +1649,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches_compone
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with collect_access(
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn collect_access(
   access,
 ) {
   A::collect_access(access)
@@ -1644,17 +1657,19 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with collect_access(
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with requires_entity_check() {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn requires_entity_check() {
   A::requires_entity_check() || B::requires_entity_check()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with is_dense(world) {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn is_dense(
+  world,
+) {
   A::is_dense(world) && B::is_dense(world)
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_anchor_component() {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn iteration_anchor_component() {
   match A::iteration_anchor_component() {
     Some(component_id) => Some(component_id)
     None => B::iteration_anchor_component()
@@ -1662,7 +1677,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_ancho
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_anchor_components() {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn iteration_anchor_components() {
   let component_ids : Array[Int] = []
   query_data_append_unique_anchor_components(
     component_ids,
@@ -1676,12 +1691,12 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_ancho
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with contiguous_compatible() {
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn contiguous_compatible() {
   A::contiguous_compatible() && B::contiguous_compatible()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with matches(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn matches(
   world,
   entity,
 ) {
@@ -1691,7 +1706,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch(
   world,
   entity,
 ) {
@@ -1699,7 +1714,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with append_fetch_plan(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -1709,12 +1724,12 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_plan_size() {
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch_plan_size() {
   A::fetch_plan_size() + B::fetch_plan_size() + C::fetch_plan_size()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch_table_row(
   fetch,
 ) {
   (
@@ -1725,7 +1740,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row_with_plan_offset(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let b_offset = fetch.offset + A::fetch_plan_size()
@@ -1738,7 +1753,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_sparse_anchor_with_plan_offset(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let b_offset = fetch.offset + A::fetch_plan_size()
@@ -1751,7 +1766,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with mentions_component(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn mentions_component(
   component_id,
 ) {
   A::mentions_component(component_id) ||
@@ -1760,7 +1775,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with matches_component_set(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn matches_component_set(
   set_contains_id,
 ) {
   A::matches_component_set(set_contains_id) &&
@@ -1769,7 +1784,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with collect_access(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn collect_access(
   access,
 ) {
   A::collect_access(access)
@@ -1778,21 +1793,21 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with requires_entity_check() {
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn requires_entity_check() {
   A::requires_entity_check() ||
   B::requires_entity_check() ||
   C::requires_entity_check()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with is_dense(
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn is_dense(
   world,
 ) {
   A::is_dense(world) && B::is_dense(world) && C::is_dense(world)
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with iteration_anchor_component() {
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn iteration_anchor_component() {
   match A::iteration_anchor_component() {
     Some(component_id) => Some(component_id)
     None =>
@@ -1804,7 +1819,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with iteration_anchor_components() {
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn iteration_anchor_components() {
   let component_ids : Array[Int] = []
   query_data_append_unique_anchor_components(
     component_ids,
@@ -1822,7 +1837,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with contiguous_compatible() {
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn contiguous_compatible() {
   A::contiguous_compatible() &&
   B::contiguous_compatible() &&
   C::contiguous_compatible()
@@ -1834,7 +1849,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with matches(world, entity) {
+) with fn matches(world, entity) {
   A::matches(world, entity) &&
   B::matches(world, entity) &&
   C::matches(world, entity) &&
@@ -1847,7 +1862,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch(world, entity) {
+) with fn fetch(world, entity) {
   (
     A::fetch(world, entity),
     B::fetch(world, entity),
@@ -1862,7 +1877,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with append_fetch_plan(world, plan) {
+) with fn append_fetch_plan(world, plan) {
   A::append_fetch_plan(world, plan)
   B::append_fetch_plan(world, plan)
   C::append_fetch_plan(world, plan)
@@ -1875,7 +1890,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_plan_size() {
+) with fn fetch_plan_size() {
   A::fetch_plan_size() +
   B::fetch_plan_size() +
   C::fetch_plan_size() +
@@ -1888,7 +1903,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_table_row(fetch) {
+) with fn fetch_table_row(fetch) {
   (
     A::fetch_table_row(fetch),
     B::fetch_table_row(fetch),
@@ -1903,7 +1918,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_table_row_with_plan_offset(fetch) {
+) with fn fetch_table_row_with_plan_offset(fetch) {
   let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   let d_offset = c_offset + C::fetch_plan_size()
@@ -1921,7 +1936,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with fetch_sparse_anchor_with_plan_offset(fetch) {
+) with fn fetch_sparse_anchor_with_plan_offset(fetch) {
   let b_offset = fetch.offset + A::fetch_plan_size()
   let c_offset = b_offset + B::fetch_plan_size()
   let d_offset = c_offset + C::fetch_plan_size()
@@ -1939,7 +1954,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with mentions_component(component_id) {
+) with fn mentions_component(component_id) {
   A::mentions_component(component_id) ||
   B::mentions_component(component_id) ||
   C::mentions_component(component_id) ||
@@ -1952,7 +1967,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with matches_component_set(set_contains_id) {
+) with fn matches_component_set(set_contains_id) {
   A::matches_component_set(set_contains_id) &&
   B::matches_component_set(set_contains_id) &&
   C::matches_component_set(set_contains_id) &&
@@ -1965,7 +1980,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with collect_access(access) {
+) with fn collect_access(access) {
   A::collect_access(access)
   B::collect_access(access)
   C::collect_access(access)
@@ -1978,7 +1993,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with requires_entity_check() {
+) with fn requires_entity_check() {
   A::requires_entity_check() ||
   B::requires_entity_check() ||
   C::requires_entity_check() ||
@@ -1991,7 +2006,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with is_dense(world) {
+) with fn is_dense(world) {
   A::is_dense(world) &&
   B::is_dense(world) &&
   C::is_dense(world) &&
@@ -2004,7 +2019,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with iteration_anchor_component() {
+) with fn iteration_anchor_component() {
   match A::iteration_anchor_component() {
     Some(component_id) => Some(component_id)
     None =>
@@ -2025,7 +2040,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with iteration_anchor_components() {
+) with fn iteration_anchor_components() {
   let component_ids : Array[Int] = []
   query_data_append_unique_anchor_components(
     component_ids,
@@ -2052,9 +2067,1335 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
-) with contiguous_compatible() {
+) with fn contiguous_compatible() {
   A::contiguous_compatible() &&
   B::contiguous_compatible() &&
   C::contiguous_compatible() &&
   D::contiguous_compatible()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn matches(world, entity) {
+  A::matches(world, entity) &&
+  B::matches(world, entity) &&
+  C::matches(world, entity) &&
+  D::matches(world, entity) &&
+  E::matches(world, entity)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn fetch(world, entity) {
+  (
+    A::fetch(world, entity),
+    B::fetch(world, entity),
+    C::fetch(world, entity),
+    D::fetch(world, entity),
+    E::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn append_fetch_plan(world, plan) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+  D::append_fetch_plan(world, plan)
+  E::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn fetch_plan_size() {
+  A::fetch_plan_size() +
+  B::fetch_plan_size() +
+  C::fetch_plan_size() +
+  D::fetch_plan_size() +
+  E::fetch_plan_size()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn fetch_table_row(fetch) {
+  (
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
+    D::fetch_table_row(fetch),
+    E::fetch_table_row(fetch),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn fetch_table_row_with_plan_offset(fetch) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_table_row_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_table_row_with_plan_offset(fetch.with_offset(e_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn fetch_sparse_anchor_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(e_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn mentions_component(component_id) {
+  A::mentions_component(component_id) ||
+  B::mentions_component(component_id) ||
+  C::mentions_component(component_id) ||
+  D::mentions_component(component_id) ||
+  E::mentions_component(component_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn matches_component_set(set_contains_id) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id) &&
+  D::matches_component_set(set_contains_id) &&
+  E::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn collect_access(access) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+  D::collect_access(access)
+  E::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check() ||
+  D::requires_entity_check() ||
+  E::requires_entity_check()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn is_dense(world) {
+  A::is_dense(world) &&
+  B::is_dense(world) &&
+  C::is_dense(world) &&
+  D::is_dense(world) &&
+  E::is_dense(world)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None =>
+      match B::iteration_anchor_component() {
+        Some(component_id) => Some(component_id)
+        None =>
+          match C::iteration_anchor_component() {
+            Some(component_id) => Some(component_id)
+            None =>
+              match D::iteration_anchor_component() {
+                Some(component_id) => Some(component_id)
+                None => E::iteration_anchor_component()
+              }
+          }
+      }
+  }
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    D::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    E::iteration_anchor_components(),
+  )
+  component_ids
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn contiguous_compatible() {
+  A::contiguous_compatible() &&
+  B::contiguous_compatible() &&
+  C::contiguous_compatible() &&
+  D::contiguous_compatible() &&
+  E::contiguous_compatible()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn matches(world, entity) {
+  A::matches(world, entity) &&
+  B::matches(world, entity) &&
+  C::matches(world, entity) &&
+  D::matches(world, entity) &&
+  E::matches(world, entity) &&
+  F::matches(world, entity)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn fetch(world, entity) {
+  (
+    A::fetch(world, entity),
+    B::fetch(world, entity),
+    C::fetch(world, entity),
+    D::fetch(world, entity),
+    E::fetch(world, entity),
+    F::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn append_fetch_plan(world, plan) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+  D::append_fetch_plan(world, plan)
+  E::append_fetch_plan(world, plan)
+  F::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn fetch_plan_size() {
+  A::fetch_plan_size() +
+  B::fetch_plan_size() +
+  C::fetch_plan_size() +
+  D::fetch_plan_size() +
+  E::fetch_plan_size() +
+  F::fetch_plan_size()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn fetch_table_row(fetch) {
+  (
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
+    D::fetch_table_row(fetch),
+    E::fetch_table_row(fetch),
+    F::fetch_table_row(fetch),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn fetch_table_row_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_table_row_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_table_row_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_table_row_with_plan_offset(fetch.with_offset(f_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn fetch_sparse_anchor_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(f_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn mentions_component(component_id) {
+  A::mentions_component(component_id) ||
+  B::mentions_component(component_id) ||
+  C::mentions_component(component_id) ||
+  D::mentions_component(component_id) ||
+  E::mentions_component(component_id) ||
+  F::mentions_component(component_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id) &&
+  D::matches_component_set(set_contains_id) &&
+  E::matches_component_set(set_contains_id) &&
+  F::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn collect_access(access) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+  D::collect_access(access)
+  E::collect_access(access)
+  F::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check() ||
+  D::requires_entity_check() ||
+  E::requires_entity_check() ||
+  F::requires_entity_check()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn is_dense(world) {
+  A::is_dense(world) &&
+  B::is_dense(world) &&
+  C::is_dense(world) &&
+  D::is_dense(world) &&
+  E::is_dense(world) &&
+  F::is_dense(world)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None =>
+      match B::iteration_anchor_component() {
+        Some(component_id) => Some(component_id)
+        None =>
+          match C::iteration_anchor_component() {
+            Some(component_id) => Some(component_id)
+            None =>
+              match D::iteration_anchor_component() {
+                Some(component_id) => Some(component_id)
+                None =>
+                  match E::iteration_anchor_component() {
+                    Some(component_id) => Some(component_id)
+                    None => F::iteration_anchor_component()
+                  }
+              }
+          }
+      }
+  }
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    D::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    E::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    F::iteration_anchor_components(),
+  )
+  component_ids
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn contiguous_compatible() {
+  A::contiguous_compatible() &&
+  B::contiguous_compatible() &&
+  C::contiguous_compatible() &&
+  D::contiguous_compatible() &&
+  E::contiguous_compatible() &&
+  F::contiguous_compatible()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn matches(world, entity) {
+  A::matches(world, entity) &&
+  B::matches(world, entity) &&
+  C::matches(world, entity) &&
+  D::matches(world, entity) &&
+  E::matches(world, entity) &&
+  F::matches(world, entity) &&
+  G::matches(world, entity)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn fetch(world, entity) {
+  (
+    A::fetch(world, entity),
+    B::fetch(world, entity),
+    C::fetch(world, entity),
+    D::fetch(world, entity),
+    E::fetch(world, entity),
+    F::fetch(world, entity),
+    G::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn append_fetch_plan(world, plan) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+  D::append_fetch_plan(world, plan)
+  E::append_fetch_plan(world, plan)
+  F::append_fetch_plan(world, plan)
+  G::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn fetch_plan_size() {
+  A::fetch_plan_size() +
+  B::fetch_plan_size() +
+  C::fetch_plan_size() +
+  D::fetch_plan_size() +
+  E::fetch_plan_size() +
+  F::fetch_plan_size() +
+  G::fetch_plan_size()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn fetch_table_row(fetch) {
+  (
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
+    D::fetch_table_row(fetch),
+    E::fetch_table_row(fetch),
+    F::fetch_table_row(fetch),
+    G::fetch_table_row(fetch),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn fetch_table_row_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  let g_offset = f_offset + F::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_table_row_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_table_row_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_table_row_with_plan_offset(fetch.with_offset(f_offset)),
+    G::fetch_table_row_with_plan_offset(fetch.with_offset(g_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn fetch_sparse_anchor_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  let g_offset = f_offset + F::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(f_offset)),
+    G::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(g_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn mentions_component(component_id) {
+  A::mentions_component(component_id) ||
+  B::mentions_component(component_id) ||
+  C::mentions_component(component_id) ||
+  D::mentions_component(component_id) ||
+  E::mentions_component(component_id) ||
+  F::mentions_component(component_id) ||
+  G::mentions_component(component_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id) &&
+  D::matches_component_set(set_contains_id) &&
+  E::matches_component_set(set_contains_id) &&
+  F::matches_component_set(set_contains_id) &&
+  G::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn collect_access(access) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+  D::collect_access(access)
+  E::collect_access(access)
+  F::collect_access(access)
+  G::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check() ||
+  D::requires_entity_check() ||
+  E::requires_entity_check() ||
+  F::requires_entity_check() ||
+  G::requires_entity_check()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn is_dense(world) {
+  A::is_dense(world) &&
+  B::is_dense(world) &&
+  C::is_dense(world) &&
+  D::is_dense(world) &&
+  E::is_dense(world) &&
+  F::is_dense(world) &&
+  G::is_dense(world)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None =>
+      match B::iteration_anchor_component() {
+        Some(component_id) => Some(component_id)
+        None =>
+          match C::iteration_anchor_component() {
+            Some(component_id) => Some(component_id)
+            None =>
+              match D::iteration_anchor_component() {
+                Some(component_id) => Some(component_id)
+                None =>
+                  match E::iteration_anchor_component() {
+                    Some(component_id) => Some(component_id)
+                    None =>
+                      match F::iteration_anchor_component() {
+                        Some(component_id) => Some(component_id)
+                        None => G::iteration_anchor_component()
+                      }
+                  }
+              }
+          }
+      }
+  }
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    D::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    E::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    F::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    G::iteration_anchor_components(),
+  )
+  component_ids
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn contiguous_compatible() {
+  A::contiguous_compatible() &&
+  B::contiguous_compatible() &&
+  C::contiguous_compatible() &&
+  D::contiguous_compatible() &&
+  E::contiguous_compatible() &&
+  F::contiguous_compatible() &&
+  G::contiguous_compatible()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn matches(world, entity) {
+  A::matches(world, entity) &&
+  B::matches(world, entity) &&
+  C::matches(world, entity) &&
+  D::matches(world, entity) &&
+  E::matches(world, entity) &&
+  F::matches(world, entity) &&
+  G::matches(world, entity) &&
+  H::matches(world, entity)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn fetch(world, entity) {
+  (
+    A::fetch(world, entity),
+    B::fetch(world, entity),
+    C::fetch(world, entity),
+    D::fetch(world, entity),
+    E::fetch(world, entity),
+    F::fetch(world, entity),
+    G::fetch(world, entity),
+    H::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn append_fetch_plan(world, plan) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+  D::append_fetch_plan(world, plan)
+  E::append_fetch_plan(world, plan)
+  F::append_fetch_plan(world, plan)
+  G::append_fetch_plan(world, plan)
+  H::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn fetch_plan_size() {
+  A::fetch_plan_size() +
+  B::fetch_plan_size() +
+  C::fetch_plan_size() +
+  D::fetch_plan_size() +
+  E::fetch_plan_size() +
+  F::fetch_plan_size() +
+  G::fetch_plan_size() +
+  H::fetch_plan_size()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn fetch_table_row(fetch) {
+  (
+    A::fetch_table_row(fetch),
+    B::fetch_table_row(fetch),
+    C::fetch_table_row(fetch),
+    D::fetch_table_row(fetch),
+    E::fetch_table_row(fetch),
+    F::fetch_table_row(fetch),
+    G::fetch_table_row(fetch),
+    H::fetch_table_row(fetch),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn fetch_table_row_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  let g_offset = f_offset + F::fetch_plan_size()
+  let h_offset = g_offset + G::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(fetch),
+    B::fetch_table_row_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_table_row_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_table_row_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_table_row_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_table_row_with_plan_offset(fetch.with_offset(f_offset)),
+    G::fetch_table_row_with_plan_offset(fetch.with_offset(g_offset)),
+    H::fetch_table_row_with_plan_offset(fetch.with_offset(h_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn fetch_sparse_anchor_with_plan_offset(
+  fetch,
+) {
+  let b_offset = fetch.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let e_offset = d_offset + D::fetch_plan_size()
+  let f_offset = e_offset + E::fetch_plan_size()
+  let g_offset = f_offset + F::fetch_plan_size()
+  let h_offset = g_offset + G::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(fetch),
+    B::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(b_offset)),
+    C::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(c_offset)),
+    D::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(d_offset)),
+    E::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(e_offset)),
+    F::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(f_offset)),
+    G::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(g_offset)),
+    H::fetch_sparse_anchor_with_plan_offset(fetch.with_offset(h_offset)),
+  )
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn mentions_component(
+  component_id,
+) {
+  A::mentions_component(component_id) ||
+  B::mentions_component(component_id) ||
+  C::mentions_component(component_id) ||
+  D::mentions_component(component_id) ||
+  E::mentions_component(component_id) ||
+  F::mentions_component(component_id) ||
+  G::mentions_component(component_id) ||
+  H::mentions_component(component_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id) &&
+  D::matches_component_set(set_contains_id) &&
+  E::matches_component_set(set_contains_id) &&
+  F::matches_component_set(set_contains_id) &&
+  G::matches_component_set(set_contains_id) &&
+  H::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn collect_access(access) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+  D::collect_access(access)
+  E::collect_access(access)
+  F::collect_access(access)
+  G::collect_access(access)
+  H::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check() ||
+  D::requires_entity_check() ||
+  E::requires_entity_check() ||
+  F::requires_entity_check() ||
+  G::requires_entity_check() ||
+  H::requires_entity_check()
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn is_dense(world) {
+  A::is_dense(world) &&
+  B::is_dense(world) &&
+  C::is_dense(world) &&
+  D::is_dense(world) &&
+  E::is_dense(world) &&
+  F::is_dense(world) &&
+  G::is_dense(world) &&
+  H::is_dense(world)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None =>
+      match B::iteration_anchor_component() {
+        Some(component_id) => Some(component_id)
+        None =>
+          match C::iteration_anchor_component() {
+            Some(component_id) => Some(component_id)
+            None =>
+              match D::iteration_anchor_component() {
+                Some(component_id) => Some(component_id)
+                None =>
+                  match E::iteration_anchor_component() {
+                    Some(component_id) => Some(component_id)
+                    None =>
+                      match F::iteration_anchor_component() {
+                        Some(component_id) => Some(component_id)
+                        None =>
+                          match G::iteration_anchor_component() {
+                            Some(component_id) => Some(component_id)
+                            None => H::iteration_anchor_component()
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    D::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    E::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    F::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    G::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    H::iteration_anchor_components(),
+  )
+  component_ids
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn contiguous_compatible() {
+  A::contiguous_compatible() &&
+  B::contiguous_compatible() &&
+  C::contiguous_compatible() &&
+  D::contiguous_compatible() &&
+  E::contiguous_compatible() &&
+  F::contiguous_compatible() &&
+  G::contiguous_compatible() &&
+  H::contiguous_compatible()
 }
