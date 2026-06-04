@@ -78,7 +78,9 @@ pub fn window_plugin_with(
   if plugin.close_when_requested {
     next = next.add_systems(
       @app.Update,
-      @app.system_config_param2(close_when_requested),
+      @app.system_config_param2(close_when_requested).in_set(
+        window_close_when_requested_system_set,
+      ),
     )
   }
   next

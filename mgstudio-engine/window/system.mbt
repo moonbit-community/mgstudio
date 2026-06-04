@@ -13,6 +13,11 @@
 // limitations under the License.
 
 ///|
+pub let window_close_when_requested_system_set : @app.SystemSet = @app.system_set(
+  "mgstudio.window.close_when_requested",
+)
+
+///|
 pub fn close_when_requested(
   requested : @ecs.MessageReader[WindowCloseRequested],
   _closing : @ecs.Query[@core.Entity, @ecs.With[ClosingWindow]],

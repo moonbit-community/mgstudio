@@ -19,6 +19,11 @@
 pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
 
 ///|
+pub let ci_testing_event_sender_system_set : @app.SystemSet = @app.system_set(
+  "mgstudio.dev_tools.ci_testing.EventSenderSystems",
+)
+
+///|
 pub fn dev_tools_ci_testing_stage() -> String {
   CI_TESTING_SYSTEMS_STAGE
 }
@@ -88,19 +93,20 @@ fn ci_testing_apply_camera_pose(
   translation : @math.Vec3,
   rotation : @math.Quat,
 ) -> Unit {
-  let query : @ecs.QueryState[
-    @ecs.Mut[@transform.Transform],
-    @ecs.With[@camera.Camera],
-  ] = world.query_filtered(@ecs.With::new(@camera.Camera::component()))
+  let query : @ecs.QueryState[@core.Entity, @ecs.With[@camera.Camera]] = world.query_filtered(
+    @ecs.With::new(@camera.Camera::component()),
+  )
   let cameras = query.iter(world)
-  guard (cameras.fetch_next() catch { _ => None })
-    is Some((_, camera_transform)) else {
+  guard (cameras.fetch_next() catch { _ => None }) is Some((entity, _)) else {
     return
   }
-  let transform = camera_transform.value()
-  transform.translation = translation
-  transform.rotation = rotation
-  camera_transform.set(transform)
+  try! world.set_by_key(
+    entity,
+    @dev_tools_easy_camera_movement.ecs_key_camera_movement,
+    @dev_tools_easy_camera_movement.CameraMovement::CameraMovement(
+      translation, rotation,
+    ),
+  )
 }
 
 ///|
@@ -151,6 +157,8 @@ pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
           ignore(
             world.send_message(@app.AppExit::message(), @app.AppExit::Success),
           )
+        StartScreenRecording => ()
+        StopScreenRecording => ()
         MoveCamera(translation, rotation) =>
           ci_testing_apply_camera_pose(world, translation, rotation)
         Custom(payload) =>

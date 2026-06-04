@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/dev_tools/easy_camera_movement"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub fn easy_camera_movement_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn easy_camera_movement_plugin_with(@app.App[@ecs.World], EasyCameraMovementPlugin) -> @app.App[@ecs.World]
+
+pub let ecs_key_camera_movement : @ecs.ComponentKey[CameraMovement]
+
+// Errors
+
+// Types and methods
+pub struct CameraMovement {
+  translation : @math.Vec3
+  rotation : @math.Quat
+}
+pub fn CameraMovement::CameraMovement(@math.Vec3, @math.Quat) -> Self
+pub impl @ecs.Component for CameraMovement
+
+pub struct EasyCameraMovementPlugin {
+  decay_rate : Float
+}
+pub fn EasyCameraMovementPlugin::EasyCameraMovementPlugin() -> Self
+pub fn EasyCameraMovementPlugin::with_decay_rate(Self, Float) -> Self
+pub impl @app.Plugin for EasyCameraMovementPlugin
+
+// Type aliases
+
+// Traits
+

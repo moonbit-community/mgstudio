@@ -56,8 +56,18 @@ pub fn terminal_ctrl_c_exit_on_flag(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub let terminal_ctrl_c_exit_on_flag_system_set : SystemSet = system_set(
+  "mgstudio.app.TerminalCtrlCHandlerPlugin.exit_on_flag",
+)
+
+///|
 pub fn terminal_ctrl_c_handler_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
-  app.add_systems(Update, system(terminal_ctrl_c_exit_on_flag))
+  app.add_systems(
+    Update,
+    system(terminal_ctrl_c_exit_on_flag).in_set(
+      terminal_ctrl_c_exit_on_flag_system_set,
+    ),
+  )
 }
 
 ///|

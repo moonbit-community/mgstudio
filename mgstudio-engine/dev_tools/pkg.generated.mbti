@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/dev_tools/easy_camera_movement",
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
@@ -36,6 +37,8 @@ pub fn dev_tools_render_diagnostics_overlay() -> DiagnosticsOverlay
 pub fn diagnostics_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn diagnostics_overlay_plugin_with(@app.App[@ecs.World], DiagnosticsOverlayPlugin) -> @app.App[@ecs.World]
+
+pub let ecs_key_camera_movement : @ecs.ComponentKey[@easy_camera_movement.CameraMovement]
 
 pub fn fps_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -181,6 +184,9 @@ pub fn FrametimeGraphMaterial::new(@asset.Handle[@render_resource.StorageBuffer[
 pub impl @asset.Asset for FrametimeGraphMaterial
 
 // Type aliases
+pub using @easy_camera_movement {type CameraMovement}
+
+pub using @easy_camera_movement {type EasyCameraMovementPlugin}
 
 // Traits
 

@@ -40,6 +40,8 @@ pub(all) enum CiTestingEvent {
   ScreenshotAndExit
   NamedScreenshot(String)
   AppExit
+  StartScreenRecording
+  StopScreenRecording
   MoveCamera(@math.Vec3, @math.Quat)
   Custom(String)
 }
@@ -114,11 +116,11 @@ let ci_testing_custom_event_message_key : @ecs.MessageKey[CiTestingCustomEvent] 
 )
 
 ///|
-pub impl @app.Resource for CiTestingConfig with resource() {
+pub impl @app.Resource for CiTestingConfig with fn resource() {
   ci_testing_config_resource_key
 }
 
 ///|
-pub impl @ecs.Message for CiTestingCustomEvent with message() {
+pub impl @ecs.Message for CiTestingCustomEvent with fn message() {
   ci_testing_custom_event_message_key
 }

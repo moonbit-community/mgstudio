@@ -32,6 +32,15 @@ const DEV_TOOLS_PICKING_DEBUG_PLUGIN_NAME : String = "mgstudio.dev_tools.Picking
 const DEV_TOOLS_EASY_SCREENSHOT_PLUGIN_NAME : String = "mgstudio.dev_tools.EasyScreenshotPlugin"
 
 ///|
+pub let ecs_key_camera_movement : @ecs.ComponentKey[CameraMovement] = @dev_tools_easy_camera_movement.ecs_key_camera_movement
+
+///|
+pub type CameraMovement = @dev_tools_easy_camera_movement.CameraMovement
+
+///|
+pub type EasyCameraMovementPlugin = @dev_tools_easy_camera_movement.EasyCameraMovementPlugin
+
+///|
 pub struct DevToolsDiagnosticsOverlayPlugin {}
 
 ///|
@@ -40,12 +49,15 @@ pub fn DevToolsDiagnosticsOverlayPlugin::DevToolsDiagnosticsOverlayPlugin() -> D
 }
 
 ///|
-pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with name(_self) {
+pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with fn name(_self) {
   DEV_TOOLS_DIAGNOSTICS_OVERLAY_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with build(_self, app) {
+pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with fn build(
+  _self,
+  app,
+) {
   diagnostics_overlay_plugin(app)
 }
 
@@ -58,12 +70,12 @@ pub fn DevToolsFpsOverlayPlugin::DevToolsFpsOverlayPlugin() -> DevToolsFpsOverla
 }
 
 ///|
-pub impl @app.Plugin for DevToolsFpsOverlayPlugin with name(_self) {
+pub impl @app.Plugin for DevToolsFpsOverlayPlugin with fn name(_self) {
   DEV_TOOLS_FPS_OVERLAY_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DevToolsFpsOverlayPlugin with build(_self, app) {
+pub impl @app.Plugin for DevToolsFpsOverlayPlugin with fn build(_self, app) {
   fps_overlay_plugin(app)
 }
 
@@ -76,12 +88,12 @@ pub fn DevToolsPickingDebugPlugin::DevToolsPickingDebugPlugin() -> DevToolsPicki
 }
 
 ///|
-pub impl @app.Plugin for DevToolsPickingDebugPlugin with name(_self) {
+pub impl @app.Plugin for DevToolsPickingDebugPlugin with fn name(_self) {
   DEV_TOOLS_PICKING_DEBUG_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DevToolsPickingDebugPlugin with build(_self, app) {
+pub impl @app.Plugin for DevToolsPickingDebugPlugin with fn build(_self, app) {
   dev_tools_picking_debug_plugin(app)
 }
 
@@ -94,12 +106,12 @@ pub fn DevToolsEasyScreenshotPlugin::DevToolsEasyScreenshotPlugin() -> DevToolsE
 }
 
 ///|
-pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with name(_self) {
+pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with fn name(_self) {
   DEV_TOOLS_EASY_SCREENSHOT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with build(_self, app) {
+pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with fn build(_self, app) {
   dev_tools_easy_screenshot_plugin(app)
 }
 
@@ -122,12 +134,12 @@ pub fn DevToolsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for DevToolsPlugins with name(_self) {
+pub impl @app.Plugin for DevToolsPlugins with fn name(_self) {
   DEV_TOOLS_PLUGINS_NAME
 }
 
 ///|
-pub impl @app.Plugin for DevToolsPlugins with build(_self, app) {
+pub impl @app.Plugin for DevToolsPlugins with fn build(_self, app) {
   app.add_plugins(DevToolsPlugins::build())
 }
 

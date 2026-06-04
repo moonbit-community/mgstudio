@@ -27,12 +27,12 @@ pub fn CiTestingPlugin::CiTestingPlugin() -> CiTestingPlugin {
 }
 
 ///|
-pub impl @app.Plugin for CiTestingPlugin with name(_self) {
+pub impl @app.Plugin for CiTestingPlugin with fn name(_self) {
   CI_TESTING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CiTestingPlugin with build(self, app) {
+pub impl @app.Plugin for CiTestingPlugin with fn build(self, app) {
   ci_testing_plugin_with(app, self)
 }
 
@@ -97,6 +97,18 @@ fn ci_testing_apply_time_update_strategy(
 }
 
 ///|
+fn ci_testing_add_easy_camera_movement_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let plugin = @dev_tools_easy_camera_movement.EasyCameraMovementPlugin::EasyCameraMovementPlugin()
+  if app.is_plugin_added(plugin) {
+    app
+  } else {
+    app.add_plugins(plugin)
+  }
+}
+
+///|
 pub fn ci_testing_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ci_testing_plugin_with(app, CiTestingPlugin::CiTestingPlugin())
 }
@@ -126,7 +138,14 @@ pub fn ci_testing_plugin_with(
       CiTestingRuntimeState::CiTestingRuntimeState(),
     )
   }
-  ci_testing_apply_time_update_strategy(next).add_system(
-    ci_testing_send_events_system,
+  ci_testing_add_easy_camera_movement_plugin(next)
+  |> ci_testing_apply_time_update_strategy
+  |> @app.App::add_message(ci_testing_custom_event_message_key)
+  |> @app.App::add_systems(
+    @app.Update,
+    @app.system(ci_testing_send_events_system)
+    .in_set(ci_testing_event_sender_system_set)
+    .before(@window.window_close_when_requested_system_set)
+    .before(@app.terminal_ctrl_c_exit_on_flag_system_set),
   )
 }

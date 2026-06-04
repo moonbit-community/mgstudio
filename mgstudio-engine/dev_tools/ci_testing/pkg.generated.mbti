@@ -11,6 +11,8 @@ import {
 // Values
 pub const CI_TESTING_SYSTEMS_STAGE : String = "mgstudio.dev_tools.ci_testing.systems"
 
+pub let ci_testing_event_sender_system_set : String
+
 pub fn ci_testing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ci_testing_plugin_with(@app.App[@ecs.World], CiTestingPlugin) -> @app.App[@ecs.World]
@@ -43,6 +45,8 @@ pub(all) enum CiTestingEvent {
   ScreenshotAndExit
   NamedScreenshot(String)
   AppExit
+  StartScreenRecording
+  StopScreenRecording
   MoveCamera(@math.Vec3, @math.Quat)
   Custom(String)
 }

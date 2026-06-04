@@ -329,6 +329,8 @@ pub fn task_pool_plugin(App[@ecs.World]) -> App[@ecs.World]
 
 pub fn terminal_ctrl_c_exit_on_flag(@ecs.World) -> Unit
 
+pub let terminal_ctrl_c_exit_on_flag_system_set : String
+
 pub fn terminal_ctrl_c_gracefully_exit() -> Unit
 
 pub fn terminal_ctrl_c_handler_plugin(App[@ecs.World]) -> App[@ecs.World]
