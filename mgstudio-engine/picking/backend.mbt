@@ -136,8 +136,8 @@ fn picking_camera_transform(
 
 ///|
 fn picking_insert_camera_sorted(
-  cameras : Array[(@core.Entity, @sprite.Camera, @camera.Projection)],
-  camera : (@core.Entity, @sprite.Camera, @camera.Projection),
+  cameras : Array[(@core.Entity, @camera_camera.Camera, @camera.Projection)],
+  camera : (@core.Entity, @camera_camera.Camera, @camera.Projection),
 ) -> Unit {
   let mut insert_at = cameras.length()
   for i in 0..<cameras.length() {
@@ -154,7 +154,7 @@ fn picking_insert_sprite_camera_sorted(
   cameras : Array[
     (
       @core.Entity,
-      @sprite.Camera,
+      @camera_camera.Camera,
       @camera.Projection,
       @transform.Transform,
       Bool,
@@ -162,7 +162,7 @@ fn picking_insert_sprite_camera_sorted(
   ],
   camera : (
     @core.Entity,
-    @sprite.Camera,
+    @camera_camera.Camera,
     @camera.Projection,
     @transform.Transform,
     Bool,
@@ -260,19 +260,28 @@ fn picking_sprite_cameras(
   world : @ecs.World,
   settings : SpritePickingSettings,
 ) -> Array[
-  (@core.Entity, @sprite.Camera, @camera.Projection, @transform.Transform, Bool),
+  (
+    @core.Entity,
+    @camera_camera.Camera,
+    @camera.Projection,
+    @transform.Transform,
+    Bool,
+  ),
 ] {
   let cameras : Array[
     (
       @core.Entity,
-      @sprite.Camera,
+      @camera_camera.Camera,
       @camera.Projection,
       @transform.Transform,
       Bool,
     ),
   ] = []
-  world.for_each_component(@sprite.ecs_key_camera2d, fn(entity, _camera2d) {
-    guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
+  world.for_each_component(@camera_components2d.ecs_key_camera2d, fn(
+    entity,
+    _camera2d,
+  ) {
+    guard (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
       is Some(camera) else {
       return
     }
@@ -447,9 +456,9 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   let scale_factor = @window.window_scale_factor()
   let window_width = @window.window_width()
   let window_height = @window.window_height()
-  let cameras : Array[(@core.Entity, @sprite.Camera, @camera.Projection)] = []
+  let cameras : Array[(@core.Entity, @camera_camera.Camera, @camera.Projection)] = []
   world.for_each_component(@camera.ecs_key_camera3d, fn(entity, _camera3d) {
-    guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
+    guard (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
       is Some(camera) else {
       return
     }

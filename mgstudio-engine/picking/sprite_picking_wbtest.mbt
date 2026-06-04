@@ -101,13 +101,13 @@ test "sprite picking camera marker requirement filters cameras" {
   let camera_entity = world.spawn_empty()
   try! world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera2d,
-    @sprite.Camera2d::Camera2d(),
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
   )
   try! world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   try! world.set_by_key(
     camera_entity,

@@ -45,7 +45,7 @@ pub fn mesh_ray_cast_first(
 pub fn mesh_ray_cast_from_camera(
   world : @ecs.World,
   screen : @math.Vec2,
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   projection : @camera.Projection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
@@ -66,7 +66,7 @@ pub fn mesh_ray_cast_from_camera(
 pub fn mesh_ray_cast_from_camera_first(
   world : @ecs.World,
   screen : @math.Vec2,
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   projection : @camera.Projection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,

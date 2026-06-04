@@ -18,7 +18,7 @@
 
 ///|
 fn picking_camera_target_size(
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   window_width : Int,
   window_height : Int,
 ) -> @math.IVec2 {
