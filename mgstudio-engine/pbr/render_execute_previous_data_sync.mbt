@@ -102,6 +102,8 @@ fn render3d_has_active_camera(world : @ecs.World) -> Bool {
 fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   guard standard_material_prepass_enabled(world) else { return }
   guard render3d_has_active_camera(world) else { return }
+  let mut existing_scanned = 0
+  let mut existing_written = 0
   let existing_query : @ecs.Query[
     (
       @core.Entity,
@@ -117,20 +119,42 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   )
   try! existing_query.view(fn(_query_entity, data) {
     let (_entity, (global_transform, previous_global_transform)) = data
+    existing_scanned += 1
+    if !@core.tick_is_newer_than(
+        global_transform.last_changed(),
+        previous_global_transform.last_changed(),
+        world.read_change_tick(),
+      ) {
+      return
+    }
     previous_global_transform.set(
       @pbr_prepass.PreviousGlobalTransform::from_global_transform(
         global_transform.value(),
       ),
     )
+    existing_written += 1
   })
 
   let sync_state = render3d_previous_global_transform_sync_state_mut(world)
   let current_generation = world.structural_generation()
   guard sync_state.peek().verified_missing_scan_generation != current_generation else {
+    @app.timeline_trace_emit_counter_int(
+      "pbr.previous_global_transform.existing_scanned", existing_scanned,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "pbr.previous_global_transform.existing_written", existing_written,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "pbr.previous_global_transform.missing_scanned", 0,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "pbr.previous_global_transform.missing_inserted", 0,
+    )
     return
   }
 
   let missing : Array[(@core.Entity, @pbr_prepass.PreviousGlobalTransform)] = []
+  let mut missing_scanned = 0
   let missing_query : @ecs.Query[
     (
       @core.Entity,
@@ -151,6 +175,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   )
   try! missing_query.view(fn(_query_entity, data) {
     let (entity, (_mesh3d, global_transform)) = data
+    missing_scanned += 1
     missing.push(
       (
         entity,
@@ -169,4 +194,17 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   sync_state.set(Render3dPreviousGlobalTransformSyncState::{
     verified_missing_scan_generation: world.structural_generation(),
   })
+  @app.timeline_trace_emit_counter_int(
+    "pbr.previous_global_transform.existing_scanned", existing_scanned,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "pbr.previous_global_transform.existing_written", existing_written,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "pbr.previous_global_transform.missing_scanned", missing_scanned,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "pbr.previous_global_transform.missing_inserted",
+    missing.length(),
+  )
 }
