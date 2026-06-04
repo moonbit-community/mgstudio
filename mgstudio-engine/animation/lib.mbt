@@ -1642,17 +1642,29 @@ fn animation_evaluation_state_commit_into(
       Some(transform) => transform
       None => @transform.Transform::identity()
     }
+    let mut changed = base_transform is None
     if result.has_translation {
-      base.translation = result.translation
+      if !animation_vec3_eq(base.translation, result.translation) {
+        base.translation = result.translation
+        changed = true
+      }
     }
     if result.has_rotation {
-      base.rotation = result.rotation
+      if !animation_quat_eq(base.rotation, result.rotation) {
+        base.rotation = result.rotation
+        changed = true
+      }
     }
     if result.has_scale {
-      base.scale = result.scale
+      if !animation_vec3_eq(base.scale, result.scale) {
+        base.scale = result.scale
+        changed = true
+      }
     }
-    output.has_transform = true
-    output.transform = base
+    if changed {
+      output.has_transform = true
+      output.transform = base
+    }
   }
   if result.has_weights {
     output.weights = Some(
@@ -1860,6 +1872,44 @@ fn AnimationTargetCounters::AnimationTargetCounters() -> AnimationTargetCounters
     morph_weight_writes: 0,
     text_color_writes: 0,
   }
+}
+
+///|
+fn animation_vec3_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
+}
+
+///|
+fn animation_quat_eq(lhs : @math.Quat, rhs : @math.Quat) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w
+}
+
+///|
+fn animation_weights_eq(lhs : AnimationWeights, rhs : AnimationWeights) -> Bool {
+  let lhs_values = lhs.values()
+  let rhs_values = rhs.values()
+  if lhs_values.length() != rhs_values.length() {
+    return false
+  }
+  for index in 0..<lhs_values.length() {
+    if lhs_values[index] != rhs_values[index] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn animation_color_eq(lhs : @sprite.Color, rhs : @sprite.Color) -> Bool {
+  lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a
+}
+
+///|
+fn animation_text_color_eq(
+  lhs : @text.TextColor,
+  rhs : @text.TextColor,
+) -> Bool {
+  animation_color_eq(lhs.color, rhs.color)
 }
 
 ///|
@@ -2086,6 +2136,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     let threaded_graph_cache = runtime_scratch.threaded_graph_cache
     let counters = AnimationTargetCounters::AnimationTargetCounters()
 
+    let player_preparation_trace_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::System,
+      "animation_targets.player_preparation",
+    )
     let prepare_player = fn(
       player_entity : @core.Entity,
       player : AnimationPlayer,
@@ -2183,12 +2237,77 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         )
       })
     }
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::System,
+      "animation_targets.player_preparation",
+      player_preparation_trace_start_us,
+    )
 
     let target_id_column = world.component_column(ecs_key_animation_target_id)
     let animated_by_column = world.component_column(ecs_key_animated_by)
     let transform_column = world.component_column(@transform.ecs_key_transform)
     let weights_column = world.component_column(ecs_key_animation_weights)
     let text_color_column = world.component_column(@text.ecs_key_text_color)
+    let mut cached_transform_table_id = -1
+    let mut cached_transform_table_column : @ecs.ComponentTableColumn[
+      @transform.Transform,
+    ]? = None
+    let mut cached_weights_table_id = -1
+    let mut cached_weights_table_column : @ecs.ComponentTableColumn[
+      AnimationWeights,
+    ]? = None
+    let mut cached_text_color_table_id = -1
+    let mut cached_text_color_table_column : @ecs.ComponentTableColumn[
+      @text.TextColor,
+    ]? = None
+    let transform_table_column_for = fn(
+      table_id : Int,
+    ) -> @ecs.ComponentTableColumn[@transform.Transform]? {
+      if table_id < 0 {
+        return None
+      }
+      if table_id == cached_transform_table_id {
+        return cached_transform_table_column
+      }
+      cached_transform_table_id = table_id
+      cached_transform_table_column = match transform_column {
+        Some(column) => column.table_column(table_id)
+        None => None
+      }
+      cached_transform_table_column
+    }
+    let weights_table_column_for = fn(
+      table_id : Int,
+    ) -> @ecs.ComponentTableColumn[AnimationWeights]? {
+      if table_id < 0 {
+        return None
+      }
+      if table_id == cached_weights_table_id {
+        return cached_weights_table_column
+      }
+      cached_weights_table_id = table_id
+      cached_weights_table_column = match weights_column {
+        Some(column) => column.table_column(table_id)
+        None => None
+      }
+      cached_weights_table_column
+    }
+    let text_color_table_column_for = fn(
+      table_id : Int,
+    ) -> @ecs.ComponentTableColumn[@text.TextColor]? {
+      if table_id < 0 {
+        return None
+      }
+      if table_id == cached_text_color_table_id {
+        return cached_text_color_table_column
+      }
+      cached_text_color_table_id = table_id
+      cached_text_color_table_column = match text_color_column {
+        Some(column) => column.table_column(table_id)
+        None => None
+      }
+      cached_text_color_table_column
+    }
     let evaluation_state = animation_evaluation_state_new()
     let evaluation_output = animation_evaluation_output_new()
     let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
@@ -2204,6 +2323,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     }
     if target_id_column is Some(target_id_column) &&
       animated_by_column is Some(animated_by_column) {
+      let target_iteration_trace_start_us = @app.timeline_trace_begin_span(
+        @app.TimelineTraceCategory::System,
+        "animation_targets.target_iteration",
+      )
       let process_target = fn(
         entity : @core.Entity,
         table_id : Int,
@@ -2249,20 +2372,17 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           counters,
         )
 
-        let mut mark_transform_changed_at_current_row = false
         if evaluation_output.has_transform {
           let transform = evaluation_output.transform
           let wrote = match transform_column {
             Some(column) =>
-              if table_id >= 0 && row_index >= 0 {
-                match base_transform {
-                  Some(_) => {
-                    mark_transform_changed_at_current_row = true
-                    true
-                  }
+              if base_transform is Some(_) && table_id >= 0 && row_index >= 0 {
+                match transform_table_column_for(table_id) {
+                  Some(table_column) =>
+                    table_column.record_changed_at_row(row_index, write_tick)
                   None =>
-                    column.set_tick_only_hot_at_table_row_value(
-                      table_id, row_index, transform, write_tick,
+                    column.record_changed_hot_at_table_row(
+                      table_id, row_index, write_tick,
                     )
                 }
               } else {
@@ -2276,12 +2396,38 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           counters.transform_writes = counters.transform_writes + 1
         }
         if evaluation_output.weights is Some(weights) {
+          let weights_changed = match weights_column {
+            Some(_) =>
+              if table_id >= 0 && row_index >= 0 {
+                match weights_table_column_for(table_id) {
+                  Some(table_column) =>
+                    match table_column.value_at_row_unchecked(row_index) {
+                      Some(current_weights) =>
+                        !animation_weights_eq(current_weights, weights)
+                      None => true
+                    }
+                  None => true
+                }
+              } else {
+                true
+              }
+            None => true
+          }
           let wrote = match weights_column {
             Some(column) =>
-              if table_id >= 0 && row_index >= 0 {
-                column.set_tick_only_hot_at_table_row_value(
-                  table_id, row_index, weights, write_tick,
-                )
+              if !weights_changed {
+                true
+              } else if table_id >= 0 && row_index >= 0 {
+                match weights_table_column_for(table_id) {
+                  Some(table_column) =>
+                    table_column.set_tick_only_hot_at_row(
+                      row_index, weights, write_tick,
+                    )
+                  None =>
+                    column.set_tick_only_hot_at_table_row_value(
+                      table_id, row_index, weights, write_tick,
+                    )
+                }
               } else {
                 column.set_tick_only_hot(entity, weights)
               }
@@ -2290,15 +2436,43 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           if !wrote {
             weights_updates.push((entity, weights))
           }
-          counters.morph_weight_writes = counters.morph_weight_writes + 1
+          if weights_changed {
+            counters.morph_weight_writes = counters.morph_weight_writes + 1
+          }
         }
         if evaluation_output.text_color is Some(text_color) {
+          let text_color_changed = match text_color_column {
+            Some(_) =>
+              if table_id >= 0 && row_index >= 0 {
+                match text_color_table_column_for(table_id) {
+                  Some(table_column) =>
+                    match table_column.value_at_row_unchecked(row_index) {
+                      Some(current_text_color) =>
+                        !animation_text_color_eq(current_text_color, text_color)
+                      None => true
+                    }
+                  None => true
+                }
+              } else {
+                true
+              }
+            None => true
+          }
           let wrote = match text_color_column {
             Some(column) =>
-              if table_id >= 0 && row_index >= 0 {
-                column.set_tick_only_hot_at_table_row_value(
-                  table_id, row_index, text_color, write_tick,
-                )
+              if !text_color_changed {
+                true
+              } else if table_id >= 0 && row_index >= 0 {
+                match text_color_table_column_for(table_id) {
+                  Some(table_column) =>
+                    table_column.set_tick_only_hot_at_row(
+                      row_index, text_color, write_tick,
+                    )
+                  None =>
+                    column.set_tick_only_hot_at_table_row_value(
+                      table_id, row_index, text_color, write_tick,
+                    )
+                }
               } else {
                 column.set_tick_only_hot(entity, text_color)
               }
@@ -2307,9 +2481,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           if !wrote {
             text_color_updates.push((entity, text_color))
           }
-          counters.text_color_writes = counters.text_color_writes + 1
+          if text_color_changed {
+            counters.text_color_writes = counters.text_color_writes + 1
+          }
         }
-        mark_transform_changed_at_current_row
+        false
       }
       match transform_column {
         Some(transform_column) =>
@@ -2348,6 +2524,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
             )
           })
       }
+      @app.timeline_trace_end_span(
+        @app.TimelineTraceCategory::System,
+        "animation_targets.target_iteration",
+        target_iteration_trace_start_us,
+      )
     }
 
     for update in transform_updates {

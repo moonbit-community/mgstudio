@@ -33,12 +33,12 @@ let component_column_migration_marker_key : ComponentKey[
 ] = register_component(debug_name="tests.ecs.component_column.migration_marker")
 
 ///|
-pub impl Component for ComponentColumnCacheValue with component() {
+pub impl Component for ComponentColumnCacheValue with fn component() {
   component_column_cache_value_key
 }
 
 ///|
-pub impl Component for ComponentColumnMigrationMarker with component() {
+pub impl Component for ComponentColumnMigrationMarker with fn component() {
   component_column_migration_marker_key
 }
 
@@ -73,6 +73,51 @@ test "ecs component column: cached table values write through typed storage" {
   )
   guard value_opt is Some(value) else { fail("expected typed component value") }
   debug_inspect(value, content="{ x: 2 }")
+}
+
+///|
+test "ecs component column: hot table row value write updates typed storage and change tick" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 5,
+  })
+  guard world.table_id_for_entity(entity) is Some(table_id) else {
+    fail("expected table entity")
+  }
+  guard world.entity_table_row(entity) is Some(table_row) else {
+    fail("expected table row")
+  }
+  guard world.component_column(component_column_cache_value_key)
+    is Some(component_column) else {
+    fail("expected component column")
+  }
+  let tick : @core.Tick = 7
+  let wrote = component_column.set_tick_only_hot_at_table_row_value(
+    table_id,
+    table_row.index(),
+    ComponentColumnCacheValue::{ x: 6 },
+    tick,
+  )
+  debug_inspect(wrote, content="true")
+  debug_inspect(
+    component_column_cache_value_key.component_get_table_row(
+      world,
+      table_id,
+      table_row.index(),
+    ),
+    content="Some({ x: 6 })",
+  )
+  guard component_column.table_column(table_id) is Some(table_column) else {
+    fail("expected cached table column")
+  }
+  debug_inspect(
+    table_column.is_changed_at_row(
+      table_row.index(),
+      @core.SystemTicks::new(0, 7),
+    ),
+    content="true",
+  )
 }
 
 ///|

@@ -1622,12 +1622,7 @@ pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row(
   guard row_index < raw_table_column_kernel_len(column_ref.storage) else {
     return false
   }
-  guard self.world.table_storage(table_id) is Some(table_ref) else {
-    return false
-  }
-  guard TableRow::from_index(row_index) is Some(row) else { return false }
-  guard table_ref.entity_at_row(row) is Some(entity) else { return false }
-  self.key.component_set(self.world, entity, value)
+  self.key.component_set_table_row(self.world, table_id, row_index, value)
   ignore(column_ref.record_changed_at_row(row_index, tick, None))
   true
 }
@@ -1648,12 +1643,7 @@ pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row_value(
   guard row_index < raw_table_column_kernel_len(column_ref.storage) else {
     return false
   }
-  guard self.world.table_storage(table_id) is Some(table_ref) else {
-    return false
-  }
-  guard TableRow::from_index(row_index) is Some(row) else { return false }
-  guard table_ref.entity_at_row(row) is Some(entity) else { return false }
-  self.key.component_set(self.world, entity, value)
+  self.key.component_set_table_row(self.world, table_id, row_index, value)
   ignore(column_ref.record_changed_at_row(row_index, tick, None))
   true
 }
