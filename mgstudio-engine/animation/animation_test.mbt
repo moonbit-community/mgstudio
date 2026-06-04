@@ -939,6 +939,75 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
 }
 
 ///|
+test "animation runtime: unchanged target output keeps transform change tick" {
+  let default_time : @time.Time[Unit] = @time.Time::Time()
+  let mut app = @app.App::new(@ecs.World::new())
+    .insert_resource(default_time)
+    .add_plugins(AnimationPlugin::AnimationPlugin())
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("Hip")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
+
+  let clip = AnimationClip::new().add_translation_curve(target_id, [
+    KeyframeVec3::new(0.0F, @math.Vec3::zero()),
+    KeyframeVec3::new(1.0F, @math.Vec3::new(2.0F, 0.0F, 0.0F)),
+  ])
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::AnimationPlayer()
+  player.play(node).seek_to(0.5F).pause() |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+  try! world.set_by_key(
+    target_entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+
+  app = app.run_once()
+  let first_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All] = @ecs.query(
+    app.world(),
+  )
+  let first_transform = try! first_query.require_single()
+  let first_changed_tick = first_transform.last_changed()
+  debug_inspect(
+    approx_eq_animation(first_transform.value().translation.x, 1.0F),
+    content="true",
+  )
+
+  app = app.run_once()
+  let second_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All] = @ecs.query(
+    app.world(),
+  )
+  let second_transform = try! second_query.require_single()
+  debug_inspect(
+    approx_eq_animation(second_transform.value().translation.x, 1.0F),
+    content="true",
+  )
+  debug_inspect(
+    second_transform.last_changed() == first_changed_tick,
+    content="true",
+  )
+}
+
+///|
 test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
   let default_time : @time.Time[Unit] = @time.Time::Time()
   let mut app = @app.App::new(@ecs.World::new())

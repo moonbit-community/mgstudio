@@ -912,6 +912,9 @@ priv struct AnimationFrameCurveCache {
   target_highs : Array[UInt64]
   target_lows : Array[UInt64]
   curves : Array[AnimationTargetCurves?]
+  mut hits : Int
+  mut misses : Int
+  mut empty_hits : Int
 }
 
 ///|
@@ -924,6 +927,9 @@ fn animation_frame_curve_cache_new() -> AnimationFrameCurveCache {
     target_highs: [],
     target_lows: [],
     curves: [],
+    hits: 0,
+    misses: 0,
+    empty_hits: 0,
   }
 }
 
@@ -945,6 +951,9 @@ fn animation_frame_curve_cache_ensure_capacity(
 fn animation_frame_curve_cache_clear(cache : AnimationFrameCurveCache) -> Unit {
   cache.stamp = cache.stamp + 1
   cache.len = 0
+  cache.hits = 0
+  cache.misses = 0
+  cache.empty_hits = 0
   if cache.stamp <= 0 {
     cache.stamp = 1
     for i in 0..<cache.stamps.length() {
@@ -1053,11 +1062,16 @@ fn animation_frame_curves_cached(
     if frame_curve_cache.clip_ids[index] == clip_id &&
       frame_curve_cache.target_highs[index] == target_key.0 &&
       frame_curve_cache.target_lows[index] == target_key.1 {
+      frame_curve_cache.hits = frame_curve_cache.hits + 1
+      if frame_curve_cache.curves[index] is None {
+        frame_curve_cache.empty_hits = frame_curve_cache.empty_hits + 1
+      }
       return frame_curve_cache.curves[index]
     }
     index = (index + 1) % capacity
   }
   let curves = clip.curves_for_target(target_id)
+  frame_curve_cache.misses = frame_curve_cache.misses + 1
   frame_curve_cache.stamps[index] = frame_curve_cache.stamp
   frame_curve_cache.clip_ids[index] = clip_id
   frame_curve_cache.target_highs[index] = target_key.0
@@ -2565,6 +2579,22 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     @app.timeline_trace_emit_counter_int(
       "animation.targets.text_color_writes",
       counters.text_color_writes,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.frame_curve_cache_hits",
+      runtime_scratch.frame_curve_cache.hits,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.frame_curve_cache_misses",
+      runtime_scratch.frame_curve_cache.misses,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.frame_curve_cache_empty_hits",
+      runtime_scratch.frame_curve_cache.empty_hits,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.frame_curve_cache_entries",
+      runtime_scratch.frame_curve_cache.len,
     )
   })
 }
