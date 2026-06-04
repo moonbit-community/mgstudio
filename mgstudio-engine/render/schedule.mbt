@@ -244,6 +244,27 @@ fn run_render_schedule(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn send_time(world : @ecs.World) -> Unit {
+  guard world.get_resource(@time.time_sender_resource_key) is Some(sender) else {
+    return
+  }
+  sender.try_send(@core.Instant::now()) catch {
+    @time.TimeSendError::Full =>
+      abort(
+        "The TimeSender channel should always be empty during render. You might need to add the mgstudio::core::time_system to your app.",
+      )
+  }
+}
+
+///|
+fn run_render_recovery_schedule(world : @ecs.World) -> Unit {
+  if renderer_is_ready(world) {
+    run_render_schedule(world)
+  }
+  send_time(world)
+}
+
+///|
 pub fn configure_base_render_graph_sets(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {

@@ -25,12 +25,12 @@ pub fn TimePlugin::TimePlugin() -> TimePlugin {
 }
 
 ///|
-pub impl @app.Plugin for TimePlugin with name(_self) {
+pub impl @app.Plugin for TimePlugin with fn name(_self) {
   "mgstudio.time.TimePlugin"
 }
 
 ///|
-pub impl @app.Plugin for TimePlugin with build(_self, app) {
+pub impl @app.Plugin for TimePlugin with fn build(_self, app) {
   time_plugin(app)
 }
 
@@ -65,12 +65,12 @@ pub(open) trait TimeContext: Default {
 }
 
 ///|
-pub impl TimeContext for Unit with time_context_debug_name() {
+pub impl TimeContext for Unit with fn time_context_debug_name() {
   "Unit"
 }
 
 ///|
-pub impl TimeContext for Unit with time_resource_key() {
+pub impl TimeContext for Unit with fn time_resource_key() {
   default_time_resource_key
 }
 
@@ -105,12 +105,12 @@ pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]] = @ecs.register_
 )
 
 ///|
-pub impl[T : TimeContext] @app.Resource for Time[T] with resource() {
+pub impl[T : TimeContext] @app.Resource for Time[T] with fn resource() {
   registered_time_resource_key()
 }
 
 ///|
-pub impl @app.Resource for TimeUpdateStrategy with resource() {
+pub impl @app.Resource for TimeUpdateStrategy with fn resource() {
   time_update_strategy_resource_key
 }
 
@@ -204,9 +204,14 @@ fn time_update_real_with_strategy(
   real_time : Time[Real],
   strategy : TimeUpdateStrategy,
   fixed_time : Time[Fixed],
+  sent_time : @core.Instant?,
 ) -> Time[Real] {
   match strategy {
-    Automatic => real_time.update()
+    Automatic =>
+      match sent_time {
+        Some(instant) => real_time.update_with_instant(instant)
+        None => real_time.update()
+      }
     ManualInstant(now_instant) => real_time.update_with_instant(now_instant)
     ManualDuration(duration) => real_time.update_with_duration(duration)
     FixedTimesteps(factor) => {
@@ -225,6 +230,7 @@ fn time_update(world : @ecs.World) -> Unit {
     TimeUpdateStrategy::default,
   )
   let fixed_time = world_fixed_or_default(world)
+  let sent_time = time_receive_sent_instant(world)
   let real_ref = world.get_resource_mut(real_time_resource_key).unwrap()
   let virtual_ref = world.get_resource_mut(virtual_time_resource_key).unwrap()
   let time_ref = world.get_resource_mut(default_time_resource_key).unwrap()
@@ -232,6 +238,7 @@ fn time_update(world : @ecs.World) -> Unit {
     real_ref.peek(),
     strategy,
     fixed_time,
+    sent_time,
   )
   let next_virtual = update_virtual_time(virtual_ref.peek(), next_real)
   real_ref.set(next_real)

@@ -62,6 +62,11 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let mut next = app.add_plugins(SyncWorldPlugin::SyncWorldPlugin())
+  let time_channels = @time.create_time_channels()
+  next = next.insert_world_resource(
+    @time.time_receiver_resource_key,
+    time_channels.1,
+  )
   if !next.contains_resource(render_asset_bytes_per_frame_resource_key) {
     next = next.insert_world_resource(
       render_asset_bytes_per_frame_resource_key,
@@ -91,6 +96,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
       init_renderer_context_resources(render_sub_app.world())
       init_render_state(render_sub_app.world())
+      render_sub_app
+      .world()
+      .insert_resource(@time.time_sender_resource_key, time_channels.0)
       if !render_sub_app
         .world()
         .resource(render_schedule_order_resource_key)
@@ -111,9 +119,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       render_sub_app
       .add_systems(
         render_recovery_schedule_stage(),
-        @app.system(run_render_schedule)
-        .named("mgstudio_render::run_render_schedule")
-        .run_if(renderer_is_ready),
+        @app.system(run_render_recovery_schedule).named(
+          "mgstudio_render::run_render_recovery_schedule",
+        ),
       )
       .add_systems(
         render_schedule_stage(),

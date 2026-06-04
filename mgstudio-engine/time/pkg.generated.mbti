@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn create_time_channels() -> (TimeSender, TimeReceiver)
+
 pub let default_time_resource_key : @ecs.ResourceKey[Time[Unit]]
 
 pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]]
@@ -65,7 +67,11 @@ pub fn time_real_elapsed() -> @core.Duration
 
 pub fn time_real_elapsed_seconds() -> Float
 
+pub let time_receiver_resource_key : @ecs.ResourceKey[TimeReceiver]
+
 pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
+
+pub let time_sender_resource_key : @ecs.ResourceKey[TimeSender]
 
 pub fn time_virtual_delta() -> @core.Duration
 
@@ -90,6 +96,9 @@ pub fn update_virtual_time(Time[Virtual], Time[Real]) -> Time[Virtual]
 pub let virtual_time_resource_key : @ecs.ResourceKey[Time[Virtual]]
 
 // Errors
+pub suberror TimeSendError {
+  Full
+}
 
 // Types and methods
 pub struct Fixed {
@@ -208,10 +217,27 @@ pub fn[T] Time::wrap_period_seconds(Self[T]) -> Float
 pub impl[T : TimeContext] @app.Resource for Time[T]
 pub impl[T : Default] Default for Time[T]
 
+pub(all) struct TimeChannel {
+  // private fields
+}
+
 pub struct TimePlugin {
 }
 pub fn TimePlugin::TimePlugin() -> Self
 pub impl @app.Plugin for TimePlugin
+
+pub struct TimeReceiver {
+  channel : TimeChannel
+  mut has_received_time : Bool
+}
+pub fn TimeReceiver::try_recv(Self) -> @core.Instant?
+pub impl @app.Resource for TimeReceiver
+
+pub struct TimeSender {
+  channel : TimeChannel
+}
+pub fn TimeSender::try_send(Self, @core.Instant) -> Unit raise TimeSendError
+pub impl @app.Resource for TimeSender
 
 pub(all) enum TimeUpdateStrategy {
   Automatic

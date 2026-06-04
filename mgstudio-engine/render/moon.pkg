@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/post_process/bloom" @post_process_bloom,
   "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
+  "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,

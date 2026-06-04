@@ -41,6 +41,13 @@ fn read_fixed_time_test_resource(app : @app.App[@ecs.World]) -> Time[Fixed] {
 }
 
 ///|
+fn send_time_test_instant(sender : TimeSender, instant : @core.Instant) -> Unit {
+  sender.try_send(instant) catch {
+    TimeSendError::Full => abort("time channel unexpectedly full")
+  }
+}
+
+///|
 fn update_virtual_test_resource(
   app : @app.App[@ecs.World],
   update : (Time[Virtual]) -> Time[Virtual],
@@ -169,6 +176,32 @@ test "time: manual instant keeps first update delta at zero" {
     read_default_time_test_resource(app).elapsed_seconds(),
     content="2.5",
   )
+}
+
+///|
+test "time: automatic update uses render world sent instant" {
+  let channels = create_time_channels()
+  let sender = channels.0
+  let receiver = channels.1
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .insert_resource(receiver)
+
+  send_time_test_instant(sender, @core.Instant::from_secs_f32(10.0F))
+  app = app.run_once()
+  debug_inspect(
+    read_real_time_test_resource(app).first_update_seconds(),
+    content="Some(10)",
+  )
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="0")
+
+  send_time_test_instant(sender, @core.Instant::from_secs_f32(12.0F))
+  app = app.run_once()
+  debug_inspect(
+    read_real_time_test_resource(app).last_update_seconds(),
+    content="Some(12)",
+  )
+  debug_inspect(read_real_time_test_resource(app).delta_seconds(), content="2")
 }
 
 ///|

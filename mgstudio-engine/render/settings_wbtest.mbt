@@ -130,13 +130,16 @@ test "render schedule: order inserts stages around render" {
 ///|
 test "render recovery: render schedule only runs when renderer is ready" {
   let log : Array[String] = []
+  let time_channels = @time.create_time_channels()
+  let time_sender = time_channels.0
+  let time_receiver = time_channels.1
   let render_sub_app = @app.SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(render_recovery_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_recovery_schedule_stage()))
     .add_systems(
       render_recovery_schedule_stage(),
-      @app.system(run_render_schedule).run_if(renderer_is_ready),
+      @app.system(run_render_recovery_schedule),
     )
     .add_systems(
       render_schedule_stage(),
@@ -148,11 +151,16 @@ test "render recovery: render schedule only runs when renderer is ready" {
     render_schedule_order_resource_key,
     RenderScheduleOrder::RenderScheduleOrder(),
   )
+  render_sub_app
+  .world()
+  .insert_resource(@time.time_sender_resource_key, time_sender)
   ignore(render_sub_app.update())
   debug_inspect(log.join(","), content="\"\"")
+  debug_inspect(time_receiver.try_recv() is Some(_), content="true")
   mark_renderer_ready(render_sub_app.world())
   ignore(render_sub_app.update())
   debug_inspect(log.join(","), content="\"render\"")
+  debug_inspect(time_receiver.try_recv() is Some(_), content="true")
 }
 
 ///|
