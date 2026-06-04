@@ -26,15 +26,11 @@ pub fn dev_tools_ci_testing_stage() -> String {
 ///|
 pub(all) struct CiTestingRuntimeState {
   mut current_frame : Int
-  mut pending_screenshot_exit_entities : Array[@core.Entity]
 }
 
 ///|
 pub fn CiTestingRuntimeState::CiTestingRuntimeState() -> CiTestingRuntimeState {
-  CiTestingRuntimeState::{
-    current_frame: 0,
-    pending_screenshot_exit_entities: [],
-  }
+  CiTestingRuntimeState::{ current_frame: 0 }
 }
 
 ///|
@@ -45,7 +41,7 @@ let ci_testing_runtime_state_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for CiTestingRuntimeState with resource() {
+pub impl @app.Resource for CiTestingRuntimeState with fn resource() {
   ci_testing_runtime_state_resource_key
 }
 
@@ -63,24 +59,27 @@ fn ci_testing_screenshot_path_for_name(name : String) -> String {
 fn ci_testing_queue_screenshot(
   world : @ecs.World,
   path : String,
-  state : CiTestingRuntimeState,
   exit_after_capture? : Bool = false,
 ) -> Unit {
   let screenshot_entity = world.spawn()
-  ignore(
-    world.add_entity_component_observer(
-      screenshot_entity,
-      @window.save_to_disk(path),
-    ),
-  )
+  let observer = if exit_after_capture {
+    fn(event : @ecs.ComponentOn[@ecs.Insert, @window.ScreenshotCaptured]) {
+      @window.save_to_disk(path)(event)
+      ignore(
+        event
+        .world()
+        .send_message(@app.AppExit::message(), @app.AppExit::Success),
+      )
+    }
+  } else {
+    @window.save_to_disk(path)
+  }
+  ignore(world.add_entity_component_observer(screenshot_entity, observer))
   try! world.set_by_key(
     screenshot_entity,
     @window.ecs_key_screenshot,
     @window.Screenshot::primary_window(),
   )
-  if exit_after_capture {
-    state.pending_screenshot_exit_entities.push(screenshot_entity)
-  }
 }
 
 ///|
@@ -105,37 +104,6 @@ fn ci_testing_apply_camera_pose(
 }
 
 ///|
-fn ci_testing_try_exit_after_capture(
-  world : @ecs.World,
-  state : CiTestingRuntimeState,
-) -> Unit {
-  if state.pending_screenshot_exit_entities.is_empty() {
-    return
-  }
-  let remaining : Array[@core.Entity] = []
-  let mut should_exit = false
-  for entity in state.pending_screenshot_exit_entities {
-    if (try! world.get_by_key(entity, @window.ecs_key_screenshot_captured))
-      is Some(_) {
-      should_exit = true
-      ignore(
-        try world.despawn(entity) catch {
-          _ => false
-        } noraise {
-          _ => true
-        },
-      )
-    } else {
-      remaining.push(entity)
-    }
-  }
-  state.pending_screenshot_exit_entities = remaining
-  if should_exit {
-    ignore(world.send_message(@app.AppExit::message(), @app.AppExit::Success))
-  }
-}
-
-///|
 pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
   guard world.get_resource_mut(ci_testing_config_resource_key)
     is Some(config_mut) else {
@@ -147,8 +115,6 @@ pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
   }
 
   state_mut.modify(fn(state) {
-    ci_testing_try_exit_after_capture(world, state)
-
     let frame = state.current_frame
     let to_run : Array[CiTestingEvent] = []
     let remaining : Array[CiTestingEventOnFrame] = []
@@ -169,20 +135,17 @@ pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
           ci_testing_queue_screenshot(
             world,
             ci_testing_screenshot_path_for_frame(frame),
-            state,
           )
         ScreenshotAndExit =>
           ci_testing_queue_screenshot(
             world,
             ci_testing_screenshot_path_for_frame(frame),
-            state,
             exit_after_capture=true,
           )
         NamedScreenshot(name) =>
           ci_testing_queue_screenshot(
             world,
             ci_testing_screenshot_path_for_name(name),
-            state,
           )
         AppExit =>
           ignore(

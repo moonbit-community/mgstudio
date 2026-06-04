@@ -60,7 +60,6 @@ pub impl @app.Plugin for CiTestingPlugin
 
 pub(all) struct CiTestingRuntimeState {
   mut current_frame : Int
-  mut pending_screenshot_exit_entities : Array[@core.Entity]
 }
 pub fn CiTestingRuntimeState::CiTestingRuntimeState() -> Self
 pub impl @app.Resource for CiTestingRuntimeState
