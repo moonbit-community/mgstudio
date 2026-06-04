@@ -304,8 +304,8 @@ pub fn render2d_viewport_to_world_2d(
 ///|
 pub fn render2d_camera_viewport_to_world_2d(
   screen : @math.Vec2,
-  camera : @sprite.Camera,
-  projection : @sprite.OrthographicProjection,
+  camera : @camera_camera.Camera,
+  projection : @camera_projection2d.OrthographicProjection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -318,8 +318,8 @@ pub fn render2d_camera_viewport_to_world_2d(
 ///|
 pub fn render2d_camera_world_to_viewport_2d(
   world : @math.Vec2,
-  camera : @sprite.Camera,
-  projection : @sprite.OrthographicProjection,
+  camera : @camera_camera.Camera,
+  projection : @camera_projection2d.OrthographicProjection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
