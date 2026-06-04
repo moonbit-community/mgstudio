@@ -128,6 +128,39 @@ test "render schedule: order inserts stages around render" {
 }
 
 ///|
+test "render schedule: pipeline queue is admitted before render set" {
+  let log : Array[String] = []
+  let cache = @render_resource.PipelineCache::new()
+  ignore(
+    cache.queue_render_pipeline(
+      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
+    ),
+  )
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(render_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_schedule_stage()))
+  render_sub_app.world().insert_resource(pipeline_cache_resource_key, cache)
+  let render_sub_app = configure_base_render_sets(render_sub_app)
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(process_pipeline_queue_system).in_set(
+        render_system_set_process_pipeline_queue,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
+        log.push(
+          "\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{to_repr(cache.waiting_pipelines()).to_string()}",
+        )
+      }).in_set(render_system_set_render),
+    )
+  ignore(render_sub_app.update())
+  debug_inspect(log.join(","), content="\"1:0:[0]\"")
+}
+
+///|
 test "render recovery: render schedule only runs when renderer is ready" {
   let log : Array[String] = []
   let time_channels = @time.create_time_channels()

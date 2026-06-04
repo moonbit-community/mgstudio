@@ -201,6 +201,11 @@ pub let render_system_set_prepare_bind_groups : @app.SystemSet = @app.system_set
 )
 
 ///|
+pub let render_system_set_process_pipeline_queue : @app.SystemSet = @app.system_set(
+  "mgstudio.render.process_pipeline_queue",
+)
+
+///|
 pub let render_system_set_render : @app.SystemSet = @app.system_set(
   "mgstudio.render.render",
 )
@@ -356,6 +361,9 @@ pub fn configure_base_render_sets(
     render_system_set_prepare_bind_groups,
   ])
   .configure_set(stage, render_system_set_prepare_bind_groups, before=[
+    render_system_set_process_pipeline_queue,
+  ])
+  .configure_set(stage, render_system_set_process_pipeline_queue, before=[
     render_system_set_render,
   ])
 }

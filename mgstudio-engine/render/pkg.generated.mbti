@@ -413,6 +413,8 @@ pub let render_system_set_prepare_resources_collect_phase_buffers : String
 
 pub let render_system_set_prepare_resources_flush : String
 
+pub let render_system_set_process_pipeline_queue : String
+
 pub let render_system_set_queue : String
 
 pub let render_system_set_queue_meshes : String

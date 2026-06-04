@@ -143,6 +143,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(process_pipeline_queue_system)
+        .named("mgstudio_render::process_pipeline_queue_system")
+        .in_set(render_system_set_process_pipeline_queue),
+      )
+      .add_systems(
+        render_schedule_stage(),
         @app.system(render_graph_driver_system).in_set(render_system_set_render),
       )
       .add_systems(

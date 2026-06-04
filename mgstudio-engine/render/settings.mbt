@@ -275,6 +275,14 @@ pub fn present_active_frames(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn process_pipeline_queue_system(world : @ecs.World) -> Unit {
+  guard world.get_resource(pipeline_cache_resource_key) is Some(cache) else {
+    return
+  }
+  cache.accept_new_pipelines_for_processing()
+}
+
+///|
 pub fn RenderResources::unpack_into(
   self : RenderResources,
   main_world : @ecs.World,
