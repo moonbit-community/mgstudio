@@ -386,11 +386,11 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_color_grading),
@@ -524,27 +524,21 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_hdr),
     content="true",
   )
 
-  let tonemapping_ok = match
-    (try! world.get_by_key(entity, ecs_key_tonemapping)) {
-    Some(None) => true
-    _ => false
-  }
   let target_ok = match (try! world.get_by_key(entity, ecs_key_render_target)) {
     Some(Screen) => true
     _ => false
   }
-  debug_inspect(tonemapping_ok, content="true")
   debug_inspect(target_ok, content="true")
 }
 

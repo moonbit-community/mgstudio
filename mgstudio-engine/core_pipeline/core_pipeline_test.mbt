@@ -113,6 +113,34 @@ test "core_2d plugin initializes phase resources in render sub-app only" {
 }
 
 ///|
+test "core_2d plugin owns Camera2d post-process required components" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
+  let world = app.world()
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  let tonemapping_ok = match
+    (try! world.get_by_key(entity, @core_2d.ecs_key_tonemapping)) {
+    Some(@core_2d.Tonemapping::None) => true
+    _ => false
+  }
+  let deband_ok = match
+    (try! world.get_by_key(entity, @core_2d.ecs_key_deband_dither)) {
+    Some(@core_2d.DebandDither::Disabled) => true
+    _ => false
+  }
+  debug_inspect(tonemapping_ok, content="true")
+  debug_inspect(deband_ok, content="true")
+}
+
+///|
 priv struct CameraDriverScheduleProbe {
   mut run_count : Int
 }

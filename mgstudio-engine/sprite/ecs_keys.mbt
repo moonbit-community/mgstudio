@@ -169,16 +169,6 @@ pub fn register_render2d_required_components(
     ecs_key_render_layers,
     fn() { RenderLayers::RenderLayers() },
   )
-  world.register_required_components_with(
-    ecs_key_camera2d,
-    ecs_key_tonemapping,
-    fn() { Tonemapping::None },
-  )
-  world.register_required_components_with(
-    ecs_key_camera2d,
-    ecs_key_deband_dither,
-    fn() { DebandDither::Disabled },
-  )
   world.register_required_components_with(ecs_key_bloom, ecs_key_hdr, fn() {
     Hdr()
   })

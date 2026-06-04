@@ -78,6 +78,40 @@ pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+fn core_2d_register_required_components(world : @ecs.World) -> Unit {
+  world.register_required_components_with(
+    @camera_components2d.ecs_key_camera2d,
+    ecs_key_deband_dither,
+    fn() { DebandDither::Disabled },
+  ) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "Core2dPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+  world.register_required_components_with(
+    @camera_components2d.ecs_key_camera2d,
+    ecs_key_tonemapping,
+    fn() { Tonemapping::None },
+  ) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "Core2dPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+}
+
+///|
 fn core_2d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -153,6 +187,7 @@ pub fn core_2d_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
+  core_2d_register_required_components(next.world())
   @render.with_render_app(next, core_2d_configure_render_sub_app)
 }
 
