@@ -51,7 +51,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               white,
-              @sprite.AlphaMode2d::Opaque,
+              @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
             ),
           ),
@@ -70,7 +70,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               blue,
-              @sprite.AlphaMode2d::Opaque,
+              @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
             ),
           ),
@@ -89,7 +89,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               green,
-              @sprite.AlphaMode2d::Opaque,
+              @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
             ),
           ),
@@ -108,7 +108,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               white,
-              @sprite.AlphaMode2d::Mask(0.5F),
+              @sprite_render.AlphaMode2d::Mask(0.5F),
               texture=Some(texture),
             ),
           ),
@@ -127,7 +127,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               blue.with_alpha(0.7F),
-              @sprite.AlphaMode2d::Blend,
+              @sprite_render.AlphaMode2d::Blend,
               texture=Some(texture),
             ),
           ),
@@ -146,7 +146,7 @@ fn setup(
           .add(
             @sprite.ColorMaterialAsset::new(
               green.with_alpha(0.7F),
-              @sprite.AlphaMode2d::Blend,
+              @sprite_render.AlphaMode2d::Blend,
               texture=Some(texture),
             ),
           ),

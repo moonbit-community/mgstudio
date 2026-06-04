@@ -81,7 +81,7 @@ fn setup(
     .peek()
     .add(
       @sprite.ColorMaterialAsset::from_image(texture).with_alpha_mode(
-        @sprite.AlphaMode2d::Mask(0.5F),
+        @sprite_render.AlphaMode2d::Mask(0.5F),
       ),
     )
 

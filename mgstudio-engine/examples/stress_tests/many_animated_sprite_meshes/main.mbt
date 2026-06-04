@@ -126,7 +126,7 @@ fn setup(
       .peek()
       .add(
         @sprite.ColorMaterialAsset::from_image(texture)
-        .with_alpha_mode(@sprite.AlphaMode2d::Mask(0.5F))
+        .with_alpha_mode(@sprite_render.AlphaMode2d::Mask(0.5F))
         .with_uv_transform(
           @transform.Affine2::from_translation(
             @math.Vec2::new(uv_offset_x, 0.0F),

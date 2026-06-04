@@ -1253,9 +1253,15 @@ test "render2d: MeshMaterial2d component keys are registered per material type" 
 
 ///|
 test "render2d: ColorMaterialAsset constructors match Bevy alpha modes" {
-  let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
-  let blend_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
-  let default_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
+  let opaque_alpha_mode : Ref[@sprite_render_mesh2d_material.AlphaMode2d?] = Ref(
+    None,
+  )
+  let blend_alpha_mode : Ref[@sprite_render_mesh2d_material.AlphaMode2d?] = Ref(
+    None,
+  )
+  let default_alpha_mode : Ref[@sprite_render_mesh2d_material.AlphaMode2d?] = Ref(
+    None,
+  )
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())

@@ -14,6 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/material.rs`.
+pub using @sprite_render_mesh2d_material {type AlphaMode2d}
+
+///|
 pub using @sprite_render {type Material2dKey}
 
 ///|

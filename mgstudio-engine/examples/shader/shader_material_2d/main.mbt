@@ -16,7 +16,7 @@
 struct CustomMaterial {
   color : @sprite.Color
   color_texture : @asset.Handle[@asset.Image]?
-  alpha_mode : @sprite.AlphaMode2d
+  alpha_mode : @sprite_render.AlphaMode2d
 }
 
 ///|
@@ -43,7 +43,9 @@ impl @asset.Asset for CustomMaterial with fn asset_resource_keys() {
 fn custom_material(
   color : @sprite.Color,
   color_texture : @asset.Handle[@asset.Image]?,
-  alpha_mode? : @sprite.AlphaMode2d = @sprite.AlphaMode2d::Mask(0.5F),
+  alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Mask(
+    0.5F,
+  ),
 ) -> CustomMaterial {
   CustomMaterial::{ color, color_texture, alpha_mode }
 }
@@ -54,7 +56,7 @@ fn f32_bits(x : Float) -> UInt {
 }
 
 ///|
-fn alpha_mode_flag(alpha_mode : @sprite.AlphaMode2d) -> UInt {
+fn alpha_mode_flag(alpha_mode : @sprite_render.AlphaMode2d) -> UInt {
   match alpha_mode {
     Opaque => 0U
     Mask(_) => 0x40000000U
@@ -63,7 +65,7 @@ fn alpha_mode_flag(alpha_mode : @sprite.AlphaMode2d) -> UInt {
 }
 
 ///|
-fn alpha_cutoff(alpha_mode : @sprite.AlphaMode2d) -> Float {
+fn alpha_cutoff(alpha_mode : @sprite_render.AlphaMode2d) -> Float {
   match alpha_mode {
     Mask(cutoff) => cutoff
     _ => 0.5F

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/sprite_render/mesh2d/material"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum AlphaMode2d {
+  Opaque
+  Mask(Float)
+  Blend
+} derive(ToJson, @json.FromJson)
+
+// Type aliases
+
+// Traits
+

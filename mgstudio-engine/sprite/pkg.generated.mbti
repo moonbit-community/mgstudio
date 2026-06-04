@@ -19,6 +19,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -275,12 +276,6 @@ pub let sprite_systems_compute_slices : String
 // Errors
 
 // Types and methods
-pub(all) enum AlphaMode2d {
-  Opaque
-  Mask(Float)
-  Blend
-} derive(ToJson, @json.FromJson)
-
 pub struct Anchor {
   value : @math.Vec2
 }
@@ -385,11 +380,11 @@ pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
 }
 pub fn ColorMaterial::ColorMaterial() -> Self
-pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
+pub fn ColorMaterial::alpha_mode(Self) -> @material.AlphaMode2d
 pub fn ColorMaterial::color(Self) -> @color.Color
 pub fn ColorMaterial::texture(Self) -> @asset.Handle[@image.Image]?
 pub fn ColorMaterial::uv_transform(Self) -> @transform.Affine2
-pub fn ColorMaterial::with_alpha_mode(Self, AlphaMode2d) -> Self
+pub fn ColorMaterial::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
 pub fn ColorMaterial::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 pub impl @ecs.Component for ColorMaterial
@@ -400,15 +395,15 @@ pub impl @json.FromJson for ColorMaterial
 
 pub struct ColorMaterialAsset {
   color : @color.Color
-  alpha_mode : AlphaMode2d
+  alpha_mode : @material.AlphaMode2d
   texture : @asset.Handle[@image.Image]?
   uv_transform : @transform.Affine2
 }
 pub fn ColorMaterialAsset::ColorMaterialAsset() -> Self
 pub fn ColorMaterialAsset::from_color(@color.Color) -> Self
 pub fn ColorMaterialAsset::from_image(@asset.Handle[@image.Image]) -> Self
-pub fn ColorMaterialAsset::new(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
-pub fn ColorMaterialAsset::with_alpha_mode(Self, AlphaMode2d) -> Self
+pub fn ColorMaterialAsset::new(@color.Color, @material.AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
+pub fn ColorMaterialAsset::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
 pub fn ColorMaterialAsset::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterialAsset::with_uv_transform(Self, @transform.Affine2) -> Self
 pub impl @asset.Asset for ColorMaterialAsset
@@ -608,7 +603,7 @@ pub struct Material2dBindGroup {
 pub fn Material2dBindGroup::Material2dBindGroup() -> Self
 pub fn Material2dBindGroup::bind_group_data(Self) -> String
 pub fn Material2dBindGroup::binding(Self, Int) -> Material2dBinding?
-pub fn Material2dBindGroup::color_material(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
+pub fn Material2dBindGroup::color_material(@color.Color, @material.AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
 pub fn Material2dBindGroup::layout_key(Self) -> String
 pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
 pub fn Material2dBindGroup::sprite_material(SpriteMaterial) -> Self
@@ -664,10 +659,10 @@ pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
 pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M]
 
 pub struct Material2dProperties {
-  alpha_mode : AlphaMode2d
+  alpha_mode : @material.AlphaMode2d
   mesh_pipeline_key_bits : Int
 }
-pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
+pub fn Material2dProperties::new(@material.AlphaMode2d, Int) -> Self
 
 type Material2dRuntimeRegistry
 pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
@@ -713,7 +708,7 @@ pub struct MeshMaterial2d[M] {
 pub fn MeshMaterial2d::from_color_material(ColorMaterial) -> Self[ColorMaterialAsset]
 pub fn[M] MeshMaterial2d::new(@asset.Handle[M]) -> Self[M]
 pub fn MeshMaterial2d::to_color_material(Self[ColorMaterialAsset]) -> ColorMaterial
-pub fn MeshMaterial2d::with_alpha_mode(Self[ColorMaterialAsset], AlphaMode2d) -> Self[ColorMaterialAsset]
+pub fn MeshMaterial2d::with_alpha_mode(Self[ColorMaterialAsset], @material.AlphaMode2d) -> Self[ColorMaterialAsset]
 pub fn MeshMaterial2d::with_texture(Self[ColorMaterialAsset], @asset.Handle[@image.Image]) -> Self[ColorMaterialAsset]
 pub fn MeshMaterial2d::with_uv_transform(Self[ColorMaterialAsset], @transform.Affine2) -> Self[ColorMaterialAsset]
 pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M]
@@ -983,7 +978,7 @@ pub struct SpriteMaterial {
   custom_size : @math.Vec2?
   rect : @math.Rect?
   image_mode : SpriteImageMode
-  alpha_mode : AlphaMode2d
+  alpha_mode : @material.AlphaMode2d
   anchor : @math.Vec2
   texture_atlas_layout : @asset.TextureAtlasLayout?
   texture_atlas_index : Int
@@ -1102,22 +1097,22 @@ pub struct TilemapChunk {
   chunk_size : @math.UVec2
   tile_display_size : @math.UVec2
   tileset : @asset.Handle[@image.Image]
-  alpha_mode : AlphaMode2d
+  alpha_mode : @material.AlphaMode2d
 }
 pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @transform.Transform
-pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], alpha_mode? : AlphaMode2d) -> Self
+pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], alpha_mode? : @material.AlphaMode2d) -> Self
 pub fn TilemapChunk::tile_capacity(Self) -> Int
 pub impl @ecs.Component for TilemapChunk
 pub impl ToJson for TilemapChunk
 pub impl @json.FromJson for TilemapChunk
 
 pub struct TilemapChunkMaterial {
-  alpha_mode : AlphaMode2d
+  alpha_mode : @material.AlphaMode2d
   tileset : @asset.Handle[@image.Image]
   tile_data : @asset.Handle[@image.Image]
 }
 pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> Self
-pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], AlphaMode2d) -> Self
+pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], @material.AlphaMode2d) -> Self
 pub impl @asset.Asset for TilemapChunkMaterial
 pub impl Material2d for TilemapChunkMaterial
 
@@ -1321,7 +1316,7 @@ pub impl IntoSpriteRingMeshGeometry for @math.Triangle2d
 pub(open) trait Material2d {
   fn material2d_debug_name() -> String
   fn material2d_keys() -> Material2dKeys[Self]
-  fn alpha_mode(Self) -> AlphaMode2d
+  fn alpha_mode(Self) -> @material.AlphaMode2d
   fn bind_group(Self) -> Material2dBindGroup
 }
 

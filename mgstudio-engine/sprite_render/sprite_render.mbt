@@ -16,7 +16,7 @@
 /// Sprite-render API boundary aligned with Bevy crate responsibilities.
 
 ///|
-pub type AlphaMode2d = @sprite.AlphaMode2d
+pub type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
 
 ///|
 pub type ColorMaterial = @sprite.ColorMaterial

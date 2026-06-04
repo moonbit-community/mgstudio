@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
 }
@@ -104,7 +105,7 @@ pub fn SpriteRenderPlugin::SpriteRenderPlugin() -> Self
 pub impl @app.Plugin for SpriteRenderPlugin
 
 // Type aliases
-pub using @sprite {type AlphaMode2d}
+pub using @material {type AlphaMode2d}
 
 pub using @sprite {type ColorMaterial}
 

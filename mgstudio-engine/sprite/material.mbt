@@ -13,11 +13,7 @@
 // limitations under the License.
 
 ///|
-pub(all) enum AlphaMode2d {
-  Opaque
-  Mask(Float)
-  Blend
-} derive(ToJson, FromJson)
+type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
 
 ///|
 fn material2d_entity_key(entity : @core.Entity) -> (Int, Int) {

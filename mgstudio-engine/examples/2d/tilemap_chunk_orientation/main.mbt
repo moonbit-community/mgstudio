@@ -77,7 +77,7 @@ fn setup(
           chunk_size,
           tile_display_size,
           tileset,
-          alpha_mode=@sprite.AlphaMode2d::Blend,
+          alpha_mode=@sprite_render.AlphaMode2d::Blend,
         ),
         @sprite.TilemapChunkTileData::new(tile_data),
       ),

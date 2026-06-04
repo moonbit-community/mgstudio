@@ -16,7 +16,7 @@
 struct CustomMaterialAsset {
   color : @sprite.Color
   color_texture : @asset.Handle[@asset.Image]?
-  alpha_mode : @sprite.AlphaMode2d
+  alpha_mode : @sprite_render.AlphaMode2d
 }
 
 ///|
@@ -43,7 +43,7 @@ impl @asset.Asset for CustomMaterialAsset with fn asset_resource_keys() {
 fn custom_material_asset(
   color : @sprite.Color,
   color_texture? : @asset.Handle[@asset.Image]? = None,
-  alpha_mode? : @sprite.AlphaMode2d = @sprite.AlphaMode2d::Blend,
+  alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Blend,
 ) -> CustomMaterialAsset {
   CustomMaterialAsset::{ color, color_texture, alpha_mode }
 }

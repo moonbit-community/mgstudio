@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/mesh2d/material",
 }
 
 // Values
@@ -31,7 +32,7 @@ pub fn[M] material2d_plugin(@sprite.Material2dPlugin[M]) -> @sprite.Material2dPl
 // Types and methods
 
 // Type aliases
-pub using @sprite {type AlphaMode2d}
+pub using @material {type AlphaMode2d}
 
 pub using @sprite {type ColorMaterial}
 

@@ -126,7 +126,7 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
       approx_eq(material.color.r, expected_color.r) &&
       approx_eq(material.color.g, expected_color.g) &&
       approx_eq(material.color.b, expected_color.b) &&
-      material.alpha_mode is AlphaMode2d::Opaque
+      material.alpha_mode is @sprite_render_mesh2d_material.AlphaMode2d::Opaque
     } else {
       false
     }
