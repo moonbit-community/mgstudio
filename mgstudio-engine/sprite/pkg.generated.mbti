@@ -19,6 +19,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
@@ -1091,33 +1092,13 @@ pub struct TileData {
   tileset_index : Int
   color : @color.Color
   visible : Bool
-  orientation : TileOrientation
+  orientation : @tilemap_chunk.TileOrientation
 }
 pub fn TileData::TileData() -> Self
 pub fn TileData::from_tileset_index(Int) -> Self
-pub fn TileData::new(Int, color? : @color.Color, visible? : Bool, orientation? : TileOrientation) -> Self
+pub fn TileData::new(Int, color? : @color.Color, visible? : Bool, orientation? : @tilemap_chunk.TileOrientation) -> Self
 pub impl ToJson for TileData
 pub impl @json.FromJson for TileData
-
-pub(all) enum TileOrientation {
-  Default
-  Rotate90
-  Rotate180
-  Rotate270
-  MirrorH
-  MirrorHRotate90
-  MirrorHRotate180
-  MirrorHRotate270
-} derive(Eq, @debug.Debug)
-pub fn TileOrientation::and_then(Self, Self) -> Self
-pub fn TileOrientation::apply_to_ivec2(Self, @math.IVec2) -> @math.IVec2
-pub fn TileOrientation::from_bools(Bool, Bool, Bool) -> Self
-pub fn TileOrientation::inverse(Self) -> Self
-pub fn TileOrientation::mirror_d(Self) -> Bool
-pub fn TileOrientation::mirror_h(Self) -> Bool
-pub fn TileOrientation::mirror_v(Self) -> Bool
-pub fn TileOrientation::to_int(Self) -> Int
-pub fn TileOrientation::to_string(Self) -> String
 
 pub struct TilemapChunk {
   chunk_size : @math.UVec2

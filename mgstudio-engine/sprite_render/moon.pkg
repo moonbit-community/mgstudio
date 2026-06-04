@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
+  "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",

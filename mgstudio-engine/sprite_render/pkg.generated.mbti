@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
 }
 
@@ -129,7 +130,7 @@ pub using @sprite {type SceneCullContext}
 
 pub using @sprite {type TileData}
 
-pub using @sprite {type TileOrientation}
+pub using @tilemap_chunk {type TileOrientation}
 
 pub using @sprite {type TilemapChunk}
 

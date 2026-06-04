@@ -30,15 +30,15 @@ fn setup(
 ) -> Unit {
   let chunk_size = @math.UVec2::splat(8)
   let tile_display_size = @math.UVec2::splat(64)
-  let orientations : Array[@sprite.TileOrientation] = [
-    @sprite.TileOrientation::Default,
-    @sprite.TileOrientation::Rotate90,
-    @sprite.TileOrientation::Rotate180,
-    @sprite.TileOrientation::Rotate270,
-    @sprite.TileOrientation::MirrorH,
-    @sprite.TileOrientation::MirrorHRotate90,
-    @sprite.TileOrientation::MirrorHRotate180,
-    @sprite.TileOrientation::MirrorHRotate270,
+  let orientations : Array[@sprite_tilemap_chunk.TileOrientation] = [
+    @sprite_tilemap_chunk.TileOrientation::Default,
+    @sprite_tilemap_chunk.TileOrientation::Rotate90,
+    @sprite_tilemap_chunk.TileOrientation::Rotate180,
+    @sprite_tilemap_chunk.TileOrientation::Rotate270,
+    @sprite_tilemap_chunk.TileOrientation::MirrorH,
+    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate90,
+    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate180,
+    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate270,
   ]
   let colors : Array[@sprite.Color] = [
     @sprite.Color::white(),

@@ -70,7 +70,7 @@ pub type Wireframe2dPlugin = @sprite.Wireframe2dPlugin
 pub type TileData = @sprite.TileData
 
 ///|
-pub type TileOrientation = @sprite.TileOrientation
+pub type TileOrientation = @tilemap_chunk.TileOrientation
 
 ///|
 pub type TilemapChunk = @sprite.TilemapChunk

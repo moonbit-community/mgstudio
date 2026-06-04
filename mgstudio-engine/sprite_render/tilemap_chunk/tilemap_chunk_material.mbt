@@ -14,21 +14,3 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tilemap_chunk_material.rs`.
-pub using @sprite_render {type TileData}
-
-///|
-pub using @sprite_render {type TilemapChunkMaterial}
-
-///|
-pub using @sprite_render {type TilemapChunkMaterialPlugin}
-
-///|
-pub using @sprite_render {type TilemapChunk}
-
-///|
-pub using @sprite_render {type TilemapChunkTileData}
-
-///|
-pub fn tilemap_chunk_tile_capacity(chunk : @sprite_render.TilemapChunk) -> Int {
-  chunk.tile_capacity()
-}
