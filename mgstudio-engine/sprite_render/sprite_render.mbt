@@ -120,27 +120,25 @@ pub type UiBorderRect = @sprite.UiBorderRect
 pub type SceneCullContext = @sprite.SceneCullContext
 
 ///|
-pub let render2d_set_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.extract",
-)
+pub let render2d_set_extract : @app.SystemSet = @sprite_render_schedule.render2d_set_extract
 
 ///|
-pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.prepare",
-)
+pub let render2d_set_extract_materials : @app.SystemSet = @sprite_render_schedule.render2d_set_extract_materials
 
 ///|
-pub let render2d_set_queue : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.queue",
-)
+pub let render2d_set_prepare_materials : @app.SystemSet = @sprite_render_schedule.render2d_set_prepare_materials
 
 ///|
-pub let render2d_set_transparent_2d : @app.SystemSet = render2d_set_queue
+pub let render2d_set_prepare : @app.SystemSet = @sprite_render_schedule.render2d_set_prepare
 
 ///|
-pub let render2d_set_render : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.render",
-)
+pub let render2d_set_queue : @app.SystemSet = @sprite_render_schedule.render2d_set_queue
+
+///|
+pub let render2d_set_transparent_2d : @app.SystemSet = @sprite_render_schedule.render2d_set_transparent_2d
+
+///|
+pub let render2d_set_render : @app.SystemSet = @sprite_render_schedule.render2d_set_render
 
 ///|
 pub fn render2d_push_sprite_uv_scissor_batch(

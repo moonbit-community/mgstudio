@@ -26,19 +26,25 @@ pub using @sprite_render {type UiBorderRect}
 pub using @sprite_render {type UiCornerRadii}
 
 ///|
-pub let render2d_set_extract : @app.SystemSet = @sprite_render.render2d_set_extract
+pub let render2d_set_extract : @app.SystemSet = @sprite_render_schedule.render2d_set_extract
 
 ///|
-pub let render2d_set_prepare : @app.SystemSet = @sprite_render.render2d_set_prepare
+pub let render2d_set_extract_materials : @app.SystemSet = @sprite_render_schedule.render2d_set_extract_materials
 
 ///|
-pub let render2d_set_queue : @app.SystemSet = @sprite_render.render2d_set_queue
+pub let render2d_set_prepare_materials : @app.SystemSet = @sprite_render_schedule.render2d_set_prepare_materials
 
 ///|
-pub let render2d_set_render : @app.SystemSet = @sprite_render.render2d_set_render
+pub let render2d_set_prepare : @app.SystemSet = @sprite_render_schedule.render2d_set_prepare
 
 ///|
-pub let render2d_set_transparent_2d : @app.SystemSet = @sprite_render.render2d_set_transparent_2d
+pub let render2d_set_queue : @app.SystemSet = @sprite_render_schedule.render2d_set_queue
+
+///|
+pub let render2d_set_transparent_2d : @app.SystemSet = @sprite_render_schedule.render2d_set_transparent_2d
+
+///|
+pub let render2d_set_render : @app.SystemSet = @sprite_render_schedule.render2d_set_render
 
 ///|
 pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
