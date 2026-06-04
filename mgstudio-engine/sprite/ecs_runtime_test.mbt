@@ -973,7 +973,9 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
 
 ///|
 test "render2d: Material2dPlugin initializes generic material asset resources" {
-  let plugin : Material2dPlugin[DummyMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
+  let plugin : @sprite_render_mesh2d_material.Material2dPlugin[
+    DummyMaterialAsset,
+  ] = @sprite_render_mesh2d_material.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
@@ -995,7 +997,9 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let pipeline_key : @ecs.ResourceKey[
     @sprite_render_mesh2d_material.Material2dPipeline[DummyMaterialAsset],
   ] = @sprite_render_mesh2d_material.Material2dPipeline::resource()
-  let registry_key : @ecs.ResourceKey[Material2dRuntimeRegistry] = Material2dRuntimeRegistry::resource()
+  let registry_key : @ecs.ResourceKey[
+    @sprite_render_mesh2d_material.Material2dRuntimeRegistry,
+  ] = @sprite_render_mesh2d_material.Material2dRuntimeRegistry::resource()
   let pipeline = render_world.get_resource(pipeline_key).unwrap()
   let registry = render_world.get_resource(registry_key).unwrap()
   let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
@@ -1069,7 +1073,9 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref(None)
   let expected = dummy_material_asset(color=Color::new(0.3F, 0.6F, 0.9F, 1.0F))
 
-  let plugin : Material2dPlugin[DummyMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
+  let plugin : @sprite_render_mesh2d_material.Material2dPlugin[
+    DummyMaterialAsset,
+  ] = @sprite_render_mesh2d_material.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")

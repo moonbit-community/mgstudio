@@ -17,17 +17,17 @@
 pub using @sprite_render_mesh2d_material {type AlphaMode2d}
 
 ///|
-pub using @sprite_render {type Material2dKey}
+pub using @sprite_render_mesh2d_material {type Material2dKey}
 
 ///|
-pub using @sprite_render {type Material2dPipeline}
+pub using @sprite_render_mesh2d_material {type Material2dPipeline}
 
 ///|
-pub using @sprite_render {type Material2dPlugin}
+pub using @sprite_render_mesh2d_material {type Material2dPlugin}
 
 ///|
 pub fn[M] material2d_plugin(
-  plugin : @sprite_render.Material2dPlugin[M],
-) -> @sprite_render.Material2dPlugin[M] {
-  @sprite_render.material2d_plugin(plugin)
+  plugin : @sprite_render_mesh2d_material.Material2dPlugin[M],
+) -> @sprite_render_mesh2d_material.Material2dPlugin[M] {
+  @sprite_render_mesh2d_material.material2d_plugin(plugin)
 }

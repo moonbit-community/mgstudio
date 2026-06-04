@@ -9,12 +9,19 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/sprite_render/mesh2d/runtime",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn[M] draw_material2d_mesh_item(@runtime.ExtractedMesh2d, @render.RenderAssets[PreparedMaterial2d[M]], RenderMaterial2dInstances[M], Material2dPipeline[M]) -> Unit
+
+pub fn[M] draw_material2d_mesh_item_with_prepared_material(@runtime.ExtractedMesh2d, PreparedMaterial2d[M], Material2dPipeline[M]) -> Unit
+
+pub fn draw_registered_material2d_mesh_item(@ecs.World, Material2dRuntimeRegistry, Int, @runtime.ExtractedMesh2d) -> Unit
+
 pub fn material2d_alpha_mode_kind_bits(AlphaMode2d) -> UInt
 
 pub fn material2d_bind_group_to_host(Material2dBindGroup) -> @renderer.HostMaterial2dBindGroup
@@ -26,6 +33,14 @@ pub fn material2d_f32_bits(Float) -> UInt
 pub fn material2d_mesh_phase_from_properties(Material2dProperties) -> Int?
 
 pub fn[M : Material2d] material2d_pipeline_or_default(@ecs.World, @asset.Handle[M]) -> Material2dPipeline[M]
+
+pub fn[M] material2d_plugin(Material2dPlugin[M]) -> Material2dPlugin[M]
+
+pub fn material2d_runtime_phase_for_draw(@ecs.World, Material2dRuntimeRegistry, @runtime.ExtractedMesh2d) -> (Int, Int)?
+
+pub fn material2d_runtime_registry_contains_entity(@ecs.World, Material2dRuntimeRegistry, @core.Entity) -> Bool
+
+pub fn material2d_runtime_registry_or_empty(@ecs.World) -> Material2dRuntimeRegistry
 
 pub fn[M : Material2d] material2d_runtime_type_name(@asset.Handle[M]) -> String
 
@@ -42,6 +57,8 @@ pub fn[M : Material2d] prepared_material2d_assets_or_empty(@ecs.World, @asset.Ha
 pub fn[M] prepared_material2d_get(@render.RenderAssets[PreparedMaterial2d[M]], @asset.Handle[PreparedMaterial2d[M]]) -> PreparedMaterial2d[M]?
 
 pub fn[M] prepared_material2d_handle_for_entity(@core.Entity, RenderMaterial2dInstances[M]) -> @asset.Handle[PreparedMaterial2d[M]]?
+
+pub fn[M] prepared_material2d_handle_for_mesh(@runtime.ExtractedMesh2d, RenderMaterial2dInstances[M]) -> @asset.Handle[PreparedMaterial2d[M]]?
 
 pub fn[M] register_material2d_keys(String) -> Material2dKeys[M]
 
@@ -107,11 +124,37 @@ pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGro
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
 
+pub struct Material2dPlugin[M] {
+  vertex_shader : String?
+  fragment_shader : String?
+  asset_init : (() -> M)?
+}
+pub fn[M] Material2dPlugin::Material2dPlugin() -> Self[M]
+pub fn[M] Material2dPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
+pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
+pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
+pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M]
+
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
   mesh_pipeline_key_bits : Int
 }
 pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
+
+pub struct Material2dRuntimeEntry {
+  type_name : String
+  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
+  mesh_phase_for_draw_fn : (@ecs.World, @runtime.ExtractedMesh2d) -> Int?
+  draw_mesh_fn : (@ecs.World, @runtime.ExtractedMesh2d) -> Unit
+}
+
+pub struct Material2dRuntimeRegistry {
+  entries : Array[Material2dRuntimeEntry]
+}
+pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
+pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
+pub fn Material2dRuntimeRegistry::new() -> Self
+pub impl @app.Resource for Material2dRuntimeRegistry
 
 pub(all) enum Material2dTextureSampleType {
   Float

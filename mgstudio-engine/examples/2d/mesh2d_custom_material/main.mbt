@@ -111,12 +111,16 @@ pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with 
 }
 
 ///|
-fn custom_material_plugin() -> @sprite.Material2dPlugin[CustomMaterialAsset] {
-  let plugin : @sprite.Material2dPlugin[CustomMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
+fn custom_material_plugin() -> @sprite_render_mesh2d_material.Material2dPlugin[
+  CustomMaterialAsset,
+] {
+  let plugin : @sprite_render_mesh2d_material.Material2dPlugin[
+    CustomMaterialAsset,
+  ] = @sprite_render_mesh2d_material.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { custom_material_asset(@sprite.Color::white()) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
-  @sprite.material2d_plugin(plugin)
+  @sprite_render_mesh2d_material.material2d_plugin(plugin)
 }
 
 ///|

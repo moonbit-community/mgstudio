@@ -28,7 +28,9 @@ pub type ColorMaterialAsset = @sprite.ColorMaterialAsset
 pub type ColorMaterialPlugin = @sprite.ColorMaterialPlugin
 
 ///|
-pub type Material2dPlugin[M] = @sprite.Material2dPlugin[M]
+pub type Material2dPlugin[M] = @sprite_render_mesh2d_material.Material2dPlugin[
+  M,
+]
 
 ///|
 pub type Material2dKey[M] = @sprite_render_mesh2d_material.Material2dKey[M]
@@ -337,7 +339,7 @@ pub fn render2d_camera_world_to_viewport_2d(
 pub fn[M] material2d_plugin(
   plugin : Material2dPlugin[M],
 ) -> Material2dPlugin[M] {
-  @sprite.material2d_plugin(plugin)
+  @sprite_render_mesh2d_material.material2d_plugin(plugin)
 }
 
 ///|

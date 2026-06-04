@@ -3903,12 +3903,8 @@ fn append_registered_material2d_mesh_draw_items(
         continue
       }
     }
-    let mut matched = false
-    for runtime_index in 0..<registry.entries.length() {
-      let entry = registry.entries[runtime_index]
-      guard (entry.mesh_phase_for_draw_fn)(world, mesh) is Some(phase) else {
-        continue
-      }
+    if material2d_runtime_phase_for_draw(world, registry, mesh)
+      is Some((runtime_index, phase)) {
       let item = DrawItem::{
         kind: Mesh(i),
         entity: mesh.entity,
@@ -3924,10 +3920,6 @@ fn append_registered_material2d_mesh_draw_items(
         transparent_items.push(item)
       }
       next_tie = next_tie + 1
-      matched = true
-      break
-    }
-    if matched {
       continue
     }
   }
