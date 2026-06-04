@@ -128,6 +128,34 @@ test "render schedule: order inserts stages around render" {
 }
 
 ///|
+test "render recovery: render schedule only runs when renderer is ready" {
+  let log : Array[String] = []
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(render_recovery_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_recovery_schedule_stage()))
+    .add_systems(
+      render_recovery_schedule_stage(),
+      @app.system(run_render_schedule).run_if(renderer_is_ready),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("render") }),
+    )
+  render_sub_app
+  .world()
+  .insert_resource(
+    render_schedule_order_resource_key,
+    RenderScheduleOrder::RenderScheduleOrder(),
+  )
+  ignore(render_sub_app.update())
+  debug_inspect(log.join(","), content="\"\"")
+  mark_renderer_ready(render_sub_app.world())
+  ignore(render_sub_app.update())
+  debug_inspect(log.join(","), content="\"render\"")
+}
+
+///|
 test "render schedule: startup and recovery labels are distinct" {
   debug_inspect(
     render_startup_schedule_stage() != render_schedule_stage(),

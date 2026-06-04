@@ -110,9 +110,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       render_sub_app
       .add_systems(
         render_recovery_schedule_stage(),
-        @app.system(run_render_schedule).named(
-          "mgstudio_render::run_render_schedule",
-        ),
+        @app.system(run_render_schedule)
+        .named("mgstudio_render::run_render_schedule")
+        .run_if(renderer_is_ready),
       )
       .add_systems(
         render_schedule_stage(),

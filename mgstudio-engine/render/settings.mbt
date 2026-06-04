@@ -301,6 +301,7 @@ pub fn RenderResources::unpack_into(
     render_adapter_info_resource_key,
     self.adapter_info,
   )
+  mark_renderer_ready(render_world)
 }
 
 ///|
@@ -368,6 +369,7 @@ pub fn ensure_primary_render_resources(
     ) {
     render_world.insert_resource(render_adapter_info_resource_key, adapter_info)
   }
+  mark_renderer_ready(render_world)
 }
 
 ///|
