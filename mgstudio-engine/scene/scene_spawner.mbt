@@ -89,7 +89,7 @@ let scene_runtime_state_resource_key : @ecs.ResourceKey[SceneRuntimeState] = @ec
 )
 
 ///|
-impl @app.Resource for SceneRuntimeState with resource() {
+impl @app.Resource for SceneRuntimeState with fn resource() {
   scene_runtime_state_resource_key
 }
 
@@ -600,7 +600,7 @@ fn scene_spawn_instance_when_ready(
     }
     if node.camera is Some(camera) {
       child_writers.push(
-        @ecs.component_writer(@sprite.Camera::component(), camera),
+        @ecs.component_writer(@camera_camera.Camera::component(), camera),
       )
     }
     if node.camera3d is Some(camera3d) {
@@ -1082,12 +1082,12 @@ pub fn ScenePlugin::with_gltf_lod_visibility_policy(
 }
 
 ///|
-pub impl @app.Plugin for ScenePlugin with name(_self) {
+pub impl @app.Plugin for ScenePlugin with fn name(_self) {
   SCENE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ScenePlugin with build(self, app) {
+pub impl @app.Plugin for ScenePlugin with fn build(self, app) {
   scene_plugin_with(app, self)
 }
 

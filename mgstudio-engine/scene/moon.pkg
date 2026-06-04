@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
@@ -14,7 +15,6 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/hashset",
@@ -28,6 +28,7 @@ import {
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/shader",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/time",
 } for "test"

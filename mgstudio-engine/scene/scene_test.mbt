@@ -348,7 +348,7 @@ test "scene: spawn applies camera and light components from scene node payload" 
           @transform.Transform::identity(),
           None,
           None,
-          camera=Some(@sprite.Camera::Camera()),
+          camera=Some(@camera_camera.Camera::Camera()),
           camera3d=Some(@camera.Camera3d::Camera3d()),
           projection=Some(@camera.Projection::default()),
         ),
@@ -383,7 +383,10 @@ test "scene: spawn applies camera and light components from scene node payload" 
     )
     @scene.scene_spawn_roots_system(world)
 
-    world.for_each_component(@sprite.Camera::component(), fn(_entity, _camera) {
+    world.for_each_component(@camera_camera.Camera::component(), fn(
+      _entity,
+      _camera,
+    ) {
       camera_count.val = camera_count.val + 1
     })
     world.for_each_component(@camera.Camera3d::component(), fn(

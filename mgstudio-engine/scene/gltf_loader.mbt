@@ -2646,7 +2646,7 @@ fn gltf_loader_skinned_mesh_bounds_policy_from_settings(
 
 ///|
 priv struct GltfNodeCameraComponents {
-  camera : @sprite.Camera
+  camera : @camera_camera.Camera
   camera3d : @camera.Camera3d
   projection : @camera.Projection
 }
@@ -2697,7 +2697,7 @@ fn gltf_scene_node_camera_components(
   guard camera_index >= 0 && camera_index < doc.cameras.length() else {
     return None
   }
-  let camera = @sprite.Camera::Camera().with_is_active(
+  let camera = @camera_camera.Camera::Camera().with_is_active(
     !camera_load_state.active_camera_found,
   )
   camera_load_state.active_camera_found = true

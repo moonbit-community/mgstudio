@@ -18,7 +18,7 @@ pub struct SceneNode3d {
   parent_node_index : Int?
   mesh : @mesh.Mesh3d?
   material : @pbr.MeshMaterial3d?
-  camera : @sprite.Camera?
+  camera : @camera_camera.Camera?
   camera3d : @camera.Camera3d?
   projection : @camera.Projection?
   directional_light : @light.DirectionalLight?
@@ -63,7 +63,7 @@ pub fn SceneNode3d::new(
   gltf_extras? : @gltf.GltfExtras? = None,
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
-  camera? : @sprite.Camera? = None,
+  camera? : @camera_camera.Camera? = None,
   camera3d? : @camera.Camera3d? = None,
   projection? : @camera.Projection? = None,
   directional_light? : @light.DirectionalLight? = None,
@@ -119,7 +119,7 @@ pub fn SceneNode3d::new_empty(
   gltf_node_index? : @gltf.GltfNodeIndex? = None,
   gltf_skin_index? : @gltf.GltfSkinIndex? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
-  camera? : @sprite.Camera? = None,
+  camera? : @camera_camera.Camera? = None,
   camera3d? : @camera.Camera3d? = None,
   projection? : @camera.Projection? = None,
   directional_light? : @light.DirectionalLight? = None,
@@ -167,12 +167,12 @@ pub struct Scene {
 }
 
 ///|
-pub impl @asset.Asset for Scene with asset_debug_name() {
+pub impl @asset.Asset for Scene with fn asset_debug_name() {
   "mgstudio_scene::Scene"
 }
 
 ///|
-pub impl @asset.Asset for Scene with asset_as_image(_self) {
+pub impl @asset.Asset for Scene with fn asset_as_image(_self) {
   None
 }
 
@@ -182,7 +182,7 @@ let scene_asset_resource_keys : @asset.AssetResourceKeys[Scene] = @asset.registe
 )
 
 ///|
-pub impl @asset.Asset for Scene with asset_resource_keys() {
+pub impl @asset.Asset for Scene with fn asset_resource_keys() {
   scene_asset_resource_keys
 }
 
