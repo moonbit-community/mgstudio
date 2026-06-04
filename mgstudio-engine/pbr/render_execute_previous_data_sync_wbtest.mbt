@@ -27,8 +27,8 @@ test "render3d preupdate sync: writes previous view and global transform" {
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera().with_is_active(true),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -134,8 +134,8 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera().with_is_active(false),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -190,8 +190,8 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
 
   try! (world.replace(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera().with_is_active(true),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
   )
   |> ignore)
 
@@ -211,8 +211,8 @@ test "render3d preupdate sync: existing previous transform updates only after gl
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera().with_is_active(true),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
   )
   |> ignore)
   try! (world.set_by_key(

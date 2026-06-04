@@ -58,10 +58,10 @@ pub fn render3d_pass_viewport_for_target(
 ///|
 pub fn render3d_target_info(
   world : @ecs.World,
-  target : @sprite.RenderTarget,
+  target : @camera_camera.RenderTarget,
 ) -> RenderTargetComputed3d? {
   match target {
-    @sprite.RenderTarget::Screen => {
+    @camera_camera.RenderTarget::Screen => {
       let width = @window.window_physical_width_for(
         world,
         @window.WindowRef::Primary,
@@ -86,7 +86,7 @@ pub fn render3d_target_info(
         scale_factor,
       })
     }
-    @sprite.RenderTarget::Window(window_ref) => {
+    @camera_camera.RenderTarget::Window(window_ref) => {
       guard @window.window_host_window_for_ref(world, window_ref)
         is Some(host_window) else {
         return None
@@ -112,7 +112,7 @@ pub fn render3d_target_info(
         scale_factor,
       })
     }
-    @sprite.RenderTarget::Image(handle) => {
+    @camera_camera.RenderTarget::Image(handle) => {
       let width = @asset.asset_texture_width(handle)
       let height = @asset.asset_texture_height(handle)
       if width <= 0 || height <= 0 {

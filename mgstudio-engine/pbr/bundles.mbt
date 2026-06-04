@@ -14,7 +14,7 @@
 
 ///|
 pub struct Camera3dBundle {
-  camera : @sprite.Camera
+  camera : @camera_camera.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
@@ -38,13 +38,13 @@ pub struct Camera3dBundle {
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
   transform : @transform.Transform
-  target : @sprite.RenderTarget
+  target : @camera_camera.RenderTarget
   layers : @camera_render_layers.RenderLayers
 }
 
 ///|
 pub fn Camera3dBundle::new(
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   transform : @transform.Transform,
 ) -> Camera3dBundle {
   Camera3dBundle::{
@@ -72,14 +72,14 @@ pub fn Camera3dBundle::new(
     atmosphere: None,
     atmosphere_settings: None,
     transform,
-    target: @sprite.RenderTarget::Screen,
+    target: @camera_camera.RenderTarget::Screen,
     layers: @camera_render_layers.RenderLayers::RenderLayers(),
   }
 }
 
 ///|
 pub fn Camera3dBundle::new_with_projection(
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   projection : Projection,
   transform : @transform.Transform,
 ) -> Camera3dBundle {
@@ -108,7 +108,7 @@ pub fn Camera3dBundle::new_with_projection(
     atmosphere: None,
     atmosphere_settings: None,
     transform,
-    target: @sprite.RenderTarget::Screen,
+    target: @camera_camera.RenderTarget::Screen,
     layers: @camera_render_layers.RenderLayers::RenderLayers(),
   }
 }
@@ -124,7 +124,7 @@ pub fn Camera3dBundle::with_sub_camera_view(
 ///|
 pub fn Camera3dBundle::with_target(
   self : Camera3dBundle,
-  target : @sprite.RenderTarget,
+  target : @camera_camera.RenderTarget,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, target, }
 }
@@ -416,8 +416,13 @@ fn camera3d_bundle_insert(
   if bundle.color_grading is Some(color_grading) {
     world.set_by_key(entity, ecs_key_color_grading, color_grading, loc~)
   }
-  world.set_by_key(entity, @sprite.ecs_key_camera, bundle.camera, loc~)
-  world.set_by_key(entity, @sprite.ecs_key_render_target, bundle.target, loc~)
+  world.set_by_key(entity, @camera_camera.ecs_key_camera, bundle.camera, loc~)
+  world.set_by_key(
+    entity,
+    @camera_camera.ecs_key_render_target,
+    bundle.target,
+    loc~,
+  )
   world.set_by_key(
     entity,
     @camera_render_layers.ecs_key_render_layers,
@@ -459,8 +464,8 @@ pub fn register_render3d_required_components(
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
     ecs_key_camera3d,
-    @sprite.ecs_key_camera,
-    fn() { @sprite.Camera::Camera() },
+    @camera_camera.ecs_key_camera,
+    fn() { @camera_camera.Camera::Camera() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -474,8 +479,8 @@ pub fn register_render3d_required_components(
   )
   world.register_required_components_with(
     ecs_key_camera3d,
-    @sprite.ecs_key_render_target,
-    fn() { @sprite.RenderTarget::Screen },
+    @camera_camera.ecs_key_render_target,
+    fn() { @camera_camera.RenderTarget::Screen },
   )
   world.register_required_components_with(
     ecs_key_camera3d,

@@ -90,7 +90,7 @@ let free_camera_system_state_key : @ecs.ResourceKey[FreeCameraSystemState] = @ec
 )
 
 ///|
-impl @app.Resource for FreeCameraSystemState with resource() {
+impl @app.Resource for FreeCameraSystemState with fn resource() {
   free_camera_system_state_key
 }
 
@@ -150,7 +150,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_free_camera, fn(entity, _config) {
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is None ||
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is None ||
       (try! world.get_by_key(entity, @transform.ecs_key_transform)) is None {
       return
     }
@@ -359,11 +359,11 @@ pub fn FreeCameraPlugin::FreeCameraPlugin() -> FreeCameraPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FreeCameraPlugin with name(_self) {
+pub impl @app.Plugin for FreeCameraPlugin with fn name(_self) {
   "mgstudio.pbr.FreeCameraPlugin"
 }
 
 ///|
-pub impl @app.Plugin for FreeCameraPlugin with build(_self, app) {
+pub impl @app.Plugin for FreeCameraPlugin with fn build(_self, app) {
   app.add_pre_update_system(run_freecamera_controller)
 }

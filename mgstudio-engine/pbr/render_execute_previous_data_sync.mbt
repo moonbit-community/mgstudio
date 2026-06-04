@@ -87,9 +87,10 @@ fn update_previous_view_data(world : @ecs.World) -> Unit {
 fn render3d_has_active_camera(world : @ecs.World) -> Bool {
   let mut active = false
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
-    let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
+    let camera = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(value) => value
-      None => @sprite.Camera::Camera()
+      None => @camera_camera.Camera::Camera()
     }
     if camera.is_active {
       active = true

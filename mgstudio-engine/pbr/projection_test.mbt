@@ -197,12 +197,14 @@ fn test_custom_projection_matrix(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with get_clip_from_view(self) {
+impl CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view(
+  self,
+) {
   test_custom_projection_matrix(self.view_width, self.view_height, 0.0F)
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with get_clip_from_view_for_sub(
+impl CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view_for_sub(
   _self,
   sub_view,
 ) {
@@ -214,7 +216,7 @@ impl CameraProjection3d for TestCustomProjection3d with get_clip_from_view_for_s
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with update(
+impl CameraProjection3d for TestCustomProjection3d with fn update(
   self,
   width,
   height,
@@ -223,12 +225,12 @@ impl CameraProjection3d for TestCustomProjection3d with update(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with far(self) {
+impl CameraProjection3d for TestCustomProjection3d with fn far(self) {
   self.far_plane
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with compute_frustum(
+impl CameraProjection3d for TestCustomProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -236,7 +238,7 @@ impl CameraProjection3d for TestCustomProjection3d with compute_frustum(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with get_frustum_corners(
+impl CameraProjection3d for TestCustomProjection3d with fn get_frustum_corners(
   self : TestCustomProjection3d,
   z_near : Float,
   z_far : Float,
@@ -321,7 +323,7 @@ test "render3d: CameraProjection3d trait exposes compute_frustum" {
 
 ///|
 test "render3d: camera helper projection APIs respect custom runtime updates" {
-  let camera = @sprite.Camera::Camera()
+  let camera = @camera_camera.Camera::Camera()
   let projection = Projection::custom(TestCustomProjection3d::{
     view_width: 1.0F,
     view_height: 1.0F,

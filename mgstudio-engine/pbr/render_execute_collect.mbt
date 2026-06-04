@@ -47,7 +47,7 @@ fn render3d_execute_collect_cameras(
       @core.Entity,
       (
         @ecs.Comp[Camera3d],
-        @ecs.Optional[@sprite.Camera],
+        @ecs.Optional[@camera_camera.Camera],
         @ecs.Optional[Projection],
         @ecs.Optional[SubCameraView3d],
       ),
@@ -58,7 +58,7 @@ fn render3d_execute_collect_cameras(
         @ecs.Optional[AutoExposure],
       ),
       (
-        @ecs.Optional[@sprite.RenderTarget],
+        @ecs.Optional[@camera_camera.RenderTarget],
         @ecs.Optional[@camera_render_layers.RenderLayers],
         @ecs.Optional[ProjectionRuntime3d],
         @ecs.Optional[@pbr_prepass.PreviousViewData],
@@ -80,7 +80,7 @@ fn render3d_execute_collect_cameras(
     ) = data
     let camera = match camera_opt.value() {
       Some(v) => v
-      None => @sprite.Camera::Camera()
+      None => @camera_camera.Camera::Camera()
     }
     if !camera.is_active {
       return
@@ -193,7 +193,7 @@ fn render3d_execute_collect_cameras(
     let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
     let target = match target_opt.value() {
       Some(v) => v
-      None => @sprite.RenderTarget::Screen
+      None => @camera_camera.RenderTarget::Screen
     }
     let layers = match layers_opt.value() {
       Some(v) => v

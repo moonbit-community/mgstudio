@@ -14,7 +14,7 @@
 
 ///|
 pub fn render3d_camera_viewport_rect_logical(
-  camera : @sprite.Camera,
+  camera : @camera_camera.Camera,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (Float, Float, Float, Float)? {

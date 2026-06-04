@@ -46,14 +46,14 @@ fn test_custom_projection_matrix_wb(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with get_clip_from_view(
+impl CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view(
   self,
 ) {
   test_custom_projection_matrix_wb(self.view_width, self.view_height, 0.0F)
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with get_clip_from_view_for_sub(
+impl CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view_for_sub(
   _self,
   sub_view,
 ) {
@@ -65,7 +65,7 @@ impl CameraProjection3d for TestCustomProjection3dWb with get_clip_from_view_for
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with update(
+impl CameraProjection3d for TestCustomProjection3dWb with fn update(
   self,
   width,
   height,
@@ -74,12 +74,12 @@ impl CameraProjection3d for TestCustomProjection3dWb with update(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with far(self) {
+impl CameraProjection3d for TestCustomProjection3dWb with fn far(self) {
   self.far_plane
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with compute_frustum(
+impl CameraProjection3d for TestCustomProjection3dWb with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -87,7 +87,7 @@ impl CameraProjection3d for TestCustomProjection3dWb with compute_frustum(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with get_frustum_corners(
+impl CameraProjection3d for TestCustomProjection3dWb with fn get_frustum_corners(
   self : TestCustomProjection3dWb,
   z_near : Float,
   z_far : Float,
@@ -208,7 +208,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
       orthographic_first_slice_depth: 0.0F,
     }),
     true,
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @math.IVec2::new(800, 400),
     1.0F,
   )

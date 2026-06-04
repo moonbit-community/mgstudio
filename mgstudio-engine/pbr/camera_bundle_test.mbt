@@ -92,20 +92,24 @@ test "render3d: Camera3dBundle stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(11, 3)
   let bundle = Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::identity(),
   ).with_target(
-    @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+    @camera_camera.RenderTarget::Window(
+      @window.WindowRef::Entity(target_window),
+    ),
   )
   let entity = bundle.spawn(world)
 
-  let target : @sprite.RenderTarget? = try! world.get_by_key(
-    entity, @sprite.ecs_key_render_target,
+  let target : @camera_camera.RenderTarget? = try! world.get_by_key(
+    entity, @camera_camera.ecs_key_render_target,
   )
   debug_inspect(
     target.map(fn(value) {
       value.to_json() ==
-      @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
+      @camera_camera.RenderTarget::Window(
+        @window.WindowRef::Entity(target_window),
+      ).to_json()
     }),
     content="Some(true)",
   )
@@ -120,7 +124,7 @@ test "render3d: Camera3dBundle stores window render target" {
 test "render3d: Camera3dBundle stores custom projection behavior" {
   let world = @ecs.World::new()
   let bundle = Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
     @transform.Transform::identity(),
   )
@@ -151,7 +155,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
     spawned.val = Some(
       commands.spawn(
         Camera3dBundle::new(
-          @sprite.Camera::Camera(),
+          @camera_camera.Camera::Camera(),
           @transform.Transform::identity(),
         ).with_color_grading(Some(@post_process.ColorGrading::ColorGrading())),
       ),
@@ -180,7 +184,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
 test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
   let world = @ecs.World::new()
   let entity = Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
 
@@ -207,7 +211,7 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
   |> ignore)
 
   debug_inspect(
-    (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is Some(_),
     content="true",
   )
   debug_inspect(
@@ -219,7 +223,8 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
     content="true",
   )
   debug_inspect(
-    (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) is Some(_),
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target))
+    is Some(_),
     content="true",
   )
   debug_inspect(
@@ -258,8 +263,8 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
     _ => false
   }
   let target_ok = match
-    (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) {
-    Some(@sprite.RenderTarget::Screen) => true
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
+    Some(@camera_camera.RenderTarget::Screen) => true
     _ => false
   }
   debug_inspect(tonemapping_ok, content="true")
@@ -288,7 +293,8 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
     content="true",
   )
   debug_inspect(
-    (try! app.world().get_by_key(entity, @sprite.ecs_key_camera)) is Some(_),
+    (try! app.world().get_by_key(entity, @camera_camera.ecs_key_camera))
+    is Some(_),
     content="true",
   )
   debug_inspect(

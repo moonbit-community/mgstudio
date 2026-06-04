@@ -1243,7 +1243,7 @@ fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
     preferred: None,
     fallback: None,
   }
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
     if selection.fallback is None {
       selection.fallback = Some(entity)
     }
@@ -1271,7 +1271,8 @@ fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
 ///|
 fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
   if render3d_cluster_camera_entity(world) is Some(entity) &&
-    (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) &&
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+    is Some(camera) &&
     camera.physical_viewport_size() is Some(viewport_size) {
     let width = if viewport_size.x <= 0 { 0 } else { viewport_size.x }
     let height = if viewport_size.y <= 0 { 0 } else { viewport_size.y }
@@ -1280,7 +1281,7 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
     }
   }
   let fallback_view = Render3dClusterViewFallback::{ view: None }
-  world.for_each_component(@sprite.ecs_key_camera, fn(_entity, camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(_entity, camera) {
     if fallback_view.view is Some(_) {
       return
     }
@@ -1324,7 +1325,7 @@ fn render3d_cluster_projection_runtime(
     if fallback.runtime is Some(_) {
       return
     }
-    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
       fallback.runtime = Some(runtime)
     }
   })
@@ -1473,7 +1474,7 @@ fn render3d_cluster_runtime(
     if fallback.runtime is Some(_) {
       return
     }
-    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
       fallback.runtime = Some(
         (
           clusters.dimensions_x,
@@ -1513,7 +1514,7 @@ fn render3d_visible_clusterable_objects(
       if fallback.camera is Some(_) {
         return
       }
-      if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+      if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
         fallback.camera = Some(visible)
       }
     },

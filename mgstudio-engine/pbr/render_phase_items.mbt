@@ -81,7 +81,7 @@ priv struct Camera3dViewPayload {
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
-  camera : @sprite.Camera
+  camera : @camera_camera.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?
   oit_settings : OrderIndependentTransparencySettings?
