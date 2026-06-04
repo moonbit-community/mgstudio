@@ -20,6 +20,13 @@ pub using @mesh {type Mesh2d}
 pub using @sprite_render {type MeshMaterial2d}
 
 ///|
+pub using @sprite_render_mesh2d_runtime {
+  type ExtractedMesh2d,
+  type Mesh2dDrawPayload,
+  type PhaseEntityRef,
+}
+
+///|
 pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|

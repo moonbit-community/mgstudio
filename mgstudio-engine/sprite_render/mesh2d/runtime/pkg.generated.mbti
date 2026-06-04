@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/sprite_render/mesh2d/runtime"
+
+import {
+  "Milky2018/mgstudio/camera/visibility/render_layers",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/transform",
+}
+
+// Values
+pub fn phase_entity_ref_cmp(PhaseEntityRef, PhaseEntityRef) -> Int
+
+pub fn phase_entity_ref_for_main(@core.Entity) -> PhaseEntityRef
+
+pub fn phase_entity_ref_placeholder() -> PhaseEntityRef
+
+// Errors
+
+// Types and methods
+pub(all) struct ExtractedMesh2d {
+  entity : PhaseEntityRef
+  payload : Mesh2dDrawPayload
+}
+
+pub(all) struct Mesh2dDrawPayload {
+  mesh_id : Int
+  transform : @transform.Transform
+  layers : @render_layers.RenderLayers
+  wireframe : Bool
+  wireframe_color : @color.Color
+}
+
+pub(all) struct PhaseEntityRef {
+  render_entity : @core.Entity
+  main_entity : @core.Entity
+}
+
+// Type aliases
+
+// Traits
+

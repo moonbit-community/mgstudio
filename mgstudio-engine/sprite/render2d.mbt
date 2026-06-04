@@ -1440,40 +1440,21 @@ fn render2d_apply_camera_bloom_from_source(
 }
 
 ///|
-priv struct PhaseEntityRef {
-  render_entity : @core.Entity
-  main_entity : @core.Entity
-}
+type PhaseEntityRef = @sprite_render_mesh2d_runtime.PhaseEntityRef
 
 ///|
 fn phase_entity_ref_for_main(main_entity : @core.Entity) -> PhaseEntityRef {
-  PhaseEntityRef::{ render_entity: main_entity, main_entity }
+  @sprite_render_mesh2d_runtime.phase_entity_ref_for_main(main_entity)
 }
 
 ///|
 fn phase_entity_ref_placeholder() -> PhaseEntityRef {
-  let placeholder = @core.Entity::placeholder()
-  PhaseEntityRef::{ render_entity: placeholder, main_entity: placeholder }
+  @sprite_render_mesh2d_runtime.phase_entity_ref_placeholder()
 }
 
 ///|
 fn phase_entity_ref_cmp(lhs : PhaseEntityRef, rhs : PhaseEntityRef) -> Int {
-  let render_id = cmp_int(lhs.render_entity.id, rhs.render_entity.id)
-  if render_id != 0 {
-    return render_id
-  }
-  let render_generation = cmp_int(
-    lhs.render_entity.generation,
-    rhs.render_entity.generation,
-  )
-  if render_generation != 0 {
-    return render_generation
-  }
-  let main_id = cmp_int(lhs.main_entity.id, rhs.main_entity.id)
-  if main_id != 0 {
-    return main_id
-  }
-  cmp_int(lhs.main_entity.generation, rhs.main_entity.generation)
+  @sprite_render_mesh2d_runtime.phase_entity_ref_cmp(lhs, rhs)
 }
 
 ///|
@@ -1648,19 +1629,10 @@ priv struct CameraComputed {
 }
 
 ///|
-priv struct Mesh2dDrawPayload {
-  mesh_id : Int
-  transform : @transform.Transform
-  layers : RenderLayers
-  wireframe : Bool
-  wireframe_color : Color
-}
+type Mesh2dDrawPayload = @sprite_render_mesh2d_runtime.Mesh2dDrawPayload
 
 ///|
-priv struct ExtractedMesh2d {
-  entity : PhaseEntityRef
-  payload : Mesh2dDrawPayload
-}
+type ExtractedMesh2d = @sprite_render_mesh2d_runtime.ExtractedMesh2d
 
 ///|
 priv enum DrawKind {

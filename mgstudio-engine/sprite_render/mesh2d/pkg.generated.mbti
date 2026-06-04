@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
+  "Milky2018/mgstudio/sprite_render/mesh2d/runtime",
 }
 
 // Values
@@ -40,6 +41,8 @@ pub using @sprite {type ColorMaterialAsset}
 
 pub using @sprite {type ColorMaterialPlugin}
 
+pub using @runtime {type ExtractedMesh2d}
+
 pub using @material {type Material2dKey}
 
 pub using @material {type Material2dPipeline}
@@ -48,9 +51,13 @@ pub using @sprite {type Material2dPlugin}
 
 pub using @mesh {type Mesh2d}
 
+pub using @runtime {type Mesh2dDrawPayload}
+
 pub using @material {type MeshMaterial2d}
 
 pub using @sprite {type NoWireframe2d}
+
+pub using @runtime {type PhaseEntityRef}
 
 pub using @sprite {type Wireframe2d}
 
