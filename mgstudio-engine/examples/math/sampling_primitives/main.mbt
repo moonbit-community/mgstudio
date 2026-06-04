@@ -260,77 +260,77 @@ let camera_rig_key : @ecs.ComponentKey[CameraRig] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for SamplingMode with resource() {
+impl @app.Resource for SamplingMode with fn resource() {
   sampling_mode_key
 }
 
 ///|
-impl @app.Resource for SpawningMode with resource() {
+impl @app.Resource for SpawningMode with fn resource() {
   spawning_mode_key
 }
 
 ///|
-impl @app.Resource for SpawnQueue with resource() {
+impl @app.Resource for SpawnQueue with fn resource() {
   spawn_queue_key
 }
 
 ///|
-impl @app.Resource for PointCounter with resource() {
+impl @app.Resource for PointCounter with fn resource() {
   point_counter_key
 }
 
 ///|
-impl @app.Resource for RandomSource with resource() {
+impl @app.Resource for RandomSource with fn resource() {
   random_source_key
 }
 
 ///|
-impl @app.Resource for SampledShapes with resource() {
+impl @app.Resource for SampledShapes with fn resource() {
   sampled_shapes_key
 }
 
 ///|
-impl @app.Resource for PointMesh with resource() {
+impl @app.Resource for PointMesh with fn resource() {
   point_mesh_key
 }
 
 ///|
-impl @app.Resource for PointMaterial with resource() {
+impl @app.Resource for PointMaterial with fn resource() {
   point_material_key
 }
 
 ///|
-impl @app.Resource for MousePressed with resource() {
+impl @app.Resource for MousePressed with fn resource() {
   mouse_pressed_key
 }
 
 ///|
-impl @app.Resource for InstructionText with resource() {
+impl @app.Resource for InstructionText with fn resource() {
   instruction_text_key
 }
 
 ///|
-impl @ecs.Component for SamplePoint with component() {
+impl @ecs.Component for SamplePoint with fn component() {
   sample_point_key
 }
 
 ///|
-impl @ecs.Component for SpawningPoint with component() {
+impl @ecs.Component for SpawningPoint with fn component() {
   spawning_point_key
 }
 
 ///|
-impl @ecs.Component for DespawningPoint with component() {
+impl @ecs.Component for DespawningPoint with fn component() {
   despawning_point_key
 }
 
 ///|
-impl @ecs.Component for FireflyLights with component() {
+impl @ecs.Component for FireflyLights with fn component() {
   firefly_lights_key
 }
 
 ///|
-impl @ecs.Component for CameraRig with component() {
+impl @ecs.Component for CameraRig with fn component() {
   camera_rig_key
 }
 
@@ -1235,9 +1235,9 @@ fn update_lights(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(handle_keypress)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(handle_mouse)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param(handle_keypress))
+  .add_systems(@app.Update, @app.system_config_param3(handle_mouse))
   .add_systems(@app.Update, @app.system(spawn_points))
   .add_systems(@app.Update, @app.system(despawn_points))
   .add_systems(@app.Update, @app.system(animate_spawning))

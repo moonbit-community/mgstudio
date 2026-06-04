@@ -50,34 +50,37 @@ let set_message_event_key : @ecs.EventKey[SetMessage] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.Component for MessageText with component() {
+pub impl @ecs.Component for MessageText with fn component() {
   message_text_key
 }
 
 ///|
-pub impl @ecs.Component for MessageFade with component() {
+pub impl @ecs.Component for MessageFade with fn component() {
   message_fade_key
 }
 
 ///|
-pub impl @animation.AnimationEvent for SetMessage with animation_event_marker(
+pub impl @animation.AnimationEvent for SetMessage with fn animation_event_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with observer_event() {
+pub impl @ecs.TriggerEvent for SetMessage with fn observer_event() {
   set_message_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with observer_entity(self) {
+pub impl @ecs.TriggerEvent for SetMessage with fn observer_entity(self) {
   self.observer_entity
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with set_observer_entity(self, entity) {
+pub impl @ecs.TriggerEvent for SetMessage with fn set_observer_entity(
+  self,
+  entity,
+) {
   SetMessage::{
     observer_entity: Some(entity),
     value: self.value,
@@ -86,12 +89,12 @@ pub impl @ecs.TriggerEvent for SetMessage with set_observer_entity(self, entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for SetMessage with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with debug_name() {
+pub impl @ecs.TriggerEvent for SetMessage with fn debug_name() {
   "SetMessage"
 }
 
@@ -200,10 +203,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_text_opacity)),
-  )
+  .add_systems(@app.Update, @app.system_config_param2(animate_text_opacity))
   .add_observer2(on_set_message)
   .run()
 }

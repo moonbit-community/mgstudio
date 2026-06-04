@@ -28,7 +28,7 @@ let contributor_orbit_key : @ecs.ComponentKey[ContributorOrbit] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for ContributorOrbit with component() {
+pub impl @ecs.Component for ContributorOrbit with fn component() {
   contributor_orbit_key
 }
 
@@ -102,10 +102,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_contributors)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_contributors))
   .run()
 }

@@ -34,7 +34,7 @@ let orbit_camera_key : @ecs.ComponentKey[OrbitCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for OrbitCamera with component() {
+pub impl @ecs.Component for OrbitCamera with fn component() {
   orbit_camera_key
 }
 
@@ -180,7 +180,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cameras)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_cameras))
   .run()
 }

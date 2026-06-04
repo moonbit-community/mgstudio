@@ -39,7 +39,7 @@ pub fn global_gizmos_plugin_with(
   ignore(plugin)
   init_gizmo_group(
     app.add_last_system_config(
-      @app.system(@app.system_param(@sprite.flush_global_gizmos)),
+      @app.system_config_param(@sprite.flush_global_gizmos),
     ),
     @sprite.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   )
@@ -56,11 +56,11 @@ pub fn gizmo() -> @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup] {
 }
 
 ///|
-pub impl @app.Plugin for GlobalGizmosPlugin with name(_self) {
+pub impl @app.Plugin for GlobalGizmosPlugin with fn name(_self) {
   GLOBAL_GIZMOS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for GlobalGizmosPlugin with build(self, app) {
+pub impl @app.Plugin for GlobalGizmosPlugin with fn build(self, app) {
   global_gizmos_plugin_with(app, self)
 }

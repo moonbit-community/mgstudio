@@ -18,12 +18,12 @@ struct CustomAsset {
 }
 
 ///|
-impl @asset.Asset for CustomAsset with asset_debug_name() {
+impl @asset.Asset for CustomAsset with fn asset_debug_name() {
   "examples.asset.custom_asset.CustomAsset"
 }
 
 ///|
-impl @asset.Asset for CustomAsset with asset_as_image(_self) {
+impl @asset.Asset for CustomAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -33,7 +33,7 @@ let custom_asset_resource_keys : @asset.AssetResourceKeys[CustomAsset] = @asset.
 )
 
 ///|
-impl @asset.Asset for CustomAsset with asset_resource_keys() {
+impl @asset.Asset for CustomAsset with fn asset_resource_keys() {
   custom_asset_resource_keys
 }
 
@@ -43,12 +43,12 @@ struct Blob {
 }
 
 ///|
-impl @asset.Asset for Blob with asset_debug_name() {
+impl @asset.Asset for Blob with fn asset_debug_name() {
   "examples.asset.custom_asset.Blob"
 }
 
 ///|
-impl @asset.Asset for Blob with asset_as_image(_self) {
+impl @asset.Asset for Blob with fn asset_as_image(_self) {
   None
 }
 
@@ -58,7 +58,7 @@ let blob_resource_keys : @asset.AssetResourceKeys[Blob] = @asset.register_asset_
 )
 
 ///|
-impl @asset.Asset for Blob with asset_resource_keys() {
+impl @asset.Asset for Blob with fn asset_resource_keys() {
   blob_resource_keys
 }
 
@@ -76,7 +76,7 @@ let state_key : @ecs.ResourceKey[State] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for State with resource() {
+pub impl @app.Resource for State with fn resource() {
   state_key
 }
 
@@ -254,7 +254,7 @@ fn main {
     ),
   )
   .init_resource(fn() { State::State() })
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(print_on_load)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(print_on_load))
   .run()
 }

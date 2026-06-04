@@ -28,7 +28,7 @@ let example_mode_resource : @ecs.ResourceKey[ExampleMode] = @ecs.register_resour
 )
 
 ///|
-pub impl @app.Resource for ExampleMode with resource() {
+pub impl @app.Resource for ExampleMode with fn resource() {
   example_mode_resource
 }
 
@@ -73,7 +73,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::desktop_app())
   .insert_resource(ExampleMode::Game)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Update, @app.system(@app.system_param2(cycle_modes)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(update_winit)))
+  .add_systems(@app.Update, @app.system_config_param2(cycle_modes))
+  .add_systems(@app.Update, @app.system_config_param3(update_winit))
   .run()
 }

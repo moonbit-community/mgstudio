@@ -39,17 +39,17 @@ let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for MenuState with resource() {
+impl @app.Resource for MenuState with fn resource() {
   menu_state_key
 }
 
 ///|
-pub impl @ecs.Component for MenuPanel with component() {
+pub impl @ecs.Component for MenuPanel with fn component() {
   menu_panel_key
 }
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
@@ -126,8 +126,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(toggle_mode)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(update_visuals)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(toggle_mode))
+  .add_systems(@app.Update, @app.system_config_param4(update_visuals))
   .run()
 }

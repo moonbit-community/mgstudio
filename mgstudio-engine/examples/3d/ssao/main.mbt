@@ -48,12 +48,12 @@ let ssao_instructions_resource_key : @ecs.ResourceKey[SsaoInstructions] = @ecs.r
 )
 
 ///|
-impl @ecs.Component for SphereMarker with component() {
+impl @ecs.Component for SphereMarker with fn component() {
   sphere_marker_component_key
 }
 
 ///|
-impl @ecs.Component for SsaoCamera with component() {
+impl @ecs.Component for SsaoCamera with fn component() {
   ssao_camera_component_key
 }
 
@@ -474,7 +474,7 @@ fn update(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::build())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(update)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param4(update))
   .run()
 }

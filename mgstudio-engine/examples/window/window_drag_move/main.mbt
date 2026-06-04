@@ -43,12 +43,12 @@ let example_text_key : @ecs.ComponentKey[ExampleText] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for LeftClickAction with resource() {
+impl @app.Resource for LeftClickAction with fn resource() {
   left_click_action_key
 }
 
 ///|
-impl @app.Resource for ResizeDir with resource() {
+impl @app.Resource for ResizeDir with fn resource() {
   resize_dir_key
 }
 
@@ -335,10 +335,7 @@ fn main {
     }),
   )
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param3(handle_input)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(move_or_resize_windows)),
-  )
+  .add_systems(@app.Update, @app.system_config_param3(handle_input))
+  .add_systems(@app.Update, @app.system_config_param3(move_or_resize_windows))
   .run()
 }

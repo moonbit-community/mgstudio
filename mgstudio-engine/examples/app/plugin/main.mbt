@@ -35,7 +35,7 @@ let print_message_state_resource_key : @ecs.ResourceKey[PrintMessageState] = @ec
 )
 
 ///|
-impl @app.Resource for PrintMessageState with resource() {
+impl @app.Resource for PrintMessageState with fn resource() {
   print_message_state_resource_key
 }
 
@@ -47,7 +47,7 @@ fn print_message_plugin(
 }
 
 ///|
-impl @app.Plugin for PrintMessagePlugin with build(self, app) {
+impl @app.Plugin for PrintMessagePlugin with fn build(self, app) {
   app
   .insert_resource(PrintMessageState::{
     message: self.config.message,
@@ -56,10 +56,7 @@ impl @app.Plugin for PrintMessagePlugin with build(self, app) {
       @time.TimerMode::Repeating,
     ),
   })
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(print_message_system)),
-  )
+  .add_systems(@app.Update, @app.system_config_param2(print_message_system))
 }
 
 ///|

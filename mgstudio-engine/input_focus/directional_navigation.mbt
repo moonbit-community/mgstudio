@@ -24,12 +24,12 @@ pub fn DirectionalNavigationPlugin::DirectionalNavigationPlugin() -> Directional
 }
 
 ///|
-pub impl @app.Plugin for DirectionalNavigationPlugin with name(_self) {
+pub impl @app.Plugin for DirectionalNavigationPlugin with fn name(_self) {
   "mgstudio.input_focus.DirectionalNavigationPlugin"
 }
 
 ///|
-pub impl @app.Plugin for DirectionalNavigationPlugin with build(_self, app) {
+pub impl @app.Plugin for DirectionalNavigationPlugin with fn build(_self, app) {
   directional_navigation_plugin(app)
 }
 
@@ -210,12 +210,12 @@ let directional_navigation_map_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for AutoNavigationConfig with resource() {
+pub impl @app.Resource for AutoNavigationConfig with fn resource() {
   auto_navigation_config_resource_key
 }
 
 ///|
-pub impl @app.Resource for DirectionalNavigationMap with resource() {
+pub impl @app.Resource for DirectionalNavigationMap with fn resource() {
   directional_navigation_map_resource_key
 }
 
@@ -646,17 +646,17 @@ pub fn DirectionalNavigation::navigate(
 }
 
 ///|
-pub impl @app.SystemParam for DirectionalNavigation with init_state(world) {
+pub impl @app.SystemParam for DirectionalNavigation with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
 ///|
-pub impl @app.SystemParam for DirectionalNavigation with get(_state) {
+pub impl @app.SystemParam for DirectionalNavigation with fn get(_state) {
   DirectionalNavigation::{ world: current_input_focus_world_abort_missing() }
 }
 
 ///|
-pub impl @app.SystemParam for DirectionalNavigation with store(self, state) {
+pub impl @app.SystemParam for DirectionalNavigation with fn store(self, state) {
   @app.system_param_store_no_state(self, state)
 }
 

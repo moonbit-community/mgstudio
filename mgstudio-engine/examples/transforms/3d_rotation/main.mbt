@@ -23,7 +23,7 @@ let rotatable_component_key : @ecs.ComponentKey[Rotatable] = @ecs.register_compo
 )
 
 ///|
-impl @ecs.Component for Rotatable with component() {
+impl @ecs.Component for Rotatable with fn component() {
   rotatable_component_key
 }
 
@@ -98,7 +98,7 @@ fn rotate_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_cube))
   .run()
 }

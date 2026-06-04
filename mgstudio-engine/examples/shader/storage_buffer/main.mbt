@@ -29,7 +29,7 @@ let instance_slot_key : @ecs.ComponentKey[InstanceSlot] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for InstanceSlot with component() {
+pub impl @ecs.Component for InstanceSlot with fn component() {
   instance_slot_key
 }
 
@@ -44,7 +44,7 @@ let storage_values_key : @ecs.ResourceKey[StorageValues] = @ecs.register_resourc
 )
 
 ///|
-pub impl @app.Resource for StorageValues with resource() {
+pub impl @app.Resource for StorageValues with fn resource() {
   storage_values_key
 }
 
@@ -134,14 +134,8 @@ fn apply_storage_values(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_storage_values)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(apply_storage_values)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_storage_values))
+  .add_systems(@app.Update, @app.system_config_param2(apply_storage_values))
   .run()
 }

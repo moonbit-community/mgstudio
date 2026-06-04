@@ -25,7 +25,7 @@ let capture_state_resource_key : @ecs.ResourceKey[CaptureState] = @ecs.register_
 )
 
 ///|
-impl @app.Resource for CaptureState with resource() {
+impl @app.Resource for CaptureState with fn resource() {
   capture_state_resource_key
 }
 
@@ -89,6 +89,6 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(CaptureState::{ target: None, frame: 0, single_image: true })
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(capture_system)))
+  .add_systems(@app.Update, @app.system_config_param2(capture_system))
   .run()
 }

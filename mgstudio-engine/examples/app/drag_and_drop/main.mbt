@@ -32,9 +32,6 @@ fn file_drag_and_drop_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(file_drag_and_drop_system)),
-  )
+  .add_systems(@app.Update, @app.system_config_param(file_drag_and_drop_system))
   .run()
 }

@@ -16,10 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(print_char_event_system)),
-  )
+  .add_systems(@app.Update, @app.system_config_param(print_char_event_system))
   .run()
 }
 

@@ -24,7 +24,7 @@ let rotates_key : @ecs.ComponentKey[Rotates] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Rotates with component() {
+pub impl @ecs.Component for Rotates with fn component() {
   rotates_key
 }
 
@@ -120,7 +120,7 @@ fn rotate_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_cube))
   .run()
 }

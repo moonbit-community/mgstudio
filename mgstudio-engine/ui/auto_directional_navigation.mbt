@@ -35,7 +35,7 @@ let ecs_key_auto_directional_navigation : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for AutoDirectionalNavigation with component() {
+pub impl @ecs.Component for AutoDirectionalNavigation with fn component() {
   ecs_key_auto_directional_navigation
 }
 
@@ -445,18 +445,21 @@ pub fn AutoDirectionalNavigator::navigate(
 }
 
 ///|
-pub impl @app.SystemParam for AutoDirectionalNavigator with init_state(world) {
+pub impl @app.SystemParam for AutoDirectionalNavigator with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
 ///|
-pub impl @app.SystemParam for AutoDirectionalNavigator with get(_state) {
+pub impl @app.SystemParam for AutoDirectionalNavigator with fn get(_state) {
   AutoDirectionalNavigator::{
     world: current_auto_directional_navigation_world_abort_missing(),
   }
 }
 
 ///|
-pub impl @app.SystemParam for AutoDirectionalNavigator with store(self, state) {
+pub impl @app.SystemParam for AutoDirectionalNavigator with fn store(
+  self,
+  state,
+) {
   @app.system_param_store_no_state(self, state)
 }

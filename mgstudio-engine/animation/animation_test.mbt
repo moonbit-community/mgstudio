@@ -59,26 +59,26 @@ let test_typed_animation_event_key : @ecs.EventKey[TestTypedAnimationEvent] = @e
 )
 
 ///|
-pub impl AnimationEvent for TestTypedAnimationEvent with animation_event_marker(
+pub impl AnimationEvent for TestTypedAnimationEvent with fn animation_event_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with observer_event() {
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn observer_event() {
   test_typed_animation_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with observer_entity(
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn observer_entity(
   self,
 ) {
   self.observer_entity
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with set_observer_entity(
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn set_observer_entity(
   self,
   entity,
 ) {
@@ -86,14 +86,14 @@ pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with auto_propagate(
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn auto_propagate(
   _self,
 ) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with debug_name() {
+pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn debug_name() {
   "TestTypedAnimationEvent"
 }
 
@@ -109,12 +109,12 @@ let observed_typed_animation_events : Ref[
 ] = Ref(@core.Messages::new())
 
 ///|
-pub impl @core.Message for ObservedTypedAnimationEvent with reader(tick) {
+pub impl @core.Message for ObservedTypedAnimationEvent with fn reader(tick) {
   observed_typed_animation_events.val.reader(tick)
 }
 
 ///|
-pub impl @core.Message for ObservedTypedAnimationEvent with writer(tick) {
+pub impl @core.Message for ObservedTypedAnimationEvent with fn writer(tick) {
   observed_typed_animation_events.val.writer(tick)
 }
 
@@ -1005,15 +1005,13 @@ test "animation runtime: trigger_events emits root and target messages" {
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
-      @app.system(
-        @app.system_param(fn(
-          reader : @core.MessageReader[AnimationTriggeredEvent],
-        ) {
-          for message in reader.read() {
-            captured.push(message)
-          }
-        }),
-      ).after(animation_set_trigger_untargeted_events),
+      @app.system_config_param(fn(
+        reader : @core.MessageReader[AnimationTriggeredEvent],
+      ) {
+        for message in reader.read() {
+          captured.push(message)
+        }
+      }).after(animation_set_trigger_untargeted_events),
     )
   let world = app.world()
   let player_entity = world.spawn()
@@ -1079,28 +1077,24 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
-      @app.system(
-        @app.system_param(fn(
-          reader : @core.MessageReader[AnimationTriggeredEvent],
-        ) {
-          for message in reader.read() {
-            animate_targets_stage_labels.push(message.label())
-          }
-        }),
-      )
+      @app.system_config_param(fn(
+        reader : @core.MessageReader[AnimationTriggeredEvent],
+      ) {
+        for message in reader.read() {
+          animate_targets_stage_labels.push(message.label())
+        }
+      })
       .after(animation_set_animate_targets)
       .before(animation_set_trigger_untargeted_events),
     )
     .add_post_update_system_config(
-      @app.system(
-        @app.system_param(fn(
-          reader : @core.MessageReader[AnimationTriggeredEvent],
-        ) {
-          for message in reader.read() {
-            untargeted_stage_labels.push(message.label())
-          }
-        }),
-      ).after(animation_set_trigger_untargeted_events),
+      @app.system_config_param(fn(
+        reader : @core.MessageReader[AnimationTriggeredEvent],
+      ) {
+        for message in reader.read() {
+          untargeted_stage_labels.push(message.label())
+        }
+      }).after(animation_set_trigger_untargeted_events),
     )
   let world = app.world()
   let player_entity = world.spawn()

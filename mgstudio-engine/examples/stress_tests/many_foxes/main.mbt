@@ -45,7 +45,7 @@ let fox_animations_key : @ecs.ResourceKey[FoxAnimations] = @ecs.register_resourc
 )
 
 ///|
-impl @app.Resource for FoxAnimations with resource() {
+impl @app.Resource for FoxAnimations with fn resource() {
   fox_animations_key
 }
 
@@ -63,7 +63,7 @@ let foxes_key : @ecs.ResourceKey[Foxes] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for Foxes with resource() {
+impl @app.Resource for Foxes with fn resource() {
   foxes_key
 }
 
@@ -88,7 +88,7 @@ let stress_metrics_state_key : @ecs.ResourceKey[StressMetricsState] = @ecs.regis
 )
 
 ///|
-impl @app.Resource for StressMetricsState with resource() {
+impl @app.Resource for StressMetricsState with fn resource() {
   stress_metrics_state_key
 }
 
@@ -162,7 +162,7 @@ let ring_key : @ecs.ComponentKey[Ring] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Ring with component() {
+pub impl @ecs.Component for Ring with fn component() {
   ring_key
 }
 
@@ -177,7 +177,7 @@ let rotation_direction_key : @ecs.ComponentKey[RotationDirection] = @ecs.registe
 )
 
 ///|
-pub impl @ecs.Component for RotationDirection with component() {
+pub impl @ecs.Component for RotationDirection with fn component() {
   rotation_direction_key
 }
 
@@ -555,11 +555,11 @@ fn update_fox_rings(
 ///|
 fn main {
   let args = parse_args()
-  let keyboard_animation_control_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(keyboard_animation_control),
+  let keyboard_animation_control_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    keyboard_animation_control,
   ).named("examples.stress_tests.many_foxes.keyboard_animation_control")
-  let update_fox_rings_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(update_fox_rings),
+  let update_fox_rings_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    update_fox_rings,
   ).named("examples.stress_tests.many_foxes.update_fox_rings")
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(Foxes::{ ..Foxes(), count: args.count, sync: args.sync })
@@ -581,7 +581,7 @@ fn main {
     .add_plugins(@diagnostic.TimelineTracePlugin::TimelineTracePlugin())
     .add_systems(
       @app.Startup,
-      @app.system(@app.system_param3(setup)).named(
+      @app.system_config_param3(setup).named(
         "examples.stress_tests.many_foxes.setup",
       ),
     )
@@ -592,7 +592,7 @@ fn main {
     )
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(stress_metrics_system)).named(
+      @app.system_config_param2(stress_metrics_system).named(
         "examples.stress_tests.many_foxes.stress_metrics",
       ),
     )

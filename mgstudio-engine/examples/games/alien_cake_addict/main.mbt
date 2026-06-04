@@ -45,17 +45,17 @@ let score_key : @ecs.ResourceKey[Score] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
 ///|
-pub impl @ecs.Component for Cake with component() {
+pub impl @ecs.Component for Cake with fn component() {
   cake_key
 }
 
 ///|
-impl @app.Resource for Score with resource() {
+impl @app.Resource for Score with fn resource() {
   score_key
 }
 
@@ -191,8 +191,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(move_player)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(collect_cakes)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param3(move_player))
+  .add_systems(@app.Update, @app.system_config_param4(collect_cakes))
   .run()
 }

@@ -26,7 +26,7 @@ let scaling_component_key : @ecs.ComponentKey[Scaling] = @ecs.register_component
 )
 
 ///|
-impl @ecs.Component for Scaling with component() {
+impl @ecs.Component for Scaling with fn component() {
   scaling_component_key
 }
 
@@ -151,11 +151,8 @@ fn scale_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(change_scale_direction)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(scale_cube)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(change_scale_direction))
+  .add_systems(@app.Update, @app.system_config_param2(scale_cube))
   .run()
 }

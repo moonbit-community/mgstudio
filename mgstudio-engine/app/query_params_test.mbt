@@ -43,17 +43,17 @@ let query_marker_key : @ecs.ComponentKey[QueryMarker] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for QueryPosition with component() {
+pub impl @ecs.Component for QueryPosition with fn component() {
   query_position_key
 }
 
 ///|
-pub impl @ecs.Component for QueryVelocity with component() {
+pub impl @ecs.Component for QueryVelocity with fn component() {
   query_velocity_key
 }
 
 ///|
-pub impl @ecs.Component for QueryMarker with component() {
+pub impl @ecs.Component for QueryMarker with fn component() {
   query_marker_key
 }
 
@@ -65,12 +65,12 @@ struct QueryGenericData {
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with matches(world, entity) {
+pub impl @ecs.QueryData for QueryGenericData with fn matches(world, entity) {
   @ecs.query_data_component_matches(world, entity, query_position_key)
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with fetch(world, entity) {
+pub impl @ecs.QueryData for QueryGenericData with fn fetch(world, entity) {
   {
     entity,
     position: @ecs.query_data_component_fetch(world, entity, query_position_key),
@@ -81,7 +81,7 @@ pub impl @ecs.QueryData for QueryGenericData with fetch(world, entity) {
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with mentions_component(
+pub impl @ecs.QueryData for QueryGenericData with fn mentions_component(
   component_id,
 ) {
   component_id == query_position_key.id() ||
@@ -89,24 +89,24 @@ pub impl @ecs.QueryData for QueryGenericData with mentions_component(
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with matches_component_set(
+pub impl @ecs.QueryData for QueryGenericData with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(query_position_key.id())
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with requires_entity_check() {
+pub impl @ecs.QueryData for QueryGenericData with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with iteration_anchor_component() {
+pub impl @ecs.QueryData for QueryGenericData with fn iteration_anchor_component() {
   Some(query_position_key.id())
 }
 
 ///|
-pub impl @ecs.QueryData for QueryGenericData with contiguous_compatible() {
+pub impl @ecs.QueryData for QueryGenericData with fn contiguous_compatible() {
   true
 }
 
@@ -114,7 +114,7 @@ pub impl @ecs.QueryData for QueryGenericData with contiguous_compatible() {
 struct QueryMarkerFilter {}
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with matches(
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn matches(
   self,
   world,
   entity,
@@ -124,7 +124,7 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with matches(
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with mentions_component(
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn mentions_component(
   self,
   component_id,
 ) {
@@ -133,7 +133,7 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with mentions_component(
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with matches_component_set(
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn matches_component_set(
   self,
   set_contains_id,
 ) {
@@ -142,13 +142,15 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with matches_component_set(
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with requires_entity_check(self) {
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn requires_entity_check(
+  self,
+) {
   ignore(self)
   false
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with iteration_anchor_component(
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn iteration_anchor_component(
   self,
 ) {
   ignore(self)
@@ -156,13 +158,13 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with iteration_anchor_component(
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with depends_on_ticks(self) {
+pub impl @ecs.QueryFilter for QueryMarkerFilter with fn depends_on_ticks(self) {
   ignore(self)
   false
 }
 
 ///|
-pub impl FromWorld for QueryMarkerFilter with from_world(_world) {
+pub impl FromWorld for QueryMarkerFilter with fn from_world(_world) {
   QueryMarkerFilter::{  }
 }
 
@@ -347,29 +349,27 @@ test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
 
   let mut app = App::new(world).add_systems(
     Update,
-    system(
-      system_param3(fn(
-        visible_entities : @ecs.Query[@core.Entity, @ecs.Allow[@ecs.Disabled]],
-        has_query : @ecs.Query[
-          (@ecs.Comp[QueryPosition], @ecs.Has[@ecs.Disabled]),
-          @ecs.All,
-        ],
-        optional_query : @ecs.Query[
-          (@ecs.Comp[QueryPosition], @ecs.Comp[@ecs.Disabled]?),
-          @ecs.All,
-        ],
-      ) {
-        entity_counts.push(visible_entities.count())
-        try! has_query.view(fn(entity, data) {
-          let (_, has_disabled) = data
-          has_seen.push((entity.id, has_disabled.present()))
-        })
-        try! optional_query.view(fn(entity, data) {
-          let (_, maybe_disabled) = data
-          optional_seen.push((entity.id, maybe_disabled is Some(_)))
-        })
-      }),
-    ),
+    system_config_param3(fn(
+      visible_entities : @ecs.Query[@core.Entity, @ecs.Allow[@ecs.Disabled]],
+      has_query : @ecs.Query[
+        (@ecs.Comp[QueryPosition], @ecs.Has[@ecs.Disabled]),
+        @ecs.All,
+      ],
+      optional_query : @ecs.Query[
+        (@ecs.Comp[QueryPosition], @ecs.Comp[@ecs.Disabled]?),
+        @ecs.All,
+      ],
+    ) {
+      entity_counts.push(visible_entities.count())
+      try! has_query.view(fn(entity, data) {
+        let (_, has_disabled) = data
+        has_seen.push((entity.id, has_disabled.present()))
+      })
+      try! optional_query.view(fn(entity, data) {
+        let (_, maybe_disabled) = data
+        optional_seen.push((entity.id, maybe_disabled is Some(_)))
+      })
+    }),
   )
 
   app = app.run_once()
@@ -381,62 +381,87 @@ test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
 
 ///|
 test "app: validated single query params expose strict single access" {
-  let world = @ecs.World::new()
-  let entity = world.spawn()
-  let other = world.spawn()
+  let read_world = @ecs.World::new()
+  let read_entity = read_world.spawn()
+  let read_other = read_world.spawn()
 
-  try! world.set_by_key(entity, query_position_key, QueryPosition::{
+  try! read_world.set_by_key(read_entity, query_position_key, QueryPosition::{
     x: 1,
     y: 2,
   })
-  try! world.set_by_key(entity, query_velocity_key, QueryVelocity::{
+  try! read_world.set_by_key(read_entity, query_velocity_key, QueryVelocity::{
     dx: 3,
     dy: 4,
   })
-  try! world.set_by_key(other, query_position_key, QueryPosition::{
+  try! read_world.set_by_key(read_other, query_position_key, QueryPosition::{
     x: 10,
     y: 20,
   })
 
   let entity_ids : Array[Int] = []
   let xs : Array[Int] = []
-  let mut app = App::new(world).add_systems(
+  let mut read_app = App::new(read_world).add_systems(
     Update,
-    system(
-      system_param3(fn(
-        single_entity : Single[
-          @core.Entity,
-          (@ecs.With[QueryPosition], @ecs.With[QueryVelocity]),
-        ],
-        single_position : Single[
-          @ecs.Comp[QueryPosition],
-          @ecs.With[QueryVelocity],
-        ],
-        single_pair : Single[
-          (@ecs.Mut[QueryPosition], @ecs.Comp[QueryVelocity]),
-          @ecs.All,
-        ],
-      ) {
-        entity_ids.push(single_entity.get().id)
-        xs.push(single_position.get().value().x)
-        let (position_mut, velocity_ref) = single_pair.get()
-        position_mut.modify(fn(value) {
-          value.x = value.x + velocity_ref.value().dx
-        })
-      }),
-    ),
+    system_config_param2(fn(
+      single_entity : Single[
+        @core.Entity,
+        (@ecs.With[QueryPosition], @ecs.With[QueryVelocity]),
+      ],
+      single_position : Single[
+        @ecs.Comp[QueryPosition],
+        @ecs.With[QueryVelocity],
+      ],
+    ) {
+      entity_ids.push(single_entity.get().id)
+      xs.push(single_position.get().value().x)
+    }),
   )
 
-  app = app.run_once()
+  read_app = read_app.run_once()
 
   debug_inspect(entity_ids, content="[0]")
   debug_inspect(xs, content="[1]")
+
+  let write_world = @ecs.World::new()
+  let write_entity = write_world.spawn()
+  let write_other = write_world.spawn()
+
+  try! write_world.set_by_key(write_entity, query_position_key, QueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  try! write_world.set_by_key(write_entity, query_velocity_key, QueryVelocity::{
+    dx: 3,
+    dy: 4,
+  })
+  try! write_world.set_by_key(write_other, query_position_key, QueryPosition::{
+    x: 10,
+    y: 20,
+  })
+
+  let mut write_app = App::new(write_world).add_systems(
+    Update,
+    system_config_param(fn(
+      single_pair : Single[
+        (@ecs.Mut[QueryPosition], @ecs.Comp[QueryVelocity]),
+        @ecs.All,
+      ],
+    ) {
+      let (position_mut, velocity_ref) = single_pair.get()
+      position_mut.modify(fn(value) {
+        value.x = value.x + velocity_ref.value().dx
+      })
+    }),
+  )
+
+  write_app = write_app.run_once()
+
   debug_inspect(
-    try! app.world().get_by_key(entity, query_position_key),
+    try! write_app.world().get_by_key(write_entity, query_position_key),
     content="Some({ x: 4, y: 2 })",
   )
   debug_inspect(
-    try! app.world().get_by_key(other, query_position_key),
+    try! write_app.world().get_by_key(write_other, query_position_key),
     content="Some({ x: 10, y: 20 })",
   )
 }
@@ -487,23 +512,21 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
   let counts : Array[Int] = []
   let mut app = App::new(world).add_systems(
     Update,
-    system(
-      fallible_system_param(fn(
-        query_param : Populated[
-          (@ecs.Mut[QueryPosition], @ecs.Mut[QueryVelocity]),
-          @ecs.All,
-        ],
-      ) {
-        let query = query_param.query()
-        counts.push(query.count())
-        try! query.view(fn(_entity, data) {
-          let (position_mut, velocity_mut) = data
-          velocity_mut.modify(fn(value) {
-            value.dx = value.dx + position_mut.peek().x
-          })
+    fallible_system_config_param(fn(
+      query_param : Populated[
+        (@ecs.Mut[QueryPosition], @ecs.Mut[QueryVelocity]),
+        @ecs.All,
+      ],
+    ) {
+      let query = query_param.query()
+      counts.push(query.count())
+      try! query.view(fn(_entity, data) {
+        let (position_mut, velocity_mut) = data
+        velocity_mut.modify(fn(value) {
+          value.dx = value.dx + position_mut.peek().x
         })
-      }),
-    ),
+      })
+    }),
   )
 
   app = app.run_once()

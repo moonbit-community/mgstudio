@@ -29,7 +29,7 @@ let scene_spin_key : @ecs.ComponentKey[SceneSpin] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for SceneSpin with component() {
+pub impl @ecs.Component for SceneSpin with fn component() {
   scene_spin_key
 }
 
@@ -113,7 +113,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_scene_roots)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_scene_roots))
   .run()
 }

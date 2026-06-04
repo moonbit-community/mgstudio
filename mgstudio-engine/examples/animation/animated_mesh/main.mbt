@@ -30,7 +30,7 @@ let animation_to_play_key : @ecs.ComponentKey[AnimationToPlay] = @ecs.register_c
 )
 
 ///|
-pub impl @ecs.Component for AnimationToPlay with component() {
+pub impl @ecs.Component for AnimationToPlay with fn component() {
   animation_to_play_key
 }
 
@@ -147,7 +147,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
     @app.Startup,
-    @app.system(@app.system_param2(setup_mesh_and_animation)),
+    @app.system_config_param2(setup_mesh_and_animation),
   )
   .add_systems(@app.Startup, @app.system(setup_camera_and_environment))
   .run()

@@ -45,17 +45,17 @@ let ball_key : @ecs.ComponentKey[Ball] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Paddle with component() {
+pub impl @ecs.Component for Paddle with fn component() {
   paddle_key
 }
 
 ///|
-pub impl @ecs.Component for Brick with component() {
+pub impl @ecs.Component for Brick with fn component() {
   brick_key
 }
 
 ///|
-pub impl @ecs.Component for Ball with component() {
+pub impl @ecs.Component for Ball with fn component() {
   ball_key
 }
 
@@ -210,8 +210,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(move_paddle)))
-  .add_systems(@app.Update, @app.system(@app.system_param5(move_ball)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param3(move_paddle))
+  .add_systems(@app.Update, @app.system_config_param5(move_ball))
   .run()
 }

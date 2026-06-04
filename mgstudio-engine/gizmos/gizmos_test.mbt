@@ -35,19 +35,19 @@ fn TestRoundGizmos::TestRoundGizmos() -> TestRoundGizmos {
 }
 
 ///|
-impl Default for TestRoundGizmos with default() {
+impl Default for TestRoundGizmos with fn default() {
   TestRoundGizmos::TestRoundGizmos()
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_marker(
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_debug_name() {
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos_test::TestRoundGizmos"
 }
 
@@ -59,7 +59,7 @@ let test_round_gizmos_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_storage_resource_key() {
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_storage_resource_key() {
   test_round_gizmos_storage_resource_key
 }
 
@@ -69,12 +69,12 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with new_gizmo_config_group_cell() {
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn new_gizmo_config_group_cell() {
   TestRoundGizmosCell(Ref(TestRoundGizmos::TestRoundGizmos()))
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_cell_ref(
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -91,11 +91,9 @@ test "custom gizmo groups expose config through store and system param" {
     TestRoundGizmos::TestRoundGizmos(),
   ).add_systems(
     @app.Update,
-    @app.system(
-      @app.system_param(fn(gizmos : @gizmos.Gizmos[TestRoundGizmos]) {
-        seen_width.val = gizmos.config().line.width
-      }),
-    ),
+    @app.system_config_param(fn(gizmos : @gizmos.Gizmos[TestRoundGizmos]) {
+      seen_width.val = gizmos.config().line.width
+    }),
   )
 
   match app.world().get_resource_mut(@gizmos.GizmoConfigStore::resource()) {

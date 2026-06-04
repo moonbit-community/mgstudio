@@ -111,12 +111,12 @@ pub fn TimelineTracePlugin::with_config(
 }
 
 ///|
-pub impl @app.Plugin for TimelineTracePlugin with name(_self) {
+pub impl @app.Plugin for TimelineTracePlugin with fn name(_self) {
   TIMELINE_TRACE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for TimelineTracePlugin with build(self, app) {
+pub impl @app.Plugin for TimelineTracePlugin with fn build(self, app) {
   timeline_trace_plugin_with(app, self)
 }
 
@@ -154,12 +154,12 @@ pub fn StressDiagnosticsPlugin::with_log_interval_seconds(
 }
 
 ///|
-pub impl @app.Plugin for StressDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for StressDiagnosticsPlugin with fn name(_self) {
   STRESS_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for StressDiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for StressDiagnosticsPlugin with fn build(self, app) {
   stress_diagnostics_plugin_with(app, self)
 }
 
@@ -187,7 +187,7 @@ let stress_metrics_state_key : @ecs.ResourceKey[StressMetricsState] = @ecs.regis
 )
 
 ///|
-impl @app.Resource for StressMetricsState with resource() {
+impl @app.Resource for StressMetricsState with fn resource() {
   stress_metrics_state_key
 }
 
@@ -593,7 +593,7 @@ pub fn stress_diagnostics_plugin_with(
     return next
       .add_systems(
         @app.PostUpdate,
-        @app.system(@app.system_param2(stress_metrics_system)),
+        @app.system_config_param2(stress_metrics_system),
       )
       .add_plugins(TimelineTracePlugin::TimelineTracePlugin())
   }

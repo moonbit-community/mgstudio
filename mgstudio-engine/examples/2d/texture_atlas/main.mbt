@@ -66,17 +66,17 @@ fn main {
   .insert_state(AppState::default())
   .add_on_enter_system_config(
     AppState::Setup,
-    @app.system(@app.system_param2(load_textures)),
+    @app.system_config_param2(load_textures),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(check_textures)).run_if(
+    @app.system_config_param2(check_textures).run_if(
       @app.in_state(AppState::Setup),
     ),
   )
   .add_on_enter_system_config(
     AppState::Finished,
-    @app.system(@app.system_param5(setup)),
+    @app.system_config_param5(setup),
   )
   .run()
 }

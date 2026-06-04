@@ -151,32 +151,32 @@ let mixed_oklcha_key : @ecs.ComponentKey[MixedOklcha] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for CurveLinearRgba with component() {
+impl @ecs.Component for CurveLinearRgba with fn component() {
   curve_linear_rgba_key
 }
 
 ///|
-impl @ecs.Component for CurveXyza with component() {
+impl @ecs.Component for CurveXyza with fn component() {
   curve_xyza_key
 }
 
 ///|
-impl @ecs.Component for CurveOklaba with component() {
+impl @ecs.Component for CurveOklaba with fn component() {
   curve_oklaba_key
 }
 
 ///|
-impl @ecs.Component for MixedHsla with component() {
+impl @ecs.Component for MixedHsla with fn component() {
   mixed_hsla_key
 }
 
 ///|
-impl @ecs.Component for MixedSrgba with component() {
+impl @ecs.Component for MixedSrgba with fn component() {
   mixed_srgba_key
 }
 
 ///|
-impl @ecs.Component for MixedOklcha with component() {
+impl @ecs.Component for MixedOklcha with fn component() {
   mixed_oklcha_key
 }
 
@@ -185,24 +185,12 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(color_animation_setup))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_curve_linear)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_curve_xyza)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_curve_oklaba)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_mixed_hsla)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_mixed_srgba)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_mixed_oklcha)),
-  )
+  .add_systems(@app.Update, @app.system_config_param2(animate_curve_linear))
+  .add_systems(@app.Update, @app.system_config_param2(animate_curve_xyza))
+  .add_systems(@app.Update, @app.system_config_param2(animate_curve_oklaba))
+  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_hsla))
+  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_srgba))
+  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_oklcha))
   .run()
 }
 

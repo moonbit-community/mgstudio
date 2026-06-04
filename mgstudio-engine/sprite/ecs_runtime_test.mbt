@@ -604,36 +604,34 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
     .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
     .add_systems(
       @app.Startup,
-      @app.system(
-        @app.system_param3(fn(
-          commands : @app.Commands,
-          meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-          materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
-        ) {
-          ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
-          meshes.set_changed()
-          let mesh_handle = meshes
-            .peek()
-            .add(
-              Mesh::from_2d_geometry(
-                mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
-              ),
-            )
-          materials.set_changed()
-          let material_handle = materials
-            .peek()
-            .add(ColorMaterialAsset::from_color(Color::white()))
-          ignore(
-            commands.spawn(
-              (
-                Mesh2d::new(mesh_handle),
-                MeshMaterial2d::new(material_handle),
-                @transform.Transform::identity(),
-              ),
+      @app.system_config_param3(fn(
+        commands : @app.Commands,
+        meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+        materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
+      ) {
+        ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+        meshes.set_changed()
+        let mesh_handle = meshes
+          .peek()
+          .add(
+            Mesh::from_2d_geometry(
+              mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
             ),
           )
-        }),
-      ),
+        materials.set_changed()
+        let material_handle = materials
+          .peek()
+          .add(ColorMaterialAsset::from_color(Color::white()))
+        ignore(
+          commands.spawn(
+            (
+              Mesh2d::new(mesh_handle),
+              MeshMaterial2d::new(material_handle),
+              @transform.Transform::identity(),
+            ),
+          ),
+        )
+      }),
     )
 
   app = app.update()

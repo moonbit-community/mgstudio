@@ -26,7 +26,7 @@ let wiggle_key : @ecs.ComponentKey[Wiggle] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Wiggle with component() {
+pub impl @ecs.Component for Wiggle with fn component() {
   wiggle_key
 }
 
@@ -100,7 +100,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate))
   .run()
 }

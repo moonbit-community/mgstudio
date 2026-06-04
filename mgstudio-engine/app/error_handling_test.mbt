@@ -31,12 +31,12 @@ let error_handling_marker_key : @ecs.ComponentKey[ErrorHandlingMarker] = @ecs.re
 )
 
 ///|
-pub impl Resource for ErrorHandlingResource with resource() {
+pub impl Resource for ErrorHandlingResource with fn resource() {
   error_handling_resource_key
 }
 
 ///|
-pub impl @ecs.Component for ErrorHandlingMarker with component() {
+pub impl @ecs.Component for ErrorHandlingMarker with fn component() {
   error_handling_marker_key
 }
 
@@ -82,11 +82,9 @@ test "app error handling: missing Res routes invalid validation through default 
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_systems(
       Update,
-      system(
-        system_param(fn(_resource : Res[ErrorHandlingResource]) {
-          ran.val = true
-        }),
-      ),
+      system_config_param(fn(_resource : Res[ErrorHandlingResource]) {
+        ran.val = true
+      }),
     )
 
   app = app.run_once()
@@ -104,13 +102,11 @@ test "app error handling: skipped validated params do not invoke error handlers"
     .set_error_handler(fn(error, _context) { errors.push(error.to_string()) })
     .add_systems(
       Update,
-      system(
-        system_param(fn(
-          _marker : Single[@ecs.Comp[ErrorHandlingMarker], @ecs.All],
-        ) {
-          ran.val = true
-        }),
-      ),
+      system_config_param(fn(
+        _marker : Single[@ecs.Comp[ErrorHandlingMarker], @ecs.All],
+      ) {
+        ran.val = true
+      }),
     )
 
   app = app.run_once()
@@ -158,7 +154,7 @@ test "app error handling: per-system handler does not intercept validation failu
     })
     .add_systems(
       Update,
-      system(system_param(fn(_resource : Res[ErrorHandlingResource]) {  })).handle_error_with(fn(
+      system_config_param(fn(_resource : Res[ErrorHandlingResource]) {  }).handle_error_with(fn(
           _error,
           context,
         ) {

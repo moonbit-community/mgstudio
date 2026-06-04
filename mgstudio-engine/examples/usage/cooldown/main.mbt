@@ -34,7 +34,7 @@ let ability_name_key : @ecs.ComponentKey[AbilityName] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for AbilityName with component() {
+pub impl @ecs.Component for AbilityName with fn component() {
   ability_name_key
 }
 
@@ -51,7 +51,7 @@ let cooldown_key : @ecs.ComponentKey[Cooldown] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Cooldown with component() {
+pub impl @ecs.Component for Cooldown with fn component() {
   cooldown_key
 }
 
@@ -64,7 +64,7 @@ let active_cooldown_key : @ecs.ComponentKey[ActiveCooldown] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for ActiveCooldown with component() {
+pub impl @ecs.Component for ActiveCooldown with fn component() {
   active_cooldown_key
 }
 
@@ -77,7 +77,7 @@ let status_label_key : @ecs.ComponentKey[StatusLabel] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for StatusLabel with component() {
+pub impl @ecs.Component for StatusLabel with fn component() {
   status_label_key
 }
 
@@ -281,11 +281,11 @@ fn animate_cooldowns(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(activate_ability)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param4(activate_ability))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param5(animate_cooldowns)).run_if(
+    @app.system_config_param5(animate_cooldowns).run_if(
       @app.any_with_component(ActiveCooldown::component()),
     ),
   )

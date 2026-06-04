@@ -69,32 +69,32 @@ let random_source_key : @ecs.ResourceKey[RandomSource] = @ecs.register_resource(
 )
 
 ///|
-impl @ecs.Component for TargetSphere with component() {
+impl @ecs.Component for TargetSphere with fn component() {
   target_sphere_key
 }
 
 ///|
-impl @ecs.Component for FollowingSphere with component() {
+impl @ecs.Component for FollowingSphere with fn component() {
   following_sphere_key
 }
 
 ///|
-impl @app.Resource for TargetSphereSpeed with resource() {
+impl @app.Resource for TargetSphereSpeed with fn resource() {
   target_sphere_speed_key
 }
 
 ///|
-impl @app.Resource for TargetPosition with resource() {
+impl @app.Resource for TargetPosition with fn resource() {
   target_position_key
 }
 
 ///|
-impl @app.Resource for DecayRate with resource() {
+impl @app.Resource for DecayRate with fn resource() {
   decay_rate_key
 }
 
 ///|
-impl @app.Resource for RandomSource with resource() {
+impl @app.Resource for RandomSource with fn resource() {
   random_source_key
 }
 
@@ -277,16 +277,16 @@ fn move_follower(
 
 ///|
 fn main {
-  let move_target_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param5(move_target),
+  let move_target_system : @app.SystemConfig[@ecs.World] = @app.system_config_param5(
+    move_target,
   )
-  let move_follower_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(move_follower),
+  let move_follower_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    move_follower,
   )
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
   .add_systems(
     @app.Update,
     (move_target_system, move_follower_system) |> @app.chain(),

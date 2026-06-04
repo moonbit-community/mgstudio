@@ -26,12 +26,12 @@ pub fn TabNavigationPlugin::TabNavigationPlugin() -> TabNavigationPlugin {
 }
 
 ///|
-pub impl @app.Plugin for TabNavigationPlugin with name(_self) {
+pub impl @app.Plugin for TabNavigationPlugin with fn name(_self) {
   "mgstudio.input_focus.TabNavigationPlugin"
 }
 
 ///|
-pub impl @app.Plugin for TabNavigationPlugin with build(_self, app) {
+pub impl @app.Plugin for TabNavigationPlugin with fn build(_self, app) {
   tab_navigation_plugin(app)
 }
 
@@ -51,7 +51,7 @@ let tab_index_component_key : @ecs.ComponentKey[TabIndex] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for TabIndex with component() {
+pub impl @ecs.Component for TabIndex with fn component() {
   tab_index_component_key
 }
 
@@ -87,7 +87,7 @@ let tab_group_component_key : @ecs.ComponentKey[TabGroup] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for TabGroup with component() {
+pub impl @ecs.Component for TabGroup with fn component() {
   tab_group_component_key
 }
 
@@ -348,8 +348,5 @@ fn tab_navigation_input(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit 
 pub fn tab_navigation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_systems(
-    @app.Update,
-    @app.system(@app.system_param(tab_navigation_input)),
-  )
+  app.add_systems(@app.Update, @app.system_config_param(tab_navigation_input))
 }

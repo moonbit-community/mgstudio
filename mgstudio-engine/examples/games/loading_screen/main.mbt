@@ -32,12 +32,12 @@ let loading_bar_key : @ecs.ComponentKey[LoadingBar] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for LoadingState with resource() {
+impl @app.Resource for LoadingState with fn resource() {
   loading_state_key
 }
 
 ///|
-pub impl @ecs.Component for LoadingBar with component() {
+pub impl @ecs.Component for LoadingBar with fn component() {
   loading_bar_key
 }
 
@@ -108,7 +108,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(simulate_loading)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param4(simulate_loading))
   .run()
 }

@@ -604,10 +604,7 @@ test "window: close_when_requested marks windows without immediate despawn" {
     .add_message(ecs_key_window_closing)
     .add_message(ecs_key_window_closed)
     .add_message(ecs_key_window_destroyed)
-    .add_systems(
-      @app.Update,
-      @app.system(@app.system_param2(close_when_requested)),
-    )
+    .add_systems(@app.Update, @app.system_config_param2(close_when_requested))
   ignore(
     app
     .world()
@@ -627,10 +624,7 @@ test "window: close_when_requested marks windows without immediate despawn" {
 test "window: exit_on_all_closed sends AppExit when no windows remain" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_message(@app.AppExit::message())
-    .add_systems(
-      @app.PostUpdate,
-      @app.system(@app.system_param2(exit_on_all_closed)),
-    )
+    .add_systems(@app.PostUpdate, @app.system_config_param2(exit_on_all_closed))
 
   app = app.run_once()
   debug_inspect(app.should_exit(), content="Some(Success)")
@@ -652,7 +646,7 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
     .add_message(ecs_key_window_closed)
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(exit_on_primary_closed)),
+      @app.system_config_param2(exit_on_primary_closed),
     )
 
   app = app.run_once()

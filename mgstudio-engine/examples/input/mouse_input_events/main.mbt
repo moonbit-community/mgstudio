@@ -18,11 +18,11 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param4(print_mouse_events_system)),
+    @app.system_config_param4(print_mouse_events_system),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(print_mouse_gesture_events_system)),
+    @app.system_config_param3(print_mouse_gesture_events_system),
   )
   .run()
 }

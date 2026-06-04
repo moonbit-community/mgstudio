@@ -51,22 +51,22 @@ let keyboard_buffer_key : @ecs.ResourceKey[KeyboardBuffer] = @ecs.register_resou
 )
 
 ///|
-pub impl @ecs.Component for KeyCap with component() {
+pub impl @ecs.Component for KeyCap with fn component() {
   key_cap_key
 }
 
 ///|
-pub impl @ecs.Component for WasPressed with component() {
+pub impl @ecs.Component for WasPressed with fn component() {
   was_pressed_key
 }
 
 ///|
-pub impl @ecs.Component for KeyboardDisplay with component() {
+pub impl @ecs.Component for KeyboardDisplay with fn component() {
   keyboard_display_key
 }
 
 ///|
-pub impl @app.Resource for KeyboardBuffer with resource() {
+pub impl @app.Resource for KeyboardBuffer with fn resource() {
   keyboard_buffer_key
 }
 
@@ -213,14 +213,8 @@ fn keyboard_display_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(keyboard_input_system)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(keyboard_display_system)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(keyboard_input_system))
+  .add_systems(@app.Update, @app.system_config_param2(keyboard_display_system))
   .run()
 }

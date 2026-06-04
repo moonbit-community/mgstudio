@@ -23,7 +23,7 @@ let one_shot_counter_resource_key : @ecs.ResourceKey[OneShotCounterResource] = @
 )
 
 ///|
-pub impl Resource for OneShotCounterResource with resource() {
+pub impl Resource for OneShotCounterResource with fn resource() {
   one_shot_counter_resource_key
 }
 

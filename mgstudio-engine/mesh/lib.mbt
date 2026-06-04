@@ -96,12 +96,12 @@ pub fn MeshPlugin::MeshPlugin() -> MeshPlugin {
 }
 
 ///|
-pub impl @app.Plugin for MeshPlugin with name(_self) {
+pub impl @app.Plugin for MeshPlugin with fn name(_self) {
   MESH_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MeshPlugin with build(_self, app) {
+pub impl @app.Plugin for MeshPlugin with fn build(_self, app) {
   mesh_plugin(app)
 }
 
@@ -190,14 +190,16 @@ pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     }),
     fn() { SkinnedMeshInverseBindposes::new([]) },
   )
-  .add_post_update_system(
-    @app.system_param3(mark_2d_meshes_as_changed_if_their_assets_changed),
+  .add_post_update_system_config(
+    @app.system_config_param3(mark_2d_meshes_as_changed_if_their_assets_changed),
   )
-  .add_post_update_system(
-    @app.system_param3(mark_3d_meshes_as_changed_if_their_assets_changed),
+  .add_post_update_system_config(
+    @app.system_config_param3(mark_3d_meshes_as_changed_if_their_assets_changed),
   )
-  .add_post_update_system(
-    @app.system_param3(mark_skinned_meshes_as_changed_if_their_assets_changed),
+  .add_post_update_system_config(
+    @app.system_config_param3(
+      mark_skinned_meshes_as_changed_if_their_assets_changed,
+    ),
   )
 }
 
@@ -214,12 +216,12 @@ pub struct Mesh {
 }
 
 ///|
-pub impl @asset.Asset for Mesh with asset_debug_name() {
+pub impl @asset.Asset for Mesh with fn asset_debug_name() {
   "mgstudio_mesh::Mesh"
 }
 
 ///|
-pub impl @asset.Asset for Mesh with asset_as_image(_self) {
+pub impl @asset.Asset for Mesh with fn asset_as_image(_self) {
   None
 }
 
@@ -229,6 +231,6 @@ let mesh_asset_resource_keys : @asset.AssetResourceKeys[Mesh] = @asset.register_
 )
 
 ///|
-pub impl @asset.Asset for Mesh with asset_resource_keys() {
+pub impl @asset.Asset for Mesh with fn asset_resource_keys() {
   mesh_asset_resource_keys
 }

@@ -27,7 +27,7 @@ let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
@@ -163,17 +163,17 @@ fn update_camera(
 
 ///|
 fn main {
-  let move_player_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(move_player),
+  let move_player_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    move_player,
   )
-  let update_camera_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(update_camera),
+  let update_camera_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    update_camera,
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_instructions)))
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup_scene))
+  .add_systems(@app.Startup, @app.system_config_param(setup_instructions))
+  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
   .add_systems(
     @app.Update,
     (move_player_system, update_camera_system) |> @app.chain(),

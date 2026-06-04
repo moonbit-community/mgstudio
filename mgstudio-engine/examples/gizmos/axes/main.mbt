@@ -41,12 +41,12 @@ let transform_tracking_key : @ecs.ComponentKey[TransformTracking] = @ecs.registe
 )
 
 ///|
-pub impl @ecs.Component for ShowAxes with component() {
+pub impl @ecs.Component for ShowAxes with fn component() {
   show_axes_key
 }
 
 ///|
-pub impl @ecs.Component for TransformTracking with component() {
+pub impl @ecs.Component for TransformTracking with fn component() {
   transform_tracking_key
 }
 
@@ -208,7 +208,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_cubes)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(draw_axes)))
+  .add_systems(@app.Update, @app.system_config_param2(move_cubes))
+  .add_systems(@app.Update, @app.system_config_param2(draw_axes))
   .run()
 }

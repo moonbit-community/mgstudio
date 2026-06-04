@@ -23,7 +23,7 @@ let counter_resource_key : @ecs.ResourceKey[CounterResource] = @ecs.register_res
 )
 
 ///|
-impl Resource for CounterResource with resource() {
+impl Resource for CounterResource with fn resource() {
   counter_resource_key
 }
 

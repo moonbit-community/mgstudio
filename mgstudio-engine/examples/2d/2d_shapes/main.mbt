@@ -17,16 +17,16 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@sprite.Wireframe2dPlugin::Wireframe2dPlugin())
-  .add_systems(Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(Startup, @app.system_config_param3(setup))
   .add_systems(
     Update,
-    @app.system(@app.system_param(toggle_wireframe)).run_if(
+    @app.system_config_param(toggle_wireframe).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
     Update,
-    @app.system(@app.system_param2(rotate)).run_if(
+    @app.system_config_param2(rotate).run_if(
       @input.input_toggle_active(false, @window.KeyCode::KeyR),
     ),
   )

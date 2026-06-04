@@ -27,19 +27,19 @@ fn MyRoundGizmos::MyRoundGizmos() -> MyRoundGizmos {
 }
 
 ///|
-impl Default for MyRoundGizmos with default() {
+impl Default for MyRoundGizmos with fn default() {
   MyRoundGizmos::MyRoundGizmos()
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_marker(
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_debug_name() {
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_debug_name() {
   "examples.gizmos.3d_gizmos.MyRoundGizmos"
 }
 
@@ -51,7 +51,7 @@ let my_round_gizmos_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_storage_resource_key() {
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_storage_resource_key() {
   my_round_gizmos_storage_resource_key
 }
 
@@ -61,12 +61,12 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with new_gizmo_config_group_cell() {
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn new_gizmo_config_group_cell() {
   MyRoundGizmosCell(Ref(MyRoundGizmos::MyRoundGizmos()))
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_cell_ref(
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -449,11 +449,8 @@ fn main {
     ),
     MyRoundGizmos::MyRoundGizmos(),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(draw_example_collection)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param4(update_config)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(draw_example_collection))
+  .add_systems(@app.Update, @app.system_config_param4(update_config))
   .run()
 }

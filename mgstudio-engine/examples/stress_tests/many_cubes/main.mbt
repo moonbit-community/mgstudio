@@ -27,7 +27,7 @@ let rotating_cube_key : @ecs.ComponentKey[RotatingCube] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for RotatingCube with component() {
+pub impl @ecs.Component for RotatingCube with fn component() {
   rotating_cube_key
 }
 
@@ -159,8 +159,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cubes)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_cubes))
+  .add_systems(@app.Update, @app.system_config_param2(move_camera))
   .run()
 }

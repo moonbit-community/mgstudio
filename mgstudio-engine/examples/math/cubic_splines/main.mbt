@@ -20,7 +20,7 @@ enum SplineMode {
 } derive(Eq, Debug)
 
 ///|
-impl Default for SplineMode with default() {
+impl Default for SplineMode with fn default() {
   SplineMode::Hermite
 }
 
@@ -31,7 +31,7 @@ enum CyclingMode {
 } derive(Eq, Debug)
 
 ///|
-impl Default for CyclingMode with default() {
+impl Default for CyclingMode with fn default() {
   CyclingMode::NotCyclic
 }
 
@@ -110,42 +110,42 @@ let cycling_mode_text_handle_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for SplineMode with resource() {
+impl @app.Resource for SplineMode with fn resource() {
   spline_mode_resource_key
 }
 
 ///|
-impl @app.Resource for CyclingMode with resource() {
+impl @app.Resource for CyclingMode with fn resource() {
   cycling_mode_resource_key
 }
 
 ///|
-impl @app.Resource for Curve with resource() {
+impl @app.Resource for Curve with fn resource() {
   curve_resource_key
 }
 
 ///|
-impl @app.Resource for ControlPoints with resource() {
+impl @app.Resource for ControlPoints with fn resource() {
   control_points_resource_key
 }
 
 ///|
-impl @app.Resource for MouseEditMove with resource() {
+impl @app.Resource for MouseEditMove with fn resource() {
   mouse_edit_move_resource_key
 }
 
 ///|
-impl @app.Resource for MousePosition with resource() {
+impl @app.Resource for MousePosition with fn resource() {
   mouse_position_resource_key
 }
 
 ///|
-impl @app.Resource for SplineModeTextHandle with resource() {
+impl @app.Resource for SplineModeTextHandle with fn resource() {
   spline_mode_text_handle_resource_key
 }
 
 ///|
-impl @app.Resource for CyclingModeTextHandle with resource() {
+impl @app.Resource for CyclingModeTextHandle with fn resource() {
   cycling_mode_text_handle_resource_key
 }
 
@@ -185,53 +185,45 @@ fn main {
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param4(handle_keypress)).in_set(
+    @app.system_config_param4(handle_keypress).in_set(cubic_splines_input_set),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_mouse_move).in_set(cubic_splines_input_set),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param4(handle_mouse_press).in_set(
       cubic_splines_input_set,
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(handle_mouse_move)).in_set(
-      cubic_splines_input_set,
-    ),
+    @app.system_config_param4(update_curve).in_set(cubic_splines_curve_set),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param4(handle_mouse_press)).in_set(
-      cubic_splines_input_set,
-    ),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(update_curve)).in_set(
-      cubic_splines_curve_set,
-    ),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_spline_mode_text)).in_set(
+    @app.system_config_param2(update_spline_mode_text).in_set(
       cubic_splines_ui_set,
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(update_cycling_mode_text)).in_set(
+    @app.system_config_param2(update_cycling_mode_text).in_set(
       cubic_splines_ui_set,
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(draw_edit_move)).in_set(
-      cubic_splines_draw_set,
-    ),
+    @app.system_config_param3(draw_edit_move).in_set(cubic_splines_draw_set),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(draw_curve)).in_set(cubic_splines_draw_set),
+    @app.system_config_param2(draw_curve).in_set(cubic_splines_draw_set),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(draw_control_points)).in_set(
+    @app.system_config_param3(draw_control_points).in_set(
       cubic_splines_draw_set,
     ),
   )

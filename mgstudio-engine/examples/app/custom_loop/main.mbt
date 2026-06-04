@@ -23,7 +23,7 @@ let input_resource_key : @ecs.ResourceKey[Input] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for Input with resource() {
+impl @app.Resource for Input with fn resource() {
   input_resource_key
 }
 
@@ -67,7 +67,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(Input::{ value: "" })
   .set_runner(my_runner_builder)
-  .add_systems(@app.Update, @app.system(@app.system_param(print_system)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(exit_system)))
+  .add_systems(@app.Update, @app.system_config_param(print_system))
+  .add_systems(@app.Update, @app.system_config_param2(exit_system))
   .run()
 }

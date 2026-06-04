@@ -77,27 +77,27 @@ let button_press_state_key : @ecs.ComponentKey[ButtonPressState] = @ecs.register
 )
 
 ///|
-pub impl @ecs.Component for RotateButton with component() {
+pub impl @ecs.Component for RotateButton with fn component() {
   rotate_button_key
 }
 
 ///|
-pub impl @ecs.Component for ScaleButton with component() {
+pub impl @ecs.Component for ScaleButton with fn component() {
   scale_button_key
 }
 
 ///|
-pub impl @ecs.Component for TargetNode with component() {
+pub impl @ecs.Component for TargetNode with fn component() {
   target_node_key
 }
 
 ///|
-pub impl @ecs.Component for ControlButton with component() {
+pub impl @ecs.Component for ControlButton with fn component() {
   control_button_key
 }
 
 ///|
-pub impl @ecs.Component for ButtonPressState with component() {
+pub impl @ecs.Component for ButtonPressState with fn component() {
   button_press_state_key
 }
 
@@ -466,8 +466,8 @@ fn translation_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(@app.Update, @app.system(button_system))
-  .add_systems(@app.Update, @app.system(@app.system_param3(translation_system)))
+  .add_systems(@app.Update, @app.system_config_param3(translation_system))
   .run()
 }

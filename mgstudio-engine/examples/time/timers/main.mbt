@@ -25,7 +25,7 @@ let print_on_completion_timer_component_key : @ecs.ComponentKey[
 )
 
 ///|
-impl @ecs.Component for PrintOnCompletionTimer with component() {
+impl @ecs.Component for PrintOnCompletionTimer with fn component() {
   print_on_completion_timer_component_key
 }
 
@@ -41,7 +41,7 @@ let countdown_resource_key : @ecs.ResourceKey[Countdown] = @ecs.register_resourc
 )
 
 ///|
-impl @app.Resource for Countdown with resource() {
+impl @app.Resource for Countdown with fn resource() {
   countdown_resource_key
 }
 
@@ -112,11 +112,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { Countdown::Countdown() })
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(countdown)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(print_when_completed)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(countdown))
+  .add_systems(@app.Update, @app.system_config_param2(print_when_completed))
   .run()
 }

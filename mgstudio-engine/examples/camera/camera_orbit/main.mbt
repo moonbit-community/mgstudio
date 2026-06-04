@@ -28,7 +28,7 @@ let camera_settings_resource_key : @ecs.ResourceKey[CameraSettings] = @ecs.regis
 )
 
 ///|
-impl @app.Resource for CameraSettings with resource() {
+impl @app.Resource for CameraSettings with fn resource() {
   camera_settings_resource_key
 }
 
@@ -221,11 +221,11 @@ fn clamp_float(value : Float, lower : Float, upper : Float) -> Float {
 
 ///|
 fn main {
-  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(setup),
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    setup,
   )
-  let instructions_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(instructions),
+  let instructions_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    instructions,
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
@@ -234,6 +234,6 @@ fn main {
     @app.Startup,
     (setup_system, instructions_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param5(orbit)))
+  .add_systems(@app.Update, @app.system_config_param5(orbit))
   .run()
 }

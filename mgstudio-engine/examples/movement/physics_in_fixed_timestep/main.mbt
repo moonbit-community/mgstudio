@@ -109,32 +109,32 @@ let fixed_frame_flag_key : @ecs.ResourceKey[DidFixedTimestepRunThisFrame] = @ecs
 )
 
 ///|
-impl @ecs.Component for AccumulatedInput with component() {
+impl @ecs.Component for AccumulatedInput with fn component() {
   accumulated_input_key
 }
 
 ///|
-impl @ecs.Component for Velocity with component() {
+impl @ecs.Component for Velocity with fn component() {
   velocity_key
 }
 
 ///|
-impl @ecs.Component for PhysicalTranslation with component() {
+impl @ecs.Component for PhysicalTranslation with fn component() {
   physical_translation_key
 }
 
 ///|
-impl @ecs.Component for PreviousPhysicalTranslation with component() {
+impl @ecs.Component for PreviousPhysicalTranslation with fn component() {
   previous_physical_translation_key
 }
 
 ///|
-impl @ecs.Component for CameraSensitivity with component() {
+impl @ecs.Component for CameraSensitivity with fn component() {
   camera_sensitivity_key
 }
 
 ///|
-impl @app.Resource for DidFixedTimestepRunThisFrame with resource() {
+impl @app.Resource for DidFixedTimestepRunThisFrame with fn resource() {
   fixed_frame_flag_key
 }
 
@@ -519,14 +519,14 @@ fn main {
   let fixed_main_loop_set = @app.run_fixed_main_loop_system_set_name(
     @app.RunFixedMainLoopSystems::FixedMainLoop,
   )
-  let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(spawn_text),
+  let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    spawn_text,
   )
-  let spawn_player_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(spawn_player),
+  let spawn_player_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    spawn_player,
   )
-  let spawn_environment_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(spawn_environment),
+  let spawn_environment_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    spawn_environment,
   )
 
   @app.App::new(@ecs.World::new())
@@ -539,42 +539,39 @@ fn main {
   .add_systems(@app.Startup, spawn_environment_system)
   .add_systems(
     @app.PreUpdate,
-    @app.system(@app.system_param(clear_fixed_timestep_flag)),
+    @app.system_config_param(clear_fixed_timestep_flag),
   )
   .add_systems(
     @app.FixedPreUpdate,
-    @app.system(@app.system_param(set_fixed_time_step_flag)),
+    @app.system_config_param(set_fixed_time_step_flag),
   )
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system(@app.system_param2(advance_physics)),
-  )
+  .add_systems(@app.FixedUpdate, @app.system_config_param2(advance_physics))
   .add_run_fixed_main_loop_system_config(
-    @app.system(@app.system_param2(rotate_camera))
+    @app.system_config_param2(rotate_camera)
     .in_set(SET_ROTATE_CAMERA)
     .before(SET_ACCUMULATE_INPUT)
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(@app.system_param4(accumulate_input))
+    @app.system_config_param4(accumulate_input)
     .in_set(SET_ACCUMULATE_INPUT)
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(@app.system_param(clear_input))
+    @app.system_config_param(clear_input)
     .run_if(did_fixed_timestep_run_this_frame)
     .in_set(SET_CLEAR_INPUT)
     .after(fixed_main_loop_set)
     .before(SET_INTERPOLATE_TRANSFORM),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(@app.system_param(interpolate_rendered_transform))
+    @app.system_config_param(interpolate_rendered_transform)
     .in_set(SET_INTERPOLATE_TRANSFORM)
     .after(fixed_main_loop_set)
     .before(SET_TRANSLATE_CAMERA),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(@app.system_param2(translate_camera))
+    @app.system_config_param2(translate_camera)
     .in_set(SET_TRANSLATE_CAMERA)
     .after(fixed_main_loop_set),
   )

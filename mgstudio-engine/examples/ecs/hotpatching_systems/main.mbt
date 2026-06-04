@@ -41,17 +41,17 @@ let hot_text_key : @ecs.ComponentKey[HotText] = @ecs.register_component(
 )
 
 ///|
-pub impl @app.Resource for Mode with resource() {
+pub impl @app.Resource for Mode with fn resource() {
   mode_key
 }
 
 ///|
-pub impl @app.Resource for ClickCount with resource() {
+pub impl @app.Resource for ClickCount with fn resource() {
   click_count_key
 }
 
 ///|
-pub impl @ecs.Component for HotText with component() {
+pub impl @ecs.Component for HotText with fn component() {
   hot_text_key
 }
 
@@ -157,8 +157,8 @@ fn update_text(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(keyboard_toggle)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(update_text)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(keyboard_toggle))
+  .add_systems(@app.Update, @app.system_config_param3(update_text))
   .run()
 }

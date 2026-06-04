@@ -157,10 +157,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(print_morph_target_names)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(print_morph_target_names))
   .run()
 }

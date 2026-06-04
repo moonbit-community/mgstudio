@@ -27,7 +27,7 @@ let camera_order_box_key : @ecs.ComponentKey[CameraOrderBox] = @ecs.register_com
 )
 
 ///|
-pub impl @ecs.Component for CameraOrderBox with component() {
+pub impl @ecs.Component for CameraOrderBox with fn component() {
   camera_order_box_key
 }
 
@@ -158,10 +158,7 @@ fn update_camera_orders(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(update_camera_orders)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param4(update_camera_orders))
   .run()
 }

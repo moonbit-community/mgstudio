@@ -46,17 +46,17 @@ let my_message_key : @ecs.MessageKey[MyMessage] = @ecs.register_message(
 )
 
 ///|
-pub impl @ecs.Component for MyComponent with component() {
+pub impl @ecs.Component for MyComponent with fn component() {
   my_component_key
 }
 
 ///|
-pub impl @app.Resource for MyComponentIndex with resource() {
+pub impl @app.Resource for MyComponentIndex with fn resource() {
   my_component_index_key
 }
 
 ///|
-pub impl @ecs.Message for MyMessage with message() {
+pub impl @ecs.Message for MyMessage with fn message() {
   my_message_key
 }
 
@@ -190,6 +190,6 @@ fn main {
   .init_resource(fn() { MyComponentIndex::MyComponentIndex() })
   .add_message(my_message_key)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param3(trigger_hooks)))
+  .add_systems(@app.Update, @app.system_config_param3(trigger_hooks))
   .run()
 }

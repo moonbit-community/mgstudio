@@ -32,12 +32,12 @@ let viewer_root_key : @ecs.ComponentKey[ViewerRoot] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for ViewerScenes with resource() {
+impl @app.Resource for ViewerScenes with fn resource() {
   viewer_scenes_key
 }
 
 ///|
-pub impl @ecs.Component for ViewerRoot with component() {
+pub impl @ecs.Component for ViewerRoot with fn component() {
   viewer_root_key
 }
 
@@ -112,7 +112,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(cycle_scene)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param4(cycle_scene))
   .run()
 }

@@ -31,12 +31,12 @@ let step_sprite_key : @ecs.ComponentKey[StepSprite] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for StepState with resource() {
+impl @app.Resource for StepState with fn resource() {
   step_state_key
 }
 
 ///|
-pub impl @ecs.Component for StepSprite with component() {
+pub impl @ecs.Component for StepSprite with fn component() {
   step_sprite_key
 }
 
@@ -98,8 +98,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.FixedUpdate, @app.system(@app.system_param2(fixed_step)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(color_feedback)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.FixedUpdate, @app.system_config_param2(fixed_step))
+  .add_systems(@app.Update, @app.system_config_param2(color_feedback))
   .run()
 }

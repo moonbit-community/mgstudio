@@ -50,12 +50,12 @@ let player_count_key : @ecs.ResourceKey[PlayerCount] = @ecs.register_resource(
 )
 
 ///|
-impl @ecs.Component for Player with component() {
+impl @ecs.Component for Player with fn component() {
   player_key
 }
 
 ///|
-impl @app.Resource for PlayerCount with resource() {
+impl @app.Resource for PlayerCount with fn resource() {
   player_count_key
 }
 
@@ -63,7 +63,7 @@ impl @app.Resource for PlayerCount with resource() {
 impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
   P0,
   P1,
-] with init_state(world) {
+] with fn init_state(world) {
   let players_state = P0::init_state(world)
   let count_state = P1::init_state(world)
   @app.SystemParamState::new(
@@ -86,7 +86,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
 impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
   P0,
   P1,
-] with get(state) {
+] with fn get(state) {
   state.get()
 }
 
@@ -94,7 +94,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
 impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
   P0,
   P1,
-] with store(self, state) {
+] with fn store(self, state) {
   state.store(self)
 }
 
@@ -127,7 +127,7 @@ fn count_players(counter : PlayerCounterParam) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(PlayerCount::{ value: 0 })
-  .add_systems(@app.Startup, @app.system(@app.system_param(spawn)))
-  .add_systems(@app.Update, @app.system(@app.system_param(count_players)))
+  .add_systems(@app.Startup, @app.system_config_param(spawn))
+  .add_systems(@app.Update, @app.system_config_param(count_players))
   .run()
 }

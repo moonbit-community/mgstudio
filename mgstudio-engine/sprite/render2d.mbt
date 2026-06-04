@@ -9463,12 +9463,12 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.system(tilemap_chunk_prepare_materials_system),
     )
     .add_post_update_system_config(
-      @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
+      @app.system_config_param3(compute_slices_on_sprite_change_system).in_set(
         sprite_systems_compute_slices,
       ),
     )
     .add_post_update_system_config(
-      @app.system(@app.system_param3(compute_slices_on_asset_event_system))
+      @app.system_config_param3(compute_slices_on_asset_event_system)
       .in_set(sprite_systems_compute_slices)
       .before(@asset.asset_event_system_set()),
     )
@@ -9504,12 +9504,12 @@ fn render2d_plugin_ecs_install(
       @app.system(tilemap_chunk_prepare_materials_system),
     )
     .add_post_update_system_config(
-      @app.system(@app.system_param3(compute_slices_on_sprite_change_system)).in_set(
+      @app.system_config_param3(compute_slices_on_sprite_change_system).in_set(
         sprite_systems_compute_slices,
       ),
     )
     .add_post_update_system_config(
-      @app.system(@app.system_param3(compute_slices_on_asset_event_system))
+      @app.system_config_param3(compute_slices_on_asset_event_system)
       .in_set(sprite_systems_compute_slices)
       .before(@asset.asset_event_system_set()),
     )

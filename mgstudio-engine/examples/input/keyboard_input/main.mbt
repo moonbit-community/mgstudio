@@ -16,10 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(keyboard_input_system)),
-  )
+  .add_systems(@app.Update, @app.system_config_param2(keyboard_input_system))
   .run()
 }
 

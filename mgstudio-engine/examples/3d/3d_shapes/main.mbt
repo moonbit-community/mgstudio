@@ -43,7 +43,7 @@ let row_key : @ecs.ComponentKey[Row] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Row with component() {
+impl @ecs.Component for Row with fn component() {
   row_key
 }
 
@@ -56,7 +56,7 @@ let shape_key : @ecs.ComponentKey[Shape] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Shape with component() {
+impl @ecs.Component for Shape with fn component() {
   shape_key
 }
 
@@ -561,22 +561,22 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_plugins(@pbr.WireframePlugin::WireframePlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(toggle_wireframe)).run_if(
+    @app.system_config_param(toggle_wireframe).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(rotate)).run_if(
+    @app.system_config_param2(rotate).run_if(
       @input.input_toggle_active(true, @window.KeyCode::KeyR),
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(advance_rows)).run_if(
+    @app.system_config_param(advance_rows).run_if(
       @input.input_just_pressed(@window.KeyCode::Tab),
     ),
   )

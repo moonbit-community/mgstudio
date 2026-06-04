@@ -24,7 +24,7 @@ let example_display_component_key : @ecs.ComponentKey[ExampleDisplay] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for ExampleDisplay with component() {
+pub impl @ecs.Component for ExampleDisplay with fn component() {
   example_display_component_key
 }
 
@@ -173,7 +173,7 @@ fn update_display(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_display)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_display))
   .run()
 }

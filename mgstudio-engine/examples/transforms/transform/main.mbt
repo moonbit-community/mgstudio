@@ -25,7 +25,7 @@ let cube_state_component_key : @ecs.ComponentKey[CubeState] = @ecs.register_comp
 )
 
 ///|
-impl @ecs.Component for CubeState with component() {
+impl @ecs.Component for CubeState with fn component() {
   cube_state_component_key
 }
 
@@ -42,7 +42,7 @@ let center_component_key : @ecs.ComponentKey[Center] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Center with component() {
+impl @ecs.Component for Center with fn component() {
   center_component_key
 }
 
@@ -208,19 +208,19 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
 
 ///|
 fn main {
-  let move_cube_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(move_cube),
+  let move_cube_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    move_cube,
   )
-  let rotate_cube_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(rotate_cube),
+  let rotate_cube_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    rotate_cube,
   )
-  let scale_down_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(scale_down_sphere_proportional_to_cube_travel_distance),
+  let scale_down_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    scale_down_sphere_proportional_to_cube_travel_distance,
   )
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
   .add_systems(
     @app.Update,
     (move_cube_system, rotate_cube_system, scale_down_system) |> @app.chain(),

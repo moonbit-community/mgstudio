@@ -24,7 +24,7 @@ let first_pass_cube_key : @ecs.ComponentKey[FirstPassCube] = @ecs.register_compo
 )
 
 ///|
-pub impl @ecs.Component for FirstPassCube with component() {
+pub impl @ecs.Component for FirstPassCube with fn component() {
   first_pass_cube_key
 }
 
@@ -37,7 +37,7 @@ let main_pass_cube_key : @ecs.ComponentKey[MainPassCube] = @ecs.register_compone
 )
 
 ///|
-pub impl @ecs.Component for MainPassCube with component() {
+pub impl @ecs.Component for MainPassCube with fn component() {
   main_pass_cube_key
 }
 
@@ -186,11 +186,8 @@ fn cube_rotator_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(cube_rotator_system)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotator_system)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param2(cube_rotator_system))
+  .add_systems(@app.Update, @app.system_config_param2(rotator_system))
   .run()
 }

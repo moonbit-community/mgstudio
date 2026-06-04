@@ -23,7 +23,7 @@ let observer_marker_key : @ecs.ComponentKey[ObserverMarker] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for ObserverMarker with component() {
+pub impl @ecs.Component for ObserverMarker with fn component() {
   observer_marker_key
 }
 
@@ -38,17 +38,17 @@ let observer_pulse_event_key : @ecs.EventKey[ObserverPulse] = @ecs.register_even
 )
 
 ///|
-pub impl @ecs.TriggerEvent for ObserverPulse with observer_event() {
+pub impl @ecs.TriggerEvent for ObserverPulse with fn observer_event() {
   observer_pulse_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ObserverPulse with observer_entity(_self) {
+pub impl @ecs.TriggerEvent for ObserverPulse with fn observer_entity(_self) {
   None
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ObserverPulse with set_observer_entity(
+pub impl @ecs.TriggerEvent for ObserverPulse with fn set_observer_entity(
   event,
   _entity,
 ) {
@@ -56,12 +56,12 @@ pub impl @ecs.TriggerEvent for ObserverPulse with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ObserverPulse with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for ObserverPulse with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ObserverPulse with debug_name() {
+pub impl @ecs.TriggerEvent for ObserverPulse with fn debug_name() {
   "ObserverPulse"
 }
 
@@ -82,7 +82,7 @@ fn observer_triggered_key() -> @ecs.MessageKey[ObserverTriggered] {
 }
 
 ///|
-pub impl @ecs.Message for ObserverTriggered with message() {
+pub impl @ecs.Message for ObserverTriggered with fn message() {
   observer_triggered_key()
 }
 
@@ -102,7 +102,7 @@ fn trigger_observer_triggered_key() -> @ecs.MessageKey[TriggerObserverTriggered]
 }
 
 ///|
-pub impl @ecs.Message for TriggerObserverTriggered with message() {
+pub impl @ecs.Message for TriggerObserverTriggered with fn message() {
   trigger_observer_triggered_key()
 }
 

@@ -88,14 +88,14 @@ fn high_res_layers() -> @sprite.RenderLayers {
 
 ///|
 fn main {
-  let setup_camera_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(setup_camera),
+  let setup_camera_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    setup_camera,
   )
-  let setup_sprite_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(setup_sprite),
+  let setup_sprite_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    setup_sprite,
   )
-  let setup_mesh_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(setup_mesh),
+  let setup_mesh_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    setup_mesh,
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
@@ -104,8 +104,8 @@ fn main {
     (setup_camera_system, setup_sprite_system, setup_mesh_system)
     |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(fit_canvas)))
+  .add_systems(@app.Update, @app.system_config_param2(rotate))
+  .add_systems(@app.Update, @app.system_config_param2(fit_canvas))
   .run()
 }
 

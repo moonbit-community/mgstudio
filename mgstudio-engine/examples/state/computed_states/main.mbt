@@ -64,22 +64,22 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 )
 
 ///|
-impl Default for AppState with default() {
+impl Default for AppState with fn default() {
   AppState::Menu
 }
 
 ///|
-impl Default for TutorialState with default() {
+impl Default for TutorialState with fn default() {
   TutorialState::Active
 }
 
 ///|
-impl @app.States for AppState with type_debug_name() {
+impl @app.States for AppState with fn type_debug_name() {
   "AppState"
 }
 
 ///|
-impl @app.States for AppState with debug_name(self) {
+impl @app.States for AppState with fn debug_name(self) {
   ignore(self)
   "AppState"
 }
@@ -90,17 +90,17 @@ let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_s
 )
 
 ///|
-impl @app.States for AppState with state_resource_keys() {
+impl @app.States for AppState with fn state_resource_keys() {
   app_state_resource_keys
 }
 
 ///|
-impl @app.States for TutorialState with type_debug_name() {
+impl @app.States for TutorialState with fn type_debug_name() {
   "TutorialState"
 }
 
 ///|
-impl @app.States for TutorialState with debug_name(self) {
+impl @app.States for TutorialState with fn debug_name(self) {
   ignore(self)
   "TutorialState"
 }
@@ -111,17 +111,17 @@ let tutorial_state_resource_keys : @app.StateResourceKeys[TutorialState] = @app.
 )
 
 ///|
-impl @app.States for TutorialState with state_resource_keys() {
+impl @app.States for TutorialState with fn state_resource_keys() {
   tutorial_state_resource_keys
 }
 
 ///|
-impl @app.States for InGame with type_debug_name() {
+impl @app.States for InGame with fn type_debug_name() {
   "InGame"
 }
 
 ///|
-impl @app.States for InGame with debug_name(self) {
+impl @app.States for InGame with fn debug_name(self) {
   ignore(self)
   "InGame"
 }
@@ -132,17 +132,17 @@ let in_game_resource_keys : @app.StateResourceKeys[InGame] = @app.register_state
 )
 
 ///|
-impl @app.States for InGame with state_resource_keys() {
+impl @app.States for InGame with fn state_resource_keys() {
   in_game_resource_keys
 }
 
 ///|
-impl @app.States for TurboMode with type_debug_name() {
+impl @app.States for TurboMode with fn type_debug_name() {
   "TurboMode"
 }
 
 ///|
-impl @app.States for TurboMode with debug_name(self) {
+impl @app.States for TurboMode with fn debug_name(self) {
   ignore(self)
   "TurboMode"
 }
@@ -153,17 +153,17 @@ let turbo_mode_resource_keys : @app.StateResourceKeys[TurboMode] = @app.register
 )
 
 ///|
-impl @app.States for TurboMode with state_resource_keys() {
+impl @app.States for TurboMode with fn state_resource_keys() {
   turbo_mode_resource_keys
 }
 
 ///|
-impl @app.States for IsPaused with type_debug_name() {
+impl @app.States for IsPaused with fn type_debug_name() {
   "IsPaused"
 }
 
 ///|
-impl @app.States for IsPaused with debug_name(self) {
+impl @app.States for IsPaused with fn debug_name(self) {
   ignore(self)
   "IsPaused"
 }
@@ -174,17 +174,17 @@ let is_paused_resource_keys : @app.StateResourceKeys[IsPaused] = @app.register_s
 )
 
 ///|
-impl @app.States for IsPaused with state_resource_keys() {
+impl @app.States for IsPaused with fn state_resource_keys() {
   is_paused_resource_keys
 }
 
 ///|
-impl @app.States for Tutorial with type_debug_name() {
+impl @app.States for Tutorial with fn type_debug_name() {
   "Tutorial"
 }
 
 ///|
-impl @app.States for Tutorial with debug_name(self) {
+impl @app.States for Tutorial with fn debug_name(self) {
   ignore(self)
   "Tutorial"
 }
@@ -195,17 +195,17 @@ let tutorial_resource_keys : @app.StateResourceKeys[Tutorial] = @app.register_st
 )
 
 ///|
-impl @app.States for Tutorial with state_resource_keys() {
+impl @app.States for Tutorial with fn state_resource_keys() {
   tutorial_resource_keys
 }
 
 ///|
-impl @ecs.Component for MenuButton with component() {
+impl @ecs.Component for MenuButton with fn component() {
   menu_button_key
 }
 
 ///|
-pub impl @app.Resource for MenuData with resource() {
+pub impl @app.Resource for MenuData with fn resource() {
   menu_data_resource_key
 }
 
@@ -303,14 +303,23 @@ fn main {
     Tutorial::MovementInstructions,
     compute_tutorial,
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_on_enter_system(AppState::Menu, @app.system_param(setup_menu))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_on_enter_system_config(
+    AppState::Menu,
+    @app.system_config_param(setup_menu),
+  )
   .add_systems(
     @app.Update,
     @app.system(menu).run_if(@app.in_state(AppState::Menu)),
   )
-  .add_on_exit_system(AppState::Menu, @app.system_param2(cleanup_menu))
-  .add_on_enter_system(InGame::{  }, @app.system_param2(setup_game))
+  .add_on_exit_system_config(
+    AppState::Menu,
+    @app.system_config_param2(cleanup_menu),
+  )
+  .add_on_enter_system_config(
+    InGame::{  },
+    @app.system_config_param2(setup_game),
+  )
   .add_systems(
     @app.Update,
     @app.system(toggle_pause).run_if(@app.in_state(InGame::{  })),
@@ -331,15 +340,21 @@ fn main {
     @app.Update,
     @app.system(movement).run_if(@app.in_state(IsPaused::NotPaused)),
   )
-  .add_on_enter_system(IsPaused::Paused, @app.system_param(setup_paused_screen))
-  .add_on_enter_system(TurboMode::{  }, @app.system_param(setup_turbo_text))
-  .add_on_enter_system(
-    Tutorial::MovementInstructions,
-    @app.system_param(movement_instructions),
+  .add_on_enter_system_config(
+    IsPaused::Paused,
+    @app.system_config_param(setup_paused_screen),
   )
-  .add_on_enter_system(
+  .add_on_enter_system_config(
+    TurboMode::{  },
+    @app.system_config_param(setup_turbo_text),
+  )
+  .add_on_enter_system_config(
+    Tutorial::MovementInstructions,
+    @app.system_config_param(movement_instructions),
+  )
+  .add_on_enter_system_config(
     Tutorial::PauseInstructions,
-    @app.system_param(pause_instructions),
+    @app.system_config_param(pause_instructions),
   )
   .run()
 }

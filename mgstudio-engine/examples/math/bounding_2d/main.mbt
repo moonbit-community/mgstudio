@@ -37,12 +37,12 @@ pub(all) enum Test {
 } derive(Eq, Debug)
 
 ///|
-impl @app.States for Test with type_debug_name() {
+impl @app.States for Test with fn type_debug_name() {
   "examples.math.bounding_2d.Test"
 }
 
 ///|
-impl @app.States for Test with debug_name(self) {
+impl @app.States for Test with fn debug_name(self) {
   ignore(self)
   "examples.math.bounding_2d.Test"
 }
@@ -53,7 +53,7 @@ let test_state_resource_keys : @app.StateResourceKeys[Test] = @app.register_stat
 )
 
 ///|
-impl @app.States for Test with state_resource_keys() {
+impl @app.States for Test with fn state_resource_keys() {
   test_state_resource_keys
 }
 
@@ -114,28 +114,28 @@ let intersects_key : @ecs.ComponentKey[Bool] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Spin with component() {
+impl @ecs.Component for Spin with fn component() {
   spin_key
 }
 
 ///|
-impl @ecs.Component for Shape with component() {
+impl @ecs.Component for Shape with fn component() {
   shape_key
 }
 
 ///|
-impl @ecs.Component for DesiredVolume with component() {
+impl @ecs.Component for DesiredVolume with fn component() {
   desired_volume_key
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with matches(world, entity) {
+impl @ecs.QueryData for VolumeIntersectionData with fn matches(world, entity) {
   @ecs.query_data_component_matches(world, entity, current_volume_key) &&
   @ecs.query_data_component_matches(world, entity, intersects_key)
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with fetch(world, entity) {
+impl @ecs.QueryData for VolumeIntersectionData with fn fetch(world, entity) {
   {
     volume: @ecs.query_data_component_fetch(world, entity, current_volume_key),
     intersects: (try! world.get_by_key(entity, intersects_key)).unwrap(),
@@ -143,14 +143,14 @@ impl @ecs.QueryData for VolumeIntersectionData with fetch(world, entity) {
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with mentions_component(
+impl @ecs.QueryData for VolumeIntersectionData with fn mentions_component(
   component_id,
 ) {
   component_id == current_volume_key.id() || component_id == intersects_key.id()
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with matches_component_set(
+impl @ecs.QueryData for VolumeIntersectionData with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(current_volume_key.id()) &&
@@ -158,17 +158,17 @@ impl @ecs.QueryData for VolumeIntersectionData with matches_component_set(
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with requires_entity_check() {
+impl @ecs.QueryData for VolumeIntersectionData with fn requires_entity_check() {
   false
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with iteration_anchor_component() {
+impl @ecs.QueryData for VolumeIntersectionData with fn iteration_anchor_component() {
   Some(current_volume_key.id())
 }
 
 ///|
-impl @ecs.QueryData for VolumeIntersectionData with contiguous_compatible() {
+impl @ecs.QueryData for VolumeIntersectionData with fn contiguous_compatible() {
   true
 }
 
@@ -191,50 +191,48 @@ fn main {
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(render_shapes))
+    @app.system_config_param(render_shapes)
     .after(SYSTEM_SET_UPDATE_VOLUMES)
     .in_set(SYSTEM_SET_RENDER_SHAPES),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(aabb_intersection_system))
+    @app.system_config_param(aabb_intersection_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbSweep)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(circle_intersection_system))
+    @app.system_config_param(circle_intersection_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleSweep)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(ray_cast_system))
+    @app.system_config_param(ray_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::RayCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(aabb_cast_system))
+    @app.system_config_param(aabb_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(bounding_circle_cast_system))
+    @app.system_config_param(bounding_circle_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param(render_volumes)).in_set(
-      SYSTEM_SET_RENDER_VOLUMES,
-    ),
+    @app.system_config_param(render_volumes).in_set(SYSTEM_SET_RENDER_VOLUMES),
   )
   .run()
 }

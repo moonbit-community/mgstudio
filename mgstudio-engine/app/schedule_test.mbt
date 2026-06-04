@@ -1264,10 +1264,10 @@ test "app: add_system_param4 injects parameters in order" {
 }
 
 ///|
-test "app: system_param5 injects parameters in order" {
+test "app: system_config_param5 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system(
-    system_param5(fn(
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system_config_param5(fn(
       p1 : Param1,
       p2 : Param2,
       p3 : Param3,
@@ -1294,10 +1294,10 @@ test "app: system_param5 injects parameters in order" {
 }
 
 ///|
-test "app: system_param6 injects parameters in order" {
+test "app: system_config_param6 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system(
-    system_param6(fn(
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system_config_param6(fn(
       p1 : Param1,
       p2 : Param2,
       p3 : Param3,
@@ -1327,10 +1327,10 @@ test "app: system_param6 injects parameters in order" {
 }
 
 ///|
-test "app: system_param8 injects parameters in order" {
+test "app: system_config_param8 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system(
-    system_param8(fn(
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system_config_param8(fn(
       p1 : Param1,
       p2 : Param2,
       p3 : Param3,

@@ -85,32 +85,32 @@ let comp_f_key : @ecs.ComponentKey[CompF] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for CompA with component() {
+pub impl @ecs.Component for CompA with fn component() {
   comp_a_key
 }
 
 ///|
-pub impl @ecs.Component for CompB with component() {
+pub impl @ecs.Component for CompB with fn component() {
   comp_b_key
 }
 
 ///|
-pub impl @ecs.Component for CompC with component() {
+pub impl @ecs.Component for CompC with fn component() {
   comp_c_key
 }
 
 ///|
-pub impl @ecs.Component for CompD with component() {
+pub impl @ecs.Component for CompD with fn component() {
   comp_d_key
 }
 
 ///|
-pub impl @ecs.Component for CompE with component() {
+pub impl @ecs.Component for CompE with fn component() {
   comp_e_key
 }
 
 ///|
-pub impl @ecs.Component for CompF with component() {
+pub impl @ecs.Component for CompF with fn component() {
   comp_f_key
 }
 
@@ -228,18 +228,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_component_group_1)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_component_group_2)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_visible_sprites)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_component_group_1))
+  .add_systems(@app.Update, @app.system_config_param2(update_component_group_2))
+  .add_systems(@app.Update, @app.system_config_param2(update_visible_sprites))
   .run()
 }

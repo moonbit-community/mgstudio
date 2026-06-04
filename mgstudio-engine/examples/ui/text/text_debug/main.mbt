@@ -37,17 +37,17 @@ let frame_time_value_key : @ecs.ComponentKey[FrameTimeValue] = @ecs.register_com
 )
 
 ///|
-pub impl @ecs.Component for SecondsValue with component() {
+pub impl @ecs.Component for SecondsValue with fn component() {
   seconds_value_key
 }
 
 ///|
-pub impl @ecs.Component for FpsValue with component() {
+pub impl @ecs.Component for FpsValue with fn component() {
   fps_value_key
 }
 
 ///|
-pub impl @ecs.Component for FrameTimeValue with component() {
+pub impl @ecs.Component for FrameTimeValue with fn component() {
   frame_time_value_key
 }
 
@@ -406,7 +406,7 @@ fn main {
   .add_plugins(
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param5(change_text_system)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param5(change_text_system))
   .run()
 }

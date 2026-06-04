@@ -41,7 +41,7 @@ let bird_key : @ecs.ComponentKey[Bird] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Bird with component() {
+pub impl @ecs.Component for Bird with fn component() {
   bird_key
 }
 
@@ -57,7 +57,7 @@ let bird_counter_key : @ecs.ResourceKey[BirdCounter] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for BirdCounter with resource() {
+impl @app.Resource for BirdCounter with fn resource() {
   bird_counter_key
 }
 
@@ -77,7 +77,7 @@ let bird_assets_key : @ecs.ResourceKey[BirdAssets] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for BirdAssets with resource() {
+impl @app.Resource for BirdAssets with fn resource() {
   bird_assets_key
 }
 
@@ -226,9 +226,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(spawn_on_click)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(movement_system)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(counter_system)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param3(spawn_on_click))
+  .add_systems(@app.Update, @app.system_config_param2(movement_system))
+  .add_systems(@app.Update, @app.system_config_param2(counter_system))
   .run()
 }

@@ -46,12 +46,12 @@ pub(all) enum OptionalDerivedState {
 } derive(Eq, Debug)
 
 ///|
-impl States for DerivedState with type_debug_name() {
+impl States for DerivedState with fn type_debug_name() {
   "DerivedState"
 }
 
 ///|
-impl States for DerivedState with debug_name(self) {
+impl States for DerivedState with fn debug_name(self) {
   ignore(self)
   "DerivedState"
 }
@@ -62,17 +62,17 @@ let derived_state_resource_keys : StateResourceKeys[DerivedState] = register_sta
 )
 
 ///|
-impl States for DerivedState with state_resource_keys() {
+impl States for DerivedState with fn state_resource_keys() {
   derived_state_resource_keys
 }
 
 ///|
-impl States for PairState with type_debug_name() {
+impl States for PairState with fn type_debug_name() {
   "PairState"
 }
 
 ///|
-impl States for PairState with debug_name(self) {
+impl States for PairState with fn debug_name(self) {
   ignore(self)
   "PairState"
 }
@@ -83,17 +83,17 @@ let pair_state_resource_keys : StateResourceKeys[PairState] = register_state_res
 )
 
 ///|
-impl States for PairState with state_resource_keys() {
+impl States for PairState with fn state_resource_keys() {
   pair_state_resource_keys
 }
 
 ///|
-impl States for OptionalParentState with type_debug_name() {
+impl States for OptionalParentState with fn type_debug_name() {
   "OptionalParentState"
 }
 
 ///|
-impl States for OptionalParentState with debug_name(self) {
+impl States for OptionalParentState with fn debug_name(self) {
   ignore(self)
   "OptionalParentState"
 }
@@ -104,17 +104,17 @@ let optional_parent_state_resource_keys : StateResourceKeys[OptionalParentState]
 )
 
 ///|
-impl States for OptionalParentState with state_resource_keys() {
+impl States for OptionalParentState with fn state_resource_keys() {
   optional_parent_state_resource_keys
 }
 
 ///|
-impl States for OptionalChildState with type_debug_name() {
+impl States for OptionalChildState with fn type_debug_name() {
   "OptionalChildState"
 }
 
 ///|
-impl States for OptionalChildState with debug_name(self) {
+impl States for OptionalChildState with fn debug_name(self) {
   ignore(self)
   "OptionalChildState"
 }
@@ -125,7 +125,7 @@ let optional_child_state_resource_keys : StateResourceKeys[OptionalChildState] =
 )
 
 ///|
-impl States for OptionalChildState with state_resource_keys() {
+impl States for OptionalChildState with fn state_resource_keys() {
   optional_child_state_resource_keys
 }
 
@@ -136,12 +136,12 @@ impl FreelyMutableState for OptionalChildState
 impl SubStates for OptionalChildState
 
 ///|
-impl States for MultiSourceDerivedState with type_debug_name() {
+impl States for MultiSourceDerivedState with fn type_debug_name() {
   "MultiSourceDerivedState"
 }
 
 ///|
-impl States for MultiSourceDerivedState with debug_name(self) {
+impl States for MultiSourceDerivedState with fn debug_name(self) {
   ignore(self)
   "MultiSourceDerivedState"
 }
@@ -152,17 +152,17 @@ let multi_source_derived_state_resource_keys : StateResourceKeys[
 ] = register_state_resource_keys("MultiSourceDerivedState")
 
 ///|
-impl States for MultiSourceDerivedState with state_resource_keys() {
+impl States for MultiSourceDerivedState with fn state_resource_keys() {
   multi_source_derived_state_resource_keys
 }
 
 ///|
-impl States for OptionalDerivedState with type_debug_name() {
+impl States for OptionalDerivedState with fn type_debug_name() {
   "OptionalDerivedState"
 }
 
 ///|
-impl States for OptionalDerivedState with debug_name(self) {
+impl States for OptionalDerivedState with fn debug_name(self) {
   ignore(self)
   "OptionalDerivedState"
 }
@@ -173,7 +173,7 @@ let optional_derived_state_resource_keys : StateResourceKeys[
 ] = register_state_resource_keys("OptionalDerivedState")
 
 ///|
-impl States for OptionalDerivedState with state_resource_keys() {
+impl States for OptionalDerivedState with fn state_resource_keys() {
   optional_derived_state_resource_keys
 }
 

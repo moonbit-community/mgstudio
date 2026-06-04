@@ -34,7 +34,7 @@ let node_motion_key : @ecs.ComponentKey[NodeMotion] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for NodeMotion with component() {
+pub impl @ecs.Component for NodeMotion with fn component() {
   node_motion_key
 }
 
@@ -50,7 +50,7 @@ let hierarchy_stats_key : @ecs.ResourceKey[HierarchyStats] = @ecs.register_resou
 )
 
 ///|
-impl @app.Resource for HierarchyStats with resource() {
+impl @app.Resource for HierarchyStats with fn resource() {
   hierarchy_stats_key
 }
 
@@ -202,8 +202,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_transforms)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(print_stats)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_transforms))
+  .add_systems(@app.Update, @app.system_config_param2(print_stats))
   .run()
 }

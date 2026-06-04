@@ -27,7 +27,7 @@ let decodable_state_resource_key : @ecs.ResourceKey[DecodableState] = @ecs.regis
 )
 
 ///|
-pub impl @app.Resource for DecodableState with resource() {
+pub impl @app.Resource for DecodableState with fn resource() {
   decodable_state_resource_key
 }
 
@@ -69,7 +69,7 @@ fn play_when_decoded(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(play_when_decoded)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(play_when_decoded))
   .run()
 }

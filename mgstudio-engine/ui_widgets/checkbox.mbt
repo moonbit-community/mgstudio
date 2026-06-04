@@ -22,7 +22,7 @@ pub let ecs_key_checkbox : @ecs.ComponentKey[Checkbox] = @ecs.register_component
 )
 
 ///|
-pub impl @ecs.Component for Checkbox with component() {
+pub impl @ecs.Component for Checkbox with fn component() {
   ecs_key_checkbox
 }
 
@@ -38,27 +38,30 @@ let set_checked_event_key : @ecs.EventKey[SetChecked] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with observer_event() {
+pub impl @ecs.TriggerEvent for SetChecked with fn observer_event() {
   set_checked_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with observer_entity(self) {
+pub impl @ecs.TriggerEvent for SetChecked with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with set_observer_entity(self, entity) {
+pub impl @ecs.TriggerEvent for SetChecked with fn set_observer_entity(
+  self,
+  entity,
+) {
   SetChecked::{ entity, checked: self.checked }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for SetChecked with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with debug_name() {
+pub impl @ecs.TriggerEvent for SetChecked with fn debug_name() {
   "SetChecked"
 }
 
@@ -73,17 +76,17 @@ let toggle_checked_event_key : @ecs.EventKey[ToggleChecked] = @ecs.register_even
 )
 
 ///|
-pub impl @ecs.TriggerEvent for ToggleChecked with observer_event() {
+pub impl @ecs.TriggerEvent for ToggleChecked with fn observer_event() {
   toggle_checked_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ToggleChecked with observer_entity(self) {
+pub impl @ecs.TriggerEvent for ToggleChecked with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ToggleChecked with set_observer_entity(
+pub impl @ecs.TriggerEvent for ToggleChecked with fn set_observer_entity(
   _self,
   entity,
 ) {
@@ -91,12 +94,12 @@ pub impl @ecs.TriggerEvent for ToggleChecked with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ToggleChecked with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for ToggleChecked with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ToggleChecked with debug_name() {
+pub impl @ecs.TriggerEvent for ToggleChecked with fn debug_name() {
   "ToggleChecked"
 }
 
@@ -213,10 +216,7 @@ pub fn checkbox_self_update(
 ///|
 pub fn checkbox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(checkbox_on_key_input)),
-  )
+  .add_systems(@app.Update, @app.system_config_param4(checkbox_on_key_input))
   .add_pointer_observer3(checkbox_on_pointer_click)
   .add_observer3(checkbox_on_set_checked)
   .add_observer3(checkbox_on_toggle_checked)

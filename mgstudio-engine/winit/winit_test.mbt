@@ -539,7 +539,7 @@ test "winit: keyboard press reaches update input readers" {
   let mut app = winit_plugin(@window.window_plugin(@app.App::new(world)))
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param(keyboard_press_probe_system)),
+      @app.system_config_param(keyboard_press_probe_system),
     )
     .run_once()
   let host_window = match

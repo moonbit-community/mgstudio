@@ -22,7 +22,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(change_clear_color_system)),
+    @app.system_config_param2(change_clear_color_system),
   )
   .run()
 }

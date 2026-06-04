@@ -262,7 +262,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
   .add_plugins(@input_focus.TabNavigationPlugin::TabNavigationPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(@app.Update, @app.system(button_system))
   .add_systems(@app.Update, @app.system(focus_system))
   .run()

@@ -18,12 +18,12 @@ struct Text {
 }
 
 ///|
-impl @asset.Asset for Text with asset_debug_name() {
+impl @asset.Asset for Text with fn asset_debug_name() {
   "examples.asset.processing.asset_processing.Text"
 }
 
 ///|
-impl @asset.Asset for Text with asset_as_image(_self) {
+impl @asset.Asset for Text with fn asset_as_image(_self) {
   None
 }
 
@@ -33,7 +33,7 @@ let text_asset_resource_keys : @asset.AssetResourceKeys[Text] = @asset.register_
 )
 
 ///|
-impl @asset.Asset for Text with asset_resource_keys() {
+impl @asset.Asset for Text with fn asset_resource_keys() {
   text_asset_resource_keys
 }
 
@@ -64,7 +64,7 @@ let text_assets_key : @ecs.ResourceKey[TextAssets] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for TextAssets with resource() {
+pub impl @app.Resource for TextAssets with fn resource() {
   text_assets_key
 }
 
@@ -137,12 +137,12 @@ fn TextPlugin::TextPlugin() -> TextPlugin {
 }
 
 ///|
-impl @app.Plugin for TextPlugin with name(_self) {
+impl @app.Plugin for TextPlugin with fn name(_self) {
   "examples.asset.processing.asset_processing.TextPlugin"
 }
 
 ///|
-impl @app.Plugin for TextPlugin with build(_self, app) {
+impl @app.Plugin for TextPlugin with fn build(_self, app) {
   @asset.init_asset(app, fn() { Text::new("") })
 }
 
@@ -199,7 +199,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(TextPlugin::TextPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(print_text)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(print_text))
   .run()
 }

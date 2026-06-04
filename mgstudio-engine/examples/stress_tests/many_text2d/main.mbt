@@ -37,7 +37,7 @@ let text_stats_key : @ecs.ResourceKey[TextStats] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for TextStats with resource() {
+impl @app.Resource for TextStats with fn resource() {
   text_stats_key
 }
 
@@ -56,7 +56,7 @@ let args_key : @ecs.ResourceKey[Args] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for Args with resource() {
+impl @app.Resource for Args with fn resource() {
   args_key
 }
 
@@ -305,12 +305,11 @@ fn main {
       }),
     )
     .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-    .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-    .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
-    .add_systems(@app.Update, @app.system(@app.system_param4(print_counts)))
+    .add_systems(@app.Startup, @app.system_config_param3(setup))
+    .add_systems(@app.Update, @app.system_config_param2(move_camera))
+    .add_systems(@app.Update, @app.system_config_param4(print_counts))
   if args.recompute {
-    app.add_systems(@app.Update, @app.system(@app.system_param(recompute)))
-    |> ignore
+    app.add_systems(@app.Update, @app.system_config_param(recompute)) |> ignore
   }
   app.run()
 }

@@ -37,7 +37,7 @@ fn oblique_clip_from_view(
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view(
   self,
 ) {
   oblique_clip_from_view(
@@ -48,7 +48,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view_for_sub(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -60,7 +60,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with update(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn update(
   self,
   width,
   height,
@@ -69,12 +69,12 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with update(
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with far(self) {
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn far(self) {
   self.perspective.far
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with compute_frustum(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -82,7 +82,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with compute_frust
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_frustum_corners(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_frustum_corners(
   self : ObliquePerspectiveProjection,
   z_near : Float,
   z_far : Float,
@@ -160,6 +160,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
   .run()
 }

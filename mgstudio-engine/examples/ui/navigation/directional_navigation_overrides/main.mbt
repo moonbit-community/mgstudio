@@ -87,27 +87,27 @@ let override_status_key : @ecs.ResourceKey[OverrideStatus] = @ecs.register_resou
 )
 
 ///|
-pub impl @ecs.Component for OverrideButton with component() {
+pub impl @ecs.Component for OverrideButton with fn component() {
   override_button_key
 }
 
 ///|
-pub impl @ecs.Component for OverrideState with component() {
+pub impl @ecs.Component for OverrideState with fn component() {
   override_state_key
 }
 
 ///|
-pub impl @ecs.Component for OverrideFocusDisplay with component() {
+pub impl @ecs.Component for OverrideFocusDisplay with fn component() {
   override_focus_display_key
 }
 
 ///|
-pub impl @ecs.Component for OverrideLastInputDisplay with component() {
+pub impl @ecs.Component for OverrideLastInputDisplay with fn component() {
   override_last_input_display_key
 }
 
 ///|
-pub impl @app.Resource for OverrideStatus with resource() {
+pub impl @app.Resource for OverrideStatus with fn resource() {
   override_status_key
 }
 
@@ -536,11 +536,8 @@ fn main {
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(200.0F), true),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup_override_ui)))
-  .add_systems(
-    @app.PreUpdate,
-    @app.system(@app.system_param3(navigate_override_ui)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param4(setup_override_ui))
+  .add_systems(@app.PreUpdate, @app.system_config_param3(navigate_override_ui))
   .add_systems(@app.PreUpdate, @app.system(activate_override_button))
   .add_systems(@app.Update, @app.system(update_override_focus_display))
   .add_systems(@app.Update, @app.system(update_override_last_input_display))

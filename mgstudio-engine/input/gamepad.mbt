@@ -94,7 +94,7 @@ pub fn GamepadButton::all() -> Array[GamepadButton] {
 }
 
 ///|
-pub impl ButtonInputButton for GamepadButton with button_id(self) {
+pub impl ButtonInputButton for GamepadButton with fn button_id(self) {
   self.to_json().stringify()
 }
 
@@ -178,17 +178,17 @@ pub(open) trait IntoGamepadInput {
 }
 
 ///|
-pub impl IntoGamepadInput for GamepadInput with into_gamepad_input(self) {
+pub impl IntoGamepadInput for GamepadInput with fn into_gamepad_input(self) {
   self
 }
 
 ///|
-pub impl IntoGamepadInput for GamepadButton with into_gamepad_input(self) {
+pub impl IntoGamepadInput for GamepadButton with fn into_gamepad_input(self) {
   GamepadInput::Button(self)
 }
 
 ///|
-pub impl IntoGamepadInput for GamepadAxis with into_gamepad_input(self) {
+pub impl IntoGamepadInput for GamepadAxis with fn into_gamepad_input(self) {
   GamepadInput::Axis(self)
 }
 
@@ -584,7 +584,7 @@ pub fn ButtonSettings::ButtonSettings() -> ButtonSettings {
 }
 
 ///|
-pub impl Default for ButtonSettings with default() {
+pub impl Default for ButtonSettings with fn default() {
   ButtonSettings::ButtonSettings()
 }
 
@@ -708,7 +708,7 @@ pub fn AxisSettings::AxisSettings() -> AxisSettings {
 }
 
 ///|
-pub impl Default for AxisSettings with default() {
+pub impl Default for AxisSettings with fn default() {
   AxisSettings::AxisSettings()
 }
 
@@ -924,7 +924,7 @@ pub fn ButtonAxisSettings::ButtonAxisSettings() -> ButtonAxisSettings {
 }
 
 ///|
-pub impl Default for ButtonAxisSettings with default() {
+pub impl Default for ButtonAxisSettings with fn default() {
   ButtonAxisSettings::ButtonAxisSettings()
 }
 
@@ -951,7 +951,7 @@ pub fn GamepadSettings::GamepadSettings() -> GamepadSettings {
 }
 
 ///|
-pub impl Default for GamepadSettings with default() {
+pub impl Default for GamepadSettings with fn default() {
   GamepadSettings::GamepadSettings()
 }
 
@@ -1256,7 +1256,7 @@ pub fn Gamepad::Gamepad() -> Gamepad {
 }
 
 ///|
-pub impl Default for Gamepad with default() {
+pub impl Default for Gamepad with fn default() {
   Gamepad::Gamepad()
 }
 
@@ -1266,7 +1266,7 @@ pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Gamepad with component() {
+pub impl @ecs.Component for Gamepad with fn component() {
   ecs_key_gamepad
 }
 
@@ -1276,7 +1276,7 @@ pub let ecs_key_gamepad_settings : @ecs.ComponentKey[GamepadSettings] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for GamepadSettings with component() {
+pub impl @ecs.Component for GamepadSettings with fn component() {
   ecs_key_gamepad_settings
 }
 
@@ -1316,7 +1316,7 @@ let running_rumble_effects_resource_key : @ecs.ResourceKey[RunningRumbleEffects]
 )
 
 ///|
-pub impl @app.Resource for RunningRumbleEffects with resource() {
+pub impl @app.Resource for RunningRumbleEffects with fn resource() {
   running_rumble_effects_resource_key
 }
 
@@ -1913,12 +1913,12 @@ priv struct GamepadProcessedEventWriters {
 }
 
 ///|
-impl @app.SystemParam for GamepadProcessedEventWriters with init_state(world) {
+impl @app.SystemParam for GamepadProcessedEventWriters with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
 ///|
-impl @app.SystemParam for GamepadProcessedEventWriters with get(_state) {
+impl @app.SystemParam for GamepadProcessedEventWriters with fn get(_state) {
   let world = current_gamepad_world_abort_missing()
   GamepadProcessedEventWriters::{
     gamepad_events: world.message_writer(gamepad_event_message_key),
@@ -1933,7 +1933,10 @@ impl @app.SystemParam for GamepadProcessedEventWriters with get(_state) {
 }
 
 ///|
-impl @app.SystemParam for GamepadProcessedEventWriters with store(self, state) {
+impl @app.SystemParam for GamepadProcessedEventWriters with fn store(
+  self,
+  state,
+) {
   @app.system_param_store_no_state(self, state)
 }
 
@@ -2163,47 +2166,47 @@ fn gamepad_rumble_system(
 }
 
 ///|
-pub impl @ecs.Message for GamepadEvent with message() {
+pub impl @ecs.Message for GamepadEvent with fn message() {
   gamepad_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for GamepadConnectionEvent with message() {
+pub impl @ecs.Message for GamepadConnectionEvent with fn message() {
   gamepad_connection_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for RawGamepadAxisChangedEvent with message() {
+pub impl @ecs.Message for RawGamepadAxisChangedEvent with fn message() {
   raw_gamepad_axis_changed_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for GamepadAxisChangedEvent with message() {
+pub impl @ecs.Message for GamepadAxisChangedEvent with fn message() {
   gamepad_axis_changed_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for RawGamepadButtonChangedEvent with message() {
+pub impl @ecs.Message for RawGamepadButtonChangedEvent with fn message() {
   raw_gamepad_button_changed_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for GamepadButtonChangedEvent with message() {
+pub impl @ecs.Message for GamepadButtonChangedEvent with fn message() {
   gamepad_button_changed_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for GamepadButtonStateChangedEvent with message() {
+pub impl @ecs.Message for GamepadButtonStateChangedEvent with fn message() {
   gamepad_button_state_changed_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for RawGamepadEvent with message() {
+pub impl @ecs.Message for RawGamepadEvent with fn message() {
   raw_gamepad_event_message_key
 }
 
 ///|
-pub impl @ecs.Message for GamepadRumbleRequest with message() {
+pub impl @ecs.Message for GamepadRumbleRequest with fn message() {
   gamepad_rumble_request_message_key
 }
 
@@ -2228,17 +2231,17 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     @app.system(input_poll_gamepad_system).in_set(input_systems_set),
   )
   .add_pre_update_system_config(
-    @app.system(@app.system_param(gamepad_connection_system)).in_set(
+    @app.system_config_param(gamepad_connection_system).in_set(
       input_systems_set,
     ),
   )
   .add_pre_update_system_config(
-    @app.system(@app.system_param3(gamepad_event_processing_system)).in_set(
+    @app.system_config_param3(gamepad_event_processing_system).in_set(
       input_systems_set,
     ),
   )
   .add_post_update_system_config(
-    @app.system(@app.system_param3(gamepad_rumble_system)).in_set(
+    @app.system_config_param3(gamepad_rumble_system).in_set(
       input_gamepad_rumble_system_set,
     ),
   )

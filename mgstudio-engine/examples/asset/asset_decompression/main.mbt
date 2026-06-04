@@ -19,12 +19,12 @@ struct GzAsset {
 }
 
 ///|
-impl @asset.Asset for GzAsset with asset_debug_name() {
+impl @asset.Asset for GzAsset with fn asset_debug_name() {
   "examples.asset.asset_decompression.GzAsset"
 }
 
 ///|
-impl @asset.Asset for GzAsset with asset_as_image(_self) {
+impl @asset.Asset for GzAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -34,7 +34,7 @@ let gz_asset_resource_keys : @asset.AssetResourceKeys[GzAsset] = @asset.register
 )
 
 ///|
-impl @asset.Asset for GzAsset with asset_resource_keys() {
+impl @asset.Asset for GzAsset with fn asset_resource_keys() {
   gz_asset_resource_keys
 }
 
@@ -49,7 +49,7 @@ let compressed_image_key : @ecs.ComponentKey[CompressedImage] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for CompressedImage with component() {
+pub impl @ecs.Component for CompressedImage with fn component() {
   compressed_image_key
 }
 
@@ -143,7 +143,7 @@ fn main {
       @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(decompress)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param4(decompress))
   .run()
 }

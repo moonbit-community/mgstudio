@@ -107,7 +107,7 @@ let schedule_batch_marker_key : @ecs.ComponentKey[ScheduleBatchMarker] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for ScheduleBatchMarker with component() {
+pub impl @ecs.Component for ScheduleBatchMarker with fn component() {
   schedule_batch_marker_key
 }
 
@@ -119,7 +119,7 @@ let missing_run_if_parity_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl Resource for MissingRunIfParityResource with resource() {
+pub impl Resource for MissingRunIfParityResource with fn resource() {
   missing_run_if_parity_resource_key
 }
 

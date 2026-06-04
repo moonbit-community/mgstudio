@@ -18,12 +18,12 @@ pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for WindowPlugin with name(_self) {
+pub impl @app.Plugin for WindowPlugin with fn name(_self) {
   WINDOW_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for WindowPlugin with build(self, app) {
+pub impl @app.Plugin for WindowPlugin with fn build(self, app) {
   window_plugin_with(app, self)
 }
 
@@ -66,19 +66,19 @@ pub fn window_plugin_with(
     OnPrimaryClosed =>
       next = next.add_systems(
         @app.PostUpdate,
-        @app.system(@app.system_param2(exit_on_primary_closed)),
+        @app.system_config_param2(exit_on_primary_closed),
       )
     OnAllClosed =>
       next = next.add_systems(
         @app.PostUpdate,
-        @app.system(@app.system_param2(exit_on_all_closed)),
+        @app.system_config_param2(exit_on_all_closed),
       )
     DontExit => ()
   }
   if plugin.close_when_requested {
     next = next.add_systems(
       @app.Update,
-      @app.system(@app.system_param2(close_when_requested)),
+      @app.system_config_param2(close_when_requested),
     )
   }
   next

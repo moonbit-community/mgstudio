@@ -40,17 +40,17 @@ let slider_values_key : @ecs.ResourceKey[SliderValues] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Component for VerticalFill with component() {
+pub impl @ecs.Component for VerticalFill with fn component() {
   vertical_fill_key
 }
 
 ///|
-pub impl @ecs.Component for HorizontalFill with component() {
+pub impl @ecs.Component for HorizontalFill with fn component() {
   horizontal_fill_key
 }
 
 ///|
-pub impl @app.Resource for SliderValues with resource() {
+pub impl @app.Resource for SliderValues with fn resource() {
   slider_values_key
 }
 
@@ -187,8 +187,8 @@ fn apply_values(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_values)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(apply_values)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_values))
+  .add_systems(@app.Update, @app.system_config_param3(apply_values))
   .run()
 }

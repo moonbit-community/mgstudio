@@ -318,19 +318,13 @@ fn main {
     @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
   )
   .add_systems(@app.Startup, @app.system(setup_scene))
-  .add_systems(
-    @app.Startup,
-    @app.system(@app.system_param(configure_light_gizmos)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param(rotate_camera)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_config)))
+  .add_systems(@app.Startup, @app.system_config_param(configure_light_gizmos))
+  .add_systems(@app.Update, @app.system_config_param(rotate_camera))
+  .add_systems(@app.Update, @app.system_config_param2(update_config))
+  .add_systems(@app.Update, @app.system_config_param4(@light.draw_light_gizmos))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param4(@light.draw_light_gizmos)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(@light.draw_all_light_gizmos)),
+    @app.system_config_param4(@light.draw_all_light_gizmos),
   )
   .run()
 }

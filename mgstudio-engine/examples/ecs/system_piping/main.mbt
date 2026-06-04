@@ -39,12 +39,12 @@ let optional_warning_resource_key : @ecs.ResourceKey[OptionalWarning] = @ecs.reg
 )
 
 ///|
-impl @app.Resource for Message with resource() {
+impl @app.Resource for Message with fn resource() {
   message_resource_key
 }
 
 ///|
-impl @app.Resource for OptionalWarning with resource() {
+impl @app.Resource for OptionalWarning with fn resource() {
   optional_warning_resource_key
 }
 

@@ -30,7 +30,7 @@ let args_key : @ecs.ResourceKey[Args] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for Args with resource() {
+impl @app.Resource for Args with fn resource() {
   args_key
 }
 
@@ -131,12 +131,9 @@ fn main {
       }),
     )
     .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-    .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+    .add_systems(@app.Startup, @app.system_config_param2(setup))
   if args.recompute_text {
-    app.add_systems(
-      @app.Update,
-      @app.system(@app.system_param(force_recompute)),
-    )
+    app.add_systems(@app.Update, @app.system_config_param(force_recompute))
     |> ignore
   }
   app.run()

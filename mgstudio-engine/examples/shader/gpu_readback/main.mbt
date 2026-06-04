@@ -29,7 +29,7 @@ let readback_sample_key : @ecs.ComponentKey[ReadbackSample] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for ReadbackSample with component() {
+pub impl @ecs.Component for ReadbackSample with fn component() {
   readback_sample_key
 }
 
@@ -44,7 +44,7 @@ let readback_state_key : @ecs.ResourceKey[ReadbackState] = @ecs.register_resourc
 )
 
 ///|
-pub impl @app.Resource for ReadbackState with resource() {
+pub impl @app.Resource for ReadbackState with fn resource() {
   readback_state_key
 }
 
@@ -157,12 +157,9 @@ fn tint_from_readback(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_samples)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(emulate_gpu_readback)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param3(tint_from_readback)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_samples))
+  .add_systems(@app.Update, @app.system_config_param2(emulate_gpu_readback))
+  .add_systems(@app.Update, @app.system_config_param3(tint_from_readback))
   .run()
 }

@@ -27,7 +27,7 @@ let spin_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Spin with component() {
+pub impl @ecs.Component for Spin with fn component() {
   spin_key
 }
 
@@ -42,7 +42,7 @@ let utility_shader_handle_key : @ecs.ResourceKey[UtilityShaderHandle] = @ecs.reg
 )
 
 ///|
-pub impl @app.Resource for UtilityShaderHandle with resource() {
+pub impl @app.Resource for UtilityShaderHandle with fn resource() {
   utility_shader_handle_key
 }
 
@@ -55,7 +55,7 @@ pub fn UtilityShaderPlugin::UtilityShaderPlugin() -> UtilityShaderPlugin {
 }
 
 ///|
-pub impl @app.Plugin for UtilityShaderPlugin with build(_self, app) {
+pub impl @app.Plugin for UtilityShaderPlugin with fn build(_self, app) {
   let world = app.world()
   let asset_server = match world.get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
@@ -161,7 +161,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(UtilityShaderPlugin::UtilityShaderPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(spin_system)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param2(spin_system))
   .run()
 }

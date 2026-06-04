@@ -37,12 +37,12 @@ let atlas_debug_text_key : @ecs.ComponentKey[AtlasDebugText] = @ecs.register_com
 )
 
 ///|
-pub impl @app.Resource for AtlasDebugState with resource() {
+pub impl @app.Resource for AtlasDebugState with fn resource() {
   atlas_debug_state_key
 }
 
 ///|
-pub impl @ecs.Component for AtlasDebugText with component() {
+pub impl @ecs.Component for AtlasDebugText with fn component() {
   atlas_debug_text_key
 }
 
@@ -196,11 +196,8 @@ fn atlas_render_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(text_update_system)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(atlas_render_system)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(text_update_system))
+  .add_systems(@app.Update, @app.system_config_param4(atlas_render_system))
   .run()
 }

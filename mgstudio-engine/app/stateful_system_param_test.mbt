@@ -18,7 +18,7 @@ struct LocalCounter {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-impl FromWorld for LocalCounter with from_world(_world) {
+impl FromWorld for LocalCounter with fn from_world(_world) {
   { value: 0 }
 }
 
@@ -31,7 +31,7 @@ let removed_marker_key : @ecs.ComponentKey[RemovedMarker] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for RemovedMarker with component() {
+pub impl @ecs.Component for RemovedMarker with fn component() {
   removed_marker_key
 }
 

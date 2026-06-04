@@ -81,7 +81,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_camera))
-  .add_systems(@app.Startup, @app.system(@app.system_param(configure_gizmos)))
+  .add_systems(@app.Startup, @app.system_config_param(configure_gizmos))
   .add_system_param2(draw_text)
   .run()
 }

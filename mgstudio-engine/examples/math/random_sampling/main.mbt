@@ -82,37 +82,37 @@ let sample_point_key : @ecs.ComponentKey[SamplePoint] = @ecs.register_component(
 )
 
 ///|
-impl @app.Resource for Mode with resource() {
+impl @app.Resource for Mode with fn resource() {
   mode_key
 }
 
 ///|
-impl @app.Resource for SampledShape with resource() {
+impl @app.Resource for SampledShape with fn resource() {
   sampled_shape_key
 }
 
 ///|
-impl @app.Resource for RandomSource with resource() {
+impl @app.Resource for RandomSource with fn resource() {
   random_source_key
 }
 
 ///|
-impl @app.Resource for PointMesh with resource() {
+impl @app.Resource for PointMesh with fn resource() {
   point_mesh_key
 }
 
 ///|
-impl @app.Resource for PointMaterial with resource() {
+impl @app.Resource for PointMaterial with fn resource() {
   point_material_key
 }
 
 ///|
-impl @app.Resource for MousePressed with resource() {
+impl @app.Resource for MousePressed with fn resource() {
   mouse_pressed_key
 }
 
 ///|
-impl @ecs.Component for SamplePoint with component() {
+impl @ecs.Component for SamplePoint with fn component() {
   sample_point_key
 }
 
@@ -487,8 +487,8 @@ fn handle_mouse(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(handle_keypress)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(handle_mouse)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(handle_keypress))
+  .add_systems(@app.Update, @app.system_config_param2(handle_mouse))
   .run()
 }

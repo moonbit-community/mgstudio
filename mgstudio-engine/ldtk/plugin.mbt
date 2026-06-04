@@ -42,12 +42,12 @@ pub fn LdtkPlugin::LdtkPlugin() -> LdtkPlugin {
 }
 
 ///|
-pub impl @app.Plugin for LdtkPlugin with name(_self) {
+pub impl @app.Plugin for LdtkPlugin with fn name(_self) {
   LDTK_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LdtkPlugin with build(self, app) {
+pub impl @app.Plugin for LdtkPlugin with fn build(self, app) {
   ldtk_plugin_with(app, self)
 }
 
@@ -99,11 +99,11 @@ pub fn ldtk_plugin_with(
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param2(detect_level_spawned_events)),
+    @app.system_config_param2(detect_level_spawned_events),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param2(fire_level_transformed_events)),
+    @app.system_config_param2(fire_level_transformed_events),
   )
   .add_systems(
     @app.PostUpdate,

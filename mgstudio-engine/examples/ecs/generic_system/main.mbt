@@ -55,12 +55,12 @@ let level_unload_key : @ecs.ComponentKey[LevelUnload] = @ecs.register_component(
 )
 
 ///|
-impl @app.States for AppState with type_debug_name() {
+impl @app.States for AppState with fn type_debug_name() {
   "AppState"
 }
 
 ///|
-impl @app.States for AppState with debug_name(self) {
+impl @app.States for AppState with fn debug_name(self) {
   ignore(self)
   "AppState"
 }
@@ -71,32 +71,32 @@ let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_s
 )
 
 ///|
-impl @app.States for AppState with state_resource_keys() {
+impl @app.States for AppState with fn state_resource_keys() {
   app_state_resource_keys
 }
 
 ///|
-impl Default for AppState with default() {
+impl Default for AppState with fn default() {
   AppState::MainMenu
 }
 
 ///|
-impl @ecs.Component for TextToPrint with component() {
+impl @ecs.Component for TextToPrint with fn component() {
   text_to_print_key
 }
 
 ///|
-impl @ecs.Component for PrinterTick with component() {
+impl @ecs.Component for PrinterTick with fn component() {
   printer_tick_key
 }
 
 ///|
-impl @ecs.Component for MenuClose with component() {
+impl @ecs.Component for MenuClose with fn component() {
   menu_close_key
 }
 
 ///|
-impl @ecs.Component for LevelUnload with component() {
+impl @ecs.Component for LevelUnload with fn component() {
   level_unload_key
 }
 
@@ -175,21 +175,21 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_system)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(print_text_system)))
+  .add_systems(@app.Startup, @app.system_config_param(setup_system))
+  .add_systems(@app.Update, @app.system_config_param2(print_text_system))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(transition_to_in_game_system)).run_if(
+    @app.system_config_param(transition_to_in_game_system).run_if(
       @app.in_state(AppState::MainMenu),
     ),
   )
-  .add_on_exit_system(
+  .add_on_exit_system_config(
     AppState::MainMenu,
-    @app.system_param2(cleanup_menu_close_system),
+    @app.system_config_param2(cleanup_menu_close_system),
   )
-  .add_on_exit_system(
+  .add_on_exit_system_config(
     AppState::InGame,
-    @app.system_param2(cleanup_level_unload_system),
+    @app.system_config_param2(cleanup_level_unload_system),
   )
   .run()
 }

@@ -32,19 +32,19 @@ pub fn AabbGizmoConfigGroup::AabbGizmoConfigGroup() -> AabbGizmoConfigGroup {
 }
 
 ///|
-pub impl Default for AabbGizmoConfigGroup with default() {
+pub impl Default for AabbGizmoConfigGroup with fn default() {
   AabbGizmoConfigGroup::AabbGizmoConfigGroup()
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_group_marker(
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_group_debug_name() {
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::AabbGizmoConfigGroup"
 }
 
@@ -56,7 +56,7 @@ let aabb_gizmo_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_storage_resource_key() {
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_storage_resource_key() {
   aabb_gizmo_storage_resource_key
 }
 
@@ -66,12 +66,12 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with new_gizmo_config_group_cell() {
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   AabbGizmoConfigGroupCell(Ref(AabbGizmoConfigGroup::AabbGizmoConfigGroup()))
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_group_cell_ref(
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -100,7 +100,7 @@ pub fn ShowAabbGizmo::with_color(
 }
 
 ///|
-pub impl @ecs.Component for ShowAabbGizmo with component() {
+pub impl @ecs.Component for ShowAabbGizmo with fn component() {
   ecs_key_show_aabb_gizmo
 }
 
@@ -245,13 +245,10 @@ pub fn draw_all_aabb_gizmos(
 pub fn aabb_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @sprite.init_gizmo_group(
     app
+    .add_systems(@app.PostUpdate, @app.system_config_param2(draw_aabb_gizmos))
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(draw_aabb_gizmos)),
-    )
-    .add_systems(
-      @app.PostUpdate,
-      @app.system(@app.system_param2(draw_all_aabb_gizmos)),
+      @app.system_config_param2(draw_all_aabb_gizmos),
     ),
     AabbGizmoConfigGroup::AabbGizmoConfigGroup(),
   )

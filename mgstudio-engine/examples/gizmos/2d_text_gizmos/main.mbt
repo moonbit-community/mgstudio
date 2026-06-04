@@ -129,7 +129,7 @@ fn main {
   .add_plugins(
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_system_param2(draw_labels)
   .add_system_param(draw_all_glyphs)
   .run()

@@ -21,7 +21,7 @@ let hierarchy_validation_marker_key : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="tests.app.hierarchy.validation_marker")
 
 ///|
-pub impl @ecs.Component for HierarchyValidationMarker with component() {
+pub impl @ecs.Component for HierarchyValidationMarker with fn component() {
   hierarchy_validation_marker_key
 }
 
@@ -33,7 +33,7 @@ let hierarchy_validation_marker_parent_keys : ValidateParentHasComponentKeys[
 )
 
 ///|
-pub impl ValidateParentHasComponentTarget for HierarchyValidationMarker with validate_parent_has_component_keys() {
+pub impl ValidateParentHasComponentTarget for HierarchyValidationMarker with fn validate_parent_has_component_keys() {
   hierarchy_validation_marker_parent_keys
 }
 

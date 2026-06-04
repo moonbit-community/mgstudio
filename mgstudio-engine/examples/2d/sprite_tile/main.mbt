@@ -26,7 +26,7 @@ let animation_state_key : @ecs.ResourceKey[AnimationState] = @ecs.register_resou
 )
 
 ///|
-pub impl @app.Resource for AnimationState with resource() {
+pub impl @app.Resource for AnimationState with fn resource() {
   animation_state_key
 }
 
@@ -34,8 +34,8 @@ pub impl @app.Resource for AnimationState with resource() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(animate)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(animate))
   .run()
 }
 

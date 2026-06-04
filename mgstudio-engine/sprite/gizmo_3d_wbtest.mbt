@@ -74,15 +74,13 @@ test "gizmos system param queues into world storage before render drain" {
     DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_systems(
     @app.Update,
-    @app.system(
-      @app.system_param(fn(gizmos : Gizmos[DefaultGizmoConfigGroup]) {
-        gizmos.line_3d(
-          @math.Vec3::zero(),
-          @math.Vec3::new(1.0F, 0.0F, 0.0F),
-          Color::white(),
-        )
-      }),
-    ),
+    @app.system_config_param(fn(gizmos : Gizmos[DefaultGizmoConfigGroup]) {
+      gizmos.line_3d(
+        @math.Vec3::zero(),
+        @math.Vec3::new(1.0F, 0.0F, 0.0F),
+        Color::white(),
+      )
+    }),
   )
 
   ignore(app.update())
@@ -104,7 +102,7 @@ test "global gizmo buffer flushes through last schedule into default storage" {
   let app = init_gizmo_group(
     @app.App::new(@ecs.World::new()),
     DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
-  ).add_last_system_config(@app.system(@app.system_param(flush_global_gizmos)))
+  ).add_last_system_config(@app.system_config_param(flush_global_gizmos))
 
   gizmo().line_3d(
     @math.Vec3::zero(),

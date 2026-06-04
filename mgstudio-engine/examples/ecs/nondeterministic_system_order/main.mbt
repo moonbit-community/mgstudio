@@ -33,12 +33,12 @@ let b_key : @ecs.ResourceKey[B] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for A with resource() {
+pub impl @app.Resource for A with fn resource() {
   a_key
 }
 
 ///|
-pub impl @app.Resource for B with resource() {
+pub impl @app.Resource for B with fn resource() {
   b_key
 }
 
@@ -76,23 +76,23 @@ fn reads_a_and_b(a : @app.Res[A], b : @app.Res[B]) -> Unit {
 
 ///|
 fn main {
-  let reads_a_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(reads_a),
+  let reads_a_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    reads_a,
   )
-  let writes_a_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(writes_a),
+  let writes_a_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    writes_a,
   )
-  let adds_one_to_b_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(adds_one_to_b),
+  let adds_one_to_b_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    adds_one_to_b,
   )
-  let doubles_b_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(doubles_b),
+  let doubles_b_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    doubles_b,
   )
-  let reads_b_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(reads_b),
+  let reads_b_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    reads_b,
   )
-  let reads_a_and_b_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(reads_a_and_b),
+  let reads_a_and_b_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    reads_a_and_b,
   )
   let b_ordered_chain : @app.SystemConfig[@ecs.World] = (
       adds_one_to_b_system, doubles_b_system, reads_b_system,

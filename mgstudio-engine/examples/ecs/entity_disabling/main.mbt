@@ -29,12 +29,12 @@ let entity_name_text_key : @ecs.ComponentKey[EntityNameText] = @ecs.register_com
 )
 
 ///|
-pub impl @ecs.Component for DisableOnClick with component() {
+pub impl @ecs.Component for DisableOnClick with fn component() {
   disable_on_click_key
 }
 
 ///|
-pub impl @ecs.Component for EntityNameText with component() {
+pub impl @ecs.Component for EntityNameText with fn component() {
   entity_name_text_key
 }
 
@@ -45,17 +45,11 @@ const X_EXTENT : Float = 900.0F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(Startup, @app.system(@app.system_param3(setup_scene)))
-  .add_systems(Startup, @app.system(@app.system_param(display_instructions)))
-  .add_systems(
-    Update,
-    @app.system(@app.system_param3(disable_entities_on_click)),
-  )
-  .add_systems(Update, @app.system(@app.system_param2(list_all_named_entities)))
-  .add_systems(
-    Update,
-    @app.system(@app.system_param2(reenable_entities_on_space)),
-  )
+  .add_systems(Startup, @app.system_config_param3(setup_scene))
+  .add_systems(Startup, @app.system_config_param(display_instructions))
+  .add_systems(Update, @app.system_config_param3(disable_entities_on_click))
+  .add_systems(Update, @app.system_config_param2(list_all_named_entities))
+  .add_systems(Update, @app.system_config_param2(reenable_entities_on_space))
   .run()
 }
 

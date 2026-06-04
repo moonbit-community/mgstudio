@@ -56,27 +56,27 @@ let widget_state_key : @ecs.ResourceKey[WidgetState] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Component for ToggleButton with component() {
+pub impl @ecs.Component for ToggleButton with fn component() {
   toggle_button_key
 }
 
 ///|
-pub impl @ecs.Component for ToggleLabel with component() {
+pub impl @ecs.Component for ToggleLabel with fn component() {
   toggle_label_key
 }
 
 ///|
-pub impl @ecs.Component for WidgetSlider with component() {
+pub impl @ecs.Component for WidgetSlider with fn component() {
   widget_slider_key
 }
 
 ///|
-pub impl @ecs.Component for WidgetSliderFill with component() {
+pub impl @ecs.Component for WidgetSliderFill with fn component() {
   widget_slider_fill_key
 }
 
 ///|
-pub impl @app.Resource for WidgetState with resource() {
+pub impl @app.Resource for WidgetState with fn resource() {
   widget_state_key
 }
 
@@ -214,11 +214,8 @@ fn update_widget_styles(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(input_system)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(update_widget_styles)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(input_system))
+  .add_systems(@app.Update, @app.system_config_param4(update_widget_styles))
   .run()
 }

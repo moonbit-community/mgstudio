@@ -55,27 +55,27 @@ let last_triggered_label_key : @ecs.ComponentKey[LastTriggeredLabel] = @ecs.regi
 )
 
 ///|
-pub impl @ecs.Component for Callback with component() {
+pub impl @ecs.Component for Callback with fn component() {
   callback_key
 }
 
 ///|
-pub impl @ecs.Component for Triggered with component() {
+pub impl @ecs.Component for Triggered with fn component() {
   triggered_key
 }
 
 ///|
-pub impl @ecs.Component for CallbackA with component() {
+pub impl @ecs.Component for CallbackA with fn component() {
   callback_a_key
 }
 
 ///|
-pub impl @ecs.Component for CallbackB with component() {
+pub impl @ecs.Component for CallbackB with fn component() {
   callback_b_key
 }
 
 ///|
-pub impl @ecs.Component for LastTriggeredLabel with component() {
+pub impl @ecs.Component for LastTriggeredLabel with fn component() {
   last_triggered_label_key
 }
 
@@ -83,11 +83,11 @@ pub impl @ecs.Component for LastTriggeredLabel with component() {
 fn main {
   println("Press A or B to trigger a one-shot system.")
 
-  let trigger_system_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(trigger_system),
+  let trigger_system_config : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    trigger_system,
   )
-  let evaluate_callbacks_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(evaluate_callbacks),
+  let evaluate_callbacks_config : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    evaluate_callbacks,
   )
   let update_chain : @app.SystemConfig[@ecs.World] = (
       trigger_system_config, evaluate_callbacks_config,
@@ -96,11 +96,8 @@ fn main {
 
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, @app.system(@app.system_param2(setup_ui)))
-    .add_systems(
-      @app.Startup,
-      @app.system(@app.system_param(setup_with_commands)),
-    )
+    .add_systems(@app.Startup, @app.system_config_param2(setup_ui))
+    .add_systems(@app.Startup, @app.system_config_param(setup_with_commands))
     .add_systems(@app.Startup, @app.system(setup_with_world))
     .add_systems(@app.Update, update_chain)
   app.run()

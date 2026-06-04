@@ -23,7 +23,7 @@ let velocity_key : @ecs.ComponentKey[Velocity] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Velocity with component() {
+impl @ecs.Component for Velocity with fn component() {
   velocity_key
 }
 
@@ -131,8 +131,8 @@ fn bounce_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(spawn_system)))
-  .add_systems(@app.Update, @app.system(@app.system_param(move_system)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(bounce_system)))
+  .add_systems(@app.Startup, @app.system_config_param2(spawn_system))
+  .add_systems(@app.Update, @app.system_config_param(move_system))
+  .add_systems(@app.Update, @app.system_config_param2(bounce_system))
   .run()
 }

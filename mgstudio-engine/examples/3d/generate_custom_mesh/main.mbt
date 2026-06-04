@@ -21,7 +21,7 @@ let custom_uv_key : @ecs.ComponentKey[CustomUV] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for CustomUV with component() {
+pub impl @ecs.Component for CustomUV with fn component() {
   custom_uv_key
 }
 
@@ -295,7 +295,7 @@ fn input_handler(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param5(input_handler)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param5(input_handler))
   .run()
 }

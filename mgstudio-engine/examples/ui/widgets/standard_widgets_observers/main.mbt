@@ -31,12 +31,12 @@ let counter_label_key : @ecs.ComponentKey[CounterLabel] = @ecs.register_componen
 )
 
 ///|
-pub impl @app.Resource for ClickCounter with resource() {
+pub impl @app.Resource for ClickCounter with fn resource() {
   click_counter_key
 }
 
 ///|
-pub impl @ecs.Component for CounterLabel with component() {
+pub impl @ecs.Component for CounterLabel with fn component() {
   counter_label_key
 }
 
@@ -125,10 +125,7 @@ fn update_counter_label(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_counter_label)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_counter_label))
   .run()
 }

@@ -38,7 +38,7 @@ pub fn dev_tools_picking_debug_is_noisy(mode : DebugPickingMode) -> Bool {
 }
 
 ///|
-pub impl @app.Resource for DebugPickingMode with resource() {
+pub impl @app.Resource for DebugPickingMode with fn resource() {
   ecs_res_key_debug_picking_mode
 }
 
@@ -116,7 +116,7 @@ pub fn dev_tools_picking_debug_plugin(
     )
   }
   next.add_pre_update_system_config(
-    @app.system(@app.system_param2(picking_debug_log_system)).after(
+    @app.system_config_param2(picking_debug_log_system).after(
       @picking.picking_set_events,
     ),
   )

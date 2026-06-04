@@ -21,7 +21,7 @@ let my_component_key : @ecs.ComponentKey[MyComponent] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for MyComponent with component() {
+pub impl @ecs.Component for MyComponent with fn component() {
   my_component_key
 }
 
@@ -87,7 +87,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param3(remove_component)))
+  .add_systems(@app.Update, @app.system_config_param3(remove_component))
   .add_component_observer2(react_on_removal)
   .run()
 }

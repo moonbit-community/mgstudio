@@ -27,7 +27,7 @@ let converted_mesh_state_key : @ecs.ResourceKey[ConvertedMeshState] = @ecs.regis
 )
 
 ///|
-pub impl @app.Resource for ConvertedMeshState with resource() {
+pub impl @app.Resource for ConvertedMeshState with fn resource() {
   converted_mesh_state_key
 }
 
@@ -136,10 +136,7 @@ fn spawn_converted_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(spawn_converted_mesh)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param4(spawn_converted_mesh))
   .run()
 }

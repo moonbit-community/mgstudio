@@ -35,7 +35,7 @@ let light_stats_key : @ecs.ResourceKey[LightStats] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for LightStats with resource() {
+impl @app.Resource for LightStats with fn resource() {
   light_stats_key
 }
 
@@ -192,8 +192,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(print_light_count)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(move_camera))
+  .add_systems(@app.Update, @app.system_config_param3(print_light_count))
   .run()
 }

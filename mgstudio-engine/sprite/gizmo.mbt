@@ -146,14 +146,14 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
 ///|
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
   Config,
-] with init_state(world) {
+] with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
 ///|
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
   Config,
-] with get(_state) {
+] with fn get(_state) {
   let world = @app.current_world().unwrap()
   let gizmos : Gizmos[Config] = gizmos_from_world(world)
   gizmos
@@ -162,7 +162,7 @@ pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
 ///|
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
   Config,
-] with store(self, state) {
+] with fn store(self, state) {
   self.flush()
   @app.system_param_store_no_state(self, state)
 }
@@ -170,7 +170,7 @@ pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
 ///|
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
   Config,
-] with access(_world) {
+] with fn access(_world) {
   let access = @app.SystemAccess::new()
   access.add_read_resource(GizmoConfigStore::resource().id())
   access
@@ -629,7 +629,7 @@ pub fn[Config] GizmoStorage::GizmoStorage() -> GizmoStorage[Config] {
 }
 
 ///|
-pub impl[Config] Default for GizmoStorage[Config] with default() {
+pub impl[Config] Default for GizmoStorage[Config] with fn default() {
   GizmoStorage::GizmoStorage()
 }
 
@@ -655,7 +655,7 @@ fn[Config : GizmoConfigGroup] registered_gizmo_storage_resource_key() -> @ecs.Re
 }
 
 ///|
-pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config] with resource() {
+pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config] with fn resource() {
   registered_gizmo_storage_resource_key()
 }
 

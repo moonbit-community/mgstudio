@@ -287,26 +287,26 @@ fn main {
   let widget_click_message_key : @ecs.MessageKey[
     @widgets_lib.WidgetClickEvent[AppSetting],
   ] = @widgets_lib.widget_click_event_key()
-  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(setup),
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    setup,
   )
-  let handle_widget_interactions_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(handle_widget_interactions),
+  let handle_widget_interactions_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    handle_widget_interactions,
   )
-  let handle_app_setting_change_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(handle_app_setting_change),
+  let handle_app_setting_change_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    handle_app_setting_change,
   )
-  let update_radio_buttons_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(update_radio_buttons),
+  let update_radio_buttons_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    update_radio_buttons,
   )
-  let handle_resize_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(handle_window_resize_events),
+  let handle_resize_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    handle_window_resize_events,
   )
-  let regenerate_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param6(regenerate_image_when_requested),
+  let regenerate_system : @app.SystemConfig[@ecs.World] = @app.system_config_param6(
+    regenerate_image_when_requested,
   )
-  let animate_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(animate_image_scale),
+  let animate_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    animate_image_scale,
   )
 
   let app = @app.App::new(@ecs.World::new())

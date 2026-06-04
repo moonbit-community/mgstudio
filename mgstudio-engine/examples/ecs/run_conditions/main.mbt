@@ -31,12 +31,12 @@ let unused_resource_key : @ecs.ResourceKey[Unused] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for InputCounter with resource() {
+pub impl @app.Resource for InputCounter with fn resource() {
   input_counter_resource_key
 }
 
 ///|
-pub impl @app.Resource for Unused with resource() {
+pub impl @app.Resource for Unused with fn resource() {
   unused_resource_key
 }
 
@@ -63,7 +63,7 @@ fn main {
   .insert_resource(InputCounter::{ value: 0 })
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(increment_input_counter))
+    @app.system_config_param(increment_input_counter)
     .run_if(@app.resource_exists(InputCounter::resource()))
     .run_if(
       @app.run_condition_or(
@@ -74,7 +74,7 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(print_input_counter))
+    @app.system_config_param(print_input_counter)
     .run_if(@app.resource_exists(InputCounter::resource()))
     .run_if_stateful(None, input_counter_changed),
   )

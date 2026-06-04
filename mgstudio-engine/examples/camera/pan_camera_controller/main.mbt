@@ -69,11 +69,11 @@ fn setup(
 
 ///|
 fn main {
-  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(setup),
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    setup,
   )
-  let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(spawn_text),
+  let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    spawn_text,
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())

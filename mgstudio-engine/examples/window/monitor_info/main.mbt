@@ -26,7 +26,7 @@ let monitor_ref_component_key : @ecs.ComponentKey[MonitorRef] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for MonitorRef with component() {
+pub impl @ecs.Component for MonitorRef with fn component() {
   monitor_ref_component_key
 }
 
@@ -113,7 +113,7 @@ fn main {
       exit_condition: @window.ExitCondition::DontExit,
     }),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param2(update)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(close_on_esc)))
+  .add_systems(@app.Update, @app.system_config_param2(update))
+  .add_systems(@app.Update, @app.system_config_param3(close_on_esc))
   .run()
 }

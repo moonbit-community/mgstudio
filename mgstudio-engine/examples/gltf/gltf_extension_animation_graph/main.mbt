@@ -186,6 +186,6 @@ fn play_animation_when_ready(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_environment)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup_environment))
   .run()
 }

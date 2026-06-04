@@ -26,7 +26,7 @@ let material_slot_key : @ecs.ComponentKey[MaterialSlot] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for MaterialSlot with component() {
+pub impl @ecs.Component for MaterialSlot with fn component() {
   material_slot_key
 }
 
@@ -130,7 +130,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(animate_materials)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param3(animate_materials))
   .run()
 }

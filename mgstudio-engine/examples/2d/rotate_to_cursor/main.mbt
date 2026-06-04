@@ -21,7 +21,7 @@ let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
@@ -34,7 +34,7 @@ let main_camera_key : @ecs.ComponentKey[MainCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for MainCamera with component() {
+pub impl @ecs.Component for MainCamera with fn component() {
   main_camera_key
 }
 
@@ -42,10 +42,10 @@ pub impl @ecs.Component for MainCamera with component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(
     @app.FixedUpdate,
-    @app.system(@app.system_param6(player_movement_system)),
+    @app.system_config_param6(player_movement_system),
   )
   .run()
 }

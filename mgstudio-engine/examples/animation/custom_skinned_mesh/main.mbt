@@ -21,7 +21,7 @@ let animated_joint_key : @ecs.ComponentKey[AnimatedJoint] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for AnimatedJoint with component() {
+pub impl @ecs.Component for AnimatedJoint with fn component() {
   animated_joint_key
 }
 
@@ -184,6 +184,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_joint)))
+  .add_systems(@app.Update, @app.system_config_param2(animate_joint))
   .run()
 }

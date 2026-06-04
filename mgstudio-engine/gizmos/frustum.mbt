@@ -32,19 +32,19 @@ pub fn FrustumGizmoConfigGroup::FrustumGizmoConfigGroup() -> FrustumGizmoConfigG
 }
 
 ///|
-pub impl Default for FrustumGizmoConfigGroup with default() {
+pub impl Default for FrustumGizmoConfigGroup with fn default() {
   FrustumGizmoConfigGroup::FrustumGizmoConfigGroup()
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_group_marker(
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_group_debug_name() {
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::FrustumGizmoConfigGroup"
 }
 
@@ -56,7 +56,7 @@ let frustum_gizmo_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_storage_resource_key() {
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_storage_resource_key() {
   frustum_gizmo_storage_resource_key
 }
 
@@ -66,14 +66,14 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with new_gizmo_config_group_cell() {
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   FrustumGizmoConfigGroupCell(
     Ref(FrustumGizmoConfigGroup::FrustumGizmoConfigGroup()),
   )
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_group_cell_ref(
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -102,7 +102,7 @@ pub fn ShowFrustumGizmo::with_color(
 }
 
 ///|
-pub impl @ecs.Component for ShowFrustumGizmo with component() {
+pub impl @ecs.Component for ShowFrustumGizmo with fn component() {
   ecs_key_show_frustum_gizmo
 }
 
@@ -207,11 +207,11 @@ pub fn frustum_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     app
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(draw_frustum_gizmos)),
+      @app.system_config_param2(draw_frustum_gizmos),
     )
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(draw_all_frustum_gizmos)),
+      @app.system_config_param2(draw_all_frustum_gizmos),
     ),
     FrustumGizmoConfigGroup::FrustumGizmoConfigGroup(),
   )

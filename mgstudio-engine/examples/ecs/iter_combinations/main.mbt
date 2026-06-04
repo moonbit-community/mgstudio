@@ -57,22 +57,22 @@ let star_key : @ecs.ComponentKey[Star] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Mass with component() {
+pub impl @ecs.Component for Mass with fn component() {
   mass_key
 }
 
 ///|
-pub impl @ecs.Component for Velocity with component() {
+pub impl @ecs.Component for Velocity with fn component() {
   velocity_key
 }
 
 ///|
-pub impl @ecs.Component for Acceleration with component() {
+pub impl @ecs.Component for Acceleration with fn component() {
   acceleration_key
 }
 
 ///|
-pub impl @ecs.Component for Star with component() {
+pub impl @ecs.Component for Star with fn component() {
   star_key
 }
 
@@ -243,11 +243,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(fixed_time)
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system(@app.system_param(interact_bodies)),
-  )
-  .add_systems(@app.FixedUpdate, @app.system(@app.system_param2(integrate)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.FixedUpdate, @app.system_config_param(interact_bodies))
+  .add_systems(@app.FixedUpdate, @app.system_config_param2(integrate))
   .run()
 }

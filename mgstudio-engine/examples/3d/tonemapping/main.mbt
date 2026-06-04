@@ -858,24 +858,24 @@ fn main {
   .insert_resource(PerMethodSettings::PerMethodSettings())
   .insert_resource(CurrentScene::CurrentScene())
   .insert_resource(SelectedParameter::SelectedParameter())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_basic_scene)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Startup, @app.system_config_param2(setup_basic_scene))
   .add_systems(@app.Startup, @app.system(setup_color_gradient_scene))
   .add_systems(
     @app.Startup,
-    @app.system(@app.system_param6(setup_image_viewer_scene)),
+    @app.system_config_param6(setup_image_viewer_scene),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param6(drag_drop_image)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(resize_image)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(toggle_scene)))
+  .add_systems(@app.Update, @app.system_config_param6(drag_drop_image))
+  .add_systems(@app.Update, @app.system_config_param4(resize_image))
+  .add_systems(@app.Update, @app.system_config_param4(toggle_scene))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param4(toggle_tonemapping_method)),
+    @app.system_config_param4(toggle_tonemapping_method),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param6(update_color_grading_settings)),
+    @app.system_config_param6(update_color_grading_settings),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param6(update_ui)))
+  .add_systems(@app.Update, @app.system_config_param6(update_ui))
   .run()
 }

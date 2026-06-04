@@ -21,7 +21,7 @@ let animated_material_node_key : @ecs.ComponentKey[AnimatedMaterialNode] = @ecs.
 )
 
 ///|
-pub impl @ecs.Component for AnimatedMaterialNode with component() {
+pub impl @ecs.Component for AnimatedMaterialNode with fn component() {
   animated_material_node_key
 }
 
@@ -98,10 +98,7 @@ fn animate_material_node(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_material_node)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_material_node))
   .run()
 }

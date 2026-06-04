@@ -21,7 +21,7 @@ let player_component_key : @ecs.ComponentKey[Player] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Player with component() {
+impl @ecs.Component for Player with fn component() {
   player_component_key
 }
 
@@ -37,7 +37,7 @@ let camera_sensitivity_component_key : @ecs.ComponentKey[CameraSensitivity] = @e
 )
 
 ///|
-impl @ecs.Component for CameraSensitivity with component() {
+impl @ecs.Component for CameraSensitivity with fn component() {
   camera_sensitivity_component_key
 }
 
@@ -55,7 +55,7 @@ let world_model_camera_component_key : @ecs.ComponentKey[WorldModelCamera] = @ec
 )
 
 ///|
-impl @ecs.Component for WorldModelCamera with component() {
+impl @ecs.Component for WorldModelCamera with fn component() {
   world_model_camera_component_key
 }
 
@@ -423,7 +423,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(spawn_world_model))
   .add_systems(@app.Startup, @app.system(spawn_lights))
   .add_systems(@app.Startup, @app.system(spawn_text))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_player)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(change_fov)))
+  .add_systems(@app.Update, @app.system_config_param2(move_player))
+  .add_systems(@app.Update, @app.system_config_param2(change_fov))
   .run()
 }

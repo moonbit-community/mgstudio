@@ -36,7 +36,7 @@ let example_animation_graph_key : @ecs.ResourceKey[ExampleAnimationGraph] = @ecs
 )
 
 ///|
-pub impl @app.Resource for ExampleAnimationGraph with resource() {
+pub impl @app.Resource for ExampleAnimationGraph with fn resource() {
   example_animation_graph_key
 }
 
@@ -51,7 +51,7 @@ let example_animation_weights_key : @ecs.ComponentKey[ExampleAnimationWeights] =
 )
 
 ///|
-pub impl @ecs.Component for ExampleAnimationWeights with component() {
+pub impl @ecs.Component for ExampleAnimationWeights with fn component() {
   example_animation_weights_key
 }
 
@@ -61,7 +61,7 @@ pub fn ExampleAnimationWeights::ExampleAnimationWeights() -> ExampleAnimationWei
 }
 
 ///|
-pub impl Default for ExampleAnimationWeights with default() {
+pub impl Default for ExampleAnimationWeights with fn default() {
   ExampleAnimationWeights::ExampleAnimationWeights()
 }
 
@@ -76,7 +76,7 @@ let clip_node_key : @ecs.ComponentKey[ClipNode] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for ClipNode with component() {
+pub impl @ecs.Component for ClipNode with fn component() {
   clip_node_key
 }
 
@@ -91,7 +91,7 @@ let clip_node_fill_key : @ecs.ComponentKey[ClipNodeFill] = @ecs.register_compone
 )
 
 ///|
-pub impl @ecs.Component for ClipNodeFill with component() {
+pub impl @ecs.Component for ClipNodeFill with fn component() {
   clip_node_fill_key
 }
 
@@ -107,7 +107,7 @@ let clip_node_label_key : @ecs.ComponentKey[ClipNodeLabel] = @ecs.register_compo
 )
 
 ///|
-pub impl @ecs.Component for ClipNodeLabel with component() {
+pub impl @ecs.Component for ClipNodeLabel with fn component() {
   clip_node_label_key
 }
 
@@ -515,12 +515,12 @@ fn sync_weights(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_assets)))
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup_scene)))
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_ui)))
-  .add_systems(@app.Update, @app.system(@app.system_param4(init_animations)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(handle_weight_drag)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(update_ui)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(sync_weights)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup_assets))
+  .add_systems(@app.Startup, @app.system_config_param4(setup_scene))
+  .add_systems(@app.Startup, @app.system_config_param2(setup_ui))
+  .add_systems(@app.Update, @app.system_config_param4(init_animations))
+  .add_systems(@app.Update, @app.system_config_param2(handle_weight_drag))
+  .add_systems(@app.Update, @app.system_config_param3(update_ui))
+  .add_systems(@app.Update, @app.system_config_param2(sync_weights))
   .run()
 }

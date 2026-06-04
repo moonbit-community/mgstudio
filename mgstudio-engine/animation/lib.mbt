@@ -34,12 +34,12 @@ pub fn AnimatedBy::player(self : AnimatedBy) -> @core.Entity {
 }
 
 ///|
-pub impl ToJson for AnimatedBy with to_json(self) {
+pub impl ToJson for AnimatedBy with fn to_json(self) {
   (self.player.id, self.player.generation).to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimatedBy with from_json(json, path) {
+pub impl @json.FromJson for AnimatedBy with fn from_json(json, path) {
   let (id, generation) : (Int, Int) = @json.from_json(json, path~)
   AnimatedBy::new(@core.Entity::new(id, generation))
 }
@@ -113,7 +113,7 @@ pub(all) enum RepeatAnimation {
 }
 
 ///|
-pub impl ToJson for RepeatAnimation with to_json(self) {
+pub impl ToJson for RepeatAnimation with fn to_json(self) {
   match self {
     RepeatAnimation::Never => (0, 0).to_json()
     RepeatAnimation::Count(count) => (1, count).to_json()
@@ -122,7 +122,7 @@ pub impl ToJson for RepeatAnimation with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for RepeatAnimation with from_json(json, path) {
+pub impl @json.FromJson for RepeatAnimation with fn from_json(json, path) {
   let (tag, payload) : (Int, Int) = @json.from_json(json, path~)
   match tag {
     0 => RepeatAnimation::Never
@@ -146,7 +146,7 @@ pub struct ActiveAnimation {
 }
 
 ///|
-pub impl ToJson for ActiveAnimation with to_json(self) {
+pub impl ToJson for ActiveAnimation with fn to_json(self) {
   (
     self.weight,
     self.repeat,
@@ -161,7 +161,7 @@ pub impl ToJson for ActiveAnimation with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for ActiveAnimation with from_json(json, path) {
+pub impl @json.FromJson for ActiveAnimation with fn from_json(json, path) {
   let (
     weight,
     repeat,
@@ -443,12 +443,12 @@ fn animation_player_entry_active_or_abort(
 }
 
 ///|
-pub impl ToJson for AnimationPlayer with to_json(self) {
+pub impl ToJson for AnimationPlayer with fn to_json(self) {
   self.playing_animations().to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
+pub impl @json.FromJson for AnimationPlayer with fn from_json(json, path) {
   let active_animations : Array[(AnimationNodeIndex, ActiveAnimation)] = @json.from_json(
     json,
     path~,
@@ -1965,17 +1965,17 @@ pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights] = @ecs.r
 )
 
 ///|
-pub impl @ecs.Component for AnimationGraphHandle with component() {
+pub impl @ecs.Component for AnimationGraphHandle with fn component() {
   ecs_key_animation_graph_handle
 }
 
 ///|
-pub impl @ecs.Component for AnimationTransitions with component() {
+pub impl @ecs.Component for AnimationTransitions with fn component() {
   ecs_key_animation_transitions
 }
 
 ///|
-pub impl @ecs.Component for AnimationWeights with component() {
+pub impl @ecs.Component for AnimationWeights with fn component() {
   ecs_key_animation_weights
 }
 
@@ -2388,12 +2388,12 @@ pub fn AnimationPlugin::AnimationPlugin() -> AnimationPlugin {
 }
 
 ///|
-pub impl @app.Plugin for AnimationPlugin with name(_self) {
+pub impl @app.Plugin for AnimationPlugin with fn name(_self) {
   ANIMATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for AnimationPlugin with build(self, app) {
+pub impl @app.Plugin for AnimationPlugin with fn build(self, app) {
   animation_plugin_with(app, self)
 }
 
@@ -2413,7 +2413,7 @@ pub fn animation_plugin_with(
   })
   .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
   .add_post_update_system_config(
-    @app.system(@app.system_param3(thread_animation_graphs)).in_set(
+    @app.system_config_param3(thread_animation_graphs).in_set(
       animation_set_thread,
     ),
   )

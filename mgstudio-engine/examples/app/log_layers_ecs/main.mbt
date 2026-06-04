@@ -27,7 +27,7 @@ let log_message_key : @ecs.MessageKey[LogMessage] = @ecs.register_message(
 let captured_log_queue_ref : Ref[Array[LogMessage]] = Ref([])
 
 ///|
-pub impl @ecs.Message for LogMessage with message() {
+pub impl @ecs.Message for LogMessage with fn message() {
   log_message_key
 }
 
@@ -75,10 +75,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(log_plugin)
   .add_systems(@app.Update, @app.system(log_system))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(transfer_log_messages)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param(print_logs)))
+  .add_systems(@app.Update, @app.system_config_param(transfer_log_messages))
+  .add_systems(@app.Update, @app.system_config_param(print_logs))
   .run()
 }

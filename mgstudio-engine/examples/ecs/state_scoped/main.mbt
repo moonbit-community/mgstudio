@@ -29,17 +29,17 @@ let tick_tock_resource_key : @ecs.ResourceKey[TickTock] = @ecs.register_resource
 )
 
 ///|
-impl Default for GameState with default() {
+impl Default for GameState with fn default() {
   GameState::A
 }
 
 ///|
-impl @app.States for GameState with type_debug_name() {
+impl @app.States for GameState with fn type_debug_name() {
   "GameState"
 }
 
 ///|
-impl @app.States for GameState with debug_name(self) {
+impl @app.States for GameState with fn debug_name(self) {
   ignore(self)
   "GameState"
 }
@@ -50,12 +50,12 @@ let game_state_resource_keys : @app.StateResourceKeys[GameState] = @app.register
 )
 
 ///|
-impl @app.States for GameState with state_resource_keys() {
+impl @app.States for GameState with fn state_resource_keys() {
   game_state_resource_keys
 }
 
 ///|
-impl @app.Resource for TickTock with resource() {
+impl @app.Resource for TickTock with fn resource() {
   tick_tock_resource_key
 }
 
@@ -201,11 +201,17 @@ fn main {
   .insert_resource(TickTock::{
     timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
   })
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))
-  .add_on_enter_system(GameState::A, @app.system_param(on_a_enter))
-  .add_on_enter_system(GameState::B, @app.system_param(on_b_enter))
-  .add_on_exit_system(GameState::A, @app.system_param(on_a_exit))
-  .add_on_exit_system(GameState::B, @app.system_param(on_b_exit))
-  .add_systems(@app.Update, @app.system(@app.system_param4(toggle)))
+  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
+  .add_on_enter_system_config(
+    GameState::A,
+    @app.system_config_param(on_a_enter),
+  )
+  .add_on_enter_system_config(
+    GameState::B,
+    @app.system_config_param(on_b_enter),
+  )
+  .add_on_exit_system_config(GameState::A, @app.system_config_param(on_a_exit))
+  .add_on_exit_system_config(GameState::B, @app.system_config_param(on_b_exit))
+  .add_systems(@app.Update, @app.system_config_param4(toggle))
   .run()
 }

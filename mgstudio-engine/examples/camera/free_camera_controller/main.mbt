@@ -21,7 +21,7 @@ let info_text_key : @ecs.ComponentKey[InfoText] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for InfoText with component() {
+pub impl @ecs.Component for InfoText with fn component() {
   info_text_key
 }
 
@@ -428,19 +428,19 @@ fn spawn_world(
 
 ///|
 fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_systems(@app.Startup, @app.system(@app.system_param(spawn_camera)))
+  app.add_systems(@app.Startup, @app.system_config_param(spawn_camera))
 }
 
 ///|
 fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  let update_camera_settings_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(update_camera_settings),
+  let update_camera_settings_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    update_camera_settings,
   )
-  let update_text_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(update_text),
+  let update_text_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    update_text,
   )
   app
-  .add_systems(@app.PostStartup, @app.system(@app.system_param3(spawn_text)))
+  .add_systems(@app.PostStartup, @app.system_config_param3(spawn_text))
   .add_systems(
     @app.Update,
     (update_camera_settings_system, update_text_system) |> @app.chain(),
@@ -450,8 +450,8 @@ fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Startup, @app.system(@app.system_param(spawn_lights)))
-  .add_systems(@app.Startup, @app.system(@app.system_param3(spawn_world)))
+  .add_systems(@app.Startup, @app.system_config_param(spawn_lights))
+  .add_systems(@app.Startup, @app.system_config_param3(spawn_world))
 }
 
 ///|

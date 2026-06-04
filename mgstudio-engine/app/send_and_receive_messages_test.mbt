@@ -30,7 +30,7 @@ let test_cursor_message_key : @ecs.MessageKey[TestCursorMessage] = @ecs.register
 )
 
 ///|
-impl @ecs.Message for TestCursorMessage with message() {
+impl @ecs.Message for TestCursorMessage with fn message() {
   test_cursor_message_key
 }
 
@@ -40,7 +40,7 @@ let test_param_set_message_key : @ecs.MessageKey[TestParamSetMessage] = @ecs.reg
 )
 
 ///|
-impl @ecs.Message for TestParamSetMessage with message() {
+impl @ecs.Message for TestParamSetMessage with fn message() {
   test_param_set_message_key
 }
 
@@ -84,47 +84,41 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestCursorMessage]) {
-          frame.val = frame.val + 1
-          ignore(
-            writer.write(TestCursorMessage::{
-              resend: frame.val == 1,
-              times_sent: frame.val,
-            }),
-          )
-        }),
-      ).in_set(cursor_send_set),
+      system_config_param(fn(writer : @ecs.MessageWriter[TestCursorMessage]) {
+        frame.val = frame.val + 1
+        ignore(
+          writer.write(TestCursorMessage::{
+            resend: frame.val == 1,
+            times_sent: frame.val,
+          }),
+        )
+      }).in_set(cursor_send_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param2(fn(
-          cursor : Local[@ecs.MessageCursor[TestCursorMessage]],
-          messages : ResMut[@ecs.Messages[TestCursorMessage]],
-        ) {
-          for message in cursor.read(messages) {
-            if message.resend {
-              ignore(
-                messages.write(TestCursorMessage::{
-                  resend: message.resend,
-                  times_sent: message.times_sent + 10,
-                }),
-              )
-            }
+      system_config_param2(fn(
+        cursor : Local[@ecs.MessageCursor[TestCursorMessage]],
+        messages : ResMut[@ecs.Messages[TestCursorMessage]],
+      ) {
+        for message in cursor.read(messages) {
+          if message.resend {
+            ignore(
+              messages.write(TestCursorMessage::{
+                resend: message.resend,
+                times_sent: message.times_sent + 10,
+              }),
+            )
           }
-        }),
-      ).in_set(cursor_receive_set),
+        }
+      }).in_set(cursor_receive_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(reader : @ecs.MessageReader[TestCursorMessage]) {
-          for message in reader.read() {
-            observed.push((message.resend, message.times_sent))
-          }
-        }),
-      ).in_set(cursor_observe_set),
+      system_config_param(fn(reader : @ecs.MessageReader[TestCursorMessage]) {
+        for message in reader.read() {
+          observed.push((message.resend, message.times_sent))
+        }
+      }).in_set(cursor_observe_set),
     )
     .configure_set(Update, cursor_send_set, before=[cursor_receive_set])
     .configure_set(Update, cursor_receive_set, before=[cursor_observe_set])
@@ -148,57 +142,51 @@ test "app: ParamSet2 can read and write the same message type in one system" {
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestParamSetMessage]) {
-          if !sent.val {
-            ignore(
-              writer.write(TestParamSetMessage::{ resend: false, times_sent: 1 }),
-            )
-            ignore(
-              writer.write(TestParamSetMessage::{ resend: true, times_sent: 1 }),
-            )
-            sent.val = true
-          }
-        }),
-      ).in_set(param_send_set),
+      system_config_param(fn(writer : @ecs.MessageWriter[TestParamSetMessage]) {
+        if !sent.val {
+          ignore(
+            writer.write(TestParamSetMessage::{ resend: false, times_sent: 1 }),
+          )
+          ignore(
+            writer.write(TestParamSetMessage::{ resend: true, times_sent: 1 }),
+          )
+          sent.val = true
+        }
+      }).in_set(param_send_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(
-          param_set : ParamSet2[
-            @ecs.MessageReader[TestParamSetMessage],
-            @ecs.MessageWriter[TestParamSetMessage],
-          ],
-        ) {
-          let resend : Array[TestParamSetMessage] = []
-          for message in param_set.p0().read() {
-            if message.resend {
-              resend.push(message)
-            }
+      system_config_param(fn(
+        param_set : ParamSet2[
+          @ecs.MessageReader[TestParamSetMessage],
+          @ecs.MessageWriter[TestParamSetMessage],
+        ],
+      ) {
+        let resend : Array[TestParamSetMessage] = []
+        for message in param_set.p0().read() {
+          if message.resend {
+            resend.push(message)
           }
-          for message in resend {
-            ignore(
-              param_set
-              .p1()
-              .write(TestParamSetMessage::{
-                resend: message.resend,
-                times_sent: message.times_sent + 1,
-              }),
-            )
-          }
-        }),
-      ).in_set(param_receive_set),
+        }
+        for message in resend {
+          ignore(
+            param_set
+            .p1()
+            .write(TestParamSetMessage::{
+              resend: message.resend,
+              times_sent: message.times_sent + 1,
+            }),
+          )
+        }
+      }).in_set(param_receive_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(reader : @ecs.MessageReader[TestParamSetMessage]) {
-          for message in reader.read() {
-            observed.push(message.times_sent)
-          }
-        }),
-      ).in_set(param_observe_set),
+      system_config_param(fn(reader : @ecs.MessageReader[TestParamSetMessage]) {
+        for message in reader.read() {
+          observed.push(message.times_sent)
+        }
+      }).in_set(param_observe_set),
     )
     .configure_set(Update, param_send_set, before=[param_receive_set])
     .configure_set(Update, param_receive_set, before=[param_observe_set])

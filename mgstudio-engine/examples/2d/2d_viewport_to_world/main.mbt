@@ -27,13 +27,13 @@ pub impl @ecs.Component for MainCamera with fn component() {
 
 ///|
 fn main {
-  let draw_cursor_system = @app.system(@app.system_param5(draw_cursor)).after(
+  let draw_cursor_system = @app.system_config_param5(draw_cursor).after(
     @transform.transform_set_propagate,
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.FixedUpdate, @app.system(@app.system_param6(controls)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.FixedUpdate, @app.system_config_param6(controls))
   .add_systems(@app.PostUpdate, draw_cursor_system)
   .run()
 }

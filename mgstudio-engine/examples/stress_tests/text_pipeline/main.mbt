@@ -21,7 +21,7 @@ let pipeline_text_key : @ecs.ComponentKey[PipelineText] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for PipelineText with component() {
+pub impl @ecs.Component for PipelineText with fn component() {
   pipeline_text_key
 }
 
@@ -101,10 +101,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_text_pipeline)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(update_text_pipeline))
   .run()
 }

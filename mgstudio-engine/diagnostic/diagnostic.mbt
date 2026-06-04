@@ -290,7 +290,7 @@ let diagnostics_store_resource_key : @ecs.ResourceKey[DiagnosticsStore] = @ecs.r
 )
 
 ///|
-pub impl @app.Resource for DiagnosticsStore with resource() {
+pub impl @app.Resource for DiagnosticsStore with fn resource() {
   diagnostics_store_resource_key
 }
 
@@ -348,7 +348,7 @@ pub struct Diagnostics {
 }
 
 ///|
-pub impl @app.SystemParam for Diagnostics with init_state(world) {
+pub impl @app.SystemParam for Diagnostics with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
@@ -365,7 +365,7 @@ fn diagnostics_store(world : @ecs.World) -> DiagnosticsStore? {
 }
 
 ///|
-pub impl @app.SystemParam for Diagnostics with get(_state) {
+pub impl @app.SystemParam for Diagnostics with fn get(_state) {
   let world = @app.current_world().unwrap()
   match diagnostics_store(world) {
     Some(store) => Diagnostics::{ store, buffer: @hashmap.HashMap([]) }
@@ -374,7 +374,7 @@ pub impl @app.SystemParam for Diagnostics with get(_state) {
 }
 
 ///|
-pub impl @app.SystemParam for Diagnostics with store(self, state) {
+pub impl @app.SystemParam for Diagnostics with fn store(self, state) {
   state |> ignore
   if self.buffer.is_empty() {
     return
@@ -404,7 +404,7 @@ pub impl @app.SystemParam for Diagnostics with store(self, state) {
 }
 
 ///|
-pub impl @app.SystemParam for Diagnostics with access(_world) {
+pub impl @app.SystemParam for Diagnostics with fn access(_world) {
   let access = @app.SystemAccess::new()
   access.mark_deferred_commands()
   access

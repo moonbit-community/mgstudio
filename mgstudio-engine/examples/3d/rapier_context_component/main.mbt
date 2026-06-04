@@ -20,7 +20,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(setup_graphics))
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param2(display_nb_colliders)).after(
+    @app.system_config_param2(display_nb_colliders).after(
       @physics3d.physics3d_set_writeback,
     ),
   )

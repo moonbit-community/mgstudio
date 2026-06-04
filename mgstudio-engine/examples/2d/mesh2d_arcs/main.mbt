@@ -59,14 +59,14 @@ impl @ecs.Component for SegmentBounds with fn component() {
 
 ///|
 fn main {
-  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(setup),
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    setup,
   )
-  let draw_sector_bounds_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(draw_sector_bounds),
+  let draw_sector_bounds_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    draw_sector_bounds,
   )
-  let draw_segment_bounds_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(draw_segment_bounds),
+  let draw_segment_bounds_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    draw_segment_bounds,
   )
 
   @app.App::new(@ecs.World::new())

@@ -43,7 +43,7 @@ let bunny_wiggler_key : @ecs.ComponentKey[BunnyWiggler] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for BunnyWiggler with component() {
+pub impl @ecs.Component for BunnyWiggler with fn component() {
   bunny_wiggler_key
 }
 
@@ -248,6 +248,6 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr_meshlet.MeshletPlugin::new(16_384))
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(bunny_wiggler)))
+  .add_systems(@app.Update, @app.system_config_param2(bunny_wiggler))
   .run()
 }

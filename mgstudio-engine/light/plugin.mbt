@@ -55,12 +55,12 @@ fn register_light_required_components(
 }
 
 ///|
-pub impl @app.Plugin for LightPlugin with name(_self) {
+pub impl @app.Plugin for LightPlugin with fn name(_self) {
   LIGHT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LightPlugin with build(_self, app) {
+pub impl @app.Plugin for LightPlugin with fn build(_self, app) {
   light_plugin(app)
 }
 
@@ -91,9 +91,7 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   next
   .add_systems(
     @app.Update,
-    @app.system(
-      @app.system_param2(automatically_add_parallax_correction_components),
-    ),
+    @app.system_config_param2(automatically_add_parallax_correction_components),
   )
   .add_post_update_system(validate_directional_light_shadow_map_size)
 }

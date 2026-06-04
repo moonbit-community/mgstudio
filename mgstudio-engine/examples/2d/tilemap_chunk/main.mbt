@@ -72,11 +72,11 @@ pub impl @app.Resource for SeededRng with fn resource() {
 
 ///|
 fn main {
-  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(setup),
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    setup,
   )
-  let spawn_fake_player_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(spawn_fake_player),
+  let spawn_fake_player_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    spawn_fake_player,
   )
 
   @app.App::new(@ecs.World::new())
@@ -85,9 +85,9 @@ fn main {
     @app.Startup,
     (setup_system, spawn_fake_player_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param4(update_tilemap)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(move_player)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(log_tile)))
+  .add_systems(@app.Update, @app.system_config_param4(update_tilemap))
+  .add_systems(@app.Update, @app.system_config_param3(move_player))
+  .add_systems(@app.Update, @app.system_config_param2(log_tile))
   .run()
 }
 

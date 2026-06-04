@@ -128,12 +128,12 @@ pub fn InputDispatchPlugin::InputDispatchPlugin() -> InputDispatchPlugin {
 }
 
 ///|
-pub impl @app.Plugin for InputDispatchPlugin with name(_self) {
+pub impl @app.Plugin for InputDispatchPlugin with fn name(_self) {
   "mgstudio.input_focus.InputDispatchPlugin"
 }
 
 ///|
-pub impl @app.Plugin for InputDispatchPlugin with build(_self, app) {
+pub impl @app.Plugin for InputDispatchPlugin with fn build(_self, app) {
   input_dispatch_plugin(app)
 }
 
@@ -155,7 +155,7 @@ let focused_keyboard_input_message_key_value : @ecs.MessageKey[
 )
 
 ///|
-pub impl FocusedInputSourceMessage for @input.KeyboardInput with focused_input_message_key() {
+pub impl FocusedInputSourceMessage for @input.KeyboardInput with fn focused_input_message_key() {
   focused_keyboard_input_message_key_value
 }
 
@@ -167,7 +167,7 @@ let focused_gamepad_button_input_message_key_value : @ecs.MessageKey[
 )
 
 ///|
-pub impl FocusedInputSourceMessage for @input.GamepadButtonChangedEvent with focused_input_message_key() {
+pub impl FocusedInputSourceMessage for @input.GamepadButtonChangedEvent with fn focused_input_message_key() {
   focused_gamepad_button_input_message_key_value
 }
 
@@ -179,7 +179,7 @@ let focused_mouse_wheel_message_key_value : @ecs.MessageKey[
 )
 
 ///|
-pub impl FocusedInputSourceMessage for @input.MouseWheel with focused_input_message_key() {
+pub impl FocusedInputSourceMessage for @input.MouseWheel with fn focused_input_message_key() {
   focused_mouse_wheel_message_key_value
 }
 
@@ -261,22 +261,22 @@ pub fn[M : FocusedInputSourceMessage] focused_input_message_key() -> @ecs.Messag
 }
 
 ///|
-pub impl @app.Resource for InputFocus with resource() {
+pub impl @app.Resource for InputFocus with fn resource() {
   input_focus_resource_key
 }
 
 ///|
-pub impl @app.Resource for InputFocusVisible with resource() {
+pub impl @app.Resource for InputFocusVisible with fn resource() {
   input_focus_visible_resource_key
 }
 
 ///|
-pub impl[M : FocusedInputSourceMessage] @ecs.Message for FocusedInput[M] with message() {
+pub impl[M : FocusedInputSourceMessage] @ecs.Message for FocusedInput[M] with fn message() {
   focused_input_message_key()
 }
 
 ///|
-pub impl IsFocused for @ecs.World with is_focused(self, entity) {
+pub impl IsFocused for @ecs.World with fn is_focused(self, entity) {
   match input_focus_world_resource(self, InputFocus::resource()) {
     Some(focus) => focus.get() == Some(entity)
     None => false
@@ -284,7 +284,7 @@ pub impl IsFocused for @ecs.World with is_focused(self, entity) {
 }
 
 ///|
-pub impl IsFocused for @ecs.World with is_focus_within(self, entity) {
+pub impl IsFocused for @ecs.World with fn is_focus_within(self, entity) {
   guard input_focus_world_resource(self, InputFocus::resource()) is Some(focus) else {
     return false
   }
@@ -303,7 +303,7 @@ pub impl IsFocused for @ecs.World with is_focus_within(self, entity) {
 }
 
 ///|
-pub impl IsFocused for @ecs.World with is_focus_visible(self, entity) {
+pub impl IsFocused for @ecs.World with fn is_focus_visible(self, entity) {
   let focus_visible = match
     input_focus_world_resource(self, InputFocusVisible::resource()) {
     Some(visible) => visible.visible()
@@ -313,7 +313,7 @@ pub impl IsFocused for @ecs.World with is_focus_visible(self, entity) {
 }
 
 ///|
-pub impl IsFocused for @ecs.World with is_focus_within_visible(self, entity) {
+pub impl IsFocused for @ecs.World with fn is_focus_within_visible(self, entity) {
   let focus_visible = match
     input_focus_world_resource(self, InputFocusVisible::resource()) {
     Some(visible) => visible.visible()
@@ -323,22 +323,22 @@ pub impl IsFocused for @ecs.World with is_focus_within_visible(self, entity) {
 }
 
 ///|
-pub impl IsFocused for IsFocusedHelper with is_focused(self, entity) {
+pub impl IsFocused for IsFocusedHelper with fn is_focused(self, entity) {
   IsFocused::is_focused(self.world, entity)
 }
 
 ///|
-pub impl IsFocused for IsFocusedHelper with is_focus_within(self, entity) {
+pub impl IsFocused for IsFocusedHelper with fn is_focus_within(self, entity) {
   IsFocused::is_focus_within(self.world, entity)
 }
 
 ///|
-pub impl IsFocused for IsFocusedHelper with is_focus_visible(self, entity) {
+pub impl IsFocused for IsFocusedHelper with fn is_focus_visible(self, entity) {
   IsFocused::is_focus_visible(self.world, entity)
 }
 
 ///|
-pub impl IsFocused for IsFocusedHelper with is_focus_within_visible(
+pub impl IsFocused for IsFocusedHelper with fn is_focus_within_visible(
   self,
   entity,
 ) {
@@ -346,17 +346,17 @@ pub impl IsFocused for IsFocusedHelper with is_focus_within_visible(
 }
 
 ///|
-pub impl @app.SystemParam for IsFocusedHelper with init_state(world) {
+pub impl @app.SystemParam for IsFocusedHelper with fn init_state(world) {
   @app.system_param_empty_state(world)
 }
 
 ///|
-pub impl @app.SystemParam for IsFocusedHelper with get(_state) {
+pub impl @app.SystemParam for IsFocusedHelper with fn get(_state) {
   IsFocusedHelper::{ world: current_input_focus_world_abort_missing() }
 }
 
 ///|
-pub impl @app.SystemParam for IsFocusedHelper with store(self, state) {
+pub impl @app.SystemParam for IsFocusedHelper with fn store(self, state) {
   @app.system_param_store_no_state(self, state)
 }
 
@@ -460,19 +460,19 @@ pub fn input_dispatch_plugin(
   .add_systems(@app.PostStartup, @app.system(set_initial_focus))
   .add_systems(
     @app.PreUpdate,
-    @app.system(@app.system_param2(dispatch_focused_keyboard_input)).in_set(
+    @app.system_config_param2(dispatch_focused_keyboard_input).in_set(
       input_focus_system_set_name(Dispatch),
     ),
   )
   .add_systems(
     @app.PreUpdate,
-    @app.system(@app.system_param2(dispatch_focused_gamepad_button_input)).in_set(
+    @app.system_config_param2(dispatch_focused_gamepad_button_input).in_set(
       input_focus_system_set_name(Dispatch),
     ),
   )
   .add_systems(
     @app.PreUpdate,
-    @app.system(@app.system_param2(dispatch_focused_mouse_wheel)).in_set(
+    @app.system_config_param2(dispatch_focused_mouse_wheel).in_set(
       input_focus_system_set_name(Dispatch),
     ),
   )

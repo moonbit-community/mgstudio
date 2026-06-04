@@ -34,27 +34,30 @@ let menu_event_key : @ecs.EventKey[MenuEvent] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with observer_event() {
+pub impl @ecs.TriggerEvent for MenuEvent with fn observer_event() {
   menu_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with observer_entity(self) {
+pub impl @ecs.TriggerEvent for MenuEvent with fn observer_entity(self) {
   Some(self.source)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with set_observer_entity(self, entity) {
+pub impl @ecs.TriggerEvent for MenuEvent with fn set_observer_entity(
+  self,
+  entity,
+) {
   MenuEvent::{ source: entity, action: self.action }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for MenuEvent with fn auto_propagate(_self) {
   true
 }
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with debug_name() {
+pub impl @ecs.TriggerEvent for MenuEvent with fn debug_name() {
   "MenuEvent"
 }
 
@@ -94,12 +97,12 @@ pub let ecs_key_menu_item : @ecs.ComponentKey[MenuItem] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for MenuPopup with component() {
+pub impl @ecs.Component for MenuPopup with fn component() {
   ecs_key_menu_popup
 }
 
 ///|
-pub impl @ecs.Component for MenuItem with component() {
+pub impl @ecs.Component for MenuItem with fn component() {
   ecs_key_menu_item
 }
 
@@ -206,7 +209,7 @@ fn menu_item_on_pointer_click(
 ///|
 pub fn menu_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Update, @app.system(@app.system_param5(menu_on_key_input)))
+  .add_systems(@app.Update, @app.system_config_param5(menu_on_key_input))
   .add_pointer_observer3(menu_item_on_pointer_down)
   .add_pointer_observer3(menu_item_on_pointer_up)
   .add_pointer_observer3(menu_item_on_pointer_click)

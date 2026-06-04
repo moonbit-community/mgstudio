@@ -31,7 +31,7 @@ let orbit_camera_key : @ecs.ComponentKey[OrbitCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for OrbitCamera with component() {
+pub impl @ecs.Component for OrbitCamera with fn component() {
   orbit_camera_key
 }
 
@@ -121,7 +121,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(orbit_camera)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(orbit_camera))
   .run()
 }

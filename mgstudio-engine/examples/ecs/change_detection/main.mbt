@@ -34,12 +34,12 @@ let my_resource_key : @ecs.ResourceKey[MyResource] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Component for MyComponent with component() {
+pub impl @ecs.Component for MyComponent with fn component() {
   my_component_key
 }
 
 ///|
-pub impl @app.Resource for MyResource with resource() {
+pub impl @app.Resource for MyResource with fn resource() {
   my_resource_key
 }
 
@@ -96,14 +96,11 @@ fn detect_resource_change(resource : @app.ResMut[MyResource]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(change_component)))
-  .add_systems(@app.Update, @app.system(@app.system_param(change_resource)))
-  .add_systems(@app.Update, @app.system(@app.system_param(detect_added)))
-  .add_systems(@app.Update, @app.system(@app.system_param(detect_changed)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(detect_resource_change)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param(change_component))
+  .add_systems(@app.Update, @app.system_config_param(change_resource))
+  .add_systems(@app.Update, @app.system_config_param(detect_added))
+  .add_systems(@app.Update, @app.system_config_param(detect_changed))
+  .add_systems(@app.Update, @app.system_config_param(detect_resource_change))
   .run()
 }

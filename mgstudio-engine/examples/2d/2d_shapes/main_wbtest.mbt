@@ -17,7 +17,7 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(@sprite.Wireframe2dPlugin::Wireframe2dPlugin())
-    .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+    .add_systems(@app.Startup, @app.system_config_param3(setup))
 
   app = app.update()
 

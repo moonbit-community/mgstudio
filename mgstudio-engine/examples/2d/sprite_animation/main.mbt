@@ -103,17 +103,17 @@ pub impl @ecs.Component for RightSprite with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(execute_animations)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(execute_animations))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(trigger_left_animation)).run_if(
+    @app.system_config_param(trigger_left_animation).run_if(
       @input.input_just_pressed(@window.KeyCode::ArrowLeft),
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(trigger_right_animation)).run_if(
+    @app.system_config_param(trigger_right_animation).run_if(
       @input.input_just_pressed(@window.KeyCode::ArrowRight),
     ),
   )

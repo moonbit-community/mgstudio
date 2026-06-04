@@ -85,27 +85,27 @@ let navigation_status_key : @ecs.ResourceKey[NavigationStatus] = @ecs.register_r
 )
 
 ///|
-pub impl @ecs.Component for NavButton with component() {
+pub impl @ecs.Component for NavButton with fn component() {
   nav_button_key
 }
 
 ///|
-pub impl @ecs.Component for ActivatedButton with component() {
+pub impl @ecs.Component for ActivatedButton with fn component() {
   activated_button_key
 }
 
 ///|
-pub impl @ecs.Component for FocusDisplay with component() {
+pub impl @ecs.Component for FocusDisplay with fn component() {
   focus_display_key
 }
 
 ///|
-pub impl @ecs.Component for LastInputDisplay with component() {
+pub impl @ecs.Component for LastInputDisplay with fn component() {
   last_input_display_key
 }
 
 ///|
-pub impl @app.Resource for NavigationStatus with resource() {
+pub impl @app.Resource for NavigationStatus with fn resource() {
   navigation_status_key
 }
 
@@ -530,8 +530,8 @@ fn main {
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(500.0F), true),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.PreUpdate, @app.system(@app.system_param3(navigate_ui)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.PreUpdate, @app.system_config_param3(navigate_ui))
   .add_systems(@app.PreUpdate, @app.system(activate_focused_button))
   .add_systems(@app.Update, @app.system(update_focus_display))
   .add_systems(@app.Update, @app.system(update_last_input_display))

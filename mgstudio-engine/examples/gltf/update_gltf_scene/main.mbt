@@ -24,7 +24,7 @@ let ecs_key_moved_scene : @ecs.ComponentKey[MovedScene] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for MovedScene with component() {
+pub impl @ecs.Component for MovedScene with fn component() {
   ecs_key_moved_scene
 }
 
@@ -153,7 +153,7 @@ fn move_scene_entities(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(@app.Update, @app.system(move_scene_entities))
   .run()
 }

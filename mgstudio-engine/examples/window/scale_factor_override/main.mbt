@@ -42,8 +42,8 @@ fn main {
   )
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(display_override))
-  .add_systems(@app.Update, @app.system(@app.system_param(toggle_override)))
-  .add_systems(@app.Update, @app.system(@app.system_param(change_scale_factor)))
+  .add_systems(@app.Update, @app.system_config_param(toggle_override))
+  .add_systems(@app.Update, @app.system_config_param(change_scale_factor))
   .run()
 }
 

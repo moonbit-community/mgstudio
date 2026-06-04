@@ -38,12 +38,12 @@ let comp_velocity : @ecs.ComponentKey[Velocity] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Position with component() {
+pub impl @ecs.Component for Position with fn component() {
   comp_position
 }
 
 ///|
-pub impl @ecs.Component for Velocity with component() {
+pub impl @ecs.Component for Velocity with fn component() {
   comp_velocity
 }
 
@@ -58,7 +58,7 @@ fn main {
       try! world.set_by_key(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
     }),
   )
-  .add_systems(@app.Update, @app.system(@app.system_param(move_system)))
+  .add_systems(@app.Update, @app.system_config_param(move_system))
   .update()
   |> ignore
 }

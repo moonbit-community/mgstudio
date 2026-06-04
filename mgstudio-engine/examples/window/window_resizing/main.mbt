@@ -33,7 +33,7 @@ let resolution_settings_key : @ecs.ResourceKey[ResolutionSettings] = @ecs.regist
 )
 
 ///|
-impl @app.Resource for ResolutionSettings with resource() {
+impl @app.Resource for ResolutionSettings with fn resource() {
   resolution_settings_key
 }
 
@@ -48,8 +48,8 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(setup_ui))
-  .add_systems(@app.Update, @app.system(@app.system_param2(toggle_resolution)))
-  .add_systems(@app.Update, @app.system(@app.system_param(on_resize_system)))
+  .add_systems(@app.Update, @app.system_config_param2(toggle_resolution))
+  .add_systems(@app.Update, @app.system_config_param(on_resize_system))
   .run()
 }
 

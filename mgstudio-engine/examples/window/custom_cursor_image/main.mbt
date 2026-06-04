@@ -30,7 +30,7 @@ let animation_config_component_key : @ecs.ComponentKey[AnimationConfig] = @ecs.r
 )
 
 ///|
-pub impl @ecs.Component for AnimationConfig with component() {
+pub impl @ecs.Component for AnimationConfig with fn component() {
   animation_config_component_key
 }
 
@@ -48,7 +48,7 @@ let cursor_image_example_state_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for CursorImageExampleState with resource() {
+pub impl @app.Resource for CursorImageExampleState with fn resource() {
   cursor_image_example_state_resource_key
 }
 
@@ -339,18 +339,12 @@ fn cycle_rect(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Startup,
-    @app.system(@app.system_param(setup_cursor_image_state)),
-  )
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup_cursor_icon)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(execute_animation)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(toggle_texture_atlas)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(toggle_flip_x)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(toggle_flip_y)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(cycle_rect)))
+  .add_systems(@app.Startup, @app.system_config_param(setup_cursor_image_state))
+  .add_systems(@app.Startup, @app.system_config_param4(setup_cursor_icon))
+  .add_systems(@app.Update, @app.system_config_param2(execute_animation))
+  .add_systems(@app.Update, @app.system_config_param3(toggle_texture_atlas))
+  .add_systems(@app.Update, @app.system_config_param2(toggle_flip_x))
+  .add_systems(@app.Update, @app.system_config_param2(toggle_flip_y))
+  .add_systems(@app.Update, @app.system_config_param3(cycle_rect))
   .run()
 }

@@ -33,12 +33,12 @@ let velocity_key : @ecs.ComponentKey[Velocity] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Position with component() {
+pub impl @ecs.Component for Position with fn component() {
   position_key
 }
 
 ///|
-pub impl @ecs.Component for Velocity with component() {
+pub impl @ecs.Component for Velocity with fn component() {
   velocity_key
 }
 
@@ -58,7 +58,7 @@ type MovementQuery = @ecs.Query[
 type MovementSystemParam = MovementParam[MovementQuery]
 
 ///|
-impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with init_state(
+impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with fn init_state(
   world,
 ) {
   let state = P::init_state(world)
@@ -70,12 +70,14 @@ impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with init_state
 }
 
 ///|
-impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with get(state) {
+impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with fn get(
+  state,
+) {
   state.get()
 }
 
 ///|
-impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with store(
+impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with fn store(
   self,
   state,
 ) {
@@ -116,11 +118,8 @@ fn print_positions(query : @ecs.Query[@ecs.Comp[Position], @ecs.All]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems(@app.Startup, @app.system(@app.system_param(spawn)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(run_custom_query_param)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param(print_positions)))
+  .add_systems(@app.Startup, @app.system_config_param(spawn))
+  .add_systems(@app.Update, @app.system_config_param(run_custom_query_param))
+  .add_systems(@app.Update, @app.system_config_param(print_positions))
   .run()
 }

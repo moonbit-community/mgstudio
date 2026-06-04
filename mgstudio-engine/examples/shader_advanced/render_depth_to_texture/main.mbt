@@ -24,7 +24,7 @@ let offscreen_object_key : @ecs.ComponentKey[OffscreenObject] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for OffscreenObject with component() {
+pub impl @ecs.Component for OffscreenObject with fn component() {
   offscreen_object_key
 }
 
@@ -141,10 +141,7 @@ fn spin_offscreen_object(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(spin_offscreen_object)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param2(spin_offscreen_object))
   .run()
 }

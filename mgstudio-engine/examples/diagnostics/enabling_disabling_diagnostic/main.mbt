@@ -25,7 +25,7 @@ fn main {
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(toggle)).run_if(
+    @app.system_config_param(toggle).run_if(
       @time.on_timer(@core.Duration::from_secs_f32(TOGGLE_INTERVAL_SECONDS)),
     ),
   )

@@ -19,7 +19,7 @@ pub let transform_set_propagate : @app.SystemSet = @app.system_set(
 
 ///|
 fn transform_mark_dirty_trees_system_config() -> @app.SystemConfig[@ecs.World] {
-  @app.system(@app.system_param4(mark_dirty_trees_system)).named(
+  @app.system_config_param4(mark_dirty_trees_system).named(
     "mgstudio.transform.mark_dirty_trees_system",
   )
 }
@@ -37,7 +37,7 @@ fn transform_propagate_parent_transforms_system_config() -> @app.SystemConfig[
 fn transform_sync_simple_transforms_system_config() -> @app.SystemConfig[
   @ecs.World,
 ] {
-  @app.system(@app.system_param2(sync_simple_transforms)).named(
+  @app.system_config_param2(sync_simple_transforms).named(
     "mgstudio.transform.sync_simple_transforms",
   )
 }

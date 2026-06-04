@@ -48,17 +48,17 @@ let enemy_spawn_cursor_key : @ecs.ResourceKey[EnemySpawnCursor] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for Enemy with component() {
+pub impl @ecs.Component for Enemy with fn component() {
   enemy_key
 }
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
 ///|
-pub impl @app.Resource for EnemySpawnCursor with resource() {
+pub impl @app.Resource for EnemySpawnCursor with fn resource() {
   enemy_spawn_cursor_key
 }
 
@@ -80,21 +80,21 @@ fn main {
   )
   println("")
 
-  let user_input_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param4(user_input),
+  let user_input_system : @app.SystemConfig[@ecs.World] = @app.system_config_param4(
+    user_input,
   )
-  let move_targets_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(move_targets),
+  let move_targets_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    move_targets,
   )
-  let track_targets_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(track_targets),
+  let track_targets_system : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    track_targets,
   )
 
   @app.App::new(@ecs.World::new())
   .set_error_handler(@app.ErrorHandlers::warn)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(EnemySpawnCursor::{ next: 0 })
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
   .add_systems(
     @app.Update,
     (user_input_system, move_targets_system, track_targets_system)
@@ -102,7 +102,7 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(do_nothing_fail_validation)),
+    @app.system_config_param(do_nothing_fail_validation),
   )
   .run()
 }

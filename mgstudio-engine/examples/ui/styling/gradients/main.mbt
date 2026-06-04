@@ -23,7 +23,7 @@ let gradient_stop_key : @ecs.ComponentKey[GradientStop] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for GradientStop with component() {
+pub impl @ecs.Component for GradientStop with fn component() {
   gradient_stop_key
 }
 
@@ -117,7 +117,7 @@ fn animate_gradients(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_gradients)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_gradients))
   .run()
 }

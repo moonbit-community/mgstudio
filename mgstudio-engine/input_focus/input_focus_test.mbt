@@ -61,7 +61,7 @@ let mock_input_message_key : @ecs.MessageKey[MockInput] = @ecs.register_message(
 )
 
 ///|
-pub impl @ecs.Message for MockInput with message() {
+pub impl @ecs.Message for MockInput with fn message() {
   mock_input_message_key
 }
 
@@ -73,7 +73,7 @@ let focused_mock_input_message_key : @ecs.MessageKey[
 )
 
 ///|
-impl @input_focus.FocusedInputSourceMessage for MockInput with focused_input_message_key() {
+impl @input_focus.FocusedInputSourceMessage for MockInput with fn focused_input_message_key() {
   focused_mock_input_message_key
 }
 
@@ -176,7 +176,7 @@ test "input_focus runtime dispatches and clears stale focus" {
     .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
     .add_systems(
       @app.PreUpdate,
-      @app.system(@app.system_param2(dispatch_mock_input)).in_set(
+      @app.system_config_param2(dispatch_mock_input).in_set(
         @input_focus.input_focus_system_set_name(
           @input_focus.InputFocusSystems::Dispatch,
         ),
@@ -235,15 +235,11 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
     .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
     .add_systems(
       @app.Update,
-      @app.system(
-        @app.system_param(fn(helper : @input_focus.IsFocusedHelper) {
-          helper_focus_within_parent.val = helper.is_focus_within(parent)
-          helper_focus_visible_parent.val = helper.is_focus_within_visible(
-            parent,
-          )
-          helper_focus_visible_child.val = helper.is_focus_visible(child)
-        }),
-      ),
+      @app.system_config_param(fn(helper : @input_focus.IsFocusedHelper) {
+        helper_focus_within_parent.val = helper.is_focus_within(parent)
+        helper_focus_visible_parent.val = helper.is_focus_within_visible(parent)
+        helper_focus_visible_child.val = helper.is_focus_visible(child)
+      }),
     )
     .run_once()
 

@@ -24,7 +24,7 @@ let animated_material_key : @ecs.ComponentKey[AnimatedMaterial] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for AnimatedMaterial with component() {
+pub impl @ecs.Component for AnimatedMaterial with fn component() {
   animated_material_key
 }
 
@@ -92,10 +92,7 @@ fn animate_material_color(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(animate_material_color)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param3(animate_material_color))
   .run()
 }

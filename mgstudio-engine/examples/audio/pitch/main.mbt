@@ -31,7 +31,7 @@ let pitch_frequency_resource_key : @ecs.ResourceKey[PitchFrequency] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Message for PlayPitch with message() {
+pub impl @ecs.Message for PlayPitch with fn message() {
   play_pitch_message_key
 }
 
@@ -41,12 +41,12 @@ pub fn PlayPitch::PlayPitch() -> PlayPitch {
 }
 
 ///|
-pub impl Default for PlayPitch with default() {
+pub impl Default for PlayPitch with fn default() {
   PlayPitch::PlayPitch()
 }
 
 ///|
-pub impl @app.Resource for PitchFrequency with resource() {
+pub impl @app.Resource for PitchFrequency with fn resource() {
   pitch_frequency_resource_key
 }
 
@@ -56,11 +56,8 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_message(play_pitch_message_key)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param4(play_pitch)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(keyboard_input_system)),
-  )
+  .add_systems(@app.Update, @app.system_config_param4(play_pitch))
+  .add_systems(@app.Update, @app.system_config_param3(keyboard_input_system))
   .run()
 }
 

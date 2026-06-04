@@ -25,7 +25,7 @@ let movable_component_key : @ecs.ComponentKey[Movable] = @ecs.register_component
 )
 
 ///|
-impl @ecs.Component for Movable with component() {
+impl @ecs.Component for Movable with fn component() {
   movable_component_key
 }
 
@@ -120,7 +120,7 @@ fn move_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(move_cube)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param3(move_cube))
   .run()
 }

@@ -19,12 +19,12 @@ pub(all) enum TestState {
 } derive(Eq, Debug)
 
 ///|
-impl States for TestState with type_debug_name() {
+impl States for TestState with fn type_debug_name() {
   "TestState"
 }
 
 ///|
-impl States for TestState with debug_name(self) {
+impl States for TestState with fn debug_name(self) {
   ignore(self)
   "TestState"
 }
@@ -35,7 +35,7 @@ let test_state_resource_keys : StateResourceKeys[TestState] = register_state_res
 )
 
 ///|
-impl States for TestState with state_resource_keys() {
+impl States for TestState with fn state_resource_keys() {
   test_state_resource_keys
 }
 

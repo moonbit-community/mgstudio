@@ -55,13 +55,10 @@ impl @ecs.Component for AnimateScale with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_translation)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_rotation)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_scale)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_translation))
+  .add_systems(@app.Update, @app.system_config_param2(animate_rotation))
+  .add_systems(@app.Update, @app.system_config_param2(animate_scale))
   .run()
 }
 

@@ -23,7 +23,7 @@ let layer_key : @ecs.ComponentKey[Layer] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Layer with component() {
+pub impl @ecs.Component for Layer with fn component() {
   layer_key
 }
 
@@ -95,7 +95,7 @@ fn animate_layers(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_layers)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_layers))
   .run()
 }

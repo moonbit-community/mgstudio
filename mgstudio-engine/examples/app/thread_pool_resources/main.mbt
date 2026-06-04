@@ -26,7 +26,7 @@ let worker_cube_key : @ecs.ComponentKey[WorkerCube] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for WorkerCube with component() {
+pub impl @ecs.Component for WorkerCube with fn component() {
   worker_cube_key
 }
 
@@ -44,7 +44,7 @@ let simulated_pool_key : @ecs.ResourceKey[SimulatedPool] = @ecs.register_resourc
 )
 
 ///|
-impl @app.Resource for SimulatedPool with resource() {
+impl @app.Resource for SimulatedPool with fn resource() {
   simulated_pool_key
 }
 
@@ -217,9 +217,9 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(input_control)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(simulate_pool)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(animate_cubes)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param(input_control))
+  .add_systems(@app.Update, @app.system_config_param2(simulate_pool))
+  .add_systems(@app.Update, @app.system_config_param3(animate_cubes))
   .run()
 }

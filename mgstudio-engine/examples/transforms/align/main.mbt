@@ -24,7 +24,7 @@ let ship_key : @ecs.ComponentKey[Ship] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Ship with component() {
+pub impl @ecs.Component for Ship with fn component() {
   ship_key
 }
 
@@ -203,8 +203,8 @@ fn spin_ship(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(handle_keys)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(spin_ship)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(handle_keys))
+  .add_systems(@app.Update, @app.system_config_param2(spin_ship))
   .run()
 }

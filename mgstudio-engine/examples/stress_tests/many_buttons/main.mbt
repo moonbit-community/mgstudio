@@ -26,7 +26,7 @@ let idle_color_key : @ecs.ComponentKey[IdleColor] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for IdleColor with component() {
+pub impl @ecs.Component for IdleColor with fn component() {
   idle_color_key
 }
 
@@ -114,7 +114,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(button_system)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param(button_system))
   .run()
 }

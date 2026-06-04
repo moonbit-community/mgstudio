@@ -32,7 +32,7 @@ let cell_key : @ecs.ComponentKey[Cell] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Cell with component() {
+pub impl @ecs.Component for Cell with fn component() {
   cell_key
 }
 
@@ -49,7 +49,7 @@ let life_state_key : @ecs.ResourceKey[LifeState] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for LifeState with resource() {
+pub impl @app.Resource for LifeState with fn resource() {
   life_state_key
 }
 
@@ -198,8 +198,8 @@ fn apply_life_visuals(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(step_life)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(apply_life_visuals)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(step_life))
+  .add_systems(@app.Update, @app.system_config_param3(apply_life_visuals))
   .run()
 }

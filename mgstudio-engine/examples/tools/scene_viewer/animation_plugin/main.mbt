@@ -23,7 +23,7 @@ let spin_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Spin with component() {
+pub impl @ecs.Component for Spin with fn component() {
   spin_key
 }
 
@@ -100,6 +100,6 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_preview)))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_preview))
   .run()
 }

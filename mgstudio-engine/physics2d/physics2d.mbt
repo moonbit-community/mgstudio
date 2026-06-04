@@ -772,7 +772,7 @@ pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     physics2d_set_writeback,
   ])
   .add_post_update_system_config(
-    @app.system(@app.system_param(physics2d_debug_render_system))
+    @app.system_config_param(physics2d_debug_render_system)
     .named("mgstudio.physics2d.debug_render")
     .in_set(physics2d_set_debug_render),
   )

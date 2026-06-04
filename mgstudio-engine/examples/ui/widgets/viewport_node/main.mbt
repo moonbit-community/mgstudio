@@ -21,7 +21,7 @@ let viewport_mesh_key : @ecs.ComponentKey[ViewportMesh] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for ViewportMesh with component() {
+pub impl @ecs.Component for ViewportMesh with fn component() {
   viewport_mesh_key
 }
 
@@ -127,7 +127,7 @@ fn rotate_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_mesh)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_mesh))
   .run()
 }

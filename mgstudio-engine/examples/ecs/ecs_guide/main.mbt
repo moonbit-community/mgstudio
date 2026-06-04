@@ -87,27 +87,27 @@ let after_round_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub impl @ecs.Component for Player with component() {
+pub impl @ecs.Component for Player with fn component() {
   player_key
 }
 
 ///|
-pub impl @ecs.Component for Score with component() {
+pub impl @ecs.Component for Score with fn component() {
   score_key
 }
 
 ///|
-pub impl @ecs.Component for PlayerStreak with component() {
+pub impl @ecs.Component for PlayerStreak with fn component() {
   player_streak_key
 }
 
 ///|
-pub impl @app.Resource for GameState with resource() {
+pub impl @app.Resource for GameState with fn resource() {
   game_state_key
 }
 
 ///|
-pub impl @app.Resource for GameRules with resource() {
+pub impl @app.Resource for GameRules with fn resource() {
   game_rules_key
 }
 
@@ -314,21 +314,21 @@ fn print_at_end_round(counter : @app.Local[Int]) -> Unit {
 
 ///|
 fn main {
-  let new_round_system_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(new_round_system),
+  let new_round_system_config : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    new_round_system,
   )
-  let new_player_system_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(new_player_system),
+  let new_player_system_config : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    new_player_system,
   )
   let before_round_chain : @app.SystemConfig[@ecs.World] = (
       new_round_system_config, new_player_system_config,
     )
     |> @app.chain()
-  let score_check_system_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(score_check_system),
+  let score_check_system_config : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    score_check_system,
   )
-  let game_over_system_config : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param3(game_over_system),
+  let game_over_system_config : @app.SystemConfig[@ecs.World] = @app.system_config_param3(
+    game_over_system,
   )
   let after_round_chain : @app.SystemConfig[@ecs.World] = (
       score_check_system_config, game_over_system_config,
@@ -338,9 +338,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .init_resource(fn() { GameState::GameState() })
   .add_plugins(@app.ScheduleRunnerPlugin::run_loop(0.05F))
-  .add_systems(@app.Startup, @app.system(@app.system_param2(startup_system)))
+  .add_systems(@app.Startup, @app.system_config_param2(startup_system))
   .add_systems(@app.Update, @app.system(print_message_system))
-  .add_systems(@app.Last, @app.system(@app.system_param(print_at_end_round)))
+  .add_systems(@app.Last, @app.system_config_param(print_at_end_round))
   .configure_set(@app.Update, before_round_set, before=[round_set])
   .configure_set(@app.Update, round_set, before=[after_round_set])
   .add_systems(@app.Update, before_round_chain.in_set(before_round_set))
@@ -350,7 +350,7 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(score_system)).in_set(round_set),
+    @app.system_config_param2(score_system).in_set(round_set),
   )
   .add_systems(@app.Update, after_round_chain.in_set(after_round_set))
   .run()

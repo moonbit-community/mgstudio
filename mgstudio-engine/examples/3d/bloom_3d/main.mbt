@@ -21,7 +21,7 @@ let bouncing_component_key : @ecs.ComponentKey[Bouncing] = @ecs.register_compone
 )
 
 ///|
-impl @ecs.Component for Bouncing with component() {
+impl @ecs.Component for Bouncing with fn component() {
   bouncing_component_key
 }
 
@@ -34,7 +34,7 @@ let bloom_camera_component_key : @ecs.ComponentKey[BloomCamera] = @ecs.register_
 )
 
 ///|
-impl @ecs.Component for BloomCamera with component() {
+impl @ecs.Component for BloomCamera with fn component() {
   bloom_camera_component_key
 }
 
@@ -49,7 +49,7 @@ let bloom_instructions_resource_key : @ecs.ResourceKey[BloomInstructions] = @ecs
 )
 
 ///|
-impl @app.Resource for BloomInstructions with resource() {
+impl @app.Resource for BloomInstructions with fn resource() {
   bloom_instructions_resource_key
 }
 
@@ -360,10 +360,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_scene))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(update_bloom_settings)),
-  )
-  .add_systems(@app.Update, @app.system(@app.system_param2(bounce_spheres)))
+  .add_systems(@app.Update, @app.system_config_param4(update_bloom_settings))
+  .add_systems(@app.Update, @app.system_config_param2(bounce_spheres))
   .run()
 }

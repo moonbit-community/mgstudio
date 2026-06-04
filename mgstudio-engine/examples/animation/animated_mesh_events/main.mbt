@@ -78,39 +78,39 @@ let step_event_key : @ecs.EventKey[StepEvent] = @ecs.register_event(
 )
 
 ///|
-pub impl @app.Resource for AnimationSetup with resource() {
+pub impl @app.Resource for AnimationSetup with fn resource() {
   animation_setup_key
 }
 
 ///|
-pub impl @app.Resource for ParticleAssets with resource() {
+pub impl @app.Resource for ParticleAssets with fn resource() {
   particle_assets_key
 }
 
 ///|
-pub impl @ecs.Component for Particle with component() {
+pub impl @ecs.Component for Particle with fn component() {
   particle_key
 }
 
 ///|
-pub impl @animation.AnimationEvent for StepEvent with animation_event_marker(
+pub impl @animation.AnimationEvent for StepEvent with fn animation_event_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @ecs.TriggerEvent for StepEvent with observer_event() {
+pub impl @ecs.TriggerEvent for StepEvent with fn observer_event() {
   step_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for StepEvent with observer_entity(self) {
+pub impl @ecs.TriggerEvent for StepEvent with fn observer_entity(self) {
   self.observer_entity
 }
 
 ///|
-pub impl @ecs.TriggerEvent for StepEvent with set_observer_entity(
+pub impl @ecs.TriggerEvent for StepEvent with fn set_observer_entity(
   event_ref,
   entity,
 ) {
@@ -118,12 +118,12 @@ pub impl @ecs.TriggerEvent for StepEvent with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for StepEvent with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for StepEvent with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for StepEvent with debug_name() {
+pub impl @ecs.TriggerEvent for StepEvent with fn debug_name() {
   "StepEvent"
 }
 
@@ -401,6 +401,6 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_observer4(observe_on_step)
-  .add_systems(@app.Update, @app.system(@app.system_param3(simulate_particles)))
+  .add_systems(@app.Update, @app.system_config_param3(simulate_particles))
   .run()
 }

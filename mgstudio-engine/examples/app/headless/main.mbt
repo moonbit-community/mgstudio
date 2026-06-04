@@ -23,7 +23,7 @@ let counter_state_resource_key : @ecs.ResourceKey[CounterState] = @ecs.register_
 )
 
 ///|
-impl @app.Resource for CounterState with resource() {
+impl @app.Resource for CounterState with fn resource() {
   counter_state_resource_key
 }
 
@@ -54,7 +54,7 @@ fn run_loop_app() -> Unit {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_loop(1.0F / 60.0F))
   .insert_resource(CounterState::{ count: 0 })
-  .add_systems(@app.Update, @app.system(@app.system_param(counter_system)))
+  .add_systems(@app.Update, @app.system_config_param(counter_system))
   .run()
 }
 

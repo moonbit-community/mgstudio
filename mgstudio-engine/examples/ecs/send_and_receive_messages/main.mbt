@@ -41,17 +41,17 @@ let debug_message_key : @ecs.MessageKey[DebugMessage] = @ecs.register_message(
 )
 
 ///|
-pub impl @ecs.Message for A with message() {
+pub impl @ecs.Message for A with fn message() {
   a_key
 }
 
 ///|
-pub impl @ecs.Message for B with message() {
+pub impl @ecs.Message for B with fn message() {
   b_key
 }
 
 ///|
-pub impl @ecs.Message for DebugMessage with message() {
+pub impl @ecs.Message for DebugMessage with fn message() {
   debug_message_key
 }
 
@@ -210,39 +210,39 @@ fn main {
     .add_message(b_key)
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param2(read_and_write_different_message_types)),
+      @app.system_config_param2(read_and_write_different_message_types),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param2(send_messages)).in_set(send_messages_set),
+      @app.system_config_param2(send_messages).in_set(send_messages_set),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param(debug_messages)).in_set(
+      @app.system_config_param(debug_messages).in_set(
         debug_messages_before_param_set,
       ),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param2(send_and_receive_param_set)).in_set(
+      @app.system_config_param2(send_and_receive_param_set).in_set(
         send_and_receive_param_set_set,
       ),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param(debug_messages)).in_set(
+      @app.system_config_param(debug_messages).in_set(
         debug_messages_before_local_cursor_set,
       ),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param3(send_and_receive_manual_message_reader)).in_set(
+      @app.system_config_param3(send_and_receive_manual_message_reader).in_set(
         send_and_receive_manual_reader_set,
       ),
     )
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param(debug_messages)).in_set(
+      @app.system_config_param(debug_messages).in_set(
         debug_messages_after_local_cursor_set,
       ),
     )

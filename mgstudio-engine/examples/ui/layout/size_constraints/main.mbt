@@ -53,17 +53,17 @@ let constraint_settings_key : @ecs.ResourceKey[ConstraintSettings] = @ecs.regist
 )
 
 ///|
-pub impl @ecs.Component for Bar with component() {
+pub impl @ecs.Component for Bar with fn component() {
   bar_key
 }
 
 ///|
-pub impl @ecs.Component for ConstraintButton with component() {
+pub impl @ecs.Component for ConstraintButton with fn component() {
   constraint_button_key
 }
 
 ///|
-pub impl @app.Resource for ConstraintSettings with resource() {
+pub impl @app.Resource for ConstraintSettings with fn resource() {
   constraint_settings_key
 }
 
@@ -514,7 +514,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(ConstraintSettings::ConstraintSettings())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_buttons)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(apply_settings)))
+  .add_systems(@app.Update, @app.system_config_param2(update_buttons))
+  .add_systems(@app.Update, @app.system_config_param2(apply_settings))
   .run()
 }

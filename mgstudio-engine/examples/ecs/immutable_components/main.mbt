@@ -33,12 +33,12 @@ let name_index_key : @ecs.ResourceKey[NameIndex] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Component for Name with component() {
+pub impl @ecs.Component for Name with fn component() {
   name_key
 }
 
 ///|
-pub impl @app.Resource for NameIndex with resource() {
+pub impl @app.Resource for NameIndex with fn resource() {
   name_index_key
 }
 
@@ -96,9 +96,9 @@ fn print_index(index : @app.Res[NameIndex]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
   .add_systems(@app.Update, @app.system(rename_one_entity))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rebuild_name_index)))
-  .add_systems(@app.Update, @app.system(@app.system_param(print_index)))
+  .add_systems(@app.Update, @app.system_config_param2(rebuild_name_index))
+  .add_systems(@app.Update, @app.system_config_param(print_index))
   .run()
 }

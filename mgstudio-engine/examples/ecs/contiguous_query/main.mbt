@@ -33,12 +33,12 @@ let health_decay_key : @ecs.ComponentKey[HealthDecay] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for Health with component() {
+impl @ecs.Component for Health with fn component() {
   health_key
 }
 
 ///|
-impl @ecs.Component for HealthDecay with component() {
+impl @ecs.Component for HealthDecay with fn component() {
   health_decay_key
 }
 
@@ -88,11 +88,11 @@ fn setup(commands : @app.Commands) -> Unit {
 
 ///|
 fn main {
-  let apply_health_decay_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param(apply_health_decay),
+  let apply_health_decay_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    apply_health_decay,
   )
-  let finish_off_first_system : @app.SystemConfig[@ecs.World] = @app.system(
-    @app.system_param2(finish_off_first),
+  let finish_off_first_system : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    finish_off_first,
   )
   let update_chain : @app.SystemConfig[@ecs.World] = (
       apply_health_decay_system, finish_off_first_system,
@@ -100,7 +100,7 @@ fn main {
     |> @app.chain()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
   .add_systems(@app.Update, update_chain)
   .run()
 }

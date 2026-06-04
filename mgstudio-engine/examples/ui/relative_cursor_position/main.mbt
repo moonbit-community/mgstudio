@@ -29,12 +29,12 @@ let cursor_readout_key : @ecs.ComponentKey[CursorReadout] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for CursorArea with component() {
+pub impl @ecs.Component for CursorArea with fn component() {
   cursor_area_key
 }
 
 ///|
-pub impl @ecs.Component for CursorReadout with component() {
+pub impl @ecs.Component for CursorReadout with fn component() {
   cursor_readout_key
 }
 
@@ -162,10 +162,10 @@ fn relative_cursor_position_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(relative_cursor_position_system)),
+    @app.system_config_param2(relative_cursor_position_system),
   )
   .run()
 }

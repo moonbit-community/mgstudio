@@ -19,7 +19,7 @@ fn main {
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.9F)),
   )
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()
 }
 

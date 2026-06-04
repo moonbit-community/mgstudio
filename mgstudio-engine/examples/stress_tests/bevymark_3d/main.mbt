@@ -38,7 +38,7 @@ let cube_velocity_key : @ecs.ComponentKey[CubeVelocity] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for CubeVelocity with component() {
+pub impl @ecs.Component for CubeVelocity with fn component() {
   cube_velocity_key
 }
 
@@ -54,7 +54,7 @@ let cube_assets_key : @ecs.ResourceKey[CubeAssets] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for CubeAssets with resource() {
+impl @app.Resource for CubeAssets with fn resource() {
   cube_assets_key
 }
 
@@ -70,7 +70,7 @@ let cube_counter_key : @ecs.ResourceKey[CubeCounter] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for CubeCounter with resource() {
+impl @app.Resource for CubeCounter with fn resource() {
   cube_counter_key
 }
 
@@ -269,9 +269,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(mouse_spawn)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(movement)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(print_count)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems(@app.Update, @app.system_config_param3(mouse_spawn))
+  .add_systems(@app.Update, @app.system_config_param2(movement))
+  .add_systems(@app.Update, @app.system_config_param2(print_count))
   .run()
 }

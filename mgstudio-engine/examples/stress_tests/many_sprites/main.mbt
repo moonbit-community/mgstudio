@@ -35,7 +35,7 @@ let sprite_stats_key : @ecs.ResourceKey[SpriteStats] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for SpriteStats with resource() {
+impl @app.Resource for SpriteStats with fn resource() {
   sprite_stats_key
 }
 
@@ -136,8 +136,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(print_sprite_count)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(move_camera))
+  .add_systems(@app.Update, @app.system_config_param3(print_sprite_count))
   .run()
 }

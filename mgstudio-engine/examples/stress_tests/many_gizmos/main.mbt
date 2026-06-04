@@ -27,7 +27,7 @@ let config_key : @ecs.ResourceKey[Config] = @ecs.register_resource(
 )
 
 ///|
-impl @app.Resource for Config with resource() {
+impl @app.Resource for Config with fn resource() {
   config_key
 }
 
@@ -139,8 +139,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(input)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(draw_many_lines)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param(input))
+  .add_systems(@app.Update, @app.system_config_param3(draw_many_lines))
   .run()
 }

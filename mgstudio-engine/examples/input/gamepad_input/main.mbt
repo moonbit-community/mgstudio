@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Update, @app.system(@app.system_param(gamepad_system)))
+  .add_systems(@app.Update, @app.system_config_param(gamepad_system))
   .run()
 }
 

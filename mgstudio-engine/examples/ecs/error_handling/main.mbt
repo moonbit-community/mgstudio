@@ -23,7 +23,7 @@ let observer_target_key : @ecs.ComponentKey[ObserverTarget] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for ObserverTarget with component() {
+pub impl @ecs.Component for ObserverTarget with fn component() {
   observer_target_key
 }
 
@@ -47,8 +47,8 @@ fn main {
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-    .add_systems(@app.Startup, @app.system(@app.system_param(failing_commands)))
+    .add_systems(@app.Startup, @app.system_config_param2(setup))
+    .add_systems(@app.Startup, @app.system_config_param(failing_commands))
     .add_systems(
       @app.PostStartup,
       @app.fallible_system(failing_system).handle_error_with(

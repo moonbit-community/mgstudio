@@ -29,7 +29,7 @@ let gradient_cell_key : @ecs.ComponentKey[GradientCell] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for GradientCell with component() {
+pub impl @ecs.Component for GradientCell with fn component() {
   gradient_cell_key
 }
 
@@ -113,7 +113,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_cells)))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_cells))
   .run()
 }

@@ -85,27 +85,27 @@ let overflow_settings_key : @ecs.ResourceKey[OverflowDebugSettings] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for InstructionsText with component() {
+pub impl @ecs.Component for InstructionsText with fn component() {
   instructions_text_key
 }
 
 ///|
-pub impl @ecs.Component for AnimationMotion with component() {
+pub impl @ecs.Component for AnimationMotion with fn component() {
   animation_motion_key
 }
 
 ///|
-pub impl @ecs.Component for Container with component() {
+pub impl @ecs.Component for Container with fn component() {
   container_key
 }
 
 ///|
-pub impl @app.Resource for AnimationState with resource() {
+pub impl @app.Resource for AnimationState with fn resource() {
   animation_state_key
 }
 
 ///|
-pub impl @app.Resource for OverflowDebugSettings with resource() {
+pub impl @app.Resource for OverflowDebugSettings with fn resource() {
   overflow_settings_key
 }
 
@@ -547,20 +547,11 @@ fn update_instructions(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(update_controls)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(update_animation)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(update_motion_transforms)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(apply_container_settings)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(update_instructions)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param3(update_controls))
+  .add_systems(@app.Update, @app.system_config_param2(update_animation))
+  .add_systems(@app.Update, @app.system_config_param2(update_motion_transforms))
+  .add_systems(@app.Update, @app.system_config_param2(apply_container_settings))
+  .add_systems(@app.Update, @app.system_config_param3(update_instructions))
   .run()
 }

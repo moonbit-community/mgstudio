@@ -18,7 +18,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(print_keyboard_event_system)),
+    @app.system_config_param(print_keyboard_event_system),
   )
   .run()
 }

@@ -49,7 +49,7 @@ let real_time_component_key : @ecs.ComponentKey[RealTime] = @ecs.register_compon
 )
 
 ///|
-impl @ecs.Component for RealTime with component() {
+impl @ecs.Component for RealTime with fn component() {
   real_time_component_key
 }
 
@@ -62,7 +62,7 @@ let virtual_time_component_key : @ecs.ComponentKey[VirtualTime] = @ecs.register_
 )
 
 ///|
-impl @ecs.Component for VirtualTime with component() {
+impl @ecs.Component for VirtualTime with fn component() {
   virtual_time_component_key
 }
 
@@ -312,12 +312,9 @@ fn main {
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(move_virtual_time_sprites)),
+    @app.system_config_param2(move_virtual_time_sprites),
   )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(move_real_time_sprites)),
-  )
+  .add_systems(@app.Update, @app.system_config_param2(move_real_time_sprites))
   .add_systems(
     @app.Update,
     @app.system(toggle_pause).run_if(input_toggle_pressed),

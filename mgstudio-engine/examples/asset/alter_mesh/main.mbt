@@ -48,7 +48,7 @@ let left_key : @ecs.ComponentKey[Left] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Left with component() {
+pub impl @ecs.Component for Left with fn component() {
   left_key
 }
 
@@ -58,7 +58,7 @@ let shape_key : @ecs.ComponentKey[Shape] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Shape with component() {
+pub impl @ecs.Component for Shape with fn component() {
   shape_key
 }
 
@@ -206,17 +206,17 @@ fn alter_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Startup, @app.system(@app.system_param(spawn_text)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Startup, @app.system_config_param(spawn_text))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(alter_handle)).run_if(
+    @app.system_config_param3(alter_handle).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(alter_mesh)).run_if(
+    @app.system_config_param3(alter_mesh).run_if(
       @input.input_just_pressed(@window.KeyCode::Enter),
     ),
   )

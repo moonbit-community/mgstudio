@@ -29,7 +29,7 @@ let test_app_message_key : @ecs.MessageKey[TestAppMessage] = @ecs.register_messa
 )
 
 ///|
-impl @ecs.Message for TestAppMessage with message() {
+impl @ecs.Message for TestAppMessage with fn message() {
   test_app_message_key
 }
 
@@ -39,7 +39,7 @@ let test_cursor_app_message_key : @ecs.MessageKey[TestCursorAppMessage] = @ecs.r
 )
 
 ///|
-impl @ecs.Message for TestCursorAppMessage with message() {
+impl @ecs.Message for TestCursorAppMessage with fn message() {
   test_cursor_app_message_key
 }
 
@@ -54,7 +54,7 @@ let test_default_app_message_key : @ecs.MessageKey[TestDefaultAppMessage] = @ecs
 )
 
 ///|
-impl @ecs.Message for TestDefaultAppMessage with message() {
+impl @ecs.Message for TestDefaultAppMessage with fn message() {
   test_default_app_message_key
 }
 
@@ -64,7 +64,7 @@ pub fn TestDefaultAppMessage::TestDefaultAppMessage() -> TestDefaultAppMessage {
 }
 
 ///|
-pub impl Default for TestDefaultAppMessage with default() {
+pub impl Default for TestDefaultAppMessage with fn default() {
   TestDefaultAppMessage::TestDefaultAppMessage()
 }
 
@@ -98,24 +98,20 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
-          if !sent.val {
-            ignore(writer.write(TestAppMessage::{ value: 7 }))
-            sent.val = true
-          }
-        }),
-      ).in_set(test_message_writer_set),
+      system_config_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
+        if !sent.val {
+          ignore(writer.write(TestAppMessage::{ value: 7 }))
+          sent.val = true
+        }
+      }).in_set(test_message_writer_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(reader : @ecs.MessageReader[TestAppMessage]) {
-          for message in reader.read() {
-            seen.push(message.value)
-          }
-        }),
-      ).in_set(test_message_reader_set),
+      system_config_param(fn(reader : @ecs.MessageReader[TestAppMessage]) {
+        for message in reader.read() {
+          seen.push(message.value)
+        }
+      }).in_set(test_message_reader_set),
     )
     .configure_set(Update, test_message_writer_set, before=[
       test_message_reader_set,
@@ -137,14 +133,12 @@ test "app: on_message consumes unread messages once per condition state" {
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
-          if !sent.val {
-            ignore(writer.write(TestAppMessage::{ value: 1 }))
-            sent.val = true
-          }
-        }),
-      ).in_set(test_message_writer_set),
+      system_config_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
+        if !sent.val {
+          ignore(writer.write(TestAppMessage::{ value: 1 }))
+          sent.val = true
+        }
+      }).in_set(test_message_writer_set),
     )
     .add_systems(
       Update,
@@ -173,34 +167,34 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestDefaultAppMessage]) {
-          if !sent.val {
-            ignore(writer.write_default())
-            sent.val = true
-          }
-        }),
-      ).in_set(test_message_writer_set),
+      system_config_param(fn(
+        writer : @ecs.MessageWriter[TestDefaultAppMessage],
+      ) {
+        if !sent.val {
+          ignore(writer.write_default())
+          sent.val = true
+        }
+      }).in_set(test_message_writer_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(mutator : @ecs.MessageMutator[TestDefaultAppMessage]) {
-          for message in mutator.read() {
-            message.value = message.value + 4
-          }
-        }),
-      ).in_set(test_message_mutator_set),
+      system_config_param(fn(
+        mutator : @ecs.MessageMutator[TestDefaultAppMessage],
+      ) {
+        for message in mutator.read() {
+          message.value = message.value + 4
+        }
+      }).in_set(test_message_mutator_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(reader : @ecs.MessageReader[TestDefaultAppMessage]) {
-          for message in reader.read() {
-            seen.push(message.value)
-          }
-        }),
-      ).in_set(test_message_reader_set),
+      system_config_param(fn(
+        reader : @ecs.MessageReader[TestDefaultAppMessage],
+      ) {
+        for message in reader.read() {
+          seen.push(message.value)
+        }
+      }).in_set(test_message_reader_set),
     )
     .configure_set(Update, test_message_writer_set, before=[
       test_message_mutator_set,
@@ -225,47 +219,45 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
     .add_message(key)
     .add_systems(
       Update,
-      system(
-        system_param(fn(writer : @ecs.MessageWriter[TestCursorAppMessage]) {
-          frame.val = frame.val + 1
-          ignore(
-            writer.write(TestCursorAppMessage::{
-              resend: frame.val == 1,
-              times_sent: frame.val,
-            }),
-          )
-        }),
-      ).in_set(test_message_writer_set),
+      system_config_param(fn(
+        writer : @ecs.MessageWriter[TestCursorAppMessage],
+      ) {
+        frame.val = frame.val + 1
+        ignore(
+          writer.write(TestCursorAppMessage::{
+            resend: frame.val == 1,
+            times_sent: frame.val,
+          }),
+        )
+      }).in_set(test_message_writer_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param2(fn(
-          cursor : Local[@ecs.MessageCursor[TestCursorAppMessage]],
-          messages : ResMut[@ecs.Messages[TestCursorAppMessage]],
-        ) {
-          for message in cursor.read(messages) {
-            if message.resend {
-              ignore(
-                messages.write(TestCursorAppMessage::{
-                  resend: message.resend,
-                  times_sent: message.times_sent + 10,
-                }),
-              )
-            }
+      system_config_param2(fn(
+        cursor : Local[@ecs.MessageCursor[TestCursorAppMessage]],
+        messages : ResMut[@ecs.Messages[TestCursorAppMessage]],
+      ) {
+        for message in cursor.read(messages) {
+          if message.resend {
+            ignore(
+              messages.write(TestCursorAppMessage::{
+                resend: message.resend,
+                times_sent: message.times_sent + 10,
+              }),
+            )
           }
-        }),
-      ).in_set(test_message_cursor_set),
+        }
+      }).in_set(test_message_cursor_set),
     )
     .add_systems(
       Update,
-      system(
-        system_param(fn(reader : @ecs.MessageReader[TestCursorAppMessage]) {
-          for message in reader.read() {
-            seen.push(message.times_sent)
-          }
-        }),
-      ).in_set(test_message_reader_set),
+      system_config_param(fn(
+        reader : @ecs.MessageReader[TestCursorAppMessage],
+      ) {
+        for message in reader.read() {
+          seen.push(message.times_sent)
+        }
+      }).in_set(test_message_reader_set),
     )
     .configure_set(Update, test_message_writer_set, before=[
       test_message_cursor_set,

@@ -51,17 +51,17 @@ let log_diagnostics_commands_text_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for LogDiagnosticsStatus with resource() {
+pub impl @app.Resource for LogDiagnosticsStatus with fn resource() {
   log_diagnostics_status_resource_key
 }
 
 ///|
-pub impl @app.Resource for LogDiagnosticsFilters with resource() {
+pub impl @app.Resource for LogDiagnosticsFilters with fn resource() {
   log_diagnostics_filters_resource_key
 }
 
 ///|
-pub impl @app.Resource for LogDiagnosticsCommandsText with resource() {
+pub impl @app.Resource for LogDiagnosticsCommandsText with fn resource() {
   log_diagnostics_commands_text_resource_key
 }
 
@@ -336,10 +336,10 @@ fn main {
   .insert_resource(default_filters())
   .insert_resource(LogDiagnosticsStatus::Disabled)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param3(filters_inputs)))
+  .add_systems(@app.Update, @app.system_config_param3(filters_inputs))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(update_commands)).run_if(
+    @app.system_config_param3(update_commands).run_if(
       @app.run_condition_or(
         @app.resource_exists_and_changed(LogDiagnosticsStatus::resource()),
         @app.resource_exists_and_changed(LogDiagnosticsFilters::resource()),

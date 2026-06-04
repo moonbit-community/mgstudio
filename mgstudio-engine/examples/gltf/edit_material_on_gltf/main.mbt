@@ -32,7 +32,7 @@ let color_override_component_key : @ecs.ComponentKey[ColorOverride] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for ColorOverride with component() {
+pub impl @ecs.Component for ColorOverride with fn component() {
   color_override_component_key
 }
 
@@ -168,6 +168,6 @@ fn change_material(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()
 }

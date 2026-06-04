@@ -29,7 +29,7 @@ let idle_color_key : @ecs.ComponentKey[IdleColor] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for IdleColor with component() {
+pub impl @ecs.Component for IdleColor with fn component() {
   idle_color_key
 }
 
@@ -144,7 +144,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(button_system)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param(button_system))
   .run()
 }

@@ -29,7 +29,7 @@ let instance_phase_key : @ecs.ComponentKey[InstancePhase] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for InstancePhase with component() {
+pub impl @ecs.Component for InstancePhase with fn component() {
   instance_phase_key
 }
 
@@ -97,7 +97,7 @@ fn animate_instances(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_instances)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_instances))
   .run()
 }

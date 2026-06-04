@@ -42,7 +42,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(overlay_plugin)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(customize_config)))
+  .add_systems(@app.Update, @app.system_config_param2(customize_config))
   .run()
 }
 

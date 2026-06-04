@@ -24,12 +24,12 @@ fn EmbeddedAssetPlugin::EmbeddedAssetPlugin() -> EmbeddedAssetPlugin {
 }
 
 ///|
-impl @app.Plugin for EmbeddedAssetPlugin with name(_self) {
+impl @app.Plugin for EmbeddedAssetPlugin with fn name(_self) {
   "examples.asset.embedded_asset.EmbeddedAssetPlugin"
 }
 
 ///|
-impl @app.Plugin for EmbeddedAssetPlugin with build(_self, app) {
+impl @app.Plugin for EmbeddedAssetPlugin with fn build(_self, app) {
   @asset.embedded_asset(
     app,
     @asset.AssetPath::from_path(
@@ -68,6 +68,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(EmbeddedAssetPlugin::EmbeddedAssetPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()
 }

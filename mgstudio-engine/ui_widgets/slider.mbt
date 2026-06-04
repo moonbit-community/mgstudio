@@ -180,32 +180,32 @@ pub let ecs_key_slider_precision : @ecs.ComponentKey[SliderPrecision] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for Slider with component() {
+pub impl @ecs.Component for Slider with fn component() {
   ecs_key_slider
 }
 
 ///|
-pub impl @ecs.Component for SliderThumb with component() {
+pub impl @ecs.Component for SliderThumb with fn component() {
   ecs_key_slider_thumb
 }
 
 ///|
-pub impl @ecs.Component for SliderValue with component() {
+pub impl @ecs.Component for SliderValue with fn component() {
   ecs_key_slider_value
 }
 
 ///|
-pub impl @ecs.Component for SliderRange with component() {
+pub impl @ecs.Component for SliderRange with fn component() {
   ecs_key_slider_range
 }
 
 ///|
-pub impl @ecs.Component for SliderStep with component() {
+pub impl @ecs.Component for SliderStep with fn component() {
   ecs_key_slider_step
 }
 
 ///|
-pub impl @ecs.Component for SliderPrecision with component() {
+pub impl @ecs.Component for SliderPrecision with fn component() {
   ecs_key_slider_precision
 }
 
@@ -221,17 +221,17 @@ let set_slider_value_event_key : @ecs.EventKey[SetSliderValue] = @ecs.register_e
 )
 
 ///|
-pub impl @ecs.TriggerEvent for SetSliderValue with observer_event() {
+pub impl @ecs.TriggerEvent for SetSliderValue with fn observer_event() {
   set_slider_value_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetSliderValue with observer_entity(self) {
+pub impl @ecs.TriggerEvent for SetSliderValue with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetSliderValue with set_observer_entity(
+pub impl @ecs.TriggerEvent for SetSliderValue with fn set_observer_entity(
   self,
   entity,
 ) {
@@ -239,12 +239,12 @@ pub impl @ecs.TriggerEvent for SetSliderValue with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetSliderValue with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for SetSliderValue with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetSliderValue with debug_name() {
+pub impl @ecs.TriggerEvent for SetSliderValue with fn debug_name() {
   "SetSliderValue"
 }
 
@@ -456,10 +456,7 @@ pub fn slider_self_update(
 ///|
 pub fn slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param4(slider_on_key_input)),
-  )
+  .add_systems(@app.Update, @app.system_config_param4(slider_on_key_input))
   .add_pointer_observer3(slider_on_pointer_down)
   .add_pointer_observer3(slider_on_pointer_click)
   .add_observer3(slider_on_set_value)

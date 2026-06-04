@@ -21,7 +21,7 @@ let auto_scroll_area_key : @ecs.ComponentKey[AutoScrollArea] = @ecs.register_com
 )
 
 ///|
-pub impl @ecs.Component for AutoScrollArea with component() {
+pub impl @ecs.Component for AutoScrollArea with fn component() {
   auto_scroll_area_key
 }
 
@@ -137,7 +137,7 @@ fn auto_scroll(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param(auto_scroll)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param(auto_scroll))
   .run()
 }

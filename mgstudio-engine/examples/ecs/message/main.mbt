@@ -49,22 +49,22 @@ let damage_timer_key : @ecs.ResourceKey[DamageTimer] = @ecs.register_resource(
 )
 
 ///|
-pub impl @ecs.Message for DealDamage with message() {
+pub impl @ecs.Message for DealDamage with fn message() {
   deal_damage_key
 }
 
 ///|
-pub impl @ecs.Message for DamageReceived with message() {
+pub impl @ecs.Message for DamageReceived with fn message() {
   damage_received_key
 }
 
 ///|
-pub impl @ecs.Message for ArmorBlockedDamage with message() {
+pub impl @ecs.Message for ArmorBlockedDamage with fn message() {
   armor_blocked_damage_key
 }
 
 ///|
-pub impl @app.Resource for DamageTimer with resource() {
+pub impl @app.Resource for DamageTimer with fn resource() {
   damage_timer_key
 }
 
@@ -74,7 +74,7 @@ pub fn DamageReceived::DamageReceived() -> DamageReceived {
 }
 
 ///|
-pub impl Default for DamageReceived with default() {
+pub impl Default for DamageReceived with fn default() {
   DamageReceived::DamageReceived()
 }
 
@@ -84,7 +84,7 @@ pub fn ArmorBlockedDamage::ArmorBlockedDamage() -> ArmorBlockedDamage {
 }
 
 ///|
-pub impl Default for ArmorBlockedDamage with default() {
+pub impl Default for ArmorBlockedDamage with fn default() {
   ArmorBlockedDamage::ArmorBlockedDamage()
 }
 
@@ -175,19 +175,19 @@ fn main {
   .init_resource(fn() { DamageTimer::DamageTimer() })
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param3(deal_damage_over_time)).in_set(
+    @app.system_config_param3(deal_damage_over_time).in_set(
       deal_damage_over_time_set,
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(apply_armor_to_damage)).in_set(
+    @app.system_config_param2(apply_armor_to_damage).in_set(
       apply_armor_to_damage_set,
     ),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(apply_damage_to_health)).in_set(
+    @app.system_config_param2(apply_damage_to_health).in_set(
       apply_damage_to_health_set,
     ),
   )
@@ -199,11 +199,11 @@ fn main {
   ])
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(play_damage_received_sound)),
+    @app.system_config_param(play_damage_received_sound),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(play_damage_received_particle_effect)),
+    @app.system_config_param(play_damage_received_particle_effect),
   )
   .run()
 }

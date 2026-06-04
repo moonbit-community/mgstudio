@@ -29,17 +29,17 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 )
 
 ///|
-impl Default for AppState with default() {
+impl Default for AppState with fn default() {
   AppState::Menu
 }
 
 ///|
-impl @app.States for AppState with type_debug_name() {
+impl @app.States for AppState with fn type_debug_name() {
   "AppState"
 }
 
 ///|
-impl @app.States for AppState with debug_name(self) {
+impl @app.States for AppState with fn debug_name(self) {
   ignore(self)
   "AppState"
 }
@@ -50,12 +50,12 @@ let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_s
 )
 
 ///|
-impl @app.States for AppState with state_resource_keys() {
+impl @app.States for AppState with fn state_resource_keys() {
   app_state_resource_keys
 }
 
 ///|
-pub impl @app.Resource for MenuData with resource() {
+pub impl @app.Resource for MenuData with fn resource() {
   menu_data_resource_key
 }
 
@@ -83,15 +83,27 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
-  .add_on_enter_system(AppState::Menu, @app.system_param(setup_menu))
+  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_on_enter_system_config(
+    AppState::Menu,
+    @app.system_config_param(setup_menu),
+  )
   .add_systems(
     @app.Update,
     @app.system(menu).run_if(@app.in_state(AppState::Menu)),
   )
-  .add_on_exit_system(AppState::Menu, @app.system_param2(cleanup_menu))
-  .add_on_reenter_system(AppState::InGame, @app.system_param2(setup_game))
-  .add_on_reexit_system(AppState::InGame, @app.system_param2(teardown_game))
+  .add_on_exit_system_config(
+    AppState::Menu,
+    @app.system_config_param2(cleanup_menu),
+  )
+  .add_on_reenter_system_config(
+    AppState::InGame,
+    @app.system_config_param2(setup_game),
+  )
+  .add_on_reexit_system_config(
+    AppState::InGame,
+    @app.system_config_param2(teardown_game),
+  )
   .add_systems(
     @app.Update,
     @app.system(movement).run_if(@app.in_state(AppState::InGame)),

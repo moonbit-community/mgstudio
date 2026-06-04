@@ -30,12 +30,12 @@ pub let ecs_key_radio_button : @ecs.ComponentKey[RadioButton] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for RadioGroup with component() {
+pub impl @ecs.Component for RadioGroup with fn component() {
   ecs_key_radio_group
 }
 
 ///|
-pub impl @ecs.Component for RadioButton with component() {
+pub impl @ecs.Component for RadioButton with fn component() {
   ecs_key_radio_button
 }
 
@@ -121,7 +121,7 @@ pub fn radio_group_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param5(radio_button_on_key_input)),
+    @app.system_config_param5(radio_button_on_key_input),
   )
   .add_pointer_observer4(radio_button_on_pointer_click)
 }

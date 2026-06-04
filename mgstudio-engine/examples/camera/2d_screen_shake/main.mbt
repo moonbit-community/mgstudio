@@ -82,12 +82,12 @@ let camera_shake_config_key : @ecs.ComponentKey[CameraShakeConfig] = @ecs.regist
 )
 
 ///|
-impl @ecs.Component for CameraShakeState with component() {
+impl @ecs.Component for CameraShakeState with fn component() {
   camera_shake_state_key
 }
 
 ///|
-impl @ecs.Component for CameraShakeConfig with component() {
+impl @ecs.Component for CameraShakeConfig with fn component() {
   camera_shake_config_key
 }
 
@@ -97,7 +97,7 @@ fn CameraShakeState::CameraShakeState() -> CameraShakeState {
 }
 
 ///|
-impl Default for CameraShakeState with default() {
+impl Default for CameraShakeState with fn default() {
   CameraShakeState::CameraShakeState()
 }
 
@@ -106,22 +106,19 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(register_camera_shake_requirements))
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
-  .add_systems(
-    @app.Startup,
-    @app.system(@app.system_param2(setup_instructions)),
-  )
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))
-  .add_systems(@app.PreUpdate, @app.system(@app.system_param(reset_transform)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup_scene))
+  .add_systems(@app.Startup, @app.system_config_param2(setup_instructions))
+  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
+  .add_systems(@app.PreUpdate, @app.system_config_param(reset_transform))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(increase_trauma)).run_if(
+    @app.system_config_param(increase_trauma).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(@app.system_param2(shake_camera)).before(
+    @app.system_config_param2(shake_camera).before(
       @transform.transform_set_propagate,
     ),
   )

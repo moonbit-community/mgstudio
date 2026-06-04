@@ -1684,7 +1684,7 @@ pub fn[W] fallible_system(
 }
 
 ///|
-pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
+fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
   let state = system_param_state_slot_new()
   fn(_world : W) {
     let param_state = state.get_or_init(system_param_abort_missing_world())
@@ -1696,7 +1696,7 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
 }
 
 ///|
-pub fn[W, P : SystemParam] fallible_system_param(
+fn[W, P : SystemParam] fallible_system_param(
   system : (P) -> Unit raise,
 ) -> SystemFn[W] {
   let state = system_param_state_slot_new()
@@ -1710,7 +1710,7 @@ pub fn[W, P : SystemParam] fallible_system_param(
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
+fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
   system : (P1, P2) -> Unit,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1730,7 +1730,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
+fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
   system : (P1, P2) -> Unit raise,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1750,7 +1750,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
+fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
   system : (P1, P2, P3) -> Unit,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1775,7 +1775,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3(
+fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3(
   system : (P1, P2, P3) -> Unit raise,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1800,13 +1800,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
 }
 
 ///|
-pub fn[
-  W,
-  P1 : SystemParam,
-  P2 : SystemParam,
-  P3 : SystemParam,
-  P4 : SystemParam,
-] system_param4(
+fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4(
   system : (P1, P2, P3, P4) -> Unit,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1836,13 +1830,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W,
-  P1 : SystemParam,
-  P2 : SystemParam,
-  P3 : SystemParam,
-  P4 : SystemParam,
-] fallible_system_param4(
+fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_param4(
   system : (P1, P2, P3, P4) -> Unit raise,
 ) -> SystemFn[W] {
   let state1 = system_param_state_slot_new()
@@ -1872,7 +1860,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -1914,7 +1902,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -1956,7 +1944,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -2004,7 +1992,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -2052,7 +2040,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -2106,7 +2094,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -2160,7 +2148,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,
@@ -2220,7 +2208,7 @@ pub fn[
 }
 
 ///|
-pub fn[
+fn[
   W,
   P1 : SystemParam,
   P2 : SystemParam,

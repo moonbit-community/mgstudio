@@ -32,12 +32,12 @@ let phase_b_key : @ecs.ComponentKey[PhaseB] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for PhaseA with component() {
+pub impl @ecs.Component for PhaseA with fn component() {
   phase_a_key
 }
 
 ///|
-pub impl @ecs.Component for PhaseB with component() {
+pub impl @ecs.Component for PhaseB with fn component() {
   phase_b_key
 }
 
@@ -135,8 +135,8 @@ fn animate_phase_b(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_phase_a)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(animate_phase_b)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(animate_phase_a))
+  .add_systems(@app.Update, @app.system_config_param2(animate_phase_b))
   .run()
 }

@@ -72,17 +72,17 @@ pub let ecs_key_core_scrollbar_drag_state : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Scrollbar with component() {
+pub impl @ecs.Component for Scrollbar with fn component() {
   ecs_key_scrollbar
 }
 
 ///|
-pub impl @ecs.Component for CoreScrollbarThumb with component() {
+pub impl @ecs.Component for CoreScrollbarThumb with fn component() {
   ecs_key_core_scrollbar_thumb
 }
 
 ///|
-pub impl @ecs.Component for CoreScrollbarDragState with component() {
+pub impl @ecs.Component for CoreScrollbarDragState with fn component() {
   ecs_key_core_scrollbar_drag_state
 }
 
@@ -270,7 +270,7 @@ pub fn scrollbar_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pointer_observer4(scrollbar_on_pointer_click)
   .add_post_update_system_config(
-    @app.system(@app.system_param3(scrollbar_update_thumb_system)).in_set(
+    @app.system_config_param3(scrollbar_update_thumb_system).in_set(
       @ui.ui_set_prepare,
     ),
   )

@@ -30,7 +30,7 @@ let animations_resource_key : @ecs.ResourceKey[Animations] = @ecs.register_resou
 )
 
 ///|
-pub impl @app.Resource for Animations with resource() {
+pub impl @app.Resource for Animations with fn resource() {
   animations_resource_key
 }
 
@@ -312,6 +312,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param4(keyboard_control)))
+  .add_systems(@app.Update, @app.system_config_param4(keyboard_control))
   .run()
 }

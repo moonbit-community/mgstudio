@@ -78,22 +78,6 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 #callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] fallible_system_config_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P : SystemParam] fallible_system_param((P) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2((P1, P2) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3((P1, P2, P3) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_param4((P1, P2, P3, P4) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] fallible_system_param5((P1, P2, P3, P4, P5) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_param6((P1, P2, P3, P4, P5, P6) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] fallible_system_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit raise) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] fallible_system_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise) -> (W) -> Unit
-
 pub let fixed_main_schedule_order_resource_key : @ecs.ResourceKey[FixedMainScheduleOrder]
 
 pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
@@ -328,22 +312,6 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] system_config_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
-
-pub fn[W, P : SystemParam] system_param((P) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2((P1, P2) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3((P1, P2, P3) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4((P1, P2, P3, P4) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] system_param5((P1, P2, P3, P4, P5) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_param6((P1, P2, P3, P4, P5, P6) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] system_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit) -> (W) -> Unit
-
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] system_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> (W) -> Unit
 
 pub fn[P] system_param_empty_state(@ecs.World) -> SystemParamState[P]
 

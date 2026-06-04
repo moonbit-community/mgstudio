@@ -20,12 +20,12 @@ struct CustomMaterial {
 }
 
 ///|
-impl @asset.Asset for CustomMaterial with asset_debug_name() {
+impl @asset.Asset for CustomMaterial with fn asset_debug_name() {
   "examples.shader.shader_material_2d.CustomMaterial"
 }
 
 ///|
-impl @asset.Asset for CustomMaterial with asset_as_image(_self) {
+impl @asset.Asset for CustomMaterial with fn asset_as_image(_self) {
   None
 }
 
@@ -35,7 +35,7 @@ let custom_material_resource_keys : @asset.AssetResourceKeys[CustomMaterial] = @
 )
 
 ///|
-impl @asset.Asset for CustomMaterial with asset_resource_keys() {
+impl @asset.Asset for CustomMaterial with fn asset_resource_keys() {
   custom_material_resource_keys
 }
 
@@ -91,12 +91,12 @@ fn custom_material_uniform_bytes(material : CustomMaterial) -> Bytes {
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with alpha_mode(self) {
+pub impl @sprite.Material2d for CustomMaterial with fn alpha_mode(self) {
   self.alpha_mode
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with material2d_debug_name() {
+pub impl @sprite.Material2d for CustomMaterial with fn material2d_debug_name() {
   "examples.shader.shader_material_2d.CustomMaterial"
 }
 
@@ -106,12 +106,12 @@ let custom_material_material2d_keys : @sprite.Material2dKeys[CustomMaterial] = @
 )
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with material2d_keys() {
+pub impl @sprite.Material2d for CustomMaterial with fn material2d_keys() {
   custom_material_material2d_keys
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with bind_group(self) {
+pub impl @sprite.Material2d for CustomMaterial with fn bind_group(self) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_transparent_texture()
@@ -173,6 +173,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(shader_material_2d_plugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Startup, @app.system_config_param4(setup))
   .run()
 }

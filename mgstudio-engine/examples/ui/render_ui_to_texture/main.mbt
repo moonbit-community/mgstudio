@@ -45,7 +45,7 @@ let cube_key : @ecs.ComponentKey[Cube] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Cube with component() {
+pub impl @ecs.Component for Cube with fn component() {
   cube_key
 }
 
@@ -58,7 +58,7 @@ let main_camera_key : @ecs.ComponentKey[MainCamera] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for MainCamera with component() {
+pub impl @ecs.Component for MainCamera with fn component() {
   main_camera_key
 }
 
@@ -71,7 +71,7 @@ let draggable_panel_key : @ecs.ComponentKey[DraggablePanel] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for DraggablePanel with component() {
+pub impl @ecs.Component for DraggablePanel with fn component() {
   draggable_panel_key
 }
 
@@ -91,7 +91,7 @@ let panel_drag_state_resource_key : @ecs.ResourceKey[PanelDragState] = @ecs.regi
 )
 
 ///|
-pub impl @app.Resource for PanelDragState with resource() {
+pub impl @app.Resource for PanelDragState with fn resource() {
   panel_drag_state_resource_key
 }
 
@@ -457,8 +457,8 @@ fn stop_drag_panel(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param5(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
+  .add_systems(@app.Startup, @app.system_config_param5(setup))
+  .add_systems(@app.Update, @app.system_config_param2(rotate_cube))
   .add_systems(
     @app.PreUpdate,
     @app.system(drive_diegetic_pointer)

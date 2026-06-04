@@ -27,7 +27,7 @@ let spin_cube_key : @ecs.ComponentKey[SpinCube] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for SpinCube with component() {
+pub impl @ecs.Component for SpinCube with fn component() {
   spin_cube_key
 }
 
@@ -146,8 +146,8 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(spin_cubes)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(orbit_camera)))
+  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems(@app.Update, @app.system_config_param2(spin_cubes))
+  .add_systems(@app.Update, @app.system_config_param2(orbit_camera))
   .run()
 }

@@ -216,6 +216,6 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()
 }

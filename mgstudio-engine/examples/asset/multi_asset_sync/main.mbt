@@ -25,7 +25,7 @@ let pending_textures_key : @ecs.ResourceKey[PendingTextures] = @ecs.register_res
 )
 
 ///|
-impl @app.Resource for PendingTextures with resource() {
+impl @app.Resource for PendingTextures with fn resource() {
   pending_textures_key
 }
 
@@ -40,7 +40,7 @@ let loaded_sprite_key : @ecs.ComponentKey[LoadedSprite] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for LoadedSprite with component() {
+pub impl @ecs.Component for LoadedSprite with fn component() {
   loaded_sprite_key
 }
 
@@ -122,11 +122,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_systems(@app.Update, @app.system(@app.system_param2(spawn_when_loaded)))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(animate_loaded_sprites)),
-  )
+  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems(@app.Update, @app.system_config_param2(spawn_when_loaded))
+  .add_systems(@app.Update, @app.system_config_param2(animate_loaded_sprites))
   .run()
 }
