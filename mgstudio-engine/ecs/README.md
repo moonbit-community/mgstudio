@@ -159,6 +159,32 @@ component is allowed, but structural changes that would invalidate iteration are
 not. Inserting a new component, removing a component, or despawning an entity
 during active query iteration raises `StructuralChangeDuringQueryIteration`.
 
+## Read Access And Change Detection
+
+Bevy relies on Rust's borrowing rules to separate read access from write
+access. MoonBit does not provide the same aliasing guarantee for values with
+mutable fields, so mgstudio treats read access as an API contract:
+
+- `Comp[T]`, `Res[T]`, `World::get_by_key`, `World::get`, `World::get_resource`,
+  `Mut::peek`, `Mut::value`, and `ResourceMut::peek` are read-only APIs.
+- Do not mutate a value obtained from a read-only API, even when MoonBit lets
+  the field assignment compile.
+- Writes that should affect `Changed<T>`, `Changed<Resource>`, changed
+  component messages, or changed resource ticks must go through `Mut[T]`,
+  `ResourceMut[T]`, `EntityMut` write methods, or explicit world set/update
+  APIs.
+- Fetching a mutable-capable handle does not mark a value changed by itself.
+  The change tick advances only when the caller invokes a write method such as
+  `Mut::set`, `Mut::modify`, `Mut::update`, `ResourceMut::set`,
+  `ResourceMut::modify`, `ResourceMut::update`, or `set_changed`.
+
+This is a migration difference from Bevy's Rust API, not a storage workaround.
+Do not add copy-on-read wrappers, erased payload wrappers, or changed-on-read
+behavior to hide read-side mutation. Ported Bevy systems should choose
+`Comp[T]`/`Res[T]` only when the source system reads the value, and
+`Mut[T]`/`ResMut[T]` when the source system writes or intentionally marks the
+value changed.
+
 ## Storage Model
 
 Components use table storage by default. Table components store their canonical
@@ -186,7 +212,7 @@ migration.
 - Store ordinary resources and components as direct typed values, not nested
   payload wrappers.
 - Use `Mut` and `ResourceMut` mutation methods to update change ticks.
-- Treat `peek`, `value`, and plain `get` calls as reads.
+- Treat `Comp`, `Res`, `peek`, `value`, and plain `get` calls as reads.
 - Keep structural changes out of active query iteration.
 - Use `component_metadata_builder` for storage policy, required components,
   hooks, and relationship metadata.
