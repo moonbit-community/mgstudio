@@ -33,6 +33,21 @@ test "image boundary re-exports sampler constructors" {
 }
 
 ///|
+test "image sampler is stored on Image assets" {
+  let image = @image.Image::new(
+    1,
+    1,
+    Bytes::from_array([
+      (255).to_byte(),
+      (0).to_byte(),
+      (0).to_byte(),
+      (255).to_byte(),
+    ]),
+  ).with_sampler(@image.ImageSampler::nearest())
+  debug_inspect(sampler_tag(image.sampler), content="1")
+}
+
+///|
 test "image texture formats follow current wgpu constants" {
   debug_inspect(
     @image.texture_format(@image.TextureFormat::Rgba8Unorm).to_u32() ==

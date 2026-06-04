@@ -40,6 +40,7 @@ pub fn image_with_srgb_view(image : Image) -> Image {
     pixels: image.pixels,
     format: image.format,
     view_format,
+    sampler: image.sampler,
     kind: image.kind,
     mip_level_count: image.mip_level_count,
     usage_bits: image.usage_bits,

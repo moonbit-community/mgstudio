@@ -33,6 +33,9 @@ fn image_asset_sync_metadata(handle : Handle[Image], image : Image) -> Unit {
   let asset_server = asset_server_or_abort()
   asset_server.set_image_usage_bits(handle, image_asset_usage_bits(image))
   asset_server.set_image_is_srgb(handle, image_asset_is_srgb(image))
+  if image.sampler is Descriptor(_) {
+    asset_set_texture_sampler(handle, image.sampler)
+  }
 }
 
 ///|
@@ -50,7 +53,8 @@ fn[T] image_asset_allocate_handle(
   assets : Assets[T],
   image : Image,
 ) -> Handle[T] {
-  let nearest = asset_server_or_abort().default_sampler_nearest
+  let asset_server = asset_server_or_abort()
+  let nearest = asset_server.image_sampler_uses_nearest(image.sampler)
   if image.is_target_texture() {
     let id = create_render_target_with_formats(
       width=image.width,
@@ -60,6 +64,7 @@ fn[T] image_asset_allocate_handle(
       image.view_format.map(fn(format) { @image.texture_format(format) }),
     )
     if id > 0 {
+      image_asset_sync_metadata(Handle::new(id), image)
       return Handle::new(id)
     }
     return image_asset_fallback_handle(assets)
@@ -67,6 +72,7 @@ fn[T] image_asset_allocate_handle(
 
   let id = image_asset_create_gpu_texture(image, nearest)
   if id > 0 {
+    image_asset_sync_metadata(Handle::new(id), image)
     return Handle::new(id)
   }
   image_asset_fallback_handle(assets)

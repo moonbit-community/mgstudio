@@ -127,6 +127,7 @@ pub(all) struct Image {
   mut pixels : Bytes
   format : TextureFormat
   view_format : TextureFormat?
+  sampler : ImageSampler
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
@@ -141,6 +142,7 @@ pub fn Image::width(Self) -> Int
 pub fn Image::with_added_texture_usage(Self, Int) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
 pub fn Image::with_mip_level_count(Self, Int) -> Self
+pub fn Image::with_sampler(Self, ImageSampler) -> Self
 pub fn Image::with_texture_usage_bits(Self, Int) -> Self
 
 pub(all) enum ImageAddressMode {
@@ -265,6 +267,7 @@ pub struct SerializedImage {
   pixels : Bytes
   format : TextureFormat
   view_format : TextureFormat?
+  sampler : ImageSampler
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int

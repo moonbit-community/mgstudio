@@ -22,6 +22,7 @@ pub(all) struct Image {
   mut pixels : Bytes
   format : TextureFormat
   view_format : TextureFormat?
+  sampler : ImageSampler
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
@@ -79,6 +80,7 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
     pixels,
     format: TextureFormat::Rgba8Unorm,
     view_format: None,
+    sampler: ImageSampler::default(),
     kind: ImageKind::Data,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_SAMPLED,
@@ -93,6 +95,22 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
     pixels: self.pixels,
     format,
     view_format: self.view_format,
+    sampler: self.sampler,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
+  }
+}
+
+///|
+pub fn Image::with_sampler(self : Image, sampler : ImageSampler) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    sampler,
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
@@ -110,6 +128,7 @@ pub fn Image::with_mip_level_count(
     pixels: self.pixels,
     format: self.format,
     view_format: self.view_format,
+    sampler: self.sampler,
     kind: self.kind,
     mip_level_count: image_mip_count_sanitize(mip_level_count),
     usage_bits: self.usage_bits,
@@ -124,6 +143,7 @@ pub fn Image::with_texture_usage_bits(self : Image, usage_bits : Int) -> Image {
     pixels: self.pixels,
     format: self.format,
     view_format: self.view_format,
+    sampler: self.sampler,
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: image_usage_sanitize(usage_bits),
@@ -192,6 +212,7 @@ pub fn Image::new_target_texture(
     pixels: Bytes::new(0),
     format,
     view_format,
+    sampler: ImageSampler::default(),
     kind: ImageKind::TargetTexture,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_TARGET,

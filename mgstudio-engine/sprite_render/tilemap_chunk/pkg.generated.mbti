@@ -18,9 +18,22 @@ pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk]
 
 pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[TilemapChunkTileData]
 
+pub fn make_chunk_tile_data_image(@math.UVec2, Array[PackedTileData]) -> @image.Image?
+
+pub fn tilemap_chunk_tile_data_image(TilemapChunk, TilemapChunkTileData) -> @image.Image?
+
 // Errors
 
 // Types and methods
+pub(all) struct PackedTileData {
+  tileset_index : Int
+  color : @color.Color
+  flags : Int
+}
+pub fn PackedTileData::empty() -> Self
+pub fn PackedTileData::from_optional(TileData?) -> Self
+pub fn PackedTileData::from_tile_data(TileData) -> Self
+
 pub struct TileData {
   tileset_index : Int
   color : @color.Color

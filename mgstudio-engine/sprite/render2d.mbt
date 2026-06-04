@@ -687,9 +687,6 @@ fn mesh_asset_set(
 }
 
 ///|
-type TileData = @sprite_tilemap_chunk.TileData
-
-///|
 type TilemapChunk = @sprite_tilemap_chunk.TilemapChunk
 
 ///|
@@ -893,101 +890,11 @@ fn tilemap_chunk_mesh_handle(
 }
 
 ///|
-fn tilemap_chunk_color_u8(value : Float) -> Int {
-  let clamped = if value < 0.0F {
-    0.0F
-  } else if value > 1.0F {
-    1.0F
-  } else {
-    value
-  }
-  (clamped * 255.0F + 0.5F).to_int()
-}
-
-///|
-fn tilemap_chunk_u16_bytes(value : Int) -> (Byte, Byte) {
-  let clamped = if value < 0 {
-    0U
-  } else if value > 0xFFFF {
-    0xFFFFU
-  } else {
-    value.reinterpret_as_uint()
-  }
-  (
-    (clamped & 0xFFU).reinterpret_as_int().to_byte(),
-    ((clamped >> 8) & 0xFFU).reinterpret_as_int().to_byte(),
-  )
-}
-
-///|
-fn tilemap_chunk_empty_packed_tile_bytes(out : Array[Byte]) -> Unit {
-  let (lo, hi) = tilemap_chunk_u16_bytes(0xFFFF)
-  out.push(lo)
-  out.push(hi)
-  out.push((0).to_byte())
-  out.push((0).to_byte())
-  out.push((0).to_byte())
-  out.push((0).to_byte())
-  out.push((0).to_byte())
-  out.push((0).to_byte())
-}
-
-///|
-fn tilemap_chunk_push_packed_tile_bytes(
-  out : Array[Byte],
-  tile : TileData,
-) -> Unit {
-  let (index_lo, index_hi) = tilemap_chunk_u16_bytes(tile.tileset_index)
-  let (r, g, b, a) = tile.color.to_srgba_tuple()
-  let flags = (if tile.visible { 1 } else { 0 }) |
-    (tile.orientation.to_int() << 1)
-  let (flags_lo, flags_hi) = tilemap_chunk_u16_bytes(flags)
-  out.push(index_lo)
-  out.push(index_hi)
-  out.push(tilemap_chunk_color_u8(r).to_byte())
-  out.push(tilemap_chunk_color_u8(g).to_byte())
-  out.push(tilemap_chunk_color_u8(b).to_byte())
-  out.push(tilemap_chunk_color_u8(a).to_byte())
-  out.push(flags_lo)
-  out.push(flags_hi)
-}
-
-///|
-fn tilemap_chunk_packed_tile_data_bytes(
-  chunk : TilemapChunk,
-  tile_data : TilemapChunkTileData,
-) -> Bytes? {
-  let expected_len = chunk.tile_capacity()
-  if expected_len <= 0 || tile_data.tile_data.length() != expected_len {
-    return None
-  }
-  let out : Array[Byte] = []
-  for maybe_tile in tile_data.tile_data {
-    match maybe_tile {
-      Some(tile) => tilemap_chunk_push_packed_tile_bytes(out, tile)
-      None => tilemap_chunk_empty_packed_tile_bytes(out)
-    }
-  }
-  Some(Bytes::from_array(out))
-}
-
-///|
 fn tilemap_chunk_tile_data_image(
   chunk : TilemapChunk,
   tile_data : TilemapChunkTileData,
 ) -> @asset.Image? {
-  guard tilemap_chunk_packed_tile_data_bytes(chunk, tile_data) is Some(bytes) else {
-    return None
-  }
-  let safe_chunk_size = tilemap_chunk_safe_uvec2(
-    chunk.chunk_size,
-    @math.UVec2::new(1, 1),
-  )
-  Some(
-    @asset.Image::new(safe_chunk_size.x, safe_chunk_size.y, bytes).with_format(
-      @asset.TextureFormat::Rgba16Uint,
-    ),
-  )
+  @sprite_tilemap_chunk.tilemap_chunk_tile_data_image(chunk, tile_data)
 }
 
 ///|
