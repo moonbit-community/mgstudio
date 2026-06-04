@@ -82,6 +82,15 @@ pub fn PipelineCache::waiting_pipelines(self : PipelineCache) -> Array[UInt64] {
 }
 
 ///|
+pub fn PipelineCache::drain_waiting_pipelines(
+  self : PipelineCache,
+) -> Array[UInt64] {
+  let waiting = self.waiting_pipelines.copy()
+  self.waiting_pipelines.clear()
+  waiting
+}
+
+///|
 pub fn PipelineCache::queued_pipeline_count(self : PipelineCache) -> Int {
   self.new_pipelines.length()
 }

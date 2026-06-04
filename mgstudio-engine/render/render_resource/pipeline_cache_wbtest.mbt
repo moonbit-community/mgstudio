@@ -58,6 +58,25 @@ test "pipeline cache: accepting new pipelines exposes descriptors and waiting id
 }
 
 ///|
+test "pipeline cache: waiting pipeline ids drain once" {
+  let cache = PipelineCache::new()
+  ignore(
+    cache.queue_render_pipeline(
+      RenderPipelineDescriptor::RenderPipelineDescriptor(),
+    ),
+  )
+  ignore(
+    cache.queue_compute_pipeline(
+      ComputePipelineDescriptor::ComputePipelineDescriptor(),
+    ),
+  )
+  cache.accept_new_pipelines_for_processing()
+  debug_inspect(cache.drain_waiting_pipelines(), content="[0, 1]")
+  debug_inspect(cache.waiting_pipelines(), content="[]")
+  debug_inspect(cache.drain_waiting_pipelines(), content="[]")
+}
+
+///|
 test "pipeline cache: descriptor access rejects unprocessed ids and wrong kinds" {
   let cache = PipelineCache::new()
   let render_id = cache.queue_render_pipeline(

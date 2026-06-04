@@ -289,11 +289,17 @@ fn register_pipeline_cache_render_pipeline_descriptors(
   guard world.get_resource(pipeline_cache_resource_key) is Some(cache) else {
     return
   }
-  for index, cached_pipeline in cache.pipelines() {
+  let pipelines = cache.pipelines()
+  for pipeline_id in cache.drain_waiting_pipelines() {
+    let index = pipeline_id.to_int()
+    if index < 0 || index >= pipelines.length() {
+      continue
+    }
+    let cached_pipeline = pipelines[index]
     match cached_pipeline.descriptor() {
       @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) =>
         @renderer.register_mesh3d_material_pipeline_descriptor(
-          material_pipeline_id=index.to_uint64(),
+          material_pipeline_id=pipeline_id,
           descriptor~,
         )
       @render_resource.PipelineDescriptor::ComputePipelineDescriptor(_) => ()
