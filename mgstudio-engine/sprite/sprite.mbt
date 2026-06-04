@@ -103,6 +103,76 @@ pub impl Default for SpriteImageMode with fn default() {
 }
 
 ///|
+pub struct Anchor {
+  value : @math.Vec2
+}
+
+///|
+pub fn Anchor::new(value : @math.Vec2) -> Anchor {
+  Anchor::{ value, }
+}
+
+///|
+pub fn Anchor::as_vec(self : Anchor) -> @math.Vec2 {
+  self.value
+}
+
+///|
+pub fn Anchor::bottom_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, -0.5F))
+}
+
+///|
+pub fn Anchor::bottom_center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, -0.5F))
+}
+
+///|
+pub fn Anchor::bottom_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, -0.5F))
+}
+
+///|
+pub fn Anchor::center_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, 0.0F))
+}
+
+///|
+pub fn Anchor::center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, 0.0F))
+}
+
+///|
+pub fn Anchor::center_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, 0.0F))
+}
+
+///|
+pub fn Anchor::top_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, 0.5F))
+}
+
+///|
+pub fn Anchor::top_center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, 0.5F))
+}
+
+///|
+pub fn Anchor::top_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, 0.5F))
+}
+
+///|
+pub fn Anchor::Anchor() -> Anchor {
+  Anchor::center()
+}
+
+///|
+pub impl Default for Anchor with fn default() {
+  Anchor::Anchor()
+}
+
+///|
 pub fn SpriteImageMode::scale(self : SpriteImageMode) -> SpriteScalingMode? {
   match self {
     SpriteImageMode::Scale(mode) => Some(mode)
