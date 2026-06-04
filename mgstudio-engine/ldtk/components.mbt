@@ -337,18 +337,7 @@ pub fn LdtkWorldBundle::spawn(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for LdtkWorldBundle with spawn_components(
-  self,
-  world,
-  entity,
-  _sequence,
-  loc~,
-) {
-  ldtk_world_bundle_insert(self, world, entity, loc~)
-}
-
-///|
-pub impl @ecs.Bundle for LdtkWorldBundle with insert_into(
+pub impl @ecs.Bundle for LdtkWorldBundle with fn insert_into(
   self,
   world,
   entity,

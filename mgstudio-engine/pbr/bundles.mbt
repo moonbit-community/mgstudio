@@ -429,19 +429,7 @@ fn camera3d_bundle_insert(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  ignore(tick)
-  camera3d_bundle_insert(self, world, entity, loc~)
-}
-
-///|
-pub impl @ecs.Bundle for Camera3dBundle with insert_into(
+pub impl @ecs.Bundle for Camera3dBundle with fn insert_into(
   self,
   world,
   entity,
@@ -559,19 +547,7 @@ fn mesh_material3d_bundle_insert(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  ignore(tick)
-  mesh_material3d_bundle_insert(self, world, entity, loc~)
-}
-
-///|
-pub impl @ecs.Bundle for MeshMaterial3dBundle with insert_into(
+pub impl @ecs.Bundle for MeshMaterial3dBundle with fn insert_into(
   self,
   world,
   entity,

@@ -29,171 +29,6 @@ pub struct DeferredCommandEntry {
 }
 
 ///|
-fn[T : @ecs.Component] insert_spawn_component(
-  world : @ecs.World,
-  entity : @core.Entity,
-  component : T,
-  tick : @core.Tick,
-  loc~ : SourceLoc,
-) -> Unit raise @ecs.EcsError {
-  ignore(tick)
-  world.set_by_key(entity, T::component(), component, loc~)
-}
-
-///|
-pub(open) trait CommandSpawnComponents {
-  fn spawn_components(
-    Self,
-    @ecs.World,
-    @core.Entity,
-    @core.Tick,
-    loc~ : SourceLoc,
-  ) -> Unit raise @ecs.EcsError
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (
-  A,
-  B,
-) with spawn_components(self, world, entity, tick, loc~) {
-  let (a, b) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-}
-
-///|
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (
-  A,
-  B,
-  C,
-) with spawn_components(self, world, entity, tick, loc~) {
-  let (a, b, c) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  D : @ecs.Component,
-] CommandSpawnComponents for (A, B, C, D) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  let (a, b, c, d) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-  insert_spawn_component(world, entity, d, tick, loc~)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  D : @ecs.Component,
-  E : @ecs.Component,
-] CommandSpawnComponents for (A, B, C, D, E) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  let (a, b, c, d, e) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-  insert_spawn_component(world, entity, d, tick, loc~)
-  insert_spawn_component(world, entity, e, tick, loc~)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  D : @ecs.Component,
-  E : @ecs.Component,
-  F : @ecs.Component,
-] CommandSpawnComponents for (A, B, C, D, E, F) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  let (a, b, c, d, e, f) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-  insert_spawn_component(world, entity, d, tick, loc~)
-  insert_spawn_component(world, entity, e, tick, loc~)
-  insert_spawn_component(world, entity, f, tick, loc~)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  D : @ecs.Component,
-  E : @ecs.Component,
-  F : @ecs.Component,
-  G : @ecs.Component,
-] CommandSpawnComponents for (A, B, C, D, E, F, G) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  let (a, b, c, d, e, f, g) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-  insert_spawn_component(world, entity, d, tick, loc~)
-  insert_spawn_component(world, entity, e, tick, loc~)
-  insert_spawn_component(world, entity, f, tick, loc~)
-  insert_spawn_component(world, entity, g, tick, loc~)
-}
-
-///|
-pub impl[
-  A : @ecs.Component,
-  B : @ecs.Component,
-  C : @ecs.Component,
-  D : @ecs.Component,
-  E : @ecs.Component,
-  F : @ecs.Component,
-  G : @ecs.Component,
-  H : @ecs.Component,
-] CommandSpawnComponents for (A, B, C, D, E, F, G, H) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
-  let (a, b, c, d, e, f, g, h) = self
-  insert_spawn_component(world, entity, a, tick, loc~)
-  insert_spawn_component(world, entity, b, tick, loc~)
-  insert_spawn_component(world, entity, c, tick, loc~)
-  insert_spawn_component(world, entity, d, tick, loc~)
-  insert_spawn_component(world, entity, e, tick, loc~)
-  insert_spawn_component(world, entity, f, tick, loc~)
-  insert_spawn_component(world, entity, g, tick, loc~)
-  insert_spawn_component(world, entity, h, tick, loc~)
-}
-
-///|
 pub struct Commands {
   world : @ecs.World
   tick : @core.Tick
@@ -204,6 +39,16 @@ pub struct Commands {
 pub struct EntityCommands {
   commands : Commands
   entity : @core.Entity
+}
+
+///|
+fn[T : @ecs.Component] insert_single_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  component : T,
+  loc~ : SourceLoc,
+) -> Unit raise @ecs.EcsError {
+  world.set_by_key(entity, T::component(), component, loc~)
 }
 
 ///|
@@ -356,8 +201,8 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
   self.queue.push({
-    run: fn(world : @ecs.World, tick : @core.Tick) raise {
-      insert_spawn_component(world, entity, component, tick, loc~)
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      insert_single_component(world, entity, component, loc~)
     },
     error_handler: None,
     source: "Commands::spawn_component",
@@ -367,25 +212,7 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] Commands::spawn(
-  self : Commands,
-  components : T,
-  loc~ : SourceLoc,
-) -> @core.Entity {
-  let entity = self.world.spawn_empty()
-  self.queue.push({
-    run: fn(world : @ecs.World, tick : @core.Tick) raise {
-      components.spawn_components(world, entity, tick, loc~)
-    },
-    error_handler: None,
-    source: "Commands::spawn",
-  })
-  entity
-}
-
-///|
-#callsite(autofill(loc))
-pub fn[B : @ecs.Bundle] Commands::spawn_bundle(
+pub fn[B : @ecs.Bundle] Commands::spawn(
   self : Commands,
   bundle : B,
   loc~ : SourceLoc,
@@ -396,35 +223,30 @@ pub fn[B : @ecs.Bundle] Commands::spawn_bundle(
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
-    source: "Commands::spawn_bundle",
+    source: "Commands::spawn",
   })
   entity
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] Commands::spawn_batch(
+pub fn[B : @ecs.Bundle] Commands::spawn_batch(
   self : Commands,
-  component_batch : Array[T],
+  bundles : Array[B],
   loc~ : SourceLoc,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  for _ in component_batch {
+  for _ in bundles {
     let entity = self.world.spawn_empty()
     entities.push(entity)
   }
-  let queued_components = component_batch
+  let queued_bundles = bundles
   let queued_entities = entities
   self.queue.push({
-    run: fn(world : @ecs.World, tick : @core.Tick) raise {
-      let count = queued_components.length()
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      let count = queued_bundles.length()
       for i in 0..<count {
-        queued_components[i].spawn_components(
-          world,
-          queued_entities[i],
-          tick,
-          loc~,
-        )
+        B::insert_into(queued_bundles[i], world, queued_entities[i], loc~)
       }
     },
     error_handler: None,
@@ -530,24 +352,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] EntityCommands::insert(
-  self : EntityCommands,
-  components : T,
-  loc~ : SourceLoc,
-) -> Unit {
-  let entity = self.entity
-  self.commands.queue.push({
-    run: fn(world : @ecs.World, tick : @core.Tick) raise {
-      components.spawn_components(world, entity, tick, loc~)
-    },
-    error_handler: None,
-    source: "EntityCommands::insert",
-  })
-}
-
-///|
-#callsite(autofill(loc))
-pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(
+pub fn[B : @ecs.Bundle] EntityCommands::insert(
   self : EntityCommands,
   bundle : B,
   loc~ : SourceLoc,
@@ -558,7 +363,7 @@ pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
-    source: "EntityCommands::insert_bundle",
+    source: "EntityCommands::insert",
   })
 }
 
@@ -571,8 +376,8 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 ) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, tick : @core.Tick) raise {
-      insert_spawn_component(world, entity, component, tick, loc~)
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      insert_single_component(world, entity, component, loc~)
     },
     error_handler: None,
     source: "EntityCommands::insert_component",
@@ -731,12 +536,12 @@ fn Commands::flush(self : Commands) -> Unit {
 }
 
 ///|
-pub impl SystemParam for Commands with init_state(world) {
+pub impl SystemParam for Commands with fn init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl SystemParam for Commands with get(_state) {
+pub impl SystemParam for Commands with fn get(_state) {
   Commands::{
     world: system_param_abort_missing_world(),
     tick: current_system_ticks().this_run,
@@ -745,7 +550,7 @@ pub impl SystemParam for Commands with get(_state) {
 }
 
 ///|
-pub impl SystemParam for Commands with store(self, state) {
+pub impl SystemParam for Commands with fn store(self, state) {
   match deferred_command_runtime_state.batch_queue {
     Some(entries) => {
       for entry in self.queue {
@@ -759,7 +564,7 @@ pub impl SystemParam for Commands with store(self, state) {
 }
 
 ///|
-pub impl SystemParam for Commands with access(_world) {
+pub impl SystemParam for Commands with fn access(_world) {
   let access = SystemAccess::new()
   access.mark_deferred_commands()
   access

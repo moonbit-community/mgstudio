@@ -38,12 +38,12 @@ let morph_asset_state_key : @ecs.ResourceKey[MorphAssetState] = @ecs.register_re
 )
 
 ///|
-pub impl @ecs.Component for AnimationToPlay with component() {
+pub impl @ecs.Component for AnimationToPlay with fn component() {
   animation_to_play_key
 }
 
 ///|
-impl @app.Resource for MorphAssetState with resource() {
+impl @app.Resource for MorphAssetState with fn resource() {
   morph_asset_state_key
 }
 
@@ -63,7 +63,7 @@ fn setup(
   let graph_handle = @animation.animation_graph_add(graph)
   commands.insert_resource(MorphAssetState::{ primitive_handle, printed: false })
   ignore(
-    commands.spawn_bundle(
+    commands.spawn(
       @camera.Camera3dBundle::new(
         @sprite.Camera::Camera(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(

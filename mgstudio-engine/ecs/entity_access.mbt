@@ -462,13 +462,13 @@ pub fn[E : TriggerEvent] EntityMut::observe(
 }
 
 ///|
-pub impl Bundle for Unit with insert_into(_self, _world, _entity, loc~) {
+pub impl Bundle for Unit with fn insert_into(_self, _world, _entity, loc~) {
   ignore(loc)
   ()
 }
 
 ///|
-pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
+pub impl[A : Component, B : Component] Bundle for (A, B) with fn insert_into(
   self,
   world,
   entity,
@@ -487,7 +487,7 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
 }
 
 ///|
-pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with insert_into(
+pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with fn insert_into(
   self,
   world,
   entity,
@@ -512,7 +512,7 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
   B,
   C,
   D,
-) with insert_into(self, world, entity, loc~) {
+) with fn insert_into(self, world, entity, loc~) {
   let (a, b, c, d) = self
   let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
@@ -534,7 +534,7 @@ pub impl[
   C : Component,
   D : Component,
   E : Component,
-] Bundle for (A, B, C, D, E) with insert_into(self, world, entity, loc~) {
+] Bundle for (A, B, C, D, E) with fn insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e) = self
   let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
@@ -558,7 +558,7 @@ pub impl[
   D : Component,
   E : Component,
   F : Component,
-] Bundle for (A, B, C, D, E, F) with insert_into(self, world, entity, loc~) {
+] Bundle for (A, B, C, D, E, F) with fn insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f) = self
   let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
@@ -584,7 +584,12 @@ pub impl[
   E : Component,
   F : Component,
   G : Component,
-] Bundle for (A, B, C, D, E, F, G) with insert_into(self, world, entity, loc~) {
+] Bundle for (A, B, C, D, E, F, G) with fn insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   let (a, b, c, d, e, f, g) = self
   let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
@@ -612,7 +617,7 @@ pub impl[
   F : Component,
   G : Component,
   H : Component,
-] Bundle for (A, B, C, D, E, F, G, H) with insert_into(
+] Bundle for (A, B, C, D, E, F, G, H) with fn insert_into(
   self,
   world,
   entity,

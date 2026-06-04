@@ -4194,17 +4194,6 @@ pub fn SpriteBundle::spawn(
 }
 
 ///|
-pub impl @app.CommandSpawnComponents for SpriteBundle with fn spawn_components(
-  self,
-  world,
-  entity,
-  _sequence,
-  loc~,
-) {
-  sprite_bundle_insert(self, world, entity, loc~)
-}
-
-///|
 pub impl @ecs.Bundle for SpriteBundle with fn insert_into(
   self,
   world,
@@ -4239,17 +4228,6 @@ fn camera2d_bundle_insert(
     world.set_by_key(entity, ecs_key_deband_dither, deband_dither, loc~)
   }
   world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
-}
-
-///|
-pub impl @app.CommandSpawnComponents for Camera2dBundle with fn spawn_components(
-  self,
-  world,
-  entity,
-  _sequence,
-  loc~,
-) {
-  camera2d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|
@@ -4313,17 +4291,6 @@ pub fn Mesh2dBundle::spawn(
   let e = world.spawn_empty()
   try! mesh2d_bundle_insert(self, world, e, loc~)
   e
-}
-
-///|
-pub impl @app.CommandSpawnComponents for Mesh2dBundle with fn spawn_components(
-  self,
-  world,
-  entity,
-  _tick,
-  loc~,
-) {
-  mesh2d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|

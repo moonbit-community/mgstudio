@@ -103,52 +103,52 @@ let commands_counter_resource_key : @ecs.ResourceKey[CommandsCounterResource] = 
 )
 
 ///|
-pub impl @ecs.Component for CommandsPosition with component() {
+pub impl @ecs.Component for CommandsPosition with fn component() {
   commands_position_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsVelocity with component() {
+pub impl @ecs.Component for CommandsVelocity with fn component() {
   commands_velocity_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsMarker with component() {
+pub impl @ecs.Component for CommandsMarker with fn component() {
   commands_marker_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsTagA with component() {
+pub impl @ecs.Component for CommandsTagA with fn component() {
   commands_tag_a_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsTagB with component() {
+pub impl @ecs.Component for CommandsTagB with fn component() {
   commands_tag_b_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsTagC with component() {
+pub impl @ecs.Component for CommandsTagC with fn component() {
   commands_tag_c_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsTagD with component() {
+pub impl @ecs.Component for CommandsTagD with fn component() {
   commands_tag_d_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsTagE with component() {
+pub impl @ecs.Component for CommandsTagE with fn component() {
   commands_tag_e_key
 }
 
 ///|
-pub impl @ecs.Component for CommandsHookComponent with component() {
+pub impl @ecs.Component for CommandsHookComponent with fn component() {
   commands_hook_component_key
 }
 
 ///|
-pub impl Resource for CommandsCounterResource with resource() {
+pub impl Resource for CommandsCounterResource with fn resource() {
   commands_counter_resource_key
 }
 
@@ -356,14 +356,14 @@ test "app: Commands spawn supports eight-component tuples" {
 }
 
 ///|
-test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
+test "app: Commands spawn accepts ecs bundle tuples and unit bundles" {
   let nested_spawned : Ref[@core.Entity?] = Ref(None)
   let empty_spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
     nested_spawned.val = Some(
-      commands.spawn_bundle(
+      commands.spawn(
         (
           CommandsPosition::{ x: 5, y: 6 },
           CommandsVelocity::{ dx: 7, dy: 8 },
@@ -371,7 +371,7 @@ test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
         ),
       ),
     )
-    empty_spawned.val = Some(commands.spawn_bundle(()))
+    empty_spawned.val = Some(commands.spawn(()))
   })
 
   app = app.run_once()

@@ -27,7 +27,7 @@ let animation_to_play_key : @ecs.ComponentKey[AnimationToPlay] = @ecs.register_c
 )
 
 ///|
-pub impl @ecs.Component for AnimationToPlay with component() {
+pub impl @ecs.Component for AnimationToPlay with fn component() {
   animation_to_play_key
 }
 
@@ -125,7 +125,7 @@ fn setup_environment(
   )
 
   ignore(
-    commands.spawn_bundle(
+    commands.spawn(
       @camera.Camera3dBundle::new(
         @sprite.Camera::Camera(),
         @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(

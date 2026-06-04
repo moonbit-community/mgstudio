@@ -38,12 +38,12 @@ let morph_target_asset_state_key : @ecs.ResourceKey[MorphTargetAssetState] = @ec
 )
 
 ///|
-pub impl @ecs.Component for AnimationToPlay with component() {
+pub impl @ecs.Component for AnimationToPlay with fn component() {
   animation_to_play_key
 }
 
 ///|
-pub impl @app.Resource for MorphTargetAssetState with resource() {
+pub impl @app.Resource for MorphTargetAssetState with fn resource() {
   morph_target_asset_state_key
 }
 
@@ -71,7 +71,7 @@ fn setup(
   )
 
   ignore(
-    commands.spawn_bundle(
+    commands.spawn(
       @camera.Camera3dBundle::new(
         @sprite.Camera::Camera(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(

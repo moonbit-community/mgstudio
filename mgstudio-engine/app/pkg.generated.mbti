@@ -618,11 +618,9 @@ pub fn[T : Resource] Commands::remove_resource(Self) -> Unit
 pub fn[T] Commands::remove_world_resource(Self, @ecs.ResourceKey[T]) -> Unit
 pub fn Commands::run_system(Self, SystemId) -> Unit
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
+pub fn[B : @ecs.Bundle] Commands::spawn(Self, B, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : SourceLoc) -> Array[@core.Entity]
-#callsite(autofill(loc))
-pub fn[B : @ecs.Bundle] Commands::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity
+pub fn[B : @ecs.Bundle] Commands::spawn_batch(Self, Array[B], loc~ : SourceLoc) -> Array[@core.Entity]
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
@@ -660,9 +658,7 @@ pub struct EntityCommands {
 #callsite(autofill(loc))
 pub fn EntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(Self, B, loc~ : SourceLoc) -> Unit
+pub fn[B : @ecs.Bundle] EntityCommands::insert(Self, B, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
 pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit) -> Self
@@ -1422,17 +1418,6 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
-
-pub(open) trait CommandSpawnComponents {
-  fn spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
-}
-pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component] CommandSpawnComponents for (A, B, C, D)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component, H : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
 
 pub(open) trait FreelyMutableState : States {
 }
