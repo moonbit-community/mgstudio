@@ -9,37 +9,95 @@ import {
 // Values
 pub fn annulus_mesh(@math.Annulus) -> @mesh.Mesh3dGeometry
 
+pub fn annulus_to_mesh2d_geometry(@math.Annulus) -> @mesh.Mesh2dGeometry
+
+pub fn capsule_ring_to_mesh2d_geometry(@math.Ring[@math.Capsule2d]) -> @mesh.Mesh2dGeometry
+
+pub fn capsule_to_mesh2d_geometry(@math.Capsule2d) -> @mesh.Mesh2dGeometry
+
 pub fn circle(Float) -> @math.Circle
 
 pub fn circle_line_strip_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn circle_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
+pub fn circle_to_mesh2d_geometry(@math.Circle) -> @mesh.Mesh2dGeometry
+
 pub fn circular_sector_mesh(@math.CircularSector) -> @mesh.Mesh3dGeometry
 
+pub fn circular_sector_ring_to_mesh2d_geometry(@math.Ring[@math.CircularSector]) -> @mesh.Mesh2dGeometry
+
+pub fn circular_sector_to_mesh2d_geometry(@math.CircularSector) -> @mesh.Mesh2dGeometry
+
 pub fn circular_segment_mesh(@math.CircularSegment) -> @mesh.Mesh3dGeometry
+
+pub fn circular_segment_ring_to_mesh2d_geometry(@math.Ring[@math.CircularSegment]) -> @mesh.Mesh2dGeometry
+
+pub fn circular_segment_to_mesh2d_geometry(@math.CircularSegment) -> @mesh.Mesh2dGeometry
 
 pub fn convex_polygon_mesh(@math.ConvexPolygon) -> @mesh.Mesh3dGeometry
 
 pub fn ellipse_mesh(@math.Ellipse) -> @mesh.Mesh3dGeometry
 
+pub fn ellipse_ring_to_mesh2d_geometry(@math.Ring[@math.Ellipse]) -> @mesh.Mesh2dGeometry
+
+pub fn ellipse_to_mesh2d_geometry(@math.Ellipse) -> @mesh.Mesh2dGeometry
+
 pub fn[P : ExtrudablePrimitive] extrusion_mesh(@math.Extrusion[P]) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_wireframe_mesh(@mesh.Mesh3dGeometry) -> @mesh.Mesh3dGeometry?
 
+pub fn generic_capsule_ring_to_mesh2d_geometry(@math.Ring[@math.Capsule2d]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_circle_ring_to_mesh2d_geometry(@math.Ring[@math.Circle]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_circular_sector_ring_to_mesh2d_geometry(@math.Ring[@math.CircularSector]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_circular_segment_ring_to_mesh2d_geometry(@math.Ring[@math.CircularSegment]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_ellipse_ring_to_mesh2d_geometry(@math.Ring[@math.Ellipse]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_rectangle_ring_to_mesh2d_geometry(@math.Ring[@math.Rectangle]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_regular_polygon_ring_to_mesh2d_geometry(@math.Ring[@math.RegularPolygon]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_rhombus_ring_to_mesh2d_geometry(@math.Ring[@math.Rhombus]) -> @mesh.Mesh2dGeometry
+
+pub fn generic_triangle_ring_to_mesh2d_geometry(@math.Ring[@math.Triangle2d]) -> @mesh.Mesh2dGeometry
+
 pub fn polyline2d_mesh(@math.Polyline2d) -> @mesh.Mesh3dGeometry
+
+pub fn polyline_to_mesh2d_geometry(@math.Polyline2d) -> @mesh.Mesh2dGeometry
 
 pub fn rectangle(Float, Float) -> @math.Rectangle
 
 pub fn rectangle_mesh(Float, Float) -> @mesh.Mesh3dGeometry
 
+pub fn rectangle_ring_to_mesh2d_geometry(@math.Ring[@math.Rectangle]) -> @mesh.Mesh2dGeometry
+
+pub fn rectangle_to_mesh2d_geometry(@math.Rectangle) -> @mesh.Mesh2dGeometry
+
 pub fn regular_polygon_mesh(@math.RegularPolygon) -> @mesh.Mesh3dGeometry
+
+pub fn regular_polygon_ring_to_mesh2d_geometry(@math.Ring[@math.RegularPolygon]) -> @mesh.Mesh2dGeometry
+
+pub fn regular_polygon_to_mesh2d_geometry(@math.RegularPolygon) -> @mesh.Mesh2dGeometry
 
 pub fn rhombus_mesh(@math.Rhombus) -> @mesh.Mesh3dGeometry
 
+pub fn rhombus_ring_to_mesh2d_geometry(@math.Ring[@math.Rhombus]) -> @mesh.Mesh2dGeometry
+
+pub fn rhombus_to_mesh2d_geometry(@math.Rhombus) -> @mesh.Mesh2dGeometry
+
 pub fn segment2d_mesh(@math.Segment2d) -> @mesh.Mesh3dGeometry
 
+pub fn segment_to_mesh2d_geometry(@math.Segment2d) -> @mesh.Mesh2dGeometry
+
 pub fn triangle2d_mesh(@math.Triangle2d) -> @mesh.Mesh3dGeometry
+
+pub fn triangle_ring_to_mesh2d_geometry(@math.Ring[@math.Triangle2d]) -> @mesh.Mesh2dGeometry
+
+pub fn triangle_to_mesh2d_geometry(@math.Triangle2d) -> @mesh.Mesh2dGeometry
 
 // Errors
 
