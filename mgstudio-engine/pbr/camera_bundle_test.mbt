@@ -198,7 +198,7 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
 }
 
 ///|
-test "render3d: required components align Camera3d with Bevy camera authoring" {
+test "render3d: required components align PBR-owned Camera3d authoring" {
   let world = @ecs.World::new()
   try! register_render3d_required_components(world)
   let entity = world.spawn_empty()
@@ -237,7 +237,7 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
   )
   debug_inspect(
     (try! world.get_by_key(entity, ecs_key_exposure)) is Some(_),
-    content="true",
+    content="false",
   )
   debug_inspect(
     (try! world.get_by_key(entity, ecs_key_frustum)) is Some(_),

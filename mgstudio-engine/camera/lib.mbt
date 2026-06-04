@@ -76,6 +76,37 @@ pub fn camera_projection_plugin(
 
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let world = app.world()
+  world.register_required_components_with(
+    @pbr.ecs_key_camera3d,
+    @post_process.ecs_key_color_grading,
+    fn() { @post_process.ColorGrading::ColorGrading() },
+  ) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "CameraPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+  world.register_required_components_with(
+    @pbr.ecs_key_camera3d,
+    @pbr.ecs_key_exposure,
+    fn() { @pbr.Exposure::Exposure() },
+  ) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "CameraPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
   app
   .init_resource(fn() { @camera_clear_color.ClearColor::ClearColor() })
   .add_plugins(CameraProjectionPlugin::CameraProjectionPlugin())

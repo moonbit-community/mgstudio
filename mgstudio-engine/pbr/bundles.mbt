@@ -492,9 +492,6 @@ pub fn register_render3d_required_components(
     ecs_key_deband_dither,
     fn() { DebandDither::Enabled },
   )
-  world.register_required_components_with(ecs_key_camera3d, ecs_key_exposure, fn() {
-    Exposure::Exposure()
-  })
   world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
     Projection::default().compute_frustum(@transform.Transform::identity())
   })

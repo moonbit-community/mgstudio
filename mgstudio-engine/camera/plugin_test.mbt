@@ -44,6 +44,30 @@ test "camera plugin: installs visibility and visibility-range plugins" {
 }
 
 ///|
+test "camera plugin: owns Camera3d color grading and exposure requirements" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    CameraPlugin::CameraPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @pbr.ecs_key_camera3d,
+    @pbr.Camera3d::Camera3d(),
+  )
+
+  debug_inspect(
+    (try! world.get_by_key(entity, @post_process.ecs_key_color_grading))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @pbr.ecs_key_exposure)) is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "camera projection plugin: updates frustum when transform changes" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
     CameraProjectionPlugin::CameraProjectionPlugin(),
