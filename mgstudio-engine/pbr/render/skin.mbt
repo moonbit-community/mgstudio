@@ -648,6 +648,7 @@ fn render3d_extract_joints_for_skin(
   changed_skin_entities : @hashset.HashSet[UInt64],
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   transform_columns : Render3dTransformColumns,
+  tick : @core.SystemTicks,
   counters : Render3dSkinExtractionCounters,
 ) -> Unit {
   let skin_key = render3d_skin_entity_key(skin_entity)
@@ -676,10 +677,19 @@ fn render3d_extract_joints_for_skin(
     inverse_bindposes_values.length()
   }
   let matrix_offset = info.offset()
-  counters.dirty_skins = counters.dirty_skins + 1
-  counters.joints = counters.joints + joint_count
+  let mut wrote_skin = false
   for joint_index in 0..<joint_count {
     let joint = joints[joint_index]
+    if !source_world.is_changed_by_key(
+        joint, @transform.ecs_key_global_transform, tick,
+      ) {
+      continue
+    }
+    if !wrote_skin {
+      counters.dirty_skins = counters.dirty_skins + 1
+      wrote_skin = true
+    }
+    counters.joints = counters.joints + 1
     let inverse_bindpose = inverse_bindposes_values[joint_index]
     match transform_columns.global {
       Some(column) =>
@@ -701,17 +711,18 @@ fn render3d_extract_joints_for_skin(
         }
       None => ()
     }
-    render3d_write_skin_joint_matrix(
-      source_world,
-      skin_uniforms_value,
-      world_transform_cache_value,
-      transform_columns,
-      matrix_offset + joint_index,
-      joint_index,
-      joint,
+    let joint_world = render3d_entity_world_transform_cached_with_columns(
+      source_world, joint, world_transform_cache_value, transform_columns,
+    )
+    let base = render3d_skin_matrix_row_offset(matrix_offset + joint_index)
+    if base < 0 {
+      continue
+    }
+    render3d_ensure_skin_staging_rows(skin_uniforms_value, base + 16)
+    @mesh.SkinningMat4::from_transform(joint_world).mul_write_row_major_f32(
       inverse_bindpose,
-      skinned_mesh,
-      counters,
+      skin_uniforms_value.current_staging_buffer,
+      base,
     )
   }
 }
@@ -726,99 +737,20 @@ fn render3d_extract_joints(
   transform_columns : Render3dTransformColumns,
   counters : Render3dSkinExtractionCounters,
 ) -> Unit {
-  if skin_uniforms_value.total_joints <= 0 {
-    return
-  }
   let tick = source_world.get_tick_context().ticks()
-  let threshold = skin_uniforms_value.total_joints / 4
   let skinned_mesh_key = @mesh.SkinnedMesh::component()
-  let dirty_skins : Map[UInt64, @core.Entity] = {}
-  let mut changed_transform_count = 0
-  let mut must_extract_all = false
-  match transform_columns.global {
-    Some(global_column) =>
-      ignore(
-        global_column.for_each_changed_table_entity(tick, fn(
-          changed_entity,
-          _table_id,
-          _row_index,
-        ) {
-          changed_transform_count += 1
-          if changed_transform_count > threshold {
-            must_extract_all = true
-            return false
-          }
-          let changed_key = render3d_skin_entity_key(changed_entity)
-          match skin_uniforms_value.joint_to_skins.get(changed_key) {
-            Some(skins) =>
-              for skin_entity in skins {
-                dirty_skins.set(
-                  render3d_skin_entity_key(skin_entity),
-                  skin_entity,
-                )
-              }
-            None => ()
-          }
-          true
-        }),
-      )
-    None =>
-      for entry in skin_uniforms_value.joint_to_skins.iter() {
-        let (joint_key, skins) = entry
-        let joint_entity = @core.Entity::from_bits(joint_key)
-        if !source_world.is_changed_by_key(
-            joint_entity, @transform.ecs_key_global_transform, tick,
-          ) {
-          continue
-        }
-        changed_transform_count += 1
-        if changed_transform_count > threshold {
-          must_extract_all = true
-          break
-        }
-        for skin_entity in skins {
-          dirty_skins.set(render3d_skin_entity_key(skin_entity), skin_entity)
-        }
-      }
-  }
-  if must_extract_all {
-    source_world.for_each_component(skinned_mesh_key, fn(entity, skinned_mesh) {
-      if entity.id < 0 {
-        return
-      }
-      if !render3d_has_prepared_skin_binding(skin_uniforms_value, entity) {
-        return
-      }
-      render3d_extract_joints_for_skin(
-        source_world, skin_uniforms_value, world_transform_cache_value, entity, skinned_mesh,
-        changed_skin_entities, inverse_bindposes_assets, transform_columns, counters,
-      )
-    })
-    return
-  }
-  if dirty_skins.is_empty() {
-    return
-  }
-  let skinned_mesh_column = source_world.component_column(skinned_mesh_key)
-  guard skinned_mesh_column is Some(skinned_column) else { return }
-  for entry in dirty_skins.iter() {
-    let (_skin_key, skin_entity) = entry
-    if !source_world.is_alive(skin_entity) {
-      render3d_phase_remove_skin(skin_uniforms_value, skin_entity)
-      continue
+  source_world.for_each_component(skinned_mesh_key, fn(entity, skinned_mesh) {
+    if entity.id < 0 {
+      return
     }
-    if !render3d_has_prepared_skin_binding(skin_uniforms_value, skin_entity) {
-      continue
-    }
-    guard skinned_column.get_fast(skin_entity) is Some(skinned_mesh) else {
-      continue
+    if !render3d_has_prepared_skin_binding(skin_uniforms_value, entity) {
+      return
     }
     render3d_extract_joints_for_skin(
-      source_world, skin_uniforms_value, world_transform_cache_value, skin_entity,
-      skinned_mesh, changed_skin_entities, inverse_bindposes_assets, transform_columns,
-      counters,
+      source_world, skin_uniforms_value, world_transform_cache_value, entity, skinned_mesh,
+      changed_skin_entities, inverse_bindposes_assets, transform_columns, tick, counters,
     )
-  }
+  })
 }
 
 ///|
