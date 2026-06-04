@@ -50,13 +50,13 @@ fn setup(
     @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.25F),
     @sprite.Color::new(1.0F, 1.0F, 1.0F, 0.5F),
   ]
-  let tile_data : Array[@sprite.TileData?] = []
+  let tile_data : Array[@sprite_tilemap_chunk.TileData?] = []
   for i in 0..<(chunk_size.x * chunk_size.y) {
     let row = i / 8
     let col = i % 8
     tile_data.push(
       Some(
-        @sprite.TileData::new(
+        @sprite_tilemap_chunk.TileData::new(
           row % 2,
           color=colors[row],
           visible=row != 7,
@@ -73,13 +73,13 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.TilemapChunk::new(
+        @sprite_tilemap_chunk.TilemapChunk::new(
           chunk_size,
           tile_display_size,
           tileset,
           alpha_mode=@sprite_render.AlphaMode2d::Blend,
         ),
-        @sprite.TilemapChunkTileData::new(tile_data),
+        @sprite_tilemap_chunk.TilemapChunkTileData::new(tile_data),
       ),
     ),
   )

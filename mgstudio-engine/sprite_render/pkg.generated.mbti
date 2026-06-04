@@ -133,17 +133,17 @@ pub using @sprite {type OverlaySpriteUvScissor}
 
 pub using @sprite {type SceneCullContext}
 
-pub using @sprite {type TileData}
+pub using @tilemap_chunk {type TileData}
 
 pub using @tilemap_chunk {type TileOrientation}
 
-pub using @sprite {type TilemapChunk}
+pub using @tilemap_chunk {type TilemapChunk}
 
 pub using @sprite {type TilemapChunkMaterial}
 
 pub using @sprite {type TilemapChunkMaterialPlugin}
 
-pub using @sprite {type TilemapChunkTileData}
+pub using @tilemap_chunk {type TilemapChunkTileData}
 
 pub using @sprite {type UiBorderRect}
 

@@ -903,65 +903,13 @@ pub fn Mesh2dBundle::new_with_mesh_material_layers(
 }
 
 ///|
-type TileOrientation = @sprite_tilemap_chunk.TileOrientation
+type TileData = @sprite_tilemap_chunk.TileData
 
 ///|
-pub struct TileData {
-  tileset_index : Int
-  color : Color
-  visible : Bool
-  orientation : TileOrientation
-}
+type TilemapChunk = @sprite_tilemap_chunk.TilemapChunk
 
 ///|
-pub fn TileData::TileData() -> TileData {
-  TileData::{
-    tileset_index: 0,
-    color: Color::white(),
-    visible: true,
-    orientation: TileOrientation::Default,
-  }
-}
-
-///|
-pub fn TileData::from_tileset_index(tileset_index : Int) -> TileData {
-  let value = if tileset_index < 0 { 0 } else { tileset_index }
-  TileData::{ ..TileData::TileData(), tileset_index: value }
-}
-
-///|
-pub fn TileData::new(
-  tileset_index : Int,
-  color? : Color = Color::white(),
-  visible? : Bool = true,
-  orientation? : TileOrientation = TileOrientation::Default,
-) -> TileData {
-  let value = if tileset_index < 0 { 0 } else { tileset_index }
-  TileData::{ tileset_index: value, color, visible, orientation }
-}
-
-///|
-pub struct TilemapChunk {
-  chunk_size : @math.UVec2
-  tile_display_size : @math.UVec2
-  tileset : @asset.Handle[@asset.Image]
-  alpha_mode : AlphaMode2d
-}
-
-///|
-pub fn TilemapChunk::new(
-  chunk_size : @math.UVec2,
-  tile_display_size : @math.UVec2,
-  tileset : @asset.Handle[@asset.Image],
-  alpha_mode? : AlphaMode2d = AlphaMode2d::Blend,
-) -> TilemapChunk {
-  TilemapChunk::{ chunk_size, tile_display_size, tileset, alpha_mode }
-}
-
-///|
-pub fn TilemapChunk::tile_capacity(self : TilemapChunk) -> Int {
-  self.chunk_size.x * self.chunk_size.y
-}
+type TilemapChunkTileData = @sprite_tilemap_chunk.TilemapChunkTileData
 
 ///|
 fn tilemap_chunk_safe_uvec2(
@@ -971,109 +919,6 @@ fn tilemap_chunk_safe_uvec2(
   let x = if value.x <= 0 { fallback.x } else { value.x }
   let y = if value.y <= 0 { fallback.y } else { value.y }
   @math.UVec2::new(x, y)
-}
-
-///|
-fn tilemap_chunk_local_center(
-  chunk : TilemapChunk,
-  tile_pos : @math.UVec2,
-) -> @math.Vec2 {
-  let safe_chunk_size = tilemap_chunk_safe_uvec2(
-    chunk.chunk_size,
-    @math.UVec2::new(1, 1),
-  )
-  let safe_tile_size = tilemap_chunk_safe_uvec2(
-    chunk.tile_display_size,
-    @math.UVec2::new(1, 1),
-  )
-  let tile_w = Float::from_double(safe_tile_size.x.to_double())
-  let tile_h = Float::from_double(safe_tile_size.y.to_double())
-  let chunk_w = Float::from_double(safe_chunk_size.x.to_double()) * tile_w
-  let chunk_h = Float::from_double(safe_chunk_size.y.to_double()) * tile_h
-  let origin_x = -chunk_w / 2.0F + tile_w / 2.0F
-  let origin_y = -chunk_h / 2.0F + tile_h / 2.0F
-  let x = origin_x + Float::from_double(tile_pos.x.to_double()) * tile_w
-  let y = origin_y + Float::from_double(tile_pos.y.to_double()) * tile_h
-  @math.Vec2::new(x, y)
-}
-
-///|
-pub fn TilemapChunk::calculate_tile_transform(
-  self : TilemapChunk,
-  tile_pos : @math.UVec2,
-) -> @transform.Transform {
-  let local_center = tilemap_chunk_local_center(self, tile_pos)
-  let safe_tile_size = tilemap_chunk_safe_uvec2(
-    self.tile_display_size,
-    @math.UVec2::new(1, 1),
-  )
-  @transform.Transform::from_xy_rotation_scale(
-    local_center,
-    0.0F,
-    @math.Vec2::new(
-      Float::from_double(safe_tile_size.x.to_double()),
-      Float::from_double(safe_tile_size.y.to_double()),
-    ),
-  )
-}
-
-///|
-pub struct TilemapChunkTileData {
-  tile_data : Array[TileData?]
-}
-
-///|
-pub fn TilemapChunkTileData::new(
-  tile_data : Array[TileData?],
-) -> TilemapChunkTileData {
-  TilemapChunkTileData::{ tile_data, }
-}
-
-///|
-pub fn TilemapChunkTileData::tile_data_from_tile_pos(
-  self : TilemapChunkTileData,
-  chunk_size : @math.UVec2,
-  tile_pos : @math.UVec2,
-) -> TileData? {
-  if tile_pos.x < 0 || tile_pos.y < 0 {
-    return None
-  }
-  if tile_pos.x >= chunk_size.x || tile_pos.y >= chunk_size.y {
-    return None
-  }
-  let index = tile_pos.y * chunk_size.x + tile_pos.x
-  if index < 0 || index >= self.tile_data.length() {
-    return None
-  }
-  self.tile_data[index]
-}
-
-///|
-pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(
-  self : TilemapChunkTileData,
-  chunk_size : @math.UVec2,
-  tile_pos : @math.UVec2,
-  value : TileData?,
-) -> TilemapChunkTileData {
-  if tile_pos.x < 0 || tile_pos.y < 0 {
-    return self
-  }
-  if tile_pos.x >= chunk_size.x || tile_pos.y >= chunk_size.y {
-    return self
-  }
-  let index = tile_pos.y * chunk_size.x + tile_pos.x
-  if index < 0 || index >= self.tile_data.length() {
-    return self
-  }
-  let next : Array[TileData?] = []
-  for i in 0..<self.tile_data.length() {
-    if i == index {
-      next.push(value)
-    } else {
-      next.push(self.tile_data[i])
-    }
-  }
-  TilemapChunkTileData::{ tile_data: next }
 }
 
 ///|

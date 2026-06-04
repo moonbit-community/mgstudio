@@ -109,14 +109,10 @@ pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @ecs.reg
 )
 
 ///|
-pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @ecs.register_component(
-  debug_name="render2d.tilemap_chunk",
-)
+let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @sprite_tilemap_chunk.ecs_key_tilemap_chunk
 
 ///|
-pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[
-  TilemapChunkTileData,
-] = @ecs.register_component(debug_name="render2d.tilemap_chunk_tile_data")
+let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[TilemapChunkTileData] = @sprite_tilemap_chunk.ecs_key_tilemap_chunk_tile_data
 
 ///|
 pub impl @ecs.Component for Sprite with fn component() {
@@ -191,16 +187,6 @@ pub impl @ecs.Component for Wireframe2dColor with fn component() {
 ///|
 pub impl @ecs.Component for Mesh2dWireframe with fn component() {
   ecs_key_mesh2d_wireframe
-}
-
-///|
-pub impl @ecs.Component for TilemapChunk with fn component() {
-  ecs_key_tilemap_chunk
-}
-
-///|
-pub impl @ecs.Component for TilemapChunkTileData with fn component() {
-  ecs_key_tilemap_chunk_tile_data
 }
 
 ///|
@@ -331,11 +317,6 @@ fn encode_color(color : Color) -> Json {
 ///|
 fn encode_vec2(value : @math.Vec2) -> Json {
   (value.x, value.y).to_json()
-}
-
-///|
-fn encode_uvec2(value : @math.UVec2) -> Json {
-  value.to_json()
 }
 
 ///|
@@ -490,36 +471,6 @@ fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
 }
 
 ///|
-fn encode_tile_orientation(orientation : TileOrientation) -> Json {
-  orientation.to_int().to_json()
-}
-
-///|
-fn encode_tile_data(tile_data : TileData) -> Json {
-  (
-    tile_data.tileset_index,
-    tile_data.color,
-    tile_data.visible,
-    encode_tile_orientation(tile_data.orientation),
-  ).to_json()
-}
-
-///|
-fn encode_tilemap_chunk(tilemap_chunk : TilemapChunk) -> Json {
-  (
-    encode_uvec2(tilemap_chunk.chunk_size),
-    encode_uvec2(tilemap_chunk.tile_display_size),
-    encode_image_handle(tilemap_chunk.tileset),
-    tilemap_chunk.alpha_mode,
-  ).to_json()
-}
-
-///|
-fn encode_tilemap_chunk_tile_data(tile_data : TilemapChunkTileData) -> Json {
-  tile_data.tile_data.to_json()
-}
-
-///|
 fn decode_color(json : Json) -> Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
   Color::new(r, g, b, a)
@@ -529,11 +480,6 @@ fn decode_color(json : Json) -> Color {
 fn decode_vec2(json : Json) -> @math.Vec2 {
   let (x, y) : (Float, Float) = try! @json.from_json(json)
   @math.Vec2::new(x, y)
-}
-
-///|
-fn decode_uvec2(json : Json) -> @math.UVec2 {
-  try! @json.from_json(json)
 }
 
 ///|
@@ -731,63 +677,6 @@ fn[M] decode_mesh_material2d(json : Json) -> MeshMaterial2d[M] {
 }
 
 ///|
-fn decode_tile_data(json : Json) -> TileData {
-  let (tileset_index, color, visible, orientation_json) : (
-    Int,
-    Color,
-    Bool,
-    Json,
-  ) = try! @json.from_json(json)
-  TileData::new(
-    tileset_index,
-    color~,
-    visible~,
-    orientation=decode_tile_orientation(orientation_json),
-  )
-}
-
-///|
-fn decode_tile_orientation(json : Json) -> TileOrientation {
-  let raw : Int = try! @json.from_json(json)
-  TileOrientation::from_bools(
-    (raw & 0b100) != 0,
-    (raw & 0b010) != 0,
-    (raw & 0b001) != 0,
-  )
-}
-
-///|
-fn decode_tilemap_chunk(json : Json) -> TilemapChunk {
-  let (chunk_size_json, tile_display_size_json, tileset_json, alpha_mode) : (
-    Json,
-    Json,
-    Json,
-    AlphaMode2d,
-  ) = try! @json.from_json(json)
-  TilemapChunk::new(
-    decode_uvec2(chunk_size_json),
-    decode_uvec2(tile_display_size_json),
-    decode_image_handle(tileset_json),
-    alpha_mode~,
-  )
-}
-
-///|
-fn decode_tilemap_chunk_tile_data(json : Json) -> TilemapChunkTileData {
-  let tile_data_json : Array[Json] = try! @json.from_json(json)
-  let tile_data : Array[TileData?] = []
-  for entry in tile_data_json {
-    tile_data.push(
-      match entry {
-        Null => None
-        _ => Some(decode_tile_data(entry))
-      },
-    )
-  }
-  TilemapChunkTileData::new(tile_data)
-}
-
-///|
 fn decode_scissor_rect(json : Json) -> ScissorRect {
   ScissorRect::new(decode_rect(json))
 }
@@ -895,36 +784,6 @@ pub impl[M] ToJson for MeshMaterial2d[M] with fn to_json(self) {
 ///|
 pub impl[M] @json.FromJson for MeshMaterial2d[M] with fn from_json(json, _path) {
   decode_mesh_material2d(json)
-}
-
-///|
-pub impl ToJson for TileData with fn to_json(self) {
-  encode_tile_data(self)
-}
-
-///|
-pub impl @json.FromJson for TileData with fn from_json(json, _path) {
-  decode_tile_data(json)
-}
-
-///|
-pub impl ToJson for TilemapChunk with fn to_json(self) {
-  encode_tilemap_chunk(self)
-}
-
-///|
-pub impl @json.FromJson for TilemapChunk with fn from_json(json, _path) {
-  decode_tilemap_chunk(json)
-}
-
-///|
-pub impl ToJson for TilemapChunkTileData with fn to_json(self) {
-  encode_tilemap_chunk_tile_data(self)
-}
-
-///|
-pub impl @json.FromJson for TilemapChunkTileData with fn from_json(json, _path) {
-  decode_tilemap_chunk_tile_data(json)
 }
 
 ///|

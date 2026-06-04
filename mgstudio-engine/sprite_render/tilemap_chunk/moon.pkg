@@ -1,5 +1,11 @@
 import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite_render/mesh2d/material" @mesh2d_material,
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
 }
 
 supported_targets = "native"

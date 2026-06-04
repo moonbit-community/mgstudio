@@ -67,13 +67,13 @@ pub type Mesh2dWireframe = @sprite.Mesh2dWireframe
 pub type Wireframe2dPlugin = @sprite.Wireframe2dPlugin
 
 ///|
-pub type TileData = @sprite.TileData
+pub type TileData = @tilemap_chunk.TileData
 
 ///|
 pub type TileOrientation = @tilemap_chunk.TileOrientation
 
 ///|
-pub type TilemapChunk = @sprite.TilemapChunk
+pub type TilemapChunk = @tilemap_chunk.TilemapChunk
 
 ///|
 pub type TilemapChunkMaterial = @sprite.TilemapChunkMaterial
@@ -82,7 +82,7 @@ pub type TilemapChunkMaterial = @sprite.TilemapChunkMaterial
 pub type TilemapChunkMaterialPlugin = @sprite.TilemapChunkMaterialPlugin
 
 ///|
-pub type TilemapChunkTileData = @sprite.TilemapChunkTileData
+pub type TilemapChunkTileData = @tilemap_chunk.TilemapChunkTileData
 
 ///|
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @sprite.ecs_key_color_material

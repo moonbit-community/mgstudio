@@ -95,15 +95,15 @@ fn main {
 fn build_initial_tile_data(
   rng : @example_rng.ChaCha8Rng,
   tile_count : Int,
-) -> Array[@sprite.TileData?] {
-  let tile_data : Array[@sprite.TileData?] = []
+) -> Array[@sprite_tilemap_chunk.TileData?] {
+  let tile_data : Array[@sprite_tilemap_chunk.TileData?] = []
   for _ in 0..<tile_count {
     let value = rng.random_range(TILESET_RANDOM_RANGE)
     tile_data.push(
       if value == 0 {
         None
       } else {
-        Some(@sprite.TileData::from_tileset_index(value - 1))
+        Some(@sprite_tilemap_chunk.TileData::from_tileset_index(value - 1))
       },
     )
   }
@@ -116,7 +116,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let rng = @example_rng.ChaCha8Rng::seed_from_u64(42UL)
-  let chunk = @sprite.TilemapChunk::new(
+  let chunk = @sprite_tilemap_chunk.TilemapChunk::new(
     @math.UVec2::splat(CHUNK_SIDE),
     @math.UVec2::splat(TILE_SIZE),
     asset_server
@@ -131,7 +131,7 @@ fn setup(
     commands.spawn(
       (
         chunk,
-        @sprite.TilemapChunkTileData::new(tile_data),
+        @sprite_tilemap_chunk.TilemapChunkTileData::new(tile_data),
         UpdateTimer::{
           timer: @time.Timer::from_seconds(
             UPDATE_INTERVAL_SECONDS,
@@ -150,7 +150,7 @@ fn spawn_player(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  chunk : @sprite.TilemapChunk,
+  chunk : @sprite_tilemap_chunk.TilemapChunk,
   tile_pos : @math.UVec2,
   moving? : Bool = false,
 ) -> Unit {
@@ -191,7 +191,7 @@ fn spawn_fake_player(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
+  chunks : @ecs.Query[@ecs.Comp[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
 ) -> Unit {
   guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
     return
@@ -212,7 +212,7 @@ fn spawn_fake_player(
 fn move_player(
   players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MovePlayer]],
   time : @app.Res[@time.Time[Unit]],
-  chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
+  chunks : @ecs.Query[@ecs.Comp[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
 ) -> Unit {
   guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
     return
@@ -235,7 +235,10 @@ fn move_player(
 ///|
 fn update_tilemap(
   timers : @ecs.Query[@ecs.Mut[UpdateTimer], @ecs.All],
-  tile_data_query : @ecs.Query[@ecs.Mut[@sprite.TilemapChunkTileData], @ecs.All],
+  tile_data_query : @ecs.Query[
+    @ecs.Mut[@sprite_tilemap_chunk.TilemapChunkTileData],
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
   rng : @app.ResMut[SeededRng],
 ) -> Unit {
@@ -260,7 +263,7 @@ fn update_tilemap(
             for _ in 0..<UPDATE_BATCH_COUNT {
               let index = random_source.rng.random_range(tile_count)
               value.tile_data[index] = Some(
-                @sprite.TileData::from_tileset_index(
+                @sprite_tilemap_chunk.TileData::from_tileset_index(
                   random_source.rng.random_range(TILESET_RANDOM_RANGE),
                 ),
               )
@@ -275,13 +278,22 @@ fn update_tilemap(
 ///|
 fn first_tilemap(
   tilemaps : @ecs.Query[
-    (@ecs.Comp[@sprite.TilemapChunk], @ecs.Comp[@sprite.TilemapChunkTileData]),
+    (
+      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunk],
+      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunkTileData],
+    ),
     @ecs.All,
   ],
-) -> (@sprite.TilemapChunk, @sprite.TilemapChunkTileData)? {
-  let result : Ref[(@sprite.TilemapChunk, @sprite.TilemapChunkTileData)?] = Ref(
-    None,
-  )
+) -> (
+  @sprite_tilemap_chunk.TilemapChunk,
+  @sprite_tilemap_chunk.TilemapChunkTileData,
+)? {
+  let result : Ref[
+    (
+      @sprite_tilemap_chunk.TilemapChunk,
+      @sprite_tilemap_chunk.TilemapChunkTileData,
+    )?,
+  ] = Ref(None)
   try! tilemaps.view(fn(_entity, data) {
     let (chunk, tile_data) = data
     if result.val is None {
@@ -294,7 +306,10 @@ fn first_tilemap(
 ///|
 fn log_tile(
   tilemaps : @ecs.Query[
-    (@ecs.Comp[@sprite.TilemapChunk], @ecs.Comp[@sprite.TilemapChunkTileData]),
+    (
+      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunk],
+      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunkTileData],
+    ),
     @ecs.All,
   ],
   last_tileset_index : @app.Local[Int],
