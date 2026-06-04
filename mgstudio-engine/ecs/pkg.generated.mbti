@@ -202,6 +202,7 @@ pub fn[T] ComponentColumn::set_tick_only_hot_at_row(Self[T], @core.Entity, Array
 pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int64) -> Bool
 pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row_value(Self[T], Int, Int, T, Int64) -> Bool
 pub fn[T] ComponentColumn::table_changed_tick_at_row(Self[T], Int, Int) -> Int64?
+pub fn[T] ComponentColumn::table_changed_value_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemTicks) -> T?
 pub fn[T] ComponentColumn::table_column(Self[T], Int) -> ComponentTableColumn[T]?
 pub fn[T] ComponentColumn::table_has_value_at_row(Self[T], Int, Int) -> Bool
 pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemTicks) -> Bool?

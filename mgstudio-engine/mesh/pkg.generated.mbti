@@ -485,6 +485,7 @@ pub struct SkinnedMesh {
   joint_row_indices : Array[Int]
 }
 pub fn SkinnedMesh::inverse_bindposes(Self) -> @asset.Handle[SkinnedMeshInverseBindposes]
+pub fn SkinnedMesh::joint_changed_global_transform_cached(Self, @ecs.ComponentColumn[@transform.GlobalTransform], Int, @core.SystemTicks) -> @transform.GlobalTransform?
 pub fn SkinnedMesh::joint_global_transform_cached(Self, @ecs.ComponentColumn[@transform.GlobalTransform], Int) -> @transform.GlobalTransform?
 pub fn SkinnedMesh::joints(Self) -> Array[@core.Entity]
 pub fn SkinnedMesh::new(@asset.Handle[SkinnedMeshInverseBindposes], Array[@core.Entity]) -> Self

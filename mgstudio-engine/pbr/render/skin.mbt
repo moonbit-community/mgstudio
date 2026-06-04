@@ -438,6 +438,20 @@ fn render3d_write_skin_matrix(
 }
 
 ///|
+fn render3d_write_skin_matrix_at_base(
+  skin_uniforms_value : SkinUniforms,
+  base : Int,
+  joint_global : @transform.GlobalTransform,
+  inverse_bindpose : @mesh.SkinningMat4,
+) -> Unit {
+  inverse_bindpose.write_affine3_mul_row_major_f32(
+    joint_global.affine(),
+    skin_uniforms_value.current_staging_buffer,
+    base,
+  )
+}
+
+///|
 fn render3d_write_skin_joint_matrix(
   source_world : @ecs.World,
   skin_uniforms_value : SkinUniforms,
@@ -677,48 +691,54 @@ fn render3d_extract_joints_for_skin(
     inverse_bindposes_values.length()
   }
   let matrix_offset = info.offset()
+  let global_column = transform_columns.global
+  let base_offset = render3d_skin_matrix_row_offset(matrix_offset)
+  if base_offset < 0 {
+    return
+  }
   let mut wrote_skin = false
   for joint_index in 0..<joint_count {
     let joint = joints[joint_index]
-    if !source_world.is_changed_by_key(
-        joint, @transform.ecs_key_global_transform, tick,
-      ) {
-      continue
+    let inverse_bindpose = inverse_bindposes_values[joint_index]
+    let base = base_offset + joint_index * 16
+    match global_column {
+      Some(column) =>
+        match
+          skinned_mesh.joint_changed_global_transform_cached(
+            column, joint_index, tick,
+          ) {
+          Some(joint_global) => {
+            if !wrote_skin {
+              counters.dirty_skins = counters.dirty_skins + 1
+              wrote_skin = true
+            }
+            counters.joints = counters.joints + 1
+            counters.joint_transform_cache_hits = counters.joint_transform_cache_hits +
+              1
+            render3d_write_skin_matrix_at_base(
+              skin_uniforms_value, base, joint_global, inverse_bindpose,
+            )
+            continue
+          }
+          None => continue
+        }
+      None =>
+        if !source_world.is_changed_by_key(
+            joint, @transform.ecs_key_global_transform, tick,
+          ) {
+          continue
+        }
     }
     if !wrote_skin {
       counters.dirty_skins = counters.dirty_skins + 1
       wrote_skin = true
     }
     counters.joints = counters.joints + 1
-    let inverse_bindpose = inverse_bindposes_values[joint_index]
-    match transform_columns.global {
-      Some(column) =>
-        match skinned_mesh.joint_global_transform_cached(column, joint_index) {
-          Some(joint_global) => {
-            counters.joint_transform_cache_hits = counters.joint_transform_cache_hits +
-              1
-            render3d_write_skin_matrix(
-              skin_uniforms_value,
-              matrix_offset + joint_index,
-              joint_global,
-              inverse_bindpose,
-            )
-            continue
-          }
-          None =>
-            counters.joint_transform_cache_misses = counters.joint_transform_cache_misses +
-              1
-        }
-      None => ()
-    }
+    counters.joint_transform_cache_misses = counters.joint_transform_cache_misses +
+      1
     let joint_world = render3d_entity_world_transform_cached_with_columns(
       source_world, joint, world_transform_cache_value, transform_columns,
     )
-    let base = render3d_skin_matrix_row_offset(matrix_offset + joint_index)
-    if base < 0 {
-      continue
-    }
-    render3d_ensure_skin_staging_rows(skin_uniforms_value, base + 16)
     @mesh.SkinningMat4::from_transform(joint_world).mul_write_row_major_f32(
       inverse_bindpose,
       skin_uniforms_value.current_staging_buffer,

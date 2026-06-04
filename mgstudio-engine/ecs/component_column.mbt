@@ -564,6 +564,34 @@ pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
 }
 
 ///|
+pub fn[T] ComponentColumn::table_changed_value_at_entity_row(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+  system_ticks : @core.SystemTicks,
+) -> T? {
+  guard self.storage_type == Table else { return None }
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return None
+  }
+  guard table_ref.entity_at_row(row) is Some(row_entity) else { return None }
+  guard row_entity.to_bits() == entity.to_bits() else { return None }
+  guard self.cached_table_column(table_id) is Some(column_ref) else {
+    return None
+  }
+  guard row_index < raw_table_column_kernel_len(column_ref.storage) else {
+    return None
+  }
+  guard column_ref.changed_tick_at_row(row_index) is Some(changed_tick) else {
+    return None
+  }
+  guard system_ticks.contains(changed_tick) else { return None }
+  self.key.component_get_table_row(self.world, table_id, row_index)
+}
+
+///|
 pub fn[T] ComponentColumn::table_value_in_cached_values_at_entity_row(
   self : ComponentColumn[T],
   entity : @core.Entity,

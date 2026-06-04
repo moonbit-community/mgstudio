@@ -32,12 +32,12 @@ pub fn Mesh2d::mesh(self : Mesh2d) -> @asset.Handle[Mesh] {
 }
 
 ///|
-pub impl ToJson for Mesh2d with to_json(self) {
+pub impl ToJson for Mesh2d with fn to_json(self) {
   self.mesh.id().to_json()
 }
 
 ///|
-pub impl @json.FromJson for Mesh2d with from_json(json, path) {
+pub impl @json.FromJson for Mesh2d with fn from_json(json, path) {
   let mesh_id : Int = @json.from_json(json, path~)
   Mesh2d::new(@asset.Handle::new(mesh_id))
 }
@@ -58,12 +58,12 @@ pub fn Mesh3d::mesh(self : Mesh3d) -> @asset.Handle[Mesh] {
 }
 
 ///|
-pub impl ToJson for Mesh3d with to_json(self) {
+pub impl ToJson for Mesh3d with fn to_json(self) {
   self.mesh.id().to_json()
 }
 
 ///|
-pub impl @json.FromJson for Mesh3d with from_json(json, path) {
+pub impl @json.FromJson for Mesh3d with fn from_json(json, path) {
   let mesh_id : Int = @json.from_json(json, path~)
   Mesh3d::new(@asset.Handle::new(mesh_id))
 }
@@ -89,12 +89,12 @@ pub fn MeshTag::value(self : MeshTag) -> UInt {
 }
 
 ///|
-pub impl ToJson for MeshTag with to_json(self) {
+pub impl ToJson for MeshTag with fn to_json(self) {
   self.value.to_json()
 }
 
 ///|
-pub impl @json.FromJson for MeshTag with from_json(json, path) {
+pub impl @json.FromJson for MeshTag with fn from_json(json, path) {
   let value : UInt = @json.from_json(json, path~)
   MeshTag::new(value)
 }
@@ -106,12 +106,14 @@ pub struct SkinnedMeshInverseBindposes {
 }
 
 ///|
-pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_debug_name() {
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with fn asset_debug_name() {
   "mgstudio_mesh::SkinnedMeshInverseBindposes"
 }
 
 ///|
-pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_as_image(_self) {
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with fn asset_as_image(
+  _self,
+) {
   None
 }
 
@@ -123,7 +125,7 @@ let skinned_mesh_inverse_bindposes_asset_resource_keys : @asset.AssetResourceKey
 )
 
 ///|
-pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_resource_keys() {
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with fn asset_resource_keys() {
   skinned_mesh_inverse_bindposes_asset_resource_keys
 }
 
@@ -258,6 +260,44 @@ pub fn SkinnedMesh::joint_global_transform_cached(
 }
 
 ///|
+pub fn SkinnedMesh::joint_changed_global_transform_cached(
+  self : SkinnedMesh,
+  column : @ecs.ComponentColumn[@transform.GlobalTransform],
+  joint_index : Int,
+  system_ticks : @core.SystemTicks,
+) -> @transform.GlobalTransform? {
+  if joint_index < 0 || joint_index >= self.joints.length() {
+    return None
+  }
+  self.ensure_joint_row_cache()
+  let joint = self.joints[joint_index]
+  if joint_index < self.joint_table_ids.length() &&
+    joint_index < self.joint_row_indices.length() {
+    let table_id = self.joint_table_ids[joint_index]
+    let row_index = self.joint_row_indices[joint_index]
+    if table_id >= 0 && row_index >= 0 {
+      match
+        column.table_changed_value_at_entity_row(
+          joint, table_id, row_index, system_ticks,
+        ) {
+        Some(global_transform) => return Some(global_transform)
+        None => ()
+      }
+    }
+  }
+  match column.table_row_location(joint) {
+    Some((table_id, row_index)) => {
+      self.joint_table_ids[joint_index] = table_id
+      self.joint_row_indices[joint_index] = row_index
+      column.table_changed_value_at_entity_row(
+        joint, table_id, row_index, system_ticks,
+      )
+    }
+    None => None
+  }
+}
+
+///|
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]
 }
@@ -337,36 +377,36 @@ pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Mesh2d with component() {
+pub impl @ecs.Component for Mesh2d with fn component() {
   ecs_key_mesh2d
 }
 
 ///|
-pub impl @ecs.Component for Mesh3d with component() {
+pub impl @ecs.Component for Mesh3d with fn component() {
   ecs_key_mesh3d
 }
 
 ///|
-pub impl @ecs.Component for MeshTag with component() {
+pub impl @ecs.Component for MeshTag with fn component() {
   ecs_key_mesh_tag
 }
 
 ///|
-pub impl @ecs.Component for SkinnedMesh with component() {
+pub impl @ecs.Component for SkinnedMesh with fn component() {
   ecs_key_skinned_mesh
 }
 
 ///|
-pub impl @ecs.Component for MorphTargetMesh with component() {
+pub impl @ecs.Component for MorphTargetMesh with fn component() {
   ecs_key_morph_target_mesh
 }
 
 ///|
-pub impl @ecs.Component for MorphWeights with component() {
+pub impl @ecs.Component for MorphWeights with fn component() {
   ecs_key_morph_weights
 }
 
 ///|
-pub impl @ecs.Component for DynamicSkinnedMeshBounds with component() {
+pub impl @ecs.Component for DynamicSkinnedMeshBounds with fn component() {
   ecs_key_dynamic_skinned_mesh_bounds
 }
