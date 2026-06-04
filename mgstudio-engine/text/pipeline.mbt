@@ -1425,7 +1425,7 @@ fn text_push_overlay_sprite_slice_batch(
   color : @sprite.Color,
   cull_center : @math.Vec2,
   cull_half_size : @math.Vec2,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   scissor : @math.Rect?,
   target_camera : @core.Entity?,
   slices_xy_uv : Array[Float],

@@ -40,7 +40,7 @@ pub fn camera_2d_bundle_new_with_layers(
   camera : Camera,
   transform : @transform.Transform,
   target : @sprite.RenderTarget,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> Camera2dBundle {
   @sprite.Camera2dBundle::new_with_layers(camera, transform, target, layers)
 }

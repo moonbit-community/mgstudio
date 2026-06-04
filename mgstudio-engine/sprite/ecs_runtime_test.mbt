@@ -243,7 +243,9 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
+    ecs_has_non_null_payload(
+      world, entity, @camera_render_layers.ecs_key_render_layers,
+    ),
     content="true",
   )
   debug_inspect(
@@ -285,7 +287,7 @@ test "render2d: Commands can spawn SpriteBundle" {
   let bundle = SpriteBundle::new_with_layers(
     Sprite::from_image(@asset.Handle::new(7)),
     @transform.Transform::identity(),
-    RenderLayers::layer(2),
+    @camera_render_layers.RenderLayers::layer(2),
   )
   let mut app = @app.App::new(@ecs.World::new()).add_system_param(fn(
     commands : @app.Commands,
@@ -303,7 +305,11 @@ test "render2d: Commands can spawn SpriteBundle" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_render_layers),
+    ecs_has_non_null_payload(
+      app.world(),
+      entity,
+      @camera_render_layers.ecs_key_render_layers,
+    ),
     content="true",
   )
   debug_inspect(
@@ -345,7 +351,9 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
+    ecs_has_non_null_payload(
+      world, entity, @camera_render_layers.ecs_key_render_layers,
+    ),
     content="true",
   )
   debug_inspect(
@@ -479,7 +487,9 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
+    ecs_has_non_null_payload(
+      world, entity, @camera_render_layers.ecs_key_render_layers,
+    ),
     content="true",
   )
   debug_inspect(
@@ -572,7 +582,9 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
+    ecs_has_non_null_payload(
+      world, entity, @camera_render_layers.ecs_key_render_layers,
+    ),
     content="true",
   )
   debug_inspect(

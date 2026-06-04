@@ -20,12 +20,12 @@ struct CustomMaterialAsset {
 }
 
 ///|
-impl @asset.Asset for CustomMaterialAsset with asset_debug_name() {
+impl @asset.Asset for CustomMaterialAsset with fn asset_debug_name() {
   "examples.2d.mesh2d_custom_material.CustomMaterialAsset"
 }
 
 ///|
-impl @asset.Asset for CustomMaterialAsset with asset_as_image(_self) {
+impl @asset.Asset for CustomMaterialAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -35,7 +35,7 @@ let custom_material_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(CustomMaterialAsset::asset_debug_name())
 
 ///|
-impl @asset.Asset for CustomMaterialAsset with asset_resource_keys() {
+impl @asset.Asset for CustomMaterialAsset with fn asset_resource_keys() {
   custom_material_asset_resource_keys
 }
 
@@ -69,12 +69,12 @@ fn custom_material_uniform_bytes(color : @sprite.Color) -> Bytes {
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with alpha_mode(self) {
+pub impl @sprite.Material2d for CustomMaterialAsset with fn alpha_mode(self) {
   self.alpha_mode
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with material2d_debug_name() {
+pub impl @sprite.Material2d for CustomMaterialAsset with fn material2d_debug_name() {
   "examples.2d.mesh2d_custom_material.CustomMaterialAsset"
 }
 
@@ -86,12 +86,12 @@ let custom_material_asset_material2d_keys : @sprite.Material2dKeys[
 )
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with material2d_keys() {
+pub impl @sprite.Material2d for CustomMaterialAsset with fn material2d_keys() {
   custom_material_asset_material2d_keys
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with bind_group(self) {
+pub impl @sprite.Material2d for CustomMaterialAsset with fn bind_group(self) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_white_texture()
@@ -163,8 +163,8 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   |> ignore)
   try! (world.set_by_key(
     entity,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::RenderLayers(),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::RenderLayers(),
   )
   |> ignore)
   try! (world.set_by_key(

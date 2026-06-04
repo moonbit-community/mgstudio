@@ -28,9 +28,7 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @ecs.register_component(
-  debug_name="render2d.render_layers",
-)
+let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
 
 ///|
 pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d] = @ecs.register_component(
@@ -138,11 +136,6 @@ pub impl @ecs.Component for SpriteMesh with fn component() {
 ///|
 pub impl @ecs.Component for Anchor with fn component() {
   ecs_key_anchor
-}
-
-///|
-pub impl @ecs.Component for RenderLayers with fn component() {
-  ecs_key_render_layers
 }
 
 ///|
@@ -455,11 +448,6 @@ fn encode_anchor(anchor : Anchor) -> Json {
 }
 
 ///|
-fn encode_render_layers(layers : RenderLayers) -> Json {
-  layers.mask.to_json()
-}
-
-///|
 fn encode_viewport(viewport : Viewport) -> Json {
   (
     encode_ivec2(viewport.physical_position),
@@ -714,12 +702,6 @@ fn decode_anchor(json : Json) -> Anchor {
 }
 
 ///|
-fn decode_render_layers(json : Json) -> RenderLayers {
-  let mask : Int = try! @json.from_json(json)
-  RenderLayers::{ mask, }
-}
-
-///|
 fn decode_viewport(json : Json) -> Viewport {
   let (position, size, depth_min, depth_max) : (Json, Json, Float, Float) = try! @json.from_json(
     json,
@@ -910,16 +892,6 @@ pub impl ToJson for Anchor with fn to_json(self) {
 ///|
 pub impl @json.FromJson for Anchor with fn from_json(json, _path) {
   decode_anchor(json)
-}
-
-///|
-pub impl ToJson for RenderLayers with fn to_json(self) {
-  encode_render_layers(self)
-}
-
-///|
-pub impl @json.FromJson for RenderLayers with fn from_json(json, _path) {
-  decode_render_layers(json)
 }
 
 ///|

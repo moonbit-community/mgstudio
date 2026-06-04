@@ -59,7 +59,7 @@ fn render3d_execute_collect_cameras(
       ),
       (
         @ecs.Optional[@sprite.RenderTarget],
-        @ecs.Optional[@sprite.RenderLayers],
+        @ecs.Optional[@camera_render_layers.RenderLayers],
         @ecs.Optional[ProjectionRuntime3d],
         @ecs.Optional[@pbr_prepass.PreviousViewData],
       ),
@@ -197,7 +197,7 @@ fn render3d_execute_collect_cameras(
     }
     let layers = match layers_opt.value() {
       Some(v) => v
-      None => @sprite.RenderLayers::RenderLayers()
+      None => @camera_render_layers.RenderLayers::RenderLayers()
     }
     let has_no_cpu_culling = (try! source_world.get_by_key(
         entity, @visibility.ecs_key_no_cpu_culling,

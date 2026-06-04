@@ -67,7 +67,7 @@ pub struct GizmoMeshConfig {
   line_perspective : Bool
   line_style : @sprite.GizmoLineStyle
   line_joints : @sprite.GizmoLineJoint
-  render_layers : @sprite.RenderLayers
+  render_layers : @camera_render_layers.RenderLayers
   handle : @asset.Handle[GizmoAsset]
 }
 
@@ -76,7 +76,7 @@ pub fn GizmoMeshConfig::new(
   line_perspective~ : Bool,
   line_style~ : @sprite.GizmoLineStyle,
   line_joints~ : @sprite.GizmoLineJoint,
-  render_layers~ : @sprite.RenderLayers,
+  render_layers~ : @camera_render_layers.RenderLayers,
   handle~ : @asset.Handle[GizmoAsset],
 ) -> GizmoMeshConfig {
   GizmoMeshConfig::{
@@ -110,7 +110,7 @@ pub fn GizmoMeshConfig::line_joints(
 ///|
 pub fn GizmoMeshConfig::render_layers(
   self : GizmoMeshConfig,
-) -> @sprite.RenderLayers {
+) -> @camera_render_layers.RenderLayers {
   self.render_layers
 }
 
@@ -127,6 +127,6 @@ pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for GizmoMeshConfig with component() {
+pub impl @ecs.Component for GizmoMeshConfig with fn component() {
   ecs_key_gizmo_mesh_config
 }

@@ -27,7 +27,7 @@ fn setup(
       (
         @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
-        @sprite.RenderLayers::layer(1),
+        @camera_render_layers.RenderLayers::layer(1),
       ),
     ),
   )
@@ -70,7 +70,7 @@ fn setup(
           asset_server.get().load("textures/rpg/chars/sensei/sensei.png"),
         ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
         @transform.Transform::identity(),
-        @sprite.RenderLayers::layer(1),
+        @camera_render_layers.RenderLayers::layer(1),
       ),
     ),
   )

@@ -129,8 +129,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   ).spawn(world)
   try! world.set_by_key(
     view_model_camera,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
   )
   try! world.set_by_key(
     view_model_camera,
@@ -155,8 +155,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   ).spawn(world)
   try! world.set_by_key(
     arm,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
   )
   try! world.set_by_key(
     arm,
@@ -238,8 +238,8 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   )
   try! world.set_by_key(
     light,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::from_layers([
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::from_layers([
       DEFAULT_RENDER_LAYER,
       VIEW_MODEL_RENDER_LAYER,
     ]),

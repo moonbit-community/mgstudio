@@ -218,7 +218,7 @@ fn render3d_queue_shadow_phase_items(
 ///|
 fn render3d_shadow_visible_extracted_indices(
   meshes : Array[ExtractedMesh3d],
-  camera_layers : @sprite.RenderLayers,
+  camera_layers : @camera_render_layers.RenderLayers,
   shadow_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
 ) -> Array[Int] {
   let visible : Array[Int] = []

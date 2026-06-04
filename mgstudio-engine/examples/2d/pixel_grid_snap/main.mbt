@@ -77,13 +77,13 @@ pub impl @ecs.Component for Rotate with fn component() {
 }
 
 ///|
-fn pixel_perfect_layers() -> @sprite.RenderLayers {
-  @sprite.RenderLayers::layer(PIXEL_PERFECT_LAYER)
+fn pixel_perfect_layers() -> @camera_render_layers.RenderLayers {
+  @camera_render_layers.RenderLayers::layer(PIXEL_PERFECT_LAYER)
 }
 
 ///|
-fn high_res_layers() -> @sprite.RenderLayers {
-  @sprite.RenderLayers::layer(HIGH_RES_LAYER)
+fn high_res_layers() -> @camera_render_layers.RenderLayers {
+  @camera_render_layers.RenderLayers::layer(HIGH_RES_LAYER)
 }
 
 ///|

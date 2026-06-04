@@ -115,7 +115,7 @@ priv struct Render3dExtractMeshRequiredComponents {
   global_transform : @transform.GlobalTransform
   previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
   aabb : @camera_primitives.Aabb?
-  layers : @sprite.RenderLayers?
+  layers : @camera_render_layers.RenderLayers?
   visibility_range : @visibility.VisibilityRange?
   lightmap : Lightmap?
   is_forward_decal : Bool
@@ -237,7 +237,7 @@ fn render3d_extract_mesh_for_entity(
         entity, @camera_primitives.ecs_key_aabb,
       )
       let layers = try! source_world.get_by_key(
-        entity, @sprite.ecs_key_render_layers,
+        entity, @camera_render_layers.ecs_key_render_layers,
       )
       let visibility_range = try! source_world.get_by_key(
         entity, @visibility.ecs_key_visibility_range,
@@ -310,7 +310,7 @@ fn render3d_extract_mesh_for_entity(
   let material_fragment_shader_path = resolved_material.material_fragment_shader_path
   let layers = match prefetched_layers {
     Some(v) => v
-    None => @sprite.RenderLayers::RenderLayers()
+    None => @camera_render_layers.RenderLayers::RenderLayers()
   }
   // Bevy `bevy_pbr::render::mesh::extract_meshes_for_cpu_building` reads
   // `&GlobalTransform` directly and derives render instance transforms from it.
@@ -490,7 +490,7 @@ fn render3d_execute_collect_meshes(
           @ecs.Optional[@camera_primitives.Aabb],
         ),
         (
-          @ecs.Optional[@sprite.RenderLayers],
+          @ecs.Optional[@camera_render_layers.RenderLayers],
           @ecs.Optional[@visibility.VisibilityRange],
         ),
         @ecs.Optional[Lightmap],

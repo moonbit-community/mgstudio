@@ -104,9 +104,11 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       continue
     }
     let layers = match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+      (try! source_world.get_by_key(
+        entity, @camera_render_layers.ecs_key_render_layers,
+      )) {
       Some(v) => v
-      None => @sprite.RenderLayers::RenderLayers()
+      None => @camera_render_layers.RenderLayers::RenderLayers()
     }
     let scissor = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_scissor_rect)) {

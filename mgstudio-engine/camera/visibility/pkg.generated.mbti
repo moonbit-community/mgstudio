@@ -3,9 +3,9 @@ package "Milky2018/mgstudio/camera/visibility"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/sprite",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -13,9 +13,11 @@ import {
 // Values
 pub fn check_visibility_ranges(@ecs.World) -> Unit
 
-pub let default_layers : @sprite.RenderLayers
+pub let default_layers : @render_layers.RenderLayers
 
 pub fn default_visibility() -> @Milky2018/mgstudio/visibility.Visibility
+
+pub let ecs_key_render_layers : @ecs.ComponentKey[@render_layers.RenderLayers]
 
 pub let ecs_key_shadow_lod_origin : @ecs.ComponentKey[ShadowLodOrigin]
 
@@ -29,15 +31,15 @@ pub fn no_cpu_culling() -> @Milky2018/mgstudio/visibility.NoCpuCulling
 
 pub fn no_frustum_culling() -> @Milky2018/mgstudio/visibility.NoFrustumCulling
 
-pub fn render_layers_default() -> @sprite.RenderLayers
+pub fn render_layers_default() -> @render_layers.RenderLayers
 
-pub fn render_layers_from_indices(Array[Int]) -> @sprite.RenderLayers
+pub fn render_layers_from_indices(Array[Int]) -> @render_layers.RenderLayers
 
-pub fn render_layers_layer(Int) -> @sprite.RenderLayers
+pub fn render_layers_layer(Int) -> @render_layers.RenderLayers
 
-pub fn render_layers_matches(@sprite.RenderLayers, @sprite.RenderLayers) -> Bool
+pub fn render_layers_matches(@render_layers.RenderLayers, @render_layers.RenderLayers) -> Bool
 
-pub fn render_layers_none() -> @sprite.RenderLayers
+pub fn render_layers_none() -> @render_layers.RenderLayers
 
 pub fn view_visibility(Bool) -> @Milky2018/mgstudio/visibility.ViewVisibility
 
@@ -96,6 +98,8 @@ pub impl @app.Resource for VisibleEntityRanges
 
 // Type aliases
 pub type Layer = Int
+
+pub using @render_layers {type RenderLayers}
 
 // Traits
 

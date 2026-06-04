@@ -16,37 +16,38 @@
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/render_layers.rs`.
 
 ///|
-pub type Layer = Int
+pub using @camera_render_layers {type Layer}
 
 ///|
-pub let default_layers : @sprite.RenderLayers = @sprite.RenderLayers::RenderLayers()
+pub using @camera_render_layers {type RenderLayers}
 
 ///|
-pub fn render_layers_default() -> @sprite.RenderLayers {
-  @sprite.RenderLayers::RenderLayers()
+pub using @camera_render_layers {default_layers}
+
+///|
+pub using @camera_render_layers {ecs_key_render_layers}
+
+///|
+pub fn render_layers_default() -> RenderLayers {
+  RenderLayers::RenderLayers()
 }
 
 ///|
-pub fn render_layers_none() -> @sprite.RenderLayers {
-  @sprite.RenderLayers::none()
+pub fn render_layers_none() -> RenderLayers {
+  RenderLayers::none()
 }
 
 ///|
-pub fn render_layers_layer(index : Layer) -> @sprite.RenderLayers {
-  @sprite.RenderLayers::layer(index)
+pub fn render_layers_layer(index : Layer) -> RenderLayers {
+  RenderLayers::layer(index)
 }
 
 ///|
-pub fn render_layers_from_indices(
-  indices : Array[Layer],
-) -> @sprite.RenderLayers {
-  @sprite.RenderLayers::from_layers(indices)
+pub fn render_layers_from_indices(indices : Array[Layer]) -> RenderLayers {
+  RenderLayers::from_layers(indices)
 }
 
 ///|
-pub fn render_layers_matches(
-  a : @sprite.RenderLayers,
-  b : @sprite.RenderLayers,
-) -> Bool {
+pub fn render_layers_matches(a : RenderLayers, b : RenderLayers) -> Bool {
   a.matches(b)
 }

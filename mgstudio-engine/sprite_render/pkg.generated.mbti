@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite_render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -61,11 +62,11 @@ pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullConte
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
 
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
 
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
 
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
 

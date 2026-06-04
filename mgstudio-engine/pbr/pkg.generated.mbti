@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
@@ -722,7 +723,7 @@ pub struct Camera3dBundle {
   atmosphere_settings : @light.AtmosphereSettings?
   transform : @transform.Transform
   target : @sprite.RenderTarget
-  layers : @sprite.RenderLayers
+  layers : @render_layers.RenderLayers
 }
 pub fn Camera3dBundle::new(@sprite.Camera, @transform.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @transform.Transform) -> Self
@@ -1188,7 +1189,7 @@ pub struct MeshMaterial3dBundle {
   mesh : @mesh.Mesh3d
   material : @material.MeshMaterial3d
   transform : @transform.Transform
-  layers : @sprite.RenderLayers
+  layers : @render_layers.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility

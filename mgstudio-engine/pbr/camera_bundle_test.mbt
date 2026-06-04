@@ -28,7 +28,7 @@ struct CameraBundleCustomProjection3d {
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view(
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view(
   self,
 ) {
   ProjectionMatrix3d::from_cols(
@@ -40,7 +40,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_vi
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view_for_sub(
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view_for_sub(
   self,
   _sub_view,
 ) {
@@ -48,7 +48,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_vi
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with update(
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn update(
   self,
   _width,
   _height,
@@ -57,12 +57,12 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with update(
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with far(_self) {
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn far(_self) {
   256.0F
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with compute_frustum(
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -70,7 +70,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with compute_frustum(
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with get_frustum_corners(
+impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_frustum_corners(
   self,
   _z_near,
   _z_far,
@@ -223,7 +223,8 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
     content="true",
   )
   debug_inspect(
-    (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) is Some(_),
+    (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers))
+    is Some(_),
     content="true",
   )
   debug_inspect(

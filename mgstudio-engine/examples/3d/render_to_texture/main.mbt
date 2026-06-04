@@ -58,7 +58,7 @@ fn setup(
       ),
     )
   })
-  let first_pass_layer = @sprite.RenderLayers::layer(1)
+  let first_pass_layer = @camera_render_layers.RenderLayers::layer(1)
   let cube_handle = meshes.modify(fn(mesh_assets) {
     mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 4.0F))
   })
@@ -98,7 +98,7 @@ fn setup(
       (
         @pbr.PointLight::PointLight(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
-        @sprite.RenderLayers::layer(0).with_layer(1),
+        @camera_render_layers.RenderLayers::layer(0).with_layer(1),
       ),
     ),
   )

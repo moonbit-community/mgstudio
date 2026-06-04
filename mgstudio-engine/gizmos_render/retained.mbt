@@ -31,7 +31,7 @@ pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform] = @ecs.
 )
 
 ///|
-pub impl @ecs.Component for LineGizmoUniform with component() {
+pub impl @ecs.Component for LineGizmoUniform with fn component() {
   ecs_key_line_gizmo_uniform
 }
 
@@ -119,7 +119,7 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
     (
       @ecs.Comp[@gizmos.Gizmo],
       @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@sprite.RenderLayers]?,
+      @ecs.Comp[@camera_render_layers.RenderLayers]?,
     ),
     @ecs.All,
   ] = @ecs.query(source_world)
@@ -131,7 +131,7 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
     let (gap_scale, line_scale) = retained_line_style_parts(line_config.style)
     let render_layers = match render_layers_comp {
       Some(layers_comp) => layers_comp.value()
-      None => @sprite.RenderLayers::RenderLayers()
+      None => @camera_render_layers.RenderLayers::RenderLayers()
     }
     values.push(ExtractedLineGizmo::{
       uniform: LineGizmoUniform::{

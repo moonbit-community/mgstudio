@@ -233,7 +233,7 @@ fn render3d_test_extracted_mesh_for_flags(
       has_transmitted_shadow_receiver,
       has_no_frustum_culling,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::RenderLayers(),
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -293,7 +293,7 @@ fn render3d_test_transparent_mesh_for_queue(
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::RenderLayers(),
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -316,7 +316,7 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   let camera_transform = @transform.Transform::identity()
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
-    @sprite.RenderLayers::RenderLayers(),
+    @camera_render_layers.RenderLayers::RenderLayers(),
     camera_transform,
     [],
     false,
@@ -324,7 +324,7 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   )
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
-    @sprite.RenderLayers::RenderLayers(),
+    @camera_render_layers.RenderLayers::RenderLayers(),
     camera_transform,
     [],
     false,
@@ -378,7 +378,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::RenderLayers(),
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -392,7 +392,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
   }
   let items = render3d_queue_mesh_phase_items(
     [mesh],
-    @sprite.RenderLayers::RenderLayers(),
+    @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
     false,

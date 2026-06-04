@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/primitives",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
@@ -284,15 +285,15 @@ pub struct GizmoMeshConfig {
   line_perspective : Bool
   line_style : @sprite.GizmoLineStyle
   line_joints : @sprite.GizmoLineJoint
-  render_layers : @sprite.RenderLayers
+  render_layers : @render_layers.RenderLayers
   handle : @asset.Handle[GizmoAsset]
 }
 pub fn GizmoMeshConfig::handle(Self) -> @asset.Handle[GizmoAsset]
 pub fn GizmoMeshConfig::line_joints(Self) -> @sprite.GizmoLineJoint
 pub fn GizmoMeshConfig::line_perspective(Self) -> Bool
 pub fn GizmoMeshConfig::line_style(Self) -> @sprite.GizmoLineStyle
-pub fn GizmoMeshConfig::new(line_perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle, line_joints~ : @sprite.GizmoLineJoint, render_layers~ : @sprite.RenderLayers, handle~ : @asset.Handle[GizmoAsset]) -> Self
-pub fn GizmoMeshConfig::render_layers(Self) -> @sprite.RenderLayers
+pub fn GizmoMeshConfig::new(line_perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle, line_joints~ : @sprite.GizmoLineJoint, render_layers~ : @render_layers.RenderLayers, handle~ : @asset.Handle[GizmoAsset]) -> Self
+pub fn GizmoMeshConfig::render_layers(Self) -> @render_layers.RenderLayers
 pub impl @ecs.Component for GizmoMeshConfig
 
 pub struct GizmoPlugin {

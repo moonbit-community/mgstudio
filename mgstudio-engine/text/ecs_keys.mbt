@@ -113,102 +113,102 @@ let ecs_res_key_font_atlas_set : @ecs.ResourceKey[FontAtlasSet] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for Text with component() {
+pub impl @ecs.Component for Text with fn component() {
   ecs_key_text
 }
 
 ///|
-pub impl @ecs.Component for Text2d with component() {
+pub impl @ecs.Component for Text2d with fn component() {
   ecs_key_text2d
 }
 
 ///|
-pub impl @ecs.Component for TextSpan with component() {
+pub impl @ecs.Component for TextSpan with fn component() {
   ecs_key_text_span
 }
 
 ///|
-pub impl @ecs.Component for TextFont with component() {
+pub impl @ecs.Component for TextFont with fn component() {
   ecs_key_text_font
 }
 
 ///|
-pub impl @ecs.Component for TextColor with component() {
+pub impl @ecs.Component for TextColor with fn component() {
   ecs_key_text_color
 }
 
 ///|
-pub impl @ecs.Component for TextBackgroundColor with component() {
+pub impl @ecs.Component for TextBackgroundColor with fn component() {
   ecs_key_text_background_color
 }
 
 ///|
-pub impl @ecs.Component for UnderlineColor with component() {
+pub impl @ecs.Component for UnderlineColor with fn component() {
   ecs_key_text_underline_color
 }
 
 ///|
-pub impl @ecs.Component for Underline with component() {
+pub impl @ecs.Component for Underline with fn component() {
   ecs_key_text_underline
 }
 
 ///|
-pub impl @ecs.Component for StrikethroughColor with component() {
+pub impl @ecs.Component for StrikethroughColor with fn component() {
   ecs_key_text_strikethrough_color
 }
 
 ///|
-pub impl @ecs.Component for Strikethrough with component() {
+pub impl @ecs.Component for Strikethrough with fn component() {
   ecs_key_text_strikethrough
 }
 
 ///|
-pub impl @ecs.Component for TextLayout with component() {
+pub impl @ecs.Component for TextLayout with fn component() {
   ecs_key_text_layout
 }
 
 ///|
-pub impl @ecs.Component for TextBounds with component() {
+pub impl @ecs.Component for TextBounds with fn component() {
   ecs_key_text_bounds
 }
 
 ///|
-pub impl @ecs.Component for LineHeight with component() {
+pub impl @ecs.Component for LineHeight with fn component() {
   ecs_key_text_line_height
 }
 
 ///|
-pub impl @ecs.Component for FontHinting with component() {
+pub impl @ecs.Component for FontHinting with fn component() {
   ecs_key_text_font_hinting
 }
 
 ///|
-pub impl @ecs.Component for Text2dShadow with component() {
+pub impl @ecs.Component for Text2dShadow with fn component() {
   ecs_key_text2d_shadow
 }
 
 ///|
-pub impl @ecs.Component for TextShadow with component() {
+pub impl @ecs.Component for TextShadow with fn component() {
   ecs_key_text_shadow
 }
 
 ///|
-pub impl @ecs.Component for YAxisOrientation with component() {
+pub impl @ecs.Component for YAxisOrientation with fn component() {
   ecs_key_text_y_axis
 }
 
 ///|
-pub impl @app.Resource for RemSize with resource() {
+pub impl @app.Resource for RemSize with fn resource() {
   ecs_res_key_rem_size
 }
 
 ///|
-pub impl @app.Resource for FontCx with resource() {
+pub impl @app.Resource for FontCx with fn resource() {
   ecs_res_key_font_cx
 }
 
 ///|
-pub impl @app.Resource for FontAtlasSet with resource() {
+pub impl @app.Resource for FontAtlasSet with fn resource() {
   ecs_res_key_font_atlas_set
 }
 
@@ -387,8 +387,8 @@ fn transform_eq(lhs : @transform.Transform, rhs : @transform.Transform) -> Bool 
 
 ///|
 fn render_layers_eq(
-  lhs : @sprite.RenderLayers,
-  rhs : @sprite.RenderLayers,
+  lhs : @camera_render_layers.RenderLayers,
+  rhs : @camera_render_layers.RenderLayers,
 ) -> Bool {
   lhs.mask == rhs.mask
 }
@@ -842,7 +842,7 @@ fn text_ecs_bundle_from_entity(
         font_hinting: FontHinting::default(),
         shadow: None,
         transform: local_transform,
-        layers: @sprite.RenderLayers::RenderLayers(),
+        layers: @camera_render_layers.RenderLayers::RenderLayers(),
         no_frustum_culling: false,
         anchor: @sprite.Anchor::Anchor(),
         y_axis: YAxisOrientation::TopToBottom,
@@ -888,9 +888,9 @@ fn text_ecs_bundle_from_entity(
   }
   let shadow : Text2dShadow? = text_ecs_entity_ref_get(entity_ref)
   let layers = match
-    (text_ecs_entity_ref_get(entity_ref) : @sprite.RenderLayers?) {
+    (text_ecs_entity_ref_get(entity_ref) : @camera_render_layers.RenderLayers?) {
     Some(layers) => layers
-    None => @sprite.RenderLayers::RenderLayers()
+    None => @camera_render_layers.RenderLayers::RenderLayers()
   }
   let anchor = match (text_ecs_entity_ref_get(entity_ref) : @sprite.Anchor?) {
     Some(anchor) => anchor
@@ -1335,7 +1335,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @sprite.ecs_key_render_layers, tick, dirty_entities, has_text_dirty_entities,
+      world, @camera_render_layers.ecs_key_render_layers, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
@@ -1517,7 +1517,7 @@ fn ui_text_ecs_bundle_from_entity(
       font_hinting: FontHinting::default(),
       shadow: None,
       transform: @transform.Transform::identity(),
-      layers: @sprite.RenderLayers::RenderLayers(),
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
       no_frustum_culling: false,
       anchor: @sprite.Anchor::Anchor(),
       y_axis: YAxisOrientation::TopToBottom,
@@ -1570,7 +1570,7 @@ fn ui_text_ecs_bundle_from_entity(
     font_hinting,
     shadow: text_shadow_component_to_2d(shadow_component),
     transform: @transform.Transform::identity(),
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
     no_frustum_culling: false,
     anchor: @sprite.Anchor::Anchor(),
     y_axis: YAxisOrientation::TopToBottom,

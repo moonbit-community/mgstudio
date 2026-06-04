@@ -133,7 +133,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
     @transform.Transform::identity(),
     @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
-    @sprite.RenderLayers::layer(1),
+    @camera_render_layers.RenderLayers::layer(1),
   ).spawn(world)
 
   spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
@@ -158,7 +158,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @text.Text2d::new(TEXT2D_SECONDARY),
     text_font,
     @transform.Transform::identity(),
-    @sprite.RenderLayers::layer(1),
+    @camera_render_layers.RenderLayers::layer(1),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
@@ -169,7 +169,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @text.Text2d::new(TEXT2D_BOTH),
     text_font,
     @transform.Transform::from_xyz(0.0F, -50.0F, 0.0F),
-    @sprite.RenderLayers::from_layers([0, 1]),
+    @camera_render_layers.RenderLayers::from_layers([0, 1]),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(0.8784314F, 1.0F, 1.0F)))
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))

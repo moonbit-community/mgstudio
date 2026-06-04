@@ -144,21 +144,23 @@ fn spawn_mesh_with_layer(
   mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> @core.Entity {
   let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
     @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
+  try! world.set_by_key(
+    entity, @camera_render_layers.ecs_key_render_layers, layers,
+  )
   entity
 }
 
 ///|
 fn spawn_scene_spheres(
   world : @ecs.World,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let sphere = uv_sphere_mesh(2.0F, 18, 32)
@@ -205,7 +207,7 @@ fn spawn_scene_spheres(
 ///|
 fn spawn_scene_quads(
   world : @ecs.World,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let quad = @mesh.Mesh3d::new(
@@ -280,7 +282,7 @@ fn spawn_scene_quads(
 ///|
 fn spawn_scene_occlusion(
   world : @ecs.World,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @mesh.Mesh3d::new(
@@ -365,7 +367,7 @@ fn spawn_scene_occlusion(
 ///|
 fn spawn_scene_instancing(
   world : @ecs.World,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   asset_server : @asset.AssetServer,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
@@ -439,7 +441,7 @@ fn apply_oit_mode(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let layer = @sprite.RenderLayers::layer(LAYER_INDEX)
+  let layer = @camera_render_layers.RenderLayers::layer(LAYER_INDEX)
   let asset_server = @asset.AssetServer::new()
 
   oit_state.val.camera = None
@@ -455,7 +457,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @sprite.ecs_key_render_layers, layer)
+  try! world.set_by_key(
+    camera, @camera_render_layers.ecs_key_render_layers, layer,
+  )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
@@ -479,7 +483,9 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
-  try! world.set_by_key(light, @sprite.ecs_key_render_layers, layer)
+  try! world.set_by_key(
+    light, @camera_render_layers.ecs_key_render_layers, layer,
+  )
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),

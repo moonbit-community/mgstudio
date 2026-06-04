@@ -47,12 +47,15 @@ fn ensure_visibility_defaults(
 fn ensure_layers_default(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @sprite.RenderLayers {
-  match (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+) -> @camera_render_layers.RenderLayers {
+  match
+    (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers)) {
     Some(v) => v
     None => {
-      let layers = @sprite.RenderLayers::RenderLayers()
-      try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
+      let layers = @camera_render_layers.RenderLayers::RenderLayers()
+      try! world.set_by_key(
+        entity, @camera_render_layers.ecs_key_render_layers, layers,
+      )
       layers
     }
   }

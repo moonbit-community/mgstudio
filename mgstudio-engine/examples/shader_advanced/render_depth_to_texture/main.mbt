@@ -35,7 +35,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let offscreen_layer = @sprite.RenderLayers::layer(1)
+  let offscreen_layer = @camera_render_layers.RenderLayers::layer(1)
   let render_target = images
     .peek()
     .add(

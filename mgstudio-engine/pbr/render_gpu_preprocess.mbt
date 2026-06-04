@@ -117,7 +117,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 ///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
@@ -201,7 +201,7 @@ priv struct GpuPreprocessWorkItem3d {
 ///|
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
@@ -1493,7 +1493,7 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
 ///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
@@ -1517,7 +1517,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 ///|
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,

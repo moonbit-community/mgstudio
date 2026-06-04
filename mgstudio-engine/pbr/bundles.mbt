@@ -39,7 +39,7 @@ pub struct Camera3dBundle {
   atmosphere_settings : AtmosphereSettings?
   transform : @transform.Transform
   target : @sprite.RenderTarget
-  layers : @sprite.RenderLayers
+  layers : @camera_render_layers.RenderLayers
 }
 
 ///|
@@ -73,7 +73,7 @@ pub fn Camera3dBundle::new(
     atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
   }
 }
 
@@ -109,7 +109,7 @@ pub fn Camera3dBundle::new_with_projection(
     atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
   }
 }
 
@@ -294,7 +294,7 @@ pub struct MeshMaterial3dBundle {
   mesh : @mesh.Mesh3d
   material : MeshMaterial3d
   transform : @transform.Transform
-  layers : @sprite.RenderLayers
+  layers : @camera_render_layers.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
@@ -310,7 +310,7 @@ pub fn MeshMaterial3dBundle::new(
     mesh,
     material,
     transform,
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
     visibility: @visibility.Visibility::Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
@@ -418,7 +418,12 @@ fn camera3d_bundle_insert(
   }
   world.set_by_key(entity, @sprite.ecs_key_camera, bundle.camera, loc~)
   world.set_by_key(entity, @sprite.ecs_key_render_target, bundle.target, loc~)
-  world.set_by_key(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(
+    entity,
+    @camera_render_layers.ecs_key_render_layers,
+    bundle.layers,
+    loc~,
+  )
   world.set_by_key(
     entity,
     ecs_key_frustum,
@@ -484,8 +489,8 @@ pub fn register_render3d_required_components(
   )
   world.register_required_components_with(
     ecs_key_camera3d,
-    @sprite.ecs_key_render_layers,
-    fn() { @sprite.RenderLayers::RenderLayers() },
+    @camera_render_layers.ecs_key_render_layers,
+    fn() { @camera_render_layers.RenderLayers::RenderLayers() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -524,7 +529,12 @@ fn mesh_material3d_bundle_insert(
 ) -> Unit raise @ecs.EcsError {
   world.set_by_key(entity, ecs_key_mesh3d, bundle.mesh, loc~)
   world.set_by_key(entity, ecs_key_mesh_material3d, bundle.material, loc~)
-  world.set_by_key(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(
+    entity,
+    @camera_render_layers.ecs_key_render_layers,
+    bundle.layers,
+    loc~,
+  )
   world.set_by_key(
     entity,
     @visibility.ecs_key_visibility,

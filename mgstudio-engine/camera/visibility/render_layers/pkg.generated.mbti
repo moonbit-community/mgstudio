@@ -1,0 +1,43 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/visibility/render_layers"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let default_layers : RenderLayers
+
+pub let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers]
+
+// Errors
+
+// Types and methods
+pub struct RenderLayers {
+  mask : Int
+}
+pub fn RenderLayers::RenderLayers() -> Self
+pub fn RenderLayers::add(Self, Int) -> Self
+pub fn RenderLayers::combine(Self, Self) -> Self
+pub fn RenderLayers::contains(Self, Int) -> Bool
+pub fn RenderLayers::from_layers(Array[Int]) -> Self
+pub fn RenderLayers::intersection(Self, Self) -> Self
+pub fn RenderLayers::intersects(Self, Self) -> Bool
+pub fn RenderLayers::layer(Int) -> Self
+pub fn RenderLayers::mask(Self) -> Int
+pub fn RenderLayers::matches(Self, Self) -> Bool
+pub fn RenderLayers::none() -> Self
+pub fn RenderLayers::remove(Self, Int) -> Self
+pub fn RenderLayers::union(Self, Self) -> Self
+pub fn RenderLayers::with_layer(Self, Int) -> Self
+pub fn RenderLayers::without_layer(Self, Int) -> Self
+pub impl @ecs.Component for RenderLayers
+pub impl ToJson for RenderLayers
+pub impl @json.FromJson for RenderLayers
+
+// Type aliases
+pub type Layer = Int
+
+// Traits
+

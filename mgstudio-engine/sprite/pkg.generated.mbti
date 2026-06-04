@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
@@ -71,8 +72,6 @@ pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
-pub let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers]
-
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
 
 pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
@@ -111,7 +110,7 @@ pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup]
 
 pub fn gizmos_clear_3d() -> Unit
 
-pub fn gizmos_mesh_id_3d(RenderLayers) -> Int?
+pub fn gizmos_mesh_id_3d(@render_layers.RenderLayers) -> Int?
 
 pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
@@ -193,7 +192,7 @@ pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, RenderLayers) -> Unit
+pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, @render_layers.RenderLayers) -> Unit
 
 pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -203,19 +202,19 @@ pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render2d_primary_scene_cull_context(@ecs.World) -> SceneCullContext?
 
-pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers) -> Unit
+pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers) -> Unit
 
-pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?) -> Unit
+pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?) -> Unit
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
 
 pub fn render2d_push_sprite_uv_scissor_slices_batch(@ecs.World, Array[OverlaySpriteUvScissorSlices]) -> Unit
 
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
 
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
 
@@ -364,14 +363,14 @@ pub struct Camera2dBundle {
   camera2d : Camera2d
   transform : @transform.Transform
   target : RenderTarget
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   bloom : @post_process.Bloom?
   tonemapping : @post_process.Tonemapping?
   color_grading : @post_process.ColorGrading?
   deband_dither : @post_process.DebandDither?
 }
 pub fn Camera2dBundle::new(Camera, @transform.Transform) -> Self
-pub fn Camera2dBundle::new_with_layers(Camera, @transform.Transform, RenderTarget, RenderLayers) -> Self
+pub fn Camera2dBundle::new_with_layers(Camera, @transform.Transform, RenderTarget, @render_layers.RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @transform.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @transform.Transform, RenderTarget) -> Self
 #callsite(autofill(loc))
@@ -485,7 +484,7 @@ pub(all) struct GizmoConfig {
   enabled : Bool
   line : GizmoLineConfig
   depth_bias : Float
-  render_layers : RenderLayers
+  render_layers : @render_layers.RenderLayers
 }
 pub fn GizmoConfig::GizmoConfig() -> Self
 
@@ -510,7 +509,7 @@ pub(all) struct GizmoLine {
   end : @math.Vec2
   start_color : @color.Color
   end_color : @color.Color
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   width : Float
   style : GizmoLineStyle
 }
@@ -520,7 +519,7 @@ pub(all) struct GizmoLine3d {
   end : @math.Vec3
   start_color : @color.Color
   end_color : @color.Color
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
 }
 
 pub(all) struct GizmoLineConfig {
@@ -722,13 +721,13 @@ pub struct Mesh2dBundle {
   mesh : @mesh.Mesh2d
   material : MeshMaterial2d[ColorMaterialAsset]
   transform : @transform.Transform
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
 pub fn Mesh2dBundle::new_with_mesh_material(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, @render_layers.RenderLayers) -> Self
 #callsite(autofill(loc))
 pub fn Mesh2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @ecs.Bundle for Mesh2dBundle
@@ -774,7 +773,7 @@ pub(all) struct OverlaySpriteUvScissor {
   uv_min : @math.Vec2
   uv_max : @math.Vec2
   color : @color.Color
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
 }
@@ -787,7 +786,7 @@ pub(all) struct OverlaySpriteUvScissorSlices {
   color : @color.Color
   cull_center : @math.Vec2
   cull_half_size : @math.Vec2
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
   slices_xy_uv : Array[Float]
@@ -890,28 +889,6 @@ pub struct Render2dPlugin {
 pub fn Render2dPlugin::Render2dPlugin() -> Self
 pub impl @app.Plugin for Render2dPlugin
 
-pub struct RenderLayers {
-  mask : Int
-}
-pub fn RenderLayers::RenderLayers() -> Self
-pub fn RenderLayers::add(Self, Int) -> Self
-pub fn RenderLayers::combine(Self, Self) -> Self
-pub fn RenderLayers::contains(Self, Int) -> Bool
-pub fn RenderLayers::from_layers(Array[Int]) -> Self
-pub fn RenderLayers::intersection(Self, Self) -> Self
-pub fn RenderLayers::intersects(Self, Self) -> Bool
-pub fn RenderLayers::layer(Int) -> Self
-pub fn RenderLayers::mask(Self) -> Int
-pub fn RenderLayers::matches(Self, Self) -> Bool
-pub fn RenderLayers::none() -> Self
-pub fn RenderLayers::remove(Self, Int) -> Self
-pub fn RenderLayers::union(Self, Self) -> Self
-pub fn RenderLayers::with_layer(Self, Int) -> Self
-pub fn RenderLayers::without_layer(Self, Int) -> Self
-pub impl @ecs.Component for RenderLayers
-pub impl ToJson for RenderLayers
-pub impl @json.FromJson for RenderLayers
-
 pub struct RenderMaterial2dInstances[M] {
   instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
 }
@@ -1007,13 +984,13 @@ pub struct SpriteBundle {
   sprite : Sprite
   anchor : Anchor
   transform : @transform.Transform
-  layers : RenderLayers
+  layers : @render_layers.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
 pub fn SpriteBundle::new(Sprite, @transform.Transform) -> Self
-pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, RenderLayers) -> Self
+pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, @render_layers.RenderLayers) -> Self
 #callsite(autofill(loc))
 pub fn SpriteBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @ecs.Bundle for SpriteBundle

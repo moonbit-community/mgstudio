@@ -83,8 +83,8 @@ fn spawn_meshlet_bunny(
   try! world.set_by_key(entity, @pbr.ecs_key_mesh_material3d, material)
   try! world.set_by_key(
     entity,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::RenderLayers(),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::RenderLayers(),
   )
   try! world.set_by_key(
     entity,

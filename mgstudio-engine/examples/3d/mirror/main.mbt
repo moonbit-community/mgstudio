@@ -391,8 +391,8 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   try! world.set_by_key(
     mirror_entity,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(LAYER_MIRROR_SURFACE),
   )
   mirror_state.val.mirror_plane = mirror_entity
 
@@ -429,8 +429,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   try! world.set_by_key(
     main_camera,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::from_layers([LAYER_MAIN_SCENE, LAYER_MIRROR_SURFACE]),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::from_layers([
+      LAYER_MAIN_SCENE,
+      LAYER_MIRROR_SURFACE,
+    ]),
   )
   mirror_state.val.main_camera = main_camera
   let (initial_yaw, initial_pitch) = orbit_angles_from_translation(
@@ -455,8 +458,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   try! world.set_by_key(
     mirror_camera,
-    @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::layer(LAYER_MAIN_SCENE),
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(LAYER_MAIN_SCENE),
   )
   mirror_state.val.mirror_camera = mirror_camera
 

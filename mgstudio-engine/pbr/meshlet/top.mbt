@@ -258,10 +258,11 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
                   }
                   let render_layer_mask = match
                     (try! source_world.get_by_key(
-                      entity, @sprite.ecs_key_render_layers,
+                      entity, @camera_render_layers.ecs_key_render_layers,
                     )) {
                     Some(render_layers) => render_layers.mask()
-                    None => @sprite.RenderLayers::RenderLayers().mask()
+                    None =>
+                      @camera_render_layers.RenderLayers::RenderLayers().mask()
                   }
                   let not_shadow_caster = try! source_world.contains_by_key(
                     entity, @pbr.ecs_key_not_shadow_caster,
@@ -390,10 +391,10 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
           Some(instance_manager) => {
             let view_render_layer_mask = match
               (try! source_world.get_by_key(
-                view_entity, @sprite.ecs_key_render_layers,
+                view_entity, @camera_render_layers.ecs_key_render_layers,
               )) {
               Some(render_layers) => render_layers.mask()
-              None => @sprite.RenderLayers::RenderLayers().mask()
+              None => @camera_render_layers.RenderLayers::RenderLayers().mask()
             }
             ignore(
               instance_manager.prepare_view_instance_visibility(

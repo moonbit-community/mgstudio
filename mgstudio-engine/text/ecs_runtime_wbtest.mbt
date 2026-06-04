@@ -185,7 +185,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     font_hinting: FontHinting::default(),
     shadow: None,
     transform: global_transform,
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
     no_frustum_culling: false,
     anchor: @sprite.Anchor::Anchor(),
     y_axis: YAxisOrientation::TopToBottom,
@@ -494,7 +494,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     font_hinting: FontHinting::default(),
     shadow: None,
     transform: @transform.Transform::identity(),
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
     no_frustum_culling: false,
     anchor: @sprite.Anchor::Anchor(),
     y_axis: YAxisOrientation::TopToBottom,
@@ -503,7 +503,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
   let entry = ui_text_ecs_entries[0]
   let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
-  let runtime_layers = @sprite.RenderLayers::layer(11)
+  let runtime_layers = @camera_render_layers.RenderLayers::layer(11)
   text_set_transform(entry.handle, runtime_transform)
   text_set_layers(entry.handle, runtime_layers)
   text_set_anchor(entry.handle, @sprite.Anchor::center())

@@ -28,7 +28,7 @@ pub struct Text2dBundle {
   font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
-  layers : @sprite.RenderLayers
+  layers : @camera_render_layers.RenderLayers
   no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
@@ -56,7 +56,7 @@ pub fn Text2dBundle::new(
     font_hinting: FontHinting::default(),
     shadow: None,
     transform,
-    layers: @sprite.RenderLayers::RenderLayers(),
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
     no_frustum_culling: false,
     anchor: @sprite.Anchor::Anchor(),
     y_axis: YAxisOrientation::TopToBottom,
@@ -69,7 +69,7 @@ pub fn Text2dBundle::new_with_layers(
   text : Text2d,
   font : TextFont,
   transform : @transform.Transform,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> Text2dBundle {
   Text2dBundle::{
     text,
@@ -320,7 +320,7 @@ priv struct TextInstance {
   font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
-  layers : @sprite.RenderLayers
+  layers : @camera_render_layers.RenderLayers
   view_visible : Bool
   no_frustum_culling : Bool
   anchor : @sprite.Anchor
@@ -1001,7 +1001,7 @@ pub fn text_get_transform(handle : TextHandle) -> @transform.Transform? {
 /// Update the render layers of a text handle without marking it as needing rerender.
 pub fn text_set_layers(
   handle : TextHandle,
-  layers : @sprite.RenderLayers,
+  layers : @camera_render_layers.RenderLayers,
 ) -> Unit {
   text_update_instance(handle, instance => {
     if instance.layers.mask == layers.mask {

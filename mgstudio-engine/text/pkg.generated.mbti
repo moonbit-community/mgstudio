@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/text"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -178,7 +179,7 @@ pub fn text_set_font(TextHandle, TextFont) -> Unit
 
 pub fn text_set_font_hinting(TextHandle, FontHinting) -> Unit
 
-pub fn text_set_layers(TextHandle, @sprite.RenderLayers) -> Unit
+pub fn text_set_layers(TextHandle, @render_layers.RenderLayers) -> Unit
 
 pub fn text_set_layout(TextHandle, TextLayout) -> Unit
 
@@ -582,14 +583,14 @@ pub struct Text2dBundle {
   font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
-  layers : @sprite.RenderLayers
+  layers : @render_layers.RenderLayers
   no_frustum_culling : Bool
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
   logical_viewport_size : @math.Vec2?
 }
 pub fn Text2dBundle::new(Text2d, TextFont, @transform.Transform) -> Self
-pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @transform.Transform, @sprite.RenderLayers) -> Self
+pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @transform.Transform, @render_layers.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
 pub fn Text2dBundle::with_anchor(Self, @sprite.Anchor) -> Self
 pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self
