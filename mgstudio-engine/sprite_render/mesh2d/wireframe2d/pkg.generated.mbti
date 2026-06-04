@@ -1,0 +1,99 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe]
+
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
+
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d]
+
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor]
+
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
+
+pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
+
+pub fn wireframe2d_material_color(@ecs.World, Mesh2dWireframe) -> @color.Color
+
+// Errors
+
+// Types and methods
+type GlobalWireframeMaterial
+pub impl @app.Resource for GlobalWireframeMaterial
+
+pub struct Mesh2dWireframe {
+  handle : @asset.Handle[Wireframe2dMaterial]
+}
+pub fn Mesh2dWireframe::handle(Self) -> @asset.Handle[Wireframe2dMaterial]
+pub fn Mesh2dWireframe::new(@asset.Handle[Wireframe2dMaterial]) -> Self
+pub impl @ecs.Component for Mesh2dWireframe
+
+pub struct NoWireframe2d {
+}
+pub fn NoWireframe2d::NoWireframe2d() -> Self
+pub impl @ecs.Component for NoWireframe2d
+pub impl ToJson for NoWireframe2d
+pub impl @json.FromJson for NoWireframe2d
+
+pub struct Wireframe2d {
+}
+pub fn Wireframe2d::Wireframe2d() -> Self
+pub impl @ecs.Component for Wireframe2d
+pub impl ToJson for Wireframe2d
+pub impl @json.FromJson for Wireframe2d
+
+pub struct Wireframe2dColor {
+  color : @color.Color
+}
+pub fn Wireframe2dColor::Wireframe2dColor() -> Self
+pub fn Wireframe2dColor::new(@color.Color) -> Self
+pub fn Wireframe2dColor::with_color(Self, @color.Color) -> Self
+pub impl @ecs.Component for Wireframe2dColor
+pub impl ToJson for Wireframe2dColor
+pub impl @json.FromJson for Wireframe2dColor
+
+pub struct Wireframe2dConfig {
+  global : Bool
+  default_color : @color.Color
+} derive(ToJson, @json.FromJson)
+pub fn Wireframe2dConfig::Wireframe2dConfig() -> Self
+pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
+pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
+pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
+pub impl @app.Resource for Wireframe2dConfig
+
+pub struct Wireframe2dMaterial {
+  mut color : @color.Color
+}
+pub fn Wireframe2dMaterial::Wireframe2dMaterial() -> Self
+pub fn Wireframe2dMaterial::color(Self) -> @color.Color
+pub fn Wireframe2dMaterial::new(@color.Color) -> Self
+pub impl @asset.Asset for Wireframe2dMaterial
+
+pub struct Wireframe2dPlugin {
+}
+pub fn Wireframe2dPlugin::Wireframe2dPlugin() -> Self
+pub impl @app.Plugin for Wireframe2dPlugin
+
+pub struct WireframeEntitiesNeedingSpecialization {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+}
+pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> Self
+pub impl @app.Resource for WireframeEntitiesNeedingSpecialization
+
+// Type aliases
+
+// Traits
+

@@ -44,25 +44,25 @@ pub type Mesh2d = @mesh.Mesh2d
 pub type MeshMaterial2d[M] = @sprite_render_mesh2d_material.MeshMaterial2d[M]
 
 ///|
-pub type Wireframe2d = @sprite.Wireframe2d
+pub type Wireframe2d = @sprite_render_mesh2d_wireframe2d.Wireframe2d
 
 ///|
-pub type NoWireframe2d = @sprite.NoWireframe2d
+pub type NoWireframe2d = @sprite_render_mesh2d_wireframe2d.NoWireframe2d
 
 ///|
-pub type Wireframe2dColor = @sprite.Wireframe2dColor
+pub type Wireframe2dColor = @sprite_render_mesh2d_wireframe2d.Wireframe2dColor
 
 ///|
-pub type Wireframe2dConfig = @sprite.Wireframe2dConfig
+pub type Wireframe2dConfig = @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig
 
 ///|
-pub type Wireframe2dMaterial = @sprite.Wireframe2dMaterial
+pub type Wireframe2dMaterial = @sprite_render_mesh2d_wireframe2d.Wireframe2dMaterial
 
 ///|
-pub type Mesh2dWireframe = @sprite.Mesh2dWireframe
+pub type Mesh2dWireframe = @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe
 
 ///|
-pub type Wireframe2dPlugin = @sprite.Wireframe2dPlugin
+pub type Wireframe2dPlugin = @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin
 
 ///|
 pub type TileData = @tilemap_chunk.TileData
@@ -91,16 +91,16 @@ pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
 
 ///|
-pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d] = @sprite.ecs_key_wireframe2d
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d
 
 ///|
-pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d] = @sprite.ecs_key_no_wireframe2d
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d] = @sprite_render_mesh2d_wireframe2d.ecs_key_no_wireframe2d
 
 ///|
-pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @sprite.ecs_key_wireframe2d_color
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d_color
 
 ///|
-pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @sprite.ecs_key_wireframe2d_config
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d_config
 
 ///|
 pub type OverlaySpriteUvScissor = @sprite.OverlaySpriteUvScissor

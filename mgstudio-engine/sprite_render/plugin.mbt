@@ -21,11 +21,11 @@ pub fn SpriteRenderPlugin::SpriteRenderPlugin() -> SpriteRenderPlugin {
 }
 
 ///|
-pub impl @app.Plugin for SpriteRenderPlugin with name(_self) {
+pub impl @app.Plugin for SpriteRenderPlugin with fn name(_self) {
   "mgstudio.sprite_render.SpriteRenderPlugin"
 }
 
 ///|
-pub impl @app.Plugin for SpriteRenderPlugin with build(_self, app) {
+pub impl @app.Plugin for SpriteRenderPlugin with fn build(_self, app) {
   sprite_render_plugin_ecs(app)
 }

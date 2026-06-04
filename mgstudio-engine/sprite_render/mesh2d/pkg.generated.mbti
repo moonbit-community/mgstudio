@@ -4,10 +4,10 @@ package "Milky2018/mgstudio/sprite_render/mesh2d"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/runtime",
+  "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
 }
 
 // Values
@@ -17,13 +17,13 @@ pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
 
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@color_material.ColorMaterial]]
 
-pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite.NoWireframe2d]
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@wireframe2d.NoWireframe2d]
 
-pub let ecs_key_wireframe2d : @ecs.ComponentKey[@sprite.Wireframe2d]
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[@wireframe2d.Wireframe2d]
 
-pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor]
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@wireframe2d.Wireframe2dColor]
 
-pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@wireframe2d.Wireframe2dConfig]
 
 pub fn[M] material2d_plugin(@material.Material2dPlugin[M]) -> @material.Material2dPlugin[M]
 
@@ -52,15 +52,15 @@ pub using @runtime {type Mesh2dDrawPayload}
 
 pub using @material {type MeshMaterial2d}
 
-pub using @sprite {type NoWireframe2d}
+pub using @wireframe2d {type NoWireframe2d}
 
 pub using @runtime {type PhaseEntityRef}
 
-pub using @sprite {type Wireframe2d}
+pub using @wireframe2d {type Wireframe2d}
 
-pub using @sprite {type Wireframe2dColor}
+pub using @wireframe2d {type Wireframe2dColor}
 
-pub using @sprite {type Wireframe2dConfig}
+pub using @wireframe2d {type Wireframe2dConfig}
 
 // Traits
 

@@ -458,16 +458,6 @@ pub fn register_render3d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
-    ecs_key_mesh3d,
-    @transform.ecs_key_transform,
-    fn() { @transform.Transform::identity() },
-  )
-  world.register_required_components_with(
-    ecs_key_mesh3d,
-    @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
-  )
-  world.register_required_components_with(
     ecs_key_camera3d,
     @sprite.ecs_key_camera,
     fn() { @sprite.Camera::Camera() },

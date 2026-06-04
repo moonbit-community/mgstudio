@@ -14,25 +14,33 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/wireframe2d.rs`.
-pub using @sprite {type NoWireframe2d}
+pub using @sprite_render_mesh2d_wireframe2d {type NoWireframe2d}
 
 ///|
-pub using @sprite {type Wireframe2d}
+pub using @sprite_render_mesh2d_wireframe2d {type Wireframe2d}
 
 ///|
-pub using @sprite {type Wireframe2dColor}
+pub using @sprite_render_mesh2d_wireframe2d {type Wireframe2dColor}
 
 ///|
-pub using @sprite {type Wireframe2dConfig}
+pub using @sprite_render_mesh2d_wireframe2d {type Wireframe2dConfig}
 
 ///|
-pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite.NoWireframe2d] = @sprite.ecs_key_no_wireframe2d
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[
+  @sprite_render_mesh2d_wireframe2d.NoWireframe2d,
+] = @sprite_render_mesh2d_wireframe2d.ecs_key_no_wireframe2d
 
 ///|
-pub let ecs_key_wireframe2d : @ecs.ComponentKey[@sprite.Wireframe2d] = @sprite.ecs_key_wireframe2d
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[
+  @sprite_render_mesh2d_wireframe2d.Wireframe2d,
+] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d
 
 ///|
-pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor] = @sprite.ecs_key_wireframe2d_color
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[
+  @sprite_render_mesh2d_wireframe2d.Wireframe2dColor,
+] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d_color
 
 ///|
-pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig] = @sprite.ecs_key_wireframe2d_config
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[
+  @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig,
+] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d_config

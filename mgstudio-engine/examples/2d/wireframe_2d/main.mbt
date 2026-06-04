@@ -29,8 +29,15 @@ pub impl @ecs.Component for WireframeHelpText with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@sprite.Wireframe2dPlugin::Wireframe2dPlugin())
-  .insert_resource(@sprite.Wireframe2dConfig::new(true, color_default_white()))
+  .add_plugins(
+    @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin::Wireframe2dPlugin(),
+  )
+  .insert_resource(
+    @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
+      true,
+      color_default_white(),
+    ),
+  )
   .add_systems(@app.Startup, @app.system_config_param4(setup))
   .add_systems(@app.Update, @app.system_config_param4(update_colors))
   .run()
@@ -80,7 +87,9 @@ fn wireframe_color_text(color : @sprite.Color) -> String {
 }
 
 ///|
-fn wireframe_overlay_text(config : @sprite.Wireframe2dConfig) -> String {
+fn wireframe_overlay_text(
+  config : @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig,
+) -> String {
   let global_value = if config.global { "true" } else { "false" }
   "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: \{global_value}\nColor: \{wireframe_color_text(config.default_color)}"
 }
@@ -122,7 +131,7 @@ fn setup(
           }),
         ),
         @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
-        @sprite.NoWireframe2d::NoWireframe2d(),
+        @sprite_render_mesh2d_wireframe2d.NoWireframe2d::NoWireframe2d(),
       ),
     ),
   )
@@ -173,8 +182,8 @@ fn setup(
           }),
         ),
         @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),
-        @sprite.Wireframe2d::Wireframe2d(),
-        @sprite.Wireframe2dColor::new(color_green()),
+        @sprite_render_mesh2d_wireframe2d.Wireframe2d::Wireframe2d(),
+        @sprite_render_mesh2d_wireframe2d.Wireframe2dColor::new(color_green()),
       ),
     ),
   )
@@ -211,8 +220,11 @@ fn setup(
 ///|
 fn update_colors(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  config : @app.ResMut[@sprite.Wireframe2dConfig],
-  wireframe_colors : @ecs.Query[@ecs.Mut[@sprite.Wireframe2dColor], @ecs.All],
+  config : @app.ResMut[@sprite_render_mesh2d_wireframe2d.Wireframe2dConfig],
+  wireframe_colors : @ecs.Query[
+    @ecs.Mut[@sprite_render_mesh2d_wireframe2d.Wireframe2dColor],
+    @ecs.All,
+  ],
   text : @ecs.Query[
     (@ecs.Comp[WireframeHelpText], @ecs.Mut[@text.Text]),
     @ecs.All,

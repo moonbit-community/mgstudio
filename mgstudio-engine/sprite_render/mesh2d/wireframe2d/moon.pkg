@@ -1,0 +1,11 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/mesh",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

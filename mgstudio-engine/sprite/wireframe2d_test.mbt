@@ -13,11 +13,15 @@
 // limitations under the License.
 
 ///|
-test "sprite: Wireframe2dConfig can be accessed through ResMut" {
+test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig can be accessed through ResMut" {
   let observed : Ref[Bool?] = Ref(None)
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(@sprite.Wireframe2dConfig::Wireframe2dConfig())
-    .add_system_param(fn(config : @app.ResMut[Wireframe2dConfig]) {
+    .insert_resource(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::Wireframe2dConfig(),
+    )
+    .add_system_param(fn(
+      config : @app.ResMut[@sprite_render_mesh2d_wireframe2d.Wireframe2dConfig],
+    ) {
       observed.val = Some(config.get().global)
       config.update(fn(value) { value.with_global(true) })
     })
@@ -28,18 +32,27 @@ test "sprite: Wireframe2dConfig can be accessed through ResMut" {
   debug_inspect(
     app
     .world()
-    .get_resource(Wireframe2dConfig::resource())
+    .get_resource(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::resource(),
+    )
     .map(fn(config) { config.global }),
     content="Some(true)",
   )
 }
 
 ///|
-test "sprite: Wireframe2dPlugin applies Mesh2dWireframe material handles" {
+test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin applies @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe material handles" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(Wireframe2dConfig::new(true, Color::white()))
-    .add_plugins(Wireframe2dPlugin::Wireframe2dPlugin())
+    .insert_resource(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
+        true,
+        Color::white(),
+      ),
+    )
+    .add_plugins(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin::Wireframe2dPlugin(),
+    )
     .add_system(fn(world : @ecs.World) {
       if entity_ref.val is Some(_) {
         return
@@ -60,8 +73,13 @@ test "sprite: Wireframe2dPlugin applies Mesh2dWireframe material handles" {
   let entity = entity_ref.val.unwrap()
   let wireframe = (try! app
   .world()
-  .get_by_key(entity, Mesh2dWireframe::component())).unwrap()
-  let material_key : @ecs.ResourceKey[@asset.Assets[Wireframe2dMaterial]] = @asset.assets_resource_key()
+  .get_by_key(
+    entity,
+    @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe::component(),
+  )).unwrap()
+  let material_key : @ecs.ResourceKey[
+    @asset.Assets[@sprite_render_mesh2d_wireframe2d.Wireframe2dMaterial],
+  ] = @asset.assets_resource_key()
   let materials = app.world().get_resource(material_key).unwrap()
   debug_inspect(wireframe.handle().id() >= 0, content="true")
   debug_inspect(materials.get(wireframe.handle()) is Some(_), content="true")

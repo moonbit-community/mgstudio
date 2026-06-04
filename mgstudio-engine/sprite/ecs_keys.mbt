@@ -71,9 +71,6 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 
 ///|
-let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
-
-///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
   MeshMaterial2d[ColorMaterial],
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
@@ -84,24 +81,7 @@ pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect] = @ecs.register_co
 )
 
 ///|
-pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d] = @ecs.register_component(
-  debug_name="render2d.wireframe2d",
-)
-
-///|
-pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d] = @ecs.register_component(
-  debug_name="render2d.no_wireframe2d",
-)
-
-///|
-pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @ecs.register_component(
-  debug_name="render2d.wireframe2d_color",
-)
-
-///|
-pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @ecs.register_component(
-  debug_name="render2d.mesh2d_wireframe",
-)
+let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @sprite_render_mesh2d_wireframe2d.ecs_key_mesh2d_wireframe
 
 ///|
 let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @sprite_tilemap_chunk.ecs_key_tilemap_chunk
@@ -152,26 +132,6 @@ pub impl @ecs.Component for RenderTarget with fn component() {
 ///|
 pub impl @ecs.Component for ScissorRect with fn component() {
   ecs_key_scissor_rect
-}
-
-///|
-pub impl @ecs.Component for Wireframe2d with fn component() {
-  ecs_key_wireframe2d
-}
-
-///|
-pub impl @ecs.Component for NoWireframe2d with fn component() {
-  ecs_key_no_wireframe2d
-}
-
-///|
-pub impl @ecs.Component for Wireframe2dColor with fn component() {
-  ecs_key_wireframe2d_color
-}
-
-///|
-pub impl @ecs.Component for Mesh2dWireframe with fn component() {
-  ecs_key_mesh2d_wireframe
 }
 
 ///|
@@ -264,23 +224,6 @@ pub fn ensure_render2d_required_components(world : @ecs.World) -> Unit {
 ///|
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="render2d.render_state",
-)
-
-///|
-pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @ecs.register_resource(
-  debug_name="render2d.wireframe2d_config",
-)
-
-///|
-pub let ecs_key_global_wireframe_material : @ecs.ResourceKey[
-  GlobalWireframeMaterial,
-] = @ecs.register_resource(debug_name="render2d.global_wireframe_material")
-
-///|
-pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[
-  WireframeEntitiesNeedingSpecialization,
-] = @ecs.register_resource(
-  debug_name="render2d.wireframe_entities_needing_specialization",
 )
 
 ///|
@@ -631,21 +574,6 @@ fn decode_scissor_rect(json : Json) -> ScissorRect {
 }
 
 ///|
-fn decode_wireframe2d(_json : Json) -> Wireframe2d {
-  Wireframe2d::Wireframe2d()
-}
-
-///|
-fn decode_no_wireframe2d(_json : Json) -> NoWireframe2d {
-  NoWireframe2d::NoWireframe2d()
-}
-
-///|
-fn decode_wireframe2d_color(json : Json) -> Wireframe2dColor {
-  Wireframe2dColor::new(decode_color(json))
-}
-
-///|
 pub impl ToJson for Sprite with fn to_json(self) {
   encode_sprite(self)
 }
@@ -716,38 +644,6 @@ pub impl @json.FromJson for RenderTarget with fn from_json(json, _path) {
 }
 
 ///|
-pub impl ToJson for Wireframe2d with fn to_json(self) {
-  self |> ignore
-  (0).to_json()
-}
-
-///|
-pub impl @json.FromJson for Wireframe2d with fn from_json(json, _path) {
-  decode_wireframe2d(json)
-}
-
-///|
-pub impl ToJson for NoWireframe2d with fn to_json(self) {
-  self |> ignore
-  (0).to_json()
-}
-
-///|
-pub impl @json.FromJson for NoWireframe2d with fn from_json(json, _path) {
-  decode_no_wireframe2d(json)
-}
-
-///|
-pub impl ToJson for Wireframe2dColor with fn to_json(self) {
-  encode_color(self.color)
-}
-
-///|
-pub impl @json.FromJson for Wireframe2dColor with fn from_json(json, _path) {
-  decode_wireframe2d_color(json)
-}
-
-///|
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "PanCamera",
   "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
@@ -769,5 +665,5 @@ pub fn get_render_state_resource(
 pub fn get_wireframe2d_config_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[Wireframe2dConfig] {
-  world.resource(ecs_key_wireframe2d_config)
+  @sprite_render_mesh2d_wireframe2d.get_wireframe2d_config_resource(world)
 }
