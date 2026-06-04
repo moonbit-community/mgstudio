@@ -44,6 +44,9 @@ fn GpuBackend::register_mesh3d_material_pipeline_descriptor(
         material_pipeline_id,
         descriptor,
       }
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_material_pipeline_descriptor_updates", 1,
+      )
       return
     }
   }
@@ -51,6 +54,9 @@ fn GpuBackend::register_mesh3d_material_pipeline_descriptor(
     material_pipeline_id,
     descriptor,
   })
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_material_pipeline_descriptor_inserts", 1,
+  )
 }
 
 ///|
@@ -61,6 +67,9 @@ pub fn register_mesh3d_material_pipeline_descriptor(
   if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
     return
   }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_material_pipeline_descriptor_registrations", 1,
+  )
   if ensure_backend() is Some(backend) {
     backend.register_mesh3d_material_pipeline_descriptor(
       material_pipeline_id, descriptor,

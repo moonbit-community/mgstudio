@@ -249,10 +249,20 @@ fn render3d_shadow_visible_extracted_indices(
 fn render3d_prewarm_shadow_material_pipeline(
   world : @ecs.World,
   shadow_mesh : Mesh3dExtractedPayload,
+  prewarm_cache : Render3dShadowMaterialPipelinePrewarmCache,
 ) -> @material.CachedRenderPipelineId? {
   guard shadow_mesh.material_properties.prepass_specialize
     is Some(prepass_specialize) else {
     return None
+  }
+  let prewarm_key = render3d_shadow_material_pipeline_prewarm_key(shadow_mesh)
+  prewarm_cache.lookups += 1
+  match prewarm_cache.entries.get(prewarm_key) {
+    Some(cached_pipeline_id) => {
+      prewarm_cache.hits += 1
+      return cached_pipeline_id
+    }
+    None => prewarm_cache.misses += 1
   }
   guard @sprite.render_mesh_asset_get(shadow_mesh.mesh_handle)
     is Some(mesh_asset) else {
@@ -301,14 +311,70 @@ fn render3d_prewarm_shadow_material_pipeline(
     state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
       prepass_pipeline_id,
     ) {
-    Some(descriptor) =>
+    Some(descriptor) => {
+      prewarm_cache.descriptor_registrations += 1
       @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
         material_pipeline_id=runtime_pipeline_id.id(),
         descriptor~,
       )
+    }
     None => ()
   }
-  Some(runtime_pipeline_id)
+  let result = Some(runtime_pipeline_id)
+  prewarm_cache.entries.set(prewarm_key, result)
+  result
+}
+
+///|
+priv struct Render3dShadowMaterialPipelinePrewarmCache {
+  entries : Map[String, @material.CachedRenderPipelineId?]
+  mut lookups : Int
+  mut hits : Int
+  mut misses : Int
+  mut descriptor_registrations : Int
+}
+
+///|
+fn render3d_shadow_material_pipeline_prewarm_cache_new() -> Render3dShadowMaterialPipelinePrewarmCache {
+  { entries: {}, lookups: 0, hits: 0, misses: 0, descriptor_registrations: 0 }
+}
+
+///|
+fn render3d_shadow_material_pipeline_prewarm_key(
+  shadow_mesh : Mesh3dExtractedPayload,
+) -> String {
+  let material_key = shadow_mesh.material_properties.material_key
+  let mesh_key = shadow_mesh.material_properties.mesh_pipeline_key_bits
+  let may_discard = if render3d_shadow_material_may_discard(
+      shadow_mesh.material.alpha_mode,
+    ) {
+    1
+  } else {
+    0
+  }
+  "\{shadow_mesh.mesh_handle.id()}:\{shadow_mesh.mesh_id}:\{mesh_key.type_tag()}:\{mesh_key.bits()}:\{material_key.type_tag()}:\{material_key.hash()}:\{material_key.bits()}:\{may_discard}"
+}
+
+///|
+fn render3d_shadow_material_pipeline_emit_prewarm_counters(
+  cache : Render3dShadowMaterialPipelinePrewarmCache,
+) -> Unit {
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_prewarm_lookups",
+    cache.lookups,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_prewarm_cache_hits",
+    cache.hits,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_prewarm_cache_misses",
+    cache.misses,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_descriptor_registrations",
+    cache.descriptor_registrations,
+  )
 }
 
 ///|
@@ -321,6 +387,32 @@ fn render3d_execute_shadow_phase_view(
   meshes : Array[ExtractedMesh3d],
   phase_view : Render3dShadowPhaseView,
 ) -> Unit {
+  let prewarm_cache = render3d_shadow_material_pipeline_prewarm_cache_new()
+  let material_pipeline_ids : Array[@material.CachedRenderPipelineId?] = []
+  let prewarm_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_shadow_pipeline_prewarm",
+  )
+  for shadow_phase_item in phase_view.items {
+    let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
+    material_pipeline_ids.push(
+      render3d_prewarm_shadow_material_pipeline(
+        world,
+        extracted_shadow_mesh.payload,
+        prewarm_cache,
+      ),
+    )
+  }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_shadow_pipeline_prewarm",
+    prewarm_trace_start_us,
+  )
+  render3d_shadow_material_pipeline_emit_prewarm_counters(prewarm_cache)
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_phase_items",
+    phase_view.items.length(),
+  )
   render3d_shadow_view_begin_pass(
     phase_view.shadow_view,
     pass_lighting,
@@ -340,13 +432,12 @@ fn render3d_execute_shadow_phase_view(
     return
   }
   let mut draw_storage_offset = 0
-  for shadow_phase_item in phase_view.items {
+  for item_index in 0..<phase_view.items.length() {
+    let shadow_phase_item = phase_view.items[item_index]
     ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
     let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
     let shadow_mesh = extracted_shadow_mesh.payload
-    let material_pipeline_id = render3d_prewarm_shadow_material_pipeline(
-      world, shadow_mesh,
-    )
+    let material_pipeline_id = material_pipeline_ids[item_index]
     let draw_storage_index = draw_storage_base + draw_storage_offset
     render3d_mesh_gpu_binned_phase_push(
       shadow_phase,
@@ -405,6 +496,10 @@ fn render3d_execute_shadow_phase_view(
     )
     draw_storage_offset += 1
   }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_binned_batches",
+    render3d_mesh_gpu_binned_phase_batch_count(shadow_phase),
+  )
   @render.host_gpu_prepare_mesh3d_main_pass_draw_batch(
     preprocess_camera_key_hi=shadow_view_key_hi,
     preprocess_camera_key_lo=shadow_view_key_lo,

@@ -30,12 +30,38 @@ fn render3d_execute_render_cameras(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_render_cameras",
   )
+  let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_lighting",
+  )
   let lighting = @pbr_render.render3d_collect_lighting(source_world)
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_collect_lighting",
+    trace_collect_lighting_start_us,
+  )
+  let trace_camera_phase_items_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_phase_items",
+  )
   let camera_phase_items = match
     render3d_prepared_camera_phase_items(world, cameras) {
     Some(items) => items
     None => render3d_queue_camera_phase_items(cameras)
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "execute_3d_camera_phase_items",
+    trace_camera_phase_items_start_us,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_count",
+    cameras.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_phase_items",
+    camera_phase_items.length(),
+  )
   let cleared_targets_this_frame : Array[Int] = []
   for camera_phase_item in camera_phase_items {
     let extracted_camera = cameras[camera_phase_item.extracted_index]
@@ -45,10 +71,19 @@ fn render3d_execute_render_cameras(
     } else {
       None
     }
+    let trace_camera_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera",
+    )
     render3d_execute_camera(
       world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
       deferred_lighting_enabled, default_opaque_renderer_method, wireframe_config,
       lighting, delta_seconds, cleared_targets_this_frame, prepared_camera_queue,
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "execute_3d_camera",
+      trace_camera_start_us,
     )
   }
   @app.timeline_trace_end_span(

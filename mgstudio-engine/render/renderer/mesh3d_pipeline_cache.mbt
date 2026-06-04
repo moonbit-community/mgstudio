@@ -81,14 +81,23 @@ fn mesh3d_pipeline_get(
       entry.deband_dither_enabled == deband_dither_enabled &&
       entry.shadow_filter_method == shadow_filter_method {
       match entry.state {
-        RenderPipelineOk(pipeline) => return Some(pipeline)
+        RenderPipelineOk(pipeline) => {
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_pipeline_cache_hits", 1,
+          )
+          return Some(pipeline)
+        }
         RenderPipelineErr(message) => {
           ignore(message)
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_pipeline_cache_failed_hits", 1,
+          )
           return None
         }
       }
     }
   }
+  @app.timeline_trace_emit_counter_int("render_3d_pipeline_cache_misses", 1)
   None
 }
 
@@ -166,6 +175,7 @@ fn mesh3d_pipeline_set(
     shadow_filter_method,
     state: RenderPipelineOk(pipeline),
   })
+  @app.timeline_trace_emit_counter_int("render_3d_pipeline_cache_inserts", 1)
 }
 
 ///|
@@ -215,6 +225,9 @@ fn mesh3d_pipeline_set_failed(
     shadow_filter_method,
     state: RenderPipelineErr(message),
   })
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_pipeline_cache_failed_inserts", 1,
+  )
 }
 
 ///|
@@ -284,9 +297,15 @@ fn mesh3d_shadow_pipeline_get(
       entry.material_path == material_path &&
       entry.skinned == skinned &&
       entry.directional_light == directional_light {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_shadow_pipeline_cache_hits", 1,
+      )
       return Some(entry.pipeline)
     }
   }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_cache_misses", 1,
+  )
   None
 }
 
@@ -310,6 +329,9 @@ fn mesh3d_shadow_pipeline_set(
     directional_light,
     pipeline,
   })
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_shadow_pipeline_cache_inserts", 1,
+  )
 }
 
 ///|
@@ -334,9 +356,15 @@ fn mesh3d_motion_vector_pipeline_get(
       entry.has_previous_skin == has_previous_skin &&
       entry.morphed == morphed &&
       entry.has_previous_morph == has_previous_morph {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_motion_vector_pipeline_cache_hits", 1,
+      )
       return Some(entry)
     }
   }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_motion_vector_pipeline_cache_misses", 1,
+  )
   None
 }
 
@@ -346,4 +374,7 @@ fn mesh3d_motion_vector_pipeline_set(
   entry : Mesh3dMotionVectorPipelineCacheEntry,
 ) -> Unit {
   backend.mesh3d_motion_vector_pipeline_cache.push(entry)
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_motion_vector_pipeline_cache_inserts", 1,
+  )
 }

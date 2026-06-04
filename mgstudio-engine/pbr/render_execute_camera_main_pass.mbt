@@ -648,6 +648,34 @@ fn render3d_execute_camera_main_pass(
       @pbr_render.render3d_host_main_pass_draw_entry(wireframe_draw),
     )
   }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_input_draw_items",
+    draw_items.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_binned_items",
+    render3d_mesh_gpu_binned_phase_entries(main_phase).length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_binned_batches",
+    render3d_mesh_gpu_binned_phase_batch_count(main_phase),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_transmissive_items",
+    transmissive_phase_items.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_transparent_items",
+    transparent_draws.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_wireframe_items",
+    wireframe_draws.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_draw_entries",
+    batched_draw_entries.length(),
+  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "render_3d_main_pass_construction",

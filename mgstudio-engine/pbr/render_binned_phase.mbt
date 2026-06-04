@@ -314,9 +314,20 @@ fn render3d_mesh_gpu_binned_phase_entries(
 }
 
 ///|
+fn render3d_mesh_gpu_binned_phase_batch_count(
+  phase : MeshGpuBinnedRenderPhase3d,
+) -> Int {
+  phase.batches.length()
+}
+
+///|
 fn render3d_draw_mesh_gpu_binned_phase(
   phase : MeshGpuBinnedRenderPhase3d,
 ) -> Unit {
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_binned_phase_draw_commands",
+    phase.batches.length(),
+  )
   for batch in phase.batches {
     ignore(batch.batch_set_key)
     ignore(batch.bin_key)

@@ -44,7 +44,7 @@ pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::Render3dMeshRuntimeState")
 
 ///|
-pub impl @app.Resource for Render3dMeshRuntimeState with resource() {
+pub impl @app.Resource for Render3dMeshRuntimeState with fn resource() {
   render3d_mesh_runtime_state_key
 }
 
@@ -526,6 +526,7 @@ pub fn render3d_host_main_pass_draw_entry(
 
 ///|
 pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
+  @app.timeline_trace_emit_counter_int("render_3d_draw_mesh_commands", 1)
   @render_gpu.host_gpu_draw_mesh3d(
     mesh_id=payload.mesh_id,
     preprocess_camera_key_hi=payload.preprocess_camera_key_hi,
