@@ -664,7 +664,9 @@ pub fn GpuBackend::begin_pass_3d(
     }
     (Some(primary_view), None, Some(velocity_view), prepass_depth_texture.view)
   } else {
-    guard target_color_attachment(self, target_id, target_layer)
+    guard target_color_attachment(
+        self, target_id, target_layer, safe_msaa_sample_count,
+      )
       is Some((view, resolve_view)) else {
       return
     }

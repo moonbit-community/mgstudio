@@ -1760,14 +1760,75 @@ fn target_view(
 }
 
 ///|
+fn ensure_surface_msaa_color_view_for_target(
+  backend : GpuBackend,
+  target_id : Int,
+  sample_count : Int,
+) -> @wgpu.TextureView? {
+  guard target_id < 0 else { return None }
+  guard surface_target_size(backend, target_id) is Some((raw_w, raw_h)) else {
+    return None
+  }
+  guard surface_target_format(backend, target_id) is Some(format) else {
+    return None
+  }
+  let width = if raw_w <= 0 { 1 } else { raw_w }
+  let height = if raw_h <= 0 { 1 } else { raw_h }
+  let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
+  guard safe_sample_count > 1 else { return None }
+  if backend.surface_msaa_target_id == target_id &&
+    backend.surface_msaa_width == width &&
+    backend.surface_msaa_height == height &&
+    backend.surface_msaa_sample_count == safe_sample_count &&
+    backend.surface_msaa_format is Some(cached_format) &&
+    cached_format.raw == format.raw {
+    if backend.surface_msaa_view is Some(view) {
+      return Some(view)
+    }
+  }
+  if backend.surface_msaa_view is Some(old_view) {
+    old_view.release()
+  }
+  if backend.surface_msaa_texture is Some(old_tex) {
+    old_tex.release()
+  }
+  let msaa_texture = backend.device.create_texture_u32(
+    width.reinterpret_as_uint(),
+    height.reinterpret_as_uint(),
+    1U,
+    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=safe_sample_count.reinterpret_as_uint(),
+  )
+  let msaa_view = msaa_texture.create_view()
+  backend.surface_msaa_texture = Some(msaa_texture)
+  backend.surface_msaa_view = Some(msaa_view)
+  backend.surface_msaa_target_id = target_id
+  backend.surface_msaa_width = width
+  backend.surface_msaa_height = height
+  backend.surface_msaa_sample_count = safe_sample_count
+  backend.surface_msaa_format = Some(format)
+  Some(msaa_view)
+}
+
+///|
 fn target_color_attachment(
   backend : GpuBackend,
   target_id : Int,
   target_layer : Int,
+  sample_count : Int,
 ) -> (@wgpu.TextureView, @wgpu.TextureView?)? {
   if target_id < 0 {
     match target_view(backend, target_id, target_layer) {
-      Some(view) => Some((view, None))
+      Some(view) =>
+        match
+          ensure_surface_msaa_color_view_for_target(
+            backend, target_id, sample_count,
+          ) {
+          Some(msaa_view) => Some((msaa_view, Some(view)))
+          None => Some((view, None))
+        }
       None => None
     }
   } else {

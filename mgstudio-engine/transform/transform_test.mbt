@@ -194,6 +194,62 @@ test "transform ecs: propagate preserves global transform until inputs change" {
 }
 
 ///|
+test "transform ecs: propagation does not mark unchanged root global changed" {
+  let world = @ecs.World::new()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  prepare_transform_world(world)
+  world.insert_resource(
+    static_transform_optimizations_resource_key,
+    StaticTransformOptimizations::disabled(),
+  )
+  next_system_ticks(world) |> ignore
+  try! world.set_by_key(
+    parent,
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 2.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  mark_dirty_trees(world)
+  propagate_parent_transforms(world)
+
+  let second_ticks = next_system_ticks(world)
+  mark_dirty_trees(world)
+  propagate_parent_transforms(world)
+  guard world.entity_table_location(parent) is Some((table_id, row_index)) else {
+    fail("expected parent table row")
+  }
+  guard world.component_column(ecs_key_global_transform) is Some(global_column) else {
+    fail("expected global transform column")
+  }
+  guard global_column.table_column(table_id) is Some(global_table_column) else {
+    fail("expected global transform table column")
+  }
+  debug_inspect(
+    global_table_column.is_changed_at_row(row_index, second_ticks),
+    content="false",
+  )
+}
+
+///|
 test "transform ecs: sync simple transforms updates orphaned entity once parent is removed" {
   let world = @ecs.World::new()
   let parent = world.spawn_empty()

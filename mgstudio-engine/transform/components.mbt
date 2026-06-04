@@ -264,6 +264,38 @@ pub fn GlobalTransform::set_from(
 }
 
 ///|
+pub fn GlobalTransform::set_from_if_neq(
+  self : GlobalTransform,
+  other : GlobalTransform,
+) -> Bool {
+  let old_xx = self.affine.matrix3.x_axis.x
+  let old_xy = self.affine.matrix3.x_axis.y
+  let old_xz = self.affine.matrix3.x_axis.z
+  let old_yx = self.affine.matrix3.y_axis.x
+  let old_yy = self.affine.matrix3.y_axis.y
+  let old_yz = self.affine.matrix3.y_axis.z
+  let old_zx = self.affine.matrix3.z_axis.x
+  let old_zy = self.affine.matrix3.z_axis.y
+  let old_zz = self.affine.matrix3.z_axis.z
+  let old_tx = self.affine.translation.x
+  let old_ty = self.affine.translation.y
+  let old_tz = self.affine.translation.z
+  self.set_from(other)
+  old_xx != self.affine.matrix3.x_axis.x ||
+  old_xy != self.affine.matrix3.x_axis.y ||
+  old_xz != self.affine.matrix3.x_axis.z ||
+  old_yx != self.affine.matrix3.y_axis.x ||
+  old_yy != self.affine.matrix3.y_axis.y ||
+  old_yz != self.affine.matrix3.y_axis.z ||
+  old_zx != self.affine.matrix3.z_axis.x ||
+  old_zy != self.affine.matrix3.z_axis.y ||
+  old_zz != self.affine.matrix3.z_axis.z ||
+  old_tx != self.affine.translation.x ||
+  old_ty != self.affine.translation.y ||
+  old_tz != self.affine.translation.z
+}
+
+///|
 fn GlobalTransform::set_affine_values(
   self : GlobalTransform,
   x_axis_x : Float,

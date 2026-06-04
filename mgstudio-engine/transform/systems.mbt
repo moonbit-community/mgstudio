@@ -86,6 +86,15 @@ priv struct TransformPropagationTableColumns {
 }
 
 ///|
+priv struct TransformPropagationNode {
+  transform : Transform
+  global : GlobalTransform
+  tree_changed_column : @ecs.ComponentTableColumn[TransformTreeChanged]?
+  children : @hierarchy.Children?
+  parent : @hierarchy.Parent?
+}
+
+///|
 priv struct TransformPropagationScratch {
   dense_stack : Array[TransformPropagationStackItem]
   table_columns : Array[TransformPropagationTableColumns?]
@@ -415,31 +424,59 @@ fn transform_propagation_columns(
 }
 
 ///|
-fn transform_set_global_hot_at_row(
-  global_column : @ecs.ComponentTableColumn[GlobalTransform],
-  row_index : Int,
-  next_global : GlobalTransform,
-  tick : @core.Tick,
-) -> Bool {
-  if row_index < 0 {
-    return false
-  }
-  match global_column.value_at_row_unchecked(row_index) {
-    Some(current_global) => {
-      current_global.set_from(next_global)
-      global_column.record_changed_at_row(row_index, tick)
-    }
-    None => global_column.set_tick_only_hot_at_row(row_index, next_global, tick)
-  }
-}
-
-///|
-fn transform_table_tree_changed_at_row(
+fn transform_node_tree_changed_at_row(
   table_columns : TransformPropagationTableColumns,
   row_index : Int,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
   match table_columns.tree_changed {
+    Some(tree_changed_column) =>
+      tree_changed_column.is_changed_at_row(row_index, system_ticks)
+    None => false
+  }
+}
+
+///|
+fn transform_fetch_node_at_row(
+  table_columns : TransformPropagationTableColumns,
+  row_index : Int,
+  require_parent : Bool,
+) -> TransformPropagationNode? {
+  guard row_index >= 0 else { return None }
+  guard table_columns.transform is Some(transform_column) else { return None }
+  guard transform_column.value_at_row_unchecked(row_index) is Some(transform) else {
+    return None
+  }
+  guard table_columns.global is Some(global_column) else { return None }
+  guard global_column.value_at_row_unchecked(row_index) is Some(global) else {
+    return None
+  }
+  let parent = match table_columns.parent {
+    Some(parent_column) => parent_column.value_at_row_unchecked(row_index)
+    None => None
+  }
+  if require_parent && parent is None {
+    return None
+  }
+  Some(TransformPropagationNode::{
+    transform,
+    global,
+    tree_changed_column: table_columns.tree_changed,
+    children: match table_columns.children {
+      Some(children_column) => children_column.value_at_row_unchecked(row_index)
+      None => None
+    },
+    parent,
+  })
+}
+
+///|
+fn transform_node_tree_changed(
+  node : TransformPropagationNode,
+  row_index : Int,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  match node.tree_changed_column {
     Some(tree_changed_column) =>
       tree_changed_column.is_changed_at_row(row_index, system_ticks)
     None => false
@@ -515,61 +552,51 @@ fn propagate_descendants_dense(
     }
     if static_optimizations_enabled &&
       !stack_item.parent_global_changed &&
-      !transform_table_tree_changed_at_row(
+      !transform_node_tree_changed_at_row(
         table_columns, row_index, system_ticks,
       ) {
       continue
     }
-    guard table_columns.transform is Some(transform_column) else { continue }
-    guard transform_column.value_at_row_unchecked(row_index)
-      is Some(local_transform) else {
+    guard transform_fetch_node_at_row(table_columns, row_index, true)
+      is Some(node) else {
       continue
     }
-    guard table_columns.parent is Some(parent_column) else { continue }
-    guard parent_column.value_at_row_unchecked(row_index) is Some(parent_value) else {
-      continue
-    }
+    guard node.parent is Some(parent_value) else { continue }
     if !entity_eq(parent_value.entity(), stack_item.parent) {
       transform_abort_malformed_hierarchy()
     }
-    guard table_columns.global is Some(global_column) else { continue }
-    guard global_column.value_at_row_unchecked(row_index) is Some(child_global) else {
-      continue
-    }
-    let child_global_changed = if child_global.set_mul_transform_if_neq(
+    let child_global = node.global
+    let child_global_changed = if node.global.set_mul_transform_if_neq(
         stack_item.parent_global,
-        local_transform,
+        node.transform,
       ) {
       counters.global_transform_writes = counters.global_transform_writes + 1
+      guard table_columns.global is Some(global_column) else { false }
       global_column.record_changed_at_row(row_index, tick)
     } else {
       false
     }
-    match table_columns.children {
-      Some(children_column) =>
-        match children_column.value_at_row_unchecked(row_index) {
-          Some(grand_children) => {
-            let grandchildren = grand_children.entities()
-            for index in 0..<grandchildren.length() {
-              let reverse_index = grandchildren.length() - 1 - index
-              counters.table_row_fetches = counters.table_row_fetches + 1
-              let (table_id, row_index) = match
-                grand_children.entity_table_row_cached(_world, reverse_index) {
-                Some(location) => location
-                None => (-1, -1)
-              }
-              scratch.dense_stack.push(TransformPropagationStackItem::{
-                entity: grandchildren[reverse_index],
-                table_id,
-                row_index,
-                parent: child,
-                parent_global: child_global,
-                parent_global_changed: child_global_changed,
-              })
-            }
+    match node.children {
+      Some(grand_children) => {
+        let grandchildren = grand_children.entities()
+        for index in 0..<grandchildren.length() {
+          let reverse_index = grandchildren.length() - 1 - index
+          counters.table_row_fetches = counters.table_row_fetches + 1
+          let (table_id, row_index) = match
+            grand_children.entity_table_row_cached(_world, reverse_index) {
+            Some(location) => location
+            None => (-1, -1)
           }
-          None => ()
+          scratch.dense_stack.push(TransformPropagationStackItem::{
+            entity: grandchildren[reverse_index],
+            table_id,
+            row_index,
+            parent: child,
+            parent_global: child_global,
+            parent_global_changed: child_global_changed,
+          })
         }
+      }
       None => ()
     }
   }
@@ -612,22 +639,21 @@ fn propagate_parent_transforms_dense(
       is Some(table_columns) else {
       return
     }
+    guard transform_fetch_node_at_row(table_columns, row_index, false)
+      is Some(root_node) else {
+      return
+    }
     if static_optimizations_enabled &&
-      !transform_table_tree_changed_at_row(
-        table_columns, row_index, system_ticks,
-      ) {
+      !transform_node_tree_changed(root_node, row_index, system_ticks) {
       return
     }
-    guard table_columns.transform is Some(transform_column) else { return }
-    guard transform_column.value_at_row_unchecked(row_index)
-      is Some(root_transform) else {
-      return
-    }
-    let root_global = GlobalTransform::from_transform(root_transform)
+    let root_global = GlobalTransform::from_transform(root_node.transform)
     guard table_columns.global is Some(global_column) else { return }
-    let root_global_changed = transform_set_global_hot_at_row(
-      global_column, row_index, root_global, tick,
-    )
+    let root_global_changed = if root_node.global.set_from_if_neq(root_global) {
+      global_column.record_changed_at_row(row_index, tick)
+    } else {
+      false
+    }
     if root_global_changed {
       counters.global_transform_writes = counters.global_transform_writes + 1
     }

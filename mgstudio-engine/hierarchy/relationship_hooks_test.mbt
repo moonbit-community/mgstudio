@@ -28,6 +28,23 @@ fn hierarchy_test_world() -> @ecs.World {
 }
 
 ///|
+struct HierarchyCacheMigrationMarker {
+  value : Int
+} derive(Debug, Eq)
+
+///|
+let hierarchy_cache_migration_marker_key : @ecs.ComponentKey[
+  HierarchyCacheMigrationMarker,
+] = @ecs.register_component(
+  debug_name="mgstudio_hierarchy_test::HierarchyCacheMigrationMarker",
+)
+
+///|
+pub impl @ecs.Component for HierarchyCacheMigrationMarker with fn component() {
+  hierarchy_cache_migration_marker_key
+}
+
+///|
 test "hierarchy: inserting Parent immediately inserts Children on target" {
   let world = hierarchy_test_world()
   let parent = world.spawn_empty()
@@ -113,4 +130,27 @@ test "hierarchy: missing parent target is removed immediately" {
     (try! world.get_by_key(child, ecs_key_parent)) is None,
     content="true",
   )
+}
+
+///|
+test "hierarchy: cached child table row refreshes after structural migration" {
+  let world = hierarchy_test_world()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  try! world.set_by_key(child, ecs_key_parent, Parent::new(parent))
+  let children = (try! world.get_by_key(parent, ecs_key_children)).unwrap()
+  ignore(children.entity_table_row_cached(world, 0))
+
+  try! world.set_by_key(child, hierarchy_cache_migration_marker_key, HierarchyCacheMigrationMarker::{
+    value: 1,
+  })
+
+  guard world.entity_table_location(child) is Some(actual_location) else {
+    fail("expected child table location")
+  }
+  guard children.entity_table_row_cached(world, 0) is Some(cached_location) else {
+    fail("expected cached child table location")
+  }
+  debug_inspect(cached_location == actual_location, content="true")
 }

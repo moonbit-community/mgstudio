@@ -256,7 +256,8 @@ pub fn[T] ComponentTableColumn::value_at_row_unchecked(
   self : ComponentTableColumn[T],
   row_index : Int,
 ) -> T? {
-  self.value_at_row(row_index)
+  guard row_index >= 0 else { return None }
+  self.key.component_get_table_row(self.world, self.table_id, row_index)
 }
 
 ///|

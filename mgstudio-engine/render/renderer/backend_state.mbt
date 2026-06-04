@@ -37,6 +37,13 @@ pub struct GpuBackend {
   mut depth_width : Int
   mut depth_height : Int
   mut depth_sample_count : Int
+  mut surface_msaa_texture : @wgpu.Texture?
+  mut surface_msaa_view : @wgpu.TextureView?
+  mut surface_msaa_target_id : Int
+  mut surface_msaa_width : Int
+  mut surface_msaa_height : Int
+  mut surface_msaa_sample_count : Int
+  mut surface_msaa_format : @wgpu.TextureFormat?
   mut sprite_bgl_tex : @wgpu.BindGroupLayout?
   mut sprite_bgl_globals : @wgpu.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu.PipelineLayout?
