@@ -140,6 +140,50 @@ fn visibility_write_aabb(
 }
 
 ///|
+fn visibility_vec3_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
+}
+
+///|
+fn visibility_aabb_eq(lhs : Aabb, rhs : Aabb) -> Bool {
+  visibility_vec3_eq(lhs.center(), rhs.center()) &&
+  visibility_vec3_eq(lhs.half_size(), rhs.half_size())
+}
+
+///|
+priv struct SkinnedMeshBoundsTraceCounters {
+  mut skinned_entities : Int
+  mut joint_bounds_processed : Int
+  mut joint_transform_cache_hits : Int
+  mut joint_transform_cache_misses : Int
+  mut aabb_writes : Int
+}
+
+///|
+fn SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters() -> SkinnedMeshBoundsTraceCounters {
+  {
+    skinned_entities: 0,
+    joint_bounds_processed: 0,
+    joint_transform_cache_hits: 0,
+    joint_transform_cache_misses: 0,
+    aabb_writes: 0,
+  }
+}
+
+///|
+fn skinned_mesh_bounds_trace_emit(
+  counters : SkinnedMeshBoundsTraceCounters,
+) -> Unit {
+  @mesh.skinned_mesh_bounds_trace_emit_counters(
+    counters.skinned_entities,
+    counters.joint_bounds_processed,
+    counters.joint_transform_cache_hits,
+    counters.joint_transform_cache_misses,
+    counters.aabb_writes,
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::calculate_bounds`.
 pub fn calculate_bounds_system(world : @ecs.World) -> Unit {
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
@@ -207,11 +251,13 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
       1
     }
   }
+  let counters = SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters()
   mesh3d_column.for_each2_with2_markers_fast_table_row(
     skinned_mesh_column,
     dynamic_bounds_column,
     aabb_column,
     fn(entity, table_id, row_index, mesh3d, skinned_mesh) {
+      counters.skinned_entities = counters.skinned_entities + 1
       guard mesh_assets.get(mesh3d.mesh()) is Some(mesh_asset) else { return }
       guard inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
         is Some(inverse_bindposes_asset) else {
@@ -225,19 +271,45 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
         global_transforms.get_fast(entity)
       }
       try {
-        let skinned_aabb = @mesh.entity_aabb_from_skinned_mesh_bounds_cached(
+        let (
+          skinned_aabb,
+          joint_bounds_processed,
+          joint_transform_cache_hits,
+          joint_transform_cache_misses,
+        ) = @mesh.entity_aabb_from_skinned_mesh_bounds_cached_counted(
           global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
         )
-        let aabb = Aabb::from_math(skinned_aabb)
-        let wrote = aabb_column.set_tick_only_hot_at_table_row_value(
-          table_id, row_index, aabb, write_tick,
-        )
-        if !wrote {
-          visibility_write_aabb(world, entity, aabb)
+        counters.joint_bounds_processed = counters.joint_bounds_processed +
+          joint_bounds_processed
+        counters.joint_transform_cache_hits = counters.joint_transform_cache_hits +
+          joint_transform_cache_hits
+        counters.joint_transform_cache_misses = counters.joint_transform_cache_misses +
+          joint_transform_cache_misses
+        let next_aabb = Aabb::from_math(skinned_aabb)
+        let changed = if table_id >= 0 && row_index >= 0 {
+          match aabb_column.table_value_at_row(table_id, row_index) {
+            Some(current_aabb) => !visibility_aabb_eq(current_aabb, next_aabb)
+            None => true
+          }
+        } else {
+          match aabb_column.get_fast(entity) {
+            Some(current_aabb) => !visibility_aabb_eq(current_aabb, next_aabb)
+            None => true
+          }
+        }
+        if changed {
+          let wrote = aabb_column.set_tick_only_hot_at_table_row_value(
+            table_id, row_index, next_aabb, write_tick,
+          )
+          if !wrote {
+            visibility_write_aabb(world, entity, next_aabb)
+          }
+          counters.aabb_writes = counters.aabb_writes + 1
         }
       } catch {
         _ => ()
       }
     },
   )
+  skinned_mesh_bounds_trace_emit(counters)
 }

@@ -355,58 +355,37 @@ pub(all) suberror EntityAabbFromSkinnedMeshBoundsError {
 }
 
 ///|
-priv struct SkinnedMeshBoundsTraceCounters {
-  mut skinned_entities : Int
-  mut joint_bounds_processed : Int
-  mut joint_transform_cache_hits : Int
-  mut joint_transform_cache_misses : Int
-  mut aabb_writes : Int
-}
-
-///|
-fn SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters() -> SkinnedMeshBoundsTraceCounters {
-  {
-    skinned_entities: 0,
-    joint_bounds_processed: 0,
-    joint_transform_cache_hits: 0,
-    joint_transform_cache_misses: 0,
-    aabb_writes: 0,
-  }
-}
-
-///|
-fn skinned_mesh_bounds_trace_emit(
-  counters : SkinnedMeshBoundsTraceCounters,
-) -> Unit {
-  @app.timeline_trace_emit_counter_int(
-    "mesh.skinned_bounds.skinned_entities",
-    counters.skinned_entities,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "mesh.skinned_bounds.joint_bounds_processed",
-    counters.joint_bounds_processed,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "mesh.skinned_bounds.joint_transform_cache_hits",
-    counters.joint_transform_cache_hits,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "mesh.skinned_bounds.joint_transform_cache_misses",
-    counters.joint_transform_cache_misses,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "mesh.skinned_bounds.aabb_writes",
-    counters.aabb_writes,
-  )
-}
-
-///|
 fn abs_float(value : Float) -> Float {
   if value < 0.0F {
     -value
   } else {
     value
   }
+}
+
+///|
+pub fn skinned_mesh_bounds_trace_emit_counters(
+  skinned_entities : Int,
+  joint_bounds_processed : Int,
+  joint_transform_cache_hits : Int,
+  joint_transform_cache_misses : Int,
+  aabb_writes : Int,
+) -> Unit {
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.skinned_entities", skinned_entities,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_bounds_processed", joint_bounds_processed,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_transform_cache_hits", joint_transform_cache_hits,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_transform_cache_misses", joint_transform_cache_misses,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.aabb_writes", aabb_writes,
+  )
 }
 
 ///|
@@ -530,6 +509,82 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
 }
 
 ///|
+pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
+  joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
+  mesh : Mesh,
+  skinned_mesh : SkinnedMesh,
+  skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
+  world_from_entity : @transform.GlobalTransform?,
+) -> (@math.Aabb3d, Int, Int, Int) raise EntityAabbFromSkinnedMeshBoundsError {
+  let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
+    Some(bounds) => bounds
+    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds
+  }
+  let accumulator = AabbAccumulator::new()
+  let joints = skinned_mesh.joints()
+  let mut joint_bounds_processed = 0
+  let mut joint_transform_cache_hits = 0
+  let mut joint_transform_cache_misses = 0
+  let bounds_len = if skinned_mesh_bounds.aabbs.length() <
+    skinned_mesh_bounds.aabb_index_to_joint_index.length() {
+    skinned_mesh_bounds.aabbs.length()
+  } else {
+    skinned_mesh_bounds.aabb_index_to_joint_index.length()
+  }
+  for bounds_index in 0..<bounds_len {
+    let joint_index = skinned_mesh_bounds.aabb_index_to_joint_index[bounds_index]
+    let modelspace_joint_aabb = skinned_mesh_bounds.aabbs[bounds_index]
+    let joint_index_value = joint_index.value()
+    let joint_from_model = match
+      skinned_mesh_inverse_bindposes.affine(joint_index_value) {
+      Some(inverse_bindpose) => inverse_bindpose
+      None =>
+        raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
+          joint_index,
+        )
+    }
+    if joint_index_value < 0 || joint_index_value >= joints.length() {
+      raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
+        joint_index,
+      )
+    }
+    joint_bounds_processed = joint_bounds_processed + 1
+    let world_from_joint = match
+      skinned_mesh.joint_global_transform_cached(
+        joint_transforms, joint_index_value,
+      ) {
+      Some(global_transform) => {
+        joint_transform_cache_hits = joint_transform_cache_hits + 1
+        global_transform
+      }
+      None => {
+        joint_transform_cache_misses = joint_transform_cache_misses + 1
+        raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+      }
+    }
+    let world_from_model = world_from_joint.affine().mul(joint_from_model)
+    accumulator.add_aabb(
+      transform_joint_aabb(modelspace_joint_aabb, world_from_model),
+    )
+  }
+  let worldspace_entity_aabb = match accumulator.finish() {
+    Some(aabb) => aabb.to_aabb3d()
+    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+  }
+  let aabb = match world_from_entity {
+    Some(global_transform) =>
+      transform_joint_aabb(
+        JointAabb::from_aabb3d(worldspace_entity_aabb),
+        global_transform.affine().inverse(),
+      )
+    None => worldspace_entity_aabb
+  }
+  (
+    aabb, joint_bounds_processed, joint_transform_cache_hits, joint_transform_cache_misses,
+  )
+}
+
+///|
 pub fn entity_aabb_from_skinned_mesh_bounds_cached(
   joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
   mesh : Mesh,
@@ -537,40 +592,9 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached(
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
 ) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
-  let counters = SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters()
-  counters.skinned_entities = 1
-  let aabb = entity_aabb_from_skinned_mesh_bounds_with_fetch(
-    mesh,
-    skinned_mesh,
-    skinned_mesh_inverse_bindposes,
-    world_from_entity,
-    fn(_joint_entity, joint_index) {
-      counters.joint_bounds_processed = counters.joint_bounds_processed + 1
-      match
-        skinned_mesh.joint_global_transform_cached(
-          joint_transforms, joint_index,
-        ) {
-        Some(global_transform) => {
-          counters.joint_transform_cache_hits = counters.joint_transform_cache_hits +
-            1
-          Some(global_transform)
-        }
-        None => {
-          counters.joint_transform_cache_misses = counters.joint_transform_cache_misses +
-            1
-          None
-        }
-      }
-    },
-  ) catch {
-    error => {
-      skinned_mesh_bounds_trace_emit(counters)
-      raise error
-    }
-  }
-  counters.aabb_writes = counters.aabb_writes + 1
-  skinned_mesh_bounds_trace_emit(counters)
-  aabb
+  entity_aabb_from_skinned_mesh_bounds_cached_counted(
+    joint_transforms, mesh, skinned_mesh, skinned_mesh_inverse_bindposes, world_from_entity,
+  ).0
 }
 
 ///|

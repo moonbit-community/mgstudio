@@ -34,11 +34,15 @@ pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.ComponentColumn[@transform.Glob
 
 pub fn entity_aabb_from_skinned_mesh_bounds_cached(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError
 
+pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> (@math.Aabb3d, Int, Int, Int) raise EntityAabbFromSkinnedMeshBoundsError
+
 pub fn first_available_custom_mesh_attribute() -> UInt64
 
 pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let mesh_set_inherit_weight : String
+
+pub fn skinned_mesh_bounds_trace_emit_counters(Int, Int, Int, Int, Int) -> Unit
 
 // Errors
 pub(all) suberror EntityAabbFromSkinnedMeshBoundsError {
