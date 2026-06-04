@@ -120,7 +120,7 @@ fn spawn_converted_mesh(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh_handle),
+        @mesh.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(material_handle),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(180.0F)),
       ),

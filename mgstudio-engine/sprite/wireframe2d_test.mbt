@@ -49,7 +49,7 @@ test "sprite: Wireframe2dPlugin applies Mesh2dWireframe material handles" {
       try! (world.set_by_key(
         entity,
         @mesh.ecs_key_mesh2d,
-        Mesh2d::new(@asset.Handle::new(7)),
+        @mesh.Mesh2d::new(@asset.Handle::new(7)),
       )
       |> ignore)
     })

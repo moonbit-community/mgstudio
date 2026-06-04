@@ -62,8 +62,6 @@ pub let ecs_key_global_wireframe_material : @ecs.ResourceKey[GlobalWireframeMate
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
-pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
-
 pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe]
 
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]]
@@ -1251,8 +1249,6 @@ pub using @core_3d {type Hdr}
 pub using @math {type Line2d}
 
 pub using @mesh {type Mesh}
-
-pub using @mesh {type Mesh2d}
 
 pub using @mesh {type Mesh2dGeometry}
 

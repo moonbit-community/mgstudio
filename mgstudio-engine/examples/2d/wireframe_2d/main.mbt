@@ -97,7 +97,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(
+        @mesh.Mesh2d::new(
           meshes
           .peek()
           .add(
@@ -124,7 +124,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(
+        @mesh.Mesh2d::new(
           meshes
           .peek()
           .add(
@@ -146,7 +146,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(
+        @mesh.Mesh2d::new(
           meshes
           .peek()
           .add(

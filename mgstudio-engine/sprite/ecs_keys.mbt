@@ -71,7 +71,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 
 ///|
-pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
+let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.register_component(

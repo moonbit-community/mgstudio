@@ -191,10 +191,10 @@ pub impl Material2d for DummyMaterialAsset with fn bind_group(self) {
 }
 
 ///|
-fn test_rectangle_mesh(width : Float, height : Float) -> Mesh2d {
+fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
   let mesh_assets = mesh_assets_mut_or_abort()
   mesh_assets.set_changed()
-  Mesh2d::new(
+  @mesh.Mesh2d::new(
     mesh_assets
     .peek()
     .add(
@@ -570,7 +570,7 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
 
   debug_inspect(world.is_alive(entity), content="true")
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_mesh2d),
+    ecs_has_non_null_payload(world, entity, @mesh.ecs_key_mesh2d),
     content="true",
   )
   debug_inspect(
@@ -637,7 +637,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
         ignore(
           commands.spawn(
             (
-              Mesh2d::new(mesh_handle),
+              @mesh.Mesh2d::new(mesh_handle),
               MeshMaterial2d::new(material_handle),
               @transform.Transform::identity(),
             ),
@@ -648,7 +648,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 
   app = app.update()
 
-  let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
+  let mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh2d], @ecs.All] = @ecs.query(
     app.world(),
   )
   debug_inspect(mesh_query.count(), content="1")
@@ -676,7 +676,11 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
       ),
     )
   let entity = world.spawn()
-  try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
+  try! world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh2d,
+    @mesh.Mesh2d::new(mesh_handle),
+  )
 
   app = app.update()
 
@@ -714,7 +718,11 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
       ),
     )
   let entity = world.spawn()
-  try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
+  try! world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh2d,
+    @mesh.Mesh2d::new(mesh_handle),
+  )
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_no_auto_aabb,

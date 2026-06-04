@@ -45,7 +45,7 @@ fn setup(
 
   let center_panel = commands.spawn(
     (
-      @sprite.Mesh2d::new(
+      @mesh.Mesh2d::new(
         meshes
         .peek()
         .add(
@@ -74,7 +74,7 @@ fn setup(
 
   let left_panel = commands.spawn(
     (
-      @sprite.Mesh2d::new(
+      @mesh.Mesh2d::new(
         meshes
         .peek()
         .add(
@@ -107,7 +107,7 @@ fn setup(
 
   let right_panel = commands.spawn(
     (
-      @sprite.Mesh2d::new(
+      @mesh.Mesh2d::new(
         meshes
         .peek()
         .add(

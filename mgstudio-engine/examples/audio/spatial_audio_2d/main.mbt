@@ -207,7 +207,7 @@ fn spawn_listener_ear(
   color : @sprite.Color,
 ) -> Unit {
   let ear = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
+    @mesh.Mesh2d::new(
       @sprite.mesh_assets_mut_or_abort()
       .peek()
       .add(
@@ -249,7 +249,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let emitter = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
+    @mesh.Mesh2d::new(
       @sprite.mesh_assets_mut_or_abort()
       .peek()
       .add(

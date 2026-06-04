@@ -170,7 +170,7 @@ fn setup(
     ignore(
       commands.spawn(
         (
-          @sprite.Mesh2d::new(shapes[i]),
+          @mesh.Mesh2d::new(shapes[i]),
           @sprite.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
               material_assets |> @sprite.add_material(color)
@@ -191,7 +191,7 @@ fn setup(
     ignore(
       commands.spawn(
         (
-          @sprite.Mesh2d::new(rings[i]),
+          @mesh.Mesh2d::new(rings[i]),
           @sprite.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
               material_assets |> @sprite.add_material(color)
@@ -232,7 +232,7 @@ fn toggle_wireframe(config : @app.ResMut[@sprite.Wireframe2dConfig]) -> Unit {
 ///|
 fn rotate(
   query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[@sprite.Mesh2d]),
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[@mesh.Mesh2d]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

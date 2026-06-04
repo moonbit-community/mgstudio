@@ -160,7 +160,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(material),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(128.0F)),
       ),

@@ -149,7 +149,7 @@ fn setup(
       ignore(
         commands.spawn(
           (
-            @sprite.Mesh2d::new(mesh),
+            @mesh.Mesh2d::new(mesh),
             @sprite.MeshMaterial2d::new(atlas_materials[start_frame]),
             @transform.Transform::from_xyz(
               float_from_int(x) * TILE_SIZE,

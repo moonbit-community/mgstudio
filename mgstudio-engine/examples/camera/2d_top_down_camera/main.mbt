@@ -40,7 +40,7 @@ fn setup_scene(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(
+        @mesh.Mesh2d::new(
           meshes.modify(fn(meshes) {
             meshes |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F))
           }),
@@ -58,7 +58,7 @@ fn setup_scene(
     commands.spawn(
       (
         Player::{  },
-        @sprite.Mesh2d::new(
+        @mesh.Mesh2d::new(
           meshes.modify(fn(meshes) {
             meshes |> @sprite.add_mesh(@sprite.Circle::new(25.0F))
           }),

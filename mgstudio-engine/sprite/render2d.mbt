@@ -622,7 +622,7 @@ pub type CircularSegment = @math.CircularSegment
 pub type Ring[P] = @math.Ring[P]
 
 ///|
-pub type Mesh2d = @mesh.Mesh2d
+type Mesh2d = @mesh.Mesh2d
 
 ///|
 let mesh_upload_cache : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])

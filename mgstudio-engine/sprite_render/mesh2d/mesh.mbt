@@ -14,7 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_sprite_render/src/mesh2d/mesh.rs`.
-pub using @sprite_render {type Mesh2d}
+pub using @mesh {type Mesh2d}
 
 ///|
 pub using @sprite_render {type Mesh2dBundle}
@@ -23,7 +23,7 @@ pub using @sprite_render {type Mesh2dBundle}
 pub using @sprite_render {type MeshMaterial2d}
 
 ///|
-pub let ecs_key_mesh2d : @ecs.ComponentKey[@sprite_render.Mesh2d] = @sprite_render.ecs_key_mesh2d
+pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[

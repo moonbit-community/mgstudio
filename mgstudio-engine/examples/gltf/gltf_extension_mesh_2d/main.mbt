@@ -99,7 +99,7 @@ fn convert_mesh_to_2d(
     .entity_mut(entity)
     .insert(
       (
-        @sprite.Mesh2d::new(mesh2d_handle),
+        @mesh.Mesh2d::new(mesh2d_handle),
         @sprite.MeshMaterial2d::new(material_handle),
       ),
     ),

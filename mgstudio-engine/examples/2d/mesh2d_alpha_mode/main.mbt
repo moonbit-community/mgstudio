@@ -44,7 +44,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()
@@ -63,7 +63,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()
@@ -82,7 +82,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()
@@ -101,7 +101,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()
@@ -120,7 +120,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()
@@ -139,7 +139,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh),
+        @mesh.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()

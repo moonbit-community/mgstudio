@@ -162,7 +162,7 @@ fn spawn_player(
       1.0F,
     ),
   )
-  let player_mesh = @sprite.Mesh2d::new(
+  let player_mesh = @mesh.Mesh2d::new(
     meshes
     .peek()
     .add(

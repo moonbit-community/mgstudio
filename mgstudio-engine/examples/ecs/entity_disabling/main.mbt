@@ -94,7 +94,7 @@ fn setup_scene(
         (
           name,
           DisableOnClick::{  },
-          @sprite.Mesh2d::new(mesh),
+          @mesh.Mesh2d::new(mesh),
           @sprite.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
               material_assets |> @sprite.add_material(color)

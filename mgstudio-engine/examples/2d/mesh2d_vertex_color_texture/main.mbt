@@ -37,7 +37,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh_handle),
+        @mesh.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(
           materials.peek().add(@sprite.ColorMaterialAsset::ColorMaterialAsset()),
         ),
@@ -51,7 +51,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(mesh_handle),
+        @mesh.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(
           materials
           .peek()

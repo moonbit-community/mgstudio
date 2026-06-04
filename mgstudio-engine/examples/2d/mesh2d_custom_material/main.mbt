@@ -140,7 +140,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
     )
   })
 
-  let mesh = @sprite.Mesh2d::new(
+  let mesh = @mesh.Mesh2d::new(
     @sprite.mesh_assets_mut_or_abort()
     .peek()
     .add(
@@ -152,7 +152,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
     @sprite.MeshMaterial2d[CustomMaterialAsset],
   ] = @sprite.MeshMaterial2d::component()
   let transform = @transform.Transform::identity()
-  try! (world.set_by_key(entity, @sprite.ecs_key_mesh2d, mesh) |> ignore)
+  try! (world.set_by_key(entity, @mesh.ecs_key_mesh2d, mesh) |> ignore)
   try! (world.set_by_key(
     entity,
     material_key,

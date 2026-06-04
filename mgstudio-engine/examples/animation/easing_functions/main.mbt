@@ -457,7 +457,7 @@ fn spawn_marker(
   position : @math.Vec2,
 ) -> @core.Entity {
   @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
+    @mesh.Mesh2d::new(
       @sprite.mesh_assets_mut_or_abort()
       .peek()
       .add(

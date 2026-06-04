@@ -37,7 +37,7 @@ pub type Material2dKey[M] = @sprite.Material2dKey[M]
 pub type Material2dPipeline[M] = @sprite.Material2dPipeline[M]
 
 ///|
-pub type Mesh2d = @sprite.Mesh2d
+pub type Mesh2d = @mesh.Mesh2d
 
 ///|
 pub type Mesh2dBundle = @sprite.Mesh2dBundle
@@ -88,7 +88,7 @@ pub type TilemapChunkTileData = @sprite.TilemapChunkTileData
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @sprite.ecs_key_color_material
 
 ///|
-pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @sprite.ecs_key_mesh2d
+pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
