@@ -28,7 +28,7 @@ pub fn dlss_node_enabled_for_entity(
   if !DLSS_RUNTIME_SUPPORTED {
     return false
   }
-  if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+  if !(try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
     return false
   }
   match (try! world.entity(entity).get() : Dlss?) {

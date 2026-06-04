@@ -64,12 +64,12 @@ pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="anti_alias.taa.runtime_state")
 
 ///|
-pub impl @app.Resource for TemporalAntiAliasRuntimeState with resource() {
+pub impl @app.Resource for TemporalAntiAliasRuntimeState with fn resource() {
   ecs_key_temporal_anti_alias_runtime_state
 }
 
 ///|
-pub impl @app.Plugin for TemporalAntiAliasPlugin with name(_self) {
+pub impl @app.Plugin for TemporalAntiAliasPlugin with fn name(_self) {
   TEMPORAL_ANTI_ALIAS_PLUGIN_NAME
 }
 
@@ -104,7 +104,7 @@ pub fn install_temporal_anti_alias_required_components() -> Unit {
 }
 
 ///|
-pub impl @app.Plugin for TemporalAntiAliasPlugin with build(self, app) {
+pub impl @app.Plugin for TemporalAntiAliasPlugin with fn build(self, app) {
   install_temporal_anti_alias_required_components()
   register_embedded_wgsl_sources()
   temporal_anti_alias_plugin_with(app, self)
@@ -138,7 +138,7 @@ fn temporal_anti_alias_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+  try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)
 }
 
 ///|

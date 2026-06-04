@@ -103,7 +103,7 @@ pub fn smaa_embedded_lut_registered(path : String) -> Bool {
 }
 
 ///|
-pub impl @app.Resource for SmaaLuts with resource() {
+pub impl @app.Resource for SmaaLuts with fn resource() {
   ecs_key_smaa_luts
 }
 
@@ -219,12 +219,12 @@ let ecs_key_smaa_runtime_state : @ecs.ResourceKey[SmaaRuntimeState] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for Smaa with component() {
+pub impl @ecs.Component for Smaa with fn component() {
   ecs_key_smaa
 }
 
 ///|
-pub impl @app.Resource for SmaaRuntimeState with resource() {
+pub impl @app.Resource for SmaaRuntimeState with fn resource() {
   ecs_key_smaa_runtime_state
 }
 
@@ -440,12 +440,12 @@ pub fn SmaaNeighborhoodBlendingPipeline::specialize(
 }
 
 ///|
-pub impl @app.Plugin for SmaaPlugin with name(_self) {
+pub impl @app.Plugin for SmaaPlugin with fn name(_self) {
   SMAA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SmaaPlugin with build(self, app) {
+pub impl @app.Plugin for SmaaPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   ignore(@asset.embedded_asset(app, SMAA_AREA_LUT_PATH, SMAA_AREA_LUT_PATH))
   ignore(@asset.embedded_asset(app, SMAA_SEARCH_LUT_PATH, SMAA_SEARCH_LUT_PATH))
@@ -479,7 +479,7 @@ fn smaa_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+  try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)
 }
 
 ///|

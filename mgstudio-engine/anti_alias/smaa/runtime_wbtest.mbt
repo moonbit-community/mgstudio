@@ -17,8 +17,8 @@ fn smaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   entity
 }
@@ -133,8 +133,15 @@ test "anti_alias/smaa: pipeline descriptors mirror Bevy pass layout" {
     Some("luma_edge_detection_fragment_main"),
     content="true",
   )
-  inspect(edge.fragment.unwrap().targets[0].unwrap().format, content="8")
-  inspect(edge.depth_stencil.unwrap().format, content="38")
+  debug_inspect(
+    edge.fragment.unwrap().targets[0].unwrap().format ==
+    @wgpu.TEXTURE_FORMAT_RG8_UNORM,
+    content="true",
+  )
+  debug_inspect(
+    edge.depth_stencil.unwrap().format == @wgpu.TEXTURE_FORMAT_STENCIL8,
+    content="true",
+  )
   debug_inspect(
     blend.fragment.unwrap().entry_point ==
     Some("blending_weight_calculation_fragment_main"),
@@ -146,8 +153,9 @@ test "anti_alias/smaa: pipeline descriptors mirror Bevy pass layout" {
     Some("neighborhood_blending_fragment_main"),
     content="true",
   )
-  inspect(
-    neighborhood.fragment.unwrap().targets[0].unwrap().format,
-    content="18",
+  debug_inspect(
+    neighborhood.fragment.unwrap().targets[0].unwrap().format ==
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    content="true",
   )
 }

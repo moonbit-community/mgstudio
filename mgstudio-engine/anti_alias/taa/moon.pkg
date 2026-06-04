@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core_pipeline",
@@ -8,7 +9,6 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/post_process",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }
 

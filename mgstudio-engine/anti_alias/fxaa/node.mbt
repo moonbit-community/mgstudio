@@ -17,7 +17,7 @@
 
 ///|
 pub fn fxaa_node_enabled(world : @ecs.World, entity : @core.Entity) -> Bool {
-  if !(try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+  if !(try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
     return false
   }
   match (try! world.entity(entity).get() : Fxaa?) {

@@ -35,7 +35,7 @@ pub(all) enum DlssPerfQualityMode {
 } derive(Eq, Debug)
 
 ///|
-pub impl Default for DlssPerfQualityMode with default() {
+pub impl Default for DlssPerfQualityMode with fn default() {
   Auto
 }
 
@@ -82,7 +82,7 @@ pub fn Dlss::Dlss() -> Dlss {
 }
 
 ///|
-pub impl Default for Dlss with default() {
+pub impl Default for Dlss with fn default() {
   Dlss::Dlss()
 }
 
@@ -167,42 +167,42 @@ let dlss_init_plugin_marker_resource_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="anti_alias.dlss.init_plugin_marker")
 
 ///|
-pub impl @ecs.Component for Dlss with component() {
+pub impl @ecs.Component for Dlss with fn component() {
   ecs_key_dlss
 }
 
 ///|
-pub impl @app.Resource for DlssProjectId with resource() {
+pub impl @app.Resource for DlssProjectId with fn resource() {
   dlss_project_id_resource_key
 }
 
 ///|
-pub impl @app.Resource for DlssSuperResolutionSupported with resource() {
+pub impl @app.Resource for DlssSuperResolutionSupported with fn resource() {
   dlss_super_resolution_supported_resource_key
 }
 
 ///|
-pub impl @app.Resource for DlssRayReconstructionSupported with resource() {
+pub impl @app.Resource for DlssRayReconstructionSupported with fn resource() {
   dlss_ray_reconstruction_supported_resource_key
 }
 
 ///|
-pub impl @app.Resource for DlssRuntimeState with resource() {
+pub impl @app.Resource for DlssRuntimeState with fn resource() {
   dlss_runtime_state_resource_key
 }
 
 ///|
-pub impl @app.Plugin for DlssInitPlugin with name(_self) {
+pub impl @app.Plugin for DlssInitPlugin with fn name(_self) {
   DLSS_INIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DlssInitPlugin with build(self, app) {
+pub impl @app.Plugin for DlssInitPlugin with fn build(self, app) {
   dlss_init_plugin_with(app, self)
 }
 
 ///|
-pub impl @app.Plugin for DlssPlugin with name(_self) {
+pub impl @app.Plugin for DlssPlugin with fn name(_self) {
   DLSS_PLUGIN_NAME
 }
 
@@ -241,7 +241,7 @@ pub fn install_dlss_required_components() -> Unit {
 }
 
 ///|
-pub impl @app.Plugin for DlssPlugin with build(self, app) {
+pub impl @app.Plugin for DlssPlugin with fn build(self, app) {
   install_dlss_required_components()
   dlss_plugin_with(app, self)
 }
@@ -306,7 +306,7 @@ fn dlss_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+  try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)
 }
 
 ///|

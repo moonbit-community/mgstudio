@@ -51,17 +51,17 @@ pub let ecs_key_fxaa_runtime_state : @ecs.ResourceKey[FxaaRuntimeState] = @ecs.r
 )
 
 ///|
-pub impl @app.Resource for FxaaRuntimeState with resource() {
+pub impl @app.Resource for FxaaRuntimeState with fn resource() {
   ecs_key_fxaa_runtime_state
 }
 
 ///|
-pub impl @app.Plugin for FxaaPlugin with name(_self) {
+pub impl @app.Plugin for FxaaPlugin with fn name(_self) {
   FXAA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FxaaPlugin with build(self, app) {
+pub impl @app.Plugin for FxaaPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   fxaa_plugin_install_with(app, self)
 }
@@ -94,7 +94,7 @@ fn fxaa_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+  try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)
 }
 
 ///|
