@@ -790,15 +790,42 @@ pub fn GpuBackend::end_frame_binding(
     pass.release()
     frame.pass = None
   }
+  let command_encoding_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.command_encoding",
+  )
   screenshot_encode_active_surface_captures(self, frame)
   screenshot_present_surface_capture(self)
   screenshot_encode_pending_texture_captures(self, frame)
   let cmd = frame.encoder.finish()
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.command_encoding",
+    command_encoding_trace_start_us,
+  )
+  let submission_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.submission",
+  )
   self.queue.submit_one(cmd)
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.submission",
+    submission_trace_start_us,
+  )
   screenshot_collect_completed_captures(self)
   cmd.release()
+  let present_wait_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.present_wait",
+  )
   self.surfaces[index].surface.present() |> ignore
   self.instance.process_events()
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "renderer.present_wait",
+    present_wait_trace_start_us,
+  )
   for bind_group in frame.transient_bind_groups {
     self.frame_retired_bind_groups.push(bind_group)
   }

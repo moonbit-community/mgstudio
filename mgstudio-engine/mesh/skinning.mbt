@@ -355,6 +355,52 @@ pub(all) suberror EntityAabbFromSkinnedMeshBoundsError {
 }
 
 ///|
+priv struct SkinnedMeshBoundsTraceCounters {
+  mut skinned_entities : Int
+  mut joint_bounds_processed : Int
+  mut joint_transform_cache_hits : Int
+  mut joint_transform_cache_misses : Int
+  mut aabb_writes : Int
+}
+
+///|
+fn SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters() -> SkinnedMeshBoundsTraceCounters {
+  {
+    skinned_entities: 0,
+    joint_bounds_processed: 0,
+    joint_transform_cache_hits: 0,
+    joint_transform_cache_misses: 0,
+    aabb_writes: 0,
+  }
+}
+
+///|
+fn skinned_mesh_bounds_trace_emit(
+  counters : SkinnedMeshBoundsTraceCounters,
+) -> Unit {
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.skinned_entities",
+    counters.skinned_entities,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_bounds_processed",
+    counters.joint_bounds_processed,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_transform_cache_hits",
+    counters.joint_transform_cache_hits,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.joint_transform_cache_misses",
+    counters.joint_transform_cache_misses,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "mesh.skinned_bounds.aabb_writes",
+    counters.aabb_writes,
+  )
+}
+
+///|
 fn abs_float(value : Float) -> Float {
   if value < 0.0F {
     -value
@@ -491,15 +537,40 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached(
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
 ) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
-  entity_aabb_from_skinned_mesh_bounds_with_fetch(
+  let counters = SkinnedMeshBoundsTraceCounters::SkinnedMeshBoundsTraceCounters()
+  counters.skinned_entities = 1
+  let aabb = entity_aabb_from_skinned_mesh_bounds_with_fetch(
     mesh,
     skinned_mesh,
     skinned_mesh_inverse_bindposes,
     world_from_entity,
     fn(_joint_entity, joint_index) {
-      skinned_mesh.joint_global_transform_cached(joint_transforms, joint_index)
+      counters.joint_bounds_processed = counters.joint_bounds_processed + 1
+      match
+        skinned_mesh.joint_global_transform_cached(
+          joint_transforms, joint_index,
+        ) {
+        Some(global_transform) => {
+          counters.joint_transform_cache_hits = counters.joint_transform_cache_hits +
+            1
+          Some(global_transform)
+        }
+        None => {
+          counters.joint_transform_cache_misses = counters.joint_transform_cache_misses +
+            1
+          None
+        }
+      }
     },
-  )
+  ) catch {
+    error => {
+      skinned_mesh_bounds_trace_emit(counters)
+      raise error
+    }
+  }
+  counters.aabb_writes = counters.aabb_writes + 1
+  skinned_mesh_bounds_trace_emit(counters)
+  aabb
 }
 
 ///|

@@ -80,6 +80,34 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
 }
 
 ///|
+test "diagnostics: timeline trace plugin captures direct counters" {
+  let output_path = timeline_trace_test_output_path()
+  let config = TimelineTraceConfig::TimelineTraceConfig()
+    .with_enabled(true)
+    .with_output_path(output_path)
+    .with_flush_interval_frames(1)
+    .with_categories([@app.TimelineTraceCategory::Counter])
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    TimelineTracePlugin::with_config(config),
+  )
+  app = app.add_system_config(
+    @app.system(fn(_world : @ecs.World) {
+      @app.timeline_trace_emit_counter_int("counter_diagnostic_test", 7)
+    }),
+  )
+  app = app.update()
+
+  let json_text = @fs.read_file_to_string(output_path) catch { _ => "" }
+  debug_inspect(json_text.contains("\"cat\":\"counter\""), content="true")
+  debug_inspect(json_text.contains("\"ph\":\"C\""), content="true")
+  debug_inspect(
+    json_text.contains("\"name\":\"counter_diagnostic_test\""),
+    content="true",
+  )
+  debug_inspect(json_text.contains("\"value\":7"), content="true")
+}
+
+///|
 test "diagnostics: stress diagnostics plugin installs lightweight metrics by default" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@time.TimePlugin::TimePlugin())

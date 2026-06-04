@@ -1,7 +1,7 @@
 # Many Foxes Performance Breakdown
 
 This document records the current `many_foxes` performance shape on
-June 2, 2026. It is a current-checkout snapshot only. It does not reuse the
+June 4, 2026. It is a current-checkout snapshot only. It does not reuse the
 older May 2026 Bevy comparison numbers, and it does not treat historical
 payload/erasure findings as current evidence.
 
@@ -21,6 +21,7 @@ Command:
 MGSTUDIO_MANY_FOXES_PROFILE_SECONDS=10 \
 MGSTUDIO_MANY_FOXES_START_TIMEOUT_SECONDS=300 \
 MGSTUDIO_MANY_FOXES_TRACE_FLUSH_FRAMES=30 \
+MGSTUDIO_MANY_FOXES_TRACE_CATEGORIES=stage,system,render_queue,render_pass,counter \
 mgstudio-engine/scripts/profile_many_foxes_breakdown.sh \
   /tmp/mgstudio_many_foxes_current_breakdown
 ```
@@ -28,10 +29,23 @@ mgstudio-engine/scripts/profile_many_foxes_breakdown.sh \
 Notes:
 
 - The script builds and then runs `moon run examples/stress_tests/many_foxes --release`.
+- If `MGSTUDIO_MANY_FOXES_TRACE_CATEGORIES` is omitted, the script now uses
+  `stage,system,render_queue,render_pass,counter` by default.
 - The first build in this pass was slow because native release linking rebuilt the
   example. The successful profile command waited through that build and launch.
 - Timeline tracing is useful for named system spans, but it can add overhead.
   The no-trace `sample` run below is used to confirm the same main-thread shape.
+- The generated report has a `## Counters` section and the CSV has
+  `avg_value_per_frame` rows for `category=counter`.
+
+Counter groups emitted by the current engine:
+
+| Group | Counters |
+| --- | --- |
+| `transform.propagation.*` | roots scanned, descendants visited, table-row fetches, `GlobalTransform` writes |
+| `animation.targets.*` | players prepared, targets processed, sampled curves, transform writes, morph weight writes, text color writes |
+| `mesh.skinned_bounds.*` | skinned entities, joint bounds processed, joint transform cache hits/misses, AABB writes |
+| `pbr.skin_extraction.*` | skins, joints, dirty skins, staging rows, upload bytes, joint transform cache hits/misses |
 
 Artifacts:
 
@@ -195,8 +209,8 @@ Candidate causes:
 
 Required evidence before calling this a root cause:
 
-- Add current counters for roots scanned, descendants visited, table-row lookups,
-  and `GlobalTransform` writes.
+- Use the timeline report `## Counters` rows for roots scanned, descendants
+  visited, table-row fetches, and `GlobalTransform` writes.
 - Split changed-tree detection from descendant propagation so root scan cost and
   child traversal cost are not conflated.
 - Compare against a current Bevy run only after collecting the same counters
@@ -246,9 +260,9 @@ Candidate causes:
 
 Required evidence before calling this a root cause:
 
-- Split `execute_3d` into CPU collection, shadow phase construction, main pass
-  construction, pipeline lookup, command encoding, submission, and present/wait
-  spans.
+- Use the render queue spans for CPU collection, shadow phase construction,
+  main pass construction, pipeline lookup, command encoding, submission, and
+  present/wait.
 - Add counters for shadow phase items, main pass draw items, pipeline-cache
   hits, descriptor registrations, and `PreviousGlobalTransform` writes.
 - Re-run with shadows disabled only as a diagnostic probe, then remove the probe.

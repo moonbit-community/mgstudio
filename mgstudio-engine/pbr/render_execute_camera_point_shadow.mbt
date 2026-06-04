@@ -60,6 +60,10 @@ fn render3d_execute_camera_point_shadow_pass(
       shadow_camera_transform,
       pass_lighting.point_range,
     )
+    let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "render_3d_shadow_phase_construction",
+    )
     let shadow_phase_items = render3d_queue_shadow_phase_items(
       meshes,
       render3d_shadow_visible_extracted_indices(
@@ -69,6 +73,11 @@ fn render3d_execute_camera_point_shadow_pass(
           shadow_frustum.half_spaces,
         ),
       ),
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "render_3d_shadow_phase_construction",
+      shadow_phase_trace_start_us,
     )
     let shadow_view = Render3dShadowView::{
       target_id: shadow_target_id,
@@ -121,7 +130,7 @@ let render3d_point_light_shadow_targets_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for Render3dPointLightShadowTargets with resource() {
+impl @app.Resource for Render3dPointLightShadowTargets with fn resource() {
   render3d_point_light_shadow_targets_key
 }
 

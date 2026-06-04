@@ -35,6 +35,8 @@ pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
 
 pub fn[C : ValidateParentHasComponentTarget] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
 
+pub fn clear_timeline_trace_counter_sink() -> Unit
+
 pub fn clear_timeline_trace_span_sink() -> Unit
 
 pub fn current_schedule_stage() -> ScheduleStage?
@@ -264,6 +266,8 @@ pub fn[S : States] set_state(S) -> Unit
 
 pub fn[S : States] set_state_if_neq(S) -> Unit
 
+pub fn set_timeline_trace_counter_sink(((TimelineTraceCounter) -> Unit)?) -> Unit
+
 pub fn set_timeline_trace_span_sink(((TimelineTraceSpan) -> Unit)?) -> Unit
 
 pub fn[S : States] state_changed(S) -> (@ecs.World) -> Bool
@@ -339,9 +343,15 @@ pub fn timeline_trace_begin_span(TimelineTraceCategory, String) -> Int64
 
 pub fn timeline_trace_category_label(TimelineTraceCategory) -> String
 
+pub fn timeline_trace_clear_pending_counters() -> Unit
+
 pub fn timeline_trace_clear_pending_spans() -> Unit
 
 pub fn timeline_trace_emit_complete_span(TimelineTraceCategory, String, Int64, Int64) -> Unit
+
+pub fn timeline_trace_emit_counter(String, Float) -> Unit
+
+pub fn timeline_trace_emit_counter_int(String, Int) -> Unit
 
 pub fn timeline_trace_enabled() -> Bool
 
@@ -349,7 +359,11 @@ pub fn timeline_trace_end_span(TimelineTraceCategory, String, Int64) -> Unit
 
 pub fn timeline_trace_now_us() -> Int64
 
+pub fn timeline_trace_push_pending_counter(TimelineTraceCounter) -> Unit
+
 pub fn timeline_trace_push_pending_span(TimelineTraceSpan) -> Unit
+
+pub fn timeline_trace_take_pending_counters() -> Array[TimelineTraceCounter]
 
 pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan]
 
@@ -1384,7 +1398,17 @@ pub(all) enum TimelineTraceCategory {
   System
   RenderPass
   RenderQueue
+  Counter
 } derive(Eq, @debug.Debug)
+
+pub struct TimelineTraceCounter {
+  name : String
+  ts_us : Int64
+  value : Float
+}
+pub fn TimelineTraceCounter::name(Self) -> String
+pub fn TimelineTraceCounter::ts_us(Self) -> Int64
+pub fn TimelineTraceCounter::value(Self) -> Float
 
 pub struct TimelineTraceSpan {
   category : TimelineTraceCategory
@@ -1430,6 +1454,8 @@ pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 pub type SystemFn[W] = (W) -> Unit
 
 pub type SystemSet = String
+
+pub type TimelineTraceCounterSink = (TimelineTraceCounter) -> Unit
 
 pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 

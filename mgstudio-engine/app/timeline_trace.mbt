@@ -18,6 +18,7 @@ pub(all) enum TimelineTraceCategory {
   System
   RenderPass
   RenderQueue
+  Counter
 } derive(Eq, Debug)
 
 ///|
@@ -26,6 +27,13 @@ pub struct TimelineTraceSpan {
   name : String
   ts_us : Int64
   dur_us : Int64
+}
+
+///|
+pub struct TimelineTraceCounter {
+  name : String
+  ts_us : Int64
+  value : Float
 }
 
 ///|
@@ -59,6 +67,7 @@ pub fn timeline_trace_category_label(
     System => "system"
     RenderPass => "render_pass"
     RenderQueue => "render_queue"
+    Counter => "counter"
   }
 }
 
@@ -66,15 +75,37 @@ pub fn timeline_trace_category_label(
 pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 
 ///|
+pub fn TimelineTraceCounter::name(self : TimelineTraceCounter) -> String {
+  self.name
+}
+
+///|
+pub fn TimelineTraceCounter::ts_us(self : TimelineTraceCounter) -> Int64 {
+  self.ts_us
+}
+
+///|
+pub fn TimelineTraceCounter::value(self : TimelineTraceCounter) -> Float {
+  self.value
+}
+
+///|
+pub type TimelineTraceCounterSink = (TimelineTraceCounter) -> Unit
+
+///|
 priv struct TimelineTraceRuntimeState {
   mut span_sink : TimelineTraceSpanSink?
+  mut counter_sink : TimelineTraceCounterSink?
   pending_spans : Array[TimelineTraceSpan]
+  pending_counters : Array[TimelineTraceCounter]
 }
 
 ///|
 let timeline_trace_runtime_state : TimelineTraceRuntimeState = {
   span_sink: None,
+  counter_sink: None,
   pending_spans: [],
+  pending_counters: [],
 }
 
 ///|
@@ -88,8 +119,27 @@ pub fn clear_timeline_trace_span_sink() -> Unit {
 }
 
 ///|
+pub fn set_timeline_trace_counter_sink(
+  sink : TimelineTraceCounterSink?,
+) -> Unit {
+  timeline_trace_runtime_state.counter_sink = sink
+}
+
+///|
+pub fn clear_timeline_trace_counter_sink() -> Unit {
+  timeline_trace_runtime_state.counter_sink = None
+}
+
+///|
 pub fn timeline_trace_push_pending_span(span : TimelineTraceSpan) -> Unit {
   timeline_trace_runtime_state.pending_spans.push(span)
+}
+
+///|
+pub fn timeline_trace_push_pending_counter(
+  counter : TimelineTraceCounter,
+) -> Unit {
+  timeline_trace_runtime_state.pending_counters.push(counter)
 }
 
 ///|
@@ -100,13 +150,26 @@ pub fn timeline_trace_take_pending_spans() -> Array[TimelineTraceSpan] {
 }
 
 ///|
+pub fn timeline_trace_take_pending_counters() -> Array[TimelineTraceCounter] {
+  let pending = timeline_trace_runtime_state.pending_counters.copy()
+  timeline_trace_runtime_state.pending_counters.clear()
+  pending
+}
+
+///|
 pub fn timeline_trace_clear_pending_spans() -> Unit {
   timeline_trace_runtime_state.pending_spans.clear()
 }
 
 ///|
+pub fn timeline_trace_clear_pending_counters() -> Unit {
+  timeline_trace_runtime_state.pending_counters.clear()
+}
+
+///|
 pub fn timeline_trace_enabled() -> Bool {
-  timeline_trace_runtime_state.span_sink is Some(_)
+  timeline_trace_runtime_state.span_sink is Some(_) ||
+  timeline_trace_runtime_state.counter_sink is Some(_)
 }
 
 ///|
@@ -159,4 +222,15 @@ pub fn timeline_trace_emit_complete_span(
     },
   }
   sink(span)
+}
+
+///|
+pub fn timeline_trace_emit_counter(name : String, value : Float) -> Unit {
+  guard timeline_trace_runtime_state.counter_sink is Some(sink) else { return }
+  sink(TimelineTraceCounter::{ name, ts_us: timeline_trace_now_us(), value })
+}
+
+///|
+pub fn timeline_trace_emit_counter_int(name : String, value : Int) -> Unit {
+  timeline_trace_emit_counter(name, Float::from_int(value))
 }

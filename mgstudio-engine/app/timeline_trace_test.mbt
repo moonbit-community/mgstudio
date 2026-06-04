@@ -48,6 +48,7 @@ test "app: timeline trace captures schedule stage and system spans" {
 ///|
 test "app: timeline trace disabled path stays no-op" {
   clear_timeline_trace_span_sink()
+  clear_timeline_trace_counter_sink()
   debug_inspect(timeline_trace_enabled(), content="false")
 
   let begin_ts = timeline_trace_begin_span(
@@ -62,7 +63,9 @@ test "app: timeline trace disabled path stays no-op" {
 ///|
 test "app: timeline trace pending queue stores and drains spans" {
   clear_timeline_trace_span_sink()
+  clear_timeline_trace_counter_sink()
   timeline_trace_clear_pending_spans()
+  timeline_trace_clear_pending_counters()
 
   set_timeline_trace_span_sink(
     Some(fn(span) { timeline_trace_push_pending_span(span) }),
@@ -84,5 +87,26 @@ test "app: timeline trace pending queue stores and drains spans" {
     first_batch[0].category() == TimelineTraceCategory::RenderQueue,
     content="true",
   )
+  debug_inspect(second_batch.length(), content="0")
+}
+
+///|
+test "app: timeline trace pending queue stores and drains counters" {
+  clear_timeline_trace_span_sink()
+  clear_timeline_trace_counter_sink()
+  timeline_trace_clear_pending_counters()
+
+  set_timeline_trace_counter_sink(
+    Some(fn(counter) { timeline_trace_push_pending_counter(counter) }),
+  )
+  timeline_trace_emit_counter_int("counter_test", 42)
+  clear_timeline_trace_counter_sink()
+
+  let first_batch = timeline_trace_take_pending_counters()
+  let second_batch = timeline_trace_take_pending_counters()
+
+  debug_inspect(first_batch.length(), content="1")
+  debug_inspect(first_batch[0].name() == "counter_test", content="true")
+  debug_inspect(first_batch[0].value(), content="42")
   debug_inspect(second_batch.length(), content="0")
 }

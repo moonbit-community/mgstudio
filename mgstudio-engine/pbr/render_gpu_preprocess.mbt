@@ -94,6 +94,27 @@ fn render3d_mesh_pipeline_id_for_view(
 }
 
 ///|
+fn render3d_traced_mesh_pipeline_id_for_view(
+  mesh : ExtractedMesh3d,
+  view_entity : @core.Entity?,
+  specialized_material_pipeline_cache : SpecializedMaterialPipelineCache?,
+) -> @material.CachedRenderPipelineId? {
+  let trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_pipeline_lookup",
+  )
+  let pipeline_id = render3d_mesh_pipeline_id_for_view(
+    mesh, view_entity, specialized_material_pipeline_cache,
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_pipeline_lookup",
+    trace_start_us,
+  )
+  pipeline_id
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
@@ -140,7 +161,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: render3d_mesh_pipeline_id_for_view(
+      pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
         mesh, view_entity, specialized_material_pipeline_cache,
       ),
       distance: render3d_material_phase_distance(payload, camera_transform),
@@ -223,7 +244,7 @@ fn render3d_collect_meshes_for_gpu_building(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: render3d_mesh_pipeline_id_for_view(
+      pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
         mesh, view_entity, specialized_material_pipeline_cache,
       ),
       distance: render3d_material_phase_distance(payload, camera_transform),

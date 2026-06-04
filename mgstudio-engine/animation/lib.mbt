@@ -1680,6 +1680,7 @@ fn animation_apply_threaded_player_to_target(
   evaluation_state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
   output : AnimationEvaluationOutput,
+  counters : AnimationTargetCounters,
 ) -> Unit {
   animation_evaluation_state_reset(evaluation_state)
 
@@ -1753,6 +1754,7 @@ fn animation_apply_threaded_player_to_target(
           is Some(curves) else {
           continue
         }
+        counters.sampled_curves = counters.sampled_curves + 1
         animation_evaluation_state_push_target_curves(
           evaluation_state,
           node_index,
@@ -1837,6 +1839,28 @@ fn AnimationRuntimeScratch::AnimationRuntimeScratch() -> AnimationRuntimeScratch
 let ecs_key_animation_runtime_scratch : @ecs.ResourceKey[
   AnimationRuntimeScratch,
 ] = @ecs.register_resource(debug_name="mgstudio.animation.runtime_scratch")
+
+///|
+priv struct AnimationTargetCounters {
+  mut players_prepared : Int
+  mut targets_processed : Int
+  mut sampled_curves : Int
+  mut transform_writes : Int
+  mut morph_weight_writes : Int
+  mut text_color_writes : Int
+}
+
+///|
+fn AnimationTargetCounters::AnimationTargetCounters() -> AnimationTargetCounters {
+  {
+    players_prepared: 0,
+    targets_processed: 0,
+    sampled_curves: 0,
+    transform_writes: 0,
+    morph_weight_writes: 0,
+    text_color_writes: 0,
+  }
+}
 
 ///|
 fn animation_runtime_scratch_ref_or_init(
@@ -2060,6 +2084,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     let graph_cache = runtime_scratch.graph_cache
     let clip_cache = runtime_scratch.clip_cache
     let threaded_graph_cache = runtime_scratch.threaded_graph_cache
+    let counters = AnimationTargetCounters::AnimationTargetCounters()
 
     let prepare_player = fn(
       player_entity : @core.Entity,
@@ -2123,6 +2148,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           threaded_graph,
         },
       )
+      counters.players_prepared = counters.players_prepared + 1
     }
     let player_column = world.component_column(ecs_key_animation_player)
     let graph_handle_column = world.component_column(
@@ -2198,6 +2224,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           Some(cached) => cached
           None => return false
         }
+        counters.targets_processed = counters.targets_processed + 1
         let target_mask = animation_target_mask_cached(
           target_mask_cache,
           prepared_player.graph_id,
@@ -2219,6 +2246,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           evaluation_state,
           base_transform,
           evaluation_output,
+          counters,
         )
 
         let mut mark_transform_changed_at_current_row = false
@@ -2245,6 +2273,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           if !wrote {
             transform_updates.push((entity, transform))
           }
+          counters.transform_writes = counters.transform_writes + 1
         }
         if evaluation_output.weights is Some(weights) {
           let wrote = match weights_column {
@@ -2261,6 +2290,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           if !wrote {
             weights_updates.push((entity, weights))
           }
+          counters.morph_weight_writes = counters.morph_weight_writes + 1
         }
         if evaluation_output.text_color is Some(text_color) {
           let wrote = match text_color_column {
@@ -2277,6 +2307,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           if !wrote {
             text_color_updates.push((entity, text_color))
           }
+          counters.text_color_writes = counters.text_color_writes + 1
         }
         mark_transform_changed_at_current_row
       }
@@ -2330,6 +2361,30 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     for update in text_color_updates {
       try! world.set_by_key(update.0, @text.ecs_key_text_color, update.1)
     }
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.players_prepared",
+      counters.players_prepared,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.targets_processed",
+      counters.targets_processed,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.sampled_curves",
+      counters.sampled_curves,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.transform_writes",
+      counters.transform_writes,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.morph_weight_writes",
+      counters.morph_weight_writes,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "animation.targets.text_color_writes",
+      counters.text_color_writes,
+    )
   })
 }
 

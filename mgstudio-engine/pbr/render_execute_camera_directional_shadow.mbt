@@ -337,6 +337,10 @@ fn render3d_execute_camera_directional_shadow_pass(
   )
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
+    let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "render_3d_shadow_phase_construction",
+    )
     let visible_indices = render3d_shadow_visible_extracted_indices(
       meshes,
       camera.layers,
@@ -344,6 +348,11 @@ fn render3d_execute_camera_directional_shadow_pass(
     )
     let cascade_phase_items = render3d_queue_shadow_phase_items(
       meshes, visible_indices,
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "render_3d_shadow_phase_construction",
+      shadow_phase_trace_start_us,
     )
     let shadow_view = Render3dShadowView::{
       target_id,
@@ -399,7 +408,7 @@ let render3d_directional_light_shadow_targets_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for Render3dDirectionalLightShadowTargets with resource() {
+impl @app.Resource for Render3dDirectionalLightShadowTargets with fn resource() {
   render3d_directional_light_shadow_targets_key
 }
 

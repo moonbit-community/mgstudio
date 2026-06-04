@@ -255,6 +255,10 @@ fn render3d_execute_camera_main_pass(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
   )
+  let main_phase_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_main_pass_construction",
+  )
   let main_phase = render3d_mesh_gpu_binned_phase_new()
   let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
   let transparent_draws : Array[MeshGpuDrawPayload3d] = []
@@ -644,6 +648,11 @@ fn render3d_execute_camera_main_pass(
       @pbr_render.render3d_host_main_pass_draw_entry(wireframe_draw),
     )
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_main_pass_construction",
+    main_phase_trace_start_us,
+  )
   @render.host_gpu_prepare_mesh3d_main_pass_draw_batch(
     preprocess_camera_key_hi=camera_entity.id,
     preprocess_camera_key_lo=camera_entity.generation,

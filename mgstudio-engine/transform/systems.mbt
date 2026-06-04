@@ -447,6 +447,24 @@ fn transform_table_tree_changed_at_row(
 }
 
 ///|
+priv struct TransformPropagationCounters {
+  mut roots_scanned : Int
+  mut descendants_visited : Int
+  mut table_row_fetches : Int
+  mut global_transform_writes : Int
+}
+
+///|
+fn TransformPropagationCounters::TransformPropagationCounters() -> TransformPropagationCounters {
+  {
+    roots_scanned: 0,
+    descendants_visited: 0,
+    table_row_fetches: 0,
+    global_transform_writes: 0,
+  }
+}
+
+///|
 fn propagate_descendants_dense(
   _world : @ecs.World,
   columns : TransformPropagationColumns,
@@ -458,11 +476,13 @@ fn propagate_descendants_dense(
   parent_global : GlobalTransform,
   parent_global_changed : Bool,
   children : @hierarchy.Children,
+  counters : TransformPropagationCounters,
 ) -> Unit {
   scratch.dense_stack.clear()
   let root_children = children.entities()
   for index in 0..<root_children.length() {
     let reverse_index = root_children.length() - 1 - index
+    counters.table_row_fetches = counters.table_row_fetches + 1
     let (table_id, row_index) = match
       children.entity_table_row_cached(_world, reverse_index) {
       Some(location) => location
@@ -482,6 +502,7 @@ fn propagate_descendants_dense(
       Some(item) => item
       None => break
     }
+    counters.descendants_visited = counters.descendants_visited + 1
     let child = stack_item.entity
     let table_id = stack_item.table_id
     let row_index = stack_item.row_index
@@ -519,6 +540,7 @@ fn propagate_descendants_dense(
         stack_item.parent_global,
         local_transform,
       ) {
+      counters.global_transform_writes = counters.global_transform_writes + 1
       global_column.record_changed_at_row(row_index, tick)
     } else {
       false
@@ -530,6 +552,7 @@ fn propagate_descendants_dense(
             let grandchildren = grand_children.entities()
             for index in 0..<grandchildren.length() {
               let reverse_index = grandchildren.length() - 1 - index
+              counters.table_row_fetches = counters.table_row_fetches + 1
               let (table_id, row_index) = match
                 grand_children.entity_table_row_cached(_world, reverse_index) {
                 Some(location) => location
@@ -577,7 +600,10 @@ fn propagate_parent_transforms_dense(
   )
   let mut descendants_trace_first_us = -1L
   let mut descendants_trace_total_us = 0L
+  let counters = TransformPropagationCounters::TransformPropagationCounters()
   columns.children.for_each_without_fast(parent_column, fn(entity, children) {
+    counters.roots_scanned = counters.roots_scanned + 1
+    counters.table_row_fetches = counters.table_row_fetches + 1
     guard transform_dense_entity_slot(world, entity)
       is Some((table_id, row_index)) else {
       return
@@ -602,6 +628,9 @@ fn propagate_parent_transforms_dense(
     let root_global_changed = transform_set_global_hot_at_row(
       global_column, row_index, root_global, tick,
     )
+    if root_global_changed {
+      counters.global_transform_writes = counters.global_transform_writes + 1
+    }
     let descendants_start_us = if trace_enabled {
       let now = @app.timeline_trace_now_us()
       if descendants_trace_first_us < 0L {
@@ -613,7 +642,7 @@ fn propagate_parent_transforms_dense(
     }
     propagate_descendants_dense(
       world, columns, scratch, tick, static_optimizations_enabled, system_ticks,
-      entity, root_global, root_global_changed, children,
+      entity, root_global, root_global_changed, children, counters,
     )
     if descendants_start_us >= 0L {
       let descendants_end_us = @app.timeline_trace_now_us()
@@ -635,6 +664,22 @@ fn propagate_parent_transforms_dense(
       descendants_trace_total_us,
     )
   }
+  @app.timeline_trace_emit_counter_int(
+    "transform.propagation.roots_scanned",
+    counters.roots_scanned,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "transform.propagation.descendants_visited",
+    counters.descendants_visited,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "transform.propagation.table_row_fetches",
+    counters.table_row_fetches,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "transform.propagation.global_transform_writes",
+    counters.global_transform_writes,
+  )
 }
 
 ///|

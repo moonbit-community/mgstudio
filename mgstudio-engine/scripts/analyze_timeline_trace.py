@@ -168,15 +168,26 @@ def aggregate_events(events, steady_frames):
     count_by_cat_name = {category: collections.Counter() for category in categories}
     duration_by_category = collections.defaultdict(float)
     count_by_category = collections.Counter()
+    counter_value_by_name = collections.defaultdict(float)
+    counter_count_by_name = collections.Counter()
 
     for event in events:
-        if "ts" not in event or "dur" not in event:
+        if "ts" not in event:
             continue
         frame_index = frame_index_for_ts(event["ts"])
         if frame_index is None:
             continue
         category = event.get("cat", "")
         name = event.get("name", "")
+        if category == "counter":
+            args = event.get("args", {})
+            value = args.get("value") if isinstance(args, dict) else None
+            if isinstance(value, (int, float)):
+                counter_value_by_name[name] += float(value)
+                counter_count_by_name[name] += 1
+            continue
+        if "dur" not in event:
+            continue
         duration_ms = event["dur"] / 1000.0
         duration_by_category[category] += duration_ms
         count_by_category[category] += 1
@@ -184,7 +195,14 @@ def aggregate_events(events, steady_frames):
             duration_by_cat_name[category][name] += duration_ms
             count_by_cat_name[category][name] += 1
 
-    return duration_by_category, count_by_category, duration_by_cat_name, count_by_cat_name
+    return (
+        duration_by_category,
+        count_by_category,
+        duration_by_cat_name,
+        count_by_cat_name,
+        counter_value_by_name,
+        counter_count_by_name,
+    )
 
 
 def top_rows(duration_by_name, count_by_name, frame_count, limit):
@@ -206,11 +224,32 @@ def top_rows(duration_by_name, count_by_name, frame_count, limit):
     return rows
 
 
+def counter_rows(value_by_name, count_by_name, frame_count):
+    rows = []
+    if frame_count == 0:
+        return rows
+    for name, value in sorted(value_by_name.items()):
+        rows.append(
+            {
+                "name": name,
+                "avg_value_per_frame": value / frame_count,
+                "events_per_frame": count_by_name[name] / frame_count,
+            }
+        )
+    return rows
+
+
 def write_csv(path, rows):
     with path.open("w", newline="", encoding="utf-8") as fp:
         writer = csv.DictWriter(
             fp,
-            fieldnames=["category", "name", "avg_ms_per_frame", "count_per_frame"],
+            fieldnames=[
+                "category",
+                "name",
+                "avg_ms_per_frame",
+                "avg_value_per_frame",
+                "count_per_frame",
+            ],
         )
         writer.writeheader()
         for row in rows:
@@ -260,9 +299,14 @@ def main():
             f"(tried Main, First, Update; found: {stage_names})"
         )
 
-    duration_by_category, count_by_category, duration_by_name, count_by_name = (
-        aggregate_events(events, steady_frames)
-    )
+    (
+        duration_by_category,
+        count_by_category,
+        duration_by_name,
+        count_by_name,
+        counter_value_by_name,
+        counter_count_by_name,
+    ) = aggregate_events(events, steady_frames)
     steady_count = len(steady_frames)
     frametime_stats = stats([f["interval_ms"] for f in steady_frames])
     fps = None
@@ -284,9 +328,20 @@ def main():
                     "category": category,
                     "name": row["name"],
                     "avg_ms_per_frame": f"{row['avg_ms_per_frame']:.6f}",
+                    "avg_value_per_frame": "",
                     "count_per_frame": f"{row['count_per_frame']:.6f}",
                 }
             )
+    for row in counter_rows(counter_value_by_name, counter_count_by_name, steady_count):
+        all_top_rows.append(
+            {
+                "category": "counter",
+                "name": row["name"],
+                "avg_ms_per_frame": "",
+                "avg_value_per_frame": f"{row['avg_value_per_frame']:.6f}",
+                "count_per_frame": f"{row['events_per_frame']:.6f}",
+            }
+        )
     if args.out_csv:
         args.out_csv.parent.mkdir(parents=True, exist_ok=True)
         write_csv(args.out_csv, all_top_rows)
@@ -374,6 +429,21 @@ def main():
             lines.extend(markdown_table(["name", "avg_ms/frame", "count/frame"], rows))
         else:
             lines.append("_No events._")
+
+    lines.extend(["", "## Counters", ""])
+    rows = []
+    for row in counter_rows(counter_value_by_name, counter_count_by_name, steady_count):
+        rows.append(
+            [
+                f"`{row['name']}`",
+                fmt(row["avg_value_per_frame"]),
+                fmt(row["events_per_frame"], 2),
+            ]
+        )
+    if rows:
+        lines.extend(markdown_table(["name", "avg_value/frame", "events/frame"], rows))
+    else:
+        lines.append("_No counter events._")
 
     spike_rows = sorted(
         [

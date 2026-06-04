@@ -48,6 +48,7 @@ fn timeline_trace_default_categories() -> Array[@app.TimelineTraceCategory] {
     @app.TimelineTraceCategory::System,
     @app.TimelineTraceCategory::RenderPass,
     @app.TimelineTraceCategory::RenderQueue,
+    @app.TimelineTraceCategory::Counter,
   ]
 }
 
@@ -329,6 +330,8 @@ fn timeline_trace_parse_category(token : String) -> @app.TimelineTraceCategory? 
       Some(@app.TimelineTraceCategory::RenderPass)
     "render_queue" | "RenderQueue" | "queue" =>
       Some(@app.TimelineTraceCategory::RenderQueue)
+    "counter" | "Counter" | "counters" =>
+      Some(@app.TimelineTraceCategory::Counter)
     _ => None
   }
 }
@@ -404,6 +407,11 @@ fn timeline_trace_capture_span(span : @app.TimelineTraceSpan) -> Unit {
 }
 
 ///|
+fn timeline_trace_capture_counter(counter : @app.TimelineTraceCounter) -> Unit {
+  @app.timeline_trace_push_pending_counter(counter)
+}
+
+///|
 fn timeline_trace_json_escape(value : String) -> String {
   let chars : Array[Char] = []
   for ch in value {
@@ -448,6 +456,18 @@ fn timeline_trace_event_json_line(
     @app.timeline_trace_category_label(category),
   )
   "{\"name\":\"\{safe_name}\",\"cat\":\"\{safe_category}\",\"ph\":\"X\",\"ts\":\{safe_ts.to_string()},\"dur\":\{safe_dur.to_string()},\"pid\":1,\"tid\":0}"
+}
+
+///|
+fn timeline_trace_counter_json_line(
+  counter : @app.TimelineTraceCounter,
+) -> String {
+  let safe_ts = if counter.ts_us() >= 0L { counter.ts_us() } else { 0L }
+  let safe_name = timeline_trace_json_escape(counter.name())
+  let safe_category = timeline_trace_json_escape(
+    @app.timeline_trace_category_label(@app.TimelineTraceCategory::Counter),
+  )
+  "{\"name\":\"\{safe_name}\",\"cat\":\"\{safe_category}\",\"ph\":\"C\",\"ts\":\{safe_ts.to_string()},\"pid\":1,\"tid\":0,\"args\":{\"value\":\{counter.value().to_string()}}}"
 }
 
 ///|
@@ -501,6 +521,20 @@ fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
 }
 
 ///|
+fn timeline_trace_append_pending_counters(state : TimelineTraceState) -> Unit {
+  let pending = @app.timeline_trace_take_pending_counters()
+  if !timeline_trace_category_enabled(
+      state.config,
+      @app.TimelineTraceCategory::Counter,
+    ) {
+    return
+  }
+  for counter in pending {
+    state.events_json_lines.push(timeline_trace_counter_json_line(counter))
+  }
+}
+
+///|
 fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
   guard world.get_resource_mut(timeline_trace_state_resource_key)
     is Some(state_mut) else {
@@ -511,6 +545,7 @@ fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
       return
     }
     timeline_trace_append_pending_spans(state)
+    timeline_trace_append_pending_counters(state)
     state.frame_count_since_flush = state.frame_count_since_flush + 1
     if state.frame_count_since_flush >= state.config.flush_interval_frames {
       timeline_trace_flush_to_disk(state)
@@ -550,11 +585,14 @@ pub fn timeline_trace_plugin_with(
     })
 
   @app.timeline_trace_clear_pending_spans()
+  @app.timeline_trace_clear_pending_counters()
   if config.enabled {
     @app.set_timeline_trace_span_sink(Some(timeline_trace_capture_span))
+    @app.set_timeline_trace_counter_sink(Some(timeline_trace_capture_counter))
     app_ = app_.add_post_update_system(timeline_trace_flush_system)
   } else {
     @app.clear_timeline_trace_span_sink()
+    @app.clear_timeline_trace_counter_sink()
   }
   app_
 }
