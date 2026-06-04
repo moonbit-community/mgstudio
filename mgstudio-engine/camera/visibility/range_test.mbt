@@ -29,8 +29,8 @@ fn spawn_camera_entity(
   )
   try! world.set_by_key(
     entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   entity
 }

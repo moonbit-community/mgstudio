@@ -64,12 +64,12 @@ pub fn visibility_range_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for VisibilityRangePlugin with name(_self) {
+pub impl @app.Plugin for VisibilityRangePlugin with fn name(_self) {
   VISIBILITY_RANGE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for VisibilityRangePlugin with build(self, app) {
+pub impl @app.Plugin for VisibilityRangePlugin with fn build(self, app) {
   visibility_range_plugin_with(app, self)
 }
 
@@ -118,7 +118,7 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     (
       @core.Entity,
       @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@sprite.Camera],
+      @ecs.Comp[@camera_camera.Camera],
     ),
     @ecs.All,
   ] = @ecs.query(world)
@@ -288,11 +288,11 @@ pub let ecs_key_shadow_lod_origin : @ecs.ComponentKey[ShadowLodOrigin] = @ecs.re
 )
 
 ///|
-pub impl @app.Resource for VisibleEntityRanges with resource() {
+pub impl @app.Resource for VisibleEntityRanges with fn resource() {
   ecs_key_visible_entity_ranges
 }
 
 ///|
-pub impl @ecs.Component for ShadowLodOrigin with component() {
+pub impl @ecs.Component for ShadowLodOrigin with fn component() {
   ecs_key_shadow_lod_origin
 }
