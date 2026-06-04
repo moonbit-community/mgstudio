@@ -83,6 +83,59 @@ pub fn render_recovery_schedule_stage() -> @app.ScheduleStage {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderScheduleOrder`).
+pub struct RenderScheduleOrder {
+  labels : Array[@app.ScheduleStage]
+}
+
+///|
+pub fn RenderScheduleOrder::RenderScheduleOrder() -> RenderScheduleOrder {
+  RenderScheduleOrder::{ labels: [render_schedule_stage()] }
+}
+
+///|
+pub fn RenderScheduleOrder::labels(
+  self : RenderScheduleOrder,
+) -> Array[@app.ScheduleStage] {
+  self.labels.copy()
+}
+
+///|
+pub fn RenderScheduleOrder::insert_after(
+  self : RenderScheduleOrder,
+  after : @app.ScheduleStage,
+  schedule : @app.ScheduleStage,
+) -> Unit {
+  for i, current in self.labels {
+    if current == after {
+      self.labels.insert(i + 1, schedule)
+      return
+    }
+  }
+  abort("Expected render schedule stage to exist")
+}
+
+///|
+pub fn RenderScheduleOrder::insert_before(
+  self : RenderScheduleOrder,
+  before : @app.ScheduleStage,
+  schedule : @app.ScheduleStage,
+) -> Unit {
+  for i, current in self.labels {
+    if current == before {
+      self.labels.insert(i, schedule)
+      return
+    }
+  }
+  abort("Expected render schedule stage to exist")
+}
+
+///|
+pub let render_schedule_order_resource_key : @ecs.ResourceKey[
+  RenderScheduleOrder,
+] = @ecs.register_resource(debug_name="mgstudio_render::RenderScheduleOrder")
+
+///|
 pub let render_system_set_extract_commands : @app.SystemSet = @app.system_set(
   "mgstudio.render.extract_commands",
 )
@@ -177,6 +230,17 @@ pub fn render_graph_schedule_stage() -> @app.ScheduleStage {
 ///|
 fn render_graph_driver_system(world : @ecs.World) -> Unit {
   @app.run_current_schedule_stage(world, RenderGraph::schedule())
+}
+
+///|
+fn run_render_schedule(world : @ecs.World) -> Unit {
+  let order = match world.get_resource(render_schedule_order_resource_key) {
+    Some(value) => value
+    None => RenderScheduleOrder::RenderScheduleOrder()
+  }
+  for stage in order.labels() {
+    @app.run_current_schedule_stage(world, stage)
+  }
 }
 
 ///|

@@ -69,7 +69,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   }
   if next.get_sub_app(@app.RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
-      Some(render_schedule_stage()),
+      Some(render_recovery_schedule_stage()),
     )
     let render_sub_app = configure_base_render_sets(
       configure_base_render_graph_sets(
@@ -90,6 +90,17 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
       init_renderer_context_resources(render_sub_app.world())
       init_render_state(render_sub_app.world())
+      if !render_sub_app
+        .world()
+        .resource(render_schedule_order_resource_key)
+        .is_present() {
+        render_sub_app
+        .world()
+        .insert_resource(
+          render_schedule_order_resource_key,
+          RenderScheduleOrder::RenderScheduleOrder(),
+        )
+      }
       render_sub_app
       .world()
       .insert_resource(
@@ -97,6 +108,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
         RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
       )
       render_sub_app
+      .add_systems(
+        render_recovery_schedule_stage(),
+        @app.system(run_render_schedule).named(
+          "mgstudio_render::run_render_schedule",
+        ),
+      )
       .add_systems(
         render_schedule_stage(),
         @app.system(extract_render_asset_bytes_per_frame).in_set(

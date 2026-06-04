@@ -379,6 +379,8 @@ pub fn render_recovery_schedule_stage() -> @app.ScheduleStage
 
 pub fn render_runtime_error() -> @app.RenderRuntimeError?
 
+pub let render_schedule_order_resource_key : @ecs.ResourceKey[RenderScheduleOrder]
+
 pub fn render_schedule_stage() -> @app.ScheduleStage
 
 pub fn render_source_world(@ecs.World) -> @ecs.World
@@ -788,6 +790,14 @@ pub fn RenderResources::new(@renderer.RenderDevice, @renderer.RenderQueue, @rend
 pub fn RenderResources::queue(Self) -> @renderer.RenderQueue
 pub fn RenderResources::render_adapter(Self) -> @renderer.RenderAdapter
 pub fn RenderResources::unpack_into(Self, @ecs.World, @ecs.World) -> Unit
+
+pub struct RenderScheduleOrder {
+  labels : Array[@app.ScheduleStage]
+}
+pub fn RenderScheduleOrder::RenderScheduleOrder() -> Self
+pub fn RenderScheduleOrder::insert_after(Self, @app.ScheduleStage, @app.ScheduleStage) -> Unit
+pub fn RenderScheduleOrder::insert_before(Self, @app.ScheduleStage, @app.ScheduleStage) -> Unit
+pub fn RenderScheduleOrder::labels(Self) -> Array[@app.ScheduleStage]
 
 pub(all) enum RenderState {
   Initializing

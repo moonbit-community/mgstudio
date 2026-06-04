@@ -55,15 +55,26 @@ test "render schedule: render graph is a distinct root graph schedule" {
 }
 
 ///|
-test "render schedule: render system drives render graph phases once" {
+test "render schedule: recovery drives render and render graph phases once" {
   let log : Array[String] = []
   let render_sub_app = @app.SubApp::new(@ecs.World::new())
-    .set_update_schedule(Some(render_schedule_stage()))
+    .set_update_schedule(Some(render_recovery_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_schedule_stage()))
     .add_schedule(RenderGraph::base_schedule())
+  render_sub_app
+  .world()
+  .insert_resource(
+    render_schedule_order_resource_key,
+    RenderScheduleOrder::RenderScheduleOrder(),
+  )
   let render_sub_app = configure_base_render_sets(
     configure_base_render_graph_sets(render_sub_app),
   )
   let render_sub_app = render_sub_app
+    .add_systems(
+      render_recovery_schedule_stage(),
+      @app.system(run_render_schedule),
+    )
     .add_systems(
       render_schedule_stage(),
       @app.system(fn(_world : @ecs.World) { log.push("prepare") }).in_set(
@@ -100,6 +111,20 @@ test "render schedule: render system drives render graph phases once" {
     )
   ignore(render_sub_app.update())
   debug_inspect(log.join(","), content="\"prepare,begin,render,submit,finish\"")
+}
+
+///|
+test "render schedule: order inserts stages around render" {
+  let before = @app.schedule_label("mgstudio.render.test.before")
+  let after = @app.schedule_label("mgstudio.render.test.after")
+  let order = RenderScheduleOrder::RenderScheduleOrder()
+  order.insert_before(render_schedule_stage(), before)
+  order.insert_after(render_schedule_stage(), after)
+  let labels = order.labels()
+  debug_inspect(labels.length(), content="3")
+  debug_inspect(labels[0] == before, content="true")
+  debug_inspect(labels[1] == render_schedule_stage(), content="true")
+  debug_inspect(labels[2] == after, content="true")
 }
 
 ///|
