@@ -72,3 +72,23 @@ test "app: sub app extractor updates both main and render worlds" {
   debug_inspect(app.world().read_change_tick(), content="9")
   debug_inspect(sub_app.world().read_change_tick(), content="12")
 }
+
+///|
+test "app: sub app extractor can run the sub app schedule" {
+  let log : Array[String] = []
+  let stage = schedule_label("mgstudio.app.test.extract.stage")
+  let sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(Main))
+    .add_schedule(Schedule::new(stage))
+    .add_systems(stage, system(fn(_world : @ecs.World) { log.push("stage") }))
+  let app = App::new(@ecs.World::new()).insert_sub_app(RenderApp, sub_app)
+  let app = app.set_sub_app_extract(RenderApp, fn(
+    main_world : @ecs.World,
+    sub_world : @ecs.World,
+  ) {
+    run_current_schedule_stage(sub_world, stage)
+    (main_world, sub_world)
+  })
+  app.run_once() |> ignore
+  debug_inspect(log.join(","), content="\"stage\"")
+}

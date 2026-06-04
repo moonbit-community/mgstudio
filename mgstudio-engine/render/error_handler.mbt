@@ -68,6 +68,16 @@ pub fn init_render_state(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render_resources_ready_for_startup(world : @ecs.World) -> Bool {
+  world.resource(render_device_resource_key).is_present() &&
+  world.resource(render_queue_resource_key).is_present() &&
+  world.resource(render_adapter_resource_key).is_present() &&
+  world.resource(render_adapter_info_resource_key).is_present() &&
+  world.resource(render_instance_resource_key).is_present() &&
+  world.resource(pipeline_cache_resource_key).is_present()
+}
+
+///|
 pub fn renderer_is_ready(world : @ecs.World) -> Bool {
   match world.get_resource(render_state_resource_key) {
     Some(state) => state.is_ready()
@@ -78,6 +88,37 @@ pub fn renderer_is_ready(world : @ecs.World) -> Bool {
 ///|
 pub fn mark_renderer_ready(world : @ecs.World) -> Unit {
   world.insert_resource(render_state_resource_key, RenderState::ready())
+}
+
+///|
+fn update_render_state(
+  _main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  let state = match render_world.get_resource(render_state_resource_key) {
+    Some(value) => value
+    None => RenderState::initializing()
+  }
+  match state {
+    Initializing =>
+      if render_resources_ready_for_startup(render_world) {
+        @app.run_current_schedule_stage(
+          render_world,
+          render_startup_schedule_stage(),
+        )
+        mark_renderer_ready(render_world)
+      } else if render_world.resource(render_state_resource_key).is_present() {
+        ()
+      } else {
+        render_world.insert_resource(
+          render_state_resource_key,
+          RenderState::initializing(),
+        )
+      }
+    Ready => ()
+    Reinitializing => ()
+    Errored(_) => ()
+  }
 }
 
 ///|

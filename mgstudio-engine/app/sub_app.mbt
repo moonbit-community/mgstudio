@@ -251,7 +251,19 @@ pub fn SubApps::update(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
     let (key, sub_app) = entry
     let mut next_sub_app = sub_app
     if next_sub_app.extract is Some(extract) {
+      app_execution_context_state.current_app_schedule = Some(
+        next_sub_app.schedule,
+      )
+      app_execution_context_state.current_allowed_ambiguous_components = Some(
+        next_sub_app.allowed_ambiguous_components,
+      )
+      app_execution_context_state.current_allowed_ambiguous_resources = Some(
+        next_sub_app.allowed_ambiguous_resources,
+      )
       let worlds = extract(self.main.world, next_sub_app.world)
+      app_execution_context_state.current_allowed_ambiguous_components = None
+      app_execution_context_state.current_allowed_ambiguous_resources = None
+      app_execution_context_state.current_app_schedule = None
       self.main.world = worlds.0
       next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
     }
@@ -269,7 +281,19 @@ pub fn SubApps::update_sub_app_by_label(
   if self.sub_apps.get(key) is Some(sub_app) {
     let mut next_sub_app = sub_app
     if next_sub_app.extract is Some(extract) {
+      app_execution_context_state.current_app_schedule = Some(
+        next_sub_app.schedule,
+      )
+      app_execution_context_state.current_allowed_ambiguous_components = Some(
+        next_sub_app.allowed_ambiguous_components,
+      )
+      app_execution_context_state.current_allowed_ambiguous_resources = Some(
+        next_sub_app.allowed_ambiguous_resources,
+      )
       let worlds = extract(self.main.world, next_sub_app.world)
+      app_execution_context_state.current_allowed_ambiguous_components = None
+      app_execution_context_state.current_allowed_ambiguous_resources = None
+      app_execution_context_state.current_app_schedule = None
       self.main.world = worlds.0
       next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
     }
