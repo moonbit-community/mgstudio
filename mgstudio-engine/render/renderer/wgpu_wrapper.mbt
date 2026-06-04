@@ -82,6 +82,72 @@ fn command_encoder_begin_render_pass_depth_u32(
 }
 
 ///|
+extern "C" fn render_pass_descriptor_color_depth_resolve_u32_new(
+  color_view : @wgpu_c.TextureView,
+  color_resolve_view : @wgpu_c.TextureView,
+  color_load_op_u32 : UInt,
+  color_store_op_u32 : UInt,
+  color_clear_r_f32 : Float,
+  color_clear_g_f32 : Float,
+  color_clear_b_f32 : Float,
+  color_clear_a_f32 : Float,
+  depth_view : @wgpu_c.TextureView,
+  depth_load_op_u32 : UInt,
+  depth_store_op_u32 : UInt,
+  depth_clear_value_f32 : Float,
+  stencil_load_op_u32 : UInt,
+  stencil_store_op_u32 : UInt,
+  stencil_clear_value_u32 : UInt,
+  depth_read_only : Bool,
+  stencil_read_only : Bool,
+) -> @wgpu_c.WGPURenderPassDescriptorPtr = "mgstudio_render_pass_descriptor_color_depth_resolve_u32_new"
+
+///|
+fn command_encoder_begin_render_pass_color_depth_resolve_u32(
+  encoder : @wgpu.CommandEncoder,
+  color_view : @wgpu.TextureView,
+  color_resolve_view : @wgpu.TextureView,
+  color_load_op_u32~ : UInt,
+  color_store_op_u32~ : UInt,
+  color_clear_r_f32~ : Float,
+  color_clear_g_f32~ : Float,
+  color_clear_b_f32~ : Float,
+  color_clear_a_f32~ : Float,
+  depth_view : @wgpu.TextureView,
+  depth_load_op_u32~ : UInt,
+  depth_store_op_u32~ : UInt,
+  depth_clear_value_f32~ : Float,
+  stencil_load_op_u32~ : UInt,
+  stencil_store_op_u32~ : UInt,
+  stencil_clear_value_u32~ : UInt,
+  depth_read_only~ : Bool,
+  stencil_read_only~ : Bool,
+) -> @wgpu.RenderPass {
+  let desc = render_pass_descriptor_color_depth_resolve_u32_new(
+    color_view.raw,
+    color_resolve_view.raw,
+    color_load_op_u32,
+    color_store_op_u32,
+    color_clear_r_f32,
+    color_clear_g_f32,
+    color_clear_b_f32,
+    color_clear_a_f32,
+    depth_view.raw,
+    depth_load_op_u32,
+    depth_store_op_u32,
+    depth_clear_value_f32,
+    stencil_load_op_u32,
+    stencil_store_op_u32,
+    stencil_clear_value_u32,
+    depth_read_only,
+    stencil_read_only,
+  )
+  let pass = encoder.begin_render_pass(desc)
+  @wgpu_c.render_pass_descriptor_free(desc)
+  pass
+}
+
+///|
 fn create_pipeline_layout_4(
   device : @wgpu.Device,
   bind_group_layout0 : @wgpu.BindGroupLayout,

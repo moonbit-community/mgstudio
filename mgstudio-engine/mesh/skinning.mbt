@@ -93,10 +93,10 @@ pub fn Influence::joint_weight(self : Influence) -> Float {
 }
 
 ///|
-pub(all) enum MeshAttributeError {
+pub(all) suberror MeshAttributeError {
   MissingAttribute(String)
   UnexpectedFormat(String, String)
-} derive(Eq, Debug)
+}
 
 ///|
 pub struct InfluenceIterator {
@@ -118,20 +118,18 @@ fn mesh_joint_weight_at(weights : @math.Vec4, index : Int) -> Float? {
 ///|
 pub fn InfluenceIterator::new(
   mesh : Mesh,
-) -> Result[InfluenceIterator, MeshAttributeError] {
+) -> InfluenceIterator raise MeshAttributeError {
   let geometry = match mesh.as_3d_geometry() {
     Some(geometry) => geometry
-    None => return Err(MeshAttributeError::MissingAttribute("Vertex_Position"))
+    None => raise MeshAttributeError::MissingAttribute("Vertex_Position")
   }
   let joint_indices = match geometry.joint_indices {
     Some(joint_indices) => joint_indices
-    None =>
-      return Err(MeshAttributeError::MissingAttribute("Vertex_JointIndex"))
+    None => raise MeshAttributeError::MissingAttribute("Vertex_JointIndex")
   }
   let joint_weights = match geometry.joint_weights {
     Some(joint_weights) => joint_weights
-    None =>
-      return Err(MeshAttributeError::MissingAttribute("Vertex_JointWeight"))
+    None => raise MeshAttributeError::MissingAttribute("Vertex_JointWeight")
   }
   let vertex_count = if joint_indices.length() < joint_weights.length() {
     joint_indices.length()
@@ -159,7 +157,7 @@ pub fn InfluenceIterator::new(
       }
     }
   }
-  Ok(InfluenceIterator::{ influences, cursor: 0 })
+  InfluenceIterator::{ influences, cursor: 0 }
 }
 
 ///|
@@ -344,17 +342,17 @@ pub fn SkinnedMeshBounds::iter(
 }
 
 ///|
-pub(all) enum SkinnedMeshBoundsError {
+pub(all) suberror SkinnedMeshBoundsError {
   NoSkinnedJoints
   MeshAttributeError(MeshAttributeError)
-} derive(Eq, Debug)
+}
 
 ///|
-pub(all) enum EntityAabbFromSkinnedMeshBoundsError {
+pub(all) suberror EntityAabbFromSkinnedMeshBoundsError {
   OutOfRangeJointIndex(JointIndex)
   MissingJointEntity
   MissingSkinnedMeshBounds
-} derive(Eq, Debug)
+}
 
 ///|
 fn abs_float(value : Float) -> Float {
@@ -413,11 +411,10 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
   fetch_joint_transform : (@core.Entity, Int) -> @transform.GlobalTransform?,
-) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
   let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
     Some(bounds) => bounds
-    None =>
-      return Err(EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds)
+    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds
   }
   let accumulator = AabbAccumulator::new()
   let joints = skinned_mesh.joints()
@@ -435,23 +432,20 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
       skinned_mesh_inverse_bindposes.affine(joint_index_value) {
       Some(inverse_bindpose) => inverse_bindpose
       None =>
-        return Err(
-          EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
-            joint_index,
-          ),
+        raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
+          joint_index,
         )
     }
     if joint_index_value < 0 || joint_index_value >= joints.length() {
-      return Err(
-        EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(joint_index),
+      raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
+        joint_index,
       )
     }
     let joint_entity = joints[joint_index_value]
     let world_from_joint = match
       fetch_joint_transform(joint_entity, joint_index_value) {
       Some(global_transform) => global_transform
-      None =>
-        return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
+      None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
     }
     let world_from_model = world_from_joint.affine().mul(joint_from_model)
     accumulator.add_aabb(
@@ -460,17 +454,15 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
   }
   let worldspace_entity_aabb = match accumulator.finish() {
     Some(aabb) => aabb.to_aabb3d()
-    None => return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
+    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
   }
   match world_from_entity {
     Some(global_transform) =>
-      Ok(
-        transform_joint_aabb(
-          JointAabb::from_aabb3d(worldspace_entity_aabb),
-          global_transform.affine().inverse(),
-        ),
+      transform_joint_aabb(
+        JointAabb::from_aabb3d(worldspace_entity_aabb),
+        global_transform.affine().inverse(),
       )
-    None => Ok(worldspace_entity_aabb)
+    None => worldspace_entity_aabb
   }
 }
 
@@ -481,7 +473,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
   skinned_mesh : SkinnedMesh,
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
-) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
   entity_aabb_from_skinned_mesh_bounds_with_fetch(
     mesh,
     skinned_mesh,
@@ -498,7 +490,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached(
   skinned_mesh : SkinnedMesh,
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
-) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
   entity_aabb_from_skinned_mesh_bounds_with_fetch(
     mesh,
     skinned_mesh,
@@ -513,22 +505,19 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached(
 ///|
 pub fn SkinnedMeshBounds::from_mesh(
   mesh : Mesh,
-) -> Result[SkinnedMeshBounds, SkinnedMeshBoundsError] {
+) -> SkinnedMeshBounds raise SkinnedMeshBoundsError {
   let geometry = match mesh.as_3d_geometry() {
     Some(geometry) => geometry
     None =>
-      return Err(
-        SkinnedMeshBoundsError::MeshAttributeError(
-          MeshAttributeError::MissingAttribute("Vertex_Position"),
-        ),
+      raise SkinnedMeshBoundsError::MeshAttributeError(
+        MeshAttributeError::MissingAttribute("Vertex_Position"),
       )
   }
-  let influences = match InfluenceIterator::new(mesh) {
-    Ok(iterator) => iterator.collect()
-    Err(error) => return Err(SkinnedMeshBoundsError::MeshAttributeError(error))
+  let influences = InfluenceIterator::new(mesh).collect() catch {
+    error => raise SkinnedMeshBoundsError::MeshAttributeError(error)
   }
   if influences.is_empty() {
-    return Ok(SkinnedMeshBounds::SkinnedMeshBounds())
+    return SkinnedMeshBounds::SkinnedMeshBounds()
   }
   let mut max_joint_index = -1
   for influence in influences {
@@ -563,9 +552,9 @@ pub fn SkinnedMeshBounds::from_mesh(
     }
   }
   if aabbs.is_empty() {
-    Err(SkinnedMeshBoundsError::NoSkinnedJoints)
+    raise SkinnedMeshBoundsError::NoSkinnedJoints
   } else {
-    Ok(SkinnedMeshBounds::new(aabbs, aabb_index_to_joint_index))
+    SkinnedMeshBounds::new(aabbs, aabb_index_to_joint_index)
   }
 }
 

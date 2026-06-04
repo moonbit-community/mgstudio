@@ -107,22 +107,20 @@ fn meshlet_test_triangle_geometry() -> @mesh.Mesh3dGeometry {
 ///|
 test "pbr meshlet: mesh input extraction mirrors required Bevy attributes" {
   let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
-  match meshlet_extract_mesh_input(mesh) {
-    Ok(input) => {
-      inspect(input.vertices.length(), content="3")
-      inspect(input.indices.length(), content="3")
-      inspect(input.indices[0], content="0")
-      inspect(input.indices[2], content="2")
-      inspect(input.triangle_count, content="1")
-      inspect(input.vertices[1].position.x, content="1")
-      inspect(input.vertices[2].uv.y, content="1")
-      let summary = input.summary()
-      inspect(summary.vertex_attributes.length(), content="3")
-      inspect(summary.vertex_attributes[0], content="POSITION")
-      inspect(summary.vertex_attributes[2], content="UV_0")
-    }
-    Err(_) => abort("expected meshlet input extraction to pass")
+  let input = meshlet_extract_mesh_input(mesh) catch {
+    _ => abort("expected meshlet input extraction to pass")
   }
+  inspect(input.vertices.length(), content="3")
+  inspect(input.indices.length(), content="3")
+  inspect(input.indices[0], content="0")
+  inspect(input.indices[2], content="2")
+  inspect(input.triangle_count, content="1")
+  inspect(input.vertices[1].position.x, content="1")
+  inspect(input.vertices[2].uv.y, content="1")
+  let summary = input.summary()
+  inspect(summary.vertex_attributes.length(), content="3")
+  inspect(summary.vertex_attributes[0], content="POSITION")
+  inspect(summary.vertex_attributes[2], content="UV_0")
 }
 
 ///|
@@ -132,19 +130,25 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
       @mesh.Mesh3dPrimitiveTopology::LineList,
     ),
   )
-  inspect(
-    meshlet_extract_mesh_input(wrong_topology)
-    is Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology),
-    content="true",
-  )
+  let wrong_topology_rejected = try {
+    ignore(meshlet_extract_mesh_input(wrong_topology))
+    false
+  } catch {
+    MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology => true
+    _ => false
+  }
+  inspect(wrong_topology_rejected, content="true")
   let missing_indices = @mesh.Mesh::from_3d_geometry(
     meshlet_test_triangle_geometry().with_indices(None),
   )
-  inspect(
-    meshlet_extract_mesh_input(missing_indices)
-    is Err(MeshToMeshletMeshConversionError::MeshMissingIndices),
-    content="true",
-  )
+  let missing_indices_rejected = try {
+    ignore(meshlet_extract_mesh_input(missing_indices))
+    false
+  } catch {
+    MeshToMeshletMeshConversionError::MeshMissingIndices => true
+    _ => false
+  }
+  inspect(missing_indices_rejected, content="true")
   let extra_attribute = @mesh.Mesh::from_3d_geometry(
     meshlet_test_triangle_geometry().with_colors(
       Some([
@@ -154,11 +158,14 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
       ]),
     ),
   )
-  inspect(
-    meshlet_extract_mesh_input(extra_attribute)
-    is Err(MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_)),
-    content="true",
-  )
+  let extra_attribute_rejected = try {
+    ignore(meshlet_extract_mesh_input(extra_attribute))
+    false
+  } catch {
+    MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_) => true
+    _ => false
+  }
+  inspect(extra_attribute_rejected, content="true")
 }
 
 ///|
@@ -168,20 +175,21 @@ test "pbr meshlet: from_mesh validates mesh before running processor" {
       @mesh.Mesh3dPrimitiveTopology::LineList,
     ),
   )
-  inspect(
-    MeshletMesh::from_mesh(wrong_topology)
-    is Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology),
-    content="true",
-  )
-  let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
-  match MeshletMesh::from_mesh(mesh) {
-    Ok(meshlet_mesh) => {
-      inspect(meshlet_mesh.meshlet_count() > 0, content="true")
-      inspect(meshlet_mesh.index_count() > 0, content="true")
-      inspect(meshlet_mesh.bvh_depth > 0, content="true")
-    }
-    Err(_) => abort("expected native meshlet processor to build a meshlet mesh")
+  let wrong_topology_rejected = try {
+    ignore(MeshletMesh::from_mesh(wrong_topology))
+    false
+  } catch {
+    MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology => true
+    _ => false
   }
+  inspect(wrong_topology_rejected, content="true")
+  let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
+  let meshlet_mesh = MeshletMesh::from_mesh(mesh) catch {
+    _ => abort("expected native meshlet processor to build a meshlet mesh")
+  }
+  inspect(meshlet_mesh.meshlet_count() > 0, content="true")
+  inspect(meshlet_mesh.index_count() > 0, content="true")
+  inspect(meshlet_mesh.bvh_depth > 0, content="true")
 }
 
 ///|

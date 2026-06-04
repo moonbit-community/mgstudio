@@ -242,67 +242,67 @@ fn entity_snapshot_index(
 }
 
 ///|
-pub impl Component for TypedCounter with component() {
+pub impl Component for TypedCounter with fn component() {
   typed_counter_key
 }
 
 ///|
-pub impl Component for TypedMarker with component() {
+pub impl Component for TypedMarker with fn component() {
   typed_marker_key
 }
 
 ///|
-pub impl Component for WorldLocalProbe with component() {
+pub impl Component for WorldLocalProbe with fn component() {
   world_local_probe_key
 }
 
 ///|
-pub impl Component for WorldLocalComponent with component() {
+pub impl Component for WorldLocalComponent with fn component() {
   world_local_component_key
 }
 
 ///|
-pub impl Component for QueuedRequireA with component() {
+pub impl Component for QueuedRequireA with fn component() {
   queued_require_a_key
 }
 
 ///|
-pub impl Component for QueuedRequireB with component() {
+pub impl Component for QueuedRequireB with fn component() {
   queued_require_b_key
 }
 
 ///|
-pub impl Component for SparseStorageCounter with component() {
+pub impl Component for SparseStorageCounter with fn component() {
   sparse_storage_counter_key
 }
 
 ///|
-pub impl Component for StorageModeProbe with component() {
+pub impl Component for StorageModeProbe with fn component() {
   storage_mode_probe_key
 }
 
 ///|
-pub impl Component for QueuedOrderProbe with component() {
+pub impl Component for QueuedOrderProbe with fn component() {
   queued_order_probe_key
 }
 
 ///|
-pub impl Component for ParityHookRegistrationProbe with component() {
+pub impl Component for ParityHookRegistrationProbe with fn component() {
   parity_hook_registration_probe_key
 }
 
 ///|
-pub impl Component for ParityRequiredA with component() {
+pub impl Component for ParityRequiredA with fn component() {
   parity_required_a_key
 }
 
 ///|
-pub impl Component for ParityRequiredB with component() {
+pub impl Component for ParityRequiredB with fn component() {
   parity_required_b_key
 }
 
 ///|
-pub impl Component for ParityRequiredC with component() {
+pub impl Component for ParityRequiredC with fn component() {
   parity_required_c_key
 }
 
@@ -412,14 +412,12 @@ test "ecs: dead entity fails fast" {
   let entity = world.spawn()
   try! world.despawn(entity)
 
-  let set_result : Result[Unit, EcsError] = try? world.set_by_key(
-    entity,
-    comp_counter,
-    Counter::{ value: 1 },
-  )
-  guard set_result is Err(EntityNotAlive(_)) else {
-    fail("expected EntityNotAlive for set")
+  let mut entity_not_alive = false
+  world.set_by_key(entity, comp_counter, Counter::{ value: 1 }) catch {
+    EntityNotAlive(_) => entity_not_alive = true
+    _ => fail("expected EntityNotAlive for set")
   }
+  debug_inspect(entity_not_alive, content="true")
 }
 
 ///|
@@ -1271,21 +1269,21 @@ test "ecs parity wave2: duplicate hook kind registration fails in-world" {
   )
   ignore(try! builder.on_insert(fn(_world, _context) { () }))
 
-  let duplicate_result : Result[
-    ComponentHooksBuilder[ParityHookRegistrationProbe],
-    ComponentHooksError,
-  ] = try? world
-    .register_component_hooks_for_key(parity_hook_registration_probe_key)
-    .on_insert(fn(_world, _context) { () })
-
-  guard duplicate_result
-    is Err(DuplicateHookRegistration(component_id, OnInsert)) else {
-    fail("expected duplicate hook kind registration to fail")
+  let duplicate_component_id = try {
+    ignore(
+      world
+      .register_component_hooks_for_key(parity_hook_registration_probe_key)
+      .on_insert(fn(_world, _context) { () }),
+    )
+    -1
+  } catch {
+    DuplicateHookRegistration(component_id, OnInsert) => component_id
+    _ => fail("expected duplicate hook kind registration to fail")
   }
   let expected_component_id = world
     .component_id_by_key(parity_hook_registration_probe_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == expected_component_id, content="true")
+  debug_inspect(duplicate_component_id == expected_component_id, content="true")
 }
 
 ///|
@@ -1296,19 +1294,21 @@ test "ecs parity wave2: late hook registration after archetype use fails" {
 
   })
 
-  let late_result : Result[
-    ComponentHooksBuilder[ParityHookRegistrationProbe],
-    ComponentHooksError,
-  ] = try? world
-    .register_component_hooks_for_key(parity_hook_registration_probe_key)
-    .on_add(fn(_world, _context) { () })
-  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
-    fail("expected late hook registration to fail")
+  let late_component_id = try {
+    ignore(
+      world
+      .register_component_hooks_for_key(parity_hook_registration_probe_key)
+      .on_add(fn(_world, _context) { () }),
+    )
+    -1
+  } catch {
+    ComponentAlreadyInUse(component_id) => component_id
+    _ => fail("expected late hook registration to fail")
   }
   let expected_component_id = world
     .component_id_by_key(parity_hook_registration_probe_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == expected_component_id, content="true")
+  debug_inspect(late_component_id == expected_component_id, content="true")
 }
 
 ///|
@@ -1339,12 +1339,17 @@ test "ecs parity wave2: required_by tracks transitive closure and cycle registra
     content="true",
   )
 
-  let cycle_result : Result[Unit, RequiredComponentsError] = try? world.register_required_components_with(
+  let mut cycle_pair : (Int, Int)? = None
+  world.register_required_components_with(
     parity_required_c_key,
     parity_required_a_key,
     fn() { ParityRequiredA::{  } },
-  )
-  guard cycle_result is Err(CyclicRequirement(requiree_id, required_id)) else {
+  ) catch {
+    CyclicRequirement(requiree_id, required_id) =>
+      cycle_pair = Some((requiree_id, required_id))
+    _ => fail("expected cycle registration to fail")
+  }
+  guard cycle_pair is Some((requiree_id, required_id)) else {
     fail("expected cycle registration to fail")
   }
   let expected_requiree_id = world

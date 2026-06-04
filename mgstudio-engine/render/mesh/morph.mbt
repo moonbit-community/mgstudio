@@ -25,10 +25,10 @@ pub const RENDER_MORPH_MAX_WEIGHTS : Int = 256
 pub const RENDER_MORPH_ATTRIBUTE_COMPONENT_COUNT : Int = 9
 
 ///|
-pub(all) enum RenderMorphBuildError {
+pub(all) suberror RenderMorphBuildError {
   TooManyAttributes(vertex_count~ : Int, component_count~ : Int)
   TooManyTargets(target_count~ : Int)
-} derive(Eq, Debug)
+}
 
 ///|
 pub struct RenderMorphTextureRect {
@@ -203,23 +203,26 @@ pub fn render_morph_lowest_2d(
 pub fn render_morph_target_image_plan(
   target_count : Int,
   vertex_count : Int,
-) -> Result[MorphTargetImagePlan, RenderMorphBuildError] {
+) -> MorphTargetImagePlan raise RenderMorphBuildError {
   if target_count > RENDER_MORPH_MAX_WEIGHTS {
-    return Err(TooManyTargets(target_count~))
+    raise RenderMorphBuildError::TooManyTargets(target_count~)
   }
   let component_count = vertex_count * RENDER_MORPH_ATTRIBUTE_COMPONENT_COUNT
   guard render_morph_lowest_2d(component_count) is Some(rect) else {
-    return Err(TooManyAttributes(vertex_count~, component_count~))
+    raise RenderMorphBuildError::TooManyAttributes(
+      vertex_count~,
+      component_count~,
+    )
   }
   let layer_component_count = component_count + rect.padding
-  Ok(MorphTargetImagePlan::{
+  MorphTargetImagePlan::{
     width: rect.width,
     height: rect.height,
     depth_or_array_layers: target_count,
     padding_components_per_layer: rect.padding,
     component_count_per_layer: component_count,
     byte_count: layer_component_count * target_count * 4,
-  })
+  }
 }
 
 ///|

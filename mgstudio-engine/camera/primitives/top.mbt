@@ -29,7 +29,7 @@ pub let ecs_key_aabb : @ecs.ComponentKey[Aabb] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Aabb with component() {
+pub impl @ecs.Component for Aabb with fn component() {
   ecs_key_aabb
 }
 
@@ -106,12 +106,12 @@ fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
 }
 
 ///|
-pub impl MeshAabb for @mesh.Mesh3dGeometry with compute_aabb(self) {
+pub impl MeshAabb for @mesh.Mesh3dGeometry with fn compute_aabb(self) {
   mesh3d_geometry_compute_aabb(self)
 }
 
 ///|
-pub impl MeshAabb for @mesh.Mesh with compute_aabb(self) {
+pub impl MeshAabb for @mesh.Mesh with fn compute_aabb(self) {
   match self.as_3d_geometry() {
     Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
     None => None
@@ -224,20 +224,19 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
       } else {
         global_transforms.get_fast(entity)
       }
-      match
-        @mesh.entity_aabb_from_skinned_mesh_bounds_cached(
+      try {
+        let skinned_aabb = @mesh.entity_aabb_from_skinned_mesh_bounds_cached(
           global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
-        ) {
-        Ok(skinned_aabb) => {
-          let aabb = Aabb::from_math(skinned_aabb)
-          let wrote = aabb_column.set_tick_only_hot_at_table_row_value(
-            table_id, row_index, aabb, write_tick,
-          )
-          if !wrote {
-            visibility_write_aabb(world, entity, aabb)
-          }
+        )
+        let aabb = Aabb::from_math(skinned_aabb)
+        let wrote = aabb_column.set_tick_only_hot_at_table_row_value(
+          table_id, row_index, aabb, write_tick,
+        )
+        if !wrote {
+          visibility_write_aabb(world, entity, aabb)
         }
-        Err(_) => ()
+      } catch {
+        _ => ()
       }
     },
   )

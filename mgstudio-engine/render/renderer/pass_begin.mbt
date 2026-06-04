@@ -629,11 +629,11 @@ pub fn GpuBackend::begin_pass_3d(
   }
   let is_shadow_depth_pass = base_kind == PASS_KIND_BASE_POINT_SHADOW ||
     base_kind == PASS_KIND_BASE_DIRECTIONAL_SHADOW
-  let (color_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
+  let (color_view, color_resolve_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
-    (None, None, shadow_depth_view)
+    (None, None, None, shadow_depth_view)
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
     guard target_view(self, target_id, target_layer) is Some(primary_view) else {
@@ -662,16 +662,17 @@ pub fn GpuBackend::begin_pass_3d(
       prepass_depth_texture.sample_count != safe_msaa_sample_count {
       return
     }
-    (Some(primary_view), Some(velocity_view), prepass_depth_texture.view)
+    (Some(primary_view), None, Some(velocity_view), prepass_depth_texture.view)
   } else {
-    guard target_view(self, target_id, target_layer) is Some(view) else {
+    guard target_color_attachment(self, target_id, target_layer)
+      is Some((view, resolve_view)) else {
       return
     }
     guard ensure_depth_view_for_target(self, target_id, safe_msaa_sample_count)
       is Some(scene_depth_view) else {
       return
     }
-    (Some(view), None, scene_depth_view)
+    (Some(view), resolve_view, None, scene_depth_view)
   }
   let effective_clear_enabled = if target_id < 0 &&
     clear_enabled != 0 &&
@@ -761,25 +762,49 @@ pub fn GpuBackend::begin_pass_3d(
             )
           }
         None =>
-          frame.encoder.begin_render_pass_color_depth_u32(
-            color0_view,
-            depth_view,
-            color_load_op_u32~,
-            color_store_op_u32=@wgpu.STORE_OP_STORE,
-            color_clear_r_f32=clear_r,
-            color_clear_g_f32=clear_g,
-            color_clear_b_f32=clear_b,
-            color_clear_a_f32=clear_a,
-            depth_load_op_u32~,
-            depth_store_op_u32=@wgpu.STORE_OP_STORE,
-            depth_clear_value_f32=0.0F,
-            depth_read_only=false,
-            // Bevy-aligned reverse-Z: clear depth to far plane.
-            stencil_load_op_u32~,
-            stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-            stencil_clear_value_u32=0U,
-            stencil_read_only=true,
-          )
+          match color_resolve_view {
+            Some(resolve_view) =>
+              command_encoder_begin_render_pass_color_depth_resolve_u32(
+                frame.encoder,
+                color0_view,
+                resolve_view,
+                color_load_op_u32~,
+                color_store_op_u32=@wgpu.STORE_OP_STORE,
+                color_clear_r_f32=clear_r,
+                color_clear_g_f32=clear_g,
+                color_clear_b_f32=clear_b,
+                color_clear_a_f32=clear_a,
+                depth_view,
+                depth_load_op_u32~,
+                depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                depth_clear_value_f32=0.0F,
+                depth_read_only=false,
+                stencil_load_op_u32~,
+                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                stencil_clear_value_u32=0U,
+                stencil_read_only=true,
+              )
+            None =>
+              frame.encoder.begin_render_pass_color_depth_u32(
+                color0_view,
+                depth_view,
+                color_load_op_u32~,
+                color_store_op_u32=@wgpu.STORE_OP_STORE,
+                color_clear_r_f32=clear_r,
+                color_clear_g_f32=clear_g,
+                color_clear_b_f32=clear_b,
+                color_clear_a_f32=clear_a,
+                depth_load_op_u32~,
+                depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                depth_clear_value_f32=0.0F,
+                depth_read_only=false,
+                // Bevy-aligned reverse-Z: clear depth to far plane.
+                stencil_load_op_u32~,
+                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                stencil_clear_value_u32=0U,
+                stencil_read_only=true,
+              )
+          }
       }
   }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }

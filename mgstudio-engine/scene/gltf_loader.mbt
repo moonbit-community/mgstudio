@@ -73,7 +73,7 @@ let ecs_key_scene_gltf_pending_requests_state : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for SceneGltfPendingRequestsState with resource() {
+impl @app.Resource for SceneGltfPendingRequestsState with fn resource() {
   ecs_key_scene_gltf_pending_requests_state
 }
 
@@ -3739,9 +3739,8 @@ fn scene_build_from_gltf(
           mesh_index >= 0 &&
           mesh_index < meshes_on_skinned_nodes.length() &&
           meshes_on_skinned_nodes[mesh_index] {
-          match mesh_asset.generate_skinned_mesh_bounds() {
-            Ok(_) => ()
-            Err(_) => ()
+          mesh_asset.generate_skinned_mesh_bounds() catch {
+            _ => ()
           }
         }
         let material_component = if should_load_materials {

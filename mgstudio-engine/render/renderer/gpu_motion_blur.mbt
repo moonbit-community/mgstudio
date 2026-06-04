@@ -28,6 +28,38 @@ fn motion_blur_debug_log(message : String) -> Unit {
 }
 
 ///|
+const MOTION_BLUR_UNIFORM_BUFFER_SIZE : UInt64 = 16UL
+
+///|
+const MOTION_BLUR_GLOBALS_BUFFER_SIZE : UInt64 = 16UL
+
+///|
+fn motion_blur_clamped_samples(samples : Int) -> Int {
+  if samples < 0 {
+    0
+  } else if samples > 64 {
+    64
+  } else {
+    samples
+  }
+}
+
+///|
+fn ensure_motion_blur_uniform_buffers(backend : GpuBackend) -> Unit {
+  let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+  if backend.motion_blur_settings_buf is None {
+    backend.motion_blur_settings_buf = Some(
+      backend.device.create_buffer(size=MOTION_BLUR_UNIFORM_BUFFER_SIZE, usage~),
+    )
+  }
+  if backend.motion_blur_globals_buf is None {
+    backend.motion_blur_globals_buf = Some(
+      backend.device.create_buffer(size=MOTION_BLUR_GLOBALS_BUFFER_SIZE, usage~),
+    )
+  }
+}
+
+///|
 fn ensure_motion_blur_layouts(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -79,7 +111,7 @@ fn ensure_motion_blur_layouts(
       builder.add_texture(
         1U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
         multisampled=true,
       ) &&
@@ -119,18 +151,6 @@ fn ensure_motion_blur_pipeline_rgba8(
   multisampled : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_motion_blur_layouts(backend)
-  if backend.motion_blur_settings_buf is None {
-    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    backend.motion_blur_settings_buf = Some(
-      backend.device.create_buffer(size=16UL, usage~),
-    )
-  }
-  if backend.motion_blur_globals_buf is None {
-    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    backend.motion_blur_globals_buf = Some(
-      backend.device.create_buffer(size=16UL, usage~),
-    )
-  }
   if multisampled && backend.motion_blur_pipeline_msaa is Some(_) {
     return
   }
@@ -254,12 +274,90 @@ fn motion_blur_pipeline_for_current_pass(
 }
 
 ///|
+fn motion_blur_prepared_pipeline_for_current_pass(
+  backend : GpuBackend,
+  multisampled : Bool,
+) -> @wgpu.RenderPipeline? {
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
+      if multisampled {
+        backend.motion_blur_pipeline_surface_msaa
+      } else {
+        backend.motion_blur_pipeline_surface
+      }
+    _ =>
+      if multisampled {
+        backend.motion_blur_pipeline_msaa
+      } else {
+        backend.motion_blur_pipeline
+      }
+  }
+}
+
+///|
+pub fn GpuBackend::prepare_motion_blur(
+  self : GpuBackend,
+  velocity_texture_id : Int,
+  shutter_angle : Float,
+  samples : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else {
+    motion_blur_debug_log("prepare skip: no frame")
+    return
+  }
+  guard frame.pass is Some(_) else {
+    motion_blur_debug_log("prepare skip: no active render pass")
+    return
+  }
+  if velocity_texture_id < 0 {
+    motion_blur_debug_log(
+      "prepare skip: invalid velocity texture id=\{velocity_texture_id}",
+    )
+    return
+  }
+  guard find_texture(self, velocity_texture_id) is Some(velocity_texture) else {
+    motion_blur_debug_log(
+      "prepare skip: velocity texture not found id=\{velocity_texture_id}",
+    )
+    return
+  }
+  let multisampled = velocity_texture.texture.sample_count_u32() > 1U
+  ensure_motion_blur_layouts(self)
+  ensure_motion_blur_uniform_buffers(self)
+  ignore(motion_blur_pipeline_for_current_pass(self, multisampled))
+  guard self.motion_blur_settings_buf is Some(settings_buf) else {
+    motion_blur_debug_log("prepare skip: no settings buffer")
+    return
+  }
+  guard self.motion_blur_globals_buf is Some(globals_buf) else {
+    motion_blur_debug_log("prepare skip: no globals buffer")
+    return
+  }
+  let clamped_samples = motion_blur_clamped_samples(samples)
+  let settings_bytes = u32le_pack([
+    f32_bits(shutter_angle),
+    clamped_samples.reinterpret_as_uint(),
+    0U,
+    0U,
+  ])
+  self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
+  let globals_bytes = u32le_pack([
+    f32_bits(0.0F),
+    f32_bits(0.0F),
+    self.frame_count,
+    0U,
+  ])
+  self.queue.write_buffer(globals_buf, 0UL, globals_bytes)
+  motion_blur_debug_log(
+    "prepare: velocity=\{velocity_texture_id}, samples=\{clamped_samples}, msaa=\{multisampled}",
+  )
+}
+
+///|
 pub fn GpuBackend::draw_motion_blur(
   self : GpuBackend,
   scene_texture_id : Int,
   velocity_texture_id : Int,
-  shutter_angle : Float,
-  samples : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     motion_blur_debug_log("skip: no frame")
@@ -305,7 +403,7 @@ pub fn GpuBackend::draw_motion_blur(
     return
   }
   let multisampled = velocity_texture.texture.sample_count_u32() > 1U
-  guard motion_blur_pipeline_for_current_pass(self, multisampled)
+  guard motion_blur_prepared_pipeline_for_current_pass(self, multisampled)
     is Some(pipeline) else {
     motion_blur_debug_log("skip: no pipeline")
     return
@@ -323,28 +421,6 @@ pub fn GpuBackend::draw_motion_blur(
     motion_blur_debug_log("skip: no depth_view")
     return
   }
-  let clamped_samples = if samples < 0 {
-    0
-  } else if samples > 64 {
-    64
-  } else {
-    samples
-  }
-  let settings_bytes = u32le_pack([
-    f32_bits(shutter_angle),
-    clamped_samples.reinterpret_as_uint(),
-    0U,
-    0U,
-  ])
-  self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
-  let globals_bytes = u32le_pack([
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    self.frame_count,
-    0U,
-  ])
-  self.queue.write_buffer(globals_buf, 0UL, globals_bytes)
-
   let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
   let ok = builder.add_texture_view(0U, scene_texture.view) &&
     builder.add_texture_view(1U, velocity_texture.view) &&
@@ -362,7 +438,7 @@ pub fn GpuBackend::draw_motion_blur(
     label="mgstudio_motion_blur_bg",
   )
   motion_blur_debug_log(
-    "draw: scene=\{scene_texture_id}, velocity=\{velocity_texture_id}, samples=\{clamped_samples}, msaa=\{multisampled}",
+    "draw: scene=\{scene_texture_id}, velocity=\{velocity_texture_id}, msaa=\{multisampled}",
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, material_bg, [])
@@ -371,16 +447,25 @@ pub fn GpuBackend::draw_motion_blur(
 }
 
 ///|
-pub fn draw_motion_blur(
-  scene_texture_id~ : Int,
+pub fn prepare_motion_blur(
   velocity_texture_id~ : Int,
   shutter_angle~ : Float,
   samples~ : Int,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.draw_motion_blur(
-      scene_texture_id, velocity_texture_id, shutter_angle, samples,
-    ) catch {
+    backend.prepare_motion_blur(velocity_texture_id, shutter_angle, samples) catch {
+      err => debug_runtime_error("prepare_motion_blur", err)
+    }
+  }
+}
+
+///|
+pub fn draw_motion_blur(
+  scene_texture_id~ : Int,
+  velocity_texture_id~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_motion_blur(scene_texture_id, velocity_texture_id) catch {
       err => debug_runtime_error("draw_motion_blur", err)
     }
   }

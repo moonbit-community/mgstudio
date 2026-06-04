@@ -623,9 +623,9 @@ pub enum SphereKind {
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum IcosphereError {
+pub(all) suberror IcosphereError {
   TooManyVertices(Int, Int)
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn SphereKind::default() -> SphereKind {
@@ -680,13 +680,15 @@ pub fn SphereMeshBuilder::kind(
 pub fn SphereMeshBuilder::ico(
   self : SphereMeshBuilder,
   subdivisions : Int,
-) -> Result[@mesh.Mesh3dGeometry, IcosphereError] {
+) -> @mesh.Mesh3dGeometry raise IcosphereError {
   if subdivisions >= 80 {
     let temp = subdivisions + 1
     let number_of_resulting_points = temp * temp * 10 + 2
-    Err(TooManyVertices(subdivisions, number_of_resulting_points))
+    raise IcosphereError::TooManyVertices(
+      subdivisions, number_of_resulting_points,
+    )
   } else {
-    Ok(icosphere_mesh(self.sphere.radius, subdivisions))
+    icosphere_mesh(self.sphere.radius, subdivisions)
   }
 }
 
@@ -707,12 +709,12 @@ pub fn SphereMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for SphereMeshBuilder with build(self) {
+pub impl MeshBuilder for SphereMeshBuilder with fn build(self) {
   sphere_mesh_with_kind(self.sphere.radius, self.kind)
 }
 
 ///|
-pub impl Meshable for @math.Sphere with mesh(self) {
+pub impl Meshable for @math.Sphere with fn mesh(self) {
   SphereMeshBuilder::from_sphere(self).build()
 }
 
@@ -728,7 +730,10 @@ pub fn sphere_mesh_with_kind(
 ) -> @mesh.Mesh3dGeometry {
   match kind {
     Ico(subdivisions) =>
-      SphereMeshBuilder::new(radius, kind).ico(subdivisions).unwrap()
+      SphereMeshBuilder::new(radius, kind).ico(subdivisions) catch {
+        TooManyVertices(_, _) =>
+          abort("icosphere subdivisions produce too many vertices")
+      }
     Uv(sectors, stacks) => uv_sphere_mesh(radius, sectors, stacks)
   }
 }

@@ -377,10 +377,8 @@ fn mesh2d_material_vertex_attribute_descriptors(
 fn mesh2d_material_vertex_buffer_layout(
   layout : @mesh.MeshVertexBufferLayout,
 ) -> @mesh.VertexBufferLayout? {
-  match
-    layout.get_layout(mesh2d_material_vertex_attribute_descriptors(layout)) {
-    Ok(vertex_buffer_layout) => Some(vertex_buffer_layout)
-    Err(_) => None
+  Some(layout.get_layout(mesh2d_material_vertex_attribute_descriptors(layout))) catch {
+    _ => None
   }
 }
 

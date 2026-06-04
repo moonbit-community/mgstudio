@@ -88,7 +88,7 @@ pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGB
 
 pub fn meshlet_deferred_gbuffer_prepass_plan(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool, uses_motion_vector_prepass_bind_group? : Bool) -> MeshletMaterialShadePassPlan
 
-pub fn meshlet_extract_mesh_input(@mesh.Mesh) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError]
+pub fn meshlet_extract_mesh_input(@mesh.Mesh) -> MeshletMeshInputData raise MeshToMeshletMeshConversionError
 
 pub fn meshlet_fake_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout
 
@@ -227,6 +227,16 @@ pub fn register_embedded_wgsl_sources() -> Unit
 pub fn register_meshlet_mesh3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 // Errors
+pub(all) suberror MeshToMeshletMeshConversionError {
+  RuntimeUnavailable
+  ProcessorError(String)
+  WrongMeshPrimitiveTopology
+  WrongMeshVertexAttributes(Array[String])
+  MeshMissingIndices
+  MissingPositions
+  UnsupportedTopology
+  TooManyVertices
+}
 
 // Types and methods
 pub struct BvhNode {
@@ -315,17 +325,6 @@ pub struct MeshToMeshletMeshConversionConfig {
   max_triangles : Int
 }
 pub fn MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig() -> Self
-
-pub(all) enum MeshToMeshletMeshConversionError {
-  RuntimeUnavailable
-  ProcessorError(String)
-  WrongMeshPrimitiveTopology
-  WrongMeshVertexAttributes(Array[String])
-  MeshMissingIndices
-  MissingPositions
-  UnsupportedTopology
-  TooManyVertices
-}
 
 pub struct Meshlet {
   start_vertex_position_bit : Int
@@ -530,7 +529,7 @@ pub struct MeshletMesh {
   bvh_depth : Int
 }
 pub fn MeshletMesh::bvh_node_count(Self) -> Int
-pub fn MeshletMesh::from_mesh(@mesh.Mesh, vertex_position_quantization_factor? : Int) -> Result[Self, MeshToMeshletMeshConversionError]
+pub fn MeshletMesh::from_mesh(@mesh.Mesh, vertex_position_quantization_factor? : Int) -> Self raise MeshToMeshletMeshConversionError
 pub fn MeshletMesh::from_parts(vertex_positions~ : Array[Int], vertex_normals~ : Array[Int], vertex_uvs~ : Array[MeshletVertexUv], indices~ : Array[Int], bvh~ : Array[BvhNode], meshlets~ : Array[Meshlet], meshlet_cull_data~ : Array[MeshletCullData], aabb? : MeshletAabb, bvh_depth? : Int) -> Self
 pub fn MeshletMesh::index_count(Self) -> Int
 pub fn MeshletMesh::is_empty(Self) -> Bool

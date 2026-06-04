@@ -99,22 +99,14 @@ pub fn Mesh::with_skinned_mesh_bounds(
 ///|
 pub fn Mesh::generate_skinned_mesh_bounds(
   self : Mesh,
-) -> Result[Unit, SkinnedMeshBoundsError] {
-  match SkinnedMeshBounds::from_mesh(self) {
-    Ok(bounds) => {
-      self.skinned_mesh_bounds = Some(bounds)
-      Ok(())
-    }
-    Err(error) => Err(error)
-  }
+) -> Unit raise SkinnedMeshBoundsError {
+  self.skinned_mesh_bounds = Some(SkinnedMeshBounds::from_mesh(self))
 }
 
 ///|
 pub fn Mesh::with_generated_skinned_mesh_bounds(
   self : Mesh,
-) -> Result[Mesh, SkinnedMeshBoundsError] {
-  match self.generate_skinned_mesh_bounds() {
-    Ok(_) => Ok(self)
-    Err(error) => Err(error)
-  }
+) -> Mesh raise SkinnedMeshBoundsError {
+  self.generate_skinned_mesh_bounds()
+  self
 }

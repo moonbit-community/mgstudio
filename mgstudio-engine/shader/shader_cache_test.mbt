@@ -216,14 +216,16 @@ test "shader cache wesl resolver requires imported modules to be loaded as shade
     ),
   )
 
-  let result = try? cache.get(root_id.index(), root_id, [])
-  match result {
-    Err(@shader.ShaderCacheError::ProcessShaderError(reason)) => {
+  let mut import_failed = false
+  ignore(cache.get(root_id.index(), root_id, [])) catch {
+    @shader.ShaderCacheError::ProcessShaderError(reason) => {
+      import_failed = true
       debug_inspect(reason.contains("module not found"), content="true")
       debug_inspect(reason.contains("package::shaders::util"), content="true")
     }
     _ => fail("expected resolver-backed wesl import failure")
   }
+  debug_inspect(import_failed, content="true")
 }
 
 ///|

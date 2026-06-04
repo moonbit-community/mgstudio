@@ -23,7 +23,7 @@ let hook_test_component_key : ComponentKey[HookTestComponent] = register_compone
 )
 
 ///|
-pub impl Component for HookTestComponent with component() {
+pub impl Component for HookTestComponent with fn component() {
   hook_test_component_key
 }
 
@@ -36,7 +36,7 @@ let duplicate_hook_test_component_key : ComponentKey[DuplicateHookTestComponent]
 )
 
 ///|
-pub impl Component for DuplicateHookTestComponent with component() {
+pub impl Component for DuplicateHookTestComponent with fn component() {
   duplicate_hook_test_component_key
 }
 
@@ -49,7 +49,7 @@ let late_registration_hook_test_component_key : ComponentKey[
 ] = register_component(debug_name="tests.ecs.component_hooks.late_registration")
 
 ///|
-pub impl Component for LateRegistrationHookTestComponent with component() {
+pub impl Component for LateRegistrationHookTestComponent with fn component() {
   late_registration_hook_test_component_key
 }
 
@@ -62,7 +62,7 @@ let hook_commands_test_component_key : ComponentKey[HookCommandsTestComponent] =
 )
 
 ///|
-pub impl Component for HookCommandsTestComponent with component() {
+pub impl Component for HookCommandsTestComponent with fn component() {
   hook_commands_test_component_key
 }
 
@@ -75,7 +75,7 @@ let hooks_with_registration_test_component_key : ComponentKey[
 ] = register_component(debug_name="tests.ecs.component_hooks.with_registration")
 
 ///|
-pub impl Component for HooksWithRegistrationTestComponent with component() {
+pub impl Component for HooksWithRegistrationTestComponent with fn component() {
   hooks_with_registration_test_component_key
 }
 
@@ -90,7 +90,7 @@ let hooks_with_late_registration_test_component_key : ComponentKey[
 )
 
 ///|
-pub impl Component for HooksWithLateRegistrationTestComponent with component() {
+pub impl Component for HooksWithLateRegistrationTestComponent with fn component() {
   hooks_with_late_registration_test_component_key
 }
 
@@ -120,14 +120,13 @@ fn hook_test_reset() -> Unit {
 
 ///|
 fn hook_test_value_text(world : World, entity : @core.Entity) -> String {
-  let result : Result[HookTestComponent?, EcsError] = try? world.get_by_key(
-    entity, hook_test_component_key,
-  )
-  match result {
-    Ok(Some(component)) => component.value.to_string()
-    Ok(None) => "none"
-    Err(EntityNotAlive(_)) => "dead"
-    Err(_) => "error"
+  match
+    (world.get_by_key(entity, hook_test_component_key) catch {
+      EntityNotAlive(_) => return "dead"
+      _ => return "error"
+    }) {
+    Some(component) => component.value.to_string()
+    None => "none"
   }
 }
 
@@ -328,20 +327,21 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
   )
   ignore(try! builder.on_add(fn(_world, _context) { () }))
 
-  let duplicate_result : Result[
-    ComponentHooksBuilder[DuplicateHookTestComponent],
-    ComponentHooksError,
-  ] = try? world
-    .register_component_hooks_for_key(duplicate_hook_test_component_key)
-    .on_add(fn(_world, _context) { () })
-
-  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
-    fail("expected duplicate on_add registration failure")
+  let duplicate_component_id = try {
+    ignore(
+      world
+      .register_component_hooks_for_key(duplicate_hook_test_component_key)
+      .on_add(fn(_world, _context) { () }),
+    )
+    -1
+  } catch {
+    DuplicateHookRegistration(component_id, OnAdd) => component_id
+    _ => fail("expected duplicate on_add registration failure")
   }
   let expected_component_id = world
     .component_id_by_key(duplicate_hook_test_component_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == expected_component_id, content="true")
+  debug_inspect(duplicate_component_id == expected_component_id, content="true")
 }
 
 ///|
@@ -355,40 +355,40 @@ test "ecs component hooks: world-scoped registration rejects late hooks and keep
 
   })
 
-  let late_result : Result[
-    ComponentHooksBuilder[LateRegistrationHookTestComponent],
-    ComponentHooksError,
-  ] = try? World::register_component_hooks_for_key(
-    world0, late_registration_hook_test_component_key,
-  ).on_add(fn(_world, _context) { () })
-  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
-    fail("expected late hook registration in same world to fail")
+  let late_component_id = try {
+    ignore(
+      World::register_component_hooks_for_key(
+        world0, late_registration_hook_test_component_key,
+      ).on_add(fn(_world, _context) { () }),
+    )
+    -1
+  } catch {
+    ComponentAlreadyInUse(component_id) => component_id
+    _ => fail("expected late hook registration in same world to fail")
   }
   let world0_component_id = world0
     .component_id_by_key(late_registration_hook_test_component_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == world0_component_id, content="true")
+  debug_inspect(late_component_id == world0_component_id, content="true")
 
-  let duplicate_result : Result[
-    ComponentHooksBuilder[LateRegistrationHookTestComponent],
-    ComponentHooksError,
-  ] = try? World::register_component_hooks_for_key(
-    world0, late_registration_hook_test_component_key,
-  ).on_add(fn(_world, _context) { () })
-  guard duplicate_result is Err(ComponentAlreadyInUse(component_id)) else {
-    fail("expected repeated late hook registration in same world to fail")
+  let duplicate_component_id = try {
+    ignore(
+      World::register_component_hooks_for_key(
+        world0, late_registration_hook_test_component_key,
+      ).on_add(fn(_world, _context) { () }),
+    )
+    -1
+  } catch {
+    ComponentAlreadyInUse(component_id) => component_id
+    _ => fail("expected repeated late hook registration in same world to fail")
   }
-  debug_inspect(component_id == world0_component_id, content="true")
+  debug_inspect(duplicate_component_id == world0_component_id, content="true")
 
-  let fresh_result : Result[
-    ComponentHooksBuilder[LateRegistrationHookTestComponent],
-    ComponentHooksError,
-  ] = try? World::register_component_hooks_for_key(
-    world1, late_registration_hook_test_component_key,
-  ).on_add(fn(_world, _context) { () })
-  guard fresh_result is Ok(_) else {
-    fail("expected independent world hook registration to succeed")
-  }
+  ignore(
+    try! World::register_component_hooks_for_key(
+      world1, late_registration_hook_test_component_key,
+    ).on_add(fn(_world, _context) { () }),
+  )
 }
 
 ///|
@@ -396,33 +396,29 @@ test "ecs component hooks: register_component_hooks_with merges disjoint hooks a
   ignore(HooksWithRegistrationTestComponent::{  })
   let world = World::new()
 
-  let first_result : Result[Unit, ComponentHooksError] = try? world.register_component_hooks_with(
+  try! world.register_component_hooks_with(
     hooks_with_registration_test_component_key,
     ComponentHooks::new(on_add=Some(fn(_world, _context) { () })),
   )
-  guard first_result is Ok(_) else {
-    fail("expected first hook-with registration to succeed")
-  }
 
-  let second_result : Result[Unit, ComponentHooksError] = try? world.register_component_hooks_with(
+  try! world.register_component_hooks_with(
     hooks_with_registration_test_component_key,
     ComponentHooks::new(on_remove=Some(fn(_world, _context) { () })),
   )
-  guard second_result is Ok(_) else {
-    fail("expected disjoint hook kind registration to succeed")
-  }
 
-  let duplicate_result : Result[Unit, ComponentHooksError] = try? world.register_component_hooks_with(
+  let mut duplicate_component_id = -1
+  world.register_component_hooks_with(
     hooks_with_registration_test_component_key,
     ComponentHooks::new(on_add=Some(fn(_world, _context) { () })),
-  )
-  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
-    fail("expected duplicate hook kind registration to fail")
+  ) catch {
+    DuplicateHookRegistration(component_id, OnAdd) =>
+      duplicate_component_id = component_id
+    _ => fail("expected duplicate hook kind registration to fail")
   }
   let expected_component_id = world
     .component_id_by_key(hooks_with_registration_test_component_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == expected_component_id, content="true")
+  debug_inspect(duplicate_component_id == expected_component_id, content="true")
 }
 
 ///|
@@ -437,23 +433,21 @@ test "ecs component hooks: register_component_hooks_with enforces pre-use-only p
     HooksWithLateRegistrationTestComponent::{  },
   )
 
-  let late_result : Result[Unit, ComponentHooksError] = try? world0.register_component_hooks_with(
+  let mut late_component_id = -1
+  world0.register_component_hooks_with(
     hooks_with_late_registration_test_component_key,
     ComponentHooks::new(on_insert=Some(fn(_world, _context) { () })),
-  )
-  guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
-    fail("expected late hook-with registration in same world to fail")
+  ) catch {
+    ComponentAlreadyInUse(component_id) => late_component_id = component_id
+    _ => fail("expected late hook-with registration in same world to fail")
   }
   let world0_component_id = world0
     .component_id_by_key(hooks_with_late_registration_test_component_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == world0_component_id, content="true")
+  debug_inspect(late_component_id == world0_component_id, content="true")
 
-  let fresh_result : Result[Unit, ComponentHooksError] = try? world1.register_component_hooks_with(
+  try! world1.register_component_hooks_with(
     hooks_with_late_registration_test_component_key,
     ComponentHooks::new(on_insert=Some(fn(_world, _context) { () })),
   )
-  guard fresh_result is Ok(_) else {
-    fail("expected hook-with registration in independent world to succeed")
-  }
 }

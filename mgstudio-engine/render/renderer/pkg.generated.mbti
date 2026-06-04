@@ -123,6 +123,8 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int
 
 pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
 
+pub fn create_motion_vector_prepass_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
+
 pub fn create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
@@ -165,7 +167,7 @@ pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Fl
 
 pub fn draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
-pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
+pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int) -> Unit
 
 pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
@@ -328,6 +330,8 @@ pub fn prepare_meshlet_storage_buffers(vertex_positions~ : Bytes, vertex_normals
 pub fn prepare_meshlet_view_instance_visibility_buffer(view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 
 pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
+
+pub fn prepare_motion_blur(velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
@@ -932,6 +936,7 @@ pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_point_light_shadow_target(Self, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
@@ -958,7 +963,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassStat
 pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Array[Float]?, Int, Int, Int, Int, Int, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, Int, UInt64, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Bool, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int, Int, Int, Int, UInt64) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_motion_blur(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -998,6 +1003,7 @@ pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ :
 pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(Self, view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(Self, view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
+pub fn GpuBackend::prepare_motion_blur(Self, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::register_mesh2d_pipeline_descriptor(Self, UInt64, String) -> Unit
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
@@ -1202,6 +1208,9 @@ pub struct GpuTextureInfo {
   texture : @wgpu_mbt.Texture
   view : @wgpu_mbt.TextureView
   sample_view : @wgpu_mbt.TextureView?
+  msaa_texture : @wgpu_mbt.Texture?
+  msaa_view : @wgpu_mbt.TextureView?
+  sample_count : Int
   layer_views : Array[@wgpu_mbt.TextureView]
   sampler : @wgpu_mbt.Sampler
   bind_group : @wgpu_mbt.BindGroup

@@ -36,7 +36,7 @@ pub fn RequiredB::RequiredB() -> RequiredB {
 }
 
 ///|
-pub impl Default for RequiredB with default() {
+pub impl Default for RequiredB with fn default() {
   RequiredB::RequiredB()
 }
 
@@ -46,7 +46,7 @@ pub fn RequiredC::RequiredC() -> RequiredC {
 }
 
 ///|
-pub impl Default for RequiredC with default() {
+pub impl Default for RequiredC with fn default() {
   RequiredC::RequiredC()
 }
 
@@ -56,7 +56,7 @@ pub fn RequiredCounter::RequiredCounter() -> RequiredCounter {
 }
 
 ///|
-pub impl Default for RequiredCounter with default() {
+pub impl Default for RequiredCounter with fn default() {
   RequiredCounter::RequiredCounter()
 }
 
@@ -81,22 +81,22 @@ let required_counter_key : ComponentKey[RequiredCounter] = register_component(
 )
 
 ///|
-pub impl Component for RequiredA with component() {
+pub impl Component for RequiredA with fn component() {
   required_a_key
 }
 
 ///|
-pub impl Component for RequiredB with component() {
+pub impl Component for RequiredB with fn component() {
   required_b_key
 }
 
 ///|
-pub impl Component for RequiredC with component() {
+pub impl Component for RequiredC with fn component() {
   required_c_key
 }
 
 ///|
-pub impl Component for RequiredCounter with component() {
+pub impl Component for RequiredCounter with fn component() {
   required_counter_key
 }
 
@@ -322,23 +322,17 @@ test "ecs: late required registration is pre-use-only and world-local" {
   let entity = world0.spawn()
   try! (world0.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
-  let late_result : Result[Unit, RequiredComponentsError] = try? world0.register_required_components(
-    required_a_key, required_b_key,
-  )
-  guard late_result is Err(ArchetypeExists(component_id)) else {
-    fail("expected late required registration in used world to fail")
+  let mut late_component_id = -1
+  world0.register_required_components(required_a_key, required_b_key) catch {
+    ArchetypeExists(component_id) => late_component_id = component_id
+    _ => fail("expected late required registration in used world to fail")
   }
   let world0_component_id = world0
     .component_id_by_key(required_a_key)
     .unwrap_or(-1)
-  debug_inspect(component_id == world0_component_id, content="true")
+  debug_inspect(late_component_id == world0_component_id, content="true")
 
-  let fresh_result : Result[Unit, RequiredComponentsError] = try? world1.register_required_components(
-    required_a_key, required_b_key,
-  )
-  guard fresh_result is Ok(_) else {
-    fail("expected required registration in independent world to succeed")
-  }
+  try! world1.register_required_components(required_a_key, required_b_key)
   let required = world1.get_required_components(required_a_key).unwrap()
   debug_inspect(required.contains(required_b_key.id()), content="true")
 }

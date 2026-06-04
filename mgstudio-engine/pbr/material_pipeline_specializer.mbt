@@ -564,9 +564,8 @@ fn pbr_mesh_pipeline_descriptor(
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 6, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
-  let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
-    Ok(vertex_buffer_layout) => vertex_buffer_layout
-    Err(error) =>
+  let vertex_buffer_layout = mesh_layout.get_layout(vertex_attributes) catch {
+    error =>
       raise @material.specialized_mesh_pipeline_missing_vertex_attribute_error(
         error.with_pipeline_type(Some("PbrMeshPipeline")),
       )
@@ -747,9 +746,8 @@ fn pbr_prepass_pipeline_descriptor(
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 5, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
-  let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
-    Ok(vertex_buffer_layout) => vertex_buffer_layout
-    Err(error) =>
+  let vertex_buffer_layout = mesh_layout.get_layout(vertex_attributes) catch {
+    error =>
       raise @material.specialized_mesh_pipeline_missing_vertex_attribute_error(
         error.with_pipeline_type(Some("PrepassPipeline")),
       )

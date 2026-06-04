@@ -24,8 +24,8 @@ test "render mesh morph: lowest texture rectangle matches Bevy search" {
 
 ///|
 test "render mesh morph: image plan accounts for target layers and padding" {
-  guard render_morph_target_image_plan(2, 3) is Ok(plan) else {
-    fail("expected morph target image plan")
+  let plan = render_morph_target_image_plan(2, 3) catch {
+    _ => fail("expected morph target image plan")
   }
   debug_inspect(plan.component_count_per_layer(), content="27")
   debug_inspect(plan.depth_or_array_layers(), content="2")

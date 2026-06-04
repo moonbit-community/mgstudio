@@ -301,7 +301,7 @@ pub fn SpriteMesh::compute_pixel_space_point(
   anchor : Anchor,
   images : @asset.Assets[@asset.Image],
   texture_atlases : @asset.Assets[@asset.TextureAtlasLayout],
-) -> Result[@math.Vec2, @math.Vec2] {
+) -> SpritePixelSpacePoint {
   images |> ignore
   sprite_compute_pixel_space_point(
     self.image,

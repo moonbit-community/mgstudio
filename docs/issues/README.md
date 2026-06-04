@@ -79,6 +79,7 @@ graph TD
   ISS_027["ISS-027: Move tilemap chunk ownership out of sprite/render2d and old sprite facades"]
   ISS_028["ISS-028: Move shape conversion and bundle authoring out of render2d runtime"]
   ISS_029["ISS-029: Replace render2d immediate execute monolith with Bevy Core2d phases"]
+  ISS_030["ISS-030: Restore Bevy motion blur runtime wiring"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_002 --> ISS_005

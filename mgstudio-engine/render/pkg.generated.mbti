@@ -185,6 +185,8 @@ pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~ : String) -> Int
 
 pub fn host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
 
+pub fn host_gpu_create_motion_vector_prepass_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
+
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
@@ -223,7 +225,7 @@ pub fn host_gpu_draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotat
 
 pub fn host_gpu_draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
-pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
+pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int) -> Unit
 
 pub fn host_gpu_draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
@@ -266,6 +268,8 @@ pub fn host_gpu_prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> 
 pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id? : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
+
+pub fn host_gpu_prepare_motion_blur(velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
@@ -311,7 +315,7 @@ pub let pipeline_cache_resource_key : @ecs.ResourceKey[@render_resource.Pipeline
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, ErasedPrepareAssetError], (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
+pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> B raise ErasedPrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
@@ -319,7 +323,7 @@ pub fn prepare_gpu_image_render_asset(@ecs.World, @asset.AssetId[@image.Image]) 
 
 pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
-pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, PrepareAssetError], (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
+pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> B raise PrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
 

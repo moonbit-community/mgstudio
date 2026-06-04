@@ -187,6 +187,28 @@ fn sprite_texture_rect_for_pixel_space(
 }
 
 ///|
+pub(all) enum SpritePixelSpacePoint {
+  Inside(@math.Vec2)
+  Outside(@math.Vec2)
+}
+
+///|
+pub fn SpritePixelSpacePoint::point(self : SpritePixelSpacePoint) -> @math.Vec2 {
+  match self {
+    Inside(point) => point
+    Outside(point) => point
+  }
+}
+
+///|
+pub fn SpritePixelSpacePoint::is_inside(self : SpritePixelSpacePoint) -> Bool {
+  match self {
+    Inside(_) => true
+    Outside(_) => false
+  }
+}
+
+///|
 fn sprite_compute_pixel_space_point(
   image : @asset.Handle[@asset.Image],
   texture_atlas : @asset.TextureAtlas?,
@@ -197,7 +219,7 @@ fn sprite_compute_pixel_space_point(
   point_relative_to_sprite : @math.Vec2,
   anchor : Anchor,
   texture_atlases : @asset.Assets[@asset.TextureAtlasLayout],
-) -> Result[@math.Vec2, @math.Vec2] {
+) -> SpritePixelSpacePoint {
   let texture_rect = sprite_texture_rect_for_pixel_space(
     image, texture_atlas, rect, texture_atlases,
   )
@@ -216,7 +238,7 @@ fn sprite_compute_pixel_space_point(
     point_relative_to_sprite_center.y = -point_relative_to_sprite_center.y
   }
   if sprite_size.x == 0.0F || sprite_size.y == 0.0F {
-    return Err(point_relative_to_sprite_center)
+    return Outside(point_relative_to_sprite_center)
   }
   let texture_size = texture_rect.size()
   let sprite_to_texture_ratio = @math.Vec2::new(
@@ -228,9 +250,9 @@ fn sprite_compute_pixel_space_point(
     point_relative_to_sprite_center.y * sprite_to_texture_ratio.y,
   ).add(texture_rect.center())
   if texture_rect.contains(point_relative_to_texture) {
-    Ok(point_relative_to_texture)
+    Inside(point_relative_to_texture)
   } else {
-    Err(point_relative_to_texture)
+    Outside(point_relative_to_texture)
   }
 }
 
@@ -241,7 +263,7 @@ pub fn Sprite::compute_pixel_space_point(
   anchor : Anchor,
   _images : @asset.Assets[@asset.Image],
   texture_atlases : @asset.Assets[@asset.TextureAtlasLayout],
-) -> Result[@math.Vec2, @math.Vec2] {
+) -> SpritePixelSpacePoint {
   sprite_compute_pixel_space_point(
     self.image,
     self.texture_atlas,

@@ -34,9 +34,13 @@ pub fn render_morph_lowest_2d(Int, max_edge? : Int) -> RenderMorphTextureRect?
 
 pub fn render_morph_pack_attribute_components(position_x~ : Float, position_y~ : Float, position_z~ : Float, normal_x~ : Float, normal_y~ : Float, normal_z~ : Float, tangent_x~ : Float, tangent_y~ : Float, tangent_z~ : Float) -> Array[Float]
 
-pub fn render_morph_target_image_plan(Int, Int) -> Result[MorphTargetImagePlan, RenderMorphBuildError]
+pub fn render_morph_target_image_plan(Int, Int) -> MorphTargetImagePlan raise RenderMorphBuildError
 
 // Errors
+pub(all) suberror RenderMorphBuildError {
+  TooManyAttributes(vertex_count~ : Int, component_count~ : Int)
+  TooManyTargets(target_count~ : Int)
+}
 
 // Types and methods
 pub struct MeshAllocator {
@@ -286,11 +290,6 @@ pub(all) enum RenderMeshDimension {
 pub(all) enum RenderMeshIndexFormat {
   Uint16
   Uint32
-} derive(Eq, @debug.Debug)
-
-pub(all) enum RenderMorphBuildError {
-  TooManyAttributes(vertex_count~ : Int, component_count~ : Int)
-  TooManyTargets(target_count~ : Int)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum RenderMorphTargetAllocatorMode {

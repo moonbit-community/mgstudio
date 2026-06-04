@@ -23,6 +23,9 @@ pub struct GpuTextureInfo {
   texture : @wgpu.Texture
   view : @wgpu.TextureView
   sample_view : @wgpu.TextureView?
+  msaa_texture : @wgpu.Texture?
+  msaa_view : @wgpu.TextureView?
+  sample_count : Int
   layer_views : Array[@wgpu.TextureView]
   sampler : @wgpu.Sampler
   bind_group : @wgpu.BindGroup

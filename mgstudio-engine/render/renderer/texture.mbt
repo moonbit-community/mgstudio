@@ -150,6 +150,9 @@ fn ensure_default_texture(
       texture: tex,
       view,
       sample_view: None,
+      msaa_texture: None,
+      msaa_view: None,
+      sample_count: 1,
       layer_views: [],
       sampler,
       bind_group: bg,
@@ -204,6 +207,9 @@ fn ensure_normal_map_fallback_texture(
     texture: tex,
     view,
     sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler,
     bind_group: bg,
@@ -307,6 +313,9 @@ fn ensure_environment_map_fallback_texture(
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_view),
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,
@@ -370,6 +379,9 @@ pub fn GpuBackend::create_texture_rgba8(
     texture: tex,
     view,
     sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler,
     bind_group: bg,
@@ -529,6 +541,9 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     texture: tex,
     view,
     sample_view,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler,
     bind_group: bg,
@@ -674,6 +689,9 @@ pub fn GpuBackend::create_texture_3d_with_format(
     texture: tex,
     view,
     sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,
@@ -998,6 +1016,9 @@ pub fn GpuBackend::create_texture_mip_view(
     texture: source.texture,
     view,
     sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views: [],
     sampler: source.sampler,
     bind_group,
@@ -1083,6 +1104,9 @@ pub fn GpuBackend::set_texture_sampler(
         texture: info.texture,
         view: info.view,
         sample_view: info.sample_view,
+        msaa_texture: info.msaa_texture,
+        msaa_view: info.msaa_view,
+        sample_count: info.sample_count,
         layer_views: info.layer_views,
         sampler,
         bind_group: bg,
@@ -1140,6 +1164,73 @@ pub fn GpuBackend::create_render_target_rg16f(
     tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT),
     sample_count~,
   )
+}
+
+///|
+pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  nearest : Bool,
+  sample_count? : Int = 1,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+  )
+  let format = tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
+  let tex = self.device.create_texture_u32(
+    w,
+    h,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=safe_sample_count,
+  )
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let sampler = if nearest {
+    self.device.create_sampler_nearest_clamp()
+  } else {
+    self.device.create_sampler_linear_clamp()
+  }
+  let bind_group = create_cached_texture_bind_group(self, sampler, view)
+  let info = GpuTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format,
+    texture: tex,
+    view,
+    sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: safe_sample_count.reinterpret_as_int(),
+    layer_views: [],
+    sampler,
+    bind_group,
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
 }
 
 ///|
@@ -1257,6 +1348,9 @@ pub fn GpuBackend::create_point_light_shadow_target(
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_array_view),
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views,
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,
@@ -1321,6 +1415,9 @@ pub fn GpuBackend::create_directional_light_shadow_target(
     texture: tex,
     view: array_view,
     sample_view: Some(array_view),
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views,
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,
@@ -1485,6 +1582,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_view),
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
     layer_views,
     sampler,
     bind_group,
@@ -1515,14 +1615,10 @@ pub fn GpuBackend::create_render_target_with_formats(
   } else {
     sample_count.reinterpret_as_uint()
   }
-  let usage_bits = if safe_sample_count > 1U {
-    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
-  } else {
-    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_SRC |
     @wgpu.TEXTURE_USAGE_COPY_DST
-  }
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let view_formats = match sample_format_raw {
     Some(raw) if raw != format_raw => [tf(raw)]
@@ -1536,7 +1632,7 @@ pub fn GpuBackend::create_render_target_with_formats(
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     format,
     view_formats~,
-    sample_count=safe_sample_count,
+    sample_count=1U,
   )
   let view = tex.create_view_u32(
     format,
@@ -1562,6 +1658,30 @@ pub fn GpuBackend::create_render_target_with_formats(
       )
     _ => None
   }
+  let (msaa_texture, msaa_view) = if safe_sample_count > 1U {
+    let msaa_tex = self.device.create_texture_u32(
+      w,
+      h,
+      1U,
+      @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+      format,
+      view_formats~,
+      sample_count=safe_sample_count,
+    )
+    let msaa_view = msaa_tex.create_view_u32(
+      format,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      texture_view_aspect_for_format(format),
+      0U,
+      1U,
+      0U,
+      1U,
+    )
+    (Some(msaa_tex), Some(msaa_view))
+  } else {
+    (None, None)
+  }
   let sampler = if nearest {
     self.device.create_sampler_nearest_clamp()
   } else {
@@ -1581,6 +1701,9 @@ pub fn GpuBackend::create_render_target_with_formats(
     texture: tex,
     view,
     sample_view,
+    msaa_texture,
+    msaa_view,
+    sample_count: safe_sample_count.reinterpret_as_int(),
     layer_views: [],
     sampler,
     bind_group,
@@ -1630,6 +1753,33 @@ fn target_view(
           Some(texture.layer_views[target_layer])
         } else {
           Some(texture.view)
+        }
+      None => None
+    }
+  }
+}
+
+///|
+fn target_color_attachment(
+  backend : GpuBackend,
+  target_id : Int,
+  target_layer : Int,
+) -> (@wgpu.TextureView, @wgpu.TextureView?)? {
+  if target_id < 0 {
+    match target_view(backend, target_id, target_layer) {
+      Some(view) => Some((view, None))
+      None => None
+    }
+  } else {
+    match find_texture(backend, target_id) {
+      Some(texture) =>
+        if target_layer >= 0 && target_layer < texture.layer_views.length() {
+          Some((texture.layer_views[target_layer], None))
+        } else {
+          match texture.msaa_view {
+            Some(msaa_view) => Some((msaa_view, Some(texture.view)))
+            None => Some((texture.view, None))
+          }
         }
       None => None
     }
@@ -1812,6 +1962,28 @@ pub fn create_render_target_rg16f(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_render_target_rg16f(
+        width,
+        height,
+        nearest,
+        sample_count~,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_motion_vector_prepass_target_rg16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  sample_count? : Int = 1,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_motion_vector_prepass_target_rg16f(
         width,
         height,
         nearest,

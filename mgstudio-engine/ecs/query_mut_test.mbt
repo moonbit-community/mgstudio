@@ -69,27 +69,27 @@ let mut_query_method_value_key : ComponentKey[MutQueryMethodValue] = register_co
 )
 
 ///|
-pub impl Component for MutQueryPosition with component() {
+pub impl Component for MutQueryPosition with fn component() {
   mut_query_position_key
 }
 
 ///|
-pub impl Component for MutQueryVelocity with component() {
+pub impl Component for MutQueryVelocity with fn component() {
   mut_query_velocity_key
 }
 
 ///|
-pub impl Component for MutQueryAcceleration with component() {
+pub impl Component for MutQueryAcceleration with fn component() {
   mut_query_acceleration_key
 }
 
 ///|
-pub impl Component for MutQueryMarker with component() {
+pub impl Component for MutQueryMarker with fn component() {
   mut_query_marker_key
 }
 
 ///|
-pub impl Component for MutQueryMethodValue with component() {
+pub impl Component for MutQueryMethodValue with fn component() {
   mut_query_method_value_key
 }
 
@@ -177,34 +177,35 @@ test "ecs query: view permits non-structural replacement but rejects structural 
     y: 2,
   })
   let query : Query[Comp[MutQueryPosition], All] = query(world)
-  let replace_result : Ref[Result[Unit, EcsError]?] = Ref(None)
+  let replace_succeeded : Ref[Bool] = Ref(false)
+  let replace_failed : Ref[Bool] = Ref(false)
   try! query.view(fn(entity, _position) {
-    replace_result.val = Some(
-      try? world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-        x: 3,
-        y: 4,
-      }),
-    )
+    world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+      x: 3,
+      y: 4,
+    }) catch {
+      _ => replace_failed.val = true
+    }
+    replace_succeeded.val = true
   })
-  guard replace_result.val is Some(Ok(_)) else {
-    fail("expected existing component replacement to be allowed")
-  }
+  debug_inspect(replace_failed.val, content="false")
+  debug_inspect(replace_succeeded.val, content="true")
   debug_inspect(
     try! world.get_by_key(entity, mut_query_position_key),
     content="Some({ x: 3, y: 4 })",
   )
 
-  let insert_result : Ref[Result[Unit, EcsError]?] = Ref(None)
+  let insert_error : Ref[EcsError?] = Ref(None)
   try! query.view(fn(entity, _position) {
-    insert_result.val = Some(
-      try? world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
-        dx: 1,
-        dy: 1,
-      }),
-    )
+    world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
+      dx: 1,
+      dy: 1,
+    }) catch {
+      err => insert_error.val = Some(err)
+    }
   })
-  guard insert_result.val
-    is Some(Err(StructuralChangeDuringQueryIteration("insert component"))) else {
+  guard insert_error.val
+    is Some(StructuralChangeDuringQueryIteration("insert component")) else {
     fail("expected inserting a new component during Query::view to be rejected")
   }
 }
@@ -218,14 +219,19 @@ test "ecs query: view rejects structural removal" {
     y: 2,
   })
   let query : Query[Comp[MutQueryPosition], All] = query(world)
-  let remove_result : Ref[Result[Bool, EcsError]?] = Ref(None)
+  let remove_error : Ref[EcsError?] = Ref(None)
   try! query.view(fn(entity, _position) {
-    remove_result.val = Some(
-      try? world.remove_by_key(entity, mut_query_position_key),
+    ignore(
+      world.remove_by_key(entity, mut_query_position_key) catch {
+        err => {
+          remove_error.val = Some(err)
+          false
+        }
+      },
     )
   })
-  guard remove_result.val
-    is Some(Err(StructuralChangeDuringQueryIteration("remove component"))) else {
+  guard remove_error.val
+    is Some(StructuralChangeDuringQueryIteration("remove component")) else {
     fail("expected removing a component during Query::view to be rejected")
   }
   debug_inspect(
@@ -347,14 +353,14 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
     (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
     Without[MutQueryAcceleration],
   ] = query_filtered(world, Without::new(mut_query_acceleration_key))
-  let duplicate_result : Result[
-    QueryMany[
-      (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
-      Without[MutQueryAcceleration],
-    ],
-    EcsError,
-  ] = try? query.iter_many_unique([e0, e0])
-  guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
+  let duplicate_entity : @core.Entity? = try {
+    ignore(query.iter_many_unique([e0, e0]))
+    None
+  } catch {
+    NonUniqueEntityList(entity) => Some(entity)
+    _ => fail("expected duplicate entity diagnostics")
+  }
+  guard duplicate_entity is Some(entity) else {
     fail("expected duplicate entity diagnostics")
   }
   debug_inspect(entity.id, content="0")

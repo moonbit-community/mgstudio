@@ -460,8 +460,7 @@ fn material_test_specialized_mesh_pipeline(
   _key : @material.ErasedMaterialPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
-  let vertex_layout = match
-    layout
+  let vertex_layout = layout
     .layout()
     .get_layout([
       @mesh.VertexAttributeDescriptor::new(
@@ -469,13 +468,12 @@ fn material_test_specialized_mesh_pipeline(
         id=@mesh.MeshVertexAttribute::position().id(),
         name="Vertex_Position",
       ),
-    ]) {
-    Ok(vertex_layout) => vertex_layout
-    Err(error) =>
-      raise @material.specialized_mesh_pipeline_missing_vertex_attribute_error(
-        error,
-      )
-  }
+    ]) catch {
+      error =>
+        raise @material.specialized_mesh_pipeline_missing_vertex_attribute_error(
+          error,
+        )
+    }
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_vertex(
     @material.VertexState::new(None, [], None, [vertex_layout]),
   )

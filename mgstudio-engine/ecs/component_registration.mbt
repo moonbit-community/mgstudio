@@ -355,19 +355,17 @@ fn World::install_required_component_metadata(
     state.direct.get(required_local_id) is Some(_) {
     return
   }
-  let result : Result[Unit, RequiredComponentsError] = try? self.register_required_components_by_keys(
+  self.register_required_components_by_keys(
     requiree_definition_id,
     required.required_component_id,
     required.init_value,
-  )
-  match result {
-    Ok(_) => ()
-    Err(DuplicateRegistration(_, _)) => ()
-    Err(ArchetypeExists(component_id)) =>
+  ) catch {
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Static required-component registration ran too late for component \{component_id.to_string()}",
       )
-    Err(CyclicRequirement(requiree, dependency)) =>
+    CyclicRequirement(requiree, dependency) =>
       abort(
         "Static required-component cycle detected: \{requiree.to_string()} -> \{dependency.to_string()}",
       )
@@ -421,25 +419,23 @@ fn World::install_component_metadata(
     let existing = self.component_hooks_registry
       .get(local_component_id)
       .unwrap_or(ComponentHooks::new())
-    let merged_result : Result[ComponentHooks, ComponentHooksError] = try? component_hooks_merge(
+    let merged_hooks = component_hooks_merge(
       existing, hooks, local_component_id,
-    )
-    match merged_result {
-      Ok(merged_hooks) =>
-        self.component_hooks_registry.set(local_component_id, merged_hooks)
-      Err(DuplicateHookRegistration(_, kind)) =>
+    ) catch {
+      DuplicateHookRegistration(_, kind) =>
         abort(
           "Duplicate static \{component_hook_kind_name(kind)} hook registration for component `\{component_debug_name}`",
         )
-      Err(DuplicateRegistration(_)) =>
+      DuplicateRegistration(_) =>
         abort(
           "Duplicate static hook registration for component `\{component_debug_name}`",
         )
-      Err(ComponentAlreadyInUse(_)) =>
+      ComponentAlreadyInUse(_) =>
         abort(
           "Static hook registration ran too late for component `\{component_debug_name}`",
         )
     }
+    self.component_hooks_registry.set(local_component_id, merged_hooks)
   }
   self.components.storage_types_by_local_id.set(
     local_component_id,

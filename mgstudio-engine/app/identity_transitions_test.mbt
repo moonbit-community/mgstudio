@@ -31,7 +31,7 @@ let despawn_marker_key : @ecs.ComponentKey[DespawnMarker] = @ecs.register_compon
 )
 
 ///|
-impl Resource for TriggerIdentityOnce with resource() {
+impl Resource for TriggerIdentityOnce with fn resource() {
   trigger_identity_once_resource_key
 }
 
@@ -111,10 +111,14 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
-    .world()
-    .get_by_key(entity, despawn_marker_key)
-  debug_inspect(result is Err(_), content="true")
+  let entity_not_alive = try {
+    ignore(app.world().get_by_key(entity, despawn_marker_key))
+    false
+  } catch {
+    @ecs.EntityNotAlive(_) => true
+    _ => fail("expected despawned entity lookup to fail")
+  }
+  debug_inspect(entity_not_alive, content="true")
 }
 
 ///|
@@ -142,8 +146,12 @@ test "app identity transition: DespawnOnEnter removes scoped entities" {
   app.run_once() |> ignore
   app.run_once() |> ignore
 
-  let result : Result[DespawnMarker?, @ecs.EcsError] = try? app
-    .world()
-    .get_by_key(entity, despawn_marker_key)
-  debug_inspect(result is Err(_), content="true")
+  let entity_not_alive = try {
+    ignore(app.world().get_by_key(entity, despawn_marker_key))
+    false
+  } catch {
+    @ecs.EntityNotAlive(_) => true
+    _ => fail("expected despawned entity lookup to fail")
+  }
+  debug_inspect(entity_not_alive, content="true")
 }

@@ -26,6 +26,11 @@ struct SystemPipingCounter {
 struct SystemPipingMarker {} derive(Eq, Debug)
 
 ///|
+suberror SystemPipingError {
+  InvalidInteger(String)
+}
+
+///|
 let system_piping_message_key : @ecs.ResourceKey[SystemPipingMessage] = @ecs.register_resource(
   debug_name="tests.app.system_piping.message",
 )
@@ -41,17 +46,17 @@ let system_piping_marker_key : @ecs.ComponentKey[SystemPipingMarker] = @ecs.regi
 )
 
 ///|
-pub impl Resource for SystemPipingMessage with resource() {
+pub impl Resource for SystemPipingMessage with fn resource() {
   system_piping_message_key
 }
 
 ///|
-pub impl Resource for SystemPipingCounter with resource() {
+pub impl Resource for SystemPipingCounter with fn resource() {
   system_piping_counter_key
 }
 
 ///|
-pub impl @ecs.Component for SystemPipingMarker with component() {
+pub impl @ecs.Component for SystemPipingMarker with fn component() {
   system_piping_marker_key
 }
 
@@ -61,19 +66,17 @@ fn touch_system_piping_types() -> Unit {
 }
 
 ///|
-fn parse_piped_message(text : String) -> Result[Int, String] {
-  try @string.parse_int(text[:], base=10) catch {
-    _ => Err("invalid integer: \{text}")
-  } noraise {
-    value => Ok(value)
+fn parse_piped_message(text : String) -> Int raise SystemPipingError {
+  @string.parse_int(text[:], base=10) catch {
+    _ => raise SystemPipingError::InvalidInteger("invalid integer: \{text}")
   }
 }
 
 ///|
-fn parse_piped_message_system(
-  message : Res[SystemPipingMessage],
-) -> Result[Int, String] {
-  parse_piped_message(message.get().value)
+fn parse_piped_message_system(message : Res[SystemPipingMessage]) -> Int {
+  parse_piped_message(message.get().value) catch {
+    SystemPipingError::InvalidInteger(message) => abort(message)
+  }
 }
 
 ///|
@@ -88,13 +91,9 @@ test "app system piping: pipe passes output into handler" {
   app.world().insert_resource(system_piping_message_key, { value: "42" })
   app = app.add_systems(
     Update,
-    system_param_output(parse_piped_message_system).pipe(fn(
-      input : In[Result[Int, String]],
-    ) {
-      match input.get() {
-        Ok(value) => log.push("parsed \{value.to_string()}")
-        Err(message) => log.push(message)
-      }
+    system_param_output(parse_piped_message_system).pipe(fn(input : In[Int]) {
+      let value = input.get()
+      log.push("parsed \{value.to_string()}")
     }),
   )
 

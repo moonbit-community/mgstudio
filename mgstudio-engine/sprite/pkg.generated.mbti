@@ -981,7 +981,7 @@ pub(all) struct Sprite {
   mut image_mode : SpriteImageMode
 }
 pub fn Sprite::Sprite() -> Self
-pub fn Sprite::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
+pub fn Sprite::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> SpritePixelSpacePoint
 pub fn Sprite::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn Sprite::from_color(@color.Color, @math.Vec2) -> Self
 pub fn Sprite::from_image(@asset.Handle[@image.Image]) -> Self
@@ -1070,7 +1070,7 @@ pub(all) struct SpriteMesh {
   mut alpha_mode : SpriteAlphaMode
 }
 pub fn SpriteMesh::SpriteMesh() -> Self
-pub fn SpriteMesh::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
+pub fn SpriteMesh::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> SpritePixelSpacePoint
 pub fn SpriteMesh::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn SpriteMesh::from_color(@color.Color, @math.Vec2) -> Self
 pub fn SpriteMesh::from_image(@asset.Handle[@image.Image]) -> Self
@@ -1089,6 +1089,13 @@ pub struct SpriteMeshPlugin {
 }
 pub fn SpriteMeshPlugin::SpriteMeshPlugin() -> Self
 pub impl @app.Plugin for SpriteMeshPlugin
+
+pub(all) enum SpritePixelSpacePoint {
+  Inside(@math.Vec2)
+  Outside(@math.Vec2)
+}
+pub fn SpritePixelSpacePoint::is_inside(Self) -> Bool
+pub fn SpritePixelSpacePoint::point(Self) -> @math.Vec2
 
 pub struct SpritePlugin {
 }

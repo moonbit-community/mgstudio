@@ -56,7 +56,7 @@ pub fn pointer_hits_message_key() -> @ecs.MessageKey[PointerHits] {
 }
 
 ///|
-pub impl @ecs.Message for PointerHits with message() {
+pub impl @ecs.Message for PointerHits with fn message() {
   ecs_msg_key_pointer_hits
 }
 
@@ -238,7 +238,7 @@ fn picking_sprite_pixel_is_valid(
   guard sprite.compute_pixel_space_point(
       local_pos, anchor, images, texture_atlases,
     )
-    is Ok(pixel) else {
+    is @sprite.SpritePixelSpacePoint::Inside(pixel) else {
     return false
   }
   match mode {

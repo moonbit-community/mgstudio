@@ -54,22 +54,22 @@ let sparse_tag_key : ComponentKey[SparseTag] = register_component(
 )
 
 ///|
-pub impl Component for Position with component() {
+pub impl Component for Position with fn component() {
   position_key
 }
 
 ///|
-pub impl Component for Velocity with component() {
+pub impl Component for Velocity with fn component() {
   velocity_key
 }
 
 ///|
-pub impl Component for Acceleration with component() {
+pub impl Component for Acceleration with fn component() {
   acceleration_key
 }
 
 ///|
-pub impl Component for SparseTag with component() {
+pub impl Component for SparseTag with fn component() {
   sparse_tag_key
 }
 
@@ -116,17 +116,17 @@ let generic_tag_key : ComponentKey[GenericTag] = register_component(
 )
 
 ///|
-pub impl Component for GenericPosition with component() {
+pub impl Component for GenericPosition with fn component() {
   generic_position_key
 }
 
 ///|
-pub impl Component for GenericVelocity with component() {
+pub impl Component for GenericVelocity with fn component() {
   generic_velocity_key
 }
 
 ///|
-pub impl Component for GenericTag with component() {
+pub impl Component for GenericTag with fn component() {
   generic_tag_key
 }
 
@@ -136,39 +136,41 @@ struct NestedVelocityData {
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with matches(world, entity) {
+pub impl QueryData for NestedVelocityData with fn matches(world, entity) {
   query_data_component_matches(world, entity, generic_velocity_key)
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with fetch(world, entity) {
+pub impl QueryData for NestedVelocityData with fn fetch(world, entity) {
   { velocity: query_data_component_fetch(world, entity, generic_velocity_key) }
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with mentions_component(component_id) {
+pub impl QueryData for NestedVelocityData with fn mentions_component(
+  component_id,
+) {
   component_id == generic_velocity_key.id()
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with matches_component_set(
+pub impl QueryData for NestedVelocityData with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(generic_velocity_key.id())
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with requires_entity_check() {
+pub impl QueryData for NestedVelocityData with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with iteration_anchor_component() {
+pub impl QueryData for NestedVelocityData with fn iteration_anchor_component() {
   Some(generic_velocity_key.id())
 }
 
 ///|
-pub impl QueryData for NestedVelocityData with contiguous_compatible() {
+pub impl QueryData for NestedVelocityData with fn contiguous_compatible() {
   true
 }
 
@@ -178,7 +180,7 @@ struct GenericPair[A, B] {
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matches(
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn matches(
   world,
   entity,
 ) {
@@ -186,7 +188,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matc
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fetch(
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn fetch(
   world,
   entity,
 ) {
@@ -194,14 +196,14 @@ pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fetc
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with mentions_component(
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn mentions_component(
   component_id,
 ) {
   A::mentions_component(component_id) || B::mentions_component(component_id)
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matches_component_set(
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn matches_component_set(
   set_contains_id,
 ) {
   A::matches_component_set(set_contains_id) &&
@@ -209,12 +211,12 @@ pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matc
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with requires_entity_check() {
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn requires_entity_check() {
   A::requires_entity_check() || B::requires_entity_check()
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with iteration_anchor_component() {
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn iteration_anchor_component() {
   match A::iteration_anchor_component() {
     Some(component_id) => Some(component_id)
     None => B::iteration_anchor_component()
@@ -222,7 +224,7 @@ pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with iter
 }
 
 ///|
-pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with contiguous_compatible() {
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fn contiguous_compatible() {
   A::contiguous_compatible() && B::contiguous_compatible()
 }
 
@@ -236,12 +238,12 @@ struct ReadOnlyCustomQuery {
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with matches(world, entity) {
+pub impl QueryData for ReadOnlyCustomQuery with fn matches(world, entity) {
   query_data_component_matches(world, entity, generic_position_key)
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with fetch(world, entity) {
+pub impl QueryData for ReadOnlyCustomQuery with fn fetch(world, entity) {
   {
     entity,
     position: query_data_component_fetch(world, entity, generic_position_key),
@@ -258,30 +260,32 @@ pub impl QueryData for ReadOnlyCustomQuery with fetch(world, entity) {
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with mentions_component(component_id) {
+pub impl QueryData for ReadOnlyCustomQuery with fn mentions_component(
+  component_id,
+) {
   component_id == generic_position_key.id() ||
   component_id == ecs_key_disabled.id()
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with matches_component_set(
+pub impl QueryData for ReadOnlyCustomQuery with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(generic_position_key.id())
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with requires_entity_check() {
+pub impl QueryData for ReadOnlyCustomQuery with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with iteration_anchor_component() {
+pub impl QueryData for ReadOnlyCustomQuery with fn iteration_anchor_component() {
   Some(generic_position_key.id())
 }
 
 ///|
-pub impl QueryData for ReadOnlyCustomQuery with contiguous_compatible() {
+pub impl QueryData for ReadOnlyCustomQuery with fn contiguous_compatible() {
   true
 }
 
@@ -297,13 +301,13 @@ fn[T] comp_option_value(value : Comp[T]?) -> T? {
 struct GenericTagFilter {}
 
 ///|
-pub impl QueryFilter for GenericTagFilter with matches(self, world, entity) {
+pub impl QueryFilter for GenericTagFilter with fn matches(self, world, entity) {
   ignore(self)
   (try! world.get_by_key(entity, generic_tag_key)) is Some(_)
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with mentions_component(
+pub impl QueryFilter for GenericTagFilter with fn mentions_component(
   self,
   component_id,
 ) {
@@ -312,7 +316,7 @@ pub impl QueryFilter for GenericTagFilter with mentions_component(
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with matches_component_set(
+pub impl QueryFilter for GenericTagFilter with fn matches_component_set(
   self,
   set_contains_id,
 ) {
@@ -321,19 +325,21 @@ pub impl QueryFilter for GenericTagFilter with matches_component_set(
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with requires_entity_check(self) {
+pub impl QueryFilter for GenericTagFilter with fn requires_entity_check(self) {
   ignore(self)
   false
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with iteration_anchor_component(self) {
+pub impl QueryFilter for GenericTagFilter with fn iteration_anchor_component(
+  self,
+) {
   ignore(self)
   Some(generic_tag_key.id())
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with depends_on_ticks(self) {
+pub impl QueryFilter for GenericTagFilter with fn depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -1377,11 +1383,14 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
     world,
     With::new(comp_velocity),
   )
-  let duplicate_result : Result[
-    QueryMany[Comp[Position], With[Velocity]],
-    EcsError,
-  ] = try? query.iter_many_unique([e1, e1])
-  guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
+  let duplicate_entity : @core.Entity? = try {
+    ignore(query.iter_many_unique([e1, e1]))
+    None
+  } catch {
+    NonUniqueEntityList(entity) => Some(entity)
+    _ => fail("expected duplicate entity diagnostics")
+  }
+  guard duplicate_entity is Some(entity) else {
     fail("expected duplicate entity diagnostics")
   }
   debug_inspect(entity.id, content="1")
@@ -1408,9 +1417,12 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   let e1 = world.spawn()
 
   let position_query : Query[Comp[Position], All] = query(world)
-  let none_result = try? position_query.require_single()
-  guard none_result is Err(@ecs.Skipped(message0)) else {
-    fail("expected skipped error when no entity matches")
+  let message0 = try {
+    ignore(position_query.require_single())
+    ""
+  } catch {
+    @ecs.Skipped(message) => message
+    _ => fail("expected skipped error when no entity matches")
   }
   debug_inspect(message0, content="\"Expected exactly one matching entity\"")
 
@@ -1436,9 +1448,12 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
     content="{ x: 5, y: 8 }",
   )
 
-  let many_result = try? position_query.require_single()
-  guard many_result is Err(@ecs.Skipped(message1)) else {
-    fail("expected skipped error when many entities match")
+  let message1 = try {
+    ignore(position_query.require_single())
+    ""
+  } catch {
+    @ecs.Skipped(message) => message
+    _ => fail("expected skipped error when many entities match")
   }
   debug_inspect(message1, content="\"Expected exactly one matching entity\"")
 }

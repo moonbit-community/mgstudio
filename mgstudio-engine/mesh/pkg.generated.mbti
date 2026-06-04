@@ -30,9 +30,9 @@ pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights]
 
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
 
-pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError]
+pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError
 
-pub fn entity_aabb_from_skinned_mesh_bounds_cached(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError]
+pub fn entity_aabb_from_skinned_mesh_bounds_cached(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError
 
 pub fn first_available_custom_mesh_attribute() -> UInt64
 
@@ -41,6 +41,30 @@ pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub let mesh_set_inherit_weight : String
 
 // Errors
+pub(all) suberror EntityAabbFromSkinnedMeshBoundsError {
+  OutOfRangeJointIndex(JointIndex)
+  MissingJointEntity
+  MissingSkinnedMeshBounds
+}
+
+pub(all) suberror MeshAttributeError {
+  MissingAttribute(String)
+  UnexpectedFormat(String, String)
+}
+
+pub suberror MissingVertexAttributeError {
+  MissingVertexAttribute(MeshVertexAttributeId, String, String?)
+}
+pub fn MissingVertexAttributeError::id(Self) -> MeshVertexAttributeId
+pub fn MissingVertexAttributeError::name(Self) -> String
+pub fn MissingVertexAttributeError::new(id~ : MeshVertexAttributeId, name~ : String, pipeline_type? : String?) -> Self
+pub fn MissingVertexAttributeError::pipeline_type(Self) -> String?
+pub fn MissingVertexAttributeError::with_pipeline_type(Self, String?) -> Self
+
+pub(all) suberror SkinnedMeshBoundsError {
+  NoSkinnedJoints
+  MeshAttributeError(MeshAttributeError)
+}
 
 // Types and methods
 pub struct BaseMeshPipelineKey {
@@ -58,12 +82,6 @@ pub struct DynamicSkinnedMeshBounds {
 pub fn DynamicSkinnedMeshBounds::new() -> Self
 pub impl @ecs.Component for DynamicSkinnedMeshBounds
 
-pub(all) enum EntityAabbFromSkinnedMeshBoundsError {
-  OutOfRangeJointIndex(JointIndex)
-  MissingJointEntity
-  MissingSkinnedMeshBounds
-} derive(Eq, @debug.Debug)
-
 pub struct Influence {
   vertex_index : Int
   joint_index : JointIndex
@@ -79,7 +97,7 @@ pub struct InfluenceIterator {
   mut cursor : Int
 } derive(@debug.Debug)
 pub fn InfluenceIterator::collect(Self) -> Array[Influence]
-pub fn InfluenceIterator::new(Mesh) -> Result[Self, MeshAttributeError]
+pub fn InfluenceIterator::new(Mesh) -> Self raise MeshAttributeError
 pub fn InfluenceIterator::next(Self) -> Influence?
 
 pub struct JointAabb {
@@ -112,7 +130,7 @@ pub fn Mesh::create_packed_vertex_buffer_data(Self) -> Bytes
 pub fn Mesh::custom_attribute_vec3(Self, String) -> Array[@math.Vec3]?
 pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub fn Mesh::from_3d_geometry(Mesh3dGeometry) -> Self
-pub fn Mesh::generate_skinned_mesh_bounds(Self) -> Result[Unit, SkinnedMeshBoundsError]
+pub fn Mesh::generate_skinned_mesh_bounds(Self) -> Unit raise SkinnedMeshBoundsError
 pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
 pub fn Mesh::get_mesh_vertex_buffer_layout(Self, MeshVertexBufferLayouts) -> MeshVertexBufferLayoutRef
 pub fn Mesh::get_vertex_buffer_size(Self) -> Int
@@ -127,7 +145,7 @@ pub fn Mesh::skinned_mesh_bounds(Self) -> SkinnedMeshBounds?
 pub fn Mesh::vertex_count(Self) -> Int
 pub fn Mesh::with_2d_geometry(Self, Mesh2dGeometry) -> Self?
 pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
-pub fn Mesh::with_generated_skinned_mesh_bounds(Self) -> Result[Self, SkinnedMeshBoundsError]
+pub fn Mesh::with_generated_skinned_mesh_bounds(Self) -> Self raise SkinnedMeshBoundsError
 pub fn Mesh::with_skinned_mesh_bounds(Self, SkinnedMeshBounds?) -> Self
 pub impl @asset.Asset for Mesh
 
@@ -324,11 +342,6 @@ pub fn MeshAttributeData::attribute(Self) -> MeshVertexAttribute
 pub fn MeshAttributeData::new(MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn MeshAttributeData::values(Self) -> VertexAttributeValues
 
-pub(all) enum MeshAttributeError {
-  MissingAttribute(String)
-  UnexpectedFormat(String, String)
-} derive(Eq, @debug.Debug)
-
 pub struct MeshCustomAttributeVec3 {
   attribute : MeshVertexAttribute
   values : Array[@math.Vec3]
@@ -406,7 +419,7 @@ pub struct MeshVertexBufferLayout {
 pub fn MeshVertexBufferLayout::attribute_ids(Self) -> Array[MeshVertexAttributeId]
 pub fn MeshVertexBufferLayout::contains(Self, MeshVertexAttributeId) -> Bool
 pub fn MeshVertexBufferLayout::equal(Self, Self) -> Bool
-pub fn MeshVertexBufferLayout::get_layout(Self, Array[VertexAttributeDescriptor]) -> Result[VertexBufferLayout, MissingVertexAttributeError]
+pub fn MeshVertexBufferLayout::get_layout(Self, Array[VertexAttributeDescriptor]) -> VertexBufferLayout raise MissingVertexAttributeError
 pub fn MeshVertexBufferLayout::layout(Self) -> VertexBufferLayout
 pub fn MeshVertexBufferLayout::new(attribute_ids~ : Array[MeshVertexAttributeId], layout~ : VertexBufferLayout) -> Self
 
@@ -447,17 +460,6 @@ pub(all) enum MeshVertexStepMode {
   Instance
 } derive(Eq, @debug.Debug)
 
-pub struct MissingVertexAttributeError {
-  id : MeshVertexAttributeId
-  name : String
-  pipeline_type : String?
-}
-pub fn MissingVertexAttributeError::id(Self) -> MeshVertexAttributeId
-pub fn MissingVertexAttributeError::name(Self) -> String
-pub fn MissingVertexAttributeError::new(id~ : MeshVertexAttributeId, name~ : String, pipeline_type? : String?) -> Self
-pub fn MissingVertexAttributeError::pipeline_type(Self) -> String?
-pub fn MissingVertexAttributeError::with_pipeline_type(Self, String?) -> Self
-
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]
 }
@@ -491,14 +493,9 @@ pub struct SkinnedMeshBounds {
 pub fn SkinnedMeshBounds::SkinnedMeshBounds() -> Self
 pub fn SkinnedMeshBounds::aabb_index_to_joint_index(Self) -> Array[JointIndex]
 pub fn SkinnedMeshBounds::aabbs(Self) -> Array[JointAabb]
-pub fn SkinnedMeshBounds::from_mesh(Mesh) -> Result[Self, SkinnedMeshBoundsError]
+pub fn SkinnedMeshBounds::from_mesh(Mesh) -> Self raise SkinnedMeshBoundsError
 pub fn SkinnedMeshBounds::iter(Self) -> Array[(JointIndex, JointAabb)]
 pub fn SkinnedMeshBounds::new(Array[JointAabb], Array[JointIndex]) -> Self
-
-pub(all) enum SkinnedMeshBoundsError {
-  NoSkinnedJoints
-  MeshAttributeError(MeshAttributeError)
-} derive(Eq, @debug.Debug)
 
 pub struct SkinnedMeshInverseBindposes {
   values : Array[SkinningMat4]

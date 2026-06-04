@@ -43,14 +43,16 @@ fn test_skinning_mesh_with_influences() -> Mesh {
 ///|
 test "mesh/skinning: influence iterator mirrors Bevy non-zero weights" {
   let empty = Mesh3dGeometry::new([], [], None).to_mesh()
-  guard InfluenceIterator::new(empty)
-    is Err(MeshAttributeError::MissingAttribute("Vertex_JointIndex")) else {
-    fail("expected missing joint index attribute")
+  let missing_joint_index = try {
+    ignore(InfluenceIterator::new(empty))
+    false
+  } catch {
+    MeshAttributeError::MissingAttribute("Vertex_JointIndex") => true
+    _ => fail("expected missing joint index attribute")
   }
-  let influences = match
-    InfluenceIterator::new(test_skinning_mesh_with_influences()) {
-    Ok(iterator) => iterator.collect()
-    Err(_) => fail("unexpected influence iterator error")
+  debug_inspect(missing_joint_index, content="true")
+  let influences = InfluenceIterator::new(test_skinning_mesh_with_influences()).collect() catch {
+    _ => fail("unexpected influence iterator error")
   }
   debug_inspect(influences.length(), content="4")
   debug_inspect(influences[0].vertex_index(), content="0")
@@ -65,10 +67,10 @@ test "mesh/skinning: influence iterator mirrors Bevy non-zero weights" {
 
 ///|
 test "mesh/skinning: skinned mesh bounds group vertices by joint" {
-  let bounds = match
-    SkinnedMeshBounds::from_mesh(test_skinning_mesh_with_influences()) {
-    Ok(bounds) => bounds
-    Err(_) => fail("unexpected skinned mesh bounds error")
+  let bounds = SkinnedMeshBounds::from_mesh(
+    test_skinning_mesh_with_influences(),
+  ) catch {
+    _ => fail("unexpected skinned mesh bounds error")
   }
   let entries = bounds.iter()
   debug_inspect(entries.length(), content="4")
@@ -90,9 +92,8 @@ test "mesh/skinning: skinned mesh bounds group vertices by joint" {
 test "mesh/skinning: mesh stores and generates skinned mesh bounds" {
   let mesh = test_skinning_mesh_with_influences()
   debug_inspect(mesh.skinned_mesh_bounds() is None, content="true")
-  match mesh.generate_skinned_mesh_bounds() {
-    Ok(_) => ()
-    Err(_) => fail("generate_skinned_mesh_bounds should succeed")
+  mesh.generate_skinned_mesh_bounds() catch {
+    _ => fail("generate_skinned_mesh_bounds should succeed")
   }
   let generated = mesh.skinned_mesh_bounds().unwrap()
   debug_inspect(generated.iter().length(), content="4")
@@ -103,10 +104,8 @@ test "mesh/skinning: mesh stores and generates skinned mesh bounds" {
   mesh.set_skinned_mesh_bounds(Some(explicit))
   let stored = mesh.skinned_mesh_bounds().unwrap()
   debug_inspect(stored.iter()[0].0.value(), content="7")
-  let generated_mesh = match
-    test_skinning_mesh_with_influences().with_generated_skinned_mesh_bounds() {
-    Ok(mesh) => mesh
-    Err(_) => fail("with_generated_skinned_mesh_bounds should succeed")
+  let generated_mesh = test_skinning_mesh_with_influences().with_generated_skinned_mesh_bounds() catch {
+    _ => fail("with_generated_skinned_mesh_bounds should succeed")
   }
   debug_inspect(
     generated_mesh.skinned_mesh_bounds().unwrap().iter().length(),

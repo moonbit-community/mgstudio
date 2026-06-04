@@ -91,11 +91,14 @@ fn render3d_execute_camera_postprocess(
           cleared_targets_this_frame, post_motion_blur_target_id, clear_enabled,
         ),
       )
-      @render.host_gpu_draw_motion_blur(
-        scene_texture_id=scene_target_id,
+      @render.host_gpu_prepare_motion_blur(
         velocity_texture_id=velocity_target_id,
         shutter_angle=motion_blur.shutter_angle,
         samples=motion_blur.samples,
+      )
+      @render.host_gpu_draw_motion_blur(
+        scene_texture_id=scene_target_id,
+        velocity_texture_id=velocity_target_id,
       )
       @render.host_gpu_end_pass()
       final_source_texture_id = post_motion_blur_target_id
@@ -130,11 +133,14 @@ fn render3d_execute_camera_postprocess(
           clear_enabled,
         ),
       )
-      @render.host_gpu_draw_motion_blur(
-        scene_texture_id=scene_target_id,
+      @render.host_gpu_prepare_motion_blur(
         velocity_texture_id=velocity_target_id,
         shutter_angle=motion_blur.shutter_angle,
         samples=motion_blur.samples,
+      )
+      @render.host_gpu_draw_motion_blur(
+        scene_texture_id=scene_target_id,
+        velocity_texture_id=velocity_target_id,
       )
       @render.host_gpu_end_pass()
     }

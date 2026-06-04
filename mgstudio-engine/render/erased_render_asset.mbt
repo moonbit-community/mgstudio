@@ -45,7 +45,7 @@ pub fn[A : RenderAssetResource] ErasedRenderAssets::resource() -> @ecs.ResourceK
 }
 
 ///|
-pub impl[A : RenderAssetResource] @app.Resource for ErasedRenderAssets[A] with resource() {
+pub impl[A : RenderAssetResource] @app.Resource for ErasedRenderAssets[A] with fn resource() {
   ErasedRenderAssets::resource()
 }
 
@@ -139,7 +139,7 @@ pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A] with resource() {
+pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A] with fn resource() {
   ErasedPrepareNextFrameAssets::resource()
 }
 
@@ -185,10 +185,7 @@ pub fn[A, B] prepare_erased_render_assets_with(
   extracted_assets : ExtractedAssets[A],
   render_assets : ErasedRenderAssets[B],
   prepare_next_frame : ErasedPrepareNextFrameAssets[A],
-  prepare_asset : (A, UntypedRenderAssetId, B?) -> Result[
-    B,
-    ErasedPrepareAssetError,
-  ],
+  prepare_asset : (A, UntypedRenderAssetId, B?) -> B raise ErasedPrepareAssetError,
   unload_asset : (UntypedRenderAssetId, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
   bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
@@ -211,13 +208,13 @@ pub fn[A, B] prepare_erased_render_assets_with(
       None => 0
     }
     let previous_asset = render_assets.get(id)
-    match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => {
-        render_assets.insert(id, prepared_asset)
-        bytes_per_frame.write_bytes(write_bytes)
-      }
-      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
-      Err(AsBindGroupError(_)) => ()
+    try {
+      let prepared_asset = prepare_asset(extracted_asset, id, previous_asset)
+      render_assets.insert(id, prepared_asset)
+      bytes_per_frame.write_bytes(write_bytes)
+    } catch {
+      RetryNextUpdate(_) => prepare_next_frame.push(id, extracted_asset)
+      AsBindGroupError(_) => ()
     }
   }
 
@@ -242,13 +239,13 @@ pub fn[A, B] prepare_erased_render_assets_with(
         }
       None => 0
     }
-    match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => {
-        render_assets.insert(id, prepared_asset)
-        bytes_per_frame.write_bytes(write_bytes)
-      }
-      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
-      Err(AsBindGroupError(_)) => ()
+    try {
+      let prepared_asset = prepare_asset(extracted_asset, id, previous_asset)
+      render_assets.insert(id, prepared_asset)
+      bytes_per_frame.write_bytes(write_bytes)
+    } catch {
+      RetryNextUpdate(_) => prepare_next_frame.push(id, extracted_asset)
+      AsBindGroupError(_) => ()
     }
   }
   extracted_assets.modified.clear()

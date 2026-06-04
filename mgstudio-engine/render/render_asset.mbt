@@ -86,7 +86,7 @@ pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A] with resource() {
+pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A] with fn resource() {
   RenderAssets::resource()
 }
 
@@ -169,12 +169,12 @@ pub fn RenderAssetBytesPerFrame::RenderAssetBytesPerFrame() -> RenderAssetBytesP
 }
 
 ///|
-pub impl Default for RenderAssetBytesPerFrame with default() {
+pub impl Default for RenderAssetBytesPerFrame with fn default() {
   RenderAssetBytesPerFrame::RenderAssetBytesPerFrame()
 }
 
 ///|
-pub impl @app.Resource for RenderAssetBytesPerFrame with resource() {
+pub impl @app.Resource for RenderAssetBytesPerFrame with fn resource() {
   render_asset_bytes_per_frame_resource_key
 }
 
@@ -211,12 +211,12 @@ pub fn RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter() -> Ren
 }
 
 ///|
-pub impl Default for RenderAssetBytesPerFrameLimiter with default() {
+pub impl Default for RenderAssetBytesPerFrameLimiter with fn default() {
   RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter()
 }
 
 ///|
-pub impl @app.Resource for RenderAssetBytesPerFrameLimiter with resource() {
+pub impl @app.Resource for RenderAssetBytesPerFrameLimiter with fn resource() {
   render_asset_bytes_per_frame_limiter_resource_key
 }
 
@@ -341,7 +341,7 @@ pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with resource() {
+pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with fn resource() {
   PrepareNextFrameAssets::resource()
 }
 
@@ -392,7 +392,7 @@ pub fn[A, B] prepare_render_assets_with(
   extracted_assets : ExtractedAssets[A],
   render_assets : RenderAssets[B],
   prepare_next_frame : PrepareNextFrameAssets[A],
-  prepare_asset : (A, Int, B?) -> Result[B, PrepareAssetError],
+  prepare_asset : (A, Int, B?) -> B raise PrepareAssetError,
   unload_asset : (Int, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
   bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
@@ -415,13 +415,13 @@ pub fn[A, B] prepare_render_assets_with(
       None => 0
     }
     let previous_asset = render_assets.get(id)
-    match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => {
-        render_assets.insert(id, prepared_asset)
-        bytes_per_frame.write_bytes(write_bytes)
-      }
-      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
-      Err(AsBindGroupError(_)) => ()
+    try {
+      let prepared_asset = prepare_asset(extracted_asset, id, previous_asset)
+      render_assets.insert(id, prepared_asset)
+      bytes_per_frame.write_bytes(write_bytes)
+    } catch {
+      RetryNextUpdate(_) => prepare_next_frame.push(id, extracted_asset)
+      AsBindGroupError(_) => ()
     }
   }
 
@@ -446,13 +446,13 @@ pub fn[A, B] prepare_render_assets_with(
         }
       None => 0
     }
-    match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => {
-        render_assets.insert(id, prepared_asset)
-        bytes_per_frame.write_bytes(write_bytes)
-      }
-      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
-      Err(AsBindGroupError(_)) => ()
+    try {
+      let prepared_asset = prepare_asset(extracted_asset, id, previous_asset)
+      render_assets.insert(id, prepared_asset)
+      bytes_per_frame.write_bytes(write_bytes)
+    } catch {
+      RetryNextUpdate(_) => prepare_next_frame.push(id, extracted_asset)
+      AsBindGroupError(_) => ()
     }
   }
   extracted_assets.modified.clear()

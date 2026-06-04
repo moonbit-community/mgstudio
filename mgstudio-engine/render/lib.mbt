@@ -1497,15 +1497,17 @@ pub fn host_gpu_draw_mesh3d(
 pub fn host_gpu_draw_motion_blur(
   scene_texture_id~ : Int,
   velocity_texture_id~ : Int,
+) -> Unit {
+  @renderer.draw_motion_blur(scene_texture_id~, velocity_texture_id~)
+}
+
+///|
+pub fn host_gpu_prepare_motion_blur(
+  velocity_texture_id~ : Int,
   shutter_angle~ : Float,
   samples~ : Int,
 ) -> Unit {
-  @renderer.draw_motion_blur(
-    scene_texture_id~,
-    velocity_texture_id~,
-    shutter_angle~,
-    samples~,
-  )
+  @renderer.prepare_motion_blur(velocity_texture_id~, shutter_angle~, samples~)
 }
 
 ///|

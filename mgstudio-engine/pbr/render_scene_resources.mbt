@@ -93,7 +93,7 @@ fn render3d_motion_blur_targets_get_or_create(
     nearest=false,
     sample_count=safe_sample_count,
   )
-  let velocity_target_id = @render.host_gpu_create_render_target_rg16f(
+  let velocity_target_id = @render.host_gpu_create_motion_vector_prepass_target_rg16f(
     width~,
     height~,
     nearest=false,

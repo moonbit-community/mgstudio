@@ -888,18 +888,18 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
     atlas_assets,
   )
   match inside {
-    Ok(point) => {
+    SpritePixelSpacePoint::Inside(point) => {
       debug_inspect(point.x.to_double(), content="9")
       debug_inspect(point.y.to_double(), content="1")
     }
-    Err(_) => abort("expected inside point")
+    SpritePixelSpacePoint::Outside(_) => abort("expected inside point")
   }
   match outside {
-    Err(point) => {
+    SpritePixelSpacePoint::Outside(point) => {
       debug_inspect(point.x.to_double(), content="11")
       debug_inspect(point.y.to_double(), content="10")
     }
-    Ok(_) => abort("expected outside point")
+    SpritePixelSpacePoint::Inside(_) => abort("expected outside point")
   }
 }
 

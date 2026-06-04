@@ -17,11 +17,11 @@ fn test_prepare_render_asset(
   extracted : Int,
   _id : Int,
   previous : Int?,
-) -> Result[Int, PrepareAssetError] {
+) -> Int raise PrepareAssetError {
   if extracted < 0 {
-    return Err(RetryNextUpdate("not ready"))
+    raise RetryNextUpdate("not ready")
   }
-  Ok(extracted + previous.unwrap_or(0))
+  extracted + previous.unwrap_or(0)
 }
 
 ///|
@@ -132,11 +132,11 @@ fn test_prepare_erased_render_asset(
   extracted : Int,
   _id : UntypedRenderAssetId,
   previous : Int?,
-) -> Result[Int, ErasedPrepareAssetError] {
+) -> Int raise ErasedPrepareAssetError {
   if extracted < 0 {
-    return Err(RetryNextUpdate("not ready"))
+    raise RetryNextUpdate("not ready")
   }
-  Ok(extracted + previous.unwrap_or(0))
+  extracted + previous.unwrap_or(0)
 }
 
 ///|

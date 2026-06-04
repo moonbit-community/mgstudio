@@ -50,6 +50,21 @@ pub fn host_gpu_create_render_target_rg16f(
 }
 
 ///|
+pub fn host_gpu_create_motion_vector_prepass_target_rg16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  sample_count? : Int = 1,
+) -> Int {
+  @renderer.create_motion_vector_prepass_target_rg16f(
+    width~,
+    height~,
+    nearest~,
+    sample_count~,
+  )
+}
+
+///|
 pub fn host_gpu_create_depth_prepass_target(
   width~ : Int,
   height~ : Int,

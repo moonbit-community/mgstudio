@@ -959,16 +959,17 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
   self.world.begin_query_iteration()
-  let result : Result[Unit, EcsError] = try? ({
+  try {
     let iter = self.iter()
     while iter.fetch_next() is Some((entity, item)) {
       f(entity, item)
     }
-  })
-  self.world.end_query_iteration()
-  match result {
-    Ok(_) => ()
-    Err(err) => raise err
+    self.world.end_query_iteration()
+  } catch {
+    err => {
+      self.world.end_query_iteration()
+      raise err
+    }
   }
 }
 

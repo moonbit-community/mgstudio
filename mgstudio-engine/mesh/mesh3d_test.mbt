@@ -328,7 +328,7 @@ test "mesh: specialized vertex buffer layout remaps shader locations" {
       ],
     ),
   )
-  let specialized = layout.get_layout([
+  let vertex_layout = layout.get_layout([
     VertexAttributeDescriptor::new(
       shader_location=7,
       id=MeshVertexAttribute::uv_0().id(),
@@ -339,18 +339,15 @@ test "mesh: specialized vertex buffer layout remaps shader locations" {
       id=MeshVertexAttribute::position().id(),
       name="Vertex_Position",
     ),
-  ])
-  match specialized {
-    Ok(vertex_layout) => {
-      debug_inspect(vertex_layout.array_stride, content="32")
-      debug_inspect(vertex_layout.attributes.length(), content="2")
-      debug_inspect(vertex_layout.attributes[0].offset, content="24")
-      debug_inspect(vertex_layout.attributes[0].shader_location, content="7")
-      debug_inspect(vertex_layout.attributes[1].offset, content="0")
-      debug_inspect(vertex_layout.attributes[1].shader_location, content="3")
-    }
-    Err(_) => abort("expected specialized layout")
+  ]) catch {
+    _ => abort("expected specialized layout")
   }
+  debug_inspect(vertex_layout.array_stride, content="32")
+  debug_inspect(vertex_layout.attributes.length(), content="2")
+  debug_inspect(vertex_layout.attributes[0].offset, content="24")
+  debug_inspect(vertex_layout.attributes[0].shader_location, content="7")
+  debug_inspect(vertex_layout.attributes[1].offset, content="0")
+  debug_inspect(vertex_layout.attributes[1].shader_location, content="3")
 }
 
 ///|
@@ -369,21 +366,23 @@ test "mesh: specialized vertex buffer layout reports missing attributes" {
       ],
     ),
   )
-  match
-    layout.get_layout([
-      VertexAttributeDescriptor::new(
-        shader_location=2,
-        id=MeshVertexAttribute::uv_0().id(),
-        name="Vertex_Uv",
-      ),
-    ]) {
-    Ok(_) => abort("expected missing attribute")
-    Err(error) => {
-      debug_inspect(error.id.value(), content="2")
-      debug_inspect(error.name, content="\"Vertex_Uv\"")
-      debug_inspect(error.pipeline_type is None, content="true")
-    }
+  let missing_attribute = try {
+    ignore(
+      layout.get_layout([
+        VertexAttributeDescriptor::new(
+          shader_location=2,
+          id=MeshVertexAttribute::uv_0().id(),
+          name="Vertex_Uv",
+        ),
+      ]),
+    )
+    abort("expected missing attribute")
+  } catch {
+    error => error
   }
+  debug_inspect(missing_attribute.id().value(), content="2")
+  debug_inspect(missing_attribute.name(), content="\"Vertex_Uv\"")
+  debug_inspect(missing_attribute.pipeline_type() is None, content="true")
 }
 
 ///|

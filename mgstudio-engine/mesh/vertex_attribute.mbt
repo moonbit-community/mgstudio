@@ -345,10 +345,8 @@ pub fn VertexAttributeDescriptor::new(
 }
 
 ///|
-pub struct MissingVertexAttributeError {
-  id : MeshVertexAttributeId
-  name : String
-  pipeline_type : String?
+pub suberror MissingVertexAttributeError {
+  MissingVertexAttribute(MeshVertexAttributeId, String, String?)
 }
 
 ///|
@@ -357,28 +355,34 @@ pub fn MissingVertexAttributeError::new(
   name~ : String,
   pipeline_type? : String? = None,
 ) -> MissingVertexAttributeError {
-  MissingVertexAttributeError::{ id, name, pipeline_type }
+  MissingVertexAttributeError::MissingVertexAttribute(id, name, pipeline_type)
 }
 
 ///|
 pub fn MissingVertexAttributeError::id(
   self : MissingVertexAttributeError,
 ) -> MeshVertexAttributeId {
-  self.id
+  match self {
+    MissingVertexAttribute(id, _, _) => id
+  }
 }
 
 ///|
 pub fn MissingVertexAttributeError::name(
   self : MissingVertexAttributeError,
 ) -> String {
-  self.name
+  match self {
+    MissingVertexAttribute(_, name, _) => name
+  }
 }
 
 ///|
 pub fn MissingVertexAttributeError::pipeline_type(
   self : MissingVertexAttributeError,
 ) -> String? {
-  self.pipeline_type
+  match self {
+    MissingVertexAttribute(_, _, pipeline_type) => pipeline_type
+  }
 }
 
 ///|
@@ -386,7 +390,11 @@ pub fn MissingVertexAttributeError::with_pipeline_type(
   self : MissingVertexAttributeError,
   pipeline_type : String?,
 ) -> MissingVertexAttributeError {
-  MissingVertexAttributeError::{ ..self, pipeline_type, }
+  MissingVertexAttributeError::MissingVertexAttribute(
+    self.id(),
+    self.name(),
+    pipeline_type,
+  )
 }
 
 ///|
@@ -447,7 +455,7 @@ fn mesh_vertex_buffer_attribute_index(
 pub fn MeshVertexBufferLayout::get_layout(
   self : MeshVertexBufferLayout,
   attribute_descriptors : Array[VertexAttributeDescriptor],
-) -> Result[VertexBufferLayout, MissingVertexAttributeError] {
+) -> VertexBufferLayout raise MissingVertexAttributeError {
   let attributes : Array[VertexAttribute] = []
   for descriptor in attribute_descriptors {
     match
@@ -461,18 +469,17 @@ pub fn MeshVertexBufferLayout::get_layout(
         })
       }
       None =>
-        return Err(MissingVertexAttributeError::{
-          id: descriptor.id,
-          name: descriptor.name,
-          pipeline_type: None,
-        })
+        raise MissingVertexAttributeError::new(
+          id=descriptor.id,
+          name=descriptor.name,
+        )
     }
   }
-  Ok(VertexBufferLayout::{
+  VertexBufferLayout::{
     array_stride: self.layout.array_stride,
     step_mode: self.layout.step_mode,
     attributes,
-  })
+  }
 }
 
 ///|

@@ -31,9 +31,11 @@ fn visibility_bounds_test_skinned_mesh() -> @mesh.Mesh {
       Some([@math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F)]),
     ),
   )
-  match mesh.generate_skinned_mesh_bounds() {
-    Ok(_) => mesh
-    Err(_) => abort("expected generated skinned mesh bounds")
+  try {
+    mesh.generate_skinned_mesh_bounds()
+    mesh
+  } catch {
+    _ => abort("expected generated skinned mesh bounds")
   }
 }
 

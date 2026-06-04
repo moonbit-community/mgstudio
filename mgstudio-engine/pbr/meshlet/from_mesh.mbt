@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/from_mesh.rs`.
 
 ///|
-pub(all) enum MeshToMeshletMeshConversionError {
+pub(all) suberror MeshToMeshletMeshConversionError {
   RuntimeUnavailable
   ProcessorError(String)
   WrongMeshPrimitiveTopology
@@ -293,43 +293,35 @@ fn meshlet_mesh_has_exact_required_attributes(
 ///|
 pub fn meshlet_extract_mesh_input(
   mesh : @mesh.Mesh,
-) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError] {
+) -> MeshletMeshInputData raise MeshToMeshletMeshConversionError {
   guard mesh.primitive_topology()
     is Some(@mesh.Mesh3dPrimitiveTopology::TriangleList) else {
-    return Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
+    raise MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology
   }
   let attributes = mesh.attributes()
   if !meshlet_mesh_has_exact_required_attributes(attributes) {
-    return Err(
-      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh_vertex_attribute_names(attributes),
-      ),
+    raise MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+      meshlet_mesh_vertex_attribute_names(attributes),
     )
   }
   guard mesh.indices() is Some(indices) else {
-    return Err(MeshToMeshletMeshConversionError::MeshMissingIndices)
+    raise MeshToMeshletMeshConversionError::MeshMissingIndices
   }
   guard attributes[0].values()
     is @mesh.VertexAttributeValues::Float32x3(positions) else {
-    return Err(
-      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh_vertex_attribute_names(attributes),
-      ),
+    raise MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+      meshlet_mesh_vertex_attribute_names(attributes),
     )
   }
   guard attributes[1].values()
     is @mesh.VertexAttributeValues::Float32x3(normals) else {
-    return Err(
-      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh_vertex_attribute_names(attributes),
-      ),
+    raise MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+      meshlet_mesh_vertex_attribute_names(attributes),
     )
   }
   guard attributes[2].values() is @mesh.VertexAttributeValues::Float32x2(uvs) else {
-    return Err(
-      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh_vertex_attribute_names(attributes),
-      ),
+    raise MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+      meshlet_mesh_vertex_attribute_names(attributes),
     )
   }
   let vertices : Array[MeshletSourceVertex] = []
@@ -342,7 +334,7 @@ pub fn meshlet_extract_mesh_input(
       ),
     )
   }
-  Ok(MeshletMeshInputData::new(vertices~, indices~))
+  MeshletMeshInputData::new(vertices~, indices~)
 }
 
 ///|
@@ -588,13 +580,10 @@ pub fn meshlet_conversion_error_for_counts(
 pub fn MeshletMesh::from_mesh(
   mesh : @mesh.Mesh,
   vertex_position_quantization_factor? : Int = MESHLET_DEFAULT_VERTEX_POSITION_QUANTIZATION_FACTOR,
-) -> Result[MeshletMesh, MeshToMeshletMeshConversionError] {
-  let input = match meshlet_extract_mesh_input(mesh) {
-    Ok(input) => input
-    Err(error) => return Err(error)
-  }
+) -> MeshletMesh raise MeshToMeshletMeshConversionError {
+  let input = meshlet_extract_mesh_input(mesh)
   if !meshlet_processor_available() {
-    return Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+    raise MeshToMeshletMeshConversionError::RuntimeUnavailable
   }
   meshlet_build_from_mesh_with_processor(
     input, vertex_position_quantization_factor,
@@ -2142,11 +2131,11 @@ fn meshlet_group_graph_signature(graph : MeshletPartitionGraph) -> Int {
 ///|
 fn meshlet_metis_partition_triangles(
   graph : MeshletMetisPartitionGraph,
-) -> Result[Array[Int], MeshToMeshletMeshConversionError] {
+) -> Array[Int] raise MeshToMeshletMeshConversionError {
   ignore(meshlet_metis_graph_signature(graph))
   if graph.partition_count <= 1 {
     let triangle_count = graph.xadj.length() - 1
-    return Ok(Array::make(triangle_count, 0))
+    return Array::make(triangle_count, 0)
   }
   let csr = @metis.CsrGraph::new(
     graph.xadj.length() - 1,
@@ -2155,8 +2144,8 @@ fn meshlet_metis_partition_triangles(
     adjwgt=meshlet_int_array_to_fixed(graph.adjwgt),
   ) catch {
     _ =>
-      return Err(
-        MeshToMeshletMeshConversionError::ProcessorError("METIS graph error"),
+      raise MeshToMeshletMeshConversionError::ProcessorError(
+        "METIS graph error",
       )
   }
   let options = @metis.Options::default()
@@ -2165,23 +2154,21 @@ fn meshlet_metis_partition_triangles(
     .set_imbalance_factor(graph.imbalance_factor)
   let result = @metis.part_graph_recursive(csr, graph.partition_count, options~) catch {
     _ =>
-      return Err(
-        MeshToMeshletMeshConversionError::ProcessorError(
-          "METIS partition error",
-        ),
+      raise MeshToMeshletMeshConversionError::ProcessorError(
+        "METIS partition error",
       )
   }
-  Ok(meshlet_fixed_int_to_array(result.part))
+  meshlet_fixed_int_to_array(result.part)
 }
 
 ///|
 fn meshlet_metis_partition_meshlets(
   graph : MeshletPartitionGraph,
-) -> Result[Array[Int], MeshToMeshletMeshConversionError] {
+) -> Array[Int] raise MeshToMeshletMeshConversionError {
   ignore(meshlet_group_graph_signature(graph))
   if graph.partition_count <= 1 {
     let meshlet_count = graph.xadj.length() - 1
-    return Ok(Array::make(meshlet_count, 0))
+    return Array::make(meshlet_count, 0)
   }
   let csr = @metis.CsrGraph::new(
     graph.xadj.length() - 1,
@@ -2190,8 +2177,8 @@ fn meshlet_metis_partition_meshlets(
     adjwgt=meshlet_int_array_to_fixed(graph.adjwgt),
   ) catch {
     _ =>
-      return Err(
-        MeshToMeshletMeshConversionError::ProcessorError("METIS graph error"),
+      raise MeshToMeshletMeshConversionError::ProcessorError(
+        "METIS graph error",
       )
   }
   let options = @metis.Options::default()
@@ -2200,13 +2187,11 @@ fn meshlet_metis_partition_meshlets(
     .set_imbalance_factor(graph.imbalance_factor)
   let result = @metis.part_graph_recursive(csr, graph.partition_count, options~) catch {
     _ =>
-      return Err(
-        MeshToMeshletMeshConversionError::ProcessorError(
-          "METIS partition error",
-        ),
+      raise MeshToMeshletMeshConversionError::ProcessorError(
+        "METIS partition error",
       )
   }
-  Ok(meshlet_fixed_int_to_array(result.part))
+  meshlet_fixed_int_to_array(result.part)
 }
 
 ///|
@@ -2214,7 +2199,7 @@ fn meshlet_meshopt_build_meshlets(
   input : MeshletMeshInputData,
   indices_per_partition : Array[Array[Int]],
   prev_lod_data : MeshletTempLodData?,
-) -> Result[MeshletGeneratedMeshlets, MeshToMeshletMeshConversionError] {
+) -> MeshletGeneratedMeshlets raise MeshToMeshletMeshConversionError {
   let positions = meshlet_source_positions_fixed(input.vertices)
   let meshlets = MeshletBuildMeshlets::new(meshlets=[], vertices=[], triangles=[])
   let cull_data : Array[MeshletTempCullData] = []
@@ -2223,7 +2208,7 @@ fn meshlet_meshopt_build_meshlets(
       continue
     }
     guard meshlet_uint_indices_fixed(partition_indices) is Some(indices) else {
-      return Err(meshlet_meshopt_error("meshopt indices must be non-negative"))
+      raise meshlet_meshopt_error("meshopt indices must be non-negative")
     }
     let built = @meshopt.build_meshlets(
       indices,
@@ -2234,7 +2219,7 @@ fn meshlet_meshopt_build_meshlets(
       128,
       cone_weight=0.0F,
     ) catch {
-      _ => return Err(meshlet_meshopt_error("meshopt build_meshlets error"))
+      _ => raise meshlet_meshopt_error("meshopt build_meshlets error")
     }
     for meshlet_index in 0..<built.meshlet_count {
       let base = meshlet_index * 4
@@ -2255,7 +2240,7 @@ fn meshlet_meshopt_build_meshlets(
       @meshopt.optimize_meshlet(
         meshlet_vertices, meshlet_triangles, triangle_count, vertex_count,
       ) catch {
-        _ => return Err(meshlet_meshopt_error("meshopt optimize_meshlet error"))
+        _ => raise meshlet_meshopt_error("meshopt optimize_meshlet error")
       }
       let bounds = @meshopt.compute_meshlet_bounds(
         meshlet_vertices,
@@ -2265,10 +2250,7 @@ fn meshlet_meshopt_build_meshlets(
         input.vertices.length(),
         12,
       ) catch {
-        _ =>
-          return Err(
-            meshlet_meshopt_error("meshopt compute_meshlet_bounds error"),
-          )
+        _ => raise meshlet_meshopt_error("meshopt compute_meshlet_bounds error")
       }
       let start_vertex = meshlets.vertices.length()
       let start_triangle = meshlets.triangles.length()
@@ -2306,7 +2288,7 @@ fn meshlet_meshopt_build_meshlets(
       })
     }
   }
-  Ok(MeshletGeneratedMeshlets::{ meshlets, cull_data })
+  MeshletGeneratedMeshlets::{ meshlets, cull_data }
 }
 
 ///|
@@ -2315,14 +2297,11 @@ fn meshlet_compute_meshlets_with_processor(
   indices : Array[Int],
   position_only_vertex_remap : Array[Int],
   prev_lod_data : MeshletTempLodData?,
-) -> Result[MeshletGeneratedMeshlets, MeshToMeshletMeshConversionError] {
+) -> MeshletGeneratedMeshlets raise MeshToMeshletMeshConversionError {
   let graph = meshlet_build_triangle_partition_graph(
     indices, position_only_vertex_remap,
   )
-  let partition_per_triangle = match meshlet_metis_partition_triangles(graph) {
-    Ok(partition_per_triangle) => partition_per_triangle
-    Err(error) => return Err(error)
-  }
+  let partition_per_triangle = meshlet_metis_partition_triangles(graph)
   let indices_per_partition = meshlet_collect_indices_per_partition(
     indices,
     partition_per_triangle,
@@ -2336,11 +2315,9 @@ fn meshlet_meshopt_simplify_indices(
   group_indices : Array[Int],
   input : MeshletMeshInputData,
   vertex_locks : Array[Bool],
-) -> Result[MeshletSimplifiedIndices?, MeshToMeshletMeshConversionError] {
+) -> MeshletSimplifiedIndices? raise MeshToMeshletMeshConversionError {
   guard meshlet_uint_indices_fixed(group_indices) is Some(indices) else {
-    return Err(
-      meshlet_meshopt_error("meshopt simplify indices must be non-negative"),
-    )
+    raise meshlet_meshopt_error("meshopt simplify indices must be non-negative")
   }
   let positions = meshlet_source_positions_fixed(input.vertices)
   let normals = meshlet_source_normals_fixed(input.vertices)
@@ -2367,20 +2344,12 @@ fn meshlet_meshopt_simplify_indices(
     3.4028235e38F,
     options=@meshopt.SimplifyOptions::new(sparse=true, error_absolute=true),
   ) catch {
-    _ =>
-      return Err(
-        meshlet_meshopt_error("meshopt simplify_with_attributes error"),
-      )
+    _ => raise meshlet_meshopt_error("meshopt simplify_with_attributes error")
   }
-  Ok(
-    Some(MeshletSimplifiedIndices::{
-      indices: meshlet_fixed_uint_to_int_array(
-        result.indices,
-        result.index_count,
-      ),
-      error: result.error,
-    }),
-  )
+  Some(MeshletSimplifiedIndices::{
+    indices: meshlet_fixed_uint_to_int_array(result.indices, result.index_count),
+    error: result.error,
+  })
 }
 
 ///|
@@ -2391,65 +2360,55 @@ fn meshlet_simplify_group_with_processor(
   input : MeshletMeshInputData,
   position_only_vertex_remap : Array[Int],
   vertex_locks : Array[Bool],
-) -> Result[MeshletLodSimplificationResult, MeshToMeshletMeshConversionError] {
+) -> MeshletLodSimplificationResult raise MeshToMeshletMeshConversionError {
   if group.meshlets.length() == 1 {
-    return Ok(MeshletLodStuck(group))
+    return MeshletLodStuck(group)
   }
   let group_indices = meshlet_collect_group_indices(group, meshlets)
-  let simplified_or_error = match
-    meshlet_meshopt_simplify_indices(group_indices, input, vertex_locks) {
-    Ok(simplified) => simplified
-    Err(error) => return Err(error)
-  }
+  let simplified_or_error = meshlet_meshopt_simplify_indices(
+    group_indices, input, vertex_locks,
+  )
   let simplified = match simplified_or_error {
     Some(simplified) => simplified
-    None => return Ok(MeshletLodStuck(group))
+    None => return MeshletLodStuck(group)
   }
   if !meshlet_simplified_group_accepted(
       group_indices.length(),
       simplified.indices.length(),
     ) {
-    return Ok(MeshletLodStuck(group))
+    return MeshletLodStuck(group)
   }
   let mut group_error = simplified.error
   for meshlet_id in group.meshlets {
     group_error = group_error.max(cull_data[meshlet_id].error)
   }
   let next_group = MeshletTempGroup::{ ..group, parent_error: group_error }
-  let generated = match
-    meshlet_compute_meshlets_with_processor(
-      input,
-      simplified.indices,
-      position_only_vertex_remap,
-      Some(MeshletTempLodData::{
-        lod_bounds: next_group.lod_bounds,
-        parent_error: next_group.parent_error,
-      }),
-    ) {
-    Ok(generated) => generated
-    Err(error) => return Err(error)
-  }
-  Ok(MeshletLodSimplified(next_group, generated.meshlets, generated.cull_data))
+  let generated = meshlet_compute_meshlets_with_processor(
+    input,
+    simplified.indices,
+    position_only_vertex_remap,
+    Some(MeshletTempLodData::{
+      lod_bounds: next_group.lod_bounds,
+      parent_error: next_group.parent_error,
+    }),
+  )
+  MeshletLodSimplified(next_group, generated.meshlets, generated.cull_data)
 }
 
 ///|
 fn meshlet_build_from_mesh_with_processor(
   input : MeshletMeshInputData,
   vertex_position_quantization_factor : Int,
-) -> Result[MeshletMesh, MeshToMeshletMeshConversionError] {
+) -> MeshletMesh raise MeshToMeshletMeshConversionError {
   let position_only_vertex_remap = meshlet_generate_position_remap(
     input.vertices,
   )
-  let generated = match
-    meshlet_compute_meshlets_with_processor(
-      input,
-      input.indices,
-      position_only_vertex_remap,
-      None,
-    ) {
-    Ok(generated) => generated
-    Err(error) => return Err(error)
-  }
+  let generated = meshlet_compute_meshlets_with_processor(
+    input,
+    input.indices,
+    position_only_vertex_remap,
+    None,
+  )
   let meshlets = generated.meshlets
   let cull_data = generated.cull_data
   let vertex_locks : Array[Bool] = []
@@ -2470,10 +2429,7 @@ fn meshlet_build_from_mesh_with_processor(
     let graph = meshlet_build_group_partition_graph(
       simplification_queue, connected_meshlets_per_meshlet,
     )
-    let partition_per_meshlet = match meshlet_metis_partition_meshlets(graph) {
-      Ok(partition_per_meshlet) => partition_per_meshlet
-      Err(error) => return Err(error)
-    }
+    let partition_per_meshlet = meshlet_metis_partition_meshlets(graph)
     let groups = meshlet_groups_from_partitions(
       simplification_queue,
       cull_data,
@@ -2485,13 +2441,9 @@ fn meshlet_build_from_mesh_with_processor(
     )
     let simplified : Array[MeshletLodSimplificationResult] = []
     for group in groups {
-      let result = match
-        meshlet_simplify_group_with_processor(
-          group, meshlets, cull_data, input, position_only_vertex_remap, vertex_locks,
-        ) {
-        Ok(result) => result
-        Err(error) => return Err(error)
-      }
+      let result = meshlet_simplify_group_with_processor(
+        group, meshlets, cull_data, input, position_only_vertex_remap, vertex_locks,
+      )
       simplified.push(result)
     }
     let result = meshlet_lod_iteration_apply_results(
@@ -2504,11 +2456,5 @@ fn meshlet_build_from_mesh_with_processor(
   }
   ignore(meshlet_lod_append_final_stuck_lod(all_groups, stuck, bvh))
   let built = bvh.build(meshlets, all_groups, cull_data)
-  Ok(
-    meshlet_finalize_bvh_build(
-      input,
-      built,
-      vertex_position_quantization_factor~,
-    ),
-  )
+  meshlet_finalize_bvh_build(input, built, vertex_position_quantization_factor~)
 }

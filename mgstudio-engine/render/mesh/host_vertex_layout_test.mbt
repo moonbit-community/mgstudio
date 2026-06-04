@@ -152,8 +152,7 @@ test "render mesh host vertex layout preserves skinned semantics with renderer o
     .contains(@asset_mesh.MeshVertexAttribute::joint_index().id()),
     content="true",
   )
-  match
-    host_layout
+  let prepass_layout = host_layout
     .layout()
     .get_layout([
       host_vertex_layout_test_descriptor(
@@ -172,39 +171,34 @@ test "render mesh host vertex layout preserves skinned semantics with renderer o
         @asset_mesh.MeshVertexAttribute::joint_weight(),
         6,
       ),
-    ]) {
-    Ok(prepass_layout) => {
-      let expected_prepass_layout = @asset_mesh.VertexBufferLayout::new(
-        array_stride=80,
-        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @asset_mesh.VertexAttribute::new(
-            offset=0,
-            format=@asset_mesh.MeshVertexFormat::Float32x3,
-            shader_location=0,
-          ),
-          @asset_mesh.VertexAttribute::new(
-            offset=24,
-            format=@asset_mesh.MeshVertexFormat::Float32x2,
-            shader_location=1,
-          ),
-          @asset_mesh.VertexAttribute::new(
-            offset=48,
-            format=@asset_mesh.MeshVertexFormat::Uint32x4,
-            shader_location=5,
-          ),
-          @asset_mesh.VertexAttribute::new(
-            offset=64,
-            format=@asset_mesh.MeshVertexFormat::Float32x4,
-            shader_location=6,
-          ),
-        ],
-      )
-      debug_inspect(
-        prepass_layout.equal(expected_prepass_layout),
-        content="true",
-      )
+    ]) catch {
+      _ => abort("expected renderer host prepass layout")
     }
-    Err(_) => abort("expected renderer host prepass layout")
-  }
+  let expected_prepass_layout = @asset_mesh.VertexBufferLayout::new(
+    array_stride=80,
+    step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+    attributes=[
+      @asset_mesh.VertexAttribute::new(
+        offset=0,
+        format=@asset_mesh.MeshVertexFormat::Float32x3,
+        shader_location=0,
+      ),
+      @asset_mesh.VertexAttribute::new(
+        offset=24,
+        format=@asset_mesh.MeshVertexFormat::Float32x2,
+        shader_location=1,
+      ),
+      @asset_mesh.VertexAttribute::new(
+        offset=48,
+        format=@asset_mesh.MeshVertexFormat::Uint32x4,
+        shader_location=5,
+      ),
+      @asset_mesh.VertexAttribute::new(
+        offset=64,
+        format=@asset_mesh.MeshVertexFormat::Float32x4,
+        shader_location=6,
+      ),
+    ],
+  )
+  debug_inspect(prepass_layout.equal(expected_prepass_layout), content="true")
 }
