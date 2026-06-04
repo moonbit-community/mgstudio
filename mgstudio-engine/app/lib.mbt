@@ -38,28 +38,28 @@ pub(open) trait Plugin {
 }
 
 ///|
-impl Plugin with name(self) {
+impl Plugin with fn name(self) {
   ignore(self)
   "mgstudio.app.Plugin"
 }
 
 ///|
-impl Plugin with is_unique(_self) {
+impl Plugin with fn is_unique(_self) {
   true
 }
 
 ///|
-impl Plugin with ready(_self, _app) {
+impl Plugin with fn ready(_self, _app) {
   true
 }
 
 ///|
-impl Plugin with finish(_self, app) {
+impl Plugin with fn finish(_self, app) {
   app
 }
 
 ///|
-impl Plugin with cleanup(_self, app) {
+impl Plugin with fn cleanup(_self, app) {
   app
 }
 
@@ -90,7 +90,7 @@ pub(open) trait PluginGroup {
 pub struct NoopPluginGroup {}
 
 ///|
-impl PluginGroup with name(self) {
+impl PluginGroup with fn name(self) {
   ignore(self)
   "mgstudio.app.PluginGroup"
 }
@@ -443,17 +443,17 @@ pub fn[P : Plugin] PluginGroupBuilder::try_enable(
 }
 
 ///|
-pub impl PluginGroup for PluginGroupBuilder[@ecs.World] with build(self) {
+pub impl PluginGroup for PluginGroupBuilder[@ecs.World] with fn build(self) {
   self
 }
 
 ///|
-pub impl PluginGroup for PluginGroupBuilder[@ecs.World] with name(self) {
+pub impl PluginGroup for PluginGroupBuilder[@ecs.World] with fn name(self) {
   self.group_name
 }
 
 ///|
-pub impl Plugin for PluginGroupBuilder[@ecs.World] with name(self) {
+pub impl Plugin for PluginGroupBuilder[@ecs.World] with fn name(self) {
   if self.group_name == "" {
     "mgstudio.app.PluginGroupBuilder"
   } else {
@@ -462,12 +462,12 @@ pub impl Plugin for PluginGroupBuilder[@ecs.World] with name(self) {
 }
 
 ///|
-pub impl Plugin for PluginGroupBuilder[@ecs.World] with is_unique(_self) {
+pub impl Plugin for PluginGroupBuilder[@ecs.World] with fn is_unique(_self) {
   false
 }
 
 ///|
-pub impl Plugin for PluginGroupBuilder[@ecs.World] with build(self, app) {
+pub impl Plugin for PluginGroupBuilder[@ecs.World] with fn build(self, app) {
   app.add_plugin_entries(self.build_entries())
 }
 
@@ -477,12 +477,12 @@ pub fn NoopPluginGroup::NoopPluginGroup() -> NoopPluginGroup {
 }
 
 ///|
-pub impl PluginGroup for NoopPluginGroup with name(_self) {
+pub impl PluginGroup for NoopPluginGroup with fn name(_self) {
   "mgstudio.app.NoopPluginGroup"
 }
 
 ///|
-pub impl PluginGroup for NoopPluginGroup with build(_self) {
+pub impl PluginGroup for NoopPluginGroup with fn build(_self) {
   let builder : PluginGroupBuilder[@ecs.World] = PluginGroupBuilder::start_named(
     "mgstudio.app.NoopPluginGroup",
   )
@@ -490,12 +490,12 @@ pub impl PluginGroup for NoopPluginGroup with build(_self) {
 }
 
 ///|
-pub impl Plugin for NoopPluginGroup with name(_self) {
+pub impl Plugin for NoopPluginGroup with fn name(_self) {
   "mgstudio.app.NoopPluginGroup"
 }
 
 ///|
-pub impl Plugin for NoopPluginGroup with build(_self, app) {
+pub impl Plugin for NoopPluginGroup with fn build(_self, app) {
   app
 }
 
@@ -665,8 +665,19 @@ pub(open) trait SystemParam {
 }
 
 ///|
-impl SystemParam with access(_world) {
+impl SystemParam with fn access(_world) {
   SystemAccess::new()
+}
+
+///|
+fn system_access_from_param_accesses(
+  param_accesses : Array[SystemAccess],
+) -> SystemAccess {
+  let access = SystemAccess::new()
+  for param_access in param_accesses {
+    system_access_merge_validated(access, param_access, @utils.IntBitSet::new())
+  }
+  access
 }
 
 ///|
@@ -1398,6 +1409,254 @@ pub fn[
 
 ///|
 #callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] system_config_param5(
+  system : (P1, P2, P3, P4, P5) -> Unit,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    system_param5(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] fallible_system_config_param5(
+  system : (P1, P2, P3, P4, P5) -> Unit raise,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fallible_system_param5(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] system_config_param6(
+  system : (P1, P2, P3, P4, P5, P6) -> Unit,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    system_param6(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] fallible_system_config_param6(
+  system : (P1, P2, P3, P4, P5, P6) -> Unit raise,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fallible_system_param6(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] system_config_param7(
+  system : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    system_param7(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+        P7::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] fallible_system_config_param7(
+  system : (P1, P2, P3, P4, P5, P6, P7) -> Unit raise,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fallible_system_param7(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+        P7::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] system_config_param8(
+  system : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    system_param8(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+        P7::access(world),
+        P8::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] fallible_system_config_param8(
+  system : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fallible_system_param8(system),
+    fn(world : @ecs.World) {
+      system_access_from_param_accesses([
+        P1::access(world),
+        P2::access(world),
+        P3::access(world),
+        P4::access(world),
+        P5::access(world),
+        P6::access(world),
+        P7::access(world),
+        P8::access(world),
+      ])
+    },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
 pub fn[W] fallible_system(
   system : FallibleSystemFn[W],
   loc~ : SourceLoc,
@@ -1793,6 +2052,234 @@ pub fn[
 }
 
 ///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] system_param7(
+  system : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> SystemFn[W] {
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
+  let state7 = system_param_state_slot_new()
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
+    guard p1_opt is Some(p1) else { return }
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
+    guard p2_opt is Some(p2) else { return }
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
+    guard p3_opt is Some(p3) else { return }
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
+    guard p4_opt is Some(p4) else { return }
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
+    guard p5_opt is Some(p5) else { return }
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
+    guard p6_opt is Some(p6) else { return }
+    let param_state7 = state7.get_or_init(world)
+    let p7_opt : P7? = system_param_get_or_record(param_state7)
+    guard p7_opt is Some(p7) else { return }
+    system(p1, p2, p3, p4, p5, p6, p7)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
+    P7::store(p7, param_state7)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] fallible_system_param7(
+  system : (P1, P2, P3, P4, P5, P6, P7) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
+  let state7 = system_param_state_slot_new()
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
+    guard p1_opt is Some(p1) else { return }
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
+    guard p2_opt is Some(p2) else { return }
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
+    guard p3_opt is Some(p3) else { return }
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
+    guard p4_opt is Some(p4) else { return }
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
+    guard p5_opt is Some(p5) else { return }
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
+    guard p6_opt is Some(p6) else { return }
+    let param_state7 = state7.get_or_init(world)
+    let p7_opt : P7? = system_param_get_or_record(param_state7)
+    guard p7_opt is Some(p7) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3, p4, p5, p6, p7))
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
+    P7::store(p7, param_state7)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] system_param8(
+  system : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> SystemFn[W] {
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
+  let state7 = system_param_state_slot_new()
+  let state8 = system_param_state_slot_new()
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
+    guard p1_opt is Some(p1) else { return }
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
+    guard p2_opt is Some(p2) else { return }
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
+    guard p3_opt is Some(p3) else { return }
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
+    guard p4_opt is Some(p4) else { return }
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
+    guard p5_opt is Some(p5) else { return }
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
+    guard p6_opt is Some(p6) else { return }
+    let param_state7 = state7.get_or_init(world)
+    let p7_opt : P7? = system_param_get_or_record(param_state7)
+    guard p7_opt is Some(p7) else { return }
+    let param_state8 = state8.get_or_init(world)
+    let p8_opt : P8? = system_param_get_or_record(param_state8)
+    guard p8_opt is Some(p8) else { return }
+    system(p1, p2, p3, p4, p5, p6, p7, p8)
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
+    P7::store(p7, param_state7)
+    P8::store(p8, param_state8)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] fallible_system_param8(
+  system : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = system_param_state_slot_new()
+  let state2 = system_param_state_slot_new()
+  let state3 = system_param_state_slot_new()
+  let state4 = system_param_state_slot_new()
+  let state5 = system_param_state_slot_new()
+  let state6 = system_param_state_slot_new()
+  let state7 = system_param_state_slot_new()
+  let state8 = system_param_state_slot_new()
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    let param_state1 = state1.get_or_init(world)
+    let p1_opt : P1? = system_param_get_or_record(param_state1)
+    guard p1_opt is Some(p1) else { return }
+    let param_state2 = state2.get_or_init(world)
+    let p2_opt : P2? = system_param_get_or_record(param_state2)
+    guard p2_opt is Some(p2) else { return }
+    let param_state3 = state3.get_or_init(world)
+    let p3_opt : P3? = system_param_get_or_record(param_state3)
+    guard p3_opt is Some(p3) else { return }
+    let param_state4 = state4.get_or_init(world)
+    let p4_opt : P4? = system_param_get_or_record(param_state4)
+    guard p4_opt is Some(p4) else { return }
+    let param_state5 = state5.get_or_init(world)
+    let p5_opt : P5? = system_param_get_or_record(param_state5)
+    guard p5_opt is Some(p5) else { return }
+    let param_state6 = state6.get_or_init(world)
+    let p6_opt : P6? = system_param_get_or_record(param_state6)
+    guard p6_opt is Some(p6) else { return }
+    let param_state7 = state7.get_or_init(world)
+    let p7_opt : P7? = system_param_get_or_record(param_state7)
+    guard p7_opt is Some(p7) else { return }
+    let param_state8 = state8.get_or_init(world)
+    let p8_opt : P8? = system_param_get_or_record(param_state8)
+    guard p8_opt is Some(p8) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3, p4, p5, p6, p7, p8))
+    P1::store(p1, param_state1)
+    P2::store(p2, param_state2)
+    P3::store(p3, param_state3)
+    P4::store(p4, param_state4)
+    P5::store(p5, param_state5)
+    P6::store(p6, param_state6)
+    P7::store(p7, param_state7)
+    P8::store(p8, param_state8)
+  }
+}
+
+///|
 priv struct AppExecutionContextState {
   mut current_system_ticks : @core.SystemTicks?
   mut current_schedule_stage : ScheduleStage?
@@ -1866,21 +2353,21 @@ pub fn run_current_schedule_stage(
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with init_state(
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with fn init_state(
   world,
 ) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get(
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with fn get(
   _state,
 ) {
   @core.Message::reader(current_system_ticks())
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with store(
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with fn store(
   self,
   state,
 ) {
@@ -1888,21 +2375,21 @@ pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with store(
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with init_state(
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with fn init_state(
   world,
 ) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get(
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with fn get(
   _state,
 ) {
   @core.Message::writer(current_system_ticks().this_run)
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with store(
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with fn store(
   self,
   state,
 ) {
@@ -1910,12 +2397,12 @@ pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with store(
 }
 
 ///|
-pub impl[T : Resource] SystemParam for Res[T] with init_state(world) {
+pub impl[T : Resource] SystemParam for Res[T] with fn init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
+pub impl[T : Resource] SystemParam for Res[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
   Res::{
     value: world_resource_value_or_raise(world),
@@ -1925,36 +2412,36 @@ pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
 }
 
 ///|
-pub impl[T : Resource] SystemParam for Res[T] with store(self, state) {
+pub impl[T : Resource] SystemParam for Res[T] with fn store(self, state) {
   system_param_store_no_state(self, state)
 }
 
 ///|
-pub impl[T : Resource] SystemParam for Res[T] with access(_world) {
+pub impl[T : Resource] SystemParam for Res[T] with fn access(_world) {
   let access = SystemAccess::new()
   access.add_read_resource(T::resource().id())
   access
 }
 
 ///|
-pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
+pub impl[T : Resource] SystemParam for ResMut[T] with fn init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
+pub impl[T : Resource] SystemParam for ResMut[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
   let _resource : T = world_resource_value_or_raise(world)
   ResMut::{ world: Some(world), inner: world.get_resource_mut(T::resource()) }
 }
 
 ///|
-pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
+pub impl[T : Resource] SystemParam for ResMut[T] with fn store(self, state) {
   system_param_store_no_state(self, state)
 }
 
 ///|
-pub impl[T : Resource] SystemParam for ResMut[T] with access(_world) {
+pub impl[T : Resource] SystemParam for ResMut[T] with fn access(_world) {
   let access = SystemAccess::new()
   access.add_write_resource(T::resource().id())
   access
@@ -2156,7 +2643,7 @@ fn chain_group_config(
 pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
-) with chain(self) {
+) with fn chain(self) {
   let (first, second) = self
   chain_group_config([first, second])
 }
@@ -2166,7 +2653,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
-) with chain(self) {
+) with fn chain(self) {
   let (first, second, third) = self
   chain_group_config([first, second, third])
 }
@@ -2177,7 +2664,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
-) with chain(self) {
+) with fn chain(self) {
   let (first, second, third, fourth) = self
   chain_group_config([first, second, third, fourth])
 }
@@ -2189,7 +2676,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
-) with chain(self) {
+) with fn chain(self) {
   let (first, second, third, fourth, fifth) = self
   chain_group_config([first, second, third, fourth, fifth])
 }
@@ -2202,7 +2689,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
-) with chain(self) {
+) with fn chain(self) {
   let (first, second, third, fourth, fifth, sixth) = self
   chain_group_config([first, second, third, fourth, fifth, sixth])
 }
@@ -3569,6 +4056,92 @@ pub fn[
     self.sub_apps.main.schedule,
     Update,
     system_config_param4(update_system),
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] App::add_system_param5(
+  self : App[W],
+  update_system : (P1, P2, P3, P4, P5) -> Unit,
+) -> App[W] {
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Update,
+    system_config_param5(update_system),
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] App::add_system_param6(
+  self : App[W],
+  update_system : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> App[W] {
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Update,
+    system_config_param6(update_system),
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] App::add_system_param7(
+  self : App[W],
+  update_system : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> App[W] {
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Update,
+    system_config_param7(update_system),
+  )
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] App::add_system_param8(
+  self : App[W],
+  update_system : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> App[W] {
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Update,
+    system_config_param8(update_system),
   )
   self
 }

@@ -132,54 +132,54 @@ fn plugin_group_test_plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin1 with name(_self) {
+pub impl Plugin for PluginGroupTestPlugin1 with fn name(_self) {
   "mgstudio.app.test_plugin_1"
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin1 with build(_self, app) {
+pub impl Plugin for PluginGroupTestPlugin1 with fn build(_self, app) {
   plugin_group_test_plugin_1(app)
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin1Override with name(_self) {
+pub impl Plugin for PluginGroupTestPlugin1Override with fn name(_self) {
   "mgstudio.app.test_plugin_1"
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin1Override with build(_self, app) {
+pub impl Plugin for PluginGroupTestPlugin1Override with fn build(_self, app) {
   plugin_group_test_plugin_1_override(app)
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin2 with name(_self) {
+pub impl Plugin for PluginGroupTestPlugin2 with fn name(_self) {
   "mgstudio.app.test_plugin_2"
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin2 with build(_self, app) {
+pub impl Plugin for PluginGroupTestPlugin2 with fn build(_self, app) {
   plugin_group_test_plugin_2(app)
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin3 with name(_self) {
+pub impl Plugin for PluginGroupTestPlugin3 with fn name(_self) {
   "mgstudio.app.test_plugin_3"
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin3 with build(_self, app) {
+pub impl Plugin for PluginGroupTestPlugin3 with fn build(_self, app) {
   app.add_system(fn(_world : @ecs.World) {
     plugin_group_test_log_ref.val.push(3)
   })
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin4 with name(_self) {
+pub impl Plugin for PluginGroupTestPlugin4 with fn name(_self) {
   "mgstudio.app.test_plugin_4"
 }
 
 ///|
-pub impl Plugin for PluginGroupTestPlugin4 with build(_self, app) {
+pub impl Plugin for PluginGroupTestPlugin4 with fn build(_self, app) {
   app.add_system(fn(_world : @ecs.World) {
     plugin_group_test_log_ref.val.push(4)
   })
@@ -191,12 +191,12 @@ fn missing_plugin_test(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl Plugin for MissingPluginTest with name(_self) {
+pub impl Plugin for MissingPluginTest with fn name(_self) {
   "mgstudio.app.missing_plugin_test"
 }
 
 ///|
-pub impl Plugin for MissingPluginTest with build(_self, app) {
+pub impl Plugin for MissingPluginTest with fn build(_self, app) {
   missing_plugin_test(app)
 }
 
@@ -207,116 +207,116 @@ fn plugin_lifecycle_test_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub impl Plugin for PluginLifecycleTestPlugin with name(_self) {
+pub impl Plugin for PluginLifecycleTestPlugin with fn name(_self) {
   "mgstudio.app.plugin_lifecycle_test"
 }
 
 ///|
-pub impl Plugin for PluginLifecycleTestPlugin with build(_self, app) {
+pub impl Plugin for PluginLifecycleTestPlugin with fn build(_self, app) {
   plugin_lifecycle_test_plugin(app)
 }
 
 ///|
-pub impl Plugin for PluginLifecycleTestPlugin with ready(_self, _app) {
+pub impl Plugin for PluginLifecycleTestPlugin with fn ready(_self, _app) {
   plugin_lifecycle_ready_ref.val
 }
 
 ///|
-pub impl Plugin for PluginLifecycleTestPlugin with finish(_self, app) {
+pub impl Plugin for PluginLifecycleTestPlugin with fn finish(_self, app) {
   plugin_lifecycle_log_ref.val.push(2)
   app
 }
 
 ///|
-pub impl Plugin for PluginLifecycleTestPlugin with cleanup(_self, app) {
+pub impl Plugin for PluginLifecycleTestPlugin with fn cleanup(_self, app) {
   plugin_lifecycle_log_ref.val.push(3)
   app
 }
 
 ///|
-pub impl Plugin for NestedParentPlugin with name(_self) {
+pub impl Plugin for NestedParentPlugin with fn name(_self) {
   "mgstudio.app.nested_parent_plugin"
 }
 
 ///|
-pub impl Plugin for NestedParentPlugin with build(_self, app) {
+pub impl Plugin for NestedParentPlugin with fn build(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(1)
   app.add_plugins(NestedChildPlugin::{  })
 }
 
 ///|
-pub impl Plugin for NestedParentPlugin with finish(_self, app) {
+pub impl Plugin for NestedParentPlugin with fn finish(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(10)
   app
 }
 
 ///|
-pub impl Plugin for NestedParentPlugin with cleanup(_self, app) {
+pub impl Plugin for NestedParentPlugin with fn cleanup(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(100)
   app
 }
 
 ///|
-pub impl Plugin for NestedChildPlugin with name(_self) {
+pub impl Plugin for NestedChildPlugin with fn name(_self) {
   "mgstudio.app.nested_child_plugin"
 }
 
 ///|
-pub impl Plugin for NestedChildPlugin with build(_self, app) {
+pub impl Plugin for NestedChildPlugin with fn build(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(2)
   app
 }
 
 ///|
-pub impl Plugin for NestedChildPlugin with finish(_self, app) {
+pub impl Plugin for NestedChildPlugin with fn finish(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(20)
   app
 }
 
 ///|
-pub impl Plugin for NestedChildPlugin with cleanup(_self, app) {
+pub impl Plugin for NestedChildPlugin with fn cleanup(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(200)
   app
 }
 
 ///|
-pub impl Plugin for PluginBuildDepthProbePlugin with name(_self) {
+pub impl Plugin for PluginBuildDepthProbePlugin with fn name(_self) {
   "mgstudio.app.plugin_build_depth_probe"
 }
 
 ///|
-pub impl Plugin for PluginBuildDepthProbePlugin with build(_self, app) {
+pub impl Plugin for PluginBuildDepthProbePlugin with fn build(_self, app) {
   plugin_build_depth_probe_ref.val = app.is_building_plugins()
   app
 }
 
 ///|
-pub impl Plugin for FinishAddsPluginPlugin with name(_self) {
+pub impl Plugin for FinishAddsPluginPlugin with fn name(_self) {
   "mgstudio.app.finish_adds_plugin"
 }
 
 ///|
-pub impl Plugin for FinishAddsPluginPlugin with build(_self, app) {
+pub impl Plugin for FinishAddsPluginPlugin with fn build(_self, app) {
   app
 }
 
 ///|
-pub impl Plugin for FinishAddsPluginPlugin with finish(_self, app) {
+pub impl Plugin for FinishAddsPluginPlugin with fn finish(_self, app) {
   app.add_plugins(PluginGroupTestPlugin2::{  })
 }
 
 ///|
-pub impl Plugin for PluginAddedProbePlugin with name(_self) {
+pub impl Plugin for PluginAddedProbePlugin with fn name(_self) {
   "mgstudio.app.plugin_added_probe"
 }
 
 ///|
-pub impl Plugin for PluginAddedProbePlugin with build(_self, app) {
+pub impl Plugin for PluginAddedProbePlugin with fn build(_self, app) {
   app
 }
 
 ///|
-pub impl Plugin for PluginAddedProbePlugin with finish(_self, app) {
+pub impl Plugin for PluginAddedProbePlugin with fn finish(_self, app) {
   plugin_added_probe_finish_ref.val = app.is_plugin_added(PluginGroupTestPlugin1::{
 
   })
@@ -324,7 +324,7 @@ pub impl Plugin for PluginAddedProbePlugin with finish(_self, app) {
 }
 
 ///|
-pub impl Plugin for PluginAddedProbePlugin with cleanup(_self, app) {
+pub impl Plugin for PluginAddedProbePlugin with fn cleanup(_self, app) {
   plugin_added_probe_cleanup_ref.val = app.is_plugin_added(PluginGroupTestPlugin1::{
 
   })
@@ -332,50 +332,50 @@ pub impl Plugin for PluginAddedProbePlugin with cleanup(_self, app) {
 }
 
 ///|
-pub impl Plugin for PluginReadyCountPlugin with name(_self) {
+pub impl Plugin for PluginReadyCountPlugin with fn name(_self) {
   "mgstudio.app.plugin_ready_count"
 }
 
 ///|
-pub impl Plugin for PluginReadyCountPlugin with build(_self, app) {
+pub impl Plugin for PluginReadyCountPlugin with fn build(_self, app) {
   app
 }
 
 ///|
-pub impl Plugin for PluginReadyCountPlugin with ready(_self, _app) {
+pub impl Plugin for PluginReadyCountPlugin with fn ready(_self, _app) {
   plugin_ready_count_ref.val = plugin_ready_count_ref.val + 1
   true
 }
 
 ///|
-pub impl Plugin for FinishAddsDeferredFinishPlugin with name(_self) {
+pub impl Plugin for FinishAddsDeferredFinishPlugin with fn name(_self) {
   "mgstudio.app.finish_adds_deferred_finish"
 }
 
 ///|
-pub impl Plugin for FinishAddsDeferredFinishPlugin with build(_self, app) {
+pub impl Plugin for FinishAddsDeferredFinishPlugin with fn build(_self, app) {
   app
 }
 
 ///|
-pub impl Plugin for FinishAddsDeferredFinishPlugin with finish(_self, app) {
+pub impl Plugin for FinishAddsDeferredFinishPlugin with fn finish(_self, app) {
   deferred_finish_probe_log_ref.val.push(1)
   app.add_plugins(DeferredFinishProbePlugin::{  })
 }
 
 ///|
-pub impl Plugin for DeferredFinishProbePlugin with name(_self) {
+pub impl Plugin for DeferredFinishProbePlugin with fn name(_self) {
   "mgstudio.app.deferred_finish_probe"
 }
 
 ///|
-pub impl Plugin for DeferredFinishProbePlugin with build(_self, app) {
+pub impl Plugin for DeferredFinishProbePlugin with fn build(_self, app) {
   deferred_finish_probe_log_ref.val.push(2)
   app
 }
 
 ///|
-pub impl Plugin for DeferredFinishProbePlugin with finish(_self, app) {
+pub impl Plugin for DeferredFinishProbePlugin with fn finish(_self, app) {
   deferred_finish_probe_log_ref.val.push(3)
   app
 }
@@ -1074,92 +1074,132 @@ struct Param6 {
 }
 
 ///|
-impl SystemParam for Param1 with init_state(_world) {
+struct Param7 {
+  value : Int
+}
+
+///|
+struct Param8 {
+  value : Int
+}
+
+///|
+impl SystemParam for Param1 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param1 with get(_state) {
+impl SystemParam for Param1 with fn get(_state) {
   { value: 1 }
 }
 
 ///|
-impl SystemParam for Param1 with store(self, _state) {
+impl SystemParam for Param1 with fn store(self, _state) {
   ignore(self)
 }
 
 ///|
-impl SystemParam for Param2 with init_state(_world) {
+impl SystemParam for Param2 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param2 with get(_state) {
+impl SystemParam for Param2 with fn get(_state) {
   { value: 2 }
 }
 
 ///|
-impl SystemParam for Param2 with store(self, _state) {
+impl SystemParam for Param2 with fn store(self, _state) {
   ignore(self)
 }
 
 ///|
-impl SystemParam for Param3 with init_state(_world) {
+impl SystemParam for Param3 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param3 with get(_state) {
+impl SystemParam for Param3 with fn get(_state) {
   { value: 3 }
 }
 
 ///|
-impl SystemParam for Param3 with store(self, _state) {
+impl SystemParam for Param3 with fn store(self, _state) {
   ignore(self)
 }
 
 ///|
-impl SystemParam for Param4 with init_state(_world) {
+impl SystemParam for Param4 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param4 with get(_state) {
+impl SystemParam for Param4 with fn get(_state) {
   { value: 4 }
 }
 
 ///|
-impl SystemParam for Param4 with store(self, _state) {
+impl SystemParam for Param4 with fn store(self, _state) {
   ignore(self)
 }
 
 ///|
-impl SystemParam for Param5 with init_state(_world) {
+impl SystemParam for Param5 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param5 with get(_state) {
+impl SystemParam for Param5 with fn get(_state) {
   { value: 5 }
 }
 
 ///|
-impl SystemParam for Param5 with store(self, _state) {
+impl SystemParam for Param5 with fn store(self, _state) {
   ignore(self)
 }
 
 ///|
-impl SystemParam for Param6 with init_state(_world) {
+impl SystemParam for Param6 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for Param6 with get(_state) {
+impl SystemParam for Param6 with fn get(_state) {
   { value: 6 }
 }
 
 ///|
-impl SystemParam for Param6 with store(self, _state) {
+impl SystemParam for Param6 with fn store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param7 with fn init_state(_world) {
+  system_param_empty_state(_world)
+}
+
+///|
+impl SystemParam for Param7 with fn get(_state) {
+  { value: 7 }
+}
+
+///|
+impl SystemParam for Param7 with fn store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param8 with fn init_state(_world) {
+  system_param_empty_state(_world)
+}
+
+///|
+impl SystemParam for Param8 with fn get(_state) {
+  { value: 8 }
+}
+
+///|
+impl SystemParam for Param8 with fn store(self, _state) {
   ignore(self)
 }
 
@@ -1169,17 +1209,17 @@ struct SequenceParam {
 }
 
 ///|
-impl SystemParam for SequenceParam with init_state(_world) {
+impl SystemParam for SequenceParam with fn init_state(_world) {
   system_param_empty_state(_world)
 }
 
 ///|
-impl SystemParam for SequenceParam with get(_state) {
+impl SystemParam for SequenceParam with fn get(_state) {
   { tick: current_system_ticks() }
 }
 
 ///|
-impl SystemParam for SequenceParam with store(self, _state) {
+impl SystemParam for SequenceParam with fn store(self, _state) {
   ignore(self)
 }
 
@@ -1194,7 +1234,7 @@ let test_message_key : @ecs.MessageKey[TestMessage] = @ecs.register_message(
 )
 
 ///|
-impl @ecs.Message for TestMessage with message() {
+impl @ecs.Message for TestMessage with fn message() {
   test_message_key
 }
 
@@ -1287,6 +1327,82 @@ test "app: system_param6 injects parameters in order" {
 }
 
 ///|
+test "app: system_param8 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system(
+    system_param8(fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+    ) {
+      log.push(p1.value)
+      log.push(p2.value)
+      log.push(p3.value)
+      log.push(p4.value)
+      log.push(p5.value)
+      log.push(p6.value)
+      log.push(p7.value)
+      log.push(p8.value)
+    }),
+  )
+  app.run_once() |> ignore
+  debug_inspect(
+    log.length() == 8 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6 &&
+    log[6] == 7 &&
+    log[7] == 8,
+    content="true",
+  )
+}
+
+///|
+test "app: add_system_param8 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_param8(fn(
+    p1 : Param1,
+    p2 : Param2,
+    p3 : Param3,
+    p4 : Param4,
+    p5 : Param5,
+    p6 : Param6,
+    p7 : Param7,
+    p8 : Param8,
+  ) {
+    log.push(p1.value)
+    log.push(p2.value)
+    log.push(p3.value)
+    log.push(p4.value)
+    log.push(p5.value)
+    log.push(p6.value)
+    log.push(p7.value)
+    log.push(p8.value)
+  })
+  app.run_once() |> ignore
+  debug_inspect(
+    log.length() == 8 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6 &&
+    log[6] == 7 &&
+    log[7] == 8,
+    content="true",
+  )
+}
+
+///|
 test "app: system param can read current system tick" {
   let log : Array[(@core.Tick, @core.Tick)] = []
   let app = App::new(@ecs.World::new())
@@ -1343,12 +1459,12 @@ let ecs_velocity_key : @ecs.ComponentKey[EcsVelocity] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for EcsPosition with component() {
+pub impl @ecs.Component for EcsPosition with fn component() {
   ecs_position_key
 }
 
 ///|
-pub impl @ecs.Component for EcsVelocity with component() {
+pub impl @ecs.Component for EcsVelocity with fn component() {
   ecs_velocity_key
 }
 
@@ -1412,4 +1528,27 @@ test "app: schedule reports conflicting query params during execution validation
     kinds[1] == ErrorContextKind::Validation,
     content="true",
   )
+}
+
+///|
+test "app: add_system_param5 reports conflicting query params during execution validation" {
+  let kinds : Array[ErrorContextKind] = []
+  let ran = Ref(false)
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_system_param5(fn(
+      _p1 : Param1,
+      _lhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _p2 : Param2,
+      _rhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _p3 : Param3,
+    ) {
+      ran.val = true
+    })
+
+  app.run_once() |> ignore
+
+  debug_inspect(ran.val, content="false")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
 }

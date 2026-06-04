@@ -66,6 +66,18 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
 #callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4((P1, P2, P3, P4) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] fallible_system_config_param5((P1, P2, P3, P4, P5) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_config_param6((P1, P2, P3, P4, P5, P6) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] fallible_system_config_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] fallible_system_config_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
+
 pub fn[W, P : SystemParam] fallible_system_param((P) -> Unit raise) -> (W) -> Unit
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2((P1, P2) -> Unit raise) -> (W) -> Unit
@@ -77,6 +89,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] fallible_system_param5((P1, P2, P3, P4, P5) -> Unit raise) -> (W) -> Unit
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_param6((P1, P2, P3, P4, P5, P6) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] fallible_system_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] fallible_system_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit raise) -> (W) -> Unit
 
 pub let fixed_main_schedule_order_resource_key : @ecs.ResourceKey[FixedMainScheduleOrder]
 
@@ -299,6 +315,18 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_pa
 #callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4((P1, P2, P3, P4) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] system_config_param5((P1, P2, P3, P4, P5) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_config_param6((P1, P2, P3, P4, P5, P6) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] system_config_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] system_config_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
 pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
 
 pub fn[W, P : SystemParam] system_param((P) -> Unit) -> (W) -> Unit
@@ -312,6 +340,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] system_param5((P1, P2, P3, P4, P5) -> Unit) -> (W) -> Unit
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_param6((P1, P2, P3, P4, P5, P6) -> Unit) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] system_param7((P1, P2, P3, P4, P5, P6, P7) -> Unit) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] system_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> (W) -> Unit
 
 pub fn[P] system_param_empty_state(@ecs.World) -> SystemParamState[P]
 
@@ -529,6 +561,10 @@ pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] App::add_system_param5(Self[W], (P1, P2, P3, P4, P5) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] App::add_system_param6(Self[W], (P1, P2, P3, P4, P5, P6) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] App::add_system_param7(Self[W], (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] App::add_system_param8(Self[W], (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[T : Resource] App::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
@@ -614,6 +650,10 @@ pub fn[P1 : SystemParam] Commands::register_system_param(Self, (P1) -> Unit) -> 
 pub fn[P1 : SystemParam, P2 : SystemParam] Commands::register_system_param2(Self, (P1, P2) -> Unit) -> SystemId
 pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] Commands::register_system_param3(Self, (P1, P2, P3) -> Unit) -> SystemId
 pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] Commands::register_system_param4(Self, (P1, P2, P3, P4) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] Commands::register_system_param5(Self, (P1, P2, P3, P4, P5) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] Commands::register_system_param6(Self, (P1, P2, P3, P4, P5, P6) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] Commands::register_system_param7(Self, (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> SystemId
+pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] Commands::register_system_param8(Self, (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> SystemId
 pub fn[T : Resource] Commands::remove_resource(Self) -> Unit
 pub fn[T] Commands::remove_world_resource(Self, @ecs.ResourceKey[T]) -> Unit
 pub fn Commands::run_system(Self, SystemId) -> Unit

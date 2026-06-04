@@ -182,6 +182,68 @@ pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] C
 }
 
 ///|
+pub fn[
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] Commands::register_system_param5(
+  self : Commands,
+  system_fn : (P1, P2, P3, P4, P5) -> Unit,
+) -> SystemId {
+  self.register_system(system_config_param5(system_fn))
+}
+
+///|
+pub fn[
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] Commands::register_system_param6(
+  self : Commands,
+  system_fn : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> SystemId {
+  self.register_system(system_config_param6(system_fn))
+}
+
+///|
+pub fn[
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] Commands::register_system_param7(
+  self : Commands,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> SystemId {
+  self.register_system(system_config_param7(system_fn))
+}
+
+///|
+pub fn[
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] Commands::register_system_param8(
+  self : Commands,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> SystemId {
+  self.register_system(system_config_param8(system_fn))
+}
+
+///|
 pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
