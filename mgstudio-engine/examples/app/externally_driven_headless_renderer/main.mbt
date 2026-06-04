@@ -44,18 +44,24 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, -5.0F),
   )
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera().with_order(-1),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(-1),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   // Keep a visible camera on screen for web runtime.
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 }
 
 ///|

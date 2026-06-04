@@ -47,11 +47,14 @@ fn rapier2d_contact_filter2_setup(world : @ecs.World) -> Unit {
       @sprite.Color::new(0.90F, 0.90F, 0.95F, 1.0F),
     ),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
   let floor = world.spawn_empty()
   try! world.set_by_key(
     floor,

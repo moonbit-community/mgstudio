@@ -313,11 +313,14 @@ fn setup(world : @ecs.World) -> Unit {
     world, "Up/Down/Left/Right: Move Listener\nSpace: Toggle Emitter Movement",
   )
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   spatial_audio_2d_state.val.emitter = emitter
   spatial_audio_2d_state.val.listener = listener

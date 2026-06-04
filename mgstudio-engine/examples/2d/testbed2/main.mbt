@@ -40,11 +40,14 @@ fn rapier2d_testbed2_setup(world : @ecs.World) -> Unit {
       @sprite.Color::new(0.90F, 0.90F, 0.92F, 1.0F),
     ),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
   testbed_state.val = TestbedState::{ spawned: [] }
   rapier2d_testbed2_spawn_mode(world, texture, 0)
 }

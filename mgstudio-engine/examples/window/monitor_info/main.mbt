@@ -63,7 +63,8 @@ fn spawn_window_for_monitor(
 
   ignore(
     commands.spawn(
-      @sprite.Camera2dBundle::new_with_target(
+      (
+        @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera(),
         @transform.Transform::identity(),
         @sprite.RenderTarget::Window(@window.WindowRef::Entity(window_entity)),

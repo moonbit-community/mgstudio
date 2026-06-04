@@ -39,7 +39,8 @@ fn spawn_system(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   commands.spawn(
-    @sprite.Camera2dBundle::new(
+    (
+      @sprite.Camera2d::Camera2d(),
       @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ),

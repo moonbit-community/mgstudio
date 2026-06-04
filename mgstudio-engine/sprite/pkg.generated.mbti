@@ -346,30 +346,6 @@ pub impl @ecs.Component for Camera2d
 pub impl ToJson for Camera2d
 pub impl @json.FromJson for Camera2d
 
-pub struct Camera2dBundle {
-  camera : Camera
-  projection : Projection
-  camera2d : Camera2d
-  transform : @transform.Transform
-  target : RenderTarget
-  layers : @render_layers.RenderLayers
-  bloom : @post_process.Bloom?
-  tonemapping : @post_process.Tonemapping?
-  color_grading : @post_process.ColorGrading?
-  deband_dither : @post_process.DebandDither?
-}
-pub fn Camera2dBundle::new(Camera, @transform.Transform) -> Self
-pub fn Camera2dBundle::new_with_layers(Camera, @transform.Transform, RenderTarget, @render_layers.RenderLayers) -> Self
-pub fn Camera2dBundle::new_with_projection(Camera, Projection, @transform.Transform) -> Self
-pub fn Camera2dBundle::new_with_target(Camera, @transform.Transform, RenderTarget) -> Self
-#callsite(autofill(loc))
-pub fn Camera2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
-pub fn Camera2dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
-pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
-pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
-pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
-pub impl @ecs.Bundle for Camera2dBundle
-
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
 }

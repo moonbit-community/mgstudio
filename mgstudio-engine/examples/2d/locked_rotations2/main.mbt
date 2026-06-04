@@ -31,11 +31,14 @@ fn rapier2d_locked_rotations2_setup(world : @ecs.World) -> Unit {
       @sprite.Color::new(0.52F, 0.72F, 0.47F, 1.0F),
     ),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current) =>

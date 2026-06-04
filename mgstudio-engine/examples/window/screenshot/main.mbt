@@ -97,11 +97,14 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let root = world.spawn_empty()
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())

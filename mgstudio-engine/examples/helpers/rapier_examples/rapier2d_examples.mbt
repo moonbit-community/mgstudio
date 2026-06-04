@@ -14,11 +14,14 @@
 
 ///|
 pub fn rapier2d_spawn_camera(world : @ecs.World, x : Float, y : Float) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::from_xyz(x, y, 0.0F),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::from_xyz(x, y, 0.0F),
+    ),
+  )
+  |> ignore)
 }
 
 ///|

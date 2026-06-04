@@ -35,11 +35,14 @@ fn rapier2d_joints_despawn2_setup(world : @ecs.World) -> Unit {
       @sprite.Color::new(0.88F, 0.91F, 0.96F, 1.0F),
     ),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current) =>

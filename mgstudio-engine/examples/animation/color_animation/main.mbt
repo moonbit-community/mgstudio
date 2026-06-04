@@ -203,11 +203,14 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
   let srgba_points = to_srgba_points(linear_points)
   let oklcha_points = to_oklcha_points(linear_points)
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   spawn_curve_linear_rgba_sprite(world, CURVE_LINEAR_Y, linear_points)
   spawn_curve_xyza_sprite(world, CURVE_XYZ_Y, xyza_points)

@@ -241,11 +241,14 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   overlay_text_entity.val = None
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   spawn_shape_entity(
     world,

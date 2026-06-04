@@ -63,11 +63,14 @@ fn main {
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")

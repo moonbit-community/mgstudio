@@ -37,11 +37,14 @@ fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = world_asset_server(world)
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let sprite = try! world.spawn_bundle(
     (

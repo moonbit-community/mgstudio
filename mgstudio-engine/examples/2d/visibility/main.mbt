@@ -68,10 +68,10 @@ fn visibility_setup(world : @ecs.World) -> Unit {
     @hierarchy.Parent::new(parent),
   )
   let camera = @sprite.Camera::Camera()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+  try! (world.spawn_bundle(
+    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
   )
-  |> ignore
+  |> ignore)
   @window.host_debug_string(
     value="Press H to toggle parent Visibility (Hidden/Visible).",
   )

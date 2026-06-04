@@ -25,7 +25,7 @@ let ecs_key_pickable_sprite_colors : @ecs.ComponentKey[PickableSpriteColors] = @
 )
 
 ///|
-impl @ecs.Component for PickableSpriteColors with component() {
+impl @ecs.Component for PickableSpriteColors with fn component() {
   ecs_key_pickable_sprite_colors
 }
 
@@ -33,7 +33,8 @@ impl @ecs.Component for PickableSpriteColors with component() {
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
-      @sprite.Camera2dBundle::new(
+      (
+        @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera(),
         @transform.Transform::identity(),
       ),

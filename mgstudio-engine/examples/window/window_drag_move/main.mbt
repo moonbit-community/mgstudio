@@ -120,10 +120,13 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
-  let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
+  let overlay_camera = try! world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
   let camera_tick = world.read_change_tick()
   ignore(camera_tick)
   try! world.set_by_key(

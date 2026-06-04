@@ -371,7 +371,8 @@ fn setup(
   )
 
   let overlay_camera = commands.spawn(
-    @sprite.Camera2dBundle::new(
+    (
+      @sprite.Camera2d::Camera2d(),
       @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),

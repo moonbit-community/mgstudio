@@ -50,17 +50,17 @@ let button_press_state_key : @ecs.ComponentKey[ButtonPressState] = @ecs.register
 )
 
 ///|
-pub impl @ecs.Component for TargetPanel with component() {
+pub impl @ecs.Component for TargetPanel with fn component() {
   target_panel_key
 }
 
 ///|
-pub impl @ecs.Component for ToggleButtonAction with component() {
+pub impl @ecs.Component for ToggleButtonAction with fn component() {
   toggle_button_action_key
 }
 
 ///|
-pub impl @ecs.Component for ButtonPressState with component() {
+pub impl @ecs.Component for ButtonPressState with fn component() {
   button_press_state_key
 }
 
@@ -403,11 +403,14 @@ fn setup(world : @ecs.World) -> Unit {
   ignore(world.increment_change_tick())
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let root = spawn_node(
     world,

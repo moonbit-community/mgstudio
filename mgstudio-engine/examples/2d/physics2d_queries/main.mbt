@@ -118,10 +118,10 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Camera.
   let camera = @sprite.Camera::Camera()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+  try! (world.spawn_bundle(
+    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
   )
-  |> ignore
+  |> ignore)
 
   // Visible query line.
   let ray_line_sprite = @sprite.Sprite::from_image(texture).with_color(

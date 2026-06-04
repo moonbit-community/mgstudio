@@ -76,22 +76,22 @@ let fade_out_component_key : @ecs.ComponentKey[FadeOut] = @ecs.register_componen
 )
 
 ///|
-impl @app.Resource for GameState with resource() {
+impl @app.Resource for GameState with fn resource() {
   game_state_resource_key
 }
 
 ///|
-impl @app.Resource for GameStateTimer with resource() {
+impl @app.Resource for GameStateTimer with fn resource() {
   game_state_timer_resource_key
 }
 
 ///|
-impl @app.Resource for SoundtrackPlayer with resource() {
+impl @app.Resource for SoundtrackPlayer with fn resource() {
   soundtrack_player_resource_key
 }
 
 ///|
-impl @app.Resource for TrackChangePending with resource() {
+impl @app.Resource for TrackChangePending with fn resource() {
   track_change_pending_resource_key
 }
 
@@ -131,11 +131,14 @@ fn setup(world : @ecs.World) -> Unit {
     track_list: [track_1, track_2],
   })
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 }
 
 ///|

@@ -268,11 +268,14 @@ fn cycle_cursor_icon(
 
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 }
 
 ///|

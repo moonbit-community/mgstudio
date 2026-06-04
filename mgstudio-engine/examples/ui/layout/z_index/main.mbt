@@ -59,11 +59,14 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let root = world.spawn_empty()
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())

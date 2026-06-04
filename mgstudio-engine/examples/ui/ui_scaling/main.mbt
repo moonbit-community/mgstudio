@@ -36,11 +36,14 @@ fn setup(world : @ecs.World) -> Unit {
   ignore(tick)
   let icon = @asset.AssetServer::new().load_image("branding/icon.png")
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   @ui.get_ui_scale_resource(world).insert(@ui.UiScale::new(1.0F))
 

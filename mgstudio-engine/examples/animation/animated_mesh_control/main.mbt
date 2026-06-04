@@ -62,10 +62,13 @@ fn setup(world : @ecs.World) -> Unit {
     ).spawn(world),
   )
   ignore(
-    @sprite.Camera2dBundle::new(
-      @sprite.Camera::Camera(),
-      @transform.Transform::identity(),
-    ).spawn(world),
+    try! world.spawn_bundle(
+      (
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera(),
+        @transform.Transform::identity(),
+      ),
+    ),
   )
 
   let plane = world.spawn_empty()

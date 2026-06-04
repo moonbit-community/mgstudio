@@ -128,22 +128,22 @@ let pressed_controls_key : @ecs.ResourceKey[PressedControls] = @ecs.register_res
 )
 
 ///|
-pub impl @ecs.Component for AnimationControl with component() {
+pub impl @ecs.Component for AnimationControl with fn component() {
   animation_control_key
 }
 
 ///|
-pub impl @app.Resource for AnimationMaskSetup with resource() {
+pub impl @app.Resource for AnimationMaskSetup with fn resource() {
   animation_mask_setup_key
 }
 
 ///|
-pub impl @app.Resource for AnimationMaskState with resource() {
+pub impl @app.Resource for AnimationMaskState with fn resource() {
   animation_mask_state_key
 }
 
 ///|
-pub impl @app.Resource for PressedControls with resource() {
+pub impl @app.Resource for PressedControls with fn resource() {
   pressed_controls_key
 }
 
@@ -521,10 +521,13 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   ignore(
-    @sprite.Camera2dBundle::new(
-      @sprite.Camera::Camera(),
-      @transform.Transform::identity(),
-    ).spawn(world),
+    try! world.spawn_bundle(
+      (
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera(),
+        @transform.Transform::identity(),
+      ),
+    ),
   )
 
   let root = world.spawn_empty()

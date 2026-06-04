@@ -31,11 +31,14 @@ fn rapier2d_voxels2_no_collider_setup(world : @ecs.World) -> Unit {
       @sprite.Color::new(0.58F, 0.73F, 0.49F, 1.0F),
     ),
   )
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
   for y in 0..<8 {
     for x in 0..<16 {
       let voxel = world.spawn_empty()

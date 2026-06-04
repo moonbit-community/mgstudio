@@ -21,7 +21,7 @@ let ecs_key_drop_area : @ecs.ComponentKey[DropArea] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for DropArea with component() {
+impl @ecs.Component for DropArea with fn component() {
   ecs_key_drop_area
 }
 
@@ -34,7 +34,7 @@ let ecs_key_draggable_button : @ecs.ComponentKey[DraggableButton] = @ecs.registe
 )
 
 ///|
-impl @ecs.Component for DraggableButton with component() {
+impl @ecs.Component for DraggableButton with fn component() {
   ecs_key_draggable_button
 }
 
@@ -47,7 +47,7 @@ let ecs_key_ghost_preview : @ecs.ComponentKey[GhostPreview] = @ecs.register_comp
 )
 
 ///|
-impl @ecs.Component for GhostPreview with component() {
+impl @ecs.Component for GhostPreview with fn component() {
   ecs_key_ghost_preview
 }
 
@@ -70,7 +70,7 @@ let ecs_res_key_drag_state : @ecs.ResourceKey[DragState] = @ecs.register_resourc
 )
 
 ///|
-impl @app.Resource for DragState with resource() {
+impl @app.Resource for DragState with fn resource() {
   ecs_res_key_drag_state
 }
 
@@ -95,7 +95,8 @@ fn dragdrop_node_style(
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
-      @sprite.Camera2dBundle::new(
+      (
+        @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera(),
         @transform.Transform::identity(),
       ),

@@ -81,10 +81,10 @@ fn setup(world : @ecs.World) -> Unit {
   progress_text_entity.val = None
 
   let camera = @sprite.Camera::Camera()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+  try! (world.spawn_bundle(
+    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
   )
-  |> ignore
+  |> ignore)
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

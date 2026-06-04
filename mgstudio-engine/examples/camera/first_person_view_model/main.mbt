@@ -248,10 +248,13 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_text(world : @ecs.World) -> Unit {
-  let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera().with_order(2).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
+  let overlay_camera = try! world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(2).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),

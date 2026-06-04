@@ -107,13 +107,16 @@ fn spawn_ui_label(
 fn setup_scene(world : @ecs.World) -> Unit {
   let text_font = @text.TextFont::from_font_size(30.0F)
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera().with_clear_color(
-      @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_clear_color(
+        @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
+      ),
+      @transform.Transform::identity(),
     ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  )
+  |> ignore)
 
   if @render.host_gpu_mesh3d_preprocess_disabled() {
     spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
@@ -127,14 +130,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     configured_secondary_window(),
   )
 
-  let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
-    @sprite.Camera::Camera().with_clear_color(
-      @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
+  let secondary_window_camera = try! world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_clear_color(
+        @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
+      ),
+      @transform.Transform::identity(),
+      @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
+      @camera_render_layers.RenderLayers::layer(1),
     ),
-    @transform.Transform::identity(),
-    @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
-    @camera_render_layers.RenderLayers::layer(1),
-  ).spawn(world)
+  )
 
   spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
   spawn_ui_label(

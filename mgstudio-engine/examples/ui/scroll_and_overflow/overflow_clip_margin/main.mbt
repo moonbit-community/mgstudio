@@ -59,10 +59,13 @@ fn setup(world : @ecs.World) -> Unit {
   let icon = asset_server.load_image("branding/icon.png")
 
   ignore(
-    @sprite.Camera2dBundle::new(
-      @sprite.Camera::Camera(),
-      @transform.Transform::identity(),
-    ).spawn(world),
+    try! world.spawn_bundle(
+      (
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera(),
+        @transform.Transform::identity(),
+      ),
+    ),
   )
 
   let root = world.spawn_empty()

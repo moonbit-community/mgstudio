@@ -33,11 +33,14 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = world_asset_server(world)
   let texture = asset_server.load_image("branding/icon.png")
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let parent = try! world.spawn_bundle(
     (

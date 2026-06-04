@@ -322,15 +322,19 @@ test "render2d: Commands can spawn Sprite component tuples" {
 }
 
 ///|
-test "render2d: Camera2dBundle::spawn inserts expected components" {
+test "render2d: Camera2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
-  let bundle = Camera2dBundle::new(
+  ensure_render2d_required_components(world)
+  let transform = @transform.Transform::identity()
+  let entity = try! world.spawn_bundle(
+    (
+      Camera2d::Camera2d(),
       Camera::Camera(),
-      @transform.Transform::identity(),
-    )
-    .with_bloom(Some(@post_process.Bloom::Bloom()))
-    .with_color_grading(Some(ColorGrading()))
-  let entity = bundle.spawn(world)
+      transform,
+      @post_process.Bloom::Bloom(),
+      @post_process.ColorGrading::ColorGrading(),
+    ),
+  )
 
   debug_inspect(world.is_alive(entity), content="true")
   debug_inspect(
@@ -375,25 +379,26 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
     ecs_has_non_null_payload(world, entity, ecs_key_color_grading),
     content="true",
   )
-  debug_inspect(
-    ecs_transform_matches(world, entity, bundle.transform),
-    content="true",
-  )
+  debug_inspect(ecs_transform_matches(world, entity, transform), content="true")
 }
 
 ///|
-test "render2d: Commands::spawn accepts Camera2dBundle" {
+test "render2d: Commands::spawn accepts Camera2d tuples" {
   let world = @ecs.World::new()
   let spawned : Ref[@core.Entity?] = Ref(None)
 
-  let mut app = @app.App::new(world).add_system_param(fn(
-    commands : @app.Commands,
-  ) {
+  let mut app = @app.App::new(world)
+  ensure_render2d_required_components(app.world())
+  app = app.add_system_param(fn(commands : @app.Commands) {
     spawned.val = Some(
       commands.spawn(
-        Camera2dBundle::new(Camera::Camera(), @transform.Transform::identity())
-        .with_bloom(Some(@post_process.Bloom::Bloom()))
-        .with_color_grading(Some(ColorGrading())),
+        (
+          Camera2d::Camera2d(),
+          Camera::Camera(),
+          @transform.Transform::identity(),
+          @post_process.Bloom::Bloom(),
+          @post_process.ColorGrading::ColorGrading(),
+        ),
       ),
     )
   })
@@ -423,22 +428,25 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
 ///|
 test "render2d: tonemapping and deband components share post_process ownership" {
   let world = @ecs.World::new()
-  let entity = Camera2dBundle::new(
+  ensure_render2d_required_components(world)
+  let entity = try! world.spawn_bundle(
+    (
+      Camera2d::Camera2d(),
       Camera::Camera(),
       @transform.Transform::identity(),
-    )
-    .with_tonemapping(Some(AgX))
-    .with_deband_dither(Some(Enabled))
-    .spawn(world)
+      @post_process.Tonemapping::AgX,
+      @post_process.DebandDither::Enabled,
+    ),
+  )
 
   let tonemapping_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_tonemapping)) {
-    Some(AgX) => true
+    Some(@post_process.Tonemapping::AgX) => true
     _ => false
   }
   let deband_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_deband_dither)) {
-    Some(Enabled) => true
+    Some(@post_process.DebandDither::Enabled) => true
     _ => false
   }
   debug_inspect(tonemapping_ok, content="true")
@@ -448,12 +456,14 @@ test "render2d: tonemapping and deband components share post_process ownership" 
 ///|
 test "render2d: bloom component shares post_process ownership" {
   let world = @ecs.World::new()
-  let entity = Camera2dBundle::new(
+  let entity = try! world.spawn_bundle(
+    (
+      Camera2d::Camera2d(),
       Camera::Camera(),
       @transform.Transform::identity(),
-    )
-    .with_bloom(Some(@post_process.Bloom::Bloom().with_intensity(0.35F)))
-    .spawn(world)
+      @post_process.Bloom::Bloom().with_intensity(0.35F),
+    ),
+  )
 
   let bloom_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_bloom)) {
@@ -522,15 +532,18 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
 }
 
 ///|
-test "render2d: Camera2dBundle::new_with_target stores window render target" {
+test "render2d: Camera2d tuple stores window render target" {
   let world = @ecs.World::new()
+  ensure_render2d_required_components(world)
   let target_window = @core.Entity::new(7, 2)
-  let bundle = Camera2dBundle::new_with_target(
-    Camera::Camera(),
-    @transform.Transform::identity(),
-    RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+  let entity = try! world.spawn_bundle(
+    (
+      Camera2d::Camera2d(),
+      Camera::Camera(),
+      @transform.Transform::identity(),
+      RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+    ),
   )
-  let entity = bundle.spawn(world)
 
   let target : RenderTarget? = try! world.get_by_key(
     entity, ecs_key_render_target,

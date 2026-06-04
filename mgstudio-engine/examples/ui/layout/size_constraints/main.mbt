@@ -317,10 +317,13 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   ignore(
-    @sprite.Camera2dBundle::new(
-      @sprite.Camera::Camera(),
-      @transform.Transform::identity(),
-    ).spawn(world),
+    try! world.spawn_bundle(
+      (
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera(),
+        @transform.Transform::identity(),
+      ),
+    ),
   )
 
   let root = world.spawn_empty()

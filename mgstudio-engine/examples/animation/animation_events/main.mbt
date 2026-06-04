@@ -114,11 +114,14 @@ fn message_color(palette : MessagePalette, alpha : Float) -> @color.Color {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::new(@color.Color::black()),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::new(@color.Color::black()),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let message_entity = world.spawn_empty()
   ignore(

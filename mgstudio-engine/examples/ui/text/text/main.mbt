@@ -29,12 +29,12 @@ let animated_text_key : @ecs.ComponentKey[AnimatedText] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for FpsText with component() {
+pub impl @ecs.Component for FpsText with fn component() {
   fps_text_key
 }
 
 ///|
-pub impl @ecs.Component for AnimatedText with component() {
+pub impl @ecs.Component for AnimatedText with fn component() {
   animated_text_key
 }
 
@@ -70,11 +70,14 @@ fn setup(world : @ecs.World) -> Unit {
   let mono_font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
   let opentype_font = asset_server.load_font("fonts/EBGaramond12-Regular.otf")
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  try! (world.spawn_bundle(
+    (
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera(),
+      @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
 
   let root = world.spawn_empty()
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
