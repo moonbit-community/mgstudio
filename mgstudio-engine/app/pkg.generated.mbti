@@ -1442,6 +1442,11 @@ pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T]
 pub impl[T] FromWorld for Array[T]
 pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld] FromWorld for (A, B, C, D)
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld, E : FromWorld] FromWorld for (A, B, C, D, E)
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld, E : FromWorld, F : FromWorld] FromWorld for (A, B, C, D, E, F)
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld, E : FromWorld, F : FromWorld, G : FromWorld] FromWorld for (A, B, C, D, E, F, G)
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld, E : FromWorld, F : FromWorld, G : FromWorld, H : FromWorld] FromWorld for (A, B, C, D, E, F, G, H)
 
 pub(open) trait Plugin {
   fn build(Self, App[@ecs.World]) -> App[@ecs.World]

@@ -570,6 +570,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   let comp_position = position_key
   let comp_velocity = velocity_key
   let comp_accel = acceleration_key
+  let comp_sparse = sparse_tag_key
 
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -599,6 +600,37 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   .query_entities_filtered((With::new(comp_position), Without::new(comp_accel)))
   .view(fn(_query_entity, entity) { matched_entities.push(entity.id) })
   debug_inspect(matched_entities, content="[0, 1]")
+
+  let wide_query : Query[
+    Comp[Position],
+    (
+      With[Position],
+      With[Velocity],
+      Without[Acceleration],
+      Without[SparseTag],
+      With[Velocity],
+      Without[Acceleration],
+      With[Position],
+      Without[SparseTag],
+    ),
+  ] = query_filtered(
+    world,
+    (
+      With::new(comp_position),
+      With::new(comp_velocity),
+      Without::new(comp_accel),
+      Without::new(comp_sparse),
+      With::new(comp_velocity),
+      Without::new(comp_accel),
+      With::new(comp_position),
+      Without::new(comp_sparse),
+    ),
+  )
+  debug_inspect(wide_query.count(), content="1")
+  debug_inspect(
+    comp_option_value(try! wide_query.get(e1)),
+    content="Some({ x: 2, y: 2 })",
+  )
 }
 
 ///|

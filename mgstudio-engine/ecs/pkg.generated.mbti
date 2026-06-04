@@ -1009,6 +1009,11 @@ pub(open) trait QueryFilter {
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilter for (A, B, C, D)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter, E : QueryFilter] QueryFilter for (A, B, C, D, E)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter, E : QueryFilter, F : QueryFilter] QueryFilter for (A, B, C, D, E, F)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter, E : QueryFilter, F : QueryFilter, G : QueryFilter] QueryFilter for (A, B, C, D, E, F, G)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter, E : QueryFilter, F : QueryFilter, G : QueryFilter, H : QueryFilter] QueryFilter for (A, B, C, D, E, F, G, H)
 
 pub(open) trait QueryFilterDisjunction {
   fn matches_any(Self, World, @core.Entity) -> Bool

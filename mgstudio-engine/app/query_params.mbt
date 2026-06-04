@@ -13,68 +13,171 @@
 // limitations under the License.
 
 ///|
-pub impl FromWorld for @ecs.All with from_world(_world) {
+pub impl FromWorld for @ecs.All with fn from_world(_world) {
   @ecs.All::new()
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.With[T] with from_world(_world) {
+pub impl[T : @ecs.Component] FromWorld for @ecs.With[T] with fn from_world(
+  _world,
+) {
   @ecs.With::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T] with from_world(
+pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T] with fn from_world(
   _world,
 ) {
   @ecs.Without::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Allow[T] with from_world(_world) {
+pub impl[T : @ecs.Component] FromWorld for @ecs.Allow[T] with fn from_world(
+  _world,
+) {
   @ecs.Allow::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T] with from_world(_world) {
+pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T] with fn from_world(
+  _world,
+) {
   @ecs.Added::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T] with from_world(
+pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T] with fn from_world(
   _world,
 ) {
   @ecs.Changed::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Has[T] with from_world(_world) {
+pub impl[T : @ecs.Component] FromWorld for @ecs.Has[T] with fn from_world(
+  _world,
+) {
   @ecs.Has::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[T : @ecs.Component] FromWorld for @ecs.Optional[T] with from_world(
+pub impl[T : @ecs.Component] FromWorld for @ecs.Optional[T] with fn from_world(
   _world,
 ) {
   @ecs.Optional::new(@ecs.Component::component())
 }
 
 ///|
-pub impl[F : FromWorld] FromWorld for @ecs.Or[F] with from_world(world) {
+pub impl[F : FromWorld] FromWorld for @ecs.Or[F] with fn from_world(world) {
   @ecs.Or::new(F::from_world(world))
 }
 
 ///|
-pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B) with from_world(
+pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B) with fn from_world(
   world,
 ) {
   (A::from_world(world), B::from_world(world))
 }
 
 ///|
-pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) with from_world(
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) with fn from_world(
   world,
 ) {
   (A::from_world(world), B::from_world(world), C::from_world(world))
+}
+
+///|
+pub impl[A : FromWorld, B : FromWorld, C : FromWorld, D : FromWorld] FromWorld for (
+  A,
+  B,
+  C,
+  D,
+) with fn from_world(world) {
+  (
+    A::from_world(world),
+    B::from_world(world),
+    C::from_world(world),
+    D::from_world(world),
+  )
+}
+
+///|
+pub impl[
+  A : FromWorld,
+  B : FromWorld,
+  C : FromWorld,
+  D : FromWorld,
+  E : FromWorld,
+] FromWorld for (A, B, C, D, E) with fn from_world(world) {
+  (
+    A::from_world(world),
+    B::from_world(world),
+    C::from_world(world),
+    D::from_world(world),
+    E::from_world(world),
+  )
+}
+
+///|
+pub impl[
+  A : FromWorld,
+  B : FromWorld,
+  C : FromWorld,
+  D : FromWorld,
+  E : FromWorld,
+  F : FromWorld,
+] FromWorld for (A, B, C, D, E, F) with fn from_world(world) {
+  (
+    A::from_world(world),
+    B::from_world(world),
+    C::from_world(world),
+    D::from_world(world),
+    E::from_world(world),
+    F::from_world(world),
+  )
+}
+
+///|
+pub impl[
+  A : FromWorld,
+  B : FromWorld,
+  C : FromWorld,
+  D : FromWorld,
+  E : FromWorld,
+  F : FromWorld,
+  G : FromWorld,
+] FromWorld for (A, B, C, D, E, F, G) with fn from_world(world) {
+  (
+    A::from_world(world),
+    B::from_world(world),
+    C::from_world(world),
+    D::from_world(world),
+    E::from_world(world),
+    F::from_world(world),
+    G::from_world(world),
+  )
+}
+
+///|
+pub impl[
+  A : FromWorld,
+  B : FromWorld,
+  C : FromWorld,
+  D : FromWorld,
+  E : FromWorld,
+  F : FromWorld,
+  G : FromWorld,
+  H : FromWorld,
+] FromWorld for (A, B, C, D, E, F, G, H) with fn from_world(world) {
+  (
+    A::from_world(world),
+    B::from_world(world),
+    C::from_world(world),
+    D::from_world(world),
+    E::from_world(world),
+    F::from_world(world),
+    G::from_world(world),
+    H::from_world(world),
+  )
 }
 
 ///|
@@ -108,7 +211,7 @@ fn[D, F] query_param_store_query_state(
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
   D,
   F,
-] with init_state(_world) {
+] with fn init_state(_world) {
   let state = query_param_state_new()
   SystemParamState::new(fn() { query_param_query_from_state(state) }, fn(
     query : @ecs.Query[D, F],
@@ -121,7 +224,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
   D,
   F,
-] with get(state) {
+] with fn get(state) {
   state.get()
 }
 
@@ -129,7 +232,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
   D,
   F,
-] with store(self, state) {
+] with fn store(self, state) {
   state.store(self)
 }
 
@@ -137,7 +240,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
   D,
   F,
-] with access(world) {
+] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
@@ -174,7 +277,7 @@ pub fn[D, F] Populated::query(self : Populated[D, F]) -> @ecs.Query[D, F] {
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
   D,
   F,
-] with init_state(world) {
+] with fn init_state(world) {
   ignore(world)
   let state = query_param_state_new()
   SystemParamState::new(
@@ -193,7 +296,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
   D,
   F,
-] with get(state) {
+] with fn get(state) {
   state.get()
 }
 
@@ -201,7 +304,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
   D,
   F,
-] with store(self, state) {
+] with fn store(self, state) {
   state.store(self)
 }
 
@@ -209,7 +312,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
   D,
   F,
-] with access(world) {
+] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
@@ -225,7 +328,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
   D,
   F,
-] with init_state(world) {
+] with fn init_state(world) {
   ignore(world)
   let state = query_param_state_new()
   SystemParamState::new(
@@ -246,7 +349,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
   D,
   F,
-] with get(state) {
+] with fn get(state) {
   state.get()
 }
 
@@ -254,7 +357,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
   D,
   F,
-] with store(self, state) {
+] with fn store(self, state) {
   state.store(self)
 }
 
@@ -262,7 +365,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
   D,
   F,
-] with access(world) {
+] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
