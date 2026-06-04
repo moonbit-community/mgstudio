@@ -121,8 +121,6 @@ pub using @sprite {type Material2dPlugin}
 
 pub using @mesh {type Mesh2d}
 
-pub using @sprite {type Mesh2dBundle}
-
 pub using @sprite {type Mesh2dWireframe}
 
 pub using @sprite {type MeshMaterial2d}

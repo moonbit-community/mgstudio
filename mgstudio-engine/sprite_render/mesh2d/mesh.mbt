@@ -17,9 +17,6 @@
 pub using @mesh {type Mesh2d}
 
 ///|
-pub using @sprite_render {type Mesh2dBundle}
-
-///|
 pub using @sprite_render {type MeshMaterial2d}
 
 ///|

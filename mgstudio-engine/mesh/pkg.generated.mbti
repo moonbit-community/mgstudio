@@ -30,6 +30,8 @@ pub let ecs_key_morph_weights : @ecs.ComponentKey[MorphWeights]
 
 pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
 
+pub fn ensure_mesh_required_components(@ecs.World) -> Unit
+
 pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError
 
 pub fn entity_aabb_from_skinned_mesh_bounds_cached(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError

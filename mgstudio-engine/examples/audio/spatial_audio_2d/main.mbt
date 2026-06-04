@@ -206,27 +206,29 @@ fn spawn_listener_ear(
   offset_x : Float,
   color : @sprite.Color,
 ) -> Unit {
-  let ear = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @mesh.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort()
-      .peek()
-      .add(
-        @sprite.mesh2d_geometry_rectangle(
-          @sprite.Rectangle::new(EAR_SIZE, EAR_SIZE),
-        ).to_mesh(),
+  let ear = try! world.spawn_bundle(
+    (
+      @mesh.Mesh2d::new(
+        @sprite.mesh_assets_mut_or_abort()
+        .peek()
+        .add(
+          @sprite.mesh2d_geometry_rectangle(
+            @sprite.Rectangle::new(EAR_SIZE, EAR_SIZE),
+          ).to_mesh(),
+        ),
+      ),
+      @sprite.MeshMaterial2d::new(
+        @sprite.color_material_assets_mut_or_abort()
+        .peek()
+        .add(@sprite.ColorMaterialAsset::from_color(color)),
+      ),
+      @transform.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(offset_x, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
       ),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort()
-      .peek()
-      .add(@sprite.ColorMaterialAsset::from_color(color)),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(offset_x, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
+  )
 
   try! world.set_by_key(
     ear,
@@ -248,25 +250,27 @@ fn setup(world : @ecs.World) -> Unit {
     "sounds/Windless Slopes.ogg",
   )
 
-  let emitter = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @mesh.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort()
-      .peek()
-      .add(
-        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(EMITTER_RADIUS)).to_mesh(),
+  let emitter = try! world.spawn_bundle(
+    (
+      @mesh.Mesh2d::new(
+        @sprite.mesh_assets_mut_or_abort()
+        .peek()
+        .add(
+          @sprite.mesh2d_geometry_circle(@sprite.Circle::new(EMITTER_RADIUS)).to_mesh(),
+        ),
+      ),
+      @sprite.MeshMaterial2d::new(
+        @sprite.color_material_assets_mut_or_abort()
+        .peek()
+        .add(@sprite.ColorMaterialAsset::from_color(color_blue())),
+      ),
+      @transform.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, EMITTER_Y),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
       ),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort()
-      .peek()
-      .add(@sprite.ColorMaterialAsset::from_color(color_blue())),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, EMITTER_Y),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
+  )
 
   try! world.set_by_key(
     emitter,

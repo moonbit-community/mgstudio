@@ -184,6 +184,7 @@ fn mark_2d_meshes_as_changed_if_their_assets_changed(
 
 ///|
 pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  ensure_mesh_required_components(app.world())
   @asset.init_asset(
     @asset.init_asset(app, fn() {
       Mesh::from_3d_geometry(Mesh3dGeometry::new([], [], None))
@@ -201,6 +202,31 @@ pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       mark_skinned_meshes_as_changed_if_their_assets_changed,
     ),
   )
+}
+
+///|
+fn register_mesh_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_mesh2d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_mesh3d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+}
+
+///|
+pub fn ensure_mesh_required_components(world : @ecs.World) -> Unit {
+  register_mesh_required_components(world) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(_) => ()
+    _ => abort("failed to register mesh required components")
+  }
 }
 
 ///|

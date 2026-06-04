@@ -813,52 +813,6 @@ pub fn Camera2dBundle::with_deband_dither(
 }
 
 ///|
-pub struct Mesh2dBundle {
-  mesh : Mesh2d
-  material : MeshMaterial2d[ColorMaterialAsset]
-  transform : @transform.Transform
-  layers : RenderLayers
-  visibility : @visibility.Visibility
-  inherited_visibility : @visibility.InheritedVisibility
-  view_visibility : @visibility.ViewVisibility
-}
-
-///|
-pub fn Mesh2dBundle::new_with_mesh_material(
-  mesh : Mesh2d,
-  material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @transform.Transform,
-) -> Mesh2dBundle {
-  Mesh2dBundle::{
-    mesh,
-    material,
-    transform,
-    layers: RenderLayers::RenderLayers(),
-    visibility: @visibility.Visibility::Inherited,
-    inherited_visibility: @visibility.InheritedVisibility::new(true),
-    view_visibility: @visibility.ViewVisibility::new(true),
-  }
-}
-
-///|
-pub fn Mesh2dBundle::new_with_mesh_material_layers(
-  mesh : Mesh2d,
-  material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @transform.Transform,
-  layers : RenderLayers,
-) -> Mesh2dBundle {
-  Mesh2dBundle::{
-    mesh,
-    material,
-    transform,
-    layers,
-    visibility: @visibility.Visibility::Inherited,
-    inherited_visibility: @visibility.InheritedVisibility::new(true),
-    view_visibility: @visibility.ViewVisibility::new(true),
-  }
-}
-
-///|
 type TileData = @sprite_tilemap_chunk.TileData
 
 ///|
@@ -2542,59 +2496,6 @@ pub fn Camera2dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   try! world.spawn_bundle(self, loc~)
-}
-
-///|
-fn mesh2d_bundle_insert(
-  bundle : Mesh2dBundle,
-  world : @ecs.World,
-  entity : @core.Entity,
-  loc~ : SourceLoc,
-) -> Unit raise @ecs.EcsError {
-  world.set_by_key(entity, ecs_key_mesh2d, bundle.mesh, loc~)
-  world.set_by_key(entity, ecs_key_mesh_material2d, bundle.material, loc~)
-  world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    bundle.visibility,
-    loc~,
-  )
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_inherited_visibility,
-    bundle.inherited_visibility,
-    loc~,
-  )
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    bundle.view_visibility,
-    loc~,
-  )
-  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
-}
-
-///|
-#callsite(autofill(loc))
-pub fn Mesh2dBundle::spawn(
-  self : Mesh2dBundle,
-  world : @ecs.World,
-  loc~ : SourceLoc,
-) -> @core.Entity {
-  let e = world.spawn_empty()
-  try! mesh2d_bundle_insert(self, world, e, loc~)
-  e
-}
-
-///|
-pub impl @ecs.Bundle for Mesh2dBundle with fn insert_into(
-  self,
-  world,
-  entity,
-  loc~,
-) {
-  mesh2d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|

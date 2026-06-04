@@ -21,7 +21,6 @@ import {
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -674,21 +673,6 @@ pub(all) enum Material2dTextureViewDimension {
   D2
   D2Array
 } derive(Eq, @debug.Debug)
-
-pub struct Mesh2dBundle {
-  mesh : @mesh.Mesh2d
-  material : MeshMaterial2d[ColorMaterialAsset]
-  transform : @transform.Transform
-  layers : @render_layers.RenderLayers
-  visibility : @visibility.Visibility
-  inherited_visibility : @visibility.InheritedVisibility
-  view_visibility : @visibility.ViewVisibility
-}
-pub fn Mesh2dBundle::new_with_mesh_material(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, @render_layers.RenderLayers) -> Self
-#callsite(autofill(loc))
-pub fn Mesh2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
-pub impl @ecs.Bundle for Mesh2dBundle
 
 pub struct Mesh2dWireframe {
   handle : @asset.Handle[Wireframe2dMaterial]

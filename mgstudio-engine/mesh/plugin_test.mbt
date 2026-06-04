@@ -206,6 +206,28 @@ test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
 }
 
 ///|
+test "mesh plugin: Mesh2d and Mesh3d require Transform" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @mesh.MeshPlugin::MeshPlugin(),
+  )
+  let world = app.world()
+  let mesh_handle : @asset.Handle[Mesh] = @asset.Handle::new(1)
+  let mesh2d_entity = world.spawn()
+  try! world.set(mesh2d_entity, Mesh2d::new(mesh_handle))
+  let mesh3d_entity = world.spawn()
+  try! world.set(mesh3d_entity, Mesh3d::new(mesh_handle))
+
+  debug_inspect(
+    try! world.contains_by_key(mesh2d_entity, @transform.ecs_key_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(mesh3d_entity, @transform.ecs_key_transform),
+    content="true",
+  )
+}
+
+///|
 test "mesh: base mesh pipeline key primitive topology roundtrip" {
   let triangle = BaseMeshPipelineKey::from_primitive_topology(
     Mesh3dPrimitiveTopology::TriangleList,

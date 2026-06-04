@@ -40,9 +40,6 @@ pub type Material2dPipeline[M] = @sprite.Material2dPipeline[M]
 pub type Mesh2d = @mesh.Mesh2d
 
 ///|
-pub type Mesh2dBundle = @sprite.Mesh2dBundle
-
-///|
 pub type MeshMaterial2d[M] = @sprite.MeshMaterial2d[M]
 
 ///|

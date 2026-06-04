@@ -545,7 +545,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
 }
 
 ///|
-test "render2d: Mesh2dBundle::spawn inserts expected components" {
+test "render2d: Mesh2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   let expected_transform = @transform.Transform::identity()
@@ -560,10 +560,9 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
     let material = MeshMaterial2d::new(
       test_color_material_handle(Color::white()),
     )
-    let bundle = Mesh2dBundle::new_with_mesh_material(
-      mesh, material, expected_transform,
+    entity_ref.val = Some(
+      try! world.spawn_bundle((mesh, material, expected_transform)),
     )
-    entity_ref.val = Some(bundle.spawn(world))
   })
   .run_once()
   |> ignore
@@ -582,26 +581,6 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_mesh_material2d),
-    content="true",
-  )
-  debug_inspect(
-    ecs_has_non_null_payload(
-      world, entity, @camera_render_layers.ecs_key_render_layers,
-    ),
-    content="true",
-  )
-  debug_inspect(
-    ecs_has_non_null_payload(world, entity, @visibility.ecs_key_visibility),
-    content="true",
-  )
-  debug_inspect(
-    ecs_has_non_null_payload(
-      world, entity, @visibility.ecs_key_inherited_visibility,
-    ),
-    content="true",
-  )
-  debug_inspect(
-    ecs_has_non_null_payload(world, entity, @visibility.ecs_key_view_visibility),
     content="true",
   )
   debug_inspect(
@@ -925,12 +904,8 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
 }
 
 ///|
-test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
-  let wrapped_material_handle : Ref[Int?] = Ref(None)
-  let preserved_material_handle : Ref[Int?] = Ref(None)
-  let color_material_handle : Ref[Int?] = Ref(None)
-  let explicit_mesh_material_handle : Ref[Int?] = Ref(None)
-
+test "render2d: MeshMaterial2d stores the material handle directly" {
+  let matched : Ref[Bool?] = Ref(None)
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -939,35 +914,12 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   .add_system(fn(_world : @ecs.World) {
     let material_handle = test_color_material_handle(Color::white())
     let mesh_material = MeshMaterial2d::new(material_handle)
-    let mesh = test_rectangle_mesh(4.0F, 4.0F)
-
-    let wrapped_bundle = Mesh2dBundle::new_with_mesh_material(
-      mesh,
-      MeshMaterial2d::new(material_handle),
-      @transform.Transform::identity(),
-    )
-    let preserved_bundle = Mesh2dBundle::new_with_mesh_material(
-      mesh,
-      mesh_material,
-      @transform.Transform::identity(),
-    )
-
-    wrapped_material_handle.val = Some(wrapped_bundle.material.handle.id())
-    preserved_material_handle.val = Some(preserved_bundle.material.handle.id())
-    color_material_handle.val = Some(material_handle.id())
-    explicit_mesh_material_handle.val = Some(mesh_material.handle.id())
+    matched.val = Some(mesh_material.handle.id() == material_handle.id())
   })
   .run_once()
   |> ignore
 
-  debug_inspect(
-    wrapped_material_handle.val == color_material_handle.val,
-    content="true",
-  )
-  debug_inspect(
-    preserved_material_handle.val == explicit_mesh_material_handle.val,
-    content="true",
-  )
+  debug_inspect(matched.val, content="Some(true)")
 }
 
 ///|
@@ -1155,11 +1107,13 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     let material_handle = test_image_material_handle(7)
     handle_ref.val = Some(material_handle)
     entity_ref.val = Some(
-      Mesh2dBundle::new_with_mesh_material(
-        test_rectangle_mesh(8.0F, 6.0F),
-        MeshMaterial2d::new(material_handle),
-        @transform.Transform::identity(),
-      ).spawn(world),
+      try! world.spawn_bundle(
+        (
+          test_rectangle_mesh(8.0F, 6.0F),
+          MeshMaterial2d::new(material_handle),
+          @transform.Transform::identity(),
+        ),
+      ),
     )
   })
   app = app.run_once()
@@ -1191,12 +1145,14 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(11)
     handle_ref.val = Some(material_handle)
-    Mesh2dBundle::new_with_mesh_material(
-      test_rectangle_mesh(8.0F, 6.0F),
-      MeshMaterial2d::new(material_handle),
-      @transform.Transform::identity(),
-    ).spawn(world)
-    |> ignore
+    try! (world.spawn_bundle(
+      (
+        test_rectangle_mesh(8.0F, 6.0F),
+        MeshMaterial2d::new(material_handle),
+        @transform.Transform::identity(),
+      ),
+    )
+    |> ignore)
   })
   app = app.run_once()
   let world = app.world()
