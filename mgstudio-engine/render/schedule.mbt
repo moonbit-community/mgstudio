@@ -206,6 +206,11 @@ pub let render_system_set_process_pipeline_queue : @app.SystemSet = @app.system_
 )
 
 ///|
+pub let render_system_set_register_pipeline_descriptors : @app.SystemSet = @app.system_set(
+  "mgstudio.render.register_pipeline_descriptors",
+)
+
+///|
 pub let render_system_set_render : @app.SystemSet = @app.system_set(
   "mgstudio.render.render",
 )
@@ -364,6 +369,9 @@ pub fn configure_base_render_sets(
     render_system_set_process_pipeline_queue,
   ])
   .configure_set(stage, render_system_set_process_pipeline_queue, before=[
+    render_system_set_register_pipeline_descriptors,
+  ])
+  .configure_set(stage, render_system_set_register_pipeline_descriptors, before=[
     render_system_set_render,
   ])
 }

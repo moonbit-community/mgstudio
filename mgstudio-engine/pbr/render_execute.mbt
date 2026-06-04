@@ -457,17 +457,6 @@ fn render3d_prewarm_material_pipeline(
         "missing SpecializedMaterialPipelineCache resource during pbr material pipeline specialization",
       )
   }
-  match
-    mesh_runtime_state_value.specialized_material_pipelines.render_pipeline_descriptor(
-      pipeline_id,
-    ) {
-    Some(descriptor) =>
-      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
-        material_pipeline_id=pipeline_id.id(),
-        descriptor~,
-      )
-    None => ()
-  }
   Some(pipeline_id)
 }
 
@@ -480,6 +469,22 @@ fn render3d_prewarm_mesh_pipelines(
 ) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   let specialization_tick = world.read_change_tick()
+  let mut motion_vector_prewarm_needed = false
+  for camera in cameras {
+    if camera.payload.motion_vector_prepass_enabled {
+      motion_vector_prewarm_needed = true
+      break
+    }
+    match camera.payload.motion_blur {
+      Some(motion_blur) =>
+        if motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F {
+          motion_vector_prewarm_needed = true
+          break
+        }
+      None => ()
+    }
+  }
+  let shadow_prewarm_cache = render3d_shadow_material_pipeline_prewarm_cache_new()
   for mesh_index in 0..<meshes.length() {
     let extracted_mesh = meshes[mesh_index]
     let mesh = extracted_mesh.payload
@@ -503,6 +508,16 @@ fn render3d_prewarm_mesh_pipelines(
         ..extracted_mesh,
         payload: Mesh3dExtractedPayload::{ ..mesh, material_pipeline_id, },
       }
+    }
+    if motion_vector_prewarm_needed && mesh.motion_vector_enabled {
+      ignore(render3d_prewarm_motion_vector_material_pipeline(world, mesh))
+    }
+    if !mesh.has_not_shadow_caster {
+      ignore(
+        render3d_prewarm_shadow_material_pipeline(
+          world, mesh, shadow_prewarm_cache,
+        ),
+      )
     }
     let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
       meshes[mesh_index],

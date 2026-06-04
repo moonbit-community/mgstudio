@@ -487,28 +487,28 @@ test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
     mesh_key, material_key, "PipelineKey",
   )
   let pipelines = @material.SpecializedMeshPipelines::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
   let first_layout = material_test_mesh_vertex_layout()
   let second_layout = material_test_mesh_vertex_layout(
     include_unused_attribute=true,
   )
   let first_id = try! pipelines.specialize(
-    material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
+    pipeline_cache, material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
   )
   let same_mesh_layout_id = try! pipelines.specialize(
-    material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
+    pipeline_cache, material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
   )
   let compatible_vertex_layout_id = try! pipelines.specialize(
-    material_test_specialized_mesh_pipeline, pipeline_key, second_layout,
+    pipeline_cache, material_test_specialized_mesh_pipeline, pipeline_key, second_layout,
   )
   inspect(first_id.id(), content="0")
   inspect(same_mesh_layout_id.id(), content="0")
   inspect(compatible_vertex_layout_id.id(), content="0")
   inspect(pipelines.mesh_layout_cache_len(), content="2")
   inspect(pipelines.vertex_layout_cache_len(), content="1")
-  inspect(
-    pipelines.render_pipeline_descriptor(first_id) is Some(_),
-    content="true",
-  )
+  pipeline_cache.accept_new_pipelines_for_processing()
+  let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
+  inspect(descriptor.vertex.buffers.length(), content="1")
 }
 
 ///|

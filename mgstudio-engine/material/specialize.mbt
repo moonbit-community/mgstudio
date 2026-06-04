@@ -117,7 +117,6 @@ struct SpecializedMeshPipelineVertexLayoutCacheEntry {
   vertex_layout : VertexBufferLayout
   key : ErasedMaterialPipelineKey
   pipeline_id : CachedRenderPipelineId
-  descriptor : RenderPipelineDescriptor
 }
 
 ///|
@@ -137,7 +136,7 @@ pub fn SpecializedMeshPipelines::SpecializedMeshPipelines() -> SpecializedMeshPi
 }
 
 ///|
-pub impl Default for SpecializedMeshPipelines with default() {
+pub impl Default for SpecializedMeshPipelines with fn default() {
   SpecializedMeshPipelines::SpecializedMeshPipelines()
 }
 
@@ -153,19 +152,6 @@ pub fn SpecializedMeshPipelines::vertex_layout_cache_len(
   self : SpecializedMeshPipelines,
 ) -> Int {
   self.vertex_layout_cache.length()
-}
-
-///|
-pub fn SpecializedMeshPipelines::render_pipeline_descriptor(
-  self : SpecializedMeshPipelines,
-  pipeline_id : CachedRenderPipelineId,
-) -> RenderPipelineDescriptor? {
-  for entry in self.vertex_layout_cache {
-    if entry.pipeline_id.id() == pipeline_id.id() {
-      return Some(entry.descriptor)
-    }
-  }
-  None
 }
 
 ///|
@@ -199,6 +185,7 @@ fn specialized_mesh_pipeline_find_vertex_layout_cache(
 ///|
 pub fn SpecializedMeshPipelines::specialize(
   self : SpecializedMeshPipelines,
+  pipeline_cache : @render_resource.PipelineCache,
   specialize_pipeline : SpecializedMeshPipelineFn,
   key : ErasedMaterialPipelineKey,
   layout : MaterialMeshVertexLayout,
@@ -227,14 +214,11 @@ pub fn SpecializedMeshPipelines::specialize(
     ) {
     Some(pipeline_id) => pipeline_id
     None => {
-      let id = CachedRenderPipelineId::new(
-        self.vertex_layout_cache.length().to_uint64(),
-      )
+      let id = pipeline_cache.queue_render_pipeline(descriptor)
       self.vertex_layout_cache.push(SpecializedMeshPipelineVertexLayoutCacheEntry::{
         vertex_layout,
         key,
         pipeline_id: id,
-        descriptor,
       })
       id
     }

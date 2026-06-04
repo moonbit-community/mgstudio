@@ -516,6 +516,8 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
 ///|
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
+  world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),
     None,
@@ -547,12 +549,8 @@ test "pbr material base specialization caches descriptors from real material pro
     state.peek().specialized_material_pipelines.vertex_layout_cache_len(),
     content="1",
   )
-  guard state.peek().specialized_material_pipelines.render_pipeline_descriptor(
-      first_id,
-    )
-    is Some(descriptor) else {
-    abort("expected cached pbr material descriptor")
-  }
+  pipeline_cache.accept_new_pipelines_for_processing()
+  let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   inspect(descriptor.layout.length(), content="4")
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_uint(
@@ -765,6 +763,8 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
 ///|
 test "pbr material prepass specialization caches descriptors separately" {
   let world = @ecs.World::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
+  world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),
     None,
@@ -806,23 +806,19 @@ test "pbr material prepass specialization caches descriptors separately" {
     state.peek().specialized_prepass_material_pipelines.mesh_layout_cache_len(),
     content="1",
   )
-  guard state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
-      first_id,
-    )
-    is Some(descriptor) else {
-    abort("expected cached prepass material descriptor")
-  }
+  pipeline_cache.accept_new_pipelines_for_processing()
+  let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   debug_inspect(descriptor.label, content="Some(\"prepass_pipeline\")")
 }
 
 ///|
-test "pbr prepass runtime pipeline ids do not collide with main pass cache ids" {
+test "pbr prepass runtime pipeline ids preserve global pipeline cache ids" {
   let prepass_zero = pbr_prepass_runtime_pipeline_id(
     @material.CachedRenderPipelineId::new(0UL),
   )
   let prepass_one = pbr_prepass_runtime_pipeline_id(
     @material.CachedRenderPipelineId::new(1UL),
   )
-  inspect(prepass_zero.id(), content="4611686018427387904")
-  inspect(prepass_one.id(), content="4611686018427387905")
+  inspect(prepass_zero.id(), content="0")
+  inspect(prepass_one.id(), content="1")
 }

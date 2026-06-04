@@ -68,17 +68,6 @@ fn render3d_prewarm_motion_vector_material_pipeline(
       )
   }
   let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
-  match
-    state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
-      prepass_pipeline_id,
-    ) {
-    Some(descriptor) =>
-      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
-        material_pipeline_id=runtime_pipeline_id.id(),
-        descriptor~,
-      )
-    None => ()
-  }
   Some(runtime_pipeline_id)
 }
 

@@ -283,6 +283,25 @@ fn process_pipeline_queue_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn register_pipeline_cache_render_pipeline_descriptors(
+  world : @ecs.World,
+) -> Unit {
+  guard world.get_resource(pipeline_cache_resource_key) is Some(cache) else {
+    return
+  }
+  for index, cached_pipeline in cache.pipelines() {
+    match cached_pipeline.descriptor() {
+      @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) =>
+        @renderer.register_mesh3d_material_pipeline_descriptor(
+          material_pipeline_id=index.to_uint64(),
+          descriptor~,
+        )
+      @render_resource.PipelineDescriptor::ComputePipelineDescriptor(_) => ()
+    }
+  }
+}
+
+///|
 pub fn RenderResources::unpack_into(
   self : RenderResources,
   main_world : @ecs.World,

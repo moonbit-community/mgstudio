@@ -421,6 +421,8 @@ pub let render_system_set_queue_meshes : String
 
 pub let render_system_set_queue_sweep : String
 
+pub let render_system_set_register_pipeline_descriptors : String
+
 pub let render_system_set_render : String
 
 pub fn renderer_is_ready(@ecs.World) -> Bool

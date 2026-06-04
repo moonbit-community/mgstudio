@@ -149,6 +149,14 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(register_pipeline_cache_render_pipeline_descriptors)
+        .named(
+          "mgstudio_render::register_pipeline_cache_render_pipeline_descriptors",
+        )
+        .in_set(render_system_set_register_pipeline_descriptors),
+      )
+      .add_systems(
+        render_schedule_stage(),
         @app.system(render_graph_driver_system).in_set(render_system_set_render),
       )
       .add_systems(

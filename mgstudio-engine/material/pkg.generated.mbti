@@ -347,8 +347,7 @@ pub struct SpecializedMeshPipelines {
 pub fn SpecializedMeshPipelines::SpecializedMeshPipelines() -> Self
 pub fn SpecializedMeshPipelines::mesh_layout_cache_len(Self) -> Int
 pub fn SpecializedMeshPipelines::new() -> Self
-pub fn SpecializedMeshPipelines::render_pipeline_descriptor(Self, @render_resource.CachedRenderPipelineId) -> @render_resource.RenderPipelineDescriptor?
-pub fn SpecializedMeshPipelines::specialize(Self, (ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.CachedRenderPipelineId raise SpecializedMeshPipelineError
+pub fn SpecializedMeshPipelines::specialize(Self, @render_resource.PipelineCache, (ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.CachedRenderPipelineId raise SpecializedMeshPipelineError
 pub fn SpecializedMeshPipelines::vertex_layout_cache_len(Self) -> Int
 pub impl Default for SpecializedMeshPipelines
 

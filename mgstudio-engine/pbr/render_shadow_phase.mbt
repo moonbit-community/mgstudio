@@ -307,19 +307,7 @@ fn render3d_prewarm_shadow_material_pipeline(
       )
   }
   let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
-  match
-    state.peek().specialized_prepass_material_pipelines.render_pipeline_descriptor(
-      prepass_pipeline_id,
-    ) {
-    Some(descriptor) => {
-      prewarm_cache.descriptor_registrations += 1
-      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
-        material_pipeline_id=runtime_pipeline_id.id(),
-        descriptor~,
-      )
-    }
-    None => ()
-  }
+  prewarm_cache.specializations += 1
   let result = Some(runtime_pipeline_id)
   prewarm_cache.entries.set(prewarm_key, result)
   result
@@ -331,12 +319,12 @@ priv struct Render3dShadowMaterialPipelinePrewarmCache {
   mut lookups : Int
   mut hits : Int
   mut misses : Int
-  mut descriptor_registrations : Int
+  mut specializations : Int
 }
 
 ///|
 fn render3d_shadow_material_pipeline_prewarm_cache_new() -> Render3dShadowMaterialPipelinePrewarmCache {
-  { entries: {}, lookups: 0, hits: 0, misses: 0, descriptor_registrations: 0 }
+  { entries: {}, lookups: 0, hits: 0, misses: 0, specializations: 0 }
 }
 
 ///|
@@ -372,8 +360,8 @@ fn render3d_shadow_material_pipeline_emit_prewarm_counters(
     cache.misses,
   )
   @app.timeline_trace_emit_counter_int(
-    "render_3d_shadow_pipeline_descriptor_registrations",
-    cache.descriptor_registrations,
+    "render_3d_shadow_pipeline_prewarm_specializations",
+    cache.specializations,
   )
 }
 

@@ -112,9 +112,6 @@ const MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS : Int = 37
 const MESH_PIPELINE_KEY_BLEND_RESERVED_BITS : UInt64 = 1879048192UL
 
 ///|
-const PBR_PREPASS_RUNTIME_PIPELINE_ID_OFFSET : UInt64 = 0x4000000000000000UL
-
-///|
 fn pbr_shader_def(name : String) -> @material.ShaderDefVal {
   @material.ShaderDefVal::Flag(name)
 }
@@ -959,12 +956,23 @@ pub fn PbrPrepassPipelineSpecializer::specialize(
 }
 
 ///|
+fn pbr_pipeline_cache_or_abort(
+  world : @ecs.World,
+) -> @render_resource.PipelineCache {
+  match world.get_resource(@render.pipeline_cache_resource_key) {
+    Some(cache) => cache
+    None => abort("Missing PipelineCache resource in render world")
+  }
+}
+
+///|
 fn pbr_material_base_specialize(
   world : @ecs.World,
   key : @material.ErasedMaterialPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  let pipeline_cache = pbr_pipeline_cache_or_abort(world)
   let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
   let state_value = state.peek()
   let specializer = PbrMaterialPipelineSpecializer::new(
@@ -972,6 +980,7 @@ fn pbr_material_base_specialize(
     binding_arrays_are_usable=state_value.binding_arrays_are_usable,
   )
   let result = state_value.specialized_material_pipelines.specialize(
+    pipeline_cache,
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)
     },
@@ -989,6 +998,7 @@ fn pbr_material_prepass_specialize(
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  let pipeline_cache = pbr_pipeline_cache_or_abort(world)
   let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
   let state_value = state.peek()
   let specializer = PbrPrepassPipelineSpecializer::new(
@@ -996,6 +1006,7 @@ fn pbr_material_prepass_specialize(
     binding_arrays_are_usable=state_value.binding_arrays_are_usable,
   )
   let result = state_value.specialized_prepass_material_pipelines.specialize(
+    pipeline_cache,
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)
     },
@@ -1010,9 +1021,7 @@ fn pbr_material_prepass_specialize(
 fn pbr_prepass_runtime_pipeline_id(
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> @material.CachedRenderPipelineId {
-  @material.CachedRenderPipelineId::new(
-    PBR_PREPASS_RUNTIME_PIPELINE_ID_OFFSET | pipeline_id.id(),
-  )
+  pipeline_id
 }
 
 ///|
