@@ -39,6 +39,11 @@ pub suberror NoFragmentStateError {
   NoFragmentStateConfigured
 }
 
+pub suberror PipelineCacheAccessError {
+  PipelineNotProcessed(UInt64)
+  WrongPipelineKind(UInt64)
+}
+
 // Types and methods
 pub struct AtomicPodBlob {
   words : Array[UInt]
@@ -232,6 +237,22 @@ pub fn CachedComputePipelineId::id(Self) -> UInt64
 pub fn CachedComputePipelineId::invalid() -> Self
 pub fn CachedComputePipelineId::new(UInt64) -> Self
 
+pub struct CachedPipeline {
+  descriptor : PipelineDescriptor
+  state : CachedPipelineState
+}
+pub fn CachedPipeline::descriptor(Self) -> PipelineDescriptor
+pub fn CachedPipeline::state(Self) -> CachedPipelineState
+
+pub(all) enum CachedPipelineState {
+  Queued
+  Ok(Pipeline)
+  Err(String)
+}
+pub fn CachedPipelineState::is_err(Self) -> Bool
+pub fn CachedPipelineState::is_ok(Self) -> Bool
+pub fn CachedPipelineState::is_queued(Self) -> Bool
+
 pub struct CachedRenderPipelineId {
   id : UInt64
 }
@@ -323,16 +344,30 @@ pub struct MultisampleState {
 pub fn MultisampleState::MultisampleState() -> Self
 pub impl Default for MultisampleState
 
-pub struct PipelineCache {
-  render_pipelines : Map[String, UInt64]
-  compute_pipelines : Map[String, UInt64]
+pub(all) enum Pipeline {
+  RenderPipeline(RenderPipeline)
+  ComputePipeline(ComputePipeline)
 }
-pub fn PipelineCache::clear(Self) -> Unit
-pub fn PipelineCache::compute_pipeline(Self, String) -> UInt64?
-pub fn PipelineCache::insert_compute(Self, String, UInt64) -> Unit
-pub fn PipelineCache::insert_render(Self, String, UInt64) -> Unit
+
+pub struct PipelineCache {
+  pipelines : Array[CachedPipeline]
+  waiting_pipelines : Array[UInt64]
+  new_pipelines : Array[CachedPipeline]
+}
+pub fn PipelineCache::accept_new_pipelines_for_processing(Self) -> Unit
+pub fn PipelineCache::get_compute_pipeline(Self, CachedComputePipelineId) -> ComputePipeline?
+pub fn PipelineCache::get_compute_pipeline_descriptor(Self, CachedComputePipelineId) -> ComputePipelineDescriptor raise PipelineCacheAccessError
+pub fn PipelineCache::get_compute_pipeline_state(Self, CachedComputePipelineId) -> CachedPipelineState
+pub fn PipelineCache::get_render_pipeline(Self, CachedRenderPipelineId) -> RenderPipeline?
+pub fn PipelineCache::get_render_pipeline_descriptor(Self, CachedRenderPipelineId) -> RenderPipelineDescriptor raise PipelineCacheAccessError
+pub fn PipelineCache::get_render_pipeline_state(Self, CachedRenderPipelineId) -> CachedPipelineState
 pub fn PipelineCache::new() -> Self
-pub fn PipelineCache::render_pipeline(Self, String) -> UInt64?
+pub fn PipelineCache::pipeline_count(Self) -> Int
+pub fn PipelineCache::pipelines(Self) -> Array[CachedPipeline]
+pub fn PipelineCache::queue_compute_pipeline(Self, ComputePipelineDescriptor) -> CachedComputePipelineId
+pub fn PipelineCache::queue_render_pipeline(Self, RenderPipelineDescriptor) -> CachedRenderPipelineId
+pub fn PipelineCache::queued_pipeline_count(Self) -> Int
+pub fn PipelineCache::waiting_pipelines(Self) -> Array[UInt64]
 
 pub(all) enum PipelineDescriptor {
   RenderPipelineDescriptor(RenderPipelineDescriptor)
