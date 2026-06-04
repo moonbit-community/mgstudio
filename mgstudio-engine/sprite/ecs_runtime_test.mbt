@@ -496,7 +496,11 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   try! register_render2d_required_components(world)
   let entity = world.spawn_empty()
 
-  try! (world.set_by_key(entity, ecs_key_camera2d, @sprite.Camera2d::Camera2d())
+  try! (world.set_by_key(
+    entity,
+    ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
   |> ignore)
   try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
 
@@ -625,7 +629,9 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
         ],
       ) {
-        ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+        ignore(
+          commands.spawn_component(@camera_components2d.Camera2d::Camera2d()),
+        )
         meshes.set_changed()
         let mesh_handle = meshes
           .peek()
