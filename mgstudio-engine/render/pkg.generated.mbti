@@ -145,7 +145,7 @@ pub fn host_gpu_apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scen
 
 pub fn host_gpu_apply_bloom(scene_texture_id~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
-pub fn host_gpu_begin_frame(Int) -> Int
+pub fn host_gpu_begin_frame(Int) -> Bool
 
 pub fn host_gpu_begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
@@ -243,8 +243,6 @@ pub fn host_gpu_draw_ui_rect(texture_id~ : Int, x~ : Float, y~ : Float, rotation
 
 pub fn host_gpu_draw_ui_texture_slice(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_slice_l~ : Float, texture_slice_t~ : Float, texture_slice_r~ : Float, texture_slice_b~ : Float, target_slice_l~ : Float, target_slice_t~ : Float, target_slice_r~ : Float, target_slice_b~ : Float, repeat_side_x~ : Float, repeat_side_y~ : Float, repeat_center_x~ : Float, repeat_center_y~ : Float, atlas_l~ : Float, atlas_t~ : Float, atlas_r~ : Float, atlas_b~ : Float) -> Unit
 
-pub fn host_gpu_end_frame(Int) -> Unit
-
 pub fn host_gpu_end_pass() -> Unit
 
 pub fn host_gpu_get_queue(Int) -> Int
@@ -315,6 +313,8 @@ pub let pipeline_cache_resource_key : @ecs.ResourceKey[@render_resource.Pipeline
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn prepare_active_frame_submissions(@ecs.World) -> Unit
+
 pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> B raise ErasedPrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
@@ -324,6 +324,8 @@ pub fn prepare_gpu_image_render_asset(@ecs.World, @asset.AssetId[@image.Image]) 
 pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
 pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> B raise PrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
+
+pub fn present_active_frames(@ecs.World) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -356,6 +358,12 @@ pub fn render_graph_schedule_stage() -> @app.ScheduleStage
 pub let render_graph_system_set_begin : String
 
 pub let render_graph_system_set_finish : String
+
+pub let render_graph_system_set_flush_command_buffers : String
+
+pub let render_graph_system_set_prepare_frame_submissions : String
+
+pub let render_graph_system_set_present_frames : String
 
 pub let render_graph_system_set_render : String
 
@@ -941,8 +949,6 @@ pub fn WgpuSettingsPriority::default() -> Self
 pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
 
 pub type HostGpuDevice = Int
-
-pub type HostGpuFrame = Int
 
 pub using @renderer {type HostGpuMeshInfo}
 

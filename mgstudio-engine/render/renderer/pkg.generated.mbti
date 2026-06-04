@@ -83,7 +83,7 @@ pub fn asset_write_texture_region_rgba8(texture_id~ : Int, x~ : Int, y~ : Int, w
 
 pub fn asset_write_texture_region_rgba8_mip(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, pixels_rgba8~ : Bytes) -> Unit
 
-pub fn begin_frame(Int) -> Int
+pub fn begin_frame(Int) -> Bool
 
 pub fn begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
@@ -184,8 +184,6 @@ pub fn draw_ui_box_shadow(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ :
 pub fn draw_ui_rect(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, uv_min_x~ : Float, uv_min_y~ : Float, uv_max_x~ : Float, uv_max_y~ : Float, flags~ : Int, radius_tl~ : Float, radius_tr~ : Float, radius_br~ : Float, radius_bl~ : Float, border_left~ : Float, border_top~ : Float, border_right~ : Float, border_bottom~ : Float) -> Unit
 
 pub fn draw_ui_texture_slice(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_slice_l~ : Float, texture_slice_t~ : Float, texture_slice_r~ : Float, texture_slice_b~ : Float, target_slice_l~ : Float, target_slice_t~ : Float, target_slice_r~ : Float, target_slice_b~ : Float, repeat_side_x~ : Float, repeat_side_y~ : Float, repeat_center_x~ : Float, repeat_center_y~ : Float, atlas_l~ : Float, atlas_t~ : Float, atlas_r~ : Float, atlas_b~ : Float) -> Unit
-
-pub fn end_frame(Int) -> Unit
 
 pub fn end_pass() -> Unit
 
@@ -311,6 +309,8 @@ pub fn meshlet_visibility_buffer_hardware_raster_dispatch_count() -> Int
 
 pub fn meshlet_visibility_buffer_software_raster_dispatch_count() -> Int
 
+pub fn prepare_active_frame_submissions(PendingCommandBuffers) -> Unit
+
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
 pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
@@ -334,6 +334,8 @@ pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_w
 pub fn prepare_motion_blur(velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
+
+pub fn present_active_frames() -> Unit
 
 pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, vertex_shader_path~ : String?, fragment_shader_path~ : String?, forward_decal~ : Bool) -> Unit
 
@@ -978,8 +980,6 @@ pub fn GpuBackend::draw_tonemapping3d(Self, Int, Float, Int, Int, Int, Int, Int,
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
-pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
-pub fn GpuBackend::end_frame_binding(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
@@ -1000,6 +1000,7 @@ pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(Self, view_
 pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
+pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
 pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
@@ -1012,6 +1013,7 @@ pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(Self, view_en
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(Self, view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
 pub fn GpuBackend::prepare_motion_blur(Self, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::present_active_frames(Self) -> Unit
 pub fn GpuBackend::register_mesh2d_pipeline_descriptor(Self, UInt64, String) -> Unit
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
@@ -1795,8 +1797,6 @@ pub fn[T] WgpuWrapper::set(Self[T], T) -> Unit
 
 // Type aliases
 pub type NativeGpuDevice = Int
-
-pub type NativeGpuFrame = Int
 
 pub type NativeGpuQueue = Int
 

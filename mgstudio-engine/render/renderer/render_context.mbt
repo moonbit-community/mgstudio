@@ -27,9 +27,6 @@ pub type NativeGpuQueue = Int
 pub type NativeGpuSurface = Int
 
 ///|
-pub type NativeGpuFrame = Int
-
-///|
 pub(all) struct PendingCommandBuffersInner {
   mut buffers : Array[@wgpu.CommandBuffer]
   mut encoders : Array[@wgpu.CommandEncoder]

@@ -56,6 +56,21 @@ pub let render_graph_system_set_finish : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render_graph_system_set_prepare_frame_submissions : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.prepare_frame_submissions",
+)
+
+///|
+pub let render_graph_system_set_flush_command_buffers : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.flush_command_buffers",
+)
+
+///|
+pub let render_graph_system_set_present_frames : @app.SystemSet = @app.system_set(
+  "mgstudio.render.graph.present_frames",
+)
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderStartup`).
 pub fn render_startup_schedule_stage() -> @app.ScheduleStage {
   @app.schedule_label("mgstudio.render.startup")
@@ -177,6 +192,21 @@ pub fn configure_base_render_graph_sets(
     render_graph_system_set_submit,
   ])
   .configure_set(stage, render_graph_system_set_submit, before=[
+    render_graph_system_set_finish,
+  ])
+  .configure_set(
+    stage,
+    render_graph_system_set_prepare_frame_submissions,
+    before=[render_graph_system_set_flush_command_buffers],
+    in_sets=[render_graph_system_set_submit],
+  )
+  .configure_set(
+    stage,
+    render_graph_system_set_flush_command_buffers,
+    before=[render_graph_system_set_finish],
+    in_sets=[render_graph_system_set_submit],
+  )
+  .configure_set(stage, render_graph_system_set_present_frames, in_sets=[
     render_graph_system_set_finish,
   ])
 }

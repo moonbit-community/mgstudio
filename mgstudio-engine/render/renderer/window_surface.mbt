@@ -26,7 +26,6 @@ priv struct SurfaceBinding {
 
 ///|
 priv struct FrameBinding {
-  frame_id : NativeGpuFrame
   surface_id : NativeGpuSurface
 }
 
@@ -34,18 +33,12 @@ priv struct FrameBinding {
 priv struct WindowSurfaceRuntimeState {
   surfaces : Array[SurfaceBinding]
   mut next_surface_id : Int
-  mut next_frame_id : Int
   mut frames : Array[FrameBinding]
 }
 
 ///|
 fn window_surface_runtime_state_default() -> WindowSurfaceRuntimeState {
-  WindowSurfaceRuntimeState::{
-    surfaces: [],
-    next_surface_id: 1,
-    next_frame_id: 1,
-    frames: [],
-  }
+  WindowSurfaceRuntimeState::{ surfaces: [], next_surface_id: 1, frames: [] }
 }
 
 ///|
@@ -56,14 +49,6 @@ fn next_surface_id() -> NativeGpuSurface {
   let state = window_surface_runtime_state
   let id = state.next_surface_id
   state.next_surface_id = state.next_surface_id + 1
-  id
-}
-
-///|
-fn next_frame_id() -> NativeGpuFrame {
-  let state = window_surface_runtime_state
-  let id = state.next_frame_id
-  state.next_frame_id = state.next_frame_id + 1
   id
 }
 
@@ -92,22 +77,6 @@ fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
     }
   }
   None
-}
-
-///|
-fn remove_frame_binding(frame_id : NativeGpuFrame) -> NativeGpuSurface? {
-  let state = window_surface_runtime_state
-  let next : Array[FrameBinding] = []
-  let mut found : NativeGpuSurface? = None
-  for binding in state.frames {
-    if binding.frame_id == frame_id {
-      found = Some(binding.surface_id)
-    } else {
-      next.push(binding)
-    }
-  }
-  state.frames = next
-  found
 }
 
 ///|
@@ -767,9 +736,10 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
 }
 
 ///|
-pub fn GpuBackend::end_frame_binding(
+fn GpuBackend::prepare_frame_submission_binding(
   self : GpuBackend,
   surface_id : Int,
+  pending_command_buffers : PendingCommandBuffers,
 ) -> Unit raise GpuBackendError {
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
     return
@@ -798,23 +768,28 @@ pub fn GpuBackend::end_frame_binding(
   screenshot_present_surface_capture(self)
   screenshot_encode_pending_texture_captures(self, frame)
   let cmd = frame.encoder.finish()
+  pending_command_buffers.push_one(cmd)
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "renderer.command_encoding",
     command_encoding_trace_start_us,
   )
-  let submission_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "renderer.submission",
-  )
-  self.queue.submit_one(cmd)
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "renderer.submission",
-    submission_trace_start_us,
-  )
+}
+
+///|
+fn GpuBackend::present_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let target_id = self.surfaces[index].target_id
+  if !activate_surface_frame_for_target(self, target_id) {
+    return
+  }
+  guard self.frame is Some(frame) else { return }
   screenshot_collect_completed_captures(self)
-  cmd.release()
   let present_wait_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "renderer.present_wait",
@@ -849,15 +824,31 @@ pub fn GpuBackend::end_frame_binding(
   self.frame = None
   self.pass_state = None
   sync_active_surface_state(self)
+  render_diagnostics_end_frame()
 }
 
 ///|
-pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
-  guard default_surface_target_id(self) is Some(target_id) else { return }
-  guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
-    return
+pub fn GpuBackend::prepare_active_frame_submissions(
+  self : GpuBackend,
+  pending_command_buffers : PendingCommandBuffers,
+) -> Unit raise GpuBackendError {
+  let state = window_surface_runtime_state
+  for binding in state.frames {
+    self.prepare_frame_submission_binding(
+      binding.surface_id,
+      pending_command_buffers,
+    )
   }
-  self.end_frame_binding(self.surfaces[index].surface_id)
+}
+
+///|
+pub fn GpuBackend::present_active_frames(self : GpuBackend) -> Unit {
+  let state = window_surface_runtime_state
+  let frames = state.frames
+  state.frames = []
+  for binding in frames {
+    self.present_frame_binding(binding.surface_id)
+  }
 }
 
 ///|
@@ -917,28 +908,34 @@ pub fn configure_surface(
 }
 
 ///|
-pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
+pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
   if surface <= 0 {
-    return 0
+    return false
   }
   render_diagnostics_begin_frame()
   if ensure_backend() is Some(backend) {
-    guard backend.begin_frame_binding(surface) else { return 0 }
-    let frame_id = next_frame_id()
+    guard backend.begin_frame_binding(surface) else { return false }
     let state = window_surface_runtime_state
-    state.frames.push(FrameBinding::{ frame_id, surface_id: surface })
-    return frame_id
+    state.frames.push(FrameBinding::{ surface_id: surface })
+    return true
   }
-  0
+  false
 }
 
 ///|
-pub fn end_frame(frame : NativeGpuFrame) -> Unit {
-  guard remove_frame_binding(frame) is Some(surface_id) else { return }
+pub fn prepare_active_frame_submissions(
+  pending_command_buffers : PendingCommandBuffers,
+) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.end_frame_binding(surface_id) catch {
-      err => debug_runtime_error("end_frame", err)
+    backend.prepare_active_frame_submissions(pending_command_buffers) catch {
+      err => debug_runtime_error("prepare_active_frame_submissions", err)
     }
   }
-  render_diagnostics_end_frame()
+}
+
+///|
+pub fn present_active_frames() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.present_active_frames()
+  }
 }

@@ -252,8 +252,26 @@ pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
   let buffers = pending.take()
   if buffers.length() > 0 {
     queue.submit(buffers)
+    for buffer in buffers {
+      buffer.release()
+    }
   }
   world.insert_resource(pending_command_buffers_resource_key, pending)
+}
+
+///|
+pub fn prepare_active_frame_submissions(world : @ecs.World) -> Unit {
+  let pending = match world.get_resource(pending_command_buffers_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  @renderer.prepare_active_frame_submissions(pending)
+  world.insert_resource(pending_command_buffers_resource_key, pending)
+}
+
+///|
+pub fn present_active_frames(_world : @ecs.World) -> Unit {
+  @renderer.present_active_frames()
 }
 
 ///|

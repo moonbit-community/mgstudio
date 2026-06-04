@@ -25,11 +25,6 @@ priv struct RunnerSurfaceBinding {
 }
 
 ///|
-priv struct RunnerFrameBinding {
-  frame : @render.HostGpuFrame
-}
-
-///|
 fn runner_surface_binding_find(
   bindings : Array[RunnerSurfaceBinding],
   host_window : @window.HostWindow,
@@ -513,7 +508,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     } else {
       self.debug_screenshot_surface_index
     }
-    let frame_bindings : Array[RunnerFrameBinding] = []
+    let mut begun_frame_count = 0
     let begin_frames_trace_start_us = @app.timeline_trace_begin_span(
       @app.TimelineTraceCategory::System,
       "mgstudio_winit::runner.begin_frames",
@@ -534,32 +529,25 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
         continue
       }
       @render.host_gpu_set_active_surface_target(binding.target_id)
-      let frame = @render.host_gpu_begin_frame(binding.surface)
-      if frame > 0 {
-        frame_bindings.push(RunnerFrameBinding::{ frame, })
+      if @render.host_gpu_begin_frame(binding.surface) {
+        begun_frame_count = begun_frame_count + 1
       }
     }
     @app.timeline_trace_emit_counter_int(
-      "winit.runner.frames",
-      frame_bindings.length(),
+      "winit.runner.frames", begun_frame_count,
     )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::System,
       "mgstudio_winit::runner.begin_frames",
       begin_frames_trace_start_us,
     )
+    winit_runner_trace_span("mgstudio_winit::runner.screenshot_queue", fn() {
+      @window.screenshot_queue_capture_requests(self.app_ref.val.world())
+    })
     winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
       self.app_ref.val = self.app_ref.val.run_once()
     })
     self.debug_screenshot_render_frame = next_render_frame
-    winit_runner_trace_span("mgstudio_winit::runner.screenshot_queue", fn() {
-      @window.screenshot_queue_capture_requests(self.app_ref.val.world())
-    })
-    winit_runner_trace_span("mgstudio_winit::runner.end_frames", fn() {
-      for frame_binding in frame_bindings {
-        @render.host_gpu_end_frame(frame_binding.frame)
-      }
-    })
     winit_runner_trace_span("mgstudio_winit::runner.screenshot_finalize", fn() {
       @window.screenshot_finalize_capture_requests(self.app_ref.val.world())
     })

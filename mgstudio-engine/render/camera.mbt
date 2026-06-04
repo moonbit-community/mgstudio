@@ -19,9 +19,6 @@
 pub type HostGpuSurface = Int
 
 ///|
-pub type HostGpuFrame = Int
-
-///|
 pub(all) enum HostGpuPresentMode {
   AutoVsync
   AutoNoVsync
@@ -115,13 +112,8 @@ pub fn host_gpu_configure_surface(
 }
 
 ///|
-pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame {
+pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> Bool {
   @renderer.begin_frame(surface)
-}
-
-///|
-pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
-  @renderer.end_frame(frame)
 }
 
 ///|
@@ -147,7 +139,7 @@ pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for SortedCameras with resource() {
+pub impl @app.Resource for SortedCameras with fn resource() {
   sorted_cameras_key
 }
 

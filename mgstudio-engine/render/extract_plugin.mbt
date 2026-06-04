@@ -121,9 +121,21 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         RenderGraph::schedule(),
-        @app.system(flush_pending_command_buffers).in_set(
-          render_graph_system_set_submit,
-        ),
+        @app.system(prepare_active_frame_submissions)
+        .named("mgstudio_render::prepare_active_frame_submissions")
+        .in_set(render_graph_system_set_prepare_frame_submissions),
+      )
+      .add_systems(
+        RenderGraph::schedule(),
+        @app.system(flush_pending_command_buffers)
+        .named("mgstudio_render::flush_pending_command_buffers")
+        .in_set(render_graph_system_set_flush_command_buffers),
+      )
+      .add_systems(
+        RenderGraph::schedule(),
+        @app.system(present_active_frames)
+        .named("mgstudio_render::present_active_frames")
+        .in_set(render_graph_system_set_present_frames),
       )
     }),
   )

@@ -100,9 +100,8 @@ fn externally_driven_runner_builder(
     let mut runtime_app = app.run_startup()
     for _ in 0..<120 {
       @window.window_poll_host_events(runtime_app.world())
-      let frame = @render.host_gpu_begin_frame(surface)
+      ignore(@render.host_gpu_begin_frame(surface))
       runtime_app = runtime_app.update()
-      @render.host_gpu_end_frame(frame)
       if runtime_app.should_exit() is Some(_) {
         break
       }
