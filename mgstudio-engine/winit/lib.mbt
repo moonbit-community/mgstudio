@@ -35,7 +35,7 @@ pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent] = 
 )
 
 ///|
-pub impl @ecs.Message for RawWinitWindowEvent with message() {
+pub impl @ecs.Message for RawWinitWindowEvent with fn message() {
   ecs_key_raw_winit_window_event
 }
 
@@ -50,12 +50,12 @@ pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for WinitPlugin with name(_self) {
+pub impl @app.Plugin for WinitPlugin with fn name(_self) {
   WINIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for WinitPlugin with build(self, app) {
+pub impl @app.Plugin for WinitPlugin with fn build(self, app) {
   winit_plugin_with(app, self)
 }
 
@@ -92,21 +92,39 @@ pub fn winit_plugin_with(
   .add_systems(
     @app.Last,
     (
-      @app.system(winit_changed_windows_system),
-      @app.system(@winit_cursor.winit_changed_cursor_options_system),
-      @app.system(winit_despawn_windows_system),
-      @app.system(winit_check_keyboard_focus_lost_system),
+      @app.system(winit_changed_windows_system).named(
+        "mgstudio_winit::changed_windows",
+      ),
+      @app.system(@winit_cursor.winit_changed_cursor_options_system).named(
+        "mgstudio_winit::changed_cursor_options",
+      ),
+      @app.system(winit_despawn_windows_system).named(
+        "mgstudio_winit::despawn_windows",
+      ),
+      @app.system(winit_check_keyboard_focus_lost_system).named(
+        "mgstudio_winit::check_keyboard_focus_lost",
+      ),
     )
     |> @app.chain(),
   )
   .add_systems(
     @app.PreUpdate,
     (
-      @app.system(winit_create_monitors_system),
-      @app.system(winit_create_windows_system),
-      @app.system(winit_prepare_windows_system),
-      @app.system(winit_sync_windows_resource_system),
-      @app.system(winit_write_raw_winit_window_events_system),
+      @app.system(winit_create_monitors_system).named(
+        "mgstudio_winit::create_monitors",
+      ),
+      @app.system(winit_create_windows_system).named(
+        "mgstudio_winit::create_windows",
+      ),
+      @app.system(winit_prepare_windows_system).named(
+        "mgstudio_winit::prepare_windows",
+      ),
+      @app.system(winit_sync_windows_resource_system).named(
+        "mgstudio_winit::sync_windows_resource",
+      ),
+      @app.system(winit_write_raw_winit_window_events_system).named(
+        "mgstudio_winit::write_raw_window_events",
+      ),
     )
     |> @app.chain(),
   )

@@ -144,6 +144,20 @@ fn runner_now_millis() -> Int64 {
 }
 
 ///|
+fn winit_runner_trace_span(name : String, run : () -> Unit) -> Unit {
+  let trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    name,
+  )
+  run()
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    name,
+    trace_start_us,
+  )
+}
+
+///|
 fn runner_update_mode_for_world(world : @ecs.World) -> UpdateMode {
   let settings = match world.get_resource(WinitSettings::resource()) {
     Some(value) => value
@@ -386,8 +400,18 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       None => ()
     }
   }
-  winit_window_backend_sync_system(world)
+  winit_runner_trace_span("mgstudio_winit::runner.backend_sync", fn() {
+    winit_window_backend_sync_system(world)
+  })
+  let surface_bindings_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::runner.surface_bindings",
+  )
   let host_entries = @window.window_host_entries(world)
+  @app.timeline_trace_emit_counter_int(
+    "winit.runner.host_windows",
+    host_entries.length(),
+  )
   let next_surfaces : Array[RunnerSurfaceBinding] = []
   let previous_surfaces = self.runner_surfaces
   for entry in host_entries {
@@ -465,6 +489,15 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     })
   }
   self.runner_surfaces = next_surfaces
+  @app.timeline_trace_emit_counter_int(
+    "winit.runner.surface_bindings",
+    self.runner_surfaces.length(),
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::runner.surface_bindings",
+    surface_bindings_trace_start_us,
+  )
 
   if @app.app_rendering_enabled() {
     let next_render_frame = self.debug_screenshot_render_frame + 1
@@ -481,6 +514,10 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       self.debug_screenshot_surface_index
     }
     let frame_bindings : Array[RunnerFrameBinding] = []
+    let begin_frames_trace_start_us = @app.timeline_trace_begin_span(
+      @app.TimelineTraceCategory::System,
+      "mgstudio_winit::runner.begin_frames",
+    )
     for i, binding in ordered_surface_bindings {
       if !self.debug_screenshot_requested &&
         self.debug_screenshot_path is Some(_) &&
@@ -502,13 +539,30 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
         frame_bindings.push(RunnerFrameBinding::{ frame, })
       }
     }
-    self.app_ref.val = self.app_ref.val.run_once()
+    @app.timeline_trace_emit_counter_int(
+      "winit.runner.frames",
+      frame_bindings.length(),
+    )
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::System,
+      "mgstudio_winit::runner.begin_frames",
+      begin_frames_trace_start_us,
+    )
+    winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
+      self.app_ref.val = self.app_ref.val.run_once()
+    })
     self.debug_screenshot_render_frame = next_render_frame
-    @window.screenshot_queue_capture_requests(self.app_ref.val.world())
-    for frame_binding in frame_bindings {
-      @render.host_gpu_end_frame(frame_binding.frame)
-    }
-    @window.screenshot_finalize_capture_requests(self.app_ref.val.world())
+    winit_runner_trace_span("mgstudio_winit::runner.screenshot_queue", fn() {
+      @window.screenshot_queue_capture_requests(self.app_ref.val.world())
+    })
+    winit_runner_trace_span("mgstudio_winit::runner.end_frames", fn() {
+      for frame_binding in frame_bindings {
+        @render.host_gpu_end_frame(frame_binding.frame)
+      }
+    })
+    winit_runner_trace_span("mgstudio_winit::runner.screenshot_finalize", fn() {
+      @window.screenshot_finalize_capture_requests(self.app_ref.val.world())
+    })
     if !self.debug_screenshot_saved && self.debug_screenshot_path is Some(path) {
       let capture0 = if self.debug_screenshot_texture_id > 0 &&
         next_render_frame >= self.debug_screenshot_frame {
@@ -544,7 +598,9 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       return
     }
   } else {
-    self.app_ref.val = self.app_ref.val.run_once()
+    winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
+      self.app_ref.val = self.app_ref.val.run_once()
+    })
   }
   if self.app_ref.val.should_exit() is Some(_) {
     @window.window_request_close_all_hosts(self.app_ref.val.world())
@@ -561,6 +617,10 @@ fn WinitAppRunnerState::redraw_requested(
   self : WinitAppRunnerState,
   event_loop : @window_macos.ActiveEventLoop,
 ) -> Unit {
+  let redraw_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::redraw_requested",
+  )
   let begin_frame_ms = runner_now_millis()
   let mode = runner_update_mode_for_world(self.app_ref.val.world())
   let mut should_update = runner_should_update(
@@ -574,10 +634,20 @@ fn WinitAppRunnerState::redraw_requested(
     self.startup_forced_updates = self.startup_forced_updates - 1
     should_update = true
   }
+  @app.timeline_trace_emit_counter_int(
+    "winit.redraw.should_update",
+    if should_update {
+      1
+    } else {
+      0
+    },
+  )
   if should_update {
     if !self.ran_update_since_last_redraw ||
       runner_all_windows_invisible(self.app_ref.val.world()) {
-      self.run_tick()
+      winit_runner_trace_span("mgstudio_winit::redraw.run_tick", fn() {
+        self.run_tick()
+      })
       self.mark_app_update_complete()
       self.ran_update_since_last_redraw = true
     } else {
@@ -595,6 +665,10 @@ fn WinitAppRunnerState::redraw_requested(
     self.update_mode = mode
   }
 
+  let control_flow_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::redraw.control_flow",
+  )
   match mode {
     Continuous => {
       event_loop.set_control_flow(@window_core.ControlFlow::Wait)
@@ -618,16 +692,37 @@ fn WinitAppRunnerState::redraw_requested(
         event_loop.set_control_flow(control_flow)
       }
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::redraw.control_flow",
+    control_flow_trace_start_us,
+  )
 
   if self.redraw_requested {
-    self.request_redraw_for_windows()
+    @app.timeline_trace_emit_counter_int("winit.redraw.requested", 1)
+    winit_runner_trace_span("mgstudio_winit::redraw.request_redraw", fn() {
+      self.request_redraw_for_windows()
+    })
     self.redraw_requested = false
+  } else {
+    @app.timeline_trace_emit_counter_int("winit.redraw.requested", 0)
   }
 
   if self.app_ref.val.should_exit() is Some(_) {
     @window.window_request_close_all_hosts(self.app_ref.val.world())
+    @app.timeline_trace_end_span(
+      @app.TimelineTraceCategory::System,
+      "mgstudio_winit::redraw_requested",
+      redraw_trace_start_us,
+    )
     event_loop.exit()
+    return
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::redraw_requested",
+    redraw_trace_start_us,
+  )
 }
 
 ///|
@@ -647,13 +742,23 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn window_eve
   event,
 ) {
   self.window_event_received = true
-  @windowing.runner_process_window_event(window_id.into_raw(), event)
+  winit_runner_trace_span("mgstudio_winit::window_event.dispatch", fn() {
+    @windowing.runner_process_window_event(window_id.into_raw(), event)
+  })
   match event {
     RedrawRequested => {
+      @app.timeline_trace_emit_counter_int(
+        "winit.window_event.redraw_requested", 1,
+      )
       self.ran_update_since_last_redraw = false
-      self.redraw_requested(event_loop)
+      winit_runner_trace_span("mgstudio_winit::window_event.redraw_requested", fn() {
+        self.redraw_requested(event_loop)
+      })
     }
-    _ => ()
+    _ =>
+      @app.timeline_trace_emit_counter_int(
+        "winit.window_event.redraw_requested", 0,
+      )
   }
 }
 
@@ -699,7 +804,9 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn about_to_w
   self,
   event_loop,
 ) {
-  self.redraw_requested(event_loop)
+  winit_runner_trace_span("mgstudio_winit::about_to_wait.redraw_requested", fn() {
+    self.redraw_requested(event_loop)
+  })
   if !@windowing.any_window_open() {
     event_loop.exit()
   }

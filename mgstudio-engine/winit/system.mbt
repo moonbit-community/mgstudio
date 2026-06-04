@@ -35,6 +35,20 @@ fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool 
 }
 
 ///|
+fn winit_trace_window_backend_span(name : String, run : () -> Unit) -> Unit {
+  let trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    name,
+  )
+  run()
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    name,
+    trace_start_us,
+  )
+}
+
+///|
 fn winit_sync_primary_monitor_marker(
   world : @ecs.World,
   entity : @core.Entity,
@@ -149,11 +163,26 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
-  winit_create_monitors_system(world)
-  winit_create_windows_system(world)
-  winit_prepare_windows_system(world)
-  winit_sync_windows_resource_system(world)
-  winit_write_raw_winit_window_events_system(world)
+  winit_trace_window_backend_span(
+    "mgstudio_winit::backend_sync.create_monitors",
+    fn() { winit_create_monitors_system(world) },
+  )
+  winit_trace_window_backend_span(
+    "mgstudio_winit::backend_sync.create_windows",
+    fn() { winit_create_windows_system(world) },
+  )
+  winit_trace_window_backend_span(
+    "mgstudio_winit::backend_sync.prepare_windows",
+    fn() { winit_prepare_windows_system(world) },
+  )
+  winit_trace_window_backend_span(
+    "mgstudio_winit::backend_sync.sync_windows_resource",
+    fn() { winit_sync_windows_resource_system(world) },
+  )
+  winit_trace_window_backend_span(
+    "mgstudio_winit::backend_sync.write_raw_window_events",
+    fn() { winit_write_raw_winit_window_events_system(world) },
+  )
 }
 
 ///|
