@@ -46,6 +46,57 @@ Do not register the same component or resource from helper functions on demand.
 Registration creates the typed storage closure, so the key should be a stable
 package-level value.
 
+## Generic Key Families
+
+MoonBit does not give mgstudio a Rust-style `TypeId` / `Any` mechanism for
+recovering the concrete type behind a generic ECS value. Generic component,
+resource, message, and render-asset families must therefore expose an explicit
+typed key-family provider.
+
+Use this pattern for a generic family `Foo[T]`:
+
+```moonbit
+pub struct FooKeys[T] {
+  component : ComponentKey[Foo[T]]
+  cache : ResourceKey[FooCache[T]]
+}
+
+pub fn[T] register_foo_keys(type_debug_name : String) -> FooKeys[T] {
+  FooKeys::{
+    component: register_component(debug_name="mgstudio_example::Foo<\{type_debug_name}>"),
+    cache: register_resource(debug_name="mgstudio_example::FooCache<\{type_debug_name}>"),
+  }
+}
+
+pub(open) trait FooParam {
+  fn foo_debug_name() -> String
+  fn foo_keys() -> FooKeys[Self]
+}
+
+pub impl[T : FooParam] Component for Foo[T] with component() {
+  T::foo_keys().component
+}
+```
+
+Each concrete `T` owns one stable package-level `FooKeys[T]` value and returns
+it from the provider trait. Do not derive the key from an integer id, reconstruct
+it from a debug string, store `T` in a JSON-backed payload, or recover a generic
+key through a downcast registry.
+
+Active engine families follow this convention:
+
+- `AssetResourceKeys[T]` plus `Asset::asset_resource_keys()` owns
+  `Assets[T]`, `AssetEvent[T]`, and asset load-failure messages.
+- `RenderAssetResourceKeys[A]` plus `RenderAssetResource::render_asset_resource_keys()`
+  owns `RenderAssets[A]` and Bevy-shaped `ErasedRenderAssets[A]`.
+- `Material2dKeys[M]` plus `Material2d::material2d_keys()` owns
+  `MeshMaterial2d[M]`, material instance resources, material pipelines, and
+  prepared render assets.
+
+If a Bevy generic family cannot be represented with a typed key-pack provider
+or a small set of explicit concrete specializations, record a blocker instead
+of adding an erased or JSON-backed compatibility path.
+
 ## Components
 
 Use the typed key when operating on entities directly:
