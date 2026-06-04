@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/viewport",
-  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
@@ -21,14 +20,6 @@ import {
 }
 
 // Values
-pub fn camera_2d_bundle_new(@sprite.Camera, @transform.Transform) -> @sprite.Camera2dBundle
-
-pub fn camera_2d_bundle_new_with_layers(@sprite.Camera, @transform.Transform, @sprite.RenderTarget, @render_layers.RenderLayers) -> @sprite.Camera2dBundle
-
-pub fn camera_2d_bundle_new_with_projection(@sprite.Camera, @sprite.Projection, @transform.Transform) -> @sprite.Camera2dBundle
-
-pub fn camera_2d_bundle_new_with_target(@sprite.Camera, @transform.Transform, @sprite.RenderTarget) -> @sprite.Camera2dBundle
-
 pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
 
 pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -96,8 +87,6 @@ pub using @pbr {type AutoExposure}
 pub using @sprite {type Camera}
 
 pub using @sprite {type Camera2d}
-
-pub using @sprite {type Camera2dBundle}
 
 pub using @pbr {type Camera3d}
 

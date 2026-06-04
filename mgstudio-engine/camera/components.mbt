@@ -22,43 +22,4 @@ pub type Camera = @sprite.Camera
 pub type Camera2d = @sprite.Camera2d
 
 ///|
-pub type Camera2dBundle = @sprite.Camera2dBundle
-
-///|
 pub type Hdr = @core_pipeline.Hdr
-
-///|
-pub fn camera_2d_bundle_new(
-  camera : Camera,
-  transform : @transform.Transform,
-) -> Camera2dBundle {
-  @sprite.Camera2dBundle::new(camera, transform)
-}
-
-///|
-pub fn camera_2d_bundle_new_with_layers(
-  camera : Camera,
-  transform : @transform.Transform,
-  target : @sprite.RenderTarget,
-  layers : @camera_render_layers.RenderLayers,
-) -> Camera2dBundle {
-  @sprite.Camera2dBundle::new_with_layers(camera, transform, target, layers)
-}
-
-///|
-pub fn camera_2d_bundle_new_with_target(
-  camera : Camera,
-  transform : @transform.Transform,
-  target : @sprite.RenderTarget,
-) -> Camera2dBundle {
-  @sprite.Camera2dBundle::new_with_target(camera, transform, target)
-}
-
-///|
-pub fn camera_2d_bundle_new_with_projection(
-  camera : Camera,
-  projection : @sprite.Projection,
-  transform : @transform.Transform,
-) -> Camera2dBundle {
-  @sprite.Camera2dBundle::new_with_projection(camera, projection, transform)
-}
