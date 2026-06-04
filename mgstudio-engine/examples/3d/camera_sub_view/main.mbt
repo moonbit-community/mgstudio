@@ -299,13 +299,13 @@ fn resize_viewports(world : @ecs.World) -> Unit {
     if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
-        None => @sprite.Viewport::Viewport()
+        None => @camera_viewport.Viewport::Viewport()
       }
       try! (world.replace(
         entity,
         @sprite.ecs_key_camera,
         camera.with_viewport(
-          @sprite.Viewport::new_with_depth(
+          @camera_viewport.Viewport::new_with_depth(
             position,
             size,
             viewport.depth_min,

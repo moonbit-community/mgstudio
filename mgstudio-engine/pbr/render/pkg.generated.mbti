@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr/render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -222,7 +223,7 @@ pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
 
-pub fn render3d_clamp_viewport(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
+pub fn render3d_clamp_viewport(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
 
 pub fn render3d_clear_mesh_upload_cache(Render3dMeshRuntimeState) -> Unit
 

@@ -175,7 +175,7 @@ test "pbr meshlet: view resources use camera physical viewport size" {
   let target_camera = @sprite.Camera::Camera()
   debug_inspect(meshlet_view_size_from_camera(target_camera), content="(1, 1)")
   let viewport_camera = target_camera.with_viewport(
-    @sprite.Viewport::new(@math.IVec2::new(10, 20), @math.IVec2::new(640, 360)),
+    @camera.Viewport::new(@math.IVec2::new(10, 20), @math.IVec2::new(640, 360)),
   )
   debug_inspect(
     meshlet_view_size_from_camera(viewport_camera),

@@ -39,14 +39,14 @@ fn main {
 }
 
 ///|
-fn viewport_default(width : Int, height : Int) -> @sprite.Viewport {
+fn viewport_default(width : Int, height : Int) -> @camera_viewport.Viewport {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
   let size_x = safe_width * 3 / 4
   let size_y = safe_height * 3 / 4
   let pos_x = safe_width / 8
   let pos_y = safe_height / 8
-  @sprite.Viewport::new(
+  @camera_viewport.Viewport::new(
     @math.IVec2::new(pos_x, pos_y),
     @math.IVec2::new(size_x, size_y),
   )
@@ -309,7 +309,7 @@ fn controls(
       }
       let mut viewport = current_viewport
       if viewport.physical_size.x > width || viewport.physical_size.y > height {
-        viewport = @sprite.Viewport::new(
+        viewport = @camera_viewport.Viewport::new(
           viewport.physical_position,
           @math.IVec2::new(width * 3 / 4, height * 3 / 4),
         )
@@ -348,7 +348,7 @@ fn controls(
       let min_size = @math.IVec2::new(20, 20)
       let max_size = window_size.saturating_sub(position)
       size = size.min(max_size).max(min_size)
-      let next_viewport = @sprite.Viewport::new(position, size)
+      let next_viewport = @camera_viewport.Viewport::new(position, size)
       let changed = next_viewport.physical_position.x !=
         current_viewport.physical_position.x ||
         next_viewport.physical_position.y !=

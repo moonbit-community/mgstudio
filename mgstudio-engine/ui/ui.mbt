@@ -1155,10 +1155,10 @@ fn create_white_texture_if_needed(ctx : UiContext) -> Unit {
 
 ///|
 fn clamp_viewport_to_window(
-  viewport : @sprite.Viewport,
+  viewport : @camera_viewport.Viewport,
   win_w : Int,
   win_h : Int,
-) -> @sprite.Viewport {
+) -> @camera_viewport.Viewport {
   let mut x = viewport.physical_position.x
   let mut y = viewport.physical_position.y
   let mut w = viewport.physical_size.x
@@ -1183,7 +1183,7 @@ fn clamp_viewport_to_window(
   if h > max_h {
     h = max_h
   }
-  @sprite.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
+  @camera_viewport.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
 }
 
 ///|

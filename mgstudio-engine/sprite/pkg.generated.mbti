@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -325,7 +326,7 @@ pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
 
 pub struct Camera {
-  viewport : Viewport?
+  viewport : @viewport.Viewport?
   order : Int
   is_active : Bool
   computed : CameraComputedValues
@@ -345,7 +346,7 @@ pub fn Camera::with_clear_color_config(Self, ClearColorConfig) -> Self
 pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
-pub fn Camera::with_viewport(Self, Viewport) -> Self
+pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self
 pub impl @ecs.Component for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera
@@ -1211,18 +1212,6 @@ pub struct UiCornerRadii {
 } derive(ToJson, @json.FromJson)
 pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
 pub fn UiCornerRadii::zero() -> Self
-
-pub struct Viewport {
-  physical_position : @math.IVec2
-  physical_size : @math.IVec2
-  depth_min : Float
-  depth_max : Float
-}
-pub fn Viewport::Viewport() -> Self
-pub fn Viewport::clamp_to_size(Self, @math.IVec2) -> Self
-pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
-pub fn Viewport::new_with_depth(@math.IVec2, @math.IVec2, Float, Float) -> Self
-pub fn Viewport::with_depth(Self, Float, Float) -> Self
 
 pub struct Wireframe2d {
 }

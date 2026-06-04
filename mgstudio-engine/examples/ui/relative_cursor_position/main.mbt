@@ -69,7 +69,7 @@ fn setup(
       (
         @sprite.Camera2d::Camera2d(),
         @sprite.Camera::Camera().with_viewport(
-          @sprite.Viewport::new(
+          @camera_viewport.Viewport::new(
             @math.IVec2::new(200, 100),
             @math.IVec2::new(600, 600),
           ),

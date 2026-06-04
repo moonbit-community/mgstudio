@@ -129,8 +129,8 @@ pub fn render3d_target_info(
 
 ///|
 pub fn render3d_clamp_viewport(
-  viewport : @sprite.Viewport,
+  viewport : @camera_viewport.Viewport,
   target_size : @math.IVec2,
-) -> @sprite.Viewport {
+) -> @camera_viewport.Viewport {
   viewport.clamp_to_size(target_size)
 }

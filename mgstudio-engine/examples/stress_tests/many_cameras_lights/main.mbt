@@ -127,7 +127,7 @@ fn setup(
             @sprite.Camera::Camera()
             .with_order(index)
             .with_viewport(
-              @sprite.Viewport::new(
+              @camera_viewport.Viewport::new(
                 @math.IVec2::new(col * cell_width, row * cell_height),
                 @math.IVec2::new(cell_width, cell_height),
               ),

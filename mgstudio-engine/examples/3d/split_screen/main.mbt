@@ -183,7 +183,7 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
     let grid_pos = pair.1
-    let viewport = @sprite.Viewport::new(
+    let viewport = @camera_viewport.Viewport::new(
       @math.IVec2::new(grid_pos.x * half_size.x, grid_pos.y * half_size.y),
       half_size,
     )

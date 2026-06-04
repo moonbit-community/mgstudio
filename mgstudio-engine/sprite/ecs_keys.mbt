@@ -449,12 +449,7 @@ fn encode_anchor(anchor : Anchor) -> Json {
 
 ///|
 fn encode_viewport(viewport : Viewport) -> Json {
-  (
-    encode_ivec2(viewport.physical_position),
-    encode_ivec2(viewport.physical_size),
-    viewport.depth_min,
-    viewport.depth_max,
-  ).to_json()
+  @camera_viewport.encode_viewport(viewport)
 }
 
 ///|
@@ -703,12 +698,7 @@ fn decode_anchor(json : Json) -> Anchor {
 
 ///|
 fn decode_viewport(json : Json) -> Viewport {
-  let (position, size, depth_min, depth_max) : (Json, Json, Float, Float) = try! @json.from_json(
-    json,
-  )
-  Viewport::new(decode_ivec2(position), decode_ivec2(size)).with_depth(
-    depth_min, depth_max,
-  )
+  @camera_viewport.decode_viewport(json)
 }
 
 ///|

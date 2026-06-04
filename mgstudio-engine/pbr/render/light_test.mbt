@@ -1305,7 +1305,10 @@ test "pbr render light: cluster factors xy prefer camera viewport size when pres
     camera,
     @sprite.ecs_key_camera,
     @sprite.Camera::Camera().with_viewport(
-      @sprite.Viewport::new(@math.IVec2::new(0, 0), @math.IVec2::new(640, 360)),
+      @camera_viewport.Viewport::new(
+        @math.IVec2::new(0, 0),
+        @math.IVec2::new(640, 360),
+      ),
     ),
   )
   |> ignore)

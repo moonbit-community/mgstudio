@@ -17,7 +17,7 @@
 /// Runtime implementation currently lives in `Milky2018/mgstudio/pbr`.
 
 ///|
-pub type Viewport = @sprite.Viewport
+pub type Viewport = @camera_viewport.Viewport
 
 ///|
 pub type RenderTarget = @sprite.RenderTarget

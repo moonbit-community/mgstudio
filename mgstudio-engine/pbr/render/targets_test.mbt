@@ -14,7 +14,7 @@
 
 ///|
 test "render3d targets: viewport clamp matches bevy edge behavior" {
-  let viewport = @sprite.Viewport::new(
+  let viewport = @camera_viewport.Viewport::new(
     @math.IVec2::new(260, 120),
     @math.IVec2::new(50, 20),
   )

@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/camera"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/primitives",
+  "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline/core_3d",
@@ -42,7 +43,7 @@ pub fn camera_projection_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let camera_update_systems : String
 
-pub fn camera_viewport_clamp_to_size(@sprite.Viewport, @math.IVec2) -> @sprite.Viewport
+pub fn camera_viewport_clamp_to_size(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
 
 pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
@@ -142,7 +143,7 @@ pub using @math {type BoundingSphere as Sphere}
 
 pub using @render {type SubCameraView3d}
 
-pub using @sprite {type Viewport}
+pub using @viewport {type Viewport}
 
 pub using @primitives {trait MeshAabb}
 
