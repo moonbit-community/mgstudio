@@ -92,8 +92,8 @@ test "light cluster: assign system populates camera cluster payload with default
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   |> ignore)
   cluster_assign_lights_system(world)
@@ -125,8 +125,8 @@ test "light cluster: assign system uses max light range for default far z mode" 
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   |> ignore)
   let point = world.spawn()
@@ -167,8 +167,8 @@ test "light cluster: assign system writes visible point lights into cluster list
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -208,8 +208,8 @@ test "light cluster: assign system honors constant far z mode from config" {
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -239,8 +239,8 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
   |> ignore)
 

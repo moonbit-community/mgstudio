@@ -99,7 +99,7 @@ fn cluster_assign_tile_size(screen_size : Int, cluster_dimension : Int) -> Int {
 }
 
 ///|
-fn cluster_assign_viewport_size(camera : @sprite.Camera) -> (Int, Int) {
+fn cluster_assign_viewport_size(camera : @camera_camera.Camera) -> (Int, Int) {
   match camera.physical_viewport_size() {
     Some(viewport_size) => {
       let width = if viewport_size.x <= 0 { 1 } else { viewport_size.x }
@@ -557,7 +557,7 @@ fn cluster_assign_fill_object_clusters(
 pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
   let clusterable_objects = cluster_assign_collect_objects(world)
   let camera_entities = []
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
     camera_entities.push(entity)
   })
   for entity in camera_entities {
@@ -566,7 +566,8 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       Some(cluster_config) => cluster_config
       None => ClusterConfig::default()
     }
-    let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
+    let camera = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(camera_component) => camera_component
       None => continue
     }
@@ -652,7 +653,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     entity,
     existing,
   ) {
-    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
       return
     }
     let next = VisibleClusterableObjects::new()
