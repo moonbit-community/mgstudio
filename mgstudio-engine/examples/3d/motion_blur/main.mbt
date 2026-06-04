@@ -40,42 +40,55 @@ pub(all) enum CameraMode {
 }
 
 ///|
-priv struct CarBody {
-  entity : @core.Entity
+let camera_mode_resource_key : @ecs.ResourceKey[CameraMode] = @ecs.register_resource(
+  debug_name="examples.3d.motion_blur.CameraMode",
+)
+
+///|
+impl @app.Resource for CameraMode with fn resource() {
+  camera_mode_resource_key
+}
+
+///|
+priv struct Moves {
   phase : Float
-  wheel_start : Int
-  wheel_count : Int
 }
 
 ///|
-priv struct WheelState {
-  entity : @core.Entity
-  radius : Float
+let moves_component_key : @ecs.ComponentKey[Moves] = @ecs.register_component(
+  debug_name="examples.3d.motion_blur.Moves",
+)
+
+///|
+impl @ecs.Component for Moves with fn component() {
+  moves_component_key
 }
 
 ///|
-priv struct MotionBlurExampleState {
-  mut camera : @core.Entity?
-  mut tracked_car : @core.Entity?
-  mut help_text : @core.Entity?
-  car_bodies : Array[CarBody]
-  wheels : Array[WheelState]
-  mut camera_mode : CameraMode
-  mut shutter_angle : Float
-  mut samples : Int
+priv struct CameraTracked {}
+
+///|
+let camera_tracked_component_key : @ecs.ComponentKey[CameraTracked] = @ecs.register_component(
+  debug_name="examples.3d.motion_blur.CameraTracked",
+)
+
+///|
+impl @ecs.Component for CameraTracked with fn component() {
+  camera_tracked_component_key
 }
 
 ///|
-let motion_blur_state : Ref[MotionBlurExampleState] = Ref({
-  camera: None,
-  tracked_car: None,
-  help_text: None,
-  car_bodies: [],
-  wheels: [],
-  camera_mode: CameraMode::Chase,
-  shutter_angle: 1.0F,
-  samples: 2,
-})
+priv struct Rotates {}
+
+///|
+let rotates_component_key : @ecs.ComponentKey[Rotates] = @ecs.register_component(
+  debug_name="examples.3d.motion_blur.Rotates",
+)
+
+///|
+impl @ecs.Component for Rotates with fn component() {
+  rotates_component_key
+}
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -103,11 +116,17 @@ fn byte_from_int(value : Int) -> Byte {
 }
 
 ///|
-fn toggle_camera_mode() -> Unit {
-  motion_blur_state.val.camera_mode = match motion_blur_state.val.camera_mode {
-    Track => Chase
-    Chase => Track
+fn toggle_camera_mode(world : @ecs.World) -> Unit {
+  let mode_ref = match world.get_resource_mut(CameraMode::resource()) {
+    Some(value) => value
+    None => return
   }
+  mode_ref.set(
+    match mode_ref.peek() {
+      Track => Chase
+      Chase => Track
+    },
+  )
 }
 
 ///|
@@ -129,21 +148,81 @@ fn race_track_pos(offset : Float, t : Float) -> @math.Vec2 {
 }
 
 ///|
-fn help_shutter_text() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\n"
+fn help_shutter_text(shutter_angle : Float) -> String {
+  "Shutter angle: \{float_text_2(shutter_angle)}\n"
 }
 
 ///|
-fn help_samples_text() -> String {
-  "Samples: \{motion_blur_state.val.samples}\n"
+fn help_samples_text(samples : Int) -> String {
+  "Samples: \{samples}\n"
 }
 
 ///|
-fn update_help_text(world : @ecs.World) -> Unit {
-  guard motion_blur_state.val.help_text is Some(help_text) else { return }
+fn first_text_entity(world : @ecs.World) -> @core.Entity? {
+  let mut text_entity : @core.Entity? = None
+  try! world
+  .query_entities_filtered(@ecs.With::new(@text.ecs_key_text))
+  .view(fn(_query_entity, entity) {
+    if text_entity is None {
+      text_entity = Some(entity)
+    }
+  })
+  text_entity
+}
+
+///|
+fn first_motion_blur_entity(world : @ecs.World) -> @core.Entity? {
+  let mut camera : @core.Entity? = None
+  try! world
+  .query_entities_filtered(@ecs.With::new(@pbr.ecs_key_motion_blur))
+  .view(fn(_query_entity, entity) {
+    if camera is None {
+      camera = Some(entity)
+    }
+  })
+  camera
+}
+
+///|
+fn first_camera_entity(world : @ecs.World) -> @core.Entity? {
+  let mut camera : @core.Entity? = None
+  try! world
+  .query_entities_filtered(
+    (
+      @ecs.With::new(@camera.Camera::component()),
+      @ecs.With::new(@camera.ecs_key_camera3d),
+      @ecs.Without::new(CameraTracked::component()),
+    ),
+  )
+  .view(fn(_query_entity, entity) {
+    if camera is None {
+      camera = Some(entity)
+    }
+  })
+  camera
+}
+
+///|
+fn first_tracked_entity(world : @ecs.World) -> @core.Entity? {
+  let mut tracked : @core.Entity? = None
+  try! world
+  .query_entities_filtered(@ecs.With::new(CameraTracked::component()))
+  .view(fn(_query_entity, entity) {
+    if tracked is None {
+      tracked = Some(entity)
+    }
+  })
+  tracked
+}
+
+///|
+fn update_help_text(world : @ecs.World, motion_blur : @pbr.MotionBlur) -> Unit {
+  guard first_text_entity(world) is Some(help_text) else { return }
   let writer = @ui.TextUiWriter::new(world)
-  writer.set_text(help_text, 1, help_shutter_text()) |> ignore
-  writer.set_text(help_text, 2, help_samples_text()) |> ignore
+  writer.set_text(help_text, 1, help_shutter_text(motion_blur.shutter_angle))
+  |> ignore
+  writer.set_text(help_text, 2, help_samples_text(motion_blur.samples))
+  |> ignore
 }
 
 ///|
@@ -176,25 +255,16 @@ fn set_camera_fov(
 }
 
 ///|
-fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
-  guard motion_blur_state.val.camera is Some(camera) else { return }
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_motion_blur,
-    @pbr.MotionBlur::new(
-      motion_blur_state.val.shutter_angle,
-      motion_blur_state.val.samples,
-    ),
-  )
-}
-
-///|
-fn spawn_camera(world : @ecs.World) -> Unit {
+fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
-  motion_blur_state.val.camera = Some(camera)
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_motion_blur,
+    @pbr.MotionBlur::new(1.0F, 2),
+  )
 }
 
 ///|
@@ -299,7 +369,7 @@ fn spawn_help_text_span(
 }
 
 ///|
-fn spawn_help_text(world : @ecs.World) -> Unit {
+fn setup_ui(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
@@ -346,7 +416,6 @@ fn spawn_help_text(world : @ecs.World) -> Unit {
     @text.ecs_key_text_layout,
     @text.TextLayout::TextLayout(),
   )
-  motion_blur_state.val.help_text = Some(text_entity)
   spawn_help_text_span(world, text_entity, "") |> ignore
   spawn_help_text_span(world, text_entity, "") |> ignore
   spawn_help_text_span(
@@ -377,6 +446,10 @@ fn spawn_car(
       @math.Vec3::new(0.5F, 0.5F, 0.5F),
     ),
   ).spawn(world)
+  try! world.set_by_key(body, Moves::component(), Moves::{ phase, })
+  if tracked {
+    try! world.set_by_key(body, CameraTracked::component(), CameraTracked::{  })
+  }
 
   let cabin = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
@@ -391,7 +464,6 @@ fn spawn_car(
     @hierarchy.Parent::new(body),
   )
 
-  let wheel_start = motion_blur_state.val.wheels.length()
   let wheel_offsets = [
     @math.Vec3::new(0.14F, -0.045F, 0.15F),
     @math.Vec3::new(0.14F, -0.045F, -0.15F),
@@ -411,17 +483,7 @@ fn spawn_car(
       @hierarchy.ecs_key_parent,
       @hierarchy.Parent::new(body),
     )
-    motion_blur_state.val.wheels.push({ entity: wheel, radius: 0.15F })
-  }
-
-  motion_blur_state.val.car_bodies.push({
-    entity: body,
-    phase,
-    wheel_start,
-    wheel_count: 4,
-  })
-  if tracked {
-    motion_blur_state.val.tracked_car = Some(body)
+    try! world.set_by_key(wheel, Rotates::component(), Rotates::{  })
   }
 }
 
@@ -488,6 +550,7 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
+  world.insert_resource(CameraMode::resource(), CameraMode::Chase)
   let mesh_assets = @pbr.mesh_assets_mut_or_abort()
   let image_assets_ref : @ecs.ResourceMut[@asset.Assets[@asset.Image]] = @asset.asset_assets_ref_mut_or_abort()
   let image_assets = image_assets_ref.peek()
@@ -625,53 +688,43 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  motion_blur_state.val.camera = None
-  motion_blur_state.val.tracked_car = None
-  motion_blur_state.val.help_text = None
-  motion_blur_state.val.car_bodies.clear()
-  motion_blur_state.val.wheels.clear()
-  motion_blur_state.val.camera_mode = CameraMode::Chase
-  motion_blur_state.val.shutter_angle = 1.0F
-  motion_blur_state.val.samples = 2
-
+fn setup_scene_system(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  spawn_camera(world)
   spawn_scene(world, asset_server)
-  spawn_help_text(world)
-  apply_motion_blur_settings(world)
-  update_help_text(world)
 }
 
 ///|
 fn keyboard_inputs(world : @ecs.World) -> Unit {
+  guard first_motion_blur_entity(world) is Some(camera) else { return }
+  guard (try! world.get_by_key(camera, @pbr.ecs_key_motion_blur))
+    is Some(motion_blur) else {
+    return
+  }
+  let mut shutter_angle = motion_blur.shutter_angle
+  let mut samples = motion_blur.samples
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    motion_blur_state.val.shutter_angle = motion_blur_state.val.shutter_angle -
-      0.25F
+    shutter_angle = shutter_angle - 0.25F
   } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    motion_blur_state.val.shutter_angle = motion_blur_state.val.shutter_angle +
-      0.25F
+    shutter_angle = shutter_angle + 0.25F
   } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    motion_blur_state.val.samples = motion_blur_state.val.samples - 1
+    samples = samples - 1
   } else if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    motion_blur_state.val.samples = motion_blur_state.val.samples + 1
+    samples = samples + 1
   } else if @input.key_just_pressed(@window.KeyCode::Space) {
-    toggle_camera_mode()
+    toggle_camera_mode(world)
   }
 
-  motion_blur_state.val.shutter_angle = clampf(
-    motion_blur_state.val.shutter_angle,
-    0.0F,
-    1.0F,
-  )
-  if motion_blur_state.val.samples < 0 {
-    motion_blur_state.val.samples = 0
-  } else if motion_blur_state.val.samples > 64 {
-    motion_blur_state.val.samples = 64
+  shutter_angle = clampf(shutter_angle, 0.0F, 1.0F)
+  if samples < 0 {
+    samples = 0
+  } else if samples > 64 {
+    samples = 64
   }
+  let next_motion_blur = @pbr.MotionBlur::new(shutter_angle, samples)
 
-  apply_motion_blur_settings(world)
-  update_help_text(world)
+  try! (world.replace(camera, @pbr.ecs_key_motion_blur, next_motion_blur)
+  |> ignore)
+  update_help_text(world, next_motion_blur)
 }
 
 ///|
@@ -684,16 +737,20 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn move_cars(world : @ecs.World) -> Unit {
-  if motion_blur_state.val.car_bodies.length() == 0 {
-    return
-  }
   let now = world_time(world).elapsed_seconds() * 0.25F
-  for car in motion_blur_state.val.car_bodies {
-    guard (try! world.get_by_key(car.entity, @transform.ecs_key_transform))
+  let car_entities : Array[@core.Entity] = []
+  try! world
+  .query_entities_filtered(@ecs.With::new(Moves::component()))
+  .view(fn(_query_entity, entity) { car_entities.push(entity) })
+  for car_entity in car_entities {
+    guard (try! world.get_by_key(car_entity, Moves::component())) is Some(moves) else {
+      continue
+    }
+    guard (try! world.get_by_key(car_entity, @transform.ecs_key_transform))
       is Some(current_transform) else {
       continue
     }
-    let t0 = now + 0.5F * car.phase
+    let t0 = now + 0.5F * moves.phase
     let dx = @math.cos(t0)
     let dz = -@math.sin(3.0F * t0)
     let speed_variation = @math.sqrt(dx * dx + dz * dz) * 0.15F
@@ -711,30 +768,36 @@ fn move_cars(world : @ecs.World) -> Unit {
       )
     }
     try! (world.replace(
-      car.entity,
-      @transform.ecs_key_transform,
-      next_transform,
+      car_entity, @transform.ecs_key_transform, next_transform,
     )
     |> ignore)
 
     let distance = delta.length()
-    for i in car.wheel_start..<(car.wheel_start + car.wheel_count) {
-      let wheel = motion_blur_state.val.wheels[i]
-      guard (try! world.get_by_key(wheel.entity, @transform.ecs_key_transform))
+    guard (try! world.get_by_key(car_entity, @hierarchy.ecs_key_children))
+      is Some(children) else {
+      continue
+    }
+    for wheel_entity in children.entities() {
+      if !(try! world.contains_by_key(wheel_entity, Rotates::component())) {
+        continue
+      }
+      if (try! world.contains_by_key(wheel_entity, Moves::component())) {
+        continue
+      }
+      guard (try! world.get_by_key(wheel_entity, @transform.ecs_key_transform))
         is Some(wheel_transform) else {
         continue
       }
-      if wheel.radius <= 1.0e-6F {
+      let radius = wheel_transform.scale.x
+      if radius <= 1.0e-6F {
         continue
       }
-      let angle = distance / wheel.radius
-      let next_rotation = wheel_transform.rotation
-        .mul(@math.Quat::from_rotation_y(angle))
-        .normalize()
+      let circumference = TWO_PI * radius
+      let angle = distance / circumference * TWO_PI
+      let next_wheel_transform = wheel_transform
+      next_wheel_transform.rotate_y(angle)
       try! (world.replace(
-        wheel.entity,
-        @transform.ecs_key_transform,
-        wheel_transform.with_rotation(next_rotation),
+        wheel_entity, @transform.ecs_key_transform, next_wheel_transform,
       )
       |> ignore)
     }
@@ -743,10 +806,8 @@ fn move_cars(world : @ecs.World) -> Unit {
 
 ///|
 fn move_camera(world : @ecs.World) -> Unit {
-  guard motion_blur_state.val.camera is Some(camera_entity) else { return }
-  guard motion_blur_state.val.tracked_car is Some(tracked_entity) else {
-    return
-  }
+  guard first_camera_entity(world) is Some(camera_entity) else { return }
+  guard first_tracked_entity(world) is Some(tracked_entity) else { return }
   guard (try! world.get_by_key(tracked_entity, @transform.ecs_key_transform))
     is Some(tracked_transform) else {
     return
@@ -756,7 +817,11 @@ fn move_camera(world : @ecs.World) -> Unit {
     return
   }
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
-  match motion_blur_state.val.camera_mode {
+  let camera_mode = match world.get_resource(CameraMode::resource()) {
+    Some(value) => value
+    None => CameraMode::Chase
+  }
+  match camera_mode {
     Track => {
       let next_transform = current_camera_transform
         .looking_at(tracked_transform.translation, up)
@@ -789,7 +854,15 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@dev_tools_ci_testing.CiTestingPlugin::CiTestingPlugin())
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(
+    @app.Startup,
+    (
+      @app.system(setup_camera),
+      @app.system(setup_scene_system),
+      @app.system(setup_ui),
+    )
+    |> @app.chain(),
+  )
   .add_systems(
     @app.Update,
     (
