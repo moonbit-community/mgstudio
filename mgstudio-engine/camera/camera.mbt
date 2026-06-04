@@ -23,7 +23,10 @@ pub type Viewport = @camera_viewport.Viewport
 pub type RenderTarget = @sprite.RenderTarget
 
 ///|
-pub type CameraTargetInfo = @sprite.CameraTargetInfo
+pub type RenderTargetInfo = @camera_computed.RenderTargetInfo
+
+///|
+pub type ComputedCameraValues = @camera_computed.ComputedCameraValues
 
 ///|
 pub type Camera3d = @pbr.Camera3d

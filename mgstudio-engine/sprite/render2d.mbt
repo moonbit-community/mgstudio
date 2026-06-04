@@ -58,6 +58,12 @@ type RenderLayers = @camera_render_layers.RenderLayers
 type Viewport = @camera_viewport.Viewport
 
 ///|
+type RenderTargetInfo = @camera_computed.RenderTargetInfo
+
+///|
+type ComputedCameraValues = @camera_computed.ComputedCameraValues
+
+///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
 /// camera's view (top-left origin).
 ///
@@ -318,44 +324,11 @@ pub fn ClearColorConfig::resolve(self : ClearColorConfig) -> (Bool, Color) {
 }
 
 ///|
-pub struct CameraTargetInfo {
-  physical_size : @math.IVec2
-  scale_factor : Float
-}
-
-///|
-pub fn CameraTargetInfo::new(
-  physical_size : @math.IVec2,
-  scale_factor : Float,
-) -> CameraTargetInfo {
-  CameraTargetInfo::{ physical_size, scale_factor }
-}
-
-///|
-pub fn CameraTargetInfo::CameraTargetInfo() -> CameraTargetInfo {
-  CameraTargetInfo::{
-    physical_size: @math.IVec2::new(0, 0),
-    scale_factor: 1.0F,
-  }
-}
-
-///|
-pub struct CameraComputedValues {
-  target_info : CameraTargetInfo?
-  old_viewport_size : @math.IVec2?
-}
-
-///|
-pub fn CameraComputedValues::CameraComputedValues() -> CameraComputedValues {
-  CameraComputedValues::{ target_info: None, old_viewport_size: None }
-}
-
-///|
 pub struct Camera {
   viewport : Viewport?
   order : Int
   is_active : Bool
-  computed : CameraComputedValues
+  computed : ComputedCameraValues
   clear_color : ClearColorConfig
 }
 
@@ -365,7 +338,7 @@ pub fn Camera::new(clear_color : Color) -> Camera {
     viewport: None,
     order: 0,
     is_active: true,
-    computed: CameraComputedValues::CameraComputedValues(),
+    computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: Custom(clear_color),
   }
 }
@@ -376,7 +349,7 @@ pub fn Camera::Camera() -> Camera {
     viewport: None,
     order: 0,
     is_active: true,
-    computed: CameraComputedValues::CameraComputedValues(),
+    computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: ClearColorConfig::default(),
   }
 }
@@ -3385,7 +3358,7 @@ priv struct QueuedCameraDrawItems {
 }
 
 ///|
-priv struct RenderTargetInfo {
+priv struct RuntimeRenderTargetInfo {
   id : Int
   width : Int
   height : Int
@@ -3415,7 +3388,7 @@ struct RenderState {
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice]
   cameras : Array[ExtractedCamera2d]
   meshes : Array[ExtractedMesh2d]
-  render_targets : Array[RenderTargetInfo]
+  render_targets : Array[RuntimeRenderTargetInfo]
   postprocess_intermediate_targets : Array[PostProcessIntermediateTargetInfo]
   // Prepare stage output: stable camera iteration order for the frame.
   mut prepared_camera_indices : Array[Int]
@@ -3910,7 +3883,7 @@ pub fn render2d_create_render_target(
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
     let rs = state_value
-    rs.render_targets.push(RenderTargetInfo::{ id, width, height })
+    rs.render_targets.push(RuntimeRenderTargetInfo::{ id, width, height })
     res.insert(rs)
   }
   @asset.Handle::new(id)
@@ -4397,7 +4370,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
 fn render2d_find_render_target_size(
   state : RenderState,
   id : Int,
-) -> RenderTargetInfo? {
+) -> RuntimeRenderTargetInfo? {
   for target in state.render_targets {
     if target.id == id {
       return Some(target)
@@ -4531,7 +4504,7 @@ fn render2d_get_or_create_postprocess_intermediate_target(
     nearest=false,
   )
   let handle : @asset.Handle[@asset.Image] = @asset.Handle::new(id)
-  state.render_targets.push(RenderTargetInfo::{
+  state.render_targets.push(RuntimeRenderTargetInfo::{
     id,
     width: safe_width,
     height: safe_height,
@@ -4569,8 +4542,8 @@ fn render2d_clamp_viewport(
 
 ///|
 fn render2d_camera_target_info_eq(
-  a : CameraTargetInfo?,
-  b : CameraTargetInfo?,
+  a : RenderTargetInfo?,
+  b : RenderTargetInfo?,
 ) -> Bool {
   match (a, b) {
     (Some(ta), Some(tb)) =>
@@ -4584,9 +4557,9 @@ fn render2d_camera_target_info_eq(
 ///|
 fn render2d_camera_target_info_from_render_target(
   value : RenderTargetComputed?,
-) -> CameraTargetInfo? {
+) -> RenderTargetInfo? {
   match value {
-    Some(info) => Some(CameraTargetInfo::new(info.size, info.scale_factor))
+    Some(info) => Some(RenderTargetInfo::new(info.size, info.scale_factor))
     None => None
   }
 }
@@ -4838,10 +4811,10 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
       }
       camera_value = Camera::{
         ..camera_value,
-        computed: CameraComputedValues::{
-          target_info: next_target_info,
-          old_viewport_size: render2d_camera_viewport_size(camera_value),
-        },
+        computed: ComputedCameraValues::new(
+          next_target_info,
+          render2d_camera_viewport_size(camera_value),
+        ),
       }
       try! (world.replace(entity, ecs_key_camera, camera_value) |> ignore)
     }
@@ -4941,10 +4914,10 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
     }
     camera_value = Camera::{
       ..camera_value,
-      computed: CameraComputedValues::{
-        target_info: next_target_info,
-        old_viewport_size: render2d_camera_viewport_size(camera_value),
-      },
+      computed: ComputedCameraValues::new(
+        next_target_info,
+        render2d_camera_viewport_size(camera_value),
+      ),
     }
     try! world.set_by_key(entity, ecs_key_camera, camera_value)
   }

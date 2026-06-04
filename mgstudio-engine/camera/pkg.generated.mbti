@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/camera"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
@@ -109,7 +110,7 @@ pub using @pbr {type CameraDeferredConfig3d}
 
 pub using @pbr {type CameraDeferredMode3d}
 
-pub using @sprite {type CameraTargetInfo}
+pub using @computed_camera_values {type ComputedCameraValues}
 
 pub using @pbr {type DepthOfField}
 
@@ -138,6 +139,8 @@ pub using @pbr {type Projection}
 pub using @render {type ProjectionMatrix3d}
 
 pub using @sprite {type RenderTarget}
+
+pub using @computed_camera_values {type RenderTargetInfo}
 
 pub using @math {type BoundingSphere as Sphere}
 

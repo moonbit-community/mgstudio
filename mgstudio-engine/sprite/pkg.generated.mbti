@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
@@ -329,7 +330,7 @@ pub struct Camera {
   viewport : @viewport.Viewport?
   order : Int
   is_active : Bool
-  computed : CameraComputedValues
+  computed : @computed_camera_values.ComputedCameraValues
   clear_color : ClearColorConfig
 }
 pub fn Camera::Camera() -> Self
@@ -381,19 +382,6 @@ pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> 
 pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub impl @ecs.Bundle for Camera2dBundle
-
-pub struct CameraComputedValues {
-  target_info : CameraTargetInfo?
-  old_viewport_size : @math.IVec2?
-}
-pub fn CameraComputedValues::CameraComputedValues() -> Self
-
-pub struct CameraTargetInfo {
-  physical_size : @math.IVec2
-  scale_factor : Float
-}
-pub fn CameraTargetInfo::CameraTargetInfo() -> Self
-pub fn CameraTargetInfo::new(@math.IVec2, Float) -> Self
 
 pub struct ClearColor {
   color : @color.Color

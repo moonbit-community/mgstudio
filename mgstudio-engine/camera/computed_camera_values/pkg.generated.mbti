@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/computed_camera_values"
+
+import {
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn decode_computed_camera_values(Json) -> ComputedCameraValues
+
+pub fn decode_render_target_info(Json) -> RenderTargetInfo
+
+pub fn encode_computed_camera_values(ComputedCameraValues) -> Json
+
+pub fn encode_render_target_info(RenderTargetInfo) -> Json
+
+// Errors
+
+// Types and methods
+pub struct ComputedCameraValues {
+  target_info : RenderTargetInfo?
+  old_viewport_size : @math.IVec2?
+}
+pub fn ComputedCameraValues::ComputedCameraValues() -> Self
+pub fn ComputedCameraValues::new(RenderTargetInfo?, @math.IVec2?) -> Self
+pub impl ToJson for ComputedCameraValues
+pub impl @json.FromJson for ComputedCameraValues
+
+pub struct RenderTargetInfo {
+  physical_size : @math.IVec2
+  scale_factor : Float
+}
+pub fn RenderTargetInfo::RenderTargetInfo() -> Self
+pub fn RenderTargetInfo::new(@math.IVec2, Float) -> Self
+pub impl ToJson for RenderTargetInfo
+pub impl @json.FromJson for RenderTargetInfo
+
+// Type aliases
+
+// Traits
+

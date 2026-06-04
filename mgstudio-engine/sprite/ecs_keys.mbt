@@ -344,11 +344,6 @@ fn encode_vec2(value : @math.Vec2) -> Json {
 }
 
 ///|
-fn encode_ivec2(value : @math.IVec2) -> Json {
-  (value.x, value.y).to_json()
-}
-
-///|
 fn encode_uvec2(value : @math.UVec2) -> Json {
   value.to_json()
 }
@@ -453,18 +448,8 @@ fn encode_viewport(viewport : Viewport) -> Json {
 }
 
 ///|
-fn encode_camera_target_info(target_info : CameraTargetInfo) -> Json {
-  (encode_ivec2(target_info.physical_size), target_info.scale_factor).to_json()
-}
-
-///|
-fn encode_camera_computed_values(computed : CameraComputedValues) -> Json {
-  (
-    computed.target_info.map(fn(target_info) {
-      encode_camera_target_info(target_info)
-    }),
-    computed.old_viewport_size.map(fn(size) { encode_ivec2(size) }),
-  ).to_json()
+fn encode_computed_camera_values(computed : ComputedCameraValues) -> Json {
+  @camera_computed.encode_computed_camera_values(computed)
 }
 
 ///|
@@ -482,7 +467,7 @@ fn encode_camera(camera : Camera) -> Json {
     camera.viewport.map(fn(viewport) { encode_viewport(viewport) }),
     camera.order,
     camera.is_active,
-    encode_camera_computed_values(camera.computed),
+    encode_computed_camera_values(camera.computed),
     encode_clear_color_config(camera.clear_color),
   ).to_json()
 }
@@ -558,12 +543,6 @@ fn decode_color(json : Json) -> Color {
 fn decode_vec2(json : Json) -> @math.Vec2 {
   let (x, y) : (Float, Float) = try! @json.from_json(json)
   @math.Vec2::new(x, y)
-}
-
-///|
-fn decode_ivec2(json : Json) -> @math.IVec2 {
-  let (x, y) : (Int, Int) = try! @json.from_json(json)
-  @math.IVec2::new(x, y)
 }
 
 ///|
@@ -702,24 +681,8 @@ fn decode_viewport(json : Json) -> Viewport {
 }
 
 ///|
-fn decode_camera_target_info(json : Json) -> CameraTargetInfo {
-  let (size, scale_factor) : (Json, Float) = try! @json.from_json(json)
-  CameraTargetInfo::new(decode_ivec2(size), scale_factor)
-}
-
-///|
-fn decode_camera_computed_values(json : Json) -> CameraComputedValues {
-  let (target_info_json, old_viewport_size_json) : (Json?, Json?) = try! @json.from_json(
-    json,
-  )
-  CameraComputedValues::{
-    target_info: target_info_json.map(fn(value) {
-      decode_camera_target_info(value)
-    }),
-    old_viewport_size: old_viewport_size_json.map(fn(value) {
-      decode_ivec2(value)
-    }),
-  }
+fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
+  @camera_computed.decode_computed_camera_values(json)
 }
 
 ///|
@@ -746,7 +709,7 @@ fn decode_camera(json : Json) -> Camera {
     viewport: viewport_json.map(fn(value) { decode_viewport(value) }),
     order,
     is_active,
-    computed: decode_camera_computed_values(computed_json),
+    computed: decode_computed_camera_values(computed_json),
     clear_color: decode_clear_color_config(clear_color_json),
   }
 }
