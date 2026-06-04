@@ -997,22 +997,27 @@ fn ui_viewport_point_to_world(
   point : @math.Vec2,
 ) -> @math.Vec2 {
   if entity_ctx.camera_entity is Some(camera_entity) {
-    let camera_opt : @sprite.Camera? = try
-      world.get_by_key(camera_entity, @sprite.ecs_key_camera)
+    let camera_opt : @camera_camera.Camera? = try
+      world.get_by_key(camera_entity, @camera_camera.ecs_key_camera)
     catch {
-      _ => (None : @sprite.Camera?)
+      _ => (None : @camera_camera.Camera?)
     } noraise {
       value => value
     }
     if camera_opt is Some(camera) {
       let projection = match
-        (try world.get_by_key(camera_entity, @sprite.ecs_key_projection) catch {
-          _ => (None : @sprite.Projection?)
+        (try
+          world.get_by_key(
+            camera_entity, @camera_projection2d.ecs_key_projection,
+          )
+        catch {
+          _ => (None : @camera_projection2d.Projection?)
         } noraise {
           value => value
         }) {
-        Some(@sprite.Projection::Orthographic(orthographic)) => orthographic
-        _ => @sprite.OrthographicProjection::default_2d()
+        Some(@camera_projection2d.Projection::Orthographic(orthographic)) =>
+          orthographic
+        _ => @camera_projection2d.OrthographicProjection::default_2d()
       }
       let target_size = match camera.physical_target_size() {
         Some(size) => size
@@ -1189,11 +1194,11 @@ fn clamp_viewport_to_window(
 ///|
 fn ui_render_target_targets_primary_window(
   world : @ecs.World,
-  target : @sprite.RenderTarget,
+  target : @camera_camera.RenderTarget,
 ) -> Bool {
   match target {
-    @sprite.RenderTarget::Screen => true
-    @sprite.RenderTarget::Window(window_ref) =>
+    @camera_camera.RenderTarget::Screen => true
+    @camera_camera.RenderTarget::Window(window_ref) =>
       match window_ref {
         @window.WindowRef::Primary => true
         @window.WindowRef::Entity(window_entity) =>
@@ -1203,7 +1208,7 @@ fn ui_render_target_targets_primary_window(
             None => false
           }
       }
-    @sprite.RenderTarget::Image(_) => false
+    @camera_camera.RenderTarget::Image(_) => false
   }
 }
 
@@ -1211,7 +1216,7 @@ fn ui_render_target_targets_primary_window(
 fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
   let marked : Array[@core.Entity] = []
   world.for_each_component(ecs_key_is_default_ui_camera, fn(entity, _marker) {
-    if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
+    if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
       marked.push(entity)
     }
   })
@@ -1221,11 +1226,11 @@ fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
 
   let mut best_entity : @core.Entity? = None
   let mut best_order = 0
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, camera) {
     let target = match
-      (try! world.get_by_key(entity, @sprite.ecs_key_render_target)) {
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => @sprite.RenderTarget::Screen
+      None => @camera_camera.RenderTarget::Screen
     }
     if !ui_render_target_targets_primary_window(world, target) {
       return
@@ -1251,8 +1256,11 @@ fn ui_camera_transform_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> @transform.Transform {
-  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-    Some(@sprite.Projection::Orthographic(_)) => ()
+  match
+    (try! world.get_by_key(
+      camera_entity, @camera_projection2d.ecs_key_projection,
+    )) {
+    Some(@camera_projection2d.Projection::Orthographic(_)) => ()
     _ => return @transform.Transform::identity()
   }
   match
@@ -1272,15 +1280,18 @@ fn ui_camera_scale_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Float {
-  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_projection)) {
-    Some(@sprite.Projection::Orthographic(projection)) =>
+  match
+    (try! world.get_by_key(
+      camera_entity, @camera_projection2d.ecs_key_projection,
+    )) {
+    Some(@camera_projection2d.Projection::Orthographic(projection)) =>
       safe_camera_scale(projection.scale)
     _ => 1.0F
   }
 }
 
 ///|
-fn ui_camera_viewport_origin(camera : @sprite.Camera) -> @math.Vec2 {
+fn ui_camera_viewport_origin(camera : @camera_camera.Camera) -> @math.Vec2 {
   match camera.viewport {
     Some(viewport) => {
       let scale_factor = safe_scale_factor(
@@ -1306,7 +1317,7 @@ fn ui_compute_render_target_info(
   } else {
     ui_scale.value
   }
-  match (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera)) {
+  match (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera)) {
     Some(camera) => {
       let (target_physical_size, target_scale_factor) = match
         camera.computed.target_info {
@@ -1314,12 +1325,14 @@ fn ui_compute_render_target_info(
           (target_info.physical_size, target_info.scale_factor)
         None => {
           let target = match
-            (try! world.get_by_key(camera_entity, @sprite.ecs_key_render_target)) {
+            (try! world.get_by_key(
+              camera_entity, @camera_camera.ecs_key_render_target,
+            )) {
             Some(value) => value
-            None => @sprite.RenderTarget::Screen
+            None => @camera_camera.RenderTarget::Screen
           }
           match target {
-            @sprite.RenderTarget::Screen =>
+            @camera_camera.RenderTarget::Screen =>
               (
                 @math.IVec2::new(
                   @window.window_physical_width_for(
@@ -1336,7 +1349,7 @@ fn ui_compute_render_target_info(
                   @window.WindowRef::Primary,
                 ),
               )
-            @sprite.RenderTarget::Window(window_ref) =>
+            @camera_camera.RenderTarget::Window(window_ref) =>
               (
                 @math.IVec2::new(
                   @window.window_physical_width_for(world, window_ref),
@@ -1344,7 +1357,7 @@ fn ui_compute_render_target_info(
                 ),
                 @window.window_scale_factor_for(world, window_ref),
               )
-            @sprite.RenderTarget::Image(handle) =>
+            @camera_camera.RenderTarget::Image(handle) =>
               (
                 @math.IVec2::new(
                   @asset.asset_texture_width(handle),
@@ -1396,7 +1409,8 @@ fn ui_resolved_camera_state_from_computed(
   let mut camera_transform = @transform.Transform::identity()
   let mut camera_scale = 1.0F
   if camera_entity is Some(entity) {
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) {
       viewport_origin = ui_camera_viewport_origin(camera)
     }
     camera_transform = ui_camera_transform_for_entity(world, entity)
@@ -1507,7 +1521,7 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   if best_entity is Some(cam_entity) {
     camera_transform = ui_camera_transform_for_entity(world, cam_entity)
     camera_scale = ui_camera_scale_for_entity(world, cam_entity)
-    if (try! world.get_by_key(cam_entity, @sprite.ecs_key_camera))
+    if (try! world.get_by_key(cam_entity, @camera_camera.ecs_key_camera))
       is Some(camera) {
       viewport_origin = ui_camera_viewport_origin(camera)
       if camera.logical_viewport_size() is Some(size) {

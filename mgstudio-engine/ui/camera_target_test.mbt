@@ -36,7 +36,7 @@ fn camera_with_target_info(
   order : Int,
   physical_size : @math.IVec2,
   scale_factor : Float,
-) -> @sprite.Camera {
+) -> @camera_camera.Camera {
   let target_info_json : Json = (
     (physical_size.x, physical_size.y).to_json(),
     scale_factor,
@@ -49,7 +49,7 @@ fn camera_with_target_info(
   let camera_json : Json = (
     no_viewport_json, order, true, computed_json, clear_color_json,
   ).to_json()
-  let camera : @sprite.Camera = try! @json.from_json(camera_json)
+  let camera : @camera_camera.Camera = try! @json.from_json(camera_json)
   camera
 }
 
@@ -62,14 +62,14 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   let fallback = world.spawn_empty()
   try! world.set_by_key(
     fallback,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(10, @math.IVec2::new(800, 600), 1.0F),
   )
 
   let marked = world.spawn_empty()
   try! world.set_by_key(
     marked,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(-5, @math.IVec2::new(640, 360), 1.0F),
   )
   try! world.set_by_key(
@@ -105,7 +105,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   let marked_a = world.spawn_empty()
   try! world.set_by_key(
     marked_a,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(2, @math.IVec2::new(960, 540), 1.0F),
   )
   try! world.set_by_key(
@@ -117,13 +117,13 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   let marked_b = world.spawn_empty()
   try! world.set_by_key(
     marked_b,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(20, @math.IVec2::new(512, 512), 1.0F),
   )
   try! world.set_by_key(
     marked_b,
-    @sprite.ecs_key_render_target,
-    @sprite.RenderTarget::Image(@asset.Handle::new(7)),
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Image(@asset.Handle::new(7)),
   )
   try! world.set_by_key(
     marked_b,
@@ -134,25 +134,25 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   let primary_ref = world.spawn_empty()
   try! world.set_by_key(
     primary_ref,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(5, @math.IVec2::new(960, 540), 1.0F),
   )
   try! world.set_by_key(
     primary_ref,
-    @sprite.ecs_key_render_target,
-    @sprite.RenderTarget::Window(@window.WindowRef::Primary),
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Window(@window.WindowRef::Primary),
   )
 
   let primary_entity = world.spawn_empty()
   try! world.set_by_key(
     primary_entity,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(9, @math.IVec2::new(960, 540), 1.0F),
   )
   try! world.set_by_key(
     primary_entity,
-    @sprite.ecs_key_render_target,
-    @sprite.RenderTarget::Window(
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Window(
       @window.WindowRef::Entity(primary_window_entity),
     ),
   )
@@ -175,14 +175,14 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   let target_camera = world.spawn_empty()
   try! world.set_by_key(
     target_camera,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
   )
 
   let ignored_child_target = world.spawn_empty()
   try! world.set_by_key(
     ignored_child_target,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(1, @math.IVec2::new(320, 180), 1.0F),
   )
 
@@ -261,8 +261,8 @@ test "ui: propagated target info falls back to camera target when computed info 
   let target_camera = world.spawn_empty()
   try! world.set_by_key(
     target_camera,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::Camera(),
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
   )
 
   let root = world.spawn_empty()
@@ -295,7 +295,7 @@ test "ui: perspective target camera keeps overlays in screen space" {
   let target_camera = world.spawn_empty()
   try! world.set_by_key(
     target_camera,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 1.0F),
   )
   try! world.set_by_key(
@@ -334,13 +334,13 @@ test "ui: layout resolves each root against its propagated target viewport" {
   let camera_a = world.spawn_empty()
   try! world.set_by_key(
     camera_a,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(0, @math.IVec2::new(200, 100), 1.0F),
   )
   let camera_b = world.spawn_empty()
   try! world.set_by_key(
     camera_b,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     camera_with_target_info(1, @math.IVec2::new(600, 300), 2.0F),
   )
 

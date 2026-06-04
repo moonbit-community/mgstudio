@@ -36,7 +36,7 @@ fn implicit_root_camera_with_target_info(
   order : Int,
   physical_size : @math.IVec2,
   scale_factor : Float,
-) -> @sprite.Camera {
+) -> @camera_camera.Camera {
   let target_info_json : Json = (
     (physical_size.x, physical_size.y).to_json(),
     scale_factor,
@@ -126,7 +126,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
   let target_camera = world.spawn_empty()
   try! world.set_by_key(
     target_camera,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     implicit_root_camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
   )
 
@@ -180,7 +180,7 @@ test "ui: unparented ghost node acts as implicit root for target camera propagat
   let target_camera = world.spawn_empty()
   try! world.set_by_key(
     target_camera,
-    @sprite.ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     implicit_root_camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
   )
 
