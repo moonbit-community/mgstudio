@@ -15,7 +15,7 @@ import {
   "Milky2018/moon_rodio@0.3.2",
   "Milky2018/moon_wesl@0.1.2",
   "Milky2018/moon_wgsl@0.13.0",
-  "Milky2018/wgpu_mbt@0.14.1",
+  "Milky2018/wgpu_mbt@0.14.2",
   "moonbitlang/x@0.4.43",
   "Milky2018/window@0.5.1",
   "gmlewis/image@0.17.6",

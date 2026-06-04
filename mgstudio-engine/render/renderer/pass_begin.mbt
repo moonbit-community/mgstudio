@@ -783,7 +783,12 @@ pub fn GpuBackend::begin_pass_3d(
                 stencil_store_op_u32=@wgpu.STORE_OP_STORE,
                 stencil_clear_value_u32=0U,
                 stencil_read_only=true,
-              )
+              ) catch {
+                _ =>
+                  fatal(
+                    "wgpu: failed to begin color/depth render pass with resolve target",
+                  )
+              }
             None =>
               frame.encoder.begin_render_pass_color_depth_u32(
                 color0_view,

@@ -24,7 +24,3 @@ import {
 }
 
 supported_targets = "native"
-
-options(
-  "native-stub": [ "render_pass_resolve_stub.c" ],
-)
