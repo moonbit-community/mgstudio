@@ -36,9 +36,7 @@ pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d] = @ecs.register_component
 )
 
 ///|
-pub let ecs_key_camera : @ecs.ComponentKey[Camera] = @ecs.register_component(
-  debug_name="render2d.camera",
-)
+pub let ecs_key_camera : @ecs.ComponentKey[Camera] = @camera_camera.ecs_key_camera
 
 ///|
 pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
@@ -51,9 +49,7 @@ pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_compon
 )
 
 ///|
-pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @ecs.register_component(
-  debug_name="render2d.render_target",
-)
+pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @camera_camera.ecs_key_render_target
 
 ///|
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
@@ -110,11 +106,6 @@ pub impl @ecs.Component for Camera2d with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for Camera with fn component() {
-  ecs_key_camera
-}
-
-///|
 pub impl @ecs.Component for Projection with fn component() {
   ecs_key_projection
 }
@@ -122,11 +113,6 @@ pub impl @ecs.Component for Projection with fn component() {
 ///|
 pub impl @ecs.Component for PanCamera with fn component() {
   ecs_key_pan_camera
-}
-
-///|
-pub impl @ecs.Component for RenderTarget with fn component() {
-  ecs_key_render_target
 }
 
 ///|
@@ -335,32 +321,6 @@ fn encode_anchor(anchor : Anchor) -> Json {
 }
 
 ///|
-fn encode_viewport(viewport : Viewport) -> Json {
-  @camera_viewport.encode_viewport(viewport)
-}
-
-///|
-fn encode_computed_camera_values(computed : ComputedCameraValues) -> Json {
-  @camera_computed.encode_computed_camera_values(computed)
-}
-
-///|
-fn encode_clear_color_config(clear_color : ClearColorConfig) -> Json {
-  @camera_clear_color.encode_clear_color_config(clear_color)
-}
-
-///|
-fn encode_camera(camera : Camera) -> Json {
-  (
-    camera.viewport.map(fn(viewport) { encode_viewport(viewport) }),
-    camera.order,
-    camera.is_active,
-    encode_computed_camera_values(camera.computed),
-    encode_clear_color_config(camera.clear_color),
-  ).to_json()
-}
-
-///|
 fn encode_camera2d(_camera2d : Camera2d) -> Json {
   (0).to_json()
 }
@@ -369,15 +329,6 @@ fn encode_camera2d(_camera2d : Camera2d) -> Json {
 fn encode_projection(projection : Projection) -> Json {
   match projection {
     Orthographic(orthographic) => (0, orthographic.scale).to_json()
-  }
-}
-
-///|
-fn encode_render_target(target : RenderTarget) -> Json {
-  match target {
-    Screen => (0, Json::null()).to_json()
-    Image(image) => (1, encode_image_handle(image)).to_json()
-    Window(window_ref) => (2, window_ref.to_json()).to_json()
   }
 }
 
@@ -511,39 +462,6 @@ fn decode_anchor(json : Json) -> Anchor {
 }
 
 ///|
-fn decode_viewport(json : Json) -> Viewport {
-  @camera_viewport.decode_viewport(json)
-}
-
-///|
-fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
-  @camera_computed.decode_computed_camera_values(json)
-}
-
-///|
-fn decode_clear_color_config(json : Json) -> ClearColorConfig {
-  @camera_clear_color.decode_clear_color_config(json)
-}
-
-///|
-fn decode_camera(json : Json) -> Camera {
-  let (viewport_json, order, is_active, computed_json, clear_color_json) : (
-    Json?,
-    Int,
-    Bool,
-    Json,
-    Json,
-  ) = try! @json.from_json(json)
-  Camera::{
-    viewport: viewport_json.map(fn(value) { decode_viewport(value) }),
-    order,
-    is_active,
-    computed: decode_computed_camera_values(computed_json),
-    clear_color: decode_clear_color_config(clear_color_json),
-  }
-}
-
-///|
 fn decode_camera2d(_json : Json) -> Camera2d {
   Camera2d::Camera2d()
 }
@@ -554,17 +472,6 @@ fn decode_projection(json : Json) -> Projection {
   match tag {
     0 => Orthographic(OrthographicProjection::new(payload))
     _ => Projection::orthographic_2d()
-  }
-}
-
-///|
-fn decode_render_target(json : Json) -> RenderTarget {
-  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
-  match tag {
-    0 => Screen
-    1 => Image(decode_image_handle(payload))
-    2 => Window(try! @json.from_json(payload))
-    _ => Screen
   }
 }
 
@@ -604,16 +511,6 @@ pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
 }
 
 ///|
-pub impl ToJson for Camera with fn to_json(self) {
-  encode_camera(self)
-}
-
-///|
-pub impl @json.FromJson for Camera with fn from_json(json, _path) {
-  decode_camera(json)
-}
-
-///|
 pub impl ToJson for Camera2d with fn to_json(self) {
   encode_camera2d(self)
 }
@@ -631,16 +528,6 @@ pub impl ToJson for Projection with fn to_json(self) {
 ///|
 pub impl @json.FromJson for Projection with fn from_json(json, _path) {
   decode_projection(json)
-}
-
-///|
-pub impl ToJson for RenderTarget with fn to_json(self) {
-  encode_render_target(self)
-}
-
-///|
-pub impl @json.FromJson for RenderTarget with fn from_json(json, _path) {
-  decode_render_target(json)
 }
 
 ///|

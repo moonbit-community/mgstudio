@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr/render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -16,7 +17,6 @@ import {
   "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_wgsl/common",
@@ -221,7 +221,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @mater
 
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
-pub fn render3d_camera_viewport_rect_logical(@sprite.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
+pub fn render3d_camera_viewport_rect_logical(@camera.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
 
 pub fn render3d_clamp_viewport(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
 
@@ -457,7 +457,7 @@ pub fn render3d_sweep_mesh_runtime_caches(Render3dMeshRuntimeState) -> Unit
 
 pub fn render3d_system_labels() -> Array[String]
 
-pub fn render3d_target_info(@ecs.World, @sprite.RenderTarget) -> RenderTargetComputed3d?
+pub fn render3d_target_info(@ecs.World, @camera.RenderTarget) -> RenderTargetComputed3d?
 
 pub fn render3d_transform_columns(@ecs.World) -> Render3dTransformColumns
 

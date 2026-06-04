@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -23,7 +24,6 @@ import {
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/render_resource",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/debug",
@@ -375,9 +375,9 @@ pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) ->
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @camera.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @camera.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
 pub fn mesh_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -503,9 +503,9 @@ pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.Requ
 
 pub fn render3d_apply_view_contact_shadows_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewContactShadowsUniformOffset)]) -> Unit
 
-pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
-pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render3d_camera_world_to_viewport(@math.Vec3, @camera.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render3d_contact_shadows_buffer_mut(@ecs.World) -> @ecs.ResourceMut[ContactShadowsBuffer]?
 
@@ -698,7 +698,7 @@ pub fn Camera3d::Camera3d() -> Self
 pub impl @ecs.Component for Camera3d
 
 pub struct Camera3dBundle {
-  camera : @sprite.Camera
+  camera : @camera.Camera
   projection : Projection
   sub_camera_view : @render.SubCameraView3d?
   screen_space_transmission : @transmission.ScreenSpaceTransmission?
@@ -722,11 +722,11 @@ pub struct Camera3dBundle {
   atmosphere : @light.Atmosphere?
   atmosphere_settings : @light.AtmosphereSettings?
   transform : @transform.Transform
-  target : @sprite.RenderTarget
+  target : @camera.RenderTarget
   layers : @render_layers.RenderLayers
 }
-pub fn Camera3dBundle::new(@sprite.Camera, @transform.Transform) -> Self
-pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @transform.Transform) -> Self
+pub fn Camera3dBundle::new(@camera.Camera, @transform.Transform) -> Self
+pub fn Camera3dBundle::new_with_projection(@camera.Camera, Projection, @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn Camera3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
@@ -747,7 +747,7 @@ pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, @render.SubCameraView3d?) -> Self
-pub fn Camera3dBundle::with_target(Self, @sprite.RenderTarget) -> Self
+pub fn Camera3dBundle::with_target(Self, @camera.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self

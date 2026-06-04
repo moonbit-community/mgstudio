@@ -76,7 +76,7 @@ options(
       "output": "meshlet_mesh_material_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name remap_1d_to_2d_dispatch_wgsl_source",
+      "command": ":embed --input $input --output $output --name remap_one_d_to_two_d_dispatch_wgsl_source",
       "input": "remap_1d_to_2d_dispatch.wgsl",
       "output": "remap_1d_to_2d_dispatch_wgsl.mbt",
     },

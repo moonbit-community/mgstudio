@@ -62,11 +62,11 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     @asset.asset_text_to_bytes(meshlet_mesh_material_wgsl_source),
   )
   @shader_source.load_embedded_shader_source(
-    "pbr/meshlet/remap_1d_to_2d_dispatch.wgsl", remap_1d_to_2d_dispatch_wgsl_source,
+    "pbr/meshlet/remap_1d_to_2d_dispatch.wgsl", remap_one_d_to_two_d_dispatch_wgsl_source,
   )
   @asset.register_embedded_asset_virtual_bytes(
     "pbr/meshlet/remap_1d_to_2d_dispatch.wgsl",
-    @asset.asset_text_to_bytes(remap_1d_to_2d_dispatch_wgsl_source),
+    @asset.asset_text_to_bytes(remap_one_d_to_two_d_dispatch_wgsl_source),
   )
   @shader_source.load_embedded_shader_source(
     "pbr/meshlet/resolve_render_targets.wgsl", resolve_render_targets_wgsl_source,

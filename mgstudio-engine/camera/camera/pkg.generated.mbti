@@ -1,0 +1,71 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/camera"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/clear_color",
+  "Milky2018/mgstudio/camera/computed_camera_values",
+  "Milky2018/mgstudio/camera/viewport",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/window",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_camera : @ecs.ComponentKey[Camera]
+
+pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
+
+// Errors
+
+// Types and methods
+pub struct Camera {
+  viewport : @viewport.Viewport?
+  order : Int
+  is_active : Bool
+  computed : @computed_camera_values.ComputedCameraValues
+  clear_color : @clear_color.ClearColorConfig
+}
+pub fn Camera::Camera() -> Self
+pub fn Camera::clear_viewport(Self) -> Self
+pub fn Camera::logical_target_size(Self) -> @math.Vec2?
+pub fn Camera::logical_viewport_size(Self) -> @math.Vec2?
+pub fn Camera::new(@color.Color) -> Self
+pub fn Camera::physical_target_size(Self) -> @math.IVec2?
+pub fn Camera::physical_viewport_size(Self) -> @math.IVec2?
+pub fn Camera::target_scaling_factor(Self) -> Float?
+pub fn Camera::to_logical(Self, @math.IVec2) -> @math.Vec2?
+pub fn Camera::with_clear_color(Self, @color.Color) -> Self
+pub fn Camera::with_clear_color_config(Self, @clear_color.ClearColorConfig) -> Self
+pub fn Camera::with_clear_color_none(Self) -> Self
+pub fn Camera::with_computed(Self, @computed_camera_values.ComputedCameraValues) -> Self
+pub fn Camera::with_is_active(Self, Bool) -> Self
+pub fn Camera::with_order(Self, Int) -> Self
+pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self
+pub impl @ecs.Component for Camera
+pub impl ToJson for Camera
+pub impl @json.FromJson for Camera
+
+pub(all) enum RenderTarget {
+  Screen
+  Window(@window.WindowRef)
+  Image(@asset.Handle[@image.Image])
+}
+pub impl @ecs.Component for RenderTarget
+pub impl ToJson for RenderTarget
+pub impl @json.FromJson for RenderTarget
+
+// Type aliases
+pub using @clear_color {type ClearColorConfig}
+
+pub using @computed_camera_values {type ComputedCameraValues}
+
+pub using @computed_camera_values {type RenderTargetInfo}
+
+pub using @viewport {type Viewport}
+
+// Traits
+

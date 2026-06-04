@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_camera/src/components.rs`.
 
 ///|
-pub type Camera = @sprite.Camera
+pub type Camera = @camera_camera.Camera
 
 ///|
 pub type Camera2d = @sprite.Camera2d

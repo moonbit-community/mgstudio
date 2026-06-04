@@ -4,13 +4,13 @@ package "Milky2018/mgstudio/pbr/meshlet"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
 }
@@ -186,7 +186,7 @@ pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> 
 
 pub fn meshlet_validate_input_mesh_summary(MeshToMeshletInputMeshSummary, MeshToMeshletMeshConversionConfig, Bool) -> MeshToMeshletMeshConversionError?
 
-pub fn meshlet_view_size_from_camera(@sprite.Camera) -> (Int, Int)
+pub fn meshlet_view_size_from_camera(@camera.Camera) -> (Int, Int)
 
 pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, pipelines_ready? : Bool) -> Unit
 

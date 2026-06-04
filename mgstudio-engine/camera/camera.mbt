@@ -20,7 +20,7 @@
 pub type Viewport = @camera_viewport.Viewport
 
 ///|
-pub type RenderTarget = @sprite.RenderTarget
+pub type RenderTarget = @camera_camera.RenderTarget
 
 ///|
 pub type RenderTargetInfo = @camera_computed.RenderTargetInfo

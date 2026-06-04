@@ -4,9 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/camera/clear_color",
-  "Milky2018/mgstudio/camera/computed_camera_values",
-  "Milky2018/mgstudio/camera/viewport",
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -21,7 +19,6 @@ import {
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/window",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -38,7 +35,7 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
-pub let ecs_key_camera : @ecs.ComponentKey[Camera]
+pub let ecs_key_camera : @ecs.ComponentKey[@camera.Camera]
 
 pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
 
@@ -56,7 +53,7 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
 
-pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
+pub let ecs_key_render_target : @ecs.ComponentKey[@camera.RenderTarget]
 
 pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
@@ -126,9 +123,9 @@ pub fn render2d_camera_system(@ecs.World) -> Unit
 
 pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
@@ -279,32 +276,6 @@ pub struct BorderRect {
 pub fn BorderRect::BorderRect() -> Self
 pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
-
-pub struct Camera {
-  viewport : @viewport.Viewport?
-  order : Int
-  is_active : Bool
-  computed : @computed_camera_values.ComputedCameraValues
-  clear_color : @clear_color.ClearColorConfig
-}
-pub fn Camera::Camera() -> Self
-pub fn Camera::clear_viewport(Self) -> Self
-pub fn Camera::logical_target_size(Self) -> @math.Vec2?
-pub fn Camera::logical_viewport_size(Self) -> @math.Vec2?
-pub fn Camera::new(@color.Color) -> Self
-pub fn Camera::physical_target_size(Self) -> @math.IVec2?
-pub fn Camera::physical_viewport_size(Self) -> @math.IVec2?
-pub fn Camera::target_scaling_factor(Self) -> Float?
-pub fn Camera::to_logical(Self, @math.IVec2) -> @math.Vec2?
-pub fn Camera::with_clear_color(Self, @color.Color) -> Self
-pub fn Camera::with_clear_color_config(Self, @clear_color.ClearColorConfig) -> Self
-pub fn Camera::with_clear_color_none(Self) -> Self
-pub fn Camera::with_is_active(Self, Bool) -> Self
-pub fn Camera::with_order(Self, Int) -> Self
-pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self
-pub impl @ecs.Component for Camera
-pub impl ToJson for Camera
-pub impl @json.FromJson for Camera
 
 pub struct Camera2d {
 }
@@ -615,15 +586,6 @@ type RenderState
 pub impl ToJson for RenderState
 pub impl @json.FromJson for RenderState
 
-pub(all) enum RenderTarget {
-  Screen
-  Window(@window.WindowRef)
-  Image(@asset.Handle[@image.Image])
-}
-pub impl @ecs.Component for RenderTarget
-pub impl ToJson for RenderTarget
-pub impl @json.FromJson for RenderTarget
-
 pub struct RoundedRectBuilder {
   id : Int
   state : @ref.Ref[GizmoState]
@@ -864,6 +826,8 @@ pub using @post_process {type BloomCompositeMode}
 
 pub using @post_process {type BloomPrefilter}
 
+pub using @camera {type Camera}
+
 pub using @math {type Capsule2d}
 
 pub using @math {type Circle}
@@ -907,6 +871,8 @@ pub using @math {type Polyline2d}
 pub using @math {type Rectangle}
 
 pub using @math {type RegularPolygon}
+
+pub using @camera {type RenderTarget}
 
 pub using @math {type Rhombus}
 

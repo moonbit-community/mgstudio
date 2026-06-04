@@ -67,7 +67,10 @@ type ComputedCameraValues = @camera_computed.ComputedCameraValues
 type ClearColor = @camera_clear_color.ClearColor
 
 ///|
-type ClearColorConfig = @camera_clear_color.ClearColorConfig
+pub type Camera = @camera_camera.Camera
+
+///|
+pub type RenderTarget = @camera_camera.RenderTarget
 
 ///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
@@ -182,127 +185,6 @@ pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
 ///|
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
   render2d_asset_store_mut_or_abort()
-}
-
-///|
-pub struct Camera {
-  viewport : Viewport?
-  order : Int
-  is_active : Bool
-  computed : ComputedCameraValues
-  clear_color : ClearColorConfig
-}
-
-///|
-pub fn Camera::new(clear_color : Color) -> Camera {
-  Camera::{
-    viewport: None,
-    order: 0,
-    is_active: true,
-    computed: ComputedCameraValues::ComputedCameraValues(),
-    clear_color: ClearColorConfig::Custom(clear_color),
-  }
-}
-
-///|
-pub fn Camera::Camera() -> Camera {
-  Camera::{
-    viewport: None,
-    order: 0,
-    is_active: true,
-    computed: ComputedCameraValues::ComputedCameraValues(),
-    clear_color: ClearColorConfig::default(),
-  }
-}
-
-///|
-pub fn Camera::with_order(self : Camera, order : Int) -> Camera {
-  Camera::{ ..self, order, }
-}
-
-///|
-pub fn Camera::with_viewport(self : Camera, viewport : Viewport) -> Camera {
-  Camera::{ ..self, viewport: Some(viewport) }
-}
-
-///|
-pub fn Camera::clear_viewport(self : Camera) -> Camera {
-  Camera::{ ..self, viewport: None }
-}
-
-///|
-pub fn Camera::with_clear_color(self : Camera, clear_color : Color) -> Camera {
-  Camera::{ ..self, clear_color: ClearColorConfig::Custom(clear_color) }
-}
-
-///|
-pub fn Camera::with_clear_color_config(
-  self : Camera,
-  clear_color : ClearColorConfig,
-) -> Camera {
-  Camera::{ ..self, clear_color, }
-}
-
-///|
-pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
-  Camera::{ ..self, clear_color: ClearColorConfig::None }
-}
-
-///|
-pub fn Camera::with_is_active(self : Camera, is_active : Bool) -> Camera {
-  Camera::{ ..self, is_active, }
-}
-
-///|
-pub fn Camera::to_logical(
-  self : Camera,
-  physical_size : @math.IVec2,
-) -> @math.Vec2? {
-  guard self.computed.target_info is Some(target_info) else { return None }
-  let mut scale = target_info.scale_factor
-  if scale <= 0.0F {
-    scale = 1.0F
-  }
-  Some(
-    @math.Vec2::new(
-      Float::from_double(physical_size.x.to_double()) / scale,
-      Float::from_double(physical_size.y.to_double()) / scale,
-    ),
-  )
-}
-
-///|
-pub fn Camera::physical_target_size(self : Camera) -> @math.IVec2? {
-  self.computed.target_info.map(fn(target_info) { target_info.physical_size })
-}
-
-///|
-pub fn Camera::logical_target_size(self : Camera) -> @math.Vec2? {
-  match self.physical_target_size() {
-    Some(size) => self.to_logical(size)
-    None => None
-  }
-}
-
-///|
-pub fn Camera::physical_viewport_size(self : Camera) -> @math.IVec2? {
-  match self.viewport {
-    Some(viewport) => Some(viewport.physical_size)
-    None => self.physical_target_size()
-  }
-}
-
-///|
-pub fn Camera::logical_viewport_size(self : Camera) -> @math.Vec2? {
-  match self.viewport {
-    Some(viewport) => self.to_logical(viewport.physical_size)
-    None => self.logical_target_size()
-  }
-}
-
-///|
-pub fn Camera::target_scaling_factor(self : Camera) -> Float? {
-  self.computed.target_info.map(fn(target_info) { target_info.scale_factor })
 }
 
 ///|
@@ -485,13 +367,6 @@ pub impl Show for PanCamera with fn output(self, logger) {
   logger.write_string(
     "\nPanCamera Controls:\n  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
   )
-}
-
-///|
-pub(all) enum RenderTarget {
-  Screen
-  Window(@window.WindowRef)
-  Image(@asset.Handle[@asset.Image])
 }
 
 ///|
@@ -2977,13 +2852,12 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
         let clamped = render2d_clamp_viewport(viewport, info.size)
         camera_value = camera_value.with_viewport(clamped)
       }
-      camera_value = Camera::{
-        ..camera_value,
-        computed: ComputedCameraValues::new(
+      camera_value = camera_value.with_computed(
+        ComputedCameraValues::new(
           next_target_info,
           render2d_camera_viewport_size(camera_value),
         ),
-      }
+      )
       try! (world.replace(entity, ecs_key_camera, camera_value) |> ignore)
     }
   })
@@ -3080,13 +2954,12 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
       let clamped = render2d_clamp_viewport(viewport, info.size)
       camera_value = camera_value.with_viewport(clamped)
     }
-    camera_value = Camera::{
-      ..camera_value,
-      computed: ComputedCameraValues::new(
+    camera_value = camera_value.with_computed(
+      ComputedCameraValues::new(
         next_target_info,
         render2d_camera_viewport_size(camera_value),
       ),
-    }
+    )
     try! world.set_by_key(entity, ecs_key_camera, camera_value)
   }
 }
