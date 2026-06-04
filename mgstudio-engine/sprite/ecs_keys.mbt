@@ -160,11 +160,6 @@ pub impl @ecs.Component for ColorMaterial with fn component() {
 }
 
 ///|
-pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M] with fn component() {
-  M::material2d_keys().mesh_material2d_component
-}
-
-///|
 pub impl @ecs.Component for ScissorRect with fn component() {
   ecs_key_scissor_rect
 }
@@ -466,11 +461,6 @@ fn encode_color_material(material : ColorMaterial) -> Json {
 }
 
 ///|
-fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
-  material.handle.to_json()
-}
-
-///|
 fn decode_color(json : Json) -> Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
   Color::new(r, g, b, a)
@@ -671,12 +661,6 @@ fn decode_color_material(json : Json) -> ColorMaterial {
 }
 
 ///|
-fn[M] decode_mesh_material2d(json : Json) -> MeshMaterial2d[M] {
-  let handle : @asset.Handle[M] = try! @json.from_json(json)
-  MeshMaterial2d::new(handle)
-}
-
-///|
 fn decode_scissor_rect(json : Json) -> ScissorRect {
   ScissorRect::new(decode_rect(json))
 }
@@ -774,16 +758,6 @@ pub impl ToJson for ColorMaterial with fn to_json(self) {
 ///|
 pub impl @json.FromJson for ColorMaterial with fn from_json(json, _path) {
   decode_color_material(json)
-}
-
-///|
-pub impl[M] ToJson for MeshMaterial2d[M] with fn to_json(self) {
-  encode_mesh_material2d(self)
-}
-
-///|
-pub impl[M] @json.FromJson for MeshMaterial2d[M] with fn from_json(json, _path) {
-  decode_mesh_material2d(json)
 }
 
 ///|

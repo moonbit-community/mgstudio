@@ -95,7 +95,7 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh2d::new(quad_mesh),
-            @sprite.MeshMaterial2d::new(base_material),
+            @sprite_render_mesh2d_material.MeshMaterial2d::new(base_material),
             @transform.Transform::from_xyz(
               float_from_int(x) * TILE_SIZE,
               float_from_int(y) * TILE_SIZE,

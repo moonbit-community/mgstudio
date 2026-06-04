@@ -750,7 +750,7 @@ pub impl @asset.Asset for TilemapChunkMaterial with fn asset_resource_keys() {
 }
 
 ///|
-pub fn Material2dBindGroup::tilemap_chunk_material(
+fn tilemap_chunk_material_bind_group(
   tileset : @asset.Handle[@asset.Image],
   tile_data : @asset.Handle[@asset.Image],
 ) -> Material2dBindGroup {
@@ -772,12 +772,14 @@ pub fn Material2dBindGroup::tilemap_chunk_material(
 }
 
 ///|
-pub impl Material2d for TilemapChunkMaterial with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for TilemapChunkMaterial with fn alpha_mode(
+  self,
+) {
   self.alpha_mode
 }
 
 ///|
-pub impl Material2d for TilemapChunkMaterial with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for TilemapChunkMaterial with fn material2d_debug_name() {
   "mgstudio_sprite::TilemapChunkMaterial"
 }
 
@@ -787,13 +789,15 @@ let tilemap_chunk_material_material2d_keys : Material2dKeys[
 ] = register_material2d_keys(TilemapChunkMaterial::material2d_debug_name())
 
 ///|
-pub impl Material2d for TilemapChunkMaterial with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for TilemapChunkMaterial with fn material2d_keys() {
   tilemap_chunk_material_material2d_keys
 }
 
 ///|
-pub impl Material2d for TilemapChunkMaterial with fn bind_group(self) {
-  Material2dBindGroup::tilemap_chunk_material(self.tileset, self.tile_data)
+pub impl @sprite_render_mesh2d_material.Material2d for TilemapChunkMaterial with fn bind_group(
+  self,
+) {
+  tilemap_chunk_material_bind_group(self.tileset, self.tile_data)
 }
 
 ///|

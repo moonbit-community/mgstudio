@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/sprite_render/mesh2d/material" @sprite_render_mesh2d_material,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/sprite",

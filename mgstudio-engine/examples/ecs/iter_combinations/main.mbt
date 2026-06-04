@@ -90,7 +90,9 @@ fn spawn_body(
 ) -> Unit {
   let bundle = (
     @mesh.Mesh2d::new(meshes |> @sprite.add_mesh(@sprite.Circle::new(1.0F))),
-    @sprite.MeshMaterial2d::new(materials |> @sprite.add_material(color)),
+    @sprite_render_mesh2d_material.MeshMaterial2d::new(
+      materials |> @sprite.add_material(color),
+    ),
     @transform.Transform::from_xyz(position.x, position.y, 0.0F).with_scale(
       @math.Vec3::splat(radius),
     ),

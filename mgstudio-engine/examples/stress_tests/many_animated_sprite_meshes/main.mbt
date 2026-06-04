@@ -150,7 +150,9 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh2d::new(mesh),
-            @sprite.MeshMaterial2d::new(atlas_materials[start_frame]),
+            @sprite_render_mesh2d_material.MeshMaterial2d::new(
+              atlas_materials[start_frame],
+            ),
             @transform.Transform::from_xyz(
               float_from_int(x) * TILE_SIZE,
               float_from_int(y) * TILE_SIZE,
@@ -177,7 +179,11 @@ fn animate_meshes(
     (
       @ecs.Mut[AnimationTimer],
       @ecs.Mut[AtlasFrame],
-      @ecs.Mut[@sprite.MeshMaterial2d[@sprite.ColorMaterialAsset]],
+      @ecs.Mut[
+        @sprite_render_mesh2d_material.MeshMaterial2d[
+          @sprite.ColorMaterialAsset,
+        ],
+      ],
     ),
     @ecs.All,
   ],
@@ -202,7 +208,9 @@ fn animate_meshes(
     timer.modify(fn(value) { value.elapsed = next_elapsed })
     frame.modify(fn(value) { value.index = next_index })
     material.set(
-      @sprite.MeshMaterial2d::new(materials.get().handles[next_index]),
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
+        materials.get().handles[next_index],
+      ),
     )
   })
 }

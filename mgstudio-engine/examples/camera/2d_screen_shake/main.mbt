@@ -213,7 +213,7 @@ fn setup_scene(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(
@@ -237,7 +237,7 @@ fn setup_scene(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(
@@ -262,7 +262,7 @@ fn setup_scene(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(
@@ -287,7 +287,7 @@ fn setup_scene(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(

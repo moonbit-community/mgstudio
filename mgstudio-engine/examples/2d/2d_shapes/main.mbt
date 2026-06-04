@@ -171,7 +171,7 @@ fn setup(
       commands.spawn(
         (
           @mesh.Mesh2d::new(shapes[i]),
-          @sprite.MeshMaterial2d::new(
+          @sprite_render_mesh2d_material.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
               material_assets |> @sprite.add_material(color)
             }),
@@ -192,7 +192,7 @@ fn setup(
       commands.spawn(
         (
           @mesh.Mesh2d::new(rings[i]),
-          @sprite.MeshMaterial2d::new(
+          @sprite_render_mesh2d_material.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
               material_assets |> @sprite.add_material(color)
             }),

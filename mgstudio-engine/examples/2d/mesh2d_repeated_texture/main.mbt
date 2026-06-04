@@ -54,7 +54,7 @@ fn setup(
           ).to_mesh(),
         ),
       ),
-      @sprite.MeshMaterial2d::new(
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
         materials
         .peek()
         .add(@sprite.ColorMaterialAsset::from_image(image_with_default_sampler)),
@@ -83,7 +83,7 @@ fn setup(
           ).to_mesh(),
         ),
       ),
-      @sprite.MeshMaterial2d::new(
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
         materials
         .peek()
         .add(
@@ -116,7 +116,7 @@ fn setup(
           ).to_mesh(),
         ),
       ),
-      @sprite.MeshMaterial2d::new(
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
         materials
         .peek()
         .add(

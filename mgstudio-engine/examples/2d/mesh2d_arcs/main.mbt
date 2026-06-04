@@ -91,7 +91,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  let material = @sprite.MeshMaterial2d::new(
+  let material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
     materials
     .peek()
     .add(

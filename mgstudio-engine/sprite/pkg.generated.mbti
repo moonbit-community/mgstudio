@@ -17,13 +17,10 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
-  "Milky2018/mgstudio/render",
-  "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/debug",
-  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -63,7 +60,7 @@ pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe]
 
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]]
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[ColorMaterialAsset]]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
 
@@ -113,8 +110,6 @@ pub fn init_render_state_system(@ecs.World) -> Unit
 
 pub fn[M] material2d_plugin(Material2dPlugin[M]) -> Material2dPlugin[M]
 
-pub fn[M : Material2d] material2d_runtime_type_name(@asset.Handle[M]) -> String
-
 pub fn mesh2d_geometry_annulus(@math.Annulus) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_capsule(@math.Capsule2d) -> @mesh.Mesh2dGeometry
@@ -148,8 +143,6 @@ pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn[T] register_custom_mesh2d_pipeline_world(@ecs.World, type_name~ : String, component_key~ : @ecs.ComponentKey[T], descriptor~ : CustomMesh2dPipelineDescriptor) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
-
-pub fn[M] register_material2d_keys(String) -> Material2dKeys[M]
 
 pub fn register_render2d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -238,8 +231,6 @@ pub fn render_execute_system(@ecs.World) -> Unit
 pub fn render_extract_system(@ecs.World) -> Unit
 
 pub fn render_extract_system_ecs(@ecs.World) -> Unit
-
-pub fn[M : Material2d] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
@@ -358,7 +349,7 @@ pub fn ColorMaterial::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
 pub fn ColorMaterial::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 pub impl @ecs.Component for ColorMaterial
-pub impl Material2d for ColorMaterial
+pub impl @material.Material2d for ColorMaterial
 pub impl Default for ColorMaterial
 pub impl ToJson for ColorMaterial
 pub impl @json.FromJson for ColorMaterial
@@ -377,7 +368,7 @@ pub fn ColorMaterialAsset::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
 pub fn ColorMaterialAsset::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterialAsset::with_uv_transform(Self, @transform.Affine2) -> Self
 pub impl @asset.Asset for ColorMaterialAsset
-pub impl Material2d for ColorMaterialAsset
+pub impl @material.Material2d for ColorMaterialAsset
 
 pub struct ColorMaterialPlugin {
 }
@@ -567,56 +558,6 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
-pub struct Material2dBindGroup {
-  bindings : Array[Material2dBinding]
-}
-pub fn Material2dBindGroup::Material2dBindGroup() -> Self
-pub fn Material2dBindGroup::bind_group_data(Self) -> String
-pub fn Material2dBindGroup::binding(Self, Int) -> Material2dBinding?
-pub fn Material2dBindGroup::color_material(@color.Color, @material.AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
-pub fn Material2dBindGroup::layout_key(Self) -> String
-pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
-pub fn Material2dBindGroup::sprite_material(SpriteMaterial) -> Self
-pub fn Material2dBindGroup::tilemap_chunk_material(@asset.Handle[@image.Image], @asset.Handle[@image.Image]) -> Self
-
-pub struct Material2dBinding {
-  binding : Int
-  value : Material2dBindingValue
-}
-pub fn Material2dBinding::sampler(Int, @asset.Handle[@image.Image]?) -> Self
-pub fn Material2dBinding::texture(Int, @asset.Handle[@image.Image]?) -> Self
-pub fn Material2dBinding::texture_with_layout(Int, @asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension) -> Self
-pub fn Material2dBinding::uniform(Int, Bytes) -> Self
-
-pub(all) enum Material2dBindingValue {
-  Uniform(Bytes)
-  Texture(@asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension)
-  Sampler(@asset.Handle[@image.Image]?)
-}
-
-pub struct Material2dKey[_] {
-  mesh_key : Int
-  bind_group_layout_key : String
-  bind_group_data : String
-}
-pub fn[M] Material2dKey::new(Int, String, String) -> Self[M]
-
-pub struct Material2dKeys[M] {
-  mesh_material2d_component : @ecs.ComponentKey[MeshMaterial2d[M]]
-  render_material2d_instances : @ecs.ResourceKey[RenderMaterial2dInstances[M]]
-  material2d_pipeline : @ecs.ResourceKey[Material2dPipeline[M]]
-  prepared_render_asset : @render.RenderAssetResourceKeys[PreparedMaterial2d[M]]
-}
-
-pub struct Material2dPipeline[_] {
-  vertex_shader : String?
-  fragment_shader : String?
-}
-pub fn[M] Material2dPipeline::Material2dPipeline() -> Self[M]
-pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
-pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
-pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
-
 pub struct Material2dPlugin[M] {
   vertex_shader : String?
   fragment_shader : String?
@@ -626,13 +567,7 @@ pub fn[M] Material2dPlugin::Material2dPlugin() -> Self[M]
 pub fn[M] Material2dPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
 pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
-pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M]
-
-pub struct Material2dProperties {
-  alpha_mode : @material.AlphaMode2d
-  mesh_pipeline_key_bits : Int
-}
-pub fn Material2dProperties::new(@material.AlphaMode2d, Int) -> Self
+pub impl[M : @material.Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M]
 
 type Material2dRuntimeRegistry
 pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
@@ -640,36 +575,12 @@ pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
 pub fn Material2dRuntimeRegistry::new() -> Self
 pub impl @app.Resource for Material2dRuntimeRegistry
 
-pub(all) enum Material2dTextureSampleType {
-  Float
-  UInt
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Material2dTextureViewDimension {
-  D2
-  D2Array
-} derive(Eq, @debug.Debug)
-
 pub struct Mesh2dWireframe {
   handle : @asset.Handle[Wireframe2dMaterial]
 }
 pub fn Mesh2dWireframe::handle(Self) -> @asset.Handle[Wireframe2dMaterial]
 pub fn Mesh2dWireframe::new(@asset.Handle[Wireframe2dMaterial]) -> Self
 pub impl @ecs.Component for Mesh2dWireframe
-
-pub struct MeshMaterial2d[M] {
-  handle : @asset.Handle[M]
-}
-pub fn MeshMaterial2d::from_color_material(ColorMaterial) -> Self[ColorMaterialAsset]
-pub fn[M] MeshMaterial2d::new(@asset.Handle[M]) -> Self[M]
-pub fn MeshMaterial2d::to_color_material(Self[ColorMaterialAsset]) -> ColorMaterial
-pub fn MeshMaterial2d::with_alpha_mode(Self[ColorMaterialAsset], @material.AlphaMode2d) -> Self[ColorMaterialAsset]
-pub fn MeshMaterial2d::with_texture(Self[ColorMaterialAsset], @asset.Handle[@image.Image]) -> Self[ColorMaterialAsset]
-pub fn MeshMaterial2d::with_uv_transform(Self[ColorMaterialAsset], @transform.Affine2) -> Self[ColorMaterialAsset]
-pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M]
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset]
-pub impl[M] ToJson for MeshMaterial2d[M]
-pub impl[M] @json.FromJson for MeshMaterial2d[M]
 
 pub struct NoWireframe2d {
 }
@@ -778,17 +689,6 @@ pub(all) struct PendingRoundedRect {
   config : GizmoConfig
 }
 
-pub struct PreparedMaterial2d[M] {
-  source : @asset.Handle[M]
-  bind_group : Material2dBindGroup
-  host_bind_group : @renderer.HostMaterial2dBindGroup
-  key : Material2dKey[M]
-  properties : Material2dProperties
-}
-pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M, Material2dPipeline[M]) -> Self[M]
-pub fn[M] PreparedMaterial2d::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
-pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M]
-
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
@@ -806,17 +706,6 @@ pub struct Render2dPlugin {
 }
 pub fn Render2dPlugin::Render2dPlugin() -> Self
 pub impl @app.Plugin for Render2dPlugin
-
-pub struct RenderMaterial2dInstances[M] {
-  instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
-}
-pub fn[M] RenderMaterial2dInstances::clear(Self[M]) -> Unit
-pub fn[M] RenderMaterial2dInstances::contains(Self[M], @core.Entity) -> Bool
-pub fn[M] RenderMaterial2dInstances::get(Self[M], @core.Entity) -> @asset.Handle[M]?
-pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
-pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
-pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
-pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M]
 
 type RenderState
 pub impl ToJson for RenderState
@@ -928,7 +817,7 @@ pub fn SpriteMaterial::from_sprite_mesh(SpriteMesh) -> Self
 pub fn SpriteMaterial::with_anchor(Self, @math.Vec2) -> Self
 pub fn SpriteMaterial::with_texture_atlas_layout(Self, @asset.TextureAtlasLayout?, Int) -> Self
 pub impl @asset.Asset for SpriteMaterial
-pub impl Material2d for SpriteMaterial
+pub impl @material.Material2d for SpriteMaterial
 
 pub struct SpriteMaterialPlugin {
 }
@@ -1029,7 +918,7 @@ pub struct TilemapChunkMaterial {
 pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> Self
 pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], @material.AlphaMode2d) -> Self
 pub impl @asset.Asset for TilemapChunkMaterial
-pub impl Material2d for TilemapChunkMaterial
+pub impl @material.Material2d for TilemapChunkMaterial
 
 pub struct TilemapChunkMaterialPlugin {
 }
@@ -1217,11 +1106,4 @@ pub impl IntoSpriteRingMeshGeometry for @math.Rectangle
 pub impl IntoSpriteRingMeshGeometry for @math.RegularPolygon
 pub impl IntoSpriteRingMeshGeometry for @math.Rhombus
 pub impl IntoSpriteRingMeshGeometry for @math.Triangle2d
-
-pub(open) trait Material2d {
-  fn material2d_debug_name() -> String
-  fn material2d_keys() -> Material2dKeys[Self]
-  fn alpha_mode(Self) -> @material.AlphaMode2d
-  fn bind_group(Self) -> Material2dBindGroup
-}
 

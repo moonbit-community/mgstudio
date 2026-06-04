@@ -314,7 +314,7 @@ fn material2d_color_material_uniform_bytes(
 }
 
 ///|
-pub fn Material2dBindGroup::color_material(
+fn color_material_bind_group(
   color : Color,
   alpha_mode : AlphaMode2d,
   texture? : @asset.Handle[@asset.Image]? = None,
@@ -337,12 +337,14 @@ pub fn Material2dBindGroup::color_material(
 }
 
 ///|
-pub impl Material2d for ColorMaterial with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn alpha_mode(
+  self,
+) {
   ColorMaterial::alpha_mode(self)
 }
 
 ///|
-pub impl Material2d for ColorMaterial with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn material2d_debug_name() {
   "mgstudio_sprite::ColorMaterial"
 }
 
@@ -352,13 +354,15 @@ let color_material_material2d_keys : Material2dKeys[ColorMaterial] = register_ma
 )
 
 ///|
-pub impl Material2d for ColorMaterial with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn material2d_keys() {
   color_material_material2d_keys
 }
 
 ///|
-pub impl Material2d for ColorMaterial with fn bind_group(self) {
-  Material2dBindGroup::color_material(
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn bind_group(
+  self,
+) {
+  color_material_bind_group(
     ColorMaterial::color(self),
     ColorMaterial::alpha_mode(self),
     texture=ColorMaterial::texture(self),
@@ -367,12 +371,14 @@ pub impl Material2d for ColorMaterial with fn bind_group(self) {
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterialAsset with fn alpha_mode(
+  self,
+) {
   self.alpha_mode
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterialAsset with fn material2d_debug_name() {
   "mgstudio_sprite::ColorMaterialAsset"
 }
 
@@ -382,13 +388,15 @@ let color_material_asset_material2d_keys : Material2dKeys[ColorMaterialAsset] = 
 )
 
 ///|
-pub impl Material2d for ColorMaterialAsset with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterialAsset with fn material2d_keys() {
   color_material_asset_material2d_keys
 }
 
 ///|
-pub impl Material2d for ColorMaterialAsset with fn bind_group(self) {
-  Material2dBindGroup::color_material(
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterialAsset with fn bind_group(
+  self,
+) {
+  color_material_bind_group(
     self.color,
     self.alpha_mode,
     texture=self.texture,
@@ -450,81 +458,6 @@ pub fn color_material_plugin(
   plugin : ColorMaterialPlugin,
 ) -> ColorMaterialPlugin {
   plugin
-}
-
-///|
-pub fn MeshMaterial2d::from_color_material(
-  material : ColorMaterial,
-) -> MeshMaterial2d[ColorMaterialAsset] {
-  MeshMaterial2d::{ handle: material.handle }
-}
-
-///|
-pub fn MeshMaterial2d::to_color_material(
-  self : MeshMaterial2d[ColorMaterialAsset],
-) -> ColorMaterial {
-  ColorMaterial::{ handle: self.handle }
-}
-
-///|
-pub fn MeshMaterial2d::with_alpha_mode(
-  self : MeshMaterial2d[ColorMaterialAsset],
-  alpha_mode : AlphaMode2d,
-) -> MeshMaterial2d[ColorMaterialAsset] {
-  MeshMaterial2d::from_color_material(
-    self.to_color_material().with_alpha_mode(alpha_mode),
-  )
-}
-
-///|
-pub fn MeshMaterial2d::with_texture(
-  self : MeshMaterial2d[ColorMaterialAsset],
-  texture : @asset.Handle[@asset.Image],
-) -> MeshMaterial2d[ColorMaterialAsset] {
-  MeshMaterial2d::from_color_material(
-    self.to_color_material().with_texture(texture),
-  )
-}
-
-///|
-pub fn MeshMaterial2d::with_uv_transform(
-  self : MeshMaterial2d[ColorMaterialAsset],
-  uv_transform : @transform.Affine2,
-) -> MeshMaterial2d[ColorMaterialAsset] {
-  MeshMaterial2d::from_color_material(
-    self.to_color_material().with_uv_transform(uv_transform),
-  )
-}
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn alpha_mode(
-  self,
-) {
-  self.to_color_material().alpha_mode()
-}
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn material2d_debug_name() {
-  "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>"
-}
-
-///|
-let mesh_color_material_asset_material2d_keys : Material2dKeys[
-  MeshMaterial2d[ColorMaterialAsset],
-] = register_material2d_keys(
-  "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>",
-)
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn material2d_keys() {
-  mesh_color_material_asset_material2d_keys
-}
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with fn bind_group(
-  self,
-) {
-  self.to_color_material().bind_group()
 }
 
 ///|

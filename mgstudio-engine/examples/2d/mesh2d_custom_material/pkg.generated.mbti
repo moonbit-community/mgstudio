@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/2d/mesh2d_custom_material"
 
 import {
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
 }
 
@@ -12,7 +11,7 @@ import {
 
 // Types and methods
 type CustomMaterialAsset
-pub impl @sprite.Material2d for CustomMaterialAsset
+pub impl @material.Material2d for CustomMaterialAsset
 
 // Type aliases
 

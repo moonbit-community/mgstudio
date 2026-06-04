@@ -93,35 +93,44 @@ fn custom_material_uniform_bytes(material : CustomMaterial) -> Bytes {
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn alpha_mode(
+  self,
+) {
   self.alpha_mode
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn material2d_debug_name() {
   "examples.shader.shader_material_2d.CustomMaterial"
 }
 
 ///|
-let custom_material_material2d_keys : @sprite.Material2dKeys[CustomMaterial] = @sprite.register_material2d_keys(
+let custom_material_material2d_keys : @sprite_render_mesh2d_material.Material2dKeys[
+  CustomMaterial,
+] = @sprite_render_mesh2d_material.register_material2d_keys(
   CustomMaterial::material2d_debug_name(),
 )
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn material2d_keys() {
   custom_material_material2d_keys
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterial with fn bind_group(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn bind_group(
+  self,
+) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_transparent_texture()
   }
-  @sprite.Material2dBindGroup::new([
-    @sprite.Material2dBinding::uniform(0, custom_material_uniform_bytes(self)),
-    @sprite.Material2dBinding::texture(1, Some(texture)),
-    @sprite.Material2dBinding::sampler(2, Some(texture)),
+  @sprite_render_mesh2d_material.Material2dBindGroup::new([
+    @sprite_render_mesh2d_material.Material2dBinding::uniform(
+      0,
+      custom_material_uniform_bytes(self),
+    ),
+    @sprite_render_mesh2d_material.Material2dBinding::texture(1, Some(texture)),
+    @sprite_render_mesh2d_material.Material2dBinding::sampler(2, Some(texture)),
   ])
 }
 
@@ -163,7 +172,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(mesh),
-        @sprite.MeshMaterial2d::new(material),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(material),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(128.0F)),
       ),
     ),

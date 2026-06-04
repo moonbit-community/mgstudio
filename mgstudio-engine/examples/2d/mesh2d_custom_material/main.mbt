@@ -69,40 +69,44 @@ fn custom_material_uniform_bytes(color : @sprite.Color) -> Bytes {
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with fn alpha_mode(
+  self,
+) {
   self.alpha_mode
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with fn material2d_debug_name() {
   "examples.2d.mesh2d_custom_material.CustomMaterialAsset"
 }
 
 ///|
-let custom_material_asset_material2d_keys : @sprite.Material2dKeys[
+let custom_material_asset_material2d_keys : @sprite_render_mesh2d_material.Material2dKeys[
   CustomMaterialAsset,
-] = @sprite.register_material2d_keys(
+] = @sprite_render_mesh2d_material.register_material2d_keys(
   CustomMaterialAsset::material2d_debug_name(),
 )
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with fn material2d_keys() {
   custom_material_asset_material2d_keys
 }
 
 ///|
-pub impl @sprite.Material2d for CustomMaterialAsset with fn bind_group(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with fn bind_group(
+  self,
+) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_white_texture()
   }
-  @sprite.Material2dBindGroup::new([
-    @sprite.Material2dBinding::uniform(
+  @sprite_render_mesh2d_material.Material2dBindGroup::new([
+    @sprite_render_mesh2d_material.Material2dBinding::uniform(
       0,
       custom_material_uniform_bytes(self.color),
     ),
-    @sprite.Material2dBinding::texture(1, Some(texture)),
-    @sprite.Material2dBinding::sampler(2, Some(texture)),
+    @sprite_render_mesh2d_material.Material2dBinding::texture(1, Some(texture)),
+    @sprite_render_mesh2d_material.Material2dBinding::sampler(2, Some(texture)),
   ])
 }
 
@@ -149,14 +153,14 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   )
   let entity = world.spawn_empty()
   let material_key : @ecs.ComponentKey[
-    @sprite.MeshMaterial2d[CustomMaterialAsset],
-  ] = @sprite.MeshMaterial2d::component()
+    @sprite_render_mesh2d_material.MeshMaterial2d[CustomMaterialAsset],
+  ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
   let transform = @transform.Transform::identity()
   try! (world.set_by_key(entity, @mesh.ecs_key_mesh2d, mesh) |> ignore)
   try! (world.set_by_key(
     entity,
     material_key,
-    @sprite.MeshMaterial2d::new(handle),
+    @sprite_render_mesh2d_material.MeshMaterial2d::new(handle),
   )
   |> ignore)
   try! (world.set_by_key(entity, @transform.ecs_key_transform, transform)

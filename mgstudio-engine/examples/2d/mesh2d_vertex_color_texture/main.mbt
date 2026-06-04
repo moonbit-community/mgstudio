@@ -38,7 +38,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(mesh_handle),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.peek().add(@sprite.ColorMaterialAsset::ColorMaterialAsset()),
         ),
         @transform.Transform::from_translation(
@@ -52,7 +52,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(mesh_handle),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(@sprite.ColorMaterialAsset::from_image(texture_handle)),

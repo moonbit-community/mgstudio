@@ -45,7 +45,7 @@ fn setup_scene(
             meshes |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F))
           }),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials
             |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F))
@@ -63,7 +63,7 @@ fn setup_scene(
             meshes |> @sprite.add_mesh(@sprite.Circle::new(25.0F))
           }),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials
             |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F))

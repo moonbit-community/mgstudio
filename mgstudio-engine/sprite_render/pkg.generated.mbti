@@ -24,7 +24,7 @@ pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
 
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@sprite.MeshMaterial2d[@sprite.ColorMaterialAsset]]
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@sprite.ColorMaterialAsset]]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite.NoWireframe2d]
 
@@ -113,9 +113,9 @@ pub using @sprite {type ColorMaterialAsset}
 
 pub using @sprite {type ColorMaterialPlugin}
 
-pub using @sprite {type Material2dKey}
+pub using @material {type Material2dKey}
 
-pub using @sprite {type Material2dPipeline}
+pub using @material {type Material2dPipeline}
 
 pub using @sprite {type Material2dPlugin}
 
@@ -123,7 +123,7 @@ pub using @mesh {type Mesh2d}
 
 pub using @sprite {type Mesh2dWireframe}
 
-pub using @sprite {type MeshMaterial2d}
+pub using @material {type MeshMaterial2d}
 
 pub using @sprite {type NoWireframe2d}
 

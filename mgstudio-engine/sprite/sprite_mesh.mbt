@@ -721,9 +721,7 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
 }
 
 ///|
-pub fn Material2dBindGroup::sprite_material(
-  material : SpriteMaterial,
-) -> Material2dBindGroup {
+fn sprite_material_bind_group(material : SpriteMaterial) -> Material2dBindGroup {
   Material2dBindGroup::new([
     Material2dBinding::uniform(0, sprite_material_uniform_bytes(material)),
     Material2dBinding::texture(1, Some(material.image)),
@@ -732,12 +730,14 @@ pub fn Material2dBindGroup::sprite_material(
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn alpha_mode(
+  self,
+) {
   self.alpha_mode
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn material2d_debug_name() {
   "mgstudio_sprite::SpriteMaterial"
 }
 
@@ -747,13 +747,15 @@ let sprite_material_material2d_keys : Material2dKeys[SpriteMaterial] = register_
 )
 
 ///|
-pub impl Material2d for SpriteMaterial with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn material2d_keys() {
   sprite_material_material2d_keys
 }
 
 ///|
-pub impl Material2d for SpriteMaterial with fn bind_group(self) {
-  Material2dBindGroup::sprite_material(self)
+pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn bind_group(
+  self,
+) {
+  sprite_material_bind_group(self)
 }
 
 ///|

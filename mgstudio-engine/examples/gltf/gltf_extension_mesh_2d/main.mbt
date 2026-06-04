@@ -100,7 +100,7 @@ fn convert_mesh_to_2d(
     .insert(
       (
         @mesh.Mesh2d::new(mesh2d_handle),
-        @sprite.MeshMaterial2d::new(material_handle),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(material_handle),
       ),
     ),
   )

@@ -121,7 +121,7 @@ fn spawn_converted_mesh(
     commands.spawn(
       (
         @mesh.Mesh2d::new(mesh_handle),
-        @sprite.MeshMaterial2d::new(material_handle),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(material_handle),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(180.0F)),
       ),
     ),

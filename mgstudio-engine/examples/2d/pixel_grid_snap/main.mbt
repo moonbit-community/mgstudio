@@ -156,7 +156,7 @@ fn setup_mesh(
             @sprite.mesh2d_geometry_capsule(@sprite.Capsule2d::Capsule2d()).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
           .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::black())),

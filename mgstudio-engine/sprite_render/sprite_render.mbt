@@ -31,16 +31,18 @@ pub type ColorMaterialPlugin = @sprite.ColorMaterialPlugin
 pub type Material2dPlugin[M] = @sprite.Material2dPlugin[M]
 
 ///|
-pub type Material2dKey[M] = @sprite.Material2dKey[M]
+pub type Material2dKey[M] = @sprite_render_mesh2d_material.Material2dKey[M]
 
 ///|
-pub type Material2dPipeline[M] = @sprite.Material2dPipeline[M]
+pub type Material2dPipeline[M] = @sprite_render_mesh2d_material.Material2dPipeline[
+  M,
+]
 
 ///|
 pub type Mesh2d = @mesh.Mesh2d
 
 ///|
-pub type MeshMaterial2d[M] = @sprite.MeshMaterial2d[M]
+pub type MeshMaterial2d[M] = @sprite_render_mesh2d_material.MeshMaterial2d[M]
 
 ///|
 pub type Wireframe2d = @sprite.Wireframe2d

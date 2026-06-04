@@ -110,7 +110,7 @@ fn setup(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials.add(@sprite.ColorMaterialAsset::from_color(black))
           }),
@@ -133,7 +133,7 @@ fn setup(
             ).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials.add(@sprite.ColorMaterialAsset::from_color(black))
           }),
@@ -153,7 +153,7 @@ fn setup(
             @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)).to_mesh(),
           ),
         ),
-        @sprite.MeshMaterial2d::new(
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials.add(@sprite.ColorMaterialAsset::from_color(black))
           }),

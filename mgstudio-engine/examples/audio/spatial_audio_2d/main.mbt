@@ -217,7 +217,7 @@ fn spawn_listener_ear(
           ).to_mesh(),
         ),
       ),
-      @sprite.MeshMaterial2d::new(
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
         @sprite.color_material_assets_mut_or_abort()
         .peek()
         .add(@sprite.ColorMaterialAsset::from_color(color)),
@@ -259,7 +259,7 @@ fn setup(world : @ecs.World) -> Unit {
           @sprite.mesh2d_geometry_circle(@sprite.Circle::new(EMITTER_RADIUS)).to_mesh(),
         ),
       ),
-      @sprite.MeshMaterial2d::new(
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
         @sprite.color_material_assets_mut_or_abort()
         .peek()
         .add(@sprite.ColorMaterialAsset::from_color(color_blue())),

@@ -169,7 +169,7 @@ fn spawn_player(
       @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)).to_mesh(),
     ),
   )
-  let player_material = @sprite.MeshMaterial2d::new(
+  let player_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
     materials
     .peek()
     .add(@sprite.ColorMaterialAsset::from_color(@palettes.tailwind_red_400())),

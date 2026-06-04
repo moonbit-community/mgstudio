@@ -2,10 +2,54 @@
 package "Milky2018/mgstudio/sprite_render/mesh2d/material"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/renderer",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn material2d_alpha_mode_kind_bits(AlphaMode2d) -> UInt
+
+pub fn material2d_bind_group_to_host(Material2dBindGroup) -> @renderer.HostMaterial2dBindGroup
+
+pub fn material2d_binding_to_host(Material2dBinding) -> @renderer.HostMaterial2dBinding
+
+pub fn material2d_f32_bits(Float) -> UInt
+
+pub fn material2d_mesh_phase_from_properties(Material2dProperties) -> Int?
+
+pub fn[M : Material2d] material2d_pipeline_or_default(@ecs.World, @asset.Handle[M]) -> Material2dPipeline[M]
+
+pub fn[M : Material2d] material2d_runtime_type_name(@asset.Handle[M]) -> String
+
+pub fn material2d_u32le_pack(Array[UInt]) -> Bytes
+
+pub fn mesh_alpha_cutoff(AlphaMode2d) -> Float
+
+pub fn mesh_alpha_mode_kind(AlphaMode2d) -> Int
+
+pub fn[M] prepared_material2d_alpha_phase(PreparedMaterial2d[M]) -> Int?
+
+pub fn[M : Material2d] prepared_material2d_assets_or_empty(@ecs.World, @asset.Handle[M]) -> @render.RenderAssets[PreparedMaterial2d[M]]
+
+pub fn[M] prepared_material2d_get(@render.RenderAssets[PreparedMaterial2d[M]], @asset.Handle[PreparedMaterial2d[M]]) -> PreparedMaterial2d[M]?
+
+pub fn[M] prepared_material2d_handle_for_entity(@core.Entity, RenderMaterial2dInstances[M]) -> @asset.Handle[PreparedMaterial2d[M]]?
+
+pub fn[M] register_material2d_keys(String) -> Material2dKeys[M]
+
+pub fn[M] render_material2d_instances_for_tests(Array[(@core.Entity, @asset.Handle[M])]) -> RenderMaterial2dInstances[M]
+
+pub fn[M : Material2d] render_material2d_instances_or_empty(@ecs.World, @asset.Handle[M]) -> RenderMaterial2dInstances[M]
+
+pub fn[M : Material2d] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
 
 // Errors
 
@@ -16,7 +60,106 @@ pub(all) enum AlphaMode2d {
   Blend
 } derive(ToJson, @json.FromJson)
 
+pub struct Material2dBindGroup {
+  bindings : Array[Material2dBinding]
+}
+pub fn Material2dBindGroup::Material2dBindGroup() -> Self
+pub fn Material2dBindGroup::bind_group_data(Self) -> String
+pub fn Material2dBindGroup::binding(Self, Int) -> Material2dBinding?
+pub fn Material2dBindGroup::layout_key(Self) -> String
+pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
+
+pub struct Material2dBinding {
+  binding : Int
+  value : Material2dBindingValue
+}
+pub fn Material2dBinding::sampler(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn Material2dBinding::texture(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn Material2dBinding::texture_with_layout(Int, @asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension) -> Self
+pub fn Material2dBinding::uniform(Int, Bytes) -> Self
+
+pub(all) enum Material2dBindingValue {
+  Uniform(Bytes)
+  Texture(@asset.Handle[@image.Image]?, Material2dTextureSampleType, Material2dTextureViewDimension)
+  Sampler(@asset.Handle[@image.Image]?)
+}
+
+pub struct Material2dKey[_] {
+  mesh_key : Int
+  bind_group_layout_key : String
+  bind_group_data : String
+}
+pub fn[M] Material2dKey::new(Int, String, String) -> Self[M]
+
+pub struct Material2dKeys[M] {
+  mesh_material2d_component : @ecs.ComponentKey[MeshMaterial2d[M]]
+  render_material2d_instances : @ecs.ResourceKey[RenderMaterial2dInstances[M]]
+  material2d_pipeline : @ecs.ResourceKey[Material2dPipeline[M]]
+  prepared_render_asset : @render.RenderAssetResourceKeys[PreparedMaterial2d[M]]
+}
+
+pub struct Material2dPipeline[_] {
+  vertex_shader : String?
+  fragment_shader : String?
+}
+pub fn[M] Material2dPipeline::Material2dPipeline() -> Self[M]
+pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
+pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
+pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
+
+pub struct Material2dProperties {
+  alpha_mode : AlphaMode2d
+  mesh_pipeline_key_bits : Int
+}
+pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
+
+pub(all) enum Material2dTextureSampleType {
+  Float
+  UInt
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Material2dTextureViewDimension {
+  D2
+  D2Array
+} derive(Eq, @debug.Debug)
+
+pub struct MeshMaterial2d[M] {
+  handle : @asset.Handle[M]
+}
+pub fn[M] MeshMaterial2d::new(@asset.Handle[M]) -> Self[M]
+pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M]
+pub impl[M] ToJson for MeshMaterial2d[M]
+pub impl[M] @json.FromJson for MeshMaterial2d[M]
+
+pub struct PreparedMaterial2d[M] {
+  source : @asset.Handle[M]
+  bind_group : Material2dBindGroup
+  host_bind_group : @renderer.HostMaterial2dBindGroup
+  key : Material2dKey[M]
+  properties : Material2dProperties
+}
+pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M, Material2dPipeline[M]) -> Self[M]
+pub fn[M] PreparedMaterial2d::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
+pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M]
+
+pub struct RenderMaterial2dInstances[M] {
+  instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
+}
+pub fn[M] RenderMaterial2dInstances::clear(Self[M]) -> Unit
+pub fn[M] RenderMaterial2dInstances::contains(Self[M], @core.Entity) -> Bool
+pub fn[M] RenderMaterial2dInstances::get(Self[M], @core.Entity) -> @asset.Handle[M]?
+pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
+pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
+pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
+pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M]
+
 // Type aliases
 
 // Traits
+pub(open) trait Material2d {
+  fn material2d_debug_name() -> String
+  fn material2d_keys() -> Material2dKeys[Self]
+  fn alpha_mode(Self) -> AlphaMode2d
+  fn bind_group(Self) -> Material2dBindGroup
+}
 

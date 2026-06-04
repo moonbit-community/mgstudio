@@ -146,7 +146,7 @@ fn dummy_material_uniform_bytes(color : Color) -> Bytes {
 
 ///|
 fn material2d_bind_group_texture_id(
-  bind_group : Material2dBindGroup,
+  bind_group : @sprite_render_mesh2d_material.Material2dBindGroup,
   binding : Int,
 ) -> Int? {
   guard bind_group.binding(binding) is Some(entry) else { return None }
@@ -157,36 +157,45 @@ fn material2d_bind_group_texture_id(
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with fn alpha_mode(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with fn alpha_mode(
+  self,
+) {
   self |> ignore
   Blend
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with fn material2d_debug_name() {
+pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with fn material2d_debug_name() {
   "mgstudio_sprite_test::DummyMaterialAsset"
 }
 
 ///|
-let dummy_material_asset_material2d_keys : Material2dKeys[DummyMaterialAsset] = register_material2d_keys(
+let dummy_material_asset_material2d_keys : @sprite_render_mesh2d_material.Material2dKeys[
+  DummyMaterialAsset,
+] = @sprite_render_mesh2d_material.register_material2d_keys(
   DummyMaterialAsset::material2d_debug_name(),
 )
 
 ///|
-pub impl Material2d for DummyMaterialAsset with fn material2d_keys() {
+pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with fn material2d_keys() {
   dummy_material_asset_material2d_keys
 }
 
 ///|
-pub impl Material2d for DummyMaterialAsset with fn bind_group(self) {
+pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with fn bind_group(
+  self,
+) {
   let texture = match self.color_texture {
     Some(texture) => texture
     None => @asset.asset_white_texture()
   }
-  Material2dBindGroup::new([
-    Material2dBinding::uniform(0, dummy_material_uniform_bytes(self.color)),
-    Material2dBinding::texture(1, Some(texture)),
-    Material2dBinding::sampler(2, Some(texture)),
+  @sprite_render_mesh2d_material.Material2dBindGroup::new([
+    @sprite_render_mesh2d_material.Material2dBinding::uniform(
+      0,
+      dummy_material_uniform_bytes(self.color),
+    ),
+    @sprite_render_mesh2d_material.Material2dBinding::texture(1, Some(texture)),
+    @sprite_render_mesh2d_material.Material2dBinding::sampler(2, Some(texture)),
   ])
 }
 
@@ -570,7 +579,7 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
   .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(world : @ecs.World) {
     let mesh = test_rectangle_mesh(8.0F, 6.0F)
-    let material = MeshMaterial2d::new(
+    let material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
       test_color_material_handle(Color::white()),
     )
     entity_ref.val = Some(
@@ -633,7 +642,9 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           commands.spawn(
             (
               @mesh.Mesh2d::new(mesh_handle),
-              MeshMaterial2d::new(material_handle),
+              @sprite_render_mesh2d_material.MeshMaterial2d::new(
+                material_handle,
+              ),
               @transform.Transform::identity(),
             ),
           ),
@@ -858,7 +869,9 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
   app = app.update()
 
   let world = app.world()
-  let material_key : @ecs.ComponentKey[MeshMaterial2d[SpriteMaterial]] = MeshMaterial2d::component()
+  let material_key : @ecs.ComponentKey[
+    @sprite_render_mesh2d_material.MeshMaterial2d[SpriteMaterial],
+  ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
   let mesh2d = try! world.get_by_key(entity, @mesh.ecs_key_mesh2d)
   let material = try! world.get_by_key(entity, material_key)
   let material_assets_key : @ecs.ResourceKey[@asset.Assets[SpriteMaterial]] = @asset.assets_resource_key()
@@ -917,7 +930,7 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
 }
 
 ///|
-test "render2d: MeshMaterial2d stores the material handle directly" {
+test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d stores the material handle directly" {
   let matched : Ref[Bool?] = Ref(None)
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
@@ -926,7 +939,9 @@ test "render2d: MeshMaterial2d stores the material handle directly" {
   .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     let material_handle = test_color_material_handle(Color::white())
-    let mesh_material = MeshMaterial2d::new(material_handle)
+    let mesh_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
+      material_handle,
+    )
     matched.val = Some(mesh_material.handle.id() == material_handle.id())
   })
   .run_once()
@@ -970,12 +985,16 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[PreparedMaterial2d[DummyMaterialAsset]],
+    @render.RenderAssets[
+      @sprite_render_mesh2d_material.PreparedMaterial2d[DummyMaterialAsset],
+    ],
   ] = @render.RenderAssets::resource()
   let instances_key : @ecs.ResourceKey[
-    RenderMaterial2dInstances[DummyMaterialAsset],
-  ] = RenderMaterial2dInstances::resource()
-  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[DummyMaterialAsset]] = Material2dPipeline::resource()
+    @sprite_render_mesh2d_material.RenderMaterial2dInstances[DummyMaterialAsset],
+  ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
+  let pipeline_key : @ecs.ResourceKey[
+    @sprite_render_mesh2d_material.Material2dPipeline[DummyMaterialAsset],
+  ] = @sprite_render_mesh2d_material.Material2dPipeline::resource()
   let registry_key : @ecs.ResourceKey[Material2dRuntimeRegistry] = Material2dRuntimeRegistry::resource()
   let pipeline = render_world.get_resource(pipeline_key).unwrap()
   let registry = render_world.get_resource(registry_key).unwrap()
@@ -1008,7 +1027,9 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   )
   debug_inspect(registry.entry_count(), content="1")
   debug_inspect(
-    registry.contains_type_name(material2d_runtime_type_name(probe)),
+    registry.contains_type_name(
+      @sprite_render_mesh2d_material.material2d_runtime_type_name(probe),
+    ),
     content="true",
   )
 }
@@ -1067,8 +1088,14 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     assets_ref.modify(fn(assets) { assets.insert(handle, expected) |> ignore })
     let entity = world.spawn()
     entity_ref.val = Some(entity)
-    let material_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
-    try! (world.set_by_key(entity, material_key, MeshMaterial2d::new(handle))
+    let material_key : @ecs.ComponentKey[
+      @sprite_render_mesh2d_material.MeshMaterial2d[DummyMaterialAsset],
+    ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
+    try! (world.set_by_key(
+      entity,
+      material_key,
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(handle),
+    )
     |> ignore)
   })
   app = app.run_once()
@@ -1077,10 +1104,12 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let instances_key : @ecs.ResourceKey[
-    RenderMaterial2dInstances[DummyMaterialAsset],
-  ] = RenderMaterial2dInstances::resource()
+    @sprite_render_mesh2d_material.RenderMaterial2dInstances[DummyMaterialAsset],
+  ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[PreparedMaterial2d[DummyMaterialAsset]],
+    @render.RenderAssets[
+      @sprite_render_mesh2d_material.PreparedMaterial2d[DummyMaterialAsset],
+    ],
   ] = @render.RenderAssets::resource()
   let instances = render_world.get_resource(instances_key).unwrap()
   let prepared_assets = render_world.get_resource(prepared_key).unwrap()
@@ -1123,7 +1152,7 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
       try! world.spawn_bundle(
         (
           test_rectangle_mesh(8.0F, 6.0F),
-          MeshMaterial2d::new(material_handle),
+          @sprite_render_mesh2d_material.MeshMaterial2d::new(material_handle),
           @transform.Transform::identity(),
         ),
       ),
@@ -1135,8 +1164,8 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
 
   let instances_key : @ecs.ResourceKey[
-    RenderMaterial2dInstances[ColorMaterialAsset],
-  ] = RenderMaterial2dInstances::resource()
+    @sprite_render_mesh2d_material.RenderMaterial2dInstances[ColorMaterialAsset],
+  ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
   let instances = render_world.get_resource(instances_key).unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
@@ -1161,7 +1190,7 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     try! (world.spawn_bundle(
       (
         test_rectangle_mesh(8.0F, 6.0F),
-        MeshMaterial2d::new(material_handle),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(material_handle),
         @transform.Transform::identity(),
       ),
     )
@@ -1173,9 +1202,13 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let source_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[PreparedMaterial2d[ColorMaterialAsset]],
+    @render.RenderAssets[
+      @sprite_render_mesh2d_material.PreparedMaterial2d[ColorMaterialAsset],
+    ],
   ] = @render.RenderAssets::resource()
-  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[ColorMaterialAsset]] = Material2dPipeline::resource()
+  let pipeline_key : @ecs.ResourceKey[
+    @sprite_render_mesh2d_material.Material2dPipeline[ColorMaterialAsset],
+  ] = @sprite_render_mesh2d_material.Material2dPipeline::resource()
   let source_assets = world.get_resource(source_key).unwrap()
   let prepared_assets = render_world.get_resource(prepared_key).unwrap()
   let pipeline = render_world.get_resource(pipeline_key).unwrap()
@@ -1212,12 +1245,16 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
 }
 
 ///|
-test "render2d: MeshMaterial2d component keys are registered per material type" {
-  let color_key : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]] = ecs_key_mesh_material2d
+test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d component keys are registered per material type" {
+  let color_key : @ecs.ComponentKey[
+    @sprite_render_mesh2d_material.MeshMaterial2d[ColorMaterialAsset],
+  ] = ecs_key_mesh_material2d
   let color_key_from_trait : @ecs.ComponentKey[
-    MeshMaterial2d[ColorMaterialAsset],
-  ] = MeshMaterial2d::component()
-  let dummy_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
+    @sprite_render_mesh2d_material.MeshMaterial2d[ColorMaterialAsset],
+  ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
+  let dummy_key : @ecs.ComponentKey[
+    @sprite_render_mesh2d_material.MeshMaterial2d[DummyMaterialAsset],
+  ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
 
   debug_inspect(color_key.id() == color_key_from_trait.id(), content="true")
   debug_inspect(color_key.id() == dummy_key.id(), content="false")
