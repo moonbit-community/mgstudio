@@ -218,9 +218,11 @@ fn spawn_listener_ear(
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
-        @sprite.color_material_assets_mut_or_abort()
+        @asset.asset_assets_ref_mut_or_abort()
         .peek()
-        .add(@sprite.ColorMaterialAsset::from_color(color)),
+        .add(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_color(color),
+        ),
       ),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(offset_x, 0.0F),
@@ -260,9 +262,13 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
-        @sprite.color_material_assets_mut_or_abort()
+        @asset.asset_assets_ref_mut_or_abort()
         .peek()
-        .add(@sprite.ColorMaterialAsset::from_color(color_blue())),
+        .add(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+            color_blue(),
+          ),
+        ),
       ),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, EMITTER_Y),

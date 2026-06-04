@@ -12,19 +12,18 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
 }
 
 // Values
-pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> @sprite.ColorMaterialPlugin
-
-pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
+pub fn color_material_plugin(@color_material.ColorMaterialPlugin) -> @color_material.ColorMaterialPlugin
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d]
 
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@sprite.ColorMaterialAsset]]
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@color_material.ColorMaterial]]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[@sprite.NoWireframe2d]
 
@@ -107,11 +106,9 @@ pub impl @app.Plugin for SpriteRenderPlugin
 // Type aliases
 pub using @material {type AlphaMode2d}
 
-pub using @sprite {type ColorMaterial}
+pub using @color_material {type ColorMaterial}
 
-pub using @sprite {type ColorMaterialAsset}
-
-pub using @sprite {type ColorMaterialPlugin}
+pub using @color_material {type ColorMaterialPlugin}
 
 pub using @material {type Material2dKey}
 

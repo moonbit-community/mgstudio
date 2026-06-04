@@ -50,7 +50,7 @@ let ecs_res_key_debug_picking_state : @ecs.ResourceKey[DebugPickingState] = @ecs
 )
 
 ///|
-impl @app.Resource for DebugPickingState with resource() {
+impl @app.Resource for DebugPickingState with fn resource() {
   ecs_res_key_debug_picking_state
 }
 

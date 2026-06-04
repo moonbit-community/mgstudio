@@ -33,7 +33,7 @@ let scrollable_node_key : @ecs.ComponentKey[ScrollableNode] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for ScrollableNode with component() {
+pub impl @ecs.Component for ScrollableNode with fn component() {
   scrollable_node_key
 }
 
@@ -51,7 +51,7 @@ let scroll_drag_state_key : @ecs.ResourceKey[ScrollDragState] = @ecs.register_re
 )
 
 ///|
-pub impl @app.Resource for ScrollDragState with resource() {
+pub impl @app.Resource for ScrollDragState with fn resource() {
   scroll_drag_state_key
 }
 
@@ -66,7 +66,7 @@ pub fn ScrollDragState::ScrollDragState() -> ScrollDragState {
 }
 
 ///|
-pub impl Default for ScrollDragState with default() {
+pub impl Default for ScrollDragState with fn default() {
   ScrollDragState::ScrollDragState()
 }
 

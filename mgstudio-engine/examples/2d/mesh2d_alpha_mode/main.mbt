@@ -25,7 +25,9 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -49,7 +51,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               white,
               @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
@@ -68,7 +70,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               blue,
               @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
@@ -87,7 +89,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               green,
               @sprite_render.AlphaMode2d::Opaque,
               texture=Some(texture),
@@ -106,7 +108,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               white,
               @sprite_render.AlphaMode2d::Mask(0.5F),
               texture=Some(texture),
@@ -125,7 +127,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               blue.with_alpha(0.7F),
               @sprite_render.AlphaMode2d::Blend,
               texture=Some(texture),
@@ -144,7 +146,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::new(
+            @sprite_render_mesh2d_color_material.ColorMaterial::new(
               green.with_alpha(0.7F),
               @sprite_render.AlphaMode2d::Blend,
               texture=Some(texture),

@@ -116,10 +116,14 @@ test "render2d: viewport rect clamps to target size" {
 ///|
 test "render2d: Assets::add accepts mesh geometry and color authoring values" {
   let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-  let materials : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+  let materials : @asset.Assets[
+    @sprite_render_mesh2d_color_material.ColorMaterial,
+  ] = @asset.Assets::new()
   let expected_color = Color::srgb(0.25F, 0.5F, 0.75F)
   let mesh_handle = meshes |> add_mesh(Rectangle::new(10.0F, 20.0F))
-  let material_handle = materials |> add_material(expected_color)
+  let material_handle = @sprite_render_mesh2d_color_material.add_material(
+    materials, expected_color,
+  )
   let ok = if meshes.get(mesh_handle) is Some(mesh) {
     if materials.get(material_handle) is Some(material) {
       mesh.as_3d_geometry() is None &&

@@ -33,12 +33,12 @@ let targeted_by_component_key : @ecs.ComponentKey[TargetedBy] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for Targeting with component() {
+pub impl @ecs.Component for Targeting with fn component() {
   targeting_component_key
 }
 
 ///|
-pub impl @ecs.Component for TargetedBy with component() {
+pub impl @ecs.Component for TargetedBy with fn component() {
   targeted_by_component_key
 }
 

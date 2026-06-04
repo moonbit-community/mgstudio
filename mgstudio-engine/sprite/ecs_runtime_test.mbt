@@ -217,18 +217,26 @@ fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
 ///|
 fn test_color_material_handle(
   color : Color,
-) -> @asset.Handle[ColorMaterialAsset] {
-  let materials = color_material_assets_mut_or_abort()
+) -> @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial] {
+  let materials = @asset.asset_assets_ref_mut_or_abort()
   materials.modify(fn(store) {
-    store.add(ColorMaterialAsset::from_color(color))
+    store.add(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(color),
+    )
   })
 }
 
 ///|
-fn test_image_material_handle(id : Int) -> @asset.Handle[ColorMaterialAsset] {
-  let materials = color_material_assets_mut_or_abort()
+fn test_image_material_handle(
+  id : Int,
+) -> @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial] {
+  let materials = @asset.asset_assets_ref_mut_or_abort()
   materials.modify(fn(store) {
-    store.add(ColorMaterialAsset::from_image(@asset.Handle::new(id)))
+    store.add(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+        @asset.Handle::new(id),
+      ),
+    )
   })
 }
 
@@ -598,10 +606,6 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_color_material),
-    content="false",
-  )
-  debug_inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_mesh_material2d),
     content="true",
   )
@@ -623,7 +627,9 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
       @app.system_config_param3(fn(
         commands : @app.Commands,
         meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-        materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
+        materials : @app.ResMut[
+          @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+        ],
       ) {
         ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
         meshes.set_changed()
@@ -637,7 +643,11 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
         materials.set_changed()
         let material_handle = materials
           .peek()
-          .add(ColorMaterialAsset::from_color(Color::white()))
+          .add(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+              Color::white(),
+            ),
+          )
         ignore(
           commands.spawn(
             (
@@ -956,10 +966,16 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(@sprite.ColorMaterialPlugin::ColorMaterialPlugin())
-  let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+    .add_plugins(
+      @sprite_render_mesh2d_color_material.ColorMaterialPlugin::ColorMaterialPlugin(),
+    )
+  let key : @ecs.ResourceKey[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ] = @asset.assets_resource_key()
   let assets = app.world().get_resource(key).unwrap()
-  let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
+  let handle : @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial] = @asset.Handle::new(
+    0,
+  )
   let material = assets.get(handle).unwrap()
 
   debug_inspect(assets.contains(handle), content="true")
@@ -1144,7 +1160,9 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
 ///|
 test "render2d: extract_color_material_mesh_instances_system populates resource" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
-  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
+  let handle_ref : Ref[
+    @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial]?,
+  ] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
@@ -1170,7 +1188,9 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
 
   let instances_key : @ecs.ResourceKey[
-    @sprite_render_mesh2d_material.RenderMaterial2dInstances[ColorMaterialAsset],
+    @sprite_render_mesh2d_material.RenderMaterial2dInstances[
+      @sprite_render_mesh2d_color_material.ColorMaterial,
+    ],
   ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
   let instances = render_world.get_resource(instances_key).unwrap()
 
@@ -1183,7 +1203,9 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
 
 ///|
 test "render2d: prepare_color_material2d_assets_system populates prepared assets" {
-  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
+  let handle_ref : Ref[
+    @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial]?,
+  ] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
@@ -1206,14 +1228,20 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let world = app.world()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
-  let source_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+  let source_key : @ecs.ResourceKey[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
     @render.RenderAssets[
-      @sprite_render_mesh2d_material.PreparedMaterial2d[ColorMaterialAsset],
+      @sprite_render_mesh2d_material.PreparedMaterial2d[
+        @sprite_render_mesh2d_color_material.ColorMaterial,
+      ],
     ],
   ] = @render.RenderAssets::resource()
   let pipeline_key : @ecs.ResourceKey[
-    @sprite_render_mesh2d_material.Material2dPipeline[ColorMaterialAsset],
+    @sprite_render_mesh2d_material.Material2dPipeline[
+      @sprite_render_mesh2d_color_material.ColorMaterial,
+    ],
   ] = @sprite_render_mesh2d_material.Material2dPipeline::resource()
   let source_assets = world.get_resource(source_key).unwrap()
   let prepared_assets = render_world.get_resource(prepared_key).unwrap()
@@ -1253,10 +1281,14 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
 ///|
 test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d component keys are registered per material type" {
   let color_key : @ecs.ComponentKey[
-    @sprite_render_mesh2d_material.MeshMaterial2d[ColorMaterialAsset],
+    @sprite_render_mesh2d_material.MeshMaterial2d[
+      @sprite_render_mesh2d_color_material.ColorMaterial,
+    ],
   ] = ecs_key_mesh_material2d
   let color_key_from_trait : @ecs.ComponentKey[
-    @sprite_render_mesh2d_material.MeshMaterial2d[ColorMaterialAsset],
+    @sprite_render_mesh2d_material.MeshMaterial2d[
+      @sprite_render_mesh2d_color_material.ColorMaterial,
+    ],
   ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
   let dummy_key : @ecs.ComponentKey[
     @sprite_render_mesh2d_material.MeshMaterial2d[DummyMaterialAsset],
@@ -1267,7 +1299,7 @@ test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d component keys are
 }
 
 ///|
-test "render2d: ColorMaterialAsset constructors match Bevy alpha modes" {
+test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial constructors match Bevy alpha modes" {
   let opaque_alpha_mode : Ref[@sprite_render_mesh2d_material.AlphaMode2d?] = Ref(
     None,
   )
@@ -1285,13 +1317,17 @@ test "render2d: ColorMaterialAsset constructors match Bevy alpha modes" {
   .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
-      ColorMaterialAsset::from_color(Color::white()).alpha_mode(),
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+        Color::white(),
+      ).alpha_mode(),
     )
     blend_alpha_mode.val = Some(
-      ColorMaterialAsset::from_color(Color::new(0.25F, 0.5F, 0.75F, 0.4F)).alpha_mode(),
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+        Color::new(0.25F, 0.5F, 0.75F, 0.4F),
+      ).alpha_mode(),
     )
     default_alpha_mode.val = Some(
-      ColorMaterialAsset::ColorMaterialAsset().alpha_mode(),
+      @sprite_render_mesh2d_color_material.ColorMaterial::ColorMaterial().alpha_mode(),
     )
   })
   .run_once()
@@ -1312,13 +1348,13 @@ test "render2d: ColorMaterialAsset constructors match Bevy alpha modes" {
 }
 
 ///|
-test "render2d: ColorMaterialAsset stores full affine uv transform" {
+test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial stores full affine uv transform" {
   let uv_transform = @transform.Affine2::from_translation(
     @math.Vec2::new(0.25F, -0.5F),
   ).mul(@transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)))
-  let material = ColorMaterialAsset::from_image(@asset.Handle::new(7)).with_uv_transform(
-    uv_transform,
-  )
+  let material = @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+    @asset.Handle::new(7),
+  ).with_uv_transform(uv_transform)
   let point = material.uv_transform.transform_point2(
     @math.Vec2::new(0.5F, 0.25F),
   )
@@ -1328,13 +1364,15 @@ test "render2d: ColorMaterialAsset stores full affine uv transform" {
 }
 
 ///|
-test "render2d: ColorMaterialAsset bind group uploads full affine uv transform" {
+test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial bind group uploads full affine uv transform" {
   let uv_transform = @transform.Affine2::from_cols(
     @math.Vec2::new(2.0F, 0.5F),
     @math.Vec2::new(-0.25F, 3.0F),
     @math.Vec2::new(0.25F, -0.5F),
   )
-  let bind_group = ColorMaterialAsset::from_image(@asset.Handle::new(7))
+  let bind_group = @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+      @asset.Handle::new(7),
+    )
     .with_uv_transform(uv_transform)
     .bind_group()
 

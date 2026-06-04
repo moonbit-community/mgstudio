@@ -67,7 +67,9 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -80,7 +82,7 @@ fn setup(
   let base_material = materials
     .peek()
     .add(
-      @sprite.ColorMaterialAsset::from_image(texture).with_alpha_mode(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_image(texture).with_alpha_mode(
         @sprite_render.AlphaMode2d::Mask(0.5F),
       ),
     )

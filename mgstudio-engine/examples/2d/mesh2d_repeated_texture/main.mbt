@@ -26,7 +26,9 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   let image_with_default_sampler = asset_server
     .get()
@@ -57,7 +59,11 @@ fn setup(
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
         materials
         .peek()
-        .add(@sprite.ColorMaterialAsset::from_image(image_with_default_sampler)),
+        .add(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+            image_with_default_sampler,
+          ),
+        ),
       ),
       @transform.Transform::from_translation(@math.Vec3::zero()),
     ),
@@ -87,7 +93,9 @@ fn setup(
         materials
         .peek()
         .add(
-          @sprite.ColorMaterialAsset::from_image(image_with_repeated_sampler).with_uv_transform(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+            image_with_repeated_sampler,
+          ).with_uv_transform(
             @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
           ),
         ),
@@ -120,7 +128,9 @@ fn setup(
         materials
         .peek()
         .add(
-          @sprite.ColorMaterialAsset::from_image(image_with_default_sampler).with_uv_transform(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+            image_with_default_sampler,
+          ).with_uv_transform(
             @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
           ),
         ),

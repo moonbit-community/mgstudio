@@ -31,12 +31,12 @@ fn PrintHelloPlugin::PrintHelloPlugin() -> PrintHelloPlugin {
 }
 
 ///|
-impl @app.Plugin for PrintHelloPlugin with name(_self) {
+impl @app.Plugin for PrintHelloPlugin with fn name(_self) {
   "examples.app.plugin_group.PrintHelloPlugin"
 }
 
 ///|
-impl @app.Plugin for PrintHelloPlugin with build(_self, app) {
+impl @app.Plugin for PrintHelloPlugin with fn build(_self, app) {
   app.add_systems(@app.Update, @app.system(print_hello_system))
 }
 
@@ -49,12 +49,12 @@ fn PrintWorldPlugin::PrintWorldPlugin() -> PrintWorldPlugin {
 }
 
 ///|
-impl @app.Plugin for PrintWorldPlugin with name(_self) {
+impl @app.Plugin for PrintWorldPlugin with fn name(_self) {
   "examples.app.plugin_group.PrintWorldPlugin"
 }
 
 ///|
-impl @app.Plugin for PrintWorldPlugin with build(_self, app) {
+impl @app.Plugin for PrintWorldPlugin with fn build(_self, app) {
   app.add_systems(@app.Update, @app.system(print_world_system))
 }
 
@@ -74,12 +74,12 @@ fn HelloWorldPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-impl @app.Plugin for HelloWorldPlugins with name(_self) {
+impl @app.Plugin for HelloWorldPlugins with fn name(_self) {
   "examples.app.plugin_group.HelloWorldPlugins"
 }
 
 ///|
-impl @app.Plugin for HelloWorldPlugins with build(_self, app) {
+impl @app.Plugin for HelloWorldPlugins with fn build(_self, app) {
   app.add_plugins(HelloWorldPlugins::build())
 }
 

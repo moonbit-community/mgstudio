@@ -27,7 +27,7 @@ let mine_component_key : @ecs.ComponentKey[Mine] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Mine with component() {
+pub impl @ecs.Component for Mine with fn component() {
   mine_component_key
 }
 
@@ -43,7 +43,7 @@ let mine_world_state_key : @ecs.ResourceKey[MineWorldState] = @ecs.register_reso
 )
 
 ///|
-pub impl @app.Resource for MineWorldState with resource() {
+pub impl @app.Resource for MineWorldState with fn resource() {
   mine_world_state_key
 }
 
@@ -64,17 +64,17 @@ let explode_mines_event_key : @ecs.EventKey[ExplodeMines] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for ExplodeMines with observer_event() {
+pub impl @ecs.TriggerEvent for ExplodeMines with fn observer_event() {
   explode_mines_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ExplodeMines with observer_entity(_self) {
+pub impl @ecs.TriggerEvent for ExplodeMines with fn observer_entity(_self) {
   None
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ExplodeMines with set_observer_entity(
+pub impl @ecs.TriggerEvent for ExplodeMines with fn set_observer_entity(
   self,
   _entity,
 ) {
@@ -82,12 +82,12 @@ pub impl @ecs.TriggerEvent for ExplodeMines with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ExplodeMines with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for ExplodeMines with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ExplodeMines with debug_name() {
+pub impl @ecs.TriggerEvent for ExplodeMines with fn debug_name() {
   "ExplodeMines"
 }
 
@@ -102,27 +102,30 @@ let explode_event_key : @ecs.EventKey[Explode] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with observer_event() {
+pub impl @ecs.TriggerEvent for Explode with fn observer_event() {
   explode_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with observer_entity(self) {
+pub impl @ecs.TriggerEvent for Explode with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with set_observer_entity(_self, entity) {
+pub impl @ecs.TriggerEvent for Explode with fn set_observer_entity(
+  _self,
+  entity,
+) {
   Explode::{ entity, }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for Explode with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with debug_name() {
+pub impl @ecs.TriggerEvent for Explode with fn debug_name() {
   "Explode"
 }
 

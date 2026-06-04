@@ -17,7 +17,7 @@
 pub using @mesh {type Mesh2d}
 
 ///|
-pub using @sprite_render {type MeshMaterial2d}
+pub using @sprite_render_mesh2d_material {type MeshMaterial2d}
 
 ///|
 pub using @sprite_render_mesh2d_runtime {
@@ -31,5 +31,5 @@ pub let ecs_key_mesh2d : @ecs.ComponentKey[@mesh.Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
-  @sprite_render.MeshMaterial2d[@sprite_render.ColorMaterialAsset],
-] = @sprite_render.ecs_key_mesh_material2d
+  @sprite_render_mesh2d_material.MeshMaterial2d[ColorMaterial],
+] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()

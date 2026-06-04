@@ -62,7 +62,9 @@ pub impl @ecs.Component for AtlasFrame with fn component() {
 
 ///|
 struct AnimationMaterials {
-  handles : Array[@asset.Handle[@sprite.ColorMaterialAsset]]
+  handles : Array[
+    @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ]
 }
 
 ///|
@@ -105,7 +107,9 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -118,14 +122,16 @@ fn setup(
       @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
     )
 
-  let atlas_materials : Array[@asset.Handle[@sprite.ColorMaterialAsset]] = []
+  let atlas_materials : Array[
+    @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ] = []
   let uv_scale_x = 1.0F / float_from_int(ATLAS_FRAME_COUNT)
   for i in 0..<ATLAS_FRAME_COUNT {
     let uv_offset_x = float_from_int(i) * uv_scale_x
     let material = materials
       .peek()
       .add(
-        @sprite.ColorMaterialAsset::from_image(texture)
+        @sprite_render_mesh2d_color_material.ColorMaterial::from_image(texture)
         .with_alpha_mode(@sprite_render.AlphaMode2d::Mask(0.5F))
         .with_uv_transform(
           @transform.Affine2::from_translation(
@@ -181,7 +187,7 @@ fn animate_meshes(
       @ecs.Mut[AtlasFrame],
       @ecs.Mut[
         @sprite_render_mesh2d_material.MeshMaterial2d[
-          @sprite.ColorMaterialAsset,
+          @sprite_render_mesh2d_color_material.ColorMaterial,
         ],
       ],
     ),

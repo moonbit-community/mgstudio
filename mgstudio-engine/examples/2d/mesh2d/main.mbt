@@ -24,7 +24,9 @@ fn main {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -42,7 +44,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgba(0.5019608F, 0.0F, 0.5019608F, 1.0F),
             ),
           ),

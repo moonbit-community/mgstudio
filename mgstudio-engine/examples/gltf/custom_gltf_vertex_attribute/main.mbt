@@ -102,7 +102,9 @@ fn spawn_converted_mesh(
   commands : @app.Commands,
   state : @app.ResMut[ConvertedMeshState],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   let state_value = state.get()
   if state_value.spawned {
@@ -115,7 +117,8 @@ fn spawn_converted_mesh(
 
   let mesh_handle = meshes.modify(fn(meshes) { meshes.add(converted) })
   let material_handle = materials.modify(fn(materials) {
-    materials |> @sprite.add_material(@sprite.Color::white())
+    materials
+    |> @sprite_render_mesh2d_color_material.add_material(@sprite.Color::white())
   })
   ignore(
     commands.spawn(

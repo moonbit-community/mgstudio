@@ -25,7 +25,7 @@ let ecs_key_pickable_mesh : @ecs.ComponentKey[PickableMesh] = @ecs.register_comp
 )
 
 ///|
-impl @ecs.Component for PickableMesh with component() {
+impl @ecs.Component for PickableMesh with fn component() {
   ecs_key_pickable_mesh
 }
 

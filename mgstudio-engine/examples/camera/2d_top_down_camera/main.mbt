@@ -35,7 +35,9 @@ pub impl @ecs.Component for Player with fn component() {
 fn setup_scene(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(
     commands.spawn(
@@ -48,7 +50,9 @@ fn setup_scene(
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials
-            |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F))
+            |> @sprite_render_mesh2d_color_material.add_material(
+              @sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F),
+            )
           }),
         ),
       ),
@@ -66,7 +70,9 @@ fn setup_scene(
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
             materials
-            |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F))
+            |> @sprite_render_mesh2d_color_material.add_material(
+              @sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F),
+            )
           }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),

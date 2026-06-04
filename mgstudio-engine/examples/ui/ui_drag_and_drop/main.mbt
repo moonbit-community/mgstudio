@@ -39,7 +39,7 @@ let drag_state_resource_key : @ecs.ResourceKey[DragState] = @ecs.register_resour
 )
 
 ///|
-pub impl @app.Resource for DragState with resource() {
+pub impl @app.Resource for DragState with fn resource() {
   drag_state_resource_key
 }
 

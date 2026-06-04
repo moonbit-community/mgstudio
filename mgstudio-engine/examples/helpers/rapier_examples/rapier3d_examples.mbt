@@ -21,12 +21,12 @@ pub fn Rapier3dDebugRenderPlugin::Rapier3dDebugRenderPlugin() -> Rapier3dDebugRe
 }
 
 ///|
-pub impl @app.Plugin for Rapier3dDebugRenderPlugin with name(_self) {
+pub impl @app.Plugin for Rapier3dDebugRenderPlugin with fn name(_self) {
   "examples.helpers.rapier_examples.Rapier3dDebugRenderPlugin"
 }
 
 ///|
-pub impl @app.Plugin for Rapier3dDebugRenderPlugin with build(_self, app) {
+pub impl @app.Plugin for Rapier3dDebugRenderPlugin with fn build(_self, app) {
   @physics3d.physics3d_debug_render_plugin(app)
 }
 

@@ -28,7 +28,7 @@ let ecs_key_pickable_cube : @ecs.ComponentKey[PickableCube] = @ecs.register_comp
 )
 
 ///|
-impl @ecs.Component for PickableCube with component() {
+impl @ecs.Component for PickableCube with fn component() {
   ecs_key_pickable_cube
 }
 

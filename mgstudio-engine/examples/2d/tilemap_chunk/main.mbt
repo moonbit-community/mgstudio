@@ -149,7 +149,9 @@ fn setup(
 fn spawn_player(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
   chunk : @sprite_tilemap_chunk.TilemapChunk,
   tile_pos : @math.UVec2,
   moving? : Bool = false,
@@ -172,7 +174,11 @@ fn spawn_player(
   let player_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
     materials
     .peek()
-    .add(@sprite.ColorMaterialAsset::from_color(@palettes.tailwind_red_400())),
+    .add(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+        @palettes.tailwind_red_400(),
+      ),
+    ),
   )
 
   if moving {
@@ -190,7 +196,9 @@ fn spawn_player(
 fn spawn_fake_player(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
   chunks : @ecs.Query[@ecs.Comp[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
 ) -> Unit {
   guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {

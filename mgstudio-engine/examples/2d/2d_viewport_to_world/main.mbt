@@ -73,7 +73,9 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   let viewport = viewport_default(
     @window.window_width(),
@@ -107,7 +109,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
             ),
           ),
@@ -132,7 +134,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
             ),
           ),

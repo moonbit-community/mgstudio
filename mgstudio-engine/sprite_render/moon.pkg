@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
+  "Milky2018/mgstudio/sprite_render/mesh2d/color_material" @sprite_render_mesh2d_color_material,
   "Milky2018/mgstudio/sprite_render/mesh2d/material" @sprite_render_mesh2d_material,
   "Milky2018/mgstudio/sprite_render/schedule" @sprite_render_schedule,
   "Milky2018/mgstudio/sprite_render/tilemap_chunk",

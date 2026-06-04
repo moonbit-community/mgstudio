@@ -17,6 +17,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/window",
@@ -26,17 +27,9 @@ import {
 }
 
 // Values
-pub fn[S : IntoColorMaterialAsset] add_material(@asset.Assets[ColorMaterialAsset], S) -> @asset.Handle[ColorMaterialAsset]
-
 pub fn[S : IntoSpriteMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
 
 pub let camera_update_systems : String
-
-pub fn color_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[ColorMaterialAsset]]
-
-pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset]
-
-pub fn color_material_plugin(ColorMaterialPlugin) -> ColorMaterialPlugin
 
 pub let ecs_components : Array[String]
 
@@ -50,8 +43,6 @@ pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
-pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
-
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_global_wireframe_material : @ecs.ResourceKey[GlobalWireframeMaterial]
@@ -60,7 +51,7 @@ pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
 
 pub let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe]
 
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[ColorMaterialAsset]]
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@color_material.ColorMaterial]]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
 
@@ -334,44 +325,6 @@ pub fn Camera2d::Camera2d() -> Self
 pub impl @ecs.Component for Camera2d
 pub impl ToJson for Camera2d
 pub impl @json.FromJson for Camera2d
-
-pub struct ColorMaterial {
-  handle : @asset.Handle[ColorMaterialAsset]
-}
-pub fn ColorMaterial::ColorMaterial() -> Self
-pub fn ColorMaterial::alpha_mode(Self) -> @material.AlphaMode2d
-pub fn ColorMaterial::color(Self) -> @color.Color
-pub fn ColorMaterial::texture(Self) -> @asset.Handle[@image.Image]?
-pub fn ColorMaterial::uv_transform(Self) -> @transform.Affine2
-pub fn ColorMaterial::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
-pub fn ColorMaterial::with_texture(Self, @asset.Handle[@image.Image]) -> Self
-pub fn ColorMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
-pub impl @ecs.Component for ColorMaterial
-pub impl @material.Material2d for ColorMaterial
-pub impl Default for ColorMaterial
-pub impl ToJson for ColorMaterial
-pub impl @json.FromJson for ColorMaterial
-
-pub struct ColorMaterialAsset {
-  color : @color.Color
-  alpha_mode : @material.AlphaMode2d
-  texture : @asset.Handle[@image.Image]?
-  uv_transform : @transform.Affine2
-}
-pub fn ColorMaterialAsset::ColorMaterialAsset() -> Self
-pub fn ColorMaterialAsset::from_color(@color.Color) -> Self
-pub fn ColorMaterialAsset::from_image(@asset.Handle[@image.Image]) -> Self
-pub fn ColorMaterialAsset::new(@color.Color, @material.AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_transform? : @transform.Affine2) -> Self
-pub fn ColorMaterialAsset::with_alpha_mode(Self, @material.AlphaMode2d) -> Self
-pub fn ColorMaterialAsset::with_texture(Self, @asset.Handle[@image.Image]) -> Self
-pub fn ColorMaterialAsset::with_uv_transform(Self, @transform.Affine2) -> Self
-pub impl @asset.Asset for ColorMaterialAsset
-pub impl @material.Material2d for ColorMaterialAsset
-
-pub struct ColorMaterialPlugin {
-}
-pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> Self
-pub impl @app.Plugin for ColorMaterialPlugin
 
 pub struct CustomMesh2dPipelineDescriptor {
   pipeline_id : UInt64
@@ -1050,12 +1003,6 @@ pub(open) trait GizmoConfigGroup {
   fn gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> @ref.Ref[Self]?
   fn gizmo_config_group_marker(Self) -> Unit
 }
-
-pub(open) trait IntoColorMaterialAsset {
-  fn into_color_material_asset(Self) -> ColorMaterialAsset
-}
-pub impl IntoColorMaterialAsset for @asset.Handle[@image.Image]
-pub impl IntoColorMaterialAsset for @color.Color
 
 pub(open) trait IntoSpriteMeshAsset {
   fn into_sprite_mesh_asset(Self) -> @mesh.Mesh

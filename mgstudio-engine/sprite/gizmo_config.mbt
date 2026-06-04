@@ -33,19 +33,19 @@ pub fn DefaultGizmoConfigGroup::DefaultGizmoConfigGroup() -> DefaultGizmoConfigG
 }
 
 ///|
-pub impl Default for DefaultGizmoConfigGroup with default() {
+pub impl Default for DefaultGizmoConfigGroup with fn default() {
   DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()
 }
 
 ///|
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_marker(
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_debug_name() {
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::DefaultGizmoConfigGroup"
 }
 
@@ -57,7 +57,7 @@ let default_gizmo_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_storage_resource_key() {
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with fn gizmo_storage_resource_key() {
   default_gizmo_storage_resource_key
 }
 
@@ -67,14 +67,14 @@ extenum GizmoConfigGroupCell += {
 }
 
 ///|
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with new_gizmo_config_group_cell() {
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   DefaultGizmoConfigGroupCell(
     Ref(DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()),
   )
 }
 
 ///|
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_cell_ref(
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -134,7 +134,7 @@ pub fn GizmoConfigStore::GizmoConfigStore() -> GizmoConfigStore {
 }
 
 ///|
-pub impl Default for GizmoConfigStore with default() {
+pub impl Default for GizmoConfigStore with fn default() {
   GizmoConfigStore::GizmoConfigStore()
 }
 
@@ -211,7 +211,7 @@ let ecs_res_key_gizmo_config_store : @ecs.ResourceKey[GizmoConfigStore] = @ecs.r
 )
 
 ///|
-pub impl @app.Resource for GizmoConfigStore with resource() {
+pub impl @app.Resource for GizmoConfigStore with fn resource() {
   ecs_res_key_gizmo_config_store
 }
 

@@ -80,7 +80,7 @@ pub impl @ecs.Component for Star with fn component() {
 fn spawn_body(
   commands : @app.Commands,
   meshes : @asset.Assets[@mesh.Mesh],
-  materials : @asset.Assets[@sprite.ColorMaterialAsset],
+  materials : @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   position : @math.Vec2,
   velocity : @math.Vec2,
   radius : Float,
@@ -91,7 +91,7 @@ fn spawn_body(
   let bundle = (
     @mesh.Mesh2d::new(meshes |> @sprite.add_mesh(@sprite.Circle::new(1.0F))),
     @sprite_render_mesh2d_material.MeshMaterial2d::new(
-      materials |> @sprite.add_material(color),
+      materials |> @sprite_render_mesh2d_color_material.add_material(color),
     ),
     @transform.Transform::from_xyz(position.x, position.y, 0.0F).with_scale(
       @math.Vec3::splat(radius),
@@ -110,7 +110,9 @@ fn spawn_body(
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 

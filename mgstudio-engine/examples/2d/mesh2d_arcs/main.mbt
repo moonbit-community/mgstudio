@@ -89,13 +89,15 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   let material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
     materials
     .peek()
     .add(
-      @sprite.ColorMaterialAsset::from_image(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
         asset_server.get().load("branding/icon.png"),
       ),
     ),

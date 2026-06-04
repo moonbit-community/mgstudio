@@ -28,7 +28,7 @@ let despawn_marker_component_key : @ecs.ComponentKey[DespawnMarker] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for DespawnMarker with component() {
+pub impl @ecs.Component for DespawnMarker with fn component() {
   despawn_marker_component_key
 }
 

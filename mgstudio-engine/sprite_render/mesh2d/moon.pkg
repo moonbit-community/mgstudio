@@ -1,9 +1,10 @@
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/mesh2d/color_material" @sprite_render_mesh2d_color_material,
   "Milky2018/mgstudio/sprite_render/mesh2d/material" @sprite_render_mesh2d_material,
   "Milky2018/mgstudio/sprite_render/mesh2d/runtime" @sprite_render_mesh2d_runtime,
-  "Milky2018/mgstudio/sprite_render",
 }
 
 supported_targets = "native"

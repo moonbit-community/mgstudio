@@ -118,7 +118,9 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
@@ -156,7 +158,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
             ),
           ),
@@ -182,7 +184,7 @@ fn setup(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
             ),
           ),

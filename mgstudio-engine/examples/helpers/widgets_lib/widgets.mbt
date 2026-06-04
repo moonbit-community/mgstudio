@@ -84,12 +84,12 @@ let radio_button_text_key : @ecs.ComponentKey[RadioButtonText] = @ecs.register_c
 )
 
 ///|
-pub impl @ecs.Component for RadioButton with component() {
+pub impl @ecs.Component for RadioButton with fn component() {
   radio_button_key
 }
 
 ///|
-pub impl @ecs.Component for RadioButtonText with component() {
+pub impl @ecs.Component for RadioButtonText with fn component() {
   radio_button_text_key
 }
 
@@ -108,12 +108,12 @@ pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[
 }
 
 ///|
-pub impl[T : WidgetValue] @ecs.Message for WidgetClickEvent[T] with message() {
+pub impl[T : WidgetValue] @ecs.Message for WidgetClickEvent[T] with fn message() {
   widget_click_event_key()
 }
 
 ///|
-pub impl[T : WidgetValue] @ecs.Component for WidgetClickSender[T] with component() {
+pub impl[T : WidgetValue] @ecs.Component for WidgetClickSender[T] with fn component() {
   widget_click_sender_key()
 }
 

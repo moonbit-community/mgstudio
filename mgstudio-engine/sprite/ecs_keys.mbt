@@ -74,14 +74,9 @@ pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
-pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.register_component(
-  debug_name="render2d.color_material",
-)
-
-///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
-  MeshMaterial2d[ColorMaterialAsset],
-] = ColorMaterialAsset::material2d_keys().mesh_material2d_component
+  MeshMaterial2d[ColorMaterial],
+] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
 
 ///|
 pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect] = @ecs.register_component(
@@ -152,11 +147,6 @@ pub impl @ecs.Component for PanCamera with fn component() {
 ///|
 pub impl @ecs.Component for RenderTarget with fn component() {
   ecs_key_render_target
-}
-
-///|
-pub impl @ecs.Component for ColorMaterial with fn component() {
-  ecs_key_color_material
 }
 
 ///|
@@ -325,13 +315,6 @@ fn encode_image_handle(handle : @asset.Handle[@asset.Image]) -> Json {
 }
 
 ///|
-fn encode_color_material_asset_handle(
-  handle : @asset.Handle[ColorMaterialAsset],
-) -> Json {
-  handle.id().to_json()
-}
-
-///|
 fn encode_texture_atlas(texture_atlas : @asset.TextureAtlas) -> Json {
   (texture_atlas.layout.id(), texture_atlas.index).to_json()
 }
@@ -456,11 +439,6 @@ fn encode_render_target(target : RenderTarget) -> Json {
 }
 
 ///|
-fn encode_color_material(material : ColorMaterial) -> Json {
-  encode_color_material_asset_handle(material.handle)
-}
-
-///|
 fn decode_color(json : Json) -> Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
   Color::new(r, g, b, a)
@@ -482,14 +460,6 @@ fn decode_rect(json : Json) -> @math.Rect {
 
 ///|
 fn decode_image_handle(json : Json) -> @asset.Handle[@asset.Image] {
-  let id : Int = try! @json.from_json(json)
-  @asset.Handle::new(id)
-}
-
-///|
-fn decode_color_material_asset_handle(
-  json : Json,
-) -> @asset.Handle[ColorMaterialAsset] {
   let id : Int = try! @json.from_json(json)
   @asset.Handle::new(id)
 }
@@ -656,11 +626,6 @@ fn decode_render_target(json : Json) -> RenderTarget {
 }
 
 ///|
-fn decode_color_material(json : Json) -> ColorMaterial {
-  ColorMaterial::{ handle: decode_color_material_asset_handle(json) }
-}
-
-///|
 fn decode_scissor_rect(json : Json) -> ScissorRect {
   ScissorRect::new(decode_rect(json))
 }
@@ -748,16 +713,6 @@ pub impl ToJson for RenderTarget with fn to_json(self) {
 ///|
 pub impl @json.FromJson for RenderTarget with fn from_json(json, _path) {
   decode_render_target(json)
-}
-
-///|
-pub impl ToJson for ColorMaterial with fn to_json(self) {
-  encode_color_material(self)
-}
-
-///|
-pub impl @json.FromJson for ColorMaterial with fn from_json(json, _path) {
-  decode_color_material(json)
 }
 
 ///|

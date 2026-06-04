@@ -19,13 +19,10 @@
 pub type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
 
 ///|
-pub type ColorMaterial = @sprite.ColorMaterial
+pub type ColorMaterial = @sprite_render_mesh2d_color_material.ColorMaterial
 
 ///|
-pub type ColorMaterialAsset = @sprite.ColorMaterialAsset
-
-///|
-pub type ColorMaterialPlugin = @sprite.ColorMaterialPlugin
+pub type ColorMaterialPlugin = @sprite_render_mesh2d_color_material.ColorMaterialPlugin
 
 ///|
 pub type Material2dPlugin[M] = @sprite_render_mesh2d_material.Material2dPlugin[
@@ -86,15 +83,12 @@ pub type TilemapChunkMaterialPlugin = @sprite.TilemapChunkMaterialPlugin
 pub type TilemapChunkTileData = @tilemap_chunk.TilemapChunkTileData
 
 ///|
-pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @sprite.ecs_key_color_material
-
-///|
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @mesh.ecs_key_mesh2d
 
 ///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
-  MeshMaterial2d[ColorMaterialAsset],
-] = @sprite.ecs_key_mesh_material2d
+  MeshMaterial2d[ColorMaterial],
+] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
 
 ///|
 pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d] = @sprite.ecs_key_wireframe2d
@@ -346,7 +340,7 @@ pub fn[M] material2d_plugin(
 pub fn color_material_plugin(
   plugin : ColorMaterialPlugin,
 ) -> ColorMaterialPlugin {
-  @sprite.color_material_plugin(plugin)
+  @sprite_render_mesh2d_color_material.color_material_plugin(plugin)
 }
 
 ///|

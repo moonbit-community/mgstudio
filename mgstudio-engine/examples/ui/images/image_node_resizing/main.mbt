@@ -95,32 +95,32 @@ let text_update_event_key : @ecs.EventKey[TextUpdate] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.Component for ImageGroup with component() {
+pub impl @ecs.Component for ImageGroup with fn component() {
   image_group_key
 }
 
 ///|
-pub impl @ecs.Component for ResizeLabel with component() {
+pub impl @ecs.Component for ResizeLabel with fn component() {
   resize_label_key
 }
 
 ///|
-pub impl @ecs.Component for TextData with component() {
+pub impl @ecs.Component for TextData with fn component() {
   text_data_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ImageGroupResize with observer_event() {
+pub impl @ecs.TriggerEvent for ImageGroupResize with fn observer_event() {
   image_group_resize_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ImageGroupResize with observer_entity(_self) {
+pub impl @ecs.TriggerEvent for ImageGroupResize with fn observer_entity(_self) {
   None
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ImageGroupResize with set_observer_entity(
+pub impl @ecs.TriggerEvent for ImageGroupResize with fn set_observer_entity(
   self,
   _entity,
 ) {
@@ -128,37 +128,40 @@ pub impl @ecs.TriggerEvent for ImageGroupResize with set_observer_entity(
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ImageGroupResize with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for ImageGroupResize with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for ImageGroupResize with debug_name() {
+pub impl @ecs.TriggerEvent for ImageGroupResize with fn debug_name() {
   "ImageGroupResize"
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with observer_event() {
+pub impl @ecs.TriggerEvent for TextUpdate with fn observer_event() {
   text_update_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with observer_entity(self) {
+pub impl @ecs.TriggerEvent for TextUpdate with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with set_observer_entity(self, entity) {
+pub impl @ecs.TriggerEvent for TextUpdate with fn set_observer_entity(
+  self,
+  entity,
+) {
   TextUpdate::{ change: self.change, direction: self.direction, entity }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for TextUpdate with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with debug_name() {
+pub impl @ecs.TriggerEvent for TextUpdate with fn debug_name() {
   "TextUpdate"
 }
 

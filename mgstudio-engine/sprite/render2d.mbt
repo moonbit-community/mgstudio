@@ -3457,7 +3457,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
   let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
     world,
   )
-  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+  let color_material_probe : @asset.Handle[ColorMaterial] = @asset.Handle::new(
     0,
   )
   let use_color_material_fast_path = material_runtime_registry.entry_count() ==
@@ -4038,10 +4038,8 @@ fn draw_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[
-    PreparedMaterial2d[ColorMaterialAsset],
-  ],
-  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  material_instances : RenderMaterial2dInstances[ColorMaterial],
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -4331,10 +4329,8 @@ fn draw_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[
-    PreparedMaterial2d[ColorMaterialAsset],
-  ],
-  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  material_instances : RenderMaterial2dInstances[ColorMaterial],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
 ) -> Array[DrawItem] {
@@ -4567,10 +4563,8 @@ fn build_camera_draw_items(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[
-    PreparedMaterial2d[ColorMaterialAsset],
-  ],
-  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  material_instances : RenderMaterial2dInstances[ColorMaterial],
   camera_entity : @core.Entity,
   layers : RenderLayers,
   use_color_material_fast_path : Bool,
@@ -4920,7 +4914,7 @@ fn extracted_mesh2d_item(
 ///|
 test "render2d: mesh prepared material handle resolves from extracted entity instance" {
   let entity = @core.Entity::new(1, 0)
-  let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(77)
+  let handle : @asset.Handle[ColorMaterial] = @asset.Handle::new(77)
   let extracted = extracted_mesh2d_item(
     entity,
     12,
@@ -4958,11 +4952,8 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let layers = RenderLayers::RenderLayers()
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(1)
-  let prepared_materials = prepared_color_material_assets_for_tests([
-    (
-      material_handle,
-      ColorMaterialAsset::new(Color::white(), AlphaMode2d::Blend),
-    ),
+  let prepared_materials = prepared_color_materials_for_tests([
+    (material_handle, ColorMaterial::new(Color::white(), AlphaMode2d::Blend)),
   ])
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
@@ -5031,9 +5022,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
 test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::RenderLayers()
   let prepared_materials : @render.RenderAssets[
-    PreparedMaterial2d[ColorMaterialAsset],
+    PreparedMaterial2d[ColorMaterial],
   ] = @render.RenderAssets::new()
-  let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
+  let material_instances : RenderMaterial2dInstances[ColorMaterial] = RenderMaterial2dInstances::new()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
   let sprites : Array[ExtractedSprite] = []
@@ -5101,9 +5092,9 @@ test "render2d: UI overlay draw items route by target camera" {
 test "render2d: scene draw items exclude UI overlays" {
   let layers = RenderLayers::RenderLayers()
   let prepared_materials : @render.RenderAssets[
-    PreparedMaterial2d[ColorMaterialAsset],
+    PreparedMaterial2d[ColorMaterial],
   ] = @render.RenderAssets::new()
-  let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
+  let material_instances : RenderMaterial2dInstances[ColorMaterial] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(
     [],
@@ -5354,20 +5345,17 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let blend_entity = @core.Entity::new(1, 0)
   let opaque_handle = @asset.Handle::new(20)
   let blend_handle = @asset.Handle::new(21)
-  let prepared_materials = prepared_color_material_assets_for_tests([
+  let prepared_materials = prepared_color_materials_for_tests([
     (
       opaque_handle,
-      ColorMaterialAsset::new(
+      ColorMaterial::new(
         Color::new(1.0F, 0.0F, 0.0F, 0.2F),
         AlphaMode2d::Opaque,
       ),
     ),
     (
       blend_handle,
-      ColorMaterialAsset::new(
-        Color::new(0.0F, 1.0F, 0.0F, 0.2F),
-        AlphaMode2d::Blend,
-      ),
+      ColorMaterial::new(Color::new(0.0F, 1.0F, 0.0F, 0.2F), AlphaMode2d::Blend),
     ),
   ])
   let sprites : Array[ExtractedSprite] = []
@@ -5422,13 +5410,10 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let layers = RenderLayers::RenderLayers()
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(30)
-  let prepared_materials = prepared_color_material_assets_for_tests([
+  let prepared_materials = prepared_color_materials_for_tests([
     (
       material_handle,
-      ColorMaterialAsset::new(
-        Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-        AlphaMode2d::Blend,
-      ),
+      ColorMaterial::new(Color::new(1.0F, 1.0F, 1.0F, 1.0F), AlphaMode2d::Blend),
     ),
   ])
   let sprites : Array[ExtractedSprite] = [
@@ -5544,17 +5529,17 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let masked_high_entity = @core.Entity::new(2, 0)
   let masked_low_handle = @asset.Handle::new(40)
   let masked_high_handle = @asset.Handle::new(41)
-  let prepared_materials = prepared_color_material_assets_for_tests([
+  let prepared_materials = prepared_color_materials_for_tests([
     (
       masked_low_handle,
-      ColorMaterialAsset::new(
+      ColorMaterial::new(
         Color::new(1.0F, 1.0F, 1.0F, 0.2F),
         AlphaMode2d::Mask(0.5F),
       ),
     ),
     (
       masked_high_handle,
-      ColorMaterialAsset::new(
+      ColorMaterial::new(
         Color::new(1.0F, 1.0F, 1.0F, 0.8F),
         AlphaMode2d::Mask(0.5F),
       ),
@@ -5802,7 +5787,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
   let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
     world,
   )
-  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+  let color_material_probe : @asset.Handle[ColorMaterial] = @asset.Handle::new(
     0,
   )
   let use_color_material_fast_path = material_runtime_registry.entry_count() ==
@@ -6085,7 +6070,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         let mut scissor_w = 0
         let mut scissor_h = 0
         let mut cached_color_material_handle_id = -1
-        let mut cached_color_material : PreparedMaterial2d[ColorMaterialAsset]? = None
+        let mut cached_color_material : PreparedMaterial2d[ColorMaterial]? = None
         fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
           match rect_opt {
             None =>
@@ -6321,7 +6306,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 } else {
                   if item.material_handle_id != cached_color_material_handle_id {
                     let material_handle : @asset.Handle[
-                      PreparedMaterial2d[ColorMaterialAsset],
+                      PreparedMaterial2d[ColorMaterial],
                     ] = @asset.Handle::new(item.material_handle_id)
                     cached_color_material = prepared_material2d_get(
                       color_prepared_materials, material_handle,

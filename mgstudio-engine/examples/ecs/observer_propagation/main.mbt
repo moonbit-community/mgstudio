@@ -26,7 +26,7 @@ let hit_points_component_key : @ecs.ComponentKey[HitPoints] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for HitPoints with component() {
+pub impl @ecs.Component for HitPoints with fn component() {
   hit_points_component_key
 }
 
@@ -41,7 +41,7 @@ let armor_component_key : @ecs.ComponentKey[Armor] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Armor with component() {
+pub impl @ecs.Component for Armor with fn component() {
   armor_component_key
 }
 
@@ -57,27 +57,27 @@ let attack_event_key : @ecs.EventKey[Attack] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with observer_event() {
+pub impl @ecs.TriggerEvent for Attack with fn observer_event() {
   attack_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with observer_entity(self) {
+pub impl @ecs.TriggerEvent for Attack with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with set_observer_entity(self, entity) {
+pub impl @ecs.TriggerEvent for Attack with fn set_observer_entity(self, entity) {
   Attack::{ damage: self.damage, entity }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for Attack with fn auto_propagate(_self) {
   true
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with debug_name() {
+pub impl @ecs.TriggerEvent for Attack with fn debug_name() {
   "Attack"
 }
 
@@ -93,7 +93,7 @@ let attack_schedule_key : @ecs.ResourceKey[AttackSchedule] = @ecs.register_resou
 )
 
 ///|
-pub impl @app.Resource for AttackSchedule with resource() {
+pub impl @app.Resource for AttackSchedule with fn resource() {
   attack_schedule_key
 }
 

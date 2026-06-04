@@ -24,7 +24,9 @@ fn main {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let texture_handle = asset_server.get().load("branding/banner.png")
@@ -39,7 +41,11 @@ fn setup(
       (
         @mesh.Mesh2d::new(mesh_handle),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
-          materials.peek().add(@sprite.ColorMaterialAsset::ColorMaterialAsset()),
+          materials
+          .peek()
+          .add(
+            @sprite_render_mesh2d_color_material.ColorMaterial::ColorMaterial(),
+          ),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(-96.0F, 0.0F, 0.0F),
@@ -55,7 +61,11 @@ fn setup(
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
-          .add(@sprite.ColorMaterialAsset::from_image(texture_handle)),
+          .add(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_image(
+              texture_handle,
+            ),
+          ),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(96.0F, 0.0F, 0.0F),

@@ -144,7 +144,9 @@ fn setup_sprite(
 fn setup_mesh(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(
     commands.spawn(
@@ -159,7 +161,11 @@ fn setup_mesh(
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
           .peek()
-          .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::black())),
+          .add(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+              @sprite.Color::black(),
+            ),
+          ),
         ),
         @transform.Transform::from_xyz(25.0F, 0.0F, 2.0F).with_scale(
           @math.Vec3::splat(32.0F),

@@ -89,7 +89,9 @@ fn wireframe_overlay_text(config : @sprite.Wireframe2dConfig) -> String {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let black = @sprite.Color::black()
@@ -112,7 +114,11 @@ fn setup(
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
-            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+            materials.add(
+              @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+                black,
+              ),
+            )
           }),
         ),
         @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
@@ -135,7 +141,11 @@ fn setup(
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
-            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+            materials.add(
+              @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+                black,
+              ),
+            )
           }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
@@ -155,7 +165,11 @@ fn setup(
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {
-            materials.add(@sprite.ColorMaterialAsset::from_color(black))
+            materials.add(
+              @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+                black,
+              ),
+            )
           }),
         ),
         @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),

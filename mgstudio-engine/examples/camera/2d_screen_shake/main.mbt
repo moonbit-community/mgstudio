@@ -199,7 +199,9 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 fn setup_scene(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(
     commands.spawn(
@@ -217,7 +219,7 @@ fn setup_scene(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
             ),
           ),
@@ -241,7 +243,7 @@ fn setup_scene(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
             ),
           ),
@@ -266,7 +268,7 @@ fn setup_scene(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
             ),
           ),
@@ -291,7 +293,7 @@ fn setup_scene(
           materials
           .peek()
           .add(
-            @sprite.ColorMaterialAsset::from_color(
+            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
               @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
             ),
           ),

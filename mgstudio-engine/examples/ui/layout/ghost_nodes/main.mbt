@@ -33,12 +33,12 @@ let button_press_state_key : @ecs.ComponentKey[ButtonPressState] = @ecs.register
 )
 
 ///|
-pub impl @ecs.Component for Counter with component() {
+pub impl @ecs.Component for Counter with fn component() {
   counter_key
 }
 
 ///|
-pub impl @ecs.Component for ButtonPressState with component() {
+pub impl @ecs.Component for ButtonPressState with fn component() {
   button_press_state_key
 }
 

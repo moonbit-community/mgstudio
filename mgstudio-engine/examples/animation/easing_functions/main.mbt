@@ -466,9 +466,11 @@ fn spawn_marker(
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
-        @sprite.color_material_assets_mut_or_abort()
+        @asset.asset_assets_ref_mut_or_abort()
         .peek()
-        .add(@sprite.ColorMaterialAsset::from_color(color)),
+        .add(
+          @sprite_render_mesh2d_color_material.ColorMaterial::from_color(color),
+        ),
       ),
       transform_from_position(position, MARKER_Z),
     ),

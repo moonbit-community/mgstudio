@@ -57,7 +57,9 @@ fn main {
 fn setup_scene(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  materials : @app.ResMut[
+    @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
+  ],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
@@ -97,7 +99,8 @@ fn setup_scene(
           @mesh.Mesh2d::new(mesh),
           @sprite_render_mesh2d_material.MeshMaterial2d::new(
             materials.modify(fn(material_assets) {
-              material_assets |> @sprite.add_material(color)
+              material_assets
+              |> @sprite_render_mesh2d_color_material.add_material(color)
             }),
           ),
           @transform.Transform::from_xyz(
