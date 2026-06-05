@@ -20,6 +20,9 @@
 const CORE_2D_PLUGIN_NAME : String = "mgstudio.core_pipeline.core_2d.Core2dPlugin"
 
 ///|
+const CORE_2D_SCHEDULE_NAME : String = "mgstudio.core_pipeline.core_2d"
+
+///|
 pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
 
 ///|
@@ -109,6 +112,23 @@ fn core_2d_register_required_components(world : @ecs.World) -> Unit {
         "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
   }
+  world.register_required_components_with(
+    @camera_components2d.ecs_key_camera2d,
+    @render.ecs_key_camera_render_graph,
+    fn() {
+      @render.CameraRenderGraph::new(@app.schedule_label(CORE_2D_SCHEDULE_NAME))
+    },
+  ) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "Core2dPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
 }
 
 ///|
@@ -136,7 +156,7 @@ fn core_2d_configure_render_sub_app(
   }
   let stage = @render.render_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
-  let core_2d_stage = @app.schedule_label("mgstudio.core_pipeline.core_2d")
+  let core_2d_stage = @app.schedule_label(CORE_2D_SCHEDULE_NAME)
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
     @app.Schedule::new(core_2d_stage),
   )

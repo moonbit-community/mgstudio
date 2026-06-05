@@ -35,6 +35,45 @@ pub fn RenderGraph::base_schedule() -> @app.Schedule {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs::CameraRenderGraph`.
+pub struct CameraRenderGraph {
+  schedule : @app.ScheduleStage
+}
+
+///|
+pub fn CameraRenderGraph::new(
+  schedule : @app.ScheduleStage,
+) -> CameraRenderGraph {
+  CameraRenderGraph::{ schedule, }
+}
+
+///|
+pub fn CameraRenderGraph::schedule(
+  self : CameraRenderGraph,
+) -> @app.ScheduleStage {
+  self.schedule
+}
+
+///|
+pub fn CameraRenderGraph::with_schedule(
+  self : CameraRenderGraph,
+  schedule : @app.ScheduleStage,
+) -> CameraRenderGraph {
+  self |> ignore
+  CameraRenderGraph::{ schedule, }
+}
+
+///|
+pub let ecs_key_camera_render_graph : @ecs.ComponentKey[CameraRenderGraph] = @ecs.register_component(
+  debug_name="mgstudio.render.CameraRenderGraph",
+)
+
+///|
+pub impl @ecs.Component for CameraRenderGraph with fn component() {
+  ecs_key_camera_render_graph
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/renderer/mod.rs` (`RenderGraphSystems`).
 pub let render_graph_system_set_begin : @app.SystemSet = @app.system_set(
   "mgstudio.render.graph.begin",

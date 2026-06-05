@@ -83,6 +83,8 @@ pub let current_view_resource_key : @ecs.ResourceKey[CurrentView]
 
 pub fn despawn_temporary_render_entities(@ecs.World) -> Unit
 
+pub let ecs_key_camera_render_graph : @ecs.ComponentKey[CameraRenderGraph]
+
 pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
 
 pub let ecs_key_pending_sync_entity : @ecs.ResourceKey[PendingSyncEntity]
@@ -506,6 +508,14 @@ pub(all) suberror PrepareAssetError {
 pub struct AssetExtractionSystems {
 }
 pub fn AssetExtractionSystems::new() -> Self
+
+pub struct CameraRenderGraph {
+  schedule : @app.ScheduleStage
+}
+pub fn CameraRenderGraph::new(@app.ScheduleStage) -> Self
+pub fn CameraRenderGraph::schedule(Self) -> @app.ScheduleStage
+pub fn CameraRenderGraph::with_schedule(Self, @app.ScheduleStage) -> Self
+pub impl @ecs.Component for CameraRenderGraph
 
 pub struct ComponentUniforms[C] {
   uniforms : Array[C]

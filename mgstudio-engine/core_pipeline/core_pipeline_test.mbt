@@ -138,6 +138,13 @@ test "core_2d plugin owns Camera2d post-process required components" {
   }
   debug_inspect(tonemapping_ok, content="true")
   debug_inspect(deband_ok, content="true")
+  let graph_ok = match
+    (try! world.get_by_key(entity, @render.ecs_key_camera_render_graph)) {
+    Some(graph) =>
+      graph.schedule() == @app.schedule_label("mgstudio.core_pipeline.core_2d")
+    None => false
+  }
+  debug_inspect(graph_ok, content="true")
 }
 
 ///|
