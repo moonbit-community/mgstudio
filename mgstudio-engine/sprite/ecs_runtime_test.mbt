@@ -207,7 +207,7 @@ fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
     mesh_assets
     .peek()
     .add(
-      Mesh::from_2d_geometry(
+      @mesh.Mesh::from_2d_geometry(
         mesh2d_geometry_rectangle(Rectangle::new(width, height)),
       ),
     ),
@@ -664,7 +664,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
         let mesh_handle = meshes
           .peek()
           .add(
-            Mesh::from_2d_geometry(
+            @mesh.Mesh::from_2d_geometry(
               mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
             ),
           )
@@ -715,7 +715,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
   let mesh_handle = mesh_assets
     .peek()
     .add(
-      Mesh::from_2d_geometry(
+      @mesh.Mesh::from_2d_geometry(
         mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
       ),
     )
@@ -757,7 +757,7 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
   let mesh_handle = mesh_assets
     .peek()
     .add(
-      Mesh::from_2d_geometry(
+      @mesh.Mesh::from_2d_geometry(
         mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
       ),
     )

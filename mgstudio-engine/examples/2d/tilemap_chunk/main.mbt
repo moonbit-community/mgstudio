@@ -148,7 +148,7 @@ fn setup(
 ///|
 fn spawn_player(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],
@@ -195,7 +195,7 @@ fn spawn_player(
 ///|
 fn spawn_fake_player(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],

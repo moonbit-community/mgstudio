@@ -1021,72 +1021,72 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
 
 ///|
 pub(open) trait IntoSpriteRingMeshGeometry {
-  fn into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> Mesh2dGeometry
+  fn into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> @mesh.Mesh2dGeometry
 }
 
 ///|
-pub fn mesh2d_geometry_capsule(capsule : Capsule2d) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_capsule(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.capsule_to_mesh2d_geometry(capsule)
 }
 
 ///|
 pub fn mesh2d_geometry_circular_sector(
   sector : CircularSector,
-) -> Mesh2dGeometry {
+) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.circular_sector_to_mesh2d_geometry(sector)
 }
 
 ///|
 pub fn mesh2d_geometry_circular_segment(
   segment : CircularSegment,
-) -> Mesh2dGeometry {
+) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.circular_segment_to_mesh2d_geometry(segment)
 }
 
 ///|
-pub fn mesh2d_geometry_circle(circle : Circle) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_circle(circle : Circle) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.circle_to_mesh2d_geometry(circle)
 }
 
 ///|
-pub fn mesh2d_geometry_ellipse(ellipse : Ellipse) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_ellipse(ellipse : Ellipse) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.ellipse_to_mesh2d_geometry(ellipse)
 }
 
 ///|
-pub fn mesh2d_geometry_annulus(annulus : Annulus) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_annulus(annulus : Annulus) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.annulus_to_mesh2d_geometry(annulus)
 }
 
 ///|
-pub fn mesh2d_geometry_rhombus(rhombus : Rhombus) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_rhombus(rhombus : Rhombus) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.rhombus_to_mesh2d_geometry(rhombus)
 }
 
 ///|
 pub fn mesh2d_geometry_regular_polygon(
   polygon : RegularPolygon,
-) -> Mesh2dGeometry {
+) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.regular_polygon_to_mesh2d_geometry(polygon)
 }
 
 ///|
-pub fn mesh2d_geometry_triangle(triangle : Triangle2d) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_triangle(triangle : Triangle2d) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.triangle_to_mesh2d_geometry(triangle)
 }
 
 ///|
-pub fn mesh2d_geometry_segment(segment : Segment2d) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_segment(segment : Segment2d) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.segment_to_mesh2d_geometry(segment)
 }
 
 ///|
-pub fn mesh2d_geometry_polyline(polyline : Polyline2d) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_polyline(polyline : Polyline2d) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.polyline_to_mesh2d_geometry(polyline)
 }
 
 ///|
-pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> Mesh2dGeometry {
+pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
   @mesh_primitives.rectangle_to_mesh2d_geometry(rectangle)
 }
 
@@ -1194,7 +1194,7 @@ pub fn[S : IntoSpriteMeshAsset] add_mesh(
 }
 
 ///|
-pub impl IntoSpriteMeshAsset for Mesh2dGeometry with fn into_sprite_mesh_asset(
+pub impl IntoSpriteMeshAsset for @mesh.Mesh2dGeometry with fn into_sprite_mesh_asset(
   self,
 ) {
   self.to_mesh()

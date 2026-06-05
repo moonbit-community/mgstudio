@@ -72,7 +72,7 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],

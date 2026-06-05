@@ -798,10 +798,6 @@ pub using @math {type Ellipse}
 
 pub using @math {type Line2d}
 
-pub using @mesh {type Mesh}
-
-pub using @mesh {type Mesh2dGeometry}
-
 pub using @math {type Plane2d}
 
 pub using @math {type Polygon}

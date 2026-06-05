@@ -88,7 +88,7 @@ fn int_to_float(value : Int) -> Float {
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],

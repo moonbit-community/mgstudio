@@ -16,12 +16,6 @@
 pub type Color = @color.Color
 
 ///|
-pub type Mesh = @mesh.Mesh
-
-///|
-pub type Mesh2dGeometry = @mesh.Mesh2dGeometry
-
-///|
 type RenderLayers = @camera_render_layers.RenderLayers
 
 ///|
