@@ -27,7 +27,7 @@ fn pan_camera_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-test "render2d: pan camera default text matches bevy controls" {
+test "camera_controller: pan camera default text matches bevy controls" {
   let text = PanCamera::PanCamera().to_string()
   debug_inspect(text.contains("PanCamera Controls:"), content="true")
   debug_inspect(text.contains("KeyW / KeyS"), content="true")
@@ -35,7 +35,7 @@ test "render2d: pan camera default text matches bevy controls" {
 }
 
 ///|
-test "render2d: pan camera movement normalizes diagonal input" {
+test "camera_controller: pan camera movement normalizes diagonal input" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
   key_input.press(@window.KeyCode::KeyW)
   key_input.press(@window.KeyCode::KeyD)
@@ -54,7 +54,7 @@ test "render2d: pan camera movement normalizes diagonal input" {
 }
 
 ///|
-test "render2d: pan camera rotation and zoom follow controller settings" {
+test "camera_controller: pan camera rotation and zoom follow controller settings" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
   key_input.press(@window.KeyCode::KeyQ)
   key_input.press(@window.KeyCode::Equal)
@@ -82,7 +82,7 @@ test "render2d: pan camera rotation and zoom follow controller settings" {
 }
 
 ///|
-test "render2d: pan camera zoom clamps to configured bounds" {
+test "camera_controller: pan camera zoom clamps to configured bounds" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
   let scroll = @input.AccumulatedMouseScroll::new_with_unit(
     @input.MouseScrollUnit::Line,

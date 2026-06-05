@@ -373,10 +373,6 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_pan_camera),
-    content="false",
-  )
-  debug_inspect(
     ecs_has_non_null_payload(
       world, entity, @camera_camera.ecs_key_render_target,
     ),

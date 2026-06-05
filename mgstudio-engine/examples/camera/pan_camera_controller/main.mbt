@@ -16,7 +16,7 @@
 fn spawn_text(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  camera : @ecs.Query[@ecs.Comp[@sprite.PanCamera], @ecs.All],
+  camera : @ecs.Query[@ecs.Comp[@camera_controller.PanCamera], @ecs.All],
 ) -> Unit {
   guard (camera.single() catch { _ => None }) is Some(controller_comp) else {
     return
@@ -57,7 +57,7 @@ fn setup(
     commands.spawn(
       (
         @camera_components2d.Camera2d::Camera2d(),
-        @sprite.PanCamera::PanCamera(),
+        @camera_controller.PanCamera::PanCamera(),
       ),
     ),
   )

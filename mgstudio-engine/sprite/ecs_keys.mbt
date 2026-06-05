@@ -31,11 +31,6 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
 let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
 
 ///|
-pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_component(
-  debug_name="render2d.pan_camera",
-)
-
-///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
   MeshMaterial2d[ColorMaterial],
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
@@ -67,11 +62,6 @@ pub impl @ecs.Component for SpriteMesh with fn component() {
 ///|
 pub impl @ecs.Component for Anchor with fn component() {
   ecs_key_anchor
-}
-
-///|
-pub impl @ecs.Component for PanCamera with fn component() {
-  ecs_key_pan_camera
 }
 
 ///|
@@ -439,10 +429,10 @@ pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
 
 ///|
 pub let ecs_components : Array[String] = [
-  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "PanCamera",
-  "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
-  "Tonemapping", "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d",
-  "ClearColorConfig", "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
+  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "ScissorRect",
+  "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial", "Tonemapping",
+  "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
+  "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
 ]
 
 ///|
