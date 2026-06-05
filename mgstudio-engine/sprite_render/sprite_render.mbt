@@ -31,7 +31,7 @@ pub type Render2dPlugin = @sprite_render_render.Render2dPlugin
 pub type Render2dEcsPlugin = @sprite_render_render.Render2dEcsPlugin
 
 ///|
-pub type SpriteMeshPlugin = @sprite.SpriteMeshPlugin
+pub type SpriteMeshPlugin = @sprite_render_sprite_mesh.SpriteMeshPlugin
 
 ///|
 pub type Material2dPlugin[M] = @sprite_render_mesh2d_material.Material2dPlugin[

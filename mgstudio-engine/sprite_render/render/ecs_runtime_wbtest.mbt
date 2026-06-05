@@ -904,7 +904,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for @sprite.SpriteMe
 }
 
 ///|
-test "render2d: SpriteMeshPlugin adds quad Mesh2d and @sprite.SpriteMaterial" {
+test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -926,12 +926,14 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and @sprite.SpriteMaterial" {
 
   let world = app.world()
   let material_key : @ecs.ComponentKey[
-    @sprite_render_mesh2d_material.MeshMaterial2d[@sprite.SpriteMaterial],
+    @sprite_render_mesh2d_material.MeshMaterial2d[
+      @sprite_render_sprite_mesh.SpriteMaterial,
+    ],
   ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
   let mesh2d = try! world.get_by_key(entity, @mesh.ecs_key_mesh2d)
   let material = try! world.get_by_key(entity, material_key)
   let material_assets_key : @ecs.ResourceKey[
-    @asset.Assets[@sprite.SpriteMaterial],
+    @asset.Assets[@sprite_render_sprite_mesh.SpriteMaterial],
   ] = @asset.assets_resource_key()
   let material_assets = world.get_resource(material_assets_key).unwrap()
 

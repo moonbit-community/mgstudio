@@ -74,7 +74,7 @@ type RenderMaterial2dInstances[M] = @sprite_render_mesh2d_material.RenderMateria
 type Material2dRuntimeRegistry = @sprite_render_mesh2d_material.Material2dRuntimeRegistry
 
 ///|
-type SpriteMeshPlugin = @sprite.SpriteMeshPlugin
+type SpriteMeshPlugin = @sprite_render_sprite_mesh.SpriteMeshPlugin
 
 ///|
 type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup

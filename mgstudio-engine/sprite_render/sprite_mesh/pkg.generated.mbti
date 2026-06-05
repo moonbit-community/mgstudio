@@ -2,32 +2,53 @@
 package "Milky2018/mgstudio/sprite_render/sprite_mesh"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
-  "Milky2018/mgstudio/sprite_render/render",
+  "Milky2018/mgstudio/sprite_render/mesh2d/material",
 }
 
 // Values
-pub fn render2d_primary_scene_cull_context(@ecs.World) -> @render.SceneCullContext?
-
-pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@render.OverlaySpriteUvScissor]) -> Unit
-
-pub fn render2d_scene_cull_context_values(@render.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
-
-pub fn render2d_scene_item_visible(@render.SceneCullContext, Float, Float, Float) -> Bool
 
 // Errors
 
 // Types and methods
+pub struct SpriteMaterial {
+  image : @asset.Handle[@image.Image]
+  texture_atlas : @asset.TextureAtlas?
+  color : @color.Color
+  flip_x : Bool
+  flip_y : Bool
+  custom_size : @math.Vec2?
+  rect : @math.Rect?
+  image_mode : @sprite.SpriteImageMode
+  alpha_mode : @material.AlphaMode2d
+  anchor : @math.Vec2
+  texture_atlas_layout : @asset.TextureAtlasLayout?
+  texture_atlas_index : Int
+}
+pub fn SpriteMaterial::SpriteMaterial() -> Self
+pub fn SpriteMaterial::from_sprite_mesh(@sprite.SpriteMesh) -> Self
+pub fn SpriteMaterial::with_anchor(Self, @math.Vec2) -> Self
+pub fn SpriteMaterial::with_texture_atlas_layout(Self, @asset.TextureAtlasLayout?, Int) -> Self
+pub impl @asset.Asset for SpriteMaterial
+pub impl @material.Material2d for SpriteMaterial
+
+pub struct SpriteMaterialPlugin {
+}
+pub fn SpriteMaterialPlugin::SpriteMaterialPlugin() -> Self
+pub impl @app.Plugin for SpriteMaterialPlugin
+
+pub struct SpriteMeshPlugin {
+}
+pub fn SpriteMeshPlugin::SpriteMeshPlugin() -> Self
+pub impl @app.Plugin for SpriteMeshPlugin
 
 // Type aliases
-pub using @sprite {type BorderRect}
-
-pub using @render {type OverlaySpriteUvScissor}
-
-pub using @render {type SceneCullContext}
-
-pub using @render {type UiCornerRadii}
 
 // Traits
 

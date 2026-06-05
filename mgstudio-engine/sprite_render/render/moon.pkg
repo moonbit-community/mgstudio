@@ -25,6 +25,7 @@ import {
   "Milky2018/mgstudio/sprite_render/mesh2d/runtime" @sprite_render_mesh2d_runtime,
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d" @sprite_render_mesh2d_wireframe2d,
   "Milky2018/mgstudio/sprite_render/schedule" @sprite_render_schedule,
+  "Milky2018/mgstudio/sprite_render/sprite_mesh" @sprite_render_sprite_mesh,
   "Milky2018/mgstudio/sprite_render/tilemap_chunk" @sprite_tilemap_chunk,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/time",

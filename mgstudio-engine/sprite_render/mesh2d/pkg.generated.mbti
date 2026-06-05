@@ -50,6 +50,8 @@ pub using @mesh {type Mesh2d}
 
 pub using @runtime {type Mesh2dDrawPayload}
 
+pub using @wireframe2d {type Mesh2dWireframe}
+
 pub using @material {type MeshMaterial2d}
 
 pub using @wireframe2d {type NoWireframe2d}
@@ -61,6 +63,10 @@ pub using @wireframe2d {type Wireframe2d}
 pub using @wireframe2d {type Wireframe2dColor}
 
 pub using @wireframe2d {type Wireframe2dConfig}
+
+pub using @wireframe2d {type Wireframe2dMaterial}
+
+pub using @wireframe2d {type Wireframe2dPlugin}
 
 // Traits
 

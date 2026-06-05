@@ -18,6 +18,7 @@ import {
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
   "Milky2018/mgstudio/sprite_render/render",
+  "Milky2018/mgstudio/sprite_render/sprite_mesh",
   "Milky2018/mgstudio/sprite_render/tilemap_chunk",
   "Milky2018/mgstudio/transform",
 }
@@ -162,7 +163,7 @@ pub using @render {type Render2dPlugin}
 
 pub using @render {type SceneCullContext}
 
-pub using @sprite {type SpriteMeshPlugin}
+pub using @sprite_mesh {type SpriteMeshPlugin}
 
 pub using @tilemap_chunk {type TileData}
 
