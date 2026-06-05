@@ -1853,15 +1853,24 @@ fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
   pass.set_bind_group(1U, instance_uniform_bg, [uniform_dynamic_offset])
   pass.set_bind_group(2U, material_bg, [])
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
-  gpu_mesh_bind_index_buffer(pass, mesh)
   render_diagnostics_record_mesh2d_executed_draw()
-  pass.draw_indexed(
-    mesh.index_count,
-    backend.mesh2d_batch_instance_count,
-    mesh.index_start,
-    mesh.vertex_start.reinterpret_as_int(),
-    0U,
-  )
+  if mesh.index_count > 0U {
+    gpu_mesh_bind_index_buffer(pass, mesh)
+    pass.draw_indexed(
+      mesh.index_count,
+      backend.mesh2d_batch_instance_count,
+      mesh.index_start,
+      mesh.vertex_start.reinterpret_as_int(),
+      0U,
+    )
+  } else {
+    pass.draw(
+      mesh.vertex_count,
+      backend.mesh2d_batch_instance_count,
+      mesh.vertex_start,
+      0U,
+    )
+  }
   mesh2d_reset_pending_batch(backend)
 }
 

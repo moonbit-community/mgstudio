@@ -146,53 +146,47 @@ fn setup(
       .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     ),
   )
+  let circle_mesh = meshes.modify(fn(mesh_assets) {
+    mesh_assets.add(
+      @mesh_primitives.circle_to_mesh2d_geometry(@math.Circle::new(100.0F)).to_mesh(),
+    )
+  })
+  let circle_material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+        @color.Color::srgb(7.5F, 0.0F, 7.5F),
+      ),
+    )
+  })
   ignore(
     commands.spawn(
       (
-        @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.circle_to_mesh2d_geometry(
-              @math.Circle::new(100.0F),
-            ).to_mesh(),
-          ),
-        ),
-        @sprite_render_mesh2d_material.MeshMaterial2d::new(
-          materials
-          .peek()
-          .add(
-            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @color.Color::srgb(7.5F, 0.0F, 7.5F),
-            ),
-          ),
-        ),
+        @mesh.Mesh2d::new(circle_mesh),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(circle_material),
         @transform.Transform::from_xyz(-200.0F, 0.0F, 0.0F),
       ),
     ),
   )
 
+  let hex_mesh = meshes.modify(fn(mesh_assets) {
+    mesh_assets.add(
+      @mesh_primitives.regular_polygon_to_mesh2d_geometry(
+        @math.RegularPolygon::new(100.0F, 6),
+      ).to_mesh(),
+    )
+  })
+  let hex_material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
+        @color.Color::srgb(6.25F, 9.4F, 9.1F),
+      ),
+    )
+  })
   ignore(
     commands.spawn(
       (
-        @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.regular_polygon_to_mesh2d_geometry(
-              @math.RegularPolygon::new(100.0F, 6),
-            ).to_mesh(),
-          ),
-        ),
-        @sprite_render_mesh2d_material.MeshMaterial2d::new(
-          materials
-          .peek()
-          .add(
-            @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @color.Color::srgb(6.25F, 9.4F, 9.1F),
-            ),
-          ),
-        ),
+        @mesh.Mesh2d::new(hex_mesh),
+        @sprite_render_mesh2d_material.MeshMaterial2d::new(hex_material),
         @transform.Transform::from_xyz(200.0F, 0.0F, 0.0F),
       ),
     ),
