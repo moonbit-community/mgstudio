@@ -351,7 +351,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
 fn move_player(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
   player_query : @ecs.Query[
-    (@ecs.Comp[CameraSensitivity], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[CameraSensitivity], @ecs.Write[@transform.Transform]),
     @ecs.With[Player],
   ],
 ) -> Unit {
@@ -386,7 +386,7 @@ fn move_player(
 fn change_fov(
   input : @input.ButtonInput[@window.KeyCode],
   world_model_projection_query : @ecs.Query[
-    @ecs.Mut[@camera.Projection],
+    @ecs.Write[@camera.Projection],
     @ecs.With[WorldModelCamera],
   ],
 ) -> Unit {

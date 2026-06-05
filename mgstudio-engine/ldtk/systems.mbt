@@ -257,7 +257,7 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   if changed_handles.is_empty() {
     return
   }
-  let query : @ecs.Query[@ecs.Comp[LdtkProjectHandle], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[LdtkProjectHandle], @ecs.All] = @ecs.query(
     world,
   )
   let respawn_entities : Array[@core.Entity] = []
@@ -287,7 +287,7 @@ pub fn apply_level_selection(world : @ecs.World) -> Unit {
     return
   }
   let query : @ecs.Query[
-    (@ecs.Comp[LdtkProjectHandle], @ecs.Mut[LevelSet]),
+    (@ecs.Read[LdtkProjectHandle], @ecs.Write[LevelSet]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(_entity, data) {
@@ -328,7 +328,7 @@ pub fn apply_level_set(world : @ecs.World) -> Unit {
   }
   let blob_assets = ldtk_blob_assets_or_empty(world)
   let query : @ecs.Query[
-    (@ecs.Comp[LdtkProjectHandle], @ecs.Comp[LevelSet]),
+    (@ecs.Read[LdtkProjectHandle], @ecs.Read[LevelSet]),
     @ecs.All,
   ] = @ecs.query(world)
   let level_set_entries : Array[(@core.Entity, LdtkProjectHandle, LevelSet)] = []
@@ -354,7 +354,7 @@ pub fn apply_level_set(world : @ecs.World) -> Unit {
 ///|
 pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
   let worlds_query : @ecs.Query[
-    @ecs.Comp[@hierarchy.Children],
+    @ecs.Read[@hierarchy.Children],
     (@ecs.With[LdtkProjectHandle], @ecs.With[Respawn]),
   ] = @ecs.query_filtered(
     world,
@@ -382,7 +382,7 @@ pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
   })
 
   let levels_query : @ecs.Query[
-    (@ecs.Comp[LevelIid], @ecs.Comp[@hierarchy.Children]),
+    (@ecs.Read[LevelIid], @ecs.Read[@hierarchy.Children]),
     @ecs.With[Respawn],
   ] = @ecs.query_filtered(world, @ecs.With::new(ecs_key_respawn))
   try! levels_query.view(fn(_level_entity, data) {
@@ -414,7 +414,7 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
   let blob_assets = ldtk_blob_assets_or_empty(world)
   let asset_server = ldtk_asset_server_or_default(world)
   let query : @ecs.Query[
-    (@ecs.Comp[LevelIid], @ecs.Comp[@hierarchy.Parent], @ecs.Comp[Respawn]),
+    (@ecs.Read[LevelIid], @ecs.Read[@hierarchy.Parent], @ecs.Read[Respawn]),
     @ecs.All,
   ] = @ecs.query(world)
   let respawn_levels : Array[(@core.Entity, LevelIid, @core.Entity)] = []
@@ -497,7 +497,7 @@ pub fn fire_level_transformed_events(
 
 ///|
 pub fn worldly_adoption(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[@ecs.Comp[Worldly], @ecs.Added[Worldly]] = @ecs.query_filtered(
+  let query : @ecs.Query[@ecs.Read[Worldly], @ecs.Added[Worldly]] = @ecs.query_filtered(
     world,
     @ecs.Added::new(ecs_key_worldly),
   )

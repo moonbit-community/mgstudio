@@ -31,12 +31,12 @@ pub fn AnimationNodeIndex::index(self : AnimationNodeIndex) -> Int {
 }
 
 ///|
-pub impl ToJson for AnimationNodeIndex with to_json(self) {
+pub impl ToJson for AnimationNodeIndex with fn to_json(self) {
   self.index.to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationNodeIndex with from_json(json, path) {
+pub impl @json.FromJson for AnimationNodeIndex with fn from_json(json, path) {
   AnimationNodeIndex::new(@json.from_json(json, path~))
 }
 
@@ -135,12 +135,12 @@ pub struct AnimationGraph {
 }
 
 ///|
-pub impl @asset.Asset for AnimationGraph with asset_debug_name() {
+pub impl @asset.Asset for AnimationGraph with fn asset_debug_name() {
   "mgstudio_animation::AnimationGraph"
 }
 
 ///|
-pub impl @asset.Asset for AnimationGraph with asset_as_image(_self) {
+pub impl @asset.Asset for AnimationGraph with fn asset_as_image(_self) {
   None
 }
 
@@ -150,7 +150,7 @@ let animation_graph_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(AnimationGraph::asset_debug_name())
 
 ///|
-pub impl @asset.Asset for AnimationGraph with asset_resource_keys() {
+pub impl @asset.Asset for AnimationGraph with fn asset_resource_keys() {
   animation_graph_asset_resource_keys
 }
 
@@ -676,7 +676,7 @@ let threaded_animation_graphs_key : @ecs.ResourceKey[ThreadedAnimationGraphs] = 
 )
 
 ///|
-impl @app.Resource for ThreadedAnimationGraphs with resource() {
+impl @app.Resource for ThreadedAnimationGraphs with fn resource() {
   threaded_animation_graphs_key
 }
 
@@ -810,12 +810,12 @@ pub struct AnimationGraphHandle {
 }
 
 ///|
-pub impl ToJson for AnimationGraphHandle with to_json(self) {
+pub impl ToJson for AnimationGraphHandle with fn to_json(self) {
   self.graph.to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationGraphHandle with from_json(json, path) {
+pub impl @json.FromJson for AnimationGraphHandle with fn from_json(json, path) {
   AnimationGraphHandle::new(@json.from_json(json, path~))
 }
 

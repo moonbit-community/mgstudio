@@ -64,12 +64,12 @@ pub fn visibility_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for VisibilityPlugin with name(_self) {
+pub impl @app.Plugin for VisibilityPlugin with fn name(_self) {
   VISIBILITY_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for VisibilityPlugin with build(self, app) {
+pub impl @app.Plugin for VisibilityPlugin with fn build(self, app) {
   visibility_plugin_with(app, self)
 }
 

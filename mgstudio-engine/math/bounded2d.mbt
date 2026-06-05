@@ -330,137 +330,137 @@ pub fn BoundingCircle::intersects_aabb(
 }
 
 ///|
-pub impl Bounded2d for Circle with aabb_2d(self, isometry) {
+pub impl Bounded2d for Circle with fn aabb_2d(self, isometry) {
   Aabb2d::new(isometry.translation, Vec2::new(self.radius, self.radius))
 }
 
 ///|
-pub impl Bounded2d for Circle with bounding_circle(self, isometry) {
+pub impl Bounded2d for Circle with fn bounding_circle(self, isometry) {
   BoundingCircle::new(isometry.translation, self.radius)
 }
 
 ///|
-pub impl Bounded2d for Rectangle with aabb_2d(self, isometry) {
+pub impl Bounded2d for Rectangle with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_rectangle_points(self))
 }
 
 ///|
-pub impl Bounded2d for Rectangle with bounding_circle(self, isometry) {
+pub impl Bounded2d for Rectangle with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_rectangle_points(self))
 }
 
 ///|
-pub impl Bounded2d for Triangle2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Triangle2d with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, [self.a, self.b, self.c])
 }
 
 ///|
-pub impl Bounded2d for Triangle2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Triangle2d with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, [self.a, self.b, self.c])
 }
 
 ///|
-pub impl Bounded2d for Segment2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Segment2d with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, [self.start, self.end])
 }
 
 ///|
-pub impl Bounded2d for Segment2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Segment2d with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, [self.start, self.end])
 }
 
 ///|
-pub impl Bounded2d for Capsule2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Capsule2d with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_capsule_points(self))
 }
 
 ///|
-pub impl Bounded2d for Capsule2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Capsule2d with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_capsule_points(self))
 }
 
 ///|
-pub impl Bounded2d for RegularPolygon with aabb_2d(self, isometry) {
+pub impl Bounded2d for RegularPolygon with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_polygon_points(self))
 }
 
 ///|
-pub impl Bounded2d for RegularPolygon with bounding_circle(self, isometry) {
+pub impl Bounded2d for RegularPolygon with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_polygon_points(self))
 }
 
 ///|
-pub impl Bounded2d for Polyline2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Polyline2d with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, self.points)
 }
 
 ///|
-pub impl Bounded2d for Polyline2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Polyline2d with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, self.points)
 }
 
 ///|
-pub impl Bounded2d for Polygon with aabb_2d(self, isometry) {
+pub impl Bounded2d for Polygon with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded2d for Polygon with bounding_circle(self, isometry) {
+pub impl Bounded2d for Polygon with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded2d for ConvexPolygon with aabb_2d(self, isometry) {
+pub impl Bounded2d for ConvexPolygon with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded2d for ConvexPolygon with bounding_circle(self, isometry) {
+pub impl Bounded2d for ConvexPolygon with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded2d for Arc2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Arc2d with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_arc_points(self))
 }
 
 ///|
-pub impl Bounded2d for Arc2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Arc2d with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_arc_points(self))
 }
 
 ///|
-pub impl Bounded2d for CircularSector with aabb_2d(self, isometry) {
+pub impl Bounded2d for CircularSector with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_sector_points(self))
 }
 
 ///|
-pub impl Bounded2d for CircularSector with bounding_circle(self, isometry) {
+pub impl Bounded2d for CircularSector with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_sector_points(self))
 }
 
 ///|
-pub impl Bounded2d for CircularSegment with aabb_2d(self, isometry) {
+pub impl Bounded2d for CircularSegment with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_segment_points(self))
 }
 
 ///|
-pub impl Bounded2d for CircularSegment with bounding_circle(self, isometry) {
+pub impl Bounded2d for CircularSegment with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_segment_points(self))
 }
 
 ///|
-pub impl Bounded2d for Ellipse with aabb_2d(self, isometry) {
+pub impl Bounded2d for Ellipse with fn aabb_2d(self, isometry) {
   Aabb2d::from_point_cloud(isometry, bounded_ellipse_points(self))
 }
 
 ///|
-pub impl Bounded2d for Ellipse with bounding_circle(self, isometry) {
+pub impl Bounded2d for Ellipse with fn bounding_circle(self, isometry) {
   BoundingCircle::from_point_cloud(isometry, bounded_ellipse_points(self))
 }
 
 ///|
-pub impl Bounded2d for Annulus with aabb_2d(self, isometry) {
+pub impl Bounded2d for Annulus with fn aabb_2d(self, isometry) {
   Aabb2d::new(
     isometry.translation,
     Vec2::new(self.outer_radius, self.outer_radius),
@@ -468,12 +468,12 @@ pub impl Bounded2d for Annulus with aabb_2d(self, isometry) {
 }
 
 ///|
-pub impl Bounded2d for Annulus with bounding_circle(self, isometry) {
+pub impl Bounded2d for Annulus with fn bounding_circle(self, isometry) {
   BoundingCircle::new(isometry.translation, self.outer_radius)
 }
 
 ///|
-pub impl Bounded2d for Rhombus with aabb_2d(self, isometry) {
+pub impl Bounded2d for Rhombus with fn aabb_2d(self, isometry) {
   let points = [
     Vec2::new(self.half_diagonal.x, 0.0F),
     Vec2::new(0.0F, self.half_diagonal.y),
@@ -484,7 +484,7 @@ pub impl Bounded2d for Rhombus with aabb_2d(self, isometry) {
 }
 
 ///|
-pub impl Bounded2d for Rhombus with bounding_circle(self, isometry) {
+pub impl Bounded2d for Rhombus with fn bounding_circle(self, isometry) {
   let radius = sqrt(
     self.half_diagonal.x * self.half_diagonal.x +
     self.half_diagonal.y * self.half_diagonal.y,
@@ -493,7 +493,7 @@ pub impl Bounded2d for Rhombus with bounding_circle(self, isometry) {
 }
 
 ///|
-pub impl Bounded2d for Line2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Line2d with fn aabb_2d(self, isometry) {
   let direction = isometry.rotation.mul_vec2(self.direction.as_vec2())
   let max_value = 1.0e12F
   let half_size = Vec2::new(
@@ -512,13 +512,13 @@ pub impl Bounded2d for Line2d with aabb_2d(self, isometry) {
 }
 
 ///|
-pub impl Bounded2d for Line2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Line2d with fn bounding_circle(self, isometry) {
   ignore(self)
   BoundingCircle::new(isometry.translation, 1.0e12F)
 }
 
 ///|
-pub impl Bounded2d for Plane2d with aabb_2d(self, isometry) {
+pub impl Bounded2d for Plane2d with fn aabb_2d(self, isometry) {
   let normal = isometry.rotation.mul_vec2(self.normal.as_vec2())
   let max_value = 1.0e12F
   let half_size = Vec2::new(
@@ -537,7 +537,7 @@ pub impl Bounded2d for Plane2d with aabb_2d(self, isometry) {
 }
 
 ///|
-pub impl Bounded2d for Plane2d with bounding_circle(self, isometry) {
+pub impl Bounded2d for Plane2d with fn bounding_circle(self, isometry) {
   ignore(self)
   BoundingCircle::new(isometry.translation, 1.0e12F)
 }

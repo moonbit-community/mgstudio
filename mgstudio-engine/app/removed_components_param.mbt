@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with init_state(
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with fn init_state(
   world,
 ) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with get(
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with fn get(
   _state,
 ) {
   let world = system_param_abort_missing_world()
@@ -29,7 +29,7 @@ pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with get(
 }
 
 ///|
-pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with store(
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with fn store(
   self,
   state,
 ) {
@@ -37,7 +37,7 @@ pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with stor
 }
 
 ///|
-pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with access(
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with fn access(
   _world,
 ) {
   SystemAccess::new()

@@ -40,17 +40,17 @@ pub fn Virtual::Virtual() -> Virtual {
 }
 
 ///|
-pub impl Default for Virtual with default() {
+pub impl Default for Virtual with fn default() {
   Virtual::Virtual()
 }
 
 ///|
-pub impl TimeContext for Virtual with time_context_debug_name() {
+pub impl TimeContext for Virtual with fn time_context_debug_name() {
   "mgstudio_time::Virtual"
 }
 
 ///|
-pub impl TimeContext for Virtual with time_resource_key() {
+pub impl TimeContext for Virtual with fn time_resource_key() {
   virtual_time_resource_key
 }
 

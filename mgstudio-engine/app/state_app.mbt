@@ -43,12 +43,12 @@ fn require_states_plugin_installed(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl Plugin for StatesPlugin with name(_self) {
+pub impl Plugin for StatesPlugin with fn name(_self) {
   "mgstudio.app.StatesPlugin"
 }
 
 ///|
-pub impl Plugin for StatesPlugin with build(_self, app) {
+pub impl Plugin for StatesPlugin with fn build(_self, app) {
   main_schedule_insert_after_unique(app.world(), PreUpdate, StateTransition)
   main_schedule_insert_startup_before_unique(
     app.world(),

@@ -36,12 +36,12 @@ pub fn RenderAssetDiagnosticPlugin::RenderAssetDiagnosticPlugin() -> RenderAsset
 }
 
 ///|
-pub impl @app.Plugin for RenderAssetDiagnosticPlugin with name(_self) {
+pub impl @app.Plugin for RenderAssetDiagnosticPlugin with fn name(_self) {
   RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for RenderAssetDiagnosticPlugin with build(self, app) {
+pub impl @app.Plugin for RenderAssetDiagnosticPlugin with fn build(self, app) {
   render_asset_diagnostic_plugin_with(app, self)
 }
 
@@ -66,7 +66,7 @@ let render_asset_diagnostic_state_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for RenderAssetDiagnosticState with resource() {
+pub impl @app.Resource for RenderAssetDiagnosticState with fn resource() {
   render_asset_diagnostic_state_key
 }
 

@@ -47,7 +47,7 @@ let hot_patch_changes_key : @ecs.ResourceKey[HotPatchChanges] = @ecs.register_re
 )
 
 ///|
-pub impl Resource for HotPatchChanges with resource() {
+pub impl Resource for HotPatchChanges with fn resource() {
   hot_patch_changes_key
 }
 
@@ -57,7 +57,7 @@ let hot_patched_message_key : @ecs.MessageKey[HotPatched] = @ecs.register_messag
 )
 
 ///|
-pub impl @ecs.Message for HotPatched with message() {
+pub impl @ecs.Message for HotPatched with fn message() {
   hot_patched_message_key
 }
 

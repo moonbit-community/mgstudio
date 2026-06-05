@@ -95,7 +95,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn animate_cells(
   time : @app.Res[@time.Time[Unit]],
   cells : @ecs.Query[
-    (@ecs.Comp[GradientCell], @ecs.Mut[@ui.BackgroundColor]),
+    (@ecs.Read[GradientCell], @ecs.Write[@ui.BackgroundColor]),
     @ecs.All,
   ],
 ) -> Unit {

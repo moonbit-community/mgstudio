@@ -151,7 +151,7 @@ fn setup(
 fn rotate_cameras(
   time : @app.Res[@time.Time[Unit]],
   cameras : @ecs.Query[
-    (@ecs.Mut[OrbitCamera], @ecs.Mut[@transform.Transform]),
+    (@ecs.Write[OrbitCamera], @ecs.Write[@transform.Transform]),
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {

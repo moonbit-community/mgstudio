@@ -37,12 +37,12 @@ pub fn occlusion_culling_plugin(
 }
 
 ///|
-pub impl @app.Plugin for OcclusionCullingPlugin with name(_self) {
+pub impl @app.Plugin for OcclusionCullingPlugin with fn name(_self) {
   OCCLUSION_CULLING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for OcclusionCullingPlugin with build(self, app) {
+pub impl @app.Plugin for OcclusionCullingPlugin with fn build(self, app) {
   occlusion_culling_plugin_with(app, self)
 }
 
@@ -70,7 +70,7 @@ pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.r
 )
 
 ///|
-pub impl @ecs.Component for OcclusionCulling with component() {
+pub impl @ecs.Component for OcclusionCulling with fn component() {
   ecs_key_occlusion_culling
 }
 

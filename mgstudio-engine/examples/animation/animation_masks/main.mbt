@@ -685,7 +685,7 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
   }
 
   let players : @ecs.Query[
-    (@core.Entity, @ecs.Mut[@animation.AnimationPlayer]),
+    (@core.Entity, @ecs.Write[@animation.AnimationPlayer]),
     @ecs.All,
   ] = @ecs.query(world)
   guard (players.single() catch { _ => None })
@@ -705,7 +705,7 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
   )
 
   let targets : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@animation.AnimationTargetId]),
+    (@core.Entity, @ecs.Read[@animation.AnimationTargetId]),
     @ecs.All,
   ] = @ecs.query(world)
   let targets_to_strip : Array[@core.Entity] = []
@@ -762,7 +762,7 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
   let next_pressed : Array[@core.Entity] = []
   let mut graph_changed = false
   let controls : @ecs.Query[
-    (@ecs.Comp[@ui.Interaction], @ecs.Comp[AnimationControl]),
+    (@ecs.Read[@ui.Interaction], @ecs.Read[AnimationControl]),
     @ecs.All,
   ] = @ecs.query(world)
   try! controls.view(fn(entity, pair) {
@@ -804,7 +804,7 @@ fn update_ui(world : @ecs.World) -> Unit {
     return
   }
   let controls : @ecs.Query[
-    (@ecs.Comp[AnimationControl], @ecs.Mut[@ui.BackgroundColor]),
+    (@ecs.Read[AnimationControl], @ecs.Write[@ui.BackgroundColor]),
     @ecs.All,
   ] = @ecs.query(world)
   try! controls.view(fn(_entity, pair) {

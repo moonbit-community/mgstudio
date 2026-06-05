@@ -224,77 +224,77 @@ pub fn ForwardDecalMaterialExtension::ext(
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with extension_tag(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn extension_tag(
   _self,
 ) {
   1
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with vertex_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn vertex_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with fragment_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn fragment_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with prepass_vertex_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn prepass_vertex_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with prepass_fragment_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn prepass_fragment_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with deferred_vertex_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn deferred_vertex_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with deferred_fragment_shader(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn deferred_fragment_shader(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with alpha_mode(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn alpha_mode(
   _self,
 ) {
   None
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with opaque_render_method(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn opaque_render_method(
   _self,
 ) {
   Some(@material.OpaqueRendererMethod::Forward)
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with enable_prepass(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn enable_prepass(
   _self,
 ) {
   true
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with enable_shadows(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn enable_shadows(
   _self,
 ) {
   false

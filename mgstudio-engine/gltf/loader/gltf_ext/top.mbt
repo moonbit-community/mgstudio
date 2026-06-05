@@ -100,7 +100,7 @@ let gltf_extras_component_key : @ecs.ComponentKey[GltfExtras] = @ecs.register_co
 )
 
 ///|
-pub impl @ecs.Component for GltfExtras with component() {
+pub impl @ecs.Component for GltfExtras with fn component() {
   gltf_extras_component_key
 }
 
@@ -125,7 +125,7 @@ let gltf_scene_extras_component_key : @ecs.ComponentKey[GltfSceneExtras] = @ecs.
 )
 
 ///|
-pub impl @ecs.Component for GltfSceneExtras with component() {
+pub impl @ecs.Component for GltfSceneExtras with fn component() {
   gltf_scene_extras_component_key
 }
 
@@ -150,7 +150,7 @@ let gltf_mesh_extras_component_key : @ecs.ComponentKey[GltfMeshExtras] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for GltfMeshExtras with component() {
+pub impl @ecs.Component for GltfMeshExtras with fn component() {
   gltf_mesh_extras_component_key
 }
 
@@ -175,7 +175,7 @@ let gltf_material_extras_component_key : @ecs.ComponentKey[GltfMaterialExtras] =
 )
 
 ///|
-pub impl @ecs.Component for GltfMaterialExtras with component() {
+pub impl @ecs.Component for GltfMaterialExtras with fn component() {
   gltf_material_extras_component_key
 }
 
@@ -200,7 +200,7 @@ let gltf_material_name_component_key : @ecs.ComponentKey[GltfMaterialName] = @ec
 )
 
 ///|
-pub impl @ecs.Component for GltfMaterialName with component() {
+pub impl @ecs.Component for GltfMaterialName with fn component() {
   gltf_material_name_component_key
 }
 
@@ -225,7 +225,7 @@ let gltf_scene_index_component_key : @ecs.ComponentKey[GltfSceneIndex] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for GltfSceneIndex with component() {
+pub impl @ecs.Component for GltfSceneIndex with fn component() {
   gltf_scene_index_component_key
 }
 
@@ -250,7 +250,7 @@ let gltf_node_index_component_key : @ecs.ComponentKey[GltfNodeIndex] = @ecs.regi
 )
 
 ///|
-pub impl @ecs.Component for GltfNodeIndex with component() {
+pub impl @ecs.Component for GltfNodeIndex with fn component() {
   gltf_node_index_component_key
 }
 
@@ -275,7 +275,7 @@ let gltf_mesh_index_component_key : @ecs.ComponentKey[GltfMeshIndex] = @ecs.regi
 )
 
 ///|
-pub impl @ecs.Component for GltfMeshIndex with component() {
+pub impl @ecs.Component for GltfMeshIndex with fn component() {
   gltf_mesh_index_component_key
 }
 
@@ -301,7 +301,7 @@ let gltf_primitive_index_component_key : @ecs.ComponentKey[GltfPrimitiveIndex] =
 )
 
 ///|
-pub impl @ecs.Component for GltfPrimitiveIndex with component() {
+pub impl @ecs.Component for GltfPrimitiveIndex with fn component() {
   gltf_primitive_index_component_key
 }
 
@@ -339,12 +339,12 @@ pub fn GltfSkinIndex::index(self : GltfSkinIndex) -> Int {
 }
 
 ///|
-pub impl ToJson for GltfSkinIndex with to_json(self) {
+pub impl ToJson for GltfSkinIndex with fn to_json(self) {
   self.index.to_json()
 }
 
 ///|
-pub impl @json.FromJson for GltfSkinIndex with from_json(json, path) {
+pub impl @json.FromJson for GltfSkinIndex with fn from_json(json, path) {
   GltfSkinIndex::new(@json.from_json(json, path~))
 }
 
@@ -354,7 +354,7 @@ let ecs_key_gltf_skin_index : @ecs.ComponentKey[GltfSkinIndex] = @ecs.register_c
 )
 
 ///|
-pub impl @ecs.Component for GltfSkinIndex with component() {
+pub impl @ecs.Component for GltfSkinIndex with fn component() {
   ecs_key_gltf_skin_index
 }
 

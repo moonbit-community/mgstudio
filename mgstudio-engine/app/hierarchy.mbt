@@ -107,7 +107,7 @@ pub fn[C : ValidateParentHasComponentTarget] check_parent_has_component_message_
 ///|
 pub impl[C : ValidateParentHasComponentTarget] @ecs.Message for CheckParentHasComponent[
   C,
-] with message() {
+] with fn message() {
   C::validate_parent_has_component_keys().message
 }
 
@@ -221,7 +221,7 @@ fn[C] check_parent_has_component(
 ///|
 pub impl[C : @ecs.Component + ValidateParentHasComponentTarget] Plugin for ValidateParentHasComponentPlugin[
   C,
-] with build(self, app) {
+] with fn build(self, app) {
   let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
   let component_name = component_debug_name(component_key)
   let message_key = check_parent_has_component_message_key(component_key)
@@ -247,7 +247,7 @@ pub impl[C : @ecs.Component + ValidateParentHasComponentTarget] Plugin for Valid
 ///|
 pub impl[C : @ecs.Component + ValidateParentHasComponentTarget] Plugin for ValidateParentHasComponentPlugin[
   C,
-] with name(_self) {
+] with fn name(_self) {
   let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
   "mgstudio.app.ValidateParentHasComponentPlugin<\{component_key.debug_name()}>"
 }

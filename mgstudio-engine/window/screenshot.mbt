@@ -93,22 +93,22 @@ pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured] = @e
 )
 
 ///|
-pub impl @ecs.Component for Screenshot with component() {
+pub impl @ecs.Component for Screenshot with fn component() {
   ecs_key_screenshot
 }
 
 ///|
-pub impl @ecs.Component for Capturing with component() {
+pub impl @ecs.Component for Capturing with fn component() {
   ecs_key_capturing
 }
 
 ///|
-pub impl @ecs.Component for Captured with component() {
+pub impl @ecs.Component for Captured with fn component() {
   ecs_key_captured
 }
 
 ///|
-pub impl @ecs.Component for ScreenshotCaptured with component() {
+pub impl @ecs.Component for ScreenshotCaptured with fn component() {
   ecs_key_screenshot_captured
 }
 

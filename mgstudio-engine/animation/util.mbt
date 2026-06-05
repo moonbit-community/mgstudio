@@ -432,12 +432,12 @@ pub fn AnimationTargetId::new(high : Int, low : Int) -> AnimationTargetId {
 }
 
 ///|
-pub impl ToJson for AnimationTargetId with to_json(self) {
+pub impl ToJson for AnimationTargetId with fn to_json(self) {
   (self.high, self.low).to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationTargetId with from_json(json, path) {
+pub impl @json.FromJson for AnimationTargetId with fn from_json(json, path) {
   let (high, low) : (Int, Int) = @json.from_json(json, path~)
   AnimationTargetId::new(high, low)
 }

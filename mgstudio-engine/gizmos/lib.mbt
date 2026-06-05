@@ -90,12 +90,12 @@ pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for GizmoPlugin with name(_self) {
+pub impl @app.Plugin for GizmoPlugin with fn name(_self) {
   GIZMO_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for GizmoPlugin with build(self, app) {
+pub impl @app.Plugin for GizmoPlugin with fn build(self, app) {
   gizmo_plugin_with(app, self)
 }
 

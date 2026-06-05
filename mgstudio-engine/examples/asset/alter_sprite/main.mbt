@@ -132,7 +132,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
 fn alter_handle(
   asset_server : @app.Res[@asset.AssetServer],
   right_bird : @ecs.Query[
-    (@ecs.Mut[Bird], @ecs.Mut[@sprite.Sprite]),
+    (@ecs.Write[Bird], @ecs.Write[@sprite.Sprite]),
     @ecs.Without[Left],
   ],
 ) -> Unit {
@@ -160,7 +160,7 @@ fn invert_pixels(pixels : Bytes) -> Bytes {
 ///|
 fn alter_asset(
   images : @app.ResMut[@asset.Assets[@asset.Image]],
-  left_bird : @ecs.Query[@ecs.Comp[@sprite.Sprite], @ecs.With[Left]],
+  left_bird : @ecs.Query[@ecs.Read[@sprite.Sprite], @ecs.With[Left]],
 ) -> Unit {
   guard (left_bird.single() catch { _ => None }) is Some(sprite_comp) else {
     return

@@ -67,6 +67,6 @@ pub let ecs_key_msaa_writeback : @ecs.ComponentKey[MsaaWriteback] = @ecs.registe
 )
 
 ///|
-pub impl @ecs.Component for MsaaWriteback with component() {
+pub impl @ecs.Component for MsaaWriteback with fn component() {
   ecs_key_msaa_writeback
 }

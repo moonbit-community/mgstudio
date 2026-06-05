@@ -200,12 +200,12 @@ pub fn AssetPath::with_label(self : AssetPath, label : String?) -> AssetPath {
 }
 
 ///|
-pub impl IntoAssetPath for String with into_asset_path(self) {
+pub impl IntoAssetPath for String with fn into_asset_path(self) {
   asset_parse_path(self)
 }
 
 ///|
-pub impl IntoAssetPath for AssetPath with into_asset_path(self) {
+pub impl IntoAssetPath for AssetPath with fn into_asset_path(self) {
   self
 }
 

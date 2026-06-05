@@ -86,7 +86,7 @@ let ui_serde_runtime_state : UiSerdeRuntimeState = { context_next_id: 1 }
 let ui_context_serde_values : Map[Int, UiContext] = {}
 
 ///|
-pub impl ToJson for UiContext with to_json(self) {
+pub impl ToJson for UiContext with fn to_json(self) {
   let id = ui_serde_runtime_state.context_next_id
   ui_serde_runtime_state.context_next_id = id + 1
   ui_context_serde_values.set(id, self)
@@ -94,7 +94,7 @@ pub impl ToJson for UiContext with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for UiContext with from_json(json, path) {
+pub impl @json.FromJson for UiContext with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   ui_context_serde_values.get(id).unwrap_or(UiContext::UiContext())
 }

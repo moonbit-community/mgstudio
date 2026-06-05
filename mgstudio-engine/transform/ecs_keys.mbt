@@ -18,7 +18,7 @@ pub let ecs_key_transform : @ecs.ComponentKey[Transform] = @ecs.register_compone
 )
 
 ///|
-pub impl @ecs.Component for Transform with component() {
+pub impl @ecs.Component for Transform with fn component() {
   ecs_key_transform
 }
 
@@ -28,7 +28,7 @@ pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for GlobalTransform with component() {
+pub impl @ecs.Component for GlobalTransform with fn component() {
   ecs_key_global_transform
 }
 
@@ -40,7 +40,7 @@ let global_transform_validate_parent_keys : @app.ValidateParentHasComponentKeys[
 )
 
 ///|
-pub impl @app.ValidateParentHasComponentTarget for GlobalTransform with validate_parent_has_component_keys() {
+pub impl @app.ValidateParentHasComponentTarget for GlobalTransform with fn validate_parent_has_component_keys() {
   global_transform_validate_parent_keys
 }
 
@@ -50,7 +50,7 @@ pub let ecs_key_transform_tree_changed : @ecs.ComponentKey[TransformTreeChanged]
 )
 
 ///|
-pub impl @ecs.Component for TransformTreeChanged with component() {
+pub impl @ecs.Component for TransformTreeChanged with fn component() {
   ecs_key_transform_tree_changed
 }
 

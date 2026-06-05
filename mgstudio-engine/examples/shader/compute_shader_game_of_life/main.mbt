@@ -170,7 +170,7 @@ fn step_life(
 ///|
 fn apply_life_visuals(
   cells : @ecs.Query[
-    (@ecs.Comp[Cell], @ecs.Comp[@pbr.MeshMaterial3d]),
+    (@ecs.Read[Cell], @ecs.Read[@pbr.MeshMaterial3d]),
     @ecs.All,
   ],
   life_state : @app.Res[LifeState],

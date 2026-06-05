@@ -23,7 +23,7 @@ pub fn Cuboid::Cuboid() -> Cuboid {
 }
 
 ///|
-pub impl Default for Cuboid with default() {
+pub impl Default for Cuboid with fn default() {
   Cuboid::Cuboid()
 }
 
@@ -72,12 +72,12 @@ pub fn Cuboid::sample_interior(self : Cuboid, rng : @random.Rand) -> Vec3 {
 }
 
 ///|
-pub impl ToJson for Cuboid with to_json(self) {
+pub impl ToJson for Cuboid with fn to_json(self) {
   self.half_size.to_json()
 }
 
 ///|
-pub impl @json.FromJson for Cuboid with from_json(json, path) {
+pub impl @json.FromJson for Cuboid with fn from_json(json, path) {
   Cuboid::{ half_size: @json.from_json(json, path~) }
 }
 
@@ -103,7 +103,7 @@ pub fn Sphere::Sphere() -> Sphere {
 }
 
 ///|
-pub impl Default for Sphere with default() {
+pub impl Default for Sphere with fn default() {
   Sphere::Sphere()
 }
 
@@ -129,7 +129,7 @@ pub fn Cylinder::Cylinder() -> Cylinder {
 }
 
 ///|
-pub impl Default for Cylinder with default() {
+pub impl Default for Cylinder with fn default() {
   Cylinder::Cylinder()
 }
 
@@ -233,7 +233,7 @@ pub fn Segment3d::Segment3d() -> Segment3d {
 }
 
 ///|
-pub impl Default for Segment3d with default() {
+pub impl Default for Segment3d with fn default() {
   Segment3d::Segment3d()
 }
 
@@ -273,7 +273,7 @@ pub fn Polyline3d::Polyline3d() -> Polyline3d {
 }
 
 ///|
-pub impl Default for Polyline3d with default() {
+pub impl Default for Polyline3d with fn default() {
   Polyline3d::Polyline3d()
 }
 
@@ -294,7 +294,7 @@ pub fn Capsule3d::Capsule3d() -> Capsule3d {
 }
 
 ///|
-pub impl Default for Capsule3d with default() {
+pub impl Default for Capsule3d with fn default() {
   Capsule3d::Capsule3d()
 }
 
@@ -378,7 +378,7 @@ pub fn Triangle3d::Triangle3d() -> Triangle3d {
 }
 
 ///|
-pub impl Default for Triangle3d with default() {
+pub impl Default for Triangle3d with fn default() {
   Triangle3d::Triangle3d()
 }
 
@@ -405,7 +405,7 @@ pub fn Tetrahedron::Tetrahedron() -> Tetrahedron {
 }
 
 ///|
-pub impl Default for Tetrahedron with default() {
+pub impl Default for Tetrahedron with fn default() {
   Tetrahedron::Tetrahedron()
 }
 

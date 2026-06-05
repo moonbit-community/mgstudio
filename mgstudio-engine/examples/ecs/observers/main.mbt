@@ -202,7 +202,7 @@ fn mine_color(size : Float) -> @color.Color {
 ///|
 fn pointer_world_position(
   pointer : @app.OnPointer[@app.PointerDown],
-  windows : @ecs.Query[@ecs.Comp[@window.Window], @ecs.All],
+  windows : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
 ) -> @math.Vec2? raise {
   guard windows.single() is Some(window_comp) else { return None }
   let window = window_comp.value()
@@ -250,7 +250,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn on_add_mine(
   event : @ecs.ComponentOn[@ecs.Insert, Mine],
   state : @app.ResMut[MineWorldState],
-  mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
+  mines : @ecs.Query[@ecs.Read[Mine], @ecs.All],
 ) -> Unit {
   let entity = event.entity()
   let mine_comp = mines.get(entity) catch { _ => None }
@@ -269,7 +269,7 @@ fn on_remove_mine(
 ///|
 fn explode_nearby_mines(
   explode_mines : @ecs.On[ExplodeMines],
-  mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
+  mines : @ecs.Query[@ecs.Read[Mine], @ecs.All],
   state : @app.Res[MineWorldState],
   commands : @app.Commands,
 ) -> Unit {
@@ -292,7 +292,7 @@ fn explode_nearby_mines(
 ///|
 fn explode_mine(
   explode : @ecs.On[Explode],
-  mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
+  mines : @ecs.Query[@ecs.Read[Mine], @ecs.All],
   commands : @app.Commands,
 ) -> Unit raise {
   guard explode.entity() is Some(entity) else { return }
@@ -320,7 +320,7 @@ fn toggle_explosions(
 ///|
 fn handle_click(
   pointer : @app.OnPointer[@app.PointerDown],
-  windows : @ecs.Query[@ecs.Comp[@window.Window], @ecs.All],
+  windows : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
   commands : @app.Commands,
 ) -> Unit {
   let pos = pointer_world_position(pointer, windows) catch { _ => None }
@@ -331,7 +331,7 @@ fn handle_click(
 ///|
 fn draw_mines(
   gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
-  mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
+  mines : @ecs.Query[@ecs.Read[Mine], @ecs.All],
 ) -> Unit {
   try! mines.view(fn(_query_entity, mine_comp) {
     let mine = mine_comp.value()

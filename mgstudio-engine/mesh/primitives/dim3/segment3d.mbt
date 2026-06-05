@@ -42,12 +42,12 @@ pub fn Segment3dMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for Segment3dMeshBuilder with build(self) {
+pub impl MeshBuilder for Segment3dMeshBuilder with fn build(self) {
   segment3d_line_list(self.segment)
 }
 
 ///|
-pub impl Meshable for @math.Segment3d with mesh(self) {
+pub impl Meshable for @math.Segment3d with fn mesh(self) {
   Segment3dMeshBuilder::new(self).build()
 }
 

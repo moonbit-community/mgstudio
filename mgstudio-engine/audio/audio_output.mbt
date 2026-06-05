@@ -31,7 +31,7 @@ let audio_output_resource_key : @ecs.ResourceKey[AudioOutput] = @ecs.register_re
 )
 
 ///|
-pub impl @app.Resource for AudioOutput with resource() {
+pub impl @app.Resource for AudioOutput with fn resource() {
   audio_output_resource_key
 }
 
@@ -97,37 +97,37 @@ pub let ecs_key_playback_remove_marker : @ecs.ComponentKey[PlaybackRemoveMarker]
 )
 
 ///|
-pub impl[Source : AudioPlayerSource] @ecs.Component for AudioPlayer[Source] with component() {
+pub impl[Source : AudioPlayerSource] @ecs.Component for AudioPlayer[Source] with fn component() {
   registered_audio_player_component_key()
 }
 
 ///|
-pub impl @ecs.Component for PlaybackSettings with component() {
+pub impl @ecs.Component for PlaybackSettings with fn component() {
   ecs_key_playback_settings
 }
 
 ///|
-pub impl @ecs.Component for SpatialListener with component() {
+pub impl @ecs.Component for SpatialListener with fn component() {
   ecs_key_spatial_listener
 }
 
 ///|
-pub impl @ecs.Component for AudioSink with component() {
+pub impl @ecs.Component for AudioSink with fn component() {
   ecs_key_audio_sink
 }
 
 ///|
-pub impl @ecs.Component for SpatialAudioSink with component() {
+pub impl @ecs.Component for SpatialAudioSink with fn component() {
   ecs_key_spatial_audio_sink
 }
 
 ///|
-pub impl @ecs.Component for PlaybackDespawnMarker with component() {
+pub impl @ecs.Component for PlaybackDespawnMarker with fn component() {
   ecs_key_playback_despawn_marker
 }
 
 ///|
-pub impl @ecs.Component for PlaybackRemoveMarker with component() {
+pub impl @ecs.Component for PlaybackRemoveMarker with fn component() {
   ecs_key_playback_remove_marker
 }
 
@@ -223,7 +223,7 @@ fn audio_vec3_to_native_tuple(value : @math.Vec3) -> (Double, Double, Double) {
 ///|
 fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
   let listeners : Array[(@core.Entity, SpatialListener)] = []
-  let listener_query : @ecs.Query[@ecs.Comp[SpatialListener], @ecs.All] = @ecs.query(
+  let listener_query : @ecs.Query[@ecs.Read[SpatialListener], @ecs.All] = @ecs.query(
     world,
   )
   try! listener_query.view(fn(entity, listener) {
@@ -420,7 +420,7 @@ fn audio_play_pitch_entity(
 
 ///|
 fn play_queued_audio_source_system(world : @ecs.World) -> Unit {
-  let player_query : @ecs.Query[@ecs.Comp[AudioPlayer[AudioSource]], @ecs.All] = @ecs.query(
+  let player_query : @ecs.Query[@ecs.Read[AudioPlayer[AudioSource]], @ecs.All] = @ecs.query(
     world,
   )
   try! player_query.view(fn(entity, player) {
@@ -436,7 +436,7 @@ fn play_queued_audio_source_system(world : @ecs.World) -> Unit {
 
 ///|
 fn play_queued_pitch_system(world : @ecs.World) -> Unit {
-  let player_query : @ecs.Query[@ecs.Comp[AudioPlayer[Pitch]], @ecs.All] = @ecs.query(
+  let player_query : @ecs.Query[@ecs.Read[AudioPlayer[Pitch]], @ecs.All] = @ecs.query(
     world,
   )
   try! player_query.view(fn(entity, player) {
@@ -454,7 +454,7 @@ fn play_queued_pitch_system(world : @ecs.World) -> Unit {
 fn update_spatial_audio_sink_positions_system(world : @ecs.World) -> Unit {
   let ears = audio_listener_positions(world)
   let emitters : Array[(@core.Entity, SpatialAudioSink)] = []
-  let sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+  let sink_query : @ecs.Query[@ecs.Read[SpatialAudioSink], @ecs.All] = @ecs.query(
     world,
   )
   try! sink_query.view(fn(entity, sink) {
@@ -489,7 +489,7 @@ fn update_spatial_audio_sink_positions_system(world : @ecs.World) -> Unit {
 fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
   let sinks : Array[(@core.Entity, AudioSink)] = []
   let spatial_sinks : Array[(@core.Entity, SpatialAudioSink)] = []
-  let sink_query : @ecs.Query[@ecs.Comp[AudioSink], @ecs.All] = @ecs.query(
+  let sink_query : @ecs.Query[@ecs.Read[AudioSink], @ecs.All] = @ecs.query(
     world,
   )
   try! sink_query.view(fn(entity, sink) {
@@ -497,7 +497,7 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
       sinks.push((entity, sink.value()))
     }
   })
-  let spatial_sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+  let spatial_sink_query : @ecs.Query[@ecs.Read[SpatialAudioSink], @ecs.All] = @ecs.query(
     world,
   )
   try! spatial_sink_query.view(fn(entity, sink) {
@@ -555,7 +555,7 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
 fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
   let sinks : Array[(@core.Entity, AudioSink)] = []
   let spatial_sinks : Array[(@core.Entity, SpatialAudioSink)] = []
-  let sink_query : @ecs.Query[@ecs.Comp[AudioSink], @ecs.All] = @ecs.query(
+  let sink_query : @ecs.Query[@ecs.Read[AudioSink], @ecs.All] = @ecs.query(
     world,
   )
   try! sink_query.view(fn(entity, sink) {
@@ -563,7 +563,7 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
       sinks.push((entity, sink.value()))
     }
   })
-  let spatial_sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+  let spatial_sink_query : @ecs.Query[@ecs.Read[SpatialAudioSink], @ecs.All] = @ecs.query(
     world,
   )
   try! spatial_sink_query.view(fn(entity, sink) {

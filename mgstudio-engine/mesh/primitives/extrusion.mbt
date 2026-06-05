@@ -74,7 +74,7 @@ pub fn ExtrusionBuilder::build(self : ExtrusionBuilder) -> @mesh.Mesh3dGeometry 
 }
 
 ///|
-pub impl MeshBuilder for ExtrusionBuilder with build(self) {
+pub impl MeshBuilder for ExtrusionBuilder with fn build(self) {
   extrusion_build(
     self.base_mesh,
     self.perimeter,

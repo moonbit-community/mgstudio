@@ -1035,7 +1035,7 @@ fn text_ecs_collect_span_edges(
 ) -> Array[(@core.Entity, @core.Entity)] {
   let span_edges : Array[(@core.Entity, @core.Entity)] = []
   let query : @ecs.Query[
-    (@ecs.Comp[TextSpan], @ecs.Comp[@hierarchy.Parent]),
+    (@ecs.Read[TextSpan], @ecs.Read[@hierarchy.Parent]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(child, data) {
@@ -1383,7 +1383,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   }
   text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count = dirty_entities.length()
   let query : @ecs.Query[
-    (@ecs.Comp[Text2d], @ecs.Comp[TextFont], @ecs.Comp[@transform.Transform]),
+    (@ecs.Read[Text2d], @ecs.Read[TextFont], @ecs.Read[@transform.Transform]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(entity, data) {
@@ -1834,7 +1834,7 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   if !has_text_dirty_entities.val && ui_text_ecs_entries.length() > 0 {
     return
   }
-  let query : @ecs.Query[@ecs.Comp[Text], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Read[Text], @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, text) {
     let existing_index = ui_text_ecs_find_entry_index_from_index(
       world_id, entity, index_by_entity_id,

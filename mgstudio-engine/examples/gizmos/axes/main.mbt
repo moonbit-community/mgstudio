@@ -153,7 +153,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn move_cubes(
   query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[TransformTracking]),
+    (@ecs.Write[@transform.Transform], @ecs.Read[TransformTracking]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[@time.Virtual]],
@@ -188,7 +188,7 @@ fn move_cubes(
 fn draw_axes(
   gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   query : @ecs.Query[
-    (@ecs.Comp[@transform.Transform], @ecs.Comp[ShowAxes]),
+    (@ecs.Read[@transform.Transform], @ecs.Read[ShowAxes]),
     @ecs.All,
   ],
 ) -> Unit {

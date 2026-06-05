@@ -23,7 +23,7 @@ let changed_marker_key : ComponentKey[ChangedMarker] = register_component(
 )
 
 ///|
-pub impl Component for ChangedMarker with component() {
+pub impl Component for ChangedMarker with fn component() {
   changed_marker_key
 }
 
@@ -67,7 +67,7 @@ test "ecs changed components: replace and update emit changed events" {
 }
 
 ///|
-test "ecs changed components: Mut::set emits changed event" {
+test "ecs changed components: Write::set emits changed event" {
   let world = World::new()
   let entity = world.spawn()
 
@@ -88,7 +88,7 @@ test "ecs changed components: Mut::set emits changed event" {
 }
 
 ///|
-test "ecs changed components: Mut::modify marks changed on explicit mutation" {
+test "ecs changed components: Write::modify marks changed on explicit mutation" {
   let world = World::new()
   let entity = world.spawn()
 
@@ -109,7 +109,7 @@ test "ecs changed components: Mut::modify marks changed on explicit mutation" {
 }
 
 ///|
-test "ecs changed components: Mut::value does not mark changed by itself" {
+test "ecs changed components: Write::value does not mark changed by itself" {
   let world = World::new()
   let entity = world.spawn()
 

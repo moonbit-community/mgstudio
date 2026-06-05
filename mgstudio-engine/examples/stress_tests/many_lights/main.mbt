@@ -152,7 +152,7 @@ fn setup(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
@@ -174,7 +174,7 @@ fn move_camera(
 fn print_light_count(
   time : @app.Res[@time.Time[Unit]],
   stats : @app.ResMut[LightStats],
-  lights : @ecs.Query[@ecs.Comp[@pbr.PointLight], @ecs.All],
+  lights : @ecs.Query[@ecs.Read[@pbr.PointLight], @ecs.All],
 ) -> Unit {
   let next_timer = stats.get().print_timer + time.get().delta_secs()
   if next_timer < 1.0F {

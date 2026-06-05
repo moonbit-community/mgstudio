@@ -188,7 +188,7 @@ fn relationship_find_entity_by_name(
   world : @ecs.World,
   target_name : String,
 ) -> @core.Entity {
-  let query : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Read[@ecs.Name], @ecs.All] = @ecs.query(world)
   let found : Ref[@core.Entity?] = Ref(None)
   try! query.view(fn(entity, name_comp) {
     if name_comp.value().as_str() == target_name {
@@ -220,7 +220,7 @@ fn relationship_targeted_by_names(
 
 ///|
 fn relationship_debug(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[(@ecs.Comp[@ecs.Name], @ecs.Comp[Targeting]), @ecs.All] = @ecs.query(
+  let query : @ecs.Query[(@ecs.Read[@ecs.Name], @ecs.Read[Targeting]), @ecs.All] = @ecs.query(
     world,
   )
   let lines : Array[String] = []

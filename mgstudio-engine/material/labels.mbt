@@ -49,7 +49,7 @@ pub fn DrawFunctions::DrawFunctions() -> DrawFunctions {
 }
 
 ///|
-pub impl Default for DrawFunctions with default() {
+pub impl Default for DrawFunctions with fn default() {
   DrawFunctions::DrawFunctions()
 }
 

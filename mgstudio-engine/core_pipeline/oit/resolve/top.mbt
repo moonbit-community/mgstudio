@@ -56,12 +56,12 @@ fn oit_resolve_plugin_install_with(
 pub const OIT_REQUIRED_STORAGE_BUFFERS : Int = 3
 
 ///|
-pub impl @app.Plugin for OitResolvePlugin with name(_self) {
+pub impl @app.Plugin for OitResolvePlugin with fn name(_self) {
   OIT_RESOLVE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for OitResolvePlugin with build(self, app) {
+pub impl @app.Plugin for OitResolvePlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   oit_resolve_plugin_install_with(app, self)
 }
@@ -124,7 +124,7 @@ pub let ecs_key_oit_resolve_pipeline : @ecs.ResourceKey[OitResolvePipeline] = @e
 )
 
 ///|
-pub impl @app.Resource for OitResolvePipeline with resource() {
+pub impl @app.Resource for OitResolvePipeline with fn resource() {
   ecs_key_oit_resolve_pipeline
 }
 

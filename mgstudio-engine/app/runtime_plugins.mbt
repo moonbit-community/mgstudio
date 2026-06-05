@@ -57,7 +57,7 @@ fn app_exit_message_key() -> @ecs.MessageKey[AppExit] {
 }
 
 ///|
-pub impl @ecs.Message for AppExit with message() {
+pub impl @ecs.Message for AppExit with fn message() {
   app_exit_message_key()
 }
 
@@ -256,12 +256,12 @@ fn schedule_runner_build(
 }
 
 ///|
-pub impl Plugin for ScheduleRunnerPlugin with name(_self) {
+pub impl Plugin for ScheduleRunnerPlugin with fn name(_self) {
   "mgstudio.app.ScheduleRunnerPlugin"
 }
 
 ///|
-pub impl Plugin for ScheduleRunnerPlugin with build(self, app) {
+pub impl Plugin for ScheduleRunnerPlugin with fn build(self, app) {
   let mode = self.mode
   app.set_runner(fn(app_with_runner : App[@ecs.World]) {
     schedule_runner_build(app_with_runner, mode)
@@ -572,12 +572,12 @@ pub fn log_trace_once(callsite : String, message : String) -> Unit {
 }
 
 ///|
-pub impl Plugin for LogPlugin with name(_self) {
+pub impl Plugin for LogPlugin with fn name(_self) {
   "mgstudio.log.LogPlugin"
 }
 
 ///|
-pub impl Plugin for LogPlugin with build(self, app) {
+pub impl Plugin for LogPlugin with fn build(self, app) {
   log_state.config = self
   log_state.once_keys = @hashmap.HashMap([])
   app

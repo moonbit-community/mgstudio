@@ -176,7 +176,7 @@ pub let ecs_key_render_clustered_decals : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="render3d.clustered_decals")
 
 ///|
-pub impl @app.Resource for RenderClusteredDecals with resource() {
+pub impl @app.Resource for RenderClusteredDecals with fn resource() {
   ecs_key_render_clustered_decals
 }
 
@@ -264,7 +264,7 @@ let ecs_key_decals_buffer : @ecs.ResourceKey[DecalsBuffer] = @ecs.register_resou
 )
 
 ///|
-pub impl @app.Resource for DecalsBuffer with resource() {
+pub impl @app.Resource for DecalsBuffer with fn resource() {
   ecs_key_decals_buffer
 }
 
@@ -367,7 +367,7 @@ pub fn ClusteredDecalPlugin::ClusteredDecalPlugin() -> ClusteredDecalPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ClusteredDecalPlugin with name(_self) {
+pub impl @app.Plugin for ClusteredDecalPlugin with fn name(_self) {
   CLUSTERED_DECAL_PLUGIN_NAME
 }
 
@@ -545,7 +545,7 @@ pub fn render3d_render_clustered_decals_ref_or_init(
 }
 
 ///|
-pub impl @app.Plugin for ClusteredDecalPlugin with build(self, app) {
+pub impl @app.Plugin for ClusteredDecalPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   clustered_decal_plugin_install_with(app, self)
 }

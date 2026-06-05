@@ -137,29 +137,29 @@ pub impl Primitive3d for Torus
 pub impl[P] Primitive3d for Extrusion[P]
 
 ///|
-pub impl Measured2d for Circle with perimeter(self) {
+pub impl Measured2d for Circle with fn perimeter(self) {
   2.0F * pi() * self.radius
 }
 
 ///|
-pub impl Measured2d for Circle with area(self) {
+pub impl Measured2d for Circle with fn area(self) {
   pi() * self.radius * self.radius
 }
 
 ///|
-pub impl Measured2d for Rectangle with perimeter(self) {
+pub impl Measured2d for Rectangle with fn perimeter(self) {
   let size = self.half_size.mul_scalar(2.0F)
   2.0F * (size.x + size.y)
 }
 
 ///|
-pub impl Measured2d for Rectangle with area(self) {
+pub impl Measured2d for Rectangle with fn area(self) {
   let size = self.half_size.mul_scalar(2.0F)
   size.x * size.y
 }
 
 ///|
-pub impl Measured2d for Triangle2d with perimeter(self) {
+pub impl Measured2d for Triangle2d with fn perimeter(self) {
   let ab = self.b.sub(self.a).length()
   let bc = self.c.sub(self.b).length()
   let ca = self.a.sub(self.c).length()
@@ -167,14 +167,14 @@ pub impl Measured2d for Triangle2d with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for Triangle2d with area(self) {
+pub impl Measured2d for Triangle2d with fn area(self) {
   let ab = self.b.sub(self.a)
   let ac = self.c.sub(self.a)
   primitives_absf(ab.x * ac.y - ab.y * ac.x) * 0.5F
 }
 
 ///|
-pub impl Measured2d for RegularPolygon with perimeter(self) {
+pub impl Measured2d for RegularPolygon with fn perimeter(self) {
   let safe_sides = primitives_safe_polygon_sides(self.sides)
   2.0F *
   primitives_float_from_int(safe_sides) *
@@ -183,7 +183,7 @@ pub impl Measured2d for RegularPolygon with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for RegularPolygon with area(self) {
+pub impl Measured2d for RegularPolygon with fn area(self) {
   let safe_sides = primitives_safe_polygon_sides(self.sides)
   0.5F *
   primitives_float_from_int(safe_sides) *
@@ -193,7 +193,7 @@ pub impl Measured2d for RegularPolygon with area(self) {
 }
 
 ///|
-pub impl Measured2d for Ellipse with perimeter(self) {
+pub impl Measured2d for Ellipse with fn perimeter(self) {
   let a = primitives_abs_float(self.half_size.x)
   let b = primitives_abs_float(self.half_size.y)
   let sum = a + b
@@ -205,14 +205,14 @@ pub impl Measured2d for Ellipse with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for Ellipse with area(self) {
+pub impl Measured2d for Ellipse with fn area(self) {
   pi() *
   primitives_abs_float(self.half_size.x) *
   primitives_abs_float(self.half_size.y)
 }
 
 ///|
-pub impl Measured2d for Annulus with perimeter(self) {
+pub impl Measured2d for Annulus with fn perimeter(self) {
   2.0F *
   pi() *
   (
@@ -222,7 +222,7 @@ pub impl Measured2d for Annulus with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for Annulus with area(self) {
+pub impl Measured2d for Annulus with fn area(self) {
   pi() *
   (
     self.outer_radius * self.outer_radius -
@@ -231,7 +231,7 @@ pub impl Measured2d for Annulus with area(self) {
 }
 
 ///|
-pub impl Measured2d for Rhombus with perimeter(self) {
+pub impl Measured2d for Rhombus with fn perimeter(self) {
   let side = sqrt(
     self.half_diagonal.x * self.half_diagonal.x +
     self.half_diagonal.y * self.half_diagonal.y,
@@ -240,57 +240,57 @@ pub impl Measured2d for Rhombus with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for Rhombus with area(self) {
+pub impl Measured2d for Rhombus with fn area(self) {
   2.0F * primitives_abs_float(self.half_diagonal.x * self.half_diagonal.y)
 }
 
 ///|
-pub impl Measured2d for CircularSector with perimeter(self) {
+pub impl Measured2d for CircularSector with fn perimeter(self) {
   let arc = Arc2d::new(self.radius, self.half_angle())
   2.0F * self.radius + arc.length()
 }
 
 ///|
-pub impl Measured2d for CircularSector with area(self) {
+pub impl Measured2d for CircularSector with fn area(self) {
   self.radius * self.radius * self.half_angle()
 }
 
 ///|
-pub impl Measured2d for CircularSegment with perimeter(self) {
+pub impl Measured2d for CircularSegment with fn perimeter(self) {
   let arc = Arc2d::new(self.radius, self.half_angle())
   arc.length() + 2.0F * arc.half_chord_length()
 }
 
 ///|
-pub impl Measured2d for CircularSegment with area(self) {
+pub impl Measured2d for CircularSegment with fn area(self) {
   let angle = self.half_angle()
   self.radius * self.radius * (angle - sin(angle) * cos(angle))
 }
 
 ///|
-pub impl[P : Measured2d] Measured2d for Ring[P] with perimeter(self) {
+pub impl[P : Measured2d] Measured2d for Ring[P] with fn perimeter(self) {
   self.outer_shape.perimeter() + self.inner_shape.perimeter()
 }
 
 ///|
-pub impl[P : Measured2d] Measured2d for Ring[P] with area(self) {
+pub impl[P : Measured2d] Measured2d for Ring[P] with fn area(self) {
   self.outer_shape.area() - self.inner_shape.area()
 }
 
 ///|
-pub impl Measured2d for Plane3d with perimeter(self) {
+pub impl Measured2d for Plane3d with fn perimeter(self) {
   let size = self.half_size.mul_scalar(2.0F)
   2.0F * (size.x + size.y)
 }
 
 ///|
-pub impl Measured2d for Plane3d with area(self) {
+pub impl Measured2d for Plane3d with fn area(self) {
   let size = self.half_size.mul_scalar(2.0F)
   size.x * size.y
 }
 
 ///|
-pub impl Measured2d for Triangle3d with perimeter(self) {
+pub impl Measured2d for Triangle3d with fn perimeter(self) {
   let ab = self.vertices[1].sub(self.vertices[0]).length()
   let bc = self.vertices[2].sub(self.vertices[1]).length()
   let ca = self.vertices[0].sub(self.vertices[2]).length()
@@ -298,52 +298,52 @@ pub impl Measured2d for Triangle3d with perimeter(self) {
 }
 
 ///|
-pub impl Measured2d for Triangle3d with area(self) {
+pub impl Measured2d for Triangle3d with fn area(self) {
   let ab = self.vertices[1].sub(self.vertices[0])
   let ac = self.vertices[2].sub(self.vertices[0])
   ab.cross(ac).length() * 0.5F
 }
 
 ///|
-pub impl Measured3d for Sphere with area(self) {
+pub impl Measured3d for Sphere with fn area(self) {
   4.0F * pi() * self.radius * self.radius
 }
 
 ///|
-pub impl Measured3d for Sphere with volume(self) {
+pub impl Measured3d for Sphere with fn volume(self) {
   4.0F * pi() * self.radius * self.radius * self.radius / 3.0F
 }
 
 ///|
-pub impl Measured3d for Cuboid with area(self) {
+pub impl Measured3d for Cuboid with fn area(self) {
   let size = self.size()
   2.0F * (size.x * size.y + size.y * size.z + size.z * size.x)
 }
 
 ///|
-pub impl Measured3d for Cuboid with volume(self) {
+pub impl Measured3d for Cuboid with fn volume(self) {
   let size = self.size()
   size.x * size.y * size.z
 }
 
 ///|
-pub impl Measured3d for Cylinder with area(self) {
+pub impl Measured3d for Cylinder with fn area(self) {
   let height = self.half_height * 2.0F
   2.0F * pi() * self.radius * (height + self.radius)
 }
 
 ///|
-pub impl Measured3d for Cylinder with volume(self) {
+pub impl Measured3d for Cylinder with fn volume(self) {
   pi() * self.radius * self.radius * self.half_height * 2.0F
 }
 
 ///|
-pub impl Measured3d for Capsule3d with area(self) {
+pub impl Measured3d for Capsule3d with fn area(self) {
   4.0F * pi() * self.radius * (self.radius + self.half_length)
 }
 
 ///|
-pub impl Measured3d for Capsule3d with volume(self) {
+pub impl Measured3d for Capsule3d with fn volume(self) {
   let cylinder_volume = pi() *
     self.radius *
     self.radius *
@@ -359,7 +359,7 @@ pub impl Measured3d for Capsule3d with volume(self) {
 }
 
 ///|
-pub impl Measured3d for Tetrahedron with area(self) {
+pub impl Measured3d for Tetrahedron with fn area(self) {
   self
   .faces()
   .iter()
@@ -368,7 +368,7 @@ pub impl Measured3d for Tetrahedron with area(self) {
 }
 
 ///|
-pub impl Measured3d for Tetrahedron with volume(self) {
+pub impl Measured3d for Tetrahedron with fn volume(self) {
   if self.vertices.length() != 4 {
     return 0.0F
   }
@@ -380,18 +380,18 @@ pub impl Measured3d for Tetrahedron with volume(self) {
 }
 
 ///|
-pub impl Measured3d for Cone with area(self) {
+pub impl Measured3d for Cone with fn area(self) {
   let slant = sqrt(self.radius * self.radius + self.height * self.height)
   pi() * self.radius * (self.radius + slant)
 }
 
 ///|
-pub impl Measured3d for Cone with volume(self) {
+pub impl Measured3d for Cone with fn volume(self) {
   pi() * self.radius * self.radius * self.height / 3.0F
 }
 
 ///|
-pub impl Measured3d for ConicalFrustum with area(self) {
+pub impl Measured3d for ConicalFrustum with fn area(self) {
   let slant = sqrt(
     (self.radius_bottom - self.radius_top) *
     (self.radius_bottom - self.radius_top) +
@@ -406,7 +406,7 @@ pub impl Measured3d for ConicalFrustum with area(self) {
 }
 
 ///|
-pub impl Measured3d for ConicalFrustum with volume(self) {
+pub impl Measured3d for ConicalFrustum with fn volume(self) {
   pi() *
   self.height *
   (
@@ -418,23 +418,23 @@ pub impl Measured3d for ConicalFrustum with volume(self) {
 }
 
 ///|
-pub impl Measured3d for Torus with area(self) {
+pub impl Measured3d for Torus with fn area(self) {
   4.0F * pi() * pi() * self.major_radius * self.minor_radius
 }
 
 ///|
-pub impl Measured3d for Torus with volume(self) {
+pub impl Measured3d for Torus with fn volume(self) {
   2.0F * pi() * pi() * self.major_radius * self.minor_radius * self.minor_radius
 }
 
 ///|
-pub impl[P : Measured2d] Measured3d for Extrusion[P] with area(self) {
+pub impl[P : Measured2d] Measured3d for Extrusion[P] with fn area(self) {
   2.0F *
   (self.base_shape.area() + self.half_depth * self.base_shape.perimeter())
 }
 
 ///|
-pub impl[P : Measured2d] Measured3d for Extrusion[P] with volume(self) {
+pub impl[P : Measured2d] Measured3d for Extrusion[P] with fn volume(self) {
   2.0F * self.base_shape.area() * self.half_depth
 }
 

@@ -59,7 +59,7 @@ pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters] = regis
 )
 
 ///|
-pub impl Component for Disabled with component() {
+pub impl Component for Disabled with fn component() {
   ecs_key_disabled
 }
 

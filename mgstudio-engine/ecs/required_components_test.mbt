@@ -171,7 +171,7 @@ test "ecs: required component auto insertion is visible to Added filter" {
   ctx.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx)
 
-  let query : Query[Comp[RequiredB], Added[RequiredB]] = query_filtered(
+  let query : Query[Read[RequiredB], Added[RequiredB]] = query_filtered(
     world,
     Added::new(required_b_key),
   )

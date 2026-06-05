@@ -19,22 +19,22 @@ pub(open) trait RawLevelAccessor {
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkJson with root_levels(value) {
+pub impl RawLevelAccessor for LdtkJson with fn root_levels(value) {
   value.levels
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkJson with worlds(value) {
+pub impl RawLevelAccessor for LdtkJson with fn worlds(value) {
   value.worlds
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkProject with root_levels(value) {
+pub impl RawLevelAccessor for LdtkProject with fn root_levels(value) {
   value.json_data().levels
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkProject with worlds(value) {
+pub impl RawLevelAccessor for LdtkProject with fn worlds(value) {
   value.json_data().worlds
 }
 

@@ -104,7 +104,7 @@ fn spawn_when_loaded(
 fn animate_loaded_sprites(
   time : @app.Res[@time.Time[Unit]],
   sprites : @ecs.Query[
-    (@ecs.Comp[LoadedSprite], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[LoadedSprite], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

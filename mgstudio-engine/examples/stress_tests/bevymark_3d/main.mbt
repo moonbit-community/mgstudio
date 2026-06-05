@@ -200,7 +200,7 @@ fn mouse_spawn(
 fn movement(
   time : @app.Res[@time.Time[Unit]],
   cubes : @ecs.Query[
-    (@ecs.Mut[CubeVelocity], @ecs.Mut[@transform.Transform]),
+    (@ecs.Write[CubeVelocity], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

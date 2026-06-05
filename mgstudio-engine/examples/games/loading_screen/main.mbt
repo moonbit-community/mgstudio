@@ -74,7 +74,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn simulate_loading(
   time : @app.Res[@time.Time[Unit]],
   state : @app.ResMut[LoadingState],
-  bars : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[LoadingBar]],
+  bars : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[LoadingBar]],
   commands : @app.Commands,
 ) -> Unit {
   if state.peek().done {

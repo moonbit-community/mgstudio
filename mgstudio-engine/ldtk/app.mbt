@@ -62,12 +62,12 @@ let ldtk_int_cell_map_key : @ecs.ResourceKey[LdtkIntCellMap] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for LdtkEntityMap with resource() {
+pub impl @app.Resource for LdtkEntityMap with fn resource() {
   ldtk_entity_map_key
 }
 
 ///|
-pub impl @app.Resource for LdtkIntCellMap with resource() {
+pub impl @app.Resource for LdtkIntCellMap with fn resource() {
   ldtk_int_cell_map_key
 }
 

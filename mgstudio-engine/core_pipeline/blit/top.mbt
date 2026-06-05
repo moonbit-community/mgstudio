@@ -36,12 +36,12 @@ pub fn blit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for BlitPlugin with name(_self) {
+pub impl @app.Plugin for BlitPlugin with fn name(_self) {
   BLIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for BlitPlugin with build(self, app) {
+pub impl @app.Plugin for BlitPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   blit_plugin_install_with(app, self)
 }
@@ -110,7 +110,7 @@ pub let ecs_key_blit_pipeline : @ecs.ResourceKey[BlitPipeline] = @ecs.register_r
 )
 
 ///|
-pub impl @app.Resource for BlitPipeline with resource() {
+pub impl @app.Resource for BlitPipeline with fn resource() {
   ecs_key_blit_pipeline
 }
 

@@ -35,7 +35,7 @@ let render_diagnostics_module_state_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for RenderDiagnosticsModuleState with resource() {
+pub impl @app.Resource for RenderDiagnosticsModuleState with fn resource() {
   render_diagnostics_module_state_key
 }
 

@@ -134,7 +134,7 @@ fn setup(
 fn text_update_system(
   state : @app.ResMut[AtlasDebugState],
   time : @app.Res[@time.Time[@time.Real]],
-  query : @app.Single[@ecs.Mut[@text.Text], @ecs.With[AtlasDebugText]],
+  query : @app.Single[@ecs.Write[@text.Text], @ecs.With[AtlasDebugText]],
 ) -> Unit {
   let next_glyph = state.modify(fn(value) {
     value.timer = value.timer.tick(time.get().delta())

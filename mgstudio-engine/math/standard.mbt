@@ -13,23 +13,23 @@
 // limitations under the License.
 
 ///|
-pub impl FromRng for Dir2 with from_rng(rng) {
+pub impl FromRng for Dir2 with fn from_rng(rng) {
   Dir2::from_angle(rng.float() * 2.0F * pi())
 }
 
 ///|
-pub impl FromRng for Dir3 with from_rng(rng) {
+pub impl FromRng for Dir3 with fn from_rng(rng) {
   let value = Sphere::new(1.0F).sample_boundary(rng)
   Dir3::new_unchecked(value)
 }
 
 ///|
-pub impl FromRng for Rot2 with from_rng(rng) {
+pub impl FromRng for Rot2 with fn from_rng(rng) {
   Rot2::radians(rng.float() * 2.0F * pi())
 }
 
 ///|
-pub impl FromRng for Quat with from_rng(rng) {
+pub impl FromRng for Quat with fn from_rng(rng) {
   let u1 = rng.float()
   let u2 = rng.float()
   let u3 = rng.float()

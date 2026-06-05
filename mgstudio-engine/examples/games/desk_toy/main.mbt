@@ -73,7 +73,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn simulate_bodies(
   time : @app.Res[@time.Time[Unit]],
   bodies : @ecs.Query[
-    (@ecs.Mut[ToyBody], @ecs.Mut[@transform.Transform]),
+    (@ecs.Write[ToyBody], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

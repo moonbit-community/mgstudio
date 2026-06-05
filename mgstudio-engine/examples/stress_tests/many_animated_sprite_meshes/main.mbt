@@ -185,9 +185,9 @@ fn animate_meshes(
   materials : @app.Res[AnimationMaterials],
   meshes : @ecs.Query[
     (
-      @ecs.Mut[AnimationTimer],
-      @ecs.Mut[AtlasFrame],
-      @ecs.Mut[
+      @ecs.Write[AnimationTimer],
+      @ecs.Write[AtlasFrame],
+      @ecs.Write[
         @sprite_render_mesh2d_material.MeshMaterial2d[
           @sprite_render_mesh2d_color_material.ColorMaterial,
         ],
@@ -227,7 +227,7 @@ fn animate_meshes(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
@@ -246,7 +246,7 @@ fn move_camera(
 fn print_count(
   time : @app.Res[@time.Time[Unit]],
   timer : @app.ResMut[PrintTimer],
-  meshes : @ecs.Query[@ecs.Comp[AtlasFrame], @ecs.All],
+  meshes : @ecs.Query[@ecs.Read[AtlasFrame], @ecs.All],
 ) -> Unit {
   let next_seconds = timer.get().seconds + time.get().delta_secs()
   if next_seconds < 1.0F {

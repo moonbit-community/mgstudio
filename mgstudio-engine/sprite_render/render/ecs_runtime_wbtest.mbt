@@ -704,7 +704,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 
   app = app.update()
 
-  let mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh2d], @ecs.All] = @ecs.query(
+  let mesh_query : @ecs.Query[@ecs.Read[@mesh.Mesh2d], @ecs.All] = @ecs.query(
     app.world(),
   )
   debug_inspect(mesh_query.count(), content="1")
@@ -794,7 +794,7 @@ test "render2d: bloom2d scene queues bright sprite and color material meshes" {
 
   app = app.update()
 
-  let mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh2d], @ecs.All] = @ecs.query(
+  let mesh_query : @ecs.Query[@ecs.Read[@mesh.Mesh2d], @ecs.All] = @ecs.query(
     app.world(),
   )
   debug_inspect(mesh_query.count(), content="2")

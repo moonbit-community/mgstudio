@@ -1943,7 +1943,7 @@ impl @app.SystemParam for GamepadProcessedEventWriters with fn store(
 ///|
 fn gamepad_event_processing_system(
   gamepads : @ecs.Query[
-    (@ecs.Comp[GamepadSettings], @ecs.Mut[Gamepad]),
+    (@ecs.Read[GamepadSettings], @ecs.Write[Gamepad]),
     @ecs.All,
   ],
   raw_events : @ecs.MessageReader[RawGamepadEvent],

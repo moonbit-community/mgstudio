@@ -87,7 +87,7 @@ fn setup(
 fn cycle_scene(
   keyboard : @input.ButtonInput[@window.KeyCode],
   scenes : @app.ResMut[ViewerScenes],
-  roots : @ecs.Query[@ecs.Comp[ViewerRoot], @ecs.All],
+  roots : @ecs.Query[@ecs.Read[ViewerRoot], @ecs.All],
   commands : @app.Commands,
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::Enter) {

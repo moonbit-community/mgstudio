@@ -108,7 +108,7 @@ pub impl @app.Plugin for MeshPlugin with fn build(_self, app) {
 ///|
 fn mark_skinned_meshes_as_changed_if_their_assets_changed(
   commands : @app.Commands,
-  skinned_meshes : @ecs.Query[@ecs.Comp[SkinnedMesh], @ecs.All],
+  skinned_meshes : @ecs.Query[@ecs.Read[SkinnedMesh], @ecs.All],
   inverse_bindposes_asset_events : @ecs.MessageReader[
     @asset.AssetEvent[SkinnedMeshInverseBindposes],
   ],
@@ -135,7 +135,7 @@ fn mark_skinned_meshes_as_changed_if_their_assets_changed(
 ///|
 fn mark_3d_meshes_as_changed_if_their_assets_changed(
   commands : @app.Commands,
-  meshes_3d : @ecs.Query[@ecs.Comp[Mesh3d], @ecs.All],
+  meshes_3d : @ecs.Query[@ecs.Read[Mesh3d], @ecs.All],
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
   let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
@@ -160,7 +160,7 @@ fn mark_3d_meshes_as_changed_if_their_assets_changed(
 ///|
 fn mark_2d_meshes_as_changed_if_their_assets_changed(
   commands : @app.Commands,
-  meshes_2d : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All],
+  meshes_2d : @ecs.Query[@ecs.Read[Mesh2d], @ecs.All],
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
   let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])

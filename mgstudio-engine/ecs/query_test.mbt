@@ -290,7 +290,7 @@ pub impl QueryData for ReadOnlyCustomQuery with fn contiguous_compatible() {
 }
 
 ///|
-fn[T] comp_option_value(value : Comp[T]?) -> T? {
+fn[T] comp_option_value(value : Read[T]?) -> T? {
   match value {
     Some(component) => Some(component.value())
     None => None
@@ -355,14 +355,14 @@ test "ecs query: query1 view and for_each" {
   try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 6 })
 
   let sum_ref : Ref[Int] = Ref(0)
-  let read_query : Query[Comp[Position], All] = query(world)
+  let read_query : Query[Read[Position], All] = query(world)
   try! read_query.view(fn(_entity, position) {
     let position = position.value()
     sum_ref.val = sum_ref.val + position.x + position.y
   })
   debug_inspect(sum_ref.val, content="13")
 
-  let write_query : Query[Mut[Position], All] = query(world)
+  let write_query : Query[Write[Position], All] = query(world)
   try! write_query.view(fn(_entity, position) {
     position.modify(fn(value) {
       value.x = value.x + 10
@@ -388,11 +388,11 @@ test "ecs query: single returns only for exactly one match" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  let position_query : Query[Comp[Position], All] = query(world)
+  let position_query : Query[Read[Position], All] = query(world)
   debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
-  let all_position_query : Query[Comp[Position], All] = query_filtered(
+  let all_position_query : Query[Read[Position], All] = query_filtered(
     world,
     All::new(),
   )
@@ -405,7 +405,7 @@ test "ecs query: single returns only for exactly one match" {
   debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
-  let with_velocity_query : Query[Comp[Position], With[Velocity]] = query_filtered(
+  let with_velocity_query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
   )
@@ -448,7 +448,7 @@ test "ecs query: query2 view intersection and for_each" {
 
   let hits_ref : Ref[Int] = Ref(0)
   let sum_ref : Ref[Int] = Ref(0)
-  let read_query : Query[(Comp[Position], Comp[Velocity]), All] = query(world)
+  let read_query : Query[(Read[Position], Read[Velocity]), All] = query(world)
   try! read_query.view(fn(_entity, data) {
     let (p, v) = data
     hits_ref.val = hits_ref.val + 1
@@ -461,7 +461,9 @@ test "ecs query: query2 view intersection and for_each" {
   debug_inspect(hits_ref.val, content="1")
   debug_inspect(sum_ref.val, content="26")
 
-  let write_query : Query[(Mut[Position], Mut[Velocity]), All] = query(world)
+  let write_query : Query[(Write[Position], Write[Velocity]), All] = query(
+    world,
+  )
   try! write_query.view(fn(_entity, data) {
     let (p, v) = data
     p.modify(fn(position) {
@@ -516,7 +518,7 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   let hits_ref : Ref[Int] = Ref(0)
   let score_ref : Ref[Int] = Ref(0)
   let read_query : Query[
-    (Comp[Position], Comp[Velocity], Comp[Acceleration]),
+    (Read[Position], Read[Velocity], Read[Acceleration]),
     All,
   ] = query(world)
   try! read_query.view(fn(_entity, data) {
@@ -534,14 +536,14 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   let wide_score_ref : Ref[Int] = Ref(0)
   let wide_read_query : Query[
     (
-      Comp[Position],
-      Comp[Velocity],
-      Comp[Acceleration],
-      Comp[Position],
-      Comp[Velocity],
-      Comp[Acceleration],
-      Comp[Position],
-      Comp[Velocity],
+      Read[Position],
+      Read[Velocity],
+      Read[Acceleration],
+      Read[Position],
+      Read[Velocity],
+      Read[Acceleration],
+      Read[Position],
+      Read[Velocity],
     ),
     All,
   ] = query(world)
@@ -578,7 +580,7 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   debug_inspect(wide_score_ref.val, content="91")
 
   let write_query : Query[
-    (Mut[Position], Mut[Velocity], Mut[Acceleration]),
+    (Write[Position], Write[Velocity], Write[Acceleration]),
     All,
   ] = query(world)
   try! write_query.view(fn(_entity, data) {
@@ -630,7 +632,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
   try! world.set_by_key(e2, comp_accel, Acceleration::{ ax: 6, ay: 6 })
 
-  let query : Query[Comp[Position], (With[Velocity], Without[Acceleration])] = query_filtered(
+  let query : Query[Read[Position], (With[Velocity], Without[Acceleration])] = query_filtered(
     world,
     (With::new(comp_velocity), Without::new(comp_accel)),
   )
@@ -649,7 +651,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   debug_inspect(matched_entities, content="[0, 1]")
 
   let wide_query : Query[
-    Comp[Position],
+    Read[Position],
     (
       With[Position],
       With[Velocity],
@@ -722,13 +724,13 @@ test "ecs query: structural filters compose without change detection" {
   try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
   try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
 
-  let with_position_query : Query[Comp[Position], With[Position]] = query_filtered(
+  let with_position_query : Query[Read[Position], With[Position]] = query_filtered(
     world,
     With::new(comp_position),
   )
   debug_inspect(with_position_query.count(), content="2")
   let any_position_query : Query[
-    Comp[Position],
+    Read[Position],
     Or[(Without[Velocity], With[Velocity])],
   ] = query_filtered(
     world,
@@ -746,7 +748,7 @@ test "ecs query: structural filters compose without change detection" {
   )
 
   debug_inspect(with_position_query.count(), content="2")
-  let without_velocity_query : Query[Comp[Position], Without[Velocity]] = query_filtered(
+  let without_velocity_query : Query[Read[Position], Without[Velocity]] = query_filtered(
     world,
     Without::new(comp_velocity),
   )
@@ -764,7 +766,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
   let ctx0 = @core.SystemTickContext::new()
   ctx0.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx0)
-  let first_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
+  let first_added_query : Query[Read[Position], Added[Position]] = query_filtered(
     world,
     Added::new(position_key),
   )
@@ -776,7 +778,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
   let ctx1 = @core.SystemTickContext::new()
   ctx1.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(ctx1)
-  let second_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
+  let second_added_query : Query[Read[Position], Added[Position]] = query_filtered(
     world,
     Added::new(position_key),
   )
@@ -795,7 +797,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
 }
 
 ///|
-test "ecs query: Comp exposes change detection metadata" {
+test "ecs query: Read exposes change detection metadata" {
   let world = World::new()
   let entity = world.spawn()
 
@@ -805,7 +807,7 @@ test "ecs query: Comp exposes change detection metadata" {
   let first_ctx = @core.SystemTickContext::new()
   first_ctx.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(first_ctx)
-  let first_query : Query[Comp[Position], All] = query(world)
+  let first_query : Query[Read[Position], All] = query(world)
   let first_position = try! first_query.require_single()
   debug_inspect(first_position.is_added(), content="true")
   debug_inspect(first_position.is_changed(), content="true")
@@ -827,7 +829,7 @@ test "ecs query: Comp exposes change detection metadata" {
   let second_ctx = @core.SystemTickContext::new()
   second_ctx.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(second_ctx)
-  let second_query : Query[Comp[Position], All] = query(world)
+  let second_query : Query[Read[Position], All] = query(world)
   let second_position = try! second_query.require_single()
   debug_inspect(second_position.is_added(), content="false")
   debug_inspect(second_position.is_changed(), content="true")
@@ -847,7 +849,7 @@ test "ecs query_state: default query filter cache invalidates on resource update
   try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(entity, ecs_key_disabled, Disabled::new())
 
-  let state : QueryState[Comp[Position], All] = world.query()
+  let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="0")
 
   world.insert_resource(
@@ -898,7 +900,7 @@ test "ecs query cache: archetype fast path keeps entity cache lazy" {
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
 
-  let query : Query[Comp[Position], All] = query_filtered_with_cache(
+  let query : Query[Read[Position], All] = query_filtered_with_cache(
     world,
     All::new(),
     QueryCache::new(),
@@ -939,7 +941,7 @@ test "ecs query cache: sparse entity-check path materializes entity cache" {
   tick_context.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(tick_context)
 
-  let added_query : Query[Comp[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
+  let added_query : Query[Read[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
     world,
     Added::new(sparse_tag_key),
     QueryCache::new(),
@@ -962,7 +964,7 @@ test "ecs query cache: dense mode tracks matched tables cache" {
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
   try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
 
-  let query : Query[Comp[Position], All] = query_filtered_with_cache(
+  let query : Query[Read[Position], All] = query_filtered_with_cache(
     world,
     All::new(),
     QueryCache::new(),
@@ -989,7 +991,7 @@ test "ecs query cache: table tick filter uses dense matched tables" {
   tick_context.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(tick_context)
 
-  let query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
+  let query : Query[Read[Position], Added[Position]] = query_filtered_with_cache(
     world,
     Added::new(position_key),
     QueryCache::new(),
@@ -1014,7 +1016,7 @@ test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
   tick_context.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(tick_context)
 
-  let query : Query[Comp[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
+  let query : Query[Read[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
     world,
     Added::new(sparse_tag_key),
     QueryCache::new(),
@@ -1067,7 +1069,7 @@ test "ecs query cache: tuple data anchors choose minimal membership candidate" {
   try! world.set_by_key(e3, position_key, Position::{ x: 4, y: 4 })
   try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 9, dy: 9 })
 
-  let query : Query[(Comp[Position], Comp[Velocity]), All] = query_filtered_with_cache(
+  let query : Query[(Read[Position], Read[Velocity]), All] = query_filtered_with_cache(
     world,
     All::new(),
     QueryCache::new(),
@@ -1127,7 +1129,7 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
   try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
   try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 7, dy: 7 })
 
-  let state : QueryState[Comp[Position], Without[Velocity]] = world.query_filtered(
+  let state : QueryState[Read[Position], Without[Velocity]] = world.query_filtered(
     Without::new(velocity_key),
   )
   let combinations0 = state.iter_combinations(world)
@@ -1185,7 +1187,7 @@ test "ecs query_state cache: table tick-dependent filters stay dense across runs
   ctx0.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx0)
 
-  let state : QueryState[Comp[Position], Added[Position]] = world.query_filtered(
+  let state : QueryState[Read[Position], Added[Position]] = world.query_filtered(
     Added::new(position_key),
   )
   debug_inspect(state.count(world), content="1")
@@ -1221,7 +1223,7 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
-  let state : QueryState[Comp[Position], All] = world.query()
+  let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
   debug_inspect(
     state.cache_snapshot().cached_matching_archetypes().length(),
@@ -1276,7 +1278,7 @@ test "ecs query_state cache: archetype generation remains stable across non-empt
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
-  let state : QueryState[Comp[Position], All] = world.query()
+  let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
   let initial_matching_generation = state
     .cache_snapshot()
@@ -1323,7 +1325,7 @@ test "ecs query_state cache: dense tables update incrementally on matching arche
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
-  let state : QueryState[Comp[Position], All] = world.query()
+  let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
   debug_inspect(
     state.cache_snapshot().cached_matching_tables().length(),
@@ -1423,7 +1425,7 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   world.set_tick_context(ctx)
 
   let seen : Array[Int] = []
-  let query : Query[Comp[Position], With[Velocity]] = query_filtered(
+  let query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
   )
@@ -1458,7 +1460,7 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   ctx.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx)
 
-  let query : Query[Comp[Position], With[Velocity]] = query_filtered(
+  let query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
   )
@@ -1495,7 +1497,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  let position_query : Query[Comp[Position], All] = query(world)
+  let position_query : Query[Read[Position], All] = query(world)
   let message0 = try {
     ignore(position_query.require_single())
     ""
@@ -1507,7 +1509,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
 
   try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
   debug_inspect(
-    (try! (query_filtered(world, All::new()) : Query[Comp[Position], All]).require_single()).value(),
+    (try! (query_filtered(world, All::new()) : Query[Read[Position], All]).require_single()).value(),
     content="{ x: 5, y: 8 }",
   )
   let single_entity = try! world
@@ -1518,7 +1520,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
 
   try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
   try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
-  let filtered_query : Query[Comp[Position], With[Velocity]] = query_filtered(
+  let filtered_query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
   )
@@ -1571,7 +1573,7 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
   }
   debug_inspect(optional_disabled.value() is None, content="true")
 
-  let tuple_query : Query[(Comp[GenericPosition], Has[Disabled]), All] = query(
+  let tuple_query : Query[(Read[GenericPosition], Has[Disabled]), All] = query(
     world,
   )
   debug_inspect(tuple_query.count(), content="2")
@@ -1671,7 +1673,7 @@ test "ecs query: generic query supports named reusable data, filters and iterato
   debug_inspect(contiguous_seen, content="[10, 30]")
 
   let generic_query : Query[
-    GenericPair[Comp[GenericPosition], Optional[GenericVelocity]],
+    GenericPair[Read[GenericPosition], Optional[GenericVelocity]],
     All,
   ] = query(world)
   debug_inspect(generic_query.count(), content="2")
@@ -1695,7 +1697,7 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
   try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 30 })
   try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 4, dy: 40 })
 
-  let query : Query[Comp[Position], All] = query(world)
+  let query : Query[Read[Position], All] = query(world)
   let combinations = query.iter_combinations()
   let values : Array[(Int, Int)] = []
   while true {
@@ -1707,7 +1709,7 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
   }
   debug_inspect(values, content="[(1, 2), (1, 3), (2, 3)]")
 
-  let state : QueryState[Comp[Position], All] = world.query()
+  let state : QueryState[Read[Position], All] = world.query()
   let state_combinations = state.iter_combinations(world)
   let state_values : Array[(Int, Int)] = []
   while true {
@@ -1734,7 +1736,7 @@ test "ecs query: iter_combinations supports mut query data across distinct entit
   try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 2, dy: 0 })
   try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 3, dy: 0 })
 
-  let query : Query[(Mut[Position], Comp[Velocity]), All] = query(world)
+  let query : Query[(Write[Position], Read[Velocity]), All] = query(world)
   let combinations = query.iter_combinations()
   while true {
     if (try! combinations.fetch_next()) is Some((left, right)) {

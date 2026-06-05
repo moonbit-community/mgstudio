@@ -379,12 +379,14 @@ pub fn Projection::compute_frustum(
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view(self) {
+pub impl CameraProjection3d for CustomProjection3d with fn get_clip_from_view(
+  self,
+) {
   self.get_clip_from_view()
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view_for_sub(
+pub impl CameraProjection3d for CustomProjection3d with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -392,7 +394,7 @@ pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view_for_s
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with update(
+pub impl CameraProjection3d for CustomProjection3d with fn update(
   self,
   width,
   height,
@@ -401,12 +403,12 @@ pub impl CameraProjection3d for CustomProjection3d with update(
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with far(self) {
+pub impl CameraProjection3d for CustomProjection3d with fn far(self) {
   self.far()
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with compute_frustum(
+pub impl CameraProjection3d for CustomProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -414,7 +416,7 @@ pub impl CameraProjection3d for CustomProjection3d with compute_frustum(
 }
 
 ///|
-pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
+pub impl CameraProjection3d for CustomProjection3d with fn get_frustum_corners(
   self,
   z_near,
   z_far,
@@ -423,12 +425,12 @@ pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
 }
 
 ///|
-pub impl CameraProjection3d for Projection with get_clip_from_view(self) {
+pub impl CameraProjection3d for Projection with fn get_clip_from_view(self) {
   self.get_clip_from_view()
 }
 
 ///|
-pub impl CameraProjection3d for Projection with get_clip_from_view_for_sub(
+pub impl CameraProjection3d for Projection with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -436,17 +438,17 @@ pub impl CameraProjection3d for Projection with get_clip_from_view_for_sub(
 }
 
 ///|
-pub impl CameraProjection3d for Projection with update(self, width, height) {
+pub impl CameraProjection3d for Projection with fn update(self, width, height) {
   self.update(width, height)
 }
 
 ///|
-pub impl CameraProjection3d for Projection with far(self) {
+pub impl CameraProjection3d for Projection with fn far(self) {
   self.far()
 }
 
 ///|
-pub impl CameraProjection3d for Projection with compute_frustum(
+pub impl CameraProjection3d for Projection with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -454,7 +456,7 @@ pub impl CameraProjection3d for Projection with compute_frustum(
 }
 
 ///|
-pub impl CameraProjection3d for Projection with get_frustum_corners(
+pub impl CameraProjection3d for Projection with fn get_frustum_corners(
   self,
   z_near,
   z_far,
@@ -463,14 +465,14 @@ pub impl CameraProjection3d for Projection with get_frustum_corners(
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view(
+pub impl CameraProjection3d for PerspectiveProjection3d with fn get_clip_from_view(
   self,
 ) {
   render3d_perspective_projection_matrix(self)
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view_for_sub(
+pub impl CameraProjection3d for PerspectiveProjection3d with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -478,7 +480,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view_
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with update(
+pub impl CameraProjection3d for PerspectiveProjection3d with fn update(
   self,
   width,
   height,
@@ -488,12 +490,12 @@ pub impl CameraProjection3d for PerspectiveProjection3d with update(
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with far(self) {
+pub impl CameraProjection3d for PerspectiveProjection3d with fn far(self) {
   self.far
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with compute_frustum(
+pub impl CameraProjection3d for PerspectiveProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -501,7 +503,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with compute_frustum(
 }
 
 ///|
-pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners(
+pub impl CameraProjection3d for PerspectiveProjection3d with fn get_frustum_corners(
   self,
   z_near,
   z_far,
@@ -515,7 +517,7 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view(
+pub impl CameraProjection3d for OrthographicProjection3d with fn get_clip_from_view(
   self,
 ) {
   render3d_orthographic_projection_matrix(
@@ -529,7 +531,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view_for_sub(
+pub impl CameraProjection3d for OrthographicProjection3d with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -537,7 +539,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with update(
+pub impl CameraProjection3d for OrthographicProjection3d with fn update(
   self,
   width,
   height,
@@ -547,12 +549,12 @@ pub impl CameraProjection3d for OrthographicProjection3d with update(
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with far(self) {
+pub impl CameraProjection3d for OrthographicProjection3d with fn far(self) {
   self.far
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with compute_frustum(
+pub impl CameraProjection3d for OrthographicProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -560,7 +562,7 @@ pub impl CameraProjection3d for OrthographicProjection3d with compute_frustum(
 }
 
 ///|
-pub impl CameraProjection3d for OrthographicProjection3d with get_frustum_corners(
+pub impl CameraProjection3d for OrthographicProjection3d with fn get_frustum_corners(
   self,
   z_near,
   z_far,
@@ -591,7 +593,7 @@ pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = 
 )
 
 ///|
-pub impl @ecs.Component for ProjectionRuntime3d with component() {
+pub impl @ecs.Component for ProjectionRuntime3d with fn component() {
   ecs_key_projection_runtime3d
 }
 
@@ -601,6 +603,6 @@ pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Frustum with component() {
+pub impl @ecs.Component for Frustum with fn component() {
   ecs_key_frustum
 }

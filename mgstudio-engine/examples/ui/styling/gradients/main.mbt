@@ -94,7 +94,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn animate_gradients(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Comp[GradientStop], @ecs.Mut[@ui.BackgroundColor]),
+    (@ecs.Read[GradientStop], @ecs.Write[@ui.BackgroundColor]),
     @ecs.All,
   ],
 ) -> Unit {

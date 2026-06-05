@@ -313,27 +313,27 @@ pub fn draw_light_gizmos(
   point_query : @ecs.Query[
     (
       @core.Entity,
-      @ecs.Comp[PointLight],
-      @ecs.Comp[@transform.Transform],
-      @ecs.Comp[ShowLightGizmo],
+      @ecs.Read[PointLight],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[ShowLightGizmo],
     ),
     @ecs.All,
   ],
   spot_query : @ecs.Query[
     (
       @core.Entity,
-      @ecs.Comp[SpotLight],
-      @ecs.Comp[@transform.Transform],
-      @ecs.Comp[ShowLightGizmo],
+      @ecs.Read[SpotLight],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[ShowLightGizmo],
     ),
     @ecs.All,
   ],
   directional_query : @ecs.Query[
     (
       @core.Entity,
-      @ecs.Comp[DirectionalLight],
-      @ecs.Comp[@transform.Transform],
-      @ecs.Comp[ShowLightGizmo],
+      @ecs.Read[DirectionalLight],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[ShowLightGizmo],
     ),
     @ecs.All,
   ],
@@ -393,15 +393,15 @@ pub fn draw_light_gizmos(
 ///|
 pub fn draw_all_light_gizmos(
   point_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform]),
+    (@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform]),
     @ecs.Without[ShowLightGizmo],
   ],
   spot_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform]),
+    (@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform]),
     @ecs.Without[ShowLightGizmo],
   ],
   directional_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform]),
+    (@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform]),
     @ecs.Without[ShowLightGizmo],
   ],
   gizmos : @sprite.Gizmos[LightGizmoConfigGroup],

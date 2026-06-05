@@ -102,7 +102,7 @@ fn setup(
 fn animate_samples(
   time : @app.Res[@time.Time[Unit]],
   samples : @ecs.Query[
-    (@ecs.Comp[ReadbackSample], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[ReadbackSample], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -118,7 +118,7 @@ fn animate_samples(
 ///|
 fn emulate_gpu_readback(
   samples : @ecs.Query[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     @ecs.With[ReadbackSample],
   ],
   readback_state : @app.ResMut[ReadbackState],
@@ -139,7 +139,7 @@ fn emulate_gpu_readback(
 ///|
 fn tint_from_readback(
   readback_state : @app.Res[ReadbackState],
-  mesh_materials : @ecs.Query[@ecs.Comp[@pbr.MeshMaterial3d], @ecs.All],
+  mesh_materials : @ecs.Query[@ecs.Read[@pbr.MeshMaterial3d], @ecs.All],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let value = 0.5F + readback_state.get().average_height * 0.4F

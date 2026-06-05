@@ -115,7 +115,7 @@ fn setup(
 ///|
 fn compute_mesh_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[ComputeMeshTarget]],
+  query : @ecs.Query[@ecs.Read[@mesh.Mesh3d], @ecs.With[ComputeMeshTarget]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let t = time.get().elapsed_seconds()

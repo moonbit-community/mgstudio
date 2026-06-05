@@ -269,7 +269,7 @@ fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
 
 ///|
 fn[A : @ecs.Component, B : @ecs.Component] first2(
-  query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B]), @ecs.All],
+  query : @ecs.Query[(@ecs.Read[A], @ecs.Read[B]), @ecs.All],
 ) -> (@core.Entity, A, B)? {
   let result : Ref[(@core.Entity, A, B)?] = Ref(None)
   try! query.view(fn(entity, data) {
@@ -283,7 +283,7 @@ fn[A : @ecs.Component, B : @ecs.Component] first2(
 
 ///|
 fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
-  query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B], @ecs.Comp[C]), @ecs.All],
+  query : @ecs.Query[(@ecs.Read[A], @ecs.Read[B], @ecs.Read[C]), @ecs.All],
 ) -> (@core.Entity, A, B, C)? {
   let result : Ref[(@core.Entity, A, B, C)?] = Ref(None)
   try! query.view(fn(entity, data) {
@@ -488,7 +488,7 @@ fn setup_image_viewer_scene(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   camera_transform : @app.Res[CameraTransform],
-  ui_root_query : @ecs.Query[@ecs.Comp[TonemappingUiRoot], @ecs.All],
+  ui_root_query : @ecs.Query[@ecs.Read[TonemappingUiRoot], @ecs.All],
 ) -> Unit {
   let mesh_handle = mesh_assets
     .peek()
@@ -543,9 +543,9 @@ fn setup_image_viewer_scene(
 ///|
 fn toggle_scene(
   keys : @input.ButtonInput[@window.KeyCode],
-  visibility_query : @ecs.Query[@ecs.Mut[@visibility.Visibility], @ecs.All],
+  visibility_query : @ecs.Query[@ecs.Write[@visibility.Visibility], @ecs.All],
   current_scene : @app.ResMut[CurrentScene],
-  scene_query : @ecs.Query[@ecs.Comp[SceneNumber], @ecs.All],
+  scene_query : @ecs.Query[@ecs.Read[SceneNumber], @ecs.All],
 ) -> Unit {
   let next_scene = if keys.just_pressed(KeyQ) {
     Some(1)
@@ -574,9 +574,12 @@ fn toggle_scene(
 ///|
 fn toggle_tonemapping_method(
   keys : @input.ButtonInput[@window.KeyCode],
-  tonemapping_query : @ecs.Query[@ecs.Mut[@post_process.Tonemapping], @ecs.All],
+  tonemapping_query : @ecs.Query[
+    @ecs.Write[@post_process.Tonemapping],
+    @ecs.All,
+  ],
   color_grading_query : @ecs.Query[
-    @ecs.Mut[@post_process.ColorGrading],
+    @ecs.Write[@post_process.ColorGrading],
     @ecs.All,
   ],
   per_method_settings : @app.Res[PerMethodSettings],
@@ -630,7 +633,10 @@ fn update_color_grading_settings(
   keys : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
   per_method_settings : @app.ResMut[PerMethodSettings],
-  tonemapping_query : @ecs.Query[@ecs.Mut[@post_process.Tonemapping], @ecs.All],
+  tonemapping_query : @ecs.Query[
+    @ecs.Write[@post_process.Tonemapping],
+    @ecs.All,
+  ],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
@@ -703,11 +709,11 @@ fn update_color_grading_settings(
 ///|
 fn drag_drop_image(
   image_material_query : @ecs.Query[
-    (@ecs.Comp[HDRViewer], @ecs.Comp[@pbr.MeshMaterial3d]),
+    (@ecs.Read[HDRViewer], @ecs.Read[@pbr.MeshMaterial3d]),
     @ecs.All,
   ],
   image_viewer_text_query : @ecs.Query[
-    (@ecs.Comp[@text.Text], @ecs.Comp[SceneNumber]),
+    (@ecs.Read[@text.Text], @ecs.Read[SceneNumber]),
     @ecs.All,
   ],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
@@ -750,9 +756,9 @@ fn drag_drop_image(
 fn resize_image(
   image_mesh_query : @ecs.Query[
     (
-      @ecs.Comp[HDRViewer],
-      @ecs.Comp[@pbr.MeshMaterial3d],
-      @ecs.Comp[@mesh.Mesh3d],
+      @ecs.Read[HDRViewer],
+      @ecs.Read[@pbr.MeshMaterial3d],
+      @ecs.Read[@mesh.Mesh3d],
     ),
     @ecs.All,
   ],
@@ -816,13 +822,13 @@ fn update_ui(
   selected_parameter : @app.Res[SelectedParameter],
   settings_query : @ecs.Query[
     (
-      @ecs.Comp[@post_process.Tonemapping],
-      @ecs.Comp[@post_process.ColorGrading],
+      @ecs.Read[@post_process.Tonemapping],
+      @ecs.Read[@post_process.ColorGrading],
     ),
     @ecs.All,
   ],
   ui_text_query : @ecs.Query[
-    (@ecs.Comp[@text.Text], @ecs.Comp[TonemappingUiText]),
+    (@ecs.Read[@text.Text], @ecs.Read[TonemappingUiText]),
     @ecs.All,
   ],
   hide_ui : @app.Local[Bool],

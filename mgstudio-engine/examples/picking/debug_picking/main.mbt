@@ -174,7 +174,7 @@ fn on_pointer_click(
 ///|
 fn refresh_overlay(
   state : @app.Res[DebugPickingState],
-  texts : @ecs.Query[@ecs.Mut[@text.Text], @ecs.All],
+  texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.All],
 ) -> Unit {
   let text = texts.get(state.get().label_entity) catch { _ => None }
   if text is Some(text) {

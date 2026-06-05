@@ -33,32 +33,32 @@ pub fn[T] Local::set(self : Local[T], value : T) -> Unit {
 }
 
 ///|
-pub impl FromWorld for Bool with from_world(_world) {
+pub impl FromWorld for Bool with fn from_world(_world) {
   false
 }
 
 ///|
-pub impl FromWorld for Int with from_world(_world) {
+pub impl FromWorld for Int with fn from_world(_world) {
   0
 }
 
 ///|
-pub impl FromWorld for Float with from_world(_world) {
+pub impl FromWorld for Float with fn from_world(_world) {
   0.0F
 }
 
 ///|
-pub impl FromWorld for String with from_world(_world) {
+pub impl FromWorld for String with fn from_world(_world) {
   ""
 }
 
 ///|
-pub impl[T] FromWorld for Array[T] with from_world(_world) {
+pub impl[T] FromWorld for Array[T] with fn from_world(_world) {
   []
 }
 
 ///|
-pub impl[T : FromWorld] SystemParam for Local[T] with init_state(world) {
+pub impl[T : FromWorld] SystemParam for Local[T] with fn init_state(world) {
   let mut value = T::from_world(world)
   SystemParamState::new(fn() { Local::{ value, } }, fn(local_value : Local[T]) {
     value = local_value.value
@@ -66,16 +66,16 @@ pub impl[T : FromWorld] SystemParam for Local[T] with init_state(world) {
 }
 
 ///|
-pub impl[T : FromWorld] SystemParam for Local[T] with get(state) {
+pub impl[T : FromWorld] SystemParam for Local[T] with fn get(state) {
   state.get()
 }
 
 ///|
-pub impl[T : FromWorld] SystemParam for Local[T] with store(self, state) {
+pub impl[T : FromWorld] SystemParam for Local[T] with fn store(self, state) {
   state.store(self)
 }
 
 ///|
-pub impl[T : FromWorld] SystemParam for Local[T] with access(_world) {
+pub impl[T : FromWorld] SystemParam for Local[T] with fn access(_world) {
   SystemAccess::new()
 }

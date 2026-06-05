@@ -107,7 +107,7 @@ fn setup(
 ///|
 fn spin_cubes(
   time : @app.Res[@time.Time[Unit]],
-  cubes : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[SpinCube]],
+  cubes : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[SpinCube]],
 ) -> Unit {
   let rot = @math.Quat::from_rotation_y(time.get().delta_secs() * 0.7F)
   try! cubes.for_each(fn(_entity, transform) {
@@ -118,7 +118,10 @@ fn spin_cubes(
 ///|
 fn orbit_camera(
   time : @app.Res[@time.Time[Unit]],
-  cameras : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[@pbr.Camera3d]],
+  cameras : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@pbr.Camera3d],
+  ],
 ) -> Unit {
   let t = time.get().elapsed_secs()
   try! cameras.for_each(fn(_entity, transform) {

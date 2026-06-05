@@ -279,7 +279,7 @@ fn setup_scene_once_loaded(
   scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animation_setup : @app.ResMut[AnimationSetup],
-  players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
+  players : @ecs.Query[@ecs.Write[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
   guard scene_ready.entity() is Some(scene_entity) else { return }
   guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
@@ -319,7 +319,7 @@ fn observe_on_step(
   step_event : @ecs.On[StepEvent],
   particle_assets : @app.Res[ParticleAssets],
   commands : @app.Commands,
-  transforms : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
+  transforms : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All],
 ) -> Unit {
   let event = step_event.event()
   guard step_event.entity() is Some(target_entity) else { return }
@@ -364,7 +364,7 @@ fn observe_on_step(
 fn simulate_particles(
   commands : @app.Commands,
   particles : @ecs.Query[
-    (@core.Entity, @ecs.Mut[@transform.Transform], @ecs.Mut[Particle]),
+    (@core.Entity, @ecs.Write[@transform.Transform], @ecs.Write[Particle]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

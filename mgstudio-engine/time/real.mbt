@@ -29,17 +29,17 @@ pub fn Real::Real() -> Real {
 }
 
 ///|
-pub impl Default for Real with default() {
+pub impl Default for Real with fn default() {
   Real::Real()
 }
 
 ///|
-pub impl TimeContext for Real with time_context_debug_name() {
+pub impl TimeContext for Real with fn time_context_debug_name() {
   "mgstudio_time::Real"
 }
 
 ///|
-pub impl TimeContext for Real with time_resource_key() {
+pub impl TimeContext for Real with fn time_resource_key() {
   real_time_resource_key
 }
 

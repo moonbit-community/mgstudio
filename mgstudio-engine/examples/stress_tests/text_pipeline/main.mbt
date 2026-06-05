@@ -86,7 +86,7 @@ fn setup(
 ///|
 fn update_text_pipeline(
   time : @app.Res[@time.Time[Unit]],
-  texts : @ecs.Query[@ecs.Mut[@text.TextBounds], @ecs.With[PipelineText]],
+  texts : @ecs.Query[@ecs.Write[@text.TextBounds], @ecs.With[PipelineText]],
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
   let width = (1.0F + @math.sin(elapsed)) * 600.0F

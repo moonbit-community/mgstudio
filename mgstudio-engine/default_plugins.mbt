@@ -32,12 +32,12 @@ pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for DefaultPlugins with name(_self) {
+pub impl @app.Plugin for DefaultPlugins with fn name(_self) {
   "mgstudio.DefaultPlugins"
 }
 
 ///|
-pub impl @app.Plugin for DefaultPlugins with build(_self, app) {
+pub impl @app.Plugin for DefaultPlugins with fn build(_self, app) {
   app.add_plugins(DefaultPlugins::build())
 }
 
@@ -76,11 +76,11 @@ pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for MinimalPlugins with name(_self) {
+pub impl @app.Plugin for MinimalPlugins with fn name(_self) {
   "mgstudio.MinimalPlugins"
 }
 
 ///|
-pub impl @app.Plugin for MinimalPlugins with build(_self, app) {
+pub impl @app.Plugin for MinimalPlugins with fn build(_self, app) {
   app.add_plugins(MinimalPlugins::build())
 }

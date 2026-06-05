@@ -21,11 +21,11 @@ pub fn TextPlugin::TextPlugin() -> TextPlugin {
 }
 
 ///|
-pub impl @app.Plugin for TextPlugin with name(_self) {
+pub impl @app.Plugin for TextPlugin with fn name(_self) {
   "mgstudio.text.TextPlugin"
 }
 
 ///|
-pub impl @app.Plugin for TextPlugin with build(_self, app) {
+pub impl @app.Plugin for TextPlugin with fn build(_self, app) {
   text_plugin(app)
 }

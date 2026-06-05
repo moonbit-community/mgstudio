@@ -33,12 +33,12 @@ pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> VolumetricFogPlugin {
 }
 
 ///|
-pub impl @app.Plugin for VolumetricFogPlugin with name(_self) {
+pub impl @app.Plugin for VolumetricFogPlugin with fn name(_self) {
   VOLUMETRIC_FOG_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for VolumetricFogPlugin with build(self, app) {
+pub impl @app.Plugin for VolumetricFogPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   volumetric_fog_plugin_install_with(app, self)
 }
@@ -76,7 +76,7 @@ let ecs_key_volumetric_fog_plugin_state : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::VolumetricFogPluginState")
 
 ///|
-pub impl @app.Resource for VolumetricFogPluginState with resource() {
+pub impl @app.Resource for VolumetricFogPluginState with fn resource() {
   ecs_key_volumetric_fog_plugin_state
 }
 

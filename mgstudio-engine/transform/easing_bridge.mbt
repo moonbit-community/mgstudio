@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub impl @math.Ease for Transform with interpolate(self, end, t) {
+pub impl @math.Ease for Transform with fn interpolate(self, end, t) {
   Transform::{
     translation: self.translation.interpolate(end.translation, t),
     rotation: self.rotation.interpolate(end.rotation, t),

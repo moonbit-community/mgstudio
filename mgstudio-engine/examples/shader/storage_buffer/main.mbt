@@ -118,7 +118,7 @@ fn update_storage_values(
 fn apply_storage_values(
   storage_values : @app.Res[StorageValues],
   query : @ecs.Query[
-    (@ecs.Comp[InstanceSlot], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[InstanceSlot], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

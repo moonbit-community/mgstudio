@@ -90,14 +90,14 @@ pub impl @ecs.Component for CoreScrollbarDragState with fn component() {
 fn scrollbar_on_pointer_click(
   pointer : @app.OnPointer[@app.PointerClick],
   scrollbar_query : @ecs.Query[
-    (@ecs.Comp[Scrollbar], @ecs.Comp[@ui.UiLayout]),
+    (@ecs.Read[Scrollbar], @ecs.Read[@ui.UiLayout]),
     @ecs.All,
   ],
   target_query : @ecs.Query[
     (
-      @ecs.Comp[@ui.ScrollPosition],
-      @ecs.Comp[@ui.UiLayout],
-      @ecs.Comp[@ui.ContentSize]?,
+      @ecs.Read[@ui.ScrollPosition],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[@ui.ContentSize]?,
     ),
     @ecs.All,
   ],
@@ -168,22 +168,22 @@ fn scrollbar_on_pointer_click(
 fn scrollbar_update_thumb_system(
   scrollbar_query : @ecs.Query[
     (
-      @ecs.Comp[Scrollbar],
-      @ecs.Comp[@ui.UiLayout],
-      @ecs.Comp[@hierarchy.Children],
+      @ecs.Read[Scrollbar],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[@hierarchy.Children],
     ),
     @ecs.All,
   ],
   target_query : @ecs.Query[
     (
-      @ecs.Comp[@ui.ScrollPosition],
-      @ecs.Comp[@ui.UiLayout],
-      @ecs.Comp[@ui.ContentSize]?,
+      @ecs.Read[@ui.ScrollPosition],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[@ui.ContentSize]?,
     ),
     @ecs.All,
   ],
   thumb_query : @ecs.Query[
-    (@ecs.Has[CoreScrollbarThumb], @ecs.Mut[@ui.Node]),
+    (@ecs.Has[CoreScrollbarThumb], @ecs.Write[@ui.Node]),
     @ecs.All,
   ],
 ) -> Unit {

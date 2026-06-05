@@ -117,7 +117,7 @@ fn format_optional_string(value : String?) -> String {
 ///|
 fn update_display(
   entities : @ecs.Query[@ecs.EntityRef, @ecs.All],
-  display : @app.Single[@ecs.Mut[@text.Text], @ecs.With[ExampleDisplay]],
+  display : @app.Single[@ecs.Write[@text.Text], @ecs.With[ExampleDisplay]],
 ) -> Unit {
   let lines : Array[String] = []
 

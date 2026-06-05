@@ -417,8 +417,8 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
 fn handle_widget_interactions(
   interactions : @ecs.Query[
     (
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[AppSetting]],
     ),
     @ecs.With[@ui.Button],
   ],
@@ -433,15 +433,15 @@ fn handle_widget_interactions(
 fn update_radio_buttons(
   radio_buttons : @ecs.Query[
     (
-      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
-      @ecs.Mut[@ui.BackgroundColor],
+      @ecs.Read[@widgets_lib.WidgetClickSender[AppSetting]],
+      @ecs.Write[@ui.BackgroundColor],
     ),
     @ecs.With[@widgets_lib.RadioButton],
   ],
   radio_button_texts : @ecs.Query[
     (
-      @ecs.Comp[@widgets_lib.WidgetClickSender[AppSetting]],
-      @ecs.Mut[@text.TextColor],
+      @ecs.Read[@widgets_lib.WidgetClickSender[AppSetting]],
+      @ecs.Write[@text.TextColor],
     ),
     @ecs.With[@widgets_lib.RadioButtonText],
   ],
@@ -526,9 +526,9 @@ fn handle_window_resize_events(
 ///|
 fn regenerate_image_when_requested(
   commands : @app.Commands,
-  image_views : @ecs.Query[@ecs.Comp[ImageView], @ecs.All],
+  image_views : @ecs.Query[@ecs.Read[ImageView], @ecs.All],
   windows : @ecs.Query[
-    @ecs.Comp[@window.Window],
+    @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   app_status : @app.ResMut[AppStatus],
@@ -567,11 +567,11 @@ fn regenerate_image_when_requested(
 ///|
 fn animate_image_scale(
   animated_images : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[AnimatedImage],
   ],
   windows : @ecs.Query[
-    @ecs.Comp[@window.Window],
+    @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   app_status : @app.Res[AppStatus],
@@ -833,7 +833,7 @@ fn image_size_to_int(size : ImageSize) -> Int {
 ///|
 fn primary_window_size(
   windows : @ecs.Query[
-    @ecs.Comp[@window.Window],
+    @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> @math.Vec2 {

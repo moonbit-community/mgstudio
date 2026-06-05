@@ -43,7 +43,7 @@ let frame_count_plugin_marker_key : @ecs.ResourceKey[FrameCountPluginMarker] = @
 )
 
 ///|
-pub impl @app.Resource for FrameCount with resource() {
+pub impl @app.Resource for FrameCount with fn resource() {
   frame_count_resource_key
 }
 
@@ -56,12 +56,12 @@ pub fn FrameCountPlugin::FrameCountPlugin() -> FrameCountPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FrameCountPlugin with name(_self) {
+pub impl @app.Plugin for FrameCountPlugin with fn name(_self) {
   FRAME_COUNT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FrameCountPlugin with build(self, app) {
+pub impl @app.Plugin for FrameCountPlugin with fn build(self, app) {
   frame_count_plugin_with(app, self)
 }
 

@@ -58,17 +58,17 @@ pub fn LdtkProjectData::as_parent(
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkProjectData with root_levels(value) {
+pub impl RawLevelAccessor for LdtkProjectData with fn root_levels(value) {
   value.json_data().levels
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkProjectData with worlds(value) {
+pub impl RawLevelAccessor for LdtkProjectData with fn worlds(value) {
   value.json_data().worlds
 }
 
 ///|
-pub impl LevelMetadataAccessor for LdtkProjectData with get_level_metadata_by_iid(
+pub impl LevelMetadataAccessor for LdtkProjectData with fn get_level_metadata_by_iid(
   value,
   iid,
 ) {

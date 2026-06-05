@@ -24,12 +24,12 @@ pub fn FrameTimeGraphPlugin::FrameTimeGraphPlugin() -> FrameTimeGraphPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FrameTimeGraphPlugin with name(_self) {
+pub impl @app.Plugin for FrameTimeGraphPlugin with fn name(_self) {
   "mgstudio.dev_tools.FrameTimeGraphPlugin"
 }
 
 ///|
-pub impl @app.Plugin for FrameTimeGraphPlugin with build(self, app) {
+pub impl @app.Plugin for FrameTimeGraphPlugin with fn build(self, app) {
   frame_time_graph_plugin_with(app, self)
 }
 
@@ -82,12 +82,12 @@ fn FrametimeGraphMaterial::asset_init_probe() -> FrametimeGraphMaterial {
 }
 
 ///|
-pub impl @asset.Asset for FrametimeGraphMaterial with asset_debug_name() {
+pub impl @asset.Asset for FrametimeGraphMaterial with fn asset_debug_name() {
   "mgstudio_dev_tools::FrametimeGraphMaterial"
 }
 
 ///|
-pub impl @asset.Asset for FrametimeGraphMaterial with asset_as_image(_self) {
+pub impl @asset.Asset for FrametimeGraphMaterial with fn asset_as_image(_self) {
   None
 }
 
@@ -99,7 +99,7 @@ let frametime_graph_material_asset_resource_keys : @asset.AssetResourceKeys[
 )
 
 ///|
-pub impl @asset.Asset for FrametimeGraphMaterial with asset_resource_keys() {
+pub impl @asset.Asset for FrametimeGraphMaterial with fn asset_resource_keys() {
   frametime_graph_material_asset_resource_keys
 }
 

@@ -168,7 +168,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn update_component_group_1(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[CompA], @ecs.Mut[CompB], @ecs.Comp[CompC]),
+    (@ecs.Write[CompA], @ecs.Write[CompB], @ecs.Read[CompC]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -185,7 +185,7 @@ fn update_component_group_1(
 fn update_component_group_2(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[CompD], @ecs.Mut[CompE], @ecs.Mut[CompF]),
+    (@ecs.Write[CompD], @ecs.Write[CompE], @ecs.Write[CompF]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -203,10 +203,10 @@ fn update_visible_sprites(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Comp[CompA],
-      @ecs.Comp[CompB],
-      @ecs.Comp[CompD],
-      @ecs.Mut[@transform.Transform],
+      @ecs.Read[CompA],
+      @ecs.Read[CompB],
+      @ecs.Read[CompD],
+      @ecs.Write[@transform.Transform],
     ),
     @ecs.With[@sprite.Sprite],
   ],

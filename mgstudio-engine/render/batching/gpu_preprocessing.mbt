@@ -544,12 +544,12 @@ pub fn GpuPreprocessingPlugin::with_mode(
 }
 
 ///|
-pub impl @app.Plugin for GpuPreprocessingPlugin with name(_self) {
+pub impl @app.Plugin for GpuPreprocessingPlugin with fn name(_self) {
   GPU_PREPROCESSING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for GpuPreprocessingPlugin with build(self, app) {
+pub impl @app.Plugin for GpuPreprocessingPlugin with fn build(self, app) {
   gpu_preprocessing_plugin_with(app, self)
 }
 
@@ -561,7 +561,7 @@ let gpu_preprocessing_support_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for GpuPreprocessingSupport with resource() {
+pub impl @app.Resource for GpuPreprocessingSupport with fn resource() {
   gpu_preprocessing_support_resource_key
 }
 

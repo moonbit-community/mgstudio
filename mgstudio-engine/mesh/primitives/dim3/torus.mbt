@@ -122,7 +122,7 @@ pub fn TorusMeshBuilder::build(self : TorusMeshBuilder) -> @mesh.Mesh3dGeometry 
 }
 
 ///|
-pub impl MeshBuilder for TorusMeshBuilder with build(self) {
+pub impl MeshBuilder for TorusMeshBuilder with fn build(self) {
   torus_mesh_with_angle_range(
     self.torus,
     self.minor_resolution,
@@ -133,7 +133,7 @@ pub impl MeshBuilder for TorusMeshBuilder with build(self) {
 }
 
 ///|
-pub impl Meshable for @math.Torus with mesh(self) {
+pub impl Meshable for @math.Torus with fn mesh(self) {
   TorusMeshBuilder::from_torus(self).build()
 }
 

@@ -343,7 +343,7 @@ pub fn[T : WidgetValue] spawn_option_buttons(
 ///|
 pub fn[T : WidgetValue] handle_ui_interactions(
   interactions : @ecs.Query[
-    (@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]),
+    (@ecs.Read[@ui.Interaction], @ecs.Read[WidgetClickSender[T]]),
     @ecs.With[@ui.Button],
   ],
   widget_click_events : @ecs.MessageWriter[WidgetClickEvent[T]],
@@ -362,7 +362,7 @@ pub fn[T : WidgetValue] handle_ui_interactions(
 
 ///|
 pub fn update_ui_radio_button(
-  background_color : @ecs.Mut[@ui.BackgroundColor],
+  background_color : @ecs.Write[@ui.BackgroundColor],
   selected : Bool,
 ) -> Unit {
   background_color.set(
@@ -372,7 +372,7 @@ pub fn update_ui_radio_button(
 
 ///|
 pub fn update_ui_radio_button_text(
-  text_color : @ecs.Mut[@text.TextColor],
+  text_color : @ecs.Write[@text.TextColor],
   selected : Bool,
 ) -> Unit {
   text_color.set(@text.TextColor::new(radio_button_foreground_color(selected)))

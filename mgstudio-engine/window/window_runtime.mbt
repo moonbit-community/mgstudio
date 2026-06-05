@@ -57,7 +57,7 @@ let ecs_key_window_runtime : @ecs.ComponentKey[WindowRuntime] = @ecs.register_co
 )
 
 ///|
-impl @ecs.Component for WindowRuntime with component() {
+impl @ecs.Component for WindowRuntime with fn component() {
   ecs_key_window_runtime
 }
 
@@ -1794,7 +1794,7 @@ pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
   window_emit_native_theme_events(world)
   window_emit_native_occluded_events(world)
   window_emit_native_app_lifecycle_events(world)
-  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+  let runtime_query : @ecs.Query[@ecs.Write[WindowRuntime], @ecs.All] = @ecs.query(
     world,
   )
   for entity in window_runtime_entities_with_host(world) {
@@ -1817,7 +1817,7 @@ pub fn window_backend_apply_requested_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
-  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+  let runtime_query : @ecs.Query[@ecs.Write[WindowRuntime], @ecs.All] = @ecs.query(
     world,
   )
   for entity in window_runtime_entities_with_host(world) {
@@ -1837,7 +1837,7 @@ pub fn window_take_changed_mode_requests(
   world : @ecs.World,
 ) -> Array[WindowModeChangeRequest] {
   let requests : Array[WindowModeChangeRequest] = []
-  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+  let runtime_query : @ecs.Query[@ecs.Write[WindowRuntime], @ecs.All] = @ecs.query(
     world,
   )
   for entity in window_runtime_entities_with_host(world) {
@@ -1868,7 +1868,7 @@ pub fn window_take_changed_mode_requests(
 pub fn window_backend_apply_changed_cursor_options_system(
   world : @ecs.World,
 ) -> Unit {
-  let runtime_query : @ecs.Query[@ecs.Mut[WindowRuntime], @ecs.All] = @ecs.query(
+  let runtime_query : @ecs.Query[@ecs.Write[WindowRuntime], @ecs.All] = @ecs.query(
     world,
   )
   for entity in window_runtime_entities_with_host(world) {

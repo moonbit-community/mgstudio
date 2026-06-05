@@ -45,7 +45,7 @@ let ecs_res_key_picking_events : @ecs.ResourceKey[PickingEvents] = @ecs.register
 )
 
 ///|
-pub impl Resource for PickingEvents with resource() {
+pub impl Resource for PickingEvents with fn resource() {
   ecs_res_key_picking_events
 }
 
@@ -81,68 +81,68 @@ pub(open) trait PointerObserverKind {
 }
 
 ///|
-pub impl PointerObserverKind for PointerMove with event_kind() {
+pub impl PointerObserverKind for PointerMove with fn event_kind() {
   ignore(PointerMove::{  })
   @pointer_events.PointerEventKind::Move
 }
 
 ///|
-pub impl PointerObserverKind for PointerMove with source_label() {
+pub impl PointerObserverKind for PointerMove with fn source_label() {
   "Pointer<Move>"
 }
 
 ///|
-pub impl PointerObserverKind for PointerEnter with event_kind() {
+pub impl PointerObserverKind for PointerEnter with fn event_kind() {
   ignore(PointerEnter::{  })
   @pointer_events.PointerEventKind::Enter
 }
 
 ///|
-pub impl PointerObserverKind for PointerEnter with source_label() {
+pub impl PointerObserverKind for PointerEnter with fn source_label() {
   "Pointer<Enter>"
 }
 
 ///|
-pub impl PointerObserverKind for PointerLeave with event_kind() {
+pub impl PointerObserverKind for PointerLeave with fn event_kind() {
   ignore(PointerLeave::{  })
   @pointer_events.PointerEventKind::Leave
 }
 
 ///|
-pub impl PointerObserverKind for PointerLeave with source_label() {
+pub impl PointerObserverKind for PointerLeave with fn source_label() {
   "Pointer<Leave>"
 }
 
 ///|
-pub impl PointerObserverKind for PointerDown with event_kind() {
+pub impl PointerObserverKind for PointerDown with fn event_kind() {
   ignore(PointerDown::{  })
   @pointer_events.PointerEventKind::Down
 }
 
 ///|
-pub impl PointerObserverKind for PointerDown with source_label() {
+pub impl PointerObserverKind for PointerDown with fn source_label() {
   "Pointer<Down>"
 }
 
 ///|
-pub impl PointerObserverKind for PointerUp with event_kind() {
+pub impl PointerObserverKind for PointerUp with fn event_kind() {
   ignore(PointerUp::{  })
   @pointer_events.PointerEventKind::Up
 }
 
 ///|
-pub impl PointerObserverKind for PointerUp with source_label() {
+pub impl PointerObserverKind for PointerUp with fn source_label() {
   "Pointer<Up>"
 }
 
 ///|
-pub impl PointerObserverKind for PointerClick with event_kind() {
+pub impl PointerObserverKind for PointerClick with fn event_kind() {
   ignore(PointerClick::{  })
   @pointer_events.PointerEventKind::Click
 }
 
 ///|
-pub impl PointerObserverKind for PointerClick with source_label() {
+pub impl PointerObserverKind for PointerClick with fn source_label() {
   "Pointer<Click>"
 }
 
@@ -190,17 +190,17 @@ fn current_pointer_event_abort_missing() -> @pointer_events.PointerEvent {
 }
 
 ///|
-pub impl[K] SystemParam for OnPointer[K] with init_state(world) {
+pub impl[K] SystemParam for OnPointer[K] with fn init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[K] SystemParam for OnPointer[K] with get(_state) {
+pub impl[K] SystemParam for OnPointer[K] with fn get(_state) {
   OnPointer::{ event: current_pointer_event_abort_missing() }
 }
 
 ///|
-pub impl[K] SystemParam for OnPointer[K] with store(self, state) {
+pub impl[K] SystemParam for OnPointer[K] with fn store(self, state) {
   system_param_store_no_state(self, state)
 }
 

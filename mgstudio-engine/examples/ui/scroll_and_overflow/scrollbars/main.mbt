@@ -128,7 +128,7 @@ fn setup(
 
 ///|
 fn auto_scroll(
-  areas : @ecs.Query[@ecs.Mut[@ui.ScrollPosition], @ecs.With[AutoScrollArea]],
+  areas : @ecs.Query[@ecs.Write[@ui.ScrollPosition], @ecs.With[AutoScrollArea]],
 ) -> Unit {
   try! areas.view(fn(_entity, scroll) {
     scroll.set(scroll.value().with_delta(0.15F, 0.65F))

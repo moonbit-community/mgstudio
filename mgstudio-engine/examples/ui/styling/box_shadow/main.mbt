@@ -567,8 +567,8 @@ fn update_shadow_controls(
     (
       @core.Entity,
       (
-        (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
-        (@ecs.Comp[@ui.Interaction], @ecs.Comp[ShadowControlButton]),
+        (@ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
+        (@ecs.Read[@ui.Interaction], @ecs.Read[ShadowControlButton]),
       ),
     ),
     @ecs.All,
@@ -611,7 +611,7 @@ fn update_shadow_controls(
 fn update_shadow_node(
   settings : @app.Res[ShadowSettings],
   shadow_nodes : @ecs.Query[
-    (@ecs.Mut[@ui.Node], @ecs.Mut[@ui.BoxShadow]),
+    (@ecs.Write[@ui.Node], @ecs.Write[@ui.BoxShadow]),
     @ecs.With[ShadowNode],
   ],
 ) -> Unit {
@@ -638,7 +638,7 @@ fn update_shadow_node(
 fn update_shadow_labels(
   settings : @app.Res[ShadowSettings],
   labels : @ecs.Query[
-    (@ecs.Mut[@text.Text], @ecs.Comp[ShadowValueLabel]),
+    (@ecs.Write[@text.Text], @ecs.Read[ShadowValueLabel]),
     @ecs.All,
   ],
 ) -> Unit {

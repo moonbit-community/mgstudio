@@ -413,7 +413,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
   let diagnostics_store = world
     .get_resource(@diagnostic.DiagnosticsStore::resource())
     .unwrap_or(@diagnostic.DiagnosticsStore::DiagnosticsStore())
-  let overlays : @ecs.QueryState[@ecs.Comp[DiagnosticsOverlay], @ecs.All] = world.query()
+  let overlays : @ecs.QueryState[@ecs.Read[DiagnosticsOverlay], @ecs.All] = world.query()
   let overlay_iter = overlays.iter(world)
   let mut window_index = 0
   while (overlay_iter.fetch_next() catch { _ => None })
@@ -567,7 +567,7 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
     .get_resource(@diagnostic.DiagnosticsStore::resource())
     .unwrap_or(@diagnostic.DiagnosticsStore::DiagnosticsStore())
   let overlays : @ecs.QueryState[
-    (@ecs.Comp[DiagnosticsOverlay], @ecs.Comp[DiagnosticsOverlayWindow]),
+    (@ecs.Read[DiagnosticsOverlay], @ecs.Read[DiagnosticsOverlayWindow]),
     @ecs.All,
   ] = world.query()
   let overlay_iter = overlays.iter(world)
@@ -584,8 +584,8 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
 ///|
 fn diagnostics_overlay_pointer_down(
   pointer : @app.OnPointer[@app.PointerDown],
-  headers : @ecs.Query[@ecs.Comp[DiagnosticsOverlayHeader], @ecs.All],
-  overlays : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  headers : @ecs.Query[@ecs.Read[DiagnosticsOverlayHeader], @ecs.All],
+  overlays : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
@@ -608,7 +608,7 @@ fn diagnostics_overlay_pointer_down(
 fn diagnostics_overlay_pointer_move(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
-  overlays : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  overlays : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
 ) -> Unit {
   let drag_state_value = drag_state.get()
   guard drag_state_value.active_overlay is Some(overlay_entity) else { return }
@@ -639,9 +639,9 @@ fn diagnostics_overlay_pointer_up(
 ///|
 fn diagnostics_overlay_pointer_click(
   pointer : @app.OnPointer[@app.PointerClick],
-  headers : @ecs.Query[@ecs.Comp[DiagnosticsOverlayHeader], @ecs.All],
-  windows : @ecs.Query[@ecs.Mut[DiagnosticsOverlayWindow], @ecs.All],
-  nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  headers : @ecs.Query[@ecs.Read[DiagnosticsOverlayHeader], @ecs.All],
+  windows : @ecs.Query[@ecs.Write[DiagnosticsOverlayWindow], @ecs.All],
+  nodes : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
   let header_comp = headers.get(target) catch { _ => None }

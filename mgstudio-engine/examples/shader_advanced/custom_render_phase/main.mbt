@@ -108,7 +108,7 @@ fn setup(
 ///|
 fn animate_phase_a(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[PhaseA]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[PhaseA]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, transform) {
@@ -121,7 +121,7 @@ fn animate_phase_a(
 ///|
 fn animate_phase_b(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[PhaseB]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[PhaseB]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, transform) {

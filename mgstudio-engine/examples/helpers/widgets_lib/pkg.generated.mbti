@@ -11,7 +11,7 @@ import {
 }
 
 // Values
-pub fn[T : WidgetValue] handle_ui_interactions(@ecs.Query[(@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
+pub fn[T : WidgetValue] handle_ui_interactions(@ecs.Query[(@ecs.Read[@ui.Interaction], @ecs.Read[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
 
 pub fn main_ui_node() -> @ui.Node
 
@@ -23,9 +23,9 @@ pub fn[T : WidgetValue] spawn_option_buttons(@app.Commands, @core.Entity, String
 
 pub fn ui_text(String, @color.Color) -> (@text.Text, @text.TextFont, @text.TextColor)
 
-pub fn update_ui_radio_button(@ecs.Mut[@ui.BackgroundColor], Bool) -> Unit
+pub fn update_ui_radio_button(@ecs.Write[@ui.BackgroundColor], Bool) -> Unit
 
-pub fn update_ui_radio_button_text(@ecs.Mut[@text.TextColor], Bool) -> Unit
+pub fn update_ui_radio_button_text(@ecs.Write[@text.TextColor], Bool) -> Unit
 
 pub fn[T : WidgetValue] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]]
 

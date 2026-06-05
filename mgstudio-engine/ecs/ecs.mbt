@@ -388,7 +388,7 @@ pub fn[T] World::set_by_key(
 /// MoonBit cannot enforce that the returned value is not mutated through an
 /// alias. Code that wants ECS change detection, changed-component messages, or
 /// replacement hooks must use `World::get_mut`, `World::update_by_key`,
-/// `Mut::modify`, `Mut::set`, or `Mut::update` instead of mutating the value
+/// `Write::modify` or `Write::set` instead of mutating the value
 /// returned here.
 pub fn[T] World::get_by_key(
   self : World,

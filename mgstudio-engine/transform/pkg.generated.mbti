@@ -26,7 +26,7 @@ pub fn mark_dirty_trees(@ecs.World) -> Unit
 
 pub fn mark_dirty_trees_ecs(@ecs.World) -> Unit
 
-pub fn mark_dirty_trees_system(@ecs.Query[@core.Entity, @ecs.Or[(@ecs.Changed[Transform], @ecs.Changed[@hierarchy.Parent], @ecs.Added[GlobalTransform])]], @ecs.RemovedComponents[@hierarchy.Parent], @app.ParamSet2[@ecs.Query[@ecs.Mut[TransformTreeChanged], @ecs.All], @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All]], @app.ResMut[StaticTransformOptimizations]) -> Unit
+pub fn mark_dirty_trees_system(@ecs.Query[@core.Entity, @ecs.Or[(@ecs.Changed[Transform], @ecs.Changed[@hierarchy.Parent], @ecs.Added[GlobalTransform])]], @ecs.RemovedComponents[@hierarchy.Parent], @app.ParamSet2[@ecs.Query[@ecs.Write[TransformTreeChanged], @ecs.All], @ecs.Query[@ecs.Read[@hierarchy.Parent], @ecs.All]], @app.ResMut[StaticTransformOptimizations]) -> Unit
 
 pub fn propagate_parent_transforms(@ecs.World) -> Unit
 
@@ -48,7 +48,7 @@ pub fn set_parent_in_place(@ecs.World, @core.Entity, @core.Entity) -> Unit
 
 pub let static_transform_optimizations_resource_key : @ecs.ResourceKey[StaticTransformOptimizations]
 
-pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children], @ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])])], @ecs.Query[(@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
+pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Read[Transform], @ecs.Write[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children], @ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])])], @ecs.Query[(@ecs.Read[Transform], @ecs.Write[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
 
 pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 

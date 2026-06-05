@@ -86,7 +86,7 @@ pub fn ConicalFrustumMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for ConicalFrustumMeshBuilder with build(self) {
+pub impl MeshBuilder for ConicalFrustumMeshBuilder with fn build(self) {
   conical_frustum_mesh_with_options(
     self.frustum,
     self.resolution,
@@ -95,7 +95,7 @@ pub impl MeshBuilder for ConicalFrustumMeshBuilder with build(self) {
 }
 
 ///|
-pub impl Meshable for @math.ConicalFrustum with mesh(self) {
+pub impl Meshable for @math.ConicalFrustum with fn mesh(self) {
   ConicalFrustumMeshBuilder::from_frustum(self).build()
 }
 

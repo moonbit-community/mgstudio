@@ -119,10 +119,10 @@ position_mut.modify(fn(value) {
 `get_by_key` returns a typed value for read-only use. MoonBit cannot enforce
 that a returned value with mutable fields is not modified through an alias, so
 callers must treat read APIs as read-only by contract. `get_mut` returns a
-`Mut[T]` handle that keeps the exact key and table row that produced the fetch.
-Read methods such as `Mut::peek` and `Mut::value` do not mark the component
-changed. Mutation methods such as `Mut::set`, `Mut::modify`, `Mut::update`, and
-`Mut::set_changed` record change ticks.
+`Write[T]` handle that keeps the exact key and table row that produced the fetch.
+Read methods such as `Write::peek` and `Write::value` do not mark the component
+changed. Mutation methods such as `Write::set`, `Write::modify`, and
+`Write::set_changed` record change ticks.
 
 For types implementing `Component`, the convenience methods without an explicit
 key use `T::component()`:
@@ -172,8 +172,8 @@ resources when unchanged writes should not produce change ticks.
 
 ## Queries
 
-Queries fetch typed data through `QueryData`. Use `Comp[T]` for read access and
-`Mut[T]` for write access:
+Queries fetch typed data through `QueryData`. Use `Read[T]` for read access and
+`Write[T]` for write access:
 
 ```moonbit
 struct Velocity {
@@ -185,7 +185,7 @@ let velocity_key : ComponentKey[Velocity] = register_component(
   debug_name="mgstudio_example::Velocity",
 )
 
-let query : Query[(Mut[Position], Comp[Velocity]), All] = query(world)
+let query : Query[(Write[Position], Read[Velocity]), All] = query(world)
 
 try! query.view(fn(_entity, data) {
   let (position, velocity) = data
@@ -199,7 +199,7 @@ try! query.view(fn(_entity, data) {
 Filters use typed component keys:
 
 ```moonbit
-let moving : Query[Mut[Position], With[Velocity]] = query_filtered(
+let moving : Query[Write[Position], With[Velocity]] = query_filtered(
   world,
   With::new(velocity_key),
 )
@@ -216,24 +216,24 @@ Bevy relies on Rust's borrowing rules to separate read access from write
 access. MoonBit does not provide the same aliasing guarantee for values with
 mutable fields, so mgstudio treats read access as an API contract:
 
-- `Comp[T]`, `Res[T]`, `World::get_by_key`, `World::get`, `World::get_resource`,
-  `Mut::peek`, `Mut::value`, and `ResourceMut::peek` are read-only APIs.
+- `Read[T]`, `Res[T]`, `World::get_by_key`, `World::get`, `World::get_resource`,
+  `Write::peek`, `Write::value`, and `ResourceMut::peek` are read-only APIs.
 - Do not mutate a value obtained from a read-only API, even when MoonBit lets
   the field assignment compile.
 - Writes that should affect `Changed<T>`, `Changed<Resource>`, changed
-  component messages, or changed resource ticks must go through `Mut[T]`,
+  component messages, or changed resource ticks must go through `Write[T]`,
   `ResourceMut[T]`, `EntityMut` write methods, or explicit world set/update
   APIs.
 - Fetching a mutable-capable handle does not mark a value changed by itself.
   The change tick advances only when the caller invokes a write method such as
-  `Mut::set`, `Mut::modify`, `Mut::update`, `ResourceMut::set`,
-  `ResourceMut::modify`, `ResourceMut::update`, or `set_changed`.
+  `Write::set`, `Write::modify`, `ResourceMut::set`, `ResourceMut::modify`,
+  `ResourceMut::update`, or `set_changed`.
 
 This is a migration difference from Bevy's Rust API, not a storage workaround.
 Do not add copy-on-read wrappers, erased payload wrappers, or changed-on-read
 behavior to hide read-side mutation. Ported Bevy systems should choose
-`Comp[T]`/`Res[T]` only when the source system reads the value, and
-`Mut[T]`/`ResMut[T]` when the source system writes or intentionally marks the
+`Read[T]`/`Res[T]` only when the source system reads the value, and
+`Write[T]`/`ResMut[T]` when the source system writes or intentionally marks the
 value changed.
 
 ## Storage Model
@@ -262,8 +262,8 @@ migration.
   recovering type information from raw integer ids.
 - Store ordinary resources and components as direct typed values, not nested
   payload wrappers.
-- Use `Mut` and `ResourceMut` mutation methods to update change ticks.
-- Treat `Comp`, `Res`, `peek`, `value`, and plain `get` calls as reads.
+- Use `Write` and `ResourceMut` mutation methods to update change ticks.
+- Treat `Read`, `Res`, `peek`, `value`, and plain `get` calls as reads.
 - Keep structural changes out of active query iteration.
 - Use `component_metadata_builder` for storage policy, required components,
   hooks, and relationship metadata.

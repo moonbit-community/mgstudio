@@ -80,7 +80,7 @@ fn setup(
 ///|
 fn rotate_cube(
   cubes : @ecs.Query[
-    (@ecs.Comp[Rotatable], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Rotatable], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

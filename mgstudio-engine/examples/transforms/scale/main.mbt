@@ -96,7 +96,7 @@ fn setup(
 fn change_scale_direction(
   commands : @app.Commands,
   cubes : @ecs.Query[
-    (@ecs.Comp[Scaling], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Scaling], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -129,7 +129,7 @@ fn change_scale_direction(
 ///|
 fn scale_cube(
   cubes : @ecs.Query[
-    (@ecs.Comp[Scaling], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Scaling], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

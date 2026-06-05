@@ -78,7 +78,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn animate_contributors(
   time : @app.Res[@time.Time[Unit]],
   contributors : @ecs.Query[
-    (@ecs.Comp[ContributorOrbit], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[ContributorOrbit], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

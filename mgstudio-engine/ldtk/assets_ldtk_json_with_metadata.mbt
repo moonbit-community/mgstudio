@@ -46,17 +46,17 @@ pub fn LdtkJsonWithMetadata::level_map(
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkJsonWithMetadata with root_levels(value) {
+pub impl RawLevelAccessor for LdtkJsonWithMetadata with fn root_levels(value) {
   value.json_data.levels
 }
 
 ///|
-pub impl RawLevelAccessor for LdtkJsonWithMetadata with worlds(value) {
+pub impl RawLevelAccessor for LdtkJsonWithMetadata with fn worlds(value) {
   value.json_data.worlds
 }
 
 ///|
-pub impl LevelMetadataAccessor for LdtkJsonWithMetadata with get_level_metadata_by_iid(
+pub impl LevelMetadataAccessor for LdtkJsonWithMetadata with fn get_level_metadata_by_iid(
   value,
   iid,
 ) {

@@ -117,8 +117,8 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
   let view_query : @ecs.Query[
     (
       @core.Entity,
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@camera_camera.Camera],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[@camera_camera.Camera],
     ),
     @ecs.All,
   ] = @ecs.query(world)
@@ -135,8 +135,8 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
   let shadow_lod_origin_query : @ecs.Query[
     (
       @core.Entity,
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[ShadowLodOrigin],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[ShadowLodOrigin],
     ),
     @ecs.All,
   ] = @ecs.query(world)
@@ -179,9 +179,9 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     let entity_query : @ecs.Query[
       (
         @core.Entity,
-        @ecs.Comp[@transform.GlobalTransform],
-        @ecs.Comp[@root_visibility.VisibilityRange],
-        @ecs.Comp[@camera_primitives.Aabb]?,
+        @ecs.Read[@transform.GlobalTransform],
+        @ecs.Read[@root_visibility.VisibilityRange],
+        @ecs.Read[@camera_primitives.Aabb]?,
       ),
       @ecs.All,
     ] = @ecs.query(world)

@@ -283,7 +283,7 @@ impl QueryData with fn iteration_anchor_components() {
 }
 
 ///|
-pub struct Comp[T] {
+pub struct Read[T] {
   priv key : ComponentKey[T]
   priv value : T
   priv added_tick : @core.Tick
@@ -325,43 +325,43 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
 }
 
 ///|
-pub fn[T] Comp::key(self : Comp[T]) -> ComponentKey[T] {
+pub fn[T] Read::key(self : Read[T]) -> ComponentKey[T] {
   self.key
 }
 
 ///|
 /// Returns the queried component value for read-only use.
 ///
-/// `Comp[T]` is a read query item. If `T` contains mutable fields, mutating the
-/// returned value directly bypasses ECS change detection. Use `Mut[T]` in the
-/// query data and mutate through `Mut::modify`, `Mut::set`, or `Mut::update`
-/// when the query intends to write the component.
-pub fn[T] Comp::value(self : Comp[T]) -> T {
+/// `Read[T]` is a read query item. If `T` contains mutable fields, mutating the
+/// returned value directly bypasses ECS change detection. Use `Write[T]` in the
+/// query data and mutate through `Write::modify` or `Write::set` when the query
+/// intends to write the component.
+pub fn[T] Read::value(self : Read[T]) -> T {
   self.value
 }
 
 ///|
-pub fn[T] Comp::is_added(self : Comp[T]) -> Bool {
+pub fn[T] Read::is_added(self : Read[T]) -> Bool {
   self.is_added
 }
 
 ///|
-pub fn[T] Comp::is_changed(self : Comp[T]) -> Bool {
+pub fn[T] Read::is_changed(self : Read[T]) -> Bool {
   self.is_changed
 }
 
 ///|
-pub fn[T] Comp::added(self : Comp[T]) -> @core.Tick {
+pub fn[T] Read::added(self : Read[T]) -> @core.Tick {
   self.added_tick
 }
 
 ///|
-pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Tick {
+pub fn[T] Read::last_changed(self : Read[T]) -> @core.Tick {
   self.changed_tick
 }
 
 ///|
-pub fn[T] Comp::changed_by(self : Comp[T]) -> String? {
+pub fn[T] Read::changed_by(self : Read[T]) -> String? {
   self.changed_by
 }
 
@@ -565,7 +565,7 @@ fn[T] query_data_comp_from_value(
   key : ComponentKey[T],
   local_component_id : Int,
   value : T,
-) -> Comp[T] {
+) -> Read[T] {
   let snapshot = query_data_tick_snapshot_at_table_row(
     fetch.world,
     fetch.entity,
@@ -771,7 +771,7 @@ fn[T] query_data_require_component_mut(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> Mut[T] {
+) -> Write[T] {
   guard world.component_present(key.id(), entity) else {
     abort("QueryData::fetch expected component value to exist after matches")
   }
@@ -850,12 +850,12 @@ pub impl QueryData for @core.Entity with fn contiguous_compatible() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn matches(world, entity) {
+pub impl[T : Component] QueryData for Read[T] with fn matches(world, entity) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn fetch(world, entity) {
+pub impl[T : Component] QueryData for Read[T] with fn fetch(world, entity) {
   let key = T::component()
   query_data_comp_from_value(
     query_data_table_row_fetch(world, entity, -1, -1),
@@ -866,7 +866,7 @@ pub impl[T : Component] QueryData for Comp[T] with fn fetch(world, entity) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn append_fetch_plan(
+pub impl[T : Component] QueryData for Read[T] with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -874,12 +874,12 @@ pub impl[T : Component] QueryData for Comp[T] with fn append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn fetch_plan_size() {
+pub impl[T : Component] QueryData for Read[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Read[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   let local_component_id = query_data_component_local_id_or_abort(
     fetch.world.local_component_id(key.id()),
@@ -891,7 +891,7 @@ pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Read[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -905,7 +905,7 @@ pub impl[T : Component] QueryData for Comp[T] with fn fetch_table_row_with_plan_
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Read[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -920,7 +920,7 @@ pub impl[T : Component] QueryData for Comp[T] with fn fetch_sparse_anchor_with_p
       query_data_comp_from_value(fetch.row, key, local_component_id, value)
     }
     _ =>
-      Comp::fetch_table_row_with_plan_offset({
+      Read::fetch_table_row_with_plan_offset({
         row: fetch.row,
         plan: fetch.plan,
         offset: fetch.offset,
@@ -929,61 +929,61 @@ pub impl[T : Component] QueryData for Comp[T] with fn fetch_sparse_anchor_with_p
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn mentions_component(
+pub impl[T : Component] QueryData for Read[T] with fn mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn matches_component_set(
+pub impl[T : Component] QueryData for Read[T] with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn collect_access(access) {
+pub impl[T : Component] QueryData for Read[T] with fn collect_access(access) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn requires_entity_check() {
+pub impl[T : Component] QueryData for Read[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn is_dense(world) {
+pub impl[T : Component] QueryData for Read[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn iteration_anchor_component() {
+pub impl[T : Component] QueryData for Read[T] with fn iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn iteration_anchor_components() {
+pub impl[T : Component] QueryData for Read[T] with fn iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fn contiguous_compatible() {
+pub impl[T : Component] QueryData for Read[T] with fn contiguous_compatible() {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn matches(world, entity) {
+pub impl[T : Component] QueryData for Write[T] with fn matches(world, entity) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn fetch(world, entity) {
+pub impl[T : Component] QueryData for Write[T] with fn fetch(world, entity) {
   query_data_require_component_mut(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn append_fetch_plan(
+pub impl[T : Component] QueryData for Write[T] with fn append_fetch_plan(
   world,
   plan,
 ) {
@@ -991,12 +991,12 @@ pub impl[T : Component] QueryData for Mut[T] with fn append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn fetch_plan_size() {
+pub impl[T : Component] QueryData for Write[T] with fn fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row(fetch) {
+pub impl[T : Component] QueryData for Write[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   mut_from_component_location(
     fetch.world,
@@ -1011,7 +1011,7 @@ pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row(fetch) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Write[T] with fn fetch_table_row_with_plan_offset(
   fetch,
 ) {
   let key = T::component()
@@ -1028,10 +1028,10 @@ pub impl[T : Component] QueryData for Mut[T] with fn fetch_table_row_with_plan_o
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Write[T] with fn fetch_sparse_anchor_with_plan_offset(
   fetch,
 ) {
-  Mut::fetch_table_row_with_plan_offset({
+  Write::fetch_table_row_with_plan_offset({
     row: fetch.row,
     plan: fetch.plan,
     offset: fetch.offset,
@@ -1039,46 +1039,46 @@ pub impl[T : Component] QueryData for Mut[T] with fn fetch_sparse_anchor_with_pl
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn mentions_component(
+pub impl[T : Component] QueryData for Write[T] with fn mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn matches_component_set(
+pub impl[T : Component] QueryData for Write[T] with fn matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn collect_access(access) {
+pub impl[T : Component] QueryData for Write[T] with fn collect_access(access) {
   access.add_write_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn requires_entity_check() {
+pub impl[T : Component] QueryData for Write[T] with fn requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn is_dense(world) {
+pub impl[T : Component] QueryData for Write[T] with fn is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn iteration_anchor_component() {
+pub impl[T : Component] QueryData for Write[T] with fn iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn iteration_anchor_components() {
+pub impl[T : Component] QueryData for Write[T] with fn iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component] QueryData for Mut[T] with fn contiguous_compatible() {
+pub impl[T : Component] QueryData for Write[T] with fn contiguous_compatible() {
   true
 }
 

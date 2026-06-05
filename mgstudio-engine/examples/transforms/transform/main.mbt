@@ -129,7 +129,7 @@ fn setup(
 ///|
 fn move_cube(
   cubes : @ecs.Query[
-    (@ecs.Comp[CubeState], @ecs.Mut[@mgs_transform.Transform]),
+    (@ecs.Read[CubeState], @ecs.Write[@mgs_transform.Transform]),
     @ecs.Without[Center],
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -149,11 +149,11 @@ fn move_cube(
 ///|
 fn rotate_cube(
   cubes : @ecs.Query[
-    (@ecs.Comp[CubeState], @ecs.Mut[@mgs_transform.Transform]),
+    (@ecs.Read[CubeState], @ecs.Write[@mgs_transform.Transform]),
     @ecs.Without[Center],
   ],
   center_spheres : @ecs.Query[
-    @ecs.Comp[@mgs_transform.Transform],
+    @ecs.Read[@mgs_transform.Transform],
     @ecs.With[Center],
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -178,11 +178,11 @@ fn rotate_cube(
 ///|
 fn scale_down_sphere_proportional_to_cube_travel_distance(
   cubes : @ecs.Query[
-    (@ecs.Comp[@mgs_transform.Transform], @ecs.Comp[CubeState]),
+    (@ecs.Read[@mgs_transform.Transform], @ecs.Read[CubeState]),
     @ecs.Without[Center],
   ],
   centers : @ecs.Query[
-    (@ecs.Comp[Center], @ecs.Mut[@mgs_transform.Transform]),
+    (@ecs.Read[Center], @ecs.Write[@mgs_transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

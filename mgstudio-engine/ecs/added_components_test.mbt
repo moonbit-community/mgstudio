@@ -23,7 +23,7 @@ let added_marker_key : ComponentKey[AddedMarker] = register_component(
 )
 
 ///|
-pub impl Component for AddedMarker with component() {
+pub impl Component for AddedMarker with fn component() {
   added_marker_key
 }
 

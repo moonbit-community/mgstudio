@@ -202,9 +202,9 @@ fn setup(
 fn button_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
     (
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Mut[@ui.BackgroundColor],
-      @ecs.Mut[@ui.BorderColor],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Write[@ui.BackgroundColor],
+      @ecs.Write[@ui.BorderColor],
     ),
     @ecs.With[@ui.Button],
   ] = @ecs.query_filtered(world, @ecs.With::new(@ui.Button::component()))

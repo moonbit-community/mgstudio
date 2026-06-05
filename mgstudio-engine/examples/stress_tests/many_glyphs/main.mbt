@@ -109,11 +109,9 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
 
 ///|
 fn force_recompute(
-  texts : @ecs.Query[@ecs.Mut[@text.TextLayout], @ecs.All],
+  texts : @ecs.Query[@ecs.Write[@text.TextLayout], @ecs.All],
 ) -> Unit {
-  try! texts.for_each(fn(_entity, text_layout) {
-    text_layout.set(text_layout.value())
-  })
+  try! texts.for_each(fn(_entity, text_layout) { text_layout.set_changed() })
 }
 
 ///|

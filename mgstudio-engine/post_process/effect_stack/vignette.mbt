@@ -135,7 +135,7 @@ pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @ecs.register_component
 )
 
 ///|
-pub impl @ecs.Component for Vignette with component() {
+pub impl @ecs.Component for Vignette with fn component() {
   ecs_key_vignette
 }
 

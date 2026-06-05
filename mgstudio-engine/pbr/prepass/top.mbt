@@ -36,12 +36,12 @@ pub fn PrepassPipelinePlugin::PrepassPipelinePlugin() -> PrepassPipelinePlugin {
 }
 
 ///|
-pub impl @app.Plugin for PrepassPipelinePlugin with name(_self) {
+pub impl @app.Plugin for PrepassPipelinePlugin with fn name(_self) {
   PREPASS_PIPELINE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for PrepassPipelinePlugin with build(self, app) {
+pub impl @app.Plugin for PrepassPipelinePlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   prepass_pipeline_plugin_install_with(app, self)
 }
@@ -194,22 +194,22 @@ pub let ecs_key_prepass_pipeline_state : @ecs.ResourceKey[PrepassPipelineState] 
 )
 
 ///|
-pub impl @app.Resource for AnyPrepassPluginLoaded with resource() {
+pub impl @app.Resource for AnyPrepassPluginLoaded with fn resource() {
   ecs_key_any_prepass_plugin_loaded
 }
 
 ///|
-pub impl @app.Resource for PrepassPipelineState with resource() {
+pub impl @app.Resource for PrepassPipelineState with fn resource() {
   ecs_key_prepass_pipeline_state
 }
 
 ///|
-pub impl @ecs.Component for PreviousViewData with component() {
+pub impl @ecs.Component for PreviousViewData with fn component() {
   ecs_key_previous_view_data
 }
 
 ///|
-pub impl @ecs.Component for PreviousGlobalTransform with component() {
+pub impl @ecs.Component for PreviousGlobalTransform with fn component() {
   ecs_key_previous_global_transform
 }
 

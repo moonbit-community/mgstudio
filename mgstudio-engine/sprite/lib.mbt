@@ -258,7 +258,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   }
 
   if has_mesh2d {
-    let mesh2d_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
+    let mesh2d_query : @ecs.Query[@ecs.Read[Mesh2d], @ecs.All] = @ecs.query(
       world,
     )
     try! mesh2d_query.view(fn(entity, mesh2d_comp) {
@@ -287,7 +287,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   if has_sprite {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_query : @ecs.Query[
-      (@ecs.Comp[Sprite], @ecs.Comp[Anchor]),
+      (@ecs.Read[Sprite], @ecs.Read[Anchor]),
       @ecs.All,
     ] = @ecs.query(world)
     try! sprite_query.view(fn(entity, data) {
@@ -324,7 +324,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   if has_sprite_mesh {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_mesh_query : @ecs.Query[
-      (@ecs.Comp[SpriteMesh], @ecs.Comp[Anchor]),
+      (@ecs.Read[SpriteMesh], @ecs.Read[Anchor]),
       @ecs.All,
     ] = @ecs.query(world)
     try! sprite_mesh_query.view(fn(entity, data) {

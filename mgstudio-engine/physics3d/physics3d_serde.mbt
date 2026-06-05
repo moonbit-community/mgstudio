@@ -141,17 +141,17 @@ fn collider_handle3d_from_json(
 }
 
 ///|
-pub impl ToJson for RigidBody3d with to_json(self) {
+pub impl ToJson for RigidBody3d with fn to_json(self) {
   rigid_body_type_to_json(self.body_type)
 }
 
 ///|
-pub impl @json.FromJson for RigidBody3d with from_json(json, path) {
+pub impl @json.FromJson for RigidBody3d with fn from_json(json, path) {
   RigidBody3d::{ body_type: rigid_body_type_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for ColliderShape3d with to_json(self) {
+pub impl ToJson for ColliderShape3d with fn to_json(self) {
   match self {
     Ball(radius) => ("Ball", radius).to_json()
     Cuboid(hx, hy, hz) => ("Cuboid", (hx, hy, hz)).to_json()
@@ -176,7 +176,7 @@ pub impl ToJson for ColliderShape3d with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for ColliderShape3d with from_json(json, path) {
+pub impl @json.FromJson for ColliderShape3d with fn from_json(json, path) {
   let (tag, payload) : (String, Json) = @json.from_json(json, path~)
   match tag {
     "Ball" => {
@@ -263,33 +263,33 @@ pub impl @json.FromJson for ColliderShape3d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for Collider3d with to_json(self) {
+pub impl ToJson for Collider3d with fn to_json(self) {
   (self.shape, self.sensor).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Collider3d with from_json(json, path) {
+pub impl @json.FromJson for Collider3d with fn from_json(json, path) {
   let (shape, sensor) : (ColliderShape3d, Bool) = @json.from_json(json, path~)
   Collider3d::{ shape, sensor }
 }
 
 ///|
-pub impl ToJson for ActiveEvents3d with to_json(self) {
+pub impl ToJson for ActiveEvents3d with fn to_json(self) {
   active_events_to_json(self.events)
 }
 
 ///|
-pub impl @json.FromJson for ActiveEvents3d with from_json(json, path) {
+pub impl @json.FromJson for ActiveEvents3d with fn from_json(json, path) {
   ActiveEvents3d::{ events: active_events_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for ContactForceEventThreshold3d with to_json(self) {
+pub impl ToJson for ContactForceEventThreshold3d with fn to_json(self) {
   self.threshold.to_json()
 }
 
 ///|
-pub impl @json.FromJson for ContactForceEventThreshold3d with from_json(
+pub impl @json.FromJson for ContactForceEventThreshold3d with fn from_json(
   json,
   path,
 ) {
@@ -297,55 +297,55 @@ pub impl @json.FromJson for ContactForceEventThreshold3d with from_json(
 }
 
 ///|
-pub impl ToJson for ActiveCollisionTypes3d with to_json(self) {
+pub impl ToJson for ActiveCollisionTypes3d with fn to_json(self) {
   active_collision_types_to_json(self.types)
 }
 
 ///|
-pub impl @json.FromJson for ActiveCollisionTypes3d with from_json(json, path) {
+pub impl @json.FromJson for ActiveCollisionTypes3d with fn from_json(json, path) {
   ActiveCollisionTypes3d::{
     types: active_collision_types_from_json(json, path),
   }
 }
 
 ///|
-pub impl ToJson for ActiveHooks3d with to_json(self) {
+pub impl ToJson for ActiveHooks3d with fn to_json(self) {
   active_hooks_to_json(self.hooks)
 }
 
 ///|
-pub impl @json.FromJson for ActiveHooks3d with from_json(json, path) {
+pub impl @json.FromJson for ActiveHooks3d with fn from_json(json, path) {
   ActiveHooks3d::{ hooks: active_hooks_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for Velocity3d with to_json(self) {
+pub impl ToJson for Velocity3d with fn to_json(self) {
   (self.linvel, self.angvel).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Velocity3d with from_json(json, path) {
+pub impl @json.FromJson for Velocity3d with fn from_json(json, path) {
   let (linvel, angvel) : (@math.Vec3, @math.Vec3) = @json.from_json(json, path~)
   Velocity3d::{ linvel, angvel }
 }
 
 ///|
-pub impl ToJson for RapierBodyHandle3d with to_json(self) {
+pub impl ToJson for RapierBodyHandle3d with fn to_json(self) {
   rigid_body_handle_to_json(self.handle)
 }
 
 ///|
-pub impl @json.FromJson for RapierBodyHandle3d with from_json(json, path) {
+pub impl @json.FromJson for RapierBodyHandle3d with fn from_json(json, path) {
   RapierBodyHandle3d::{ handle: rigid_body_handle_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for RapierColliderHandle3d with to_json(self) {
+pub impl ToJson for RapierColliderHandle3d with fn to_json(self) {
   collider_handle3d_to_json(self.handle)
 }
 
 ///|
-pub impl @json.FromJson for RapierColliderHandle3d with from_json(json, path) {
+pub impl @json.FromJson for RapierColliderHandle3d with fn from_json(json, path) {
   RapierColliderHandle3d::{ handle: collider_handle3d_from_json(json, path) }
 }
 
@@ -367,7 +367,7 @@ let physics3d_serde_runtime_state : Physics3dSerdeRuntimeState = {
 let physics3d_config_serde_values : Map[Int, Physics3dConfig] = {}
 
 ///|
-pub impl ToJson for Physics3dConfig with to_json(self) {
+pub impl ToJson for Physics3dConfig with fn to_json(self) {
   let id = physics3d_serde_runtime_state.config_next_id
   physics3d_serde_runtime_state.config_next_id = id + 1
   physics3d_config_serde_values.set(id, self)
@@ -375,7 +375,7 @@ pub impl ToJson for Physics3dConfig with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics3dConfig with from_json(json, path) {
+pub impl @json.FromJson for Physics3dConfig with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics3d_config_serde_values
   .get(id)
@@ -386,7 +386,7 @@ pub impl @json.FromJson for Physics3dConfig with from_json(json, path) {
 let physics3d_events_serde_values : Map[Int, Physics3dEvents] = {}
 
 ///|
-pub impl ToJson for Physics3dEvents with to_json(self) {
+pub impl ToJson for Physics3dEvents with fn to_json(self) {
   let id = physics3d_serde_runtime_state.events_next_id
   physics3d_serde_runtime_state.events_next_id = id + 1
   physics3d_events_serde_values.set(id, self)
@@ -394,7 +394,7 @@ pub impl ToJson for Physics3dEvents with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics3dEvents with from_json(json, path) {
+pub impl @json.FromJson for Physics3dEvents with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics3d_events_serde_values.get(id).unwrap_or(Physics3dEvents::new())
 }
@@ -403,7 +403,7 @@ pub impl @json.FromJson for Physics3dEvents with from_json(json, path) {
 let physics3d_context_serde_values : Map[Int, Physics3dContext] = {}
 
 ///|
-pub impl ToJson for Physics3dContext with to_json(self) {
+pub impl ToJson for Physics3dContext with fn to_json(self) {
   let id = physics3d_serde_runtime_state.context_next_id
   physics3d_serde_runtime_state.context_next_id = id + 1
   physics3d_context_serde_values.set(id, self)
@@ -411,7 +411,7 @@ pub impl ToJson for Physics3dContext with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics3dContext with from_json(json, path) {
+pub impl @json.FromJson for Physics3dContext with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics3d_context_serde_values.get(id).unwrap_or(Physics3dContext::new())
 }

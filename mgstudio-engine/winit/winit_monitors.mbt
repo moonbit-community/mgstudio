@@ -72,6 +72,6 @@ let ecs_key_winit_monitors : @ecs.ResourceKey[WinitMonitors] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for WinitMonitors with resource() {
+pub impl @app.Resource for WinitMonitors with fn resource() {
   ecs_key_winit_monitors
 }

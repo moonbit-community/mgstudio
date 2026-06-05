@@ -115,7 +115,7 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 
 ///|
 fn move_player(
-  player : @app.Single[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
+  player : @app.Single[@ecs.Write[@transform.Transform], @ecs.With[Player]],
   time : @app.Res[@time.Time[Unit]],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
@@ -148,11 +148,11 @@ fn move_player(
 ///|
 fn update_camera(
   camera : @app.Single[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     (@ecs.With[@camera_components2d.Camera2d], @ecs.Without[Player]),
   ],
   player : @app.Single[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     (@ecs.With[Player], @ecs.Without[@camera_components2d.Camera2d]),
   ],
   time : @app.Res[@time.Time[Unit]],

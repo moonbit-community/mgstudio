@@ -94,6 +94,6 @@ pub let ecs_key_no_background_motion_vectors : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for NoBackgroundMotionVectors with component() {
+pub impl @ecs.Component for NoBackgroundMotionVectors with fn component() {
   ecs_key_no_background_motion_vectors
 }

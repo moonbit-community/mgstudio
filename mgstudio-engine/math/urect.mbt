@@ -34,12 +34,12 @@ pub fn URect::as_rect(self : URect) -> Rect {
 }
 
 ///|
-pub impl ToJson for URect with to_json(self) {
+pub impl ToJson for URect with fn to_json(self) {
   (self.min, self.max).to_json()
 }
 
 ///|
-pub impl @json.FromJson for URect with from_json(json, path) {
+pub impl @json.FromJson for URect with fn from_json(json, path) {
   let (min, max) : (UVec2, UVec2) = @json.from_json(json, path~)
   URect::new(min, max)
 }

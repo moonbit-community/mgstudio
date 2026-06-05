@@ -29,7 +29,7 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
 
 ///|
-pub impl @ecs.Component for TransmittedShadowReceiver with component() {
+pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
   ecs_key_transmitted_shadow_receiver
 }
 

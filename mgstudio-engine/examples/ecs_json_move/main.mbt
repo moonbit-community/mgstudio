@@ -65,7 +65,7 @@ fn main {
 
 ///|
 fn move_system(
-  query : @ecs.Query[(@ecs.Mut[Position], @ecs.Comp[Velocity]), @ecs.All],
+  query : @ecs.Query[(@ecs.Write[Position], @ecs.Read[Velocity]), @ecs.All],
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (position, velocity) = data

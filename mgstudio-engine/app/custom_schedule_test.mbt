@@ -139,7 +139,7 @@ test "app: multithreaded schedules defer Commands until the compatible batch end
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }),
@@ -149,7 +149,7 @@ test "app: multithreaded schedules defer Commands until the compatible batch end
 
   debug_inspect(observed, content="[0]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -171,7 +171,7 @@ test "app: single-threaded schedules do not auto-apply Commands without deferred
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }),
@@ -181,7 +181,7 @@ test "app: single-threaded schedules do not auto-apply Commands without deferred
 
   debug_inspect(observed, content="[0]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -197,7 +197,7 @@ test "app: auto_insert_apply_deferred inserts apply boundary for chained deferre
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   })
   let read_system : SystemConfig[@ecs.World] = system_config_param(fn(
-    query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     observed.push(query.count())
   })
@@ -210,7 +210,7 @@ test "app: auto_insert_apply_deferred inserts apply boundary for chained deferre
 
   debug_inspect(observed, content="[1]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -229,7 +229,7 @@ test "app: disabling auto_insert_apply_deferred removes automatic apply boundari
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   })
   let read_system : SystemConfig[@ecs.World] = system_config_param(fn(
-    query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     observed.push(query.count())
   })
@@ -246,7 +246,7 @@ test "app: disabling auto_insert_apply_deferred removes automatic apply boundari
 
   debug_inspect(observed, content="[0]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -262,7 +262,7 @@ test "app: chain_ignore_deferred keeps chained deferred systems in one buffer ep
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   })
   let read_system : SystemConfig[@ecs.World] = system_config_param(fn(
-    query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     observed.push(query.count())
   })
@@ -278,7 +278,7 @@ test "app: chain_ignore_deferred keeps chained deferred systems in one buffer ep
 
   debug_inspect(observed, content="[0]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -297,7 +297,7 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   })
   let read_system : SystemConfig[@ecs.World] = system_config_param(fn(
-    query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     observed.push(query.count())
   })
@@ -317,7 +317,7 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
 
   debug_inspect(observed, content="[1]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -356,10 +356,10 @@ test "app: deferred command batches are scoped to the executing world" {
 
   outer_app = outer_app.update()
 
-  let outer_query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let outer_query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     outer_app.world(),
   )
-  let inner_query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let inner_query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     nested_ref.val.world(),
   )
   debug_inspect(outer_query.count(), content="1")
@@ -378,7 +378,7 @@ test "app: configure_sets before_ignore_deferred preserves order without forcing
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   }).in_set(set_a)
   let read_system : SystemConfig[@ecs.World] = system_config_param(fn(
-    query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     observed.push(query.count())
   }).in_set(set_b)
@@ -393,7 +393,7 @@ test "app: configure_sets before_ignore_deferred preserves order without forcing
 
   debug_inspect(observed, content="[0]")
   let world = sub_app.world()
-  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(query.count(), content="1")
@@ -417,7 +417,7 @@ test "app: do_not_consider_ignore_deferred_before_exclusive_system" {
     .add_systems(
       stage,
       system(fn(world : @ecs.World) {
-        let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+        let query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
           world,
         )
         observed.push(query.count())
@@ -450,7 +450,7 @@ test "app: bubble_sync_point_through_ignore_deferred_node" {
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_c),
@@ -482,7 +482,7 @@ test "app: explicit_sync_point_used_as_auto_sync_point" {
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_b),
@@ -491,7 +491,7 @@ test "app: explicit_sync_point_used_as_auto_sync_point" {
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_c),
@@ -525,7 +525,7 @@ test "app: conditional_explicit_sync_point_not_used_as_auto_sync_point" {
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_b),
@@ -539,7 +539,7 @@ test "app: conditional_explicit_sync_point_not_used_as_auto_sync_point" {
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_c),
@@ -574,7 +574,7 @@ test "app: conditional explicit sync point in child set is not reused as auto sy
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_b),
@@ -583,7 +583,7 @@ test "app: conditional explicit sync point in child set is not reused as auto sy
     .add_systems(
       stage,
       system_config_param(fn(
-        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+        query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
       ) {
         observed.push(query.count())
       }).in_set(set_c),
@@ -653,7 +653,7 @@ test "app: disabling apply_final_deferred keeps deferred commands pending until 
 
   sub_app = sub_app.update()
   let world_after_first = sub_app.world()
-  let query_after_first : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query_after_first : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world_after_first,
   )
   debug_inspect(query_after_first.count(), content="0")
@@ -661,7 +661,7 @@ test "app: disabling apply_final_deferred keeps deferred commands pending until 
   sub_app = sub_app.set_update_schedule(Some(flush_stage))
   sub_app = sub_app.update()
   let world_after_second = sub_app.world()
-  let query_after_second : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query_after_second : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world_after_second,
   )
   debug_inspect(query_after_second.count(), content="1")
@@ -682,7 +682,7 @@ test "app: add_schedule reinserts and replaces previous schedule content" {
 
   sub_app = sub_app.update()
   let world_after_first = sub_app.world()
-  let query_after_first : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query_after_first : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world_after_first,
   )
   debug_inspect(query_after_first.count(), content="1")
@@ -693,7 +693,7 @@ test "app: add_schedule reinserts and replaces previous schedule content" {
   )
   sub_app = sub_app.update()
   let world_after_second = sub_app.world()
-  let query_after_second : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+  let query_after_second : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world_after_second,
   )
   debug_inspect(query_after_second.count(), content="1")
@@ -913,8 +913,8 @@ test "app: statically invalid system stays in order and evaluates conditions bef
     })
     .add_system_config(
       system_config_param2(fn(
-        _a : @ecs.Query[@ecs.Mut[ScheduleBatchMarker], @ecs.All],
-        _b : @ecs.Query[@ecs.Mut[ScheduleBatchMarker], @ecs.All],
+        _a : @ecs.Query[@ecs.Write[ScheduleBatchMarker], @ecs.All],
+        _b : @ecs.Query[@ecs.Write[ScheduleBatchMarker], @ecs.All],
       ) {
         body_runs.val = body_runs.val + 1
       }).run_if(fn(_world : @ecs.World) {
@@ -954,7 +954,7 @@ test "app: consecutive deferred chain inserts one sync point per deferred edge" 
     ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
   }).named("tests.command_b")
   let reader : SystemConfig[@ecs.World] = system_config_param(fn(
-    _query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    _query : @ecs.Query[@ecs.Read[ScheduleBatchMarker], @ecs.All],
   ) {
     ()
   }).named("tests.reader")

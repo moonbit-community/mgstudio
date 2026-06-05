@@ -161,7 +161,7 @@ pub fn ViewContactShadowsUniformOffset::offset(
 }
 
 ///|
-pub impl @ecs.Component for ViewContactShadowsUniformOffset with component() {
+pub impl @ecs.Component for ViewContactShadowsUniformOffset with fn component() {
   ecs_key_view_contact_shadows_uniform_offset
 }
 
@@ -176,7 +176,7 @@ let contact_shadows_buffer_resource_key : @ecs.ResourceKey[ContactShadowsBuffer]
 )
 
 ///|
-pub impl @app.Resource for ContactShadowsBuffer with resource() {
+pub impl @app.Resource for ContactShadowsBuffer with fn resource() {
   contact_shadows_buffer_resource_key
 }
 
@@ -227,7 +227,7 @@ pub fn ContactShadowsPlugin::ContactShadowsPlugin() -> ContactShadowsPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ContactShadowsPlugin with name(_self) {
+pub impl @app.Plugin for ContactShadowsPlugin with fn name(_self) {
   CONTACT_SHADOWS_PLUGIN_NAME
 }
 
@@ -239,7 +239,7 @@ fn render3d_prepare_contact_shadows_system_in_render_app(
 }
 
 ///|
-pub impl @app.Plugin for ContactShadowsPlugin with build(self, app) {
+pub impl @app.Plugin for ContactShadowsPlugin with fn build(self, app) {
   contact_shadows_plugin_install_with(app, self)
 }
 

@@ -79,7 +79,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   })
   debug_inspect(camera_count.val, content="1")
   let camera_query : @ecs.Query[
-    @ecs.Comp[@camera_components2d.Camera2d],
+    @ecs.Read[@camera_components2d.Camera2d],
     @ecs.All,
   ] = @ecs.query(world)
   debug_inspect(camera_query.count(), content="1")

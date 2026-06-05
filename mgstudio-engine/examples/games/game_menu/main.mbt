@@ -98,8 +98,8 @@ fn toggle_mode(
 fn update_visuals(
   time : @app.Res[@time.Time[Unit]],
   state : @app.Res[MenuState],
-  panels : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.With[MenuPanel]],
-  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
+  panels : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.With[MenuPanel]],
+  players : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   let playing = state.get().playing
   try! panels.for_each(fn(_entity, panel) {

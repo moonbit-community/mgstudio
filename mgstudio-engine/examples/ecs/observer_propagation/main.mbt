@@ -169,7 +169,7 @@ fn attack_armor(
 ///|
 fn attack_hits(
   attack : @ecs.On[Attack],
-  names : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All],
+  names : @ecs.Query[@ecs.Read[@ecs.Name], @ecs.All],
 ) -> Unit {
   guard attack.entity() is Some(entity) else { return }
   if (names.get(entity) catch { _ => None }) is Some(name_comp) {
@@ -180,7 +180,7 @@ fn attack_hits(
 ///|
 fn block_attack(
   attack : @ecs.On[Attack],
-  armor_query : @ecs.Query[(@ecs.Comp[Armor], @ecs.Comp[@ecs.Name]), @ecs.All],
+  armor_query : @ecs.Query[(@ecs.Read[Armor], @ecs.Read[@ecs.Name]), @ecs.All],
 ) -> Unit raise {
   guard attack.entity() is Some(entity) else { return }
   guard armor_query.get(entity) is Some((armor_comp, name_comp)) else { return }
@@ -203,7 +203,10 @@ fn block_attack(
 ///|
 fn take_damage(
   attack : @ecs.On[Attack],
-  hit_points : @ecs.Query[(@ecs.Mut[HitPoints], @ecs.Comp[@ecs.Name]), @ecs.All],
+  hit_points : @ecs.Query[
+    (@ecs.Write[HitPoints], @ecs.Read[@ecs.Name]),
+    @ecs.All,
+  ],
   commands : @app.Commands,
 ) -> Unit raise {
   guard attack.entity() is Some(entity) else { return }

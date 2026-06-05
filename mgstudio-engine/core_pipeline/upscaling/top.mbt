@@ -33,12 +33,12 @@ pub fn upscaling_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for UpscalingPlugin with name(_self) {
+pub impl @app.Plugin for UpscalingPlugin with fn name(_self) {
   UPSCALING_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for UpscalingPlugin with build(self, app) {
+pub impl @app.Plugin for UpscalingPlugin with fn build(self, app) {
   upscaling_plugin_with(app, self)
 }
 
@@ -72,7 +72,7 @@ pub let ecs_key_view_upscaling_pipeline : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="core_pipeline.upscaling.view_pipeline")
 
 ///|
-pub impl @app.Resource for ViewUpscalingPipeline with resource() {
+pub impl @app.Resource for ViewUpscalingPipeline with fn resource() {
   ecs_key_view_upscaling_pipeline
 }
 

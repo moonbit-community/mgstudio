@@ -85,14 +85,14 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with name(
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with fn name(
   _self,
 ) {
   EXTRACT_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with build(
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with fn build(
   self,
   app,
 ) {
@@ -123,9 +123,9 @@ fn[C : @ecs.Component] extract_components(
   if only_visible {
     let query : @ecs.Query[
       (
-        @ecs.Comp[RenderEntity],
-        @ecs.Comp[@visibility.ViewVisibility],
-        @ecs.Comp[C],
+        @ecs.Read[RenderEntity],
+        @ecs.Read[@visibility.ViewVisibility],
+        @ecs.Read[C],
       ),
       @ecs.All,
     ] = @ecs.query(main_world)
@@ -139,7 +139,7 @@ fn[C : @ecs.Component] extract_components(
       )
     })
   } else {
-    let query : @ecs.Query[(@ecs.Comp[RenderEntity], @ecs.Comp[C]), @ecs.All] = @ecs.query(
+    let query : @ecs.Query[(@ecs.Read[RenderEntity], @ecs.Read[C]), @ecs.All] = @ecs.query(
       main_world,
     )
     try! query.view(fn(_entity, data) {

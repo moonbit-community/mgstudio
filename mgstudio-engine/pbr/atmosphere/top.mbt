@@ -35,12 +35,12 @@ pub fn AtmospherePlugin::AtmospherePlugin() -> AtmospherePlugin {
 }
 
 ///|
-pub impl @app.Plugin for AtmospherePlugin with name(_self) {
+pub impl @app.Plugin for AtmospherePlugin with fn name(_self) {
   ATMOSPHERE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for AtmospherePlugin with build(self, app) {
+pub impl @app.Plugin for AtmospherePlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   atmosphere_plugin_install_with(app, self)
 }
@@ -67,7 +67,7 @@ let ecs_key_atmosphere_plugin_state : @ecs.ResourceKey[AtmospherePluginState] = 
 )
 
 ///|
-pub impl @app.Resource for AtmospherePluginState with resource() {
+pub impl @app.Resource for AtmospherePluginState with fn resource() {
   ecs_key_atmosphere_plugin_state
 }
 

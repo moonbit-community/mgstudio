@@ -232,7 +232,7 @@ fn setup(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
@@ -248,8 +248,8 @@ fn move_camera(
 }
 
 ///|
-fn recompute(texts : @ecs.Query[@ecs.Mut[@text.Text2d], @ecs.All]) -> Unit {
-  try! texts.for_each(fn(_entity, text2d) { text2d.set(text2d.value()) })
+fn recompute(texts : @ecs.Query[@ecs.Write[@text.Text2d], @ecs.All]) -> Unit {
+  try! texts.for_each(fn(_entity, text2d) { text2d.set_changed() })
 }
 
 ///|
@@ -257,7 +257,7 @@ fn print_counts(
   time : @app.Res[@time.Time[Unit]],
   stats : @app.ResMut[TextStats],
   visible_texts : @ecs.Query[
-    @ecs.Comp[@visibility.ViewVisibility],
+    @ecs.Read[@visibility.ViewVisibility],
     @ecs.With[@text.Text2d],
   ],
   atlas_set : @app.Res[@text.FontAtlasSet],

@@ -235,7 +235,7 @@ fn setup_camera(
 ///|
 fn rotate(
   time : @app.Res[@time.Time[Unit]],
-  transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotate]],
+  transforms : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Rotate]],
 ) -> Unit {
   try! transforms.for_each(fn(_entity, transform) {
     transform.modify(fn(value) { value.rotate_z(time.get().delta_secs()) })
@@ -246,7 +246,7 @@ fn rotate(
 fn fit_canvas(
   resize_messages : @ecs.MessageReader[@window.WindowResized],
   projection_query : @ecs.Query[
-    @ecs.Mut[@camera_projection2d.Projection],
+    @ecs.Write[@camera_projection2d.Projection],
     @ecs.With[OuterCamera],
   ],
 ) -> Unit {

@@ -126,7 +126,10 @@ fn setup(
 ///|
 fn spin_offscreen_object(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[OffscreenObject]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[OffscreenObject],
+  ],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {

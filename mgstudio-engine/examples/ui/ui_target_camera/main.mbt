@@ -123,11 +123,11 @@ fn setup(commands : @app.Commands) -> Unit {
 fn update_camera_orders(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   buttons : @ecs.Query[
-    (@ecs.Comp[@ui.Interaction], @ecs.Comp[CameraOrderBox]),
+    (@ecs.Read[@ui.Interaction], @ecs.Read[CameraOrderBox]),
     @ecs.All,
   ],
-  cameras : @ecs.Query[@ecs.Mut[@camera_camera.Camera], @ecs.All],
-  texts : @ecs.Query[@ecs.Mut[@text.Text], @ecs.All],
+  cameras : @ecs.Query[@ecs.Write[@camera_camera.Camera], @ecs.All],
+  texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.All],
 ) -> Unit {
   let delta = if mouse_buttons.just_pressed(Left) {
     1

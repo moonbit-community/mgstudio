@@ -34,7 +34,7 @@ let scene_asset_registry_resource_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_scene::SceneAssetRegistryState")
 
 ///|
-impl @app.Resource for SceneAssetRegistryState with resource() {
+impl @app.Resource for SceneAssetRegistryState with fn resource() {
   scene_asset_registry_resource_key
 }
 
@@ -322,7 +322,7 @@ let scene_modified_events_cursor_state_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-impl @app.Resource for SceneModifiedEventsCursorState with resource() {
+impl @app.Resource for SceneModifiedEventsCursorState with fn resource() {
   scene_modified_events_cursor_state_resource_key
 }
 

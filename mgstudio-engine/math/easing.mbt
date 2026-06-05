@@ -33,7 +33,7 @@ pub(all) enum JumpAt {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub impl Default for JumpAt with default() {
+pub impl Default for JumpAt with fn default() {
   JumpAt::End
 }
 
@@ -81,7 +81,7 @@ pub(all) enum EaseFunction {
 } derive(Debug, ToJson, FromJson)
 
 ///|
-pub impl Default for EaseFunction with default() {
+pub impl Default for EaseFunction with fn default() {
   EaseFunction::Linear
 }
 
@@ -91,17 +91,17 @@ pub(open) trait Ease {
 }
 
 ///|
-pub impl Ease for Float with interpolate(self, end, t) {
+pub impl Ease for Float with fn interpolate(self, end, t) {
   self + (end - self) * t
 }
 
 ///|
-pub impl Ease for Vec2 with interpolate(self, end, t) {
+pub impl Ease for Vec2 with fn interpolate(self, end, t) {
   Vec2::new(self.x + (end.x - self.x) * t, self.y + (end.y - self.y) * t)
 }
 
 ///|
-pub impl Ease for Vec3 with interpolate(self, end, t) {
+pub impl Ease for Vec3 with fn interpolate(self, end, t) {
   Vec3::new(
     self.x + (end.x - self.x) * t,
     self.y + (end.y - self.y) * t,
@@ -110,7 +110,7 @@ pub impl Ease for Vec3 with interpolate(self, end, t) {
 }
 
 ///|
-pub impl Ease for Vec4 with interpolate(self, end, t) {
+pub impl Ease for Vec4 with fn interpolate(self, end, t) {
   Vec4::new(
     self.x + (end.x - self.x) * t,
     self.y + (end.y - self.y) * t,
@@ -120,7 +120,7 @@ pub impl Ease for Vec4 with interpolate(self, end, t) {
 }
 
 ///|
-pub impl Ease for Quat with interpolate(self, end, t) {
+pub impl Ease for Quat with fn interpolate(self, end, t) {
   self.lerp(end, t)
 }
 

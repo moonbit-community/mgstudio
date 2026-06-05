@@ -479,10 +479,10 @@ fn render3d_execute_collect_meshes(
     (
       @core.Entity,
       (
-        @ecs.Comp[@mesh.Mesh3d],
-        @ecs.Comp[MeshMaterial3d],
-        @ecs.Comp[@visibility.ViewVisibility],
-        @ecs.Comp[@transform.GlobalTransform],
+        @ecs.Read[@mesh.Mesh3d],
+        @ecs.Read[MeshMaterial3d],
+        @ecs.Read[@visibility.ViewVisibility],
+        @ecs.Read[@transform.GlobalTransform],
       ),
       (
         (

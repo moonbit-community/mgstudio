@@ -49,12 +49,12 @@ pub let morph_uniforms_key : @ecs.ResourceKey[MorphUniforms] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for MorphIndices with resource() {
+pub impl @app.Resource for MorphIndices with fn resource() {
   morph_indices_key
 }
 
 ///|
-pub impl @app.Resource for MorphUniforms with resource() {
+pub impl @app.Resource for MorphUniforms with fn resource() {
   morph_uniforms_key
 }
 

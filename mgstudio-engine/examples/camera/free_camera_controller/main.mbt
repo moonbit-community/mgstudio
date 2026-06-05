@@ -83,7 +83,7 @@ fn spawn_text(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   free_camera_query : @ecs.Query[
-    @ecs.Comp[@camera_controller.FreeCamera],
+    @ecs.Read[@camera_controller.FreeCamera],
     @ecs.All,
   ],
 ) -> Unit {
@@ -171,8 +171,8 @@ fn update_camera_settings(
   input : @input.ButtonInput[@window.KeyCode],
   camera_query : @ecs.Query[
     (
-      @ecs.Comp[@camera_controller.FreeCamera],
-      @ecs.Comp[@camera_controller.FreeCameraState],
+      @ecs.Read[@camera_controller.FreeCamera],
+      @ecs.Read[@camera_controller.FreeCameraState],
     ),
     @ecs.All,
   ],
@@ -255,13 +255,13 @@ fn update_camera_settings(
 ///|
 fn update_text(
   info_text_query : @ecs.Query[
-    (@ecs.Comp[InfoText], @ecs.Mut[@text.Text]),
+    (@ecs.Read[InfoText], @ecs.Write[@text.Text]),
     @ecs.All,
   ],
   camera_query : @ecs.Query[
     (
-      @ecs.Comp[@camera_controller.FreeCamera],
-      @ecs.Comp[@camera_controller.FreeCameraState],
+      @ecs.Read[@camera_controller.FreeCamera],
+      @ecs.Read[@camera_controller.FreeCameraState],
     ),
     @ecs.All,
   ],

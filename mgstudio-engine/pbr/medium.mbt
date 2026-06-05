@@ -454,12 +454,12 @@ pub fn scattering_medium_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for ScatteringMediumPlugin with name(_self) {
+pub impl @app.Plugin for ScatteringMediumPlugin with fn name(_self) {
   SCATTERING_MEDIUM_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ScatteringMediumPlugin with build(self, app) {
+pub impl @app.Plugin for ScatteringMediumPlugin with fn build(self, app) {
   scattering_medium_plugin_with(app, self)
 }
 

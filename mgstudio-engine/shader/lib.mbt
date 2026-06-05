@@ -29,12 +29,12 @@ pub(all) struct Shader {
 }
 
 ///|
-pub impl @asset.Asset for Shader with asset_debug_name() {
+pub impl @asset.Asset for Shader with fn asset_debug_name() {
   "mgstudio_shader::Shader"
 }
 
 ///|
-pub impl @asset.Asset for Shader with asset_as_image(_self) {
+pub impl @asset.Asset for Shader with fn asset_as_image(_self) {
   None
 }
 
@@ -44,7 +44,7 @@ let shader_asset_resource_keys : @asset.AssetResourceKeys[Shader] = @asset.regis
 )
 
 ///|
-pub impl @asset.Asset for Shader with asset_resource_keys() {
+pub impl @asset.Asset for Shader with fn asset_resource_keys() {
   shader_asset_resource_keys
 }
 

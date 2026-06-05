@@ -91,7 +91,7 @@ fn cursor_image_with(
 
 ///|
 fn cursor_icon_update(
-  cursor_icon : @ecs.Mut[@window.CursorIcon],
+  cursor_icon : @ecs.Write[@window.CursorIcon],
   map : (@window.CursorIcon) -> @window.CursorIcon,
 ) -> Unit {
   cursor_icon.set(map(cursor_icon.value()))
@@ -149,7 +149,7 @@ fn setup_cursor_icon(
 fn execute_animation(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[AnimationConfig], @ecs.Mut[@window.CursorIcon]),
+    (@ecs.Write[AnimationConfig], @ecs.Write[@window.CursorIcon]),
     @ecs.With[@window.Window],
   ],
 ) -> Unit {
@@ -195,7 +195,7 @@ fn execute_animation(
 fn toggle_texture_atlas(
   keyboard : @input.ButtonInput[@window.KeyCode],
   state : @app.ResMut[CursorImageExampleState],
-  query : @ecs.Query[@ecs.Mut[@window.CursorIcon], @ecs.With[@window.Window]],
+  query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::KeyT) {
     return
@@ -235,7 +235,7 @@ fn toggle_texture_atlas(
 ///|
 fn toggle_flip_x(
   keyboard : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query[@ecs.Mut[@window.CursorIcon], @ecs.With[@window.Window]],
+  query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::KeyX) {
     return
@@ -258,7 +258,7 @@ fn toggle_flip_x(
 ///|
 fn toggle_flip_y(
   keyboard : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query[@ecs.Mut[@window.CursorIcon], @ecs.With[@window.Window]],
+  query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::KeyY) {
     return
@@ -313,7 +313,7 @@ fn rect_from_index(index : Int) -> @math.URect? {
 fn cycle_rect(
   keyboard : @input.ButtonInput[@window.KeyCode],
   state : @app.ResMut[CursorImageExampleState],
-  query : @ecs.Query[@ecs.Mut[@window.CursorIcon], @ecs.With[@window.Window]],
+  query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::KeyC) {
     return

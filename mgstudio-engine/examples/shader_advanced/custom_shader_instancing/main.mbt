@@ -79,7 +79,7 @@ fn setup(
 fn animate_instances(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Comp[InstancePhase], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[InstancePhase], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

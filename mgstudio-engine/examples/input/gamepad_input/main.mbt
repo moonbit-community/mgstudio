@@ -22,7 +22,7 @@ fn main {
 
 ///|
 fn gamepad_system(
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
 ) -> Unit {
   try! gamepads.view(fn(entity, gamepad) {
     let gamepad = gamepad.value()

@@ -70,7 +70,7 @@ fn spawn_system(
 ///|
 fn move_system(
   sprites : @ecs.Query[
-    (@ecs.Comp[Velocity], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Velocity], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -93,11 +93,11 @@ fn move_system(
 ///|
 fn bounce_system(
   window_query : @ecs.Query[
-    @ecs.Comp[@window.Window],
+    @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   sprites : @ecs.Query[
-    (@ecs.Comp[@transform.Transform], @ecs.Mut[Velocity]),
+    (@ecs.Read[@transform.Transform], @ecs.Write[Velocity]),
     @ecs.All,
   ],
 ) -> Unit {

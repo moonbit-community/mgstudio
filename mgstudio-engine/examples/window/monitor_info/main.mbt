@@ -79,7 +79,7 @@ fn spawn_window_for_monitor(
 fn update(
   commands : @app.Commands,
   monitors_added : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@window.Monitor]),
+    (@core.Entity, @ecs.Read[@window.Monitor]),
     @ecs.Added[@window.Monitor],
   ],
 ) -> Unit {
@@ -93,7 +93,7 @@ fn update(
 fn close_on_esc(
   commands : @app.Commands,
   keyboard : @input.ButtonInput[@window.KeyCode],
-  windows : @ecs.Query[(@core.Entity, @ecs.Comp[@window.Window]), @ecs.All],
+  windows : @ecs.Query[(@core.Entity, @ecs.Read[@window.Window]), @ecs.All],
 ) -> Unit {
   if !keyboard.just_pressed(@window.KeyCode::Escape) {
     return

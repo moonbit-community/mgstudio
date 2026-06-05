@@ -195,7 +195,7 @@ test "app: Commands spawn defers component tuple insertion until after system" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
-    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
     counts.push(query.count())
     spawned.val = Some(
@@ -273,7 +273,7 @@ test "app: Commands spawn_component defers single component insertion until afte
   let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
-    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
     counts.push(query.count())
     spawned.val = Some(
@@ -407,7 +407,7 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
   let spawned : Ref[Array[@core.Entity]] = Ref([])
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
-    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+    query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
     counts.push(query.count())
     spawned.val = commands.spawn_batch([
@@ -454,7 +454,7 @@ test "app: Commands entity insert defers component insertion until flush" {
   let counts : Array[Int] = []
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
-    query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
+    query : @ecs.Query[@ecs.Read[CommandsVelocity], @ecs.All],
   ) {
     let entity = commands.spawn(
       (CommandsPosition::{ x: 7, y: 8 }, CommandsMarker::{  }),
@@ -681,7 +681,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
       .entity(target)
       .observe_pointer2(fn(
         pointer : OnPointer[PointerEnter],
-        query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+        query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
       ) {
         guard pointer.target() is Some(entity) else { return }
         if (try! query.get(entity)) is Some(position) {
@@ -746,8 +746,8 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
       .observe_pointer4(fn(
         _pointer : OnPointer[PointerClick],
         resource : Res[CommandsCounterResource],
-        positions : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-        markers : @ecs.Query[@ecs.Comp[CommandsMarker], @ecs.All],
+        positions : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
+        markers : @ecs.Query[@ecs.Read[CommandsMarker], @ecs.All],
       ) {
         if (try! positions.get(target)) is Some(position) {
           hits.push(

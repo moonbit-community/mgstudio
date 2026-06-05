@@ -176,7 +176,7 @@ fn setup(
 ///|
 fn interact_bodies(
   query : @ecs.Query[
-    (@ecs.Comp[Mass], @ecs.Comp[@transform.Transform], @ecs.Mut[Acceleration]),
+    (@ecs.Read[Mass], @ecs.Read[@transform.Transform], @ecs.Write[Acceleration]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -218,7 +218,11 @@ fn interact_bodies(
 ///|
 fn integrate(
   query : @ecs.Query[
-    (@ecs.Mut[Acceleration], @ecs.Mut[Velocity], @ecs.Mut[@transform.Transform]),
+    (
+      @ecs.Write[Acceleration],
+      @ecs.Write[Velocity],
+      @ecs.Write[@transform.Transform],
+    ),
     @ecs.Without[Star],
   ],
   fixed_time : @app.Res[@time.Time[@time.Fixed]],

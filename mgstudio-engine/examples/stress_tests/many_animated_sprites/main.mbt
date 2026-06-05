@@ -117,7 +117,7 @@ fn setup(
 fn animate_sprites(
   time : @app.Res[@time.Time[Unit]],
   sprites : @ecs.Query[
-    (@ecs.Mut[AnimationTimer], @ecs.Mut[@sprite.Sprite]),
+    (@ecs.Write[AnimationTimer], @ecs.Write[@sprite.Sprite]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -141,7 +141,7 @@ fn animate_sprites(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
@@ -161,7 +161,7 @@ fn move_camera(
 fn print_sprite_count(
   time : @app.Res[@time.Time[Unit]],
   timer : @app.ResMut[PrintTimer],
-  sprites : @ecs.Query[@ecs.Comp[AnimationTimer], @ecs.All],
+  sprites : @ecs.Query[@ecs.Read[AnimationTimer], @ecs.All],
 ) -> Unit {
   let should_print = timer.modify(fn(value) {
     value.seconds += time.get().delta_secs()

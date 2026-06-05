@@ -31,7 +31,7 @@ pub fn BatchingStrategy::BatchingStrategy() -> BatchingStrategy {
 }
 
 ///|
-pub impl Default for BatchingStrategy with default() {
+pub impl Default for BatchingStrategy with fn default() {
   BatchingStrategy::BatchingStrategy()
 }
 

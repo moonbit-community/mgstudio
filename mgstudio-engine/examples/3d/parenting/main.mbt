@@ -88,7 +88,7 @@ fn setup(
 ///|
 fn rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotator]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Rotator]],
 ) -> Unit {
   let delta = 3.0F * time.get().delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)

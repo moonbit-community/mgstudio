@@ -255,7 +255,7 @@ fn user_input(
 ///|
 fn move_targets(
   enemies : @app.Populated[
-    (@ecs.Mut[@transform.Transform], @ecs.Mut[Enemy]),
+    (@ecs.Write[@transform.Transform], @ecs.Write[Enemy]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -282,11 +282,11 @@ fn move_targets(
 ///|
 fn track_targets(
   player : @app.Single[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[Player]),
+    (@ecs.Write[@transform.Transform], @ecs.Read[Player]),
     @ecs.All,
   ],
   enemy_query : @ecs.Query[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     (@ecs.With[Enemy], @ecs.Without[Player]),
   ],
   time : @app.Res[@time.Time[Unit]],

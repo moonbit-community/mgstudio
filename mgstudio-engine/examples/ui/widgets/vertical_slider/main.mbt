@@ -168,8 +168,8 @@ fn update_values(
 ///|
 fn apply_values(
   values : @app.Res[SliderValues],
-  vertical_fill : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[VerticalFill]],
-  horizontal_fill : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[HorizontalFill]],
+  vertical_fill : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[VerticalFill]],
+  horizontal_fill : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[HorizontalFill]],
 ) -> Unit {
   try! vertical_fill.view(fn(_entity, node) {
     node.set(

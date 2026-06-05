@@ -46,102 +46,102 @@ pub(all) struct WithTwoDerivatives[T] {
 }
 
 ///|
-pub impl VectorSpace for Float with zero() {
+pub impl VectorSpace for Float with fn zero() {
   0.0F
 }
 
 ///|
-pub impl VectorSpace for Float with add(self, other) {
+pub impl VectorSpace for Float with fn add(self, other) {
   self + other
 }
 
 ///|
-pub impl VectorSpace for Float with sub(self, other) {
+pub impl VectorSpace for Float with fn sub(self, other) {
   self - other
 }
 
 ///|
-pub impl VectorSpace for Float with neg(self) {
+pub impl VectorSpace for Float with fn neg(self) {
   -self
 }
 
 ///|
-pub impl VectorSpace for Float with mul_scalar(self, scalar) {
+pub impl VectorSpace for Float with fn mul_scalar(self, scalar) {
   self * scalar
 }
 
 ///|
-pub impl VectorSpace for Float with div_scalar(self, scalar) {
+pub impl VectorSpace for Float with fn div_scalar(self, scalar) {
   self / scalar
 }
 
 ///|
-pub impl VectorSpace for Vec2 with zero() {
+pub impl VectorSpace for Vec2 with fn zero() {
   Vec2::zero()
 }
 
 ///|
-pub impl VectorSpace for Vec2 with add(self, other) {
+pub impl VectorSpace for Vec2 with fn add(self, other) {
   self.add(other)
 }
 
 ///|
-pub impl VectorSpace for Vec2 with sub(self, other) {
+pub impl VectorSpace for Vec2 with fn sub(self, other) {
   self.sub(other)
 }
 
 ///|
-pub impl VectorSpace for Vec2 with neg(self) {
+pub impl VectorSpace for Vec2 with fn neg(self) {
   Vec2::new(-self.x, -self.y)
 }
 
 ///|
-pub impl VectorSpace for Vec2 with mul_scalar(self, scalar) {
+pub impl VectorSpace for Vec2 with fn mul_scalar(self, scalar) {
   self.mul_scalar(scalar)
 }
 
 ///|
-pub impl VectorSpace for Vec2 with div_scalar(self, scalar) {
+pub impl VectorSpace for Vec2 with fn div_scalar(self, scalar) {
   self.mul_scalar(1.0F / scalar)
 }
 
 ///|
-pub impl VectorSpace for Vec3 with zero() {
+pub impl VectorSpace for Vec3 with fn zero() {
   Vec3::zero()
 }
 
 ///|
-pub impl VectorSpace for Vec3 with add(self, other) {
+pub impl VectorSpace for Vec3 with fn add(self, other) {
   self.add(other)
 }
 
 ///|
-pub impl VectorSpace for Vec3 with sub(self, other) {
+pub impl VectorSpace for Vec3 with fn sub(self, other) {
   self.sub(other)
 }
 
 ///|
-pub impl VectorSpace for Vec3 with neg(self) {
+pub impl VectorSpace for Vec3 with fn neg(self) {
   self.neg()
 }
 
 ///|
-pub impl VectorSpace for Vec3 with mul_scalar(self, scalar) {
+pub impl VectorSpace for Vec3 with fn mul_scalar(self, scalar) {
   self.mul_scalar(scalar)
 }
 
 ///|
-pub impl VectorSpace for Vec3 with div_scalar(self, scalar) {
+pub impl VectorSpace for Vec3 with fn div_scalar(self, scalar) {
   self.mul_scalar(1.0F / scalar)
 }
 
 ///|
-pub impl VectorSpace for Vec4 with zero() {
+pub impl VectorSpace for Vec4 with fn zero() {
   Vec4::new(0.0F, 0.0F, 0.0F, 0.0F)
 }
 
 ///|
-pub impl VectorSpace for Vec4 with add(self, other) {
+pub impl VectorSpace for Vec4 with fn add(self, other) {
   Vec4::new(
     self.x + other.x,
     self.y + other.y,
@@ -151,7 +151,7 @@ pub impl VectorSpace for Vec4 with add(self, other) {
 }
 
 ///|
-pub impl VectorSpace for Vec4 with sub(self, other) {
+pub impl VectorSpace for Vec4 with fn sub(self, other) {
   Vec4::new(
     self.x - other.x,
     self.y - other.y,
@@ -161,37 +161,37 @@ pub impl VectorSpace for Vec4 with sub(self, other) {
 }
 
 ///|
-pub impl VectorSpace for Vec4 with neg(self) {
+pub impl VectorSpace for Vec4 with fn neg(self) {
   Vec4::new(-self.x, -self.y, -self.z, -self.w)
 }
 
 ///|
-pub impl VectorSpace for Vec4 with mul_scalar(self, scalar) {
+pub impl VectorSpace for Vec4 with fn mul_scalar(self, scalar) {
   Vec4::new(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
 }
 
 ///|
-pub impl VectorSpace for Vec4 with div_scalar(self, scalar) {
+pub impl VectorSpace for Vec4 with fn div_scalar(self, scalar) {
   Vec4::new(self.x / scalar, self.y / scalar, self.z / scalar, self.w / scalar)
 }
 
 ///|
-pub impl StableInterpolate for Float with stable_interpolate(self, other, t) {
+pub impl StableInterpolate for Float with fn stable_interpolate(self, other, t) {
   self + (other - self) * t
 }
 
 ///|
-pub impl StableInterpolate for Vec2 with stable_interpolate(self, other, t) {
+pub impl StableInterpolate for Vec2 with fn stable_interpolate(self, other, t) {
   self.add(other.sub(self).mul_scalar(t))
 }
 
 ///|
-pub impl StableInterpolate for Vec3 with stable_interpolate(self, other, t) {
+pub impl StableInterpolate for Vec3 with fn stable_interpolate(self, other, t) {
   self.add(other.sub(self).mul_scalar(t))
 }
 
 ///|
-pub impl StableInterpolate for Vec4 with stable_interpolate(self, other, t) {
+pub impl StableInterpolate for Vec4 with fn stable_interpolate(self, other, t) {
   Vec4::new(
     self.x + (other.x - self.x) * t,
     self.y + (other.y - self.y) * t,
@@ -201,6 +201,6 @@ pub impl StableInterpolate for Vec4 with stable_interpolate(self, other, t) {
 }
 
 ///|
-pub impl StableInterpolate for Quat with stable_interpolate(self, other, t) {
+pub impl StableInterpolate for Quat with fn stable_interpolate(self, other, t) {
   self.lerp(other, t)
 }

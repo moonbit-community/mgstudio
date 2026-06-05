@@ -63,12 +63,12 @@ pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter] = @ecs.regi
 )
 
 ///|
-pub impl @ecs.Component for DespawnOnExit with component() {
+pub impl @ecs.Component for DespawnOnExit with fn component() {
   ecs_key_despawn_on_exit
 }
 
 ///|
-pub impl @ecs.Component for DespawnOnEnter with component() {
+pub impl @ecs.Component for DespawnOnEnter with fn component() {
   ecs_key_despawn_on_enter
 }
 

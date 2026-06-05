@@ -60,7 +60,7 @@ let stepping_resource_key : @ecs.ResourceKey[Stepping] = @ecs.register_resource(
 )
 
 ///|
-pub impl Resource for Stepping with resource() {
+pub impl Resource for Stepping with fn resource() {
   stepping_resource_key
 }
 

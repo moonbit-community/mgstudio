@@ -23,12 +23,12 @@ pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component
 )
 
 ///|
-pub impl @ecs.Component for Parent with component() {
+pub impl @ecs.Component for Parent with fn component() {
   ecs_key_parent
 }
 
 ///|
-pub impl @ecs.Component for Children with component() {
+pub impl @ecs.Component for Children with fn component() {
   ecs_key_children
 }
 

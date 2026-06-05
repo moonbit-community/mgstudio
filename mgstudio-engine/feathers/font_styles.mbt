@@ -42,6 +42,6 @@ let inheritable_font_component_key : @ecs.ComponentKey[InheritableFont] = @ecs.r
 )
 
 ///|
-pub impl @ecs.Component for InheritableFont with component() {
+pub impl @ecs.Component for InheritableFont with fn component() {
   inheritable_font_component_key
 }

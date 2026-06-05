@@ -29,7 +29,7 @@ fn main {
 
 ///|
 fn display_nb_colliders(
-  colliders : @ecs.Query[@ecs.Comp[@physics3d.RapierColliderHandle3d], @ecs.All],
+  colliders : @ecs.Query[@ecs.Read[@physics3d.RapierColliderHandle3d], @ecs.All],
   exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
   let nb_colliders = colliders.count()

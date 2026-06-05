@@ -70,7 +70,7 @@ fn setup(
 fn animate_material_node(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[@ui.ImageNode], @ecs.Mut[@ui.BorderColor]),
+    (@ecs.Write[@ui.ImageNode], @ecs.Write[@ui.BorderColor]),
     @ecs.With[AnimatedMaterialNode],
   ],
 ) -> Unit {

@@ -2116,7 +2116,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
     })
     return
   }
-  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
+  let player_query : @ecs.Query[@ecs.Read[AnimationPlayer], @ecs.All] = @ecs.query(
     world,
   )
   try! player_query.view(fn(entity, player) {
@@ -2237,8 +2237,8 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       let player_query : @ecs.Query[
         (
           @core.Entity,
-          @ecs.Comp[AnimationPlayer],
-          @ecs.Comp[AnimationGraphHandle],
+          @ecs.Read[AnimationPlayer],
+          @ecs.Read[AnimationGraphHandle],
         ),
         @ecs.All,
       ] = @ecs.query(world)
@@ -2604,7 +2604,7 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     @app.current_system_ticks().this_run,
   )
-  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
+  let player_query : @ecs.Query[@ecs.Read[AnimationPlayer], @ecs.All] = @ecs.query(
     world,
   )
   try! player_query.view(fn(player_entity, player) {

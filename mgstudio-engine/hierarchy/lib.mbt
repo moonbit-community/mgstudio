@@ -31,12 +31,12 @@ pub fn Parent::entity(self : Parent) -> @core.Entity {
 }
 
 ///|
-pub impl ToJson for Parent with to_json(self) {
+pub impl ToJson for Parent with fn to_json(self) {
   (self.entity.id, self.entity.generation).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Parent with from_json(json, path) {
+pub impl @json.FromJson for Parent with fn from_json(json, path) {
   let (id, generation) : (Int, Int) = @json.from_json(json, path~)
   Parent::new(@core.Entity::new(id, generation))
 }
@@ -119,7 +119,7 @@ pub fn Children::entity_table_row_cached(
 }
 
 ///|
-pub impl ToJson for Children with to_json(self) {
+pub impl ToJson for Children with fn to_json(self) {
   let encoded : Array[(Int, Int)] = []
   for entity in self.entities {
     encoded.push((entity.id, entity.generation))
@@ -128,7 +128,7 @@ pub impl ToJson for Children with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Children with from_json(json, path) {
+pub impl @json.FromJson for Children with fn from_json(json, path) {
   let encoded : Array[(Int, Int)] = @json.from_json(json, path~)
   let entities : Array[@core.Entity] = []
   for pair in encoded {

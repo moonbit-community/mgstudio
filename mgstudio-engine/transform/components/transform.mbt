@@ -32,7 +32,7 @@ pub fn Transform::new(
 }
 
 ///|
-pub impl ToJson for Transform with to_json(self) {
+pub impl ToJson for Transform with fn to_json(self) {
   (
     self.translation.x,
     self.translation.y,
@@ -48,7 +48,7 @@ pub impl ToJson for Transform with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Transform with from_json(json, path) {
+pub impl @json.FromJson for Transform with fn from_json(json, path) {
   let (tx, ty, tz, rx, ry, rz, rw, sx, sy, sz) : (
     Float,
     Float,
@@ -83,7 +83,7 @@ pub fn Transform::Transform() -> Transform {
 }
 
 ///|
-pub impl Default for Transform with default() {
+pub impl Default for Transform with fn default() {
   Transform::Transform()
 }
 

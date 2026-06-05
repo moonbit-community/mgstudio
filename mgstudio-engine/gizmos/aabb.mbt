@@ -116,7 +116,7 @@ fn aabb_gizmo_color_from_entity(entity : @core.Entity) -> @color.Color {
 
 ///|
 fn aabb_gizmo_is_visible(
-  view_visibility : @ecs.Comp[@visibility.ViewVisibility]?,
+  view_visibility : @ecs.Read[@visibility.ViewVisibility]?,
 ) -> Bool {
   match view_visibility {
     Some(comp) => comp.value().is_visible()
@@ -190,10 +190,10 @@ fn[Config] draw_aabb_3d(
 pub fn draw_aabb_gizmos(
   query : @ecs.Query[
     (
-      @ecs.Comp[@camera.Aabb],
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@visibility.ViewVisibility]?,
-      @ecs.Comp[ShowAabbGizmo],
+      @ecs.Read[@camera.Aabb],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[@visibility.ViewVisibility]?,
+      @ecs.Read[ShowAabbGizmo],
     ),
     @ecs.All,
   ],
@@ -217,9 +217,9 @@ pub fn draw_aabb_gizmos(
 pub fn draw_all_aabb_gizmos(
   query : @ecs.Query[
     (
-      @ecs.Comp[@camera.Aabb],
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@visibility.ViewVisibility]?,
+      @ecs.Read[@camera.Aabb],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[@visibility.ViewVisibility]?,
     ),
     @ecs.Without[ShowAabbGizmo],
   ],

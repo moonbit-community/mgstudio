@@ -33,17 +33,17 @@ pub fn Fixed::Fixed() -> Fixed {
 }
 
 ///|
-pub impl Default for Fixed with default() {
+pub impl Default for Fixed with fn default() {
   Fixed::Fixed()
 }
 
 ///|
-pub impl TimeContext for Fixed with time_context_debug_name() {
+pub impl TimeContext for Fixed with fn time_context_debug_name() {
   "mgstudio_time::Fixed"
 }
 
 ///|
-pub impl TimeContext for Fixed with time_resource_key() {
+pub impl TimeContext for Fixed with fn time_resource_key() {
   fixed_time_resource_key
 }
 

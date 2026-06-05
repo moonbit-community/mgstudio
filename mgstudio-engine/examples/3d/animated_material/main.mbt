@@ -148,7 +148,7 @@ fn setup(
 
 ///|
 fn animate_materials(
-  material_handles : @ecs.Query[@ecs.Comp[@pbr.MeshMaterial3d], @ecs.All],
+  material_handles : @ecs.Query[@ecs.Read[@pbr.MeshMaterial3d], @ecs.All],
   time : @app.Res[@time.Time[Unit]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {

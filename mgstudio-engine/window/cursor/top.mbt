@@ -47,7 +47,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 }
 
 ///|
-pub impl Default for CursorIcon with default() {
+pub impl Default for CursorIcon with fn default() {
   System(SystemCursorIcon::Default)
 }
 
@@ -74,11 +74,11 @@ pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for CursorOptions with component() {
+pub impl @ecs.Component for CursorOptions with fn component() {
   ecs_key_cursor_options
 }
 
 ///|
-pub impl @ecs.Component for CursorIcon with component() {
+pub impl @ecs.Component for CursorIcon with fn component() {
   ecs_key_cursor_icon
 }

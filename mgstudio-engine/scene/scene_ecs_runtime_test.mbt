@@ -104,7 +104,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     instance_id.val = instance.instance_id
 
     let children : Array[@core.Entity] = []
-    let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
+    let parent_query : @ecs.Query[@ecs.Read[@hierarchy.Parent], @ecs.All] = @ecs.query(
       world,
     )
     try! parent_query.view(fn(entity, parent) {
@@ -262,7 +262,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     old_instance_id.val = first_instance.instance_id
 
     let first_children : Array[@core.Entity] = []
-    let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
+    let parent_query : @ecs.Query[@ecs.Read[@hierarchy.Parent], @ecs.All] = @ecs.query(
       world,
     )
     try! parent_query.view(fn(entity, parent) {

@@ -30,12 +30,12 @@ pub fn ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin() -> ScreenSpa
 }
 
 ///|
-pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with name(_self) {
+pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with fn name(_self) {
   SCREEN_SPACE_REFLECTIONS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with build(self, app) {
+pub impl @app.Plugin for ScreenSpaceReflectionsPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   ssr_plugin_install_with(app, self)
 }
@@ -88,7 +88,7 @@ let ecs_key_ssr_plugin_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for ScreenSpaceReflectionsPluginState with resource() {
+pub impl @app.Resource for ScreenSpaceReflectionsPluginState with fn resource() {
   ecs_key_ssr_plugin_state
 }
 

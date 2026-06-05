@@ -48,36 +48,36 @@ pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for Visibility with component() {
+pub impl @ecs.Component for Visibility with fn component() {
   ecs_key_visibility
 }
 
 ///|
-pub impl @ecs.Component for InheritedVisibility with component() {
+pub impl @ecs.Component for InheritedVisibility with fn component() {
   ecs_key_inherited_visibility
 }
 
 ///|
-pub impl @ecs.Component for ViewVisibility with component() {
+pub impl @ecs.Component for ViewVisibility with fn component() {
   ecs_key_view_visibility
 }
 
 ///|
-pub impl @ecs.Component for NoFrustumCulling with component() {
+pub impl @ecs.Component for NoFrustumCulling with fn component() {
   ecs_key_no_frustum_culling
 }
 
 ///|
-pub impl @ecs.Component for NoAutoAabb with component() {
+pub impl @ecs.Component for NoAutoAabb with fn component() {
   ecs_key_no_auto_aabb
 }
 
 ///|
-pub impl @ecs.Component for NoCpuCulling with component() {
+pub impl @ecs.Component for NoCpuCulling with fn component() {
   ecs_key_no_cpu_culling
 }
 
 ///|
-pub impl @ecs.Component for VisibilityRange with component() {
+pub impl @ecs.Component for VisibilityRange with fn component() {
   ecs_key_visibility_range
 }

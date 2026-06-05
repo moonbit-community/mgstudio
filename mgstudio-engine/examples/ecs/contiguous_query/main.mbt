@@ -44,7 +44,7 @@ impl @ecs.Component for HealthDecay with fn component() {
 
 ///|
 fn apply_health_decay(
-  query : @ecs.Query[(@ecs.Comp[HealthDecay], @ecs.Mut[Health]), @ecs.All],
+  query : @ecs.Query[(@ecs.Read[HealthDecay], @ecs.Write[Health]), @ecs.All],
 ) -> Unit {
   guard query.contiguous_iter() is Some(iter) else { return }
   while (iter.fetch_next() catch { _ => None }) is Some((decay, health)) {
@@ -55,7 +55,7 @@ fn apply_health_decay(
 ///|
 fn finish_off_first(
   commands : @app.Commands,
-  query : @ecs.Query[@ecs.Mut[Health], @ecs.All],
+  query : @ecs.Query[@ecs.Write[Health], @ecs.All],
 ) -> Unit {
   let finished = Ref(false)
   try! query.view(fn(entity, health) {

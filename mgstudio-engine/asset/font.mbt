@@ -16,12 +16,12 @@
 pub struct Font {}
 
 ///|
-pub impl Asset for Font with asset_debug_name() {
+pub impl Asset for Font with fn asset_debug_name() {
   "mgstudio_asset::Font"
 }
 
 ///|
-pub impl Asset for Font with asset_as_image(_self) {
+pub impl Asset for Font with fn asset_as_image(_self) {
   None
 }
 
@@ -31,7 +31,7 @@ pub let font_asset_resource_keys : AssetResourceKeys[Font] = register_asset_reso
 )
 
 ///|
-pub impl Asset for Font with asset_resource_keys() {
+pub impl Asset for Font with fn asset_resource_keys() {
   font_asset_resource_keys
 }
 

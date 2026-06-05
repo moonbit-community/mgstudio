@@ -31,12 +31,12 @@ pub fn ForwardDecalPlugin::ForwardDecalPlugin() -> ForwardDecalPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ForwardDecalPlugin with name(_self) {
+pub impl @app.Plugin for ForwardDecalPlugin with fn name(_self) {
   FORWARD_DECAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ForwardDecalPlugin with build(self, app) {
+pub impl @app.Plugin for ForwardDecalPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   ignore(self)
   app
@@ -94,6 +94,6 @@ pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for ForwardDecal with component() {
+pub impl @ecs.Component for ForwardDecal with fn component() {
   ecs_key_forward_decal
 }

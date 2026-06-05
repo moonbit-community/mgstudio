@@ -353,101 +353,101 @@ pub let ecs_key_pan_gesture : @ecs.MessageKey[PanGesture] = @input_events.ecs_ke
 pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput] = @input_events.ecs_key_touch_input
 
 ///|
-pub impl @ecs.Message for WindowCreated with message() {
+pub impl @ecs.Message for WindowCreated with fn message() {
   ecs_key_window_created
 }
 
 ///|
-pub impl @ecs.Message for WindowResized with message() {
+pub impl @ecs.Message for WindowResized with fn message() {
   ecs_key_window_resized
 }
 
 ///|
-pub impl @ecs.Message for RequestRedraw with message() {
+pub impl @ecs.Message for RequestRedraw with fn message() {
   ecs_key_request_redraw
 }
 
 ///|
-pub impl @ecs.Message for WindowCloseRequested with message() {
+pub impl @ecs.Message for WindowCloseRequested with fn message() {
   ecs_key_window_close_requested
 }
 
 ///|
-pub impl @ecs.Message for WindowClosing with message() {
+pub impl @ecs.Message for WindowClosing with fn message() {
   ecs_key_window_closing
 }
 
 ///|
-pub impl @ecs.Message for WindowClosed with message() {
+pub impl @ecs.Message for WindowClosed with fn message() {
   ecs_key_window_closed
 }
 
 ///|
-pub impl @ecs.Message for WindowDestroyed with message() {
+pub impl @ecs.Message for WindowDestroyed with fn message() {
   ecs_key_window_destroyed
 }
 
 ///|
-pub impl @ecs.Message for CursorMoved with message() {
+pub impl @ecs.Message for CursorMoved with fn message() {
   ecs_key_cursor_moved
 }
 
 ///|
-pub impl @ecs.Message for CursorEntered with message() {
+pub impl @ecs.Message for CursorEntered with fn message() {
   ecs_key_cursor_entered
 }
 
 ///|
-pub impl @ecs.Message for CursorLeft with message() {
+pub impl @ecs.Message for CursorLeft with fn message() {
   ecs_key_cursor_left
 }
 
 ///|
-pub impl @ecs.Message for FileDragAndDrop with message() {
+pub impl @ecs.Message for FileDragAndDrop with fn message() {
   ecs_key_file_drag_and_drop
 }
 
 ///|
-pub impl @ecs.Message for WindowEvent with message() {
+pub impl @ecs.Message for WindowEvent with fn message() {
   ecs_key_window_event
 }
 
 ///|
-pub impl @ecs.Message for WindowMoved with message() {
+pub impl @ecs.Message for WindowMoved with fn message() {
   ecs_key_window_moved
 }
 
 ///|
-pub impl @ecs.Message for WindowScaleFactorChanged with message() {
+pub impl @ecs.Message for WindowScaleFactorChanged with fn message() {
   ecs_key_window_scale_factor_changed
 }
 
 ///|
-pub impl @ecs.Message for WindowBackendScaleFactorChanged with message() {
+pub impl @ecs.Message for WindowBackendScaleFactorChanged with fn message() {
   ecs_key_window_backend_scale_factor_changed
 }
 
 ///|
-pub impl @ecs.Message for WindowFocused with message() {
+pub impl @ecs.Message for WindowFocused with fn message() {
   ecs_key_window_focused
 }
 
 ///|
-pub impl @ecs.Message for WindowOccluded with message() {
+pub impl @ecs.Message for WindowOccluded with fn message() {
   ecs_key_window_occluded
 }
 
 ///|
-pub impl @ecs.Message for WindowThemeChanged with message() {
+pub impl @ecs.Message for WindowThemeChanged with fn message() {
   ecs_key_window_theme_changed
 }
 
 ///|
-pub impl @ecs.Message for AppLifecycle with message() {
+pub impl @ecs.Message for AppLifecycle with fn message() {
   ecs_key_app_lifecycle
 }
 
 ///|
-pub impl @ecs.Message for Ime with message() {
+pub impl @ecs.Message for Ime with fn message() {
   ecs_key_ime
 }

@@ -189,7 +189,7 @@ fn cuboid_pointer_position(
 fn set_panel_color(
   entity : @core.Entity,
   color : @color.Color,
-  backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
+  backgrounds : @ecs.Query[@ecs.Write[@ui.BackgroundColor], @ecs.All],
 ) -> Unit {
   let background = backgrounds.get(entity) catch { _ => None }
   if background is Some(background) {
@@ -282,13 +282,13 @@ fn setup(
     .entity(panel)
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerEnter],
-      backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
+      backgrounds : @ecs.Query[@ecs.Write[@ui.BackgroundColor], @ecs.All],
     ) {
       set_panel_color(panel, red(), backgrounds)
     })
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerLeave],
-      backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
+      backgrounds : @ecs.Query[@ecs.Write[@ui.BackgroundColor], @ecs.All],
     ) {
       set_panel_color(panel, blue(), backgrounds)
     })
@@ -342,7 +342,7 @@ fn setup(
 ///|
 fn rotate_cube(
   time : @app.Res[@time.Time[Unit]],
-  cubes : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Cube]],
+  cubes : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Cube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   cubes.view(fn(_entity, transform) {
@@ -364,14 +364,14 @@ fn rotate_cube(
 fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
   let camera_query : @ecs.Query[
     (
-      @ecs.Comp[@camera_camera.Camera],
-      @ecs.Comp[@pbr.Projection],
-      @ecs.Comp[@transform.Transform],
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Read[@pbr.Projection],
+      @ecs.Read[@transform.Transform],
     ),
     @ecs.With[MainCamera],
   ] = @ecs.query_filtered(world, @ecs.With::new(MainCamera::component()))
   let cube_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@transform.Transform]),
+    (@core.Entity, @ecs.Read[@transform.Transform]),
     @ecs.With[Cube],
   ] = @ecs.query_filtered(world, @ecs.With::new(Cube::component()))
   let camera = camera_query.single() catch { _ => None }
@@ -430,7 +430,7 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
 fn drag_panel(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[PanelDragState],
-  panels : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[DraggablePanel]],
+  panels : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[DraggablePanel]],
 ) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   guard drag_state.get().active else { return }

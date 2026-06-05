@@ -2186,7 +2186,7 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   let render_state = render_state_ref_value
   let cameras : Array[@core.Entity] = []
   let camera2d_query : @ecs.Query[
-    @ecs.Comp[@camera_components2d.Camera2d],
+    @ecs.Read[@camera_components2d.Camera2d],
     @ecs.All,
   ] = @ecs.query(world)
   try! camera2d_query.view(fn(entity, _camera2d) { cameras.push(entity) })
@@ -2413,7 +2413,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     rs.meshes.clear()
     // ECS camera components.
     let camera2d_query : @ecs.Query[
-      @ecs.Comp[@camera_components2d.Camera2d],
+      @ecs.Read[@camera_components2d.Camera2d],
       @ecs.All,
     ] = @ecs.query(source_world)
     try! camera2d_query.view(fn(entity, _camera2d) {
@@ -2435,7 +2435,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     let texture_atlas_layouts = source_world.get_resource(
       texture_atlas_layouts_key,
     )
-    let sprite_query : @ecs.Query[@ecs.Comp[Sprite], @ecs.All] = @ecs.query(
+    let sprite_query : @ecs.Query[@ecs.Read[Sprite], @ecs.All] = @ecs.query(
       source_world,
     )
     try! sprite_query.view(fn(entity, sprite) {
@@ -2533,7 +2533,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       }
     })
     // ECS mesh components.
-    let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
+    let mesh_query : @ecs.Query[@ecs.Read[Mesh2d], @ecs.All] = @ecs.query(
       source_world,
     )
     try! mesh_query.view(fn(entity, mesh2d) {

@@ -60,11 +60,11 @@ pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for RawHandleWrapper with component() {
+pub impl @ecs.Component for RawHandleWrapper with fn component() {
   ecs_key_raw_handle_wrapper
 }
 
 ///|
-pub impl @ecs.Component for RawHandleWrapperHolder with component() {
+pub impl @ecs.Component for RawHandleWrapperHolder with fn component() {
   ecs_key_raw_handle_wrapper_holder
 }

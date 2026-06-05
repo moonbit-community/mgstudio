@@ -42,7 +42,7 @@ pub fn AlphaPatternResource::AlphaPatternResource() -> AlphaPatternResource {
 }
 
 ///|
-pub impl @app.Resource for AlphaPatternResource with resource() {
+pub impl @app.Resource for AlphaPatternResource with fn resource() {
   alpha_pattern_resource_key
 }
 

@@ -159,17 +159,17 @@ pub fn BoundingSphere::intersects_aabb(
 }
 
 ///|
-pub impl Bounded3d for Sphere with aabb_3d(self, isometry) {
+pub impl Bounded3d for Sphere with fn aabb_3d(self, isometry) {
   Aabb3d::new(isometry.translation, Vec3::splat(self.radius))
 }
 
 ///|
-pub impl Bounded3d for Sphere with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Sphere with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(isometry.translation, self.radius)
 }
 
 ///|
-pub impl Bounded3d for Cuboid with aabb_3d(self, isometry) {
+pub impl Bounded3d for Cuboid with fn aabb_3d(self, isometry) {
   let half = self.half_size
   let corners = [
     Vec3::new(-half.x, -half.y, -half.z),
@@ -185,12 +185,12 @@ pub impl Bounded3d for Cuboid with aabb_3d(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Cuboid with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Cuboid with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(isometry.translation, self.half_size.length())
 }
 
 ///|
-pub impl Bounded3d for Cylinder with aabb_3d(self, isometry) {
+pub impl Bounded3d for Cylinder with fn aabb_3d(self, isometry) {
   let points : Array[Vec3] = []
   let steps = 32
   for index in 0..<steps {
@@ -207,7 +207,7 @@ pub impl Bounded3d for Cylinder with aabb_3d(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Cylinder with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Cylinder with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(
     isometry.translation,
     sqrt(self.radius * self.radius + self.half_height * self.half_height),
@@ -215,7 +215,7 @@ pub impl Bounded3d for Cylinder with bounding_sphere(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Capsule3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for Capsule3d with fn aabb_3d(self, isometry) {
   let half = Vec3::new(self.radius, self.radius + self.half_length, self.radius)
   Aabb3d::from_point_cloud(isometry, [
     Vec3::new(-half.x, -half.y, -half.z),
@@ -230,37 +230,37 @@ pub impl Bounded3d for Capsule3d with aabb_3d(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Capsule3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Capsule3d with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(isometry.translation, self.radius + self.half_length)
 }
 
 ///|
-pub impl Bounded3d for Triangle3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for Triangle3d with fn aabb_3d(self, isometry) {
   Aabb3d::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for Triangle3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Triangle3d with fn bounding_sphere(self, isometry) {
   BoundingSphere::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for Tetrahedron with aabb_3d(self, isometry) {
+pub impl Bounded3d for Tetrahedron with fn aabb_3d(self, isometry) {
   Aabb3d::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for Tetrahedron with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Tetrahedron with fn bounding_sphere(self, isometry) {
   BoundingSphere::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for Segment3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for Segment3d with fn aabb_3d(self, isometry) {
   Aabb3d::from_point_cloud(isometry, [self.point1(), self.point2()])
 }
 
 ///|
-pub impl Bounded3d for Segment3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Segment3d with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(
     isometry.transform_point3(self.center()),
     self.length() * 0.5F,
@@ -268,41 +268,41 @@ pub impl Bounded3d for Segment3d with bounding_sphere(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Polyline3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for Polyline3d with fn aabb_3d(self, isometry) {
   Aabb3d::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for Polyline3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Polyline3d with fn bounding_sphere(self, isometry) {
   BoundingSphere::from_point_cloud(isometry, self.vertices)
 }
 
 ///|
-pub impl Bounded3d for InfinitePlane3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for InfinitePlane3d with fn aabb_3d(self, isometry) {
   ignore(self)
   Aabb3d::new(isometry.translation, Vec3::splat(1.0e12F))
 }
 
 ///|
-pub impl Bounded3d for InfinitePlane3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for InfinitePlane3d with fn bounding_sphere(self, isometry) {
   ignore(self)
   BoundingSphere::new(isometry.translation, 1.0e12F)
 }
 
 ///|
-pub impl Bounded3d for Line3d with aabb_3d(self, isometry) {
+pub impl Bounded3d for Line3d with fn aabb_3d(self, isometry) {
   ignore(self)
   Aabb3d::new(isometry.translation, Vec3::splat(1.0e12F))
 }
 
 ///|
-pub impl Bounded3d for Line3d with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Line3d with fn bounding_sphere(self, isometry) {
   ignore(self)
   BoundingSphere::new(isometry.translation, 1.0e12F)
 }
 
 ///|
-pub impl Bounded3d for Cone with aabb_3d(self, isometry) {
+pub impl Bounded3d for Cone with fn aabb_3d(self, isometry) {
   let half_height = self.height * 0.5F
   let half = Vec3::new(self.radius, half_height, self.radius)
   Aabb3d::from_point_cloud(isometry, [
@@ -315,7 +315,7 @@ pub impl Bounded3d for Cone with aabb_3d(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Cone with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Cone with fn bounding_sphere(self, isometry) {
   let half_height = self.height * 0.5F
   BoundingSphere::new(
     isometry.translation,
@@ -324,7 +324,7 @@ pub impl Bounded3d for Cone with bounding_sphere(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for ConicalFrustum with aabb_3d(self, isometry) {
+pub impl Bounded3d for ConicalFrustum with fn aabb_3d(self, isometry) {
   let half_height = self.height * 0.5F
   let radius = bounded3d_max(self.radius_top, self.radius_bottom)
   let half = Vec3::new(radius, half_height, radius)
@@ -337,7 +337,7 @@ pub impl Bounded3d for ConicalFrustum with aabb_3d(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for ConicalFrustum with bounding_sphere(self, isometry) {
+pub impl Bounded3d for ConicalFrustum with fn bounding_sphere(self, isometry) {
   let half_height = self.height * 0.5F
   BoundingSphere::new(
     isometry.translation,
@@ -350,13 +350,13 @@ pub impl Bounded3d for ConicalFrustum with bounding_sphere(self, isometry) {
 }
 
 ///|
-pub impl Bounded3d for Torus with aabb_3d(self, isometry) {
+pub impl Bounded3d for Torus with fn aabb_3d(self, isometry) {
   let outer = self.outer_radius()
   Aabb3d::new(isometry.translation, Vec3::new(outer, self.minor_radius, outer))
 }
 
 ///|
-pub impl Bounded3d for Torus with bounding_sphere(self, isometry) {
+pub impl Bounded3d for Torus with fn bounding_sphere(self, isometry) {
   BoundingSphere::new(isometry.translation, self.outer_radius())
 }
 

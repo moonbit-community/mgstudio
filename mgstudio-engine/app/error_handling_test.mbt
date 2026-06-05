@@ -103,7 +103,7 @@ test "app error handling: skipped validated params do not invoke error handlers"
     .add_systems(
       Update,
       system_config_param(fn(
-        _marker : Single[@ecs.Comp[ErrorHandlingMarker], @ecs.All],
+        _marker : Single[@ecs.Read[ErrorHandlingMarker], @ecs.All],
       ) {
         ran.val = true
       }),

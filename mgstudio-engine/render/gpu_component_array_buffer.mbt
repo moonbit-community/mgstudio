@@ -29,12 +29,12 @@ pub fn[C] GpuComponentArrayBufferPlugin::GpuComponentArrayBufferPlugin() -> GpuC
 }
 
 ///|
-pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with name(_self) {
+pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with fn name(_self) {
   GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME
 }
 
 ///|
-pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with build(
+pub impl[C] @app.Plugin for GpuComponentArrayBufferPlugin[C] with fn build(
   self,
   app,
 ) {

@@ -615,7 +615,7 @@ fn render3d_add_or_delete_skins(
   )
   let changed_skinned_mesh_filter = @ecs.Changed::new(skinned_mesh_key)
   let changed_skinned_query : @ecs.Query[
-    (@ecs.Comp[@visibility.ViewVisibility], @ecs.Comp[@mesh.SkinnedMesh]),
+    (@ecs.Read[@visibility.ViewVisibility], @ecs.Read[@mesh.SkinnedMesh]),
     @ecs.Or[
       (
         @ecs.Changed[@visibility.ViewVisibility],

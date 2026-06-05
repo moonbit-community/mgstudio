@@ -63,9 +63,9 @@ fn animate_sprite(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Comp[AnimationIndices],
-      @ecs.Mut[AnimationTimer],
-      @ecs.Mut[@sprite.Sprite],
+      @ecs.Read[AnimationIndices],
+      @ecs.Write[AnimationTimer],
+      @ecs.Write[@sprite.Sprite],
     ),
     @ecs.All,
   ],

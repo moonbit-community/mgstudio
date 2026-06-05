@@ -456,7 +456,7 @@ fn spin(world : @ecs.World) -> Unit {
   let rotation_step = @math.Quat::from_rotation_z(time.delta_secs() / 5.0F)
   let updates : Array[(@core.Entity, @math.Quat)] = []
   let query : @ecs.Query[
-    (@ecs.Comp[Spin], @ecs.Comp[@transform.Transform]),
+    (@ecs.Read[Spin], @ecs.Read[@transform.Transform]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(entity, data) {
@@ -480,9 +480,9 @@ fn spin(world : @ecs.World) -> Unit {
 fn update_volumes(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
     (
-      @ecs.Comp[DesiredVolume],
-      @ecs.Comp[Shape],
-      @ecs.Comp[@transform.Transform],
+      @ecs.Read[DesiredVolume],
+      @ecs.Read[Shape],
+      @ecs.Read[@transform.Transform],
     ),
     @ecs.All,
   ] = @ecs.query(world)
@@ -505,7 +505,7 @@ fn render_shapes(
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let query : @ecs.Query[
-    (@ecs.Comp[Shape], @ecs.Comp[@transform.Transform]),
+    (@ecs.Read[Shape], @ecs.Read[@transform.Transform]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(_entity, data) {

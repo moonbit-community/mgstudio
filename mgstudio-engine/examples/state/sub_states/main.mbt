@@ -252,7 +252,7 @@ fn movement(world : @ecs.World) -> Unit {
     None => return
   }
   let query : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@sprite.Sprite],
   ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
@@ -293,7 +293,9 @@ fn change_color(world : @ecs.World) -> Unit {
     Some(time) => time
     None => return
   }
-  let query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.All] = @ecs.query(
+    world,
+  )
   let hue = time.elapsed_seconds() * 60.0F
   try! query.view(fn(_entity, sprite) {
     sprite.modify(fn(value) {

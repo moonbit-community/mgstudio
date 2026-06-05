@@ -60,22 +60,22 @@ pub let ecs_key_checked : @ecs.ComponentKey[Checked] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for InteractionDisabled with component() {
+pub impl @ecs.Component for InteractionDisabled with fn component() {
   ecs_key_interaction_disabled
 }
 
 ///|
-pub impl @ecs.Component for Pressed with component() {
+pub impl @ecs.Component for Pressed with fn component() {
   ecs_key_pressed
 }
 
 ///|
-pub impl @ecs.Component for Checkable with component() {
+pub impl @ecs.Component for Checkable with fn component() {
   ecs_key_checkable
 }
 
 ///|
-pub impl @ecs.Component for Checked with component() {
+pub impl @ecs.Component for Checked with fn component() {
   ecs_key_checked
 }
 

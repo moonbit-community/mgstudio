@@ -83,7 +83,7 @@ fn setup(
 ///|
 fn rotate_light(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotate]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Rotate]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {

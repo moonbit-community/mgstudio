@@ -121,7 +121,7 @@ let render3d_world_transform_cache_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio.render3d.world_transform_cache")
 
 ///|
-impl @app.Resource for Render3dWorldTransformCache with resource() {
+impl @app.Resource for Render3dWorldTransformCache with fn resource() {
   render3d_world_transform_cache_key
 }
 

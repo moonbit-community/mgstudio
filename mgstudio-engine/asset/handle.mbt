@@ -25,12 +25,12 @@ pub fn[T] Handle::new(id : Int) -> Handle[T] {
 }
 
 ///|
-pub impl[T] ToJson for Handle[T] with to_json(self) {
+pub impl[T] ToJson for Handle[T] with fn to_json(self) {
   self.id.to_json()
 }
 
 ///|
-pub impl[T] @json.FromJson for Handle[T] with from_json(json, path) {
+pub impl[T] @json.FromJson for Handle[T] with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   Handle::new(id)
 }

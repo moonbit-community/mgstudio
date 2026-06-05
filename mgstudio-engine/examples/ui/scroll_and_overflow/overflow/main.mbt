@@ -192,7 +192,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn update_outlines(
   query : @ecs.Query[
-    (@ecs.Mut[@ui.Outline], @ecs.Comp[@ui.Interaction]),
+    (@ecs.Write[@ui.Outline], @ecs.Read[@ui.Interaction]),
     @ecs.All,
   ],
 ) -> Unit {

@@ -50,6 +50,6 @@ pub let ecs_key_fullscreen_shader : @ecs.ResourceKey[FullscreenShader] = @ecs.re
 )
 
 ///|
-pub impl @app.Resource for FullscreenShader with resource() {
+pub impl @app.Resource for FullscreenShader with fn resource() {
   ecs_key_fullscreen_shader
 }

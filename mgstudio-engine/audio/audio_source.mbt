@@ -28,22 +28,22 @@ pub fn AudioSource::bytes(self : AudioSource) -> Bytes {
 }
 
 ///|
-pub impl AudioPlayerSource for AudioSource with audio_player_source_debug_name() {
+pub impl AudioPlayerSource for AudioSource with fn audio_player_source_debug_name() {
   "mgstudio_audio::AudioSource"
 }
 
 ///|
-pub impl AudioPlayerSource for AudioSource with audio_player_component_key() {
+pub impl AudioPlayerSource for AudioSource with fn audio_player_component_key() {
   ecs_key_audio_source_player
 }
 
 ///|
-pub impl @asset.Asset for AudioSource with asset_debug_name() {
+pub impl @asset.Asset for AudioSource with fn asset_debug_name() {
   "mgstudio_audio::AudioSource"
 }
 
 ///|
-pub impl @asset.Asset for AudioSource with asset_as_image(_self) {
+pub impl @asset.Asset for AudioSource with fn asset_as_image(_self) {
   None
 }
 
@@ -53,7 +53,7 @@ let audio_source_asset_resource_keys : @asset.AssetResourceKeys[AudioSource] = @
 )
 
 ///|
-pub impl @asset.Asset for AudioSource with asset_resource_keys() {
+pub impl @asset.Asset for AudioSource with fn asset_resource_keys() {
   audio_source_asset_resource_keys
 }
 
@@ -102,7 +102,7 @@ let audio_source_asset_paths_resource_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_audio::AudioSourceAssetPaths")
 
 ///|
-impl @app.Resource for AudioSourceAssetPaths with resource() {
+impl @app.Resource for AudioSourceAssetPaths with fn resource() {
   audio_source_asset_paths_resource_key
 }
 

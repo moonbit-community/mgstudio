@@ -21,7 +21,7 @@ pub(open) trait TransformPoint {
 }
 
 ///|
-pub impl TransformPoint for Transform with transform_point(self, point) {
+pub impl TransformPoint for Transform with fn transform_point(self, point) {
   let scaled = @math.Vec3::new(
     point.x * self.scale.x,
     point.y * self.scale.y,
@@ -31,12 +31,15 @@ pub impl TransformPoint for Transform with transform_point(self, point) {
 }
 
 ///|
-pub impl TransformPoint for GlobalTransform with transform_point(self, point) {
+pub impl TransformPoint for GlobalTransform with fn transform_point(self, point) {
   self.affine().transform_point3(point)
 }
 
 ///|
-pub impl TransformPoint for @math.Isometry3d with transform_point(self, point) {
+pub impl TransformPoint for @math.Isometry3d with fn transform_point(
+  self,
+  point,
+) {
   self.transform_point3(point)
 }
 

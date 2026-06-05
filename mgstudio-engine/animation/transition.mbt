@@ -24,12 +24,12 @@ pub struct AnimationTransition {
 }
 
 ///|
-pub impl ToJson for AnimationTransition with to_json(self) {
+pub impl ToJson for AnimationTransition with fn to_json(self) {
   (self.current_weight, self.weight_decline_per_sec, self.animation).to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationTransition with from_json(json, path) {
+pub impl @json.FromJson for AnimationTransition with fn from_json(json, path) {
   let (current_weight, weight_decline_per_sec, animation) : (
     Float,
     Float,
@@ -54,12 +54,12 @@ pub struct AnimationTransitions {
 }
 
 ///|
-pub impl ToJson for AnimationTransitions with to_json(self) {
+pub impl ToJson for AnimationTransitions with fn to_json(self) {
   (self.main_animation, self.transitions).to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationTransitions with from_json(json, path) {
+pub impl @json.FromJson for AnimationTransitions with fn from_json(json, path) {
   let (main_animation, transitions) : (
     AnimationNodeIndex?,
     Array[AnimationTransition],
@@ -239,7 +239,7 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
   }
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
+  let transitions_query : @ecs.Query[@ecs.Read[AnimationTransitions], @ecs.All] = @ecs.query(
     world,
   )
   try! transitions_query.view(fn(entity, transitions) {
@@ -305,7 +305,7 @@ pub fn expire_completed_transitions(world : @ecs.World) -> Unit {
   }
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
+  let transitions_query : @ecs.Query[@ecs.Read[AnimationTransitions], @ecs.All] = @ecs.query(
     world,
   )
   try! transitions_query.view(fn(entity, transitions) {

@@ -173,12 +173,12 @@ pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 }
 
 ///|
-pub impl @app.Plugin for AssetPlugin with name(_self) {
+pub impl @app.Plugin for AssetPlugin with fn name(_self) {
   ASSET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for AssetPlugin with build(self, app) {
+pub impl @app.Plugin for AssetPlugin with fn build(self, app) {
   let asset_server = asset_server_standalone()
   asset_server.default_sampler_nearest = self.default_sampler_nearest
   asset_plugin_with_server(

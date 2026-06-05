@@ -35,6 +35,6 @@ pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[BoxShadowSamples] = @e
 )
 
 ///|
-pub impl @ecs.Component for BoxShadowSamples with component() {
+pub impl @ecs.Component for BoxShadowSamples with fn component() {
   ecs_key_ui_box_shadow_samples
 }

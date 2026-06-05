@@ -21,11 +21,11 @@ pub fn VisibilityPlugin::VisibilityPlugin() -> VisibilityPlugin {
 }
 
 ///|
-pub impl @app.Plugin for VisibilityPlugin with name(_self) {
+pub impl @app.Plugin for VisibilityPlugin with fn name(_self) {
   "mgstudio.visibility.VisibilityPlugin"
 }
 
 ///|
-pub impl @app.Plugin for VisibilityPlugin with build(_self, app) {
+pub impl @app.Plugin for VisibilityPlugin with fn build(_self, app) {
   visibility_plugin(app)
 }

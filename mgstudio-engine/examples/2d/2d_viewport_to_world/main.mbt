@@ -147,7 +147,7 @@ fn setup(
 
 ///|
 fn main_camera_entity(
-  camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
 ) -> @core.Entity? {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   try! camera_query.view(fn(entity, _camera) {
@@ -160,11 +160,11 @@ fn main_camera_entity(
 
 ///|
 fn draw_cursor(
-  main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Comp[@camera_camera.Camera], @ecs.All],
-  transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
+  main_camera : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[@camera_camera.Camera], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All],
   projection_query : @ecs.Query[
-    @ecs.Comp[@camera_projection2d.Projection],
+    @ecs.Read[@camera_projection2d.Projection],
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
@@ -227,11 +227,11 @@ fn draw_cursor(
 
 ///|
 fn controls(
-  main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Mut[@camera_camera.Camera], @ecs.All],
-  transform_query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
+  main_camera : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Write[@camera_camera.Camera], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.All],
   projection_query : @ecs.Query[
-    @ecs.Mut[@camera_projection2d.Projection],
+    @ecs.Write[@camera_projection2d.Projection],
     @ecs.All,
   ],
   input : @input.ButtonInput[@window.KeyCode],

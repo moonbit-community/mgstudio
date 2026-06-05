@@ -294,7 +294,7 @@ fn auto_directional_navigation_best_candidate(
 fn auto_directional_navigation_area_query(
   world : @ecs.World,
 ) -> @ecs.Query[
-  (@core.Entity, @ecs.Comp[AutoDirectionalNavigation], @ecs.Comp[UiLayout]),
+  (@core.Entity, @ecs.Read[AutoDirectionalNavigation], @ecs.Read[UiLayout]),
   @ecs.All,
 ] {
   @ecs.query(world)

@@ -89,7 +89,7 @@ fn setup(
 fn animate_custom_phase(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Comp[CustomPhase], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[CustomPhase], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

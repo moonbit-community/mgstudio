@@ -93,7 +93,7 @@ absent from `QueryData`; the query executor constructs the root context with
 offset `0`, and tuple query data advances the offset with `fetch_plan_size()`.
 
 Fetched component items retain the exact typed key that produced them. Methods
-such as `Comp::key()` and `Mut::key()` return the captured key, not a fresh
+such as `Read::key()` and `Write::key()` return the captured key, not a fresh
 `Component::component()` lookup. This is required because MoonBit has no safe
 runtime downcast path from a structural component id back to the original `T`;
 the key is the typed storage authority.
@@ -105,10 +105,10 @@ entity lookup, because that would hide table migration bugs.
 
 ## Mutation Boundaries
 
-Read access does not mark values changed. `Mut::peek`, `Mut::value`,
+Read access does not mark values changed. `Write::peek`, `Write::value`,
 `ResourceMut::peek`, and `ResMut::get` are read operations. Change ticks are
-recorded only through explicit mutation APIs such as `set`, `modify`, `update`,
-and `set_changed`.
+recorded only through explicit mutation APIs such as `set`, `modify`, and
+`set_changed` for components, plus `ResourceMut::update` for resources.
 
 This matches the engine invariant that dirty propagation should represent actual
 component/resource mutation, not the mere acquisition of a mutable-capable handle.

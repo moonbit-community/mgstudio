@@ -147,7 +147,7 @@ fn setup(
 ///|
 fn rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[FirstPassCube]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[FirstPassCube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
@@ -166,7 +166,7 @@ fn rotator_system(
 ///|
 fn cube_rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MainPassCube]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[MainPassCube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {

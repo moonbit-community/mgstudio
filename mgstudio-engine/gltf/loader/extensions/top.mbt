@@ -102,7 +102,7 @@ pub let ecs_key_gltf_extension_runtime_state : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="gltf.loader.extensions.runtime_state")
 
 ///|
-pub impl @app.Resource for GltfExtensionRuntimeState with resource() {
+pub impl @app.Resource for GltfExtensionRuntimeState with fn resource() {
   ecs_key_gltf_extension_runtime_state
 }
 

@@ -43,12 +43,12 @@ fn EasyScreenshotState::EasyScreenshotState() -> EasyScreenshotState {
 }
 
 ///|
-pub impl @app.Resource for EasyScreenshotConfig with resource() {
+pub impl @app.Resource for EasyScreenshotConfig with fn resource() {
   ecs_res_key_easy_screenshot_config
 }
 
 ///|
-pub impl @app.Resource for EasyScreenshotState with resource() {
+pub impl @app.Resource for EasyScreenshotState with fn resource() {
   ecs_res_key_easy_screenshot_state
 }
 

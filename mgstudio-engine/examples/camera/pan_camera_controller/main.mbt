@@ -16,7 +16,7 @@
 fn spawn_text(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  camera : @ecs.Query[@ecs.Comp[@camera_controller.PanCamera], @ecs.All],
+  camera : @ecs.Query[@ecs.Read[@camera_controller.PanCamera], @ecs.All],
 ) -> Unit {
   guard (camera.single() catch { _ => None }) is Some(controller_comp) else {
     return

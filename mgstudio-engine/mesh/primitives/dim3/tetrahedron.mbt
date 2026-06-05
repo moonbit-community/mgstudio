@@ -47,12 +47,12 @@ pub fn TetrahedronMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for TetrahedronMeshBuilder with build(self) {
+pub impl MeshBuilder for TetrahedronMeshBuilder with fn build(self) {
   tetrahedron_mesh(self.tetrahedron)
 }
 
 ///|
-pub impl Meshable for @math.Tetrahedron with mesh(self) {
+pub impl Meshable for @math.Tetrahedron with fn mesh(self) {
   TetrahedronMeshBuilder::new(self).build()
 }
 

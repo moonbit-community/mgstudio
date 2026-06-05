@@ -51,7 +51,7 @@ fn setup(commands : @app.Commands) -> Unit {
 
 ///|
 fn rebuild_name_index(
-  names : @ecs.Query[(@core.Entity, @ecs.Comp[Name]), @ecs.All],
+  names : @ecs.Query[(@core.Entity, @ecs.Read[Name]), @ecs.All],
   index : @app.ResMut[NameIndex],
 ) -> Unit {
   index.set(NameIndex::{ entries: {} })
@@ -63,7 +63,7 @@ fn rebuild_name_index(
 
 ///|
 fn rename_one_entity(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[(@core.Entity, @ecs.Comp[Name]), @ecs.All] = @ecs.query(
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[Name]), @ecs.All] = @ecs.query(
     world,
   )
   let renamed : Ref[Bool] = Ref(false)

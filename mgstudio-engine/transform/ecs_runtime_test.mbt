@@ -154,7 +154,7 @@ test "transform plugin: sync_simple_transforms skips dead entities from removed 
 }
 
 ///|
-test "transform ecs query: Mut::modify persists rotate_y mutations" {
+test "transform ecs query: Write::modify persists rotate_y mutations" {
   let world = @ecs.World::new()
   prepare_transform_world_ecs(world)
   let entity = world.spawn()
@@ -165,7 +165,7 @@ test "transform ecs query: Mut::modify persists rotate_y mutations" {
     GlobalTransform::identity(),
   )
   next_system_ticks_ecs(world)
-  let query : @ecs.Query[@ecs.Mut[Transform], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Write[Transform], @ecs.All] = @ecs.query(world)
   let transform_mut = try! query.require_single()
   transform_mut.modify(fn(value) { value.rotate_y(@math.pi_half()) })
   let changed = try! world.get_by_key(entity, ecs_key_transform)

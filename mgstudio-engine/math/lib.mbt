@@ -442,67 +442,67 @@ pub fn Quat::new(x : Float, y : Float, z : Float, w : Float) -> Quat {
 }
 
 ///|
-pub impl ToJson for Vec2 with to_json(self) {
+pub impl ToJson for Vec2 with fn to_json(self) {
   (self.x, self.y).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Vec2 with from_json(json, path) {
+pub impl @json.FromJson for Vec2 with fn from_json(json, path) {
   let (x, y) : (Float, Float) = @json.from_json(json, path~)
   Vec2::new(x, y)
 }
 
 ///|
-pub impl ToJson for Vec3 with to_json(self) {
+pub impl ToJson for Vec3 with fn to_json(self) {
   (self.x, self.y, self.z).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Vec3 with from_json(json, path) {
+pub impl @json.FromJson for Vec3 with fn from_json(json, path) {
   let (x, y, z) : (Float, Float, Float) = @json.from_json(json, path~)
   Vec3::new(x, y, z)
 }
 
 ///|
-pub impl ToJson for Vec4 with to_json(self) {
+pub impl ToJson for Vec4 with fn to_json(self) {
   (self.x, self.y, self.z, self.w).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Vec4 with from_json(json, path) {
+pub impl @json.FromJson for Vec4 with fn from_json(json, path) {
   let (x, y, z, w) : (Float, Float, Float, Float) = @json.from_json(json, path~)
   Vec4::new(x, y, z, w)
 }
 
 ///|
-pub impl ToJson for IVec2 with to_json(self) {
+pub impl ToJson for IVec2 with fn to_json(self) {
   (self.x, self.y).to_json()
 }
 
 ///|
-pub impl @json.FromJson for IVec2 with from_json(json, path) {
+pub impl @json.FromJson for IVec2 with fn from_json(json, path) {
   let (x, y) : (Int, Int) = @json.from_json(json, path~)
   IVec2::new(x, y)
 }
 
 ///|
-pub impl ToJson for UVec2 with to_json(self) {
+pub impl ToJson for UVec2 with fn to_json(self) {
   (self.x, self.y).to_json()
 }
 
 ///|
-pub impl @json.FromJson for UVec2 with from_json(json, path) {
+pub impl @json.FromJson for UVec2 with fn from_json(json, path) {
   let (x, y) : (Int, Int) = @json.from_json(json, path~)
   UVec2::new(x, y)
 }
 
 ///|
-pub impl ToJson for Quat with to_json(self) {
+pub impl ToJson for Quat with fn to_json(self) {
   (self.x, self.y, self.z, self.w).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Quat with from_json(json, path) {
+pub impl @json.FromJson for Quat with fn from_json(json, path) {
   let (x, y, z, w) : (Float, Float, Float, Float) = @json.from_json(json, path~)
   Quat::new(x, y, z, w)
 }

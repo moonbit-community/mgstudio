@@ -550,7 +550,7 @@ pub fn update_tilemap_chunk_indices(world : @ecs.World) -> Unit {
     @mesh2d_material.MeshMaterial2d[TilemapChunkMaterial],
   ] = @mesh2d_material.MeshMaterial2d::component()
   let query : @ecs.Query[
-    (@ecs.Comp[TilemapChunk], @ecs.Comp[TilemapChunkTileData]),
+    (@ecs.Read[TilemapChunk], @ecs.Read[TilemapChunkTileData]),
     @ecs.All,
   ] = @ecs.query(world)
   let updates : Array[

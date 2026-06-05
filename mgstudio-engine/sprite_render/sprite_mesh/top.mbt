@@ -825,7 +825,7 @@ fn sprite_mesh_add_material_system(world : @ecs.World) -> Unit {
     return
   }
   let material_key : @ecs.ComponentKey[MeshMaterial2d[SpriteMaterial]] = MeshMaterial2d::component()
-  let query : @ecs.Query[(@ecs.Comp[SpriteMesh], @ecs.Comp[Anchor]), @ecs.All] = @ecs.query(
+  let query : @ecs.Query[(@ecs.Read[SpriteMesh], @ecs.Read[Anchor]), @ecs.All] = @ecs.query(
     world,
   )
   let updates : Array[(@core.Entity, SpriteMesh, Anchor)] = []

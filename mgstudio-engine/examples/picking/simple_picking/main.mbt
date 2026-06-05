@@ -131,7 +131,7 @@ fn setup(
     })
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerEnter],
-      texts : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
+      texts : @ecs.Query[@ecs.Write[@text.TextColor], @ecs.All],
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
@@ -140,7 +140,7 @@ fn setup(
     })
     .observe_pointer2(fn(
       _pointer : @app.OnPointer[@app.PointerLeave],
-      texts : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
+      texts : @ecs.Query[@ecs.Write[@text.TextColor], @ecs.All],
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
@@ -154,7 +154,7 @@ fn setup(
 fn toggle_cube_color_on_click(
   pointer : @app.OnPointer[@app.PointerClick],
   cubes : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Mut[PickableCube]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Write[PickableCube]),
     @ecs.All,
   ],
 ) -> Unit {

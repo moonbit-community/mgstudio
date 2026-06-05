@@ -41,11 +41,11 @@ pub fn line_gizmo_2d_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for LineGizmo2dPlugin with name(_self) {
+pub impl @app.Plugin for LineGizmo2dPlugin with fn name(_self) {
   LINE_GIZMO_2D_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LineGizmo2dPlugin with build(self, app) {
+pub impl @app.Plugin for LineGizmo2dPlugin with fn build(self, app) {
   line_gizmo_2d_plugin_with(app, self)
 }

@@ -21,11 +21,11 @@ pub fn TransformPlugin::TransformPlugin() -> TransformPlugin {
 }
 
 ///|
-pub impl @app.Plugin for TransformPlugin with name(_self) {
+pub impl @app.Plugin for TransformPlugin with fn name(_self) {
   "mgstudio.transform.TransformPlugin"
 }
 
 ///|
-pub impl @app.Plugin for TransformPlugin with build(_self, app) {
+pub impl @app.Plugin for TransformPlugin with fn build(_self, app) {
   transform_plugin(app)
 }

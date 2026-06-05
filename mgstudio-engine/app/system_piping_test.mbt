@@ -139,7 +139,7 @@ test "app system piping: source validation skip prevents downstream handler" {
     .add_systems(
       Update,
       system_param_output(fn(
-        _marker : Single[@ecs.Comp[SystemPipingMarker], @ecs.All],
+        _marker : Single[@ecs.Read[SystemPipingMarker], @ecs.All],
       ) -> Int {
         1
       }).pipe(fn(_input : In[Int]) { ran.val = true }),

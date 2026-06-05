@@ -108,7 +108,7 @@ fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit {
   guard pointer.target() is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
   let query : @ecs.QueryState[
-    (@ecs.Mut[@transform.Transform], @ecs.Mut[ObserverTarget]),
+    (@ecs.Write[@transform.Transform], @ecs.Write[ObserverTarget]),
     @ecs.All,
   ] = world.query_filtered(@ecs.All::new())
   let entity_data = query.get(world, entity) catch { _ => None }

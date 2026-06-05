@@ -85,7 +85,7 @@ let render3d_execute_queue_state_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio.render3d.execute_queue_state")
 
 ///|
-impl @app.Resource for Render3dExecuteQueueState with resource() {
+impl @app.Resource for Render3dExecuteQueueState with fn resource() {
   render3d_execute_queue_state_key
 }
 

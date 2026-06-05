@@ -14,7 +14,7 @@
 
 ///|
 type SimpleTransformChangedQuery = @ecs.Query[
-  (@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]),
+  (@ecs.Read[Transform], @ecs.Write[GlobalTransform]),
   (
     @ecs.Without[@hierarchy.Parent],
     @ecs.Without[@hierarchy.Children],
@@ -24,7 +24,7 @@ type SimpleTransformChangedQuery = @ecs.Query[
 
 ///|
 type SimpleTransformOrphanQuery = @ecs.Query[
-  (@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]),
+  (@ecs.Read[Transform], @ecs.Write[GlobalTransform]),
   (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children]),
 ]
 
@@ -42,12 +42,12 @@ type TransformDirtyTriggerQuery = @ecs.Query[
 
 ///|
 type TransformTreeChangedMutQuery = @ecs.Query[
-  @ecs.Mut[TransformTreeChanged],
+  @ecs.Write[TransformTreeChanged],
   @ecs.All,
 ]
 
 ///|
-type TransformParentQuery = @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All]
+type TransformParentQuery = @ecs.Query[@ecs.Read[@hierarchy.Parent], @ecs.All]
 
 ///|
 priv struct TransformPropagationColumns {

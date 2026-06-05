@@ -159,12 +159,12 @@ pub fn GpuMeshPreprocessPlugin::new(
 }
 
 ///|
-pub impl @app.Plugin for GpuMeshPreprocessPlugin with name(_self) {
+pub impl @app.Plugin for GpuMeshPreprocessPlugin with fn name(_self) {
   GPU_MESH_PREPROCESS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for GpuMeshPreprocessPlugin with build(self, app) {
+pub impl @app.Plugin for GpuMeshPreprocessPlugin with fn build(self, app) {
   gpu_mesh_preprocess_plugin_install_with(app, self)
 }
 
@@ -176,7 +176,7 @@ let ecs_key_gpu_mesh_preprocess_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for Render3dGpuPreprocessState with resource() {
+pub impl @app.Resource for Render3dGpuPreprocessState with fn resource() {
   ecs_key_gpu_mesh_preprocess_state
 }
 

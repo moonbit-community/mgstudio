@@ -72,11 +72,11 @@ pub fn web_asset_plugin(
 }
 
 ///|
-pub impl @app.Plugin for WebAssetPlugin with name(_self) {
+pub impl @app.Plugin for WebAssetPlugin with fn name(_self) {
   WEB_ASSET_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for WebAssetPlugin with build(self, app) {
+pub impl @app.Plugin for WebAssetPlugin with fn build(self, app) {
   web_asset_plugin(app, plugin=self)
 }

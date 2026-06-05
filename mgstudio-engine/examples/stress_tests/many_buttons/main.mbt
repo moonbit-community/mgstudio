@@ -91,9 +91,9 @@ fn setup(commands : @app.Commands) -> Unit {
 fn button_system(
   buttons : @ecs.Query[
     (
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Mut[@ui.BackgroundColor],
-      @ecs.Comp[IdleColor],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Write[@ui.BackgroundColor],
+      @ecs.Read[IdleColor],
     ),
     (@ecs.With[@ui.Button], @ecs.Changed[@ui.Interaction]),
   ],

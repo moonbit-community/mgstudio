@@ -28,16 +28,16 @@ pub let ecs_key_animation_player : @ecs.ComponentKey[AnimationPlayer] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for AnimationTargetId with component() {
+pub impl @ecs.Component for AnimationTargetId with fn component() {
   ecs_key_animation_target_id
 }
 
 ///|
-pub impl @ecs.Component for AnimatedBy with component() {
+pub impl @ecs.Component for AnimatedBy with fn component() {
   ecs_key_animated_by
 }
 
 ///|
-pub impl @ecs.Component for AnimationPlayer with component() {
+pub impl @ecs.Component for AnimationPlayer with fn component() {
   ecs_key_animation_player
 }

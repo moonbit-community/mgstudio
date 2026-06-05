@@ -35,7 +35,7 @@ pub fn Mesh2dGeometry::to_mesh(self : Mesh2dGeometry) -> Mesh {
 }
 
 ///|
-pub impl IntoMeshAsset for Mesh2dGeometry with into_mesh_asset(self) {
+pub impl IntoMeshAsset for Mesh2dGeometry with fn into_mesh_asset(self) {
   self.to_mesh()
 }
 
@@ -53,7 +53,7 @@ pub fn Mesh3dGeometry::to_mesh(self : Mesh3dGeometry) -> Mesh {
 }
 
 ///|
-pub impl IntoMeshAsset for Mesh3dGeometry with into_mesh_asset(self) {
+pub impl IntoMeshAsset for Mesh3dGeometry with fn into_mesh_asset(self) {
   self.to_mesh()
 }
 

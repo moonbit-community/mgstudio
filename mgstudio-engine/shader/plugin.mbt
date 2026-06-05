@@ -21,11 +21,11 @@ pub fn ShaderPlugin::ShaderPlugin() -> ShaderPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ShaderPlugin with name(_self) {
+pub impl @app.Plugin for ShaderPlugin with fn name(_self) {
   "mgstudio.shader.ShaderPlugin"
 }
 
 ///|
-pub impl @app.Plugin for ShaderPlugin with build(_self, app) {
+pub impl @app.Plugin for ShaderPlugin with fn build(_self, app) {
   shader_plugin(app)
 }

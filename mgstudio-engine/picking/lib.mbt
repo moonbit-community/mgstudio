@@ -42,7 +42,7 @@ pub fn Pickable::new(
 }
 
 ///|
-pub impl @ecs.Component for Pickable with component() {
+pub impl @ecs.Component for Pickable with fn component() {
   ecs_key_pickable
 }
 
@@ -52,7 +52,7 @@ pub impl @ecs.Component for Pickable with component() {
 pub struct SpritePickingCamera {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub impl @ecs.Component for SpritePickingCamera with component() {
+pub impl @ecs.Component for SpritePickingCamera with fn component() {
   ecs_key_sprite_picking_camera
 }
 
@@ -86,7 +86,7 @@ pub fn SpritePickingSettings::new(
 }
 
 ///|
-pub impl @app.Resource for SpritePickingSettings with resource() {
+pub impl @app.Resource for SpritePickingSettings with fn resource() {
   ecs_res_key_sprite_picking_settings
 }
 
@@ -109,7 +109,7 @@ pub fn PickingSettings::PickingSettings() -> PickingSettings {
 }
 
 ///|
-pub impl @app.Resource for PickingSettings with resource() {
+pub impl @app.Resource for PickingSettings with fn resource() {
   ecs_res_key_picking_settings
 }
 

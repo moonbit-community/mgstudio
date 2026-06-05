@@ -62,12 +62,12 @@ pub fn CuboidMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for CuboidMeshBuilder with build(self) {
+pub impl MeshBuilder for CuboidMeshBuilder with fn build(self) {
   cuboid_mesh(@math.Cuboid::{ half_size: self.half_size })
 }
 
 ///|
-pub impl Meshable for @math.Cuboid with mesh(self) {
+pub impl Meshable for @math.Cuboid with fn mesh(self) {
   CuboidMeshBuilder::from_cuboid(self).build()
 }
 

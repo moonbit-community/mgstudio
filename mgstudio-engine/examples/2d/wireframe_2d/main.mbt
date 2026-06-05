@@ -222,11 +222,11 @@ fn update_colors(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   config : @app.ResMut[@sprite_render_mesh2d_wireframe2d.Wireframe2dConfig],
   wireframe_colors : @ecs.Query[
-    @ecs.Mut[@sprite_render_mesh2d_wireframe2d.Wireframe2dColor],
+    @ecs.Write[@sprite_render_mesh2d_wireframe2d.Wireframe2dColor],
     @ecs.All,
   ],
   text : @ecs.Query[
-    (@ecs.Comp[WireframeHelpText], @ecs.Mut[@text.Text]),
+    (@ecs.Read[WireframeHelpText], @ecs.Write[@text.Text]),
     @ecs.All,
   ],
 ) -> Unit {

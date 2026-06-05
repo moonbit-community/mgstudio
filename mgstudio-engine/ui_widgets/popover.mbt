@@ -84,7 +84,7 @@ pub let ecs_key_popover : @ecs.ComponentKey[Popover] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Popover with component() {
+pub impl @ecs.Component for Popover with fn component() {
   ecs_key_popover
 }
 

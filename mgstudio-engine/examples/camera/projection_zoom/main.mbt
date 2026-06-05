@@ -165,7 +165,7 @@ fn instructions(
 ///|
 fn switch_projection(
   camera_query : @ecs.Query[
-    @ecs.Mut[@camera.Projection],
+    @ecs.Write[@camera.Projection],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -204,7 +204,7 @@ fn switch_projection(
 ///|
 fn zoom(
   camera_query : @ecs.Query[
-    @ecs.Mut[@camera.Projection],
+    @ecs.Write[@camera.Projection],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],

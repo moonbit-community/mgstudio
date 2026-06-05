@@ -124,19 +124,19 @@ fn register_entity_observer_command(
 }
 
 ///|
-pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with init_state(
+pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with fn init_state(
   world,
 ) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with get(_state) {
+pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with fn get(_state) {
   @ecs.World::current_observer(system_param_abort_missing_world())
 }
 
 ///|
-pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with store(
+pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with fn store(
   self,
   state,
 ) {
@@ -147,7 +147,7 @@ pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E] with store(
 pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @ecs.ComponentOn[
   E,
   C,
-] with init_state(world) {
+] with fn init_state(world) {
   system_param_empty_state(world)
 }
 
@@ -155,7 +155,7 @@ pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @e
 pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @ecs.ComponentOn[
   E,
   C,
-] with get(_state) {
+] with fn get(_state) {
   @ecs.World::current_component_observer(system_param_abort_missing_world())
 }
 
@@ -163,7 +163,7 @@ pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @e
 pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @ecs.ComponentOn[
   E,
   C,
-] with store(self, state) {
+] with fn store(self, state) {
   system_param_store_no_state(self, state)
 }
 

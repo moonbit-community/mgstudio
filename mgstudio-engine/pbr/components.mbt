@@ -26,70 +26,72 @@ pub fn[S : IntoPbrMeshAsset] add_mesh(
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry with into_pbr_mesh_asset(
+pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry with fn into_pbr_mesh_asset(
   self,
 ) {
   self.to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Cuboid with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Plane3d with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Plane3d with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Sphere with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Sphere with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Cylinder with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Cylinder with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Capsule3d with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Capsule3d with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Triangle3d with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Triangle3d with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Tetrahedron with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
-}
-
-///|
-pub impl IntoPbrMeshAsset for @math.Cone with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
-}
-
-///|
-pub impl IntoPbrMeshAsset for @math.ConicalFrustum with into_pbr_mesh_asset(
+pub impl IntoPbrMeshAsset for @math.Tetrahedron with fn into_pbr_mesh_asset(
   self,
 ) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Torus with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Cone with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Segment3d with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.ConicalFrustum with fn into_pbr_mesh_asset(
+  self,
+) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
-pub impl IntoPbrMeshAsset for @math.Polyline3d with into_pbr_mesh_asset(self) {
+pub impl IntoPbrMeshAsset for @math.Torus with fn into_pbr_mesh_asset(self) {
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Segment3d with fn into_pbr_mesh_asset(self) {
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Polyline3d with fn into_pbr_mesh_asset(self) {
   @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }

@@ -232,7 +232,7 @@ test "ecs mut query: cached table values write through typed storage" {
   }
   debug_inspect(values[table_row.index()], content="{ x: 3 }")
 
-  let query : Query[Mut[ComponentColumnCacheValue], All] = query(world)
+  let query : Query[Write[ComponentColumnCacheValue], All] = query(world)
   try! query.view(fn(_entity, value_mut) {
     value_mut.set(ComponentColumnCacheValue::{ x: 4 })
   })

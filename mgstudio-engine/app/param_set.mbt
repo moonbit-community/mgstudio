@@ -31,7 +31,7 @@ pub fn[P0, P1] ParamSet2::p1(self : ParamSet2[P0, P1]) -> P1 {
 }
 
 ///|
-pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with init_state(
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with fn init_state(
   world,
 ) {
   let state0 = P0::init_state(world)
@@ -53,14 +53,14 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
 }
 
 ///|
-pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with get(
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with fn get(
   state,
 ) {
   state.get()
 }
 
 ///|
-pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with store(
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with fn store(
   self,
   state,
 ) {
@@ -68,7 +68,7 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
 }
 
 ///|
-pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with access(
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with fn access(
   world,
 ) {
   let access = SystemAccess::new()

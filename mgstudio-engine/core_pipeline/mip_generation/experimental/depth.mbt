@@ -158,6 +158,6 @@ pub let ecs_key_downsample_depth_pipeline_pair_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for DownsampleDepthPipelinePairState with resource() {
+pub impl @app.Resource for DownsampleDepthPipelinePairState with fn resource() {
   ecs_key_downsample_depth_pipeline_pair_state
 }

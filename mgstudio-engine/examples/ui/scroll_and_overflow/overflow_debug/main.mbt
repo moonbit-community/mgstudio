@@ -480,7 +480,7 @@ fn update_animation(
 ///|
 fn update_motion_transforms(
   motions : @ecs.Query[
-    (@ecs.Comp[AnimationMotion], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[AnimationMotion], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
   state : @app.Res[AnimationState],
@@ -521,7 +521,7 @@ fn update_motion_transforms(
 
 ///|
 fn apply_container_settings(
-  containers : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[Container]],
+  containers : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[Container]],
   settings : @app.Res[OverflowDebugSettings],
 ) -> Unit {
   let overflow = overflow_at(settings.get().overflow_index)
@@ -539,7 +539,7 @@ fn apply_container_settings(
 
 ///|
 fn update_instructions(
-  text : @app.Single[@ecs.Mut[@text.Text], @ecs.With[InstructionsText]],
+  text : @app.Single[@ecs.Write[@text.Text], @ecs.With[InstructionsText]],
   settings : @app.Res[OverflowDebugSettings],
   state : @app.Res[AnimationState],
 ) -> Unit {

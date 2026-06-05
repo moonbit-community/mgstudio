@@ -83,17 +83,17 @@ let ecs_key_cas_uniform : @ecs.ComponentKey[CasUniform] = @ecs.register_componen
 )
 
 ///|
-pub impl @ecs.Component for ContrastAdaptiveSharpening with component() {
+pub impl @ecs.Component for ContrastAdaptiveSharpening with fn component() {
   ecs_key_contrast_adaptive_sharpening
 }
 
 ///|
-pub impl @ecs.Component for DenoiseCas with component() {
+pub impl @ecs.Component for DenoiseCas with fn component() {
   ecs_key_denoise_cas
 }
 
 ///|
-pub impl @ecs.Component for CasUniform with component() {
+pub impl @ecs.Component for CasUniform with fn component() {
   ecs_key_cas_uniform
 }
 
@@ -131,17 +131,17 @@ pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit 
 }
 
 ///|
-pub impl @app.Resource for CasRuntimeState with resource() {
+pub impl @app.Resource for CasRuntimeState with fn resource() {
   ecs_key_cas_runtime_state
 }
 
 ///|
-pub impl @app.Plugin for CasPlugin with name(_self) {
+pub impl @app.Plugin for CasPlugin with fn name(_self) {
   CAS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CasPlugin with build(self, app) {
+pub impl @app.Plugin for CasPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   cas_plugin_with(app, self)
 }

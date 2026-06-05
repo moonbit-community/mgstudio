@@ -51,12 +51,12 @@ pub fn FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin() -> FrameTimeDiag
 }
 
 ///|
-pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with fn name(_self) {
   FRAME_TIME_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for FrameTimeDiagnosticsPlugin with fn build(self, app) {
   frame_time_diagnostics_plugin_with(app, self)
 }
 

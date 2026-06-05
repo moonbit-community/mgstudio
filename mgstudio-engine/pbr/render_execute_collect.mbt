@@ -46,7 +46,7 @@ fn render3d_execute_collect_cameras(
     (
       @core.Entity,
       (
-        @ecs.Comp[Camera3d],
+        @ecs.Read[Camera3d],
         @ecs.Optional[@camera_camera.Camera],
         @ecs.Optional[Projection],
         @ecs.Optional[SubCameraView3d],

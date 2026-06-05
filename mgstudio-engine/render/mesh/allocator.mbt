@@ -71,7 +71,7 @@ pub fn MeshAllocatorSettings::MeshAllocatorSettings() -> MeshAllocatorSettings {
 }
 
 ///|
-pub impl Default for MeshAllocatorSettings with default() {
+pub impl Default for MeshAllocatorSettings with fn default() {
   MeshAllocatorSettings::MeshAllocatorSettings()
 }
 
@@ -709,7 +709,7 @@ pub fn MeshAllocator::MeshAllocator() -> MeshAllocator {
 }
 
 ///|
-pub impl Default for MeshAllocator with default() {
+pub impl Default for MeshAllocator with fn default() {
   MeshAllocator::MeshAllocator()
 }
 

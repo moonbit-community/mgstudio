@@ -145,7 +145,7 @@ fn setup(
 ///|
 fn spin_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Spin]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Spin]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {

@@ -137,7 +137,7 @@ let ecs_key_winit_windows : @ecs.ResourceKey[WinitWindows] = @ecs.register_resou
 )
 
 ///|
-pub impl @app.Resource for WinitWindows with resource() {
+pub impl @app.Resource for WinitWindows with fn resource() {
   ecs_key_winit_windows
 }
 

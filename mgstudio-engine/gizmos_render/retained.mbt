@@ -117,9 +117,9 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(render_world)
   let query : @ecs.Query[
     (
-      @ecs.Comp[@gizmos.Gizmo],
-      @ecs.Comp[@transform.GlobalTransform],
-      @ecs.Comp[@camera_render_layers.RenderLayers]?,
+      @ecs.Read[@gizmos.Gizmo],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[@camera_render_layers.RenderLayers]?,
     ),
     @ecs.All,
   ] = @ecs.query(source_world)

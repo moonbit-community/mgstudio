@@ -27,12 +27,12 @@ pub fn SyncWorldPlugin::SyncWorldPlugin() -> SyncWorldPlugin {
 }
 
 ///|
-pub impl @app.Plugin for SyncWorldPlugin with name(_self) {
+pub impl @app.Plugin for SyncWorldPlugin with fn name(_self) {
   SYNC_WORLD_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SyncWorldPlugin with build(self, app) {
+pub impl @app.Plugin for SyncWorldPlugin with fn build(self, app) {
   sync_world_plugin_with(app, self)
 }
 
@@ -45,7 +45,7 @@ pub fn SyncToRenderWorld::SyncToRenderWorld() -> SyncToRenderWorld {
 }
 
 ///|
-pub impl Default for SyncToRenderWorld with default() {
+pub impl Default for SyncToRenderWorld with fn default() {
   SyncToRenderWorld::SyncToRenderWorld()
 }
 
@@ -55,7 +55,7 @@ pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld] = @e
 )
 
 ///|
-pub impl @ecs.Component for SyncToRenderWorld with component() {
+pub impl @ecs.Component for SyncToRenderWorld with fn component() {
   ecs_key_sync_to_render_world
 }
 
@@ -80,7 +80,7 @@ pub let ecs_key_render_entity : @ecs.ComponentKey[RenderEntity] = @ecs.register_
 )
 
 ///|
-pub impl @ecs.Component for RenderEntity with component() {
+pub impl @ecs.Component for RenderEntity with fn component() {
   ecs_key_render_entity
 }
 
@@ -105,7 +105,7 @@ pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for MainEntity with component() {
+pub impl @ecs.Component for MainEntity with fn component() {
   ecs_key_main_entity
 }
 
@@ -123,7 +123,7 @@ pub let ecs_key_temporary_render_entity : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="mgstudio_render::TemporaryRenderEntity")
 
 ///|
-pub impl @ecs.Component for TemporaryRenderEntity with component() {
+pub impl @ecs.Component for TemporaryRenderEntity with fn component() {
   ecs_key_temporary_render_entity
 }
 
@@ -165,7 +165,7 @@ pub let ecs_key_pending_sync_entity : @ecs.ResourceKey[PendingSyncEntity] = @ecs
 )
 
 ///|
-pub impl @app.Resource for PendingSyncEntity with resource() {
+pub impl @app.Resource for PendingSyncEntity with fn resource() {
   ecs_key_pending_sync_entity
 }
 
@@ -231,7 +231,7 @@ fn entity_sync_system(
   }
 
   let stale_link_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[RenderEntity]),
+    (@core.Entity, @ecs.Read[RenderEntity]),
     @ecs.Without[SyncToRenderWorld],
   ] = @ecs.query_filtered(
     main_world,
@@ -258,7 +258,7 @@ fn entity_sync_system(
   }
 
   let render_main_entity_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[MainEntity]),
+    (@core.Entity, @ecs.Read[MainEntity]),
     @ecs.All,
   ] = @ecs.query(render_world)
   let orphan_render_entities : Array[@core.Entity] = []
@@ -303,7 +303,7 @@ fn entity_sync_system(
 
 ///|
 pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[@ecs.Comp[TemporaryRenderEntity], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[TemporaryRenderEntity], @ecs.All] = @ecs.query(
     world,
   )
   let entities : Array[@core.Entity] = []

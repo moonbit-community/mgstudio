@@ -100,7 +100,7 @@ pub fn asset_dispatch_load_failed_event(
 }
 
 ///|
-pub impl[T : Asset] @ecs.Message for AssetLoadFailedEvent[T] with message() {
+pub impl[T : Asset] @ecs.Message for AssetLoadFailedEvent[T] with fn message() {
   let type_name = assets_type_name((None : T?))
   let probe : Assets[T] = Assets::new()
   register_asset_load_failed_dispatch_for_type_name(type_name, probe)
@@ -108,7 +108,7 @@ pub impl[T : Asset] @ecs.Message for AssetLoadFailedEvent[T] with message() {
 }
 
 ///|
-pub impl @ecs.Message for UntypedAssetLoadFailedEvent with message() {
+pub impl @ecs.Message for UntypedAssetLoadFailedEvent with fn message() {
   asset_load_failed_untyped_key
 }
 

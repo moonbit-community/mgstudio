@@ -103,7 +103,7 @@ fn food_overlay_color() -> @color.Color {
 
 ///|
 fn update_status_text(
-  status_labels : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[StatusLabel]],
+  status_labels : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[StatusLabel]],
   content : String,
 ) -> Unit {
   try! status_labels.view(fn(_entity, text) {
@@ -205,11 +205,11 @@ fn setup(
 fn activate_ability(
   commands : @app.Commands,
   interactions : @ecs.Query[
-    (@ecs.Comp[@ui.Interaction], @ecs.Mut[Cooldown], @ecs.Comp[AbilityName]),
+    (@ecs.Read[@ui.Interaction], @ecs.Write[Cooldown], @ecs.Read[AbilityName]),
     @ecs.With[@ui.Button],
   ],
-  status_labels : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[StatusLabel]],
-  active_cooldowns : @ecs.Query[@ecs.Comp[ActiveCooldown], @ecs.All],
+  status_labels : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[StatusLabel]],
+  active_cooldowns : @ecs.Query[@ecs.Read[ActiveCooldown], @ecs.All],
 ) -> Unit {
   try! interactions.view(fn(entity, data) {
     let (interaction, cooldown, ability_name) = data
@@ -245,9 +245,9 @@ fn activate_ability(
 fn animate_cooldowns(
   time : @app.Res[@time.Time[Unit]],
   commands : @app.Commands,
-  cooldowns : @ecs.Query[@ecs.Mut[Cooldown], @ecs.All],
-  active_cooldowns : @ecs.Query[@ecs.Comp[ActiveCooldown], @ecs.All],
-  nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  cooldowns : @ecs.Query[@ecs.Write[Cooldown], @ecs.All],
+  active_cooldowns : @ecs.Query[@ecs.Read[ActiveCooldown], @ecs.All],
+  nodes : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
 ) -> Unit {
   try! cooldowns.view(fn(entity, cooldown) {
     guard (active_cooldowns.get(entity) catch { _ => None }) is Some(_) else {

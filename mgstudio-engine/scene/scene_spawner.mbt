@@ -22,18 +22,18 @@ pub let scene_spawner_set_spawn : @app.SystemSet = @app.system_set(
 
 ///|
 type SceneRootChangedQuery = @ecs.Query[
-  @ecs.Comp[SceneRoot],
+  @ecs.Read[SceneRoot],
   @ecs.Changed[SceneRoot],
 ]
 
 ///|
 type SceneRootPendingQuery = @ecs.Query[
-  (@ecs.Comp[SceneRoot], @ecs.Comp[SceneInstance]),
+  (@ecs.Read[SceneRoot], @ecs.Read[SceneInstance]),
   @ecs.All,
 ]
 
 ///|
-type SceneRootQuery = @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All]
+type SceneRootQuery = @ecs.Query[@ecs.Read[SceneRoot], @ecs.All]
 
 ///|
 priv struct SceneInstanceState {
@@ -304,7 +304,7 @@ priv struct SceneRootRespawnRequested {}
 
 ///|
 type SceneRootRespawnQuery = @ecs.Query[
-  @ecs.Comp[SceneRoot],
+  @ecs.Read[SceneRoot],
   @ecs.With[SceneRootRespawnRequested],
 ]
 

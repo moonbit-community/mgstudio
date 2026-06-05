@@ -62,12 +62,12 @@ pub struct MeshletMesh {
 }
 
 ///|
-pub impl @asset.Asset for MeshletMesh with asset_debug_name() {
+pub impl @asset.Asset for MeshletMesh with fn asset_debug_name() {
   "mgstudio_pbr::meshlet::MeshletMesh"
 }
 
 ///|
-pub impl @asset.Asset for MeshletMesh with asset_as_image(_self) {
+pub impl @asset.Asset for MeshletMesh with fn asset_as_image(_self) {
   None
 }
 
@@ -77,7 +77,7 @@ let meshlet_mesh_asset_resource_keys : @asset.AssetResourceKeys[MeshletMesh] = @
 )
 
 ///|
-pub impl @asset.Asset for MeshletMesh with asset_resource_keys() {
+pub impl @asset.Asset for MeshletMesh with fn asset_resource_keys() {
   meshlet_mesh_asset_resource_keys
 }
 
@@ -92,12 +92,12 @@ pub fn MeshletDebugMaterial::MeshletDebugMaterial() -> MeshletDebugMaterial {
 }
 
 ///|
-pub impl @asset.Asset for MeshletDebugMaterial with asset_debug_name() {
+pub impl @asset.Asset for MeshletDebugMaterial with fn asset_debug_name() {
   "mgstudio_pbr::meshlet::MeshletDebugMaterial"
 }
 
 ///|
-pub impl @asset.Asset for MeshletDebugMaterial with asset_as_image(_self) {
+pub impl @asset.Asset for MeshletDebugMaterial with fn asset_as_image(_self) {
   None
 }
 
@@ -109,7 +109,7 @@ let meshlet_debug_material_asset_resource_keys : @asset.AssetResourceKeys[
 )
 
 ///|
-pub impl @asset.Asset for MeshletDebugMaterial with asset_resource_keys() {
+pub impl @asset.Asset for MeshletDebugMaterial with fn asset_resource_keys() {
   meshlet_debug_material_asset_resource_keys
 }
 

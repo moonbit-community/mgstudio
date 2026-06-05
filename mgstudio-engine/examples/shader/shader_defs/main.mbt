@@ -96,7 +96,7 @@ fn setup(
 ///|
 fn rotate(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotates]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Rotates]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {

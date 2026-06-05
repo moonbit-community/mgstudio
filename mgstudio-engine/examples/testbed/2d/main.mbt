@@ -64,7 +64,7 @@ fn setup(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {

@@ -49,11 +49,11 @@ fn setup(world : @ecs.World) -> Unit {
 fn joint_animation(
   time : @app.Res[@time.Time[Unit]],
   skinned_mesh_parents : @ecs.Query[
-    @ecs.Comp[@hierarchy.Parent],
+    @ecs.Read[@hierarchy.Parent],
     @ecs.With[@mesh.SkinnedMesh],
   ],
-  parents : @ecs.Query[@ecs.Comp[@hierarchy.Children], @ecs.All],
-  transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
+  parents : @ecs.Query[@ecs.Read[@hierarchy.Children], @ecs.All],
+  transforms : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.All],
 ) -> Unit {
   let angle = @math.pi_half() * @math.sin(time.get().elapsed_secs())
   try! skinned_mesh_parents.view(fn(_entity, parent_comp) {

@@ -32,12 +32,12 @@ pub fn CameraControllerPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for CameraControllerPlugins with name(_self) {
+pub impl @app.Plugin for CameraControllerPlugins with fn name(_self) {
   "mgstudio.camera_controller.CameraControllerPlugins"
 }
 
 ///|
-pub impl @app.Plugin for CameraControllerPlugins with build(_self, app) {
+pub impl @app.Plugin for CameraControllerPlugins with fn build(_self, app) {
   app.add_plugins(CameraControllerPlugins::build())
 }
 

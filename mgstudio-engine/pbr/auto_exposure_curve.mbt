@@ -28,14 +28,14 @@ pub(open) trait AutoExposureCompensationCurveSource {
 }
 
 ///|
-pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2] with to_auto_exposure_curve(
+pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2] with fn to_auto_exposure_curve(
   self,
 ) {
   self.to_curve()
 }
 
 ///|
-pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2] with to_auto_exposure_curve(
+pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2] with fn to_auto_exposure_curve(
   self,
 ) {
   self
@@ -51,12 +51,12 @@ pub struct AutoExposureCompensationCurve {
 }
 
 ///|
-pub impl @asset.Asset for AutoExposureCompensationCurve with asset_debug_name() {
+pub impl @asset.Asset for AutoExposureCompensationCurve with fn asset_debug_name() {
   "mgstudio_pbr::AutoExposureCompensationCurve"
 }
 
 ///|
-pub impl @asset.Asset for AutoExposureCompensationCurve with asset_as_image(
+pub impl @asset.Asset for AutoExposureCompensationCurve with fn asset_as_image(
   _self,
 ) {
   None
@@ -70,7 +70,7 @@ let auto_exposure_compensation_curve_asset_resource_keys : @asset.AssetResourceK
 )
 
 ///|
-pub impl @asset.Asset for AutoExposureCompensationCurve with asset_resource_keys() {
+pub impl @asset.Asset for AutoExposureCompensationCurve with fn asset_resource_keys() {
   auto_exposure_compensation_curve_asset_resource_keys
 }
 

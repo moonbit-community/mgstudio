@@ -215,7 +215,7 @@ let default_spatial_scale_resource_key : @ecs.ResourceKey[DefaultSpatialScale] =
 )
 
 ///|
-pub impl @app.Resource for DefaultSpatialScale with resource() {
+pub impl @app.Resource for DefaultSpatialScale with fn resource() {
   default_spatial_scale_resource_key
 }
 
@@ -239,12 +239,12 @@ pub fn[Source] AudioPlayer::handle(
 }
 
 ///|
-pub impl[Source] ToJson for AudioPlayer[Source] with to_json(self) {
+pub impl[Source] ToJson for AudioPlayer[Source] with fn to_json(self) {
   self.source.to_json()
 }
 
 ///|
-pub impl[Source] @json.FromJson for AudioPlayer[Source] with from_json(
+pub impl[Source] @json.FromJson for AudioPlayer[Source] with fn from_json(
   json,
   path,
 ) {
@@ -266,12 +266,12 @@ pub fn AudioPlugin::AudioPlugin() -> AudioPlugin {
 }
 
 ///|
-pub impl @app.Plugin for AudioPlugin with name(_self) {
+pub impl @app.Plugin for AudioPlugin with fn name(_self) {
   "mgstudio.audio.AudioPlugin"
 }
 
 ///|
-pub impl @app.Plugin for AudioPlugin with build(self, app) {
+pub impl @app.Plugin for AudioPlugin with fn build(self, app) {
   audio_plugin_with(app, self)
 }
 

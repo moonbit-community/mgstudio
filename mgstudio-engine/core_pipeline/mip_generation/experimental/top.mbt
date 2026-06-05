@@ -51,12 +51,12 @@ fn experimental_mip_generation_plugin_install_with(
 }
 
 ///|
-pub impl @app.Plugin for ExperimentalMipGeneration with name(_self) {
+pub impl @app.Plugin for ExperimentalMipGeneration with fn name(_self) {
   "mgstudio.core_pipeline.mip_generation.experimental"
 }
 
 ///|
-pub impl @app.Plugin for ExperimentalMipGeneration with build(self, app) {
+pub impl @app.Plugin for ExperimentalMipGeneration with fn build(self, app) {
   register_embedded_wgsl_sources()
   experimental_mip_generation_plugin_install_with(app, self)
 }

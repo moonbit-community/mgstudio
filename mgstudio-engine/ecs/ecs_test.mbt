@@ -450,7 +450,7 @@ test "ecs: typed component api uses component ownership" {
   debug_inspect(updated_counter, content="Some({ value: 15 })")
 
   let without_marker : Without[TypedMarker] = Without::new(marker_key)
-  let filtered : Query[@ecs.Comp[TypedCounter], Without[TypedMarker]] = @ecs.query_filtered(
+  let filtered : Query[@ecs.Read[TypedCounter], Without[TypedMarker]] = @ecs.query_filtered(
     world, without_marker,
   )
   debug_inspect(filtered.count(), content="1")

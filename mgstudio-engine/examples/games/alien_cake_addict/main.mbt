@@ -116,7 +116,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn move_player(
   time : @app.Res[@time.Time[Unit]],
   keyboard : @input.ButtonInput[@window.KeyCode],
-  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
+  players : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   let speed = 360.0F
   let dt = time.get().delta_secs()
@@ -158,8 +158,8 @@ fn move_player(
 fn collect_cakes(
   commands : @app.Commands,
   score : @app.ResMut[Score],
-  players : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
-  cakes : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Cake]],
+  players : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
+  cakes : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Cake]],
 ) -> Unit {
   let player_transform = players.require_single() catch { _ => return }
   let mut remaining = 0

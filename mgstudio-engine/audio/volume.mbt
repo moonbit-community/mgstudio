@@ -33,7 +33,7 @@ let global_volume_resource_key : @ecs.ResourceKey[GlobalVolume] = @ecs.register_
 )
 
 ///|
-pub impl @app.Resource for GlobalVolume with resource() {
+pub impl @app.Resource for GlobalVolume with fn resource() {
   global_volume_resource_key
 }
 
@@ -130,7 +130,7 @@ pub fn Volume::mul(self : Volume, other : Volume) -> Volume {
 }
 
 ///|
-pub impl ToJson for Volume with to_json(self) {
+pub impl ToJson for Volume with fn to_json(self) {
   match self {
     Linear(value) => ("linear", value).to_json()
     Decibels(value) => ("decibels", value).to_json()
@@ -138,7 +138,7 @@ pub impl ToJson for Volume with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Volume with from_json(json, path) {
+pub impl @json.FromJson for Volume with fn from_json(json, path) {
   let (kind, value) : (String, Float) = @json.from_json(json, path~)
   match kind {
     "linear" => Volume::Linear(value)
@@ -148,11 +148,11 @@ pub impl @json.FromJson for Volume with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for GlobalVolume with to_json(self) {
+pub impl ToJson for GlobalVolume with fn to_json(self) {
   self.volume.to_json()
 }
 
 ///|
-pub impl @json.FromJson for GlobalVolume with from_json(json, path) {
+pub impl @json.FromJson for GlobalVolume with fn from_json(json, path) {
   GlobalVolume::{ volume: @json.from_json(json, path~) }
 }

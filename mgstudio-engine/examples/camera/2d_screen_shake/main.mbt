@@ -342,7 +342,7 @@ fn setup_instructions(
 ///|
 fn reset_transform(
   camera_shake : @app.Single[
-    (@ecs.Comp[CameraShakeState], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[CameraShakeState], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -352,7 +352,7 @@ fn reset_transform(
 
 ///|
 fn increase_trauma(
-  camera_shake : @app.Single[@ecs.Mut[CameraShakeState], @ecs.All],
+  camera_shake : @app.Single[@ecs.Write[CameraShakeState], @ecs.All],
 ) -> Unit {
   let state = camera_shake.get()
   state.modify(fn(value) {
@@ -364,9 +364,9 @@ fn increase_trauma(
 fn shake_camera(
   camera_shake : @app.Single[
     (
-      @ecs.Mut[CameraShakeState],
-      @ecs.Comp[CameraShakeConfig],
-      @ecs.Mut[@transform.Transform],
+      @ecs.Write[CameraShakeState],
+      @ecs.Read[CameraShakeConfig],
+      @ecs.Write[@transform.Transform],
     ),
     @ecs.All,
   ],

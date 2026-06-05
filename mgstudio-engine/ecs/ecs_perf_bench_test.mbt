@@ -65,27 +65,27 @@ let bench_sparse_tag_key : ComponentKey[BenchSparseTag] = register_component(
 )
 
 ///|
-pub impl Component for BenchPosition with component() {
+pub impl Component for BenchPosition with fn component() {
   bench_position_key
 }
 
 ///|
-pub impl Component for BenchVelocity with component() {
+pub impl Component for BenchVelocity with fn component() {
   bench_velocity_key
 }
 
 ///|
-pub impl Component for BenchHealth with component() {
+pub impl Component for BenchHealth with fn component() {
   bench_health_key
 }
 
 ///|
-pub impl Component for BenchMass with component() {
+pub impl Component for BenchMass with fn component() {
   bench_mass_key
 }
 
 ///|
-pub impl Component for BenchSparseTag with component() {
+pub impl Component for BenchSparseTag with fn component() {
   bench_sparse_tag_key
 }
 
@@ -189,10 +189,10 @@ fn ecs_bench_dense_query_sum(
 ) -> Int raise EcsError {
   let query : Query[
     (
-      Comp[BenchPosition],
-      Comp[BenchVelocity],
-      Comp[BenchHealth],
-      Comp[BenchMass],
+      Read[BenchPosition],
+      Read[BenchVelocity],
+      Read[BenchHealth],
+      Read[BenchMass],
     ),
     All,
   ] = query_filtered_with_cache(world, All::new(), cache)
@@ -215,10 +215,10 @@ fn ecs_bench_dense_query_state_iter_sum(
   world : World,
   state : QueryState[
     (
-      Comp[BenchPosition],
-      Comp[BenchVelocity],
-      Comp[BenchHealth],
-      Comp[BenchMass],
+      Read[BenchPosition],
+      Read[BenchVelocity],
+      Read[BenchHealth],
+      Read[BenchMass],
     ),
     All,
   ],
@@ -244,7 +244,7 @@ fn ecs_bench_sparse_query_sum(
   cache : QueryCache,
 ) -> Int raise EcsError {
   let query : Query[
-    (Comp[BenchPosition], Comp[BenchSparseTag]),
+    (Read[BenchPosition], Read[BenchSparseTag]),
     With[BenchSparseTag],
   ] = query_filtered_with_cache(world, With::new(bench_sparse_tag_key), cache)
   let total = Ref(0)
@@ -261,7 +261,7 @@ fn ecs_bench_sparse_query_sum(
 ///|
 fn ecs_bench_mut_query_apply(
   world : World,
-  state : QueryState[(Mut[BenchPosition], Comp[BenchVelocity]), All],
+  state : QueryState[(Write[BenchPosition], Read[BenchVelocity]), All],
 ) -> Int {
   let total = Ref(0)
   let iter = state.iter(world)
@@ -317,10 +317,10 @@ test "bench ecs: query dense state iter cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_dense_world(20_000)
   let state : QueryState[
     (
-      Comp[BenchPosition],
-      Comp[BenchVelocity],
-      Comp[BenchHealth],
-      Comp[BenchMass],
+      Read[BenchPosition],
+      Read[BenchVelocity],
+      Read[BenchHealth],
+      Read[BenchMass],
     ),
     All,
   ] = world.query()
@@ -341,7 +341,7 @@ test "bench ecs: query sparse filter cached" (b : @bench.T) {
 ///|
 test "bench ecs: mut query modify cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_dense_world(20_000)
-  let state : QueryState[(Mut[BenchPosition], Comp[BenchVelocity]), All] = world.query()
+  let state : QueryState[(Write[BenchPosition], Read[BenchVelocity]), All] = world.query()
   b.bench(name="query mut modify cached x20000", count=100U, () => {
     b.keep(ecs_bench_mut_query_apply(world, state))
   })

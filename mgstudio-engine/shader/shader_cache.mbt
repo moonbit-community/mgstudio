@@ -194,7 +194,7 @@ fn ShaderResolver::new(
 }
 
 ///|
-pub impl @wesl.Resolver for ShaderResolver with resolve_source(self, path) {
+pub impl @wesl.Resolver for ShaderResolver with fn resolve_source(self, path) {
   match self.module_path_to_asset_id.get(path) {
     Some(asset_id) =>
       match self.shaders.get(shader_cache_asset_key(asset_id)) {

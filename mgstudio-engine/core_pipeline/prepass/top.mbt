@@ -36,12 +36,12 @@ pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for PrepassPlugin with name(_self) {
+pub impl @app.Plugin for PrepassPlugin with fn name(_self) {
   PREPASS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for PrepassPlugin with build(self, app) {
+pub impl @app.Plugin for PrepassPlugin with fn build(self, app) {
   prepass_plugin_with(app, self)
 }
 
@@ -97,17 +97,17 @@ pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] =
 )
 
 ///|
-pub impl @ecs.Component for DepthPrepass with component() {
+pub impl @ecs.Component for DepthPrepass with fn component() {
   ecs_key_depth_prepass
 }
 
 ///|
-pub impl @ecs.Component for NormalPrepass with component() {
+pub impl @ecs.Component for NormalPrepass with fn component() {
   ecs_key_normal_prepass
 }
 
 ///|
-pub impl @ecs.Component for MotionVectorPrepass with component() {
+pub impl @ecs.Component for MotionVectorPrepass with fn component() {
   ecs_key_motion_vector_prepass
 }
 
@@ -117,6 +117,6 @@ pub let ecs_key_prepass_view_state : @ecs.ResourceKey[PrepassViewState] = @ecs.r
 )
 
 ///|
-pub impl @app.Resource for PrepassViewState with resource() {
+pub impl @app.Resource for PrepassViewState with fn resource() {
   ecs_key_prepass_view_state
 }

@@ -230,9 +230,9 @@ fn setup(
 ///|
 fn input_handler(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[CustomUV]],
+  mesh_query : @ecs.Query[@ecs.Read[@mesh.Mesh3d], @ecs.With[CustomUV]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[CustomUV]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   if keyboard_input.just_pressed(@window.KeyCode::Space) {

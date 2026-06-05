@@ -100,12 +100,12 @@ pub fn PlaneMeshBuilder::build(self : PlaneMeshBuilder) -> @mesh.Mesh3dGeometry 
 }
 
 ///|
-pub impl MeshBuilder for PlaneMeshBuilder with build(self) {
+pub impl MeshBuilder for PlaneMeshBuilder with fn build(self) {
   plane3d_mesh(self.plane, self.subdivisions)
 }
 
 ///|
-pub impl Meshable for @math.Plane3d with mesh(self) {
+pub impl Meshable for @math.Plane3d with fn mesh(self) {
   PlaneMeshBuilder::{ plane: self, subdivisions: 0 }.build()
 }
 

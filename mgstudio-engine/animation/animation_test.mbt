@@ -982,7 +982,7 @@ test "animation runtime: unchanged target output keeps transform change tick" {
   )
 
   app = app.run_once()
-  let first_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All] = @ecs.query(
+  let first_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All] = @ecs.query(
     app.world(),
   )
   let first_transform = try! first_query.require_single()
@@ -993,7 +993,7 @@ test "animation runtime: unchanged target output keeps transform change tick" {
   )
 
   app = app.run_once()
-  let second_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All] = @ecs.query(
+  let second_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All] = @ecs.query(
     app.world(),
   )
   let second_transform = try! second_query.require_single()

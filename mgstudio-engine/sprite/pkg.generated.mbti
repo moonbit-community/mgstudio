@@ -24,9 +24,9 @@ pub fn apply_scale_sprite_image_mode(@math.Vec2, @math.Vec2, @math.Vec2, @math.V
 
 pub fn apply_sprite_image_mode(@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, SpriteImageMode, Bool) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool)
 
-pub fn compute_slices_on_asset_event_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Comp[Sprite], @ecs.All]]) -> Unit
+pub fn compute_slices_on_asset_event_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Read[Sprite], @ecs.All]]) -> Unit
 
-pub fn compute_slices_on_sprite_change_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @ecs.Query[@ecs.Comp[Sprite], @ecs.Changed[Sprite]]) -> Unit
+pub fn compute_slices_on_sprite_change_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @ecs.Query[@ecs.Read[Sprite], @ecs.Changed[Sprite]]) -> Unit
 
 pub fn compute_sprite_slices_from_rect(Sprite, @math.Vec2, @math.Rect) -> ComputedTextureSlices?
 
@@ -498,13 +498,13 @@ pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
 pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
 
 // Type aliases
-pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.All]
+pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Read[Sprite], @ecs.All]
 
-pub type ComputedSlicesAssetEventParams = @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Comp[Sprite], @ecs.All]]
+pub type ComputedSlicesAssetEventParams = @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Read[Sprite], @ecs.All]]
 
 pub type ComputedSlicesAssetParams = @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]]
 
-pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.Changed[Sprite]]
+pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[@ecs.Read[Sprite], @ecs.Changed[Sprite]]
 
 // Traits
 pub(open) trait GizmoConfigGroup {

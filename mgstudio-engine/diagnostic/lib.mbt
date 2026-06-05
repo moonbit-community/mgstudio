@@ -28,12 +28,12 @@ pub fn DiagnosticsPlugin::DiagnosticsPlugin() -> DiagnosticsPlugin {
 }
 
 ///|
-pub impl @app.Plugin for DiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for DiagnosticsPlugin with fn name(_self) {
   DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for DiagnosticsPlugin with fn build(self, app) {
   diagnostics_plugin_with(app, self)
 }
 

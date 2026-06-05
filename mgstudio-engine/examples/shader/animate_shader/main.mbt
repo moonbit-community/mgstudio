@@ -69,7 +69,7 @@ fn setup(
 fn animate_material_color(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    @ecs.Comp[@pbr.MeshMaterial3d],
+    @ecs.Read[@pbr.MeshMaterial3d],
     @ecs.With[AnimatedMaterial],
   ],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],

@@ -98,7 +98,7 @@ fn setup(
 
 ///|
 fn increment_atlas_index(
-  image_nodes : @ecs.Query[@ecs.Mut[@ui.ImageNode], @ecs.All],
+  image_nodes : @ecs.Query[@ecs.Write[@ui.ImageNode], @ecs.All],
   keyboard : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
   if !keyboard.just_pressed(Space) {

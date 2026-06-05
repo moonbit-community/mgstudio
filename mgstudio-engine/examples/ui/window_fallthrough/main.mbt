@@ -72,7 +72,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn toggle_mouse_passthrough(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   cursor_query : @ecs.Query[
-    (@ecs.Comp[@window.PrimaryWindow], @ecs.Mut[@window.CursorOptions]),
+    (@ecs.Read[@window.PrimaryWindow], @ecs.Write[@window.CursorOptions]),
     @ecs.All,
   ],
 ) -> Unit {

@@ -55,22 +55,22 @@ pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for FeathersPlugin with name(_self) {
+pub impl @app.Plugin for FeathersPlugin with fn name(_self) {
   FEATHERS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FeathersPlugin with build(_self, app) {
+pub impl @app.Plugin for FeathersPlugin with fn build(_self, app) {
   feathers_plugin(app)
 }
 
 ///|
-pub impl @app.Plugin for FeathersPlugins with name(_self) {
+pub impl @app.Plugin for FeathersPlugins with fn name(_self) {
   FEATHERS_PLUGINS_NAME
 }
 
 ///|
-pub impl @app.Plugin for FeathersPlugins with build(_self, app) {
+pub impl @app.Plugin for FeathersPlugins with fn build(_self, app) {
   app.add_plugins(FeathersPlugins::build())
 }
 

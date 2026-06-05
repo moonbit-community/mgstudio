@@ -21,11 +21,11 @@ pub fn UiPlugin::UiPlugin() -> UiPlugin {
 }
 
 ///|
-pub impl @app.Plugin for UiPlugin with name(_self) {
+pub impl @app.Plugin for UiPlugin with fn name(_self) {
   "mgstudio.ui.UiPlugin"
 }
 
 ///|
-pub impl @app.Plugin for UiPlugin with build(_self, app) {
+pub impl @app.Plugin for UiPlugin with fn build(_self, app) {
   ui_plugin(app)
 }

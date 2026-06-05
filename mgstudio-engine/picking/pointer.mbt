@@ -61,7 +61,7 @@ pub fn PointerId::get_touch_id(self : PointerId) -> Int? {
 }
 
 ///|
-pub impl @ecs.Component for PointerId with component() {
+pub impl @ecs.Component for PointerId with fn component() {
   ecs_key_pointer_id
 }
 
@@ -86,7 +86,7 @@ pub fn PointerLocation::location(self : PointerLocation) -> @math.Vec2? {
 }
 
 ///|
-pub impl @ecs.Component for PointerLocation with component() {
+pub impl @ecs.Component for PointerLocation with fn component() {
   ecs_key_pointer_location
 }
 
@@ -123,7 +123,7 @@ pub fn PointerPress::is_any_pressed(self : PointerPress) -> Bool {
 }
 
 ///|
-pub impl @ecs.Component for PointerPress with component() {
+pub impl @ecs.Component for PointerPress with fn component() {
   ecs_key_pointer_press
 }
 
@@ -149,7 +149,7 @@ pub fn PointerInteraction::get_nearest_hit(
 }
 
 ///|
-pub impl @ecs.Component for PointerInteraction with component() {
+pub impl @ecs.Component for PointerInteraction with fn component() {
   ecs_key_pointer_interaction
 }
 
@@ -172,7 +172,7 @@ pub fn PointerMap::get_entity(
 }
 
 ///|
-pub impl @app.Resource for PointerMap with resource() {
+pub impl @app.Resource for PointerMap with fn resource() {
   ecs_res_key_pointer_map
 }
 
@@ -418,7 +418,7 @@ pub fn pointer_input_message_key() -> @ecs.MessageKey[PointerInput] {
 }
 
 ///|
-pub impl @ecs.Message for PointerInput with message() {
+pub impl @ecs.Message for PointerInput with fn message() {
   ecs_msg_key_pointer_input
 }
 

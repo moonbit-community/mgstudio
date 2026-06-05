@@ -16,23 +16,23 @@
 // Bevy source: `bevy/crates/bevy_math/src/sampling/standard.rs`.
 
 ///|
-pub impl FromRng for @math.Dir2 with from_rng(rng) {
+pub impl FromRng for @math.Dir2 with fn from_rng(rng) {
   @math.Dir2::from_angle(rng.float() * 2.0F * @math.pi())
 }
 
 ///|
-pub impl FromRng for @math.Dir3 with from_rng(rng) {
+pub impl FromRng for @math.Dir3 with fn from_rng(rng) {
   let value = @math.Sphere::new(1.0F).sample_boundary(rng)
   @math.Dir3::new_unchecked(value)
 }
 
 ///|
-pub impl FromRng for @math.Rot2 with from_rng(rng) {
+pub impl FromRng for @math.Rot2 with fn from_rng(rng) {
   @math.Rot2::radians(rng.float() * 2.0F * @math.pi())
 }
 
 ///|
-pub impl FromRng for @math.Quat with from_rng(rng) {
+pub impl FromRng for @math.Quat with fn from_rng(rng) {
   let u1 = rng.float()
   let u2 = rng.float()
   let u3 = rng.float()

@@ -28,12 +28,12 @@ pub fn SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin() 
 }
 
 ///|
-pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with fn name(_self) {
   SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with build(
+pub impl @app.Plugin for SystemInformationDiagnosticsPlugin with fn build(
   self,
   app,
 ) {
@@ -75,7 +75,7 @@ let system_info_resource_key : @ecs.ResourceKey[SystemInfo] = @ecs.register_reso
 )
 
 ///|
-pub impl @app.Resource for SystemInfo with resource() {
+pub impl @app.Resource for SystemInfo with fn resource() {
   system_info_resource_key
 }
 
@@ -108,7 +108,7 @@ let sysinfo_refresh_state_resource_key : @ecs.ResourceKey[SysinfoRefreshState] =
 )
 
 ///|
-impl @app.Resource for SysinfoRefreshState with resource() {
+impl @app.Resource for SysinfoRefreshState with fn resource() {
   sysinfo_refresh_state_resource_key
 }
 

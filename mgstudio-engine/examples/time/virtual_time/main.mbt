@@ -283,7 +283,7 @@ fn change_time_speed_down(world : @ecs.World) -> Unit {
 ///|
 fn move_real_time_sprites(
   sprite_query : @ecs.Query[
-    (@ecs.Comp[RealTime], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[RealTime], @ecs.Write[@transform.Transform]),
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[@time.Real]],
@@ -299,7 +299,7 @@ fn move_real_time_sprites(
 ///|
 fn move_virtual_time_sprites(
   sprite_query : @ecs.Query[
-    (@ecs.Comp[VirtualTime], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[VirtualTime], @ecs.Write[@transform.Transform]),
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[Unit]],

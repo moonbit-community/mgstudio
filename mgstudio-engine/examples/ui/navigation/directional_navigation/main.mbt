@@ -185,13 +185,13 @@ fn spawn_directional_button(
       _pointer : @app.OnPointer[@app.PointerClick],
       focus : @app.ResMut[@input_focus.InputFocus],
       buttons : @ecs.Query[
-        @ecs.Mut[ActivatedButton],
+        @ecs.Write[ActivatedButton],
         @ecs.With[ActivatedButton],
       ],
       status : @app.ResMut[NavigationStatus],
     ) {
       focus.modify(fn(value) { value.set(button) })
-      let state : @ecs.Mut[ActivatedButton]? = try buttons.get(button) catch {
+      let state : @ecs.Write[ActivatedButton]? = try buttons.get(button) catch {
         _ => None
       } noraise {
         value => value
@@ -306,7 +306,7 @@ fn setup(
 
 ///|
 fn navigation_direction_from_gamepads(
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
 ) -> @math.CompassOctant? {
   let result : Ref[@math.CompassOctant?] = Ref(None)
   try! gamepads.view(fn(_entity, gamepad) {
@@ -344,7 +344,7 @@ fn navigation_direction_text(direction : @math.CompassOctant) -> String {
 ///|
 fn navigate_ui(
   navigator : @ui.AutoDirectionalNavigator,
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
   status : @app.ResMut[NavigationStatus],
 ) -> Unit {
   let direction = if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
@@ -375,7 +375,7 @@ fn navigate_ui(
 
 ///|
 fn activate_from_gamepads(
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
 ) -> Bool {
   let pressed = Ref(false)
   try! gamepads.view(fn(_entity, gamepad) {
@@ -403,10 +403,10 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
   }
   guard focused is Some(entity) else { return }
   let state_query : @ecs.Query[
-    @ecs.Mut[ActivatedButton],
+    @ecs.Write[ActivatedButton],
     @ecs.With[ActivatedButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(ActivatedButton::component()))
-  let label_query : @ecs.Query[@ecs.Comp[NavButton], @ecs.With[NavButton]] = @ecs.query_filtered(
+  let label_query : @ecs.Query[@ecs.Read[NavButton], @ecs.With[NavButton]] = @ecs.query_filtered(
     world,
     @ecs.With::new(NavButton::component()),
   )
@@ -414,12 +414,12 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
     Some(status_ref) => status_ref
     None => return
   }
-  let state : @ecs.Mut[ActivatedButton]? = try state_query.get(entity) catch {
+  let state : @ecs.Write[ActivatedButton]? = try state_query.get(entity) catch {
     _ => None
   } noraise {
     value => value
   }
-  let label : @ecs.Comp[NavButton]? = try label_query.get(entity) catch {
+  let label : @ecs.Read[NavButton]? = try label_query.get(entity) catch {
     _ => None
   } noraise {
     value => value
@@ -442,14 +442,14 @@ fn update_focus_display(world : @ecs.World) -> Unit {
     Some(focus) => focus.get()
     None => None
   }
-  let label_query : @ecs.Query[@ecs.Comp[NavButton], @ecs.With[NavButton]] = @ecs.query_filtered(
+  let label_query : @ecs.Query[@ecs.Read[NavButton], @ecs.With[NavButton]] = @ecs.query_filtered(
     world,
     @ecs.With::new(NavButton::component()),
   )
-  let display_query : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[FocusDisplay]] = @ecs.query_filtered(
-    world,
-    @ecs.With::new(FocusDisplay::component()),
-  )
+  let display_query : @ecs.Query[
+    @ecs.Write[@text.Text],
+    @ecs.With[FocusDisplay],
+  ] = @ecs.query_filtered(world, @ecs.With::new(FocusDisplay::component()))
   let label = match focused {
     Some(entity) =>
       match
@@ -475,7 +475,7 @@ fn update_last_input_display(world : @ecs.World) -> Unit {
     None => "Last Input: None"
   }
   let display_query : @ecs.Query[
-    @ecs.Mut[@text.Text],
+    @ecs.Write[@text.Text],
     @ecs.With[LastInputDisplay],
   ] = @ecs.query_filtered(world, @ecs.With::new(LastInputDisplay::component()))
   try! display_query.view(fn(_entity, text) { text.set(@text.Text::new(label)) })
@@ -488,7 +488,7 @@ fn update_button_visuals(world : @ecs.World) -> Unit {
     None => None
   }
   let query : @ecs.Query[
-    (@core.Entity, @ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
+    (@core.Entity, @ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
     @ecs.With[NavButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(NavButton::component()))
   try! query.view(fn(_query_entity, data) {

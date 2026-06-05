@@ -92,7 +92,7 @@ pub let ecs_key_render_visible_entities : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for RenderVisibleEntities with component() {
+pub impl @ecs.Component for RenderVisibleEntities with fn component() {
   ecs_key_render_visible_entities
 }
 

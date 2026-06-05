@@ -286,6 +286,6 @@ let ecs_key_cluster_camera_projection : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="light.cluster.camera_projection")
 
 ///|
-pub impl @ecs.Component for ClusterCameraProjection with component() {
+pub impl @ecs.Component for ClusterCameraProjection with fn component() {
   ecs_key_cluster_camera_projection
 }

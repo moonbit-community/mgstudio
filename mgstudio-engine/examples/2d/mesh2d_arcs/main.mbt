@@ -205,7 +205,7 @@ fn[T : @math.Bounded2d] draw_bounds_for_shape(
 ///|
 fn draw_sector_bounds(
   query : @ecs.Query[
-    (@ecs.Comp[SectorBounds], @ecs.Comp[@transform.GlobalTransform]),
+    (@ecs.Read[SectorBounds], @ecs.Read[@transform.GlobalTransform]),
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
@@ -219,7 +219,7 @@ fn draw_sector_bounds(
 ///|
 fn draw_segment_bounds(
   query : @ecs.Query[
-    (@ecs.Comp[SegmentBounds], @ecs.Comp[@transform.GlobalTransform]),
+    (@ecs.Read[SegmentBounds], @ecs.Read[@transform.GlobalTransform]),
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],

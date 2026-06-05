@@ -93,27 +93,27 @@ pub let ldtk_level_event_key : @ecs.MessageKey[LevelEvent] = @ecs.register_messa
 )
 
 ///|
-pub impl @app.Resource for LevelSelection with resource() {
+pub impl @app.Resource for LevelSelection with fn resource() {
   ldtk_level_selection_key
 }
 
 ///|
-pub impl @app.Resource for LdtkSettings with resource() {
+pub impl @app.Resource for LdtkSettings with fn resource() {
   ldtk_settings_key
 }
 
 ///|
-pub impl @app.Resource for LdtkRuntimeState with resource() {
+pub impl @app.Resource for LdtkRuntimeState with fn resource() {
   ldtk_runtime_state_key
 }
 
 ///|
-pub impl @app.Resource for LdtkSpawnedLevelIids with resource() {
+pub impl @app.Resource for LdtkSpawnedLevelIids with fn resource() {
   ldtk_spawned_level_iids_key
 }
 
 ///|
-pub impl @ecs.Message for LevelEvent with message() {
+pub impl @ecs.Message for LevelEvent with fn message() {
   ldtk_level_event_key
 }
 

@@ -95,7 +95,7 @@ fn setup(
 fn rotate_scene_roots(
   time : @app.Res[@time.Time[Unit]],
   roots : @ecs.Query[
-    (@ecs.Comp[SceneSpin], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[SceneSpin], @ecs.Write[@transform.Transform]),
     @ecs.With[@mgscene.SceneRoot],
   ],
 ) -> Unit {

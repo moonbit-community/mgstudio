@@ -558,16 +558,16 @@ pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow] = @ecs.registe
 )
 
 ///|
-pub impl @ecs.Component for Window with component() {
+pub impl @ecs.Component for Window with fn component() {
   ecs_key_window
 }
 
 ///|
-pub impl @ecs.Component for PrimaryWindow with component() {
+pub impl @ecs.Component for PrimaryWindow with fn component() {
   ecs_key_primary_window
 }
 
 ///|
-pub impl @ecs.Component for ClosingWindow with component() {
+pub impl @ecs.Component for ClosingWindow with fn component() {
   ecs_key_closing_window
 }

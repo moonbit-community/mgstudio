@@ -179,11 +179,11 @@ fn spawn_override_button(
     .observe_pointer4(fn(
       _pointer : @app.OnPointer[@app.PointerClick],
       focus : @app.ResMut[@input_focus.InputFocus],
-      buttons : @ecs.Query[@ecs.Mut[OverrideState], @ecs.With[OverrideState]],
+      buttons : @ecs.Query[@ecs.Write[OverrideState], @ecs.With[OverrideState]],
       status : @app.ResMut[OverrideStatus],
     ) {
       focus.modify(fn(value) { value.set(button) })
-      let state : @ecs.Mut[OverrideState]? = try buttons.get(button) catch {
+      let state : @ecs.Write[OverrideState]? = try buttons.get(button) catch {
         _ => None
       } noraise {
         value => value
@@ -310,7 +310,7 @@ fn setup_override_ui(
 
 ///|
 fn override_direction_from_gamepads(
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
 ) -> @math.CompassOctant? {
   let result : Ref[@math.CompassOctant?] = Ref(None)
   try! gamepads.view(fn(_entity, gamepad) {
@@ -348,7 +348,7 @@ fn override_direction_text(direction : @math.CompassOctant) -> String {
 ///|
 fn navigate_override_ui(
   navigator : @ui.AutoDirectionalNavigator,
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
   status : @app.ResMut[OverrideStatus],
 ) -> Unit {
   let direction = if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
@@ -379,7 +379,7 @@ fn navigate_override_ui(
 
 ///|
 fn override_activate_from_gamepads(
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
 ) -> Bool {
   let pressed = Ref(false)
   try! gamepads.view(fn(_entity, gamepad) {
@@ -407,23 +407,23 @@ fn activate_override_button(world : @ecs.World) -> Unit {
   }
   guard focused is Some(entity) else { return }
   let state_query : @ecs.Query[
-    @ecs.Mut[OverrideState],
+    @ecs.Write[OverrideState],
     @ecs.With[OverrideState],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideState::component()))
   let label_query : @ecs.Query[
-    @ecs.Comp[OverrideButton],
+    @ecs.Read[OverrideButton],
     @ecs.With[OverrideButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideButton::component()))
   let status_ref = match world.get_resource_mut(OverrideStatus::resource()) {
     Some(status_ref) => status_ref
     None => return
   }
-  let state : @ecs.Mut[OverrideState]? = try state_query.get(entity) catch {
+  let state : @ecs.Write[OverrideState]? = try state_query.get(entity) catch {
     _ => None
   } noraise {
     value => value
   }
-  let label : @ecs.Comp[OverrideButton]? = try label_query.get(entity) catch {
+  let label : @ecs.Read[OverrideButton]? = try label_query.get(entity) catch {
     _ => None
   } noraise {
     value => value
@@ -447,11 +447,11 @@ fn update_override_focus_display(world : @ecs.World) -> Unit {
     None => None
   }
   let label_query : @ecs.Query[
-    @ecs.Comp[OverrideButton],
+    @ecs.Read[OverrideButton],
     @ecs.With[OverrideButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideButton::component()))
   let display_query : @ecs.Query[
-    @ecs.Mut[@text.Text],
+    @ecs.Write[@text.Text],
     @ecs.With[OverrideFocusDisplay],
   ] = @ecs.query_filtered(
     world,
@@ -482,7 +482,7 @@ fn update_override_last_input_display(world : @ecs.World) -> Unit {
     None => "Last Input: None"
   }
   let display_query : @ecs.Query[
-    @ecs.Mut[@text.Text],
+    @ecs.Write[@text.Text],
     @ecs.With[OverrideLastInputDisplay],
   ] = @ecs.query_filtered(
     world,
@@ -498,7 +498,7 @@ fn update_override_button_visuals(world : @ecs.World) -> Unit {
     None => None
   }
   let query : @ecs.Query[
-    (@core.Entity, @ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
+    (@core.Entity, @ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
     @ecs.With[OverrideButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideButton::component()))
   try! query.view(fn(_query_entity, data) {

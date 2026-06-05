@@ -68,56 +68,56 @@ pub let ecs_key_ldtk_project_handle : @ecs.ComponentKey[LdtkProjectHandle] = @ec
 )
 
 ///|
-pub impl @ecs.Component for EntityIid with component() {
+pub impl @ecs.Component for EntityIid with fn component() {
   ecs_key_entity_iid
 }
 
 ///|
-pub impl @ecs.Component for LevelIid with component() {
+pub impl @ecs.Component for LevelIid with fn component() {
   ecs_key_level_iid
 }
 
 ///|
-pub impl @ecs.Component for LevelSet with component() {
+pub impl @ecs.Component for LevelSet with fn component() {
   ecs_key_level_set
 }
 
 ///|
-pub impl @ecs.Component for IntGridCell with component() {
+pub impl @ecs.Component for IntGridCell with fn component() {
   ecs_key_int_grid_cell
 }
 
 ///|
-pub impl @ecs.Component for Worldly with component() {
+pub impl @ecs.Component for Worldly with fn component() {
   ecs_key_worldly
 }
 
 ///|
-pub impl @ecs.Component for GridCoords with component() {
+pub impl @ecs.Component for GridCoords with fn component() {
   ecs_key_grid_coords
 }
 
 ///|
-pub impl @ecs.Component for TileMetadata with component() {
+pub impl @ecs.Component for TileMetadata with fn component() {
   ecs_key_tile_metadata
 }
 
 ///|
-pub impl @ecs.Component for TileEnumTags with component() {
+pub impl @ecs.Component for TileEnumTags with fn component() {
   ecs_key_tile_enum_tags
 }
 
 ///|
-pub impl @ecs.Component for LayerMetadata with component() {
+pub impl @ecs.Component for LayerMetadata with fn component() {
   ecs_key_layer_metadata
 }
 
 ///|
-pub impl @ecs.Component for Respawn with component() {
+pub impl @ecs.Component for Respawn with fn component() {
   ecs_key_respawn
 }
 
 ///|
-pub impl @ecs.Component for LdtkProjectHandle with component() {
+pub impl @ecs.Component for LdtkProjectHandle with fn component() {
   ecs_key_ldtk_project_handle
 }

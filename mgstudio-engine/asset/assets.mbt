@@ -121,12 +121,12 @@ pub fn[T : Asset] assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
 }
 
 ///|
-pub impl[T : Asset] @app.Resource for Assets[T] with resource() {
+pub impl[T : Asset] @app.Resource for Assets[T] with fn resource() {
   registered_assets_resource_key()
 }
 
 ///|
-pub impl[T : Asset] @ecs.Message for AssetEvent[T] with message() {
+pub impl[T : Asset] @ecs.Message for AssetEvent[T] with fn message() {
   registered_asset_event_message_key()
 }
 

@@ -167,7 +167,11 @@ fn setup(world : @ecs.World) -> Unit {
 fn on_set_message(
   set_message : @ecs.On[SetMessage],
   text : @app.Single[
-    (@ecs.Mut[@text.Text2d], @ecs.Mut[@text.TextColor], @ecs.Mut[MessageFade]),
+    (
+      @ecs.Write[@text.Text2d],
+      @ecs.Write[@text.TextColor],
+      @ecs.Write[MessageFade],
+    ),
     @ecs.With[MessageText],
   ],
 ) -> Unit {
@@ -181,7 +185,7 @@ fn on_set_message(
 ///|
 fn animate_text_opacity(
   text : @ecs.Query[
-    (@ecs.Mut[@text.TextColor], @ecs.Comp[MessageFade]),
+    (@ecs.Write[@text.TextColor], @ecs.Read[MessageFade]),
     @ecs.With[MessageText],
   ],
   time : @app.Res[@time.Time[Unit]],

@@ -21,7 +21,7 @@ pub(open) trait States: Eq + Debug {
 }
 
 ///|
-impl States with dependency_depth(self) {
+impl States with fn dependency_depth(self) {
   ignore(self)
   0
 }

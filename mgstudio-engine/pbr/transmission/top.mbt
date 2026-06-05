@@ -93,6 +93,6 @@ pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="render3d.screen_space_transmission")
 
 ///|
-pub impl @ecs.Component for ScreenSpaceTransmission with component() {
+pub impl @ecs.Component for ScreenSpaceTransmission with fn component() {
   ecs_key_screen_space_transmission
 }

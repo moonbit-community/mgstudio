@@ -294,9 +294,9 @@ fn slider_on_pointer_down(
   pointer : @app.OnPointer[@app.PointerDown],
   slider_query : @ecs.Query[
     (
-      @ecs.Comp[Slider],
-      @ecs.Comp[@ui.UiLayout],
-      @ecs.Comp[SliderRange],
+      @ecs.Read[Slider],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[SliderRange],
       @ecs.Has[InteractionDisabled],
     ),
     @ecs.All,
@@ -328,9 +328,9 @@ fn slider_on_pointer_click(
   pointer : @app.OnPointer[@app.PointerClick],
   slider_query : @ecs.Query[
     (
-      @ecs.Comp[Slider],
-      @ecs.Comp[@ui.UiLayout],
-      @ecs.Comp[SliderRange],
+      @ecs.Read[Slider],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[SliderRange],
       @ecs.Has[InteractionDisabled],
     ),
     @ecs.All,
@@ -364,8 +364,8 @@ fn slider_on_key_input(
   slider_query : @ecs.Query[
     (
       @ecs.Has[Slider],
-      @ecs.Comp[SliderRange],
-      @ecs.Comp[SliderValue]?,
+      @ecs.Read[SliderRange],
+      @ecs.Read[SliderValue]?,
       @ecs.Has[InteractionDisabled],
     ),
     @ecs.All,
@@ -412,8 +412,8 @@ fn slider_on_set_value(
     (
       @ecs.Has[Slider],
       @ecs.Has[InteractionDisabled],
-      @ecs.Comp[SliderRange],
-      @ecs.Comp[SliderPrecision]?,
+      @ecs.Read[SliderRange],
+      @ecs.Read[SliderPrecision]?,
     ),
     @ecs.All,
   ],

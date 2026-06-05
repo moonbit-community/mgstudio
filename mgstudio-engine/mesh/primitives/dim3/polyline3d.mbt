@@ -42,12 +42,12 @@ pub fn Polyline3dMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for Polyline3dMeshBuilder with build(self) {
+pub impl MeshBuilder for Polyline3dMeshBuilder with fn build(self) {
   polyline3d_line_list(self.polyline)
 }
 
 ///|
-pub impl Meshable for @math.Polyline3d with mesh(self) {
+pub impl Meshable for @math.Polyline3d with fn mesh(self) {
   Polyline3dMeshBuilder::new(self).build()
 }
 

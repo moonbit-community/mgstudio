@@ -33,6 +33,6 @@ pub let ecs_key_name : ComponentKey[Name] = register_component(
 )
 
 ///|
-pub impl Component for Name with component() {
+pub impl Component for Name with fn component() {
   ecs_key_name
 }

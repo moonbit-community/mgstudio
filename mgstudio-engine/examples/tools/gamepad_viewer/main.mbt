@@ -54,8 +54,11 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn update_indicator(
   time : @app.Res[@time.Time[Unit]],
-  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
-  indicators : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.With[GamepadIndicator]],
+  gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
+  indicators : @ecs.Query[
+    @ecs.Write[@sprite.Sprite],
+    @ecs.With[GamepadIndicator],
+  ],
 ) -> Unit {
   let mut connected = 0
   let mut any_pressed = false

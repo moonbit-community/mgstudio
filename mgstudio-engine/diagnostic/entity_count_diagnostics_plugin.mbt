@@ -37,12 +37,12 @@ pub fn EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin() -> EntityCou
 }
 
 ///|
-pub impl @app.Plugin for EntityCountDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for EntityCountDiagnosticsPlugin with fn name(_self) {
   ENTITY_COUNT_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for EntityCountDiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for EntityCountDiagnosticsPlugin with fn build(self, app) {
   entity_count_diagnostics_plugin_with(app, self)
 }
 

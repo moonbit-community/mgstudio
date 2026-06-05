@@ -163,7 +163,7 @@ fn draw_frustum_outline(
 ///|
 pub fn draw_frustum_gizmos(
   query : @ecs.Query[
-    (@ecs.Comp[@camera.Frustum], @ecs.Comp[ShowFrustumGizmo]),
+    (@ecs.Read[@camera.Frustum], @ecs.Read[ShowFrustumGizmo]),
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
@@ -185,7 +185,7 @@ pub fn draw_frustum_gizmos(
 
 ///|
 pub fn draw_all_frustum_gizmos(
-  query : @ecs.Query[@ecs.Comp[@camera.Frustum], @ecs.Without[ShowFrustumGizmo]],
+  query : @ecs.Query[@ecs.Read[@camera.Frustum], @ecs.Without[ShowFrustumGizmo]],
   gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()

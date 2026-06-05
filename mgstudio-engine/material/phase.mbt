@@ -24,7 +24,7 @@ pub(all) enum RenderPhaseType {
 }
 
 ///|
-pub impl Default for RenderPhaseType with default() {
+pub impl Default for RenderPhaseType with fn default() {
   RenderPhaseType::Opaque
 }
 

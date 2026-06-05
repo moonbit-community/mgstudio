@@ -377,7 +377,7 @@ fn interaction_color(interaction : @ui.Interaction) -> @color.Color {
 
 ///|
 fn button_system(world : @ecs.World) -> Unit {
-  let mut target_transform : @ecs.Mut[@transform.Transform]? = None
+  let mut target_transform : @ecs.Write[@transform.Transform]? = None
   world.for_each_component(target_node_key, fn(entity, _target) {
     if target_transform is None {
       target_transform = try! world.get_mut(
@@ -433,7 +433,7 @@ fn button_system(world : @ecs.World) -> Unit {
 fn translation_system(
   keyboard : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
-  target : @app.Single[@ecs.Mut[@transform.Transform], @ecs.With[TargetNode]],
+  target : @app.Single[@ecs.Write[@transform.Transform], @ecs.With[TargetNode]],
 ) -> Unit {
   let mut dx = 0.0F
   let mut dy = 0.0F

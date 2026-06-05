@@ -25,7 +25,7 @@ pub struct EntityMut {
 }
 
 ///|
-pub struct Mut[T] {
+pub struct Write[T] {
   priv world : World
   priv entity : @core.Entity
   priv key : ComponentKey[T]
@@ -45,7 +45,7 @@ pub(open) trait Bundle {
 }
 
 ///|
-fn[T] mut_value_or_abort(item : Mut[T]) -> T {
+fn[T] mut_value_or_abort(item : Write[T]) -> T {
   match item.world.local_component_storage_type(item.local_component_id) {
     Some(Table) => {
       if item.table_id >= 0 && item.row_index >= 0 {
@@ -57,31 +57,31 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
             item.row_index,
           ) {
           Some(value) => return value
-          None => abort("Mut expected table component value at fetched row")
+          None => abort("Write expected table component value at fetched row")
         }
       }
       guard item.world.component_write_transaction_contains(
         item.entity,
         item.local_component_id,
       ) else {
-        abort("Mut expected table component location")
+        abort("Write expected table component location")
       }
       match item.world.component_value_by_key(item.entity, item.key) {
         Some(value) => value
-        None => abort("Mut expected staged table component value")
+        None => abort("Write expected staged table component value")
       }
     }
     Some(SparseSet) =>
       match item.world.component_value_by_key(item.entity, item.key) {
         Some(value) => value
-        None => abort("Mut expected sparse component value")
+        None => abort("Write expected sparse component value")
       }
-    None => abort("Mut expected component storage type")
+    None => abort("Write expected component storage type")
   }
 }
 
 ///|
-fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
+fn[T] mut_write_value_or_abort(item : Write[T], value : T) -> Unit {
   match item.world.local_component_storage_type(item.local_component_id) {
     Some(Table) => {
       if item.table_id >= 0 && item.row_index >= 0 {
@@ -92,7 +92,7 @@ fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
             item.row_index,
             value,
           ) {
-          abort("Mut expected writable table component row")
+          abort("Write expected writable table component row")
         }
         return
       }
@@ -100,14 +100,14 @@ fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
         item.entity,
         item.local_component_id,
       ) else {
-        abort("Mut expected writable table component location")
+        abort("Write expected writable table component location")
       }
       if !item.world.replace_component_value_by_key(
           item.entity,
           item.key,
           value,
         ) {
-        abort("Mut expected writable staged table component value")
+        abort("Write expected writable staged table component value")
       }
     }
     Some(SparseSet) =>
@@ -116,19 +116,19 @@ fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
           item.key,
           value,
         ) {
-        abort("Mut expected writable sparse component value")
+        abort("Write expected writable sparse component value")
       }
-    None => abort("Mut expected component storage type")
+    None => abort("Write expected component storage type")
   }
 }
 
 ///|
-fn[T] mut_assign_value_or_abort(item : Mut[T], value : T) -> Unit {
+fn[T] mut_assign_value_or_abort(item : Write[T], value : T) -> Unit {
   mut_write_value_or_abort(item, value)
 }
 
 ///|
-fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
+fn[T] mut_mark_changed(item : Write[T], caller? : String? = None) -> Unit {
   let tick = component_write_tick(item.world)
   let recorded = if item.table_id >= 0 && item.row_index >= 0 {
     item.world.record_table_component_changed_at_table_row(
@@ -155,7 +155,7 @@ fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
 }
 
 ///|
-pub fn[T] Mut::key(self : Mut[T]) -> ComponentKey[T] {
+pub fn[T] Write::key(self : Write[T]) -> ComponentKey[T] {
   self.key
 }
 
@@ -164,25 +164,25 @@ pub fn[T] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 ///
 /// This method does not mark the component as changed. If the returned value
 /// contains mutable fields, mutating them directly bypasses ECS change
-/// detection. Use `Mut::modify`, `Mut::set`, or `Mut::update` for writes.
+/// detection. Use `Write::modify` or `Write::set` for writes.
 #callsite(autofill(loc))
-pub fn[T] Mut::peek(self : Mut[T], loc~ : SourceLoc) -> T {
+pub fn[T] Write::peek(self : Write[T], loc~ : SourceLoc) -> T {
   ignore(loc)
   mut_value_or_abort(self)
 }
 
 ///|
-/// Alias for `Mut::peek`; it has the same read-only contract.
+/// Alias for `Write::peek`; it has the same read-only contract.
 ///
 /// Do not mutate the returned value directly if changed ticks, changed
 /// messages, filters, or observers should observe the write.
 #callsite(autofill(loc))
-pub fn[T] Mut::value(self : Mut[T], loc~ : SourceLoc) -> T {
+pub fn[T] Write::value(self : Write[T], loc~ : SourceLoc) -> T {
   self.peek(loc~)
 }
 
 ///|
-pub fn[T] Mut::is_added(self : Mut[T]) -> Bool {
+pub fn[T] Write::is_added(self : Write[T]) -> Bool {
   self.world.is_added_by_local_id(
     self.entity,
     self.local_component_id,
@@ -191,7 +191,7 @@ pub fn[T] Mut::is_added(self : Mut[T]) -> Bool {
 }
 
 ///|
-pub fn[T] Mut::is_changed(self : Mut[T]) -> Bool {
+pub fn[T] Write::is_changed(self : Write[T]) -> Bool {
   self.world.is_changed_by_local_id(
     self.entity,
     self.local_component_id,
@@ -200,31 +200,31 @@ pub fn[T] Mut::is_changed(self : Mut[T]) -> Bool {
 }
 
 ///|
-pub fn[T] Mut::added(self : Mut[T]) -> @core.Tick {
+pub fn[T] Write::added(self : Write[T]) -> @core.Tick {
   match
     self.world.added_component_tick_by_local_id(
       self.local_component_id,
       self.entity.id,
     ) {
     Some(tick) => tick
-    None => abort("Mut::added expected component tick metadata")
+    None => abort("Write::added expected component tick metadata")
   }
 }
 
 ///|
-pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Tick {
+pub fn[T] Write::last_changed(self : Write[T]) -> @core.Tick {
   match
     self.world.changed_component_tick_by_local_id(
       self.local_component_id,
       self.entity.id,
     ) {
     Some(tick) => tick
-    None => abort("Mut::last_changed expected component tick metadata")
+    None => abort("Write::last_changed expected component tick metadata")
   }
 }
 
 ///|
-pub fn[T] Mut::changed_by(self : Mut[T]) -> String? {
+pub fn[T] Write::changed_by(self : Write[T]) -> String? {
   self.world.changed_component_caller_by_local_id(
     self.local_component_id,
     self.entity.id,
@@ -233,14 +233,20 @@ pub fn[T] Mut::changed_by(self : Mut[T]) -> String? {
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] Mut::set_changed(self : Mut[T], loc~ : SourceLoc) -> Unit {
+pub fn[T : Component] Write::set_changed(
+  self : Write[T],
+  loc~ : SourceLoc,
+) -> Unit {
   ignore(T::component())
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
+pub fn[T : Component] Write::set_added(
+  self : Write[T],
+  loc~ : SourceLoc,
+) -> Unit {
   ignore(T::component())
   let world = self.world
   let entity = self.entity
@@ -261,7 +267,11 @@ pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
 /// caller must not keep using values obtained from read-only APIs as a write
 /// path.
 #callsite(autofill(loc))
-pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
+pub fn[T, R] Write::modify(
+  self : Write[T],
+  f : (T) -> R,
+  loc~ : SourceLoc,
+) -> R {
   let value = self.peek(loc~)
   let result = f(value)
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
@@ -269,19 +279,9 @@ pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
 }
 
 ///|
-/// Replaces the component with the value returned by the update closure.
-///
-/// Use this for value-style updates where the new component should be derived
-/// from the old component and recorded as a normal ECS change.
 #callsite(autofill(loc))
-pub fn[T] Mut::update(self : Mut[T], f : (T) -> T, loc~ : SourceLoc) -> Unit {
-  self.set(f(self.peek(loc~)), loc~)
-}
-
-///|
-#callsite(autofill(loc))
-pub fn[T : Eq] Mut::set_if_neq(
-  self : Mut[T],
+pub fn[T : Eq] Write::set_if_neq(
+  self : Write[T],
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
@@ -297,11 +297,11 @@ pub fn[T : Eq] Mut::set_if_neq(
 ///|
 /// Replaces the component and marks it changed.
 ///
-/// Prefer `Mut::set` or `Mut::update` over mutating values returned by
-/// read-only APIs. This keeps change ticks and changed-component messages in
-/// sync with the stored value.
+/// Prefer `Write::set` over mutating values returned by read-only APIs. This
+/// keeps change ticks and changed-component messages in sync with the stored
+/// value.
 #callsite(autofill(loc))
-pub fn[T] Mut::set(self : Mut[T], value : T, loc~ : SourceLoc) -> Unit {
+pub fn[T] Write::set(self : Write[T], value : T, loc~ : SourceLoc) -> Unit {
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
   mut_assign_value_or_abort(self, value)
 }
@@ -314,7 +314,7 @@ fn[T] mut_from_component_location(
   local_component_id : Int,
   table_id : Int,
   row_index : Int,
-) -> Mut[T] {
+) -> Write[T] {
   { world, entity, key, table_id, row_index, local_component_id }
 }
 
@@ -323,7 +323,7 @@ fn[T] world_component_mut(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> Mut[T]? raise EcsError {
+) -> Write[T]? raise EcsError {
   world.ensure_entity_alive(entity)
   guard world.component_present(key.id(), entity) else { return None }
   guard world.local_component_id(key.id()) is Some(local_component_id) else {
@@ -375,7 +375,7 @@ pub fn[T : Component] World::get_mut(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
-) -> Mut[T]? raise EcsError {
+) -> Write[T]? raise EcsError {
   world_component_mut(self, entity, key)
 }
 
@@ -448,7 +448,7 @@ pub fn[T : Component] EntityMut::get(self : EntityMut) -> T? raise EcsError {
 pub fn[T : Component] EntityMut::get_mut(
   self : EntityMut,
   key? : ComponentKey[T] = T::component(),
-) -> Mut[T]? raise EcsError {
+) -> Write[T]? raise EcsError {
   world_component_mut(self.world, self.entity, key)
 }
 

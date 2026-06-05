@@ -51,7 +51,7 @@ fn setup(commands : @app.Commands) -> Unit {
 
 ///|
 fn change_component(
-  query : @ecs.Query[@ecs.Mut[MyComponent], @ecs.All],
+  query : @ecs.Query[@ecs.Write[MyComponent], @ecs.All],
 ) -> Unit {
   try! query.view(fn(_entity, component) {
     if component.value().value != 1 {
@@ -67,7 +67,7 @@ fn change_resource(resource : @app.ResMut[MyResource]) -> Unit {
 
 ///|
 fn detect_added(
-  added : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Added[MyComponent]],
+  added : @ecs.Query[@ecs.Read[MyComponent], @ecs.Added[MyComponent]],
 ) -> Unit {
   try! added.view(fn(_entity, component) {
     println("Added MyComponent value=\{component.value().value.to_string()}")
@@ -76,7 +76,7 @@ fn detect_added(
 
 ///|
 fn detect_changed(
-  changed : @ecs.Query[@ecs.Comp[MyComponent], @ecs.Changed[MyComponent]],
+  changed : @ecs.Query[@ecs.Read[MyComponent], @ecs.Changed[MyComponent]],
 ) -> Unit {
   try! changed.view(fn(_entity, component) {
     println("Changed MyComponent value=\{component.value().value.to_string()}")

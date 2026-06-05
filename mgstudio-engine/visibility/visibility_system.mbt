@@ -67,7 +67,7 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
       None => parent_children.set(parent_key, [entity])
     }
   })
-  let visibility_query : @ecs.Query[@ecs.Comp[Visibility], @ecs.All] = @ecs.query(
+  let visibility_query : @ecs.Query[@ecs.Read[Visibility], @ecs.All] = @ecs.query(
     world,
   )
   try! visibility_query.view(fn(entity, _visibility) {
@@ -259,7 +259,7 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
 pub fn check_visibility_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
-    (@ecs.Mut[ViewVisibility], @ecs.Comp[InheritedVisibility]),
+    (@ecs.Write[ViewVisibility], @ecs.Read[InheritedVisibility]),
     @ecs.All,
   ] = @ecs.query(world)
   try! query.view(fn(_entity, data) {

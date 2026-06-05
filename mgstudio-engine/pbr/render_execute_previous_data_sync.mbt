@@ -109,8 +109,8 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
     (
       @core.Entity,
       (
-        @ecs.Comp[@transform.GlobalTransform],
-        @ecs.Mut[@pbr_prepass.PreviousGlobalTransform],
+        @ecs.Read[@transform.GlobalTransform],
+        @ecs.Write[@pbr_prepass.PreviousGlobalTransform],
       ),
     ),
     (@ecs.With[@mesh.Mesh3d], @ecs.Allow[@ecs.Disabled]),
@@ -159,7 +159,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   let missing_query : @ecs.Query[
     (
       @core.Entity,
-      (@ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@transform.GlobalTransform]),
+      (@ecs.Read[@mesh.Mesh3d], @ecs.Read[@transform.GlobalTransform]),
     ),
     (
       @ecs.With[@mesh.Mesh3d],

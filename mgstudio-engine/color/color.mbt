@@ -26,12 +26,12 @@ pub fn Color::new(r : Float, g : Float, b : Float, a : Float) -> Color {
 }
 
 ///|
-pub impl ToJson for Color with to_json(self) {
+pub impl ToJson for Color with fn to_json(self) {
   (self.r, self.g, self.b, self.a).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Color with from_json(json, _path) {
+pub impl @json.FromJson for Color with fn from_json(json, _path) {
   match (@json.from_json(json) catch { _ => None }) {
     Some((r, g, b, a)) => Color::new(r, g, b, a)
     None => {

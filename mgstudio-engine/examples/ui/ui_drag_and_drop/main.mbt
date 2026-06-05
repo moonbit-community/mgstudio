@@ -110,7 +110,7 @@ fn set_tile_colors(
   background : @color.Color,
   border : @color.Color,
   query : @ecs.Query[
-    (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
+    (@ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -127,7 +127,7 @@ fn begin_drag(
   position : @math.Vec2,
   drag_state : @app.ResMut[DragState],
   visuals : @ecs.Query[
-    (@ecs.Mut[@ui.Outline], @ecs.Mut[@ui.GlobalZIndex]),
+    (@ecs.Write[@ui.Outline], @ecs.Write[@ui.GlobalZIndex]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -153,7 +153,7 @@ fn begin_drag(
 fn drag_active_tile(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[DragState],
-  transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
+  transforms : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.All],
 ) -> Unit {
   let state_value = drag_state.peek()
   guard state_value.active is Some(active) else { return }
@@ -178,13 +178,13 @@ fn release_active_tile(
   drag_state : @app.ResMut[DragState],
   visuals : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@ui.Outline],
-      @ecs.Mut[@ui.GlobalZIndex],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@ui.Outline],
+      @ecs.Write[@ui.GlobalZIndex],
     ),
     @ecs.All,
   ],
-  nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  nodes : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
 ) -> Unit {
   let state_value = drag_state.peek()
   guard state_value.active is Some(active) else { return }
@@ -306,7 +306,7 @@ fn setup(
           _pointer : @app.OnPointer[@app.PointerEnter],
           drag_state : @app.ResMut[DragState],
           colors : @ecs.Query[
-            (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
+            (@ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
             @ecs.All,
           ],
         ) {
@@ -319,7 +319,7 @@ fn setup(
           _pointer : @app.OnPointer[@app.PointerLeave],
           drag_state : @app.ResMut[DragState],
           colors : @ecs.Query[
-            (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
+            (@ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
             @ecs.All,
           ],
         ) {
@@ -334,7 +334,7 @@ fn setup(
           pointer : @app.OnPointer[@app.PointerDown],
           drag_state : @app.ResMut[DragState],
           visuals : @ecs.Query[
-            (@ecs.Mut[@ui.Outline], @ecs.Mut[@ui.GlobalZIndex]),
+            (@ecs.Write[@ui.Outline], @ecs.Write[@ui.GlobalZIndex]),
             @ecs.All,
           ],
         ) {

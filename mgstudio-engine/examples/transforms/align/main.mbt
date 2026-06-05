@@ -150,7 +150,10 @@ fn setup(
 ///|
 fn handle_keys(
   keyboard : @input.ButtonInput[@window.KeyCode],
-  ships : @ecs.Query[(@ecs.Mut[Ship], @ecs.Mut[@transform.Transform]), @ecs.All],
+  ships : @ecs.Query[
+    (@ecs.Write[Ship], @ecs.Write[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let randomize = keyboard.just_pressed(@window.KeyCode::KeyR)
   let toggle_motion = keyboard.just_pressed(@window.KeyCode::KeyT)
@@ -186,7 +189,7 @@ fn handle_keys(
 fn spin_ship(
   time : @app.Res[@time.Time[Unit]],
   ships : @ecs.Query[
-    (@ecs.Comp[Ship], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Ship], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

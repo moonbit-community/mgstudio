@@ -171,10 +171,10 @@ fn setup(
 fn keyboard_input_system(
   buttons : @ecs.Query[
     (
-      @ecs.Comp[KeyCap],
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Mut[WasPressed],
-      @ecs.Mut[@ui.BackgroundColor],
+      @ecs.Read[KeyCap],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Write[WasPressed],
+      @ecs.Write[@ui.BackgroundColor],
     ),
     @ecs.All,
   ],
@@ -204,7 +204,7 @@ fn keyboard_input_system(
 ///|
 fn keyboard_display_system(
   buffer : @app.Res[KeyboardBuffer],
-  display : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[KeyboardDisplay]],
+  display : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[KeyboardDisplay]],
 ) -> Unit {
   try! display.view(fn(_entity, text) {
     text.set(@text.Text::new(buffer.get().value))

@@ -155,14 +155,14 @@ let animation_triggered_events : Ref[@core.Messages[AnimationTriggeredEvent]] = 
 )
 
 ///|
-pub impl @core.Message for AnimationTriggeredEvent with reader(
+pub impl @core.Message for AnimationTriggeredEvent with fn reader(
   tick : @core.SystemTicks,
 ) {
   animation_triggered_events.val.reader(tick)
 }
 
 ///|
-pub impl @core.Message for AnimationTriggeredEvent with writer(
+pub impl @core.Message for AnimationTriggeredEvent with fn writer(
   tick : @core.Tick,
 ) {
   animation_triggered_events.val.writer(tick)

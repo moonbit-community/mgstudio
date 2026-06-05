@@ -50,7 +50,7 @@ struct MovementParam[P] {
 
 ///|
 type MovementQuery = @ecs.Query[
-  (@ecs.Mut[Position], @ecs.Comp[Velocity]),
+  (@ecs.Write[Position], @ecs.Read[Velocity]),
   @ecs.All,
 ]
 
@@ -108,7 +108,7 @@ fn run_custom_query_param(param : MovementSystemParam) -> Unit {
 }
 
 ///|
-fn print_positions(query : @ecs.Query[@ecs.Comp[Position], @ecs.All]) -> Unit {
+fn print_positions(query : @ecs.Query[@ecs.Read[Position], @ecs.All]) -> Unit {
   try! query.view(fn(_entity, position) {
     println("Position: \{position.value().x.to_string()}")
   })

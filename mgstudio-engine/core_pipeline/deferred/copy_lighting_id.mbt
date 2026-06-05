@@ -112,12 +112,12 @@ pub fn copy_deferred_lighting_id_plugin(
 }
 
 ///|
-pub impl @app.Plugin for CopyDeferredLightingIdPlugin with name(_self) {
+pub impl @app.Plugin for CopyDeferredLightingIdPlugin with fn name(_self) {
   COPY_DEFERRED_LIGHTING_ID_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CopyDeferredLightingIdPlugin with build(self, app) {
+pub impl @app.Plugin for CopyDeferredLightingIdPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   copy_deferred_lighting_id_plugin_with(app, self)
 }
@@ -248,6 +248,6 @@ pub let ecs_key_copy_deferred_lighting_id_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for CopyDeferredLightingIdState with resource() {
+pub impl @app.Resource for CopyDeferredLightingIdState with fn resource() {
   ecs_key_copy_deferred_lighting_id_state
 }

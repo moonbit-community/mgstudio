@@ -82,7 +82,7 @@ fn setup(
 fn animate_light_direction(
   time : @app.Res[@time.Time[Unit]],
   lights : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@pbr.DirectionalLight],
   ],
 ) -> Unit {

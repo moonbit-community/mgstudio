@@ -137,12 +137,12 @@ fn spatial_audio_sink_live_volume(sink : SpatialAudioSink) -> Volume {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with volume(self) {
+pub impl AudioSinkPlayback for AudioSink with fn volume(self) {
   audio_sink_live_volume(self)
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with set_volume(self, volume) {
+pub impl AudioSinkPlayback for AudioSink with fn set_volume(self, volume) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) =>
       if self.managed_volume is Some(_) {
@@ -156,7 +156,7 @@ pub impl AudioSinkPlayback for AudioSink with set_volume(self, volume) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with speed(self) {
+pub impl AudioSinkPlayback for AudioSink with fn speed(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => Float::from_double(player.speed())
     None => 1.0F
@@ -164,7 +164,7 @@ pub impl AudioSinkPlayback for AudioSink with speed(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with set_speed(self, speed) {
+pub impl AudioSinkPlayback for AudioSink with fn set_speed(self, speed) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.set_speed(speed.to_double())
     None => ()
@@ -173,7 +173,7 @@ pub impl AudioSinkPlayback for AudioSink with set_speed(self, speed) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with play(self) {
+pub impl AudioSinkPlayback for AudioSink with fn play(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.play()
     None => ()
@@ -181,7 +181,7 @@ pub impl AudioSinkPlayback for AudioSink with play(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with position(self) {
+pub impl AudioSinkPlayback for AudioSink with fn position(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => @core.Duration::from_secs_f32(player.position_seconds())
     None => @core.Duration::zero()
@@ -189,7 +189,7 @@ pub impl AudioSinkPlayback for AudioSink with position(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with try_seek(self, position) {
+pub impl AudioSinkPlayback for AudioSink with fn try_seek(self, position) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => {
       player.try_seek_seconds(position.as_secs_f32()) catch {
@@ -202,7 +202,7 @@ pub impl AudioSinkPlayback for AudioSink with try_seek(self, position) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with pause(self) {
+pub impl AudioSinkPlayback for AudioSink with fn pause(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.pause()
     None => ()
@@ -210,7 +210,7 @@ pub impl AudioSinkPlayback for AudioSink with pause(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with is_paused(self) {
+pub impl AudioSinkPlayback for AudioSink with fn is_paused(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.is_paused()
     None => false
@@ -218,7 +218,7 @@ pub impl AudioSinkPlayback for AudioSink with is_paused(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with stop(self) {
+pub impl AudioSinkPlayback for AudioSink with fn stop(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.stop()
     None => ()
@@ -226,7 +226,7 @@ pub impl AudioSinkPlayback for AudioSink with stop(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with empty(self) {
+pub impl AudioSinkPlayback for AudioSink with fn empty(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => player.empty()
     None => true
@@ -234,12 +234,12 @@ pub impl AudioSinkPlayback for AudioSink with empty(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with is_muted(self) {
+pub impl AudioSinkPlayback for AudioSink with fn is_muted(self) {
   self.managed_volume is Some(_)
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with mute(self) {
+pub impl AudioSinkPlayback for AudioSink with fn mute(self) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => {
       let remembered = self.volume()
@@ -251,7 +251,7 @@ pub impl AudioSinkPlayback for AudioSink with mute(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with unmute(self) {
+pub impl AudioSinkPlayback for AudioSink with fn unmute(self) {
   match self.managed_volume {
     Some(volume) => {
       match audio_sink_registry_get(self.sink_id) {
@@ -265,12 +265,12 @@ pub impl AudioSinkPlayback for AudioSink with unmute(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with volume(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn volume(self) {
   spatial_audio_sink_live_volume(self)
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with set_volume(self, volume) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn set_volume(self, volume) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) =>
       if self.managed_volume is Some(_) {
@@ -284,7 +284,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with set_volume(self, volume) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with speed(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn speed(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => Float::from_double(player.speed())
     None => 1.0F
@@ -292,7 +292,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with speed(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with set_speed(self, speed) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn set_speed(self, speed) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.set_speed(speed.to_double())
     None => ()
@@ -301,7 +301,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with set_speed(self, speed) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with play(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn play(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.play()
     None => ()
@@ -309,7 +309,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with play(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with position(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn position(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => @core.Duration::from_secs_f32(player.position_seconds())
     None => @core.Duration::zero()
@@ -317,7 +317,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with position(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with try_seek(self, position) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn try_seek(self, position) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => {
       player.try_seek_seconds(position.as_secs_f32()) catch {
@@ -330,7 +330,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with try_seek(self, position) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with pause(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn pause(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.pause()
     None => ()
@@ -338,7 +338,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with pause(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with is_paused(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn is_paused(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.is_paused()
     None => false
@@ -346,7 +346,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with is_paused(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with stop(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn stop(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.stop()
     None => ()
@@ -354,7 +354,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with stop(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with empty(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn empty(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => player.empty()
     None => true
@@ -362,12 +362,12 @@ pub impl AudioSinkPlayback for SpatialAudioSink with empty(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with is_muted(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn is_muted(self) {
   self.managed_volume is Some(_)
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with mute(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn mute(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => {
       let remembered = self.volume()
@@ -379,7 +379,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with mute(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with unmute(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with fn unmute(self) {
   match self.managed_volume {
     Some(volume) => {
       match spatial_audio_sink_registry_get(self.sink_id) {

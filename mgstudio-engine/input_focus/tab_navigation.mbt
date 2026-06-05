@@ -238,7 +238,7 @@ fn tab_navigation_group(
 ///|
 fn tab_navigation_collect_candidates(world : @ecs.World) -> Array[TabCandidate] {
   let candidates : Array[TabCandidate] = []
-  let query : @ecs.Query[(@core.Entity, @ecs.Comp[TabIndex]), @ecs.All] = @ecs.query(
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[TabIndex]), @ecs.All] = @ecs.query(
     world,
   )
   try! query.view(fn(_query_entity, data) {

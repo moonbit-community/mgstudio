@@ -23,7 +23,7 @@ let observer_marker_key : ComponentKey[ObserverMarker] = register_component(
 )
 
 ///|
-pub impl Component for ObserverMarker with component() {
+pub impl Component for ObserverMarker with fn component() {
   observer_marker_key
 }
 
@@ -38,7 +38,7 @@ let observer_parent_link_key : ComponentKey[ObserverParentLink] = register_compo
 )
 
 ///|
-pub impl Component for ObserverParentLink with component() {
+pub impl Component for ObserverParentLink with fn component() {
   observer_parent_link_key
 }
 
@@ -53,7 +53,7 @@ let observer_parent_link_stable_key : ComponentKey[ObserverParentLinkStable] = r
 )
 
 ///|
-pub impl Component for ObserverParentLinkStable with component() {
+pub impl Component for ObserverParentLinkStable with fn component() {
   observer_parent_link_stable_key
 }
 
@@ -68,7 +68,7 @@ let observer_parent_link_late_key : ComponentKey[ObserverParentLinkLate] = regis
 )
 
 ///|
-pub impl Component for ObserverParentLinkLate with component() {
+pub impl Component for ObserverParentLinkLate with fn component() {
   observer_parent_link_late_key
 }
 
@@ -211,17 +211,17 @@ let observer_detonate_event_key : EventKey[ObserverDetonate] = register_event(
 )
 
 ///|
-pub impl TriggerEvent for ObserverDetonate with observer_event() {
+pub impl TriggerEvent for ObserverDetonate with fn observer_event() {
   observer_detonate_event_key
 }
 
 ///|
-pub impl TriggerEvent for ObserverDetonate with observer_entity(self) {
+pub impl TriggerEvent for ObserverDetonate with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl TriggerEvent for ObserverDetonate with set_observer_entity(
+pub impl TriggerEvent for ObserverDetonate with fn set_observer_entity(
   event,
   entity,
 ) {
@@ -230,12 +230,12 @@ pub impl TriggerEvent for ObserverDetonate with set_observer_entity(
 }
 
 ///|
-pub impl TriggerEvent for ObserverDetonate with auto_propagate(_self) {
+pub impl TriggerEvent for ObserverDetonate with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl TriggerEvent for ObserverDetonate with debug_name() {
+pub impl TriggerEvent for ObserverDetonate with fn debug_name() {
   "ObserverDetonate"
 }
 
@@ -251,28 +251,31 @@ let observer_attack_event_key : EventKey[ObserverAttack] = register_event(
 )
 
 ///|
-pub impl TriggerEvent for ObserverAttack with observer_event() {
+pub impl TriggerEvent for ObserverAttack with fn observer_event() {
   observer_attack_event_key
 }
 
 ///|
-pub impl TriggerEvent for ObserverAttack with observer_entity(self) {
+pub impl TriggerEvent for ObserverAttack with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl TriggerEvent for ObserverAttack with set_observer_entity(event, entity) {
+pub impl TriggerEvent for ObserverAttack with fn set_observer_entity(
+  event,
+  entity,
+) {
   event.entity = entity
   event
 }
 
 ///|
-pub impl TriggerEvent for ObserverAttack with auto_propagate(_self) {
+pub impl TriggerEvent for ObserverAttack with fn auto_propagate(_self) {
   true
 }
 
 ///|
-pub impl TriggerEvent for ObserverAttack with debug_name() {
+pub impl TriggerEvent for ObserverAttack with fn debug_name() {
   "ObserverAttack"
 }
 

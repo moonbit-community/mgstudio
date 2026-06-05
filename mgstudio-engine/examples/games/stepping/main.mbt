@@ -60,7 +60,7 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn fixed_step(
   state : @app.ResMut[StepState],
-  sprites : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[StepSprite]],
+  sprites : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[StepSprite]],
 ) -> Unit {
   let ticks = state.modify(fn(value) {
     value.ticks += 1
@@ -79,7 +79,7 @@ fn fixed_step(
 ///|
 fn color_feedback(
   state : @app.Res[StepState],
-  sprites : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.With[StepSprite]],
+  sprites : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.With[StepSprite]],
 ) -> Unit {
   let ticks = state.get().ticks
   try! sprites.for_each(fn(_entity, sprite) {

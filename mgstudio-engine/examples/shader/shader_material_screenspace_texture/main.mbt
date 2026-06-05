@@ -103,7 +103,7 @@ fn setup(
 ///|
 fn orbit_camera_system(
   time : @app.Res[@time.Time[Unit]],
-  cameras : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[OrbitCamera]],
+  cameras : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[OrbitCamera]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   try! cameras.view(fn(_entity, transform) {

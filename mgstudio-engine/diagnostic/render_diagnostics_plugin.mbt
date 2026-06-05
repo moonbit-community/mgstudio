@@ -37,12 +37,12 @@ pub fn RenderDiagnosticsPlugin::RenderDiagnosticsPlugin() -> RenderDiagnosticsPl
 }
 
 ///|
-pub impl @app.Plugin for RenderDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for RenderDiagnosticsPlugin with fn name(_self) {
   RENDER_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for RenderDiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for RenderDiagnosticsPlugin with fn build(self, app) {
   render_diagnostics_plugin_with(app, self)
 }
 

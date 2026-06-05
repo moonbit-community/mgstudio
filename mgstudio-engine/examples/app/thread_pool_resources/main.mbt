@@ -188,7 +188,7 @@ fn animate_cubes(
   time : @app.Res[@time.Time[Unit]],
   pool : @app.Res[SimulatedPool],
   cubes : @ecs.Query[
-    (@ecs.Comp[WorkerCube], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[WorkerCube], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

@@ -102,7 +102,7 @@ fn setup(
 fn animate_materials(
   time : @app.Res[@time.Time[Unit]],
   slots : @ecs.Query[
-    (@ecs.Comp[MaterialSlot], @ecs.Comp[@pbr.MeshMaterial3d]),
+    (@ecs.Read[MaterialSlot], @ecs.Read[@pbr.MeshMaterial3d]),
     @ecs.All,
   ],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],

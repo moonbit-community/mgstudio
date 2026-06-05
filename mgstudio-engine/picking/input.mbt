@@ -36,7 +36,7 @@ pub fn PointerInputSettings::new(
 }
 
 ///|
-pub impl @app.Resource for PointerInputSettings with resource() {
+pub impl @app.Resource for PointerInputSettings with fn resource() {
   ecs_res_key_pointer_input_settings
 }
 

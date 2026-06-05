@@ -152,7 +152,7 @@ fn set_target_material(
   target : @core.Entity?,
   material_handle : (PickableMesh) -> @asset.Handle[@pbr.StandardMaterial],
   query : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[PickableMesh]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -166,7 +166,7 @@ fn set_target_material(
 fn on_pointer_enter(
   pointer : @app.OnPointer[@app.PointerEnter],
   query : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[PickableMesh]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -177,7 +177,7 @@ fn on_pointer_enter(
 fn on_pointer_leave(
   pointer : @app.OnPointer[@app.PointerLeave],
   query : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[PickableMesh]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -188,7 +188,7 @@ fn on_pointer_leave(
 fn on_pointer_down(
   pointer : @app.OnPointer[@app.PointerDown],
   query : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[PickableMesh]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -212,7 +212,7 @@ fn on_pointer_down(
 fn on_pointer_up(
   pointer : @app.OnPointer[@app.PointerUp],
   query : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[PickableMesh]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -224,7 +224,7 @@ fn on_pointer_up(
 ///|
 fn on_pointer_move_drag(
   pointer : @app.OnPointer[@app.PointerMove],
-  transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
+  transforms : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.All],
 ) -> Unit {
   guard dragging_entity.val is Some(entity) else { return }
   let transform = transforms.get(entity) catch { _ => None }

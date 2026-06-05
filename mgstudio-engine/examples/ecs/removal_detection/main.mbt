@@ -78,7 +78,7 @@ fn remove_component(
 ///|
 fn react_on_removal(
   remove : @ecs.ComponentOn[@ecs.Remove, MyComponent],
-  query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
+  query : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   if (query.get(remove.entity()) catch { _ => None }) is Some(sprite) {
     sprite.modify(fn(value) {

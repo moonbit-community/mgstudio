@@ -30,12 +30,12 @@ pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for DeferredPlugin with name(_self) {
+pub impl @app.Plugin for DeferredPlugin with fn name(_self) {
   DEFERRED_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for DeferredPlugin with build(self, app) {
+pub impl @app.Plugin for DeferredPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   deferred_plugin_install_with(app, self)
 }
@@ -86,6 +86,6 @@ pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @ecs.reg
 )
 
 ///|
-pub impl @ecs.Component for DeferredPrepass with component() {
+pub impl @ecs.Component for DeferredPrepass with fn component() {
   ecs_key_deferred_prepass
 }

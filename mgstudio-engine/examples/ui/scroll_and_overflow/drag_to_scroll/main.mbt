@@ -160,8 +160,8 @@ fn start_drag(
   drag_state : @app.ResMut[ScrollDragState],
   scroll_nodes : @ecs.Query[
     (
-      (@core.Entity, @ecs.Comp[ScrollableNode]),
-      (@ecs.Comp[@ui.RelativeCursorPosition], @ecs.Comp[@ui.ScrollPosition]),
+      (@core.Entity, @ecs.Read[ScrollableNode]),
+      (@ecs.Read[@ui.RelativeCursorPosition], @ecs.Read[@ui.ScrollPosition]),
     ),
     @ecs.All,
   ],
@@ -193,7 +193,7 @@ fn start_drag(
 fn update_drag(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[ScrollDragState],
-  scroll_positions : @ecs.Query[@ecs.Mut[@ui.ScrollPosition], @ecs.All],
+  scroll_positions : @ecs.Query[@ecs.Write[@ui.ScrollPosition], @ecs.All],
 ) -> Unit {
   let state = drag_state.get()
   guard state.active_entity is Some(entity) else { return }

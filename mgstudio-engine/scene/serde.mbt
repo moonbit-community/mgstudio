@@ -16,34 +16,34 @@
 // Bevy source: `bevy/crates/bevy_scene/src/serde.rs`.
 
 ///|
-pub impl ToJson for SceneRoot with to_json(self) {
+pub impl ToJson for SceneRoot with fn to_json(self) {
   self.scene.id().to_json()
 }
 
 ///|
-pub impl @json.FromJson for SceneRoot with from_json(json, path) {
+pub impl @json.FromJson for SceneRoot with fn from_json(json, path) {
   let scene_id : Int = @json.from_json(json, path~)
   SceneRoot::new(@asset.Handle::new(scene_id))
 }
 
 ///|
-pub impl ToJson for SceneInstance with to_json(self) {
+pub impl ToJson for SceneInstance with fn to_json(self) {
   self.instance_id.to_json()
 }
 
 ///|
-pub impl @json.FromJson for SceneInstance with from_json(json, path) {
+pub impl @json.FromJson for SceneInstance with fn from_json(json, path) {
   let instance_id : Int = @json.from_json(json, path~)
   SceneInstance::new(instance_id)
 }
 
 ///|
-pub impl ToJson for SceneInstanceReady with to_json(self) {
+pub impl ToJson for SceneInstanceReady with fn to_json(self) {
   (self.entity, self.instance_id).to_json()
 }
 
 ///|
-pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
+pub impl @json.FromJson for SceneInstanceReady with fn from_json(json, path) {
   let pair : (@core.Entity?, Int)? = Some(@json.from_json(json, path~)) catch {
     _ => None
   }

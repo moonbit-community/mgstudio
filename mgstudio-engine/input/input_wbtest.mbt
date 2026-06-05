@@ -125,7 +125,7 @@ let test_button_input_snapshot_ref : Ref[ButtonInput[TestButton]] = Ref(
 )
 
 ///|
-pub impl ButtonInputButton for TestButton with button_id(self) {
+pub impl ButtonInputButton for TestButton with fn button_id(self) {
   match self {
     Toggle => "toggle"
     Alt => "alt"
@@ -133,7 +133,7 @@ pub impl ButtonInputButton for TestButton with button_id(self) {
 }
 
 ///|
-pub impl ButtonInputSnapshotProvider for TestButton with read_button_input() {
+pub impl ButtonInputSnapshotProvider for TestButton with fn read_button_input() {
   test_button_input_snapshot_ref.val
 }
 

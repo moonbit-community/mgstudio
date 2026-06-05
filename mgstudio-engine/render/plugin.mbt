@@ -21,11 +21,11 @@ pub fn RenderPlugin::RenderPlugin() -> RenderPlugin {
 }
 
 ///|
-pub impl @app.Plugin for RenderPlugin with name(_self) {
+pub impl @app.Plugin for RenderPlugin with fn name(_self) {
   "mgstudio.render.RenderPlugin"
 }
 
 ///|
-pub impl @app.Plugin for RenderPlugin with build(_self, app) {
+pub impl @app.Plugin for RenderPlugin with fn build(_self, app) {
   render_plugin_install(app)
 }

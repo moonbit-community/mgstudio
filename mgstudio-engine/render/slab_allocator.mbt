@@ -55,7 +55,7 @@ pub fn SlabAllocatorSettings::SlabAllocatorSettings() -> SlabAllocatorSettings {
 }
 
 ///|
-pub impl Default for SlabAllocatorSettings with default() {
+pub impl Default for SlabAllocatorSettings with fn default() {
   SlabAllocatorSettings::SlabAllocatorSettings()
 }
 

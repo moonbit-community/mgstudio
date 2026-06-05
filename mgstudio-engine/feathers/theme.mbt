@@ -172,26 +172,26 @@ let themed_text_component_key : @ecs.ComponentKey[ThemedText] = @ecs.register_co
 )
 
 ///|
-pub impl @app.Resource for UiTheme with resource() {
+pub impl @app.Resource for UiTheme with fn resource() {
   ui_theme_resource_key
 }
 
 ///|
-pub impl @ecs.Component for ThemeBackgroundColor with component() {
+pub impl @ecs.Component for ThemeBackgroundColor with fn component() {
   theme_background_color_component_key
 }
 
 ///|
-pub impl @ecs.Component for ThemeBorderColor with component() {
+pub impl @ecs.Component for ThemeBorderColor with fn component() {
   theme_border_color_component_key
 }
 
 ///|
-pub impl @ecs.Component for ThemeFontColor with component() {
+pub impl @ecs.Component for ThemeFontColor with fn component() {
   theme_font_color_component_key
 }
 
 ///|
-pub impl @ecs.Component for ThemedText with component() {
+pub impl @ecs.Component for ThemedText with fn component() {
   themed_text_component_key
 }

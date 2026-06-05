@@ -87,7 +87,7 @@ fn easy_camera_movement_system(
   decay_rate : Float,
   time : @app.Res[@time.Time[Unit]],
   cameras : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[CameraMovement]),
+    (@ecs.Write[@transform.Transform], @ecs.Read[CameraMovement]),
     @ecs.With[@camera.Camera],
   ],
 ) -> Unit {
@@ -118,7 +118,7 @@ pub fn easy_camera_movement_plugin_with(
     @app.system_config_param2(fn(
       time : @app.Res[@time.Time[Unit]],
       cameras : @ecs.Query[
-        (@ecs.Mut[@transform.Transform], @ecs.Comp[CameraMovement]),
+        (@ecs.Write[@transform.Transform], @ecs.Read[CameraMovement]),
         @ecs.With[@camera.Camera],
       ],
     ) {

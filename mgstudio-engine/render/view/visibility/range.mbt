@@ -68,12 +68,12 @@ pub fn render_visibility_range_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for RenderVisibilityRangePlugin with name(_self) {
+pub impl @app.Plugin for RenderVisibilityRangePlugin with fn name(_self) {
   RENDER_VISIBILITY_RANGE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for RenderVisibilityRangePlugin with build(self, app) {
+pub impl @app.Plugin for RenderVisibilityRangePlugin with fn build(self, app) {
   render_visibility_range_plugin_with(app, self)
 }
 
@@ -243,7 +243,7 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   if changed_ranges.is_empty() && removed_ranges.is_empty() {
     return
   }
-  let query : @ecs.Query[@ecs.Comp[@root_visibility.VisibilityRange], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[@root_visibility.VisibilityRange], @ecs.All] = @ecs.query(
     main_world,
   )
   let next_ranges : Array[(Int, @root_visibility.VisibilityRange)] = []
@@ -342,6 +342,6 @@ pub let ecs_key_render_visibility_ranges : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for RenderVisibilityRanges with resource() {
+pub impl @app.Resource for RenderVisibilityRanges with fn resource() {
   ecs_key_render_visibility_ranges
 }

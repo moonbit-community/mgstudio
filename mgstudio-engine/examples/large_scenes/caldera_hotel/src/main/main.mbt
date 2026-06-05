@@ -97,7 +97,7 @@ fn setup(
 fn orbit_camera(
   time : @app.Res[@time.Time[Unit]],
   cameras : @ecs.Query[
-    (@ecs.Comp[OrbitCamera], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[OrbitCamera], @ecs.Write[@transform.Transform]),
     @ecs.With[@pbr.Camera3d],
   ],
 ) -> Unit {

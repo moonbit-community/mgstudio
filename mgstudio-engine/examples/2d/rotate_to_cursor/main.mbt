@@ -74,7 +74,7 @@ fn setup(
 
 ///|
 fn main_camera_entity(
-  main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
+  main_camera_query : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
 ) -> @core.Entity? {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   try! main_camera_query.view(fn(entity, _camera) {
@@ -87,16 +87,16 @@ fn main_camera_entity(
 
 ///|
 fn player_movement_system(
-  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
-  main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Comp[@camera_camera.Camera], @ecs.All],
+  players : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Player]],
+  main_camera_query : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[@camera_camera.Camera], @ecs.All],
   projection_query : @ecs.Query[
-    @ecs.Comp[@camera_projection2d.Projection],
+    @ecs.Read[@camera_projection2d.Projection],
     @ecs.All,
   ],
-  transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All],
   windows : @ecs.Query[
-    @ecs.Comp[@window.Window],
+    @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> Unit {

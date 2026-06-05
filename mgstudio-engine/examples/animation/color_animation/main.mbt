@@ -321,9 +321,9 @@ fn animate_curve_linear(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[CurveLinearRgba],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[CurveLinearRgba],
     ),
     @ecs.All,
   ],
@@ -345,9 +345,9 @@ fn animate_curve_xyza(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[CurveXyza],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[CurveXyza],
     ),
     @ecs.All,
   ],
@@ -370,9 +370,9 @@ fn animate_curve_oklaba(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[CurveOklaba],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[CurveOklaba],
     ),
     @ecs.All,
   ],
@@ -395,9 +395,9 @@ fn animate_mixed_hsla(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[MixedHsla],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[MixedHsla],
     ),
     @ecs.All,
   ],
@@ -418,9 +418,9 @@ fn animate_mixed_srgba(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[MixedSrgba],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[MixedSrgba],
     ),
     @ecs.All,
   ],
@@ -441,9 +441,9 @@ fn animate_mixed_oklcha(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Mut[@sprite.Sprite],
-      @ecs.Comp[MixedOklcha],
+      @ecs.Write[@transform.Transform],
+      @ecs.Write[@sprite.Sprite],
+      @ecs.Read[MixedOklcha],
     ),
     @ecs.All,
   ],

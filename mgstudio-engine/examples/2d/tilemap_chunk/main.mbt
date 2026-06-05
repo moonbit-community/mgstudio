@@ -201,7 +201,7 @@ fn spawn_fake_player(
   materials : @app.ResMut[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],
-  chunks : @ecs.Query[@ecs.Comp[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
+  chunks : @ecs.Query[@ecs.Read[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
 ) -> Unit {
   guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
     return
@@ -220,9 +220,9 @@ fn spawn_fake_player(
 
 ///|
 fn move_player(
-  players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MovePlayer]],
+  players : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[MovePlayer]],
   time : @app.Res[@time.Time[Unit]],
-  chunks : @ecs.Query[@ecs.Comp[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
+  chunks : @ecs.Query[@ecs.Read[@sprite_tilemap_chunk.TilemapChunk], @ecs.All],
 ) -> Unit {
   guard (chunks.single() catch { _ => None }) is Some(chunk_comp) else {
     return
@@ -244,9 +244,9 @@ fn move_player(
 
 ///|
 fn update_tilemap(
-  timers : @ecs.Query[@ecs.Mut[UpdateTimer], @ecs.All],
+  timers : @ecs.Query[@ecs.Write[UpdateTimer], @ecs.All],
   tile_data_query : @ecs.Query[
-    @ecs.Mut[@sprite_tilemap_chunk.TilemapChunkTileData],
+    @ecs.Write[@sprite_tilemap_chunk.TilemapChunkTileData],
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -289,8 +289,8 @@ fn update_tilemap(
 fn first_tilemap(
   tilemaps : @ecs.Query[
     (
-      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunk],
-      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunkTileData],
+      @ecs.Read[@sprite_tilemap_chunk.TilemapChunk],
+      @ecs.Read[@sprite_tilemap_chunk.TilemapChunkTileData],
     ),
     @ecs.All,
   ],
@@ -317,8 +317,8 @@ fn first_tilemap(
 fn log_tile(
   tilemaps : @ecs.Query[
     (
-      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunk],
-      @ecs.Comp[@sprite_tilemap_chunk.TilemapChunkTileData],
+      @ecs.Read[@sprite_tilemap_chunk.TilemapChunk],
+      @ecs.Read[@sprite_tilemap_chunk.TilemapChunkTileData],
     ),
     @ecs.All,
   ],

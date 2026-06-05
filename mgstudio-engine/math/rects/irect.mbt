@@ -37,12 +37,12 @@ pub fn IRect::as_rect(self : IRect) -> Rect {
 }
 
 ///|
-pub impl ToJson for IRect with to_json(self) {
+pub impl ToJson for IRect with fn to_json(self) {
   (self.min, self.max).to_json()
 }
 
 ///|
-pub impl @json.FromJson for IRect with from_json(json, path) {
+pub impl @json.FromJson for IRect with fn from_json(json, path) {
   let (min, max) : (@math.IVec2, @math.IVec2) = @json.from_json(json, path~)
   IRect::new(min, max)
 }

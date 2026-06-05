@@ -30,12 +30,12 @@ pub fn lightmap_plugin() -> LightmapPlugin {
 }
 
 ///|
-pub impl @app.Plugin for LightmapPlugin with name(_self) {
+pub impl @app.Plugin for LightmapPlugin with fn name(_self) {
   LIGHTMAP_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LightmapPlugin with build(self, app) {
+pub impl @app.Plugin for LightmapPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   lightmap_plugin_install_with(app, self)
 }
@@ -315,7 +315,7 @@ pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @ecs.register_component
 )
 
 ///|
-pub impl @ecs.Component for Lightmap with component() {
+pub impl @ecs.Component for Lightmap with fn component() {
   ecs_key_lightmap
 }
 
@@ -330,12 +330,12 @@ let ecs_key_lightmap_plugin_state : @ecs.ResourceKey[LightmapPluginState] = @ecs
 )
 
 ///|
-pub impl @app.Resource for LightmapPluginState with resource() {
+pub impl @app.Resource for LightmapPluginState with fn resource() {
   ecs_key_lightmap_plugin_state
 }
 
 ///|
-pub impl @app.Resource for RenderLightmaps with resource() {
+pub impl @app.Resource for RenderLightmaps with fn resource() {
   ecs_key_render_lightmaps
 }
 

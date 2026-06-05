@@ -71,7 +71,7 @@ fn apply_target_sprite_color(
   target : @core.Entity?,
   color_selector : (PickableSpriteColors) -> @color.Color,
   query : @ecs.Query[
-    (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
+    (@ecs.Write[@sprite.Sprite], @ecs.Read[PickableSpriteColors]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -86,7 +86,7 @@ fn apply_target_sprite_color(
 fn pointer_enter_sprite(
   pointer : @app.OnPointer[@app.PointerEnter],
   query : @ecs.Query[
-    (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
+    (@ecs.Write[@sprite.Sprite], @ecs.Read[PickableSpriteColors]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -101,7 +101,7 @@ fn pointer_enter_sprite(
 fn pointer_leave_sprite(
   pointer : @app.OnPointer[@app.PointerLeave],
   query : @ecs.Query[
-    (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
+    (@ecs.Write[@sprite.Sprite], @ecs.Read[PickableSpriteColors]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -116,7 +116,7 @@ fn pointer_leave_sprite(
 fn pointer_down_sprite(
   pointer : @app.OnPointer[@app.PointerDown],
   query : @ecs.Query[
-    (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
+    (@ecs.Write[@sprite.Sprite], @ecs.Read[PickableSpriteColors]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -131,7 +131,7 @@ fn pointer_down_sprite(
 fn pointer_up_sprite(
   pointer : @app.OnPointer[@app.PointerUp],
   query : @ecs.Query[
-    (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
+    (@ecs.Write[@sprite.Sprite], @ecs.Read[PickableSpriteColors]),
     @ecs.All,
   ],
 ) -> Unit {

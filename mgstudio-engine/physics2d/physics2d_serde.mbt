@@ -1016,85 +1016,85 @@ fn generic_joint_from_json(
 }
 
 ///|
-pub impl ToJson for RigidBody2d with to_json(self) {
+pub impl ToJson for RigidBody2d with fn to_json(self) {
   rigid_body_type_to_json(self.body_type)
 }
 
 ///|
-pub impl @json.FromJson for RigidBody2d with from_json(json, path) {
+pub impl @json.FromJson for RigidBody2d with fn from_json(json, path) {
   RigidBody2d::{ body_type: rigid_body_type_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for ColliderShape2d with to_json(self) {
+pub impl ToJson for ColliderShape2d with fn to_json(self) {
   shape_to_json(collider_shape2d_to_rapier(self))
 }
 
 ///|
-pub impl @json.FromJson for ColliderShape2d with from_json(json, path) {
+pub impl @json.FromJson for ColliderShape2d with fn from_json(json, path) {
   collider_shape2d_from_rapier_shape(shape_from_json(json, path))
 }
 
 ///|
-pub impl ToJson for Collider2d with to_json(self) {
+pub impl ToJson for Collider2d with fn to_json(self) {
   (self.shape.to_json(), self.sensor).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Collider2d with from_json(json, path) {
+pub impl @json.FromJson for Collider2d with fn from_json(json, path) {
   let (shape_json, sensor) : (Json, Bool) = @json.from_json(json, path~)
   Collider2d::{ shape: @json.from_json(shape_json, path~), sensor }
 }
 
 ///|
-pub impl ToJson for ColliderParent2d with to_json(self) {
+pub impl ToJson for ColliderParent2d with fn to_json(self) {
   entity_to_json(self.parent)
 }
 
 ///|
-pub impl @json.FromJson for ColliderParent2d with from_json(json, path) {
+pub impl @json.FromJson for ColliderParent2d with fn from_json(json, path) {
   ColliderParent2d::{ parent: entity_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for Velocity2d with to_json(self) {
+pub impl ToJson for Velocity2d with fn to_json(self) {
   (self.linvel, self.angvel).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Velocity2d with from_json(json, path) {
+pub impl @json.FromJson for Velocity2d with fn from_json(json, path) {
   let (linvel, angvel) : (@math.Vec2, Float) = @json.from_json(json, path~)
   Velocity2d::{ linvel, angvel }
 }
 
 ///|
-pub impl ToJson for Damping2d with to_json(self) {
+pub impl ToJson for Damping2d with fn to_json(self) {
   (self.linear, self.angular).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Damping2d with from_json(json, path) {
+pub impl @json.FromJson for Damping2d with fn from_json(json, path) {
   let (linear, angular) : (Float, Float) = @json.from_json(json, path~)
   Damping2d::{ linear, angular }
 }
 
 ///|
-pub impl ToJson for GravityScale2d with to_json(self) {
+pub impl ToJson for GravityScale2d with fn to_json(self) {
   self.scale.to_json()
 }
 
 ///|
-pub impl @json.FromJson for GravityScale2d with from_json(json, path) {
+pub impl @json.FromJson for GravityScale2d with fn from_json(json, path) {
   GravityScale2d::{ scale: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for LockedAxes2d with to_json(self) {
+pub impl ToJson for LockedAxes2d with fn to_json(self) {
   (self.lock_translations, self.lock_rotations).to_json()
 }
 
 ///|
-pub impl @json.FromJson for LockedAxes2d with from_json(json, path) {
+pub impl @json.FromJson for LockedAxes2d with fn from_json(json, path) {
   let (lock_translations, lock_rotations) : (Bool, Bool) = @json.from_json(
     json,
     path~,
@@ -1103,54 +1103,54 @@ pub impl @json.FromJson for LockedAxes2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for Ccd2d with to_json(self) {
+pub impl ToJson for Ccd2d with fn to_json(self) {
   (self.enabled, self.soft_prediction).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Ccd2d with from_json(json, path) {
+pub impl @json.FromJson for Ccd2d with fn from_json(json, path) {
   let (enabled, soft_prediction) : (Bool, Float) = @json.from_json(json, path~)
   Ccd2d::{ enabled, soft_prediction }
 }
 
 ///|
-pub impl ToJson for Dominance2d with to_json(self) {
+pub impl ToJson for Dominance2d with fn to_json(self) {
   self.group.to_json()
 }
 
 ///|
-pub impl @json.FromJson for Dominance2d with from_json(json, path) {
+pub impl @json.FromJson for Dominance2d with fn from_json(json, path) {
   Dominance2d::{ group: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for Sleeping2d with to_json(self) {
+pub impl ToJson for Sleeping2d with fn to_json(self) {
   self.sleeping.to_json()
 }
 
 ///|
-pub impl @json.FromJson for Sleeping2d with from_json(json, path) {
+pub impl @json.FromJson for Sleeping2d with fn from_json(json, path) {
   Sleeping2d::{ sleeping: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for ExternalForce2d with to_json(self) {
+pub impl ToJson for ExternalForce2d with fn to_json(self) {
   (self.force, self.torque).to_json()
 }
 
 ///|
-pub impl @json.FromJson for ExternalForce2d with from_json(json, path) {
+pub impl @json.FromJson for ExternalForce2d with fn from_json(json, path) {
   let (force, torque) : (@math.Vec2, Float) = @json.from_json(json, path~)
   ExternalForce2d::{ force, torque }
 }
 
 ///|
-pub impl ToJson for ExternalImpulse2d with to_json(self) {
+pub impl ToJson for ExternalImpulse2d with fn to_json(self) {
   (self.impulse, self.torque_impulse).to_json()
 }
 
 ///|
-pub impl @json.FromJson for ExternalImpulse2d with from_json(json, path) {
+pub impl @json.FromJson for ExternalImpulse2d with fn from_json(json, path) {
   let (impulse, torque_impulse) : (@math.Vec2, Float) = @json.from_json(
     json,
     path~,
@@ -1159,12 +1159,12 @@ pub impl @json.FromJson for ExternalImpulse2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for ContactForceEventThreshold2d with to_json(self) {
+pub impl ToJson for ContactForceEventThreshold2d with fn to_json(self) {
   self.threshold.to_json()
 }
 
 ///|
-pub impl @json.FromJson for ContactForceEventThreshold2d with from_json(
+pub impl @json.FromJson for ContactForceEventThreshold2d with fn from_json(
   json,
   path,
 ) {
@@ -1172,62 +1172,65 @@ pub impl @json.FromJson for ContactForceEventThreshold2d with from_json(
 }
 
 ///|
-pub impl ToJson for ColliderDensity2d with to_json(self) {
+pub impl ToJson for ColliderDensity2d with fn to_json(self) {
   self.density.to_json()
 }
 
 ///|
-pub impl @json.FromJson for ColliderDensity2d with from_json(json, path) {
+pub impl @json.FromJson for ColliderDensity2d with fn from_json(json, path) {
   ColliderDensity2d::{ density: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for Friction2d with to_json(self) {
+pub impl ToJson for Friction2d with fn to_json(self) {
   self.coefficient.to_json()
 }
 
 ///|
-pub impl @json.FromJson for Friction2d with from_json(json, path) {
+pub impl @json.FromJson for Friction2d with fn from_json(json, path) {
   Friction2d::{ coefficient: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for FrictionCombineRule2d with to_json(self) {
+pub impl ToJson for FrictionCombineRule2d with fn to_json(self) {
   combine_rule_to_json(self.rule)
 }
 
 ///|
-pub impl @json.FromJson for FrictionCombineRule2d with from_json(json, path) {
+pub impl @json.FromJson for FrictionCombineRule2d with fn from_json(json, path) {
   FrictionCombineRule2d::{ rule: combine_rule_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for Restitution2d with to_json(self) {
+pub impl ToJson for Restitution2d with fn to_json(self) {
   self.coefficient.to_json()
 }
 
 ///|
-pub impl @json.FromJson for Restitution2d with from_json(json, path) {
+pub impl @json.FromJson for Restitution2d with fn from_json(json, path) {
   Restitution2d::{ coefficient: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for RestitutionCombineRule2d with to_json(self) {
+pub impl ToJson for RestitutionCombineRule2d with fn to_json(self) {
   combine_rule_to_json(self.rule)
 }
 
 ///|
-pub impl @json.FromJson for RestitutionCombineRule2d with from_json(json, path) {
+pub impl @json.FromJson for RestitutionCombineRule2d with fn from_json(
+  json,
+  path,
+) {
   RestitutionCombineRule2d::{ rule: combine_rule_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for CollisionGroups2d with to_json(self) {
+pub impl ToJson for CollisionGroups2d with fn to_json(self) {
   (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode)).to_json()
 }
 
 ///|
-pub impl @json.FromJson for CollisionGroups2d with from_json(json, path) {
+pub impl @json.FromJson for CollisionGroups2d with fn from_json(json, path) {
   let (memberships, filter, test_mode_json) : (Int, Int, Json) = @json.from_json(
     json,
     path~,
@@ -1240,12 +1243,12 @@ pub impl @json.FromJson for CollisionGroups2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for SolverGroups2d with to_json(self) {
+pub impl ToJson for SolverGroups2d with fn to_json(self) {
   (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode)).to_json()
 }
 
 ///|
-pub impl @json.FromJson for SolverGroups2d with from_json(json, path) {
+pub impl @json.FromJson for SolverGroups2d with fn from_json(json, path) {
   let (memberships, filter, test_mode_json) : (Int, Int, Json) = @json.from_json(
     json,
     path~,
@@ -1258,86 +1261,89 @@ pub impl @json.FromJson for SolverGroups2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for ColliderEnabled2d with to_json(self) {
+pub impl ToJson for ColliderEnabled2d with fn to_json(self) {
   self.enabled.to_json()
 }
 
 ///|
-pub impl @json.FromJson for ColliderEnabled2d with from_json(json, path) {
+pub impl @json.FromJson for ColliderEnabled2d with fn from_json(json, path) {
   ColliderEnabled2d::{ enabled: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for ActiveCollisionTypes2d with to_json(self) {
+pub impl ToJson for ActiveCollisionTypes2d with fn to_json(self) {
   active_collision_types_to_json(self.types)
 }
 
 ///|
-pub impl @json.FromJson for ActiveCollisionTypes2d with from_json(json, path) {
+pub impl @json.FromJson for ActiveCollisionTypes2d with fn from_json(json, path) {
   ActiveCollisionTypes2d::{
     types: active_collision_types_from_json(json, path),
   }
 }
 
 ///|
-pub impl ToJson for ActiveEvents2d with to_json(self) {
+pub impl ToJson for ActiveEvents2d with fn to_json(self) {
   active_events_to_json(self.events)
 }
 
 ///|
-pub impl @json.FromJson for ActiveEvents2d with from_json(json, path) {
+pub impl @json.FromJson for ActiveEvents2d with fn from_json(json, path) {
   ActiveEvents2d::{ events: active_events_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for ActiveHooks2d with to_json(self) {
+pub impl ToJson for ActiveHooks2d with fn to_json(self) {
   active_hooks_to_json(self.hooks)
 }
 
 ///|
-pub impl @json.FromJson for ActiveHooks2d with from_json(json, path) {
+pub impl @json.FromJson for ActiveHooks2d with fn from_json(json, path) {
   ActiveHooks2d::{ hooks: active_hooks_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for ContactSkin2d with to_json(self) {
+pub impl ToJson for ContactSkin2d with fn to_json(self) {
   self.skin.to_json()
 }
 
 ///|
-pub impl @json.FromJson for ContactSkin2d with from_json(json, path) {
+pub impl @json.FromJson for ContactSkin2d with fn from_json(json, path) {
   ContactSkin2d::{ skin: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for ColliderMassProperties2d with to_json(self) {
+pub impl ToJson for ColliderMassProperties2d with fn to_json(self) {
   rapier_mass_properties_to_json(self.mass_properties)
 }
 
 ///|
-pub impl @json.FromJson for ColliderMassProperties2d with from_json(json, path) {
+pub impl @json.FromJson for ColliderMassProperties2d with fn from_json(
+  json,
+  path,
+) {
   ColliderMassProperties2d::{
     mass_properties: rapier_mass_properties_from_json(json, path),
   }
 }
 
 ///|
-pub impl ToJson for RigidBodyEnabled2d with to_json(self) {
+pub impl ToJson for RigidBodyEnabled2d with fn to_json(self) {
   self.enabled.to_json()
 }
 
 ///|
-pub impl @json.FromJson for RigidBodyEnabled2d with from_json(json, path) {
+pub impl @json.FromJson for RigidBodyEnabled2d with fn from_json(json, path) {
   RigidBodyEnabled2d::{ enabled: @json.from_json(json, path~) }
 }
 
 ///|
-pub impl ToJson for AdditionalMassProperties2d with to_json(self) {
+pub impl ToJson for AdditionalMassProperties2d with fn to_json(self) {
   rigid_body_additional_mass_props_to_json(self.props)
 }
 
 ///|
-pub impl @json.FromJson for AdditionalMassProperties2d with from_json(
+pub impl @json.FromJson for AdditionalMassProperties2d with fn from_json(
   json,
   path,
 ) {
@@ -1347,12 +1353,12 @@ pub impl @json.FromJson for AdditionalMassProperties2d with from_json(
 }
 
 ///|
-pub impl ToJson for AdditionalSolverIterations2d with to_json(self) {
+pub impl ToJson for AdditionalSolverIterations2d with fn to_json(self) {
   self.iterations.to_json()
 }
 
 ///|
-pub impl @json.FromJson for AdditionalSolverIterations2d with from_json(
+pub impl @json.FromJson for AdditionalSolverIterations2d with fn from_json(
   json,
   path,
 ) {
@@ -1360,27 +1366,27 @@ pub impl @json.FromJson for AdditionalSolverIterations2d with from_json(
 }
 
 ///|
-pub impl ToJson for RapierBodyHandle2d with to_json(self) {
+pub impl ToJson for RapierBodyHandle2d with fn to_json(self) {
   rigid_body_handle_to_json(self.handle)
 }
 
 ///|
-pub impl @json.FromJson for RapierBodyHandle2d with from_json(json, path) {
+pub impl @json.FromJson for RapierBodyHandle2d with fn from_json(json, path) {
   RapierBodyHandle2d::{ handle: rigid_body_handle_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for RapierColliderHandle2d with to_json(self) {
+pub impl ToJson for RapierColliderHandle2d with fn to_json(self) {
   collider_handle_to_json(self.handle)
 }
 
 ///|
-pub impl @json.FromJson for RapierColliderHandle2d with from_json(json, path) {
+pub impl @json.FromJson for RapierColliderHandle2d with fn from_json(json, path) {
   RapierColliderHandle2d::{ handle: collider_handle_from_json(json, path) }
 }
 
 ///|
-pub impl ToJson for CharacterCollision2d with to_json(self) {
+pub impl ToJson for CharacterCollision2d with fn to_json(self) {
   (
     entity_option_to_json(self.other),
     self.toi,
@@ -1392,7 +1398,7 @@ pub impl ToJson for CharacterCollision2d with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for CharacterCollision2d with from_json(json, path) {
+pub impl @json.FromJson for CharacterCollision2d with fn from_json(json, path) {
   let (
     other_json,
     toi,
@@ -1415,12 +1421,12 @@ pub impl @json.FromJson for CharacterCollision2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for KinematicCharacterController2d with to_json(self) {
+pub impl ToJson for KinematicCharacterController2d with fn to_json(self) {
   (self.translation, kinematic_controller_to_json(self.controller)).to_json()
 }
 
 ///|
-pub impl @json.FromJson for KinematicCharacterController2d with from_json(
+pub impl @json.FromJson for KinematicCharacterController2d with fn from_json(
   json,
   path,
 ) {
@@ -1435,7 +1441,7 @@ pub impl @json.FromJson for KinematicCharacterController2d with from_json(
 }
 
 ///|
-pub impl ToJson for KinematicCharacterControllerOutput2d with to_json(self) {
+pub impl ToJson for KinematicCharacterControllerOutput2d with fn to_json(self) {
   (
     self.effective_translation,
     self.grounded,
@@ -1445,7 +1451,7 @@ pub impl ToJson for KinematicCharacterControllerOutput2d with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for KinematicCharacterControllerOutput2d with from_json(
+pub impl @json.FromJson for KinematicCharacterControllerOutput2d with fn from_json(
   json,
   path,
 ) {
@@ -1464,12 +1470,12 @@ pub impl @json.FromJson for KinematicCharacterControllerOutput2d with from_json(
 }
 
 ///|
-pub impl ToJson for ImpulseJoint2d with to_json(self) {
+pub impl ToJson for ImpulseJoint2d with fn to_json(self) {
   (entity_to_json(self.other), generic_joint_to_json(self.data), self.wake_up).to_json()
 }
 
 ///|
-pub impl @json.FromJson for ImpulseJoint2d with from_json(json, path) {
+pub impl @json.FromJson for ImpulseJoint2d with fn from_json(json, path) {
   let (other_json, data_json, wake_up) : (Json, Json, Bool) = @json.from_json(
     json,
     path~,
@@ -1482,12 +1488,12 @@ pub impl @json.FromJson for ImpulseJoint2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for RapierImpulseJointHandle2d with to_json(self) {
+pub impl ToJson for RapierImpulseJointHandle2d with fn to_json(self) {
   (impulse_joint_handle_to_json(self.handle), entity_to_json(self.other)).to_json()
 }
 
 ///|
-pub impl @json.FromJson for RapierImpulseJointHandle2d with from_json(
+pub impl @json.FromJson for RapierImpulseJointHandle2d with fn from_json(
   json,
   path,
 ) {
@@ -1499,7 +1505,7 @@ pub impl @json.FromJson for RapierImpulseJointHandle2d with from_json(
 }
 
 ///|
-pub impl ToJson for MultibodyJoint2d with to_json(self) {
+pub impl ToJson for MultibodyJoint2d with fn to_json(self) {
   (
     entity_to_json(self.other),
     generic_joint_to_json(self.data),
@@ -1509,7 +1515,7 @@ pub impl ToJson for MultibodyJoint2d with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for MultibodyJoint2d with from_json(json, path) {
+pub impl @json.FromJson for MultibodyJoint2d with fn from_json(json, path) {
   let (other_json, data_json, wake_up, kinematic) : (Json, Json, Bool, Bool) = @json.from_json(
     json,
     path~,
@@ -1523,12 +1529,12 @@ pub impl @json.FromJson for MultibodyJoint2d with from_json(json, path) {
 }
 
 ///|
-pub impl ToJson for RapierMultibodyJointHandle2d with to_json(self) {
+pub impl ToJson for RapierMultibodyJointHandle2d with fn to_json(self) {
   (multibody_joint_handle_to_json(self.handle), entity_to_json(self.other)).to_json()
 }
 
 ///|
-pub impl @json.FromJson for RapierMultibodyJointHandle2d with from_json(
+pub impl @json.FromJson for RapierMultibodyJointHandle2d with fn from_json(
   json,
   path,
 ) {
@@ -1557,7 +1563,7 @@ let physics2d_serde_runtime_state : Physics2dSerdeRuntimeState = {
 let physics2d_config_serde_values : Map[Int, Physics2dConfig] = {}
 
 ///|
-pub impl ToJson for Physics2dConfig with to_json(self) {
+pub impl ToJson for Physics2dConfig with fn to_json(self) {
   let id = physics2d_serde_runtime_state.config_next_id
   physics2d_serde_runtime_state.config_next_id = id + 1
   physics2d_config_serde_values.set(id, self)
@@ -1565,7 +1571,7 @@ pub impl ToJson for Physics2dConfig with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics2dConfig with from_json(json, path) {
+pub impl @json.FromJson for Physics2dConfig with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics2d_config_serde_values
   .get(id)
@@ -1576,7 +1582,7 @@ pub impl @json.FromJson for Physics2dConfig with from_json(json, path) {
 let physics2d_events_serde_values : Map[Int, Physics2dEvents] = {}
 
 ///|
-pub impl ToJson for Physics2dEvents with to_json(self) {
+pub impl ToJson for Physics2dEvents with fn to_json(self) {
   let id = physics2d_serde_runtime_state.events_next_id
   physics2d_serde_runtime_state.events_next_id = id + 1
   physics2d_events_serde_values.set(id, self)
@@ -1584,7 +1590,7 @@ pub impl ToJson for Physics2dEvents with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics2dEvents with from_json(json, path) {
+pub impl @json.FromJson for Physics2dEvents with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics2d_events_serde_values.get(id).unwrap_or(Physics2dEvents::new())
 }
@@ -1593,7 +1599,7 @@ pub impl @json.FromJson for Physics2dEvents with from_json(json, path) {
 let physics2d_context_serde_values : Map[Int, Physics2dContext] = {}
 
 ///|
-pub impl ToJson for Physics2dContext with to_json(self) {
+pub impl ToJson for Physics2dContext with fn to_json(self) {
   let id = physics2d_serde_runtime_state.context_next_id
   physics2d_serde_runtime_state.context_next_id = id + 1
   physics2d_context_serde_values.set(id, self)
@@ -1601,7 +1607,7 @@ pub impl ToJson for Physics2dContext with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Physics2dContext with from_json(json, path) {
+pub impl @json.FromJson for Physics2dContext with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
   physics2d_context_serde_values.get(id).unwrap_or(Physics2dContext::new())
 }

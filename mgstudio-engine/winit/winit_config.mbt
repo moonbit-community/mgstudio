@@ -94,6 +94,6 @@ let ecs_key_winit_settings : @ecs.ResourceKey[WinitSettings] = @ecs.register_res
 )
 
 ///|
-pub impl @app.Resource for WinitSettings with resource() {
+pub impl @app.Resource for WinitSettings with fn resource() {
   ecs_key_winit_settings
 }

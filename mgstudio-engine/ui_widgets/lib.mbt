@@ -26,27 +26,30 @@ let activate_event_key : @ecs.EventKey[Activate] = @ecs.register_event(
 )
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with observer_event() {
+pub impl @ecs.TriggerEvent for Activate with fn observer_event() {
   activate_event_key
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with observer_entity(self) {
+pub impl @ecs.TriggerEvent for Activate with fn observer_entity(self) {
   Some(self.entity)
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with set_observer_entity(_self, entity) {
+pub impl @ecs.TriggerEvent for Activate with fn set_observer_entity(
+  _self,
+  entity,
+) {
   Activate::{ entity, }
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with auto_propagate(_self) {
+pub impl @ecs.TriggerEvent for Activate with fn auto_propagate(_self) {
   false
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with debug_name() {
+pub impl @ecs.TriggerEvent for Activate with fn debug_name() {
   "Activate"
 }
 
@@ -68,12 +71,12 @@ let bool_value_change_event_key : @ecs.EventKey[ValueChange[Bool]] = @ecs.regist
 )
 
 ///|
-impl ValueChangeValue for Bool with value_change_value_debug_name() {
+impl ValueChangeValue for Bool with fn value_change_value_debug_name() {
   "Bool"
 }
 
 ///|
-impl ValueChangeValue for Bool with value_change_event_key() {
+impl ValueChangeValue for Bool with fn value_change_event_key() {
   bool_value_change_event_key
 }
 
@@ -83,12 +86,12 @@ let float_value_change_event_key : @ecs.EventKey[ValueChange[Float]] = @ecs.regi
 )
 
 ///|
-impl ValueChangeValue for Float with value_change_value_debug_name() {
+impl ValueChangeValue for Float with fn value_change_value_debug_name() {
   "Float"
 }
 
 ///|
-impl ValueChangeValue for Float with value_change_event_key() {
+impl ValueChangeValue for Float with fn value_change_event_key() {
   float_value_change_event_key
 }
 
@@ -98,12 +101,12 @@ let entity_value_change_event_key : @ecs.EventKey[ValueChange[@core.Entity]] = @
 )
 
 ///|
-impl ValueChangeValue for @core.Entity with value_change_value_debug_name() {
+impl ValueChangeValue for @core.Entity with fn value_change_value_debug_name() {
   "mgstudio_core::Entity"
 }
 
 ///|
-impl ValueChangeValue for @core.Entity with value_change_event_key() {
+impl ValueChangeValue for @core.Entity with fn value_change_event_key() {
   entity_value_change_event_key
 }
 
@@ -115,19 +118,19 @@ fn[T : ValueChangeValue] value_change_event_key() -> @ecs.EventKey[
 }
 
 ///|
-pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with observer_event() {
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn observer_event() {
   value_change_event_key()
 }
 
 ///|
-pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with observer_entity(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn observer_entity(
   self,
 ) {
   Some(self.source)
 }
 
 ///|
-pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn set_observer_entity(
   self,
   entity,
 ) {
@@ -135,14 +138,14 @@ pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with set_obs
 }
 
 ///|
-pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with auto_propagate(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn auto_propagate(
   _self,
 ) {
   false
 }
 
 ///|
-pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn debug_name() {
   "ValueChange"
 }
 
@@ -179,12 +182,12 @@ pub fn PopoverWidgetPlugin::PopoverWidgetPlugin() -> PopoverWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for PopoverWidgetPlugin with name(_self) {
+pub impl @app.Plugin for PopoverWidgetPlugin with fn name(_self) {
   UI_WIDGETS_POPOVER_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for PopoverWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for PopoverWidgetPlugin with fn build(_self, app) {
   popover_plugin(app)
 }
 
@@ -197,12 +200,12 @@ pub fn ButtonWidgetPlugin::ButtonWidgetPlugin() -> ButtonWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ButtonWidgetPlugin with name(_self) {
+pub impl @app.Plugin for ButtonWidgetPlugin with fn name(_self) {
   UI_WIDGETS_BUTTON_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ButtonWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for ButtonWidgetPlugin with fn build(_self, app) {
   button_plugin(app)
 }
 
@@ -215,12 +218,12 @@ pub fn CheckboxWidgetPlugin::CheckboxWidgetPlugin() -> CheckboxWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for CheckboxWidgetPlugin with name(_self) {
+pub impl @app.Plugin for CheckboxWidgetPlugin with fn name(_self) {
   UI_WIDGETS_CHECKBOX_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CheckboxWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for CheckboxWidgetPlugin with fn build(_self, app) {
   checkbox_plugin(app)
 }
 
@@ -233,12 +236,12 @@ pub fn MenuWidgetPlugin::MenuWidgetPlugin() -> MenuWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for MenuWidgetPlugin with name(_self) {
+pub impl @app.Plugin for MenuWidgetPlugin with fn name(_self) {
   UI_WIDGETS_MENU_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MenuWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for MenuWidgetPlugin with fn build(_self, app) {
   menu_plugin(app)
 }
 
@@ -251,12 +254,12 @@ pub fn RadioGroupWidgetPlugin::RadioGroupWidgetPlugin() -> RadioGroupWidgetPlugi
 }
 
 ///|
-pub impl @app.Plugin for RadioGroupWidgetPlugin with name(_self) {
+pub impl @app.Plugin for RadioGroupWidgetPlugin with fn name(_self) {
   UI_WIDGETS_RADIO_GROUP_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for RadioGroupWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for RadioGroupWidgetPlugin with fn build(_self, app) {
   radio_group_plugin(app)
 }
 
@@ -269,12 +272,12 @@ pub fn ScrollbarWidgetPlugin::ScrollbarWidgetPlugin() -> ScrollbarWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for ScrollbarWidgetPlugin with name(_self) {
+pub impl @app.Plugin for ScrollbarWidgetPlugin with fn name(_self) {
   UI_WIDGETS_SCROLLBAR_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ScrollbarWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for ScrollbarWidgetPlugin with fn build(_self, app) {
   scrollbar_plugin(app)
 }
 
@@ -287,12 +290,12 @@ pub fn SliderWidgetPlugin::SliderWidgetPlugin() -> SliderWidgetPlugin {
 }
 
 ///|
-pub impl @app.Plugin for SliderWidgetPlugin with name(_self) {
+pub impl @app.Plugin for SliderWidgetPlugin with fn name(_self) {
   UI_WIDGETS_SLIDER_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SliderWidgetPlugin with build(_self, app) {
+pub impl @app.Plugin for SliderWidgetPlugin with fn build(_self, app) {
   slider_plugin(app)
 }
 
@@ -317,12 +320,12 @@ pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for UiWidgetsPlugins with name(_self) {
+pub impl @app.Plugin for UiWidgetsPlugins with fn name(_self) {
   UI_WIDGETS_PLUGINS_NAME
 }
 
 ///|
-pub impl @app.Plugin for UiWidgetsPlugins with build(_self, app) {
+pub impl @app.Plugin for UiWidgetsPlugins with fn build(_self, app) {
   app.add_plugins(UiWidgetsPlugins::build())
 }
 
@@ -340,7 +343,7 @@ let ui_widgets_plugin_marker_key : @ecs.ResourceKey[UiWidgetsPluginMarker] = @ec
 )
 
 ///|
-pub impl @app.Resource for UiWidgetsPluginMarker with resource() {
+pub impl @app.Resource for UiWidgetsPluginMarker with fn resource() {
   ui_widgets_plugin_marker_key
 }
 

@@ -520,7 +520,7 @@ fn setup(
 
 ///|
 fn rotate(
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Shape]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Shape]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_seconds() / 2.0F
@@ -536,7 +536,7 @@ fn rotate(
 ///|
 fn advance_rows(
   query : @ecs.Query[
-    (@ecs.Mut[Row], @ecs.Mut[@transform.Transform]),
+    (@ecs.Write[Row], @ecs.Write[@transform.Transform]),
     @ecs.With[Shape],
   ],
 ) -> Unit {

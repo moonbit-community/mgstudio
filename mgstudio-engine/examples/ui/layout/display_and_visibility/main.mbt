@@ -210,7 +210,7 @@ fn next_visibility(
 ///|
 fn find_target_entity(world : @ecs.World, target_index : Int) -> @core.Entity? {
   let found : Ref[@core.Entity?] = Ref(None)
-  let query : @ecs.Query[(@core.Entity, @ecs.Comp[TargetPanel]), @ecs.All] = @ecs.query(
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[TargetPanel]), @ecs.All] = @ecs.query(
     world,
   )
   try! query.view(fn(_entity, data) {
@@ -523,9 +523,9 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
   let triggered : Array[ToggleButtonAction] = []
   let edge_query : @ecs.Query[
     (
-      @ecs.Comp[ToggleButtonAction],
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Mut[ButtonPressState],
+      @ecs.Read[ToggleButtonAction],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Write[ButtonPressState],
     ),
     @ecs.With[@ui.Button],
   ] = @ecs.query_filtered(world, @ecs.With::new(@ui.Button::component()))
@@ -544,9 +544,9 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
 
   let button_query : @ecs.Query[
     (
-      @ecs.Comp[ToggleButtonAction],
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Comp[@hierarchy.Children],
+      @ecs.Read[ToggleButtonAction],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@hierarchy.Children],
     ),
     @ecs.With[@ui.Button],
   ] = @ecs.query_filtered(world, @ecs.With::new(@ui.Button::component()))

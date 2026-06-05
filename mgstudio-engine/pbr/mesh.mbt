@@ -652,7 +652,7 @@ pub fn render3d_extract_morphs(
   @pbr_render.morph_indices_swap_and_reset(morph_indices_value)
   @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_value)
   let mesh_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    (@core.Entity, @ecs.Read[@mesh.Mesh3d], @ecs.Read[@mesh.MorphTargetMesh]),
     @ecs.All,
   ] = @ecs.query(source_world)
   let morph_weight_updates : Array[(@core.Entity, @mesh.MorphWeights)] = []

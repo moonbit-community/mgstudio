@@ -92,13 +92,13 @@ fn setup(
 fn button_system(
   buttons : @ecs.Query[
     (
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Comp[@hierarchy.Children],
-      @ecs.Mut[@ui.ImageNode],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@hierarchy.Children],
+      @ecs.Write[@ui.ImageNode],
     ),
     @ecs.With[@ui.Button],
   ],
-  texts : @ecs.Query[@ecs.Mut[@text.Text], @ecs.All],
+  texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.All],
 ) -> Unit {
   try! buttons.view(fn(_entity, data) {
     let (interaction, children, image) = data

@@ -133,7 +133,7 @@ fn update_text(
   mode : @app.Res[Mode],
   clicks : @app.Res[ClickCount],
   text_query : @ecs.Query[
-    (@ecs.Mut[@text.Text], @ecs.Mut[@text.TextColor]),
+    (@ecs.Write[@text.Text], @ecs.Write[@text.TextColor]),
     @ecs.With[HotText],
   ],
 ) -> Unit {

@@ -88,12 +88,12 @@ pub fn PreviousHoverMap::PreviousHoverMap() -> PreviousHoverMap {
 }
 
 ///|
-pub impl @app.Resource for HoverMap with resource() {
+pub impl @app.Resource for HoverMap with fn resource() {
   ecs_res_key_hover_map
 }
 
 ///|
-pub impl @app.Resource for PreviousHoverMap with resource() {
+pub impl @app.Resource for PreviousHoverMap with fn resource() {
   ecs_res_key_previous_hover_map
 }
 
@@ -393,7 +393,7 @@ pub fn PickingState::set_hovered(
 }
 
 ///|
-pub impl @app.Resource for PickingState with resource() {
+pub impl @app.Resource for PickingState with fn resource() {
   ecs_res_key_picking_state
 }
 

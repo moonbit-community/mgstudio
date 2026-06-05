@@ -60,11 +60,11 @@ pub let ecs_key_primary_monitor : @ecs.ComponentKey[PrimaryMonitor] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for Monitor with component() {
+pub impl @ecs.Component for Monitor with fn component() {
   ecs_key_monitor
 }
 
 ///|
-pub impl @ecs.Component for PrimaryMonitor with component() {
+pub impl @ecs.Component for PrimaryMonitor with fn component() {
   ecs_key_primary_monitor
 }

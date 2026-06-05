@@ -22,12 +22,12 @@ pub struct AnimationWeights {
 }
 
 ///|
-pub impl ToJson for AnimationWeights with to_json(self) {
+pub impl ToJson for AnimationWeights with fn to_json(self) {
   self.values.to_json()
 }
 
 ///|
-pub impl @json.FromJson for AnimationWeights with from_json(json, path) {
+pub impl @json.FromJson for AnimationWeights with fn from_json(json, path) {
   AnimationWeights::new(@json.from_json(json, path~))
 }
 

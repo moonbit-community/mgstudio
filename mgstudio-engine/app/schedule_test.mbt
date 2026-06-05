@@ -1540,7 +1540,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
     })
     .add_system_param(fn(
       query : @ecs.Query[
-        (@ecs.Mut[EcsPosition], @ecs.Comp[EcsVelocity]),
+        (@ecs.Write[EcsPosition], @ecs.Read[EcsVelocity]),
         @ecs.All,
       ],
     ) {
@@ -1554,7 +1554,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
 
   let query_world = app.world()
   let value_ref : Ref[Int] = Ref(0)
-  let query : @ecs.Query[@ecs.Comp[EcsPosition], @ecs.All] = @ecs.query(
+  let query : @ecs.Query[@ecs.Read[EcsPosition], @ecs.All] = @ecs.query(
     query_world,
   )
   try! query.view(fn(_entity, position) { value_ref.val = position.value().x })
@@ -1568,8 +1568,8 @@ test "app: schedule reports conflicting query params during execution validation
   let app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_system_param2(fn(
-      _lhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
-      _rhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _lhs : @ecs.Query[@ecs.Write[EcsPosition], @ecs.All],
+      _rhs : @ecs.Query[@ecs.Write[EcsPosition], @ecs.All],
     ) {
       ran.val = true
     })
@@ -1594,9 +1594,9 @@ test "app: add_system_param5 reports conflicting query params during execution v
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_system_param5(fn(
       _p1 : Param1,
-      _lhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _lhs : @ecs.Query[@ecs.Write[EcsPosition], @ecs.All],
       _p2 : Param2,
-      _rhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _rhs : @ecs.Query[@ecs.Write[EcsPosition], @ecs.All],
       _p3 : Param3,
     ) {
       ran.val = true

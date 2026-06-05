@@ -178,7 +178,7 @@ test "app: Query1 system param exposes plain mutable query" {
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
-    query : @ecs.Query[@ecs.Mut[QueryPosition], @ecs.All],
+    query : @ecs.Query[@ecs.Write[QueryPosition], @ecs.All],
   ) {
     counts.push(query.count())
     try! query.view(fn(_entity, position) {
@@ -207,7 +207,7 @@ test "app: Query system param refreshes after initially empty match" {
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param2(fn(
     commands : Commands,
-    query : @ecs.Query[@ecs.Mut[QueryPosition], @ecs.All],
+    query : @ecs.Query[@ecs.Write[QueryPosition], @ecs.All],
   ) {
     counts.push(query.count())
     try! query.view(fn(_entity, position) {
@@ -255,7 +255,7 @@ test "app: filtered query system param builds filters from component owners" {
   let hit_counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
     query : @ecs.Query[
-      (@ecs.Comp[QueryPosition], @ecs.Mut[QueryVelocity]),
+      (@ecs.Read[QueryPosition], @ecs.Write[QueryVelocity]),
       @ecs.Without[QueryMarker],
     ],
   ) {
@@ -298,9 +298,9 @@ test "app: optional query system param preserves some and none branches" {
   let mut app = App::new(world).add_system_param(fn(
     query : @ecs.Query[
       (
-        @ecs.Comp[QueryPosition],
-        @ecs.Mut[QueryVelocity],
-        @ecs.Comp[QueryMarker]?,
+        @ecs.Read[QueryPosition],
+        @ecs.Write[QueryVelocity],
+        @ecs.Read[QueryMarker]?,
       ),
       @ecs.All,
     ],
@@ -352,11 +352,11 @@ test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
     system_config_param3(fn(
       visible_entities : @ecs.Query[@core.Entity, @ecs.Allow[@ecs.Disabled]],
       has_query : @ecs.Query[
-        (@ecs.Comp[QueryPosition], @ecs.Has[@ecs.Disabled]),
+        (@ecs.Read[QueryPosition], @ecs.Has[@ecs.Disabled]),
         @ecs.All,
       ],
       optional_query : @ecs.Query[
-        (@ecs.Comp[QueryPosition], @ecs.Comp[@ecs.Disabled]?),
+        (@ecs.Read[QueryPosition], @ecs.Read[@ecs.Disabled]?),
         @ecs.All,
       ],
     ) {
@@ -408,7 +408,7 @@ test "app: validated single query params expose strict single access" {
         (@ecs.With[QueryPosition], @ecs.With[QueryVelocity]),
       ],
       single_position : Single[
-        @ecs.Comp[QueryPosition],
+        @ecs.Read[QueryPosition],
         @ecs.With[QueryVelocity],
       ],
     ) {
@@ -443,7 +443,7 @@ test "app: validated single query params expose strict single access" {
     Update,
     system_config_param(fn(
       single_pair : Single[
-        (@ecs.Mut[QueryPosition], @ecs.Comp[QueryVelocity]),
+        (@ecs.Write[QueryPosition], @ecs.Read[QueryVelocity]),
         @ecs.All,
       ],
     ) {
@@ -514,7 +514,7 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
     Update,
     fallible_system_config_param(fn(
       query_param : Populated[
-        (@ecs.Mut[QueryPosition], @ecs.Mut[QueryVelocity]),
+        (@ecs.Write[QueryPosition], @ecs.Write[QueryVelocity]),
         @ecs.All,
       ],
     ) {

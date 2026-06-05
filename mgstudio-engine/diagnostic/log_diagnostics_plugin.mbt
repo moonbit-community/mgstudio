@@ -47,12 +47,12 @@ pub fn LogDiagnosticsPlugin::filtered(
 }
 
 ///|
-pub impl @app.Plugin for LogDiagnosticsPlugin with name(_self) {
+pub impl @app.Plugin for LogDiagnosticsPlugin with fn name(_self) {
   LOG_DIAGNOSTICS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LogDiagnosticsPlugin with build(self, app) {
+pub impl @app.Plugin for LogDiagnosticsPlugin with fn build(self, app) {
   log_diagnostics_plugin_with(app, self)
 }
 
@@ -150,7 +150,7 @@ let log_diagnostics_state_resource_key : @ecs.ResourceKey[LogDiagnosticsState] =
 )
 
 ///|
-pub impl @app.Resource for LogDiagnosticsState with resource() {
+pub impl @app.Resource for LogDiagnosticsState with fn resource() {
   log_diagnostics_state_resource_key
 }
 

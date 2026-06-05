@@ -211,7 +211,7 @@ fn setup(
 
 ///|
 fn move_target(
-  target : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[TargetSphere]],
+  target : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[TargetSphere]],
   target_speed : @app.Res[TargetSphereSpeed],
   target_pos : @app.ResMut[TargetPosition],
   time : @app.Res[@time.Time[Unit]],
@@ -248,11 +248,11 @@ fn move_target(
 ///|
 fn move_follower(
   following : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[FollowingSphere],
   ],
   target : @ecs.Query[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     (@ecs.With[TargetSphere], @ecs.Without[FollowingSphere]),
   ],
   decay_rate : @app.Res[DecayRate],

@@ -139,7 +139,7 @@ pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Skybox with component() {
+pub impl @ecs.Component for Skybox with fn component() {
   ecs_key_skybox
 }
 
@@ -149,12 +149,12 @@ pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for SkyboxPlugin with name(_self) {
+pub impl @app.Plugin for SkyboxPlugin with fn name(_self) {
   SKYBOX_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SkyboxPlugin with build(self, app) {
+pub impl @app.Plugin for SkyboxPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   skybox_plugin_install_with(app, self)
 }
@@ -205,6 +205,6 @@ pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState] = 
 )
 
 ///|
-pub impl @app.Resource for SkyboxPipelineState with resource() {
+pub impl @app.Resource for SkyboxPipelineState with fn resource() {
   ecs_key_skybox_pipeline_state
 }

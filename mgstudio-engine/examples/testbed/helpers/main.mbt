@@ -74,7 +74,7 @@ fn setup(
 fn animate(
   time : @app.Res[@time.Time[Unit]],
   items : @ecs.Query[
-    (@ecs.Comp[Wiggle], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Wiggle], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

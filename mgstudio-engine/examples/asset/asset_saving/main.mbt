@@ -72,7 +72,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn rotate_saved_texture(
   time : @app.Res[@time.Time[Unit]],
   sprites : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@sprite.Sprite],
   ],
 ) -> Unit {

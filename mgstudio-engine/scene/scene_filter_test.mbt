@@ -23,7 +23,7 @@ let scene_filter_test_component_key : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for SceneFilterTestComponent with component() {
+pub impl @ecs.Component for SceneFilterTestComponent with fn component() {
   scene_filter_test_component_key
 }
 
@@ -36,7 +36,7 @@ let scene_filter_test_resource_key : @ecs.ResourceKey[SceneFilterTestResource] =
 )
 
 ///|
-pub impl @app.Resource for SceneFilterTestResource with resource() {
+pub impl @app.Resource for SceneFilterTestResource with fn resource() {
   scene_filter_test_resource_key
 }
 

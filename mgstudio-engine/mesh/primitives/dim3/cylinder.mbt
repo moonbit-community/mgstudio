@@ -20,7 +20,7 @@ pub enum CylinderAnchor {
 } derive(Eq, Debug)
 
 ///|
-pub impl Default for CylinderAnchor with default() {
+pub impl Default for CylinderAnchor with fn default() {
   MidPoint
 }
 
@@ -151,7 +151,7 @@ pub fn CylinderMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for CylinderMeshBuilder with build(self) {
+pub impl MeshBuilder for CylinderMeshBuilder with fn build(self) {
   cylinder_mesh_with_anchor(
     self.cylinder,
     self.resolution,
@@ -162,7 +162,7 @@ pub impl MeshBuilder for CylinderMeshBuilder with build(self) {
 }
 
 ///|
-pub impl Meshable for @math.Cylinder with mesh(self) {
+pub impl Meshable for @math.Cylinder with fn mesh(self) {
   CylinderMeshBuilder::from_cylinder(self).build()
 }
 

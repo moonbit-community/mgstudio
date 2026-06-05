@@ -231,7 +231,10 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn bunny_wiggler(
-  bunnies : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[BunnyWiggler]],
+  bunnies : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[BunnyWiggler],
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta_z = @math.cos(time.get().elapsed_secs() * 10.0F) * 0.003F

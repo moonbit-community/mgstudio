@@ -162,7 +162,7 @@ fn setup_scene_once_loaded(
   scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animations : @app.Res[Animations],
-  players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
+  players : @ecs.Query[@ecs.Write[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
   guard scene_ready.entity() is Some(scene_entity) else { return }
   guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
@@ -189,8 +189,8 @@ fn keyboard_control(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   animation_players : @ecs.Query[
     (
-      @ecs.Mut[@animation.AnimationPlayer],
-      @ecs.Mut[@animation.AnimationTransitions],
+      @ecs.Write[@animation.AnimationPlayer],
+      @ecs.Write[@animation.AnimationTransitions],
     ),
     @ecs.All,
   ],

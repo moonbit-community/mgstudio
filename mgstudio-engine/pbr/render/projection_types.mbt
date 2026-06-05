@@ -59,7 +59,7 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for SubCameraView3d with component() {
+pub impl @ecs.Component for SubCameraView3d with fn component() {
   ecs_key_sub_camera_view3d
 }
 

@@ -115,7 +115,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn spin_light(
   time : @app.Res[@time.Time[Unit]],
   lights : @ecs.Query[
-    (@ecs.Comp[Spin], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Spin], @ecs.Write[@transform.Transform]),
     @ecs.With[@pbr.PointLight],
   ],
 ) -> Unit {

@@ -119,7 +119,7 @@ fn setup(
 
 ///|
 fn visit_descendants(
-  children_query : @ecs.Query[@ecs.Comp[@hierarchy.Children], @ecs.All],
+  children_query : @ecs.Query[@ecs.Read[@hierarchy.Children], @ecs.All],
   entity : @core.Entity,
   f : (@core.Entity) -> Unit,
 ) -> Unit raise {
@@ -133,10 +133,10 @@ fn visit_descendants(
 ///|
 fn change_material(
   event : @ecs.On[@scene.SceneInstanceReady],
-  colors : @ecs.Query[@ecs.Comp[ColorOverride], @ecs.All],
-  children_query : @ecs.Query[@ecs.Comp[@hierarchy.Children], @ecs.All],
+  colors : @ecs.Query[@ecs.Read[ColorOverride], @ecs.All],
+  children_query : @ecs.Query[@ecs.Read[@hierarchy.Children], @ecs.All],
   mesh_materials : @ecs.Query[
-    (@ecs.Mut[@pbr.MeshMaterial3d], @ecs.Comp[@gltf.GltfMaterialName]),
+    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[@gltf.GltfMaterialName]),
     @ecs.All,
   ],
 ) -> Unit {

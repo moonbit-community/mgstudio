@@ -93,7 +93,7 @@ fn setup(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
@@ -112,7 +112,7 @@ fn move_camera(
 fn print_sprite_count(
   time : @app.Res[@time.Time[Unit]],
   stats : @app.ResMut[SpriteStats],
-  sprites : @ecs.Query[@ecs.Comp[@sprite.Sprite], @ecs.All],
+  sprites : @ecs.Query[@ecs.Read[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   let should_print = stats.modify(fn(value) {
     value.print_timer += time.get().delta_secs()

@@ -43,7 +43,7 @@ let shader_runtime_cache_resource_key : @ecs.ResourceKey[ShaderRuntimeCache] = @
 )
 
 ///|
-pub impl @app.Resource for ShaderRuntimeCache with resource() {
+pub impl @app.Resource for ShaderRuntimeCache with fn resource() {
   shader_runtime_cache_resource_key
 }
 

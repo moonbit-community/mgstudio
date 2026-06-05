@@ -102,13 +102,13 @@ pub fn[M] SystemConfig::run_if_on_message(
 }
 
 ///|
-pub impl[T : @ecs.Message] Resource for @ecs.Messages[T] with resource() {
+pub impl[T : @ecs.Message] Resource for @ecs.Messages[T] with fn resource() {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
   key.messages_resource()
 }
 
 ///|
-pub impl[T] FromWorld for @ecs.MessageCursor[T] with from_world(_world) {
+pub impl[T] FromWorld for @ecs.MessageCursor[T] with fn from_world(_world) {
   @ecs.MessageCursor::MessageCursor()
 }
 
@@ -162,7 +162,7 @@ pub fn[T] Local::read_mut(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with init_state(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with fn init_state(
   world,
 ) {
   ignore(world)
@@ -178,12 +178,14 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with init_state
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with get(state) {
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with fn get(
+  state,
+) {
   state.get()
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with store(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with fn store(
   self,
   state,
 ) {
@@ -191,7 +193,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with store(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with access(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with fn access(
   _world,
 ) {
   let access = SystemAccess::new()
@@ -200,7 +202,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with access(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with init_state(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with fn init_state(
   world,
 ) {
   ignore(world)
@@ -216,14 +218,14 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with init_stat
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with get(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with fn get(
   state,
 ) {
   state.get()
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with store(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with fn store(
   self,
   state,
 ) {
@@ -231,7 +233,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with store(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with access(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with fn access(
   _world,
 ) {
   let access = SystemAccess::new()
@@ -240,14 +242,14 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with access(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with init_state(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with fn init_state(
   world,
 ) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with get(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with fn get(
   _state,
 ) {
   let world = system_param_abort_missing_world()
@@ -256,7 +258,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with get(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with store(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with fn store(
   self,
   state,
 ) {
@@ -264,7 +266,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with store(
 }
 
 ///|
-pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with access(
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with fn access(
   _world,
 ) {
   let access = SystemAccess::new()

@@ -30,14 +30,14 @@ pub fn[C, F] SyncComponentPlugin::SyncComponentPlugin() -> SyncComponentPlugin[
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with name(
+pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with fn name(
   _self,
 ) {
   SYNC_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with build(
+pub impl[C : @ecs.Component, F] @app.Plugin for SyncComponentPlugin[C, F] with fn build(
   self,
   app,
 ) {

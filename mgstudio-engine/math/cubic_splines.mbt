@@ -34,72 +34,72 @@ pub(open) trait SplinePoint {
 }
 
 ///|
-pub impl SplinePoint for Float with zero() {
+pub impl SplinePoint for Float with fn zero() {
   0.0F
 }
 
 ///|
-pub impl SplinePoint for Float with add(self, other) {
+pub impl SplinePoint for Float with fn add(self, other) {
   self + other
 }
 
 ///|
-pub impl SplinePoint for Float with sub(self, other) {
+pub impl SplinePoint for Float with fn sub(self, other) {
   self - other
 }
 
 ///|
-pub impl SplinePoint for Float with mul_scalar(self, scalar) {
+pub impl SplinePoint for Float with fn mul_scalar(self, scalar) {
   self * scalar
 }
 
 ///|
-pub impl SplinePoint for Vec2 with zero() {
+pub impl SplinePoint for Vec2 with fn zero() {
   Vec2::zero()
 }
 
 ///|
-pub impl SplinePoint for Vec2 with add(self, other) {
+pub impl SplinePoint for Vec2 with fn add(self, other) {
   self.add(other)
 }
 
 ///|
-pub impl SplinePoint for Vec2 with sub(self, other) {
+pub impl SplinePoint for Vec2 with fn sub(self, other) {
   self.sub(other)
 }
 
 ///|
-pub impl SplinePoint for Vec2 with mul_scalar(self, scalar) {
+pub impl SplinePoint for Vec2 with fn mul_scalar(self, scalar) {
   self.mul_scalar(scalar)
 }
 
 ///|
-pub impl SplinePoint for Vec3 with zero() {
+pub impl SplinePoint for Vec3 with fn zero() {
   Vec3::zero()
 }
 
 ///|
-pub impl SplinePoint for Vec3 with add(self, other) {
+pub impl SplinePoint for Vec3 with fn add(self, other) {
   self.add(other)
 }
 
 ///|
-pub impl SplinePoint for Vec3 with sub(self, other) {
+pub impl SplinePoint for Vec3 with fn sub(self, other) {
   self.sub(other)
 }
 
 ///|
-pub impl SplinePoint for Vec3 with mul_scalar(self, scalar) {
+pub impl SplinePoint for Vec3 with fn mul_scalar(self, scalar) {
   self.mul_scalar(scalar)
 }
 
 ///|
-pub impl SplinePoint for Vec4 with zero() {
+pub impl SplinePoint for Vec4 with fn zero() {
   Vec4::new(0.0F, 0.0F, 0.0F, 0.0F)
 }
 
 ///|
-pub impl SplinePoint for Vec4 with add(self, other) {
+pub impl SplinePoint for Vec4 with fn add(self, other) {
   Vec4::new(
     self.x + other.x,
     self.y + other.y,
@@ -109,7 +109,7 @@ pub impl SplinePoint for Vec4 with add(self, other) {
 }
 
 ///|
-pub impl SplinePoint for Vec4 with sub(self, other) {
+pub impl SplinePoint for Vec4 with fn sub(self, other) {
   Vec4::new(
     self.x - other.x,
     self.y - other.y,
@@ -119,7 +119,7 @@ pub impl SplinePoint for Vec4 with sub(self, other) {
 }
 
 ///|
-pub impl SplinePoint for Vec4 with mul_scalar(self, scalar) {
+pub impl SplinePoint for Vec4 with fn mul_scalar(self, scalar) {
   Vec4::new(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
 }
 

@@ -297,7 +297,7 @@ fn move_or_resize_windows(
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let window_query : @ecs.Query[@ecs.Mut[@window.Window], @ecs.All] = @ecs.query(
+  let window_query : @ecs.Query[@ecs.Write[@window.Window], @ecs.All] = @ecs.query(
     world,
   )
   try! world

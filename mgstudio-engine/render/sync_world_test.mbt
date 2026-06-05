@@ -23,7 +23,7 @@ let ecs_key_render_sync_world_test_component : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for RenderSyncWorldTestComponent with component() {
+pub impl @ecs.Component for RenderSyncWorldTestComponent with fn component() {
   ecs_key_render_sync_world_test_component
 }
 

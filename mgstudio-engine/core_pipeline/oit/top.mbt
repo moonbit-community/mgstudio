@@ -51,7 +51,7 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for OrderIndependentTransparencySettings with component() {
+pub impl @ecs.Component for OrderIndependentTransparencySettings with fn component() {
   ecs_key_order_independent_transparency_settings
 }
 
@@ -63,12 +63,12 @@ pub fn oit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for OrderIndependentTransparencyPlugin with name(_self) {
+pub impl @app.Plugin for OrderIndependentTransparencyPlugin with fn name(_self) {
   OIT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for OrderIndependentTransparencyPlugin with build(
+pub impl @app.Plugin for OrderIndependentTransparencyPlugin with fn build(
   self,
   app,
 ) {

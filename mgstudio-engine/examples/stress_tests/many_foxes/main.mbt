@@ -420,7 +420,7 @@ fn setup_scene_once_loaded(
   let sync = foxes.get().sync
   commands.queue(fn(world : @ecs.World) {
     let players_state : @ecs.QueryState[
-      @ecs.Mut[@animation.AnimationPlayer],
+      @ecs.Write[@animation.AnimationPlayer],
       @ecs.All,
     ] = world.query()
     for
@@ -456,8 +456,8 @@ fn keyboard_animation_control(
   foxes : @app.ResMut[Foxes],
   players : @ecs.Query[
     (
-      @ecs.Mut[@animation.AnimationPlayer],
-      @ecs.Mut[@animation.AnimationTransitions],
+      @ecs.Write[@animation.AnimationPlayer],
+      @ecs.Write[@animation.AnimationTransitions],
     ),
     @ecs.All,
   ],
@@ -532,9 +532,9 @@ fn update_fox_rings(
   foxes : @app.Res[Foxes],
   motions : @ecs.Query[
     (
-      @ecs.Comp[Ring],
-      @ecs.Comp[RotationDirection],
-      @ecs.Mut[@transform.Transform],
+      @ecs.Read[Ring],
+      @ecs.Read[RotationDirection],
+      @ecs.Write[@transform.Transform],
     ),
     @ecs.All,
   ],

@@ -160,7 +160,7 @@ pub fn GizmoBuffer::GizmoBuffer() -> GizmoBuffer {
 }
 
 ///|
-pub impl Default for GizmoBuffer with default() {
+pub impl Default for GizmoBuffer with fn default() {
   GizmoBuffer::GizmoBuffer()
 }
 
@@ -1362,12 +1362,12 @@ pub struct GizmoAsset {
 }
 
 ///|
-pub impl @asset.Asset for GizmoAsset with asset_debug_name() {
+pub impl @asset.Asset for GizmoAsset with fn asset_debug_name() {
   "mgstudio_gizmos::GizmoAsset"
 }
 
 ///|
-pub impl @asset.Asset for GizmoAsset with asset_as_image(_self) {
+pub impl @asset.Asset for GizmoAsset with fn asset_as_image(_self) {
   None
 }
 
@@ -1377,7 +1377,7 @@ let gizmo_asset_resource_keys : @asset.AssetResourceKeys[GizmoAsset] = @asset.re
 )
 
 ///|
-pub impl @asset.Asset for GizmoAsset with asset_resource_keys() {
+pub impl @asset.Asset for GizmoAsset with fn asset_resource_keys() {
   gizmo_asset_resource_keys
 }
 
@@ -1749,7 +1749,7 @@ pub fn GizmoAsset::GizmoAsset() -> GizmoAsset {
 }
 
 ///|
-pub impl Default for GizmoAsset with default() {
+pub impl Default for GizmoAsset with fn default() {
   GizmoAsset::GizmoAsset()
 }
 
@@ -1811,12 +1811,12 @@ pub fn Gizmo::with_depth_bias(self : Gizmo, depth_bias : Float) -> Gizmo {
 }
 
 ///|
-pub impl Default for Gizmo with default() {
+pub impl Default for Gizmo with fn default() {
   Gizmo::Gizmo()
 }
 
 ///|
-pub impl @ecs.Component for Gizmo with component() {
+pub impl @ecs.Component for Gizmo with fn component() {
   ecs_key_gizmo
 }
 

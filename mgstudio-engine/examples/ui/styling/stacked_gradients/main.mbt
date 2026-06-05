@@ -72,7 +72,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn animate_layers(
   time : @app.Res[@time.Time[Unit]],
   layers : @ecs.Query[
-    (@ecs.Comp[Layer], @ecs.Mut[@ui.BackgroundColor]),
+    (@ecs.Read[Layer], @ecs.Write[@ui.BackgroundColor]),
     @ecs.All,
   ],
 ) -> Unit {

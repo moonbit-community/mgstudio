@@ -29,12 +29,12 @@ pub fn CorePipelinePlugin::CorePipelinePlugin() -> CorePipelinePlugin {
 }
 
 ///|
-pub impl @app.Plugin for CorePipelinePlugin with name(_self) {
+pub impl @app.Plugin for CorePipelinePlugin with fn name(_self) {
   CORE_PIPELINE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for CorePipelinePlugin with build(self, app) {
+pub impl @app.Plugin for CorePipelinePlugin with fn build(self, app) {
   @fullscreen_vertex_shader.register_embedded_wgsl_sources()
   core_pipeline_plugin_install_with(app, self)
 }

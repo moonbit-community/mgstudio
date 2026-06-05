@@ -303,9 +303,9 @@ fn anchor_name(anchor : @sprite.Anchor) -> String {
 fn animate_translation(
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Comp[@text.Text2d],
-      @ecs.Comp[AnimateTranslation],
+      @ecs.Write[@transform.Transform],
+      @ecs.Read[@text.Text2d],
+      @ecs.Read[AnimateTranslation],
     ),
     @ecs.All,
   ],
@@ -325,9 +325,9 @@ fn animate_translation(
 fn animate_rotation(
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Comp[@text.Text2d],
-      @ecs.Comp[AnimateRotation],
+      @ecs.Write[@transform.Transform],
+      @ecs.Read[@text.Text2d],
+      @ecs.Read[AnimateRotation],
     ),
     @ecs.All,
   ],
@@ -348,9 +348,9 @@ fn animate_rotation(
 fn animate_scale(
   query : @ecs.Query[
     (
-      @ecs.Mut[@transform.Transform],
-      @ecs.Comp[@text.Text2d],
-      @ecs.Comp[AnimateScale],
+      @ecs.Write[@transform.Transform],
+      @ecs.Read[@text.Text2d],
+      @ecs.Read[AnimateScale],
     ),
     @ecs.All,
   ],

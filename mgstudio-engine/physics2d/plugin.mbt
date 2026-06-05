@@ -21,11 +21,11 @@ pub fn Physics2dPlugin::Physics2dPlugin() -> Physics2dPlugin {
 }
 
 ///|
-pub impl @app.Plugin for Physics2dPlugin with name(_self) {
+pub impl @app.Plugin for Physics2dPlugin with fn name(_self) {
   "mgstudio.physics2d.Physics2dPlugin"
 }
 
 ///|
-pub impl @app.Plugin for Physics2dPlugin with build(_self, app) {
+pub impl @app.Plugin for Physics2dPlugin with fn build(_self, app) {
   physics2d_plugin(app)
 }

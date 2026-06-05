@@ -89,7 +89,7 @@ fn setup(
 fn update(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[InstanceTag]),
+    (@ecs.Write[@transform.Transform], @ecs.Read[InstanceTag]),
     @ecs.All,
   ],
 ) -> Unit {

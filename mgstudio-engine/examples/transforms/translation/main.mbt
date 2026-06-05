@@ -89,7 +89,7 @@ fn setup(
 fn move_cube(
   commands : @app.Commands,
   cubes : @ecs.Query[
-    (@ecs.Comp[Movable], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Movable], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

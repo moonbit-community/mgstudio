@@ -596,32 +596,32 @@ let ecs_key_visible_clusterable_objects : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @app.Resource for GlobalClusterSettings with resource() {
+pub impl @app.Resource for GlobalClusterSettings with fn resource() {
   ecs_key_global_cluster_settings
 }
 
 ///|
-pub impl @ecs.Component for ClusterConfig with component() {
+pub impl @ecs.Component for ClusterConfig with fn component() {
   ecs_key_cluster_config
 }
 
 ///|
-pub impl @ecs.Component for Clusters with component() {
+pub impl @ecs.Component for Clusters with fn component() {
   ecs_key_clusters
 }
 
 ///|
-pub impl @ecs.Component for VisibleClusterableObjects with component() {
+pub impl @ecs.Component for VisibleClusterableObjects with fn component() {
   ecs_key_visible_clusterable_objects
 }
 
 ///|
-pub impl @app.Plugin for ClusterLightPlugin with name(_self) {
+pub impl @app.Plugin for ClusterLightPlugin with fn name(_self) {
   CLUSTER_LIGHT_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ClusterLightPlugin with build(self, app) {
+pub impl @app.Plugin for ClusterLightPlugin with fn build(self, app) {
   cluster_light_plugin_with(app, self)
 }
 

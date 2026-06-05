@@ -22,12 +22,12 @@ pub struct StorageBuffer[T] {
 }
 
 ///|
-pub impl @asset.Asset for StorageBuffer[Float] with asset_debug_name() {
+pub impl @asset.Asset for StorageBuffer[Float] with fn asset_debug_name() {
   "mgstudio_render_resource::StorageBuffer<Float>"
 }
 
 ///|
-pub impl @asset.Asset for StorageBuffer[Float] with asset_as_image(_self) {
+pub impl @asset.Asset for StorageBuffer[Float] with fn asset_as_image(_self) {
   None
 }
 
@@ -39,7 +39,7 @@ let storage_buffer_float_asset_resource_keys : @asset.AssetResourceKeys[
 )
 
 ///|
-pub impl @asset.Asset for StorageBuffer[Float] with asset_resource_keys() {
+pub impl @asset.Asset for StorageBuffer[Float] with fn asset_resource_keys() {
   storage_buffer_float_asset_resource_keys
 }
 

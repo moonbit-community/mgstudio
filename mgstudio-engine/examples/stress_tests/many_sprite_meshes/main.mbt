@@ -117,7 +117,7 @@ fn setup(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
@@ -136,7 +136,7 @@ fn move_camera(
 fn print_count(
   time : @app.Res[@time.Time[Unit]],
   timer : @app.ResMut[PrintTimer],
-  sprites : @ecs.Query[@ecs.Comp[SpriteMeshTag], @ecs.All],
+  sprites : @ecs.Query[@ecs.Read[SpriteMeshTag], @ecs.All],
 ) -> Unit {
   let next_seconds = timer.get().seconds + time.get().delta_secs()
   if next_seconds < 1.0F {

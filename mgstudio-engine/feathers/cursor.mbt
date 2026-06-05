@@ -42,7 +42,7 @@ pub fn DefaultCursor::DefaultCursor() -> DefaultCursor {
 }
 
 ///|
-pub impl @app.Resource for DefaultCursor with resource() {
+pub impl @app.Resource for DefaultCursor with fn resource() {
   default_cursor_resource_key
 }
 

@@ -463,7 +463,7 @@ fn apply_wireframe_material(world : @ecs.World) -> Unit {
     return
   }
   let material_key = ecs_key_mesh2d_wireframe
-  let query : @ecs.Query[@ecs.Comp[Wireframe2d], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Read[Wireframe2d], @ecs.All] = @ecs.query(world)
   let no_wireframe_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_no_wireframe2d, fn(entity, _value) {
     no_wireframe_entities.push(entity)

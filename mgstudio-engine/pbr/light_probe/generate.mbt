@@ -102,12 +102,12 @@ pub fn EnvironmentMapGenerationPlugin::EnvironmentMapGenerationPlugin() -> Envir
 }
 
 ///|
-pub impl @app.Plugin for EnvironmentMapGenerationPlugin with name(_self) {
+pub impl @app.Plugin for EnvironmentMapGenerationPlugin with fn name(_self) {
   ENVIRONMENT_MAP_GENERATION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for EnvironmentMapGenerationPlugin with build(self, app) {
+pub impl @app.Plugin for EnvironmentMapGenerationPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   ignore(self)
   app

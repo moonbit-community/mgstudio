@@ -57,7 +57,7 @@ pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for MotionBlur with component() {
+pub impl @ecs.Component for MotionBlur with fn component() {
   ecs_key_motion_blur
 }
 

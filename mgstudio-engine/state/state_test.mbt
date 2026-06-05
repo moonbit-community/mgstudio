@@ -19,18 +19,18 @@ pub(all) enum TestState {
 } derive(Eq, Debug)
 
 ///|
-pub impl @app.States for TestState with dependency_depth(self) {
+pub impl @app.States for TestState with fn dependency_depth(self) {
   ignore(self)
   0
 }
 
 ///|
-pub impl @app.States for TestState with type_debug_name() {
+pub impl @app.States for TestState with fn type_debug_name() {
   "TestState"
 }
 
 ///|
-pub impl @app.States for TestState with debug_name(self) {
+pub impl @app.States for TestState with fn debug_name(self) {
   ignore(self)
   "TestState"
 }
@@ -41,7 +41,7 @@ let test_state_resource_keys : @app.StateResourceKeys[TestState] = @app.register
 )
 
 ///|
-pub impl @app.States for TestState with state_resource_keys() {
+pub impl @app.States for TestState with fn state_resource_keys() {
   test_state_resource_keys
 }
 

@@ -154,7 +154,7 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
 
 ///|
 fn player_translation(
-  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
+  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
 ) -> @math.Vec2? {
   match (player_query.single() catch { _ => None }) {
     Some(transform) => {
@@ -237,7 +237,7 @@ fn player_movement_system(
   time : @app.Res[@time.Time[@time.Fixed]],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   query : @ecs.Query[
-    (@ecs.Comp[Player], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Player], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -282,8 +282,8 @@ fn player_movement_system(
 
 ///|
 fn snap_to_player_system(
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[SnapToPlayer]],
-  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[SnapToPlayer]],
+  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   guard player_translation(player_query) is Some(player_position) else {
     return
@@ -312,10 +312,10 @@ fn snap_to_player_system(
 fn rotate_to_player_system(
   time : @app.Res[@time.Time[@time.Fixed]],
   query : @ecs.Query[
-    (@ecs.Comp[RotateToPlayer], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[RotateToPlayer], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
-  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
+  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   guard player_translation(player_query) is Some(player_position) else {
     return

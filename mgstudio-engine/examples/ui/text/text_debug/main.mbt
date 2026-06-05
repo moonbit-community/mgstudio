@@ -379,10 +379,13 @@ fn setup(
 fn change_text_system(
   diagnostics : @app.Res[@diagnostic.DiagnosticsStore],
   time : @app.Res[@time.Time[@time.Real]],
-  seconds_value : @app.Single[@ecs.Mut[@text.TextSpan], @ecs.With[SecondsValue]],
-  fps_value : @app.Single[@ecs.Mut[@text.TextSpan], @ecs.With[FpsValue]],
+  seconds_value : @app.Single[
+    @ecs.Write[@text.TextSpan],
+    @ecs.With[SecondsValue],
+  ],
+  fps_value : @app.Single[@ecs.Write[@text.TextSpan], @ecs.With[FpsValue]],
   frame_time_value : @app.Single[
-    @ecs.Mut[@text.TextSpan],
+    @ecs.Write[@text.TextSpan],
     @ecs.With[FrameTimeValue],
   ],
 ) -> Unit {

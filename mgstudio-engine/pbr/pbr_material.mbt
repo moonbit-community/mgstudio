@@ -378,12 +378,12 @@ pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Plugin for StandardMaterialPlugin with name(_self) {
+pub impl @app.Plugin for StandardMaterialPlugin with fn name(_self) {
   STANDARD_MATERIAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for StandardMaterialPlugin with build(self, app) {
+pub impl @app.Plugin for StandardMaterialPlugin with fn build(self, app) {
   standard_material_plugin_with(app, self)
 }
 

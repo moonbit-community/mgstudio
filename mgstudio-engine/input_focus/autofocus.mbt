@@ -24,7 +24,7 @@ let auto_focus_component_key : @ecs.ComponentKey[AutoFocus] = @ecs.register_comp
 )
 
 ///|
-pub impl @ecs.Component for AutoFocus with component() {
+pub impl @ecs.Component for AutoFocus with fn component() {
   auto_focus_component_key
 }
 

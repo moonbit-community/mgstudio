@@ -103,7 +103,7 @@ pub fn BindGroupLayoutDescriptor::BindGroupLayoutDescriptor() -> BindGroupLayout
 }
 
 ///|
-pub impl Default for BindGroupLayoutDescriptor with default() {
+pub impl Default for BindGroupLayoutDescriptor with fn default() {
   BindGroupLayoutDescriptor::BindGroupLayoutDescriptor()
 }
 

@@ -83,7 +83,7 @@ fn setup(
 fn rotate_sprite(
   time : @app.Res[@time.Time[Unit]],
   sprite : @app.Single[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@sprite.Sprite],
   ],
 ) -> Unit {

@@ -151,7 +151,7 @@ fn new_round_system(
 fn score_system(
   game_state : @app.Res[GameState],
   query : @ecs.Query[
-    (@ecs.Comp[Player], @ecs.Mut[Score], @ecs.Mut[PlayerStreak]),
+    (@ecs.Read[Player], @ecs.Write[Score], @ecs.Write[PlayerStreak]),
     @ecs.All,
   ],
 ) -> Unit {
@@ -195,7 +195,7 @@ fn score_system(
 fn score_check_system(
   game_rules : @app.Res[GameRules],
   game_state : @app.ResMut[GameState],
-  query : @ecs.Query[(@ecs.Comp[Player], @ecs.Comp[Score]), @ecs.All],
+  query : @ecs.Query[(@ecs.Read[Player], @ecs.Read[Score]), @ecs.All],
 ) -> Unit {
   let winning_score = game_rules.get().winning_score
   try! query.view(fn(_entity, item) {

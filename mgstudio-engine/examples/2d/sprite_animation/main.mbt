@@ -209,7 +209,7 @@ fn setup(
 
 ///|
 fn trigger_left_animation(
-  animation : @ecs.Query[@ecs.Mut[AnimationConfig], @ecs.With[LeftSprite]],
+  animation : @ecs.Query[@ecs.Write[AnimationConfig], @ecs.With[LeftSprite]],
 ) -> Unit {
   try! animation.for_each(fn(_entity, config) {
     config.modify(fn(value) {
@@ -220,7 +220,7 @@ fn trigger_left_animation(
 
 ///|
 fn trigger_right_animation(
-  animation : @ecs.Query[@ecs.Mut[AnimationConfig], @ecs.With[RightSprite]],
+  animation : @ecs.Query[@ecs.Write[AnimationConfig], @ecs.With[RightSprite]],
 ) -> Unit {
   try! animation.for_each(fn(_entity, config) {
     config.modify(fn(value) {
@@ -233,7 +233,7 @@ fn trigger_right_animation(
 fn execute_animations(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[AnimationConfig], @ecs.Mut[@sprite.Sprite]),
+    (@ecs.Write[AnimationConfig], @ecs.Write[@sprite.Sprite]),
     @ecs.All,
   ],
 ) -> Unit {

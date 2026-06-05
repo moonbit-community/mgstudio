@@ -531,7 +531,7 @@ fn turbo_active(world : @ecs.World) -> Bool {
 fn movement(world : @ecs.World) -> Unit {
   guard world_time(world) is Some(time) else { return }
   let query : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@sprite.Sprite],
   ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
@@ -624,7 +624,9 @@ fn setup_turbo_text(commands : @app.Commands) -> Unit {
 ///|
 fn change_color(world : @ecs.World) -> Unit {
   guard world_time(world) is Some(time) else { return }
-  let query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All] = @ecs.query(world)
+  let query : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.All] = @ecs.query(
+    world,
+  )
   let hue_speed = if turbo_active(world) { 180.0F } else { 60.0F }
   let hue = time.elapsed_seconds() * hue_speed
   try! query.view(fn(_entity, sprite) {

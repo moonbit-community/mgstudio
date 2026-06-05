@@ -25,12 +25,12 @@ pub struct Gltf {
 }
 
 ///|
-pub impl @asset.Asset for Gltf with asset_debug_name() {
+pub impl @asset.Asset for Gltf with fn asset_debug_name() {
   "mgstudio_scene::Gltf"
 }
 
 ///|
-pub impl @asset.Asset for Gltf with asset_as_image(_self) {
+pub impl @asset.Asset for Gltf with fn asset_as_image(_self) {
   None
 }
 
@@ -40,7 +40,7 @@ let gltf_asset_resource_keys : @asset.AssetResourceKeys[Gltf] = @asset.register_
 )
 
 ///|
-pub impl @asset.Asset for Gltf with asset_resource_keys() {
+pub impl @asset.Asset for Gltf with fn asset_resource_keys() {
   gltf_asset_resource_keys
 }
 

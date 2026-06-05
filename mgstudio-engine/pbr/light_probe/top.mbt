@@ -38,12 +38,12 @@ pub fn LightProbePlugin::LightProbePlugin() -> LightProbePlugin {
 }
 
 ///|
-pub impl @app.Plugin for LightProbePlugin with name(_self) {
+pub impl @app.Plugin for LightProbePlugin with fn name(_self) {
   LIGHT_PROBE_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for LightProbePlugin with build(self, app) {
+pub impl @app.Plugin for LightProbePlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   light_probe_plugin_with(app, self)
 }
@@ -237,21 +237,21 @@ pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @app.Resource for LightProbePluginState with resource() {
+pub impl @app.Resource for LightProbePluginState with fn resource() {
   ecs_key_light_probe_plugin_state
 }
 
 ///|
-pub impl @ecs.Component for RenderViewLightProbes with component() {
+pub impl @ecs.Component for RenderViewLightProbes with fn component() {
   ecs_key_render_view_light_probes
 }
 
 ///|
-pub impl @app.Resource for LightProbesUniform with resource() {
+pub impl @app.Resource for LightProbesUniform with fn resource() {
   ecs_key_light_probes_uniform
 }
 
 ///|
-pub impl @ecs.Component for ViewLightProbesUniformOffset with component() {
+pub impl @ecs.Component for ViewLightProbesUniformOffset with fn component() {
   ecs_key_view_light_probes_uniform_offset
 }

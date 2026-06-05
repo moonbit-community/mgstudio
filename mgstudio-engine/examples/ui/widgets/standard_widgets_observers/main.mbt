@@ -116,7 +116,7 @@ fn setup(
 ///|
 fn update_counter_label(
   counter : @app.Res[ClickCounter],
-  label_query : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[CounterLabel]],
+  label_query : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[CounterLabel]],
 ) -> Unit {
   try! label_query.view(fn(_entity, label) {
     label.set(@text.Text::new("Clicks: \{counter.get().value.to_string()}"))

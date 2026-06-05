@@ -186,17 +186,17 @@ pub fn GltfPlugin::GltfPlugin() -> GltfPlugin {
 }
 
 ///|
-pub impl @app.Plugin for GltfPlugin with name(_self) {
+pub impl @app.Plugin for GltfPlugin with fn name(_self) {
   GLTF_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for GltfPlugin with build(self, app) {
+pub impl @app.Plugin for GltfPlugin with fn build(self, app) {
   gltf_plugin_build_with(app, self)
 }
 
 ///|
-pub impl @app.Plugin for GltfPlugin with finish(_self, app) {
+pub impl @app.Plugin for GltfPlugin with fn finish(_self, app) {
   gltf_plugin_finish(app)
 }
 
@@ -323,7 +323,7 @@ pub let ecs_res_key_gltf_loader_runtime_state : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="gltf.loader.runtime_state")
 
 ///|
-pub impl @app.Resource for GltfLoaderRuntimeState with resource() {
+pub impl @app.Resource for GltfLoaderRuntimeState with fn resource() {
   ecs_res_key_gltf_loader_runtime_state
 }
 

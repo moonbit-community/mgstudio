@@ -163,7 +163,7 @@ pub fn Capsule3dMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for Capsule3dMeshBuilder with build(self) {
+pub impl MeshBuilder for Capsule3dMeshBuilder with fn build(self) {
   capsule3d_mesh_with_uv_profile(
     self.capsule,
     self.rings,
@@ -174,7 +174,7 @@ pub impl MeshBuilder for Capsule3dMeshBuilder with build(self) {
 }
 
 ///|
-pub impl Meshable for @math.Capsule3d with mesh(self) {
+pub impl Meshable for @math.Capsule3d with fn mesh(self) {
   Capsule3dMeshBuilder::from_capsule(self).build()
 }
 

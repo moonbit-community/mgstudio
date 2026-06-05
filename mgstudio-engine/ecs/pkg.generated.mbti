@@ -160,18 +160,6 @@ pub fn[T] ChangedComponents::is_empty(Self[T]) -> Bool
 pub fn[T] ChangedComponents::len(Self[T]) -> Int
 pub fn[T] ChangedComponents::read(Self[T]) -> Array[@core.Entity]
 
-pub struct Comp[T] {
-  // private fields
-}
-pub fn[T] Comp::added(Self[T]) -> Int64
-pub fn[T] Comp::changed_by(Self[T]) -> String?
-pub fn[T] Comp::is_added(Self[T]) -> Bool
-pub fn[T] Comp::is_changed(Self[T]) -> Bool
-pub fn[T] Comp::key(Self[T]) -> ComponentKey[T]
-pub fn[T] Comp::last_changed(Self[T]) -> Int64
-pub fn[T] Comp::value(Self[T]) -> T
-pub impl[T : Component] QueryData for Comp[T]
-
 type ComponentAccess[T]
 
 pub struct ComponentColumn[T] {
@@ -192,7 +180,7 @@ pub fn[T, U] ComponentColumn::for_each_without(Self[T], Self[U], (@core.Entity, 
 pub fn[T, U] ComponentColumn::for_each_without_fast(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentColumn::get(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_fast(Self[T], @core.Entity) -> T?
-pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
+pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Write[T]?
 pub fn[T] ComponentColumn::record_changed_hot_at_table_row(Self[T], Int, Int, Int64) -> Bool
 pub fn[T] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_tick_only(Self[T], @core.Entity, T) -> Bool
@@ -385,7 +373,7 @@ pub fn[T : Component] EntityMut::contains(Self, key? : ComponentKey[T]) -> Bool 
 #callsite(autofill(loc))
 pub fn EntityMut::despawn(Self, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn[T : Component] EntityMut::get(Self) -> T? raise EcsError
-pub fn[T : Component] EntityMut::get_mut(Self, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
+pub fn[T : Component] EntityMut::get_mut(Self, key? : ComponentKey[T]) -> Write[T]? raise EcsError
 pub fn EntityMut::id(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[B : Bundle] EntityMut::insert(Self, B, loc~ : SourceLoc) -> Self raise EcsError
@@ -507,33 +495,6 @@ pub fn[T : Default] Messages::write_default(Self[T]) -> Int
 pub fn[T] Messages::write_message(Self[T], MessageKey[T], T) -> Int
 pub fn[T] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Unit
 pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
-
-pub struct Mut[T] {
-  // private fields
-}
-pub fn[T] Mut::added(Self[T]) -> Int64
-pub fn[T] Mut::changed_by(Self[T]) -> String?
-pub fn[T] Mut::is_added(Self[T]) -> Bool
-pub fn[T] Mut::is_changed(Self[T]) -> Bool
-pub fn[T] Mut::key(Self[T]) -> ComponentKey[T]
-pub fn[T] Mut::last_changed(Self[T]) -> Int64
-#callsite(autofill(loc))
-pub fn[T, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
-#callsite(autofill(loc))
-pub fn[T] Mut::peek(Self[T], loc~ : SourceLoc) -> T
-#callsite(autofill(loc))
-pub fn[T] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn[T : Eq] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
-#callsite(autofill(loc))
-pub fn[T] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn[T] Mut::value(Self[T], loc~ : SourceLoc) -> T
-pub impl[T : Component] QueryData for Mut[T]
 
 pub struct Name {
   // private fields
@@ -700,6 +661,18 @@ pub(all) struct RawTableColumnKernel {
   mut changed_caller_ids : Array[Int]
 }
 
+pub struct Read[T] {
+  // private fields
+}
+pub fn[T] Read::added(Self[T]) -> Int64
+pub fn[T] Read::changed_by(Self[T]) -> String?
+pub fn[T] Read::is_added(Self[T]) -> Bool
+pub fn[T] Read::is_changed(Self[T]) -> Bool
+pub fn[T] Read::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Read::last_changed(Self[T]) -> Int64
+pub fn[T] Read::value(Self[T]) -> T
+pub impl[T : Component] QueryData for Read[T]
+
 pub struct Remove {
 }
 pub impl ComponentObserverEvent for Remove
@@ -838,7 +811,7 @@ pub fn World::entity_table_location_by_id(Self, Int) -> (Int, Int)?
 pub fn[T] World::for_each_component(Self, ComponentKey[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T : Component] World::get(Self, @core.Entity, key? : ComponentKey[T]) -> T? raise EcsError
 pub fn[T] World::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
-pub fn[T : Component] World::get_mut(Self, @core.Entity, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
+pub fn[T : Component] World::get_mut(Self, @core.Entity, key? : ComponentKey[T]) -> Write[T]? raise EcsError
 pub fn[T] World::get_required_by_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_by_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
@@ -937,6 +910,31 @@ pub(all) struct WorldQueuedRegistrations {
   mut queue : Array[Int]
   mut cursor : Int
 }
+
+pub struct Write[T] {
+  // private fields
+}
+pub fn[T] Write::added(Self[T]) -> Int64
+pub fn[T] Write::changed_by(Self[T]) -> String?
+pub fn[T] Write::is_added(Self[T]) -> Bool
+pub fn[T] Write::is_changed(Self[T]) -> Bool
+pub fn[T] Write::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Write::last_changed(Self[T]) -> Int64
+#callsite(autofill(loc))
+pub fn[T, R] Write::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
+#callsite(autofill(loc))
+pub fn[T] Write::peek(Self[T], loc~ : SourceLoc) -> T
+#callsite(autofill(loc))
+pub fn[T] Write::set(Self[T], T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] Write::set_added(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] Write::set_changed(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Eq] Write::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] Write::value(Self[T], loc~ : SourceLoc) -> T
+pub impl[T : Component] QueryData for Write[T]
 
 // Type aliases
 

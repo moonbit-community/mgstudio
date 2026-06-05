@@ -85,7 +85,7 @@ fn setup(commands : @app.Commands) -> Unit {
       span_commands
       .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerEnter],
-        query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
+        query : @ecs.Query[@ecs.Write[@text.TextColor], @ecs.All],
       ) {
         let text_color = query.get(span) catch { _ => None }
         if text_color is Some(text_color) {
@@ -94,7 +94,7 @@ fn setup(commands : @app.Commands) -> Unit {
       })
       .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerLeave],
-        query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
+        query : @ecs.Query[@ecs.Write[@text.TextColor], @ecs.All],
       ) {
         let text_color = query.get(span) catch { _ => None }
         if text_color is Some(text_color) {
@@ -109,11 +109,11 @@ fn setup(commands : @app.Commands) -> Unit {
 fn cycle_text_background_colors(
   time : @app.Res[@time.Time[@time.Real]],
   children_query : @ecs.Query[
-    @ecs.Comp[@hierarchy.Children],
+    @ecs.Read[@hierarchy.Children],
     @ecs.With[@text.Text],
   ],
   text_background_colors_query : @ecs.Query[
-    @ecs.Mut[@text.TextBackgroundColor],
+    @ecs.Write[@text.TextBackgroundColor],
     @ecs.All,
   ],
 ) -> Unit {

@@ -169,7 +169,10 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn animate_joint(
   time : @app.Res[@time.Time[Unit]],
-  joints : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[AnimatedJoint]],
+  joints : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[AnimatedJoint],
+  ],
 ) -> Unit {
   let angle = 0.8F * @math.sin(time.get().elapsed_secs())
   try! joints.view(fn(_entity, transform) {

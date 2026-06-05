@@ -66,7 +66,7 @@ fn setup(
 
 ///|
 fn animate(
-  sprites : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
+  sprites : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.All],
   state : @app.ResMut[AnimationState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {

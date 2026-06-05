@@ -64,7 +64,7 @@ fn setup(
 fn sprite_movement(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
-    (@ecs.Mut[Direction], @ecs.Mut[@transform.Transform]),
+    (@ecs.Write[Direction], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

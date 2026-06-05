@@ -412,7 +412,7 @@ fn World::register_trigger_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Insert with register_component_observer(
+pub impl ComponentObserverEvent for Insert with fn register_component_observer(
   world,
   component_id,
   entity,
@@ -422,7 +422,7 @@ pub impl ComponentObserverEvent for Insert with register_component_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Add with register_component_observer(
+pub impl ComponentObserverEvent for Add with fn register_component_observer(
   world,
   component_id,
   entity,
@@ -432,27 +432,27 @@ pub impl ComponentObserverEvent for Add with register_component_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Add with marker() {
+pub impl ComponentObserverEvent for Add with fn marker() {
   Add::{  }
 }
 
 ///|
-pub impl ComponentObserverEvent for Add with debug_name() {
+pub impl ComponentObserverEvent for Add with fn debug_name() {
   "add"
 }
 
 ///|
-pub impl ComponentObserverEvent for Insert with marker() {
+pub impl ComponentObserverEvent for Insert with fn marker() {
   Insert::{  }
 }
 
 ///|
-pub impl ComponentObserverEvent for Insert with debug_name() {
+pub impl ComponentObserverEvent for Insert with fn debug_name() {
   "insert"
 }
 
 ///|
-pub impl ComponentObserverEvent for Replace with register_component_observer(
+pub impl ComponentObserverEvent for Replace with fn register_component_observer(
   world,
   component_id,
   entity,
@@ -462,17 +462,17 @@ pub impl ComponentObserverEvent for Replace with register_component_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Replace with marker() {
+pub impl ComponentObserverEvent for Replace with fn marker() {
   Replace::{  }
 }
 
 ///|
-pub impl ComponentObserverEvent for Replace with debug_name() {
+pub impl ComponentObserverEvent for Replace with fn debug_name() {
   "replace"
 }
 
 ///|
-pub impl ComponentObserverEvent for Remove with register_component_observer(
+pub impl ComponentObserverEvent for Remove with fn register_component_observer(
   world,
   component_id,
   entity,
@@ -482,17 +482,17 @@ pub impl ComponentObserverEvent for Remove with register_component_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Remove with marker() {
+pub impl ComponentObserverEvent for Remove with fn marker() {
   Remove::{  }
 }
 
 ///|
-pub impl ComponentObserverEvent for Remove with debug_name() {
+pub impl ComponentObserverEvent for Remove with fn debug_name() {
   "remove"
 }
 
 ///|
-pub impl ComponentObserverEvent for Despawn with register_component_observer(
+pub impl ComponentObserverEvent for Despawn with fn register_component_observer(
   world,
   component_id,
   entity,
@@ -502,12 +502,12 @@ pub impl ComponentObserverEvent for Despawn with register_component_observer(
 }
 
 ///|
-pub impl ComponentObserverEvent for Despawn with marker() {
+pub impl ComponentObserverEvent for Despawn with fn marker() {
   Despawn::{  }
 }
 
 ///|
-pub impl ComponentObserverEvent for Despawn with debug_name() {
+pub impl ComponentObserverEvent for Despawn with fn debug_name() {
   "despawn"
 }
 

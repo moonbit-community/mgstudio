@@ -24,12 +24,12 @@ pub fn AccessibilityPlugin::AccessibilityPlugin() -> AccessibilityPlugin {
 }
 
 ///|
-pub impl @app.Plugin for AccessibilityPlugin with name(_self) {
+pub impl @app.Plugin for AccessibilityPlugin with fn name(_self) {
   ACCESSIBILITY_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for AccessibilityPlugin with build(self, app) {
+pub impl @app.Plugin for AccessibilityPlugin with fn build(self, app) {
   accessibility_plugin_with(app, self)
 }
 

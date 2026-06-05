@@ -47,7 +47,7 @@ test "examples ecs state_scoped: scheduled update queues UI overlay for Camera3d
     @ui.get_ui_context_resource(world).get().unwrap().camera_entity is Some(_),
     content="true",
   )
-  let text_query : @ecs.Query[@ecs.Comp[@text.Text], @ecs.All] = @ecs.query(
+  let text_query : @ecs.Query[@ecs.Read[@text.Text], @ecs.All] = @ecs.query(
     world,
   )
   debug_inspect(text_query.count() > 0, content="true")

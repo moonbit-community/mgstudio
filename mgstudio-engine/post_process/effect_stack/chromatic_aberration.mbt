@@ -62,7 +62,7 @@ pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = 
 )
 
 ///|
-pub impl @ecs.Component for ChromaticAberration with component() {
+pub impl @ecs.Component for ChromaticAberration with fn component() {
   ecs_key_chromatic_aberration
 }
 

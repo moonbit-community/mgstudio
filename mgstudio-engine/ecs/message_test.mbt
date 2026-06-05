@@ -23,7 +23,7 @@ let test_runtime_message_key : MessageKey[TestRuntimeMessage] = register_message
 )
 
 ///|
-impl Message for TestRuntimeMessage with message() {
+impl Message for TestRuntimeMessage with fn message() {
   test_runtime_message_key
 }
 
@@ -38,7 +38,7 @@ let test_default_runtime_message_key : MessageKey[TestDefaultRuntimeMessage] = r
 )
 
 ///|
-impl Message for TestDefaultRuntimeMessage with message() {
+impl Message for TestDefaultRuntimeMessage with fn message() {
   test_default_runtime_message_key
 }
 
@@ -48,7 +48,7 @@ pub fn TestDefaultRuntimeMessage::TestDefaultRuntimeMessage() -> TestDefaultRunt
 }
 
 ///|
-pub impl Default for TestDefaultRuntimeMessage with default() {
+pub impl Default for TestDefaultRuntimeMessage with fn default() {
   TestDefaultRuntimeMessage::TestDefaultRuntimeMessage()
 }
 

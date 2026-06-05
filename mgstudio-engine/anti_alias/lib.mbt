@@ -29,12 +29,12 @@ pub fn AntiAliasPlugin::AntiAliasPlugin() -> AntiAliasPlugin {
 const ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.AntiAliasPlugin"
 
 ///|
-pub impl @app.Plugin for AntiAliasPlugin with name(_self) {
+pub impl @app.Plugin for AntiAliasPlugin with fn name(_self) {
   ANTI_ALIAS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for AntiAliasPlugin with build(self, app) {
+pub impl @app.Plugin for AntiAliasPlugin with fn build(self, app) {
   anti_alias_plugin_with(app, self)
 }
 

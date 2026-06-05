@@ -48,12 +48,12 @@ pub fn Rect::contains(self : Rect, value : @math.Vec2) -> Bool {
 }
 
 ///|
-pub impl ToJson for Rect with to_json(self) {
+pub impl ToJson for Rect with fn to_json(self) {
   (self.min, self.max).to_json()
 }
 
 ///|
-pub impl @json.FromJson for Rect with from_json(json, path) {
+pub impl @json.FromJson for Rect with fn from_json(json, path) {
   let (min, max) : (@math.Vec2, @math.Vec2) = @json.from_json(json, path~)
   Rect::new(min, max)
 }

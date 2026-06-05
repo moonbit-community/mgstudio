@@ -121,7 +121,7 @@ fn setup(
 ///|
 fn rotate_cubes(
   time : @app.Res[@time.Time[Unit]],
-  cubes : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[RotatingCube]],
+  cubes : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[RotatingCube]],
 ) -> Unit {
   let dt = time.get().delta_secs()
   let spin = @math.Quat::from_rotation_y(dt * 0.6F)
@@ -134,7 +134,7 @@ fn rotate_cubes(
 fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   cameras : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {

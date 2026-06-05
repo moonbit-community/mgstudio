@@ -38,7 +38,7 @@ let render3d_diagnostics_state_key : @ecs.ResourceKey[Render3dDiagnosticsState] 
 )
 
 ///|
-impl @app.Resource for Render3dDiagnosticsState with resource() {
+impl @app.Resource for Render3dDiagnosticsState with fn resource() {
   render3d_diagnostics_state_key
 }
 

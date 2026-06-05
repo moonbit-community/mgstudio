@@ -156,7 +156,7 @@ fn on_drag_start(
   pointer : @app.OnPointer[@app.PointerDown],
   commands : @app.Commands,
   drag_state : @app.ResMut[DragState],
-  draggables : @ecs.Query[@ecs.Comp[DraggableButton], @ecs.All],
+  draggables : @ecs.Query[@ecs.Read[DraggableButton], @ecs.All],
 ) -> Unit {
   guard pointer.target() is Some(target) else { return }
   let draggable = draggables.get(target) catch { _ => None }
@@ -188,7 +188,7 @@ fn on_drag_start(
 fn on_drag_move(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[DragState],
-  ghost_nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
+  ghost_nodes : @ecs.Query[@ecs.Write[@ui.Node], @ecs.All],
 ) -> Unit {
   let state = drag_state.peek()
   guard state.active else { return }

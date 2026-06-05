@@ -84,7 +84,7 @@ fn bloom_text(bloom : @post_process.Bloom?) -> String {
 
 ///|
 fn bloom_camera_entity(
-  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[BloomCamera], @ecs.All],
 ) -> @core.Entity? {
   let entity_ref = Ref(None)
   try! camera_query.view(fn(entity, _camera) {
@@ -198,7 +198,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
 ///|
 fn update_bloom_settings(
-  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[BloomCamera], @ecs.All],
   instructions : @app.Res[BloomInstructions],
   keycode : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
@@ -340,7 +340,7 @@ fn update_bloom_settings(
 ///|
 fn bounce_spheres(
   query : @ecs.Query[
-    (@ecs.Comp[Bouncing], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Bouncing], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

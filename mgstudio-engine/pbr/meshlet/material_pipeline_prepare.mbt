@@ -927,16 +927,16 @@ pub fn prepare_material_meshlet_meshes_prepass(
 }
 
 ///|
-pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass with component() {
+pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass with fn component() {
   ecs_key_meshlet_view_materials_main_opaque_pass
 }
 
 ///|
-pub impl @ecs.Component for MeshletViewMaterialsPrepass with component() {
+pub impl @ecs.Component for MeshletViewMaterialsPrepass with fn component() {
   ecs_key_meshlet_view_materials_prepass
 }
 
 ///|
-pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass with component() {
+pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass with fn component() {
   ecs_key_meshlet_view_materials_deferred_gbuffer_prepass
 }

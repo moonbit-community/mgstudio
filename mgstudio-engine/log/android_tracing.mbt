@@ -24,7 +24,7 @@ pub fn AndroidTracingPlugin::AndroidTracingPlugin() -> AndroidTracingPlugin {
 }
 
 ///|
-pub impl @app.Plugin for AndroidTracingPlugin with build(self, app) {
+pub impl @app.Plugin for AndroidTracingPlugin with fn build(self, app) {
   android_tracing_plugin(app, self)
 }
 

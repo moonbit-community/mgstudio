@@ -158,7 +158,7 @@ fn display_instructions(commands : @app.Commands) -> Unit {
 fn disable_entities_on_click(
   commands : @app.Commands,
   click_events : @app.ResMut[@app.PickingEvents],
-  valid_query : @ecs.Query[@ecs.Comp[DisableOnClick], @ecs.All],
+  valid_query : @ecs.Query[@ecs.Read[DisableOnClick], @ecs.All],
 ) -> Unit {
   click_events.modify(fn(events) {
     for event in @app.PickingEvents::drain(events) {
@@ -175,9 +175,9 @@ fn disable_entities_on_click(
 
 ///|
 fn list_all_named_entities(
-  query : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All],
+  query : @ecs.Query[@ecs.Read[@ecs.Name], @ecs.All],
   name_text_query : @ecs.Query[
-    (@ecs.Comp[EntityNameText], @ecs.Mut[@text.Text]),
+    (@ecs.Read[EntityNameText], @ecs.Write[@text.Text]),
     @ecs.All,
   ],
 ) -> Unit {

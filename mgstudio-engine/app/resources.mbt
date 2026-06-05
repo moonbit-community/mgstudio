@@ -161,22 +161,22 @@ fn[S : States] pending_state_transition_event_resource_key(
 }
 
 ///|
-pub impl[S : States] Resource for State[S] with resource() {
+pub impl[S : States] Resource for State[S] with fn resource() {
   registered_state_resource_key()
 }
 
 ///|
-pub impl[S : States] Resource for PreviousState[S] with resource() {
+pub impl[S : States] Resource for PreviousState[S] with fn resource() {
   registered_previous_state_resource_key()
 }
 
 ///|
-pub impl[S : States] Resource for NextState[S] with resource() {
+pub impl[S : States] Resource for NextState[S] with fn resource() {
   registered_next_state_resource_key()
 }
 
 ///|
-pub impl[S : States] Resource for StateTransitionEvent[S] with resource() {
+pub impl[S : States] Resource for StateTransitionEvent[S] with fn resource() {
   registered_state_transition_event_resource_key()
 }
 

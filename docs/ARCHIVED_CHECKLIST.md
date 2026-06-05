@@ -223,7 +223,7 @@
 - [x] Issue `ecs/changed_filter_storage`: add changed-component tracking storage and reader lifecycle.
 - [x] Issue `ecs/changed_filter_query`: add `Changed<T>` query filter matching and component mention wiring.
 - [x] Issue `ecs/changed_filter_tests`: add wbtest/unit coverage and migrate `change_detection` example to final semantics.
-- [x] Issue `ecs/changed_filter_ref_boundary`: define/close behavior for direct `Mut::get_ref()` in-place writes.
+- [x] Issue `ecs/changed_filter_ref_boundary`: define/close behavior for direct `Write::get_ref()` in-place writes.
 - [x] Issue `ecs/added_changed_o1_lookup`: switch `is_added_by_key/is_changed_by_key` to per-entity sequence lookup and clear records on remove/despawn.
 - [x] Issue `dev_tools/perf_overlay`: add profiling-oriented diagnostics overlay (`DiagnosticsOverlayPlugin`) with preset stats, rebuild timer, drag/collapse support.
 - [x] Issue `diagnostic/timeline_metrics`: add Chrome/Perfetto trace export (`TimelineTracePlugin`) and app/render timeline spans.

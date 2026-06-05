@@ -113,7 +113,7 @@ fn decompress(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   compressed_assets : @app.ResMut[@asset.Assets[GzAsset]],
-  query : @ecs.Query[@ecs.Comp[CompressedImage], @ecs.All],
+  query : @ecs.Query[@ecs.Read[CompressedImage], @ecs.All],
 ) -> Unit {
   compressed_assets.modify(fn(asset_store) {
     try! query.view(fn(entity, compressed_image) {

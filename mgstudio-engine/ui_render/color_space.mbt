@@ -25,6 +25,6 @@ pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ecs.register_c
 )
 
 ///|
-pub impl @ecs.Component for UiAntiAlias with component() {
+pub impl @ecs.Component for UiAntiAlias with fn component() {
   ecs_key_ui_anti_alias
 }

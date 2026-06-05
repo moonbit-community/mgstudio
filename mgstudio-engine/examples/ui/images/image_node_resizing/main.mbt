@@ -192,7 +192,7 @@ fn resize_label_text(width : Float, height : Float) -> String {
 
 ///|
 fn resize_group_node(
-  node_mut : @ecs.Mut[@ui.Node],
+  node_mut : @ecs.Write[@ui.Node],
   event : ImageGroupResize,
 ) -> Unit {
   let node = node_mut.peek()
@@ -383,7 +383,7 @@ fn setup(
 fn update(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   labels : @ecs.Query[
-    (@core.Entity, @ecs.Comp[TextData]),
+    (@core.Entity, @ecs.Read[TextData]),
     @ecs.With[ResizeLabel],
   ],
   commands : @app.Commands,
@@ -428,7 +428,10 @@ fn update(
 ///|
 fn update_text(
   event : @ecs.On[TextUpdate],
-  label_query : @ecs.Query[(@ecs.Mut[TextData], @ecs.Mut[@text.Text]), @ecs.All],
+  label_query : @ecs.Query[
+    (@ecs.Write[TextData], @ecs.Write[@text.Text]),
+    @ecs.All,
+  ],
 ) -> Unit raise {
   guard event.entity() is Some(entity) else { return }
   guard label_query.get(entity) is Some((text_data_mut, text_mut)) else {
@@ -457,7 +460,7 @@ fn update_text(
 ///|
 fn on_trigger_image_group(
   event : @ecs.On[ImageGroupResize],
-  groups : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[ImageGroup]],
+  groups : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[ImageGroup]],
 ) -> Unit {
   try! groups.view(fn(_entity, node_mut) {
     resize_group_node(node_mut, event.event())

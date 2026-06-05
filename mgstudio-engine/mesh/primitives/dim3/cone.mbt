@@ -20,7 +20,7 @@ pub enum ConeAnchor {
 } derive(Eq, Debug)
 
 ///|
-pub impl Default for ConeAnchor with default() {
+pub impl Default for ConeAnchor with fn default() {
   MidPoint
 }
 
@@ -82,12 +82,12 @@ pub fn ConeMeshBuilder::build(self : ConeMeshBuilder) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-pub impl MeshBuilder for ConeMeshBuilder with build(self) {
+pub impl MeshBuilder for ConeMeshBuilder with fn build(self) {
   cone_mesh_with_anchor(self.cone, self.resolution, self.anchor)
 }
 
 ///|
-pub impl Meshable for @math.Cone with mesh(self) {
+pub impl Meshable for @math.Cone with fn mesh(self) {
   ConeMeshBuilder::from_cone(self).build()
 }
 

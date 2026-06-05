@@ -157,7 +157,7 @@ fn setup(
 fn update_transforms(
   time : @app.Res[@time.Time[Unit]],
   nodes : @ecs.Query[
-    (@ecs.Comp[NodeMotion], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[NodeMotion], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

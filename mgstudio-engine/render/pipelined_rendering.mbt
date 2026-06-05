@@ -56,7 +56,7 @@ let ecs_key_render_app_channels : @ecs.ResourceKey[RenderAppChannels] = @ecs.reg
 )
 
 ///|
-pub impl @app.Resource for RenderAppChannels with resource() {
+pub impl @app.Resource for RenderAppChannels with fn resource() {
   ecs_key_render_app_channels
 }
 

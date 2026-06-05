@@ -202,12 +202,12 @@ fn update_bloom_settings(
   camera : @app.Single[
     (
       @core.Entity,
-      @ecs.Comp[@core_pipeline_tonemapping.Tonemapping],
+      @ecs.Read[@core_pipeline_tonemapping.Tonemapping],
       @ecs.Optional[@post_process_bloom.Bloom],
     ),
     @ecs.With[@camera_camera.Camera],
   ],
-  text : @app.Single[@ecs.Mut[@text.Text], @ecs.All],
+  text : @app.Single[@ecs.Write[@text.Text], @ecs.All],
 ) -> Unit {
   let (camera_entity, tonemapping_comp, bloom_comp) = camera.get()
   let tonemapping = tonemapping_comp.value()

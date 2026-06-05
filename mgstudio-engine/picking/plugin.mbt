@@ -45,42 +45,42 @@ pub fn DefaultPickingPlugins::DefaultPickingPlugins() -> DefaultPickingPlugins {
 }
 
 ///|
-pub impl @app.Plugin for PickingPlugin with name(_self) {
+pub impl @app.Plugin for PickingPlugin with fn name(_self) {
   "mgstudio.picking.PickingPlugin"
 }
 
 ///|
-pub impl @app.Plugin for PickingPlugin with build(_self, app) {
+pub impl @app.Plugin for PickingPlugin with fn build(_self, app) {
   picking_plugin(app)
 }
 
 ///|
-pub impl @app.Plugin for PointerInputPlugin with name(_self) {
+pub impl @app.Plugin for PointerInputPlugin with fn name(_self) {
   "mgstudio.picking.PointerInputPlugin"
 }
 
 ///|
-pub impl @app.Plugin for PointerInputPlugin with build(_self, app) {
+pub impl @app.Plugin for PointerInputPlugin with fn build(_self, app) {
   picking_input_plugin(app)
 }
 
 ///|
-pub impl @app.Plugin for InteractionPlugin with name(_self) {
+pub impl @app.Plugin for InteractionPlugin with fn name(_self) {
   "mgstudio.picking.InteractionPlugin"
 }
 
 ///|
-pub impl @app.Plugin for InteractionPlugin with build(_self, app) {
+pub impl @app.Plugin for InteractionPlugin with fn build(_self, app) {
   picking_interaction_plugin(app)
 }
 
 ///|
-pub impl @app.PluginGroup for DefaultPickingPlugins with name(_self) {
+pub impl @app.PluginGroup for DefaultPickingPlugins with fn name(_self) {
   "mgstudio.picking.DefaultPickingPlugins"
 }
 
 ///|
-pub impl @app.PluginGroup for DefaultPickingPlugins with build(_self) {
+pub impl @app.PluginGroup for DefaultPickingPlugins with fn build(_self) {
   @app.PluginGroupBuilder::start_named("mgstudio.picking.DefaultPickingPlugins")
   .add(PointerInputPlugin::PointerInputPlugin())
   .add(PickingPlugin::PickingPlugin())

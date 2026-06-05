@@ -76,7 +76,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn rotate_preview(
   time : @app.Res[@time.Time[Unit]],
   previews : @ecs.Query[
-    (@ecs.Comp[Spin], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[Spin], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {

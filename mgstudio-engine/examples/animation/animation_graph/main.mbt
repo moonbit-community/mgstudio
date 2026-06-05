@@ -399,7 +399,7 @@ fn setup_ui(
 fn init_animations(
   commands : @app.Commands,
   players : @ecs.Query[
-    (@core.Entity, @ecs.Mut[@animation.AnimationPlayer]),
+    (@core.Entity, @ecs.Write[@animation.AnimationPlayer]),
     @ecs.All,
   ],
   animation_graph : @app.Res[ExampleAnimationGraph],
@@ -432,13 +432,13 @@ fn init_animations(
 fn handle_weight_drag(
   controls : @ecs.Query[
     (
-      @ecs.Comp[@ui.Interaction],
-      @ecs.Comp[@ui.RelativeCursorPosition],
-      @ecs.Comp[ClipNode],
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@ui.RelativeCursorPosition],
+      @ecs.Read[ClipNode],
     ),
     @ecs.All,
   ],
-  weights_query : @ecs.Query[@ecs.Mut[ExampleAnimationWeights], @ecs.All],
+  weights_query : @ecs.Query[@ecs.Write[ExampleAnimationWeights], @ecs.All],
 ) -> Unit {
   guard (weights_query.single() catch { _ => None }) is Some(weights_mut) else {
     return
@@ -460,12 +460,12 @@ fn handle_weight_drag(
 
 ///|
 fn update_ui(
-  weights_query : @ecs.Query[@ecs.Comp[ExampleAnimationWeights], @ecs.All],
+  weights_query : @ecs.Query[@ecs.Read[ExampleAnimationWeights], @ecs.All],
   labels : @ecs.Query[
-    (@ecs.Comp[ClipNodeLabel], @ecs.Mut[@text.Text]),
+    (@ecs.Read[ClipNodeLabel], @ecs.Write[@text.Text]),
     @ecs.All,
   ],
-  fills : @ecs.Query[(@ecs.Comp[ClipNodeFill], @ecs.Mut[@ui.Node]), @ecs.All],
+  fills : @ecs.Query[(@ecs.Read[ClipNodeFill], @ecs.Write[@ui.Node]), @ecs.All],
 ) -> Unit {
   guard (weights_query.single() catch { _ => None }) is Some(weights_comp) else {
     return
@@ -490,7 +490,7 @@ fn update_ui(
 ///|
 fn sync_weights(
   players : @ecs.Query[
-    (@ecs.Mut[@animation.AnimationPlayer], @ecs.Comp[ExampleAnimationWeights]),
+    (@ecs.Write[@animation.AnimationPlayer], @ecs.Read[ExampleAnimationWeights]),
     @ecs.All,
   ],
   animation_graph : @app.Res[ExampleAnimationGraph],

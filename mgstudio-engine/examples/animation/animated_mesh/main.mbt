@@ -63,8 +63,8 @@ fn setup_mesh_and_animation(
 fn play_animation_when_ready(
   scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
-  animations_to_play : @ecs.Query[@ecs.Comp[AnimationToPlay], @ecs.All],
-  players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
+  animations_to_play : @ecs.Query[@ecs.Read[AnimationToPlay], @ecs.All],
+  players : @ecs.Query[@ecs.Write[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
   guard scene_ready.entity() is Some(scene_entity) else { return }
   guard (animations_to_play.get(scene_entity) catch { _ => None })

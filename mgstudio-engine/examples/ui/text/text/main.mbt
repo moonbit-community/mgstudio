@@ -294,7 +294,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn text_color_system(
   time : @app.Res[@time.Time[@time.Real]],
-  query : @ecs.Query[@ecs.Mut[@mgtext.TextColor], @ecs.With[AnimatedText]],
+  query : @ecs.Query[@ecs.Write[@mgtext.TextColor], @ecs.With[AnimatedText]],
 ) -> Unit {
   let seconds = time.get().elapsed_secs()
   try! query.view(fn(_entity, text_color) {
@@ -313,7 +313,7 @@ fn text_color_system(
 ///|
 fn text_update_system(
   diagnostics : @app.Res[@diagnostic.DiagnosticsStore],
-  query : @ecs.Query[@ecs.Mut[@mgtext.TextSpan], @ecs.With[FpsText]],
+  query : @ecs.Query[@ecs.Write[@mgtext.TextSpan], @ecs.With[FpsText]],
 ) -> Unit {
   let value = match
     diagnostics.get().get(@diagnostic.frame_time_diagnostic_fps) {

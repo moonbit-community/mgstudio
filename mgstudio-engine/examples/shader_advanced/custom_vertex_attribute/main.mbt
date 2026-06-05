@@ -127,7 +127,7 @@ fn setup(
 ///|
 fn rotate_cube(
   time : @app.Res[@time.Time[Unit]],
-  cube_query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotates]],
+  cube_query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Rotates]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! cube_query.view(fn(_entity, transform) {

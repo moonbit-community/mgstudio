@@ -160,7 +160,7 @@ fn instructions(
 ///|
 fn orbit(
   camera_query : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],

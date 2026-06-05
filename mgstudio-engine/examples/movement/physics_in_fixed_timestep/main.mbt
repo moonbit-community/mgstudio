@@ -322,7 +322,7 @@ fn set_fixed_time_step_flag(
 fn rotate_camera(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
   cameras : @ecs.Query[
-    (@ecs.Comp[CameraSensitivity], @ecs.Mut[@transform.Transform]),
+    (@ecs.Read[CameraSensitivity], @ecs.Write[@transform.Transform]),
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
@@ -357,11 +357,11 @@ fn accumulate_input(
   commands : @app.Commands,
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   players : @ecs.Query[
-    (@ecs.Comp[AccumulatedInput], @ecs.Mut[Velocity]),
+    (@ecs.Read[AccumulatedInput], @ecs.Write[Velocity]),
     @ecs.All,
   ],
   cameras : @ecs.Query[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
@@ -410,7 +410,7 @@ fn did_fixed_timestep_run_this_frame(world : @ecs.World) -> Bool {
 
 ///|
 fn clear_input(
-  players : @ecs.Query[@ecs.Mut[AccumulatedInput], @ecs.All],
+  players : @ecs.Query[@ecs.Write[AccumulatedInput], @ecs.All],
 ) -> Unit {
   try! players.view(fn(_entity, input) {
     input.modify(fn(value) { value.movement = @math.Vec2::zero() })
@@ -422,9 +422,9 @@ fn advance_physics(
   commands : @app.Commands,
   players : @ecs.Query[
     (
-      @ecs.Comp[PreviousPhysicalTranslation],
-      @ecs.Comp[Velocity],
-      @ecs.Mut[PhysicalTranslation],
+      @ecs.Read[PreviousPhysicalTranslation],
+      @ecs.Read[Velocity],
+      @ecs.Write[PhysicalTranslation],
     ),
     @ecs.All,
   ],
@@ -449,9 +449,9 @@ fn advance_physics(
 fn interpolate_rendered_transform(
   players : @ecs.Query[
     (
-      @ecs.Comp[PreviousPhysicalTranslation],
-      @ecs.Comp[PhysicalTranslation],
-      @ecs.Mut[@transform.Transform],
+      @ecs.Read[PreviousPhysicalTranslation],
+      @ecs.Read[PhysicalTranslation],
+      @ecs.Write[@transform.Transform],
     ),
     @ecs.All,
   ],
@@ -471,11 +471,11 @@ fn interpolate_rendered_transform(
 ///|
 fn translate_camera(
   players : @ecs.Query[
-    @ecs.Comp[@transform.Transform],
+    @ecs.Read[@transform.Transform],
     @ecs.With[AccumulatedInput],
   ],
   cameras : @ecs.Query[
-    @ecs.Mut[@transform.Transform],
+    @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {

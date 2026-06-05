@@ -693,7 +693,7 @@ pub fn[T] ComponentColumn::for_each_changed_table_entity(
 pub fn[T] ComponentColumn::get_mut(
   self : ComponentColumn[T],
   entity : @core.Entity,
-) -> Mut[T]? {
+) -> Write[T]? {
   if self.contains(entity) {
     let (table_id, row_index) = match self.world.entity_table_location(entity) {
       Some(location) => location

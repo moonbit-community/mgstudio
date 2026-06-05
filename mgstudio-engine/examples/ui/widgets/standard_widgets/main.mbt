@@ -183,11 +183,11 @@ fn input_system(
 fn update_widget_styles(
   widget_state : @app.Res[WidgetState],
   button_query : @ecs.Query[
-    @ecs.Mut[@ui.BackgroundColor],
+    @ecs.Write[@ui.BackgroundColor],
     @ecs.With[ToggleButton],
   ],
-  label_query : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[ToggleLabel]],
-  fill_query : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[WidgetSliderFill]],
+  label_query : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[ToggleLabel]],
+  fill_query : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[WidgetSliderFill]],
 ) -> Unit {
   let enabled = widget_state.get().enabled
   let slider = widget_state.get().slider

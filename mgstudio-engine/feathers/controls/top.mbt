@@ -32,12 +32,12 @@ fn ensure_controls_runtime(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub impl @app.Plugin for ControlsPlugin with name(_self) {
+pub impl @app.Plugin for ControlsPlugin with fn name(_self) {
   CONTROLS_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ControlsPlugin with build(_self, app) {
+pub impl @app.Plugin for ControlsPlugin with fn build(_self, app) {
   controls_plugin(app)
 }
 

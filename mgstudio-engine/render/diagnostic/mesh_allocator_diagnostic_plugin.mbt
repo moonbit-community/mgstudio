@@ -36,12 +36,12 @@ pub fn MeshAllocatorDiagnosticPlugin::new(
 }
 
 ///|
-pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with name(_self) {
+pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with fn name(_self) {
   MESH_ALLOCATOR_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with build(self, app) {
+pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin with fn build(self, app) {
   mesh_allocator_diagnostic_plugin_with(app, self)
 }
 
@@ -66,7 +66,7 @@ let mesh_allocator_diagnostic_state_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for MeshAllocatorDiagnosticState with resource() {
+pub impl @app.Resource for MeshAllocatorDiagnosticState with fn resource() {
   mesh_allocator_diagnostic_state_key
 }
 

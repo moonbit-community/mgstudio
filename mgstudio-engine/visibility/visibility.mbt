@@ -23,7 +23,7 @@ pub(all) enum Visibility {
 } derive(Eq, Debug)
 
 ///|
-pub impl ToJson for Visibility with to_json(self) {
+pub impl ToJson for Visibility with fn to_json(self) {
   match self {
     Hidden => (0).to_json()
     Inherited => (1).to_json()
@@ -32,7 +32,7 @@ pub impl ToJson for Visibility with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for Visibility with from_json(json, _path) {
+pub impl @json.FromJson for Visibility with fn from_json(json, _path) {
   let tag : Int = try! @json.from_json(json)
   match tag {
     0 => Hidden
@@ -86,12 +86,12 @@ pub struct InheritedVisibility {
 } derive(Eq, Debug)
 
 ///|
-pub impl ToJson for InheritedVisibility with to_json(self) {
+pub impl ToJson for InheritedVisibility with fn to_json(self) {
   self.visible.to_json()
 }
 
 ///|
-pub impl @json.FromJson for InheritedVisibility with from_json(json, _path) {
+pub impl @json.FromJson for InheritedVisibility with fn from_json(json, _path) {
   let visible : Bool = try! @json.from_json(json)
   InheritedVisibility::new(visible)
 }
@@ -127,12 +127,12 @@ pub struct ViewVisibility {
 } derive(Eq, Debug)
 
 ///|
-pub impl ToJson for ViewVisibility with to_json(self) {
+pub impl ToJson for ViewVisibility with fn to_json(self) {
   self.get().to_json()
 }
 
 ///|
-pub impl @json.FromJson for ViewVisibility with from_json(json, _path) {
+pub impl @json.FromJson for ViewVisibility with fn from_json(json, _path) {
   let visible : Bool = try! @json.from_json(json)
   ViewVisibility::new(visible)
 }
@@ -244,7 +244,7 @@ pub fn VisibilityRange::abrupt(start : Float, end : Float) -> VisibilityRange {
 }
 
 ///|
-pub impl ToJson for VisibilityRange with to_json(self) {
+pub impl ToJson for VisibilityRange with fn to_json(self) {
   (
     self.start_margin_min,
     self.start_margin_max,
@@ -255,7 +255,7 @@ pub impl ToJson for VisibilityRange with to_json(self) {
 }
 
 ///|
-pub impl @json.FromJson for VisibilityRange with from_json(json, path) {
+pub impl @json.FromJson for VisibilityRange with fn from_json(json, path) {
   let (
     start_margin_min,
     start_margin_max,

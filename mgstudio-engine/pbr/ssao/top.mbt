@@ -33,12 +33,15 @@ pub fn ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin() ->
 }
 
 ///|
-pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with name(_self) {
+pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with fn name(_self) {
   SCREEN_SPACE_AMBIENT_OCCLUSION_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with build(self, app) {
+pub impl @app.Plugin for ScreenSpaceAmbientOcclusionPlugin with fn build(
+  self,
+  app,
+) {
   register_embedded_wgsl_sources()
   ssao_plugin_install_with(app, self)
 }
@@ -108,7 +111,7 @@ let ecs_key_ssao_plugin_state : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState with resource() {
+pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState with fn resource() {
   ecs_key_ssao_plugin_state
 }
 

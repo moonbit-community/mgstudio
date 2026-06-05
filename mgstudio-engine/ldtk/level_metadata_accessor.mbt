@@ -18,7 +18,7 @@ pub(open) trait LevelMetadataAccessor {
 }
 
 ///|
-pub impl LevelMetadataAccessor for LdtkProject with get_level_metadata_by_iid(
+pub impl LevelMetadataAccessor for LdtkProject with fn get_level_metadata_by_iid(
   value,
   iid,
 ) {

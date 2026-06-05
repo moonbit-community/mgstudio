@@ -46,12 +46,12 @@ pub fn Triangle3dMeshBuilder::build(
 }
 
 ///|
-pub impl MeshBuilder for Triangle3dMeshBuilder with build(self) {
+pub impl MeshBuilder for Triangle3dMeshBuilder with fn build(self) {
   triangle3d_mesh(self.triangle)
 }
 
 ///|
-pub impl Meshable for @math.Triangle3d with mesh(self) {
+pub impl Meshable for @math.Triangle3d with fn mesh(self) {
   Triangle3dMeshBuilder::new(self).build()
 }
 

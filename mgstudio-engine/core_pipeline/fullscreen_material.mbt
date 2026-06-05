@@ -38,12 +38,12 @@ pub fn fullscreen_material_plugin(
 }
 
 ///|
-pub impl @app.Plugin for FullscreenMaterialPlugin with name(_self) {
+pub impl @app.Plugin for FullscreenMaterialPlugin with fn name(_self) {
   FULLSCREEN_MATERIAL_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FullscreenMaterialPlugin with build(self, app) {
+pub impl @app.Plugin for FullscreenMaterialPlugin with fn build(self, app) {
   fullscreen_material_plugin_with(app, self)
 }
 
@@ -124,7 +124,7 @@ pub let ecs_key_fullscreen_material_pipeline : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for FullscreenMaterialPipelineState with resource() {
+pub impl @app.Resource for FullscreenMaterialPipelineState with fn resource() {
   ecs_key_fullscreen_material_pipeline
 }
 

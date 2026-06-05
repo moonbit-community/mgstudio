@@ -36,12 +36,15 @@ pub fn ErasedRenderAssetDiagnosticPlugin::new(
 }
 
 ///|
-pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with name(_self) {
+pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with fn name(_self) {
   ERASED_RENDER_ASSET_DIAGNOSTIC_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with build(self, app) {
+pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin with fn build(
+  self,
+  app,
+) {
   erased_render_asset_diagnostic_plugin_with(app, self)
 }
 
@@ -66,7 +69,7 @@ let erased_render_asset_diagnostic_state_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @app.Resource for ErasedRenderAssetDiagnosticState with resource() {
+pub impl @app.Resource for ErasedRenderAssetDiagnosticState with fn resource() {
   erased_render_asset_diagnostic_state_key
 }
 

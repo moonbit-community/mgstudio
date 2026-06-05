@@ -139,14 +139,14 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
 
   set_test_tick(world, 0, 1)
 
-  let visible_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let visible_query : Query[Write[MutQueryPosition], All] = query(world)
   let seen_visible : Array[Int] = []
   try! visible_query.view(fn(entity, position_mut) {
     seen_visible.push(entity.id)
     position_mut.modify(fn(value) { value.x = value.x + 10 })
   })
 
-  let disabled_query : Query[Mut[MutQueryPosition], With[Disabled]] = query_filtered(
+  let disabled_query : Query[Write[MutQueryPosition], With[Disabled]] = query_filtered(
     world,
     With::new(ecs_key_disabled),
   )
@@ -176,7 +176,7 @@ test "ecs query: view permits non-structural replacement but rejects structural 
     x: 1,
     y: 2,
   })
-  let query : Query[Comp[MutQueryPosition], All] = query(world)
+  let query : Query[Read[MutQueryPosition], All] = query(world)
   let replace_succeeded : Ref[Bool] = Ref(false)
   let replace_failed : Ref[Bool] = Ref(false)
   try! query.view(fn(entity, _position) {
@@ -218,7 +218,7 @@ test "ecs query: view rejects structural removal" {
     x: 1,
     y: 2,
   })
-  let query : Query[Comp[MutQueryPosition], All] = query(world)
+  let query : Query[Read[MutQueryPosition], All] = query(world)
   let remove_error : Ref[EcsError?] = Ref(None)
   try! query.view(fn(entity, _position) {
     ignore(
@@ -252,7 +252,7 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
   world.increment_change_tick() |> ignore
   set_test_tick(world, 0, 1)
 
-  let first_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let first_query : Query[Write[MutQueryPosition], All] = query(world)
   let first_position = try! first_query.require_single()
   debug_inspect(first_position.is_added(), content="true")
   debug_inspect(first_position.is_changed(), content="true")
@@ -266,7 +266,7 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
   world.increment_change_tick() |> ignore
   set_test_tick(world, 1, 2)
 
-  let second_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let second_query : Query[Write[MutQueryPosition], All] = query(world)
   let second_position = try! second_query.require_single()
   debug_inspect(second_position.is_added(), content="false")
   debug_inspect(second_position.is_changed(), content="false")
@@ -287,13 +287,13 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
 }
 
 ///|
-test "ecs mut query: Mut::modify persists method-style mutations" {
+test "ecs mut query: Write::modify persists method-style mutations" {
   let world = World::new()
   let entity = world.spawn()
   try! world.set_by_key(entity, mut_query_method_value_key, MutQueryMethodValue::{
     value: 1,
   })
-  let query : Query[Mut[MutQueryMethodValue], All] = query(world)
+  let query : Query[Write[MutQueryMethodValue], All] = query(world)
   let component_mut = try! query.require_single()
   component_mut.modify(fn(value) { value.bump() })
   debug_inspect(
@@ -333,7 +333,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   set_test_tick(world, 0, 1)
 
   let state : QueryState[
-    (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
+    (Read[MutQueryPosition], Write[MutQueryVelocity]),
     Without[MutQueryAcceleration],
   ] = world.query_filtered(Without::new(mut_query_acceleration_key))
 
@@ -350,7 +350,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   debug_inspect(single_velocity.peek(), content="{ dx: 12, dy: 20 }")
 
   let query : Query[
-    (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
+    (Read[MutQueryPosition], Write[MutQueryVelocity]),
     Without[MutQueryAcceleration],
   ] = query_filtered(world, Without::new(mut_query_acceleration_key))
   let duplicate_entity : @core.Entity? = try {
@@ -385,7 +385,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
 }
 
 ///|
-test "ecs mut query: contiguous_iter and par_iter work with generic Mut query data" {
+test "ecs mut query: contiguous_iter and par_iter work with generic Write query data" {
   let world = World::new()
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -423,7 +423,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
 
   set_test_tick(world, 0, 1)
 
-  let state : QueryState[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = world.query()
+  let state : QueryState[(Read[MutQueryPosition], Write[MutQueryVelocity]), All] = world.query()
   guard state.contiguous_iter(world) is Some(iter) else {
     fail("expected contiguous iterator for generic mut query")
   }
@@ -435,7 +435,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
   }
   debug_inspect(chunk_values, content="[1, 2, 4]")
 
-  let query : Query[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = query(
+  let query : Query[(Read[MutQueryPosition], Write[MutQueryVelocity]), All] = query(
     world,
   )
   try! query

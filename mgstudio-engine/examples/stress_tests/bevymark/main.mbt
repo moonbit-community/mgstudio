@@ -173,7 +173,10 @@ fn spawn_on_click(
 ///|
 fn movement_system(
   time : @app.Res[@time.Time[Unit]],
-  birds : @ecs.Query[(@ecs.Mut[Bird], @ecs.Mut[@transform.Transform]), @ecs.All],
+  birds : @ecs.Query[
+    (@ecs.Write[Bird], @ecs.Write[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let dt = time.get().delta_secs()
   try! birds.for_each(fn(_entity, data) {

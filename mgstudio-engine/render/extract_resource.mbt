@@ -30,14 +30,14 @@ pub fn[R, F] ExtractResourcePlugin::ExtractResourcePlugin() -> ExtractResourcePl
 }
 
 ///|
-pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with name(
+pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with fn name(
   _self,
 ) {
   EXTRACT_RESOURCE_PLUGIN_NAME
 }
 
 ///|
-pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with build(
+pub impl[R : @app.Resource, F] @app.Plugin for ExtractResourcePlugin[R, F] with fn build(
   self,
   app,
 ) {

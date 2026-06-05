@@ -129,7 +129,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn move_paddle(
   time : @app.Res[@time.Time[Unit]],
   keyboard : @input.ButtonInput[@window.KeyCode],
-  paddles : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Paddle]],
+  paddles : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Paddle]],
 ) -> Unit {
   let mut dir = 0.0F
   if keyboard.pressed(@window.KeyCode::ArrowLeft) ||
@@ -155,9 +155,12 @@ fn move_paddle(
 fn move_ball(
   commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
-  balls : @ecs.Query[(@ecs.Mut[Ball], @ecs.Mut[@transform.Transform]), @ecs.All],
-  paddles : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Paddle]],
-  bricks : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Brick]],
+  balls : @ecs.Query[
+    (@ecs.Write[Ball], @ecs.Write[@transform.Transform]),
+    @ecs.All,
+  ],
+  paddles : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Paddle]],
+  bricks : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Brick]],
 ) -> Unit {
   let paddle = paddles.require_single() catch { _ => return }
   let dt = time.get().delta_secs()

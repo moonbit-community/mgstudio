@@ -185,7 +185,7 @@ fn trigger_system(
 ///|
 fn evaluate_callbacks(
   callbacks : @ecs.Query[
-    (@core.Entity, @ecs.Comp[Callback]),
+    (@core.Entity, @ecs.Read[Callback]),
     @ecs.With[Triggered],
   ],
   commands : @app.Commands,
@@ -199,7 +199,7 @@ fn evaluate_callbacks(
 
 ///|
 fn system_a(
-  label : @app.Single[@ecs.Mut[@text.Text], @ecs.With[LastTriggeredLabel]],
+  label : @app.Single[@ecs.Write[@text.Text], @ecs.With[LastTriggeredLabel]],
 ) -> Unit {
   label.get().set(@text.Text::new("Last Triggered: A"))
   println("A: registered callback triggered")
@@ -207,7 +207,7 @@ fn system_a(
 
 ///|
 fn system_b(
-  label : @app.Single[@ecs.Mut[@text.Text], @ecs.With[LastTriggeredLabel]],
+  label : @app.Single[@ecs.Write[@text.Text], @ecs.With[LastTriggeredLabel]],
 ) -> Unit {
   label.get().set(@text.Text::new("Last Triggered: B"))
   println("B: world-registered callback triggered")

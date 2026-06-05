@@ -31,47 +31,47 @@ pub fn[P : Inset] Ring::from_primitive_and_thickness(
 }
 
 ///|
-pub impl ToRing for Circle with to_ring(self, thickness) {
+pub impl ToRing for Circle with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for Triangle2d with to_ring(self, thickness) {
+pub impl ToRing for Triangle2d with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for Rhombus with to_ring(self, thickness) {
+pub impl ToRing for Rhombus with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for Capsule2d with to_ring(self, thickness) {
+pub impl ToRing for Capsule2d with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for Rectangle with to_ring(self, thickness) {
+pub impl ToRing for Rectangle with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for CircularSegment with to_ring(self, thickness) {
+pub impl ToRing for CircularSegment with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl ToRing for RegularPolygon with to_ring(self, thickness) {
+pub impl ToRing for RegularPolygon with fn to_ring(self, thickness) {
   Ring::from_primitive_and_thickness(self, thickness)
 }
 
 ///|
-pub impl Inset for Circle with inset(self, distance) {
+pub impl Inset for Circle with fn inset(self, distance) {
   Circle::{ ..self, radius: self.radius - distance }
 }
 
 ///|
-pub impl Inset for Triangle2d with inset(self, distance) {
+pub impl Inset for Triangle2d with fn inset(self, distance) {
   fn find_inset_point(a : Vec2, b : Vec2, c : Vec2, distance : Float) -> Vec2 {
     let unit_vector_ab = b.sub(a).normalize()
     let unit_vector_ac = c.sub(a).normalize()
@@ -90,7 +90,7 @@ pub impl Inset for Triangle2d with inset(self, distance) {
 }
 
 ///|
-pub impl Inset for Rhombus with inset(self, distance) {
+pub impl Inset for Rhombus with fn inset(self, distance) {
   let half_width = self.half_diagonal.x
   let half_height = self.half_diagonal.y
   let angle = Float::from_double(
@@ -104,17 +104,17 @@ pub impl Inset for Rhombus with inset(self, distance) {
 }
 
 ///|
-pub impl Inset for Capsule2d with inset(self, distance) {
+pub impl Inset for Capsule2d with fn inset(self, distance) {
   Capsule2d::{ ..self, radius: self.radius - distance }
 }
 
 ///|
-pub impl Inset for Rectangle with inset(self, distance) {
+pub impl Inset for Rectangle with fn inset(self, distance) {
   Rectangle::{ half_size: self.half_size.sub(Vec2::splat(distance)) }
 }
 
 ///|
-pub impl Inset for CircularSegment with inset(self, distance) {
+pub impl Inset for CircularSegment with fn inset(self, distance) {
   let radius = self.radius - distance
   let apothem = self.radius * cos(self.half_angle) + distance
   let half_angle = acos(apothem / radius)
@@ -122,7 +122,7 @@ pub impl Inset for CircularSegment with inset(self, distance) {
 }
 
 ///|
-pub impl Inset for RegularPolygon with inset(self, distance) {
+pub impl Inset for RegularPolygon with fn inset(self, distance) {
   let safe_sides = if self.sides < 3 { 3 } else { self.sides }
   let internal_angle = pi() *
     Float::from_double((safe_sides - 2).to_double()) /

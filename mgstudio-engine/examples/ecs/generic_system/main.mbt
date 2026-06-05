@@ -128,7 +128,10 @@ fn setup_system(commands : @app.Commands) -> Unit {
 ///|
 fn print_text_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[(@ecs.Comp[TextToPrint], @ecs.Mut[PrinterTick]), @ecs.All],
+  query : @ecs.Query[
+    (@ecs.Read[TextToPrint], @ecs.Write[PrinterTick]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let delta = time.get().delta()
   try! query.view(fn(_entity, data) {

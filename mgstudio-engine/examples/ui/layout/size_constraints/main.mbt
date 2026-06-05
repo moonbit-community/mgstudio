@@ -455,8 +455,8 @@ fn update_buttons(
   settings : @app.ResMut[ConstraintSettings],
   buttons : @ecs.Query[
     (
-      (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
-      (@ecs.Comp[@ui.Interaction], @ecs.Comp[ConstraintButton]),
+      (@ecs.Write[@ui.BackgroundColor], @ecs.Write[@ui.BorderColor]),
+      (@ecs.Read[@ui.Interaction], @ecs.Read[ConstraintButton]),
     ),
     @ecs.All,
   ],
@@ -496,7 +496,7 @@ fn update_buttons(
 ///|
 fn apply_settings(
   settings : @app.Res[ConstraintSettings],
-  bars : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[Bar]],
+  bars : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[Bar]],
 ) -> Unit {
   let current = settings.get()
   try! bars.view(fn(_entity, node_mut) {

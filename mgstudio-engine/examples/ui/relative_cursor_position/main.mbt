@@ -127,11 +127,15 @@ fn setup(
 ///|
 fn relative_cursor_position_system(
   relative_cursor_positions : @ecs.Query[
-    (@ecs.Comp[CursorArea], @ecs.Comp[@ui.RelativeCursorPosition]),
+    (@ecs.Read[CursorArea], @ecs.Read[@ui.RelativeCursorPosition]),
     @ecs.All,
   ],
   outputs : @ecs.Query[
-    (@ecs.Comp[CursorReadout], @ecs.Mut[@text.Text], @ecs.Mut[@text.TextColor]),
+    (
+      @ecs.Read[CursorReadout],
+      @ecs.Write[@text.Text],
+      @ecs.Write[@text.TextColor],
+    ),
     @ecs.All,
   ],
 ) -> Unit {

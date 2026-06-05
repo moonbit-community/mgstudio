@@ -198,7 +198,10 @@ fn setup_game(
 fn movement(
   time : @app.Res[@time.Time[Unit]],
   input : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[@sprite.Sprite]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@sprite.Sprite],
+  ],
 ) -> Unit {
   let delta_seconds = time.get().delta_seconds()
   try! query.for_each(fn(_entity, transform) {
@@ -235,7 +238,7 @@ fn movement(
 ///|
 fn change_color(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
+  query : @ecs.Query[@ecs.Write[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   let hue = time.get().elapsed_seconds() * 60.0F
   try! query.for_each(fn(_entity, sprite) {

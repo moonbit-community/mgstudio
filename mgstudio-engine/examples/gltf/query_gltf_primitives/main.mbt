@@ -66,10 +66,10 @@ fn find_top_material_and_mesh(
   time : @app.Res[@time.Time[Unit]],
   query : @ecs.Query[
     (
-      @ecs.Comp[@pbr.MeshMaterial3d],
-      @ecs.Comp[@mesh.Mesh3d],
-      @ecs.Comp[@gltf.GltfPrimitiveIndex],
-      @ecs.Comp[@gltf.GltfMaterialName],
+      @ecs.Read[@pbr.MeshMaterial3d],
+      @ecs.Read[@mesh.Mesh3d],
+      @ecs.Read[@gltf.GltfPrimitiveIndex],
+      @ecs.Read[@gltf.GltfMaterialName],
     ),
     @ecs.All,
   ],

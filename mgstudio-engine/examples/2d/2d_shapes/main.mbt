@@ -242,7 +242,7 @@ fn toggle_wireframe(
 ///|
 fn rotate(
   query : @ecs.Query[
-    (@ecs.Mut[@transform.Transform], @ecs.Comp[@mesh.Mesh2d]),
+    (@ecs.Write[@transform.Transform], @ecs.Read[@mesh.Mesh2d]),
     @ecs.All,
   ],
   time : @app.Res[@time.Time[Unit]],

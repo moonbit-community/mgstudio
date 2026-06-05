@@ -21,12 +21,12 @@ pub fn UiRenderPlugin::UiRenderPlugin() -> UiRenderPlugin {
 }
 
 ///|
-pub impl @app.Plugin for UiRenderPlugin with name(_self) {
+pub impl @app.Plugin for UiRenderPlugin with fn name(_self) {
   "mgstudio.ui_render.UiRenderPlugin"
 }
 
 ///|
-pub impl @app.Plugin for UiRenderPlugin with build(_self, app) {
+pub impl @app.Plugin for UiRenderPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
   ui_render_plugin_install(app)
 }

@@ -160,7 +160,7 @@ fn alter_handle(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   right_shape : @ecs.Query[
-    (@ecs.Comp[Shape], @ecs.Comp[@mesh.Mesh3d]),
+    (@ecs.Read[Shape], @ecs.Read[@mesh.Mesh3d]),
     @ecs.Without[Left],
   ],
 ) -> Unit {
@@ -181,7 +181,7 @@ fn alter_handle(
 ///|
 fn alter_mesh(
   is_mesh_scaled : @app.Local[Bool],
-  left_shape : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[Left]],
+  left_shape : @ecs.Query[@ecs.Read[@mesh.Mesh3d], @ecs.With[Left]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   guard (left_shape.single() catch { _ => None }) is Some(mesh3d_comp) else {
