@@ -44,7 +44,8 @@ fn setup_scene(
       (
         @mesh.Mesh2d::new(
           meshes.modify(fn(meshes) {
-            meshes |> @sprite.add_mesh(@math.Rectangle::new(1000.0F, 700.0F))
+            meshes
+            |> @mesh_primitives.add_mesh(@math.Rectangle::new(1000.0F, 700.0F))
           }),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -64,7 +65,7 @@ fn setup_scene(
         Player::{  },
         @mesh.Mesh2d::new(
           meshes.modify(fn(meshes) {
-            meshes |> @sprite.add_mesh(@math.Circle::new(25.0F))
+            meshes |> @mesh_primitives.add_mesh(@math.Circle::new(25.0F))
           }),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(

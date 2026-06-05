@@ -89,7 +89,9 @@ fn spawn_body(
   star? : Bool = false,
 ) -> Unit {
   let bundle = (
-    @mesh.Mesh2d::new(meshes |> @sprite.add_mesh(@math.Circle::new(1.0F))),
+    @mesh.Mesh2d::new(
+      meshes |> @mesh_primitives.add_mesh(@math.Circle::new(1.0F)),
+    ),
     @sprite_render_mesh2d_material.MeshMaterial2d::new(
       materials |> @sprite_render_mesh2d_color_material.add_material(color),
     ),

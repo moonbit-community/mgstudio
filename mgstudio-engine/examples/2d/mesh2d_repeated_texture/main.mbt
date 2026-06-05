@@ -51,7 +51,7 @@ fn setup(
         meshes
         .peek()
         .add(
-          @sprite.mesh2d_geometry_rectangle(
+          @mesh_primitives.rectangle_to_mesh2d_geometry(
             @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
           ).to_mesh(),
         ),
@@ -84,7 +84,7 @@ fn setup(
         meshes
         .peek()
         .add(
-          @sprite.mesh2d_geometry_rectangle(
+          @mesh_primitives.rectangle_to_mesh2d_geometry(
             @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
           ).to_mesh(),
         ),
@@ -119,7 +119,7 @@ fn setup(
         meshes
         .peek()
         .add(
-          @sprite.mesh2d_geometry_rectangle(
+          @mesh_primitives.rectangle_to_mesh2d_geometry(
             @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
           ).to_mesh(),
         ),

@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline/tonemapping" @core_pipeline_tonemapping,
   "Milky2018/mgstudio/post_process/bloom" @post_process_bloom,

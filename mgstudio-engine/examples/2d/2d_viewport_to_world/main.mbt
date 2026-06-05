@@ -100,7 +100,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_rectangle(
+            @mesh_primitives.rectangle_to_mesh2d_geometry(
               @math.Rectangle::new(40.0F, 20.0F),
             ).to_mesh(),
           ),
@@ -125,7 +125,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_rectangle(
+            @mesh_primitives.rectangle_to_mesh2d_geometry(
               @math.Rectangle::new(50000.0F, 50000.0F),
             ).to_mesh(),
           ),

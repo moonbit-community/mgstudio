@@ -35,7 +35,7 @@ fn setup(
   let mesh = meshes
     .peek()
     .add(
-      @sprite.mesh2d_geometry_rectangle(
+      @mesh_primitives.rectangle_to_mesh2d_geometry(
         @math.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
       ).to_mesh(),
     )

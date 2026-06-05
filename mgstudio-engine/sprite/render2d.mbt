@@ -605,7 +605,7 @@ fn tilemap_chunk_mesh_handle(
     return handle
   }
   let mesh = @mesh.Mesh::from_2d_geometry(
-    mesh2d_geometry_rectangle(
+    @mesh_primitives.rectangle_to_mesh2d_geometry(
       @math.Rectangle::from_size(
         @math.Vec2::new(
           Float::from_double(size.x.to_double()),

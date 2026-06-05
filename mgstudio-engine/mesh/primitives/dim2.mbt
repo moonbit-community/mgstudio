@@ -2303,3 +2303,191 @@ pub fn capsule_ring_to_mesh2d_geometry(
     ),
   )
 }
+
+///|
+pub(open) trait IntoMeshPrimitiveAsset {
+  fn into_mesh_primitive_asset(Self) -> @mesh.Mesh
+}
+
+///|
+pub(open) trait IntoMeshPrimitiveRingGeometry {
+  fn into_mesh_primitive_ring_geometry(self : Self, inner_shape : Self) -> @mesh.Mesh2dGeometry
+}
+
+///|
+pub fn[S : IntoMeshPrimitiveAsset] add_mesh(
+  assets : @asset.Assets[@mesh.Mesh],
+  value : S,
+) -> @asset.Handle[@mesh.Mesh] {
+  assets.add(value.into_mesh_primitive_asset())
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for @mesh.Mesh2dGeometry with fn into_mesh_primitive_asset(
+  self,
+) {
+  self.to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Capsule2d with fn into_mesh_primitive_asset(
+  self,
+) {
+  capsule_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for CircularSector with fn into_mesh_primitive_asset(
+  self,
+) {
+  circular_sector_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for CircularSegment with fn into_mesh_primitive_asset(
+  self,
+) {
+  circular_segment_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Circle with fn into_mesh_primitive_asset(
+  self,
+) {
+  circle_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Ellipse with fn into_mesh_primitive_asset(
+  self,
+) {
+  ellipse_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Annulus with fn into_mesh_primitive_asset(
+  self,
+) {
+  annulus_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl[P : IntoMeshPrimitiveRingGeometry] IntoMeshPrimitiveAsset for Ring[P] with fn into_mesh_primitive_asset(
+  self,
+) {
+  self.outer_shape.into_mesh_primitive_ring_geometry(self.inner_shape).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Circle with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for CircularSector with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circular_sector_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for CircularSegment with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circular_segment_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Ellipse with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_ellipse_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Capsule2d with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_capsule_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Rhombus with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_rhombus_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Rectangle with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_rectangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for RegularPolygon with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_regular_polygon_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveRingGeometry for Triangle2d with fn into_mesh_primitive_ring_geometry(
+  self,
+  inner_shape,
+) {
+  generic_triangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Rhombus with fn into_mesh_primitive_asset(
+  self,
+) {
+  rhombus_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for RegularPolygon with fn into_mesh_primitive_asset(
+  self,
+) {
+  regular_polygon_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Triangle2d with fn into_mesh_primitive_asset(
+  self,
+) {
+  triangle_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Segment2d with fn into_mesh_primitive_asset(
+  self,
+) {
+  segment_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Polyline2d with fn into_mesh_primitive_asset(
+  self,
+) {
+  polyline_to_mesh2d_geometry(self).to_mesh()
+}
+
+///|
+pub impl IntoMeshPrimitiveAsset for Rectangle with fn into_mesh_primitive_asset(
+  self,
+) {
+  rectangle_to_mesh2d_geometry(self).to_mesh()
+}

@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
@@ -11,7 +12,6 @@ import {
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pointer_events",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",

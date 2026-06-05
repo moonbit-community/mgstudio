@@ -2,11 +2,14 @@
 package "Milky2018/mgstudio/mesh/primitives"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
 }
 
 // Values
+pub fn[S : IntoMeshPrimitiveAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
+
 pub fn annulus_mesh(@math.Annulus) -> @mesh.Mesh3dGeometry
 
 pub fn annulus_to_mesh2d_geometry(@math.Annulus) -> @mesh.Mesh2dGeometry
@@ -325,6 +328,37 @@ pub impl ExtrudablePrimitive for @math.RegularPolygon
 pub impl ExtrudablePrimitive for @math.Rhombus
 pub impl[P : ExtrudablePrimitive] ExtrudablePrimitive for @math.Ring[P]
 pub impl ExtrudablePrimitive for @math.Triangle2d
+
+pub(open) trait IntoMeshPrimitiveAsset {
+  fn into_mesh_primitive_asset(Self) -> @mesh.Mesh
+}
+pub impl IntoMeshPrimitiveAsset for @math.Annulus
+pub impl IntoMeshPrimitiveAsset for @math.Capsule2d
+pub impl IntoMeshPrimitiveAsset for @math.Circle
+pub impl IntoMeshPrimitiveAsset for @math.CircularSector
+pub impl IntoMeshPrimitiveAsset for @math.CircularSegment
+pub impl IntoMeshPrimitiveAsset for @math.Ellipse
+pub impl IntoMeshPrimitiveAsset for @math.Polyline2d
+pub impl IntoMeshPrimitiveAsset for @math.Rectangle
+pub impl IntoMeshPrimitiveAsset for @math.RegularPolygon
+pub impl IntoMeshPrimitiveAsset for @math.Rhombus
+pub impl[P : IntoMeshPrimitiveRingGeometry] IntoMeshPrimitiveAsset for @math.Ring[P]
+pub impl IntoMeshPrimitiveAsset for @math.Segment2d
+pub impl IntoMeshPrimitiveAsset for @math.Triangle2d
+pub impl IntoMeshPrimitiveAsset for @mesh.Mesh2dGeometry
+
+pub(open) trait IntoMeshPrimitiveRingGeometry {
+  fn into_mesh_primitive_ring_geometry(Self, Self) -> @mesh.Mesh2dGeometry
+}
+pub impl IntoMeshPrimitiveRingGeometry for @math.Capsule2d
+pub impl IntoMeshPrimitiveRingGeometry for @math.Circle
+pub impl IntoMeshPrimitiveRingGeometry for @math.CircularSector
+pub impl IntoMeshPrimitiveRingGeometry for @math.CircularSegment
+pub impl IntoMeshPrimitiveRingGeometry for @math.Ellipse
+pub impl IntoMeshPrimitiveRingGeometry for @math.Rectangle
+pub impl IntoMeshPrimitiveRingGeometry for @math.RegularPolygon
+pub impl IntoMeshPrimitiveRingGeometry for @math.Rhombus
+pub impl IntoMeshPrimitiveRingGeometry for @math.Triangle2d
 
 pub(open) trait MeshBuilder {
   fn build(Self) -> @mesh.Mesh3dGeometry

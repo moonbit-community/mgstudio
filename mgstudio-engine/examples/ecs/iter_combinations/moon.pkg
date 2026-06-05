@@ -1,11 +1,11 @@
 import {
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material" @sprite_render_mesh2d_color_material,
   "Milky2018/mgstudio/sprite_render/mesh2d/material" @sprite_render_mesh2d_material,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/ecs",

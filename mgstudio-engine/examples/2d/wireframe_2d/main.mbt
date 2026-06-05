@@ -112,7 +112,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_triangle(
+            @mesh_primitives.triangle_to_mesh2d_geometry(
               @math.Triangle2d::new(
                 @math.Vec2::new(0.0F, 50.0F),
                 @math.Vec2::new(-50.0F, -50.0F),
@@ -143,7 +143,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_rectangle(
+            @mesh_primitives.rectangle_to_mesh2d_geometry(
               @math.Rectangle::new(100.0F, 100.0F),
             ).to_mesh(),
           ),
@@ -169,7 +169,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_circle(@math.Circle::new(50.0F)).to_mesh(),
+            @mesh_primitives.circle_to_mesh2d_geometry(@math.Circle::new(50.0F)).to_mesh(),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(

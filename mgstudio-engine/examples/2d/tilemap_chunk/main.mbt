@@ -168,7 +168,9 @@ fn spawn_player(
     meshes
     .peek()
     .add(
-      @sprite.mesh2d_geometry_rectangle(@math.Rectangle::new(8.0F, 8.0F)).to_mesh(),
+      @mesh_primitives.rectangle_to_mesh2d_geometry(
+        @math.Rectangle::new(8.0F, 8.0F),
+      ).to_mesh(),
     ),
   )
   let player_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(

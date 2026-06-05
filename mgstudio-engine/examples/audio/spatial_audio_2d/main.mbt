@@ -212,7 +212,7 @@ fn spawn_listener_ear(
         @sprite.mesh_assets_mut_or_abort()
         .peek()
         .add(
-          @sprite.mesh2d_geometry_rectangle(
+          @mesh_primitives.rectangle_to_mesh2d_geometry(
             @math.Rectangle::new(EAR_SIZE, EAR_SIZE),
           ).to_mesh(),
         ),
@@ -258,7 +258,9 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.mesh_assets_mut_or_abort()
         .peek()
         .add(
-          @sprite.mesh2d_geometry_circle(@math.Circle::new(EMITTER_RADIUS)).to_mesh(),
+          @mesh_primitives.circle_to_mesh2d_geometry(
+            @math.Circle::new(EMITTER_RADIUS),
+          ).to_mesh(),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(

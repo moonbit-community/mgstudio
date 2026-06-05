@@ -155,7 +155,9 @@ fn setup_mesh(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_capsule(@math.Capsule2d::Capsule2d()).to_mesh(),
+            @mesh_primitives.capsule_to_mesh2d_geometry(
+              @math.Capsule2d::Capsule2d(),
+            ).to_mesh(),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(

@@ -466,7 +466,9 @@ fn spawn_marker(
         @sprite.mesh_assets_mut_or_abort()
         .peek()
         .add(
-          @sprite.mesh2d_geometry_rectangle(@math.Rectangle::new(size, size)).to_mesh(),
+          @mesh_primitives.rectangle_to_mesh2d_geometry(
+            @math.Rectangle::new(size, size),
+          ).to_mesh(),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(

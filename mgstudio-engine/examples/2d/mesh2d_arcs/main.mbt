@@ -128,7 +128,7 @@ fn setup(
             meshes
             .peek()
             .add(
-              @sprite.mesh2d_geometry_circular_sector(
+              @mesh_primitives.circular_sector_to_mesh2d_geometry(
                 sector.with_uv_mask_angle(sector_angle),
               ).to_mesh(),
             ),
@@ -153,7 +153,7 @@ fn setup(
             meshes
             .peek()
             .add(
-              @sprite.mesh2d_geometry_circular_segment(
+              @mesh_primitives.circular_segment_to_mesh2d_geometry(
                 segment.with_uv_mask_angle(-segment_angle),
               ).to_mesh(),
             ),
