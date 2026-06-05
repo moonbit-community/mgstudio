@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/core_pipeline"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
@@ -46,7 +47,7 @@ pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
 
 pub let ecs_key_fullscreen_material_pipeline : @ecs.ResourceKey[FullscreenMaterialPipelineState]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
 
@@ -140,7 +141,7 @@ pub using @prepass {type DepthPrepass}
 
 pub using @fullscreen_vertex_shader {type FullscreenShader}
 
-pub using @core_3d {type Hdr}
+pub using @hdr {type Hdr}
 
 pub using @prepass {type MotionVectorPrepass}
 

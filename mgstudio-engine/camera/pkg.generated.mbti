@@ -6,11 +6,11 @@ import {
   "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/components2d",
   "Milky2018/mgstudio/camera/computed_camera_values",
+  "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -115,7 +115,7 @@ pub using @pbr {type Exposure}
 
 pub using @render {type Frustum}
 
-pub using @core_3d {type Hdr}
+pub using @hdr {type Hdr}
 
 pub using @projection2d {type OrthographicProjection as OrthographicProjection2d}
 

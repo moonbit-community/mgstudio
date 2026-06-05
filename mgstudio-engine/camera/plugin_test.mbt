@@ -68,6 +68,39 @@ test "camera plugin: owns Camera3d color grading and exposure requirements" {
 }
 
 ///|
+test "camera plugin: owns Camera2d authoring required components" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    CameraPlugin::CameraPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "camera projection plugin: updates frustum when transform changes" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
     CameraProjectionPlugin::CameraProjectionPlugin(),

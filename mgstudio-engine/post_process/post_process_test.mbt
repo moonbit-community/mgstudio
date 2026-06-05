@@ -104,3 +104,21 @@ test "post_process registers Bevy root gaussian blur shader library" {
   }
   debug_inspect(source.contains("fn gaussian_blur("), content="true")
 }
+
+///|
+test "post_process plugin owns Bloom Hdr required component" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @post_process.PostProcessPlugin::PostProcessPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::Bloom(),
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_hdr.ecs_key_hdr)) is Some(_),
+    content="true",
+  )
+}

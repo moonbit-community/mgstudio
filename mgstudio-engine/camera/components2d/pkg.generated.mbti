@@ -9,6 +9,10 @@ import {
 // Values
 pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
 
+pub fn ensure_camera2d_required_components(@ecs.World) -> Unit
+
+pub fn register_camera2d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
+
 // Errors
 
 // Types and methods

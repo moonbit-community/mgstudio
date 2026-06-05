@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -223,7 +224,7 @@ pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@light.Gener
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLight]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
 
@@ -1682,7 +1683,7 @@ pub using @light {type GlobalAmbientLight}
 
 pub using @math {type HalfSpace}
 
-pub using @core_3d {type Hdr}
+pub using @hdr {type Hdr}
 
 pub using @light {type IrradianceVolume}
 

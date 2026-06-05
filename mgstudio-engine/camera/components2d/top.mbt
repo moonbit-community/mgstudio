@@ -52,3 +52,44 @@ pub impl ToJson for Camera2d with fn to_json(self) {
 pub impl @json.FromJson for Camera2d with fn from_json(json, _path) {
   decode_camera2d(json)
 }
+
+///|
+pub fn register_camera2d_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    @camera_camera.ecs_key_camera,
+    fn() { @camera_camera.Camera::Camera() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    @camera_projection2d.ecs_key_projection,
+    fn() { @camera_projection2d.Projection::orthographic_2d() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    @camera_camera.ecs_key_render_target,
+    fn() { @camera_camera.RenderTarget::Screen },
+  )
+}
+
+///|
+pub fn ensure_camera2d_required_components(world : @ecs.World) -> Unit {
+  register_camera2d_required_components(world) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "Camera2d required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "Camera2d required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+}

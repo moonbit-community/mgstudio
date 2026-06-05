@@ -142,28 +142,15 @@ pub fn Msaa::from_samples(samples : Int) -> Msaa {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`.
-pub struct Hdr {} derive(Eq, Debug, ToJson, FromJson)
+pub type Hdr = @camera_hdr.Hdr
 
 ///|
-pub fn Hdr::Hdr() -> Hdr {
-  Hdr::{  }
-}
-
-///|
-pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @ecs.register_component(
-  debug_name="render3d.hdr",
-)
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @camera_hdr.ecs_key_hdr
 
 ///|
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
   debug_name="render3d.msaa",
 )
-
-///|
-pub impl @ecs.Component for Hdr with fn component() {
-  ecs_key_hdr
-}
 
 ///|
 pub impl @ecs.Component for Msaa with fn component() {

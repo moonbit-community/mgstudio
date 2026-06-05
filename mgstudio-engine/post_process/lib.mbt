@@ -20,6 +20,60 @@
 pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
 
 ///|
+const POST_PROCESS_PLUGIN_NAME : String = "mgstudio.post_process.PostProcessPlugin"
+
+///|
+pub struct PostProcessPlugin {}
+
+///|
+pub fn PostProcessPlugin::PostProcessPlugin() -> PostProcessPlugin {
+  PostProcessPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for PostProcessPlugin with fn name(_self) {
+  POST_PROCESS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for PostProcessPlugin with fn build(_self, app) {
+  post_process_plugin(app)
+}
+
+///|
+pub fn register_post_process_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_bloom,
+    @camera_hdr.ecs_key_hdr,
+    fn() { @camera_hdr.Hdr::Hdr() },
+  )
+}
+
+///|
+pub fn ensure_post_process_required_components(world : @ecs.World) -> Unit {
+  register_post_process_required_components(world) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "PostProcessPlugin required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "PostProcessPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+}
+
+///|
+pub fn post_process_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  register_embedded_wgsl_sources()
+  ensure_post_process_required_components(app.world())
+  app
+}
+
+///|
 pub fn post_process_effect_count(
   bloom : Bloom?,
   vignette : Vignette?,

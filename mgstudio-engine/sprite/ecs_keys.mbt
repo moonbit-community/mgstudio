@@ -28,9 +28,6 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
 )
 
 ///|
-let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
-
-///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
   MeshMaterial2d[@sprite_render_mesh2d_color_material.ColorMaterial],
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
@@ -84,41 +81,6 @@ pub fn register_render2d_required_components(
     ecs_key_sprite_mesh,
     @visibility.ecs_key_visibility,
     fn() { @visibility.Visibility::Inherited },
-  )
-  world.register_required_components_with(
-    @camera_camera.ecs_key_camera,
-    @render.ecs_key_sync_to_render_world,
-    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
-  )
-  world.register_required_components_with(
-    @camera_components2d.ecs_key_camera2d,
-    @camera_camera.ecs_key_camera,
-    fn() { @camera_camera.Camera::Camera() },
-  )
-  world.register_required_components_with(
-    @camera_components2d.ecs_key_camera2d,
-    @camera_projection2d.ecs_key_projection,
-    fn() { @camera_projection2d.Projection::orthographic_2d() },
-  )
-  world.register_required_components_with(
-    @camera_components2d.ecs_key_camera2d,
-    @transform.ecs_key_transform,
-    fn() { @transform.Transform::identity() },
-  )
-  world.register_required_components_with(
-    @camera_components2d.ecs_key_camera2d,
-    @camera_camera.ecs_key_render_target,
-    fn() { @camera_camera.RenderTarget::Screen },
-  )
-  world.register_required_components_with(
-    @camera_components2d.ecs_key_camera2d,
-    ecs_key_render_layers,
-    fn() { RenderLayers::RenderLayers() },
-  )
-  world.register_required_components_with(
-    @post_process.ecs_key_bloom,
-    @core_pipeline.ecs_key_hdr,
-    fn() { @core_pipeline.Hdr::Hdr() },
   )
 }
 

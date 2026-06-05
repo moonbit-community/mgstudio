@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,13 +13,22 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/components.rs`.
+// Bevy source: `bevy/crates/bevy_camera/src/components.rs::Hdr`.
 
 ///|
-pub type Camera = @camera_camera.Camera
+pub struct Hdr {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub type Camera2d = @camera_components2d.Camera2d
+pub fn Hdr::Hdr() -> Hdr {
+  Hdr::{  }
+}
 
 ///|
-pub type Hdr = @camera_hdr.Hdr
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @ecs.register_component(
+  debug_name="mgstudio.camera.Hdr",
+)
+
+///|
+pub impl @ecs.Component for Hdr with fn component() {
+  ecs_key_hdr
+}

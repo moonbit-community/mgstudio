@@ -54,6 +54,7 @@ fn default_plugins_builder(
   .add(@light.LightPlugin::LightPlugin())
   .add(@light_cluster.ClusterLightPlugin::ClusterLightPlugin())
   .add(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
+  .add(@post_process.PostProcessPlugin::PostProcessPlugin())
   .add(@input.InputPlugin::InputPlugin())
   .add(@picking.PointerInputPlugin::PointerInputPlugin())
   .add(@picking.PickingPlugin::PickingPlugin())

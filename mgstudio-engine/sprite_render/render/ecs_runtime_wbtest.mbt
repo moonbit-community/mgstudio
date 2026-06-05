@@ -37,6 +37,12 @@ fn ecs_transform_matches(
 }
 
 ///|
+fn ensure_camera2d_authoring_required_components(world : @ecs.World) -> Unit {
+  @camera_components2d.ensure_camera2d_required_components(world)
+  @post_process.ensure_post_process_required_components(world)
+}
+
+///|
 fn dummy_f32_bits(x : Float) -> UInt {
   x.reinterpret_as_uint()
 }
@@ -343,7 +349,7 @@ test "render2d: Commands can spawn Sprite component tuples" {
 ///|
 test "render2d: Camera2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
-  ensure_render2d_required_components(world)
+  ensure_camera2d_authoring_required_components(world)
   let transform = @transform.Transform::identity()
   let entity = try! world.spawn_bundle(
     (
@@ -382,7 +388,7 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
     ecs_has_non_null_payload(
       world, entity, @camera_render_layers.ecs_key_render_layers,
     ),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, @post_process.ecs_key_bloom),
@@ -409,7 +415,7 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
   let spawned : Ref[@core.Entity?] = Ref(None)
 
   let mut app = @app.App::new(world)
-  ensure_render2d_required_components(app.world())
+  ensure_camera2d_authoring_required_components(app.world())
   app = app.add_system_param(fn(commands : @app.Commands) {
     spawned.val = Some(
       commands.spawn(
@@ -457,7 +463,7 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
 ///|
 test "render2d: tonemapping and deband components share post_process ownership" {
   let world = @ecs.World::new()
-  ensure_render2d_required_components(world)
+  ensure_camera2d_authoring_required_components(world)
   let entity = try! world.spawn_bundle(
     (
       @camera_components2d.Camera2d::Camera2d(),
@@ -505,7 +511,8 @@ test "render2d: bloom component shares post_process ownership" {
 ///|
 test "render2d: required components align Camera2d and Bloom with Bevy camera authoring" {
   let world = @ecs.World::new()
-  try! @sprite.register_render2d_required_components(world)
+  try! @camera_components2d.register_camera2d_required_components(world)
+  try! @post_process.register_post_process_required_components(world)
   let entity = world.spawn_empty()
 
   try! (world.set_by_key(
@@ -545,7 +552,7 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     ecs_has_non_null_payload(
       world, entity, @camera_render_layers.ecs_key_render_layers,
     ),
-    content="true",
+    content="false",
   )
   debug_inspect(
     ecs_has_non_null_payload(world, entity, @post_process.ecs_key_tonemapping),
@@ -571,7 +578,7 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
 ///|
 test "render2d: Camera2d tuple stores window render target" {
   let world = @ecs.World::new()
-  ensure_render2d_required_components(world)
+  ensure_camera2d_authoring_required_components(world)
   let target_window = @core.Entity::new(7, 2)
   let entity = try! world.spawn_bundle(
     (
@@ -693,6 +700,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
         )
       }),
     )
+  ensure_camera2d_authoring_required_components(app.world())
 
   app = app.update()
 

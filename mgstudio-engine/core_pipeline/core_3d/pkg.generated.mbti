@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/core_pipeline/core_3d"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -31,7 +32,7 @@ pub let core_3d_set_prepass : String
 
 pub let ecs_key_alpha_mask3d_phase : @ecs.ResourceKey[AlphaMask3dPhase]
 
-pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
+pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 
@@ -84,11 +85,6 @@ pub struct Core3dPlugin {
 }
 pub fn Core3dPlugin::Core3dPlugin() -> Self
 pub impl @app.Plugin for Core3dPlugin
-
-pub struct Hdr {
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn Hdr::Hdr() -> Self
-pub impl @ecs.Component for Hdr
 
 pub struct MainOpaquePass3dNode {
   label : String
@@ -207,6 +203,7 @@ pub fn Transparent3dPhase::push(Self, Transparent3d) -> Unit
 pub impl @app.Resource for Transparent3dPhase
 
 // Type aliases
+pub using @hdr {type Hdr}
 
 // Traits
 

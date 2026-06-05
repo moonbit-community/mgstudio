@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/hdr"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
+
+// Errors
+
+// Types and methods
+pub struct Hdr {
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn Hdr::Hdr() -> Self
+pub impl @ecs.Component for Hdr
+
+// Type aliases
+
+// Traits
+
