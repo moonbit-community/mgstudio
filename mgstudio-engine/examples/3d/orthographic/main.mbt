@@ -25,7 +25,7 @@ fn setup(world : @ecs.World) -> Unit {
   })
 
   @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     projection,
     @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),

@@ -113,7 +113,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   cursor.modify(fn(value) { value.next = 0 })
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")

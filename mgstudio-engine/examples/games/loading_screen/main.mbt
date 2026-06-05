@@ -44,7 +44,7 @@ pub impl @ecs.Component for LoadingBar with fn component() {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(LoadingState::{ progress: 0.0F, done: false })
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (

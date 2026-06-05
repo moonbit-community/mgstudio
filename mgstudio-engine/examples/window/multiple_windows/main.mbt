@@ -50,7 +50,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for primary window
   let first_window_camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -67,14 +67,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for secondary window
   let second_window_camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
     .with_target(
-      @sprite.RenderTarget::Window(@window.WindowRef::Entity(second_window)),
+      @camera_camera.RenderTarget::Window(
+        @window.WindowRef::Entity(second_window),
+      ),
     )
     .spawn(world)
 

@@ -119,7 +119,7 @@ fn setup(world : @ecs.World) -> Unit {
   lightmaps_state.val.scene_root = Some(scene_root)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {

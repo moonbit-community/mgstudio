@@ -80,9 +80,13 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   progress_text_entity.val = None
 
-  let camera = @sprite.Camera::Camera()
+  let camera = @camera_camera.Camera::Camera()
   try! (world.spawn_bundle(
-    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      camera,
+      @transform.Transform::identity(),
+    ),
   )
   |> ignore)
 

@@ -103,7 +103,9 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Bloom::natural())),
+    commands.spawn(
+      (@camera_components2d.Camera2d::Camera2d(), @sprite.Bloom::natural()),
+    ),
   )
 }
 
@@ -143,11 +145,11 @@ fn move_player(
 fn update_camera(
   camera : @app.Single[
     @ecs.Mut[@transform.Transform],
-    (@ecs.With[@sprite.Camera2d], @ecs.Without[Player]),
+    (@ecs.With[@camera_components2d.Camera2d], @ecs.Without[Player]),
   ],
   player : @app.Single[
     @ecs.Comp[@transform.Transform],
-    (@ecs.With[Player], @ecs.Without[@sprite.Camera2d]),
+    (@ecs.With[Player], @ecs.Without[@camera_components2d.Camera2d]),
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {

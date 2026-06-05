@@ -28,7 +28,7 @@ fn setup(
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(

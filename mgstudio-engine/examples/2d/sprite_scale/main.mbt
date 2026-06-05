@@ -77,7 +77,7 @@ fn main {
 
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 }
 
 ///|

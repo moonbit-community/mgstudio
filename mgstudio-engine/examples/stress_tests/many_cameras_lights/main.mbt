@@ -124,7 +124,7 @@ fn setup(
         commands.spawn(
           (
             @camera.Camera3d::Camera3d(),
-            @sprite.Camera::Camera()
+            @camera_camera.Camera::Camera()
             .with_order(index)
             .with_viewport(
               @camera_viewport.Viewport::new(

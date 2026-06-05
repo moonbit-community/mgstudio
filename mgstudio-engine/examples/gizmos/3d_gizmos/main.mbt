@@ -192,7 +192,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera::Camera(),
+        @camera_camera.Camera::Camera(),
         @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 4.5F, 10.0F).looking_at(
           @math.Vec3::new(0.0F, 0.8F, 0.0F),

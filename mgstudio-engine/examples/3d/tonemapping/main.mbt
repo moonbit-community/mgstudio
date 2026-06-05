@@ -336,7 +336,7 @@ fn setup(
 ) -> Unit {
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       camera_transform.get().transform,
     )
     .with_color_grading(Some(@post_process.ColorGrading::ColorGrading()))
@@ -372,8 +372,8 @@ fn setup(
 
   let overlay_camera = commands.spawn(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )

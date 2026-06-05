@@ -60,7 +60,7 @@ fn configured_window() -> @window.Window {
 
 ///|
 fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let text_string = build_glyph_text(10_000)
   let text_font = @text.TextFont::from_font_size(4.0F)
   let text_layout = @text.TextLayout::new(

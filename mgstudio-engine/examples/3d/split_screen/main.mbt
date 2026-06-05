@@ -128,7 +128,7 @@ fn setup(world : @ecs.World) -> Unit {
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
     let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera().with_order(index),
+      @camera_camera.Camera::Camera().with_order(index),
       camera_transform,
     ).spawn(world)
 
@@ -187,10 +187,11 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
       @math.IVec2::new(grid_pos.x * half_size.x, grid_pos.y * half_size.y),
       half_size,
     )
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) {
       try! (world.replace(
         entity,
-        @sprite.ecs_key_camera,
+        @camera_camera.ecs_key_camera,
         camera.with_viewport(viewport),
       )
       |> ignore)

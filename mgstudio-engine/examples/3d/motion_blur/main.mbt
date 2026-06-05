@@ -257,7 +257,7 @@ fn set_camera_fov(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(
@@ -372,8 +372,8 @@ fn spawn_help_text_span(
 fn setup_ui(world : @ecs.World) -> Unit {
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )

@@ -43,9 +43,13 @@ fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   builder_state.val.built = false
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
-  let camera = @sprite.Camera::Camera()
+  let camera = @camera_camera.Camera::Camera()
   try! (world.spawn_bundle(
-    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      camera,
+      @transform.Transform::identity(),
+    ),
   )
   |> ignore)
 }

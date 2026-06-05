@@ -382,7 +382,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(
       CAMERA_INITIAL_X,
       CAMERA_INITIAL_Y,
@@ -534,7 +534,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     rotated_position.y,
     rotated_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
     try! world.set_by_key(entity, @transform.ecs_key_transform, next_transform)
   })
 }
@@ -570,13 +570,19 @@ fn handle_input(world : @ecs.World) -> Unit {
       LightMode::Point => {
         anisotropy_state.val.light_mode = LightMode::EnvironmentMap
         despawn_all_lights(world)
-        world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+        world.for_each_component(@camera_camera.ecs_key_camera, fn(
+          entity,
+          _camera,
+        ) {
           add_skybox_and_environment_map(world, entity)
         })
       }
       LightMode::EnvironmentMap => {
         anisotropy_state.val.light_mode = LightMode::Directional
-        world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+        world.for_each_component(@camera_camera.ecs_key_camera, fn(
+          entity,
+          _camera,
+        ) {
           remove_skybox_and_environment_map(world, entity)
         })
         spawn_directional_light(world)

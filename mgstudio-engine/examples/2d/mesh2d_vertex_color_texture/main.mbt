@@ -34,7 +34,7 @@ fn setup(
     meshes.add(create_colored_quad_mesh())
   })
 
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(

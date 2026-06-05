@@ -151,7 +151,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
+        @camera_components2d.Camera2d::Camera2d(),
         @transform.Transform::identity().looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

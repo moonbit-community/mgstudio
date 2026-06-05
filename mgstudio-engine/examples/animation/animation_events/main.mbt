@@ -116,8 +116,8 @@ fn message_color(palette : MessagePalette, alpha : Float) -> @color.Color {
 fn setup(world : @ecs.World) -> Unit {
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::new(@color.Color::black()),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::new(@color.Color::black()),
       @transform.Transform::identity(),
     ),
   )

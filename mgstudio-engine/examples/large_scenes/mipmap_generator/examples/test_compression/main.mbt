@@ -23,7 +23,7 @@ fn color_for_support(supported : Bool) -> @sprite.Color {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let formats = @asset.asset_supported_compressed_image_formats()
   let astc = @asset.asset_compressed_image_formats_contains(
     formats,

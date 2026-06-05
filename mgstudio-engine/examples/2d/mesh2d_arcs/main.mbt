@@ -107,8 +107,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::new(
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::new(
           @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),
       ),

@@ -351,7 +351,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   commands.insert_resource(AppAssets::new(asset_server.get()))
   spawn_ui(commands)
   ignore(regenerate_writer.write(RegenerateImage::{  }))

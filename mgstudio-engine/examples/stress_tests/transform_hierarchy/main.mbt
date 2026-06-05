@@ -148,7 +148,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   stats : @app.ResMut[HierarchyStats],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let icon = asset_server.get().load("branding/icon.png")
   spawn_tree(commands, icon, stats)
 }

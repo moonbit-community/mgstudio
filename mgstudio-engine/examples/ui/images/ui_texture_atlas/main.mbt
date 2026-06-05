@@ -25,7 +25,9 @@ fn setup(
     .peek()
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1))
 
-  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
+  commands.spawn(
+    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
+  )
   |> ignore
 
   let root = commands.spawn(

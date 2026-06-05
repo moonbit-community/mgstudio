@@ -83,5 +83,5 @@ fn setup(
       ),
     ),
   )
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 }

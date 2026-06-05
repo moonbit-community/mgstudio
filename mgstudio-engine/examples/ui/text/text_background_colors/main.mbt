@@ -44,8 +44,8 @@ fn main {
 fn setup(commands : @app.Commands) -> Unit {
   commands.spawn(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
     ),
   )

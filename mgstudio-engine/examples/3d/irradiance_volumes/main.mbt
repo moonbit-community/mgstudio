@@ -298,7 +298,7 @@ fn spawn_main_scene(
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera().with_clear_color(
+    @camera_camera.Camera::Camera().with_clear_color(
       @sprite.Color::srgb(0.18F, 0.20F, 0.24F),
     ),
     @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
@@ -654,7 +654,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+  guard (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
     is Some(camera) else {
     return
   }

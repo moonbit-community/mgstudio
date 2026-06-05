@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/ecs",
@@ -6,7 +7,6 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/physics3d",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/examples/helpers/rapier_examples",

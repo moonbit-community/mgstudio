@@ -64,10 +64,12 @@ fn spawn_window_for_monitor(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::Camera(),
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera(),
         @transform.Transform::identity(),
-        @sprite.RenderTarget::Window(@window.WindowRef::Entity(window_entity)),
+        @camera_camera.RenderTarget::Window(
+          @window.WindowRef::Entity(window_entity),
+        ),
       ),
     ),
   )

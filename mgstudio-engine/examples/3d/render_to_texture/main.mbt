@@ -107,8 +107,8 @@ fn setup(
     commands.spawn(
       (
         @camera.Camera3d::Camera3d(),
-        @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
-        @sprite.RenderTarget::Image(image),
+        @camera_camera.Camera::new(@sprite.Color::white()).with_order(-1),
+        @camera_camera.RenderTarget::Image(image),
         @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

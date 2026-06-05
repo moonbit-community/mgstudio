@@ -109,8 +109,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_clear_color(
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_clear_color(
         @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
       ),
       @transform.Transform::identity(),
@@ -132,12 +132,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let secondary_window_camera = try! world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_clear_color(
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_clear_color(
         @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
       ),
       @transform.Transform::identity(),
-      @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
+      @camera_camera.RenderTarget::Window(
+        @window.WindowRef::Entity(secondary_window),
+      ),
       @camera_render_layers.RenderLayers::layer(1),
     ),
   )

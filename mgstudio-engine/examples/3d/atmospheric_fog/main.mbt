@@ -139,7 +139,7 @@ fn instruction_text() -> String {
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
         fog_center(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),

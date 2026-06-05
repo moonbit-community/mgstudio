@@ -58,7 +58,7 @@ priv struct BeamPool {
 
 ///|
 priv struct RaycastState {
-  mut camera : @sprite.Camera
+  mut camera : @camera_camera.Camera
   mut camera_projection : @camera.Projection
   mut camera_transform : @transform.Transform
   collider_entities : Array[@core.Entity]
@@ -69,7 +69,7 @@ priv struct RaycastState {
 
 ///|
 let raycast_state : Ref[RaycastState] = Ref({
-  camera: @sprite.Camera::Camera(),
+  camera: @camera_camera.Camera::Camera(),
   camera_projection: @camera.Projection::default(),
   camera_transform: @transform.Transform::identity(),
   collider_entities: [],
@@ -250,7 +250,7 @@ fn spawn_beam_pool(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  raycast_state.val.camera = @sprite.Camera::Camera().with_clear_color(
+  raycast_state.val.camera = @camera_camera.Camera::Camera().with_clear_color(
     @sprite.Color::black(),
   )
   raycast_state.val.camera_projection = @camera.Projection::default()

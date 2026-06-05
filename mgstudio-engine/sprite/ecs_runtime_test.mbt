@@ -345,8 +345,8 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
   let transform = @transform.Transform::identity()
   let entity = try! world.spawn_bundle(
     (
-      Camera2d::Camera2d(),
-      Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       transform,
       @post_process.Bloom::Bloom(),
       @post_process.ColorGrading::ColorGrading(),
@@ -355,15 +355,19 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
 
   debug_inspect(world.is_alive(entity), content="true")
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_camera2d),
+    ecs_has_non_null_payload(
+      world, entity, @camera_components2d.ecs_key_camera2d,
+    ),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_camera),
+    ecs_has_non_null_payload(world, entity, @camera_camera.ecs_key_camera),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_projection),
+    ecs_has_non_null_payload(
+      world, entity, @camera_projection2d.ecs_key_projection,
+    ),
     content="true",
   )
   debug_inspect(
@@ -371,7 +375,9 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
     content="false",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_target),
+    ecs_has_non_null_payload(
+      world, entity, @camera_camera.ecs_key_render_target,
+    ),
     content="true",
   )
   debug_inspect(
@@ -410,8 +416,8 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
     spawned.val = Some(
       commands.spawn(
         (
-          Camera2d::Camera2d(),
-          Camera::Camera(),
+          @camera_components2d.Camera2d::Camera2d(),
+          @camera_camera.Camera::Camera(),
           @transform.Transform::identity(),
           @post_process.Bloom::Bloom(),
           @post_process.ColorGrading::ColorGrading(),
@@ -425,11 +431,15 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
     abort("expected Commands::spawn to return an entity")
   }
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_camera2d),
+    ecs_has_non_null_payload(
+      app.world(),
+      entity,
+      @camera_components2d.ecs_key_camera2d,
+    ),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_camera),
+    ecs_has_non_null_payload(app.world(), entity, @camera_camera.ecs_key_camera),
     content="true",
   )
   debug_inspect(
@@ -448,8 +458,8 @@ test "render2d: tonemapping and deband components share post_process ownership" 
   ensure_render2d_required_components(world)
   let entity = try! world.spawn_bundle(
     (
-      Camera2d::Camera2d(),
-      Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
       @post_process.Tonemapping::AgX,
       @post_process.DebandDither::Enabled,
@@ -475,8 +485,8 @@ test "render2d: bloom component shares post_process ownership" {
   let world = @ecs.World::new()
   let entity = try! world.spawn_bundle(
     (
-      Camera2d::Camera2d(),
-      Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
       @post_process.Bloom::Bloom().with_intensity(0.35F),
     ),
@@ -498,18 +508,20 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
 
   try! (world.set_by_key(
     entity,
-    ecs_key_camera2d,
+    @camera_components2d.ecs_key_camera2d,
     @camera_components2d.Camera2d::Camera2d(),
   )
   |> ignore)
   try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
 
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_camera),
+    ecs_has_non_null_payload(world, entity, @camera_camera.ecs_key_camera),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_projection),
+    ecs_has_non_null_payload(
+      world, entity, @camera_projection2d.ecs_key_projection,
+    ),
     content="true",
   )
   debug_inspect(
@@ -517,7 +529,9 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_render_target),
+    ecs_has_non_null_payload(
+      world, entity, @camera_camera.ecs_key_render_target,
+    ),
     content="true",
   )
   debug_inspect(
@@ -539,7 +553,8 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     content="true",
   )
 
-  let target_ok = match (try! world.get_by_key(entity, ecs_key_render_target)) {
+  let target_ok = match
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
     Some(Screen) => true
     _ => false
   }
@@ -553,20 +568,24 @@ test "render2d: Camera2d tuple stores window render target" {
   let target_window = @core.Entity::new(7, 2)
   let entity = try! world.spawn_bundle(
     (
-      Camera2d::Camera2d(),
-      Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
-      RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+      @camera_camera.RenderTarget::Window(
+        @window.WindowRef::Entity(target_window),
+      ),
     ),
   )
 
-  let target : RenderTarget? = try! world.get_by_key(
-    entity, ecs_key_render_target,
+  let target : @camera_camera.RenderTarget? = try! world.get_by_key(
+    entity, @camera_camera.ecs_key_render_target,
   )
   debug_inspect(
     target.map(fn(value) {
       value.to_json() ==
-      RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
+      @camera_camera.RenderTarget::Window(
+        @window.WindowRef::Entity(target_window),
+      ).to_json()
     }),
     content="Some(true)",
   )

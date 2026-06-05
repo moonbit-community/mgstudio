@@ -307,7 +307,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   guard app_status.val.sphere is Some(sphere_entity) else { return }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+  guard (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
     is Some(camera) else {
     return
   }
@@ -399,7 +399,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

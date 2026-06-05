@@ -85,7 +85,7 @@ fn setup(
     commands.spawn(
       (
         @camera.Camera3d::Camera3d(),
-        @sprite.Camera::Camera()
+        @camera_camera.Camera::Camera()
         .with_order(1)
         .with_clear_color_config(@camera_clear_color.ClearColorConfig::None),
         @transform.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(

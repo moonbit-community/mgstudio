@@ -182,7 +182,7 @@ fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
+        @camera_components2d.Camera2d::Camera2d(),
         CameraShakeConfig::{
           trauma_decay_per_second: TRAUMA_DECAY_PER_SECOND,
           exponent: TRAUMA_EXPONENT,

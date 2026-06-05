@@ -43,7 +43,7 @@ pub impl @ecs.Component for StepSprite with fn component() {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(StepState::{ ticks: 0 })
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (

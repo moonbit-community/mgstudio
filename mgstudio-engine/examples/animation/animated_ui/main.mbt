@@ -50,7 +50,12 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
+    commands.spawn(
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera(),
+      ),
+    ),
   )
 
   let (graph_handle, node, target) = animated_ui_graph()

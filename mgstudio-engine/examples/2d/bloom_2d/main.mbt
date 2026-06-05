@@ -126,8 +126,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::new(@sprite.Color::black()),
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::new(@sprite.Color::black()),
         @sprite.Tonemapping::TonyMcMapface,
         @sprite.Bloom::Bloom(),
         @sprite.DebandDither::Enabled,
@@ -203,7 +203,7 @@ fn update_bloom_settings(
   time : @app.Res[@time.Time[Unit]],
   camera : @app.Single[
     (@core.Entity, @ecs.Comp[@sprite.Tonemapping], @ecs.Optional[@sprite.Bloom]),
-    @ecs.With[@sprite.Camera],
+    @ecs.With[@camera_camera.Camera],
   ],
   text : @app.Single[@ecs.Mut[@text.Text], @ecs.All],
 ) -> Unit {

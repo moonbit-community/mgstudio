@@ -130,7 +130,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.PointLight::PointLight().with_intensity(100_000.0F),
   )
   let camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
       ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: 27.0F * PI / 180.0F,

@@ -46,8 +46,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(-1),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(-1),
       @transform.Transform::identity(),
     ),
   )
@@ -56,8 +56,8 @@ fn setup(world : @ecs.World) -> Unit {
   // Keep a visible camera on screen for web runtime.
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
     ),
   )

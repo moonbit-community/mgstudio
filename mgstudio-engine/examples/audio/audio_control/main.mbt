@@ -173,7 +173,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_ui_overlay(world)
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore

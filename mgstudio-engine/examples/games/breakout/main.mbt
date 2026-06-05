@@ -77,7 +77,7 @@ fn clampf(value : Float, lower : Float, upper : Float) -> Float {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (

@@ -229,10 +229,10 @@ fn setup(
 
   let texture_camera = commands.spawn(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(-1),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(-1),
       @transform.Transform::identity(),
-      @sprite.RenderTarget::Image(image_handle),
+      @camera_camera.RenderTarget::Image(image_handle),
       @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
     ),
   )
@@ -328,7 +328,7 @@ fn setup(
 
   commands.queue(fn(world : @ecs.World) {
     let camera_entity = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -364,7 +364,7 @@ fn rotate_cube(
 fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
   let camera_query : @ecs.Query[
     (
-      @ecs.Comp[@sprite.Camera],
+      @ecs.Comp[@camera_camera.Camera],
       @ecs.Comp[@pbr.Projection],
       @ecs.Comp[@transform.Transform],
     ),

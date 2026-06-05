@@ -19,14 +19,17 @@ fn setup(
 ) -> Unit {
   ignore(
     commands.spawn(
-      (@sprite.Camera2d::Camera2d(), @ui.IsDefaultUiCamera::IsDefaultUiCamera()),
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
+      ),
     ),
   )
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera().with_order(1).with_clear_color_none(),
         @camera_render_layers.RenderLayers::layer(1),
       ),
     ),

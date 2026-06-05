@@ -14,14 +14,14 @@
 
 ///|
 priv struct PickState {
-  camera : @sprite.Camera
+  camera : @camera_camera.Camera
   projection : @camera.Projection
   transform : @transform.Transform
 }
 
 ///|
 let pick_state : Ref[PickState] = Ref({
-  camera: @sprite.Camera::Camera(),
+  camera: @camera_camera.Camera::Camera(),
   projection: @camera.Projection::default(),
   transform: @transform.Transform::identity(),
 })
@@ -42,12 +42,12 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   pick_state.val = {
-    camera: @sprite.Camera::Camera(),
+    camera: @camera_camera.Camera::Camera(),
     projection: @camera.Projection::default(),
     transform: camera_transform,
   }
   @rapier_examples.rapier3d_basic_lighting(world)
-  @camera.Camera3dBundle::new(@sprite.Camera::Camera(), camera_transform).spawn(
+  @camera.Camera3dBundle::new(@camera_camera.Camera::Camera(), camera_transform).spawn(
     world,
   )
   |> ignore

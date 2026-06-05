@@ -263,7 +263,7 @@ fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
     )
     .with_auto_exposure(Some(example_auto_exposure_settings()))

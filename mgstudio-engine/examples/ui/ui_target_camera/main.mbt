@@ -77,8 +77,8 @@ fn setup(commands : @app.Commands) -> Unit {
     let color = colors[i]
     let camera_entity = commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::Camera().with_clear_color(color).with_order(i),
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera().with_clear_color(color).with_order(i),
       ),
     )
 
@@ -126,7 +126,7 @@ fn update_camera_orders(
     (@ecs.Comp[@ui.Interaction], @ecs.Comp[CameraOrderBox]),
     @ecs.All,
   ],
-  cameras : @ecs.Query[@ecs.Mut[@sprite.Camera], @ecs.All],
+  cameras : @ecs.Query[@ecs.Mut[@camera_camera.Camera], @ecs.All],
   texts : @ecs.Query[@ecs.Mut[@text.Text], @ecs.All],
 ) -> Unit {
   let delta = if mouse_buttons.just_pressed(Left) {

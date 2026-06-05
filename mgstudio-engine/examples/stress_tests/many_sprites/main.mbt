@@ -57,7 +57,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
+        @camera_components2d.Camera2d::Camera2d(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -94,7 +94,7 @@ fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
     @ecs.Mut[@transform.Transform],
-    @ecs.With[@sprite.Camera2d],
+    @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()

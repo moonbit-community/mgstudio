@@ -267,8 +267,8 @@ fn spawn_button(
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )
@@ -576,7 +576,7 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.rotating_cube = Some(cube)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

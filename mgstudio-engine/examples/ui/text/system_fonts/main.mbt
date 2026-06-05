@@ -159,7 +159,9 @@ fn spawn_family_row(
 
 ///|
 fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit {
-  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
+  commands.spawn(
+    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
+  )
   |> ignore
 
   let families = dedup_sorted_families(font_cx.peek().family_names())

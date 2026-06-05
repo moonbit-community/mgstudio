@@ -211,7 +211,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -256,7 +256,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
     if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
       is Some(camera_transform) {
-      if (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+      if (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
         is Some(camera) {
         if (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
           is Some(projection) {

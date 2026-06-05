@@ -39,7 +39,7 @@ fn build_base_pixels(width : Int, height : Int) -> Bytes {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let mip_chain = @asset.asset_create_dynamic_texture_mip_chain_rgba8(
     BASE_WIDTH,
     BASE_HEIGHT,

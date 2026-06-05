@@ -178,7 +178,7 @@ fn setup(
     .get()
     .load("textures/simplespace/enemy_B.png")
 
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   spawn_help_overlay(commands)
 
   let horizontal_margin = BOUNDS_X / 4.0F

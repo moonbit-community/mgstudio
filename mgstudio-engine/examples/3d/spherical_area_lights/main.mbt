@@ -141,7 +141,7 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

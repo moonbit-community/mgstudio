@@ -49,7 +49,9 @@ fn div_ceil(a : Int, b : Int) -> Int {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
+  commands.spawn(
+    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
+  )
   |> ignore
 
   let rows = div_ceil(CELL_COUNT, COLS)

@@ -121,7 +121,7 @@ fn float_from_int(value : Int) -> Float {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   for i in 0..<ENTITY_COUNT {
     let a = CompA::{ value: float_from_int(i % 97) * 0.01F }

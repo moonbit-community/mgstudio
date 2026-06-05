@@ -39,7 +39,7 @@ fn checker_pixels(width : Int, height : Int) -> Bytes {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let texture = @asset.asset_create_dynamic_texture(
     @math.UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE),
     false,

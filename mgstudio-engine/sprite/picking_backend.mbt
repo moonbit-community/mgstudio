@@ -74,8 +74,8 @@ pub fn render2d_world_to_viewport(
 /// Shared math for camera viewport conversions. `screen` is in logical pixels.
 pub fn render2d_camera_viewport_to_world_2d(
   screen : @math.Vec2,
-  camera : Camera,
-  projection : OrthographicProjection,
+  camera : @camera_camera.Camera,
+  projection : @camera_projection2d.OrthographicProjection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -121,8 +121,8 @@ pub fn render2d_camera_viewport_to_world_2d(
 /// Shared math for camera viewport conversions. Return value is in logical pixels.
 pub fn render2d_camera_world_to_viewport_2d(
   world : @math.Vec2,
-  camera : Camera,
-  projection : OrthographicProjection,
+  camera : @camera_camera.Camera,
+  projection : @camera_projection2d.OrthographicProjection,
   camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,

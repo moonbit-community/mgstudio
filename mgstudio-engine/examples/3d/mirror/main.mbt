@@ -423,7 +423,7 @@ fn setup(world : @ecs.World) -> Unit {
     initial_main_translation.z,
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let main_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @camera.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
@@ -447,14 +447,14 @@ fn setup(world : @ecs.World) -> Unit {
     main_camera_transform, main_camera_projection, mirror_transform,
   )
   let mirror_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::new(@sprite.Color::black()).with_order(-1),
+    @camera_camera.Camera::new(@sprite.Color::black()).with_order(-1),
     @camera.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
   try! world.set_by_key(
     mirror_camera,
-    @sprite.ecs_key_render_target,
-    @sprite.RenderTarget::Image(mirror_target),
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Image(mirror_target),
   )
   try! world.set_by_key(
     mirror_camera,
@@ -556,7 +556,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   }
   guard (try! world.get_by_key(
       mirror_state.val.main_camera,
-      @sprite.ecs_key_camera,
+      @camera_camera.ecs_key_camera,
     ))
     is Some(camera) else {
     return
@@ -629,19 +629,19 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
 
   if (try! world.contains_by_key(
       mirror_state.val.mirror_camera,
-      @sprite.ecs_key_render_target,
+      @camera_camera.ecs_key_render_target,
     )) {
     try! (world.replace(
       mirror_state.val.mirror_camera,
-      @sprite.ecs_key_render_target,
-      @sprite.RenderTarget::Image(mirror_target),
+      @camera_camera.ecs_key_render_target,
+      @camera_camera.RenderTarget::Image(mirror_target),
     )
     |> ignore)
   } else {
     try! world.set_by_key(
       mirror_state.val.mirror_camera,
-      @sprite.ecs_key_render_target,
-      @sprite.RenderTarget::Image(mirror_target),
+      @camera_camera.ecs_key_render_target,
+      @camera_camera.RenderTarget::Image(mirror_target),
     )
   }
 

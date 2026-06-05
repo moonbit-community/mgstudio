@@ -166,7 +166,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   let texture = asset_server.get().load("textures/food_kenney.png")
   let layout = texture_atlas_layouts

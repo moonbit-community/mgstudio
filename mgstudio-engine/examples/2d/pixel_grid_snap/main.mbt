@@ -196,13 +196,13 @@ fn setup_camera(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::Camera()
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera()
         .with_order(-1)
         .with_clear_color(
           @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),
-        @sprite.RenderTarget::Image(image_handle),
+        @camera_camera.RenderTarget::Image(image_handle),
         InGameCamera::{  },
         pixel_perfect_layers(),
       ),
@@ -221,7 +221,11 @@ fn setup_camera(
 
   ignore(
     commands.spawn(
-      (@sprite.Camera2d::Camera2d(), OuterCamera::{  }, high_res_layers()),
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        OuterCamera::{  },
+        high_res_layers(),
+      ),
     ),
   )
 }
@@ -240,7 +244,7 @@ fn rotate(
 fn fit_canvas(
   resize_messages : @ecs.MessageReader[@window.WindowResized],
   projection_query : @ecs.Query[
-    @ecs.Mut[@sprite.Projection],
+    @ecs.Mut[@camera_projection2d.Projection],
     @ecs.With[OuterCamera],
   ],
 ) -> Unit {

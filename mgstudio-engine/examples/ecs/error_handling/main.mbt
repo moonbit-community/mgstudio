@@ -67,7 +67,7 @@ fn setup(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let ship = asset_server.get().load("textures/simplespace/ship_C.png")
 
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(

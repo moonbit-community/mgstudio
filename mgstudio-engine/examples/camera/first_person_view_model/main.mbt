@@ -103,7 +103,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   )
 
   let world_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     Perspective(@camera.PerspectiveProjection3d::{
       ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: degrees_to_radians(90.0F),
@@ -120,7 +120,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   )
 
   let view_model_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera().with_order(1),
+    @camera_camera.Camera::Camera().with_order(1),
     Perspective(@camera.PerspectiveProjection3d::{
       ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: degrees_to_radians(70.0F),
@@ -250,8 +250,8 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 fn spawn_text(world : @ecs.World) -> Unit {
   let overlay_camera = try! world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(2).with_clear_color_none(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(2).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )

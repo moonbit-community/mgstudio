@@ -17,7 +17,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   let source = @asset.AssetSourceId::from("example_files")
   let asset_path = @asset.AssetPath::from_path("bevy_pixel_light.png").with_source(

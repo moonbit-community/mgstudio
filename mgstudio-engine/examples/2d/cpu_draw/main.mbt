@@ -94,7 +94,7 @@ fn setup(
   commands : @app.Commands,
   images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   let handle = images
     .peek()

@@ -228,7 +228,7 @@ fn setup(world : @ecs.World) -> Unit {
     scale: 0.01F,
   }
   let camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @camera.Projection::Orthographic(orthographic),
     @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),

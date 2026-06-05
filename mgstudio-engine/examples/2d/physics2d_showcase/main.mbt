@@ -111,9 +111,13 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   // Camera.
-  let camera = @sprite.Camera::Camera()
+  let camera = @camera_camera.Camera::Camera()
   try! (world.spawn_bundle(
-    (@sprite.Camera2d::Camera2d(), camera, @transform.Transform::identity()),
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      camera,
+      @transform.Transform::identity(),
+    ),
   )
   |> ignore)
   physics2d_showcase_spawn_controls_overlay()

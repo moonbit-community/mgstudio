@@ -46,8 +46,8 @@ fn setup(
   commands.spawn(
     (
       @camera.Camera3d::Camera3d(),
-      @sprite.Camera::Camera().with_order(-1),
-      @sprite.RenderTarget::Image(target),
+      @camera_camera.Camera::Camera().with_order(-1),
+      @camera_camera.RenderTarget::Image(target),
       @transform.Transform::from_xyz(0.0F, 2.5F, 5.5F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -81,7 +81,9 @@ fn setup(
   )
   |> ignore
 
-  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
+  commands.spawn(
+    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
+  )
   |> ignore
   let root = commands.spawn(
     (

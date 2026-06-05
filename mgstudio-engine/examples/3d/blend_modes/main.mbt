@@ -133,8 +133,8 @@ fn setup_ui_overlay(
 ) -> Unit {
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )
@@ -378,7 +378,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   display_text.content = blend_modes_display_text(camera_entity, world)
   ignore(try! world.replace(display_entity, @text.ecs_key_text, display_text))
 
-  guard (try! world.get_by_key(camera_entity, @sprite.ecs_key_camera))
+  guard (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
     is Some(camera) else {
     return
   }
@@ -567,7 +567,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

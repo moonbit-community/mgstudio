@@ -58,7 +58,7 @@ fn spawn_perspective_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera().with_order(order),
+      @camera_camera.Camera::Camera().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
     .with_sub_camera_view(sub_camera_view)
@@ -78,7 +78,7 @@ fn spawn_orthographic_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @camera.Camera3dBundle::new_with_projection(
-      @sprite.Camera::Camera().with_order(order),
+      @camera_camera.Camera::Camera().with_order(order),
       @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
         ..@camera.OrthographicProjection3d::default_3d(),
         scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
@@ -296,14 +296,15 @@ fn resize_viewports(world : @ecs.World) -> Unit {
       OrthographicControl =>
         (small_wide_size, @math.IVec2::new(small_width * 6, 0))
     }
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
         None => @camera_viewport.Viewport::Viewport()
       }
       try! (world.replace(
         entity,
-        @sprite.ecs_key_camera,
+        @camera_camera.ecs_key_camera,
         camera.with_viewport(
           @camera_viewport.Viewport::new_with_depth(
             position,

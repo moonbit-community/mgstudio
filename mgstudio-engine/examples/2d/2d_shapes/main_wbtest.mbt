@@ -24,9 +24,10 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
   app = app.update()
 
   let world = app.world()
-  let camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera2d], @ecs.All] = @ecs.query(
-    world,
-  )
+  let camera_query : @ecs.Query[
+    @ecs.Comp[@camera_components2d.Camera2d],
+    @ecs.All,
+  ] = @ecs.query(world)
   let mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh2d], @ecs.All] = @ecs.query(
     world,
   )

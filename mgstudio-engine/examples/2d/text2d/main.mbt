@@ -78,7 +78,7 @@ fn setup(
   let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
   let text_shadow_color = box_color.darker(0.05F)
 
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(

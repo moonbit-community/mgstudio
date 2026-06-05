@@ -70,7 +70,7 @@ fn pan_camera_key_to_string(key : @window.KeyCode?) -> String {
 }
 
 ///|
-pub impl Show for PanCamera with output(self, logger) {
+pub impl Show for PanCamera with fn output(self, logger) {
   logger.write_string(
     "\nPanCamera Controls:\n  Move Up / Down    - \{pan_camera_key_to_string(self.key_up)} / \{pan_camera_key_to_string(self.key_down)}\n  Move Left / Right - \{pan_camera_key_to_string(self.key_left)} / \{pan_camera_key_to_string(self.key_right)}\n  Rotate CCW / CW   - \{pan_camera_key_to_string(self.key_rotate_ccw)} / \{pan_camera_key_to_string(self.key_rotate_cw)}\n  Zoom              - Mouse Scroll + \{pan_camera_key_to_string(self.key_zoom_in)} / \{pan_camera_key_to_string(self.key_zoom_out)}\n",
   )
@@ -82,7 +82,7 @@ pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for PanCamera with component() {
+pub impl @ecs.Component for PanCamera with fn component() {
   ecs_key_pan_camera
 }
 
@@ -221,7 +221,7 @@ pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   }
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_pan_camera, fn(entity, _controller) {
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(_) &&
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is Some(_) &&
       (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_) {
       controlled_entities.push(entity)
     }
@@ -271,12 +271,12 @@ pub fn PanCameraPlugin::PanCameraPlugin() -> PanCameraPlugin {
 }
 
 ///|
-pub impl @app.Plugin for PanCameraPlugin with name(_self) {
+pub impl @app.Plugin for PanCameraPlugin with fn name(_self) {
   PAN_CAMERA_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for PanCameraPlugin with build(_self, app) {
+pub impl @app.Plugin for PanCameraPlugin with fn build(_self, app) {
   pan_camera_plugin(app)
 }
 

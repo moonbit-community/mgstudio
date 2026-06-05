@@ -84,8 +84,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::Camera2d(),
-        @sprite.Camera::Camera().with_viewport(viewport),
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera().with_viewport(viewport),
         MainCamera::{  },
       ),
     ),
@@ -161,9 +161,12 @@ fn main_camera_entity(
 ///|
 fn draw_cursor(
   main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[@camera_camera.Camera], @ecs.All],
   transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
-  projection_query : @ecs.Query[@ecs.Comp[@sprite.Projection], @ecs.All],
+  projection_query : @ecs.Query[
+    @ecs.Comp[@camera_projection2d.Projection],
+    @ecs.All,
+  ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
@@ -225,9 +228,12 @@ fn draw_cursor(
 ///|
 fn controls(
   main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Mut[@sprite.Camera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Mut[@camera_camera.Camera], @ecs.All],
   transform_query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
-  projection_query : @ecs.Query[@ecs.Mut[@sprite.Projection], @ecs.All],
+  projection_query : @ecs.Query[
+    @ecs.Mut[@camera_projection2d.Projection],
+    @ecs.All,
+  ],
   input : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[@time.Fixed]],
 ) -> Unit {
@@ -274,7 +280,7 @@ fn controls(
     if (projection_query.get(camera_entity) catch { _ => None })
       is Some(camera_projection) {
       match camera_projection.value() {
-        @sprite.Projection::Orthographic(orthographic) => {
+        @camera_projection2d.Projection::Orthographic(orthographic) => {
           let mut scale = orthographic.scale
           if input.pressed(@window.KeyCode::Comma) {
             scale = scale * @math.pow(4.0F, time.get().delta_seconds())
@@ -284,8 +290,8 @@ fn controls(
           }
           if scale != orthographic.scale {
             camera_projection.set(
-              @sprite.Projection::Orthographic(
-                @sprite.OrthographicProjection::new(scale),
+              @camera_projection2d.Projection::Orthographic(
+                @camera_projection2d.OrthographicProjection::new(scale),
               ),
             )
           }

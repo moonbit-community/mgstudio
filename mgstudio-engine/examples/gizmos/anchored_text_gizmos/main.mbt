@@ -42,7 +42,12 @@ fn anchor_items() -> Array[(String, @math.Vec2, @sprite.Color)] {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
+    commands.spawn(
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera(),
+      ),
+    ),
   )
 }
 

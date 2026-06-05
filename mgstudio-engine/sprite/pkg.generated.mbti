@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
-  "Milky2018/mgstudio/camera/components2d",
   "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
@@ -37,10 +36,6 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
-pub let ecs_key_camera : @ecs.ComponentKey[@camera.Camera]
-
-pub let ecs_key_camera2d : @ecs.ComponentKey[@components2d.Camera2d]
-
 pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
@@ -51,11 +46,7 @@ pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@co
 
 pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
 
-pub let ecs_key_projection : @ecs.ComponentKey[@projection2d.Projection]
-
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
-
-pub let ecs_key_render_target : @ecs.ComponentKey[@camera.RenderTarget]
 
 pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
@@ -806,10 +797,6 @@ pub using @post_process {type BloomCompositeMode}
 
 pub using @post_process {type BloomPrefilter}
 
-pub using @camera {type Camera}
-
-pub using @components2d {type Camera2d}
-
 pub using @math {type Capsule2d}
 
 pub using @math {type Circle}
@@ -844,21 +831,15 @@ pub using @mesh {type Mesh}
 
 pub using @mesh {type Mesh2dGeometry}
 
-pub using @projection2d {type OrthographicProjection}
-
 pub using @math {type Plane2d}
 
 pub using @math {type Polygon}
 
 pub using @math {type Polyline2d}
 
-pub using @projection2d {type Projection}
-
 pub using @math {type Rectangle}
 
 pub using @math {type RegularPolygon}
-
-pub using @camera {type RenderTarget}
 
 pub using @math {type Rhombus}
 

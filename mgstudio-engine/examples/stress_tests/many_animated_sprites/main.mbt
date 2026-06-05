@@ -76,7 +76,7 @@ fn setup(
   let atlas_layout = texture_atlas_layouts
     .peek()
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1))
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   for y in -GRID_HALF_Y..<GRID_HALF_Y {
     for x in -GRID_HALF_X..<GRID_HALF_X {
@@ -142,7 +142,7 @@ fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
     @ecs.Mut[@transform.Transform],
-    @ecs.With[@sprite.Camera2d],
+    @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
   try! camera.for_each(fn(_entity, transform) {

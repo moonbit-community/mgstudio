@@ -148,7 +148,7 @@ fn setup(
   args_res : @app.Res[Args],
 ) -> Unit {
   let args = args_res.get()
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let half_x = (MAP_SIZE / 4.0F).to_int()
   let half_y = (MAP_SIZE / 4.0F).to_int()
@@ -233,7 +233,7 @@ fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
     @ecs.Mut[@transform.Transform],
-    @ecs.With[@sprite.Camera2d],
+    @ecs.With[@camera_components2d.Camera2d],
   ],
 ) -> Unit {
   let dt = time.get().delta_secs()

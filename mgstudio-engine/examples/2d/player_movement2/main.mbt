@@ -44,8 +44,8 @@ fn rapier2d_player_movement2_setup(world : @ecs.World) -> Unit {
   )
   try! (world.spawn_bundle(
     (
-      @sprite.Camera2d::Camera2d(),
-      @sprite.Camera::Camera(),
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
     ),
   )

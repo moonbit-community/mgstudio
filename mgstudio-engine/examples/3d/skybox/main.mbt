@@ -226,7 +226,7 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::Camera(),
+    @camera_camera.Camera::Camera(),
     camera_transform,
   ).spawn(world)
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)

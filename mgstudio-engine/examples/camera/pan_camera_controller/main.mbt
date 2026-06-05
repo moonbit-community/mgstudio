@@ -55,7 +55,10 @@ fn setup(
 ) -> Unit {
   ignore(
     commands.spawn(
-      (@sprite.Camera2d::Camera2d(), @sprite.PanCamera::PanCamera()),
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @sprite.PanCamera::PanCamera(),
+      ),
     ),
   )
   ignore(

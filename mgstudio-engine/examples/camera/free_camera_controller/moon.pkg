@@ -1,4 +1,6 @@
 import {
+  "Milky2018/mgstudio/camera/components2d" @camera_components2d,
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",

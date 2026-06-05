@@ -29,7 +29,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::Camera(),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
         @math.Vec3::new(-5.0F, 3.5F, -6.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),

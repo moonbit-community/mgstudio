@@ -40,7 +40,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let icon = asset_server.get().load("branding/icon.png")
   let bird = asset_server.get().load("branding/bevy_bird_dark.png")
 

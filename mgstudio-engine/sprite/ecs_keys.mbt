@@ -31,21 +31,9 @@ pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
 let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
 
 ///|
-pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d] = @camera_components2d.ecs_key_camera2d
-
-///|
-pub let ecs_key_camera : @ecs.ComponentKey[Camera] = @camera_camera.ecs_key_camera
-
-///|
-pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @camera_projection2d.ecs_key_projection
-
-///|
 pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_component(
   debug_name="render2d.pan_camera",
 )
-
-///|
-pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @camera_camera.ecs_key_render_target
 
 ///|
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
@@ -142,30 +130,32 @@ pub fn register_render2d_required_components(
     fn() { @visibility.Visibility::Inherited },
   )
   world.register_required_components_with(
-    ecs_key_camera,
+    @camera_camera.ecs_key_camera,
     @render.ecs_key_sync_to_render_world,
     fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
   )
-  world.register_required_components_with(ecs_key_camera2d, ecs_key_camera, fn() {
-    Camera::Camera()
-  })
   world.register_required_components_with(
-    ecs_key_camera2d,
-    ecs_key_projection,
-    fn() { Projection::orthographic_2d() },
+    @camera_components2d.ecs_key_camera2d,
+    @camera_camera.ecs_key_camera,
+    fn() { @camera_camera.Camera::Camera() },
   )
   world.register_required_components_with(
-    ecs_key_camera2d,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_projection2d.ecs_key_projection,
+    fn() { @camera_projection2d.Projection::orthographic_2d() },
+  )
+  world.register_required_components_with(
+    @camera_components2d.ecs_key_camera2d,
     @transform.ecs_key_transform,
     fn() { @transform.Transform::identity() },
   )
   world.register_required_components_with(
-    ecs_key_camera2d,
-    ecs_key_render_target,
-    fn() { RenderTarget::Screen },
+    @camera_components2d.ecs_key_camera2d,
+    @camera_camera.ecs_key_render_target,
+    fn() { @camera_camera.RenderTarget::Screen },
   )
   world.register_required_components_with(
-    ecs_key_camera2d,
+    @camera_components2d.ecs_key_camera2d,
     ecs_key_render_layers,
     fn() { RenderLayers::RenderLayers() },
   )

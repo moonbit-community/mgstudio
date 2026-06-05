@@ -65,7 +65,11 @@ fn setup(
       ),
     ),
   )
-  ignore(commands.spawn((@sprite.Camera2d::Camera2d(), MainCamera::{  })))
+  ignore(
+    commands.spawn(
+      (@camera_components2d.Camera2d::Camera2d(), MainCamera::{  }),
+    ),
+  )
 }
 
 ///|
@@ -85,8 +89,11 @@ fn main_camera_entity(
 fn player_movement_system(
   players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
   main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera], @ecs.All],
-  projection_query : @ecs.Query[@ecs.Comp[@sprite.Projection], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[@camera_camera.Camera], @ecs.All],
+  projection_query : @ecs.Query[
+    @ecs.Comp[@camera_projection2d.Projection],
+    @ecs.All,
+  ],
   transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
   windows : @ecs.Query[
     @ecs.Comp[@window.Window],

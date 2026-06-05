@@ -117,7 +117,7 @@ fn setup(
 ) -> Unit {
   let star = meshes.modify(fn(meshes) { meshes.add(build_star_mesh()) })
 
-  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
+  ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   ignore(
     commands.spawn((@mesh.Mesh2d::new(star), ColoredMesh2d::ColoredMesh2d())),
   )

@@ -23,7 +23,9 @@ fn setup(
     "textures/fantasy_ui_borders/panel-border-010.png",
   )
   let slicer = @ui.TextureSlicer::new(@ui.BorderRect::square(22.0F))
-  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
+  commands.spawn(
+    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
+  )
   |> ignore
 
   let root = commands.spawn(

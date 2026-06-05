@@ -29,7 +29,7 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 ///|
 test "render2d: viewport_to_world and world_to_viewport roundtrip (identity camera)" {
   let camera = @camera_camera.Camera::Camera()
-  let projection = OrthographicProjection::default_2d()
+  let projection = @camera_projection2d.OrthographicProjection::default_2d()
   let transform = @transform.Transform::identity()
   let target = @math.IVec2::new(100, 100)
   let scale_factor = 1.0F
@@ -70,7 +70,7 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
 ///|
 test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
   let camera = @camera_camera.Camera::Camera()
-  let projection = OrthographicProjection::default_2d()
+  let projection = @camera_projection2d.OrthographicProjection::default_2d()
   let transform = @transform.Transform::identity()
   let target = @math.IVec2::new(200, 100) // physical
   let scale_factor = 2.0F
@@ -96,7 +96,7 @@ test "render2d: viewport rect clamps to target size" {
       @math.IVec2::new(50, 50),
     ),
   )
-  let projection = OrthographicProjection::default_2d()
+  let projection = @camera_projection2d.OrthographicProjection::default_2d()
   let transform = @transform.Transform::identity()
   let target = @math.IVec2::new(100, 100)
 
@@ -143,7 +143,7 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
 ///|
 test "render2d: viewport conversions honor transform-based zoom scale" {
   let camera = @camera_camera.Camera::Camera()
-  let projection = OrthographicProjection::default_2d()
+  let projection = @camera_projection2d.OrthographicProjection::default_2d()
   let transform = @transform.Transform::identity().with_scale(
     @math.Vec3::splat(2.0F),
   )

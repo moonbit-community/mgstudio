@@ -67,21 +67,6 @@ type ComputedCameraValues = @camera_computed.ComputedCameraValues
 type ClearColor = @camera_clear_color.ClearColor
 
 ///|
-pub type Camera = @camera_camera.Camera
-
-///|
-pub type RenderTarget = @camera_camera.RenderTarget
-
-///|
-pub type OrthographicProjection = @camera_projection2d.OrthographicProjection
-
-///|
-pub type Projection = @camera_projection2d.Projection
-
-///|
-pub type Camera2d = @camera_components2d.Camera2d
-
-///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
 /// camera's view (top-left origin).
 ///
@@ -1446,10 +1431,10 @@ priv struct ExtractedUiTextureSlice {
 ///|
 priv struct ExtractedCamera2d {
   entity : @core.Entity
-  camera : Camera
-  projection : OrthographicProjection
+  camera : @camera_camera.Camera
+  projection : @camera_projection2d.OrthographicProjection
   transform : @transform.Transform
-  target : RenderTarget
+  target : @camera_camera.RenderTarget
   layers : RenderLayers
   bloom : Bloom?
   tonemapping_mode : Int
@@ -1788,7 +1773,7 @@ pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   }
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_pan_camera, fn(entity, _controller) {
-    if (try! world.get_by_key(entity, ecs_key_camera)) is Some(_) &&
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is Some(_) &&
       (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_) {
       controlled_entities.push(entity)
     }
@@ -2391,7 +2376,7 @@ priv struct RenderTargetComputed {
 }
 
 ///|
-fn render2d_targets_host_window(target : RenderTarget) -> Bool {
+fn render2d_targets_host_window(target : @camera_camera.RenderTarget) -> Bool {
   match target {
     Screen => true
     Window(_) => true
@@ -2423,7 +2408,7 @@ fn render2d_window_target_info(
 fn render2d_target_info(
   world : @ecs.World,
   state : RenderState,
-  target : RenderTarget,
+  target : @camera_camera.RenderTarget,
 ) -> RenderTargetComputed? {
   match target {
     Screen => render2d_window_target_info(world, @window.WindowRef::Primary)
@@ -2576,7 +2561,7 @@ fn render2d_target_component_changed(entity : @core.Entity) -> Bool {
 }
 
 ///|
-fn render2d_viewport_size_changed(camera : Camera) -> Bool {
+fn render2d_viewport_size_changed(camera : @camera_camera.Camera) -> Bool {
   !render2d_opt_ivec2_eq(
     camera.computed.old_viewport_size,
     render2d_camera_viewport_size(camera),
@@ -2640,7 +2625,7 @@ fn render2d_camera_transform_scale_axis(value : Float) -> Float {
 
 ///|
 fn render2d_camera_uniform_scale(
-  projection : OrthographicProjection,
+  projection : @camera_projection2d.OrthographicProjection,
   camera_transform : @transform.Transform,
 ) -> Float {
   let projection_scale = if projection.scale == 0.0F {
@@ -2671,7 +2656,9 @@ fn render2d_scale_viewport(viewport : Viewport, scale : Float) -> Viewport {
 }
 
 ///|
-fn render2d_camera_viewport_size(camera : Camera) -> @math.IVec2? {
+fn render2d_camera_viewport_size(
+  camera : @camera_camera.Camera,
+) -> @math.IVec2? {
   match camera.viewport {
     Some(viewport) => Some(viewport.physical_size)
     None => None
@@ -2757,19 +2744,23 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let ecs_world = world
   let render_state = render_state_ref_value
-  ecs_world.for_each_component(ecs_key_camera2d, fn(entity, _marker) {
+  ecs_world.for_each_component(@camera_components2d.ecs_key_camera2d, fn(
+    entity,
+    _marker,
+  ) {
     let target = match
-      (try! ecs_world.get_by_key(entity, ecs_key_render_target)) {
+      (try! ecs_world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => RenderTarget::Screen
+      None => @camera_camera.RenderTarget::Screen
     }
-    let camera = match (try! world.get_by_key(entity, ecs_key_camera)) {
+    let camera = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(value) => value
-      None => Camera::Camera()
+      None => @camera_camera.Camera::Camera()
     }
     try! (ecs_world
-    .get_by_key(entity, ecs_key_projection)
-    .unwrap_or(Projection::orthographic_2d())
+    .get_by_key(entity, @camera_projection2d.ecs_key_projection)
+    .unwrap_or(@camera_projection2d.Projection::orthographic_2d())
     |> ignore)
 
     let target_info = render2d_target_info(world, render_state, target)
@@ -2820,7 +2811,8 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
           render2d_camera_viewport_size(camera_value),
         ),
       )
-      try! (world.replace(entity, ecs_key_camera, camera_value) |> ignore)
+      try! (world.replace(entity, @camera_camera.ecs_key_camera, camera_value)
+      |> ignore)
     }
   })
 }
@@ -2874,19 +2866,20 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let render_state = render_state_ref_value
   let cameras : Array[@core.Entity] = []
-  let camera2d_query : @ecs.Query[@ecs.Comp[Camera2d], @ecs.All] = @ecs.query(
-    world,
-  )
+  let camera2d_query : @ecs.Query[
+    @ecs.Comp[@camera_components2d.Camera2d],
+    @ecs.All,
+  ] = @ecs.query(world)
   try! camera2d_query.view(fn(entity, _camera2d) { cameras.push(entity) })
   for entity in cameras {
-    let target = (try! world.get_by_key(entity, ecs_key_render_target)).unwrap_or(
-      RenderTarget::Screen,
+    let target = (try! world.get_by_key(
+      entity, @camera_camera.ecs_key_render_target,
+    )).unwrap_or(@camera_camera.RenderTarget::Screen)
+    let camera = (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)).unwrap_or(
+      @camera_camera.Camera::Camera(),
     )
-    let camera = (try! world.get_by_key(entity, ecs_key_camera)).unwrap_or(
-      Camera::Camera(),
-    )
-    (try! world.get_by_key(entity, ecs_key_projection)).unwrap_or(
-      Projection::orthographic_2d(),
+    (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection)).unwrap_or(
+      @camera_projection2d.Projection::orthographic_2d(),
     )
     |> ignore
     let target_info = render2d_target_info(world, render_state, target)
@@ -2922,7 +2915,7 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
         render2d_camera_viewport_size(camera_value),
       ),
     )
-    try! world.set_by_key(entity, ecs_key_camera, camera_value)
+    try! world.set_by_key(entity, @camera_camera.ecs_key_camera, camera_value)
   }
 }
 
@@ -2959,12 +2952,13 @@ fn render2d_extract_camera_entity_ecs(
   rs : RenderState,
   entity : @core.Entity,
 ) -> Unit {
-  guard (try! world.get_by_key(entity, ecs_key_camera)) is Some(camera) else {
+  guard (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+    is Some(camera) else {
     return
   }
-  let target = (try! world.get_by_key(entity, ecs_key_render_target)).unwrap_or(
-    RenderTarget::Screen,
-  )
+  let target = (try! world.get_by_key(
+    entity, @camera_camera.ecs_key_render_target,
+  )).unwrap_or(@camera_camera.RenderTarget::Screen)
   let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
     RenderLayers::RenderLayers(),
   )
@@ -2973,9 +2967,10 @@ fn render2d_extract_camera_entity_ecs(
     entity,
     @cas.ContrastAdaptiveSharpening::component(),
   )
-  let projection = match (try! world.get_by_key(entity, ecs_key_projection)) {
+  let projection = match
+    (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection)) {
     Some(Orthographic(p)) => p
-    _ => OrthographicProjection::default_2d()
+    _ => @camera_projection2d.OrthographicProjection::default_2d()
   }
   let transform = render2d_resolve_transform_ecs(world, entity)
   let mut computed = CameraComputed::{
@@ -3098,9 +3093,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     rs.cameras.clear()
     rs.meshes.clear()
     // ECS camera components.
-    let camera2d_query : @ecs.Query[@ecs.Comp[Camera2d], @ecs.All] = @ecs.query(
-      source_world,
-    )
+    let camera2d_query : @ecs.Query[
+      @ecs.Comp[@camera_components2d.Camera2d],
+      @ecs.All,
+    ] = @ecs.query(source_world)
     try! camera2d_query.view(fn(entity, _camera2d) {
       render2d_extract_camera_entity_ecs(source_world, rs, entity)
     })
@@ -5044,10 +5040,10 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.cameras.clear()
     rs.cameras.push(ExtractedCamera2d::{
       entity: camera_a,
-      camera: Camera::Camera().with_order(0),
-      projection: OrthographicProjection::default_2d(),
+      camera: @camera_camera.Camera::Camera().with_order(0),
+      projection: @camera_projection2d.OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
-      target: RenderTarget::Screen,
+      target: @camera_camera.RenderTarget::Screen,
       layers,
       bloom: None,
       tonemapping_mode: 0,
@@ -5061,10 +5057,10 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     })
     rs.cameras.push(ExtractedCamera2d::{
       entity: camera_b,
-      camera: Camera::Camera().with_order(1),
-      projection: OrthographicProjection::default_2d(),
+      camera: @camera_camera.Camera::Camera().with_order(1),
+      projection: @camera_projection2d.OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
-      target: RenderTarget::Screen,
+      target: @camera_camera.RenderTarget::Screen,
       layers,
       bloom: None,
       tonemapping_mode: 0,
@@ -5135,7 +5131,12 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   ensure_render_state_resource(world)
   let layers = RenderLayers::RenderLayers()
   let camera = world.spawn_empty()
-  try! (world.set_by_key(camera, ecs_key_camera, Camera::Camera()) |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
 
   render_state_update(world, fn(rs) {
     rs.extra_ui_sprites.clear()
@@ -5826,7 +5827,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
       // Keep render targets in physical pixels, but derive the camera
       // projection extent from the logical viewport size like Bevy does via
-      // `Camera::logical_viewport_size()`.
+      // `@camera_camera.Camera::logical_viewport_size()`.
       let view_width_logical = render2d_logical_view_extent_axis(
         view_width, scale_factor,
       )
@@ -7073,7 +7074,7 @@ pub impl @app.Plugin for Render2dPlugin with fn name(_self) {
 ///|
 pub impl @app.Plugin for Render2dPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
-  @cas.cas_register_camera_component_key(ecs_key_camera)
+  @cas.cas_register_camera_component_key(@camera_camera.ecs_key_camera)
   render2d_plugin_install(app)
 }
 
@@ -7085,7 +7086,7 @@ pub impl @app.Plugin for Render2dEcsPlugin with fn name(_self) {
 ///|
 pub impl @app.Plugin for Render2dEcsPlugin with fn build(_self, app) {
   register_embedded_wgsl_sources()
-  @cas.cas_register_camera_component_key(ecs_key_camera)
+  @cas.cas_register_camera_component_key(@camera_camera.ecs_key_camera)
   render2d_plugin_ecs_install(app)
 }
 

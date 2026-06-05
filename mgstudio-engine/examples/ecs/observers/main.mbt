@@ -229,7 +229,12 @@ fn spawn_mine(
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
+    commands.spawn(
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera(),
+      ),
+    ),
   )
   ignore(spawn_mine(commands, @math.Vec2::new(-260.0F, 120.0F), 16.0F))
   ignore(spawn_mine(commands, @math.Vec2::new(-180.0F, 40.0F), 14.0F))

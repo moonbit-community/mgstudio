@@ -86,12 +86,12 @@ pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.re
 )
 
 ///|
-pub impl @ecs.Component for FreeCamera with component() {
+pub impl @ecs.Component for FreeCamera with fn component() {
   ecs_key_free_camera
 }
 
 ///|
-pub impl @ecs.Component for FreeCameraState with component() {
+pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
 }
 
@@ -146,7 +146,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let mut system_state = free_camera_system_state.val
   let controlled_entities : Array[@core.Entity] = []
   world.for_each_component(ecs_key_free_camera, fn(entity, _config) {
-    if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is None ||
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) is None ||
       (try! world.get_by_key(entity, @transform.ecs_key_transform)) is None {
       return
     }
@@ -349,12 +349,12 @@ pub fn FreeCameraPlugin::FreeCameraPlugin() -> FreeCameraPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FreeCameraPlugin with name(_self) {
+pub impl @app.Plugin for FreeCameraPlugin with fn name(_self) {
   "mgstudio.camera_controller.FreeCameraPlugin"
 }
 
 ///|
-pub impl @app.Plugin for FreeCameraPlugin with build(_self, app) {
+pub impl @app.Plugin for FreeCameraPlugin with fn build(_self, app) {
   free_camera_plugin(app)
 }
 

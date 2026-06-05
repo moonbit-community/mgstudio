@@ -15,7 +15,7 @@
 ///|
 fn seed_ui_context(world : @ecs.World) -> Unit {
   let mut camera_entity : @core.Entity? = None
-  world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
     if camera_entity is None {
       camera_entity = Some(entity)
     }
@@ -71,13 +71,17 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   seed_ui_context(world)
 
   let camera_count = Ref(0)
-  world.for_each_component(@sprite.ecs_key_camera2d, fn(_entity, _camera) {
+  world.for_each_component(@camera_components2d.ecs_key_camera2d, fn(
+    _entity,
+    _camera,
+  ) {
     camera_count.val = camera_count.val + 1
   })
   debug_inspect(camera_count.val, content="1")
-  let camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera2d], @ecs.All] = @ecs.query(
-    world,
-  )
+  let camera_query : @ecs.Query[
+    @ecs.Comp[@camera_components2d.Camera2d],
+    @ecs.All,
+  ] = @ecs.query(world)
   debug_inspect(camera_query.count(), content="1")
 
   run_ui_extract_pipeline(world)

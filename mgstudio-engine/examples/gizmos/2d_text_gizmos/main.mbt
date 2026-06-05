@@ -53,7 +53,12 @@ fn setup(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
+    commands.spawn(
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @camera_camera.Camera::Camera(),
+      ),
+    ),
   )
   config_store.modify(fn(store) {
     let (config, _group) = store.config_mut(
