@@ -101,6 +101,49 @@ test "camera plugin: owns Camera2d authoring required components" {
 }
 
 ///|
+test "camera plugin: owns Camera required components" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    CameraPlugin::CameraPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+
+  debug_inspect(
+    (try! world.get_by_key(
+      entity, @camera_camera.ecs_key_camera_main_texture_usages,
+    ))
+    is Some(_),
+    content="true",
+  )
+  let visible_entities = try! world.get_by_key(
+    entity, @camera_camera.ecs_key_visible_entities,
+  )
+  let visible_entities_ok = match visible_entities {
+    Some(visible) => visible.is_empty(@mesh.ecs_key_mesh3d.id())
+    None => false
+  }
+  debug_inspect(visible_entities_ok, content="true")
+  debug_inspect(
+    (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @visibility.ecs_key_visibility)) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "camera projection plugin: updates frustum when transform changes" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
     CameraProjectionPlugin::CameraProjectionPlugin(),

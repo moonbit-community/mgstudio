@@ -77,6 +77,7 @@ pub fn camera_projection_plugin(
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let world = app.world()
+  @camera_camera.ensure_camera_required_components(world)
   @camera_components2d.ensure_camera2d_required_components(world)
   world.register_required_components_with(
     @pbr.ecs_key_camera3d,

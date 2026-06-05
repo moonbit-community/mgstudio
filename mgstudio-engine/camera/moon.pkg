@@ -16,4 +16,9 @@ import {
   "Milky2018/mgstudio/post_process",
 }
 
+import {
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/visibility",
+} for "test"
+
 supported_targets = "native"

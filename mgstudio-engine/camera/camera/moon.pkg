@@ -4,9 +4,15 @@ import {
   "Milky2018/mgstudio/camera/computed_camera_values" @camera_computed,
   "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "Milky2018/wgpu_mbt" @wgpu,
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 

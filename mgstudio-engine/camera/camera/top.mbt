@@ -160,6 +160,99 @@ pub fn Camera::target_scaling_factor(self : Camera) -> Float? {
 }
 
 ///|
+pub struct CameraMainTextureUsages {
+  bits : UInt64
+}
+
+///|
+pub fn CameraMainTextureUsages::CameraMainTextureUsages() -> CameraMainTextureUsages {
+  CameraMainTextureUsages::{
+    bits: @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_SRC,
+  }
+}
+
+///|
+pub fn CameraMainTextureUsages::new(bits : UInt64) -> CameraMainTextureUsages {
+  CameraMainTextureUsages::{ bits, }
+}
+
+///|
+pub fn CameraMainTextureUsages::with_usage(
+  self : CameraMainTextureUsages,
+  usage : UInt64,
+) -> CameraMainTextureUsages {
+  CameraMainTextureUsages::{ bits: self.bits | usage }
+}
+
+///|
+pub fn CameraMainTextureUsages::bits(self : CameraMainTextureUsages) -> UInt64 {
+  self.bits
+}
+
+///|
+pub struct VisibleEntities {
+  entities : @hashmap.HashMap[Int, Array[@core.Entity]]
+}
+
+///|
+pub fn VisibleEntities::VisibleEntities() -> VisibleEntities {
+  let entities : @hashmap.HashMap[Int, Array[@core.Entity]] = @hashmap.HashMap([])
+  entities.set(@mesh.ecs_key_mesh3d.id(), [])
+  VisibleEntities::{ entities, }
+}
+
+///|
+pub fn VisibleEntities::get(
+  self : VisibleEntities,
+  component_id : Int,
+) -> Array[@core.Entity] {
+  match self.entities.get(component_id) {
+    Some(entities) => entities
+    None => []
+  }
+}
+
+///|
+pub fn VisibleEntities::len(self : VisibleEntities, component_id : Int) -> Int {
+  self.get(component_id).length()
+}
+
+///|
+pub fn VisibleEntities::is_empty(
+  self : VisibleEntities,
+  component_id : Int,
+) -> Bool {
+  self.len(component_id) == 0
+}
+
+///|
+pub fn VisibleEntities::clear(
+  self : VisibleEntities,
+  component_id : Int,
+) -> Unit {
+  self.entities.set(component_id, [])
+}
+
+///|
+pub fn VisibleEntities::clear_all(self : VisibleEntities) -> Unit {
+  self.entities.clear()
+  self.entities.set(@mesh.ecs_key_mesh3d.id(), [])
+}
+
+///|
+pub fn VisibleEntities::push(
+  self : VisibleEntities,
+  entity : @core.Entity,
+  component_id : Int,
+) -> Unit {
+  let entities = self.get(component_id)
+  entities.push(entity)
+  self.entities.set(component_id, entities)
+}
+
+///|
 pub(all) enum RenderTarget {
   Screen
   Window(@window.WindowRef)
@@ -177,6 +270,18 @@ pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @ecs.register_
 )
 
 ///|
+pub let ecs_key_camera_main_texture_usages : @ecs.ComponentKey[
+  CameraMainTextureUsages,
+] = @ecs.register_component(
+  debug_name="mgstudio.camera.CameraMainTextureUsages",
+)
+
+///|
+pub let ecs_key_visible_entities : @ecs.ComponentKey[VisibleEntities] = @ecs.register_component(
+  debug_name="mgstudio.camera.VisibleEntities",
+)
+
+///|
 pub impl @ecs.Component for Camera with fn component() {
   ecs_key_camera
 }
@@ -184,6 +289,62 @@ pub impl @ecs.Component for Camera with fn component() {
 ///|
 pub impl @ecs.Component for RenderTarget with fn component() {
   ecs_key_render_target
+}
+
+///|
+pub impl @ecs.Component for CameraMainTextureUsages with fn component() {
+  ecs_key_camera_main_texture_usages
+}
+
+///|
+pub impl @ecs.Component for VisibleEntities with fn component() {
+  ecs_key_visible_entities
+}
+
+///|
+pub fn register_camera_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_camera,
+    ecs_key_camera_main_texture_usages,
+    fn() { CameraMainTextureUsages::CameraMainTextureUsages() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
+    ecs_key_visible_entities,
+    fn() { VisibleEntities::VisibleEntities() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
+    ecs_key_render_target,
+    fn() { RenderTarget::Screen },
+  )
+}
+
+///|
+pub fn ensure_camera_required_components(world : @ecs.World) -> Unit {
+  register_camera_required_components(world) catch {
+    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
+    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+      abort(
+        "Camera required-component registration ran too late for component \{component_id}",
+      )
+    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+      abort(
+        "Camera required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
 }
 
 ///|

@@ -7,17 +7,27 @@ import {
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 
+pub let ecs_key_camera_main_texture_usages : @ecs.ComponentKey[CameraMainTextureUsages]
+
 pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
+
+pub let ecs_key_visible_entities : @ecs.ComponentKey[VisibleEntities]
+
+pub fn ensure_camera_required_components(@ecs.World) -> Unit
+
+pub fn register_camera_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 // Errors
 
@@ -49,6 +59,15 @@ pub impl @ecs.Component for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera
 
+pub struct CameraMainTextureUsages {
+  bits : UInt64
+}
+pub fn CameraMainTextureUsages::CameraMainTextureUsages() -> Self
+pub fn CameraMainTextureUsages::bits(Self) -> UInt64
+pub fn CameraMainTextureUsages::new(UInt64) -> Self
+pub fn CameraMainTextureUsages::with_usage(Self, UInt64) -> Self
+pub impl @ecs.Component for CameraMainTextureUsages
+
 pub(all) enum RenderTarget {
   Screen
   Window(@window.WindowRef)
@@ -57,6 +76,18 @@ pub(all) enum RenderTarget {
 pub impl @ecs.Component for RenderTarget
 pub impl ToJson for RenderTarget
 pub impl @json.FromJson for RenderTarget
+
+pub struct VisibleEntities {
+  entities : @hashmap.HashMap[Int, Array[@core.Entity]]
+}
+pub fn VisibleEntities::VisibleEntities() -> Self
+pub fn VisibleEntities::clear(Self, Int) -> Unit
+pub fn VisibleEntities::clear_all(Self) -> Unit
+pub fn VisibleEntities::get(Self, Int) -> Array[@core.Entity]
+pub fn VisibleEntities::is_empty(Self, Int) -> Bool
+pub fn VisibleEntities::len(Self, Int) -> Int
+pub fn VisibleEntities::push(Self, @core.Entity, Int) -> Unit
+pub impl @ecs.Component for VisibleEntities
 
 // Type aliases
 pub using @clear_color {type ClearColorConfig}
