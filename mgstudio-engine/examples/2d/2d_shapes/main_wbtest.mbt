@@ -34,11 +34,11 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
   debug_inspect(camera_query.count(), content="1")
   debug_inspect(mesh_query.count() > 0, content="true")
   debug_inspect(
-    @sprite.render2d_diagnostic_prepared_camera_count() > 0,
+    @sprite_render.render2d_diagnostic_prepared_camera_count() > 0,
     content="true",
   )
   debug_inspect(
-    @sprite.render2d_diagnostic_queued_draw_item_count() > 0,
+    @sprite_render.render2d_diagnostic_queued_draw_item_count() > 0,
     content="true",
   )
 }

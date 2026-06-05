@@ -27,7 +27,7 @@ fn sprite_rect_from_size(size : @math.Vec2) -> @math.Rect {
 }
 
 ///|
-fn apply_scale_sprite_image_mode(
+pub fn apply_scale_sprite_image_mode(
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
   draw_scale : @math.Vec2,
@@ -202,7 +202,7 @@ fn apply_scale_sprite_image_mode(
 }
 
 ///|
-fn apply_sprite_image_mode(
+pub fn apply_sprite_image_mode(
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
   draw_scale : @math.Vec2,
@@ -226,12 +226,14 @@ fn apply_sprite_image_mode(
 }
 
 ///|
-priv struct ComputedTextureSlices {
+pub struct ComputedTextureSlices {
   slices : Array[TextureSlice]
 }
 
 ///|
-let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices] = @ecs.register_component(
+pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[
+  ComputedTextureSlices,
+] = @ecs.register_component(
   debug_name="mgstudio.sprite_render.ComputedTextureSlices",
 )
 
@@ -241,7 +243,7 @@ impl @ecs.Component for ComputedTextureSlices with fn component() {
 }
 
 ///|
-fn ComputedTextureSlices::extract_slices(
+pub fn ComputedTextureSlices::extract_slices(
   self : ComputedTextureSlices,
   sprite : Sprite,
   anchor : Anchor,
@@ -320,7 +322,7 @@ fn compute_sprite_slices(
 }
 
 ///|
-fn compute_sprite_slices_from_rect(
+pub fn compute_sprite_slices_from_rect(
   sprite : Sprite,
   image_size : @math.Vec2,
   texture_rect : @math.Rect,
@@ -370,28 +372,28 @@ fn insert_computed_texture_slices_for_sprite(
 }
 
 ///|
-type ComputedSlicesAssetParams = @app.ParamSet2[
+pub type ComputedSlicesAssetParams = @app.ParamSet2[
   @app.Res[@asset.Assets[@asset.Image]],
   @app.Res[@asset.Assets[@asset.TextureAtlasLayout]],
 ]
 
 ///|
-type ComputedSlicesChangedSpritesQuery = @ecs.Query[
+pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[
   @ecs.Comp[Sprite],
   @ecs.Changed[Sprite],
 ]
 
 ///|
-type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.All]
+pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.All]
 
 ///|
-type ComputedSlicesAssetEventParams = @app.ParamSet2[
+pub type ComputedSlicesAssetEventParams = @app.ParamSet2[
   @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
   ComputedSlicesAllSpritesQuery,
 ]
 
 ///|
-fn compute_slices_on_sprite_change_system(
+pub fn compute_slices_on_sprite_change_system(
   commands : @app.Commands,
   assets : ComputedSlicesAssetParams,
   changed_sprites : ComputedSlicesChangedSpritesQuery,
@@ -410,7 +412,7 @@ fn compute_slices_on_sprite_change_system(
 }
 
 ///|
-fn compute_slices_on_asset_event_system(
+pub fn compute_slices_on_asset_event_system(
   commands : @app.Commands,
   assets : ComputedSlicesAssetParams,
   params : ComputedSlicesAssetEventParams,

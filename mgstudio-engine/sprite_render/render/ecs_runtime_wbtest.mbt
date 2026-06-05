@@ -201,7 +201,7 @@ pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with f
 
 ///|
 fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
-  let mesh_assets = mesh_assets_mut_or_abort()
+  let mesh_assets = @sprite.mesh_assets_mut_or_abort()
   mesh_assets.set_changed()
   @mesh.Mesh2d::new(
     mesh_assets
@@ -255,7 +255,7 @@ test "render2d: Sprite tuple spawn inserts required components" {
 
   debug_inspect(world.is_alive(entity), content="true")
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_sprite),
+    ecs_has_non_null_payload(world, entity, @sprite.ecs_key_sprite),
     content="true",
   )
   debug_inspect(
@@ -278,7 +278,7 @@ test "render2d: Sprite tuple spawn inserts required components" {
   )
   debug_inspect(
     ecs_has_non_null_payload(
-      world, entity, @render.ecs_key_sync_to_render_world,
+      world, entity, @renderer.ecs_key_sync_to_render_world,
     ),
     content="true",
   )
@@ -323,7 +323,7 @@ test "render2d: Commands can spawn Sprite component tuples" {
     )
   }
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_sprite),
+    ecs_has_non_null_payload(app.world(), entity, @sprite.ecs_key_sprite),
     content="true",
   )
   debug_inspect(
@@ -505,7 +505,7 @@ test "render2d: bloom component shares post_process ownership" {
 ///|
 test "render2d: required components align Camera2d and Bloom with Bevy camera authoring" {
   let world = @ecs.World::new()
-  try! register_render2d_required_components(world)
+  try! @sprite.register_render2d_required_components(world)
   let entity = world.spawn_empty()
 
   try! (world.set_by_key(
@@ -607,8 +607,8 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
   @app.App::new(world)
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-  .add_plugins(@render.RenderPlugin::RenderPlugin())
-  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+  .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+  .add_plugins(Render2dPlugin::Render2dPlugin())
   .add_system(fn(world : @ecs.World) {
     let mesh = test_rectangle_mesh(8.0F, 6.0F)
     let material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -630,7 +630,11 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_mesh_material2d),
+    ecs_has_non_null_payload(
+      world,
+      entity,
+      @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component(),
+    ),
     content="true",
   )
   debug_inspect(
@@ -644,8 +648,8 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+    .add_plugins(Render2dPlugin::Render2dPlugin())
     .add_systems(
       @app.Startup,
       @app.system_config_param3(fn(
@@ -797,7 +801,11 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
     true,
   )
   let entity = world.spawn()
-  try! world.set_by_key(entity, ecs_key_sprite, Sprite::from_image(image))
+  try! world.set_by_key(
+    entity,
+    @sprite.ecs_key_sprite,
+    Sprite::from_image(image),
+  )
   try! world.set_by_key(entity, ecs_key_anchor, Anchor::center())
 
   app = app.update()
@@ -819,7 +827,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
 }
 
 ///|
-test "sprite: Sprite and SpriteMesh install Bevy required components" {
+test "sprite: Sprite and @sprite.SpriteMesh install Bevy required components" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -829,13 +837,16 @@ test "sprite: Sprite and SpriteMesh install Bevy required components" {
   let sprite_mesh_entity = world.spawn()
   try! world.set_by_key(
     sprite_entity,
-    ecs_key_sprite,
+    @sprite.ecs_key_sprite,
     Sprite::from_color(@color.Color::white(), @math.Vec2::new(8.0F, 4.0F)),
   )
   try! world.set_by_key(
     sprite_mesh_entity,
-    ecs_key_sprite_mesh,
-    SpriteMesh::from_color(@color.Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+    @sprite.ecs_key_sprite_mesh,
+    @sprite.SpriteMesh::from_color(
+      @color.Color::white(),
+      @math.Vec2::new(12.0F, 6.0F),
+    ),
   )
   app = app.update()
   let world = app.world()
@@ -860,7 +871,7 @@ test "sprite: Sprite and SpriteMesh install Bevy required components" {
 }
 
 ///|
-test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
+test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for @sprite.SpriteMesh" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -869,8 +880,11 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
-    ecs_key_sprite_mesh,
-    SpriteMesh::from_color(@color.Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+    @sprite.ecs_key_sprite_mesh,
+    @sprite.SpriteMesh::from_color(
+      @color.Color::white(),
+      @math.Vec2::new(12.0F, 6.0F),
+    ),
   )
 
   app = app.update()
@@ -890,18 +904,18 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
 }
 
 ///|
-test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
+test "render2d: SpriteMeshPlugin adds quad Mesh2d and @sprite.SpriteMaterial" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+    .add_plugins(Render2dPlugin::Render2dPlugin())
   let world = app.world()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
-    ecs_key_sprite_mesh,
-    SpriteMesh::from_color(
+    @sprite.ecs_key_sprite_mesh,
+    @sprite.SpriteMesh::from_color(
       @color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
       @math.Vec2::new(12.0F, 6.0F),
     ),
@@ -912,11 +926,13 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
 
   let world = app.world()
   let material_key : @ecs.ComponentKey[
-    @sprite_render_mesh2d_material.MeshMaterial2d[SpriteMaterial],
+    @sprite_render_mesh2d_material.MeshMaterial2d[@sprite.SpriteMaterial],
   ] = @sprite_render_mesh2d_material.MeshMaterial2d::component()
   let mesh2d = try! world.get_by_key(entity, @mesh.ecs_key_mesh2d)
   let material = try! world.get_by_key(entity, material_key)
-  let material_assets_key : @ecs.ResourceKey[@asset.Assets[SpriteMaterial]] = @asset.assets_resource_key()
+  let material_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@sprite.SpriteMaterial],
+  ] = @asset.assets_resource_key()
   let material_assets = world.get_resource(material_assets_key).unwrap()
 
   debug_inspect(mesh2d is Some(_), content="true")
@@ -956,18 +972,18 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
     atlas_assets,
   )
   match inside {
-    SpritePixelSpacePoint::Inside(point) => {
+    @sprite.SpritePixelSpacePoint::Inside(point) => {
       debug_inspect(point.x.to_double(), content="9")
       debug_inspect(point.y.to_double(), content="1")
     }
-    SpritePixelSpacePoint::Outside(_) => abort("expected inside point")
+    @sprite.SpritePixelSpacePoint::Outside(_) => abort("expected inside point")
   }
   match outside {
-    SpritePixelSpacePoint::Outside(point) => {
+    @sprite.SpritePixelSpacePoint::Outside(point) => {
       debug_inspect(point.x.to_double(), content="11")
       debug_inspect(point.y.to_double(), content="10")
     }
-    SpritePixelSpacePoint::Inside(_) => abort("expected outside point")
+    @sprite.SpritePixelSpacePoint::Inside(_) => abort("expected outside point")
   }
 }
 
@@ -977,8 +993,8 @@ test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d stores the materia
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-  .add_plugins(@render.RenderPlugin::RenderPlugin())
-  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+  .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+  .add_plugins(Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     let material_handle = test_color_material_handle(@color.Color::white())
     let mesh_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -997,7 +1013,7 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(
       @sprite_render_mesh2d_color_material.ColorMaterialPlugin::ColorMaterialPlugin(),
     )
@@ -1030,15 +1046,15 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[
+    @renderer.RenderAssets[
       @sprite_render_mesh2d_material.PreparedMaterial2d[DummyMaterialAsset],
     ],
-  ] = @render.RenderAssets::resource()
+  ] = @renderer.RenderAssets::resource()
   let instances_key : @ecs.ResourceKey[
     @sprite_render_mesh2d_material.RenderMaterial2dInstances[DummyMaterialAsset],
   ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
@@ -1132,7 +1148,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   app = app.add_system(fn(world : @ecs.World) {
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
@@ -1163,10 +1179,10 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     @sprite_render_mesh2d_material.RenderMaterial2dInstances[DummyMaterialAsset],
   ] = @sprite_render_mesh2d_material.RenderMaterial2dInstances::resource()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[
+    @renderer.RenderAssets[
       @sprite_render_mesh2d_material.PreparedMaterial2d[DummyMaterialAsset],
     ],
-  ] = @render.RenderAssets::resource()
+  ] = @renderer.RenderAssets::resource()
   let instances = render_world.get_resource(instances_key).unwrap()
   let prepared_assets = render_world.get_resource(prepared_key).unwrap()
   let prepared = prepared_assets.get(handle.id()).unwrap()
@@ -1201,8 +1217,8 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+    .add_plugins(Render2dPlugin::Render2dPlugin())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(7)
     handle_ref.val = Some(material_handle)
@@ -1244,8 +1260,8 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-    .add_plugins(@render.RenderPlugin::RenderPlugin())
-    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+    .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+    .add_plugins(Render2dPlugin::Render2dPlugin())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(11)
     handle_ref.val = Some(material_handle)
@@ -1266,12 +1282,12 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],
   ] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @render.RenderAssets[
+    @renderer.RenderAssets[
       @sprite_render_mesh2d_material.PreparedMaterial2d[
         @sprite_render_mesh2d_color_material.ColorMaterial,
       ],
     ],
-  ] = @render.RenderAssets::resource()
+  ] = @renderer.RenderAssets::resource()
   let pipeline_key : @ecs.ResourceKey[
     @sprite_render_mesh2d_material.Material2dPipeline[
       @sprite_render_mesh2d_color_material.ColorMaterial,
@@ -1318,7 +1334,7 @@ test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d component keys are
     @sprite_render_mesh2d_material.MeshMaterial2d[
       @sprite_render_mesh2d_color_material.ColorMaterial,
     ],
-  ] = ecs_key_mesh_material2d
+  ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
   let color_key_from_trait : @ecs.ComponentKey[
     @sprite_render_mesh2d_material.MeshMaterial2d[
       @sprite_render_mesh2d_color_material.ColorMaterial,
@@ -1347,8 +1363,8 @@ test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial constructors 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
-  .add_plugins(@render.RenderPlugin::RenderPlugin())
-  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
+  .add_plugins(@renderer.RenderPlugin::RenderPlugin())
+  .add_plugins(Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
       @sprite_render_mesh2d_color_material.ColorMaterial::from_color(

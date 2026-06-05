@@ -232,12 +232,12 @@ fn draw_registered_custom_mesh2d_item(
   }
   let entry = registry.entries[runtime_index]
   let descriptor = entry.descriptor
-  @render.host_gpu_register_mesh2d_pipeline_descriptor(
+  @renderer.host_gpu_register_mesh2d_pipeline_descriptor(
     pipeline_id=descriptor.pipeline_id,
     shader_path=descriptor.shader_path,
   )
   let transform = mesh.payload.transform
-  @render.host_gpu_draw_mesh2d_pipeline(
+  @renderer.host_gpu_draw_mesh2d_pipeline(
     mesh_id=mesh.payload.mesh_id,
     x=transform.translation.x,
     y=transform.translation.y,

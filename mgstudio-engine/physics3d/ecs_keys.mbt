@@ -13,24 +13,6 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = [
-  "Ccd3d", "Damping3d", "Collider3d", "Friction3d", "Sleeping3d", "Velocity3d", "Dominance3d",
-  "RigidBody3d", "LockedAxes3d", "ActiveHooks3d", "ContactSkin3d", "Restitution3d",
-  "ActiveEvents3d", "GravityScale3d", "ImpulseJoint3d", "SolverGroups3d", "ExternalForce3d",
-  "ColliderParent3d", "MultibodyJoint3d", "ColliderDensity3d", "ColliderEnabled3d",
-  "CollisionGroups3d", "ExternalImpulse3d", "RapierBodyHandle3d", "RigidBodyEnabled3d",
-  "FrictionCombineRule3d", "ActiveCollisionTypes3d", "RapierColliderHandle3d", "ColliderMassProperties3d",
-  "RestitutionCombineRule3d", "AdditionalMassProperties3d", "RapierImpulseJointHandle3d",
-  "AdditionalSolverIterations3d", "ContactForceEventThreshold3d", "RapierMultibodyJointHandle3d",
-  "KinematicCharacterController3d", "KinematicCharacterControllerOutput3d",
-]
-
-///|
-pub let ecs_resources : Array[String] = [
-  "Physics3dConfig", "Physics3dEvents", "Physics3dContext", "Physics3dHooksConfig",
-]
-
-///|
 pub let ecs_res_key_physics3d_config : @ecs.ResourceKey[Physics3dConfig] = @ecs.register_resource(
   debug_name="physics3d.physics3d_config",
 )
@@ -248,187 +230,187 @@ pub let ecs_key_kinematic_character_controller_output3d : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Ccd3d with component() {
+pub impl @ecs.Component for Ccd3d with fn component() {
   ecs_key_ccd3d
 }
 
 ///|
-pub impl @ecs.Component for Damping3d with component() {
+pub impl @ecs.Component for Damping3d with fn component() {
   ecs_key_damping3d
 }
 
 ///|
-pub impl @ecs.Component for Collider3d with component() {
+pub impl @ecs.Component for Collider3d with fn component() {
   ecs_key_collider3d
 }
 
 ///|
-pub impl @ecs.Component for Friction3d with component() {
+pub impl @ecs.Component for Friction3d with fn component() {
   ecs_key_friction3d
 }
 
 ///|
-pub impl @ecs.Component for Sleeping3d with component() {
+pub impl @ecs.Component for Sleeping3d with fn component() {
   ecs_key_sleeping3d
 }
 
 ///|
-pub impl @ecs.Component for Velocity3d with component() {
+pub impl @ecs.Component for Velocity3d with fn component() {
   ecs_key_velocity3d
 }
 
 ///|
-pub impl @ecs.Component for Dominance3d with component() {
+pub impl @ecs.Component for Dominance3d with fn component() {
   ecs_key_dominance3d
 }
 
 ///|
-pub impl @ecs.Component for RigidBody3d with component() {
+pub impl @ecs.Component for RigidBody3d with fn component() {
   ecs_key_rigid_body3d
 }
 
 ///|
-pub impl @ecs.Component for LockedAxes3d with component() {
+pub impl @ecs.Component for LockedAxes3d with fn component() {
   ecs_key_locked_axes3d
 }
 
 ///|
-pub impl @ecs.Component for ActiveHooks3d with component() {
+pub impl @ecs.Component for ActiveHooks3d with fn component() {
   ecs_key_active_hooks3d
 }
 
 ///|
-pub impl @ecs.Component for ContactSkin3d with component() {
+pub impl @ecs.Component for ContactSkin3d with fn component() {
   ecs_key_contact_skin3d
 }
 
 ///|
-pub impl @ecs.Component for Restitution3d with component() {
+pub impl @ecs.Component for Restitution3d with fn component() {
   ecs_key_restitution3d
 }
 
 ///|
-pub impl @ecs.Component for ActiveEvents3d with component() {
+pub impl @ecs.Component for ActiveEvents3d with fn component() {
   ecs_key_active_events3d
 }
 
 ///|
-pub impl @ecs.Component for GravityScale3d with component() {
+pub impl @ecs.Component for GravityScale3d with fn component() {
   ecs_key_gravity_scale3d
 }
 
 ///|
-pub impl @ecs.Component for ImpulseJoint3d with component() {
+pub impl @ecs.Component for ImpulseJoint3d with fn component() {
   ecs_key_impulse_joint3d
 }
 
 ///|
-pub impl @ecs.Component for SolverGroups3d with component() {
+pub impl @ecs.Component for SolverGroups3d with fn component() {
   ecs_key_solver_groups3d
 }
 
 ///|
-pub impl @ecs.Component for ExternalForce3d with component() {
+pub impl @ecs.Component for ExternalForce3d with fn component() {
   ecs_key_external_force3d
 }
 
 ///|
-pub impl @ecs.Component for ColliderParent3d with component() {
+pub impl @ecs.Component for ColliderParent3d with fn component() {
   ecs_key_collider_parent3d
 }
 
 ///|
-pub impl @ecs.Component for MultibodyJoint3d with component() {
+pub impl @ecs.Component for MultibodyJoint3d with fn component() {
   ecs_key_multibody_joint3d
 }
 
 ///|
-pub impl @ecs.Component for ColliderDensity3d with component() {
+pub impl @ecs.Component for ColliderDensity3d with fn component() {
   ecs_key_collider_density3d
 }
 
 ///|
-pub impl @ecs.Component for ColliderEnabled3d with component() {
+pub impl @ecs.Component for ColliderEnabled3d with fn component() {
   ecs_key_collider_enabled3d
 }
 
 ///|
-pub impl @ecs.Component for CollisionGroups3d with component() {
+pub impl @ecs.Component for CollisionGroups3d with fn component() {
   ecs_key_collision_groups3d
 }
 
 ///|
-pub impl @ecs.Component for ExternalImpulse3d with component() {
+pub impl @ecs.Component for ExternalImpulse3d with fn component() {
   ecs_key_external_impulse3d
 }
 
 ///|
-pub impl @ecs.Component for RapierBodyHandle3d with component() {
+pub impl @ecs.Component for RapierBodyHandle3d with fn component() {
   ecs_key_rapier_body_handle3d
 }
 
 ///|
-pub impl @ecs.Component for RigidBodyEnabled3d with component() {
+pub impl @ecs.Component for RigidBodyEnabled3d with fn component() {
   ecs_key_rigid_body_enabled3d
 }
 
 ///|
-pub impl @ecs.Component for FrictionCombineRule3d with component() {
+pub impl @ecs.Component for FrictionCombineRule3d with fn component() {
   ecs_key_friction_combine_rule3d
 }
 
 ///|
-pub impl @ecs.Component for ActiveCollisionTypes3d with component() {
+pub impl @ecs.Component for ActiveCollisionTypes3d with fn component() {
   ecs_key_active_collision_types3d
 }
 
 ///|
-pub impl @ecs.Component for RapierColliderHandle3d with component() {
+pub impl @ecs.Component for RapierColliderHandle3d with fn component() {
   ecs_key_rapier_collider_handle3d
 }
 
 ///|
-pub impl @ecs.Component for ColliderMassProperties3d with component() {
+pub impl @ecs.Component for ColliderMassProperties3d with fn component() {
   ecs_key_collider_mass_properties3d
 }
 
 ///|
-pub impl @ecs.Component for RestitutionCombineRule3d with component() {
+pub impl @ecs.Component for RestitutionCombineRule3d with fn component() {
   ecs_key_restitution_combine_rule3d
 }
 
 ///|
-pub impl @ecs.Component for AdditionalMassProperties3d with component() {
+pub impl @ecs.Component for AdditionalMassProperties3d with fn component() {
   ecs_key_additional_mass_properties3d
 }
 
 ///|
-pub impl @ecs.Component for RapierImpulseJointHandle3d with component() {
+pub impl @ecs.Component for RapierImpulseJointHandle3d with fn component() {
   ecs_key_rapier_impulse_joint_handle3d
 }
 
 ///|
-pub impl @ecs.Component for AdditionalSolverIterations3d with component() {
+pub impl @ecs.Component for AdditionalSolverIterations3d with fn component() {
   ecs_key_additional_solver_iterations3d
 }
 
 ///|
-pub impl @ecs.Component for ContactForceEventThreshold3d with component() {
+pub impl @ecs.Component for ContactForceEventThreshold3d with fn component() {
   ecs_key_contact_force_event_threshold3d
 }
 
 ///|
-pub impl @ecs.Component for RapierMultibodyJointHandle3d with component() {
+pub impl @ecs.Component for RapierMultibodyJointHandle3d with fn component() {
   ecs_key_rapier_multibody_joint_handle3d
 }
 
 ///|
-pub impl @ecs.Component for KinematicCharacterController3d with component() {
+pub impl @ecs.Component for KinematicCharacterController3d with fn component() {
   ecs_key_kinematic_character_controller3d
 }
 
 ///|
-pub impl @ecs.Component for KinematicCharacterControllerOutput3d with component() {
+pub impl @ecs.Component for KinematicCharacterControllerOutput3d with fn component() {
   ecs_key_kinematic_character_controller_output3d
 }
 

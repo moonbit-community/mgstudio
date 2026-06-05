@@ -13,18 +13,6 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = [
-  "Pickable", "PointerId", "PointerInteraction", "PointerLocation", "PointerPress",
-  "SpritePickingCamera",
-]
-
-///|
-pub let ecs_resources : Array[String] = [
-  "HoverMap", "PickingSettings", "PickingState", "PointerInputSettings", "PointerMap",
-  "PreviousHoverMap", "SpritePickingSettings",
-]
-
-///|
 pub let ecs_msg_key_pointer_input : @ecs.MessageKey[PointerInput] = @ecs.register_message(
   debug_name="mgstudio_picking::PointerInput",
 )

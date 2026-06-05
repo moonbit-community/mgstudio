@@ -4,16 +4,12 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/camera/camera",
-  "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
@@ -24,147 +20,65 @@ import {
 }
 
 // Values
-pub let camera_update_systems : String
+pub fn apply_scale_sprite_image_mode(@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, SpriteScalingMode) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2)
 
-pub let ecs_components : Array[String]
+pub fn apply_sprite_image_mode(@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, SpriteImageMode, Bool) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool)
+
+pub fn compute_slices_on_asset_event_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Comp[Sprite], @ecs.All]]) -> Unit
+
+pub fn compute_slices_on_sprite_change_system(@app.Commands, @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]], @ecs.Query[@ecs.Comp[Sprite], @ecs.Changed[Sprite]]) -> Unit
+
+pub fn compute_sprite_slices_from_rect(Sprite, @math.Vec2, @math.Rect) -> ComputedTextureSlices?
 
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
+pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices]
+
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@color_material.ColorMaterial]]
-
-pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
-
-pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
 pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
 
 pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh]
 
-pub let ecs_resources : Array[String]
-
 pub fn ensure_render2d_required_components(@ecs.World) -> Unit
 
 pub fn flush_global_gizmos(Gizmos[DefaultGizmoConfigGroup]) -> Unit
-
-pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[@wireframe2d.Wireframe2dConfig]
 
 pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup]
 
+pub fn gizmos_clear() -> Unit
+
 pub fn gizmos_clear_3d() -> Unit
+
+pub fn gizmos_draw_lines(@render_layers.RenderLayers) -> Unit
 
 pub fn gizmos_mesh_id_3d(@render_layers.RenderLayers) -> Int?
 
-pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
+pub fn gizmos_prepare(@ecs.World) -> Unit
 
-pub fn init_render_state_system(@ecs.World) -> Unit
+pub fn gizmos_reset() -> Unit
+
+pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 
 pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 
-pub fn[T] register_custom_mesh2d_pipeline_world(@ecs.World, type_name~ : String, component_key~ : @ecs.ComponentKey[T], descriptor~ : CustomMesh2dPipelineDescriptor) -> Unit
-
-pub fn register_embedded_wgsl_sources() -> Unit
-
 pub fn register_render2d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
-
-pub fn render2d_camera_system(@ecs.World) -> Unit
-
-pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
-
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
-
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @camera.Camera, @projection2d.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
-
-pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_sprites(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
-
-pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
 
 pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image.Image]
 
-pub fn render2d_debug_log_primary_camera(@ecs.World) -> Unit
-
 pub fn render2d_delete_uploaded_mesh_handle_id(Int) -> Bool
 
-pub fn render2d_diagnostic_execute_cpu_ms() -> Float
-
-pub fn render2d_diagnostic_prepared_camera_count() -> Int
-
-pub fn render2d_diagnostic_queue_cpu_ms() -> Float
-
-pub fn render2d_diagnostic_queued_draw_item_count() -> Int
-
-pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, @render_layers.RenderLayers) -> Unit
-
-pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
-
-pub fn render2d_primary_scene_cull_context(@ecs.World) -> SceneCullContext?
-
-pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers) -> Unit
-
-pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?) -> Unit
-
-pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
-
-pub fn render2d_push_sprite_uv_scissor_slices_batch(@ecs.World, Array[OverlaySpriteUvScissorSlices]) -> Unit
-
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
-
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
-
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
-
-pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
-
-pub fn render2d_scene_item_visible(SceneCullContext, Float, Float, Float) -> Bool
-
-pub let render2d_set_extract : String
-
-pub let render2d_set_extract_materials : String
-
-pub let render2d_set_prepare : String
-
-pub let render2d_set_prepare_materials : String
-
-pub let render2d_set_queue : String
-
-pub let render2d_set_render : String
-
 pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
-
-pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
-
-pub fn render2d_world_to_viewport(@ecs.World, @math.Vec2) -> @math.Vec2?
-
-pub fn render_execute_system(@ecs.World) -> Unit
-
-pub fn render_extract_system(@ecs.World) -> Unit
-
-pub fn render_extract_system_ecs(@ecs.World) -> Unit
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
 pub fn render_mesh_asset_get(@asset.Handle[@mesh.Mesh]) -> @mesh.Mesh?
 
 pub fn render_mesh_asset_set(@asset.Handle[@mesh.Mesh], @mesh.Mesh) -> Bool
-
-pub fn render_prepare_system(@ecs.World) -> Unit
-
-pub fn render_queue_system(@ecs.World) -> Unit
 
 pub fn sprite_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -179,6 +93,8 @@ pub fn sprite_stroke_text_emit_3d(GizmoConfig, @math.Isometry3d, String, Float, 
 pub fn sprite_stroke_text_measure(String, Float) -> @math.Vec2
 
 pub let sprite_systems_compute_slices : String
+
+pub fn uploaded_mesh_base_radius(Int) -> Float
 
 // Errors
 
@@ -221,27 +137,15 @@ pub struct BorderRect {
   right : Float
   top : Float
   bottom : Float
-}
+} derive(ToJson, @json.FromJson)
 pub fn BorderRect::BorderRect() -> Self
 pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
 
-pub struct CustomMesh2dPipelineDescriptor {
-  pipeline_id : UInt64
-  shader_path : String
-  phase : Int
+pub struct ComputedTextureSlices {
+  slices : Array[TextureSlice]
 }
-pub fn CustomMesh2dPipelineDescriptor::new(String, phase? : Int) -> Self
-pub fn CustomMesh2dPipelineDescriptor::phase(Self) -> Int
-pub fn CustomMesh2dPipelineDescriptor::pipeline_id(Self) -> UInt64
-pub fn CustomMesh2dPipelineDescriptor::shader_path(Self) -> String
-
-type CustomMesh2dRuntimeRegistry
-pub fn CustomMesh2dRuntimeRegistry::contains_entity(Self, @ecs.World, @core.Entity) -> Bool
-pub fn CustomMesh2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
-pub fn CustomMesh2dRuntimeRegistry::entry_count(Self) -> Int
-pub fn CustomMesh2dRuntimeRegistry::new() -> Self
-pub impl @app.Resource for CustomMesh2dRuntimeRegistry
+pub fn ComputedTextureSlices::extract_slices(Self, Sprite, Anchor) -> Array[TextureSlice]
 
 pub struct DefaultGizmoConfigGroup {
 }
@@ -406,31 +310,6 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
-pub(all) struct OverlaySpriteUvScissor {
-  texture : @asset.Handle[@image.Image]
-  transform : @transform.Transform
-  uv_min : @math.Vec2
-  uv_max : @math.Vec2
-  color : @color.Color
-  layers : @render_layers.RenderLayers
-  scissor : @math.Rect?
-  target_camera : @core.Entity?
-}
-
-pub(all) struct OverlaySpriteUvScissorSlices {
-  texture : @asset.Handle[@image.Image]
-  rotation : Float
-  draw_scale : @math.Vec2
-  z : Float
-  color : @color.Color
-  cull_center : @math.Vec2
-  cull_half_size : @math.Vec2
-  layers : @render_layers.RenderLayers
-  scissor : @math.Rect?
-  target_camera : @core.Entity?
-  slices_xy_uv : Array[Float]
-}
-
 pub(all) struct PendingArc {
   isometry : Isometry2d
   arc_angle : Float
@@ -478,45 +357,12 @@ pub(all) struct PendingRoundedRect {
   config : GizmoConfig
 }
 
-pub struct Render2dEcsPlugin {
-}
-pub fn Render2dEcsPlugin::Render2dEcsPlugin() -> Self
-pub impl @app.Plugin for Render2dEcsPlugin
-
-pub struct Render2dPlugin {
-}
-pub fn Render2dPlugin::Render2dPlugin() -> Self
-pub impl @app.Plugin for Render2dPlugin
-
-type RenderState
-pub impl ToJson for RenderState
-pub impl @json.FromJson for RenderState
-
 pub struct RoundedRectBuilder {
   id : Int
   state : @ref.Ref[GizmoState]
 }
 pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
 pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
-
-pub struct SceneCullContext {
-  center_x : Float
-  center_y : Float
-  cosv : Float
-  sinv : Float
-  half_width : Float
-  half_height : Float
-}
-pub fn SceneCullContext::new(Float, Float, Float, Float, Float, Float) -> Self
-pub fn SceneCullContext::values(Self) -> (Float, Float, Float, Float, Float, Float)
-
-pub struct ScissorRect {
-  rect : @math.Rect
-}
-pub fn ScissorRect::new(@math.Rect) -> Self
-pub impl @ecs.Component for ScissorRect
-pub impl ToJson for ScissorRect
-pub impl @json.FromJson for ScissorRect
 
 pub(all) enum SliceScaleMode {
   Stretch
@@ -682,25 +528,14 @@ pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
 pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
 pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
 
-pub struct UiBorderRect {
-  left : Float
-  top : Float
-  right : Float
-  bottom : Float
-} derive(ToJson, @json.FromJson)
-pub fn UiBorderRect::new(Float, Float, Float, Float) -> Self
-pub fn UiBorderRect::zero() -> Self
-
-pub struct UiCornerRadii {
-  top_left : Float
-  top_right : Float
-  bottom_right : Float
-  bottom_left : Float
-} derive(ToJson, @json.FromJson)
-pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
-pub fn UiCornerRadii::zero() -> Self
-
 // Type aliases
+pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.All]
+
+pub type ComputedSlicesAssetEventParams = @app.ParamSet2[@ecs.MessageReader[@asset.AssetEvent[@image.Image]], @ecs.Query[@ecs.Comp[Sprite], @ecs.All]]
+
+pub type ComputedSlicesAssetParams = @app.ParamSet2[@app.Res[@asset.Assets[@image.Image]], @app.Res[@asset.Assets[@asset.TextureAtlasLayout]]]
+
+pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[@ecs.Comp[Sprite], @ecs.Changed[Sprite]]
 
 // Traits
 pub(open) trait GizmoConfigGroup {

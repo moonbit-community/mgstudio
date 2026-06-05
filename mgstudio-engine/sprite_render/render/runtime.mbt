@@ -28,21 +28,327 @@ type ComputedCameraValues = @camera_computed.ComputedCameraValues
 type ClearColor = @camera_clear_color.ClearColor
 
 ///|
-/// A per-entity scissor rectangle in *logical* pixels, relative to the active
-/// camera's view (top-left origin).
-///
-/// When present, `render_execute_system` converts it into physical pixels using
-/// the camera's scale factor and viewport offset, then applies it via
-/// `host_gpu_set_scissor`.
-///
-/// This is primarily used by UI clipping (overflow/scroll).
-pub struct ScissorRect {
-  rect : @math.Rect
+type Anchor = @sprite.Anchor
+
+///|
+pub type BorderRect = @sprite.BorderRect
+
+///|
+type ComputedTextureSlices = @sprite.ComputedTextureSlices
+
+///|
+type Sprite = @sprite.Sprite
+
+///|
+type SpriteImageMode = @sprite.SpriteImageMode
+
+///|
+type SpriteScalingMode = @sprite.SpriteScalingMode
+
+///|
+type TextureSlicer = @sprite.TextureSlicer
+
+///|
+type TextureSlice = @sprite.TextureSlice
+
+///|
+type ColorMaterial = @sprite_render_mesh2d_color_material.ColorMaterial
+
+///|
+type ColorMaterialPlugin = @sprite_render_mesh2d_color_material.ColorMaterialPlugin
+
+///|
+type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
+
+///|
+type PreparedMaterial2d[M] = @sprite_render_mesh2d_material.PreparedMaterial2d[
+  M,
+]
+
+///|
+type RenderMaterial2dInstances[M] = @sprite_render_mesh2d_material.RenderMaterial2dInstances[
+  M,
+]
+
+///|
+type Material2dRuntimeRegistry = @sprite_render_mesh2d_material.Material2dRuntimeRegistry
+
+///|
+type SpriteMeshPlugin = @sprite.SpriteMeshPlugin
+
+///|
+type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
+
+///|
+type Mesh2dWireframe = @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe
+
+///|
+let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @sprite.ecs_key_anchor
+
+///|
+let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_layers.ecs_key_render_layers
+
+///|
+let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices] = @sprite.ecs_key_computed_texture_slices
+
+///|
+let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @sprite_render_mesh2d_wireframe2d.ecs_key_mesh2d_wireframe
+
+///|
+let sprite_systems_compute_slices : @app.SystemSet = @sprite.sprite_systems_compute_slices
+
+///|
+fn apply_sprite_image_mode(
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  draw_scale : @math.Vec2,
+  region_size : @math.Vec2,
+  image_mode : SpriteImageMode,
+  has_custom_size : Bool,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
+  @sprite.apply_sprite_image_mode(
+    uv_min, uv_max, draw_scale, region_size, image_mode, has_custom_size,
+  )
 }
 
 ///|
-pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
-  ScissorRect::{ rect, }
+fn apply_scale_sprite_image_mode(
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  draw_scale : @math.Vec2,
+  region_size : @math.Vec2,
+  scaling_mode : SpriteScalingMode,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2) {
+  @sprite.apply_scale_sprite_image_mode(
+    uv_min, uv_max, draw_scale, region_size, scaling_mode,
+  )
+}
+
+///|
+fn compute_sprite_slices_from_rect(
+  sprite : Sprite,
+  image_size : @math.Vec2,
+  texture_rect : @math.Rect,
+) -> ComputedTextureSlices? {
+  @sprite.compute_sprite_slices_from_rect(sprite, image_size, texture_rect)
+}
+
+///|
+fn compute_slices_on_sprite_change_system(
+  commands : @app.Commands,
+  assets : @sprite.ComputedSlicesAssetParams,
+  changed_sprites : @sprite.ComputedSlicesChangedSpritesQuery,
+) -> Unit {
+  @sprite.compute_slices_on_sprite_change_system(
+    commands, assets, changed_sprites,
+  )
+}
+
+///|
+fn compute_slices_on_asset_event_system(
+  commands : @app.Commands,
+  assets : @sprite.ComputedSlicesAssetParams,
+  params : @sprite.ComputedSlicesAssetEventParams,
+) -> Unit {
+  @sprite.compute_slices_on_asset_event_system(commands, assets, params)
+}
+
+///|
+fn[M : @sprite_render_mesh2d_material.Material2d] material2d_runtime_type_name(
+  probe : @asset.Handle[M],
+) -> String {
+  @sprite_render_mesh2d_material.material2d_runtime_type_name(probe)
+}
+
+///|
+fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? {
+  @sprite_render_mesh2d_material.prepared_material2d_alpha_phase(material)
+}
+
+///|
+fn[M] prepared_material2d_get(
+  prepared_assets : @renderer.RenderAssets[PreparedMaterial2d[M]],
+  handle : @asset.Handle[PreparedMaterial2d[M]],
+) -> PreparedMaterial2d[M]? {
+  @sprite_render_mesh2d_material.prepared_material2d_get(
+    prepared_assets, handle,
+  )
+}
+
+///|
+fn[M] prepared_material2d_handle_for_mesh(
+  mesh : ExtractedMesh2d,
+  material_instances : RenderMaterial2dInstances[M],
+) -> @asset.Handle[PreparedMaterial2d[M]]? {
+  @sprite_render_mesh2d_material.prepared_material2d_handle_for_mesh(
+    mesh, material_instances,
+  )
+}
+
+///|
+fn[M : @sprite_render_mesh2d_material.Material2d] prepared_material2d_assets_or_empty(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+) -> @renderer.RenderAssets[PreparedMaterial2d[M]] {
+  @sprite_render_mesh2d_material.prepared_material2d_assets_or_empty(
+    world, probe,
+  )
+}
+
+///|
+fn[M : @sprite_render_mesh2d_material.Material2d] render_material2d_instances_or_empty(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+) -> RenderMaterial2dInstances[M] {
+  @sprite_render_mesh2d_material.render_material2d_instances_or_empty(
+    world, probe,
+  )
+}
+
+///|
+fn material2d_runtime_registry_or_empty(
+  world : @ecs.World,
+) -> Material2dRuntimeRegistry {
+  @sprite_render_mesh2d_material.material2d_runtime_registry_or_empty(world)
+}
+
+///|
+fn[M : @sprite_render_mesh2d_material.Material2d] material2d_pipeline_or_default(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+) -> @sprite_render_mesh2d_material.Material2dPipeline[M] {
+  @sprite_render_mesh2d_material.material2d_pipeline_or_default(world, probe)
+}
+
+///|
+fn draw_registered_material2d_mesh_item(
+  world : @ecs.World,
+  registry : Material2dRuntimeRegistry,
+  runtime_index : Int,
+  mesh : ExtractedMesh2d,
+) -> Unit {
+  @sprite_render_mesh2d_material.draw_registered_material2d_mesh_item(
+    world, registry, runtime_index, mesh,
+  )
+}
+
+///|
+fn material2d_runtime_registry_contains_entity(
+  source_world : @ecs.World,
+  registry : Material2dRuntimeRegistry,
+  entity : @core.Entity,
+) -> Bool {
+  @sprite_render_mesh2d_material.material2d_runtime_registry_contains_entity(
+    source_world, registry, entity,
+  )
+}
+
+///|
+fn material2d_runtime_phase_for_draw(
+  world : @ecs.World,
+  registry : Material2dRuntimeRegistry,
+  mesh : ExtractedMesh2d,
+) -> (Int, Int)? {
+  @sprite_render_mesh2d_material.material2d_runtime_phase_for_draw(
+    world, registry, mesh,
+  )
+}
+
+///|
+fn[M] draw_material2d_mesh_item(
+  mesh : ExtractedMesh2d,
+  prepared_assets : @renderer.RenderAssets[PreparedMaterial2d[M]],
+  material_instances : RenderMaterial2dInstances[M],
+  pipeline : @sprite_render_mesh2d_material.Material2dPipeline[M],
+) -> Unit {
+  @sprite_render_mesh2d_material.draw_material2d_mesh_item(
+    mesh, prepared_assets, material_instances, pipeline,
+  )
+}
+
+///|
+fn[M] draw_material2d_mesh_item_with_prepared_material(
+  mesh : ExtractedMesh2d,
+  material : PreparedMaterial2d[M],
+  pipeline : @sprite_render_mesh2d_material.Material2dPipeline[M],
+) -> Unit {
+  @sprite_render_mesh2d_material.draw_material2d_mesh_item_with_prepared_material(
+    mesh, material, pipeline,
+  )
+}
+
+///|
+fn[M] render_material2d_instances_for_tests(
+  instances_info : Array[(@core.Entity, @asset.Handle[M])],
+) -> RenderMaterial2dInstances[M] {
+  @sprite_render_mesh2d_material.render_material2d_instances_for_tests(
+    instances_info,
+  )
+}
+
+///|
+fn prepared_color_materials_for_tests(
+  materials : Array[(@asset.Handle[ColorMaterial], ColorMaterial)],
+) -> @renderer.RenderAssets[PreparedMaterial2d[ColorMaterial]] {
+  @sprite_render_mesh2d_color_material.prepared_color_materials_for_tests(
+    materials,
+  )
+}
+
+///|
+fn wireframe2d_material_color(
+  world : @ecs.World,
+  wireframe : Mesh2dWireframe,
+) -> @color.Color {
+  @sprite_render_mesh2d_wireframe2d.wireframe2d_material_color(world, wireframe)
+}
+
+///|
+pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
+  @sprite.render2d_upload_mesh_handle(mesh)
+}
+
+///|
+pub fn render2d_create_render_target_ecs(
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> @asset.Handle[@asset.Image] {
+  let id = @renderer.host_gpu_create_render_target(width~, height~, nearest~)
+  @asset.Handle::new(id)
+}
+
+///|
+fn ensure_render2d_required_components(world : @ecs.World) -> Unit {
+  @sprite.ensure_render2d_required_components(world)
+}
+
+///|
+fn init_gizmo_group(
+  app : @app.App[@ecs.World],
+  group : DefaultGizmoConfigGroup,
+) -> @app.App[@ecs.World] {
+  @sprite.init_gizmo_group(app, group)
+}
+
+///|
+fn gizmos_prepare(world : @ecs.World) -> Unit {
+  @sprite.gizmos_prepare(world)
+}
+
+///|
+fn gizmos_clear() -> Unit {
+  @sprite.gizmos_clear()
+}
+
+///|
+fn gizmos_reset() -> Unit {
+  @sprite.gizmos_reset()
+}
+
+///|
+fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
+  @sprite.gizmos_draw_lines(layers)
 }
 
 ///|
@@ -70,211 +376,11 @@ pub fn UiCornerRadii::zero() -> UiCornerRadii {
 }
 
 ///|
-/// UI border thickness (left, top, right, bottom) in logical pixels.
-pub struct UiBorderRect {
-  left : Float
-  top : Float
-  right : Float
-  bottom : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiBorderRect::new(
-  left : Float,
-  top : Float,
-  right : Float,
-  bottom : Float,
-) -> UiBorderRect {
-  UiBorderRect::{ left, top, right, bottom }
-}
-
-///|
-pub fn UiBorderRect::zero() -> UiBorderRect {
-  UiBorderRect::new(0.0F, 0.0F, 0.0F, 0.0F)
-}
-
-///|
-fn render2d_current_world_or_abort() -> @ecs.World {
-  match @app.current_world() {
-    Some(world) => world
-    None =>
-      abort(
-        "render2d asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",
-      )
-  }
-}
-
-///|
-fn[T : @asset.Asset] render2d_asset_store_or_abort() -> @asset.Assets[T] {
-  let world = @render.render_source_world(render2d_current_world_or_abort())
-  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match world.get_resource(key) {
-    Some(assets) => assets
-    None =>
-      abort(
-        "render2d asset resource is missing; Render2dPlugin must initialize the required Assets<T> resource before use",
-      )
-  }
-}
-
-///|
-fn[T : @asset.Asset] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[
-  @asset.Assets[T],
-] {
-  let world = @render.render_source_world(render2d_current_world_or_abort())
-  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match world.get_resource_mut(key) {
-    Some(assets) => assets
-    None =>
-      abort(
-        "render2d asset resource is missing; Render2dPlugin must initialize the required Assets<T> resource before use",
-      )
-  }
-}
-
-///|
-pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
-  render2d_asset_store_or_abort()
-}
-
-///|
-pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
-  render2d_asset_store_mut_or_abort()
-}
-
-///|
 type Mesh2d = @mesh.Mesh2d
 
 ///|
-let mesh_upload_cache : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
-
-///|
-let mesh_upload_radius_cache : @hashmap.HashMap[Int, Float] = @hashmap.HashMap([])
-
-///|
-fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
-  let mut max_len_sq = 0.0F
-  for position in geometry.positions {
-    let len_sq = position.x * position.x + position.y * position.y
-    if len_sq > max_len_sq {
-      max_len_sq = len_sq
-    }
-  }
-  if max_len_sq <= 0.0F {
-    1.0F
-  } else {
-    @math.sqrt(max_len_sq)
-  }
-}
-
-///|
-fn mesh3d_geometry_flatten_vertices_f32(
-  geometry : @mesh.Mesh3dGeometry,
-) -> Array[Float]? {
-  match
-    geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices() {
-    Some(vertices) => {
-      let vertices_f32 : Array[Float] = []
-      for value in vertices {
-        vertices_f32.push(Float::from_double(value))
-      }
-      Some(vertices_f32)
-    }
-    None => None
-  }
-}
-
-///|
 fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
-  if mesh_id <= 0 {
-    return 1.0F
-  }
-  if mesh_upload_radius_cache.get(mesh_id) is Some(radius) {
-    radius
-  } else {
-    64.0F
-  }
-}
-
-///|
-fn mesh_upload_cache_sync_with_asset_events() -> Unit {
-  let events = mesh_assets_mut_or_abort().modify(fn(assets) {
-    assets.drain_events()
-  })
-  for event in events {
-    match event {
-      @asset.AssetEvent::Modified(handle) =>
-        if mesh_upload_cache.get(handle.id()) is Some(mesh_id) {
-          let mut keep_cache = false
-          if mesh_asset_get(handle) is Some(mesh_asset) {
-            match mesh_asset.geometry {
-              @mesh.MeshGeometry::Geometry3d(geometry3d) =>
-                if mesh3d_geometry_flatten_vertices_f32(geometry3d)
-                  is Some(vertices_f32) {
-                  keep_cache = match geometry3d.indices {
-                    Some(indices) =>
-                      @render.host_gpu_update_mesh3d_xyznuvrgba_indexed(
-                        mesh_id~,
-                        vertices_xyznuvrgba=vertices_f32,
-                        indices~,
-                        primitive_topology=geometry3d
-                          .primitive_topology()
-                          .to_int(),
-                      )
-                    None =>
-                      @render.host_gpu_update_mesh3d_xyznuvrgba(
-                        mesh_id~,
-                        vertices_xyznuvrgba=vertices_f32,
-                        primitive_topology=geometry3d
-                          .primitive_topology()
-                          .to_int(),
-                      )
-                  }
-                }
-              _ => ()
-            }
-          }
-          if !keep_cache {
-            ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
-          }
-        }
-      @asset.AssetEvent::Removed(handle) =>
-        if mesh_upload_cache.get(handle.id()) is Some(_) {
-          ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
-        }
-      _ => ()
-    }
-  }
-}
-
-///|
-pub fn render2d_delete_uploaded_mesh_handle_id(mesh_handle_id : Int) -> Bool {
-  match mesh_upload_cache.get(mesh_handle_id) {
-    Some(mesh_id) => {
-      mesh_upload_cache.remove(mesh_handle_id)
-      mesh_upload_radius_cache.remove(mesh_id)
-      @render.host_gpu_delete_mesh(mesh_id~)
-    }
-    None => false
-  }
-}
-
-///|
-fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
-  mesh_assets_mut_or_abort().modify(fn(assets) { assets.add(mesh) })
-}
-
-///|
-fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
-  mesh_assets_or_abort().get(handle)
-}
-
-///|
-fn mesh_asset_set(
-  handle : @asset.Handle[@mesh.Mesh],
-  mesh : @mesh.Mesh,
-) -> Bool {
-  mesh_assets_mut_or_abort().modify(fn(assets) { assets.set(handle, mesh) })
+  @sprite.uploaded_mesh_base_radius(mesh_id)
 }
 
 ///|
@@ -511,7 +617,7 @@ fn register_render2d_shader_sources(world : @ecs.World) -> Unit {
           "failed to load render2d shader asset text: \{path}: \{err.message()}",
         )
     }
-    @render.register_wgsl_source(path, source)
+    @renderer.register_wgsl_source(path, source)
   }
 }
 
@@ -561,10 +667,10 @@ fn render2d_draw_camera_tonemapping(
     return
   }
   let luts = @core_pipeline.tonemapping_luts_from_world_or_init(world)
-  let color_grading_uniform = @render.host_color_grading_from_post_process(
+  let color_grading_uniform = @renderer.host_color_grading_from_post_process(
     color_grading,
   )
-  @render.host_gpu_draw_tonemapping2d(
+  @renderer.host_gpu_draw_tonemapping2d(
     scene_texture_id=source.id(),
     exposure=1.0F,
     tonemapping_mode~,
@@ -580,7 +686,7 @@ fn render2d_draw_camera_tonemapping(
 
 ///|
 fn render2d_draw_camera_blit(source : @asset.Handle[@asset.Image]) -> Unit {
-  @render.host_gpu_draw_blit(scene_texture_id=source.id())
+  @renderer.host_gpu_draw_blit(scene_texture_id=source.id())
 }
 
 ///|
@@ -603,7 +709,7 @@ fn render2d_draw_camera_cas(
   }
   guard render2d_cas_enabled(cas) else { return }
   guard cas is Some(value) else { return }
-  @render.host_gpu_draw_contrast_adaptive_sharpening(
+  @renderer.host_gpu_draw_contrast_adaptive_sharpening(
     scene_texture_id=source.id(),
     sharpness=value.sharpening_strength,
     denoise=value.denoise,
@@ -624,7 +730,7 @@ fn render2d_apply_camera_bloom_from_source(
     return
   }
   let settings = render2d_sanitize_bloom(bloom)
-  @render.host_gpu_apply_bloom(
+  @renderer.host_gpu_apply_bloom(
     scene_texture_id=source.id(),
     intensity=settings.intensity,
     low_frequency_boost=settings.low_frequency_boost,
@@ -747,7 +853,7 @@ priv struct UiRectDrawPayload {
   scissor : @math.Rect?
   flags : Int
   radius : UiCornerRadii
-  border : UiBorderRect
+  border : BorderRect
 }
 
 ///|
@@ -962,6 +1068,18 @@ fn RenderState::new() -> RenderState {
     queued_draw_item_counts: [],
     queued_camera_draw_items: [],
   }
+}
+
+///|
+let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
+  debug_name="render2d.render_state",
+)
+
+///|
+fn get_render_state_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[RenderState] {
+  world.resource(ecs_key_render_state)
 }
 
 ///|
@@ -1218,7 +1336,7 @@ pub fn render2d_create_render_target(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  let id = @render.host_gpu_create_render_target(width~, height~, nearest~)
+  let id = @renderer.host_gpu_create_render_target(width~, height~, nearest~)
   ensure_render_state_resource(world)
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
@@ -1454,7 +1572,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   scissor : @math.Rect?,
   flags : Int,
   radius : UiCornerRadii,
-  border : UiBorderRect,
+  border : BorderRect,
 ) -> Unit {
   render_state_update(world, fn(rs) {
     rs.extra_ui_rects.push(ExtractedUiRect::{
@@ -1687,7 +1805,7 @@ fn render2d_get_or_create_postprocess_intermediate_target(
       return entry.target
     }
   }
-  let id = @render.host_gpu_create_render_target_rgba16f(
+  let id = @renderer.host_gpu_create_render_target_rgba16f(
     width=safe_width,
     height=safe_height,
     nearest=false,
@@ -2281,7 +2399,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
+  let source_world = @renderer.render_source_world(world)
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
     world,
@@ -2348,7 +2466,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         region_size,
       )
       let scissor = match
-        (try! source_world.get_by_key(entity, ecs_key_scissor_rect)) {
+        (try! source_world.get_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
         Some(v) => Some(v.rect)
         None => None
       }
@@ -2851,7 +2969,7 @@ fn[M] append_material2d_mesh_draw_items(
   opaque_items : Array[DrawItem],
   transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   tie : Int,
@@ -2969,7 +3087,7 @@ fn append_registered_custom_mesh2d_draw_items(
   tie : Int,
   scene_cull_context? : SceneCullContext? = None,
 ) -> Int {
-  let source_world = @render.render_source_world(world)
+  let source_world = @renderer.render_source_world(world)
   let mut next_tie = tie
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
@@ -3023,7 +3141,7 @@ fn[M] draw_material2d_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -3070,7 +3188,7 @@ fn draw_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[ColorMaterial]],
   material_instances : RenderMaterial2dInstances[ColorMaterial],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -3182,7 +3300,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -3335,7 +3453,7 @@ fn[M] draw_material2d_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -3361,7 +3479,7 @@ fn draw_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[ColorMaterial]],
   material_instances : RenderMaterial2dInstances[ColorMaterial],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -3552,7 +3670,7 @@ fn draw_wireframe_meshes_for_layers(
     }
     let transform = mesh.payload.transform
     let color = mesh.payload.wireframe_color
-    @render.host_gpu_draw_mesh_wireframe(
+    @renderer.host_gpu_draw_mesh_wireframe(
       mesh_id=mesh.payload.mesh_id,
       x=transform.translation.x,
       y=transform.translation.y,
@@ -3595,7 +3713,7 @@ fn build_camera_draw_items(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @render.RenderAssets[PreparedMaterial2d[ColorMaterial]],
+  prepared_materials : @renderer.RenderAssets[PreparedMaterial2d[ColorMaterial]],
   material_instances : RenderMaterial2dInstances[ColorMaterial],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -3900,7 +4018,7 @@ fn extracted_ui_rect_item(
   scissor : @math.Rect?,
   flags : Int,
   radius : UiCornerRadii,
-  border : UiBorderRect,
+  border : BorderRect,
 ) -> ExtractedUiRect {
   ExtractedUiRect::{
     entity: phase_entity_ref_for_main(entity),
@@ -4056,9 +4174,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
 ///|
 test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::RenderLayers()
-  let prepared_materials : @render.RenderAssets[
+  let prepared_materials : @renderer.RenderAssets[
     PreparedMaterial2d[ColorMaterial],
-  ] = @render.RenderAssets::new()
+  ] = @renderer.RenderAssets::new()
   let material_instances : RenderMaterial2dInstances[ColorMaterial] = RenderMaterial2dInstances::new()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
@@ -4081,7 +4199,7 @@ test "render2d: UI overlay draw items route by target camera" {
       None,
       0,
       UiCornerRadii::zero(),
-      UiBorderRect::zero(),
+      BorderRect::BorderRect(),
     ),
     extracted_ui_rect_item(
       @core.Entity::new(101, 0),
@@ -4097,7 +4215,7 @@ test "render2d: UI overlay draw items route by target camera" {
       None,
       0,
       UiCornerRadii::zero(),
-      UiBorderRect::zero(),
+      BorderRect::BorderRect(),
     ),
   ]
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
@@ -4126,9 +4244,9 @@ test "render2d: UI overlay draw items route by target camera" {
 ///|
 test "render2d: scene draw items exclude UI overlays" {
   let layers = RenderLayers::RenderLayers()
-  let prepared_materials : @render.RenderAssets[
+  let prepared_materials : @renderer.RenderAssets[
     PreparedMaterial2d[ColorMaterial],
-  ] = @render.RenderAssets::new()
+  ] = @renderer.RenderAssets::new()
   let material_instances : RenderMaterial2dInstances[ColorMaterial] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(
@@ -4159,7 +4277,7 @@ test "render2d: scene draw items exclude UI overlays" {
         None,
         0,
         UiCornerRadii::zero(),
-        UiBorderRect::zero(),
+        BorderRect::BorderRect(),
       ),
     ],
     [],
@@ -4302,7 +4420,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         None,
         0,
         UiCornerRadii::zero(),
-        UiBorderRect::zero(),
+        BorderRect::BorderRect(),
       ),
     )
     rs.extra_ui_rects.push(
@@ -4320,7 +4438,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         None,
         0,
         UiCornerRadii::zero(),
-        UiBorderRect::zero(),
+        BorderRect::BorderRect(),
       ),
     )
     rs.extra_ui_box_shadows.clear()
@@ -4366,7 +4484,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
         None,
         0,
         UiCornerRadii::zero(),
-        UiBorderRect::zero(),
+        BorderRect::BorderRect(),
       ),
     )
     rs.extra_ui_box_shadows.clear()
@@ -4978,7 +5096,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         Window(window_ref) =>
           if @window.window_host_window_for_ref(world, window_ref)
             is Some(host_window) {
-            let surface_target_id = @render.host_gpu_surface_target_id_for_window(
+            let surface_target_id = @renderer.host_gpu_surface_target_id_for_window(
               host_window,
             )
             if surface_target_id < 0 {
@@ -4987,7 +5105,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           }
         Image(handle) => target_id = handle.id()
       }
-      @render.host_gpu_set_active_surface_target(target_id)
+      @renderer.host_gpu_set_active_surface_target(target_id)
       if target_width <= 0 || target_height <= 0 {
         continue
       }
@@ -5134,7 +5252,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           match rect_opt {
             None =>
               if scissor_active {
-                @render.host_gpu_clear_scissor()
+                @renderer.host_gpu_clear_scissor()
                 scissor_active = false
               }
             Some(rect) => {
@@ -5147,7 +5265,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 sy != scissor_y ||
                 sw != scissor_w ||
                 sh != scissor_h {
-                @render.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
+                @renderer.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
                 scissor_active = true
                 scissor_x = sx
                 scissor_y = sy
@@ -5216,7 +5334,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             transform.translation.x + sprite.anchor_offset.x,
             transform.translation.y + sprite.anchor_offset.y,
           )
-          @render.host_gpu_draw_sprite_uv(
+          @renderer.host_gpu_draw_sprite_uv(
             texture_id=sprite.texture.id(),
             x=pos.x,
             y=pos.y,
@@ -5255,7 +5373,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + sprite.anchor_offset.x,
                 transform.translation.y + sprite.anchor_offset.y,
               )
-              @render.host_gpu_draw_sprite_uv(
+              @renderer.host_gpu_draw_sprite_uv(
                 texture_id=sprite.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5282,7 +5400,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + sprite.anchor_offset.x,
                 transform.translation.y + sprite.anchor_offset.y,
               )
-              @render.host_gpu_draw_sprite_uv(
+              @renderer.host_gpu_draw_sprite_uv(
                 texture_id=sprite.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5302,7 +5420,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             SpriteSliceBatchExtra(i) => {
               let batch = extra_sprite_slice_batches[i].payload
               apply_scissor(batch.scissor)
-              @render.host_gpu_draw_sprite_uv_slices(
+              @renderer.host_gpu_draw_sprite_uv_slices(
                 texture_id=batch.texture.id(),
                 rotation=batch.rotation,
                 scale_x=batch.draw_scale.x,
@@ -5322,7 +5440,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + sprite.anchor_offset.x,
                 transform.translation.y + sprite.anchor_offset.y,
               )
-              @render.host_gpu_draw_sprite_uv(
+              @renderer.host_gpu_draw_sprite_uv(
                 texture_id=sprite.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5342,7 +5460,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             UiSpriteSliceBatchExtra(i) => {
               let batch = extra_ui_sprite_slice_batches[i].payload
               apply_scissor(batch.scissor)
-              @render.host_gpu_draw_sprite_uv_slices(
+              @renderer.host_gpu_draw_sprite_uv_slices(
                 texture_id=batch.texture.id(),
                 rotation=batch.rotation,
                 scale_x=batch.draw_scale.x,
@@ -5402,7 +5520,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + rect.anchor_offset.x,
                 transform.translation.y + rect.anchor_offset.y,
               )
-              @render.host_gpu_draw_ui_rect(
+              @renderer.host_gpu_draw_ui_rect(
                 texture_id=rect.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5436,7 +5554,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + shadow.anchor_offset.x,
                 transform.translation.y + shadow.anchor_offset.y,
               )
-              @render.host_gpu_draw_ui_box_shadow(
+              @renderer.host_gpu_draw_ui_box_shadow(
                 texture_id=shadow.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5465,7 +5583,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + slice.anchor_offset.x,
                 transform.translation.y + slice.anchor_offset.y,
               )
-              @render.host_gpu_draw_ui_texture_slice(
+              @renderer.host_gpu_draw_ui_texture_slice(
                 texture_id=slice.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -5545,7 +5663,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                     )
                   }
                 }
-                @render.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_sprite_uv_slices(
                   texture_id=first_sprite.texture.id(),
                   rotation=first_rotation,
                   scale_x=first_sprite.draw_scale.x,
@@ -5600,7 +5718,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                     )
                   }
                 }
-                @render.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_sprite_uv_slices(
                   texture_id=first_sprite.texture.id(),
                   rotation=first_rotation,
                   scale_x=first_sprite.draw_scale.x,
@@ -5616,7 +5734,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               SpriteSliceBatchExtra(i) => {
                 let first_batch = extra_sprite_slice_batches[i].payload
                 apply_scissor(first_batch.scissor)
-                @render.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_sprite_uv_slices(
                   texture_id=first_batch.texture.id(),
                   rotation=first_batch.rotation,
                   scale_x=first_batch.draw_scale.x,
@@ -5671,7 +5789,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                     )
                   }
                 }
-                @render.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_sprite_uv_slices(
                   texture_id=first_sprite.texture.id(),
                   rotation=first_rotation,
                   scale_x=first_sprite.draw_scale.x,
@@ -5687,7 +5805,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               UiSpriteSliceBatchExtra(i) => {
                 let first_batch = extra_ui_sprite_slice_batches[i].payload
                 apply_scissor(first_batch.scissor)
-                @render.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_sprite_uv_slices(
                   texture_id=first_batch.texture.id(),
                   rotation=first_batch.rotation,
                   scale_x=first_batch.draw_scale.x,
@@ -5711,7 +5829,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         draw_camera_item_array(items)
         draw_camera_item_array(tail_items)
         if scissor_active {
-          @render.host_gpu_clear_scissor()
+          @renderer.host_gpu_clear_scissor()
         }
       }
 
@@ -5719,7 +5837,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         if items.length() == 0 {
           return
         }
-        @render.host_gpu_begin_pass(
+        @renderer.host_gpu_begin_pass(
           target_id~,
           width=view_width_logical,
           height=view_height_logical,
@@ -5748,7 +5866,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           scale_factor,
           [],
         )
-        @render.host_gpu_end_pass()
+        @renderer.host_gpu_end_pass()
       }
 
       let tonemapping_mode = camera.tonemapping_mode
@@ -5786,7 +5904,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         clear_stage : Bool,
       ) -> Unit {
         if scene_needs_depth {
-          @render.host_gpu_begin_pass_with_depth(
+          @renderer.host_gpu_begin_pass_with_depth(
             target_id=scene_target_id,
             width=view_width_logical,
             height=view_height_logical,
@@ -5807,7 +5925,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             clear_enabled=if clear_stage { 1 } else { 0 },
           )
         } else {
-          @render.host_gpu_begin_pass(
+          @renderer.host_gpu_begin_pass(
             target_id=scene_target_id,
             width=view_width_logical,
             height=view_height_logical,
@@ -5859,7 +5977,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             draw_scale_factor,
             [],
           )
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
           if has_transparent || has_wireframe || draw_gizmos {
             begin_scene_pass(
               scene_target_id, draw_viewport_x, draw_viewport_y, draw_viewport_width,
@@ -5878,7 +5996,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             if draw_gizmos {
               gizmos_draw_lines(camera.layers)
             }
-            @render.host_gpu_end_pass()
+            @renderer.host_gpu_end_pass()
           }
         } else {
           begin_scene_pass(
@@ -5898,7 +6016,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           if draw_gizmos {
             gizmos_draw_lines(camera.layers)
           }
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
         }
       }
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
@@ -5946,7 +6064,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           } else {
             (viewport_x, viewport_y, viewport_width, viewport_height)
           }
-          @render.host_gpu_begin_pass(
+          @renderer.host_gpu_begin_pass(
             target_id=target.id(),
             width=view_width_logical,
             height=view_height_logical,
@@ -5986,7 +6104,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           render2d_apply_camera_bloom_from_source(
             camera, postprocess_source, viewport_width, viewport_height,
           )
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
           postprocess_source = bloom_target
         }
         if camera_postprocess_plan.tonemapping_stage_enabled {
@@ -6006,13 +6124,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             gizmos_draw_lines(camera.layers)
             rendered_to_final_target = true
           }
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
           postprocess_source = tonemapping_target
         } else if !cas_postprocess_enabled {
           begin_postprocess_pass(final_target, false, true)
           render2d_draw_camera_blit(postprocess_source)
           gizmos_draw_lines(camera.layers)
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
           rendered_to_final_target = true
         }
         if cas_postprocess_enabled {
@@ -6024,14 +6142,14 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             viewport_height,
           )
           gizmos_draw_lines(camera.layers)
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
           rendered_to_final_target = true
         }
         if !rendered_to_final_target {
           begin_postprocess_pass(final_target, false, true)
           render2d_draw_camera_blit(postprocess_source)
           gizmos_draw_lines(camera.layers)
-          @render.host_gpu_end_pass()
+          @renderer.host_gpu_end_pass()
         }
         if camera_postprocess_plan.draw_ui_overlay_after_postprocess {
           draw_ui_overlay_passes(ui_overlay_draw_items)
@@ -6164,9 +6282,9 @@ fn configure_render2d_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
-  let stage = @render.render_schedule_stage()
-  let graph_stage = @render.RenderGraph::schedule()
-  @render.configure_base_render_sets(sub_app)
+  let stage = @renderer.render_schedule_stage()
+  let graph_stage = @renderer.RenderGraph::schedule()
+  @renderer.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
     @app.system(render_extract_system).in_set(render2d_set_extract),
@@ -6186,7 +6304,7 @@ fn configure_render2d_render_sub_app(
   .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
-  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+  .configure_set(stage, @renderer.render_system_set_extract_commands, before=[
     render2d_set_extract_materials,
   ])
   .configure_set(stage, render2d_set_extract, before=[
@@ -6195,24 +6313,24 @@ fn configure_render2d_render_sub_app(
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
-  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
+  .configure_set(graph_stage, @renderer.render_graph_system_set_render, before=[
     render2d_set_render,
   ])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_queue,
   ])
   .configure_set(stage, render2d_set_queue, before=[
-    @render.render_system_set_queue_sweep,
+    @renderer.render_system_set_queue_sweep,
   ])
   .configure_set(graph_stage, render2d_set_render, before=[
-    @render.render_graph_system_set_submit,
+    @renderer.render_graph_system_set_submit,
   ])
 }
 
@@ -6221,9 +6339,9 @@ fn configure_render2d_render_sub_app_ecs(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   ensure_render_state_resource(sub_app.world())
-  let stage = @render.render_schedule_stage()
-  let graph_stage = @render.RenderGraph::schedule()
-  @render.configure_base_render_sets(sub_app)
+  let stage = @renderer.render_schedule_stage()
+  let graph_stage = @renderer.RenderGraph::schedule()
+  @renderer.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
@@ -6243,7 +6361,7 @@ fn configure_render2d_render_sub_app_ecs(
   .configure_set(stage, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
-  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+  .configure_set(stage, @renderer.render_system_set_extract_commands, before=[
     render2d_set_extract_materials,
   ])
   .configure_set(stage, render2d_set_extract, before=[
@@ -6252,24 +6370,24 @@ fn configure_render2d_render_sub_app_ecs(
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
-  .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
+  .configure_set(graph_stage, @renderer.render_graph_system_set_render, before=[
     render2d_set_render,
   ])
-  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
+  .configure_set(stage, @renderer.render_system_set_queue_meshes, before=[
     render2d_set_queue,
   ])
   .configure_set(stage, render2d_set_queue, before=[
-    @render.render_system_set_queue_sweep,
+    @renderer.render_system_set_queue_sweep,
   ])
   .configure_set(graph_stage, render2d_set_render, before=[
-    @render.render_graph_system_set_submit,
+    @renderer.render_graph_system_set_submit,
   ])
 }
 
@@ -6347,7 +6465,7 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
     )
-  @render.with_render_app(next, configure_render2d_render_sub_app)
+  @renderer.with_render_app(next, configure_render2d_render_sub_app)
 }
 
 ///|
@@ -6386,5 +6504,5 @@ fn render2d_plugin_ecs_install(
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
     )
-  @render.with_render_app(next, configure_render2d_render_sub_app_ecs)
+  @renderer.with_render_app(next, configure_render2d_render_sub_app_ecs)
 }

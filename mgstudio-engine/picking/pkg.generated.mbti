@@ -12,8 +12,6 @@ import {
 }
 
 // Values
-pub let ecs_components : Array[String]
-
 pub let ecs_key_pickable : @ecs.ComponentKey[Pickable]
 
 pub let ecs_key_pointer_id : @ecs.ComponentKey[PointerId]
@@ -43,8 +41,6 @@ pub let ecs_res_key_pointer_map : @ecs.ResourceKey[PointerMap]
 pub let ecs_res_key_previous_hover_map : @ecs.ResourceKey[PreviousHoverMap]
 
 pub let ecs_res_key_sprite_picking_settings : @ecs.ResourceKey[SpritePickingSettings]
-
-pub let ecs_resources : Array[String]
 
 pub fn ensure_hover_maps_system(@ecs.World) -> Unit
 

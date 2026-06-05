@@ -13,24 +13,6 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = [
-  "Ccd2d", "Damping2d", "Collider2d", "Friction2d", "Sleeping2d", "Velocity2d", "Dominance2d",
-  "RigidBody2d", "LockedAxes2d", "ActiveHooks2d", "ContactSkin2d", "Restitution2d",
-  "ActiveEvents2d", "GravityScale2d", "ImpulseJoint2d", "SolverGroups2d", "ExternalForce2d",
-  "ColliderParent2d", "MultibodyJoint2d", "ColliderDensity2d", "ColliderEnabled2d",
-  "CollisionGroups2d", "ExternalImpulse2d", "RapierBodyHandle2d", "RigidBodyEnabled2d",
-  "FrictionCombineRule2d", "ActiveCollisionTypes2d", "RapierColliderHandle2d", "ColliderMassProperties2d",
-  "RestitutionCombineRule2d", "AdditionalMassProperties2d", "RapierImpulseJointHandle2d",
-  "AdditionalSolverIterations2d", "ContactForceEventThreshold2d", "RapierMultibodyJointHandle2d",
-  "KinematicCharacterController2d", "KinematicCharacterControllerOutput2d",
-]
-
-///|
-pub let ecs_resources : Array[String] = [
-  "Physics2dConfig", "Physics2dEvents", "Physics2dContext", "Physics2dHooksConfig",
-]
-
-///|
 pub let ecs_res_key_physics2d_config : @ecs.ResourceKey[Physics2dConfig] = @ecs.register_resource(
   debug_name="physics2d.physics2d_config",
 )
@@ -248,187 +230,187 @@ pub let ecs_key_kinematic_character_controller_output2d : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Ccd2d with component() {
+pub impl @ecs.Component for Ccd2d with fn component() {
   ecs_key_ccd2d
 }
 
 ///|
-pub impl @ecs.Component for Damping2d with component() {
+pub impl @ecs.Component for Damping2d with fn component() {
   ecs_key_damping2d
 }
 
 ///|
-pub impl @ecs.Component for Collider2d with component() {
+pub impl @ecs.Component for Collider2d with fn component() {
   ecs_key_collider2d
 }
 
 ///|
-pub impl @ecs.Component for Friction2d with component() {
+pub impl @ecs.Component for Friction2d with fn component() {
   ecs_key_friction2d
 }
 
 ///|
-pub impl @ecs.Component for Sleeping2d with component() {
+pub impl @ecs.Component for Sleeping2d with fn component() {
   ecs_key_sleeping2d
 }
 
 ///|
-pub impl @ecs.Component for Velocity2d with component() {
+pub impl @ecs.Component for Velocity2d with fn component() {
   ecs_key_velocity2d
 }
 
 ///|
-pub impl @ecs.Component for Dominance2d with component() {
+pub impl @ecs.Component for Dominance2d with fn component() {
   ecs_key_dominance2d
 }
 
 ///|
-pub impl @ecs.Component for RigidBody2d with component() {
+pub impl @ecs.Component for RigidBody2d with fn component() {
   ecs_key_rigid_body2d
 }
 
 ///|
-pub impl @ecs.Component for LockedAxes2d with component() {
+pub impl @ecs.Component for LockedAxes2d with fn component() {
   ecs_key_locked_axes2d
 }
 
 ///|
-pub impl @ecs.Component for ActiveHooks2d with component() {
+pub impl @ecs.Component for ActiveHooks2d with fn component() {
   ecs_key_active_hooks2d
 }
 
 ///|
-pub impl @ecs.Component for ContactSkin2d with component() {
+pub impl @ecs.Component for ContactSkin2d with fn component() {
   ecs_key_contact_skin2d
 }
 
 ///|
-pub impl @ecs.Component for Restitution2d with component() {
+pub impl @ecs.Component for Restitution2d with fn component() {
   ecs_key_restitution2d
 }
 
 ///|
-pub impl @ecs.Component for ActiveEvents2d with component() {
+pub impl @ecs.Component for ActiveEvents2d with fn component() {
   ecs_key_active_events2d
 }
 
 ///|
-pub impl @ecs.Component for GravityScale2d with component() {
+pub impl @ecs.Component for GravityScale2d with fn component() {
   ecs_key_gravity_scale2d
 }
 
 ///|
-pub impl @ecs.Component for ImpulseJoint2d with component() {
+pub impl @ecs.Component for ImpulseJoint2d with fn component() {
   ecs_key_impulse_joint2d
 }
 
 ///|
-pub impl @ecs.Component for SolverGroups2d with component() {
+pub impl @ecs.Component for SolverGroups2d with fn component() {
   ecs_key_solver_groups2d
 }
 
 ///|
-pub impl @ecs.Component for ExternalForce2d with component() {
+pub impl @ecs.Component for ExternalForce2d with fn component() {
   ecs_key_external_force2d
 }
 
 ///|
-pub impl @ecs.Component for ColliderParent2d with component() {
+pub impl @ecs.Component for ColliderParent2d with fn component() {
   ecs_key_collider_parent2d
 }
 
 ///|
-pub impl @ecs.Component for MultibodyJoint2d with component() {
+pub impl @ecs.Component for MultibodyJoint2d with fn component() {
   ecs_key_multibody_joint2d
 }
 
 ///|
-pub impl @ecs.Component for ColliderDensity2d with component() {
+pub impl @ecs.Component for ColliderDensity2d with fn component() {
   ecs_key_collider_density2d
 }
 
 ///|
-pub impl @ecs.Component for ColliderEnabled2d with component() {
+pub impl @ecs.Component for ColliderEnabled2d with fn component() {
   ecs_key_collider_enabled2d
 }
 
 ///|
-pub impl @ecs.Component for CollisionGroups2d with component() {
+pub impl @ecs.Component for CollisionGroups2d with fn component() {
   ecs_key_collision_groups2d
 }
 
 ///|
-pub impl @ecs.Component for ExternalImpulse2d with component() {
+pub impl @ecs.Component for ExternalImpulse2d with fn component() {
   ecs_key_external_impulse2d
 }
 
 ///|
-pub impl @ecs.Component for RapierBodyHandle2d with component() {
+pub impl @ecs.Component for RapierBodyHandle2d with fn component() {
   ecs_key_rapier_body_handle2d
 }
 
 ///|
-pub impl @ecs.Component for RigidBodyEnabled2d with component() {
+pub impl @ecs.Component for RigidBodyEnabled2d with fn component() {
   ecs_key_rigid_body_enabled2d
 }
 
 ///|
-pub impl @ecs.Component for FrictionCombineRule2d with component() {
+pub impl @ecs.Component for FrictionCombineRule2d with fn component() {
   ecs_key_friction_combine_rule2d
 }
 
 ///|
-pub impl @ecs.Component for ActiveCollisionTypes2d with component() {
+pub impl @ecs.Component for ActiveCollisionTypes2d with fn component() {
   ecs_key_active_collision_types2d
 }
 
 ///|
-pub impl @ecs.Component for RapierColliderHandle2d with component() {
+pub impl @ecs.Component for RapierColliderHandle2d with fn component() {
   ecs_key_rapier_collider_handle2d
 }
 
 ///|
-pub impl @ecs.Component for ColliderMassProperties2d with component() {
+pub impl @ecs.Component for ColliderMassProperties2d with fn component() {
   ecs_key_collider_mass_properties2d
 }
 
 ///|
-pub impl @ecs.Component for RestitutionCombineRule2d with component() {
+pub impl @ecs.Component for RestitutionCombineRule2d with fn component() {
   ecs_key_restitution_combine_rule2d
 }
 
 ///|
-pub impl @ecs.Component for AdditionalMassProperties2d with component() {
+pub impl @ecs.Component for AdditionalMassProperties2d with fn component() {
   ecs_key_additional_mass_properties2d
 }
 
 ///|
-pub impl @ecs.Component for RapierImpulseJointHandle2d with component() {
+pub impl @ecs.Component for RapierImpulseJointHandle2d with fn component() {
   ecs_key_rapier_impulse_joint_handle2d
 }
 
 ///|
-pub impl @ecs.Component for AdditionalSolverIterations2d with component() {
+pub impl @ecs.Component for AdditionalSolverIterations2d with fn component() {
   ecs_key_additional_solver_iterations2d
 }
 
 ///|
-pub impl @ecs.Component for ContactForceEventThreshold2d with component() {
+pub impl @ecs.Component for ContactForceEventThreshold2d with fn component() {
   ecs_key_contact_force_event_threshold2d
 }
 
 ///|
-pub impl @ecs.Component for RapierMultibodyJointHandle2d with component() {
+pub impl @ecs.Component for RapierMultibodyJointHandle2d with fn component() {
   ecs_key_rapier_multibody_joint_handle2d
 }
 
 ///|
-pub impl @ecs.Component for KinematicCharacterController2d with component() {
+pub impl @ecs.Component for KinematicCharacterController2d with fn component() {
   ecs_key_kinematic_character_controller2d
 }
 
 ///|
-pub impl @ecs.Component for KinematicCharacterControllerOutput2d with component() {
+pub impl @ecs.Component for KinematicCharacterControllerOutput2d with fn component() {
   ecs_key_kinematic_character_controller_output2d
 }
 

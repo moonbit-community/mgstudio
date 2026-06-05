@@ -32,16 +32,8 @@ let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers] = @camera_render_lay
 
 ///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
-  MeshMaterial2d[ColorMaterial],
+  MeshMaterial2d[@sprite_render_mesh2d_color_material.ColorMaterial],
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
-
-///|
-pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect] = @ecs.register_component(
-  debug_name="render2d.scissor_rect",
-)
-
-///|
-let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @sprite_render_mesh2d_wireframe2d.ecs_key_mesh2d_wireframe
 
 ///|
 pub impl @ecs.Component for Sprite with fn component() {
@@ -56,11 +48,6 @@ pub impl @ecs.Component for SpriteMesh with fn component() {
 ///|
 pub impl @ecs.Component for Anchor with fn component() {
   ecs_key_anchor
-}
-
-///|
-pub impl @ecs.Component for ScissorRect with fn component() {
-  ecs_key_scissor_rect
 }
 
 ///|
@@ -143,11 +130,6 @@ pub fn ensure_render2d_required_components(world : @ecs.World) -> Unit {
     _ => abort("failed to register render2d required components")
   }
 }
-
-///|
-pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
-  debug_name="render2d.render_state",
-)
 
 ///|
 /// ECS-world variant that does not depend on `RenderState` resource traits.
@@ -387,11 +369,6 @@ fn decode_anchor(json : Json) -> Anchor {
 }
 
 ///|
-fn decode_scissor_rect(json : Json) -> ScissorRect {
-  ScissorRect::new(decode_rect(json))
-}
-
-///|
 pub impl ToJson for Sprite with fn to_json(self) {
   encode_sprite(self)
 }
@@ -412,36 +389,8 @@ pub impl @json.FromJson for Anchor with fn from_json(json, _path) {
 }
 
 ///|
-pub impl ToJson for ScissorRect with fn to_json(self) {
-  encode_rect(self.rect)
-}
-
-///|
-pub impl @json.FromJson for ScissorRect with fn from_json(json, _path) {
-  decode_scissor_rect(json)
-}
-
-///|
-pub let ecs_components : Array[String] = [
-  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "ScissorRect",
-  "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial", "Tonemapping",
-  "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
-  "Wireframe2dColor",
-]
-
-///|
-pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
-
-///|
-pub fn get_render_state_resource(
-  world : @ecs.World,
-) -> @ecs.ResourceAccess[RenderState] {
-  world.resource(ecs_key_render_state)
-}
-
-///|
 pub fn get_wireframe2d_config_resource(
   world : @ecs.World,
-) -> @ecs.ResourceAccess[Wireframe2dConfig] {
+) -> @ecs.ResourceAccess[@sprite_render_mesh2d_wireframe2d.Wireframe2dConfig] {
   @sprite_render_mesh2d_wireframe2d.get_wireframe2d_config_resource(world)
 }

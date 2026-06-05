@@ -20,8 +20,6 @@ import {
 // Values
 pub fn collider_shape2d_to_rapier(ColliderShape2d) -> @collision.Shape
 
-pub let ecs_components : Array[String]
-
 pub let ecs_key_active_collision_types2d : @ecs.ComponentKey[ActiveCollisionTypes2d]
 
 pub let ecs_key_active_events2d : @ecs.ComponentKey[ActiveEvents2d]
@@ -103,8 +101,6 @@ pub let ecs_res_key_physics2d_context : @ecs.ResourceKey[Physics2dContext]
 pub let ecs_res_key_physics2d_events : @ecs.ResourceKey[Physics2dEvents]
 
 pub let ecs_res_key_physics2d_hooks_config : @ecs.ResourceKey[Physics2dHooksConfig]
-
-pub let ecs_resources : Array[String]
 
 pub fn get_physics2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dConfig]
 

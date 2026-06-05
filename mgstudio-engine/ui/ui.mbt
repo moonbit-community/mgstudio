@@ -1032,7 +1032,7 @@ fn ui_viewport_point_to_world(
       let scale_factor = safe_scale_factor(
         camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
       )
-      if @sprite.render2d_camera_viewport_to_world_2d(
+      if @sprite_render.render2d_camera_viewport_to_world_2d(
           point,
           camera,
           projection,
@@ -2442,8 +2442,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       }
       let layout = UiLayout::from_computed(
         rect,
-        @sprite.UiBorderRect::new(border_l, border_t, border_r, border_b),
-        @sprite.UiBorderRect::new(padding_l, padding_t, padding_r, padding_b),
+        @sprite.BorderRect::new(border_l, border_r, border_t, border_b),
+        @sprite.BorderRect::new(padding_l, padding_r, padding_t, padding_b),
         node_for_layout.border_radius.resolve(
           1.0F,
           size,
@@ -2732,7 +2732,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-/// Compute `CalculatedClip` and attach `@sprite.ScissorRect` for clipped UI.
+/// Compute `CalculatedClip` and attach `@ui_clip.ScissorRect` for clipped UI.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let fallback_ctx = res.get()
@@ -2776,8 +2776,8 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
         try! (world.take(entity, ecs_key_calculated_clip) |> ignore)
       }
-      if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
-        try! (world.take(entity, @sprite.ecs_key_scissor_rect) |> ignore)
+      if (try! world.contains_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
+        try! (world.take(entity, @ui_clip.ecs_key_scissor_rect) |> ignore)
       }
       for child in ui_collect_effective_children(world, entity) {
         walk(child, inherited_clip, clipped_by_parent, viewport_rect)
@@ -2793,15 +2793,15 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       try! world.set_by_key(entity, ecs_key_calculated_clip, calc)
     }
     if clipped_by_parent && !rect_is_full_viewport(self_clip, viewport_rect) {
-      let scissor = @sprite.ScissorRect::new(self_clip)
-      if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
-        try! (world.replace(entity, @sprite.ecs_key_scissor_rect, scissor)
+      let scissor = @ui_clip.ScissorRect::new(self_clip)
+      if (try! world.contains_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
+        try! (world.replace(entity, @ui_clip.ecs_key_scissor_rect, scissor)
         |> ignore)
       } else {
-        try! world.set_by_key(entity, @sprite.ecs_key_scissor_rect, scissor)
+        try! world.set_by_key(entity, @ui_clip.ecs_key_scissor_rect, scissor)
       }
-    } else if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
-      try! (world.take(entity, @sprite.ecs_key_scissor_rect) |> ignore)
+    } else if (try! world.contains_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
+      try! (world.take(entity, @ui_clip.ecs_key_scissor_rect) |> ignore)
     }
     if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
       let text_scissor = if clipped_by_parent &&

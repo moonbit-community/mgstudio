@@ -12,10 +12,6 @@ import {
   "Milky2018/mgstudio",
 }
 
-import {
-  "Milky2018/mgstudio/sprite",
-} for "wbtest"
-
 supported_targets = "native"
 
 options(

@@ -1009,7 +1009,7 @@ fn gizmos_draw_grid_with_config(
 }
 
 ///|
-fn gizmos_prepare(world : @ecs.World) -> Unit {
+pub fn gizmos_prepare(world : @ecs.World) -> Unit {
   for entry in gizmo_storage_drain_registry.iter() {
     let (_, drain) = entry
     drain(world)
@@ -1180,7 +1180,7 @@ fn gizmos_prepare(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn gizmos_clear() -> Unit {
+pub fn gizmos_clear() -> Unit {
   gizmo_state.val.lines.clear()
   gizmo_state.val.lines_3d.clear()
   gizmo_state.val.pending_ellipses.clear()
@@ -1196,14 +1196,14 @@ pub fn gizmos_clear_3d() -> Unit {
 }
 
 ///|
-fn gizmos_reset() -> Unit {
+pub fn gizmos_reset() -> Unit {
   gizmos_clear()
   gizmos_clear_3d()
   global_gizmo_state.val.clear()
 }
 
 ///|
-fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
+pub fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
   for line in gizmo_state.val.lines {
     if line.layers.matches(layers) {
       let (style_kind, gap_scale, line_scale) = gizmo_line_style_parts(

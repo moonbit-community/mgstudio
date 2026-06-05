@@ -76,8 +76,8 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
         @math.Vec2::new(10.0F, 20.0F),
         @math.Vec2::new(110.0F, 120.0F),
       ),
-      @sprite.UiBorderRect::new(5.0F, 5.0F, 5.0F, 5.0F),
-      @sprite.UiBorderRect::new(10.0F, 10.0F, 10.0F, 10.0F),
+      @sprite.BorderRect::new(5.0F, 5.0F, 5.0F, 5.0F),
+      @sprite.BorderRect::new(10.0F, 10.0F, 10.0F, 10.0F),
       ResolvedBorderRadius::ResolvedBorderRadius(),
       0.0F,
       0.0F,
@@ -92,7 +92,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
   )
   ui_clip_system(world)
   let scissor = try! world
-    .get_by_key(child, @sprite.ecs_key_scissor_rect)
+    .get_by_key(child, @ui_clip.ecs_key_scissor_rect)
     .unwrap().rect
   // BorderBox: (10,20)-(110,120)
   // ContentBox inset: border(5)+padding(10)=15 => (25,35)-(95,105)
@@ -161,7 +161,7 @@ test "ui: overflow Visible disables clipping per-axis" {
   )
   ui_clip_system(world)
   let scissor = try! world
-    .get_by_key(child, @sprite.ecs_key_scissor_rect)
+    .get_by_key(child, @ui_clip.ecs_key_scissor_rect)
     .unwrap().rect
   // X should not be clipped by container; Y should be.
   let ok_x = scissor.min.x == 0.0F && scissor.max.x == 800.0F

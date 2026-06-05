@@ -168,157 +168,157 @@ pub let ecs_key_checked : @ecs.ComponentKey[Checked] = @ecs.register_component(
 )
 
 ///|
-pub impl @ecs.Component for Node with component() {
+pub impl @ecs.Component for Node with fn component() {
   ecs_key_node
 }
 
 ///|
-pub impl @ecs.Component for Label with component() {
+pub impl @ecs.Component for Label with fn component() {
   ecs_key_label
 }
 
 ///|
-pub impl @ecs.Component for Button with component() {
+pub impl @ecs.Component for Button with fn component() {
   ecs_key_button
 }
 
 ///|
-pub impl @ecs.Component for UiRoot with component() {
+pub impl @ecs.Component for UiRoot with fn component() {
   ecs_key_ui_root
 }
 
 ///|
-pub impl @ecs.Component for GhostNode with component() {
+pub impl @ecs.Component for GhostNode with fn component() {
   ecs_key_ghost_node
 }
 
 ///|
-pub impl @ecs.Component for IsDefaultUiCamera with component() {
+pub impl @ecs.Component for IsDefaultUiCamera with fn component() {
   ecs_key_is_default_ui_camera
 }
 
 ///|
-pub impl @ecs.Component for UiTargetCamera with component() {
+pub impl @ecs.Component for UiTargetCamera with fn component() {
   ecs_key_ui_target_camera
 }
 
 ///|
-pub impl @ecs.Component for ComputedUiTargetCamera with component() {
+pub impl @ecs.Component for ComputedUiTargetCamera with fn component() {
   ecs_key_computed_ui_target_camera
 }
 
 ///|
-pub impl @ecs.Component for ComputedUiRenderTargetInfo with component() {
+pub impl @ecs.Component for ComputedUiRenderTargetInfo with fn component() {
   ecs_key_computed_ui_render_target_info
 }
 
 ///|
-pub impl @ecs.Component for ZIndex with component() {
+pub impl @ecs.Component for ZIndex with fn component() {
   ecs_key_z_index
 }
 
 ///|
-pub impl @ecs.Component for Outline with component() {
+pub impl @ecs.Component for Outline with fn component() {
   ecs_key_outline
 }
 
 ///|
-pub impl @ecs.Component for UiImage with component() {
+pub impl @ecs.Component for UiImage with fn component() {
   ecs_key_ui_image
 }
 
 ///|
-pub impl @ecs.Component for UiLayout with component() {
+pub impl @ecs.Component for UiLayout with fn component() {
   ecs_key_ui_layout
 }
 
 ///|
-pub impl @ecs.Component for BoxShadow with component() {
+pub impl @ecs.Component for BoxShadow with fn component() {
   ecs_key_box_shadow
 }
 
 ///|
-pub impl @ecs.Component for ImageNode with component() {
+pub impl @ecs.Component for ImageNode with fn component() {
   ecs_key_image_node
 }
 
 ///|
-pub impl @ecs.Component for BorderColor with component() {
+pub impl @ecs.Component for BorderColor with fn component() {
   ecs_key_border_color
 }
 
 ///|
-pub impl @ecs.Component for ContentSize with component() {
+pub impl @ecs.Component for ContentSize with fn component() {
   ecs_key_content_size
 }
 
 ///|
-pub impl @ecs.Component for FocusPolicy with component() {
+pub impl @ecs.Component for FocusPolicy with fn component() {
   ecs_key_focus_policy
 }
 
 ///|
-pub impl @ecs.Component for Interaction with component() {
+pub impl @ecs.Component for Interaction with fn component() {
   ecs_key_interaction
 }
 
 ///|
-pub impl @ecs.Component for ButtonColors with component() {
+pub impl @ecs.Component for ButtonColors with fn component() {
   ecs_key_button_colors
 }
 
 ///|
-pub impl @ecs.Component for GlobalZIndex with component() {
+pub impl @ecs.Component for GlobalZIndex with fn component() {
   ecs_key_global_z_index
 }
 
 ///|
-pub impl @ecs.Component for ImageNodeSize with component() {
+pub impl @ecs.Component for ImageNodeSize with fn component() {
   ecs_key_image_node_size
 }
 
 ///|
-pub impl @ecs.Component for CalculatedClip with component() {
+pub impl @ecs.Component for CalculatedClip with fn component() {
   ecs_key_calculated_clip
 }
 
 ///|
-pub impl @ecs.Component for ScrollPosition with component() {
+pub impl @ecs.Component for ScrollPosition with fn component() {
   ecs_key_scroll_position
 }
 
 ///|
-pub impl @ecs.Component for BackgroundColor with component() {
+pub impl @ecs.Component for BackgroundColor with fn component() {
   ecs_key_background_color
 }
 
 ///|
-pub impl @ecs.Component for AccessibilityLabel with component() {
+pub impl @ecs.Component for AccessibilityLabel with fn component() {
   ecs_key_accessibility_label
 }
 
 ///|
-pub impl @ecs.Component for RelativeCursorPosition with component() {
+pub impl @ecs.Component for RelativeCursorPosition with fn component() {
   ecs_key_relative_cursor_position
 }
 
 ///|
-pub impl @ecs.Component for InteractionDisabled with component() {
+pub impl @ecs.Component for InteractionDisabled with fn component() {
   ecs_key_interaction_disabled
 }
 
 ///|
-pub impl @ecs.Component for Pressed with component() {
+pub impl @ecs.Component for Pressed with fn component() {
   ecs_key_pressed
 }
 
 ///|
-pub impl @ecs.Component for Checkable with component() {
+pub impl @ecs.Component for Checkable with fn component() {
   ecs_key_checkable
 }
 
 ///|
-pub impl @ecs.Component for Checked with component() {
+pub impl @ecs.Component for Checked with fn component() {
   ecs_key_checked
 }
 
@@ -336,19 +336,6 @@ pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack] = @ecs.register_resource(
 pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext] = @ecs.register_resource(
   debug_name="ui.ui_context",
 )
-
-///|
-pub let ecs_components : Array[String] = [
-  "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiTargetCamera", "ComputedUiTargetCamera",
-  "ComputedUiRenderTargetInfo", "ZIndex", "Outline", "UiImage", "UiLayout", "BoxShadow",
-  "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "ButtonColors",
-  "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition", "BackgroundColor",
-  "AccessibilityLabel", "RelativeCursorPosition", "InteractionDisabled", "Pressed",
-  "Checkable", "Checked",
-]
-
-///|
-pub let ecs_resources : Array[String] = ["UiScale", "UiStack", "UiContext"]
 
 ///|
 pub fn get_ui_scale_resource(

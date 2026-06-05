@@ -127,7 +127,15 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
   )
   let ok = if meshes.get(mesh_handle) is Some(mesh) {
     if materials.get(material_handle) is Some(material) {
-      mesh.as_3d_geometry() is None &&
+      let geometry_ok = match mesh.as_3d_geometry() {
+        Some(geometry) =>
+          geometry.vertex_count() == 4 &&
+          geometry.indices_or_sequential().length() == 6 &&
+          geometry.primitive_topology() ==
+          @mesh.Mesh3dPrimitiveTopology::TriangleList
+        None => false
+      }
+      geometry_ok &&
       approx_eq(material.color.r, expected_color.r) &&
       approx_eq(material.color.g, expected_color.g) &&
       approx_eq(material.color.b, expected_color.b) &&

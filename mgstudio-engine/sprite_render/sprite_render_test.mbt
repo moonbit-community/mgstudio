@@ -26,11 +26,11 @@ test "sprite_render boundary re-exports wireframe config and alpha mode" {
 ///|
 test "sprite_render boundary re-exports render schedule labels" {
   debug_inspect(
-    @sprite_render.render2d_set_extract == @sprite.render2d_set_extract,
+    @sprite_render.render2d_set_extract == @sprite_render.render2d_set_extract,
     content="true",
   )
   debug_inspect(
-    @sprite_render.render2d_set_render == @sprite.render2d_set_render,
+    @sprite_render.render2d_set_render == @sprite_render.render2d_set_render,
     content="true",
   )
 }

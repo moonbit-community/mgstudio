@@ -1,10 +1,7 @@
 import {
-  "Milky2018/mgstudio/camera/clear_color" @camera_clear_color,
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
-  "Milky2018/mgstudio/camera/computed_camera_values" @camera_computed,
   "Milky2018/mgstudio/camera/projection2d" @camera_projection2d,
-  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
@@ -13,9 +10,6 @@ import {
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
-  "Milky2018/mgstudio/shader",
-  "Milky2018/mgstudio/shader/source" @shader_source,
-  "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashset",
@@ -25,82 +19,12 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
-  "Milky2018/mgstudio/sprite_render/schedule" @sprite_render_schedule,
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material" @sprite_render_mesh2d_color_material,
   "Milky2018/mgstudio/sprite_render/mesh2d/material" @sprite_render_mesh2d_material,
-  "Milky2018/mgstudio/sprite_render/mesh2d/runtime" @sprite_render_mesh2d_runtime,
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d" @sprite_render_mesh2d_wireframe2d,
-  "Milky2018/mgstudio/sprite_render/tilemap_chunk" @sprite_tilemap_chunk,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline",
-  "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening" @cas,
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/shader/source" @shader_source,
 }
 
 supported_targets = "native"
-
-options(
-  "pre-build": [
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_color_material_wgsl_source",
-      "input": "../sprite_render/mesh2d/color_material.wgsl",
-      "output": "mesh2d_color_material_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_bindings_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_bindings.wgsl",
-      "output": "mesh2d_bindings_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_functions_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_functions.wgsl",
-      "output": "mesh2d_functions_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_types_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_types.wgsl",
-      "output": "mesh2d_types_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_vertex_output_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-      "output": "mesh2d_vertex_output_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_view_bindings_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
-      "output": "mesh2d_view_bindings_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_view_types_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d_view_types.wgsl",
-      "output": "mesh2d_view_types_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh2d_wgsl_source",
-      "input": "../sprite_render/mesh2d/mesh2d.wgsl",
-      "output": "mesh2d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name wireframe2d_wgsl_source",
-      "input": "../sprite_render/mesh2d/wireframe2d.wgsl",
-      "output": "wireframe2d_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name sprite_render_sprite_wgsl_source",
-      "input": "../sprite_render/render/sprite.wgsl",
-      "output": "sprite_render_sprite_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name sprite_render_sprite_view_bindings_wgsl_source",
-      "input": "../sprite_render/render/sprite_view_bindings.wgsl",
-      "output": "sprite_render_sprite_view_bindings_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name sprite_render_sprite_material_wgsl_source",
-      "input": "../sprite_render/sprite_mesh/sprite_material.wgsl",
-      "output": "sprite_render_sprite_material_wgsl.mbt",
-    },
-  ],
-)

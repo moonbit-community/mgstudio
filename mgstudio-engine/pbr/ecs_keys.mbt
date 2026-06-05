@@ -287,112 +287,112 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for Skybox with component() {
+pub impl @ecs.Component for Skybox with fn component() {
   ecs_key_skybox
 }
 
 ///|
-pub impl @ecs.Component for Camera3d with component() {
+pub impl @ecs.Component for Camera3d with fn component() {
   ecs_key_camera3d
 }
 
 ///|
-pub impl @ecs.Component for CameraDecalConfig3d with component() {
+pub impl @ecs.Component for CameraDecalConfig3d with fn component() {
   ecs_key_camera_decal_config3d
 }
 
 ///|
-pub impl @ecs.Component for CameraDeferredConfig3d with component() {
+pub impl @ecs.Component for CameraDeferredConfig3d with fn component() {
   ecs_key_camera_deferred_config3d
 }
 
 ///|
-pub impl @ecs.Component for DistanceFog with component() {
+pub impl @ecs.Component for DistanceFog with fn component() {
   ecs_key_distance_fog
 }
 
 ///|
-pub impl @ecs.Component for AutoExposure with component() {
+pub impl @ecs.Component for AutoExposure with fn component() {
   ecs_key_auto_exposure
 }
 
 ///|
-pub impl @ecs.Component for DepthOfField with component() {
+pub impl @ecs.Component for DepthOfField with fn component() {
   ecs_key_depth_of_field
 }
 
 ///|
-pub impl @ecs.Component for Exposure with component() {
+pub impl @ecs.Component for Exposure with fn component() {
   ecs_key_exposure
 }
 
 ///|
-pub impl @ecs.Component for Wireframe with component() {
+pub impl @ecs.Component for Wireframe with fn component() {
   ecs_key_wireframe
 }
 
 ///|
-pub impl @ecs.Component for FreeCamera with component() {
+pub impl @ecs.Component for FreeCamera with fn component() {
   ecs_key_free_camera
 }
 
 ///|
-pub impl @ecs.Component for NoWireframe with component() {
+pub impl @ecs.Component for NoWireframe with fn component() {
   ecs_key_no_wireframe
 }
 
 ///|
-pub impl @ecs.Component for ContactShadows with component() {
+pub impl @ecs.Component for ContactShadows with fn component() {
   ecs_key_contact_shadows
 }
 
 ///|
-pub impl @ecs.Component for WireframeColor with component() {
+pub impl @ecs.Component for WireframeColor with fn component() {
   ecs_key_wireframe_color
 }
 
 ///|
-pub impl @ecs.Component for FreeCameraState with component() {
+pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
 }
 
 ///|
-pub impl @ecs.Component for NotShadowCaster with component() {
+pub impl @ecs.Component for NotShadowCaster with fn component() {
   ecs_key_not_shadow_caster
 }
 
 ///|
-pub impl @ecs.Component for OcclusionCulling with component() {
+pub impl @ecs.Component for OcclusionCulling with fn component() {
   ecs_key_occlusion_culling
 }
 
 ///|
-pub impl @ecs.Component for NoIndirectDrawing with component() {
+pub impl @ecs.Component for NoIndirectDrawing with fn component() {
   ecs_key_no_indirect_drawing
 }
 
 ///|
-pub impl @ecs.Component for NotShadowReceiver with component() {
+pub impl @ecs.Component for NotShadowReceiver with fn component() {
   ecs_key_not_shadow_receiver
 }
 
 ///|
-pub impl @ecs.Component for Projection with component() {
+pub impl @ecs.Component for Projection with fn component() {
   ecs_key_projection
 }
 
 ///|
-pub impl @ecs.Component for ShadowFilteringMethod with component() {
+pub impl @ecs.Component for ShadowFilteringMethod with fn component() {
   ecs_key_shadow_filtering_method
 }
 
 ///|
-pub impl @ecs.Component for TransmittedShadowReceiver with component() {
+pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
   ecs_key_transmitted_shadow_receiver
 }
 
 ///|
-pub impl @ecs.Component for OrderIndependentTransparencySettings with component() {
+pub impl @ecs.Component for OrderIndependentTransparencySettings with fn component() {
   ecs_key_order_independent_transparency_settings
 }
 
@@ -421,30 +421,6 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
   debug_name="render3d.internal_assets",
 )
-
-///|
-pub let ecs_components : Array[String] = [
-  "Hdr", "Fxaa", "Msaa", "Bloom", "CustomPostProcess3d", "Mesh3d", "Skybox", "Camera3d",
-  "CameraDecalConfig3d", "CameraDeferredConfig3d", "DistanceFog", "AutoExposure",
-  "DepthOfField", "VolumetricFog", "Atmosphere", "AtmosphereSettings", "Exposure",
-  "Vignette", "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur",
-  "PointLight", "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass",
-  "ForwardDecal", "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d",
-  "Lightmap", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
-  "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
-  "NoIndirectDrawing", "SunDisk", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
-  "Projection", "Frustum", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
-  "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
-  "DirectionalLightTexture", "ForwardDecalMaterialExt", "ScreenSpaceTransmission",
-  "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
-  "OrderIndependentTransparencySettings",
-]
-
-///|
-pub let ecs_resources : Array[String] = [
-  "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
-  "DefaultOpaqueRendererMethod",
-]
 
 ///|
 pub fn get_wireframe_config_resource(

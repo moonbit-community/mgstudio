@@ -342,7 +342,7 @@ pub impl IntoMeshPrimitiveAsset for @math.Polyline2d
 pub impl IntoMeshPrimitiveAsset for @math.Rectangle
 pub impl IntoMeshPrimitiveAsset for @math.RegularPolygon
 pub impl IntoMeshPrimitiveAsset for @math.Rhombus
-pub impl[P : IntoMeshPrimitiveRingGeometry] IntoMeshPrimitiveAsset for @math.Ring[P]
+pub impl[P : ExtrudablePrimitive] IntoMeshPrimitiveAsset for @math.Ring[P]
 pub impl IntoMeshPrimitiveAsset for @math.Segment2d
 pub impl IntoMeshPrimitiveAsset for @math.Triangle2d
 pub impl IntoMeshPrimitiveAsset for @mesh.Mesh2dGeometry
@@ -374,9 +374,11 @@ pub impl Meshable for @math.CircularSector
 pub impl Meshable for @math.CircularSegment
 pub impl Meshable for @math.ConvexPolygon
 pub impl Meshable for @math.Ellipse
+pub impl Meshable for @math.Polyline2d
 pub impl Meshable for @math.Rectangle
 pub impl Meshable for @math.RegularPolygon
 pub impl Meshable for @math.Rhombus
 pub impl[P : ExtrudablePrimitive] Meshable for @math.Ring[P]
+pub impl Meshable for @math.Segment2d
 pub impl Meshable for @math.Triangle2d
 

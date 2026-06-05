@@ -90,11 +90,11 @@ pub impl @app.Plugin for ColoredMesh2dPlugin with fn name(_self) {
 
 ///|
 pub impl @app.Plugin for ColoredMesh2dPlugin with fn build(_self, app) {
-  let descriptor = @sprite.CustomMesh2dPipelineDescriptor::new(
+  let descriptor = @sprite_render.CustomMesh2dPipelineDescriptor::new(
     COLORED_MESH2D_SHADER_PATH,
   )
   let configured = @render.with_render_app(app, fn(render_app) {
-    @sprite.register_custom_mesh2d_pipeline_world(
+    @sprite_render.register_custom_mesh2d_pipeline_world(
       render_app.world(),
       type_name="mgstudio.examples.mesh2d_manual.ColoredMesh2d",
       component_key=colored_mesh2d_key,

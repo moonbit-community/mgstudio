@@ -18,7 +18,7 @@ pub struct BorderRect {
   right : Float
   top : Float
   bottom : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BorderRect::new(

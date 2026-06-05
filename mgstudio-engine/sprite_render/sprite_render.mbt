@@ -25,6 +25,15 @@ pub type ColorMaterial = @sprite_render_mesh2d_color_material.ColorMaterial
 pub type ColorMaterialPlugin = @sprite_render_mesh2d_color_material.ColorMaterialPlugin
 
 ///|
+pub type Render2dPlugin = @sprite_render_render.Render2dPlugin
+
+///|
+pub type Render2dEcsPlugin = @sprite_render_render.Render2dEcsPlugin
+
+///|
+pub type SpriteMeshPlugin = @sprite.SpriteMeshPlugin
+
+///|
 pub type Material2dPlugin[M] = @sprite_render_mesh2d_material.Material2dPlugin[
   M,
 ]
@@ -103,16 +112,25 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @sprit
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @sprite_render_mesh2d_wireframe2d.ecs_key_wireframe2d_config
 
 ///|
-pub type OverlaySpriteUvScissor = @sprite.OverlaySpriteUvScissor
+pub type OverlaySpriteUvScissor = @sprite_render_render.OverlaySpriteUvScissor
 
 ///|
-pub type UiCornerRadii = @sprite.UiCornerRadii
+pub type OverlaySpriteUvScissorSlices = @sprite_render_render.OverlaySpriteUvScissorSlices
 
 ///|
-pub type UiBorderRect = @sprite.UiBorderRect
+pub type UiCornerRadii = @sprite_render_render.UiCornerRadii
 
 ///|
-pub type SceneCullContext = @sprite.SceneCullContext
+pub type BorderRect = @sprite_render_render.BorderRect
+
+///|
+pub type SceneCullContext = @sprite_render_render.SceneCullContext
+
+///|
+pub type CustomMesh2dPipelineDescriptor = @sprite_render_render.CustomMesh2dPipelineDescriptor
+
+///|
+pub type CustomMesh2dRuntimeRegistry = @sprite_render_render.CustomMesh2dRuntimeRegistry
 
 ///|
 pub let render2d_set_extract : @app.SystemSet = @sprite_render_schedule.render2d_set_extract
@@ -140,14 +158,24 @@ pub fn render2d_push_sprite_uv_scissor_batch(
   world : @ecs.World,
   sprites : Array[OverlaySpriteUvScissor],
 ) -> Unit {
-  @sprite.render2d_push_sprite_uv_scissor_batch(world, sprites)
+  @sprite_render_render.render2d_push_sprite_uv_scissor_batch(world, sprites)
+}
+
+///|
+pub fn render2d_push_sprite_uv_scissor_slices_batch(
+  world : @ecs.World,
+  sprite_batches : Array[OverlaySpriteUvScissorSlices],
+) -> Unit {
+  @sprite_render_render.render2d_push_sprite_uv_scissor_slices_batch(
+    world, sprite_batches,
+  )
 }
 
 ///|
 pub fn render2d_primary_scene_cull_context(
   world : @ecs.World,
 ) -> SceneCullContext? {
-  @sprite.render2d_primary_scene_cull_context(world)
+  @sprite_render_render.render2d_primary_scene_cull_context(world)
 }
 
 ///|
@@ -157,7 +185,7 @@ pub fn render2d_scene_item_visible(
   y : Float,
   radius : Float,
 ) -> Bool {
-  @sprite.render2d_scene_item_visible(context, x, y, radius)
+  @sprite_render_render.render2d_scene_item_visible(context, x, y, radius)
 }
 
 ///|
@@ -169,17 +197,17 @@ pub fn render2d_scene_cull_context_values(
 
 ///|
 pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
-  @sprite.render2d_clear_overlay_ui_rects(world)
+  @sprite_render_render.render2d_clear_overlay_ui_rects(world)
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
-  @sprite.render2d_clear_overlay_ui_box_shadows(world)
+  @sprite_render_render.render2d_clear_overlay_ui_box_shadows(world)
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
-  @sprite.render2d_clear_overlay_ui_texture_slices(world)
+  @sprite_render_render.render2d_clear_overlay_ui_texture_slices(world)
 }
 
 ///|
@@ -197,9 +225,9 @@ pub fn render2d_push_ui_rect_uv_scissor(
   scissor : @math.Rect?,
   flags : Int,
   radius : UiCornerRadii,
-  border : UiBorderRect,
+  border : BorderRect,
 ) -> Unit {
-  @sprite.render2d_push_ui_rect_uv_scissor(
+  @sprite_render_render.render2d_push_ui_rect_uv_scissor(
     world, entity, target_camera, texture, transform, draw_scale, uv_min, uv_max,
     color, layers, scissor, flags, radius, border,
   )
@@ -221,7 +249,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   blur : Float,
   samples : Int,
 ) -> Unit {
-  @sprite.render2d_push_ui_box_shadow_scissor(
+  @sprite_render_render.render2d_push_ui_box_shadow_scissor(
     world, entity, target_camera, texture, transform, draw_scale, color, layers,
     scissor, size, radius, blur, samples,
   )
@@ -243,7 +271,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   repeat : @math.Vec4,
   atlas_rect : @math.Vec4,
 ) -> Unit {
-  @sprite.render2d_push_ui_texture_slice_scissor(
+  @sprite_render_render.render2d_push_ui_texture_slice_scissor(
     world, entity, target_camera, texture, transform, draw_scale, color, layers,
     scissor, texture_slices, target_slices, repeat, atlas_rect,
   )
@@ -251,27 +279,77 @@ pub fn render2d_push_ui_texture_slice_scissor(
 
 ///|
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
-  @sprite.render2d_diagnostic_queued_draw_item_count()
+  @sprite_render_render.render2d_diagnostic_queued_draw_item_count()
 }
 
 ///|
 pub fn render2d_diagnostic_prepared_camera_count() -> Int {
-  @sprite.render2d_diagnostic_prepared_camera_count()
+  @sprite_render_render.render2d_diagnostic_prepared_camera_count()
 }
 
 ///|
 pub fn render2d_diagnostic_queue_cpu_ms() -> Float {
-  @sprite.render2d_diagnostic_queue_cpu_ms()
+  @sprite_render_render.render2d_diagnostic_queue_cpu_ms()
 }
 
 ///|
 pub fn render2d_diagnostic_execute_cpu_ms() -> Float {
-  @sprite.render2d_diagnostic_execute_cpu_ms()
+  @sprite_render_render.render2d_diagnostic_execute_cpu_ms()
+}
+
+///|
+pub fn init_render_state_system(world : @ecs.World) -> Unit {
+  @sprite_render_render.init_render_state_system(world)
+}
+
+///|
+pub fn render_extract_system(world : @ecs.World) -> Unit {
+  @sprite_render_render.render_extract_system(world)
+}
+
+///|
+pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
+  @sprite_render_render.render_extract_system_ecs(world)
+}
+
+///|
+pub fn render_prepare_system(world : @ecs.World) -> Unit {
+  @sprite_render_render.render_prepare_system(world)
+}
+
+///|
+pub fn render_queue_system(world : @ecs.World) -> Unit {
+  @sprite_render_render.render_queue_system(world)
+}
+
+///|
+pub fn render2d_prepared_camera_count(world : @ecs.World) -> Int? {
+  @sprite_render_render.render2d_prepared_camera_count(world)
+}
+
+///|
+pub fn render2d_queued_draw_item_count(world : @ecs.World) -> Int? {
+  @sprite_render_render.render2d_queued_draw_item_count(world)
+}
+
+///|
+pub fn[T] register_custom_mesh2d_pipeline_world(
+  world : @ecs.World,
+  type_name~ : String,
+  component_key~ : @ecs.ComponentKey[T],
+  descriptor~ : CustomMesh2dPipelineDescriptor,
+) -> Unit {
+  @sprite_render_render.register_custom_mesh2d_pipeline_world(
+    world,
+    type_name~,
+    component_key~,
+    descriptor~,
+  )
 }
 
 ///|
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
-  @sprite.render2d_upload_mesh_handle(mesh)
+  @sprite_render_render.render2d_upload_mesh_handle(mesh)
 }
 
 ///|
@@ -281,7 +359,9 @@ pub fn render2d_create_render_target(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  @sprite.render2d_create_render_target(world, width, height, nearest)
+  @sprite_render_render.render2d_create_render_target(
+    world, width, height, nearest,
+  )
 }
 
 ///|
@@ -290,7 +370,9 @@ pub fn render2d_create_render_target_ecs(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  @sprite.render2d_create_render_target_ecs(width, height, nearest)
+  @sprite_render_render.render2d_create_render_target_ecs(
+    width, height, nearest,
+  )
 }
 
 ///|
@@ -298,7 +380,7 @@ pub fn render2d_viewport_to_world_2d(
   world : @ecs.World,
   screen : @math.Vec2,
 ) -> @math.Vec2? {
-  @sprite.render2d_viewport_to_world_2d(world, screen)
+  @sprite_render_render.render2d_viewport_to_world_2d(world, screen)
 }
 
 ///|
@@ -310,7 +392,7 @@ pub fn render2d_camera_viewport_to_world_2d(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
-  @sprite.render2d_camera_viewport_to_world_2d(
+  @sprite_render_render.render2d_camera_viewport_to_world_2d(
     screen, camera, projection, camera_transform, target_size, scale_factor,
   )
 }
@@ -324,7 +406,7 @@ pub fn render2d_camera_world_to_viewport_2d(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
-  @sprite.render2d_camera_world_to_viewport_2d(
+  @sprite_render_render.render2d_camera_world_to_viewport_2d(
     world, camera, projection, camera_transform, target_size, scale_factor,
   )
 }

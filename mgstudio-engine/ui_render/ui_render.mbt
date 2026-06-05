@@ -30,9 +30,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   )
   let stack_res = @ui.get_ui_stack_resource(source_world)
   guard stack_res.get() is Some(stack0) else { return }
-  @sprite_render.render2d_clear_overlay_ui_rects(world)
-  @sprite_render.render2d_clear_overlay_ui_box_shadows(world)
-  @sprite_render.render2d_clear_overlay_ui_texture_slices(world)
+  @sprite_render_render.render2d_clear_overlay_ui_rects(world)
+  @sprite_render_render.render2d_clear_overlay_ui_box_shadows(world)
+  @sprite_render_render.render2d_clear_overlay_ui_texture_slices(world)
 
   fn atlas_rect_for(
     layouts : @asset.Assets[@asset.TextureAtlasLayout]?,
@@ -111,7 +111,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       None => @camera_render_layers.RenderLayers::RenderLayers()
     }
     let scissor = match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_scissor_rect)) {
+      (try! source_world.get_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
       Some(v) => Some(v.rect)
       None => None
     }
@@ -125,11 +125,11 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let border_right = layout_border.right * scale_x
     let border_top = layout_border.top * scale_y
     let border_bottom = layout_border.bottom * scale_y
-    let border = @sprite.UiBorderRect::new(
-      border_left, border_top, border_right, border_bottom,
+    let border = @sprite.BorderRect::new(
+      border_left, border_right, border_top, border_bottom,
     )
     let r = layout.border_radius()
-    let radius = @sprite.UiCornerRadii::new(
+    let radius = @sprite_render_render.UiCornerRadii::new(
       r.top_left * scale_min,
       r.top_right * scale_min,
       r.bottom_right * scale_min,
@@ -200,7 +200,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 @math.Vec2::new(t0.scale.x, t0.scale.y),
                 z=z_base + UI_STACK_Z_SHADOW,
               )
-              let radius_shadow = @sprite.UiCornerRadii::new(
+              let radius_shadow = @sprite_render_render.UiCornerRadii::new(
                 r.top_left * spread_ratio * scale_min,
                 r.top_right * spread_ratio * scale_min,
                 r.bottom_right * spread_ratio * scale_min,
@@ -214,7 +214,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * shadow_size.x,
                 scale_y * shadow_size.y,
               )
-              @sprite_render.render2d_push_ui_box_shadow_scissor(
+              @sprite_render_render.render2d_push_ui_box_shadow_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,
@@ -256,7 +256,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       Some(color) =>
         if color.a > 0.0F {
           let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
-          @sprite_render.render2d_push_ui_rect_uv_scissor(
+          @sprite_render_render.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -377,7 +377,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             uv_max_img.x,
             uv_max_img.y,
           )
-          @sprite_render.render2d_push_ui_texture_slice_scissor(
+          @sprite_render_render.render2d_push_ui_texture_slice_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -393,7 +393,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             atlas_rect_uv,
           )
         } else if color.a > 0.0F {
-          @sprite_render.render2d_push_ui_rect_uv_scissor(
+          @sprite_render_render.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -424,7 +424,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       is Some(bc) &&
       bc.color.a > 0.0F {
       let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
-      @sprite_render.render2d_push_ui_rect_uv_scissor(
+      @sprite_render_render.render2d_push_ui_rect_uv_scissor(
         world,
         entity,
         entity_ctx.camera_entity,
@@ -461,13 +461,13 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_y * outline_size.y,
               )
               let outline_r = layout.outline_radius()
-              let outline_border = @sprite.UiBorderRect::new(
+              let outline_border = @sprite.BorderRect::new(
+                outline_width * scale_x,
                 outline_width * scale_x,
                 outline_width * scale_y,
-                outline_width * scale_x,
                 outline_width * scale_y,
               )
-              let outline_radius = @sprite.UiCornerRadii::new(
+              let outline_radius = @sprite_render_render.UiCornerRadii::new(
                 clamp_radius_nonneg(outline_r.top_left, outline_size) *
                 scale_min,
                 clamp_radius_nonneg(outline_r.top_right, outline_size) *
@@ -477,7 +477,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 clamp_radius_nonneg(outline_r.bottom_left, outline_size) *
                 scale_min,
               )
-              @sprite_render.render2d_push_ui_rect_uv_scissor(
+              @sprite_render_render.render2d_push_ui_rect_uv_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,

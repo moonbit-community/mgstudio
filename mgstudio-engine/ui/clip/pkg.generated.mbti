@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ui/clip"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
+
+// Errors
+
+// Types and methods
+pub struct ScissorRect {
+  rect : @math.Rect
+}
+pub fn ScissorRect::new(@math.Rect) -> Self
+pub impl @ecs.Component for ScissorRect
+pub impl ToJson for ScissorRect
+pub impl @json.FromJson for ScissorRect
+
+// Type aliases
+
+// Traits
+

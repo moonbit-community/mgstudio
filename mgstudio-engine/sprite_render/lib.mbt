@@ -18,12 +18,12 @@
 
 ///|
 pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin(app)
+  @sprite_render_render.render2d_plugin(app)
 }
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin_ecs(app)
+  @sprite_render_render.render2d_plugin_ecs(app)
 }
 
 ///|

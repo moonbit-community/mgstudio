@@ -54,9 +54,9 @@ fn run_ui_extract_pipeline(world : @ecs.World) -> Unit {
   @ui.ui_clip_system(world)
   @ui.ui_stack_system(world)
   @ui_render.ui_render_extract_system(world)
-  @sprite.render_extract_system_ecs(world)
-  @sprite.render_prepare_system(world)
-  @sprite.render_queue_system(world)
+  @sprite_render.render_extract_system_ecs(world)
+  @sprite_render.render_prepare_system(world)
+  @sprite_render.render_queue_system(world)
 }
 
 ///|
@@ -65,7 +65,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
-  @sprite.init_render_state_system(world)
+  @sprite_render.init_render_state_system(world)
 
   setup(world)
   seed_ui_context(world)
@@ -87,11 +87,11 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   run_ui_extract_pipeline(world)
 
   debug_inspect(
-    @sprite.render2d_prepared_camera_count(world),
+    @sprite_render.render2d_prepared_camera_count(world),
     content="Some(1)",
   )
   debug_inspect(
-    @sprite.render2d_queued_draw_item_count(world),
+    @sprite_render.render2d_queued_draw_item_count(world),
     content="Some(2)",
   )
 }
@@ -102,7 +102,7 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
-  @sprite.init_render_state_system(world)
+  @sprite_render.init_render_state_system(world)
   seed_primary_window(world)
   setup(world)
 
@@ -115,11 +115,11 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
   run_ui_extract_pipeline(world)
 
   debug_inspect(
-    @sprite.render2d_prepared_camera_count(world),
+    @sprite_render.render2d_prepared_camera_count(world),
     content="Some(1)",
   )
   debug_inspect(
-    @sprite.render2d_queued_draw_item_count(world),
+    @sprite_render.render2d_queued_draw_item_count(world),
     content="Some(2)",
   )
 }
@@ -141,11 +141,11 @@ test "examples ui button: scheduled update queues ui draw items" {
     .unwrap()
   let layout_size = layout.rect.size()
   debug_inspect(
-    @sprite.render2d_diagnostic_prepared_camera_count(),
+    @sprite_render.render2d_diagnostic_prepared_camera_count(),
     content="1",
   )
   debug_inspect(
-    @sprite.render2d_diagnostic_queued_draw_item_count() > 0,
+    @sprite_render.render2d_diagnostic_queued_draw_item_count() > 0,
     content="true",
   )
   debug_inspect(

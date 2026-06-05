@@ -151,8 +151,6 @@ pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub let ecs_components : Array[String]
-
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
@@ -334,8 +332,6 @@ pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
 pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
 
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
-
-pub let ecs_resources : Array[String]
 
 pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 

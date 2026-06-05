@@ -17,6 +17,57 @@
 // Mesh asset and shape conversion surface split out of `render2d.mbt`.
 
 ///|
+type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
+
+///|
+type Material2dBinding = @sprite_render_mesh2d_material.Material2dBinding
+
+///|
+type Material2dBindGroup = @sprite_render_mesh2d_material.Material2dBindGroup
+
+///|
+type Material2dKeys[M] = @sprite_render_mesh2d_material.Material2dKeys[M]
+
+///|
+type Material2dPlugin[M] = @sprite_render_mesh2d_material.Material2dPlugin[M]
+
+///|
+type MeshMaterial2d[M] = @sprite_render_mesh2d_material.MeshMaterial2d[M]
+
+///|
+type Mesh2d = @mesh.Mesh2d
+
+///|
+type RenderLayers = @camera_render_layers.RenderLayers
+
+///|
+fn[M] register_material2d_keys(
+  material_debug_name : String,
+) -> Material2dKeys[M] {
+  @sprite_render_mesh2d_material.register_material2d_keys(material_debug_name)
+}
+
+///|
+fn material2d_u32le_pack(xs : Array[UInt]) -> Bytes {
+  @sprite_render_mesh2d_material.material2d_u32le_pack(xs)
+}
+
+///|
+fn material2d_f32_bits(x : Float) -> UInt {
+  @sprite_render_mesh2d_material.material2d_f32_bits(x)
+}
+
+///|
+fn material2d_alpha_mode_kind_bits(alpha_mode : AlphaMode2d) -> UInt {
+  @sprite_render_mesh2d_material.material2d_alpha_mode_kind_bits(alpha_mode)
+}
+
+///|
+fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
+  @sprite_render_mesh2d_material.mesh_alpha_cutoff(alpha_mode)
+}
+
+///|
 pub(all) enum SpriteAlphaMode {
   Opaque
   Mask(Float)
@@ -929,6 +980,158 @@ pub impl @app.Plugin for SpriteMeshPlugin with fn build(_self, app) {
 }
 
 ///|
+fn render2d_current_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "render2d asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn[T : @asset.Asset] render2d_asset_store_or_abort() -> @asset.Assets[T] {
+  let world = @render.render_source_world(render2d_current_world_or_abort())
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match world.get_resource(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render2d asset resource is missing; SpriteRenderPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+fn[T : @asset.Asset] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[
+  @asset.Assets[T],
+] {
+  let world = @render.render_source_world(render2d_current_world_or_abort())
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render2d asset resource is missing; SpriteRenderPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
+  render2d_asset_store_or_abort()
+}
+
+///|
+pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
+  render2d_asset_store_mut_or_abort()
+}
+
+///|
+let mesh_upload_cache : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
+
+///|
+let mesh_upload_radius_cache : @hashmap.HashMap[Int, Float] = @hashmap.HashMap([])
+
+///|
+fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
+  let mut max_len_sq = 0.0F
+  for position in geometry.positions {
+    let len_sq = position.x * position.x + position.y * position.y
+    if len_sq > max_len_sq {
+      max_len_sq = len_sq
+    }
+  }
+  if max_len_sq <= 0.0F {
+    1.0F
+  } else {
+    @math.sqrt(max_len_sq)
+  }
+}
+
+///|
+fn mesh3d_geometry_base_radius(geometry : @mesh.Mesh3dGeometry) -> Float {
+  let mut max_len_sq = 0.0F
+  for index in 0..<geometry.vertex_count() {
+    if geometry.vertex_position(index) is Some(position) {
+      let len_sq = position.x * position.x + position.y * position.y
+      if len_sq > max_len_sq {
+        max_len_sq = len_sq
+      }
+    }
+  }
+  if max_len_sq <= 0.0F {
+    1.0F
+  } else {
+    @math.sqrt(max_len_sq)
+  }
+}
+
+///|
+pub fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
+  if mesh_id <= 0 {
+    return 1.0F
+  }
+  if mesh_upload_radius_cache.get(mesh_id) is Some(radius) {
+    radius
+  } else {
+    64.0F
+  }
+}
+
+///|
+fn mesh_upload_cache_sync_with_asset_events() -> Unit {
+  let events = mesh_assets_mut_or_abort().modify(fn(assets) {
+    assets.drain_events()
+  })
+  for event in events {
+    match event {
+      @asset.AssetEvent::Modified(handle) =>
+        if mesh_upload_cache.get(handle.id()) is Some(mesh_id) {
+          mesh_id |> ignore
+          ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
+        }
+      @asset.AssetEvent::Removed(handle) =>
+        if mesh_upload_cache.get(handle.id()) is Some(_) {
+          ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
+        }
+      _ => ()
+    }
+  }
+}
+
+///|
+pub fn render2d_delete_uploaded_mesh_handle_id(mesh_handle_id : Int) -> Bool {
+  match mesh_upload_cache.get(mesh_handle_id) {
+    Some(mesh_id) => {
+      mesh_upload_cache.remove(mesh_handle_id)
+      mesh_upload_radius_cache.remove(mesh_id)
+      @render.host_gpu_delete_mesh(mesh_id~)
+    }
+    None => false
+  }
+}
+
+///|
+fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
+  mesh_assets_mut_or_abort().modify(fn(assets) { assets.add(mesh) })
+}
+
+///|
+fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
+  mesh_assets_or_abort().get(handle)
+}
+
+///|
+fn mesh_asset_set(
+  handle : @asset.Handle[@mesh.Mesh],
+  mesh : @mesh.Mesh,
+) -> Bool {
+  mesh_assets_mut_or_abort().modify(fn(assets) { assets.set(handle, mesh) })
+}
+
+///|
 pub fn render_mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
   mesh_asset_add(mesh)
 }
@@ -983,32 +1186,8 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
           render2d_upload_typed_mesh2d(mesh_asset)
         }
         @mesh.MeshGeometry::Geometry3d(geometry3d) => {
-          uploaded_mesh_radius = 64.0F
-          match mesh3d_geometry_flatten_vertices_f32(geometry3d) {
-            Some(vertices_f32) =>
-              match geometry3d.indices {
-                Some(indices) =>
-                  @render.host_gpu_create_mesh3d_xyznuvrgba_indexed(
-                    vertices_xyznuvrgba=vertices_f32,
-                    indices~,
-                    primitive_topology=geometry3d.primitive_topology().to_int(),
-                  )
-                None =>
-                  @render.host_gpu_create_mesh3d_xyznuvrgba(
-                    vertices_xyznuvrgba=vertices_f32,
-                    primitive_topology=geometry3d.primitive_topology().to_int(),
-                  )
-              }
-            None => {
-              let message = match geometry3d.validate() {
-                Some(err) =>
-                  "Mesh3dGeometry validation failed: \{to_repr(err).to_string()}"
-                None => "Mesh3dGeometry flatten failed"
-              }
-              @window.host_debug_string(value=message)
-              0
-            }
-          }
+          uploaded_mesh_radius = mesh3d_geometry_base_radius(geometry3d)
+          render2d_upload_typed_mesh2d(mesh_asset)
         }
       }
     None => {

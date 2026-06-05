@@ -4,29 +4,30 @@ package "Milky2018/mgstudio/sprite_render/sprite_mesh"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/render",
 }
 
 // Values
-pub fn render2d_primary_scene_cull_context(@ecs.World) -> @sprite.SceneCullContext?
+pub fn render2d_primary_scene_cull_context(@ecs.World) -> @render.SceneCullContext?
 
-pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
+pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@render.OverlaySpriteUvScissor]) -> Unit
 
-pub fn render2d_scene_cull_context_values(@sprite.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
+pub fn render2d_scene_cull_context_values(@render.SceneCullContext) -> (Float, Float, Float, Float, Float, Float)
 
-pub fn render2d_scene_item_visible(@sprite.SceneCullContext, Float, Float, Float) -> Bool
+pub fn render2d_scene_item_visible(@render.SceneCullContext, Float, Float, Float) -> Bool
 
 // Errors
 
 // Types and methods
 
 // Type aliases
-pub using @sprite {type OverlaySpriteUvScissor}
+pub using @sprite {type BorderRect}
 
-pub using @sprite {type SceneCullContext}
+pub using @render {type OverlaySpriteUvScissor}
 
-pub using @sprite {type UiBorderRect}
+pub using @render {type SceneCullContext}
 
-pub using @sprite {type UiCornerRadii}
+pub using @render {type UiCornerRadii}
 
 // Traits
 

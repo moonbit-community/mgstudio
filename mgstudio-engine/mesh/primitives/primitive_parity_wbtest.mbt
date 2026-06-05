@@ -134,6 +134,13 @@ fn primitive_parity_assert_z_bounds(
 }
 
 ///|
+fn[S : IntoMeshPrimitiveAsset] primitive_parity_into_mesh_asset(
+  value : S,
+) -> @mesh.Mesh {
+  value.into_mesh_primitive_asset()
+}
+
+///|
 fn[P : ExtrudablePrimitive] primitive_parity_extrusion(
   shape : P,
   depth : Float,
@@ -452,4 +459,43 @@ test "dim2 primitives: ring builder matches ring mesh path" {
     ),
     ExtrusionBuilder::new(ring_builder.build(), ring_builder.perimeter(), 1.0F).build(),
   )
+}
+
+///|
+test "dim2 primitive asset conversion follows Bevy Meshable path" {
+  let circle_mesh = primitive_parity_into_mesh_asset(@math.Circle::new(10.0F))
+  let circle_geometry = match circle_mesh.as_3d_geometry() {
+    Some(geometry) => geometry
+    None =>
+      abort("circle primitive asset conversion must produce Mesh3dGeometry")
+  }
+  debug_inspect(circle_geometry.vertex_count(), content="32")
+  debug_inspect(circle_geometry.indices_or_sequential().length(), content="90")
+  debug_inspect(circle_geometry.primitive_topology(), content="TriangleList")
+
+  let segment_mesh = primitive_parity_into_mesh_asset(
+    @math.Segment2d::new(
+      @math.Vec2::new(-1.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+    ),
+  )
+  let segment_geometry = match segment_mesh.as_3d_geometry() {
+    Some(geometry) => geometry
+    None =>
+      abort("segment primitive asset conversion must produce Mesh3dGeometry")
+  }
+  debug_inspect(segment_geometry.vertex_count(), content="2")
+  debug_inspect(segment_geometry.indices_or_sequential().length(), content="2")
+  debug_inspect(segment_geometry.primitive_topology(), content="LineList")
+
+  let ring_mesh = primitive_parity_into_mesh_asset(
+    @math.Circle::new(10.0F).to_ring(1.0F),
+  )
+  let ring_geometry = match ring_mesh.as_3d_geometry() {
+    Some(geometry) => geometry
+    None => abort("ring primitive asset conversion must produce Mesh3dGeometry")
+  }
+  debug_inspect(ring_geometry.vertex_count(), content="64")
+  debug_inspect(ring_geometry.indices_or_sequential().length(), content="192")
+  debug_inspect(ring_geometry.primitive_topology(), content="TriangleList")
 }

@@ -13,17 +13,6 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = ["AccessibilityNode"]
-
-///|
-pub let ecs_resources : Array[String] = [
-  "AccessibilityRequested", "ManageAccessibilityUpdates",
-]
-
-///|
-pub let ecs_messages : Array[String] = ["ActionRequest"]
-
-///|
 pub let ecs_key_accessibility_node : @ecs.ComponentKey[AccessibilityNode] = @ecs.register_component(
   debug_name="mgstudio_a11y::AccessibilityNode",
 )
@@ -46,22 +35,22 @@ pub let ecs_msg_key_action_request : @ecs.MessageKey[ActionRequest] = @ecs.regis
 )
 
 ///|
-pub impl @ecs.Component for AccessibilityNode with component() {
+pub impl @ecs.Component for AccessibilityNode with fn component() {
   ecs_key_accessibility_node
 }
 
 ///|
-pub impl @ecs.Message for ActionRequest with message() {
+pub impl @ecs.Message for ActionRequest with fn message() {
   ecs_msg_key_action_request
 }
 
 ///|
-pub impl @app.Resource for AccessibilityRequested with resource() {
+pub impl @app.Resource for AccessibilityRequested with fn resource() {
   ecs_res_key_accessibility_requested
 }
 
 ///|
-pub impl @app.Resource for ManageAccessibilityUpdates with resource() {
+pub impl @app.Resource for ManageAccessibilityUpdates with fn resource() {
   ecs_res_key_manage_accessibility_updates
 }
 

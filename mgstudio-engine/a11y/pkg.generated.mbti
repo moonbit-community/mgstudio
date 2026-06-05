@@ -21,19 +21,13 @@ pub fn accessibility_plugin_with(@app.App[@ecs.World], AccessibilityPlugin) -> @
 
 pub fn accessibility_system_set_name(AccessibilitySystems) -> String
 
-pub let ecs_components : Array[String]
-
 pub let ecs_key_accessibility_node : @ecs.ComponentKey[AccessibilityNode]
-
-pub let ecs_messages : Array[String]
 
 pub let ecs_msg_key_action_request : @ecs.MessageKey[ActionRequest]
 
 pub let ecs_res_key_accessibility_requested : @ecs.ResourceKey[AccessibilityRequested]
 
 pub let ecs_res_key_manage_accessibility_updates : @ecs.ResourceKey[ManageAccessibilityUpdates]
-
-pub let ecs_resources : Array[String]
 
 pub fn get_accessibility_requested_resource(@ecs.World) -> @ecs.ResourceAccess[AccessibilityRequested]
 

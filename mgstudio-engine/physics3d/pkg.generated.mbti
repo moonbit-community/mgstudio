@@ -15,8 +15,6 @@ import {
 }
 
 // Values
-pub let ecs_components : Array[String]
-
 pub let ecs_key_active_collision_types3d : @ecs.ComponentKey[ActiveCollisionTypes3d]
 
 pub let ecs_key_active_events3d : @ecs.ComponentKey[ActiveEvents3d]
@@ -98,8 +96,6 @@ pub let ecs_res_key_physics3d_context : @ecs.ResourceKey[Physics3dContext]
 pub let ecs_res_key_physics3d_events : @ecs.ResourceKey[Physics3dEvents]
 
 pub let ecs_res_key_physics3d_hooks_config : @ecs.ResourceKey[Physics3dHooksConfig]
-
-pub let ecs_resources : Array[String]
 
 pub fn get_physics3d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dConfig]
 

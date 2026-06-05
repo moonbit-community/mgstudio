@@ -196,7 +196,6 @@ fn toggle(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(GameState::default())
   .insert_resource(TickTock::{
     timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),

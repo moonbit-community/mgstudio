@@ -17,7 +17,7 @@
 pub using @sprite_render {type SceneCullContext}
 
 ///|
-pub using @sprite_render {type UiBorderRect}
+pub using @sprite_render {type BorderRect}
 
 ///|
 pub using @sprite_render {type UiCornerRadii}

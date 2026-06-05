@@ -115,8 +115,8 @@ pub fn ComputedUiRenderTargetInfo::logical_size(
 pub struct UiLayout {
   stack_index : Int
   rect : @math.Rect
-  border : @sprite.UiBorderRect
-  padding : @sprite.UiBorderRect
+  border : @sprite.BorderRect
+  padding : @sprite.BorderRect
   border_radius : ResolvedBorderRadius
   outline_width : Float
   outline_offset : Float
@@ -127,8 +127,8 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
   UiLayout::{
     stack_index: 0,
     rect,
-    border: @sprite.UiBorderRect::zero(),
-    padding: @sprite.UiBorderRect::zero(),
+    border: @sprite.BorderRect::BorderRect(),
+    padding: @sprite.BorderRect::BorderRect(),
     border_radius: ResolvedBorderRadius::ResolvedBorderRadius(),
     outline_width: 0.0F,
     outline_offset: 0.0F,
@@ -138,8 +138,8 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
 ///|
 pub fn UiLayout::from_computed(
   rect : @math.Rect,
-  border : @sprite.UiBorderRect,
-  padding : @sprite.UiBorderRect,
+  border : @sprite.BorderRect,
+  padding : @sprite.BorderRect,
   border_radius : ResolvedBorderRadius,
   outline_width : Float,
   outline_offset : Float,
@@ -179,12 +179,12 @@ pub fn UiLayout::size(self : UiLayout) -> @math.Vec2 {
 }
 
 ///|
-pub fn UiLayout::border(self : UiLayout) -> @sprite.UiBorderRect {
+pub fn UiLayout::border(self : UiLayout) -> @sprite.BorderRect {
   self.border
 }
 
 ///|
-pub fn UiLayout::padding(self : UiLayout) -> @sprite.UiBorderRect {
+pub fn UiLayout::padding(self : UiLayout) -> @sprite.BorderRect {
   self.padding
 }
 
@@ -222,11 +222,11 @@ pub fn UiLayout::outlined_node_size(self : UiLayout) -> @math.Vec2 {
 }
 
 ///|
-pub fn UiLayout::content_inset(self : UiLayout) -> @sprite.UiBorderRect {
-  @sprite.UiBorderRect::new(
+pub fn UiLayout::content_inset(self : UiLayout) -> @sprite.BorderRect {
+  @sprite.BorderRect::new(
     self.border.left + self.padding.left,
-    self.border.top + self.padding.top,
     self.border.right + self.padding.right,
+    self.border.top + self.padding.top,
     self.border.bottom + self.padding.bottom,
   )
 }
@@ -273,7 +273,7 @@ pub fn UiLayout::resolve_clip_rect(
 ) -> @math.Rect {
   let mut clip_rect = self.border_box()
   let clip_inset = match overflow_clip_margin.visual_box {
-    OverflowClipBox::BorderBox => @sprite.UiBorderRect::zero()
+    OverflowClipBox::BorderBox => @sprite.BorderRect::BorderRect()
     OverflowClipBox::ContentBox => self.content_inset()
     OverflowClipBox::PaddingBox => self.border
   }
