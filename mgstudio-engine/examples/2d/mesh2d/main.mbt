@@ -37,7 +37,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::Rectangle()).to_mesh(),
+            @sprite.mesh2d_geometry_rectangle(@math.Rectangle::Rectangle()).to_mesh(),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(

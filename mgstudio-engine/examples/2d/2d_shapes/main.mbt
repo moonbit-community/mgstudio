@@ -77,19 +77,18 @@ fn setup(
     mesh_assets,
   ) {
     [
-      mesh_assets |> @sprite.add_mesh(@sprite.Circle::new(50.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.CircularSector::new(50.0F, 1.0F)),
-      mesh_assets
-      |> @sprite.add_mesh(@sprite.CircularSegment::new(50.0F, 1.25F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.Ellipse::new(25.0F, 50.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.Rectangle::new(50.0F, 100.0F)),
-      mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
+      mesh_assets |> @sprite.add_mesh(@math.Circle::new(50.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.CircularSector::new(50.0F, 1.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.CircularSegment::new(50.0F, 1.25F)),
+      mesh_assets |> @sprite.add_mesh(@math.Ellipse::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.Annulus::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.Capsule2d::new(25.0F, 50.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.Rhombus::new(75.0F, 100.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.Rectangle::new(50.0F, 100.0F)),
+      mesh_assets |> @sprite.add_mesh(@math.RegularPolygon::new(50.0F, 6)),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Triangle2d::new(
+        @math.Triangle2d::new(
           @math.Vec2::new(0.0F, 50.0F),
           @math.Vec2::new(-50.0F, -50.0F),
           @math.Vec2::new(50.0F, -50.0F),
@@ -97,14 +96,14 @@ fn setup(
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Segment2d::new(
+        @math.Segment2d::new(
           @math.Vec2::new(-50.0F, 50.0F),
           @math.Vec2::new(50.0F, -50.0F),
         ),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Polyline2d::new([
+        @math.Polyline2d::new([
           @math.Vec2::new(-50.0F, 50.0F),
           @math.Vec2::new(0.0F, -50.0F),
           @math.Vec2::new(50.0F, 50.0F),
@@ -115,51 +114,44 @@ fn setup(
   let rings : Array[@asset.Handle[@mesh.Mesh]] = meshes.modify(fn(mesh_assets) {
     [
       mesh_assets
-      |> @sprite.add_mesh(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
+      |> @sprite.add_mesh(@math.Circle::new(50.0F).to_ring(THICKNESS)),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Ring::new(
-          @sprite.CircularSector::new(50.0F, 1.0F),
-          @sprite.CircularSector::new(45.0F, 1.0F),
+        @math.Ring::new(
+          @math.CircularSector::new(50.0F, 1.0F),
+          @math.CircularSector::new(45.0F, 1.0F),
         ),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
+        @math.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Ring::new(
-          @sprite.Ellipse::new(25.0F, 50.0F),
-          @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
+        @math.Ring::new(
+          @math.Ellipse::new(25.0F, 50.0F),
+          @math.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
         ),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Ring::new(
-          @sprite.Circle::new(50.0F),
-          @sprite.Circle::new(25.0F),
-        ),
+        @math.Ring::new(@math.Circle::new(50.0F), @math.Circle::new(25.0F)),
+      ),
+      mesh_assets
+      |> @sprite.add_mesh(@math.Capsule2d::new(25.0F, 50.0F).to_ring(THICKNESS)),
+      mesh_assets
+      |> @sprite.add_mesh(@math.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS)),
+      mesh_assets
+      |> @sprite.add_mesh(
+        @math.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Capsule2d::new(25.0F, 50.0F).to_ring(THICKNESS),
+        @math.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
       ),
       mesh_assets
       |> @sprite.add_mesh(
-        @sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS),
-      ),
-      mesh_assets
-      |> @sprite.add_mesh(
-        @sprite.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
-      ),
-      mesh_assets
-      |> @sprite.add_mesh(
-        @sprite.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
-      ),
-      mesh_assets
-      |> @sprite.add_mesh(
-        @sprite.Triangle2d::new(
+        @math.Triangle2d::new(
           @math.Vec2::new(0.0F, 50.0F),
           @math.Vec2::new(-50.0F, -50.0F),
           @math.Vec2::new(50.0F, -50.0F),

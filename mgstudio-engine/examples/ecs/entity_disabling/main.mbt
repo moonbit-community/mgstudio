@@ -69,15 +69,15 @@ fn setup_scene(
       [
         (
           @ecs.Name::new("Annulus"),
-          mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
+          mesh_assets |> @sprite.add_mesh(@math.Annulus::new(25.0F, 50.0F)),
         ),
         (
           @ecs.Name::new("Bestagon"),
-          mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
+          mesh_assets |> @sprite.add_mesh(@math.RegularPolygon::new(50.0F, 6)),
         ),
         (
           @ecs.Name::new("Rhombus"),
-          mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
+          mesh_assets |> @sprite.add_mesh(@math.Rhombus::new(75.0F, 100.0F)),
         ),
       ]
     },

@@ -77,7 +77,7 @@ fn setup(
   let quad_mesh = meshes
     .peek()
     .add(
-      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
+      @sprite.mesh2d_geometry_rectangle(@math.Rectangle::new(24.0F, 24.0F)).to_mesh(),
     )
   let base_material = materials
     .peek()

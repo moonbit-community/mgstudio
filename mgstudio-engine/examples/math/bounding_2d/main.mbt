@@ -62,12 +62,12 @@ priv struct Spin {}
 
 ///|
 priv enum Shape {
-  Rectangle(@sprite.Rectangle)
-  Circle(@sprite.Circle)
-  Triangle(@sprite.Triangle2d)
-  Line(@sprite.Segment2d)
-  Capsule(@sprite.Capsule2d)
-  Polygon(@sprite.RegularPolygon)
+  Rectangle(@math.Rectangle)
+  Circle(@math.Circle)
+  Triangle(@math.Triangle2d)
+  Line(@math.Segment2d)
+  Capsule(@math.Capsule2d)
+  Polygon(@math.RegularPolygon)
 }
 
 ///|
@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(-OFFSET_X, OFFSET_Y, 0.0F),
-    Shape::Circle(@sprite.Circle::new(45.0F)),
+    Shape::Circle(@math.Circle::new(45.0F)),
     DesiredVolume::Aabb,
     false,
   )
@@ -261,7 +261,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(0.0F, OFFSET_Y, 0.0F),
-    Shape::Rectangle(@sprite.Rectangle::new(80.0F, 80.0F)),
+    Shape::Rectangle(@math.Rectangle::new(80.0F, 80.0F)),
     DesiredVolume::Circle,
     true,
   )
@@ -270,7 +270,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @transform.Transform::from_xyz(OFFSET_X, OFFSET_Y, 0.0F),
     Shape::Triangle(
-      @sprite.Triangle2d::new(
+      @math.Triangle2d::new(
         @math.Vec2::new(-40.0F, -40.0F),
         @math.Vec2::new(-20.0F, 40.0F),
         @math.Vec2::new(40.0F, 50.0F),
@@ -286,7 +286,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @transform.Transform::from_xyz(-OFFSET_X, -OFFSET_Y, 0.0F),
     Shape::Line(
-      @sprite.Segment2d::new(
+      @math.Segment2d::new(
         @math.Vec2::new(-half_line.x, -half_line.y),
         @math.Vec2::new(half_line.x, half_line.y),
       ),
@@ -298,7 +298,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(0.0F, -OFFSET_Y, 0.0F),
-    Shape::Capsule(@sprite.Capsule2d::new(25.0F, 100.0F).with_segments(16)),
+    Shape::Capsule(@math.Capsule2d::new(25.0F, 100.0F).with_segments(16)),
     DesiredVolume::Aabb,
     true,
   )
@@ -306,7 +306,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(OFFSET_X, -OFFSET_Y, 0.0F),
-    Shape::Polygon(@sprite.RegularPolygon::new(50.0F, 6)),
+    Shape::Polygon(@math.RegularPolygon::new(50.0F, 6)),
     DesiredVolume::Circle,
     true,
   )
@@ -843,7 +843,7 @@ fn transformed_points(
 }
 
 ///|
-fn polygon_points_local(polygon : @sprite.RegularPolygon) -> Array[@math.Vec2] {
+fn polygon_points_local(polygon : @math.RegularPolygon) -> Array[@math.Vec2] {
   let safe_sides = if polygon.sides < 3 { 3 } else { polygon.sides }
   let points : Array[@math.Vec2] = []
   for i in 0..<safe_sides {
@@ -860,7 +860,7 @@ fn polygon_points_local(polygon : @sprite.RegularPolygon) -> Array[@math.Vec2] {
 }
 
 ///|
-fn capsule_points_local(capsule : @sprite.Capsule2d) -> Array[@math.Vec2] {
+fn capsule_points_local(capsule : @math.Capsule2d) -> Array[@math.Vec2] {
   let arc_segments = if capsule.segments < 12 { 12 } else { capsule.segments }
   let points : Array[@math.Vec2] = []
   for i in 0..<=arc_segments {

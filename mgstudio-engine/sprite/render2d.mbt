@@ -278,63 +278,6 @@ pub impl Show for PanCamera with fn output(self, logger) {
 }
 
 ///|
-pub type Capsule2d = @math.Capsule2d
-
-///|
-pub type Rectangle = @math.Rectangle
-
-///|
-pub type Circle = @math.Circle
-
-///|
-pub type Arc2d = @math.Arc2d
-
-///|
-pub type Ellipse = @math.Ellipse
-
-///|
-pub type Annulus = @math.Annulus
-
-///|
-pub type Line2d = @math.Line2d
-
-///|
-pub type Plane2d = @math.Plane2d
-
-///|
-pub type Rhombus = @math.Rhombus
-
-///|
-pub type RegularPolygon = @math.RegularPolygon
-
-///|
-pub type Triangle2d = @math.Triangle2d
-
-///|
-pub type Segment2d = @math.Segment2d
-
-///|
-pub type Polyline2d = @math.Polyline2d
-
-///|
-pub type Polygon = @math.Polygon
-
-///|
-pub type ConvexPolygon = @math.ConvexPolygon
-
-///|
-pub type CircularMeshUvMode = @math.CircularMeshUvMode
-
-///|
-pub type CircularSector = @math.CircularSector
-
-///|
-pub type CircularSegment = @math.CircularSegment
-
-///|
-pub type Ring[P] = @math.Ring[P]
-
-///|
 type Mesh2d = @mesh.Mesh2d
 
 ///|
@@ -5467,78 +5410,86 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
 
 ///|
 test "render2d: shape geometry builders validate" {
-  let polyline = Polyline2d::new([
+  let polyline = @math.Polyline2d::new([
     @math.Vec2::new(-40.0F, 40.0F),
     @math.Vec2::new(0.0F, -40.0F),
     @math.Vec2::new(40.0F, 40.0F),
   ]).with_half_thickness(3.0F)
   let geometries : Array[@mesh.Mesh2dGeometry] = [
     @mesh_primitives.circle_to_mesh2d_geometry(
-      Circle::new(10.0F).with_vertices(24),
+      @math.Circle::new(10.0F).with_vertices(24),
     ),
     @mesh_primitives.ellipse_to_mesh2d_geometry(
-      Ellipse::new(8.0F, 12.0F).with_vertices(24),
+      @math.Ellipse::new(8.0F, 12.0F).with_vertices(24),
     ),
     @mesh_primitives.annulus_to_mesh2d_geometry(
-      Annulus::new(4.0F, 10.0F).with_vertices(24),
+      @math.Annulus::new(4.0F, 10.0F).with_vertices(24),
     ),
     @mesh_primitives.generic_circle_ring_to_mesh2d_geometry(
-      Ring::new(
-        Circle::new(10.0F).with_vertices(24),
-        Circle::new(7.0F).with_vertices(24),
+      @math.Ring::new(
+        @math.Circle::new(10.0F).with_vertices(24),
+        @math.Circle::new(7.0F).with_vertices(24),
       ),
     ),
     @mesh_primitives.generic_circular_sector_ring_to_mesh2d_geometry(
-      Ring::new(
-        CircularSector::new(10.0F, 1.0F).with_vertices(24),
-        CircularSector::new(7.0F, 1.0F).with_vertices(24),
+      @math.Ring::new(
+        @math.CircularSector::new(10.0F, 1.0F).with_vertices(24),
+        @math.CircularSector::new(7.0F, 1.0F).with_vertices(24),
       ),
     ),
     @mesh_primitives.circular_sector_to_mesh2d_geometry(
-      CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
+      @math.CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
     @mesh_primitives.circular_segment_ring_to_mesh2d_geometry(
-      CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24).to_ring(2.0F),
+      @math.CircularSegment::from_turns(10.0F, 0.35F)
+      .with_vertices(24)
+      .to_ring(2.0F),
     ),
     @mesh_primitives.circular_segment_to_mesh2d_geometry(
-      CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
+      @math.CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
     @mesh_primitives.generic_ellipse_ring_to_mesh2d_geometry(
-      Ring::new(
-        Ellipse::new(8.0F, 12.0F).with_vertices(24),
-        Ellipse::new(6.0F, 10.0F).with_vertices(24),
+      @math.Ring::new(
+        @math.Ellipse::new(8.0F, 12.0F).with_vertices(24),
+        @math.Ellipse::new(6.0F, 10.0F).with_vertices(24),
       ),
     ),
-    @mesh_primitives.rhombus_to_mesh2d_geometry(Rhombus::new(12.0F, 20.0F)),
+    @mesh_primitives.rhombus_to_mesh2d_geometry(
+      @math.Rhombus::new(12.0F, 20.0F),
+    ),
     @mesh_primitives.rhombus_ring_to_mesh2d_geometry(
-      Rhombus::new(12.0F, 20.0F).to_ring(1.5F),
+      @math.Rhombus::new(12.0F, 20.0F).to_ring(1.5F),
     ),
     @mesh_primitives.regular_polygon_to_mesh2d_geometry(
-      RegularPolygon::new(10.0F, 6),
+      @math.RegularPolygon::new(10.0F, 6),
     ),
     @mesh_primitives.regular_polygon_ring_to_mesh2d_geometry(
-      RegularPolygon::new(10.0F, 6).to_ring(1.0F),
+      @math.RegularPolygon::new(10.0F, 6).to_ring(1.0F),
     ),
-    @mesh_primitives.triangle_to_mesh2d_geometry(@math.Triangle2d::Triangle2d()),
+    @mesh_primitives.triangle_to_mesh2d_geometry(
+      @math.Triangle2d::@math.Triangle2d(),
+    ),
     @mesh_primitives.triangle_ring_to_mesh2d_geometry(
-      @math.Triangle2d::Triangle2d().to_ring(0.1F),
+      @math.Triangle2d::@math.Triangle2d().to_ring(0.1F),
     ),
     @mesh_primitives.segment_to_mesh2d_geometry(
-      Segment2d::new(
+      @math.Segment2d::new(
         @math.Vec2::new(-30.0F, 30.0F),
         @math.Vec2::new(30.0F, -30.0F),
       ).with_half_thickness(3.0F),
     ),
     @mesh_primitives.polyline_to_mesh2d_geometry(polyline),
     @mesh_primitives.capsule_to_mesh2d_geometry(
-      Capsule2d::new(5.0F, 20.0F).with_segments(16),
+      @math.Capsule2d::new(5.0F, 20.0F).with_segments(16),
     ),
     @mesh_primitives.capsule_ring_to_mesh2d_geometry(
-      Capsule2d::new(5.0F, 20.0F).with_segments(16).to_ring(1.0F),
+      @math.Capsule2d::new(5.0F, 20.0F).with_segments(16).to_ring(1.0F),
     ),
-    @mesh_primitives.rectangle_to_mesh2d_geometry(Rectangle::new(10.0F, 20.0F)),
+    @mesh_primitives.rectangle_to_mesh2d_geometry(
+      @math.Rectangle::new(10.0F, 20.0F),
+    ),
     @mesh_primitives.rectangle_ring_to_mesh2d_geometry(
-      Rectangle::new(10.0F, 20.0F).to_ring(1.0F),
+      @math.Rectangle::new(10.0F, 20.0F).to_ring(1.0F),
     ),
   ]
   let mut ok = true

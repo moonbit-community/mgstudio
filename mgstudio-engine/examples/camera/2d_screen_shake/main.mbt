@@ -211,7 +211,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(1000.0F, 700.0F),
+              @math.Rectangle::new(1000.0F, 700.0F),
             ).to_mesh(),
           ),
         ),
@@ -235,7 +235,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(50.0F, 100.0F),
+              @math.Rectangle::new(50.0F, 100.0F),
             ).to_mesh(),
           ),
         ),
@@ -260,7 +260,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(50.0F, 50.0F),
+              @math.Rectangle::new(50.0F, 50.0F),
             ).to_mesh(),
           ),
         ),
@@ -285,7 +285,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(70.0F, 50.0F),
+              @math.Rectangle::new(70.0F, 50.0F),
             ).to_mesh(),
           ),
         ),

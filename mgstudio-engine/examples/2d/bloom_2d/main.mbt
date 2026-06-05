@@ -153,7 +153,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_circle(@sprite.Circle::new(100.0F)).to_mesh(),
+            @sprite.mesh2d_geometry_circle(@math.Circle::new(100.0F)).to_mesh(),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -178,7 +178,7 @@ fn setup(
           .peek()
           .add(
             @sprite.mesh2d_geometry_regular_polygon(
-              @sprite.RegularPolygon::new(100.0F, 6),
+              @math.RegularPolygon::new(100.0F, 6),
             ).to_mesh(),
           ),
         ),

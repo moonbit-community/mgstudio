@@ -776,43 +776,6 @@ pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
 pub fn UiCornerRadii::zero() -> Self
 
 // Type aliases
-pub using @math {type Annulus}
-
-pub using @math {type Arc2d}
-
-pub using @math {type Capsule2d}
-
-pub using @math {type Circle}
-
-pub using @math {type CircularMeshUvMode}
-
-pub using @math {type CircularSector}
-
-pub using @math {type CircularSegment}
-
-pub using @math {type ConvexPolygon}
-
-pub using @math {type Ellipse}
-
-pub using @math {type Line2d}
-
-pub using @math {type Plane2d}
-
-pub using @math {type Polygon}
-
-pub using @math {type Polyline2d}
-
-pub using @math {type Rectangle}
-
-pub using @math {type RegularPolygon}
-
-pub using @math {type Rhombus}
-
-pub using @math {type Ring}
-
-pub using @math {type Segment2d}
-
-pub using @math {type Triangle2d}
 
 // Traits
 pub(open) trait GizmoConfigGroup {

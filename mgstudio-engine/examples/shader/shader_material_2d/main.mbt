@@ -164,7 +164,7 @@ fn setup(
   let mesh = meshes
     .peek()
     .add(
-      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::Rectangle()).to_mesh(),
+      @sprite.mesh2d_geometry_rectangle(@math.Rectangle::Rectangle()).to_mesh(),
     )
   let material = materials
     .peek()

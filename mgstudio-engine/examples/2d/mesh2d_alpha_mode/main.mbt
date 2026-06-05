@@ -36,7 +36,7 @@ fn setup(
     .peek()
     .add(
       @sprite.mesh2d_geometry_rectangle(
-        @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+        @math.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
       ).to_mesh(),
     )
   let white = @color.Color::srgba(1.0F, 1.0F, 1.0F, 1.0F)

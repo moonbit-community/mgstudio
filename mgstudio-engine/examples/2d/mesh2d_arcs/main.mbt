@@ -29,12 +29,12 @@ const ARC_RADIUS : Float = 40.0F
 
 ///|
 struct SectorBounds {
-  shape : @sprite.CircularSector
+  shape : @math.CircularSector
 }
 
 ///|
 struct SegmentBounds {
-  shape : @sprite.CircularSegment
+  shape : @math.CircularSegment
 }
 
 ///|
@@ -119,7 +119,7 @@ fn setup(
     let fraction = int_to_float(i + 1) / int_to_float(NUM_SLICES)
     let x = SPACING_X * int_to_float(i) - offset_x
 
-    let sector = @sprite.CircularSector::from_turns(ARC_RADIUS, fraction)
+    let sector = @math.CircularSector::from_turns(ARC_RADIUS, fraction)
     let sector_angle = -sector.half_angle()
     ignore(
       commands.spawn(
@@ -144,7 +144,7 @@ fn setup(
       ),
     )
 
-    let segment = @sprite.CircularSegment::from_turns(ARC_RADIUS, fraction)
+    let segment = @math.CircularSegment::from_turns(ARC_RADIUS, fraction)
     let segment_angle = -@math.pi_half()
     ignore(
       commands.spawn(

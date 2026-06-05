@@ -208,7 +208,7 @@ fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
     .peek()
     .add(
       @mesh.Mesh::from_2d_geometry(
-        mesh2d_geometry_rectangle(Rectangle::new(width, height)),
+        mesh2d_geometry_rectangle(@math.Rectangle::new(width, height)),
       ),
     ),
   )
@@ -665,7 +665,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           .peek()
           .add(
             @mesh.Mesh::from_2d_geometry(
-              mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+              mesh2d_geometry_rectangle(@math.Rectangle::new(8.0F, 6.0F)),
             ),
           )
         materials.set_changed()
@@ -716,7 +716,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
     .peek()
     .add(
       @mesh.Mesh::from_2d_geometry(
-        mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+        mesh2d_geometry_rectangle(@math.Rectangle::new(8.0F, 6.0F)),
       ),
     )
   let entity = world.spawn()
@@ -758,7 +758,7 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
     .peek()
     .add(
       @mesh.Mesh::from_2d_geometry(
-        mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+        mesh2d_geometry_rectangle(@math.Rectangle::new(8.0F, 6.0F)),
       ),
     )
   let entity = world.spawn()
