@@ -118,13 +118,13 @@ pub impl[T : WidgetValue] @ecs.Component for WidgetClickSender[T] with fn compon
 }
 
 ///|
-fn white() -> @sprite.Color {
-  @sprite.Color::white()
+fn white() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn black() -> @sprite.Color {
-  @sprite.Color::black()
+fn black() -> @color.Color {
+  @color.Color::black()
 }
 
 ///|
@@ -179,7 +179,7 @@ fn option_button_border_radius(
 }
 
 ///|
-fn radio_button_background_color(selected : Bool) -> @sprite.Color {
+fn radio_button_background_color(selected : Bool) -> @color.Color {
   if selected {
     white()
   } else {
@@ -188,7 +188,7 @@ fn radio_button_background_color(selected : Bool) -> @sprite.Color {
 }
 
 ///|
-fn radio_button_foreground_color(selected : Bool) -> @sprite.Color {
+fn radio_button_foreground_color(selected : Bool) -> @color.Color {
   if selected {
     black()
   } else {
@@ -209,7 +209,7 @@ pub fn main_ui_node() -> @ui.Node {
 ///|
 pub fn ui_text(
   label : String,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> (@text.Text, @text.TextFont, @text.TextColor) {
   (
     @text.Text::new(label),

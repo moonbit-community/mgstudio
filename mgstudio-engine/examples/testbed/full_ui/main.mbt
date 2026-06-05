@@ -20,7 +20,7 @@ const GRID_ROWS : Int = 6
 
 ///|
 struct IdleColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -56,7 +56,7 @@ fn setup(
       .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
       .with_row_gap(@ui.Val::Px(12.0F))
       .with_align_items(@ui.AlignItems::Stretch),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.12F, 0.16F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.12F, 0.16F)),
     ),
   )
   ignore(
@@ -65,7 +65,7 @@ fn setup(
         @hierarchy.Parent::new(root),
         @text.Text::new("Full UI Testbed"),
         @text.TextFont::TextFont().with_font(font).with_font_size(32.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @ui.Node::Node().with_height(@ui.Val::Px(44.0F)),
       ),
     ),
@@ -96,7 +96,7 @@ fn setup(
   let cell_count = GRID_COLUMNS * GRID_ROWS
   for i in 0..<cell_count {
     let h = float_from_int(i * 29 % 360)
-    let idle = @sprite.Color::hsl(h, 0.72F, 0.62F)
+    let idle = @color.Color::hsl(h, 0.72F, 0.62F)
     ignore(
       commands.spawn(
         (
@@ -108,7 +108,7 @@ fn setup(
           .with_height(@ui.Val::Percent(100.0F))
           .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
           @ui.BackgroundColor::new(idle),
-          @ui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.2F)),
+          @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.2F)),
         ),
       ),
     )
@@ -129,8 +129,8 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle) = data
     let next = match interaction.value() {
-      @ui.Interaction::Hovered => @sprite.Color::srgb(1.0F, 0.38F, 0.0F)
-      @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.16F, 0.0F)
+      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.38F, 0.0F)
+      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.16F, 0.0F)
       _ => idle.value().color
     }
     color.set(@ui.BackgroundColor::new(next))

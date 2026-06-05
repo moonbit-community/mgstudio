@@ -289,7 +289,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @color.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
@@ -320,7 +320,7 @@ fn setup(world : @ecs.World) -> Unit {
     directional,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       MAIN_LIGHT_INTENSITY,
       true,
     ),
@@ -340,7 +340,7 @@ fn setup(world : @ecs.World) -> Unit {
     spot,
     @pbr.ecs_key_spot_light,
     @pbr.SpotLight::new(
-      @sprite.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
       SPOT_LIGHT_INTENSITY,
       30.0F,
       0.25F,
@@ -368,7 +368,7 @@ fn setup(world : @ecs.World) -> Unit {
     point,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
-      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       POINT_LIGHT_INTENSITY,
       20.0F,
       true,
@@ -390,14 +390,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spot_proxy_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
+      @color.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
   let point_proxy_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
+      @color.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
@@ -439,7 +439,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

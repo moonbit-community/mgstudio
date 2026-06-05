@@ -41,7 +41,7 @@ fn spawn_text_block(
   content : String,
   font : @asset.Handle[@asset.Font],
   linebreak : @text.LineBreak,
-  background : @sprite.Color,
+  background : @color.Color,
 ) -> Unit {
   let entity = world.spawn_empty()
   try! world.set_by_key(
@@ -77,7 +77,7 @@ fn spawn_text_block(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     entity,
@@ -135,7 +135,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column),
-    Some(@ui.BackgroundColor::new(@sprite.Color::black())),
+    Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
@@ -190,7 +190,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F))),
         Some(
           @ui.BackgroundColor::new(
-            @sprite.Color::srgb(0.35F, 0.25F + mix * 0.35F, 0.95F - mix * 0.45F),
+            @color.Color::srgb(0.35F, 0.25F + mix * 0.35F, 0.95F - mix * 0.45F),
           ),
         ),
       )
@@ -201,7 +201,7 @@ fn setup(world : @ecs.World) -> Unit {
         "JustifyContent::\{justify_content_name(justification)}",
         font,
         linebreak,
-        @sprite.Color::srgb(0.55F, 0.0F, 0.0F),
+        @color.Color::srgb(0.55F, 0.0F, 0.0F),
       )
       spawn_text_block(
         world,
@@ -209,7 +209,7 @@ fn setup(world : @ecs.World) -> Unit {
         "LineBreak::\{linebreak_name(linebreak)}",
         font,
         linebreak,
-        @sprite.Color::srgb(0.4F, 0.0F, 0.0F),
+        @color.Color::srgb(0.4F, 0.0F, 0.0F),
       )
       for i in 0..<messages.length() {
         spawn_text_block(
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
           messages[i],
           font,
           linebreak,
-          @sprite.Color::srgb(0.8F - float_ratio(i, 5) * 0.35F, 0.0F, 0.0F),
+          @color.Color::srgb(0.8F - float_ratio(i, 5) * 0.35F, 0.0F, 0.0F),
         )
       }
     }

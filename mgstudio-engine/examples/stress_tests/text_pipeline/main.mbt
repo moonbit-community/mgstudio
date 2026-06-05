@@ -64,7 +64,7 @@ fn setup(
           @text.TextFont::TextFont()
           .with_font(mono_font)
           .with_font_size(Float::from_double((4 + i % 10).to_double())),
-          @text.TextColor::new(@sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
+          @text.TextColor::new(@color.Color::srgb(0.0F, 0.0F, 1.0F)),
         ),
       ),
     )
@@ -76,7 +76,7 @@ fn setup(
           @text.TextFont::TextFont()
           .with_font(sans_font)
           .with_font_size(Float::from_double((4 + i % 11).to_double())),
-          @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
+          @text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)),
         ),
       ),
     )

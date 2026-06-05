@@ -24,38 +24,38 @@ priv struct WireframeState {
 let wireframe_state : Ref[WireframeState] = Ref({ controls_text: None })
 
 ///|
-fn color_white() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
+fn color_white() -> @color.Color {
+  @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_deep_pink() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
+fn color_deep_pink() -> @color.Color {
+  @color.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
 }
 
 ///|
-fn color_lime() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_lime() -> @color.Color {
+  @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+fn color_red() -> @color.Color {
+  @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_orange() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
+fn color_orange() -> @color.Color {
+  @color.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_blue() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+fn color_blue() -> @color.Color {
+  @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_black() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+fn color_black() -> @color.Color {
+  @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
@@ -68,7 +68,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_approx_eq(a : @sprite.Color, b : @sprite.Color) -> Bool {
+fn color_approx_eq(a : @color.Color, b : @color.Color) -> Bool {
   absf(a.r - b.r) <= COLOR_EPSILON &&
   absf(a.g - b.g) <= COLOR_EPSILON &&
   absf(a.b - b.b) <= COLOR_EPSILON &&
@@ -76,7 +76,7 @@ fn color_approx_eq(a : @sprite.Color, b : @sprite.Color) -> Bool {
 }
 
 ///|
-fn color_label(color : @sprite.Color) -> String {
+fn color_label(color : @color.Color) -> String {
   if color_approx_eq(color, color_white()) {
     "White"
   } else if color_approx_eq(color, color_deep_pink()) {
@@ -150,7 +150,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     controls_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   try! world.set_by_key(
     controls_entity,

@@ -36,7 +36,7 @@ pub(all) enum FieldValue {
   Float(Float?)
   Bool(Bool)
   String(String?)
-  Color(@sprite.Color)
+  Color(@color.Color)
   FilePath(String?)
   Enum(String?)
   Tile(TilesetRectangle?)
@@ -46,7 +46,7 @@ pub(all) enum FieldValue {
   Floats(Array[Float?])
   Bools(Array[Bool])
   Strings(Array[String?])
-  Colors(Array[@sprite.Color])
+  Colors(Array[@color.Color])
   FilePaths(Array[String?])
   Enums(Array[String?])
   Tiles(Array[TilesetRectangle?])
@@ -83,7 +83,7 @@ pub struct TilesetRectangle {
 ///|
 pub struct IntGridValueDefinition {
   value : Int
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -171,11 +171,11 @@ pub struct Level {
   world_y : Int
   px_wid : Int
   px_hei : Int
-  bg_color : @sprite.Color
+  bg_color : @color.Color
   bg_pos : LevelBackgroundPosition?
   neighbours : Array[NeighbourLevel]
-  smart_color : @sprite.Color
-  level_bg_color : @sprite.Color?
+  smart_color : @color.Color
+  level_bg_color : @color.Color?
   bg_pivot_x : Float
   bg_pivot_y : Float
   level_bg_pos : BgPos?
@@ -295,8 +295,8 @@ pub fn Definitions::create_int_grid_image(self : Definitions) -> @asset.Image? {
 ///|
 pub struct LdtkJson {
   iid : String
-  bg_color : @sprite.Color
-  default_level_bg_color : @sprite.Color
+  bg_color : @color.Color
+  default_level_bg_color : @color.Color
   external_levels : Bool
   world_layout : String?
   world_grid_width : Int?
@@ -331,19 +331,19 @@ fn ldtk_parse_hex_pair(source : String, start : Int) -> Int {
 }
 
 ///|
-fn ldtk_parse_color_hex(value : String) -> @sprite.Color {
+fn ldtk_parse_color_hex(value : String) -> @color.Color {
   if value.length() == 7 && value.code_unit_at(0).to_int() == 35 {
     let r = Float::from_int(ldtk_parse_hex_pair(value, 1)) / 255.0F
     let g = Float::from_int(ldtk_parse_hex_pair(value, 3)) / 255.0F
     let b = Float::from_int(ldtk_parse_hex_pair(value, 5)) / 255.0F
-    return @sprite.Color::srgb(r, g, b)
+    return @color.Color::srgb(r, g, b)
   }
   if value.length() == 9 && value.code_unit_at(0).to_int() == 35 {
     let r = Float::from_int(ldtk_parse_hex_pair(value, 1)) / 255.0F
     let g = Float::from_int(ldtk_parse_hex_pair(value, 3)) / 255.0F
     let b = Float::from_int(ldtk_parse_hex_pair(value, 5)) / 255.0F
     let a = Float::from_int(ldtk_parse_hex_pair(value, 7)) / 255.0F
-    return @sprite.Color::srgba(r, g, b, a)
+    return @color.Color::srgba(r, g, b, a)
   }
   abort("Invalid LDtk color format: \{value}")
 }
@@ -549,8 +549,8 @@ fn ldtk_field_type_is_enum_array(field_instance_type : String) -> Bool {
 }
 
 ///|
-fn ldtk_decode_field_colors(value : Json) -> Array[@sprite.Color] {
-  let out : Array[@sprite.Color] = []
+fn ldtk_decode_field_colors(value : Json) -> Array[@color.Color] {
+  let out : Array[@color.Color] = []
   for color_json in ldtk_json_array(value) {
     match color_json {
       String(color_hex) => out.push(ldtk_parse_color_hex(color_hex))

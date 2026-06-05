@@ -130,7 +130,7 @@ fn spawn_mesh(
 fn setup_scene_geometry(world : @ecs.World) -> Unit {
   let corridor_floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
+      @color.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
     )
     .with_perceptual_roughness(0.95F)
     .with_metallic(0.0F),
@@ -138,7 +138,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let wall_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
+      @color.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
@@ -146,7 +146,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let block_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
+      @color.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
     )
     .with_perceptual_roughness(0.6F)
     .with_metallic(0.0F),
@@ -222,12 +222,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let fog_volume_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
+      @color.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@sprite.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
+    .with_emissive(@color.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
   )
 
   spawn_mesh(
@@ -287,7 +287,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
   )
   volumetric_fog_state.val.directional_light = Some(directional_light)
 
@@ -301,7 +301,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
     point_light,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
-      @sprite.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
+      @color.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
       10_000.0F,
       150.0F,
       true,
@@ -322,7 +322,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
     spot_light,
     @pbr.ecs_key_spot_light,
     @pbr.SpotLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       50_000.0F,
       150.0F,
       0.76F,
@@ -351,7 +351,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
@@ -444,7 +444,7 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
   let density = clampf(0.34F - brightness * 0.22F, 0.10F, 0.32F)
 
   let fog = @pbr.DistanceFog::new(
-    @sprite.Color::new(
+    @color.Color::new(
       clamp01(0.06F + brightness * 0.42F),
       clamp01(0.06F + brightness * 0.40F),
       clamp01(0.08F + brightness * 0.50F),
@@ -588,7 +588,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
   )
 
   setup_scene_geometry(world)

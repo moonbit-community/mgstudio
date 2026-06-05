@@ -16,24 +16,24 @@
 test "pbr render fog: gpu fog mode follows fog falloff variant" {
   let linear = render3d_gpu_fog_from_view_fog(
     Render3dViewFogData::new(
-      @sprite.Color::white(),
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+      @color.Color::white(),
+      @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
       8.0F,
       Render3dFogFalloff::linear(2.0F, 30.0F),
     ),
   )
   let exponential = render3d_gpu_fog_from_view_fog(
     Render3dViewFogData::new(
-      @sprite.Color::white(),
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+      @color.Color::white(),
+      @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
       8.0F,
       Render3dFogFalloff::exponential(0.2F),
     ),
   )
   let atmospheric = render3d_gpu_fog_from_view_fog(
     Render3dViewFogData::new(
-      @sprite.Color::white(),
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+      @color.Color::white(),
+      @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
       8.0F,
       Render3dFogFalloff::atmospheric(
         @math.Vec3::new(0.1F, 0.2F, 0.3F),
@@ -58,8 +58,8 @@ test "pbr render fog: prepare writes offsets and off mode for missing fog" {
         with_fog,
         Some(
           Render3dViewFogData::new(
-            @sprite.Color::white(),
-            @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+            @color.Color::white(),
+            @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
             8.0F,
             Render3dFogFalloff::exponential_squared(0.05F),
           ),
@@ -100,8 +100,8 @@ test "pbr render fog: apply offsets writes component and meta resource initializ
           entity,
           Some(
             Render3dViewFogData::new(
-              @sprite.Color::white(),
-              @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+              @color.Color::white(),
+              @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
               8.0F,
               Render3dFogFalloff::exponential(0.25F),
             ),

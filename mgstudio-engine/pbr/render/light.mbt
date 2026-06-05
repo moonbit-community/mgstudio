@@ -14,10 +14,10 @@
 
 ///|
 pub(all) struct Render3dLightingState {
-  ambient_color : @sprite.Color
+  ambient_color : @color.Color
   ambient_brightness : Float
   directional_dir : @math.Vec3
-  directional_color : @sprite.Color
+  directional_color : @color.Color
   directional_illuminance : Float
   directional_entity : @core.Entity?
   directional_transform : @transform.Transform
@@ -30,7 +30,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_minimum_distance : Float
   point_entity : @core.Entity?
   point_pos : @math.Vec3
-  point_color : @sprite.Color
+  point_color : @color.Color
   point_intensity : Float
   point_range : Float
   point_shadow_maps_enabled : Bool
@@ -38,7 +38,7 @@ pub(all) struct Render3dLightingState {
   point_shadow_map_near_z : Float
   spot_pos : @math.Vec3
   spot_dir : @math.Vec3
-  spot_color : @sprite.Color
+  spot_color : @color.Color
   spot_intensity : Float
   spot_range : Float
   spot_inner_angle : Float
@@ -115,8 +115,8 @@ fn render3d_transform_back(transform : @transform.Transform) -> @math.Vec3 {
 }
 
 ///|
-fn render3d_scale_color(color : @sprite.Color, scale : Float) -> @sprite.Color {
-  @sprite.Color::new(
+fn render3d_scale_color(color : @color.Color, scale : Float) -> @color.Color {
+  @color.Color::new(
     color.r * scale,
     color.g * scale,
     color.b * scale,
@@ -189,7 +189,7 @@ fn render3d_directional_light_decal_index(
 ///|
 pub struct ExtractedPointLight3d {
   entity : @core.Entity
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   radius : Float
@@ -235,7 +235,7 @@ pub fn ExtractedClusterablePointLight3d::light(
 ///|
 pub struct ExtractedDirectionalLight3d {
   entity : @core.Entity
-  color : @sprite.Color
+  color : @color.Color
   illuminance : Float
   transform : @transform.Transform
   shadow_maps_enabled : Bool
@@ -263,7 +263,7 @@ pub struct GpuDirectionalCascade3d {
 ///|
 pub struct GpuDirectionalLight3d {
   cascades : Array[GpuDirectionalCascade3d]
-  color : @sprite.Color
+  color : @color.Color
   dir_to_light : @math.Vec3
   flags : UInt
   soft_shadow_size : Float
@@ -280,7 +280,7 @@ pub struct GpuDirectionalLight3d {
 ///|
 pub struct GpuLights3d {
   directional_lights : Array[GpuDirectionalLight3d]
-  ambient_color : @sprite.Color
+  ambient_color : @color.Color
   cluster_dimensions : (Int, Int, Int, Int)
   cluster_factors : @math.Vec4
   n_directional_lights : Int
@@ -1190,7 +1190,7 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
   }
   GpuDirectionalLight3d::{
     cascades,
-    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     dir_to_light: @math.Vec3::new(0.0F, 0.0F, 1.0F),
     flags: DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED,
     soft_shadow_size: 0.0F,
@@ -1697,10 +1697,10 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
 ///|
 pub fn render3d_default_lighting_state() -> Render3dLightingState {
   Render3dLightingState::{
-    ambient_color: @sprite.Color::white(),
+    ambient_color: @color.Color::white(),
     ambient_brightness: 80.0F,
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
-    directional_color: @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+    directional_color: @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     directional_illuminance: 0.0F,
     directional_entity: None,
     directional_transform: @transform.Transform::identity(),
@@ -1713,7 +1713,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_cascade_minimum_distance: 0.1F,
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    point_color: @sprite.Color::white(),
+    point_color: @color.Color::white(),
     point_intensity: 0.0F,
     point_range: 1.0F,
     point_shadow_maps_enabled: false,
@@ -1721,7 +1721,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     point_shadow_map_near_z: 0.1F,
     spot_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     spot_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
-    spot_color: @sprite.Color::white(),
+    spot_color: @color.Color::white(),
     spot_intensity: 0.0F,
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,

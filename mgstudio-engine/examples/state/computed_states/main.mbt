@@ -210,33 +210,33 @@ pub impl @app.Resource for MenuData with fn resource() {
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
-fn active_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.35F, 0.65F)
+fn active_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.35F, 0.65F)
 }
 
 ///|
-fn hovered_active_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.2F, 0.45F, 0.8F)
+fn hovered_active_button_color() -> @color.Color {
+  @color.Color::srgb(0.2F, 0.45F, 0.8F)
 }
 
 ///|
-fn pressed_active_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.55F, 0.95F)
+fn pressed_active_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.55F, 0.95F)
 }
 
 ///|
@@ -394,7 +394,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(play_button),
         @text.Text::new("Play"),
         @text.TextFont::TextFont().with_font_size(33.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -417,7 +417,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(tutorial_button),
         @text.Text::new("Tutorial"),
         @text.TextFont::TextFont().with_font_size(33.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -429,7 +429,7 @@ fn button_color(
   interaction : @ui.Interaction,
   tutorial_active : Bool,
   button : MenuButton,
-) -> @sprite.Color {
+) -> @color.Color {
   match button {
     MenuButton::Play =>
       match interaction {
@@ -595,7 +595,7 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(root),
         @text.Text::new("Paused"),
         @text.TextFont::TextFont().with_font_size(33.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -609,7 +609,7 @@ fn setup_turbo_text(commands : @app.Commands) -> Unit {
         @state.DespawnOnExit::new(TurboMode::{  }),
         @text.Text::new("TURBO MODE"),
         @text.TextFont::TextFont().with_font_size(33.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.3F, 0.1F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.3F, 0.1F)),
         @ui.Node::{
           ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
@@ -629,7 +629,7 @@ fn change_color(world : @ecs.World) -> Unit {
   let hue = time.elapsed_seconds() * hue_speed
   try! query.view(fn(_entity, sprite) {
     sprite.modify(fn(value) {
-      value.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+      value.color = @color.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
     })
   })
 }
@@ -660,7 +660,7 @@ fn movement_instructions(commands : @app.Commands) -> Unit {
           @hierarchy.Parent::new(root),
           @text.Text::new(line),
           @text.TextFont::TextFont().with_font_size(28.0F),
-          @text.TextColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.7F)),
+          @text.TextColor::new(@color.Color::srgb(0.3F, 0.3F, 0.7F)),
         ),
       ),
     )
@@ -690,7 +690,7 @@ fn pause_instructions(commands : @app.Commands) -> Unit {
           @hierarchy.Parent::new(root),
           @text.Text::new(line),
           @text.TextFont::TextFont().with_font_size(28.0F),
-          @text.TextColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.7F)),
+          @text.TextColor::new(@color.Color::srgb(0.3F, 0.3F, 0.7F)),
         ),
       ),
     )

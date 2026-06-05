@@ -43,7 +43,7 @@ fn spawn_label(
         @text.TextFont::from_font_size(@text.FontSize::Px(16.0F)).with_font(
           font,
         ),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -82,7 +82,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_justify_content(@ui.JustifyContent::Center)
         .with_flex_direction(@ui.FlexDirection::Column)
         .with_row_gap(@ui.Val::Px(40.0F)),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
       ),
     ),
   )
@@ -99,7 +99,7 @@ fn setup(world : @ecs.World) -> Unit {
           @ui.Node::Node()
           .with_flex_direction(@ui.FlexDirection::Row)
           .with_column_gap(@ui.Val::Px(20.0F)),
-          @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
+          @ui.BackgroundColor::new(@color.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
         ),
       ),
     )
@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
               @ui.Val::Px(25.0F),
             ),
           ),
-          @ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F)),
+          @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
         ),
       ),
     )
@@ -151,8 +151,8 @@ fn setup(world : @ecs.World) -> Unit {
               @ui.Val::Px(0.0F),
             ),
           ),
-          @ui.BackgroundColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
-          @ui.BorderColor::new(@sprite.Color::black()),
+          @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
+          @ui.BorderColor::new(@color.Color::black()),
         ),
       ),
     )
@@ -169,7 +169,7 @@ fn setup(world : @ecs.World) -> Unit {
             min_width: @ui.Val::Px(100.0F),
             min_height: @ui.Val::Px(100.0F),
           },
-          @ui.BackgroundColor::new(@sprite.Color::srgb(0.88F, 1.0F, 1.0F)),
+          @ui.BackgroundColor::new(@color.Color::srgb(0.88F, 1.0F, 1.0F)),
           @ui.ImageNode::new(icon),
         ),
       ),

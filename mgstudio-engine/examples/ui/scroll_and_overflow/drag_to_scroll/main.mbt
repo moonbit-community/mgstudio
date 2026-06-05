@@ -71,13 +71,13 @@ pub impl Default for ScrollDragState with fn default() {
 }
 
 ///|
-fn tile_color(x : Int, y : Int) -> @sprite.Color {
+fn tile_color(x : Int, y : Int) -> @color.Color {
   if (x + y) % 2 == 0 {
-    @sprite.Color::black()
+    @color.Color::black()
   } else {
     let hue = Float::from_int(x) / Float::from_int(GRID_WIDTH) * 270.0F +
       Float::from_int(y) / Float::from_int(GRID_HEIGHT) * 90.0F
-    @sprite.Color::hsl(hue, 1.0F, 0.5F)
+    @color.Color::hsl(hue, 1.0F, 0.5F)
   }
 }
 

@@ -97,7 +97,7 @@ test "sprite: image mode scale accessor mirrors bevy" {
 
 ///|
 struct DummyMaterialAsset {
-  color : Color
+  color : @color.Color
   color_texture : @asset.Handle[@asset.Image]?
 }
 
@@ -123,14 +123,14 @@ impl @asset.Asset for DummyMaterialAsset with fn asset_resource_keys() {
 
 ///|
 fn dummy_material_asset(
-  color? : Color = Color::white(),
+  color? : @color.Color = @color.Color::white(),
   color_texture? : @asset.Handle[@asset.Image]? = None,
 ) -> DummyMaterialAsset {
   DummyMaterialAsset::{ color, color_texture }
 }
 
 ///|
-fn dummy_material_uniform_bytes(color : Color) -> Bytes {
+fn dummy_material_uniform_bytes(color : @color.Color) -> Bytes {
   let words : Array[UInt] = [
     dummy_f32_bits(color.r),
     dummy_f32_bits(color.g),
@@ -216,7 +216,7 @@ fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
 
 ///|
 fn test_color_material_handle(
-  color : Color,
+  color : @color.Color,
 ) -> @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial] {
   let materials = @asset.asset_assets_ref_mut_or_abort()
   materials.modify(fn(store) {
@@ -614,7 +614,7 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
   .add_system(fn(world : @ecs.World) {
     let mesh = test_rectangle_mesh(8.0F, 6.0F)
     let material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
-      test_color_material_handle(Color::white()),
+      test_color_material_handle(@color.Color::white()),
     )
     entity_ref.val = Some(
       try! world.spawn_bundle((mesh, material, expected_transform)),
@@ -673,7 +673,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              Color::white(),
+              @color.Color::white(),
             ),
           )
         ignore(
@@ -826,12 +826,12 @@ test "sprite: Sprite and SpriteMesh install Bevy required components" {
   try! world.set_by_key(
     sprite_entity,
     ecs_key_sprite,
-    Sprite::from_color(Color::white(), @math.Vec2::new(8.0F, 4.0F)),
+    Sprite::from_color(@color.Color::white(), @math.Vec2::new(8.0F, 4.0F)),
   )
   try! world.set_by_key(
     sprite_mesh_entity,
     ecs_key_sprite_mesh,
-    SpriteMesh::from_color(Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+    SpriteMesh::from_color(@color.Color::white(), @math.Vec2::new(12.0F, 6.0F)),
   )
   app = app.update()
   let world = app.world()
@@ -866,7 +866,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
   try! world.set_by_key(
     entity,
     ecs_key_sprite_mesh,
-    SpriteMesh::from_color(Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+    SpriteMesh::from_color(@color.Color::white(), @math.Vec2::new(12.0F, 6.0F)),
   )
 
   app = app.update()
@@ -898,7 +898,7 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
     entity,
     ecs_key_sprite_mesh,
     SpriteMesh::from_color(
-      Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      @color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
       @math.Vec2::new(12.0F, 6.0F),
     ),
   )
@@ -976,7 +976,7 @@ test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d stores the materia
   .add_plugins(@render.RenderPlugin::RenderPlugin())
   .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
-    let material_handle = test_color_material_handle(Color::white())
+    let material_handle = test_color_material_handle(@color.Color::white())
     let mesh_material = @sprite_render_mesh2d_material.MeshMaterial2d::new(
       material_handle,
     )
@@ -1115,7 +1115,9 @@ test "render2d: custom Mesh2d runtime registry matches marker components" {
 test "render2d: generic Material2d runtime extracts and prepares custom assets" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref(None)
-  let expected = dummy_material_asset(color=Color::new(0.3F, 0.6F, 0.9F, 1.0F))
+  let expected = dummy_material_asset(
+    color=@color.Color::new(0.3F, 0.6F, 0.9F, 1.0F),
+  )
 
   let plugin : @sprite_render_mesh2d_material.Material2dPlugin[
     DummyMaterialAsset,
@@ -1346,12 +1348,12 @@ test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial constructors 
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
       @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-        Color::white(),
+        @color.Color::white(),
       ).alpha_mode(),
     )
     blend_alpha_mode.val = Some(
       @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-        Color::new(0.25F, 0.5F, 0.75F, 0.4F),
+        @color.Color::new(0.25F, 0.5F, 0.75F, 0.4F),
       ).alpha_mode(),
     )
     default_alpha_mode.val = Some(

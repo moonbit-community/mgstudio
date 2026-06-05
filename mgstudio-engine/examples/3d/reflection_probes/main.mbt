@@ -369,7 +369,7 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let sphere_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_metallic(1.0F)
     .with_perceptual_roughness(reflection_probes_state.val.sphere_roughness),
   )
@@ -410,7 +410,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

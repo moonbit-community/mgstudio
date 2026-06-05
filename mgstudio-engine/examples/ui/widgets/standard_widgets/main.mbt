@@ -102,7 +102,7 @@ fn setup(
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center)
       .with_row_gap(@ui.Val::Px(12.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.1F, 0.12F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
 
@@ -117,8 +117,8 @@ fn setup(
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BorderColor::new(@sprite.Color::srgb(0.7F, 0.7F, 0.76F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.2F, 0.2F, 0.25F)),
+      @ui.BorderColor::new(@color.Color::srgb(0.7F, 0.7F, 0.76F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.2F, 0.25F)),
     ),
   )
   commands.spawn(
@@ -127,7 +127,7 @@ fn setup(
       ToggleLabel::{  },
       @text.Text::new("Enabled"),
       @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
     ),
   )
   |> ignore
@@ -140,8 +140,8 @@ fn setup(
       .with_width(@ui.Val::Px(300.0F))
       .with_height(@ui.Val::Px(20.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
-      @ui.BorderColor::new(@sprite.Color::srgb(0.72F, 0.72F, 0.8F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.12F, 0.14F)),
+      @ui.BorderColor::new(@color.Color::srgb(0.72F, 0.72F, 0.8F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.14F)),
     ),
   )
   commands.spawn(
@@ -151,7 +151,7 @@ fn setup(
       @ui.Node::Node()
       .with_width(@ui.Val::Percent(50.0F))
       .with_height(@ui.Val::Percent(100.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.32F, 0.72F, 0.32F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.32F, 0.72F, 0.32F)),
     ),
   )
   |> ignore
@@ -195,9 +195,9 @@ fn update_widget_styles(
     background.set(
       @ui.BackgroundColor::new(
         if enabled {
-          @sprite.Color::srgb(0.2F, 0.45F, 0.24F)
+          @color.Color::srgb(0.2F, 0.45F, 0.24F)
         } else {
-          @sprite.Color::srgb(0.35F, 0.2F, 0.2F)
+          @color.Color::srgb(0.35F, 0.2F, 0.2F)
         },
       ),
     )

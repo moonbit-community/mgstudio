@@ -45,12 +45,12 @@ const Y_EXTENT : Float = 150.0F
 const THICKNESS : Float = 5.0F
 
 ///|
-fn shape_palette_color(index : Int, count : Int) -> @sprite.Color {
+fn shape_palette_color(index : Int, count : Int) -> @color.Color {
   let safe_count = if count <= 0 { 1 } else { count }
   let hue = 360.0F *
     Float::from_double(index.to_double()) /
     Float::from_double(safe_count.to_double())
-  @sprite.Color::hsl(hue, 0.95F, 0.7F)
+  @color.Color::hsl(hue, 0.95F, 0.7F)
 }
 
 ///|

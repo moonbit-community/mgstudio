@@ -16,7 +16,7 @@
 pub(all) struct Sprite {
   mut image : @asset.Handle[@asset.Image]
   mut texture_atlas : @asset.TextureAtlas?
-  mut color : Color
+  mut color : @color.Color
   mut flip_x : Bool
   mut flip_y : Bool
   mut custom_size : @math.Vec2?
@@ -213,7 +213,7 @@ pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
   Sprite::{
     image,
     texture_atlas: None,
-    color: Color::white(),
+    color: @color.Color::white(),
     flip_x: false,
     flip_y: false,
     custom_size: None,
@@ -228,7 +228,7 @@ pub fn Sprite::sized(size : @math.Vec2) -> Sprite {
 }
 
 ///|
-pub fn Sprite::from_color(color : Color, size : @math.Vec2) -> Sprite {
+pub fn Sprite::from_color(color : @color.Color, size : @math.Vec2) -> Sprite {
   Sprite::{ ..Sprite(), color, custom_size: Some(size) }
 }
 
@@ -364,7 +364,7 @@ pub fn Sprite::with_texture_atlas(
 }
 
 ///|
-pub fn Sprite::with_color(self : Sprite, color : Color) -> Sprite {
+pub fn Sprite::with_color(self : Sprite, color : @color.Color) -> Sprite {
   Sprite::{ ..self, color, }
 }
 

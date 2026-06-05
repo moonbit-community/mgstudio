@@ -44,43 +44,43 @@ pub impl @app.Resource for DragState with fn resource() {
 }
 
 ///|
-fn tile_color_a() -> @sprite.Color {
-  @sprite.Color::srgb(0.2F, 0.2F, 0.8F)
+fn tile_color_a() -> @color.Color {
+  @color.Color::srgb(0.2F, 0.2F, 0.8F)
 }
 
 ///|
-fn tile_color_b() -> @sprite.Color {
-  @sprite.Color::srgb(0.8F, 0.2F, 0.2F)
+fn tile_color_b() -> @color.Color {
+  @color.Color::srgb(0.8F, 0.2F, 0.2F)
 }
 
 ///|
-fn tile_hover_color_a() -> @sprite.Color {
-  @sprite.Color::srgb(0.3F, 0.3F, 0.92F)
+fn tile_hover_color_a() -> @color.Color {
+  @color.Color::srgb(0.3F, 0.3F, 0.92F)
 }
 
 ///|
-fn tile_hover_color_b() -> @sprite.Color {
-  @sprite.Color::srgb(0.92F, 0.3F, 0.3F)
+fn tile_hover_color_b() -> @color.Color {
+  @color.Color::srgb(0.92F, 0.3F, 0.3F)
 }
 
 ///|
-fn tile_border_color_a() -> @sprite.Color {
-  @sprite.Color::srgb(0.16F, 0.16F, 0.66F)
+fn tile_border_color_a() -> @color.Color {
+  @color.Color::srgb(0.16F, 0.16F, 0.66F)
 }
 
 ///|
-fn tile_border_color_b() -> @sprite.Color {
-  @sprite.Color::srgb(0.66F, 0.16F, 0.16F)
+fn tile_border_color_b() -> @color.Color {
+  @color.Color::srgb(0.66F, 0.16F, 0.16F)
 }
 
 ///|
-fn tile_hover_border_color_a() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.82F)
+fn tile_hover_border_color_a() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.82F)
 }
 
 ///|
-fn tile_hover_border_color_b() -> @sprite.Color {
-  @sprite.Color::srgb(0.82F, 0.25F, 0.25F)
+fn tile_hover_border_color_b() -> @color.Color {
+  @color.Color::srgb(0.82F, 0.25F, 0.25F)
 }
 
 ///|
@@ -107,8 +107,8 @@ fn label_font(font : @asset.Handle[@asset.Font]) -> @text.TextFont {
 ///|
 fn set_tile_colors(
   entity : @core.Entity,
-  background : @sprite.Color,
-  border : @sprite.Color,
+  background : @color.Color,
+  border : @color.Color,
   query : @ecs.Query[
     (@ecs.Mut[@ui.BackgroundColor], @ecs.Mut[@ui.BorderColor]),
     @ecs.All,
@@ -142,7 +142,7 @@ fn begin_drag(
       @ui.Outline::new(
         @ui.Val::Px(2.0F),
         @ui.Val::Px(0.0F),
-        @sprite.Color::white(),
+        @color.Color::white(),
       ),
     )
     global_z.set(@ui.GlobalZIndex::new(1))
@@ -246,7 +246,7 @@ fn setup(
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.4F, 0.4F, 0.4F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.4F, 0.4F, 0.4F)),
     ),
   )
 
@@ -294,7 +294,7 @@ fn setup(
           @hierarchy.Parent::new(tile),
           @text.Text::new(index.to_string()),
           label_font(font),
-          @text.TextColor::new(@sprite.Color::white()),
+          @text.TextColor::new(@color.Color::white()),
         ),
       )
       |> ignore

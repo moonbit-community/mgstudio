@@ -72,12 +72,12 @@ pub struct LdtkProject {
 }
 
 ///|
-pub impl @asset.Asset for LdtkProject with asset_debug_name() {
+pub impl @asset.Asset for LdtkProject with fn asset_debug_name() {
   "mgstudio_ldtk::LdtkProject"
 }
 
 ///|
-pub impl @asset.Asset for LdtkProject with asset_as_image(_self) {
+pub impl @asset.Asset for LdtkProject with fn asset_as_image(_self) {
   None
 }
 
@@ -87,7 +87,7 @@ let ldtk_project_asset_resource_keys : @asset.AssetResourceKeys[LdtkProject] = @
 )
 
 ///|
-pub impl @asset.Asset for LdtkProject with asset_resource_keys() {
+pub impl @asset.Asset for LdtkProject with fn asset_resource_keys() {
   ldtk_project_asset_resource_keys
 }
 
@@ -412,8 +412,8 @@ fn ldtk_project_asset_default() -> LdtkProject {
   LdtkProject::new(
     LdtkJson::{
       iid: "",
-      bg_color: @sprite.Color::black(),
-      default_level_bg_color: @sprite.Color::black(),
+      bg_color: @color.Color::black(),
+      default_level_bg_color: @color.Color::black(),
       external_levels: false,
       world_layout: None,
       world_grid_width: None,

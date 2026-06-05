@@ -28,21 +28,21 @@ pub fn[S : IntoPbrMaterialAsset] add_material(
 }
 
 ///|
-pub impl IntoPbrMaterialAsset for StandardMaterial with into_pbr_material_asset(
+pub impl IntoPbrMaterialAsset for StandardMaterial with fn into_pbr_material_asset(
   self,
 ) {
   self
 }
 
 ///|
-pub impl IntoPbrMaterialAsset for @sprite.Color with into_pbr_material_asset(
+pub impl IntoPbrMaterialAsset for @color.Color with fn into_pbr_material_asset(
   self,
 ) {
   @material.StandardMaterial::from_color(self)
 }
 
 ///|
-pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with into_pbr_material_asset(
+pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with fn into_pbr_material_asset(
   self,
 ) {
   @material.StandardMaterial::StandardMaterial().with_base_color_texture(

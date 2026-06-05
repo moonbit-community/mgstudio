@@ -33,10 +33,10 @@ fn animated_ui_graph() -> (
       @animation.KeyframeVec3::new(3.0F, @math.Vec3::splat(0.3F)),
     ])
     .add_text_color_curve(target, [
-      @animation.KeyframeColor::new(0.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
-      @animation.KeyframeColor::new(1.0F, @sprite.Color::srgb(0.0F, 1.0F, 0.0F)),
-      @animation.KeyframeColor::new(2.0F, @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
-      @animation.KeyframeColor::new(3.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+      @animation.KeyframeColor::new(0.0F, @color.Color::srgb(1.0F, 0.0F, 0.0F)),
+      @animation.KeyframeColor::new(1.0F, @color.Color::srgb(0.0F, 1.0F, 0.0F)),
+      @animation.KeyframeColor::new(2.0F, @color.Color::srgb(0.0F, 0.0F, 1.0F)),
+      @animation.KeyframeColor::new(3.0F, @color.Color::srgb(1.0F, 0.0F, 0.0F)),
     ])
   let clip_handle = @animation.animation_clip_add(clip)
   let (graph, node) = @animation.AnimationGraph::from_clip(clip_handle)
@@ -84,7 +84,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(@text.FontSize::Px(80.0F)),
-      @text.TextColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+      @text.TextColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
       @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
     ),

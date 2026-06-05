@@ -67,7 +67,7 @@ fn setup(
     named: false,
   })
   commands.insert_resource(
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 800.0F),
   )
 
   ignore(
@@ -88,7 +88,7 @@ fn setup(
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.9F, -0.6F),
         ),
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 6000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 6000.0F, true),
       ),
     ),
   )

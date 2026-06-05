@@ -13,18 +13,18 @@
 // limitations under the License.
 
 ///|
-fn wheat() -> @sprite.Color {
-  @sprite.Color::srgb(0.96F, 0.87F, 0.7F)
+fn wheat() -> @color.Color {
+  @color.Color::srgb(0.96F, 0.87F, 0.7F)
 }
 
 ///|
-fn yellow() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.92F, 0.0F)
+fn yellow() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.92F, 0.0F)
 }
 
 ///|
-fn zinc_600() -> @sprite.Color {
-  @sprite.Color::srgb(0.32F, 0.32F, 0.36F)
+fn zinc_600() -> @color.Color {
+  @color.Color::srgb(0.32F, 0.32F, 0.36F)
 }
 
 ///|

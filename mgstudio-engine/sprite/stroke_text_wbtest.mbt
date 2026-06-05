@@ -29,7 +29,7 @@ test "sprite gizmo text emits line segments for supported glyphs" {
     "AB",
     21.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    Color::white(),
+    @color.Color::white(),
   )
   debug_inspect(gizmo_state.val.lines.length() > 0, content="true")
   gizmos_reset()
@@ -45,7 +45,7 @@ test "sprite gizmo text emits 3d line segments for supported glyphs" {
     "AB",
     21.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    Color::white(),
+    @color.Color::white(),
   )
   debug_inspect(gizmo_state.val.lines_3d.length() > 0, content="true")
   gizmos_reset()
@@ -61,7 +61,7 @@ test "sprite gizmo text skips unsupported glyph geometry" {
     "🙂",
     21.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    Color::white(),
+    @color.Color::white(),
   )
   debug_inspect(gizmo_state.val.lines.length(), content="0")
   gizmos_reset()
@@ -77,7 +77,7 @@ test "sprite gizmo reset clears 2d and 3d text state" {
     "A",
     21.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    Color::white(),
+    @color.Color::white(),
   )
   stroke_text_emit_3d(
     gizmo_state,
@@ -86,7 +86,7 @@ test "sprite gizmo reset clears 2d and 3d text state" {
     "A",
     21.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    Color::white(),
+    @color.Color::white(),
   )
   gizmos_reset()
   debug_inspect(gizmo_state.val.lines.length(), content="0")

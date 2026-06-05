@@ -28,7 +28,7 @@ fn setup(
         ),
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(material_assets) {
-            material_assets |> @pbr.add_material(@sprite.Color::white())
+            material_assets |> @pbr.add_material(@color.Color::white())
           }),
         ),
         @transform.Transform::identity().with_rotation(
@@ -50,7 +50,7 @@ fn setup(
           materials.modify(fn(material_assets) {
             material_assets
             |> @pbr.add_material(
-              @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+              @color.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
             )
           }),
         ),

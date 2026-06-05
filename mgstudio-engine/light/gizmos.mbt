@@ -28,7 +28,7 @@ let ecs_key_show_light_gizmo : @ecs.ComponentKey[ShowLightGizmo] = @ecs.register
 
 ///|
 pub(all) enum LightGizmoColor {
-  Manual(@sprite.Color)
+  Manual(@color.Color)
   Varied
   MatchLightColor
   ByLightType
@@ -43,9 +43,9 @@ pub fn LightGizmoColor::default() -> LightGizmoColor {
 pub(all) struct LightGizmoConfigGroup {
   draw_all : Bool
   color : LightGizmoColor
-  point_light_color : @sprite.Color
-  spot_light_color : @sprite.Color
-  directional_light_color : @sprite.Color
+  point_light_color : @color.Color
+  spot_light_color : @color.Color
+  directional_light_color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
@@ -53,26 +53,26 @@ pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> LightGizmoConfigGroup {
   LightGizmoConfigGroup::{
     draw_all: false,
     color: MatchLightColor,
-    point_light_color: @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
-    spot_light_color: @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
-    directional_light_color: @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+    point_light_color: @color.Color::srgb(1.0F, 0.0F, 0.0F),
+    spot_light_color: @color.Color::srgb(0.0F, 1.0F, 0.0F),
+    directional_light_color: @color.Color::srgb(0.0F, 0.0F, 1.0F),
   }
 }
 
 ///|
-pub impl Default for LightGizmoConfigGroup with default() {
+pub impl Default for LightGizmoConfigGroup with fn default() {
   LightGizmoConfigGroup::LightGizmoConfigGroup()
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_group_marker(
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_group_debug_name() {
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_light::LightGizmoConfigGroup"
 }
 
@@ -84,7 +84,7 @@ let light_gizmo_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_storage_resource_key() {
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_storage_resource_key() {
   light_gizmo_storage_resource_key
 }
 
@@ -94,12 +94,12 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with new_gizmo_config_group_cell() {
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup::LightGizmoConfigGroup()))
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_group_cell_ref(
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -128,7 +128,7 @@ pub fn ShowLightGizmo::with_color(
 }
 
 ///|
-pub impl @ecs.Component for ShowLightGizmo with component() {
+pub impl @ecs.Component for ShowLightGizmo with fn component() {
   ecs_key_show_light_gizmo
 }
 
@@ -147,13 +147,13 @@ fn max_int(value : Int, min : Int) -> Int {
 }
 
 ///|
-fn light_gizmo_varied_color(entity : @core.Entity) -> @sprite.Color {
+fn light_gizmo_varied_color(entity : @core.Entity) -> @color.Color {
   let seed = float_from_int(entity.id) +
     float_from_int(entity.generation) * 97.0F
   let r = 0.2F + 0.8F * ((@math.sin(seed * 0.73F) + 1.0F) * 0.5F)
   let g = 0.2F + 0.8F * ((@math.sin(seed * 1.11F + 1.2F) + 1.0F) * 0.5F)
   let b = 0.2F + 0.8F * ((@math.sin(seed * 1.61F + 2.4F) + 1.0F) * 0.5F)
-  @sprite.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -161,9 +161,9 @@ fn light_gizmo_resolve_color(
   entity : @core.Entity,
   override_color : LightGizmoColor?,
   config_group : LightGizmoConfigGroup,
-  light_color : @sprite.Color,
-  type_color : @sprite.Color,
-) -> @sprite.Color {
+  light_color : @color.Color,
+  type_color : @color.Color,
+) -> @color.Color {
   match override_color.unwrap_or(config_group.color) {
     Manual(color) => color
     Varied => light_gizmo_varied_color(entity)
@@ -179,7 +179,7 @@ fn[Config] draw_circle_3d(
   axis_x : @math.Vec3,
   axis_y : @math.Vec3,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   resolution : Int,
 ) -> Unit {
   if radius <= 0.0F {
@@ -203,7 +203,7 @@ fn[Config] draw_wire_sphere(
   gizmos : @sprite.Gizmos[Config],
   center : @math.Vec3,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   resolution : Int,
 ) -> Unit {
   let x = @math.Vec3::new(1.0F, 0.0F, 0.0F)
@@ -220,7 +220,7 @@ fn[Config] draw_spot_cone(
   transform : @transform.Transform,
   range : Float,
   angle : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   resolution : Int,
 ) -> Unit {
   if range <= 0.0F || angle <= 0.0F {
@@ -245,7 +245,7 @@ fn draw_point_light_gizmo(
   gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   point_light : PointLight,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   draw_wire_sphere(
     gizmos,
@@ -268,7 +268,7 @@ fn draw_spot_light_gizmo(
   gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   spot_light : SpotLight,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   draw_wire_sphere(
     gizmos,
@@ -299,7 +299,7 @@ fn draw_spot_light_gizmo(
 fn draw_directional_light_gizmo(
   gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.arrow_3d(
     transform.translation,

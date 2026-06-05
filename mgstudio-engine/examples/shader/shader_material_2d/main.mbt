@@ -14,7 +14,7 @@
 
 ///|
 struct CustomMaterial {
-  color : @sprite.Color
+  color : @color.Color
   color_texture : @asset.Handle[@asset.Image]?
   alpha_mode : @sprite_render.AlphaMode2d
 }
@@ -41,7 +41,7 @@ impl @asset.Asset for CustomMaterial with fn asset_resource_keys() {
 
 ///|
 fn custom_material(
-  color : @sprite.Color,
+  color : @color.Color,
   color_texture : @asset.Handle[@asset.Image]?,
   alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Mask(
     0.5F,
@@ -139,7 +139,7 @@ fn shader_material_2d_plugin() -> @sprite_render_mesh2d_material.Material2dPlugi
   CustomMaterial,
 ] {
   let plugin : @sprite_render_mesh2d_material.Material2dPlugin[CustomMaterial] = @sprite_render_mesh2d_material.Material2dPlugin::Material2dPlugin()
-    .with_asset_init(fn() { custom_material(@sprite.Color::white(), None) })
+    .with_asset_init(fn() { custom_material(@color.Color::white(), None) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
   @sprite_render_mesh2d_material.material2d_plugin(plugin)
@@ -170,7 +170,7 @@ fn setup(
     .peek()
     .add(
       custom_material(
-        @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+        @color.Color::srgb(0.0F, 0.0F, 1.0F),
         Some(asset_server.get().load_image("branding/icon.png")),
       ),
     )

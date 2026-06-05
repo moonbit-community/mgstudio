@@ -20,7 +20,7 @@ pub fn[Config] gizmo_draw_circle_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   circle : @math.Circle,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.Ellipse2dBuilder {
   gizmos.circle_2d(isometry, circle.radius, color)
 }
@@ -30,7 +30,7 @@ pub fn[Config] gizmo_draw_rect_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   rect : @math.Rectangle,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.rect_2d(isometry, rect.half_size.mul_scalar(2.0F), color)
 }
@@ -40,7 +40,7 @@ pub fn[Config] gizmo_draw_capsule_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   capsule : @math.Capsule2d,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   if capsule.half_length <= 0.0F {
     ignore(gizmos.circle_2d(isometry, capsule.radius, color))

@@ -185,7 +185,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.24F, 0.24F, 0.26F, 1.0F),
+      @color.Color::new(0.24F, 0.24F, 0.26F, 1.0F),
     ).with_perceptual_roughness(0.85F),
   )
   @pbr.MeshMaterial3dBundle::new(
@@ -211,7 +211,7 @@ fn setup(world : @ecs.World) -> Unit {
     let hue = i_f / 8.0F
     let material = @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(
+        @color.Color::new(
           0.25F + hue * 0.55F,
           0.2F + (1.0F - hue) * 0.6F,
           0.45F,
@@ -237,7 +237,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 25_000.0F, true),
   )
   try! world.set_by_key(
     directional,
@@ -252,7 +252,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 120_000.0F, 40.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 120_000.0F, 40.0F, false),
   )
   try! world.set_by_key(
     point,
@@ -276,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

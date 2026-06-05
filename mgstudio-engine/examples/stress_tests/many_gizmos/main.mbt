@@ -109,7 +109,7 @@ fn draw_many_lines(
       gizmos.line_3d(
         @math.Vec3::new(0.0F, -1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
-        @sprite.Color::black(),
+        @color.Color::black(),
       )
     }
     return
@@ -126,8 +126,8 @@ fn draw_many_lines(
     gizmos.line_gradient_3d(
       start,
       end,
-      @sprite.Color::srgb((x + 1.0F) * 0.5F, (z + 1.0F) * 0.5F, 0.5F),
-      @sprite.Color::srgb((-z + 1.0F) * 0.5F, (-y + 1.0F) * 0.5F, 0.5F),
+      @color.Color::srgb((x + 1.0F) * 0.5F, (z + 1.0F) * 0.5F, 0.5F),
+      @color.Color::srgb((-z + 1.0F) * 0.5F, (-y + 1.0F) * 0.5F, 0.5F),
     )
   }
 }

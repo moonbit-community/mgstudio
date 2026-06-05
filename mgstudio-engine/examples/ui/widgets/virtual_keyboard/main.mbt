@@ -98,8 +98,8 @@ fn spawn_key_row(
         .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center),
-        @ui.BorderColor::new(@sprite.Color::srgb(0.82F, 0.82F, 0.92F)),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.18F, 0.18F, 0.24F)),
+        @ui.BorderColor::new(@color.Color::srgb(0.82F, 0.82F, 0.92F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.18F, 0.18F, 0.24F)),
       ),
     )
     commands.spawn(
@@ -107,7 +107,7 @@ fn spawn_key_row(
         @hierarchy.Parent::new(button),
         @text.Text::new(key),
         @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     )
     |> ignore
@@ -135,7 +135,7 @@ fn setup(
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::End)
       .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.06F, 0.08F, 0.18F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.06F, 0.08F, 0.18F)),
     ),
   )
 
@@ -147,8 +147,8 @@ fn setup(
       .with_row_gap(@ui.Val::Px(6.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F))),
-      @ui.BorderColor::new(@sprite.Color::white()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.12F, 0.26F)),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.12F, 0.26F)),
     ),
   )
   commands.spawn(
@@ -157,7 +157,7 @@ fn setup(
       KeyboardDisplay::{  },
       @text.Text::new(""),
       @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
-      @text.TextColor::new(@sprite.Color::srgb(0.95F, 0.95F, 0.95F)),
+      @text.TextColor::new(@color.Color::srgb(0.95F, 0.95F, 0.95F)),
     ),
   )
   |> ignore
@@ -192,9 +192,9 @@ fn keyboard_input_system(
     background.set(
       @ui.BackgroundColor::new(
         if pressed {
-          @sprite.Color::srgb(0.28F, 0.58F, 0.92F)
+          @color.Color::srgb(0.28F, 0.58F, 0.92F)
         } else {
-          @sprite.Color::srgb(0.18F, 0.18F, 0.24F)
+          @color.Color::srgb(0.18F, 0.18F, 0.24F)
         },
       ),
     )

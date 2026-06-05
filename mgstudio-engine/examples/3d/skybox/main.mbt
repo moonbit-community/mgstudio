@@ -158,7 +158,7 @@ fn supports_any_compressed_cubemap_format(supported_formats : Int) -> Bool {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -204,7 +204,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 32_000.0F, true),
   )
   try! world.set_by_key(
     directional_light,
@@ -217,7 +217,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   set_global_ambient_light(
     world,
-    @sprite.Color::new(210.0F / 255.0F, 220.0F / 255.0F, 240.0F / 255.0F, 1.0F),
+    @color.Color::new(210.0F / 255.0F, 220.0F / 255.0F, 240.0F / 255.0F, 1.0F),
     1.0F,
   )
 
@@ -273,7 +273,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

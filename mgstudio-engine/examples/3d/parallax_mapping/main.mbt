@@ -261,7 +261,7 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
@@ -274,7 +274,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 1_800_000.0F, 40.0F, true),
+    @pbr.PointLight::new(@color.Color::white(), 1_800_000.0F, 40.0F, true),
   )
   try! world.set_by_key(
     light,
@@ -290,7 +290,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     ),
     @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
@@ -311,7 +311,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
+          @color.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
         )
         .with_perceptual_roughness(0.45F)
         .with_reflectance(0.18F),

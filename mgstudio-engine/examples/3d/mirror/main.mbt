@@ -333,7 +333,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
+          @color.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
         ),
       ),
     ),
@@ -368,8 +368,8 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Quat::from_rotation_x(-FRAC_PI_2),
   )
   let mirror_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black())
-    .with_emissive(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::black())
+    .with_emissive(@color.Color::white())
     .with_emissive_texture(Some(mirror_target))
     .with_perceptual_roughness(0.0F)
     .with_metallic(1.0F),
@@ -401,7 +401,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 5000.0F, true),
   )
   try! world.set_by_key(
     light,
@@ -447,7 +447,7 @@ fn setup(world : @ecs.World) -> Unit {
     main_camera_transform, main_camera_projection, mirror_transform,
   )
   let mirror_camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::new(@sprite.Color::black()).with_order(-1),
+    @camera_camera.Camera::new(@color.Color::black()).with_order(-1),
     @camera.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
@@ -480,7 +480,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

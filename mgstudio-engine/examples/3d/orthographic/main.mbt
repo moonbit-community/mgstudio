@@ -48,7 +48,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+          @color.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -57,9 +57,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.8F, 0.7F, 0.6F, 1.0F)),
   )
 
   @pbr.MeshMaterial3dBundle::new(

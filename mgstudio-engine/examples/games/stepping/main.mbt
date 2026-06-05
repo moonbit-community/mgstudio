@@ -48,7 +48,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(44.0F, 44.0F)).with_color(
-          @sprite.Color::srgb(0.95F, 0.92F, 0.28F),
+          @color.Color::srgb(0.95F, 0.92F, 0.28F),
         ),
         @transform.Transform::from_xyz(-520.0F, 0.0F, 0.0F),
         StepSprite::{  },
@@ -85,9 +85,9 @@ fn color_feedback(
   try! sprites.for_each(fn(_entity, sprite) {
     sprite.modify(fn(value) {
       value.color = if ticks % 2 == 0 {
-        @sprite.Color::srgb(0.95F, 0.92F, 0.28F)
+        @color.Color::srgb(0.95F, 0.92F, 0.28F)
       } else {
-        @sprite.Color::srgb(0.3F, 0.9F, 0.95F)
+        @color.Color::srgb(0.3F, 0.9F, 0.95F)
       }
     })
   })

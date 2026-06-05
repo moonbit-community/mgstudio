@@ -188,7 +188,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
-          @sprite.Color::new(
+          @color.Color::new(
             43.0F / 255.0F,
             44.0F / 255.0F,
             47.0F / 255.0F,
@@ -253,7 +253,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
   )
   try! world.set_by_key(
     directional_light,
@@ -284,7 +284,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

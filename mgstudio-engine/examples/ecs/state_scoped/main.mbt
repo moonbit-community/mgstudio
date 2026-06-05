@@ -65,7 +65,7 @@ fn spawn_text(
   text : String,
   top : Float,
   left : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   exit_marker : @state.DespawnOnExit?,
   enter_marker : @state.DespawnOnEnter?,
 ) -> Unit {
@@ -119,7 +119,7 @@ fn on_a_enter(commands : @app.Commands) -> Unit {
     "Game is in state 'A'",
     0.0F,
     0.0F,
-    @sprite.Color::srgb(0.5F, 0.5F, 1.0F),
+    @color.Color::srgb(0.5F, 0.5F, 1.0F),
     Some(@state.DespawnOnExit::new(GameState::A)),
     None,
   )
@@ -133,7 +133,7 @@ fn on_a_exit(commands : @app.Commands) -> Unit {
     "Game state 'A' will be back in 1 second",
     0.0F,
     500.0F,
-    @sprite.Color::srgb(0.5F, 0.5F, 1.0F),
+    @color.Color::srgb(0.5F, 0.5F, 1.0F),
     None,
     Some(@state.DespawnOnEnter::new(GameState::A)),
   )
@@ -147,7 +147,7 @@ fn on_b_enter(commands : @app.Commands) -> Unit {
     "Game is in state 'B'",
     50.0F,
     0.0F,
-    @sprite.Color::srgb(0.5F, 0.5F, 1.0F),
+    @color.Color::srgb(0.5F, 0.5F, 1.0F),
     Some(@state.DespawnOnExit::new(GameState::B)),
     None,
   )
@@ -161,7 +161,7 @@ fn on_b_exit(commands : @app.Commands) -> Unit {
     "Game state 'B' will be back in 1 second",
     50.0F,
     500.0F,
-    @sprite.Color::srgb(0.5F, 0.5F, 1.0F),
+    @color.Color::srgb(0.5F, 0.5F, 1.0F),
     None,
     Some(@state.DespawnOnEnter::new(GameState::B)),
   )

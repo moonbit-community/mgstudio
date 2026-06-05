@@ -98,7 +98,7 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
       0.0F,
     ),
   )
@@ -160,7 +160,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

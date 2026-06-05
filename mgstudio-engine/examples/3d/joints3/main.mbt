@@ -40,14 +40,14 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Vec3::new(-1.5F, 2.0F, 0.0F),
     0.4F,
-    @sprite.Color::new(0.90F, 0.60F, 0.20F, 1.0F),
+    @color.Color::new(0.90F, 0.60F, 0.20F, 1.0F),
     Some(@physics3d.RigidBody3d::dynamic()),
   )
   let b = @rapier_examples.rapier3d_spawn_ball(
     world,
     @math.Vec3::new(1.5F, 2.0F, 0.0F),
     0.4F,
-    @sprite.Color::new(0.20F, 0.75F, 0.95F, 1.0F),
+    @color.Color::new(0.20F, 0.75F, 0.95F, 1.0F),
     Some(@physics3d.RigidBody3d::dynamic()),
   )
   try! world.set_by_key(

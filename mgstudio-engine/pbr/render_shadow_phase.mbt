@@ -467,7 +467,7 @@ fn render3d_execute_shadow_phase_view(
         -1,
         0.0F,
         @math.Quat::identity(),
-        @sprite.Color::white(),
+        @color.Color::white(),
         0.0F,
         0.0F,
         render3d_mesh_flags(extracted_shadow_mesh),

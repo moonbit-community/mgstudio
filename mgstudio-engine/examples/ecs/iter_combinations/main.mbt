@@ -85,7 +85,7 @@ fn spawn_body(
   velocity : @math.Vec2,
   radius : Float,
   mass : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   star? : Bool = false,
 ) -> Unit {
   let bundle = (
@@ -126,7 +126,7 @@ fn setup(
     @math.Vec2::new(0.0F, 0.0F),
     28.0F,
     1800.0F,
-    @sprite.Color::srgb(1.0F, 0.38F, 0.18F),
+    @color.Color::srgb(1.0F, 0.38F, 0.18F),
     star=true,
   )
   spawn_body(
@@ -137,7 +137,7 @@ fn setup(
     @math.Vec2::new(0.0F, 62.0F),
     10.0F,
     8.0F,
-    @sprite.Color::srgb(0.55F, 0.76F, 1.0F),
+    @color.Color::srgb(0.55F, 0.76F, 1.0F),
   )
   spawn_body(
     commands,
@@ -147,7 +147,7 @@ fn setup(
     @math.Vec2::new(0.0F, -58.0F),
     12.0F,
     10.0F,
-    @sprite.Color::srgb(0.35F, 0.95F, 0.78F),
+    @color.Color::srgb(0.35F, 0.95F, 0.78F),
   )
   spawn_body(
     commands,
@@ -157,7 +157,7 @@ fn setup(
     @math.Vec2::new(-68.0F, 0.0F),
     11.0F,
     9.0F,
-    @sprite.Color::srgb(0.96F, 0.87F, 0.42F),
+    @color.Color::srgb(0.96F, 0.87F, 0.42F),
   )
   spawn_body(
     commands,
@@ -167,7 +167,7 @@ fn setup(
     @math.Vec2::new(52.0F, 0.0F),
     9.0F,
     7.0F,
-    @sprite.Color::srgb(0.96F, 0.52F, 0.81F),
+    @color.Color::srgb(0.96F, 0.52F, 0.81F),
   )
 }
 

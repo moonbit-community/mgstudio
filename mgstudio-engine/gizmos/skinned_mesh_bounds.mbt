@@ -36,31 +36,31 @@ pub fn SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin() -> SkinnedMe
 ///|
 pub struct SkinnedMeshBoundsGizmoConfigGroup {
   draw_all : Bool
-  default_color : @sprite.Color
+  default_color : @color.Color
 }
 
 ///|
 pub fn SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup() -> SkinnedMeshBoundsGizmoConfigGroup {
   SkinnedMeshBoundsGizmoConfigGroup::{
     draw_all: false,
-    default_color: @sprite.Color::white(),
+    default_color: @color.Color::white(),
   }
 }
 
 ///|
-pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with default() {
+pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with fn default() {
   SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_marker(
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_debug_name() {
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::SkinnedMeshBoundsGizmoConfigGroup"
 }
 
@@ -72,7 +72,7 @@ let skinned_mesh_bounds_gizmo_storage_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_storage_resource_key() {
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_storage_resource_key() {
   skinned_mesh_bounds_gizmo_storage_resource_key
 }
 
@@ -82,14 +82,14 @@ extenum @sprite.GizmoConfigGroupCell += {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with new_gizmo_config_group_cell() {
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   SkinnedMeshBoundsGizmoConfigGroupCell(
     Ref(SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()),
   )
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_cell_ref(
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -100,7 +100,7 @@ pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with giz
 
 ///|
 pub struct ShowSkinnedMeshBoundsGizmo {
-  color : @sprite.Color?
+  color : @color.Color?
 }
 
 ///|
@@ -109,7 +109,7 @@ pub fn ShowSkinnedMeshBoundsGizmo::ShowSkinnedMeshBoundsGizmo() -> ShowSkinnedMe
 }
 
 ///|
-pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with component() {
+pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with fn component() {
   ecs_key_show_skinned_mesh_bounds_gizmo
 }
 
@@ -136,11 +136,11 @@ pub fn skinned_mesh_bounds_gizmo_plugin_with(
 }
 
 ///|
-pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with name(_self) {
+pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with fn name(_self) {
   SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with build(self, app) {
+pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin with fn build(self, app) {
   skinned_mesh_bounds_gizmo_plugin_with(app, self)
 }

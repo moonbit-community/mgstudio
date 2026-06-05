@@ -194,9 +194,9 @@ fn MineWorldState::get_nearby(
 }
 
 ///|
-fn mine_color(size : Float) -> @sprite.Color {
+fn mine_color(size : Float) -> @color.Color {
   let normalized = (size - 12.0F) / 16.0F
-  @sprite.Color::hsl(normalized * 320.0F, 0.85F, 0.65F)
+  @color.Color::hsl(normalized * 320.0F, 0.85F, 0.65F)
 }
 
 ///|

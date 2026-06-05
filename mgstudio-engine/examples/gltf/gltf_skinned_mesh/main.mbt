@@ -20,7 +20,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 750.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 750.0F),
   )
 
   ignore(

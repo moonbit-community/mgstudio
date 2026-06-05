@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material" @sprite_render_mesh2d_color_material,
@@ -15,7 +16,6 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/scene",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
 }
 

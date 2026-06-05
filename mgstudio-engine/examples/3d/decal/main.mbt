@@ -52,7 +52,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+    @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
       Some(asset_server.load("textures/uv_checker_bw.png")),
     ),
   )
@@ -101,7 +101,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+    @pbr.StandardMaterial::from_color(@color.Color::white()),
   )
 
   @pbr.MeshMaterial3dBundle::new(

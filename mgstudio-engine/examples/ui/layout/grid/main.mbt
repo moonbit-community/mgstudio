@@ -28,7 +28,7 @@ fn spawn_text(
   parent : @core.Entity,
   content : String,
   font : @asset.Handle[@asset.Font],
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   try! world.set_by_key(
@@ -98,7 +98,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     root,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::white()),
+    @ui.BackgroundColor::new(@color.Color::white()),
   )
 
   let header = world.spawn_empty()
@@ -119,7 +119,7 @@ fn setup(world : @ecs.World) -> Unit {
       header,
       "Grid layout example",
       font,
-      @sprite.Color::black(),
+      @color.Color::black(),
     ),
   )
 
@@ -154,26 +154,26 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     main_grid,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
   )
 
-  let colors : Array[@sprite.Color] = [
-    @sprite.Color::srgb(1.0F, 0.647F, 0.0F),
-    @sprite.Color::srgb(1.0F, 0.894F, 0.769F),
-    @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
-    @sprite.Color::srgb(0.863F, 0.078F, 0.235F),
-    @sprite.Color::srgb(0.0F, 1.0F, 1.0F),
-    @sprite.Color::srgb(1.0F, 0.271F, 0.0F),
-    @sprite.Color::srgb(0.0F, 0.392F, 0.0F),
-    @sprite.Color::srgb(1.0F, 0.0F, 1.0F),
-    @sprite.Color::srgb(0.0F, 0.5F, 0.5F),
-    @sprite.Color::srgb(0.941F, 0.973F, 1.0F),
-    @sprite.Color::srgb(1.0F, 0.863F, 0.769F),
-    @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
-    @sprite.Color::srgb(1.0F, 0.078F, 0.576F),
-    @sprite.Color::srgb(0.604F, 0.804F, 0.196F),
-    @sprite.Color::srgb(0.98F, 0.502F, 0.447F),
-    @sprite.Color::srgb(0.255F, 0.412F, 0.882F),
+  let colors : Array[@color.Color] = [
+    @color.Color::srgb(1.0F, 0.647F, 0.0F),
+    @color.Color::srgb(1.0F, 0.894F, 0.769F),
+    @color.Color::srgb(0.0F, 0.0F, 1.0F),
+    @color.Color::srgb(0.863F, 0.078F, 0.235F),
+    @color.Color::srgb(0.0F, 1.0F, 1.0F),
+    @color.Color::srgb(1.0F, 0.271F, 0.0F),
+    @color.Color::srgb(0.0F, 0.392F, 0.0F),
+    @color.Color::srgb(1.0F, 0.0F, 1.0F),
+    @color.Color::srgb(0.0F, 0.5F, 0.5F),
+    @color.Color::srgb(0.941F, 0.973F, 1.0F),
+    @color.Color::srgb(1.0F, 0.863F, 0.769F),
+    @color.Color::srgb(1.0F, 1.0F, 0.0F),
+    @color.Color::srgb(1.0F, 0.078F, 0.576F),
+    @color.Color::srgb(0.604F, 0.804F, 0.196F),
+    @color.Color::srgb(0.98F, 0.502F, 0.447F),
+    @color.Color::srgb(0.255F, 0.412F, 0.882F),
   ]
   for color in colors {
     let frame = world.spawn_empty()
@@ -192,7 +192,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       frame,
       @ui.ecs_key_background_color,
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     )
 
     let inner = world.spawn_empty()
@@ -236,16 +236,16 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     sidebar,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::black()),
+    @ui.BackgroundColor::new(@color.Color::black()),
   )
-  ignore(spawn_text(world, sidebar, "Sidebar", font, @sprite.Color::white()))
+  ignore(spawn_text(world, sidebar, "Sidebar", font, @color.Color::white()))
   ignore(
     spawn_text(
       world,
       sidebar,
       "A paragraph of text which wraps across the sidebar column.",
       font,
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
 
@@ -270,7 +270,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     footer,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::white()),
+    @ui.BackgroundColor::new(@color.Color::white()),
   )
 }
 

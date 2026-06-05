@@ -40,7 +40,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
 
@@ -55,11 +55,11 @@ fn setup(commands : @app.Commands) -> Unit {
         .with_position_type(@ui.PositionType::Absolute),
         @ui.BackgroundColor::new(
           match i {
-            0 => @sprite.Color::new(0.9F, 0.1F, 0.1F, 0.25F)
-            1 => @sprite.Color::new(0.1F, 0.2F, 0.9F, 0.25F)
-            2 => @sprite.Color::new(0.95F, 0.85F, 0.1F, 0.2F)
-            3 => @sprite.Color::new(0.1F, 0.75F, 0.6F, 0.2F)
-            _ => @sprite.Color::new(0.9F, 0.9F, 0.9F, 0.1F)
+            0 => @color.Color::new(0.9F, 0.1F, 0.1F, 0.25F)
+            1 => @color.Color::new(0.1F, 0.2F, 0.9F, 0.25F)
+            2 => @color.Color::new(0.95F, 0.85F, 0.1F, 0.2F)
+            3 => @color.Color::new(0.1F, 0.75F, 0.6F, 0.2F)
+            _ => @color.Color::new(0.9F, 0.9F, 0.9F, 0.1F)
           },
         ),
       ),
@@ -82,7 +82,7 @@ fn animate_layers(
     let f = Float::from_int(layer.value().index)
     color.set(
       @ui.BackgroundColor::new(
-        @sprite.Color::new(
+        @color.Color::new(
           0.5F + 0.4F * @math.sin(elapsed * 0.35F + f),
           0.5F + 0.4F * @math.sin(elapsed * 0.45F + f * 1.2F),
           0.5F + 0.4F * @math.sin(elapsed * 0.55F + f * 1.5F),

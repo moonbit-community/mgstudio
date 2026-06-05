@@ -52,7 +52,7 @@ fn draw_text(
     "Hello",
     1.0F,
     @math.Vec2::zero(),
-    @sprite.Color::srgb(0.9F, 0.2F, 0.2F),
+    @color.Color::srgb(0.9F, 0.2F, 0.2F),
   )
   gizmos.text_3d(
     @math.Isometry3d::new(
@@ -62,7 +62,7 @@ fn draw_text(
     "Text",
     1.0F,
     @math.Vec2::zero(),
-    @sprite.Color::srgb(0.95F, 0.5F, 0.15F),
+    @color.Color::srgb(0.95F, 0.5F, 0.15F),
   )
   gizmos.text_3d(
     @math.Isometry3d::new(
@@ -72,7 +72,7 @@ fn draw_text(
     "Gizmos",
     1.0F,
     @math.Vec2::zero(),
-    @sprite.Color::srgb(0.95F, 0.85F, 0.25F),
+    @color.Color::srgb(0.95F, 0.85F, 0.25F),
   )
 }
 

@@ -54,7 +54,7 @@ fn stroke_text_emit_2d(
   text : String,
   font_size : Float,
   anchor : @math.Vec2,
-  color : Color,
+  color : @color.Color,
 ) -> Unit {
   let scale = font_size / SIMPLEX_CAP_HEIGHT
   let glyph_height = SIMPLEX_HEIGHT * scale
@@ -116,7 +116,7 @@ fn stroke_text_emit_3d(
   text : String,
   font_size : Float,
   anchor : @math.Vec2,
-  color : Color,
+  color : @color.Color,
 ) -> Unit {
   let scale = font_size / SIMPLEX_CAP_HEIGHT
   let glyph_height = SIMPLEX_HEIGHT * scale

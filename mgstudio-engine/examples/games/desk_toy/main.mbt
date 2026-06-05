@@ -50,7 +50,7 @@ fn setup(commands : @app.Commands) -> Unit {
       commands.spawn(
         (
           @sprite.Sprite::sized(@math.Vec2::new(34.0F, 34.0F)).with_color(
-            @sprite.Color::hsl(float_from_int(i * 23 % 360), 0.8F, 0.58F),
+            @color.Color::hsl(float_from_int(i * 23 % 360), 0.8F, 0.58F),
           ),
           @transform.Transform::from_xyz(
             @math.sin(float_from_int(i) * 1.41F) * 420.0F,

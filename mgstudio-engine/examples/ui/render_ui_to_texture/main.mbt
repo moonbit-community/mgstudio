@@ -96,18 +96,18 @@ pub impl @app.Resource for PanelDragState with fn resource() {
 }
 
 ///|
-fn gray() -> @sprite.Color {
-  @sprite.Color::srgb(0.5F, 0.5F, 0.5F)
+fn gray() -> @color.Color {
+  @color.Color::srgb(0.5F, 0.5F, 0.5F)
 }
 
 ///|
-fn blue() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
+fn blue() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn red() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
+fn red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
@@ -188,7 +188,7 @@ fn cuboid_pointer_position(
 ///|
 fn set_panel_color(
   entity : @core.Entity,
-  color : @sprite.Color,
+  color : @color.Color,
   backgrounds : @ecs.Query[@ecs.Mut[@ui.BackgroundColor], @ecs.All],
 ) -> Unit {
   let background = backgrounds.get(entity) catch { _ => None }
@@ -222,7 +222,7 @@ fn setup(
     |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE))
   let cube_material = materials.peek()
     |> @pbr.add_material(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white())
+      @pbr.StandardMaterial::from_color(@color.Color::white())
       .with_base_color_texture(Some(image_handle))
       .with_reflectance(0.02F),
     )
@@ -272,7 +272,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(40.0F)),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
     ),
   )
   |> ignore

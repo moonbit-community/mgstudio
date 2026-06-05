@@ -61,7 +61,7 @@ fn setup(
   let viewport_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.87F, 0.93F, 1.0F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.87F, 0.93F, 1.0F)),
     )
   commands.spawn(
     (
@@ -75,7 +75,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_200_000.0F, 25.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_200_000.0F, 25.0F, false),
       @transform.Transform::from_xyz(0.0F, 5.0F, 5.0F),
     ),
   )
@@ -93,7 +93,7 @@ fn setup(
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.1F, 0.12F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
   commands.spawn(
@@ -104,7 +104,7 @@ fn setup(
       .with_height(@ui.Val::Px(260.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F))),
-      @ui.BorderColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.95F)),
+      @ui.BorderColor::new(@color.Color::srgb(0.9F, 0.9F, 0.95F)),
       @ui.ImageNode::new(target),
     ),
   )

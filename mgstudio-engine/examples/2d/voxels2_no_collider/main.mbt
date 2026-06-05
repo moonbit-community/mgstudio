@@ -28,7 +28,7 @@ fn rapier2d_voxels2_no_collider_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.58F, 0.73F, 0.49F, 1.0F),
+      @color.Color::new(0.58F, 0.73F, 0.49F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -59,7 +59,7 @@ fn rapier2d_voxels2_no_collider_setup(world : @ecs.World) -> Unit {
         voxel,
         @sprite.ecs_key_sprite,
         @sprite.Sprite::from_image(texture)
-        .with_color(@sprite.Color::new(0.80F, 0.86F, 0.90F, 1.0F))
+        .with_color(@color.Color::new(0.80F, 0.86F, 0.90F, 1.0F))
         .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
       )
       try! world.set_by_key(

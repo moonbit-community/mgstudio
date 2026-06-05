@@ -208,22 +208,16 @@ fn setup(world : @ecs.World) -> Unit {
   let sphere_mesh = uv_sphere_mesh(0.25F, 16, 24)
 
   let red_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
   )
   let blue_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F)),
   )
   let lime_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
   )
   let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
+    @pbr.StandardMaterial::from_color(@color.Color::white()).with_perceptual_roughness(
       1.0F,
     ),
   )
@@ -291,7 +285,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
+    @pbr.PointLight::new(@color.Color::white(), 0.0F, 500.0F, true),
   )
   try! world.set_by_key(
     point_light,
@@ -309,7 +303,7 @@ fn setup(world : @ecs.World) -> Unit {
     directional_light,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),

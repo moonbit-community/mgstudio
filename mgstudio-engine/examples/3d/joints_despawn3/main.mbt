@@ -62,7 +62,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
     0.4F,
-    @sprite.Color::new(0.85F, 0.85F, 0.95F, 1.0F),
+    @color.Color::new(0.85F, 0.85F, 0.95F, 1.0F),
     Some(@physics3d.RigidBody3d::fixed()),
   )
   let rad = 0.4F

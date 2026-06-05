@@ -73,7 +73,7 @@ fn setup(
   let material_handle = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.6F, 0.8F, 0.6F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.6F, 0.8F, 0.6F)),
     )
   let left_shape_model : @asset.Handle[@mesh.Mesh] = asset_server
     .get()

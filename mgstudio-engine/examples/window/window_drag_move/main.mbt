@@ -173,7 +173,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     root,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.75F)),
+    @ui.BackgroundColor::new(@color.Color::new(0.0F, 0.0F, 0.0F, 0.75F)),
   )
   try! world.set_by_key(
     root,
@@ -229,7 +229,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -249,7 +249,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,

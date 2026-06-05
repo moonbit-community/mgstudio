@@ -65,7 +65,7 @@ fn Val::same_unit_as(self : Val, other : Val) -> Bool {
 }
 
 ///|
-pub impl Eq for Val with equal(self, other) {
+pub impl Eq for Val with fn equal(self, other) {
   let same_unit = self.same_unit_as(other)
   match (same_unit, self.numeric_payload(), other.numeric_payload()) {
     (true, None, None) => true
@@ -76,7 +76,7 @@ pub impl Eq for Val with equal(self, other) {
 }
 
 ///|
-pub impl Eq for Val with not_equal(self, other) {
+pub impl Eq for Val with fn not_equal(self, other) {
   !(self == other)
 }
 
@@ -654,15 +654,11 @@ pub fn ResolvedBorderRadius::outline_radius(
 pub struct Outline {
   width : Val
   offset : Val
-  color : @sprite.Color
+  color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Outline::new(
-  width : Val,
-  offset : Val,
-  color : @sprite.Color,
-) -> Outline {
+pub fn Outline::new(width : Val, offset : Val, color : @color.Color) -> Outline {
   Outline::{ width, offset, color }
 }
 
@@ -671,16 +667,16 @@ pub fn Outline::Outline() -> Outline {
   Outline::{
     width: Val::Px(0.0F),
     offset: Val::Px(0.0F),
-    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
   }
 }
 
 ///|
 pub struct BorderColor {
-  color : @sprite.Color
+  color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BorderColor::new(color : @sprite.Color) -> BorderColor {
+pub fn BorderColor::new(color : @color.Color) -> BorderColor {
   BorderColor::{ color, }
 }

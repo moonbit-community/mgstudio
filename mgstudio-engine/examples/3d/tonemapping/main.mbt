@@ -343,7 +343,7 @@ fn setup(
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
-          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @color.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
           @pbr.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
@@ -403,7 +403,7 @@ fn setup(
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
         @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         TonemappingUiText::{  },
       ),
@@ -456,7 +456,7 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
           @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_maximum_distance(3.0F)
           .with_first_cascade_far_bound(0.9F),
@@ -498,7 +498,7 @@ fn setup_image_viewer_scene(
   let material_handle = material_assets
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_unlit(true),
     )
 
   let transform = camera_transform.get().transform
@@ -531,7 +531,7 @@ fn setup_image_viewer_scene(
         @text.TextFont::TextFont()
         .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
         .with_font_size(36.0F),
-        @text.TextColor::new(@sprite.Color::black()),
+        @text.TextColor::new(@color.Color::black()),
         @text.TextLayout::new_with_justify(@text.Justify::Center),
         SceneNumber::{ value: 3 },
         @visibility.Visibility::Hidden,

@@ -46,7 +46,7 @@ fn setup(
       material_assets
       |> @pbr.add_material(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+          @color.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
         )
         .with_base_color_texture(Some(texture))
         .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -55,7 +55,7 @@ fn setup(
       material_assets
       |> @pbr.add_material(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.5F),
+          @color.Color::new(0.0F, 0.0F, 1.0F, 0.5F),
         )
         .with_base_color_texture(Some(texture))
         .with_alpha_mode(@pbr.AlphaMode3d::Blend)

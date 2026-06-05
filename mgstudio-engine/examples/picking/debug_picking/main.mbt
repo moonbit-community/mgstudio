@@ -70,7 +70,7 @@ fn setup(
         ),
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(material_assets) {
-            material_assets |> @pbr.add_material(@sprite.Color::white())
+            material_assets |> @pbr.add_material(@color.Color::white())
           }),
         ),
         @transform.Transform::identity().with_rotation(
@@ -90,7 +90,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(material_assets) {
             material_assets
-            |> @pbr.add_material(@sprite.Color::srgb(0.5F, 0.7F, 1.0F))
+            |> @pbr.add_material(@color.Color::srgb(0.5F, 0.7F, 1.0F))
           }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.6F, 0.0F),
@@ -124,7 +124,7 @@ fn setup(
       .with_left(@ui.Val::Px(12.0F))
       .with_top(@ui.Val::Px(12.0F)),
       @text.Text::new(""),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
       @text.TextFont::from_font_size(@text.FontSize::Px(20.0F)),
     ),
   )

@@ -39,7 +39,7 @@ fn setup(
   let material_handle = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.72F, 0.95F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.72F, 0.95F)),
     )
 
   commands.spawn(
@@ -81,9 +81,7 @@ fn animate_material_color(
     let red = 0.45F + 0.4F * @math.sin(elapsed * 1.1F)
     let green = 0.5F + 0.35F * @math.sin(elapsed * 0.8F + 1.7F)
     let blue = 0.6F + 0.3F * @math.sin(elapsed * 1.5F + 3.1F)
-    let updated = material.with_base_color(
-      @sprite.Color::srgb(red, green, blue),
-    )
+    let updated = material.with_base_color(@color.Color::srgb(red, green, blue))
     materials.modify(fn(materials) { materials.set(handle, updated) |> ignore })
   })
 }

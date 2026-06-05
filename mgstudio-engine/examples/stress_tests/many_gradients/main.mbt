@@ -84,7 +84,7 @@ fn setup(commands : @app.Commands) -> Unit {
         @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F)),
-        @ui.BackgroundColor::new(@sprite.Color::hsl(hue, 1.0F, 0.5F)),
+        @ui.BackgroundColor::new(@color.Color::hsl(hue, 1.0F, 0.5F)),
       ),
     )
     |> ignore
@@ -104,7 +104,7 @@ fn animate_cells(
     let (cell, background) = data
     let idxf = float_from_int(cell.value().index)
     let h = (@math.sin(t + idxf * 0.01F) * 0.5F + 0.5F) * 360.0F
-    let color = @sprite.Color::hsl(h, 1.0F, 0.5F)
+    let color = @color.Color::hsl(h, 1.0F, 0.5F)
     background.set(@ui.BackgroundColor::new(color))
   })
 }

@@ -111,7 +111,7 @@ fn spawn_ui_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     entity,

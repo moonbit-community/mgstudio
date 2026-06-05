@@ -84,7 +84,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
@@ -138,7 +138,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     floor,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
+    .with_color(@color.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(800.0F, 40.0F))),
   )
   try! world.set_by_key(
@@ -221,7 +221,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     sensor_zone,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.0F, 0.8F, 0.9F, 0.35F))
+    .with_color(@color.Color::new(0.0F, 0.8F, 0.9F, 0.35F))
     .with_custom_size(Some(@math.Vec2::new(260.0F, 120.0F))),
   )
   try! world.set_by_key(
@@ -255,7 +255,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     player,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.9F))
+    .with_color(@color.Color::new(1.0F, 1.0F, 1.0F, 0.9F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 56.0F))),
   )
   try! world.set_by_key(
@@ -303,7 +303,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       box,
       @sprite.ecs_key_sprite,
       @sprite.Sprite::from_image(texture)
-      .with_color(@sprite.Color::new(0.9F, 0.6F, 0.2F, 1.0F))
+      .with_color(@color.Color::new(0.9F, 0.6F, 0.2F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(56.0F, 56.0F))),
     )
     try! world.set_by_key(
@@ -368,7 +368,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     bob,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.8F, 0.2F, 0.9F, 1.0F))
+    .with_color(@color.Color::new(0.8F, 0.2F, 0.9F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(32.0F, 32.0F))),
   )
   try! world.set_by_key(
@@ -410,7 +410,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     ghost_a,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.2F, 0.9F, 0.2F, 1.0F))
+    .with_color(@color.Color::new(0.2F, 0.9F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
   )
   try! world.set_by_key(
@@ -450,7 +450,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     ghost_b,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.2F, 0.3F, 1.0F, 1.0F))
+    .with_color(@color.Color::new(0.2F, 0.3F, 1.0F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
   )
   try! world.set_by_key(
@@ -601,7 +601,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
     ball,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(1.0F, 0.2F, 0.2F, 1.0F))
+    .with_color(@color.Color::new(1.0F, 0.2F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(24.0F, 24.0F))),
   )
   try! world.set_by_key(

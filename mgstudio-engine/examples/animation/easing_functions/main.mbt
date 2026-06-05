@@ -54,7 +54,7 @@ priv struct EaseSpec {
 ///|
 priv struct EaseFunctionPlot {
   function : @math.EaseFunction
-  color : @sprite.Color
+  color : @color.Color
   value_bar_entity : @core.Entity
   progress_dot_entity : @core.Entity
 }
@@ -109,7 +109,7 @@ fn setup(world : @ecs.World) -> Unit {
     let functions = rows[row]
     for col in 0..<functions.length() {
       let spec = functions[col]
-      let color = @sprite.Color::hsl(
+      let color = @color.Color::hsl(
         float_from_int(col) / float_from_int(COLS) * 360.0F,
         0.8F,
         0.75F,
@@ -342,7 +342,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -370,7 +370,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -457,7 +457,7 @@ fn ease_spec(function : @math.EaseFunction, label : String) -> EaseSpec {
 fn spawn_marker(
   world : @ecs.World,
   size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   position : @math.Vec2,
 ) -> @core.Entity {
   try! world.spawn_bundle(
@@ -485,7 +485,7 @@ fn spawn_marker(
 fn spawn_label(
   label : String,
   font : @text.TextFont,
-  color : @sprite.Color,
+  color : @color.Color,
   position : @math.Vec2,
 ) -> Unit {
   @text.Text2dBundle::new(

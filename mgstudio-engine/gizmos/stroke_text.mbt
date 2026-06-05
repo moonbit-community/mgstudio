@@ -30,7 +30,7 @@ pub fn[Config] gizmo_text_3d(
   text : String,
   font_size : Float,
   anchor : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.text_3d(isometry, text, font_size, anchor, color)
 }
@@ -42,7 +42,7 @@ pub fn[Config] gizmo_text_2d(
   text : String,
   font_size : Float,
   anchor : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.text_2d(isometry, text, font_size, anchor, color)
 }

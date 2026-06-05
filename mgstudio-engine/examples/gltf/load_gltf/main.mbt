@@ -57,7 +57,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
+      @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
         @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
         .with_num_cascades(1)
         .with_maximum_distance(1.6F),

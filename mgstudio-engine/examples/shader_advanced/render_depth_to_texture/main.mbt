@@ -67,7 +67,7 @@ fn setup(
   let offscreen_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.85F, 0.92F, 1.0F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.85F, 0.92F, 1.0F)),
     )
   commands.spawn(
     (
@@ -89,7 +89,7 @@ fn setup(
   let preview_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
         Some(render_target),
       ),
     )
@@ -106,7 +106,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_500_000.0F, 40.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_500_000.0F, 40.0F, false),
       @transform.Transform::from_xyz(0.0F, 8.0F, 6.0F),
     ),
   )

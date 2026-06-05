@@ -460,7 +460,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
   )
 
   let cube_mesh = @mesh.Mesh3d::new(
@@ -514,9 +514,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let candle_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.2F, 0.3F, 1.0F))
     .with_diffuse_transmission(0.7F)
     .with_perceptual_roughness(0.32F)
     .with_thickness(0.2F),
@@ -530,10 +528,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let flame_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-    )
-    .with_emissive(@sprite.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
+    .with_emissive(@color.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
     .with_diffuse_transmission(1.0F),
   )
   let flame_mesh_entity = @pbr.MeshMaterial3dBundle::new(
@@ -551,9 +547,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
   let white_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
     .with_thickness(1.8F)
@@ -569,9 +563,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let red_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F))
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
     .with_thickness(1.8F)
@@ -589,9 +581,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let green_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F))
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
     .with_thickness(1.8F)
@@ -609,9 +599,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let blue_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F))
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
     .with_thickness(1.8F)
@@ -629,12 +617,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let black_tile = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black())
+    @pbr.StandardMaterial::from_color(@color.Color::black())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
   let white_tile = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
@@ -662,7 +650,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let paper_material_base = @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
     .with_diffuse_transmission(0.6F)
     .with_perceptual_roughness(0.8F)
@@ -694,7 +682,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     flame_light,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
-      @sprite.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
+      @color.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
       4_000.0F,
       5.0F,
       true,
@@ -709,7 +697,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let color_grading = @post_process.ColorGrading::ColorGrading()
   color_grading.global.post_saturation = 1.2F
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera().with_clear_color(@sprite.Color::black()),
+      @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
       @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
@@ -777,7 +765,7 @@ fn setup_text(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
 
@@ -813,7 +801,7 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
     for handle in transmission_state.val.color_materials {
       if @pbr.standard_material_get(handle) is Some(material) {
         let alpha = material.base_color.a
-        let random_color = @sprite.Color::new(
+        let random_color = @color.Color::new(
           next_random_unit(),
           next_random_unit(),
           next_random_unit(),

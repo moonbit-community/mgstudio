@@ -191,7 +191,7 @@ fn spawn_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::srgb(0.95F, 0.95F, 0.95F)),
+    @text.TextColor::new(@color.Color::srgb(0.95F, 0.95F, 0.95F)),
   )
   entity
 }
@@ -253,12 +253,12 @@ fn spawn_border_example(
     world,
     Some(cell),
     box_node,
-    Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.45F, 0.05F, 0.18F))),
+    Some(@ui.BackgroundColor::new(@color.Color::srgb(0.45F, 0.05F, 0.18F))),
   )
   try! world.set_by_key(
     border_box,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::srgb(0.0F, 0.7F, 1.0F)),
+    @ui.BorderColor::new(@color.Color::srgb(0.0F, 0.7F, 1.0F)),
   )
   try! world.set_by_key(
     border_box,
@@ -266,7 +266,7 @@ fn spawn_border_example(
     @ui.Outline::new(
       @ui.Val::Px(4.0F),
       @ui.Val::Px(6.0F),
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
   ignore(
@@ -276,7 +276,7 @@ fn spawn_border_example(
       @ui.Node::Node()
       .with_width(@ui.Val::Px(12.0F))
       .with_height(@ui.Val::Px(12.0F)),
-      Some(@ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.92F, 0.0F))),
+      Some(@ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F))),
     ),
   )
   spawn_label(world, cell, label, font)
@@ -308,7 +308,7 @@ fn spawn_section(
       .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
       flex_wrap: @ui.FlexWrap::Wrap,
     },
-    Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.16F, 0.16F, 0.16F))),
+    Some(@ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.16F, 0.16F))),
   )
   for entry in border_cases() {
     spawn_border_example(world, samples, entry.0, entry.1, font, rounded~)
@@ -338,7 +338,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
     .with_row_gap(@ui.Val::Px(24.0F)),
-    Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.08F))),
+    Some(@ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.08F))),
   )
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 

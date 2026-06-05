@@ -114,36 +114,30 @@ fn spawn_mesh(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let floor_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.3F, 0.5F, 0.3F, 1.0F)),
   )
   let mask_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
-    ).with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F)),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.2F, 0.7F, 0.1F, 0.0F)).with_alpha_mode(
+      @pbr.AlphaMode3d::Mask(0.5F),
+    ),
   )
   let mask_unlit_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.2F, 0.7F, 0.1F, 0.0F))
     .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
     .with_unlit(true),
   )
   let blend_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.5F, 0.5F, 1.0F, 0.0F),
-    ).with_alpha_mode(@pbr.AlphaMode3d::Blend),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.5F, 0.5F, 1.0F, 0.0F)).with_alpha_mode(
+      @pbr.AlphaMode3d::Blend,
+    ),
   )
   let alpha_to_coverage_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.5F, 1.0F, 0.5F, 0.0F),
-    ).with_alpha_mode(@pbr.AlphaMode3d::AlphaToCoverage),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.5F, 1.0F, 0.5F, 0.0F)).with_alpha_mode(
+      @pbr.AlphaMode3d::AlphaToCoverage,
+    ),
   )
   let opaque_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.7F, 0.2F, 0.1F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.7F, 0.2F, 0.1F, 1.0F)),
   )
 
   transparency_state.val.materials = [
@@ -217,7 +211,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 20.0F, true),
   )
   try! world.set_by_key(
     point,
@@ -248,7 +242,7 @@ fn fade_transparency(world : @ecs.World) -> Unit {
   let alpha = @math.sin(world_time(world).elapsed_seconds()) / 2.0F + 0.5F
   for handle in transparency_state.val.materials {
     if @pbr.standard_material_get(handle) is Some(material) {
-      let next_color = @sprite.Color::new(
+      let next_color = @color.Color::new(
         material.base_color.r,
         material.base_color.g,
         material.base_color.b,

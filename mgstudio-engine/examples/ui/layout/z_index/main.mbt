@@ -20,7 +20,7 @@ fn spawn_box(
   bottom : Float,
   width : Float,
   height : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   z_index : @ui.ZIndex?,
   global_z_index : @ui.GlobalZIndex?,
 ) -> @core.Entity {
@@ -96,7 +96,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     container,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
   )
 
   ignore(
@@ -107,7 +107,7 @@ fn setup(world : @ecs.World) -> Unit {
       40.0F,
       100.0F,
       50.0F,
-      @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
+      @color.Color::srgb(1.0F, 0.0F, 0.0F),
       None,
       None,
     ),
@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
       30.0F,
       100.0F,
       50.0F,
-      @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+      @color.Color::srgb(0.0F, 0.0F, 1.0F),
       Some(@ui.ZIndex::new(2)),
       None,
     ),
@@ -133,7 +133,7 @@ fn setup(world : @ecs.World) -> Unit {
       20.0F,
       100.0F,
       75.0F,
-      @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+      @color.Color::srgb(0.0F, 1.0F, 0.0F),
       Some(@ui.ZIndex::new(-1)),
       None,
     ),
@@ -146,7 +146,7 @@ fn setup(world : @ecs.World) -> Unit {
       10.0F,
       100.0F,
       60.0F,
-      @sprite.Color::srgb(0.5F, 0.0F, 0.5F),
+      @color.Color::srgb(0.5F, 0.0F, 0.5F),
       None,
       Some(@ui.GlobalZIndex::new(1)),
     ),
@@ -159,7 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
       -15.0F,
       100.0F,
       125.0F,
-      @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
+      @color.Color::srgb(1.0F, 1.0F, 0.0F),
       None,
       Some(@ui.GlobalZIndex::new(-1)),
     ),

@@ -165,7 +165,7 @@ fn maxf(a : Float, b : Float) -> Float {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -470,7 +470,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.06F)
+  set_global_ambient_light(world, @color.Color::white(), 0.06F)
 
   let room_scene = @scene.scene_load_gltf_scene(
     asset_server,
@@ -484,7 +484,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
 
   let reflective_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_metallic(1.0F)
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F),
@@ -518,7 +518,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 10_000.0F, true),
   )
   try! world.set_by_key(
     directional,
@@ -605,7 +605,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let bounds_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.82F, 0.71F, 0.55F, 0.16F),
+      @color.Color::new(0.82F, 0.71F, 0.55F, 0.16F),
     )
     .with_unlit(true)
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -614,7 +614,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
   let falloff_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.86F, 0.14F, 0.22F, 0.18F),
+      @color.Color::new(0.86F, 0.14F, 0.22F, 0.18F),
     )
     .with_unlit(true)
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -623,7 +623,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
   let parallax_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.39F, 0.58F, 0.93F, 0.18F),
+      @color.Color::new(0.39F, 0.58F, 0.93F, 0.18F),
     )
     .with_unlit(true)
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -686,7 +686,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

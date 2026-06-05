@@ -100,7 +100,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
+      @color.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)

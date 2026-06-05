@@ -74,7 +74,7 @@ fn setup(
       (
         ObserverTarget::{ step: 18.0F },
         @sprite.Sprite::from_image(ship).with_color(
-          @sprite.Color::srgb(0.25F, 0.55F, 0.95F),
+          @color.Color::srgb(0.25F, 0.55F, 0.95F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
           @math.Vec3::new(2.0F, 2.0F, 1.0F),
@@ -96,7 +96,7 @@ fn setup(
           top: @ui.Val::Px(12.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),

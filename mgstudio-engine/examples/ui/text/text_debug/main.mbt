@@ -52,37 +52,37 @@ pub impl @ecs.Component for FrameTimeValue with fn component() {
 }
 
 ///|
-fn maroon() -> @sprite.Color {
-  @sprite.Color::srgb(0.5F, 0.0F, 0.0F)
+fn maroon() -> @color.Color {
+  @color.Color::srgb(0.5F, 0.0F, 0.0F)
 }
 
 ///|
-fn yellow() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 0.0F)
+fn yellow() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 0.0F)
 }
 
 ///|
-fn pink() -> @sprite.Color {
-  @sprite.Color::srgb(0.8F, 0.2F, 0.7F)
+fn pink() -> @color.Color {
+  @color.Color::srgb(0.8F, 0.2F, 0.7F)
 }
 
 ///|
-fn green_yellow() -> @sprite.Color {
-  @sprite.Color::srgb(0.68F, 1.0F, 0.18F)
+fn green_yellow() -> @color.Color {
+  @color.Color::srgb(0.68F, 1.0F, 0.18F)
 }
 
 ///|
-fn orange_red() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.27F, 0.0F)
+fn orange_red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.27F, 0.0F)
 }
 
 ///|
-fn lime() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
+fn lime() -> @color.Color {
+  @color.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
-fn background(color : @sprite.Color) -> @ui.BackgroundColor {
+fn background(color : @color.Color) -> @ui.BackgroundColor {
   @ui.BackgroundColor::new(color)
 }
 
@@ -102,8 +102,8 @@ fn spawn_text_block(
   content : String,
   font : @text.TextFont,
   node : @ui.Node,
-  background_color : @sprite.Color,
-  text_color? : @sprite.Color = @sprite.Color::white(),
+  background_color : @color.Color,
+  text_color? : @color.Color = @color.Color::white(),
   layout? : @text.TextLayout = @text.TextLayout::TextLayout(),
 ) -> @core.Entity {
   commands.spawn(
@@ -125,7 +125,7 @@ fn spawn_text_span(
   parent : @core.Entity,
   content : String,
   font : @text.TextFont,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   commands.spawn(
     (
@@ -346,7 +346,7 @@ fn setup(
     @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(42.0F)),
-    @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
+    @color.Color::srgb(0.2F, 0.5F, 1.0F),
   )
   ignore(
     commands.entity(frame_time_value).insert_component(FrameTimeValue::{  }),
@@ -359,7 +359,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(42.0F)),
-      @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
+      @color.Color::srgb(0.2F, 0.5F, 1.0F),
     ),
   )
   ignore(
@@ -370,7 +370,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(0.0F)),
-      @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
+      @color.Color::srgb(0.2F, 0.5F, 1.0F),
     ),
   )
 }

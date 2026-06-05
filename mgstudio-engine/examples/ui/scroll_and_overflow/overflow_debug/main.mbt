@@ -260,7 +260,7 @@ fn spawn_demo_cell(
           "\{content_title(content)} / \{motion_title(motion_kind)}",
         ),
         title_font(font),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -269,7 +269,7 @@ fn spawn_demo_cell(
       @hierarchy.Parent::new(cell),
       Container::{  },
       clipped_container_node(DEFAULT_CONTAINER_SIZE, overflow),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
     ),
   )
   match content {
@@ -296,7 +296,7 @@ fn spawn_demo_cell(
             @transform.Transform::identity(),
             @text.Text::new("Bevy"),
             content_font(font),
-            @text.TextColor::new(@sprite.Color::white()),
+            @text.TextColor::new(@color.Color::white()),
           ),
         ),
       )
@@ -344,7 +344,7 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       root_node(),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
 
@@ -364,7 +364,7 @@ fn setup(
           ),
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )

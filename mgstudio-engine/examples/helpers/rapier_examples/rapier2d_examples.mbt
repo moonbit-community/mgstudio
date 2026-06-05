@@ -27,7 +27,7 @@ pub fn rapier2d_spawn_camera(world : @ecs.World, x : Float, y : Float) -> Unit {
 ///|
 pub fn rapier2d_set_clear_color(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   world.insert_resource(
     @camera_clear_color.ClearColor::resource(),
@@ -56,7 +56,7 @@ pub fn rapier2d_spawn_sprite_box(
   position : @math.Vec2,
   half_size : @math.Vec2,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   try! world.spawn_bundle(
     (
@@ -78,7 +78,7 @@ pub fn rapier2d_spawn_sprite_box(
 ///|
 pub fn rapier2d_spawn_camera_and_clear(
   world : @ecs.World,
-  clear_color : @sprite.Color,
+  clear_color : @color.Color,
   camera_position : @math.Vec2,
 ) -> Unit {
   rapier2d_set_clear_color(world, clear_color)
@@ -92,7 +92,7 @@ fn rapier2d_spawn_physics_sprite(
   position : @math.Vec2,
   half_size : @math.Vec2,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   body : @physics2d.RigidBody2d,
   shape : @physics2d.ColliderShape2d,
 ) -> @core.Entity {
@@ -132,7 +132,7 @@ pub fn rapier2d_spawn_dynamic_box(
   position : @math.Vec2,
   half_size : @math.Vec2,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   rapier2d_spawn_physics_sprite(
     world,
@@ -153,7 +153,7 @@ pub fn rapier2d_spawn_fixed_box(
   position : @math.Vec2,
   half_size : @math.Vec2,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   rapier2d_spawn_physics_sprite(
     world,
@@ -174,7 +174,7 @@ pub fn rapier2d_spawn_dynamic_ball(
   position : @math.Vec2,
   radius : Float,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   rapier2d_spawn_physics_sprite(
     world,
@@ -195,7 +195,7 @@ pub fn rapier2d_spawn_fixed_ball(
   position : @math.Vec2,
   radius : Float,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   rapier2d_spawn_physics_sprite(
     world,
@@ -226,7 +226,7 @@ pub fn rapier2d_spawn_static_bounds(
     @math.Vec2::new(0.0F, floor_y),
     @math.Vec2::new(width, thickness),
     0.0F,
-    @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
   )
   |> ignore
   rapier2d_spawn_fixed_box(
@@ -235,7 +235,7 @@ pub fn rapier2d_spawn_static_bounds(
     @math.Vec2::new(-wall_x, 0.0F),
     @math.Vec2::new(thickness, half_width),
     0.0F,
-    @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
   )
   |> ignore
   rapier2d_spawn_fixed_box(
@@ -244,7 +244,7 @@ pub fn rapier2d_spawn_static_bounds(
     @math.Vec2::new(wall_x, 0.0F),
     @math.Vec2::new(thickness, half_width),
     0.0F,
-    @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
   )
   |> ignore
 }

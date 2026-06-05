@@ -47,7 +47,7 @@ fn setup(
       .peek()
       .add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.62F, 0.72F, 0.96F),
+          @color.Color::srgb(0.62F, 0.72F, 0.96F),
         ),
       )
     commands.spawn(
@@ -68,7 +68,7 @@ fn setup(
   }
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_600_000.0F, 36.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_600_000.0F, 36.0F, false),
       @transform.Transform::from_xyz(0.0F, 7.0F, 0.0F),
     ),
   )

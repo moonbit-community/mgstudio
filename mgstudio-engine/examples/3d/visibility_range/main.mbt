@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+          @color.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -242,7 +242,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 20_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 20_000.0F, true),
   )
   let light_angle = -0.15F * PI
   let light_rotation = @math.Quat::from_rotation_z(0.0F)
@@ -290,7 +290,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

@@ -26,7 +26,7 @@ fn setup(
   let cube_material = material_assets
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.8F, 0.7F, 0.6F)),
     )
 
   ignore(
@@ -55,7 +55,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 1_000.0F, false),
+        @pbr.DirectionalLight::new(@color.Color::white(), 1_000.0F, false),
         @transform.Transform::from_xyz(2.0F, 4.0F, 2.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

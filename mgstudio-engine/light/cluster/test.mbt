@@ -141,7 +141,7 @@ test "light cluster: assign system uses max light range for default far z mode" 
     spot,
     @light.ecs_key_spot_light,
     @light.SpotLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       1_000_000.0F,
       55.0F,
       0.6F,

@@ -17,7 +17,7 @@ const BUTTONS_PER_AXIS : Int = 20
 
 ///|
 struct IdleColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -65,7 +65,7 @@ fn setup(commands : @app.Commands) -> Unit {
   for row in 0..<BUTTONS_PER_AXIS {
     for column in 0..<BUTTONS_PER_AXIS {
       let h = float_from_int((row * BUTTONS_PER_AXIS + column) % 360)
-      let bg = @sprite.Color::hsl(h, 0.9F, 0.8F)
+      let bg = @color.Color::hsl(h, 0.9F, 0.8F)
       ignore(
         commands.spawn(
           (
@@ -79,7 +79,7 @@ fn setup(commands : @app.Commands) -> Unit {
               @ui.UiRect::all(@ui.Val::VMin(0.05F * 90.0F / buttons_f)),
             ),
             @ui.BackgroundColor::new(bg),
-            @ui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.5F)),
+            @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.5F)),
           ),
         ),
       )
@@ -101,7 +101,7 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle_color) = data
     let next = match interaction.value() {
-      @ui.Interaction::Hovered => @sprite.Color::srgb(1.0F, 0.27F, 0.0F)
+      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.27F, 0.0F)
       _ => idle_color.value().color
     }
     color.set(@ui.BackgroundColor::new(next))

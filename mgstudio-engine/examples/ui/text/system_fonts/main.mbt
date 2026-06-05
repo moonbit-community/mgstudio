@@ -13,18 +13,18 @@
 // limitations under the License.
 
 ///|
-fn page_background() -> @sprite.Color {
-  @sprite.Color::srgb(0.1F, 0.1F, 0.1F)
+fn page_background() -> @color.Color {
+  @color.Color::srgb(0.1F, 0.1F, 0.1F)
 }
 
 ///|
-fn panel_background() -> @sprite.Color {
-  @sprite.Color::srgb(0.2F, 0.2F, 0.25F)
+fn panel_background() -> @color.Color {
+  @color.Color::srgb(0.2F, 0.2F, 0.25F)
 }
 
 ///|
-fn label_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.9F, 0.9F, 0.9F)
+fn label_color() -> @color.Color {
+  @color.Color::srgb(0.9F, 0.9F, 0.9F)
 }
 
 ///|
@@ -98,7 +98,7 @@ fn spawn_text(
   parent : @core.Entity,
   content : String,
   font : @text.TextFont,
-  color : @sprite.Color,
+  color : @color.Color,
   node : @ui.Node,
 ) -> @core.Entity {
   commands.spawn(
@@ -206,7 +206,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
     (
       @hierarchy.Parent::new(panel),
       list_node(),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.14F, 0.14F, 0.18F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.14F, 0.14F, 0.18F)),
     ),
   )
   for family in families {

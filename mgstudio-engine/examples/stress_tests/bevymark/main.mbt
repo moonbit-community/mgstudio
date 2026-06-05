@@ -110,7 +110,7 @@ fn spawn_birds(
           @sprite.Sprite::from_image(bird_texture)
           .with_custom_size(Some(@math.Vec2::new(24.0F, 24.0F)))
           .with_color(
-            @sprite.Color::srgb(
+            @color.Color::srgb(
               float_from_int(idx % 7 + 3) / 10.0F,
               float_from_int(idx % 5 + 4) / 10.0F,
               float_from_int(idx % 3 + 6) / 10.0F,

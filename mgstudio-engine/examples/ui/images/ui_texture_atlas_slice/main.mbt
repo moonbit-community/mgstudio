@@ -81,7 +81,7 @@ fn setup(
           @text.TextFont::from_font_size(@text.FontSize::Px(33.0F)).with_font(
             font,
           ),
-          @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+          @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
         ),
       ),
     )
@@ -117,19 +117,19 @@ fn button_system(
             image
             .value()
             .with_texture_atlas(Some(atlas.with_index((atlas.index + 1) % 30)))
-            .with_color(@sprite.Color::srgb(1.0F, 0.84F, 0.0F)),
+            .with_color(@color.Color::srgb(1.0F, 0.84F, 0.0F)),
           )
         }
       }
       @ui.Interaction::Hovered => {
         text.modify(fn(value) { value.content = "Hover" })
         image.set(
-          image.value().with_color(@sprite.Color::srgb(1.0F, 0.55F, 0.0F)),
+          image.value().with_color(@color.Color::srgb(1.0F, 0.55F, 0.0F)),
         )
       }
       @ui.Interaction::None => {
         text.modify(fn(value) { value.content = "Button" })
-        image.set(image.value().with_color(@sprite.Color::white()))
+        image.set(image.value().with_color(@color.Color::white()))
       }
     }
   })

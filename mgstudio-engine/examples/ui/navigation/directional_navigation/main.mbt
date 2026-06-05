@@ -19,23 +19,23 @@ const BUTTON_WIDTH : Float = 140.0F
 const BUTTON_HEIGHT : Float = 80.0F
 
 ///|
-fn nav_normal_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.23F, 0.45F, 0.88F)
+fn nav_normal_color() -> @color.Color {
+  @color.Color::srgb(0.23F, 0.45F, 0.88F)
 }
 
 ///|
-fn nav_active_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.24F, 0.72F, 0.44F)
+fn nav_active_color() -> @color.Color {
+  @color.Color::srgb(0.24F, 0.72F, 0.44F)
 }
 
 ///|
-fn nav_focus_color() -> @sprite.Color {
-  @sprite.Color::white()
+fn nav_focus_color() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn nav_idle_border() -> @sprite.Color {
-  @sprite.Color::srgb(0.08F, 0.08F, 0.08F)
+fn nav_idle_border() -> @color.Color {
+  @color.Color::srgb(0.08F, 0.08F, 0.08F)
 }
 
 ///|
@@ -174,7 +174,7 @@ fn spawn_directional_button(
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
         text_font(font, 24.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -238,10 +238,10 @@ fn setup(
           "Automatic Directional Navigation\n\nArrow keys or D-pad move focus.\nEnter, Space, or South toggles the focused button.\nPointer clicks also move focus.",
         ),
         text_font(font, 18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         instruction_node(),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.08F, 0.08F, 0.08F, 0.82F),
+          @color.Color::srgba(0.08F, 0.08F, 0.08F, 0.82F),
         ),
       ),
     ),
@@ -253,10 +253,10 @@ fn setup(
         FocusDisplay::{  },
         @text.Text::new("Focused: None"),
         text_font(font, 20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         status_node(88.0F),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.10F, 0.45F, 0.18F, 0.82F),
+          @color.Color::srgba(0.10F, 0.45F, 0.18F, 0.82F),
         ),
       ),
     ),
@@ -268,10 +268,10 @@ fn setup(
         LastInputDisplay::{  },
         @text.Text::new("Last Input: None"),
         text_font(font, 20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         status_node(24.0F),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.38F, 0.16F, 0.52F, 0.82F),
+          @color.Color::srgba(0.38F, 0.16F, 0.52F, 0.82F),
         ),
       ),
     ),

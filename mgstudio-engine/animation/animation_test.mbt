@@ -164,8 +164,8 @@ test "animation clip: duration tracks added trs/weights curves" {
 test "animation clip: text color curves sample and extend duration" {
   let target = AnimationTargetId::from_name("Label")
   let clip = AnimationClip::new().add_text_color_curve(target, [
-    KeyframeColor::new(0.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
-    KeyframeColor::new(2.0F, @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
+    KeyframeColor::new(0.0F, @color.Color::srgb(1.0F, 0.0F, 0.0F)),
+    KeyframeColor::new(2.0F, @color.Color::srgb(0.0F, 0.0F, 1.0F)),
   ])
 
   debug_inspect(clip.duration(), content="2")
@@ -1286,8 +1286,8 @@ test "animation runtime: animate_targets updates text color" {
       KeyframeVec3::new(1.0F, @math.Vec3::splat(3.0F)),
     ])
     .add_text_color_curve(target_id, [
-      KeyframeColor::new(0.0F, @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
-      KeyframeColor::new(1.0F, @sprite.Color::srgb(0.0F, 1.0F, 0.0F)),
+      KeyframeColor::new(0.0F, @color.Color::srgb(1.0F, 0.0F, 0.0F)),
+      KeyframeColor::new(1.0F, @color.Color::srgb(0.0F, 1.0F, 0.0F)),
     ])
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)

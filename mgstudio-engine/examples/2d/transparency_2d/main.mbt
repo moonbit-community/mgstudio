@@ -41,7 +41,7 @@ fn setup(
     commands.spawn(
       (
         @sprite.Sprite::from_image(sprite_handle).with_color(
-          @sprite.Color::srgba(0.0F, 0.0F, 1.0F, 0.7F),
+          @color.Color::srgba(0.0F, 0.0F, 1.0F, 0.7F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.1F),
       ),
@@ -51,7 +51,7 @@ fn setup(
     commands.spawn(
       (
         @sprite.Sprite::from_image(sprite_handle).with_color(
-          @sprite.Color::srgba(0.0F, 1.0F, 0.0F, 0.3F),
+          @color.Color::srgba(0.0F, 1.0F, 0.0F, 0.3F),
         ),
         @transform.Transform::from_xyz(100.0F, 0.0F, 0.2F),
       ),

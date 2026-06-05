@@ -66,7 +66,7 @@ fn setup(
           @text.TextFont::TextFont()
           .with_font(font)
           .with_font_size(@text.FontSize::Px(33.0F)),
-          @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+          @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
         ),
       ),
     )
@@ -97,18 +97,18 @@ fn button_system(
       @ui.Interaction::Pressed => {
         text.modify(fn(value) { value.content = "Press" })
         image.set(
-          image.value().with_color(@sprite.Color::srgb(1.0F, 0.84F, 0.0F)),
+          image.value().with_color(@color.Color::srgb(1.0F, 0.84F, 0.0F)),
         )
       }
       @ui.Interaction::Hovered => {
         text.modify(fn(value) { value.content = "Hover" })
         image.set(
-          image.value().with_color(@sprite.Color::srgb(1.0F, 0.55F, 0.0F)),
+          image.value().with_color(@color.Color::srgb(1.0F, 0.55F, 0.0F)),
         )
       }
       @ui.Interaction::None => {
         text.modify(fn(value) { value.content = "Button" })
-        image.set(image.value().with_color(@sprite.Color::white()))
+        image.set(image.value().with_color(@color.Color::white()))
       }
     }
   })

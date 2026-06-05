@@ -20,7 +20,7 @@ pub fn[Config] gizmo_cross(
   gizmos : Gizmos[Config],
   isometry : @math.Isometry3d,
   half_size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let axis_x = @math.Vec3::new(half_size, 0.0F, 0.0F)
   let axis_y = @math.Vec3::new(0.0F, half_size, 0.0F)
@@ -47,7 +47,7 @@ pub fn[Config] gizmo_cross_2d(
   gizmos : Gizmos[Config],
   isometry : Isometry2d,
   half_size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let axis_x = @math.Vec2::new(half_size, 0.0F)
   let axis_y = @math.Vec2::new(0.0F, half_size)

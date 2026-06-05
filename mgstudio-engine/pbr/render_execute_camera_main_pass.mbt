@@ -76,7 +76,7 @@ fn render3d_draw_gizmo_lines_3d(
   guard @sprite.gizmos_mesh_id_3d(camera.layers) is Some(mesh_id) else {
     return
   }
-  let material = StandardMaterial::from_color(@sprite.Color::white())
+  let material = StandardMaterial::from_color(@color.Color::white())
     .with_unlit(true)
     .with_cull_mode(None)
   @pbr_render.render3d_draw_mesh_gpu_payload(
@@ -118,7 +118,7 @@ fn render3d_draw_gizmo_lines_3d(
       -1,
       0.0F,
       @math.Quat::identity(),
-      @sprite.Color::white(),
+      @color.Color::white(),
       0.0F,
       0.0F,
       RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
@@ -144,7 +144,7 @@ fn render3d_execute_camera_main_pass(
   msaa_sample_count : Int,
   view_width_logical : Int,
   view_height_logical : Int,
-  clear_color : @sprite.Color,
+  clear_color : @color.Color,
   viewport_x : Int,
   viewport_y : Int,
   viewport_width : Int,
@@ -620,7 +620,7 @@ fn render3d_execute_camera_main_pass(
         -1,
         0.0F,
         @math.Quat::identity(),
-        @sprite.Color::white(),
+        @color.Color::white(),
         0.0F,
         0.0F,
         render3d_mesh_flags(extracted_mesh),

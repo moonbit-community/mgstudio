@@ -92,11 +92,11 @@ pub fn animation_interpolate_weights_unclamped(
 
 ///|
 pub fn animation_interpolate_color_unclamped(
-  a : @sprite.Color,
-  b : @sprite.Color,
+  a : @color.Color,
+  b : @color.Color,
   t : Float,
-) -> @sprite.Color {
-  @sprite.Color::new(
+) -> @color.Color {
+  @color.Color::new(
     animation_interpolate_float_unclamped(a.r, b.r, t),
     animation_interpolate_float_unclamped(a.g, b.g, t),
     animation_interpolate_float_unclamped(a.b, b.b, t),

@@ -76,7 +76,7 @@ fn setup(
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center)
       .with_column_gap(@ui.Val::Px(40.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.1F, 0.13F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.13F)),
     ),
   )
 
@@ -87,8 +87,8 @@ fn setup(
       .with_width(@ui.Val::Px(24.0F))
       .with_height(@ui.Val::Px(240.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
-      @ui.BorderColor::new(@sprite.Color::white()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.12F, 0.16F)),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.16F)),
     ),
   )
   commands.spawn(
@@ -100,7 +100,7 @@ fn setup(
       .with_height(@ui.Val::Percent(50.0F))
       .with_position_type(@ui.PositionType::Absolute)
       .with_bottom(@ui.Val::Px(0.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.35F, 0.76F, 0.35F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.35F, 0.76F, 0.35F)),
     ),
   )
   |> ignore
@@ -112,8 +112,8 @@ fn setup(
       .with_width(@ui.Val::Px(260.0F))
       .with_height(@ui.Val::Px(24.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
-      @ui.BorderColor::new(@sprite.Color::white()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.12F, 0.16F)),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.16F)),
     ),
   )
   commands.spawn(
@@ -123,7 +123,7 @@ fn setup(
       @ui.Node::Node()
       .with_width(@ui.Val::Percent(50.0F))
       .with_height(@ui.Val::Percent(100.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.35F, 0.76F, 0.35F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.35F, 0.76F, 0.35F)),
     ),
   )
   |> ignore
@@ -133,7 +133,7 @@ fn setup(
       @hierarchy.Parent::new(root),
       @text.Text::new("Use Arrow keys to adjust both sliders"),
       @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+      @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
     ),
   )
   |> ignore

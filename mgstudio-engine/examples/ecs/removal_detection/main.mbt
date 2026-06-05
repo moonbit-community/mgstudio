@@ -82,7 +82,7 @@ fn react_on_removal(
 ) -> Unit {
   if (query.get(remove.entity()) catch { _ => None }) is Some(sprite) {
     sprite.modify(fn(value) {
-      value.color = @sprite.Color::srgb(0.5F, 1.0F, 1.0F)
+      value.color = @color.Color::srgb(0.5F, 1.0F, 1.0F)
     })
   }
 }

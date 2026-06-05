@@ -34,7 +34,7 @@ pub fn LoadedLevel::raw(self : LoadedLevel) -> Level {
 }
 
 ///|
-pub fn LoadedLevel::bg_color(self : LoadedLevel) -> @sprite.Color {
+pub fn LoadedLevel::bg_color(self : LoadedLevel) -> @color.Color {
   self.level.bg_color
 }
 
@@ -49,12 +49,12 @@ pub fn LoadedLevel::bg_pos(self : LoadedLevel) -> LevelBackgroundPosition? {
 }
 
 ///|
-pub fn LoadedLevel::smart_color(self : LoadedLevel) -> @sprite.Color {
+pub fn LoadedLevel::smart_color(self : LoadedLevel) -> @color.Color {
   self.level.smart_color
 }
 
 ///|
-pub fn LoadedLevel::level_bg_color(self : LoadedLevel) -> @sprite.Color? {
+pub fn LoadedLevel::level_bg_color(self : LoadedLevel) -> @color.Color? {
   self.level.level_bg_color
 }
 

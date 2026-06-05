@@ -69,7 +69,7 @@ fn setup(
   let room_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.2F, 0.22F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.2F, 0.2F, 0.22F)),
     )
   ignore(
     commands.spawn(
@@ -86,7 +86,7 @@ fn setup(
   let marker_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.08F, 0.58F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(1.0F, 0.08F, 0.58F)),
     )
   ignore(
     commands.spawn(
@@ -101,7 +101,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 15000.0F, false),
+        @pbr.DirectionalLight::new(@color.Color::white(), 15000.0F, false),
         @transform.Transform::from_xyz(15.0F, 25.0F, 15.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -124,7 +124,7 @@ fn setup(
           @pbr.PointLight::PointLight()
           .with_range(3.5F)
           .with_intensity(2200.0F)
-          .with_color(@sprite.Color::hsl(float_from_int(i % 360), 1.0F, 0.5F)),
+          .with_color(@color.Color::hsl(float_from_int(i % 360), 1.0F, 0.5F)),
           @transform.Transform::from_xyz(
             x * LIGHT_SPHERE_RADIUS,
             y * LIGHT_SPHERE_RADIUS,

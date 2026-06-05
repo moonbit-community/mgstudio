@@ -14,9 +14,9 @@
 
 ///|
 struct PickableSpriteColors {
-  normal : @sprite.Color
-  hover : @sprite.Color
-  pressed : @sprite.Color
+  normal : @color.Color
+  hover : @color.Color
+  pressed : @color.Color
 }
 
 ///|
@@ -42,9 +42,9 @@ fn setup(commands : @app.Commands) -> Unit {
   )
 
   let colors = PickableSpriteColors::{
-    normal: @sprite.Color::srgb(1.0F, 0.2F, 0.2F),
-    hover: @sprite.Color::srgb(0.2F, 1.0F, 0.2F),
-    pressed: @sprite.Color::srgb(0.2F, 0.2F, 1.0F),
+    normal: @color.Color::srgb(1.0F, 0.2F, 0.2F),
+    hover: @color.Color::srgb(0.2F, 1.0F, 0.2F),
+    pressed: @color.Color::srgb(0.2F, 0.2F, 1.0F),
   }
   let spacing = 140.0F
   for row in 0..<3 {
@@ -69,7 +69,7 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn apply_target_sprite_color(
   target : @core.Entity?,
-  color_selector : (PickableSpriteColors) -> @sprite.Color,
+  color_selector : (PickableSpriteColors) -> @color.Color,
   query : @ecs.Query[
     (@ecs.Mut[@sprite.Sprite], @ecs.Comp[PickableSpriteColors]),
     @ecs.All,

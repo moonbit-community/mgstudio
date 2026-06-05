@@ -44,7 +44,7 @@ fn setup(
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.1F, 0.12F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
 
@@ -57,7 +57,7 @@ fn setup(
       .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(6.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.16F, 0.16F, 0.22F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.16F, 0.22F)),
     ),
   )
 
@@ -86,7 +86,7 @@ fn setup(
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(4.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.1F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.1F)),
     ),
   )
   for i in 0..<40 {
@@ -95,7 +95,7 @@ fn setup(
         @hierarchy.Parent::new(scroll_area),
         @text.Text::new("Scrollable line \{i.to_string()}"),
         @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.92F, 0.92F, 0.92F)),
+        @text.TextColor::new(@color.Color::srgb(0.92F, 0.92F, 0.92F)),
       ),
     )
     |> ignore
@@ -108,7 +108,7 @@ fn setup(
       .with_width(@ui.Val::Px(12.0F))
       .with_height(@ui.Val::Px(210.0F))
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.36F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.3F, 0.3F, 0.36F)),
     ),
   )
   |> ignore
@@ -120,7 +120,7 @@ fn setup(
       .with_width(@ui.Val::Px(320.0F))
       .with_height(@ui.Val::Px(12.0F))
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.36F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.3F, 0.3F, 0.36F)),
     ),
   )
   |> ignore

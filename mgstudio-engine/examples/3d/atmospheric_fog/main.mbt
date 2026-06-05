@@ -99,17 +99,17 @@ fn make_fog() -> @pbr.DistanceFog {
   }
   @pbr.DistanceFog::DistanceFog()
   .with_color(
-    @sprite.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
+    @color.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
   )
   .with_directional_light_color(
-    @sprite.Color::srgba(FOG_SUN_R, FOG_SUN_G, FOG_SUN_B, directional_alpha),
+    @color.Color::srgba(FOG_SUN_R, FOG_SUN_G, FOG_SUN_B, directional_alpha),
   )
   .with_directional_light_exponent(FOG_INSCATTER_EXPONENT)
   .with_falloff(
     @pbr.FogFalloff3d::from_visibility_colors(
       FOG_VISIBILITY,
-      @sprite.Color::srgb(FOG_EXTINCTION_R, FOG_EXTINCTION_G, FOG_EXTINCTION_B),
-      @sprite.Color::srgb(FOG_INSCATTER_R, FOG_INSCATTER_G, FOG_INSCATTER_B),
+      @color.Color::srgb(FOG_EXTINCTION_R, FOG_EXTINCTION_G, FOG_EXTINCTION_B),
+      @color.Color::srgb(FOG_INSCATTER_R, FOG_INSCATTER_G, FOG_INSCATTER_B),
     ),
   )
 }
@@ -171,7 +171,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     sun,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::srgb(0.98F, 0.95F, 0.82F),
+      @color.Color::srgb(0.98F, 0.95F, 0.82F),
       100_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -191,7 +191,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
 
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.53333336F, 0.53333336F, 0.53333336F, 1.0F),
+      @color.Color::new(0.53333336F, 0.53333336F, 0.53333336F, 1.0F),
     )
     .with_unlit(true)
     .with_cull_mode(None),
@@ -230,7 +230,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

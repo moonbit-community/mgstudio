@@ -23,7 +23,7 @@ fn button_node() -> @ui.Node {
 
 ///|
 fn transparent_text_color() -> @text.TextColor {
-  @text.TextColor::new(@sprite.Color::srgba(1.0F, 1.0F, 1.0F, 0.2F))
+  @text.TextColor::new(@color.Color::srgba(1.0F, 1.0F, 1.0F, 0.2F))
 }
 
 ///|
@@ -32,7 +32,7 @@ fn spawn_button(
   parent : @core.Entity,
   font : @asset.Handle[@asset.Font],
   label : String,
-  background : @sprite.Color,
+  background : @color.Color,
 ) -> Unit {
   let button = world.spawn_empty()
   ignore(
@@ -101,14 +101,14 @@ fn setup(world : @ecs.World) -> Unit {
     root,
     font,
     "Button 1",
-    @sprite.Color::srgb(0.1F, 0.5F, 0.1F),
+    @color.Color::srgb(0.1F, 0.5F, 0.1F),
   )
   spawn_button(
     world,
     root,
     font,
     "Button 2",
-    @sprite.Color::srgb(0.5F, 0.1F, 0.5F),
+    @color.Color::srgb(0.5F, 0.1F, 0.5F),
   )
 }
 
@@ -117,7 +117,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(
-    @camera_clear_color.ClearColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.0F)),
+    @camera_clear_color.ClearColor::new(@color.Color::srgb(0.0F, 0.0F, 0.0F)),
   )
   .add_systems(@app.Startup, @app.system(setup))
   .run()

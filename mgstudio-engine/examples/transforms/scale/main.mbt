@@ -57,7 +57,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials
           .peek()
-          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
+          .add(@pbr.StandardMaterial::from_color(@color.Color::white())),
         ),
         @transform.Transform::from_rotation(
           @math.Quat::from_rotation_y(@math.pi() / 4.0F),

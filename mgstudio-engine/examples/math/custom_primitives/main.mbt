@@ -69,11 +69,11 @@ fn setup(
   ) {
     (
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.13F, 0.14F, 0.16F)),
+      |> @pbr.add_material(@color.Color::srgb(0.13F, 0.14F, 0.16F)),
       material_assets
       |> @pbr.add_material(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.88F, 0.18F, 0.36F),
+          @color.Color::srgb(0.88F, 0.18F, 0.36F),
         )
         .with_reflectance(0.28F)
         .with_perceptual_roughness(0.48F),

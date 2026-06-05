@@ -177,7 +177,7 @@ pub fn render2d_create_render_target_ecs(
 }
 
 ///|
-fn encode_color(color : Color) -> Json {
+fn encode_color(color : @color.Color) -> Json {
   (color.r, color.g, color.b, color.a).to_json()
 }
 
@@ -274,9 +274,9 @@ fn encode_anchor(anchor : Anchor) -> Json {
 }
 
 ///|
-fn decode_color(json : Json) -> Color {
+fn decode_color(json : Json) -> @color.Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
-  Color::new(r, g, b, a)
+  @color.Color::new(r, g, b, a)
 }
 
 ///|

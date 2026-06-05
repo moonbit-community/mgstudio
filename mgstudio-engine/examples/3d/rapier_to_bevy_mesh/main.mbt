@@ -41,7 +41,7 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       @math.Vec3::new(-6.0F, 2.0F, 0.0F),
       @math.Vec3::new(1.0F, 1.0F, 1.0F),
-      @sprite.Color::new(0.90F, 0.60F, 0.20F, 1.0F),
+      @color.Color::new(0.90F, 0.60F, 0.20F, 1.0F),
       Some(@physics3d.RigidBody3d::dynamic()),
     ),
   )
@@ -50,7 +50,7 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       @math.Vec3::new(-2.0F, 2.0F, 0.0F),
       1.0F,
-      @sprite.Color::new(0.20F, 0.75F, 0.95F, 1.0F),
+      @color.Color::new(0.20F, 0.75F, 0.95F, 1.0F),
       Some(@physics3d.RigidBody3d::dynamic()),
     ),
   )
@@ -60,7 +60,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(2.0F, 2.0F, 0.0F),
       1.0F,
       0.5F,
-      @sprite.Color::new(0.95F, 0.72F, 0.22F, 1.0F),
+      @color.Color::new(0.95F, 0.72F, 0.22F, 1.0F),
       Some(@physics3d.RigidBody3d::dynamic()),
     ),
   )
@@ -72,7 +72,7 @@ fn setup(world : @ecs.World) -> Unit {
     @rapier_examples.rapier3d_spawn_body_mesh(
       world,
       cylinder,
-      @sprite.Color::new(0.58F, 0.78F, 0.28F, 1.0F),
+      @color.Color::new(0.58F, 0.78F, 0.28F, 1.0F),
       @transform.Transform::from_xyz(6.0F, 2.0F, 0.0F),
       Some(@physics3d.RigidBody3d::dynamic()),
       Some(

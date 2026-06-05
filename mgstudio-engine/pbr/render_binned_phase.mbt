@@ -44,7 +44,7 @@ priv struct MeshGpuBatchSetKey3d {
   color_b : Float
   color_a : Float
   uv_transform : @transform.Affine2
-  emissive : @sprite.Color
+  emissive : @color.Color
   emissive_exposure_weight : Float
   metallic : Float
   surface_roughness : Float
@@ -54,12 +54,12 @@ priv struct MeshGpuBatchSetKey3d {
   max_relief_mapping_search_steps : Float
   anisotropy_strength : Float
   anisotropy_rotation : Float
-  specular_tint : @sprite.Color
+  specular_tint : @color.Color
   diffuse_transmission : Float
   specular_transmission : Float
   thickness : Float
   ior : Float
-  attenuation_color : @sprite.Color
+  attenuation_color : @color.Color
   attenuation_distance : Float
   clearcoat : Float
   clearcoat_perceptual_roughness : Float

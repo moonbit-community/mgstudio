@@ -128,8 +128,8 @@ fn fog_falloff_koschmieder(
 fn fog_falloff_atmospheric_from_colors(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
+  extinction_color : @color.Color,
+  inscattering_color : @color.Color,
 ) -> FogFalloff3d {
   let beta = fog_falloff_koschmieder(visibility, contrast_threshold)
 
@@ -261,7 +261,7 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(
 ///|
 pub fn FogFalloff3d::from_visibility_color(
   visibility : Float,
-  extinction_inscattering_color : @sprite.Color,
+  extinction_inscattering_color : @color.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility,
@@ -274,8 +274,8 @@ pub fn FogFalloff3d::from_visibility_color(
 ///|
 pub fn FogFalloff3d::from_visibility_colors(
   visibility : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
+  extinction_color : @color.Color,
+  inscattering_color : @color.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility,
@@ -289,7 +289,7 @@ pub fn FogFalloff3d::from_visibility_colors(
 pub fn FogFalloff3d::from_visibility_contrast_color(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_inscattering_color : @sprite.Color,
+  extinction_inscattering_color : @color.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility, contrast_threshold, extinction_inscattering_color, extinction_inscattering_color,
@@ -300,8 +300,8 @@ pub fn FogFalloff3d::from_visibility_contrast_color(
 pub fn FogFalloff3d::from_visibility_contrast_colors(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
+  extinction_color : @color.Color,
+  inscattering_color : @color.Color,
 ) -> FogFalloff3d {
   fog_falloff_atmospheric_from_colors(
     visibility, contrast_threshold, extinction_color, inscattering_color,
@@ -310,8 +310,8 @@ pub fn FogFalloff3d::from_visibility_contrast_colors(
 
 ///|
 pub struct DistanceFog {
-  color : @sprite.Color
-  directional_light_color : @sprite.Color
+  color : @color.Color
+  directional_light_color : @color.Color
   directional_light_exponent : Float
   falloff : FogFalloff3d
 } derive(ToJson, FromJson)
@@ -319,8 +319,8 @@ pub struct DistanceFog {
 ///|
 pub fn DistanceFog::DistanceFog() -> DistanceFog {
   DistanceFog::{
-    color: @sprite.Color::white(),
-    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @color.Color::white(),
+    directional_light_color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
     falloff: FogFalloff3d::linear(0.0F, 100.0F),
   }
@@ -328,12 +328,12 @@ pub fn DistanceFog::DistanceFog() -> DistanceFog {
 
 ///|
 pub fn DistanceFog::new(
-  color : @sprite.Color,
+  color : @color.Color,
   falloff : FogFalloff3d,
 ) -> DistanceFog {
   DistanceFog::{
     color,
-    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
     falloff,
   }
@@ -342,7 +342,7 @@ pub fn DistanceFog::new(
 ///|
 pub fn DistanceFog::with_color(
   self : DistanceFog,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> DistanceFog {
   DistanceFog::{ ..self, color, }
 }
@@ -350,7 +350,7 @@ pub fn DistanceFog::with_color(
 ///|
 pub fn DistanceFog::with_directional_light_color(
   self : DistanceFog,
-  directional_light_color : @sprite.Color,
+  directional_light_color : @color.Color,
 ) -> DistanceFog {
   DistanceFog::{ ..self, directional_light_color, }
 }
@@ -400,11 +400,11 @@ fn render3d_distance_fog_enabled(fog : DistanceFog) -> Bool {
 
 ///|
 fn render3d_color_lerp(
-  from_ : @sprite.Color,
-  to_ : @sprite.Color,
+  from_ : @color.Color,
+  to_ : @color.Color,
   t : Float,
-) -> @sprite.Color {
-  @sprite.Color::new(
+) -> @color.Color {
+  @color.Color::new(
     from_.r + (to_.r - from_.r) * t,
     from_.g + (to_.g - from_.g) * t,
     from_.b + (to_.b - from_.b) * t,
@@ -448,7 +448,7 @@ fn render3d_camera_distance_fog(
     )
   }
   if atmosphere is Some(atmosphere_value) {
-    let albedo_color = @sprite.Color::new(
+    let albedo_color = @color.Color::new(
       @pbr_render.render3d_float_clamp(
         atmosphere_value.ground_albedo.x,
         0.0F,

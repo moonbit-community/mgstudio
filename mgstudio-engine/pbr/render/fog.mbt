@@ -130,7 +130,7 @@ pub fn ViewFogUniformOffset::offset(self : ViewFogUniformOffset) -> UInt {
 }
 
 ///|
-pub impl @ecs.Component for ViewFogUniformOffset with component() {
+pub impl @ecs.Component for ViewFogUniformOffset with fn component() {
   ecs_key_view_fog_uniform_offset
 }
 
@@ -145,7 +145,7 @@ let fog_meta_resource_key : @ecs.ResourceKey[FogMeta] = @ecs.register_resource(
 )
 
 ///|
-pub impl @app.Resource for FogMeta with resource() {
+pub impl @app.Resource for FogMeta with fn resource() {
   fog_meta_resource_key
 }
 
@@ -158,12 +158,12 @@ pub fn FogPlugin::FogPlugin() -> FogPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FogPlugin with name(_self) {
+pub impl @app.Plugin for FogPlugin with fn name(_self) {
   FOG_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for FogPlugin with build(self, app) {
+pub impl @app.Plugin for FogPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   fog_plugin_install_with(app, self)
 }
@@ -220,7 +220,7 @@ pub fn FogMeta::fog_at(self : FogMeta, offset : UInt) -> GpuFog? {
 }
 
 ///|
-fn render3d_color_to_vec4(color : @sprite.Color) -> @math.Vec4 {
+fn render3d_color_to_vec4(color : @color.Color) -> @math.Vec4 {
   @math.Vec4::new(color.r, color.g, color.b, color.a)
 }
 
@@ -262,16 +262,16 @@ pub fn Render3dFogFalloff::atmospheric(
 
 ///|
 pub struct Render3dViewFogData {
-  color : @sprite.Color
-  directional_light_color : @sprite.Color
+  color : @color.Color
+  directional_light_color : @color.Color
   directional_light_exponent : Float
   falloff : Render3dFogFalloff
 } derive(ToJson, FromJson)
 
 ///|
 pub fn Render3dViewFogData::new(
-  color : @sprite.Color,
-  directional_light_color : @sprite.Color,
+  color : @color.Color,
+  directional_light_color : @color.Color,
   directional_light_exponent : Float,
   falloff : Render3dFogFalloff,
 ) -> Render3dViewFogData {

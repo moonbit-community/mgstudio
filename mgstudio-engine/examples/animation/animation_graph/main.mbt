@@ -153,7 +153,7 @@ fn spawn_line(
       .with_bottom(@ui.Val::Px(bottom))
       .with_width(@ui.Val::Px(width))
       .with_height(@ui.Val::Px(height)),
-      @ui.BackgroundColor::new(@sprite.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::white()),
     ),
   )
   |> ignore
@@ -184,7 +184,7 @@ fn spawn_clip_node(
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center),
-      @ui.BorderColor::new(@sprite.Color::white()),
+      @ui.BorderColor::new(@color.Color::white()),
     ),
   )
   let fill = commands.spawn(
@@ -197,7 +197,7 @@ fn spawn_clip_node(
       .with_bottom(@ui.Val::Px(0.0F))
       .with_width(@ui.Val::Px(NODE_WIDTH))
       .with_height(@ui.Val::Px(NODE_HEIGHT)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.0F, 0.39F, 0.0F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.0F, 0.39F, 0.0F)),
     ),
   )
   let text_entity = commands.spawn(
@@ -208,7 +208,7 @@ fn spawn_clip_node(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
-      @text.TextColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+      @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
       @ui.Node::Node(),
     ),
@@ -238,7 +238,7 @@ fn spawn_blend_node(
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center),
-      @ui.BorderColor::new(@sprite.Color::white()),
+      @ui.BorderColor::new(@color.Color::white()),
     ),
   )
   let text_entity = commands.spawn(
@@ -248,7 +248,7 @@ fn spawn_blend_node(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
-      @text.TextColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+      @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
       @ui.Node::Node(),
     ),
@@ -334,7 +334,7 @@ fn setup_scene(
       @pbr.MeshMaterial3d::new(
         materials.modify(fn(material_assets) {
           material_assets
-          |> @pbr.add_material(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
+          |> @pbr.add_material(@color.Color::srgb(0.3F, 0.5F, 0.3F))
         }),
       ),
       @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
@@ -365,7 +365,7 @@ fn setup_ui(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
       @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_top(@ui.Val::Px(12.0F))

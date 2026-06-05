@@ -62,7 +62,7 @@ fn setup(
       .with_justify_content(@ui.JustifyContent::Center)
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(10.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.12F, 0.14F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.14F)),
     ),
   )
 
@@ -76,8 +76,8 @@ fn setup(
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BorderColor::new(@sprite.Color::white()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.2F, 0.28F, 0.44F)),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.28F, 0.44F)),
     ),
   )
   commands.spawn(
@@ -85,7 +85,7 @@ fn setup(
       @hierarchy.Parent::new(button),
       @text.Text::new("Click Me"),
       @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
     ),
   )
   |> ignore
@@ -96,7 +96,7 @@ fn setup(
       CounterLabel::{  },
       @text.Text::new("Clicks: 0"),
       @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
-      @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+      @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
     ),
   )
   |> ignore

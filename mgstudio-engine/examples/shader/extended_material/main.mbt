@@ -40,9 +40,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.92F, 0.25F, 0.25F),
-      )
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.92F, 0.25F, 0.25F))
       .with_reflectance(0.4F)
       .with_perceptual_roughness(0.35F),
     )

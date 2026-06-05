@@ -40,7 +40,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.7F, 0.85F, 1.0F)).with_reflectance(
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.7F, 0.85F, 1.0F)).with_reflectance(
         0.4F,
       ),
     )
@@ -71,7 +71,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_500_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_500_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
     ),
   )

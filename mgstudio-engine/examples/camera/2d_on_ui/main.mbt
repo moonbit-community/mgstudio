@@ -45,7 +45,7 @@ fn setup(
         justify_content: @ui.JustifyContent::Center,
         align_items: @ui.AlignItems::Center,
       },
-      @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
+      @ui.BackgroundColor::new(@color.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
     ),
   )
   ignore(
@@ -61,7 +61,7 @@ fn setup(
           border: @ui.UiRect::all(@ui.Val::Px(2.0F)),
           border_radius: @ui.BorderRadius::all(@ui.Val::Percent(25.0F)),
         },
-        @ui.BorderColor::new(@sprite.Color::white()),
+        @ui.BorderColor::new(@color.Color::white()),
       ),
     ),
   )

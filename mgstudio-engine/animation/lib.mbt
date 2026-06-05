@@ -1145,7 +1145,7 @@ priv struct AnimationStackElement {
   mut rotation : @math.Quat
   mut scale : @math.Vec3
   weights : Array[Float]
-  mut text_color : @sprite.Color
+  mut text_color : @color.Color
 }
 
 ///|
@@ -1183,7 +1183,7 @@ fn animation_stack_element_empty(
     rotation: @math.Quat::identity(),
     scale: @math.Vec3::zero(),
     weights: [],
-    text_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    text_color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
   }
 }
 
@@ -1207,7 +1207,7 @@ fn animation_stack_element_clear(
   element.rotation = @math.Quat::identity()
   element.scale = @math.Vec3::zero()
   element.weights.clear()
-  element.text_color = @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
+  element.text_color = @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
 }
 
 ///|
@@ -1268,11 +1268,11 @@ fn animation_weights_add_scaled(
 
 ///|
 fn animation_color_add_scaled(
-  current : @sprite.Color,
-  incoming : @sprite.Color,
+  current : @color.Color,
+  incoming : @color.Color,
   weight : Float,
-) -> @sprite.Color {
-  @sprite.Color::new(
+) -> @color.Color {
+  @color.Color::new(
     current.r + incoming.r * weight,
     current.g + incoming.g * weight,
     current.b + incoming.b * weight,
@@ -1551,7 +1551,7 @@ fn animation_register_merge_text_color(
     register.text_color_weight = incoming.text_color_weight
     register.text_color = if additive {
       animation_color_add_scaled(
-        @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+        @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
         incoming.text_color,
         incoming.text_color_weight,
       )
@@ -1914,7 +1914,7 @@ fn animation_weights_eq(lhs : AnimationWeights, rhs : AnimationWeights) -> Bool 
 }
 
 ///|
-fn animation_color_eq(lhs : @sprite.Color, rhs : @sprite.Color) -> Bool {
+fn animation_color_eq(lhs : @color.Color, rhs : @color.Color) -> Bool {
   lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a
 }
 

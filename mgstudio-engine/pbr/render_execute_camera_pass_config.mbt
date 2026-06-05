@@ -21,7 +21,7 @@ priv struct Render3dExecuteCameraPassConfig {
   camera_exposure_value : Float
   distance_fog : DistanceFog
   clear_enabled : Bool
-  clear_color : @sprite.Color
+  clear_color : @color.Color
   motion_blur_active : Bool
   transmission_blur_taps : Int
   transmission_steps : Int
@@ -112,7 +112,7 @@ fn render3d_execute_camera_pass_config(
     Some(value) => value
     None =>
       DistanceFog::new(
-        @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+        @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
         FogFalloff3d::linear(0.0F, 0.0F),
       )
   }

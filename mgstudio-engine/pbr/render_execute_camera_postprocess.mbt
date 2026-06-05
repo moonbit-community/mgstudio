@@ -33,7 +33,7 @@ fn render3d_execute_camera_postprocess(
   view_height : Int,
   view_width_logical : Int,
   view_height_logical : Int,
-  clear_color : @sprite.Color,
+  clear_color : @color.Color,
   viewport_x : Int,
   viewport_y : Int,
   viewport_width : Int,

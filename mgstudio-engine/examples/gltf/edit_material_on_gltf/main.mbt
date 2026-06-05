@@ -23,7 +23,7 @@ const PISA_SPECULAR_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_
 
 ///|
 struct ColorOverride {
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -37,7 +37,7 @@ pub impl @ecs.Component for ColorOverride with fn component() {
 }
 
 ///|
-fn ColorOverride::new(color : @sprite.Color) -> ColorOverride {
+fn ColorOverride::new(color : @color.Color) -> ColorOverride {
   { color, }
 }
 
@@ -96,7 +96,7 @@ fn setup(
         (
           @scene.SceneRoot::new(flight_helmet),
           @transform.Transform::from_xyz(-1.25F, 0.0F, 0.0F),
-          ColorOverride::new(@sprite.Color::srgb(0.98F, 0.65F, 0.65F)),
+          ColorOverride::new(@color.Color::srgb(0.98F, 0.65F, 0.65F)),
         ),
       ),
     )
@@ -109,7 +109,7 @@ fn setup(
         (
           @scene.SceneRoot::new(flight_helmet),
           @transform.Transform::from_xyz(1.25F, 0.0F, 0.0F),
-          ColorOverride::new(@sprite.Color::srgb(0.55F, 0.9F, 0.55F)),
+          ColorOverride::new(@color.Color::srgb(0.55F, 0.9F, 0.55F)),
         ),
       ),
     )

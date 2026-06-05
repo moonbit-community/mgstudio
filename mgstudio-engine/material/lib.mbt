@@ -31,7 +31,7 @@ pub(all) enum AlphaMode3d {
 pub type AlphaMode = AlphaMode3d
 
 ///|
-pub impl Default for AlphaMode3d with default() {
+pub impl Default for AlphaMode3d with fn default() {
   AlphaMode3d::Opaque
 }
 
@@ -74,7 +74,7 @@ pub(all) enum OpaqueRendererMethod {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub impl Default for OpaqueRendererMethod with default() {
+pub impl Default for OpaqueRendererMethod with fn default() {
   OpaqueRendererMethod::Forward
 }
 
@@ -124,7 +124,7 @@ pub fn DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod() -> DefaultOpaq
 }
 
 ///|
-pub impl Default for DefaultOpaqueRendererMethod with default() {
+pub impl Default for DefaultOpaqueRendererMethod with fn default() {
   DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod()
 }
 
@@ -233,7 +233,7 @@ pub fn MaterialProperties::MaterialProperties() -> MaterialProperties {
 }
 
 ///|
-pub impl Default for MaterialProperties with default() {
+pub impl Default for MaterialProperties with fn default() {
   MaterialProperties::MaterialProperties()
 }
 
@@ -408,7 +408,7 @@ pub fn MaterialProperties::with_prepass_enabled(
 
 ///|
 pub struct StandardMaterial {
-  base_color : @sprite.Color
+  base_color : @color.Color
   base_color_texture : @asset.Handle[@asset.Image]?
   uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@asset.Image]?
@@ -425,7 +425,7 @@ pub struct StandardMaterial {
   anisotropy_strength : Float
   anisotropy_rotation : Float
   anisotropy_texture : @asset.Handle[@asset.Image]?
-  emissive : @sprite.Color
+  emissive : @color.Color
   emissive_exposure_weight : Float
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
@@ -436,9 +436,9 @@ pub struct StandardMaterial {
   specular_transmission : Float
   thickness : Float
   ior : Float
-  attenuation_color : @sprite.Color
+  attenuation_color : @color.Color
   attenuation_distance : Float
-  specular_tint : @sprite.Color
+  specular_tint : @color.Color
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
@@ -452,12 +452,12 @@ pub struct StandardMaterial {
 }
 
 ///|
-pub impl @asset.Asset for StandardMaterial with asset_debug_name() {
+pub impl @asset.Asset for StandardMaterial with fn asset_debug_name() {
   "mgstudio_material::StandardMaterial"
 }
 
 ///|
-pub impl @asset.Asset for StandardMaterial with asset_as_image(_self) {
+pub impl @asset.Asset for StandardMaterial with fn asset_as_image(_self) {
   None
 }
 
@@ -467,7 +467,7 @@ let standard_material_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(StandardMaterial::asset_debug_name())
 
 ///|
-pub impl @asset.Asset for StandardMaterial with asset_resource_keys() {
+pub impl @asset.Asset for StandardMaterial with fn asset_resource_keys() {
   standard_material_asset_resource_keys
 }
 
@@ -479,7 +479,7 @@ pub(open) trait IntoStandardMaterialAsset {
 ///|
 pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
   StandardMaterial::{
-    base_color: @sprite.Color::white(),
+    base_color: @color.Color::white(),
     base_color_texture: None,
     uv_transform: @transform.Affine2::identity(),
     normal_map_texture: None,
@@ -496,7 +496,7 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
     anisotropy_strength: 0.0F,
     anisotropy_rotation: 0.0F,
     anisotropy_texture: None,
-    emissive: @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    emissive: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     emissive_exposure_weight: 0.0F,
     emissive_texture: None,
     metallic: 0.0F,
@@ -507,9 +507,9 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
     specular_transmission: 0.0F,
     thickness: 0.0F,
     ior: 1.5F,
-    attenuation_color: @sprite.Color::white(),
+    attenuation_color: @color.Color::white(),
     attenuation_distance: 1.0F / 0.0F,
-    specular_tint: @sprite.Color::white(),
+    specular_tint: @color.Color::white(),
     specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
@@ -524,7 +524,7 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
 }
 
 ///|
-pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
+pub fn StandardMaterial::from_color(color : @color.Color) -> StandardMaterial {
   let alpha_mode = if color.a < 1.0F {
     AlphaMode3d::Blend
   } else {
@@ -623,14 +623,14 @@ pub fn StandardMaterial::flipped(
 }
 
 ///|
-pub impl IntoStandardMaterialAsset for @sprite.Color with into_standard_material_asset(
+pub impl IntoStandardMaterialAsset for @color.Color with fn into_standard_material_asset(
   self,
 ) {
   StandardMaterial::from_color(self)
 }
 
 ///|
-pub impl IntoStandardMaterialAsset for @asset.Handle[@asset.Image] with into_standard_material_asset(
+pub impl IntoStandardMaterialAsset for @asset.Handle[@asset.Image] with fn into_standard_material_asset(
   self,
 ) {
   StandardMaterial::StandardMaterial().with_base_color_texture(Some(self))
@@ -647,7 +647,7 @@ pub fn[S : IntoStandardMaterialAsset] add(
 ///|
 pub fn StandardMaterial::with_base_color(
   self : StandardMaterial,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, base_color: color }
 }
@@ -845,7 +845,7 @@ pub fn StandardMaterial::with_anisotropy_texture(
 ///|
 pub fn StandardMaterial::with_emissive(
   self : StandardMaterial,
-  emissive : @sprite.Color,
+  emissive : @color.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, emissive, }
 }
@@ -951,7 +951,7 @@ pub fn StandardMaterial::with_ior(
 ///|
 pub fn StandardMaterial::with_specular_tint(
   self : StandardMaterial,
-  specular_tint : @sprite.Color,
+  specular_tint : @color.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, specular_tint, }
 }
@@ -1323,12 +1323,12 @@ pub fn MeshMaterial3d::is_standard_material(self : MeshMaterial3d) -> Bool {
 }
 
 ///|
-pub impl ToJson for MeshMaterial3d with to_json(self) {
+pub impl ToJson for MeshMaterial3d with fn to_json(self) {
   self.material.id().to_json()
 }
 
 ///|
-pub impl @json.FromJson for MeshMaterial3d with from_json(json, path) {
+pub impl @json.FromJson for MeshMaterial3d with fn from_json(json, path) {
   let material_id : Int = @json.from_json(json, path~)
   MeshMaterial3d::new(@asset.Handle::new(material_id))
 }
@@ -1579,12 +1579,12 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="render3d.default_opaque_renderer_method")
 
 ///|
-pub impl @ecs.Component for MeshMaterial3d with component() {
+pub impl @ecs.Component for MeshMaterial3d with fn component() {
   ecs_key_mesh_material3d
 }
 
 ///|
-pub impl @ecs.Component for ForwardDecalMaterialExt with component() {
+pub impl @ecs.Component for ForwardDecalMaterialExt with fn component() {
   ecs_key_forward_decal_material_ext
 }
 

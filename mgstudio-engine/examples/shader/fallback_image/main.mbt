@@ -29,7 +29,7 @@ fn setup(
     .peek()
     .add(
       @pbr.StandardMaterial::StandardMaterial()
-      .with_base_color(@sprite.Color::white())
+      .with_base_color(@color.Color::white())
       .with_base_color_texture(
         Some(asset_server.get().load_image("branding/icon.png")),
       ),
@@ -38,7 +38,7 @@ fn setup(
     .peek()
     .add(
       @pbr.StandardMaterial::StandardMaterial()
-      .with_base_color(@sprite.Color::srgb(0.8F, 0.6F, 0.2F))
+      .with_base_color(@color.Color::srgb(0.8F, 0.6F, 0.2F))
       .with_base_color_texture(
         Some(
           asset_server.get().load_image("textures/this_file_does_not_exist.png"),
@@ -76,7 +76,7 @@ fn setup(
   let floor_mat = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.25F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.2F, 0.22F, 0.25F)),
     )
   commands.spawn(
     (
@@ -89,7 +89,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 24.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 24.0F, false),
       @transform.Transform::from_xyz(3.0F, 6.0F, 3.0F),
     ),
   )

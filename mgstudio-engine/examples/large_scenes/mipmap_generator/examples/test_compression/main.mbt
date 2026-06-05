@@ -13,11 +13,11 @@
 // limitations under the License.
 
 ///|
-fn color_for_support(supported : Bool) -> @sprite.Color {
+fn color_for_support(supported : Bool) -> @color.Color {
   if supported {
-    @sprite.Color::srgb(0.2F, 0.85F, 0.35F)
+    @color.Color::srgb(0.2F, 0.85F, 0.35F)
   } else {
-    @sprite.Color::srgb(0.88F, 0.25F, 0.28F)
+    @color.Color::srgb(0.88F, 0.25F, 0.28F)
   }
 }
 

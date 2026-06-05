@@ -52,19 +52,19 @@ pub fn FpsOverlayPlugin::FpsOverlayPlugin() -> FpsOverlayPlugin {
 }
 
 ///|
-pub impl @app.Plugin for FpsOverlayPlugin with name(_self) {
+pub impl @app.Plugin for FpsOverlayPlugin with fn name(_self) {
   "mgstudio.dev_tools.FpsOverlayPlugin"
 }
 
 ///|
-pub impl @app.Plugin for FpsOverlayPlugin with build(self, app) {
+pub impl @app.Plugin for FpsOverlayPlugin with fn build(self, app) {
   fps_overlay_plugin_with(app, self)
 }
 
 ///|
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
-  mut text_color : @sprite.Color
+  mut text_color : @color.Color
   mut enabled : Bool
   mut refresh_interval : @core.Duration
   mut frame_time_graph_config : FrameTimeGraphConfig
@@ -83,7 +83,7 @@ fn fps_overlay_touch_config_mutability(config : FpsOverlayConfig) -> Unit {
 pub fn FpsOverlayConfig::FpsOverlayConfig() -> FpsOverlayConfig {
   let config = FpsOverlayConfig::{
     text_config: @text.TextFont::from_font_size(32.0F),
-    text_color: @sprite.Color::white(),
+    text_color: @color.Color::white(),
     enabled: true,
     refresh_interval: @core.Duration::from_millis(100L),
     frame_time_graph_config: FrameTimeGraphConfig::target_fps(60.0F),
@@ -98,7 +98,7 @@ let fps_overlay_config_resource_key : @ecs.ResourceKey[FpsOverlayConfig] = @ecs.
 )
 
 ///|
-pub impl @app.Resource for FpsOverlayConfig with resource() {
+pub impl @app.Resource for FpsOverlayConfig with fn resource() {
   fps_overlay_config_resource_key
 }
 
@@ -180,7 +180,7 @@ let ecs_key_fps_text : @ecs.ComponentKey[FpsText] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for FpsText with component() {
+impl @ecs.Component for FpsText with fn component() {
   ecs_key_fps_text
 }
 
@@ -193,7 +193,7 @@ let ecs_key_frame_time_graph : @ecs.ComponentKey[FrameTimeGraph] = @ecs.register
 )
 
 ///|
-impl @ecs.Component for FrameTimeGraph with component() {
+impl @ecs.Component for FrameTimeGraph with fn component() {
   ecs_key_frame_time_graph
 }
 
@@ -355,12 +355,12 @@ fn fps_overlay_format_with_two_decimals(value : Float) -> String {
 
 ///|
 fn fps_overlay_color_lerp(
-  start : @sprite.Color,
-  ending : @sprite.Color,
+  start : @color.Color,
+  ending : @color.Color,
   t : Float,
-) -> @sprite.Color {
+) -> @color.Color {
   let weight = if t < 0.0F { 0.0F } else if t > 1.0F { 1.0F } else { t }
-  @sprite.Color::new(
+  @color.Color::new(
     start.r + (ending.r - start.r) * weight,
     start.g + (ending.g - start.g) * weight,
     start.b + (ending.b - start.b) * weight,
@@ -424,12 +424,12 @@ fn fps_overlay_graph_ratio(
 fn fps_overlay_graph_color(
   frame_time_ms : Float,
   config : FrameTimeGraphConfig,
-) -> @sprite.Color {
+) -> @color.Color {
   let dt = frame_time_ms / 1000.0F
   let dt_max = 1.0F / config.min_fps
   fps_overlay_color_lerp(
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     dt / dt_max,
   )
 }
@@ -528,7 +528,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   try! (world
   .entity_mut(graph_entity)
   .insert_component(
-    @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
+    @ui.BackgroundColor::new(@color.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
   )
   |> ignore)
   try! (world.entity_mut(graph_entity).insert_component(FrameTimeGraph::{  })
@@ -639,7 +639,7 @@ fn fps_overlay_resize_bars(
     try! (world
     .entity_mut(bar)
     .insert_component(
-      @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
+      @ui.BackgroundColor::new(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
     )
     |> ignore)
     state.bar_entities.push(bar)

@@ -109,7 +109,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.09F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.09F)),
     ),
   )
   let drop_area = commands.spawn(
@@ -117,14 +117,14 @@ fn setup(commands : @app.Commands) -> Unit {
       DropArea::{  },
       @ui.Button::Button(),
       dragdrop_node_style(300.0F, 150.0F, 500.0F, 500.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.4F, 0.1F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.4F, 0.1F)),
     ),
   )
   commands.entity(drop_area).insert_component(@hierarchy.Parent::new(root))
   let drop_text = commands.spawn(
     (
       @text.Text::new("Drop here"),
-      @text.TextColor::new(@sprite.Color::black()),
+      @text.TextColor::new(@color.Color::black()),
       @text.TextFont::from_font_size(@text.FontSize::Px(44.0F)),
     ),
   )
@@ -135,14 +135,14 @@ fn setup(commands : @app.Commands) -> Unit {
       DraggableButton::{  },
       @ui.Button::Button(),
       dragdrop_node_style(40.0F, 40.0F, 180.0F, 56.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
     ),
   )
   commands.entity(button).insert_component(@hierarchy.Parent::new(root))
   let button_text = commands.spawn(
     (
       @text.Text::new("Drag from me"),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
       @text.TextFont::from_font_size(@text.FontSize::Px(24.0F)),
     ),
   )
@@ -178,7 +178,7 @@ fn on_drag_start(
         30.0F,
         30.0F,
       ),
-      @ui.BackgroundColor::new(@sprite.Color::new(1.0F, 1.0F, 0.6F, 0.5F)),
+      @ui.BackgroundColor::new(@color.Color::new(1.0F, 1.0F, 0.6F, 0.5F)),
     ),
   )
   drag_state.modify(fn(value) { value.ghost = Some(ghost) })
@@ -223,7 +223,7 @@ fn on_drag_end(
             24.0F,
             24.0F,
           ),
-          @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.6F)),
+          @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 1.0F, 0.6F)),
         ),
       ),
     )

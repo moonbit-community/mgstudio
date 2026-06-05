@@ -127,7 +127,7 @@ fn setup(
           min_follow_radius: 50.0F,
         },
         @sprite.Sprite::from_image(texture).with_color(
-          @sprite.Color::srgb(0.12F, 0.24F, 0.67F),
+          @color.Color::srgb(0.12F, 0.24F, 0.67F),
         ),
       ),
     ),
@@ -146,7 +146,7 @@ fn setup(
           top: @ui.Val::Px(12.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
@@ -205,7 +205,7 @@ fn spawn_enemy(
       (
         enemy,
         @sprite.Sprite::from_image(enemy_texture).with_color(
-          @sprite.Color::srgb(0.67F, 0.16F, 0.16F),
+          @color.Color::srgb(0.67F, 0.16F, 0.16F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),

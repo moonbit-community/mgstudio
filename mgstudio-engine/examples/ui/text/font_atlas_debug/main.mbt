@@ -47,8 +47,8 @@ pub impl @ecs.Component for AtlasDebugText with fn component() {
 }
 
 ///|
-fn yellow() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 0.0F)
+fn yellow() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 0.0F)
 }
 
 ///|

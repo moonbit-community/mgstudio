@@ -71,12 +71,12 @@ fn setup(
   let plane_material = material_assets
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.18F, 0.2F, 0.24F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.18F, 0.2F, 0.24F)),
     )
   let cube_material = material_assets
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_reflectance(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_reflectance(
         0.31F,
       ),
     )
@@ -106,7 +106,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, false),
+        @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 20.0F, false),
         @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F),
       ),
     ),

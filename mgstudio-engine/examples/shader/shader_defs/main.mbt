@@ -40,16 +40,16 @@ fn setup(
   let low_steps = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.85F, 0.28F, 0.28F),
-      ).with_reflectance(0.05F),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.85F, 0.28F, 0.28F)).with_reflectance(
+        0.05F,
+      ),
     )
   let high_steps = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.28F, 0.45F, 0.95F),
-      ).with_reflectance(0.95F),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.28F, 0.45F, 0.95F)).with_reflectance(
+        0.95F,
+      ),
     )
 
   commands.spawn(
@@ -76,7 +76,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_100_000.0F, 20.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_100_000.0F, 20.0F, false),
       @transform.Transform::from_xyz(3.0F, 5.0F, 2.0F),
     ),
   )

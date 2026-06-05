@@ -191,7 +191,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let small_cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @color.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   spawn_small_cubes(world, small_cube_material)
@@ -258,7 +258,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   occlusion_state.val.help_text = Some(help_text)

@@ -41,8 +41,8 @@ fn wrap_hue_deg(value : Float) -> Float {
 }
 
 ///|
-fn color_from_hue_deg(hue_deg : Float) -> @sprite.Color {
-  @sprite.Color::hsla(hue_deg, 1.0F, 0.5F, 1.0F)
+fn color_from_hue_deg(hue_deg : Float) -> @color.Color {
+  @color.Color::hsla(hue_deg, 1.0F, 0.5F, 1.0F)
 }
 
 ///|
@@ -64,7 +64,7 @@ fn min_float(a : Float, b : Float) -> Float {
 }
 
 ///|
-fn color_hue_deg(color : @sprite.Color) -> Float {
+fn color_hue_deg(color : @color.Color) -> Float {
   let r = color.r
   let g = color.g
   let b = color.b

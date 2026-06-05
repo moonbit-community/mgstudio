@@ -38,7 +38,7 @@ fn setup(
     material_assets
     |> @pbr.add_material(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+        @color.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
       ),
     )
   })

@@ -28,7 +28,7 @@ fn color_approx_eq(a : Float, b : Float) -> Bool {
 
 ///|
 test "render2d: color darker follows Bevy additive luminance semantics" {
-  let color = Color::new(0.6F, 0.3F, 0.2F, 0.75F)
+  let color = @color.Color::new(0.6F, 0.3F, 0.2F, 0.75F)
   let twice = color.darker(0.1F).darker(0.2F)
   let once = color.darker(0.3F)
   debug_inspect(color_approx_eq(twice.r, once.r), content="true")
@@ -39,7 +39,7 @@ test "render2d: color darker follows Bevy additive luminance semantics" {
 
 ///|
 test "render2d: color darker clamps to black" {
-  let color = Color::new(0.05F, 0.1F, 0.15F, 1.0F).darker(1.0F)
+  let color = @color.Color::new(0.05F, 0.1F, 0.15F, 1.0F).darker(1.0F)
   debug_inspect(color_approx_eq(color.r, 0.0F), content="true")
   debug_inspect(color_approx_eq(color.g, 0.0F), content="true")
   debug_inspect(color_approx_eq(color.b, 0.0F), content="true")

@@ -39,7 +39,7 @@ fn rapier2d_debug_despawn2_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.91F, 0.94F, 0.98F, 1.0F),
+      @color.Color::new(0.91F, 0.94F, 0.98F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -99,7 +99,7 @@ fn rapier2d_debug_despawn2_setup(world : @ecs.World) -> Unit {
       entity,
       @sprite.ecs_key_sprite,
       @sprite.Sprite::from_image(texture)
-      .with_color(@sprite.Color::new(0.90F, 0.64F, 0.24F, 1.0F))
+      .with_color(@color.Color::new(0.90F, 0.64F, 0.24F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(46.0F, 46.0F))),
     )
     try! world.set_by_key(
@@ -146,7 +146,7 @@ fn rapier2d_debug_despawn2_update(world : @ecs.World) -> Unit {
       entity,
       @sprite.ecs_key_sprite,
       @sprite.Sprite::from_image(texture)
-      .with_color(@sprite.Color::new(0.90F, 0.42F, 0.20F, 1.0F))
+      .with_color(@color.Color::new(0.90F, 0.42F, 0.20F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(46.0F, 46.0F))),
     )
     try! world.set_by_key(

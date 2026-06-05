@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_ui/src/gradients.rs`.
 // Current runtime-bearing visual styling surface.
 pub struct BoxShadow {
-  color : @sprite.Color
+  color : @color.Color
   x_offset : Val
   y_offset : Val
   spread_radius : Val
@@ -25,7 +25,7 @@ pub struct BoxShadow {
 
 ///|
 pub fn BoxShadow::new(
-  color : @sprite.Color,
+  color : @color.Color,
   x_offset : Val,
   y_offset : Val,
   spread_radius : Val,
@@ -37,7 +37,7 @@ pub fn BoxShadow::new(
 ///|
 pub fn BoxShadow::BoxShadow() -> BoxShadow {
   BoxShadow::{
-    color: @sprite.Color::black(),
+    color: @color.Color::black(),
     x_offset: Val::Percent(20.0F),
     y_offset: Val::Percent(20.0F),
     spread_radius: Val::Px(0.0F),
@@ -47,11 +47,11 @@ pub fn BoxShadow::BoxShadow() -> BoxShadow {
 
 ///|
 pub struct BackgroundColor {
-  color : @sprite.Color
+  color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BackgroundColor::new(color : @sprite.Color) -> BackgroundColor {
+pub fn BackgroundColor::new(color : @color.Color) -> BackgroundColor {
   BackgroundColor::{ color, }
 }
 

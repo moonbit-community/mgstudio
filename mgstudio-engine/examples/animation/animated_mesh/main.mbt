@@ -88,7 +88,7 @@ fn play_animation_when_ready(
 fn setup_camera_and_environment(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 2000.0F),
   )
 
   ignore(
@@ -108,7 +108,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
     }),
   )
   let plane_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
   )
   ignore(
     try! world
@@ -131,7 +131,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
+        @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
           @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(200.0F)
           .with_maximum_distance(400.0F),

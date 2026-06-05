@@ -110,7 +110,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(text_entity, resolution_text_key, ResolutionText::{  })
 }

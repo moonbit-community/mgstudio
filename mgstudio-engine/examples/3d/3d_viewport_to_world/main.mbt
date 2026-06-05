@@ -188,7 +188,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @transform.Transform::identity(),
@@ -223,7 +223,7 @@ fn setup(world : @ecs.World) -> Unit {
     circle_line_mesh(CURSOR_RADIUS, CURSOR_SEGMENTS),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
+        @pbr.StandardMaterial::from_color(@color.Color::white()).with_unlit(
           true,
         ),
       ),

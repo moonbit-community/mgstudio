@@ -103,12 +103,12 @@ fn setup(
     |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
   let white_material = materials
     .peek()
-    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
+    .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
   let cube_material = materials
     .peek()
     .add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+        @color.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
       ),
     )
 

@@ -90,7 +90,7 @@ fn setup(
         .peek()
         .add(
           @pbr.StandardMaterial::from_color(
-            @sprite.Color::srgb(0.06F, 0.08F, 0.14F),
+            @color.Color::srgb(0.06F, 0.08F, 0.14F),
           ),
         )
       let px = (Float::from_int(x) - Float::from_int(GRID_W - 1) * 0.5F) * 0.3F
@@ -111,7 +111,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F),
     ),
   )
@@ -183,12 +183,12 @@ fn apply_life_visuals(
     guard materials.peek().get(handle) is Some(material) else { return }
     let next = if alive {
       material
-      .with_base_color(@sprite.Color::srgb(0.18F, 0.95F, 0.45F))
-      .with_emissive(@sprite.Color::srgb(0.08F, 0.2F, 0.08F))
+      .with_base_color(@color.Color::srgb(0.18F, 0.95F, 0.45F))
+      .with_emissive(@color.Color::srgb(0.08F, 0.2F, 0.08F))
     } else {
       material
-      .with_base_color(@sprite.Color::srgb(0.06F, 0.08F, 0.14F))
-      .with_emissive(@sprite.Color::black())
+      .with_base_color(@color.Color::srgb(0.06F, 0.08F, 0.14F))
+      .with_emissive(@color.Color::black())
     }
     materials.modify(fn(materials) { materials.set(handle, next) |> ignore })
   })

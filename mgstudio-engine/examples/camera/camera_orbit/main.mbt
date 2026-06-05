@@ -81,7 +81,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
+              @color.Color::srgb(0.3F, 0.5F, 0.3F),
             ).with_cull_mode(None),
           ),
         ),
@@ -103,7 +103,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
+              @color.Color::srgb(0.8F, 0.7F, 0.6F),
             ),
           ),
         ),
@@ -150,7 +150,7 @@ fn instructions(
           "Mouse up or down: pitch\nMouse left or right: yaw\nMouse buttons: roll",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),

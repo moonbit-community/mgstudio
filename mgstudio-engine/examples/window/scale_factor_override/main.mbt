@@ -90,7 +90,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     panel,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
+    @ui.BackgroundColor::new(@color.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
   )
 
   let label = world.spawn_empty()
@@ -117,7 +117,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::black()),
+    @text.TextColor::new(@color.Color::black()),
   )
   try! world.set_by_key(label, custom_text_key, CustomText::{  })
 }

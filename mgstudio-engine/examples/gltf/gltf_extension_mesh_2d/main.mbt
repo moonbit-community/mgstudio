@@ -91,7 +91,7 @@ fn convert_mesh_to_2d(
   }
   let material_handle = color_materials.modify(fn(value) {
     value
-    |> @sprite_render_mesh2d_color_material.add_material(@sprite.Color::white())
+    |> @sprite_render_mesh2d_color_material.add_material(@color.Color::white())
   })
   ignore(try! world.remove(entity, key=@mesh.Mesh3d::component()))
   ignore(try! world.remove(entity, key=@pbr.MeshMaterial3d::component()))

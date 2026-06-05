@@ -20,7 +20,7 @@ const COLS : Int = 6
 
 ///|
 struct IdleColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -55,7 +55,7 @@ fn setup(
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
       .with_row_gap(@ui.Val::Px(16.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.11F, 0.13F, 0.18F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.11F, 0.13F, 0.18F)),
     ),
   )
 
@@ -65,7 +65,7 @@ fn setup(
         @hierarchy.Parent::new(root),
         @text.Text::new("Widgets Preview"),
         @text.TextFont::TextFont().with_font(font).with_font_size(30.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -94,7 +94,7 @@ fn setup(
 
   for i in 0..<(ROWS * COLS) {
     let hue = float_from_int(i * 23 % 360)
-    let idle = @sprite.Color::hsl(hue, 0.8F, 0.66F)
+    let idle = @color.Color::hsl(hue, 0.8F, 0.66F)
     ignore(
       commands.spawn(
         (
@@ -106,7 +106,7 @@ fn setup(
           .with_height(@ui.Val::Percent(100.0F))
           .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
           @ui.BackgroundColor::new(idle),
-          @ui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.25F)),
+          @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.25F)),
         ),
       ),
     )
@@ -127,8 +127,8 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, background, idle) = data
     let next_color = match interaction.value() {
-      @ui.Interaction::Hovered => @sprite.Color::srgb(1.0F, 0.35F, 0.0F)
-      @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.12F, 0.0F)
+      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.35F, 0.0F)
+      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.12F, 0.0F)
       _ => idle.value().color
     }
     background.set(@ui.BackgroundColor::new(next_color))

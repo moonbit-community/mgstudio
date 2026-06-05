@@ -61,18 +61,18 @@ fn main {
 }
 
 ///|
-fn color_blue() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
+fn color_blue() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
+fn color_red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn color_lime() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
+fn color_lime() -> @color.Color {
+  @color.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -162,7 +162,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -190,7 +190,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -204,7 +204,7 @@ fn spawn_listener_ear(
   world : @ecs.World,
   listener : @core.Entity,
   offset_x : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let ear = try! world.spawn_bundle(
     (

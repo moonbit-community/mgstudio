@@ -123,7 +123,7 @@ fn spawn_text(
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(free_camera_text(free_camera)),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
@@ -141,7 +141,7 @@ fn spawn_text(
           "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
@@ -157,7 +157,7 @@ fn spawn_text(
         .with_right(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         InfoText::{  },
       ),
@@ -296,7 +296,7 @@ fn spawn_lights(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @pbr.PointLight::new(
-          @sprite.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
+          @color.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
           1500.0F,
           20.0F,
           true,
@@ -317,7 +317,7 @@ fn spawn_lights(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @pbr.PointLight::new(
-          @sprite.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
+          @color.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
           1200.0F,
           20.0F,
           true,
@@ -354,19 +354,19 @@ fn spawn_world(
     .peek()
     .add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
+        @color.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
       ),
     )
   let red_material = materials
     .peek()
     .add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
+        @color.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
       ),
     )
   let white_material = materials
     .peek()
-    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
+    .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
 
   ignore(
     commands.spawn(

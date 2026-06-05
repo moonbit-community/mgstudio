@@ -59,7 +59,7 @@ pub fn VolumetricLight::VolumetricLight() -> VolumetricLight {
 ///|
 /// Bevy-aligned camera component that controls volumetric fog rendering.
 pub struct VolumetricFog {
-  ambient_color : @sprite.Color
+  ambient_color : @color.Color
   ambient_intensity : Float
   jitter : Float
   step_count : Int
@@ -68,7 +68,7 @@ pub struct VolumetricFog {
 ///|
 pub fn VolumetricFog::VolumetricFog() -> VolumetricFog {
   VolumetricFog::{
-    ambient_color: @sprite.Color::white(),
+    ambient_color: @color.Color::white(),
     ambient_intensity: 0.1F,
     jitter: 0.0F,
     step_count: 64,
@@ -78,7 +78,7 @@ pub fn VolumetricFog::VolumetricFog() -> VolumetricFog {
 ///|
 pub fn VolumetricFog::with_ambient_color(
   self : VolumetricFog,
-  ambient_color : @sprite.Color,
+  ambient_color : @color.Color,
 ) -> VolumetricFog {
   VolumetricFog::{ ..self, ambient_color, }
 }
@@ -120,28 +120,28 @@ pub fn VolumetricFog::with_step_count(
 ///|
 /// Bevy-aligned local fog volume component.
 pub struct FogVolume {
-  fog_color : @sprite.Color
+  fog_color : @color.Color
   density_factor : Float
   density_texture : @asset.Handle[@asset.Image]?
   density_texture_offset : @math.Vec3
   absorption : Float
   scattering : Float
   scattering_asymmetry : Float
-  light_tint : @sprite.Color
+  light_tint : @color.Color
   light_intensity : Float
 } derive(ToJson, FromJson)
 
 ///|
 pub fn FogVolume::FogVolume() -> FogVolume {
   FogVolume::{
-    fog_color: @sprite.Color::white(),
+    fog_color: @color.Color::white(),
     density_factor: 0.1F,
     density_texture: None,
     density_texture_offset: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     absorption: 0.3F,
     scattering: 0.3F,
     scattering_asymmetry: 0.5F,
-    light_tint: @sprite.Color::white(),
+    light_tint: @color.Color::white(),
     light_intensity: 1.0F,
   }
 }
@@ -149,7 +149,7 @@ pub fn FogVolume::FogVolume() -> FogVolume {
 ///|
 pub fn FogVolume::with_fog_color(
   self : FogVolume,
-  fog_color : @sprite.Color,
+  fog_color : @color.Color,
 ) -> FogVolume {
   FogVolume::{ ..self, fog_color, }
 }
@@ -213,7 +213,7 @@ pub fn FogVolume::with_scattering_asymmetry(
 ///|
 pub fn FogVolume::with_light_tint(
   self : FogVolume,
-  light_tint : @sprite.Color,
+  light_tint : @color.Color,
 ) -> FogVolume {
   FogVolume::{ ..self, light_tint, }
 }
@@ -301,12 +301,12 @@ pub struct ScatteringMedium {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @asset.Asset for ScatteringMedium with asset_debug_name() {
+pub impl @asset.Asset for ScatteringMedium with fn asset_debug_name() {
   "mgstudio_light::ScatteringMedium"
 }
 
 ///|
-pub impl @asset.Asset for ScatteringMedium with asset_as_image(_self) {
+pub impl @asset.Asset for ScatteringMedium with fn asset_as_image(_self) {
   None
 }
 
@@ -316,7 +316,7 @@ let scattering_medium_asset_resource_keys : @asset.AssetResourceKeys[
 ] = @asset.register_asset_resource_keys(ScatteringMedium::asset_debug_name())
 
 ///|
-pub impl @asset.Asset for ScatteringMedium with asset_resource_keys() {
+pub impl @asset.Asset for ScatteringMedium with fn asset_resource_keys() {
   scattering_medium_asset_resource_keys
 }
 
@@ -498,7 +498,7 @@ const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
 
 ///|
 pub struct PointLight {
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   radius : Float
@@ -514,7 +514,7 @@ pub struct PointLight {
 ///|
 pub fn PointLight::PointLight() -> PointLight {
   PointLight::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
     radius: 0.0F,
@@ -530,7 +530,7 @@ pub fn PointLight::PointLight() -> PointLight {
 
 ///|
 pub fn PointLight::new(
-  color : @sprite.Color,
+  color : @color.Color,
   intensity : Float,
   range : Float,
   shadow_maps_enabled : Bool,
@@ -553,7 +553,7 @@ pub fn PointLight::new(
 ///|
 pub fn PointLight::with_color(
   self : PointLight,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> PointLight {
   PointLight::{ ..self, color, }
 }
@@ -879,7 +879,7 @@ pub fn CascadeShadowConfig::CascadeShadowConfig() -> CascadeShadowConfig {
 
 ///|
 pub struct DirectionalLight {
-  color : @sprite.Color
+  color : @color.Color
   illuminance : Float
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
@@ -893,7 +893,7 @@ pub struct DirectionalLight {
 ///|
 pub fn DirectionalLight::DirectionalLight() -> DirectionalLight {
   DirectionalLight::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
@@ -907,7 +907,7 @@ pub fn DirectionalLight::DirectionalLight() -> DirectionalLight {
 
 ///|
 pub fn DirectionalLight::new(
-  color : @sprite.Color,
+  color : @color.Color,
   illuminance : Float,
   shadow_maps_enabled : Bool,
 ) -> DirectionalLight {
@@ -1065,7 +1065,7 @@ pub fn SunDisk::with_intensity(self : SunDisk, intensity : Float) -> SunDisk {
 
 ///|
 pub struct SpotLight {
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   radius : Float
@@ -1083,7 +1083,7 @@ pub struct SpotLight {
 ///|
 pub fn SpotLight::SpotLight() -> SpotLight {
   SpotLight::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
     radius: 0.0F,
@@ -1101,7 +1101,7 @@ pub fn SpotLight::SpotLight() -> SpotLight {
 
 ///|
 pub fn SpotLight::new(
-  color : @sprite.Color,
+  color : @color.Color,
   intensity : Float,
   range : Float,
   inner_angle : Float,
@@ -1660,7 +1660,7 @@ pub fn ClusteredDecal::emissive_texture_id(self : ClusteredDecal) -> Int? {
 
 ///|
 pub struct GlobalAmbientLight {
-  color : @sprite.Color
+  color : @color.Color
   brightness : Float
   affects_lightmapped_meshes : Bool
 } derive(ToJson, FromJson)
@@ -1668,7 +1668,7 @@ pub struct GlobalAmbientLight {
 ///|
 pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
   GlobalAmbientLight::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     brightness: 80.0F,
     affects_lightmapped_meshes: true,
   }
@@ -1676,7 +1676,7 @@ pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
 
 ///|
 pub fn GlobalAmbientLight::new(
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> GlobalAmbientLight {
   GlobalAmbientLight::{ color, brightness, affects_lightmapped_meshes: true }
@@ -1790,97 +1790,97 @@ pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for PointLight with component() {
+pub impl @ecs.Component for PointLight with fn component() {
   ecs_key_point_light
 }
 
 ///|
-pub impl @ecs.Component for PointLightTexture with component() {
+pub impl @ecs.Component for PointLightTexture with fn component() {
   ecs_key_point_light_texture
 }
 
 ///|
-pub impl @ecs.Component for SpotLight with component() {
+pub impl @ecs.Component for SpotLight with fn component() {
   ecs_key_spot_light
 }
 
 ///|
-pub impl @ecs.Component for SpotLightTexture with component() {
+pub impl @ecs.Component for SpotLightTexture with fn component() {
   ecs_key_spot_light_texture
 }
 
 ///|
-pub impl @ecs.Component for DirectionalLight with component() {
+pub impl @ecs.Component for DirectionalLight with fn component() {
   ecs_key_directional_light
 }
 
 ///|
-pub impl @ecs.Component for SunDisk with component() {
+pub impl @ecs.Component for SunDisk with fn component() {
   ecs_key_sun_disk
 }
 
 ///|
-pub impl @ecs.Component for VolumetricLight with component() {
+pub impl @ecs.Component for VolumetricLight with fn component() {
   ecs_key_volumetric_light
 }
 
 ///|
-pub impl @ecs.Component for VolumetricFog with component() {
+pub impl @ecs.Component for VolumetricFog with fn component() {
   ecs_key_volumetric_fog
 }
 
 ///|
-pub impl @ecs.Component for Atmosphere with component() {
+pub impl @ecs.Component for Atmosphere with fn component() {
   ecs_key_atmosphere
 }
 
 ///|
-pub impl @ecs.Component for AtmosphereSettings with component() {
+pub impl @ecs.Component for AtmosphereSettings with fn component() {
   ecs_key_atmosphere_settings
 }
 
 ///|
-pub impl @ecs.Component for FogVolume with component() {
+pub impl @ecs.Component for FogVolume with fn component() {
   ecs_key_fog_volume
 }
 
 ///|
-pub impl @ecs.Component for DirectionalLightTexture with component() {
+pub impl @ecs.Component for DirectionalLightTexture with fn component() {
   ecs_key_directional_light_texture
 }
 
 ///|
-pub impl @ecs.Component for LightProbe with component() {
+pub impl @ecs.Component for LightProbe with fn component() {
   ecs_key_light_probe
 }
 
 ///|
-pub impl @ecs.Component for IrradianceVolume with component() {
+pub impl @ecs.Component for IrradianceVolume with fn component() {
   ecs_key_irradiance_volume
 }
 
 ///|
-pub impl @ecs.Component for ClusteredDecal with component() {
+pub impl @ecs.Component for ClusteredDecal with fn component() {
   ecs_key_clustered_decal
 }
 
 ///|
-pub impl @ecs.Component for ParallaxCorrection with component() {
+pub impl @ecs.Component for ParallaxCorrection with fn component() {
   ecs_key_parallax_correction
 }
 
 ///|
-pub impl @ecs.Component for EnvironmentMapLight with component() {
+pub impl @ecs.Component for EnvironmentMapLight with fn component() {
   ecs_key_environment_map_light
 }
 
 ///|
-pub impl @ecs.Component for GeneratedEnvironmentMapLight with component() {
+pub impl @ecs.Component for GeneratedEnvironmentMapLight with fn component() {
   ecs_key_generated_environment_map_light
 }
 
 ///|
-pub impl @ecs.Component for AtmosphereEnvironmentMapLight with component() {
+pub impl @ecs.Component for AtmosphereEnvironmentMapLight with fn component() {
   ecs_key_atmosphere_environment_map_light
 }
 
@@ -1900,17 +1900,17 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="render3d.directional_light_shadow_map")
 
 ///|
-pub impl @app.Resource for GlobalAmbientLight with resource() {
+pub impl @app.Resource for GlobalAmbientLight with fn resource() {
   ecs_key_global_ambient_light
 }
 
 ///|
-pub impl @app.Resource for PointLightShadowMap with resource() {
+pub impl @app.Resource for PointLightShadowMap with fn resource() {
   ecs_key_point_light_shadow_map
 }
 
 ///|
-pub impl @app.Resource for DirectionalLightShadowMap with resource() {
+pub impl @app.Resource for DirectionalLightShadowMap with fn resource() {
   ecs_key_directional_light_shadow_map
 }
 

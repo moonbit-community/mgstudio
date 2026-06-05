@@ -138,9 +138,9 @@ fn update_help_text() -> Unit {
 fn button_background(selected : Bool) -> @ui.BackgroundColor {
   @ui.BackgroundColor::new(
     if selected {
-      @sprite.Color::white()
+      @color.Color::white()
     } else {
-      @sprite.Color::black()
+      @color.Color::black()
     },
   )
 }
@@ -149,9 +149,9 @@ fn button_background(selected : Bool) -> @ui.BackgroundColor {
 fn button_border(selected : Bool) -> @ui.BorderColor {
   @ui.BorderColor::new(
     if selected {
-      @sprite.Color::black()
+      @color.Color::black()
     } else {
-      @sprite.Color::white()
+      @color.Color::white()
     },
   )
 }
@@ -257,7 +257,7 @@ fn spawn_button(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
 
   button
@@ -307,7 +307,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(help_entity, @text.ecs_key_text, @text.Text::new(""))
   try! world.set_by_key(
@@ -318,7 +318,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     help_entity,
@@ -389,7 +389,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     hint_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
 
   let camera_button = spawn_button(world, selection_panel, font, "Camera")
@@ -559,7 +559,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @color.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
@@ -602,7 +602,7 @@ fn setup(world : @ecs.World) -> Unit {
   let decal_texture = asset_server.load("branding/icon.png")
   let decal_a_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
+      @color.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -610,7 +610,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let decal_b_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
+      @color.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)

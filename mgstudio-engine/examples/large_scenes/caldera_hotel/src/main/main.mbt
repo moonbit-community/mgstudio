@@ -48,7 +48,7 @@ fn setup(
   commands.queue(fn(world : @ecs.World) {
     world.insert_resource(
       @pbr.ecs_key_global_ambient_light,
-      @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2600.0F),
+      @pbr.GlobalAmbientLight::new(@color.Color::white(), 2600.0F),
     )
   })
   ignore(
@@ -66,7 +66,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 16000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 16000.0F, true),
         @transform.Transform::from_xyz(14.0F, 20.0F, 8.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

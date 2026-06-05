@@ -184,7 +184,7 @@ fn setup(
           .with_font(font)
           .with_font_size(random_font_size(idx, args)),
           @text.TextColor::new(
-            @sprite.Color::hsl(pseudo_rand(idx + 53) * 360.0F, 0.8F, 0.8F),
+            @color.Color::hsl(pseudo_rand(idx + 53) * 360.0F, 0.8F, 0.8F),
           ),
           @text.TextLayout::new_with_justify(justify),
           @transform.Transform::from_xyz(

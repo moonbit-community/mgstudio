@@ -43,7 +43,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @transform.Transform::identity(),
@@ -58,7 +58,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),
     ),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -148,7 +148,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -176,7 +176,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,

@@ -44,7 +44,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(180.0F, 180.0F)).with_color(
-          @sprite.Color::srgb(0.2F, 0.28F, 0.95F),
+          @color.Color::srgb(0.2F, 0.28F, 0.95F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, -0.5F),
       ),
@@ -60,7 +60,7 @@ fn setup(commands : @app.Commands) -> Unit {
       commands.spawn(
         (
           @sprite.Sprite::sized(@math.Vec2::new(26.0F, 26.0F)).with_color(
-            @sprite.Color::hsl(float_from_int(i * 29 % 360), 0.82F, 0.58F),
+            @color.Color::hsl(float_from_int(i * 29 % 360), 0.82F, 0.58F),
           ),
           @transform.Transform::from_xyz(
             @math.cos(angle) * radius,

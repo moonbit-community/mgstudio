@@ -159,7 +159,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   }
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
   )
 }
 
@@ -181,7 +181,7 @@ fn spawn_mesh(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera().with_clear_color(@sprite.Color::black()),
+      @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
       @transform.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -237,7 +237,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     sun,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
+      @color.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       130_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -274,7 +274,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     }),
   )
   let probe_metal = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.0F),
   )
@@ -288,7 +288,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let probe_rough = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_metallic(0.0F)
     .with_perceptual_roughness(1.0F),
   )
@@ -328,9 +328,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     },
   )
   let water_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
     .with_perceptual_roughness(0.0F)
     .with_normal_map_texture(Some(water_normals))
     .with_uv_transform(
@@ -373,7 +371,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

@@ -41,7 +41,7 @@ fn spawn_text(
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(controller.to_string()),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),

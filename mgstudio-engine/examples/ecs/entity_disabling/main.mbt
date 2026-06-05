@@ -90,7 +90,7 @@ fn setup_scene(
     let hue = 360.0F *
       Float::from_double(i.to_double()) /
       Float::from_double(num_shapes.to_double())
-    let color = @sprite.Color::hsl(hue, 0.95F, 0.7F)
+    let color = @color.Color::hsl(hue, 0.95F, 0.7F)
     ignore(
       commands.spawn(
         (

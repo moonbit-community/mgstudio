@@ -91,7 +91,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 100.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 100.0F),
   )
 
   let player = @animation.AnimationPlayer::AnimationPlayer()
@@ -106,7 +106,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(1.0F, 0.64705884F, 0.0F),
+          @color.Color::srgb(1.0F, 0.64705884F, 0.0F),
         ),
       ),
     ),
@@ -132,12 +132,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(light)
     .insert(
       (
-        @pbr.PointLight::new(
-          @sprite.Color::white(),
-          10_000_000.0F,
-          100.0F,
-          true,
-        ),
+        @pbr.PointLight::new(@color.Color::white(), 10_000_000.0F, 100.0F, true),
         @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
       ),
     ),
@@ -157,7 +152,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
+          @color.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
         ),
       ),
     ),

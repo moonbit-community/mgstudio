@@ -14,7 +14,7 @@
 
 ///|
 struct CustomMaterialAsset {
-  color : @sprite.Color
+  color : @color.Color
   color_texture : @asset.Handle[@asset.Image]?
   alpha_mode : @sprite_render.AlphaMode2d
 }
@@ -41,7 +41,7 @@ impl @asset.Asset for CustomMaterialAsset with fn asset_resource_keys() {
 
 ///|
 fn custom_material_asset(
-  color : @sprite.Color,
+  color : @color.Color,
   color_texture? : @asset.Handle[@asset.Image]? = None,
   alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Blend,
 ) -> CustomMaterialAsset {
@@ -54,7 +54,7 @@ fn custom_material_f32_bits(x : Float) -> UInt {
 }
 
 ///|
-fn custom_material_uniform_bytes(color : @sprite.Color) -> Bytes {
+fn custom_material_uniform_bytes(color : @color.Color) -> Bytes {
   let words : Array[UInt] = [
     custom_material_f32_bits(color.r),
     custom_material_f32_bits(color.g),
@@ -117,7 +117,7 @@ fn custom_material_plugin() -> @sprite_render_mesh2d_material.Material2dPlugin[
   let plugin : @sprite_render_mesh2d_material.Material2dPlugin[
     CustomMaterialAsset,
   ] = @sprite_render_mesh2d_material.Material2dPlugin::Material2dPlugin()
-    .with_asset_init(fn() { custom_material_asset(@sprite.Color::white()) })
+    .with_asset_init(fn() { custom_material_asset(@color.Color::white()) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
   @sprite_render_mesh2d_material.material2d_plugin(plugin)
@@ -143,7 +143,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
     ignore(
       value.insert(
         handle,
-        custom_material_asset(@sprite.Color::srgb(0.15F, 0.8F, 1.0F)),
+        custom_material_asset(@color.Color::srgb(0.15F, 0.8F, 1.0F)),
       ),
     )
   })

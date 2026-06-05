@@ -130,28 +130,28 @@ fn PressedControls::PressedControls() -> PressedControls {
 }
 
 ///|
-fn panel_background() -> @sprite.Color {
-  @sprite.Color::srgb(0.12F, 0.12F, 0.12F)
+fn panel_background() -> @color.Color {
+  @color.Color::srgb(0.12F, 0.12F, 0.12F)
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
-fn shadow_card_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.21F, 0.21F, 0.21F)
+fn shadow_card_color() -> @color.Color {
+  @color.Color::srgb(0.21F, 0.21F, 0.21F)
 }
 
 ///|
@@ -316,7 +316,7 @@ fn spawn_text(
   content : String,
   font : @asset.Handle[@asset.Font],
   size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   ignore(
@@ -369,7 +369,7 @@ fn spawn_control_button(
   ignore(
     try! world
     .entity_mut(button)
-    .insert_component(@ui.BorderColor::new(@sprite.Color::white())),
+    .insert_component(@ui.BorderColor::new(@color.Color::white())),
   )
   ignore(
     spawn_text(
@@ -378,7 +378,7 @@ fn spawn_control_button(
       action_label(action),
       font,
       18.0F,
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
 }
@@ -400,7 +400,7 @@ fn spawn_value_label(
         ShadowValueLabel::{ field, },
         @text.Text::new(""),
         text_font(font, 16.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.95F, 0.95F, 0.95F)),
+        @text.TextColor::new(@color.Color::srgb(0.95F, 0.95F, 0.95F)),
       ),
     ),
   )
@@ -441,7 +441,7 @@ fn spawn_control_row(
       setting_label(field),
       font,
       16.0F,
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
   spawn_control_button(world, row, font, dec_action)
@@ -479,7 +479,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_height(@ui.Val::Percent(100.0F))
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
       ),
     ),
   )
@@ -498,7 +498,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center)
         .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
-        @ui.BorderColor::new(@sprite.Color::white()),
+        @ui.BorderColor::new(@color.Color::white()),
         @ui.BackgroundColor::new(shadow_card_color()),
       ),
     ),
@@ -508,7 +508,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(shadow_card)
     .insert_component(
       @ui.BoxShadow::new(
-        @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
+        @color.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
         @ui.Val::Px(20.0F),
         @ui.Val::Px(20.0F),
         @ui.Val::Px(15.0F),
@@ -517,14 +517,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   ignore(
-    spawn_text(
-      world,
-      shadow_card,
-      "Shadow",
-      font,
-      22.0F,
-      @sprite.Color::white(),
-    ),
+    spawn_text(world, shadow_card, "Shadow", font, 22.0F, @color.Color::white()),
   )
 
   let panel = world.spawn_empty()
@@ -543,7 +536,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
         .with_row_gap(@ui.Val::Px(10.0F)),
         @ui.BackgroundColor::new(panel_background()),
-        @ui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.15F)),
+        @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.15F)),
       ),
     ),
   )
@@ -554,7 +547,7 @@ fn setup(world : @ecs.World) -> Unit {
       "Box Shadow Controls",
       font,
       24.0F,
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
 
@@ -596,9 +589,9 @@ fn update_shadow_controls(
       @ui.Interaction::None => normal_button_color()
     }
     let border = if interaction == @ui.Interaction::Pressed {
-      @sprite.Color::white()
+      @color.Color::white()
     } else {
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 0.6F)
+      @color.Color::new(1.0F, 1.0F, 1.0F, 0.6F)
     }
     background_mut.set(@ui.BackgroundColor::new(background))
     border_mut.set(@ui.BorderColor::new(border))
@@ -631,7 +624,7 @@ fn update_shadow_node(
     node_mut.set(@ui.Node::{ ..node, width, height, border_radius })
     shadow_mut.set(
       @ui.BoxShadow::new(
-        @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
+        @color.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
         @ui.Val::Px(current.x_offset),
         @ui.Val::Px(current.y_offset),
         @ui.Val::Px(current.spread),

@@ -13,28 +13,20 @@
 // limitations under the License.
 
 ///|
-fn anchor_items() -> Array[(String, @math.Vec2, @sprite.Color)] {
+fn anchor_items() -> Array[(String, @math.Vec2, @color.Color)] {
   [
-    (
-      "left",
-      @math.Vec2::new(-0.5F, 0.0F),
-      @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
-    ),
-    (
-      "right",
-      @math.Vec2::new(0.5F, 0.0F),
-      @sprite.Color::srgb(1.0F, 0.5F, 0.0F),
-    ),
+    ("left", @math.Vec2::new(-0.5F, 0.0F), @color.Color::srgb(1.0F, 0.0F, 0.0F)),
+    ("right", @math.Vec2::new(0.5F, 0.0F), @color.Color::srgb(1.0F, 0.5F, 0.0F)),
     (
       "center",
       @math.Vec2::new(0.0F, 0.0F),
-      @sprite.Color::srgb(1.0F, 0.9F, 0.1F),
+      @color.Color::srgb(1.0F, 0.9F, 0.1F),
     ),
-    ("top", @math.Vec2::new(0.0F, 0.5F), @sprite.Color::srgb(0.0F, 1.0F, 0.0F)),
+    ("top", @math.Vec2::new(0.0F, 0.5F), @color.Color::srgb(0.0F, 1.0F, 0.0F)),
     (
       "bottom",
       @math.Vec2::new(0.0F, -0.5F),
-      @sprite.Color::srgb(0.2F, 0.4F, 1.0F),
+      @color.Color::srgb(0.2F, 0.4F, 1.0F),
     ),
   ]
 }
@@ -65,7 +57,7 @@ fn anchors(
       "+",
       12.0F,
       @math.Vec2::new(0.0F, 0.0F),
-      @sprite.Color::white(),
+      @color.Color::white(),
     )
     gizmos.text_2d(
       @gizmos.Isometry2d::new(position, seconds),

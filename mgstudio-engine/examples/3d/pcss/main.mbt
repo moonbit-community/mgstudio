@@ -73,7 +73,7 @@ let pcss_state : Ref[PcssState] = Ref({
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -121,7 +121,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn create_directional_light() -> @pbr.DirectionalLight {
-  @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true)
+  @pbr.DirectionalLight::new(@color.Color::white(), 10_000.0F, true)
   .with_shadow_depth_bias(DIRECTIONAL_SHADOW_DEPTH_BIAS)
   .with_soft_shadow_size(
     if pcss_state.val.soft_shadows {
@@ -135,7 +135,7 @@ fn create_directional_light() -> @pbr.DirectionalLight {
 ///|
 fn create_point_light() -> @pbr.PointLight {
   @pbr.PointLight::new(
-    @sprite.Color::white(),
+    @color.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     true,
@@ -149,7 +149,7 @@ fn create_point_light() -> @pbr.PointLight {
 ///|
 fn create_spot_light() -> @pbr.SpotLight {
   @pbr.SpotLight::new(
-    @sprite.Color::white(),
+    @color.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     0.0F,
@@ -321,13 +321,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   pcss_state.val.help_text = Some(help_text)
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
+  set_global_ambient_light(world, @color.Color::white(), 0.0F)
   apply_camera_shadow_filter(world)
   update_help_text()
 }

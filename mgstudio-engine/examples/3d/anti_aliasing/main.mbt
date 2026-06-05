@@ -629,7 +629,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+          @color.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -638,7 +638,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_base_color_texture(Some(uv_debug_texture()))
     .with_perceptual_roughness(0.85F)
     .with_metallic(0.0F),
@@ -677,7 +677,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
   )
   try! world.set_by_key(
     light,
@@ -698,7 +698,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
-          @sprite.Color::new(
+          @color.Color::new(
             43.0F / 255.0F,
             44.0F / 255.0F,
             47.0F / 255.0F,
@@ -736,7 +736,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

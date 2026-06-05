@@ -60,7 +60,7 @@ let physics3d_debug_render_state : Physics3dDebugRenderState = {
 const DEBUG_LINE_THICKNESS : Float = 0.04F
 
 ///|
-fn physics3d_debug_make_material(color : @sprite.Color) -> @pbr.MeshMaterial3d {
+fn physics3d_debug_make_material(color : @color.Color) -> @pbr.MeshMaterial3d {
   let standard = @pbr.StandardMaterial::from_color(color)
     .with_unlit(true)
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -113,19 +113,19 @@ fn physics3d_debug_ensure_assets() -> Unit {
     ),
   )
   state.dynamic_material = Some(
-    physics3d_debug_make_material(@sprite.Color::new(0.94F, 0.22F, 0.34F, 0.9F)),
+    physics3d_debug_make_material(@color.Color::new(0.94F, 0.22F, 0.34F, 0.9F)),
   )
   state.fixed_material = Some(
-    physics3d_debug_make_material(@sprite.Color::new(0.98F, 0.56F, 0.18F, 0.9F)),
+    physics3d_debug_make_material(@color.Color::new(0.98F, 0.56F, 0.18F, 0.9F)),
   )
   state.kinematic_material = Some(
-    physics3d_debug_make_material(@sprite.Color::new(0.98F, 0.34F, 0.20F, 0.9F)),
+    physics3d_debug_make_material(@color.Color::new(0.98F, 0.34F, 0.20F, 0.9F)),
   )
   state.parentless_material = Some(
-    physics3d_debug_make_material(@sprite.Color::new(0.82F, 0.82F, 0.84F, 0.9F)),
+    physics3d_debug_make_material(@color.Color::new(0.82F, 0.82F, 0.84F, 0.9F)),
   )
   state.sensor_material = Some(
-    physics3d_debug_make_material(@sprite.Color::new(0.22F, 0.82F, 0.98F, 0.9F)),
+    physics3d_debug_make_material(@color.Color::new(0.22F, 0.82F, 0.98F, 0.9F)),
   )
 }
 

@@ -46,7 +46,7 @@ fn setup(
     .peek()
     .add(
       @pbr.StandardMaterial::StandardMaterial()
-      .with_base_color(@sprite.Color::white())
+      .with_base_color(@color.Color::white())
       .with_base_color_texture(
         Some(asset_server.get().load_image("branding/icon.png")),
       )

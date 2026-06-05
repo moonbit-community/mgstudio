@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn overlay_red() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
+fn overlay_red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn overlay_green() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
+fn overlay_green() -> @color.Color {
+  @color.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -97,7 +97,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -107,7 +107,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn color_is_green(color : @sprite.Color) -> Bool {
+fn color_is_green(color : @color.Color) -> Bool {
   color.r == overlay_green().r &&
   color.g == overlay_green().g &&
   color.b == overlay_green().b &&

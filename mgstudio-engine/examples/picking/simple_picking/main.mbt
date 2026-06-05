@@ -40,7 +40,7 @@ fn setup(
 ) -> Unit {
   let plane_material = materials.modify(fn(material_assets) {
     material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.95F, 0.95F))
+    |> @pbr.add_material(@color.Color::srgb(0.95F, 0.95F, 0.95F))
   })
   ignore(
     commands.spawn(
@@ -86,7 +86,7 @@ fn setup(
       .with_top(@ui.Val::Percent(12.0F))
       .with_left(@ui.Val::Percent(12.0F)),
       @text.Text::new("Click me to spawn cubes\nClick cube to toggle color"),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
       @text.TextFont::from_font_size(@text.FontSize::Px(24.0F)),
     ),
   )
@@ -104,12 +104,12 @@ fn setup(
       let normal = materials.modify(fn(material_assets) {
         material_assets
         |> @pbr.add_material(
-          @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+          @color.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
         )
       })
       let selected = materials.modify(fn(material_assets) {
         material_assets
-        |> @pbr.add_material(@sprite.Color::srgb(1.0F, 0.85F, 0.2F))
+        |> @pbr.add_material(@color.Color::srgb(1.0F, 0.85F, 0.2F))
       })
       let cube = commands.spawn(
         (
@@ -135,7 +135,7 @@ fn setup(
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
-        color.set(@text.TextColor::new(@sprite.Color::srgb(0.3F, 0.9F, 0.95F)))
+        color.set(@text.TextColor::new(@color.Color::srgb(0.3F, 0.9F, 0.95F)))
       }
     })
     .observe_pointer2(fn(
@@ -144,7 +144,7 @@ fn setup(
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
-        color.set(@text.TextColor::new(@sprite.Color::white()))
+        color.set(@text.TextColor::new(@color.Color::white()))
       }
     }),
   )

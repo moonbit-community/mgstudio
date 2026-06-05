@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn align_items_color() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.066F, 0.349F)
+fn align_items_color() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.066F, 0.349F)
 }
 
 ///|
-fn justify_content_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.102F, 0.522F, 1.0F)
+fn justify_content_color() -> @color.Color {
+  @color.Color::srgb(0.102F, 0.522F, 1.0F)
 }
 
 ///|
@@ -74,7 +74,7 @@ fn spawn_label_chip(
   world : @ecs.World,
   parent : @core.Entity,
   label : String,
-  background : @sprite.Color,
+  background : @color.Color,
   margin : @ui.UiRect,
   font : @asset.Handle[@asset.Font],
 ) -> @core.Entity {
@@ -110,7 +110,7 @@ fn spawn_label_chip(
   try! world.set_by_key(
     text,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::black()),
+    @text.TextColor::new(@color.Color::black()),
   )
   chip
 }
@@ -140,7 +140,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_align_items(@ui.AlignItems::Center)
     .with_padding(@ui.UiRect::all(panel_gap()))
     .with_row_gap(panel_gap()),
-    Some(@ui.BackgroundColor::new(@sprite.Color::black())),
+    Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_align_items(alignment)
         .with_justify_content(justification)
         .with_flex_grow(1.0F),
-        Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F))),
+        Some(@ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F))),
       )
       ignore(
         spawn_label_chip(

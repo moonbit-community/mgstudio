@@ -53,7 +53,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 12000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 12000.0F, true),
         @transform.Transform::from_xyz(14.0F, 20.0F, 8.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

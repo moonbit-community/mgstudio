@@ -32,7 +32,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(360.0F, 220.0F)).with_color(
-          @sprite.Color::srgb(0.15F, 0.18F, 0.2F),
+          @color.Color::srgb(0.15F, 0.18F, 0.2F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, -1.0F),
       ),
@@ -42,7 +42,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(280.0F, 280.0F)).with_color(
-          @sprite.Color::srgb(0.9F, 0.3F, 0.25F),
+          @color.Color::srgb(0.9F, 0.3F, 0.25F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
         GamepadIndicator::{  },
@@ -72,11 +72,11 @@ fn update_indicator(
 
   let pulse = 0.5F + 0.5F * @math.sin(time.get().elapsed_secs() * 3.2F)
   let color = if connected == 0 {
-    @sprite.Color::srgb(0.9F, 0.3F, 0.25F)
+    @color.Color::srgb(0.9F, 0.3F, 0.25F)
   } else if any_pressed {
-    @sprite.Color::srgb(0.25F, 0.95F, 0.35F)
+    @color.Color::srgb(0.25F, 0.95F, 0.35F)
   } else {
-    @sprite.Color::srgb(0.2F + pulse * 0.25F, 0.45F + pulse * 0.35F, 1.0F)
+    @color.Color::srgb(0.2F + pulse * 0.25F, 0.45F + pulse * 0.35F, 1.0F)
   }
   try! indicators.for_each(fn(_entity, indicator) {
     indicator.modify(fn(value) { value.color = color })

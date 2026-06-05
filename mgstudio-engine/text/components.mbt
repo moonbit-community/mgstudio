@@ -168,19 +168,19 @@ pub fn FontSource::from_family(family : String) -> FontSource {
 }
 
 ///|
-pub impl IntoFontSource for FontSource with into_font_source(self) {
+pub impl IntoFontSource for FontSource with fn into_font_source(self) {
   self
 }
 
 ///|
-pub impl IntoFontSource for @asset.Handle[@asset.Font] with into_font_source(
+pub impl IntoFontSource for @asset.Handle[@asset.Font] with fn into_font_source(
   self,
 ) {
   FontSource::Handle(self)
 }
 
 ///|
-pub impl IntoFontSource for String with into_font_source(self) {
+pub impl IntoFontSource for String with fn into_font_source(self) {
   FontSource::Family(self)
 }
 
@@ -249,12 +249,12 @@ pub fn FontSize::uses_rem_size(self : FontSize) -> Bool {
 }
 
 ///|
-pub impl IntoFontSize for FontSize with into_font_size(self) {
+pub impl IntoFontSize for FontSize with fn into_font_size(self) {
   self
 }
 
 ///|
-pub impl IntoFontSize for Float with into_font_size(self) {
+pub impl IntoFontSize for Float with fn into_font_size(self) {
   FontSize::Px(self)
 }
 
@@ -696,82 +696,82 @@ fn font_style_to_swash(style : FontStyle) -> @swash.Style {
 
 ///|
 pub(all) struct TextColor {
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
-pub fn TextColor::new(color : @sprite.Color) -> TextColor {
+pub fn TextColor::new(color : @color.Color) -> TextColor {
   TextColor::{ color, }
 }
 
 ///|
 pub fn TextColor::TextColor() -> TextColor {
-  TextColor::new(@sprite.Color::white())
+  TextColor::new(@color.Color::white())
 }
 
 ///|
 pub fn TextColor::black() -> TextColor {
-  TextColor::new(@sprite.Color::black())
+  TextColor::new(@color.Color::black())
 }
 
 ///|
 pub fn TextColor::white() -> TextColor {
-  TextColor::new(@sprite.Color::white())
+  TextColor::new(@color.Color::white())
 }
 
 ///|
 pub(all) struct TextBackgroundColor {
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
-pub fn TextBackgroundColor::new(color : @sprite.Color) -> TextBackgroundColor {
+pub fn TextBackgroundColor::new(color : @color.Color) -> TextBackgroundColor {
   TextBackgroundColor::{ color, }
 }
 
 ///|
 pub fn TextBackgroundColor::TextBackgroundColor() -> TextBackgroundColor {
-  TextBackgroundColor::new(@sprite.Color::black())
+  TextBackgroundColor::new(@color.Color::black())
 }
 
 ///|
 pub fn TextBackgroundColor::black() -> TextBackgroundColor {
-  TextBackgroundColor::new(@sprite.Color::black())
+  TextBackgroundColor::new(@color.Color::black())
 }
 
 ///|
 pub fn TextBackgroundColor::white() -> TextBackgroundColor {
-  TextBackgroundColor::new(@sprite.Color::white())
+  TextBackgroundColor::new(@color.Color::white())
 }
 
 ///|
 pub(all) struct UnderlineColor {
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
-pub fn UnderlineColor::new(color : @sprite.Color) -> UnderlineColor {
+pub fn UnderlineColor::new(color : @color.Color) -> UnderlineColor {
   UnderlineColor::{ color, }
 }
 
 ///|
 pub fn UnderlineColor::UnderlineColor() -> UnderlineColor {
-  UnderlineColor::new(@sprite.Color::white())
+  UnderlineColor::new(@color.Color::white())
 }
 
 ///|
 pub(all) struct StrikethroughColor {
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
-pub fn StrikethroughColor::new(color : @sprite.Color) -> StrikethroughColor {
+pub fn StrikethroughColor::new(color : @color.Color) -> StrikethroughColor {
   StrikethroughColor::{ color, }
 }
 
 ///|
 pub fn StrikethroughColor::StrikethroughColor() -> StrikethroughColor {
-  StrikethroughColor::new(@sprite.Color::white())
+  StrikethroughColor::new(@color.Color::white())
 }
 
 ///|
@@ -812,20 +812,17 @@ pub fn LineHeight::eval(self : LineHeight, font_size : Float) -> Float {
 ///|
 pub(all) struct TextShadow {
   mut offset : @math.Vec2
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
-pub fn TextShadow::new(
-  offset : @math.Vec2,
-  color : @sprite.Color,
-) -> TextShadow {
+pub fn TextShadow::new(offset : @math.Vec2, color : @color.Color) -> TextShadow {
   TextShadow::{ offset, color }
 }
 
 ///|
 pub fn TextShadow::TextShadow() -> TextShadow {
-  TextShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
+  TextShadow::new(@math.Vec2::new(4.0F, -4.0F), @color.Color::black())
 }
 
 ///|
@@ -839,7 +836,7 @@ pub fn TextShadow::with_offset(
 ///|
 pub fn TextShadow::with_color(
   self : TextShadow,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> TextShadow {
   TextShadow::{ ..self, color, }
 }
@@ -847,20 +844,20 @@ pub fn TextShadow::with_color(
 ///|
 pub(all) struct Text2dShadow {
   mut offset : @math.Vec2
-  mut color : @sprite.Color
+  mut color : @color.Color
 }
 
 ///|
 pub fn Text2dShadow::new(
   offset : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Text2dShadow {
   Text2dShadow::{ offset, color }
 }
 
 ///|
 pub fn Text2dShadow::Text2dShadow() -> Text2dShadow {
-  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
+  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @color.Color::black())
 }
 
 ///|
@@ -874,7 +871,7 @@ pub fn Text2dShadow::with_offset(
 ///|
 pub fn Text2dShadow::with_color(
   self : Text2dShadow,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Text2dShadow {
   Text2dShadow::{ ..self, color, }
 }

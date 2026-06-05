@@ -76,7 +76,7 @@ fn setup(
           (
             @sprite.Sprite::from_image(texture)
             .with_custom_size(Some(@math.Vec2::new(24.0F, 24.0F)))
-            .with_color(@sprite.Color::white()),
+            .with_color(@color.Color::white()),
             @transform.Transform::from_xyz(
               float_from_int(x) * TILE_SIZE,
               float_from_int(y) * TILE_SIZE,

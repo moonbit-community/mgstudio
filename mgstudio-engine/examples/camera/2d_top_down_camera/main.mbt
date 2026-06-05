@@ -51,7 +51,7 @@ fn setup_scene(
           materials.modify(fn(materials) {
             materials
             |> @sprite_render_mesh2d_color_material.add_material(
-              @sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F),
+              @color.Color::new(0.2F, 0.2F, 0.3F, 1.0F),
             )
           }),
         ),
@@ -71,7 +71,7 @@ fn setup_scene(
           materials.modify(fn(materials) {
             materials
             |> @sprite_render_mesh2d_color_material.add_material(
-              @sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F),
+              @color.Color::new(6.25F, 9.4F, 9.1F, 1.0F),
             )
           }),
         ),

@@ -70,8 +70,8 @@ fn setup(
         @hierarchy.Parent::new(group),
         @text.Text::new("struck\nstruckstruck\nstruckstruckstruck"),
         @text.Strikethrough::Strikethrough(),
-        @text.StrikethroughColor::new(@sprite.Color::srgb(0.9F, 0.1F, 0.1F)),
-        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.2F, 0.75F, 0.35F)),
+        @text.StrikethroughColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
+        @text.TextBackgroundColor::new(@color.Color::srgb(0.2F, 0.75F, 0.35F)),
         @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
       ),
     ),
@@ -93,7 +93,7 @@ fn setup(
       @hierarchy.Parent::new(group),
       @text.Text::new("struck"),
       @text.Strikethrough::Strikethrough(),
-      @text.TextBackgroundColor::new(@sprite.Color::srgb(0.2F, 0.75F, 0.35F)),
+      @text.TextBackgroundColor::new(@color.Color::srgb(0.2F, 0.75F, 0.35F)),
       @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
     ),
   )
@@ -142,7 +142,7 @@ fn setup(
         @text.TextSpan::new("struck"),
         @text.Strikethrough::Strikethrough(),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(15.0F)),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.1F, 0.1F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
         @text.TextBackgroundColor::black(),
       ),
     ),
@@ -153,10 +153,10 @@ fn setup(
         @hierarchy.Parent::new(colorful),
         @text.TextSpan::new("\nunderline"),
         @text.Underline::Underline(),
-        @text.UnderlineColor::new(@sprite.Color::srgb(1.0F, 0.9F, 0.1F)),
+        @text.UnderlineColor::new(@color.Color::srgb(1.0F, 0.9F, 0.1F)),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(30.0F)),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.1F, 0.1F)),
-        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.2F, 0.75F, 0.35F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
+        @text.TextBackgroundColor::new(@color.Color::srgb(0.2F, 0.75F, 0.35F)),
       ),
     ),
   )
@@ -167,8 +167,8 @@ fn setup(
         @text.TextSpan::new("\nstruck"),
         @text.Strikethrough::Strikethrough(),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(50.0F)),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.1F, 0.1F)),
-        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.07F, 0.1F, 0.35F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
+        @text.TextBackgroundColor::new(@color.Color::srgb(0.07F, 0.1F, 0.35F)),
       ),
     ),
   )
@@ -178,15 +178,15 @@ fn setup(
       @text.TextSpan::new("\nunderlined and struck"),
       @text.Strikethrough::Strikethrough(),
       @text.Underline::Underline(),
-      @text.StrikethroughColor::new(@sprite.Color::white()),
+      @text.StrikethroughColor::new(@color.Color::white()),
       @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(70.0F)),
-      @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.1F, 0.1F)),
-      @text.TextBackgroundColor::new(@sprite.Color::srgb(0.07F, 0.1F, 0.35F)),
+      @text.TextColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
+      @text.TextBackgroundColor::new(@color.Color::srgb(0.07F, 0.1F, 0.35F)),
     ),
   )
   commands
   .entity(combined)
-  .insert_component(@text.UnderlineColor::new(@sprite.Color::white()))
+  .insert_component(@text.UnderlineColor::new(@color.Color::white()))
 }
 
 ///|

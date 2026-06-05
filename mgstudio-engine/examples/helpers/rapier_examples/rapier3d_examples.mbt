@@ -58,7 +58,7 @@ pub fn rapier3d_basic_lighting(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       0.40F,
     ),
   )
@@ -66,7 +66,7 @@ pub fn rapier3d_basic_lighting(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 5000.0F, 30.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 5000.0F, 30.0F, false),
   )
   try! world.set_by_key(
     light,
@@ -76,17 +76,17 @@ pub fn rapier3d_basic_lighting(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn rapier3d_color(i : Int) -> @sprite.Color {
+pub fn rapier3d_color(i : Int) -> @color.Color {
   let colors = [
-    @sprite.Color::new(0.22F, 0.22F, 0.58F, 1.0F),
-    @sprite.Color::new(0.12F, 0.64F, 0.58F, 1.0F),
-    @sprite.Color::new(0.75F, 0.25F, 0.75F, 1.0F),
+    @color.Color::new(0.22F, 0.22F, 0.58F, 1.0F),
+    @color.Color::new(0.12F, 0.64F, 0.58F, 1.0F),
+    @color.Color::new(0.75F, 0.25F, 0.75F, 1.0F),
   ]
   colors[i % colors.length()]
 }
 
 ///|
-pub fn rapier3d_unlit_material(color : @sprite.Color) -> @pbr.MeshMaterial3d {
+pub fn rapier3d_unlit_material(color : @color.Color) -> @pbr.MeshMaterial3d {
   @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(color).with_unlit(true),
@@ -98,7 +98,7 @@ pub fn rapier3d_unlit_material(color : @sprite.Color) -> @pbr.MeshMaterial3d {
 pub fn rapier3d_spawn_body_mesh(
   world : @ecs.World,
   geometry : @mesh.Mesh3dGeometry,
-  color : @sprite.Color,
+  color : @color.Color,
   transform : @transform.Transform,
   rigid_body : @physics3d.RigidBody3d?,
   collider : @physics3d.Collider3d?,
@@ -126,7 +126,7 @@ pub fn rapier3d_spawn_cuboid(
   world : @ecs.World,
   position : @math.Vec3,
   half_extents : @math.Vec3,
-  color : @sprite.Color,
+  color : @color.Color,
   rigid_body : @physics3d.RigidBody3d?,
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
@@ -154,7 +154,7 @@ pub fn rapier3d_spawn_ball(
   world : @ecs.World,
   position : @math.Vec3,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   rigid_body : @physics3d.RigidBody3d?,
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
@@ -173,7 +173,7 @@ pub fn rapier3d_spawn_capsule_y(
   position : @math.Vec3,
   half_length : Float,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   rigid_body : @physics3d.RigidBody3d?,
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
@@ -202,7 +202,7 @@ pub fn rapier3d_spawn_ground(
     world,
     position,
     half_extents,
-    @sprite.Color::new(0.70F, 0.72F, 0.76F, 1.0F),
+    @color.Color::new(0.70F, 0.72F, 0.76F, 1.0F),
     Some(@physics3d.RigidBody3d::fixed()),
   )
 }

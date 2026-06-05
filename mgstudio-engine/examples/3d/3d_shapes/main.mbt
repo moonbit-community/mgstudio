@@ -207,7 +207,7 @@ fn setup(
   })
   let debug_material = materials.modify(fn(material_assets) {
     material_assets.add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
         Some(debug_texture),
       ),
     )
@@ -429,12 +429,9 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::new(
-          @sprite.Color::white(),
-          10_000_000.0F,
-          100.0F,
-          true,
-        ).with_shadow_depth_bias(0.2F),
+        @pbr.PointLight::new(@color.Color::white(), 10_000_000.0F, 100.0F, true).with_shadow_depth_bias(
+          0.2F,
+        ),
         @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
       ),
     ),
@@ -460,7 +457,7 @@ fn setup(
           materials.modify(fn(material_assets) {
             material_assets.add(
               @pbr.StandardMaterial::from_color(
-                @sprite.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
+                @color.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
               ),
             )
           }),

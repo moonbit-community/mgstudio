@@ -152,7 +152,7 @@ fn setup(
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @transform.Transform::from_xyz(0.0F, -2.5F, 0.0F),
@@ -163,7 +163,7 @@ fn setup(
     .peek()
     .add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+        @color.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
       )
       .with_alpha_mode(@pbr.AlphaMode3d::Blend)
       .with_cull_mode(None),
@@ -223,7 +223,7 @@ fn setup(
     handle: materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.8F, 0.8F)).with_metallic(
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(1.0F, 0.8F, 0.8F)).with_metallic(
         0.8F,
       ),
     ),
@@ -296,7 +296,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -326,7 +326,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,

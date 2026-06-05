@@ -82,7 +82,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(170.0F, 24.0F)).with_color(
-          @sprite.Color::srgb(0.3F, 0.9F, 0.42F),
+          @color.Color::srgb(0.3F, 0.9F, 0.42F),
         ),
         @transform.Transform::from_xyz(0.0F, -280.0F, 0.1F),
         Paddle::{  },
@@ -93,7 +93,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(22.0F, 22.0F)).with_color(
-          @sprite.Color::srgb(0.95F, 0.95F, 0.95F),
+          @color.Color::srgb(0.95F, 0.95F, 0.95F),
         ),
         @transform.Transform::from_xyz(0.0F, -210.0F, 0.2F),
         Ball::{ velocity: @math.Vec2::new(260.0F, 280.0F) },
@@ -106,7 +106,7 @@ fn setup(commands : @app.Commands) -> Unit {
         commands.spawn(
           (
             @sprite.Sprite::sized(@math.Vec2::new(84.0F, 26.0F)).with_color(
-              @sprite.Color::hsl(
+              @color.Color::hsl(
                 float_from_int((row * 40 + col * 9) % 360),
                 0.82F,
                 0.58F,

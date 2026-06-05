@@ -74,7 +74,7 @@ fn wrap_hue_deg(value : Float) -> Float {
 }
 
 ///|
-fn tint_from_hue_deg(hue_deg : Float) -> @sprite.Color {
+fn tint_from_hue_deg(hue_deg : Float) -> @color.Color {
   let hue = wrap_hue_deg(hue_deg)
   let (r, g, b) = if hue < 60.0F {
     (1.0F, hue / 60.0F, 0.0F)
@@ -89,7 +89,7 @@ fn tint_from_hue_deg(hue_deg : Float) -> @sprite.Color {
   } else {
     (1.0F, 0.0F, 1.0F - (hue - 300.0F) / 60.0F)
   }
-  @sprite.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -161,7 +161,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -177,7 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
   state.material = None
   state.noise_texture = None
   state.help_text = None
-  set_global_ambient_light(world, @sprite.Color::black(), 0.0F)
+  set_global_ambient_light(world, @color.Color::black(), 0.0F)
 
   let asset_server = @asset.AssetServer::new()
   let diffuse_env_map : @asset.Handle[@asset.Image] = asset_server.load(
@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
   state.noise_texture = Some(noise_texture)
 
   let sphere_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black())
+    @pbr.StandardMaterial::from_color(@color.Color::black())
     .with_reflectance(1.0F)
     .with_specular_tint(tint_from_hue_deg(state.hue_deg))
     .with_metallic(0.0F)
@@ -280,7 +280,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   try! world.set_by_key(
     help_entity,
@@ -341,7 +341,7 @@ fn toggle_specular_map(_world : @ecs.World) -> Unit {
       guard state.noise_texture is Some(noise_texture) else { return }
       material
       .with_reflectance(2.0F)
-      .with_specular_tint(@sprite.Color::white())
+      .with_specular_tint(@color.Color::white())
       .with_specular_tint_texture(Some(noise_texture))
     }
   }

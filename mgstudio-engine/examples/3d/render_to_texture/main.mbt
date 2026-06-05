@@ -69,12 +69,12 @@ fn setup(
       material_assets
       |> @pbr.add_material(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+          @color.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ).with_reflectance(0.02F),
       ),
       material_assets
       |> @pbr.add_material(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white())
+        @pbr.StandardMaterial::from_color(@color.Color::white())
         .with_base_color_texture(Some(image))
         .with_reflectance(0.02F),
       ),
@@ -107,7 +107,7 @@ fn setup(
     commands.spawn(
       (
         @camera.Camera3d::Camera3d(),
-        @camera_camera.Camera::new(@sprite.Color::white()).with_order(-1),
+        @camera_camera.Camera::new(@color.Color::white()).with_order(-1),
         @camera_camera.RenderTarget::Image(image),
         @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
           @math.Vec3::zero(),

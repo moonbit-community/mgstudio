@@ -13,18 +13,18 @@
 // limitations under the License.
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
 }
 
 ///|
@@ -73,9 +73,9 @@ fn button_system(world : @ecs.World) -> Unit {
       @ui.Interaction::None => normal_button_color()
     }
     let border_color = match interaction {
-      @ui.Interaction::Pressed => @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-      @ui.Interaction::Hovered => @sprite.Color::white()
-      @ui.Interaction::None => @sprite.Color::black()
+      @ui.Interaction::Pressed => @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+      @ui.Interaction::Hovered => @color.Color::white()
+      @ui.Interaction::None => @color.Color::black()
     }
     if interaction != @ui.Interaction::None {
       if (try! world.get_by_key(entity, @ui.ecs_key_button)) is Some(button) {
@@ -190,7 +190,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
@@ -207,12 +207,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     button,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::black()),
+    @ui.BackgroundColor::new(@color.Color::black()),
   )
 
   // Button label.
@@ -236,7 +236,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
   )
   try! world.set_by_key(
     label,

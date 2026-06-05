@@ -93,7 +93,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
+              @color.Color::srgb(0.3F, 0.5F, 0.3F),
             ).with_cull_mode(None),
           ),
         ),
@@ -155,7 +155,7 @@ fn instructions(
           "Scroll mouse wheel to zoom in/out\nSpace: switch between orthographic and perspective projections",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),

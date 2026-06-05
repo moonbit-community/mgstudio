@@ -25,17 +25,17 @@ pub(open) trait LdtkFields {
 }
 
 ///|
-pub impl LdtkFields for EntityInstance with field_instances(value) {
+pub impl LdtkFields for EntityInstance with fn field_instances(value) {
   value.field_instances
 }
 
 ///|
-pub impl LdtkFields for Level with field_instances(value) {
+pub impl LdtkFields for Level with fn field_instances(value) {
   value.field_instances
 }
 
 ///|
-pub impl LdtkFields for LoadedLevel with field_instances(value) {
+pub impl LdtkFields for LoadedLevel with fn field_instances(value) {
   value.level.field_instances
 }
 
@@ -169,7 +169,7 @@ pub fn[A : LdtkFields] ldtk_get_string_field(
 pub fn[A : LdtkFields] ldtk_get_color_field(
   value : A,
   identifier : String,
-) -> @sprite.Color raise LdtkFieldsError {
+) -> @color.Color raise LdtkFieldsError {
   match ldtk_get_field(value, identifier) {
     Color(parsed) => parsed
     _ => raise ldtk_wrong_field_type(identifier)
@@ -358,7 +358,7 @@ pub fn[A : LdtkFields] ldtk_iter_strings_field(
 pub fn[A : LdtkFields] ldtk_get_colors_field(
   value : A,
   identifier : String,
-) -> Array[@sprite.Color] raise LdtkFieldsError {
+) -> Array[@color.Color] raise LdtkFieldsError {
   match ldtk_get_field(value, identifier) {
     Colors(parsed) => parsed
     _ => raise ldtk_wrong_field_type(identifier)

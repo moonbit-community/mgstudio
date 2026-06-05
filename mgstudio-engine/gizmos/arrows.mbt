@@ -20,7 +20,7 @@ pub fn[Config] gizmo_arrow_2d(
   gizmos : @sprite.Gizmos[Config],
   start : @math.Vec2,
   end : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.ArrowBuilder {
   gizmos.arrow_2d(start, end, color)
 }
@@ -30,7 +30,7 @@ pub fn[Config] gizmo_arrow_3d(
   gizmos : @sprite.Gizmos[Config],
   start : @math.Vec3,
   end : @math.Vec3,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.arrow_3d(start, end, color)
 }

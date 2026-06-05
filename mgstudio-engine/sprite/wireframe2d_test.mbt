@@ -47,7 +47,7 @@ test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin applies @sprit
     .insert_resource(
       @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
         true,
-        Color::white(),
+        @color.Color::white(),
       ),
     )
     .add_plugins(

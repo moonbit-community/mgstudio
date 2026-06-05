@@ -20,7 +20,7 @@ pub fn[Config] gizmo_circle_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.Ellipse2dBuilder {
   gizmos.circle_2d(isometry, radius, color)
 }
@@ -30,7 +30,7 @@ pub fn[Config] gizmo_circle_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.circle_3d(isometry, radius, color)
 }
@@ -40,7 +40,7 @@ pub fn[Config] gizmo_ellipse_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   half_size : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.Ellipse2dBuilder {
   gizmos.ellipse_2d(isometry, half_size, color)
 }
@@ -50,7 +50,7 @@ pub fn[Config] gizmo_sphere_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   radius : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.sphere_3d(isometry, radius, color)
 }
@@ -60,7 +60,7 @@ pub fn[Config] gizmo_draw_circle_shape_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   circle : @math.Circle,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.Ellipse2dBuilder {
   gizmos.circle_2d(isometry, circle.radius, color)
 }
@@ -70,7 +70,7 @@ pub fn[Config] gizmo_draw_arc_shape_2d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @sprite.Isometry2d,
   arc : @math.Arc2d,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @sprite.Arc2dBuilder {
   let start = @sprite.Isometry2d::new(
     isometry.translation,

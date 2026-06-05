@@ -20,7 +20,7 @@ const GRID_ROWS : Int = 8
 
 ///|
 struct IdleColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 
 ///|
@@ -66,7 +66,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let cell_count_f = float_from_int(cell_count)
   for i in 0..<cell_count {
     let h = float_from_int(i * 17 % 360)
-    let bg = @sprite.Color::hsl(h, 0.8F, 0.75F)
+    let bg = @color.Color::hsl(h, 0.8F, 0.75F)
     ignore(
       commands.spawn(
         (
@@ -80,7 +80,7 @@ fn setup(commands : @app.Commands) -> Unit {
             @mgui.UiRect::all(@mgui.Val::VMin(0.1F * 96.0F / cell_count_f)),
           ),
           @mgui.BackgroundColor::new(bg),
-          @mgui.BorderColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.4F)),
+          @mgui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.4F)),
         ),
       ),
     )
@@ -101,7 +101,7 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle_color) = data
     let next = match interaction.value() {
-      @mgui.Interaction::Hovered => @sprite.Color::srgb(1.0F, 0.33F, 0.0F)
+      @mgui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.33F, 0.0F)
       _ => idle_color.value().color
     }
     color.set(@mgui.BackgroundColor::new(next))

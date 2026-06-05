@@ -772,7 +772,7 @@ fn draw_shape_outline(
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   shape : Shape,
   isometry : @sprite.Isometry2d,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   match shape {
     Shape::Rectangle(rectangle) =>
@@ -890,7 +890,7 @@ fn capsule_points_local(capsule : @sprite.Capsule2d) -> Array[@math.Vec2] {
 fn draw_filled_circle(
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   position : @math.Vec2,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 1.0F, color)
   |> ignore
@@ -927,36 +927,36 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_gray() -> @sprite.Color {
-  @sprite.Color::new(0.5F, 0.5F, 0.5F, 1.0F)
+fn color_gray() -> @color.Color {
+  @color.Color::new(0.5F, 0.5F, 0.5F, 1.0F)
 }
 
 ///|
-fn color_aqua() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 1.0F, 1.0F, 1.0F)
+fn color_aqua() -> @color.Color {
+  @color.Color::new(0.0F, 1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_orange_red() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.27058825F, 0.0F, 1.0F)
+fn color_orange_red() -> @color.Color {
+  @color.Color::new(1.0F, 0.27058825F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_yellow() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F)
+fn color_yellow() -> @color.Color {
+  @color.Color::new(1.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_white() -> @sprite.Color {
-  @sprite.Color::white()
+fn color_white() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn color_fuchsia() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F)
+fn color_fuchsia() -> @color.Color {
+  @color.Color::new(1.0F, 0.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_lime() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_lime() -> @color.Color {
+  @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }

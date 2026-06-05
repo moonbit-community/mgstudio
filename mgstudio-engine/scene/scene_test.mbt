@@ -1070,7 +1070,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
@@ -1374,7 +1374,7 @@ test "scene: SceneRoot propagates gltf material name" {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let scene_handle = @scene.scene_register_gltf_scene(
@@ -1443,7 +1443,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let first_scene = @scene.Scene::new([
@@ -1654,7 +1654,7 @@ test "scene: modified scene asset respawns SceneRoot children" {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let first_scene = @scene.Scene::new([
@@ -1760,7 +1760,7 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let first_scene = @scene.Scene::new([

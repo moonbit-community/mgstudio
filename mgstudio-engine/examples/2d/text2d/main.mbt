@@ -75,7 +75,7 @@ fn setup(
     .with_font(font)
     .with_font_size(35.0F)
   let text_justification = @text.Justify::Center
-  let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
+  let box_color = @color.Color::srgb(0.25F, 0.25F, 0.55F)
   let text_shadow_color = box_color.darker(0.05F)
 
   ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
@@ -86,7 +86,7 @@ fn setup(
         @text.Text2d::new(" translation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
-        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
+        @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateTranslation::{  },
       ),
@@ -99,7 +99,7 @@ fn setup(
         @text.Text2d::new(" rotation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
-        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
+        @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateRotation::{  },
       ),
@@ -113,7 +113,7 @@ fn setup(
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
         @transform.Transform::from_xyz(400.0F, 0.0F, 0.0F),
-        @text.TextBackgroundColor::new(@sprite.Color::black().with_alpha(0.5F)),
+        @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
         @text.Text2dShadow::Text2dShadow(),
         AnimateScale::{  },
       ),
@@ -161,7 +161,7 @@ fn setup(
   let anchor_marker = commands.spawn(
     (
       @sprite.Sprite::from_color(
-        @sprite.Color::srgb(0.878F, 1.0F, 1.0F),
+        @color.Color::srgb(0.878F, 1.0F, 1.0F),
         @math.Vec2::new(10.0F, 10.0F),
       ),
       @transform.Transform::from_xyz(anchor_origin.x, anchor_origin.y, 0.0F),
@@ -173,28 +173,28 @@ fn setup(
     anchor_marker,
     medium_font,
     @sprite.Anchor::top_left(),
-    @sprite.Color::srgb(1.0F, 0.627F, 0.478F),
+    @color.Color::srgb(1.0F, 0.627F, 0.478F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::top_right(),
-    @sprite.Color::srgb(0.565F, 0.933F, 0.565F),
+    @color.Color::srgb(0.565F, 0.933F, 0.565F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::bottom_right(),
-    @sprite.Color::srgb(0.678F, 0.847F, 0.902F),
+    @color.Color::srgb(0.678F, 0.847F, 0.902F),
   )
   spawn_anchor_label(
     commands,
     anchor_marker,
     medium_font,
     @sprite.Anchor::bottom_left(),
-    @sprite.Color::srgb(1.0F, 1.0F, 0.878F),
+    @color.Color::srgb(1.0F, 1.0F, 0.878F),
   )
 }
 
@@ -206,8 +206,8 @@ fn spawn_wrapped_text_box(
   size : @math.Vec2,
   linebreak : @text.LineBreak,
   content : String,
-  box_color : @sprite.Color,
-  shadow_color : @sprite.Color,
+  box_color : @color.Color,
+  shadow_color : @color.Color,
   underline : Bool,
 ) -> Unit {
   let box_entity = commands.spawn(
@@ -239,7 +239,7 @@ fn spawn_anchor_label(
   parent : @core.Entity,
   font : @text.TextFont,
   anchor : @sprite.Anchor,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let label_entity = commands.spawn(
     (
@@ -247,7 +247,7 @@ fn spawn_anchor_label(
       @text.Text2d::new(" Anchor"),
       font,
       anchor,
-      @text.TextBackgroundColor::new(@sprite.Color::white().darker(0.8F)),
+      @text.TextBackgroundColor::new(@color.Color::white().darker(0.8F)),
       @transform.Transform::from_xyz(0.0F, 0.0F, -1.0F),
     ),
   )
@@ -257,8 +257,8 @@ fn spawn_anchor_label(
         @hierarchy.Parent::new(label_entity),
         @text.TextSpan::new("::"),
         font,
-        @text.TextColor::new(@sprite.Color::srgb(0.827F, 0.827F, 0.827F)),
-        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.545F)),
+        @text.TextColor::new(@color.Color::srgb(0.827F, 0.827F, 0.827F)),
+        @text.TextBackgroundColor::new(@color.Color::srgb(0.0F, 0.0F, 0.545F)),
       ),
     ),
   )

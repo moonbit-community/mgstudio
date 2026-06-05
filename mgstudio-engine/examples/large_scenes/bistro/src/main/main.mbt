@@ -40,7 +40,7 @@ fn setup(commands : @app.Commands) -> Unit {
   commands.queue(fn(world : @ecs.World) {
     world.insert_resource(
       @pbr.ecs_key_global_ambient_light,
-      @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1000.0F),
+      @pbr.GlobalAmbientLight::new(@color.Color::white(), 1000.0F),
     )
   })
   ignore(
@@ -71,7 +71,7 @@ fn setup(commands : @app.Commands) -> Unit {
     @pbr.add_mesh(assets, @math.Cuboid::new(160.0F, 0.1F, 160.0F))
   })
   let floor_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.19F, 0.21F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.17F, 0.19F, 0.21F)),
   )
   ignore(
     commands.spawn(
@@ -91,7 +91,7 @@ fn setup(commands : @app.Commands) -> Unit {
       let hue = (x * 17 + z * 29) % 360
       let material = @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::hsl(float_from_int(hue), 0.72F, 0.58F),
+          @color.Color::hsl(float_from_int(hue), 0.72F, 0.58F),
         ),
       )
       ignore(

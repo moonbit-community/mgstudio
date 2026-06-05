@@ -43,7 +43,7 @@ fn setup(commands : @app.Commands) -> Unit {
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(10.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
 
@@ -68,15 +68,15 @@ fn setup(commands : @app.Commands) -> Unit {
           .with_height(@ui.Val::Percent(100.0F)),
           @ui.BackgroundColor::new(
             match band {
-              0 => @sprite.Color::srgb(1.0F - t * 0.8F, 0.15F + t * 0.8F, 0.2F)
+              0 => @color.Color::srgb(1.0F - t * 0.8F, 0.15F + t * 0.8F, 0.2F)
               1 =>
-                @sprite.Color::srgb(
+                @color.Color::srgb(
                   0.1F + t * 0.5F,
                   0.2F + t * 0.2F,
                   1.0F - t * 0.6F,
                 )
               _ =>
-                @sprite.Color::srgb(
+                @color.Color::srgb(
                   0.25F + t * 0.6F,
                   0.1F + t * 0.7F,
                   0.6F + t * 0.2F,
@@ -105,7 +105,7 @@ fn animate_gradients(
     let pulse = 0.5F + 0.5F * @math.sin(elapsed * 0.8F + t * 5.0F)
     color.set(
       @ui.BackgroundColor::new(
-        @sprite.Color::srgb(
+        @color.Color::srgb(
           0.1F + t * 0.7F,
           0.2F + pulse * 0.5F,
           0.9F - t * 0.6F,

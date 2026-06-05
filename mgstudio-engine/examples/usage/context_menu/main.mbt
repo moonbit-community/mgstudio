@@ -43,7 +43,7 @@ fn spawn_menu_item(
   commands : @app.Commands,
   menu_entity : @core.Entity,
   label : String,
-  button_color : @sprite.Color,
+  button_color : @color.Color,
   clear_color : @color.Color,
 ) -> Unit {
   let item = commands.spawn(
@@ -63,7 +63,7 @@ fn spawn_menu_item(
       @hierarchy.Parent::new(item),
       @text.Text::new(label),
       @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(18.0F)),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
     ),
   )
   |> ignore
@@ -98,8 +98,8 @@ fn open_context_menu(
       .with_display(@ui.Display::Flex)
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
-      @ui.BorderColor::new(@sprite.Color::black()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.09F, 0.09F, 0.09F)),
+      @ui.BorderColor::new(@color.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.09F, 0.09F, 0.09F)),
     ),
   )
   state.modify(fn(value) { value.menu = Some(menu) })
@@ -108,35 +108,35 @@ fn open_context_menu(
     commands,
     menu,
     "Fuchsia",
-    @sprite.Color::srgb(0.68F, 0.2F, 0.66F),
+    @color.Color::srgb(0.68F, 0.2F, 0.66F),
     @color.Color::srgb(0.68F, 0.2F, 0.66F),
   )
   spawn_menu_item(
     commands,
     menu,
     "Gray",
-    @sprite.Color::srgb(0.42F, 0.42F, 0.42F),
+    @color.Color::srgb(0.42F, 0.42F, 0.42F),
     @color.Color::srgb(0.42F, 0.42F, 0.42F),
   )
   spawn_menu_item(
     commands,
     menu,
     "Maroon",
-    @sprite.Color::srgb(0.45F, 0.12F, 0.17F),
+    @color.Color::srgb(0.45F, 0.12F, 0.17F),
     @color.Color::srgb(0.45F, 0.12F, 0.17F),
   )
   spawn_menu_item(
     commands,
     menu,
     "Purple",
-    @sprite.Color::srgb(0.33F, 0.18F, 0.6F),
+    @color.Color::srgb(0.33F, 0.18F, 0.6F),
     @color.Color::srgb(0.33F, 0.18F, 0.6F),
   )
   spawn_menu_item(
     commands,
     menu,
     "Teal",
-    @sprite.Color::srgb(0.12F, 0.5F, 0.5F),
+    @color.Color::srgb(0.12F, 0.5F, 0.5F),
     @color.Color::srgb(0.12F, 0.5F, 0.5F),
   )
 }
@@ -168,8 +168,8 @@ fn setup(commands : @app.Commands) -> Unit {
       .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BorderColor::new(@sprite.Color::black()),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BorderColor::new(@color.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
   commands.spawn(
@@ -177,7 +177,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(button),
       @text.Text::new("Open Context Menu"),
       @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(28.0F)),
-      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextColor::new(@color.Color::white()),
     ),
   )
   |> ignore

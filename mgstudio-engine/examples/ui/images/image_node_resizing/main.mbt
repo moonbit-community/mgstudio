@@ -166,23 +166,23 @@ pub impl @ecs.TriggerEvent for TextUpdate with fn debug_name() {
 }
 
 ///|
-fn root_background() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+fn root_background() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn group_background() -> @sprite.Color {
-  @sprite.Color::srgb(0.86F, 0.92F, 0.99F)
+fn group_background() -> @color.Color {
+  @color.Color::srgb(0.86F, 0.92F, 0.99F)
 }
 
 ///|
-fn panel_background() -> @sprite.Color {
-  @sprite.Color::srgb(0.08F, 0.08F, 0.08F)
+fn panel_background() -> @color.Color {
+  @color.Color::srgb(0.08F, 0.08F, 0.08F)
 }
 
 ///|
-fn text_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.05F, 0.05F, 0.05F)
+fn text_color() -> @color.Color {
+  @color.Color::srgb(0.05F, 0.05F, 0.05F)
 }
 
 ///|

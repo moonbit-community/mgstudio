@@ -78,9 +78,7 @@ fn setup(
   let floor_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.14F, 0.18F, 0.22F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.14F, 0.18F, 0.22F)),
     )
   ignore(
     commands.spawn(
@@ -92,7 +90,7 @@ fn setup(
   let cube_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.55F, 0.75F, 1.0F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.55F, 0.75F, 1.0F)),
     )
   let side = 9
   let half = float_from_int(side) / 2.0F

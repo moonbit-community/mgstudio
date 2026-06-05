@@ -199,7 +199,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   metallic_roughness_texture_id : Int
   occlusion_texture_id : Int
   depth_texture_id : Int
-  emissive : @sprite.Color
+  emissive : @color.Color
   emissive_exposure_weight : Float
   metallic : Float
   anisotropy_texture_id : Int
@@ -213,7 +213,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   specular_transmission : Float
   thickness : Float
   ior : Float
-  attenuation_color : @sprite.Color
+  attenuation_color : @color.Color
   attenuation_distance : Float
   clearcoat : Float
   clearcoat_perceptual_roughness : Float
@@ -236,7 +236,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   environment_specular_texture_id : Int
   environment_map_intensity : Float
   environment_map_rotation : @math.Quat
-  specular_tint : @sprite.Color
+  specular_tint : @color.Color
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float
   mesh_flags : UInt
@@ -317,7 +317,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   environment_specular_texture_id : Int,
   environment_map_intensity : Float,
   environment_map_rotation : @math.Quat,
-  specular_tint : @sprite.Color,
+  specular_tint : @color.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
   mesh_flags : UInt,

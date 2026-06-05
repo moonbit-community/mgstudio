@@ -101,8 +101,8 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn random_color(alpha : Float) -> @sprite.Color {
-  @sprite.Color::new(
+fn random_color(alpha : Float) -> @color.Color {
+  @color.Color::new(
     next_random_unit(),
     next_random_unit(),
     next_random_unit(),
@@ -182,7 +182,7 @@ fn setup_ui_overlay(
   try! world.set_by_key(
     controls_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   try! world.set_by_key(
     controls_entity,
@@ -218,7 +218,7 @@ fn setup_ui_overlay(
   try! world.set_by_key(
     display_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   try! world.set_by_key(
     display_entity,
@@ -227,7 +227,7 @@ fn setup_ui_overlay(
   )
   blend_modes_state.val.display_text = Some(display_entity)
 
-  let label_color = @sprite.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
+  let label_color = @color.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
   let labels : Array[(@core.Entity, String)] = [
     (opaque_entity, "┌─ Opaque\n│\n│\n│\n│"),
     (blend_entity, "┌─ Blend\n│\n│\n│"),
@@ -435,7 +435,7 @@ fn setup(world : @ecs.World) -> Unit {
   blend_modes_state.val.labels.clear()
   blend_modes_state.val.display_text = None
 
-  let base_color = @sprite.Color::new(
+  let base_color = @color.Color::new(
     0.9F,
     0.2F,
     0.3F,
@@ -509,14 +509,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let black_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)),
   )
   let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F)),
   )
   register_material(black_material, false, true)
   register_material(white_material, false, true)
@@ -642,7 +638,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   for controlled in state.materials {
     if @pbr.standard_material_get(controlled.handle) is Some(material) {
       let mut next_material = material.with_base_color(
-        @sprite.Color::new(
+        @color.Color::new(
           material.base_color.r,
           material.base_color.g,
           material.base_color.b,

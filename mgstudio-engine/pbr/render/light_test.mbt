@@ -787,7 +787,7 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
   world.insert_resource(
     @light.ecs_key_global_ambient_light,
     @light.GlobalAmbientLight::new(
-      @sprite.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      @color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
       2.0F,
     ).with_affects_lightmapped_meshes(false),
   )
@@ -852,7 +852,7 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
   try! (world.set_by_key(
     point,
     @light.ecs_key_point_light,
-    @light.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true),
+    @light.PointLight::new(@color.Color::white(), 10_000_000.0F, 100.0F, true),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -910,7 +910,7 @@ test "pbr render light: point shadow clustered custom data matches Bevy projecti
   try! (world.set_by_key(
     point,
     @light.ecs_key_point_light,
-    @light.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true),
+    @light.PointLight::new(@color.Color::white(), 10_000_000.0F, 100.0F, true),
   )
   |> ignore)
   try! (world.set_by_key(

@@ -129,7 +129,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
+              @color.Color::srgb(0.3F, 0.15F, 0.3F),
             ),
           ),
         ),
@@ -150,7 +150,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
+              @color.Color::srgb(0.3F, 0.15F, 0.9F),
             ),
           ),
         ),
@@ -168,7 +168,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
+              @color.Color::srgb(0.9F, 0.3F, 0.3F),
             ),
           ),
         ),

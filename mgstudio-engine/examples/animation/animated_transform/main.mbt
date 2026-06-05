@@ -117,7 +117,7 @@ fn animated_transform_clip() -> (
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 150.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 150.0F),
   )
 
   let camera = @camera.Camera3dBundle::new(
@@ -158,7 +158,7 @@ fn setup(world : @ecs.World) -> Unit {
     }),
   )
   let planet_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.8F, 0.7F, 0.6F)),
   )
   let planet = @pbr.MeshMaterial3dBundle::new(
     planet_mesh,
@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
     }),
   )
   let satellite_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.9F, 0.3F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.9F, 0.3F)),
   )
   let satellite = @pbr.MeshMaterial3dBundle::new(
     satellite_mesh,

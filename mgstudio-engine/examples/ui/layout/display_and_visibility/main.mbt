@@ -65,23 +65,23 @@ pub impl @ecs.Component for ButtonPressState with fn component() {
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
-fn text_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.92F, 0.92F, 0.92F)
+fn text_color() -> @color.Color {
+  @color.Color::srgb(0.92F, 0.92F, 0.92F)
 }
 
 ///|
@@ -113,7 +113,7 @@ fn spawn_text(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   node? : @ui.Node = @ui.Node::Node(),
 ) -> @core.Entity {
   let entity = world.spawn_empty()
@@ -148,12 +148,12 @@ fn target_name(index : Int) -> String {
 }
 
 ///|
-fn panel_color(index : Int) -> @sprite.Color {
+fn panel_color(index : Int) -> @color.Color {
   match index {
-    0 => @sprite.Color::srgb(0.15F, 0.29F, 0.43F)
-    1 => @sprite.Color::srgb(0.27F, 0.42F, 0.48F)
-    2 => @sprite.Color::srgb(0.40F, 0.62F, 0.70F)
-    _ => @sprite.Color::srgb(0.68F, 0.80F, 0.89F)
+    0 => @color.Color::srgb(0.15F, 0.29F, 0.43F)
+    1 => @color.Color::srgb(0.27F, 0.42F, 0.48F)
+    2 => @color.Color::srgb(0.40F, 0.62F, 0.70F)
+    _ => @color.Color::srgb(0.68F, 0.80F, 0.89F)
   }
 }
 
@@ -281,9 +281,9 @@ fn update_button_visuals(
     @ui.Interaction::None => normal_button_color()
   }
   let border = match interaction {
-    @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.2F, 0.2F)
-    @ui.Interaction::Hovered => @sprite.Color::white()
-    @ui.Interaction::None => @sprite.Color::black()
+    @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
+    @ui.Interaction::Hovered => @color.Color::white()
+    @ui.Interaction::None => @color.Color::black()
   }
   ignore(
     try! world.replace(
@@ -337,7 +337,7 @@ fn spawn_button(
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::black()),
+    @ui.BorderColor::new(@color.Color::black()),
   )
   try! world.set_by_key(button, toggle_button_action_key, action)
   try! world.set_by_key(button, button_press_state_key, ButtonPressState::{
@@ -375,7 +375,7 @@ fn spawn_target_panel(
   try! world.set_by_key(
     panel,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   ignore(
     spawn_text(
@@ -385,9 +385,9 @@ fn spawn_target_panel(
       font,
       20.0F,
       if index == 3 {
-        @sprite.Color::black()
+        @color.Color::black()
       } else {
-        @sprite.Color::white()
+        @color.Color::white()
       },
       node=@ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
@@ -421,7 +421,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
     .with_row_gap(@ui.Val::Px(12.0F)),
-    Some(@ui.BackgroundColor::new(@sprite.Color::black())),
+    Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
@@ -455,7 +455,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_height(@ui.Val::Percent(100.0F))
     .with_align_items(@ui.AlignItems::Center)
     .with_justify_content(@ui.JustifyContent::Center),
-    Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.04F, 0.04F, 0.04F))),
+    Some(@ui.BackgroundColor::new(@color.Color::srgb(0.04F, 0.04F, 0.04F))),
   )
   let right = spawn_node(
     world,
@@ -466,7 +466,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F)))
     .with_row_gap(@ui.Val::Px(12.0F)),
-    Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.08F))),
+    Some(@ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.08F))),
   )
 
   let target0 = spawn_target_panel(world, Some(left), 0, font)
@@ -482,17 +482,10 @@ fn setup(world : @ecs.World) -> Unit {
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(6.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F))),
-      Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.12F, 0.12F))),
+      Some(@ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.12F))),
     )
     ignore(
-      spawn_text(
-        world,
-        row,
-        target_name(i),
-        font,
-        18.0F,
-        @sprite.Color::white(),
-      ),
+      spawn_text(world, row, target_name(i), font, 18.0F, @color.Color::white()),
     )
     spawn_button(
       world,
@@ -518,7 +511,7 @@ fn setup(world : @ecs.World) -> Unit {
       "Display::None removes layout space.\nVisibility::Hidden keeps layout space but hides the subtree.",
       font,
       14.0F,
-      @sprite.Color::srgb(1.0F, 0.85F, 0.85F),
+      @color.Color::srgb(1.0F, 0.85F, 0.85F),
     ),
   )
 }

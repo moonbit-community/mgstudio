@@ -593,7 +593,7 @@ pub fn UiRoot::UiRoot() -> UiRoot {
 
 ///|
 pub struct UiImage {
-  color : @sprite.Color
+  color : @color.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -604,7 +604,7 @@ pub struct UiImage {
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
   UiImage::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     image,
     texture_atlas: None,
     flip_x: false,
@@ -614,7 +614,7 @@ pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
 }
 
 ///|
-pub fn UiImage::with_color(self : UiImage, color : @sprite.Color) -> UiImage {
+pub fn UiImage::with_color(self : UiImage, color : @color.Color) -> UiImage {
   UiImage::{ ..self, color, }
 }
 
@@ -779,7 +779,7 @@ pub fn NodeImageMode::uses_slices(self : NodeImageMode) -> Bool {
 ///|
 /// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
 pub struct ImageNode {
-  color : @sprite.Color
+  color : @color.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -791,7 +791,7 @@ pub struct ImageNode {
 ///|
 pub fn ImageNode::ImageNode() -> ImageNode {
   ImageNode::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     image: @asset.asset_transparent_texture(),
     texture_atlas: None,
     flip_x: false,
@@ -817,7 +817,7 @@ pub fn ImageNode::from_atlas_image(
 ///|
 pub fn ImageNode::with_color(
   self : ImageNode,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> ImageNode {
   ImageNode::{ ..self, color, }
 }
@@ -881,16 +881,16 @@ pub fn Label::Label() -> Label {
 
 ///|
 pub struct ButtonColors {
-  normal : @sprite.Color
-  hovered : @sprite.Color
-  pressed : @sprite.Color
+  normal : @color.Color
+  hovered : @color.Color
+  pressed : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn ButtonColors::new(
-  normal : @sprite.Color,
-  hovered : @sprite.Color,
-  pressed : @sprite.Color,
+  normal : @color.Color,
+  hovered : @color.Color,
+  pressed : @color.Color,
 ) -> ButtonColors {
   ButtonColors::{ normal, hovered, pressed }
 }

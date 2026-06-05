@@ -47,9 +47,7 @@ fn setup(
   let floor_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.16F, 0.19F, 0.23F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.16F, 0.19F, 0.23F)),
     )
   ignore(
     commands.spawn(
@@ -62,7 +60,7 @@ fn setup(
   let cube_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.75F, 0.8F, 0.95F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.75F, 0.8F, 0.95F)),
     )
   for z in -GRID_HALF..<GRID_HALF {
     for x in -GRID_HALF..<GRID_HALF {

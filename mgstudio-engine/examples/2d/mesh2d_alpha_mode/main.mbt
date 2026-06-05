@@ -39,9 +39,9 @@ fn setup(
         @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
       ).to_mesh(),
     )
-  let white = @sprite.Color::srgba(1.0F, 1.0F, 1.0F, 1.0F)
-  let blue = @sprite.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
-  let green = @sprite.Color::srgba(0.0F, 0.5019608F, 0.0F, 1.0F)
+  let white = @color.Color::srgba(1.0F, 1.0F, 1.0F, 1.0F)
+  let blue = @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
+  let green = @color.Color::srgba(0.0F, 0.5019608F, 0.0F, 1.0F)
 
   ignore(
     commands.spawn(

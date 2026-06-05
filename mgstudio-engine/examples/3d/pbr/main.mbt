@@ -116,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.specular_env_map = None
   pbr_state.val.env_loaded = false
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
-  let sphere_color = @sprite.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
+  let sphere_color = @color.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 
   for y in -2..<3 {
     for x in -5..<6 {
@@ -152,7 +152,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional,
     @engine_pbr.ecs_key_directional_light,
-    @engine_pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
+    @engine_pbr.DirectionalLight::new(@color.Color::white(), 1_500.0F, false),
   )
   try! world.set_by_key(
     directional,
@@ -184,7 +184,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -201,7 +201,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::bottom_right())
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)

@@ -19,23 +19,23 @@ const OVERRIDE_BUTTON_WIDTH : Float = 156.0F
 const OVERRIDE_BUTTON_HEIGHT : Float = 86.0F
 
 ///|
-fn override_normal_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.72F, 0.34F, 0.32F)
+fn override_normal_color() -> @color.Color {
+  @color.Color::srgb(0.72F, 0.34F, 0.32F)
 }
 
 ///|
-fn override_active_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.29F, 0.66F, 0.43F)
+fn override_active_color() -> @color.Color {
+  @color.Color::srgb(0.29F, 0.66F, 0.43F)
 }
 
 ///|
-fn override_focus_color() -> @sprite.Color {
-  @sprite.Color::white()
+fn override_focus_color() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn override_idle_border() -> @sprite.Color {
-  @sprite.Color::srgb(0.08F, 0.08F, 0.08F)
+fn override_idle_border() -> @color.Color {
+  @color.Color::srgb(0.08F, 0.08F, 0.08F)
 }
 
 ///|
@@ -169,7 +169,7 @@ fn spawn_override_button(
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
         override_font(font, 22.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -231,7 +231,7 @@ fn setup_override_ui(
           "Directional Navigation Overrides\n\nThe two button islands are too far apart for automatic navigation.\nManual edges bridge the middle buttons and loop the top and bottom buttons.",
         ),
         override_font(font, 18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(24.0F))
@@ -239,7 +239,7 @@ fn setup_override_ui(
         .with_width(@ui.Val::Px(360.0F))
         .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.08F, 0.08F, 0.08F, 0.82F),
+          @color.Color::srgba(0.08F, 0.08F, 0.08F, 0.82F),
         ),
       ),
     ),
@@ -251,10 +251,10 @@ fn setup_override_ui(
         OverrideFocusDisplay::{  },
         @text.Text::new("Focused: None"),
         override_font(font, 20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         override_status_node(88.0F),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.10F, 0.45F, 0.18F, 0.82F),
+          @color.Color::srgba(0.10F, 0.45F, 0.18F, 0.82F),
         ),
       ),
     ),
@@ -266,10 +266,10 @@ fn setup_override_ui(
         OverrideLastInputDisplay::{  },
         @text.Text::new("Last Input: None"),
         override_font(font, 20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         override_status_node(24.0F),
         @ui.BackgroundColor::new(
-          @sprite.Color::srgba(0.38F, 0.16F, 0.52F, 0.82F),
+          @color.Color::srgba(0.38F, 0.16F, 0.52F, 0.82F),
         ),
       ),
     ),

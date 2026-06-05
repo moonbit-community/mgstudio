@@ -43,22 +43,22 @@ pub impl @ecs.Component for ButtonPressState with fn component() {
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
-fn button_color(interaction : @ui.Interaction) -> @sprite.Color {
+fn button_color(interaction : @ui.Interaction) -> @color.Color {
   match interaction {
     @ui.Interaction::Pressed => pressed_button_color()
     @ui.Interaction::Hovered => hovered_button_color()
@@ -67,11 +67,11 @@ fn button_color(interaction : @ui.Interaction) -> @sprite.Color {
 }
 
 ///|
-fn border_color(interaction : @ui.Interaction) -> @sprite.Color {
+fn border_color(interaction : @ui.Interaction) -> @color.Color {
   match interaction {
-    @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.2F, 0.2F)
-    @ui.Interaction::Hovered => @sprite.Color::white()
-    @ui.Interaction::None => @sprite.Color::black()
+    @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
+    @ui.Interaction::Hovered => @color.Color::white()
+    @ui.Interaction::None => @color.Color::black()
   }
 }
 
@@ -82,7 +82,7 @@ fn spawn_text(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   node? : @ui.Node = @ui.Node::Node(),
 ) -> @core.Entity {
   commands.spawn(
@@ -114,7 +114,7 @@ fn spawn_button(
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center)
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
-      @ui.BorderColor::new(@sprite.Color::black()),
+      @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
   )
@@ -125,7 +125,7 @@ fn spawn_button(
       "0",
       font,
       33.0F,
-      @sprite.Color::srgb(0.9F, 0.9F, 0.9F),
+      @color.Color::srgb(0.9F, 0.9F, 0.9F),
     ),
   )
 }
@@ -147,7 +147,7 @@ fn setup(
       .with_left(@ui.Val::Px(24.0F))
       .with_top(@ui.Val::Px(24.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.16F, 0.24F, 0.35F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.24F, 0.35F)),
     ),
   )
   ignore(
@@ -157,7 +157,7 @@ fn setup(
       "This text node is rendered under a ghost root.",
       font,
       20.0F,
-      @sprite.Color::white(),
+      @color.Color::white(),
     ),
   )
 
@@ -179,7 +179,7 @@ fn setup(
       .with_row_gap(@ui.Val::Px(16.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_flex_direction(@ui.FlexDirection::Column),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.10F, 0.14F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.10F, 0.14F)),
     ),
   )
   ignore(
@@ -189,7 +189,7 @@ fn setup(
       "Ghost node children are laid out as direct descendants of the button row.",
       font,
       20.0F,
-      @sprite.Color::srgb(0.92F, 0.92F, 0.92F),
+      @color.Color::srgb(0.92F, 0.92F, 0.92F),
     ),
   )
   let button_row = commands.spawn(

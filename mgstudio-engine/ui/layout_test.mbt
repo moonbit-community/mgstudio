@@ -146,7 +146,7 @@ test "ui: layout stores Bevy-style resolved node geometry" {
   try! world.set_by_key(
     node,
     ecs_key_outline,
-    Outline::new(Val::Px(3.0F), Val::Px(5.0F), @sprite.Color::white()),
+    Outline::new(Val::Px(3.0F), Val::Px(5.0F), @color.Color::white()),
   )
   ui_layout_system(world)
   let layout = try! world.get_by_key(node, ecs_key_ui_layout).unwrap()
@@ -457,7 +457,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   try! world.set_by_key(
     editable,
     ecs_key_background_color,
-    BackgroundColor::new(@sprite.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
+    BackgroundColor::new(@color.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
   )
   try! world.set_by_key(
     editable,

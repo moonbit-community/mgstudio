@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn color_green() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_green() -> @color.Color {
+  @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_blue() -> @sprite.Color {
-  @sprite.Color::new(0.2F, 0.5F, 1.0F, 1.0F)
+fn color_blue() -> @color.Color {
+  @color.Color::new(0.2F, 0.5F, 1.0F, 1.0F)
 }
 
 ///|
@@ -69,7 +69,7 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-fn line_material(color : @sprite.Color) -> @pbr.StandardMaterial {
+fn line_material(color : @color.Color) -> @pbr.StandardMaterial {
   @pbr.StandardMaterial::from_color(color).with_unlit(true)
 }
 

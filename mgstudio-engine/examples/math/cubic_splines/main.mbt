@@ -319,7 +319,7 @@ fn draw_curve(
   let resolution = 100 * curve_value.segments().length()
   gizmos.linestrip_2d(
     curve_value.iter_positions(resolution),
-    @sprite.Color::white(),
+    @color.Color::white(),
   )
 }
 
@@ -329,8 +329,8 @@ fn draw_control_points(
   spline_mode : @app.Res[SplineMode],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
-  let green = @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
-  let red = @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
+  let green = @color.Color::srgb(0.0F, 1.0F, 0.0F)
+  let red = @color.Color::srgb(1.0F, 0.0F, 0.0F)
   for pair in control_points.get().points_and_tangents {
     let point = pair.0
     let tangent = pair.1
@@ -493,12 +493,12 @@ fn draw_edit_move(
   guard screen_to_world(start) is Some(world_start) else { return }
   guard screen_to_world(mouse_pos) is Some(world_end) else { return }
 
-  let preview = @sprite.Color::srgb(0.0F, 1.0F, 0.7F)
+  let preview = @color.Color::srgb(0.0F, 1.0F, 0.7F)
   gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 10.0F, preview)
   |> ignore
   gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 7.0F, preview)
   |> ignore
-  gizmos.arrow_2d(world_start, world_end, @sprite.Color::srgb(1.0F, 0.0F, 0.7F))
+  gizmos.arrow_2d(world_start, world_end, @color.Color::srgb(1.0F, 0.0F, 0.7F))
   |> ignore
 }
 
@@ -593,13 +593,13 @@ fn spawn_ui_text_line(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(entity, @text.ecs_key_text_font, font)
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     entity,

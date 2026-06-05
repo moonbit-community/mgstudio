@@ -99,19 +99,19 @@ fn setup(
   ) = materials.modify(fn(material_assets) {
     (
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.09F, 0.10F, 0.13F)),
+      |> @pbr.add_material(@color.Color::srgb(0.09F, 0.10F, 0.13F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.88F, 0.32F, 0.35F)),
+      |> @pbr.add_material(@color.Color::srgb(0.88F, 0.32F, 0.35F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.94F, 0.58F, 0.27F)),
+      |> @pbr.add_material(@color.Color::srgb(0.94F, 0.58F, 0.27F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.85F, 0.30F)),
+      |> @pbr.add_material(@color.Color::srgb(0.95F, 0.85F, 0.30F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.78F, 0.36F)),
+      |> @pbr.add_material(@color.Color::srgb(0.45F, 0.78F, 0.36F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.32F, 0.54F, 0.92F)),
+      |> @pbr.add_material(@color.Color::srgb(0.32F, 0.54F, 0.92F)),
       material_assets
-      |> @pbr.add_material(@sprite.Color::srgb(0.73F, 0.44F, 0.86F)),
+      |> @pbr.add_material(@color.Color::srgb(0.73F, 0.44F, 0.86F)),
     )
   })
 

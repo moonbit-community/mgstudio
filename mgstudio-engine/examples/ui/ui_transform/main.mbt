@@ -113,23 +113,23 @@ fn clamp_float(value : Float, min : Float, max : Float) -> Float {
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::white()
+fn normal_button_color() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 0.35F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 0.35F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.2F, 0.2F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.2F, 0.2F)
 }
 
 ///|
-fn text_color() -> @sprite.Color {
-  @sprite.Color::black()
+fn text_color() -> @color.Color {
+  @color.Color::black()
 }
 
 ///|
@@ -200,7 +200,7 @@ fn spawn_control_button(
       ButtonPressState::{ pressed: false },
       button_node(),
       @ui.BackgroundColor::new(normal_button_color()),
-      @ui.BorderColor::new(@sprite.Color::black()),
+      @ui.BorderColor::new(@color.Color::black()),
     ),
   )
   if rotate_step != 0.0F {
@@ -228,7 +228,7 @@ fn spawn_static_panel_button(
     (
       @hierarchy.Parent::new(parent),
       button_node(),
-      @ui.BackgroundColor::new(@sprite.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::white()),
       button_transform(angle),
     ),
   )
@@ -261,7 +261,7 @@ fn setup(
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
 
@@ -304,7 +304,7 @@ fn setup(
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_justify_content(@ui.JustifyContent::SpaceBetween)
       .with_align_items(@ui.AlignItems::Center),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.33F, 0.33F, 0.33F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.33F, 0.33F, 0.33F)),
     ),
   )
 
@@ -367,7 +367,7 @@ fn setup(
 }
 
 ///|
-fn interaction_color(interaction : @ui.Interaction) -> @sprite.Color {
+fn interaction_color(interaction : @ui.Interaction) -> @color.Color {
   match interaction {
     Pressed => pressed_button_color()
     Hovered => hovered_button_color()

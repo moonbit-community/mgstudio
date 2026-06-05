@@ -23,7 +23,7 @@ let ecs_key_show_aabb_gizmo : @ecs.ComponentKey[ShowAabbGizmo] = @ecs.register_c
 ///|
 pub(all) struct AabbGizmoConfigGroup {
   draw_all : Bool
-  default_color : @sprite.Color?
+  default_color : @color.Color?
 }
 
 ///|
@@ -82,7 +82,7 @@ pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_
 
 ///|
 pub struct ShowAabbGizmo {
-  color : @sprite.Color?
+  color : @color.Color?
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn ShowAabbGizmo::ShowAabbGizmo() -> ShowAabbGizmo {
 ///|
 pub fn ShowAabbGizmo::with_color(
   self : ShowAabbGizmo,
-  color : @sprite.Color?,
+  color : @color.Color?,
 ) -> ShowAabbGizmo {
   ignore(self)
   ShowAabbGizmo::{ color, }
@@ -105,13 +105,13 @@ pub impl @ecs.Component for ShowAabbGizmo with fn component() {
 }
 
 ///|
-fn aabb_gizmo_color_from_entity(entity : @core.Entity) -> @sprite.Color {
+fn aabb_gizmo_color_from_entity(entity : @core.Entity) -> @color.Color {
   let seed = Float::from_double(entity.id.to_double()) +
     Float::from_double(entity.generation.to_double()) * 97.0F
   let r = 0.2F + 0.8F * ((@math.sin(seed * 0.73F) + 1.0F) * 0.5F)
   let g = 0.2F + 0.8F * ((@math.sin(seed * 1.11F + 1.2F) + 1.0F) * 0.5F)
   let b = 0.2F + 0.8F * ((@math.sin(seed * 1.61F + 2.4F) + 1.0F) * 0.5F)
-  @sprite.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -127,9 +127,9 @@ fn aabb_gizmo_is_visible(
 ///|
 fn aabb_gizmo_resolve_color(
   entity : @core.Entity,
-  override_color : @sprite.Color?,
+  override_color : @color.Color?,
   config_group : AabbGizmoConfigGroup,
-) -> @sprite.Color {
+) -> @color.Color {
   match override_color {
     Some(color) => color
     None =>
@@ -163,7 +163,7 @@ fn[Config] draw_aabb_3d(
   gizmos : @sprite.Gizmos[Config],
   aabb : @camera.Aabb,
   transform : @transform.GlobalTransform,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let corners = @transform.transform_points(transform, aabb_local_corners(aabb))
   let edges = [

@@ -63,18 +63,18 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let normal = materials.modify(fn(material_assets) {
-    material_assets |> @pbr.add_material(@sprite.Color::white())
+    material_assets |> @pbr.add_material(@color.Color::white())
   })
   let hover = materials.modify(fn(material_assets) {
     material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.92F, 0.95F))
+    |> @pbr.add_material(@color.Color::srgb(0.45F, 0.92F, 0.95F))
   })
   let pressed = materials.modify(fn(material_assets) {
     material_assets
-    |> @pbr.add_material(@sprite.Color::srgb(0.98F, 0.85F, 0.25F))
+    |> @pbr.add_material(@color.Color::srgb(0.98F, 0.85F, 0.25F))
   })
   let ground = materials.modify(fn(material_assets) {
-    material_assets |> @pbr.add_material(@sprite.Color::srgb(0.8F, 0.8F, 0.8F))
+    material_assets |> @pbr.add_material(@color.Color::srgb(0.8F, 0.8F, 0.8F))
   })
 
   ignore(

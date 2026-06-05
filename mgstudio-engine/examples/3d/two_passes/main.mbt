@@ -34,7 +34,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(material_assets) {
             material_assets
-            |> @pbr.add_material(@sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F))
+            |> @pbr.add_material(@color.Color::new(0.3F, 0.5F, 0.3F, 1.0F))
           }),
         ),
       ),
@@ -52,7 +52,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(material_assets) {
             material_assets
-            |> @pbr.add_material(@sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F))
+            |> @pbr.add_material(@color.Color::new(0.8F, 0.7F, 0.6F, 1.0F))
           }),
         ),
         @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),

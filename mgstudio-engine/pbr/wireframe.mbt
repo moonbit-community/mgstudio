@@ -39,23 +39,23 @@ pub fn NoWireframe::NoWireframe() -> NoWireframe {
 ///|
 /// Per-mesh wireframe color aligned with Bevy's `WireframeColor`.
 pub struct WireframeColor {
-  color : @sprite.Color
+  color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeColor::WireframeColor() -> WireframeColor {
-  WireframeColor::{ color: @sprite.Color::white() }
+  WireframeColor::{ color: @color.Color::white() }
 }
 
 ///|
-pub fn WireframeColor::new(color : @sprite.Color) -> WireframeColor {
+pub fn WireframeColor::new(color : @color.Color) -> WireframeColor {
   WireframeColor::{ color, }
 }
 
 ///|
 pub fn WireframeColor::with_color(
   self : WireframeColor,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> WireframeColor {
   self |> ignore
   WireframeColor::{ color, }
@@ -64,18 +64,18 @@ pub fn WireframeColor::with_color(
 ///|
 pub struct WireframeConfig {
   global : Bool
-  default_color : @sprite.Color
+  default_color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeConfig::WireframeConfig() -> WireframeConfig {
-  WireframeConfig::{ global: false, default_color: @sprite.Color::white() }
+  WireframeConfig::{ global: false, default_color: @color.Color::white() }
 }
 
 ///|
 pub fn WireframeConfig::new(
   global : Bool,
-  default_color : @sprite.Color,
+  default_color : @color.Color,
 ) -> WireframeConfig {
   WireframeConfig::{ global, default_color }
 }
@@ -91,13 +91,13 @@ pub fn WireframeConfig::with_global(
 ///|
 pub fn WireframeConfig::with_default_color(
   self : WireframeConfig,
-  default_color : @sprite.Color,
+  default_color : @color.Color,
 ) -> WireframeConfig {
   WireframeConfig::{ ..self, default_color, }
 }
 
 ///|
-pub impl @app.Resource for WireframeConfig with resource() {
+pub impl @app.Resource for WireframeConfig with fn resource() {
   ecs_key_wireframe_config
 }
 
@@ -113,12 +113,12 @@ pub fn WireframePlugin::WireframePlugin() -> WireframePlugin {
 }
 
 ///|
-pub impl @app.Plugin for WireframePlugin with name(_self) {
+pub impl @app.Plugin for WireframePlugin with fn name(_self) {
   WIREFRAME_PLUGIN_NAME
 }
 
 ///|
-pub impl @app.Plugin for WireframePlugin with build(_self, app) {
+pub impl @app.Plugin for WireframePlugin with fn build(_self, app) {
   wireframe_plugin(app)
 }
 
@@ -160,7 +160,7 @@ let render3d_wireframe_mesh_cache_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio.render3d.wireframe_mesh_cache")
 
 ///|
-impl @app.Resource for Render3dWireframeMeshCache with resource() {
+impl @app.Resource for Render3dWireframeMeshCache with fn resource() {
   render3d_wireframe_mesh_cache_key
 }
 
@@ -289,12 +289,12 @@ fn render3d_mesh_should_draw_wireframe(
 fn render3d_mesh_wireframe_color(
   mesh : ExtractedMesh3d,
   wireframe_config : WireframeConfig?,
-) -> @sprite.Color {
+) -> @color.Color {
   if mesh.payload.wireframe_color is Some(color_component) {
     color_component.color
   } else if wireframe_config is Some(config) {
     config.default_color
   } else {
-    @sprite.Color::white()
+    @color.Color::white()
   }
 }

@@ -359,7 +359,7 @@ fn float_opt_eq(lhs : Float?, rhs : Float?) -> Bool {
 }
 
 ///|
-fn color_eq(lhs : @sprite.Color, rhs : @sprite.Color) -> Bool {
+fn color_eq(lhs : @color.Color, rhs : @color.Color) -> Bool {
   lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a
 }
 

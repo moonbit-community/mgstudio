@@ -60,18 +60,18 @@ pub impl @app.Resource for MenuData with fn resource() {
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
@@ -151,7 +151,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(button),
         @text.Text::new("Play"),
         @text.TextFont::TextFont().with_font_size(33.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -261,7 +261,7 @@ fn change_color(world : @ecs.World) -> Unit {
   let hue = time.elapsed_seconds() * 60.0F
   try! query.view(fn(_entity, sprite) {
     sprite.modify(fn(value) {
-      value.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+      value.color = @color.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
     })
   })
 }

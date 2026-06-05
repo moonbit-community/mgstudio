@@ -17,7 +17,7 @@
 
 ///|
 pub struct RectLight {
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   width : Float
@@ -27,7 +27,7 @@ pub struct RectLight {
 ///|
 pub fn RectLight::RectLight() -> RectLight {
   RectLight::{
-    color: @sprite.Color::white(),
+    color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
     width: 1.0F,
@@ -37,7 +37,7 @@ pub fn RectLight::RectLight() -> RectLight {
 
 ///|
 pub fn RectLight::new(
-  color : @sprite.Color,
+  color : @color.Color,
   intensity : Float,
   range : Float,
   width : Float,
@@ -53,7 +53,7 @@ pub fn RectLight::new(
 }
 
 ///|
-pub fn RectLight::color(self : RectLight) -> @sprite.Color {
+pub fn RectLight::color(self : RectLight) -> @color.Color {
   self.color
 }
 
@@ -83,6 +83,6 @@ pub let ecs_key_rect_light : @ecs.ComponentKey[RectLight] = @ecs.register_compon
 )
 
 ///|
-pub impl @ecs.Component for RectLight with component() {
+pub impl @ecs.Component for RectLight with fn component() {
   ecs_key_rect_light
 }

@@ -51,7 +51,7 @@ fn setup(
         ),
         @pbr.MeshMaterial3d::new(
           materials.modify(fn(materials) {
-            materials |> @pbr.add_material(@sprite.Color::white())
+            materials |> @pbr.add_material(@color.Color::white())
           }),
         ),
         @transform.Transform::from_translation(entity_spawn),

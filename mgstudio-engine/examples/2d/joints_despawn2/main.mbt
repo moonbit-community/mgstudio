@@ -32,7 +32,7 @@ fn rapier2d_joints_despawn2_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.88F, 0.91F, 0.96F, 1.0F),
+      @color.Color::new(0.88F, 0.91F, 0.96F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -88,7 +88,7 @@ fn rapier2d_joints_despawn2_setup(world : @ecs.World) -> Unit {
     bob,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.95F, 0.60F, 0.25F, 1.0F))
+    .with_color(@color.Color::new(0.95F, 0.60F, 0.25F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(34.0F, 34.0F))),
   )
   try! world.set_by_key(

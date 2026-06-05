@@ -227,7 +227,7 @@ fn update_help_text(world : @ecs.World, motion_blur : @pbr.MotionBlur) -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let value = @pbr.GlobalAmbientLight::new(@sprite.Color::white(), brightness)
+  let value = @pbr.GlobalAmbientLight::new(@color.Color::white(), brightness)
   world.insert_resource(@pbr.ecs_key_global_ambient_light, value)
 }
 
@@ -562,7 +562,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 3000.0F, true),
   )
   try! world.set_by_key(
     directional_light,
@@ -578,9 +578,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @mesh_primitives_dim3.SphereMeshBuilder::SphereMeshBuilder().build(),
   )
   let sky_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
-    ).with_unlit(true),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.1F, 0.6F, 1.0F, 1.0F)).with_unlit(
+      true,
+    ),
   )
   @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
@@ -599,7 +599,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ]),
   )
   let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_base_color_texture(Some(motion_blur_uv_debug_texture(image_assets))),
   )
@@ -612,15 +612,15 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let car_colors : Array[@sprite.Color] = [
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
-    @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
-    @sprite.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
-    @sprite.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
+  let car_colors : Array[@color.Color] = [
+    @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @color.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
+    @color.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
+    @color.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
   ]
   let car_materials : Array[@asset.Handle[@pbr.StandardMaterial]] = []
   for color in car_colors {
@@ -629,7 +629,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
   }
   let wheel_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+    @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
@@ -657,7 +657,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let barrier_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::srgb(1.0F, 87.0F / 255.0F, 51.0F / 255.0F),
+      @color.Color::srgb(1.0F, 87.0F / 255.0F, 51.0F / 255.0F),
     ).with_reflectance(1.0F),
   )
   spawn_barriers(
@@ -670,14 +670,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let leaves_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
   )
   let trunk_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.4F, 0.2F, 0.2F, 1.0F)),
   )
   let leaves_mesh = mesh3d_from_geometry(
     mesh_assets,

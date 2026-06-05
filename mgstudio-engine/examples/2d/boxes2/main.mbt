@@ -28,7 +28,7 @@ fn rapier2d_boxes2_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.53F, 0.71F, 0.47F, 1.0F),
+      @color.Color::new(0.53F, 0.71F, 0.47F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -54,7 +54,7 @@ fn rapier2d_boxes2_setup(world : @ecs.World) -> Unit {
     floor,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
+    .with_color(@color.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(780.0F, 40.0F))),
   )
   try! world.set_by_key(
@@ -135,7 +135,7 @@ fn rapier2d_boxes2_setup(world : @ecs.World) -> Unit {
         box,
         @sprite.ecs_key_sprite,
         @sprite.Sprite::from_image(texture)
-        .with_color(@sprite.Color::new(0.92F, 0.72F, 0.34F, 1.0F))
+        .with_color(@color.Color::new(0.92F, 0.72F, 0.34F, 1.0F))
         .with_custom_size(Some(@math.Vec2::new(48.0F, 48.0F))),
       )
       try! world.set_by_key(

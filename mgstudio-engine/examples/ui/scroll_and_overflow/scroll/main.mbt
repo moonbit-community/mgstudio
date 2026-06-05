@@ -31,7 +31,7 @@ fn body_font(asset_server : @asset.AssetServer) -> @text.TextFont {
 
 ///|
 fn text_color() -> @text.TextColor {
-  @text.TextColor::new(@sprite.Color::srgb(0.92F, 0.92F, 0.92F))
+  @text.TextColor::new(@color.Color::srgb(0.92F, 0.92F, 0.92F))
 }
 
 ///|
@@ -107,7 +107,7 @@ fn spawn_vertical_panel(
     (
       @hierarchy.Parent::new(parent),
       panel_node(280.0F, 360.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.14F, 0.16F, 0.20F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.14F, 0.16F, 0.20F)),
     ),
   )
   let title = "Vertical scroll"
@@ -137,7 +137,7 @@ fn spawn_vertical_panel(
         280.0F,
         @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
       ).with_flex_direction(@ui.FlexDirection::Column),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.09F, 0.11F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.09F, 0.11F)),
     ),
   )
   for i in 0..<28 {
@@ -162,7 +162,7 @@ fn spawn_horizontal_panel(
     (
       @hierarchy.Parent::new(parent),
       panel_node(520.0F, 200.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.18F, 0.16F, 0.12F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.18F, 0.16F, 0.12F)),
     ),
   )
   spawn_text(
@@ -181,7 +181,7 @@ fn spawn_horizontal_panel(
         112.0F,
         @ui.Overflow::new(@ui.OverflowAxis::Scroll, @ui.OverflowAxis::Hidden),
       ).with_flex_direction(@ui.FlexDirection::Row),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.10F, 0.08F, 0.06F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.10F, 0.08F, 0.06F)),
     ),
   )
   for i in 0..<12 {
@@ -190,7 +190,7 @@ fn spawn_horizontal_panel(
         @hierarchy.Parent::new(list),
         row_item_node(180.0F),
         @ui.BackgroundColor::new(
-          @sprite.Color::hsl(Float::from_int(i) * 23.0F, 0.65F, 0.52F),
+          @color.Color::hsl(Float::from_int(i) * 23.0F, 0.65F, 0.52F),
         ),
       ),
     )
@@ -215,7 +215,7 @@ fn spawn_bidirectional_panel(
     (
       @hierarchy.Parent::new(parent),
       panel_node(520.0F, 360.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.12F, 0.17F, 0.14F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.17F, 0.14F)),
     ),
   )
   spawn_text(
@@ -245,7 +245,7 @@ fn spawn_bidirectional_panel(
           @ui.GridTrack::Px(72.0F),
         ]),
       ]),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.06F, 0.10F, 0.08F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.06F, 0.10F, 0.08F)),
     ),
   )
   for y in 0..<8 {
@@ -260,7 +260,7 @@ fn spawn_bidirectional_panel(
             padding: @ui.UiRect::all(@ui.Val::Px(8.0F)),
           },
           @ui.BackgroundColor::new(
-            @sprite.Color::hsl(Float::from_int(x * 20 + y * 12), 0.55F, 0.45F),
+            @color.Color::hsl(Float::from_int(x * 20 + y * 12), 0.55F, 0.45F),
           ),
         ),
       )
@@ -286,7 +286,7 @@ fn spawn_nested_panel(
     (
       @hierarchy.Parent::new(parent),
       panel_node(280.0F, 360.0F),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.16F, 0.13F, 0.18F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.13F, 0.18F)),
     ),
   )
   spawn_text(
@@ -305,7 +305,7 @@ fn spawn_nested_panel(
         280.0F,
         @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
       ).with_flex_direction(@ui.FlexDirection::Column),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.09F, 0.07F, 0.10F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.09F, 0.07F, 0.10F)),
     ),
   )
   for i in 0..<10 {
@@ -344,7 +344,7 @@ fn spawn_nested_panel(
           @ui.Val::Px(10.0F),
         ),
       ),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.13F, 0.11F, 0.16F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.13F, 0.11F, 0.16F)),
     ),
   )
   for i in 0..<18 {
@@ -406,7 +406,7 @@ fn setup(
           @ui.GridTrack::Auto,
         ]),
       ]),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.05F, 0.05F, 0.06F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.05F, 0.05F, 0.06F)),
     ),
   )
 

@@ -119,7 +119,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+          @color.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -131,7 +131,7 @@ fn setup(world : @ecs.World) -> Unit {
     colorful_cube_mesh(),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     ),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -142,7 +142,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light_entity,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 20.0F, true),
   )
   try! world.set_by_key(
     light_entity,

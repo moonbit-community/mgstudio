@@ -129,7 +129,7 @@ fn setup(
     commands.spawn(
       (
         @camera_components2d.Camera2d::Camera2d(),
-        @camera_camera.Camera::new(@sprite.Color::black()),
+        @camera_camera.Camera::new(@color.Color::black()),
         @core_pipeline_tonemapping.Tonemapping::TonyMcMapface,
         @post_process_bloom.Bloom::Bloom(),
         @core_pipeline_tonemapping.DebandDither::Enabled,
@@ -142,7 +142,7 @@ fn setup(
       @sprite.Sprite::from_image(
         asset_server.get().load("branding/bevy_bird_dark.png"),
       )
-      .with_color(@sprite.Color::srgb(5.0F, 5.0F, 5.0F))
+      .with_color(@color.Color::srgb(5.0F, 5.0F, 5.0F))
       .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     ),
   )
@@ -161,7 +161,7 @@ fn setup(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
+              @color.Color::srgb(7.5F, 0.0F, 7.5F),
             ),
           ),
         ),
@@ -187,7 +187,7 @@ fn setup(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
+              @color.Color::srgb(6.25F, 9.4F, 9.1F),
             ),
           ),
         ),

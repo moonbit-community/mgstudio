@@ -220,7 +220,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
+              @color.Color::srgb(0.2F, 0.2F, 0.3F),
             ),
           ),
         ),
@@ -244,7 +244,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
+              @color.Color::srgb(0.25F, 0.94F, 0.91F),
             ),
           ),
         ),
@@ -269,7 +269,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
+              @color.Color::srgb(0.85F, 0.0F, 0.2F),
             ),
           ),
         ),
@@ -294,7 +294,7 @@ fn setup_scene(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
+              @color.Color::srgb(0.5F, 0.8F, 0.2F),
             ),
           ),
         ),
@@ -332,7 +332,7 @@ fn setup_instructions(
         },
         @text.Text::new(INSTRUCTIONS),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),

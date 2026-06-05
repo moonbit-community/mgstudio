@@ -13,23 +13,23 @@
 // limitations under the License.
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.15F, 0.15F, 0.15F)
+fn normal_button_color() -> @color.Color {
+  @color.Color::srgb(0.15F, 0.15F, 0.15F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.25F, 0.25F, 0.25F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.25F, 0.25F, 0.25F)
 }
 
 ///|
-fn pressed_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.35F, 0.75F, 0.35F)
+fn pressed_button_color() -> @color.Color {
+  @color.Color::srgb(0.35F, 0.75F, 0.35F)
 }
 
 ///|
 fn focus_outline() -> @ui.Outline {
-  @ui.Outline::new(@ui.Val::Px(2.0F), @ui.Val::Px(2.0F), @sprite.Color::white())
+  @ui.Outline::new(@ui.Val::Px(2.0F), @ui.Val::Px(2.0F), @color.Color::white())
 }
 
 ///|
@@ -51,7 +51,7 @@ fn spawn_tab_button(
       .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center),
-      @ui.BorderColor::new(@sprite.Color::black()),
+      @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
   )
@@ -61,7 +61,7 @@ fn spawn_tab_button(
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -92,7 +92,7 @@ fn spawn_tab_group(
         @hierarchy.Parent::new(root),
         @text.Text::new(label),
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -216,9 +216,9 @@ fn button_system(world : @ecs.World) -> Unit {
       @ui.Interaction::None => normal_button_color()
     }
     let next_border = match interaction.value() {
-      @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
-      @ui.Interaction::Hovered => @sprite.Color::white()
-      @ui.Interaction::None => @sprite.Color::black()
+      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
+      @ui.Interaction::Hovered => @color.Color::white()
+      @ui.Interaction::None => @color.Color::black()
     }
     background.set(@ui.BackgroundColor::new(next_background))
     border.set(@ui.BorderColor::new(next_border))

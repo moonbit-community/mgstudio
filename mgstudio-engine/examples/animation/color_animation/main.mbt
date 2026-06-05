@@ -520,8 +520,8 @@ fn normalized_time(elapsed_seconds : Float) -> Float {
 }
 
 ///|
-fn linear_to_color(color : LinearRgba) -> @sprite.Color {
-  @sprite.Color::new(color.r, color.g, color.b, color.a)
+fn linear_to_color(color : LinearRgba) -> @color.Color {
+  @color.Color::new(color.r, color.g, color.b, color.a)
 }
 
 ///|
@@ -841,7 +841,7 @@ fn linear_to_hsla(color : LinearRgba) -> Hsla {
 
 ///|
 fn hsla_to_linear(color : Hsla) -> LinearRgba {
-  let linear_color = @sprite.Color::hsla(color.h, color.s, color.l, color.a)
+  let linear_color = @color.Color::hsla(color.h, color.s, color.l, color.a)
   LinearRgba::{
     r: linear_color.r,
     g: linear_color.g,

@@ -92,13 +92,13 @@ fn food_items() -> Array[FoodItem] {
 }
 
 ///|
-fn food_button_color() -> @sprite.Color {
-  @sprite.Color::new(0.5803922F, 0.6392157F, 0.72156864F, 1.0F)
+fn food_button_color() -> @color.Color {
+  @color.Color::new(0.5803922F, 0.6392157F, 0.72156864F, 1.0F)
 }
 
 ///|
-fn food_overlay_color() -> @sprite.Color {
-  @sprite.Color::new(0.972549F, 0.98039216F, 0.9882353F, 0.5F)
+fn food_overlay_color() -> @color.Color {
+  @color.Color::new(0.972549F, 0.98039216F, 0.9882353F, 0.5F)
 }
 
 ///|
@@ -190,7 +190,7 @@ fn setup(
       (
         @text.Text::new("*Click some food to eat it*"),
         @text.TextFont::TextFont().with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))

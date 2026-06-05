@@ -17,7 +17,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F),
+      @color.Color::new(0.5F, 0.5F, 0.9F, 1.0F),
     ),
   )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
@@ -49,7 +49,7 @@ fn change_clear_color_system(
   if input.just_pressed(Space) {
     clear_color.set(
       @camera_clear_color.ClearColor::new(
-        @sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
+        @color.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
       ),
     )
   }

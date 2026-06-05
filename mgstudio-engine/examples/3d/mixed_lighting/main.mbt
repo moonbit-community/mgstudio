@@ -217,10 +217,10 @@ fn mode_ambient_brightness(mode : LightingMode) -> Float {
 }
 
 ///|
-fn mode_sphere_color(mode : LightingMode) -> @sprite.Color {
+fn mode_sphere_color(mode : LightingMode) -> @color.Color {
   match mode {
-    LightingMode::Baked => @sprite.Color::new(0.95F, 0.84F, 0.84F, 1.0F)
-    _ => @sprite.Color::new(0.92F, 0.92F, 0.92F, 1.0F)
+    LightingMode::Baked => @color.Color::new(0.95F, 0.84F, 0.84F, 1.0F)
+    _ => @color.Color::new(0.92F, 0.92F, 0.92F, 1.0F)
   }
 }
 
@@ -239,7 +239,7 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
       light_entity,
       @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         mode_directional_illuminance(mode),
         scenery_is_lit_in_real_time,
       ),
@@ -248,7 +248,7 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
   }
 
   let ambient_light = @pbr.GlobalAmbientLight::new(
-    @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     mode_ambient_brightness(mode),
   )
   world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient_light)
@@ -423,7 +423,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
+      @color.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
     )
     .with_perceptual_roughness(0.45F)
     .with_metallic(0.0F),
@@ -444,7 +444,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 12_000.0F, true),
   )
   try! world.set_by_key(
     directional_light,
@@ -471,7 +471,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

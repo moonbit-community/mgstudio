@@ -110,7 +110,7 @@ fn setup(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
+              @color.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
             ),
           ),
         ),
@@ -135,7 +135,7 @@ fn setup(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
+              @color.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
             ),
           ),
         ),
@@ -202,8 +202,8 @@ fn draw_cursor(
         scale_factor,
       )
       is Some(world_pos) {
-      let white = @sprite.Color::white()
-      let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+      let white = @color.Color::white()
+      let red = @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
       let cursor_iso = @sprite.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
 

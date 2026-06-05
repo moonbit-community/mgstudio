@@ -63,7 +63,7 @@ fn spawn_text(
   parent : @core.Entity,
   text : String,
   font : @asset.Handle[@asset.Font],
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   ignore(
     commands.spawn(
@@ -89,17 +89,17 @@ fn spawn_anchored_cell(
     (
       @hierarchy.Parent::new(parent),
       cell_node(),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
     ),
   )
   let label_box = commands.spawn(
     (
       @hierarchy.Parent::new(cell),
       anchored_label_node(node),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.066F, 0.349F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.066F, 0.349F)),
     ),
   )
-  spawn_text(commands, label_box, label, font, @sprite.Color::black())
+  spawn_text(commands, label_box, label, font, @color.Color::black())
 }
 
 ///|
@@ -136,7 +136,7 @@ fn setup(
           @ui.GridTrack::Fr(1.0F),
         ]),
       ]),
-      @ui.BackgroundColor::new(@sprite.Color::black()),
+      @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
   spawn_anchored_cell(

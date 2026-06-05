@@ -301,17 +301,17 @@ fn ldtk_int_grid_color(
   layer_definition_map : @hashmap.HashMap[Int, LayerDefinition],
   layer_instance : LayerInstance,
   value : Int,
-) -> @sprite.Color {
+) -> @color.Color {
   guard layer_definition_map.get(layer_instance.layer_def_uid)
     is Some(layer_definition) else {
-    return @sprite.Color::white()
+    return @color.Color::white()
   }
   for definition in layer_definition.int_grid_values {
     if definition.value == value {
       return definition.color
     }
   }
-  @sprite.Color::white()
+  @color.Color::white()
 }
 
 ///|

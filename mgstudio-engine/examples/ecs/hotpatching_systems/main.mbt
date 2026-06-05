@@ -90,8 +90,8 @@ fn setup(
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BorderColor::new(@sprite.Color::white()),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.15F, 0.15F, 0.2F)),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.15F, 0.15F, 0.2F)),
     ),
   )
   commands.spawn(
@@ -100,7 +100,7 @@ fn setup(
       HotText::{  },
       @text.Text::new("before"),
       @text.TextFont::TextFont().with_font(font).with_font_size(42.0F),
-      @text.TextColor::new(@sprite.Color::srgb(0.95F, 0.95F, 0.95F)),
+      @text.TextColor::new(@color.Color::srgb(0.95F, 0.95F, 0.95F)),
     ),
   )
   |> ignore
@@ -146,9 +146,9 @@ fn update_text(
     color.set(
       @text.TextColor::new(
         if mode.get().value == 0 {
-          @sprite.Color::srgb(0.95F, 0.95F, 0.95F)
+          @color.Color::srgb(0.95F, 0.95F, 0.95F)
         } else {
-          @sprite.Color::srgb(0.95F, 0.4F, 0.4F)
+          @color.Color::srgb(0.95F, 0.4F, 0.4F)
         },
       ),
     )

@@ -38,7 +38,7 @@ fn draw_all_glyphs(
     all_glyphs(),
     40.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    @sprite.Color::white(),
+    @color.Color::white(),
   )
 }
 

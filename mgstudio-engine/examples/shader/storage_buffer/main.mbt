@@ -65,7 +65,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.9F, 0.94F, 1.0F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.9F, 0.94F, 1.0F)),
     )
   for i in 0..<INSTANCE_COUNT {
     let x = Float::from_int(i % 16) - 7.5F
@@ -84,7 +84,7 @@ fn setup(
   }
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 25.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 25.0F, false),
       @transform.Transform::from_xyz(0.0F, 2.0F, 8.0F),
     ),
   )

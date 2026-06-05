@@ -129,7 +129,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -138,7 +138,7 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
+  set_global_ambient_light(world, @color.Color::white(), 60.0F)
 
   let camera = @camera.Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
@@ -163,7 +163,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
+          @color.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
         ).with_perceptual_roughness(0.08F),
       ),
     ),
@@ -186,7 +186,7 @@ fn setup(world : @ecs.World) -> Unit {
       @pbr.MeshMaterial3d::new(
         @pbr.standard_material_add(
           @pbr.StandardMaterial::from_color(
-            @sprite.Color::new(0.5F, 0.5F, 1.0F, 1.0F),
+            @color.Color::new(0.5F, 0.5F, 1.0F, 1.0F),
           ).with_unlit(true),
         ),
       ),
@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
       point_light,
       @pbr.ecs_key_point_light,
       @pbr.PointLight::PointLight()
-      .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
+      .with_color(@color.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))
       .with_intensity(mapped_point_light_intensity(radius))
@@ -215,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
       point_light,
       @pbr.ecs_key_point_light,
       @pbr.PointLight::PointLight()
-      .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
+      .with_color(@color.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))
       .with_intensity(mapped_point_light_intensity(radius))

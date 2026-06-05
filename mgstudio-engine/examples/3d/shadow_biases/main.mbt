@@ -127,7 +127,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       point_entity,
       @pbr.ecs_key_point_light,
       @pbr.PointLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         if state.using_point_light {
           SHADOW_BIASES_POINT_INTENSITY
         } else {
@@ -151,7 +151,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       directional_entity,
       @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         if state.using_point_light {
           0.0F
         } else {
@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_biases_state.val.help_text = None
 
   let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -264,7 +264,7 @@ fn setup(world : @ecs.World) -> Unit {
     point,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       0.0F,
       SHADOW_BIASES_POINT_RANGE,
       true,
@@ -280,7 +280,7 @@ fn setup(world : @ecs.World) -> Unit {
     directional,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE,
       true,
     )
@@ -310,7 +310,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

@@ -70,10 +70,10 @@ test "standard material defaults align with bevy clearcoat and alpha threshold" 
     content="0.5",
   )
   let blend_material = @material.StandardMaterial::from_color(
-    @sprite.Color::new(1.0F, 1.0F, 1.0F, 0.9999F),
+    @color.Color::new(1.0F, 1.0F, 1.0F, 0.9999F),
   )
   let opaque_material = @material.StandardMaterial::from_color(
-    @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+    @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
   )
   debug_inspect(
     blend_material.alpha_mode is @material.AlphaMode::Blend,
@@ -514,7 +514,7 @@ test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
 ///|
 test "material boundary Assets::add accepts Color and Image handle inputs" {
   let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
-  let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)
+  let expected_color = @color.Color::srgb(0.1F, 0.2F, 0.3F)
   let color_handle = materials |> add(expected_color)
   let texture : @asset.Handle[@asset.Image] = @asset.Handle::new(7)
   let texture_handle = materials |> add(texture)

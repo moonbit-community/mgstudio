@@ -60,7 +60,7 @@ fn build_skinned_strip() -> @mesh.Mesh3dGeometry {
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1200.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 1200.0F),
   )
   ignore(
     @camera.Camera3dBundle::new(
@@ -80,7 +80,7 @@ fn setup(world : @ecs.World) -> Unit {
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.8F, -0.7F),
         ),
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 9000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 9000.0F, true),
       ),
     ),
   )
@@ -116,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
     )
   })
   let material_handle = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.8F, 1.0F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.8F, 1.0F)),
   )
 
   let root = world.spawn_empty()

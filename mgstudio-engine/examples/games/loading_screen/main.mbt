@@ -49,7 +49,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(520.0F, 70.0F)).with_color(
-          @sprite.Color::srgb(0.2F, 0.2F, 0.24F),
+          @color.Color::srgb(0.2F, 0.2F, 0.24F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, -0.5F),
       ),
@@ -59,7 +59,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(500.0F, 48.0F)).with_color(
-          @sprite.Color::srgb(0.25F, 0.75F, 0.36F),
+          @color.Color::srgb(0.25F, 0.75F, 0.36F),
         ),
         @transform.Transform::from_xyz(-250.0F, 0.0F, 0.0F).with_scale(
           @math.Vec3::new(0.0F, 1.0F, 1.0F),
@@ -94,7 +94,7 @@ fn simulate_loading(
       commands.spawn(
         (
           @sprite.Sprite::sized(@math.Vec2::new(260.0F, 260.0F)).with_color(
-            @sprite.Color::srgb(0.35F, 0.7F, 1.0F),
+            @color.Color::srgb(0.35F, 0.7F, 1.0F),
           ),
           @transform.Transform::from_xyz(0.0F, 0.0F, 0.4F),
         ),

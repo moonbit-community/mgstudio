@@ -53,17 +53,17 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn color_for_row(index : Int) -> @sprite.Color {
+fn color_for_row(index : Int) -> @color.Color {
   if index == 0 {
-    @sprite.Color::new(0.8627451F, 0.1490196F, 0.1490196F, 1.0F)
+    @color.Color::new(0.8627451F, 0.1490196F, 0.1490196F, 1.0F)
   } else if index == 1 {
-    @sprite.Color::new(0.9176471F, 0.34509805F, 0.047058824F, 1.0F)
+    @color.Color::new(0.9176471F, 0.34509805F, 0.047058824F, 1.0F)
   } else if index == 2 {
-    @sprite.Color::new(0.98039216F, 0.8F, 0.08235294F, 1.0F)
+    @color.Color::new(0.98039216F, 0.8F, 0.08235294F, 1.0F)
   } else if index == 3 {
-    @sprite.Color::new(0.08627451F, 0.6392157F, 0.2901961F, 1.0F)
+    @color.Color::new(0.08627451F, 0.6392157F, 0.2901961F, 1.0F)
   } else {
-    @sprite.Color::new(0.007843138F, 0.5176471F, 0.78039217F, 1.0F)
+    @color.Color::new(0.007843138F, 0.5176471F, 0.78039217F, 1.0F)
   }
 }
 
@@ -145,7 +145,7 @@ fn setup(world : @ecs.World) -> Unit {
     directional,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(
-      @sprite.Color::white(),
+      @color.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -219,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
+        @pbr.StandardMaterial::from_color(@color.Color::white()).with_perceptual_roughness(
           1.0F,
         ),
       ),

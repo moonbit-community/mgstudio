@@ -35,7 +35,7 @@ fn setup(
       .peek()
       .add(
         @pbr.StandardMaterial::StandardMaterial()
-        .with_base_color(@sprite.Color::white())
+        .with_base_color(@color.Color::white())
         .with_base_color_texture(Some(image))
         .with_uv_transform(uv_transform),
       )
@@ -64,7 +64,7 @@ fn setup(
   let floor_mat = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.2F, 0.22F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.17F, 0.2F, 0.22F)),
     )
   commands.spawn(
     (
@@ -77,7 +77,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_300_000.0F, 25.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_300_000.0F, 25.0F, false),
       @transform.Transform::from_xyz(4.0F, 7.0F, 3.0F),
     ),
   )

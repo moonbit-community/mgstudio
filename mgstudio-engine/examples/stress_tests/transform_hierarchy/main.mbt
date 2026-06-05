@@ -113,7 +113,7 @@ fn spawn_tree(
           .entity(child)
           .insert_component(
             @sprite.Sprite::sized(@math.Vec2::new(6.0F, 6.0F)).with_color(
-              @sprite.Color::hsl(
+              @color.Color::hsl(
                 float_from_int((depth * 43 + branch * 17) % 360),
                 0.8F,
                 0.58F,

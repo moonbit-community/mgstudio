@@ -147,7 +147,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.65F, 0.93F, 0.90F),
+          @color.Color::srgb(0.65F, 0.93F, 0.90F),
         ),
       ),
     ),
@@ -174,7 +174,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 fn spawn_world_model(world : @ecs.World) -> Unit {
   let floor_material = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      @pbr.StandardMaterial::from_color(@color.Color::white()),
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
@@ -195,7 +195,7 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
 
   let cube_material = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      @pbr.StandardMaterial::from_color(@color.Color::white()),
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
@@ -228,7 +228,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     light,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::PointLight()
-    .with_color(@sprite.Color::srgb(1.0F, 0.76F, 0.84F))
+    .with_color(@color.Color::srgb(1.0F, 0.76F, 0.84F))
     .with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
@@ -308,7 +308,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -338,7 +338,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,

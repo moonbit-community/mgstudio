@@ -49,7 +49,7 @@ pub fn[Config] gizmo_draw_sphere_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   sphere : @math.Sphere,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   gizmos.sphere_3d(isometry, sphere.radius, color)
 }
@@ -59,7 +59,7 @@ pub fn[Config] gizmo_draw_capsule_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   capsule : @math.Capsule3d,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let top_center = isometry.transform_point3(
     @math.Vec3::new(0.0F, capsule.half_length, 0.0F),
@@ -99,7 +99,7 @@ pub fn[Config] gizmo_draw_cone_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   cone : @math.Cone,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let half_height = cone.height * 0.5F
   let tip = isometry.transform_point3(@math.Vec3::new(0.0F, half_height, 0.0F))
@@ -127,7 +127,7 @@ pub fn[Config] gizmo_draw_torus_3d(
   gizmos : @sprite.Gizmos[Config],
   isometry : @math.Isometry3d,
   torus : @math.Torus,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   let major_ring_local = gizmo_dim3_local_ring_points(
     torus.major_radius,

@@ -207,7 +207,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
         @ui.Node::Node(),
         @text.Text::new("Move the player with WASD"),
         font,
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -219,7 +219,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
         @ui.Node::Node(),
         @text.Text::new("Rotate the camera with the mouse"),
         font,
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -263,9 +263,7 @@ fn spawn_environment(
   let sphere_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.73F, 0.86F, 0.95F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.73F, 0.86F, 0.95F)),
     )
 
   for x in 0..<SPHERES_IN_X {

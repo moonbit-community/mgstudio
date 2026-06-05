@@ -75,7 +75,7 @@ fn find_top_material_and_mesh(
   ],
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
-  let target_color = @sprite.Color::hsl(elapsed * 100.0F, 0.9F, 0.7F)
+  let target_color = @color.Color::hsl(elapsed * 100.0F, 0.9F, 0.7F)
   let target_y = 1.5F + 0.5F * @math.sin(elapsed / 2.0F)
 
   try! query.view(fn(_entity, data) {

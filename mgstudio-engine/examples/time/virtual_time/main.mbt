@@ -155,7 +155,7 @@ fn setup(world : @ecs.World) -> Unit {
   let virtual_sprite = try! world.spawn_bundle(
     (
       @sprite.Sprite::from_image(texture)
-      .with_color(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
+      .with_color(@color.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(256.0F, 256.0F))),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, -160.0F),
@@ -183,7 +183,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   virtual_time_state.val.real_text = Some(real_text)
@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
   .with_bounds(@text.TextBounds::new_horizontal(300.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
   .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
@@ -222,7 +222,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Right))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

@@ -110,12 +110,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 
 ///|
 fn create_point_light() -> @pbr.PointLight {
-  @pbr.PointLight::new(@sprite.Color::white(), 100_000.0F, 20.0F, false)
+  @pbr.PointLight::new(@color.Color::white(), 100_000.0F, 20.0F, false)
 }
 
 ///|
 fn create_directional_light() -> @pbr.DirectionalLight {
-  @pbr.DirectionalLight::new(@sprite.Color::white(), 1000.0F, false)
+  @pbr.DirectionalLight::new(@color.Color::white(), 1000.0F, false)
 }
 
 ///|
@@ -186,9 +186,7 @@ fn setup(world : @ecs.World) -> Unit {
   let scratched_gold = asset_server.load("textures/ScratchedGold-Normal.png")
 
   let car_paint = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F))
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
     .with_normal_map_texture(Some(blue_noise))
@@ -198,9 +196,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_sphere(world, sphere, car_paint, @math.Vec3::new(-1.0F, 1.0F, 0.0F))
 
   let coated_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.9F, 0.9F, 0.9F, 0.3F),
-    )
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.9F, 0.9F, 0.3F))
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
@@ -211,7 +207,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let scratched_gold_ball = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
+      @color.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)
@@ -310,7 +306,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

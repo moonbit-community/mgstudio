@@ -59,7 +59,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
@@ -206,7 +206,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     )
     let first_handle = @scene.scene_register_gltf_scene(

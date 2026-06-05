@@ -100,7 +100,7 @@ let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref({
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -209,7 +209,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       entity,
       @pbr.ecs_key_directional_light,
       @pbr.DirectionalLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         if state.light_type == LightType::Directional {
           DIRECTIONAL_ILLUMINANCE
         } else {
@@ -228,7 +228,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       entity,
       @pbr.ecs_key_point_light,
       @pbr.PointLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         if state.light_type == LightType::Point {
           POINT_LIGHT_INTENSITY
         } else {
@@ -250,7 +250,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       entity,
       @pbr.ecs_key_spot_light,
       @pbr.SpotLight::new(
-        @sprite.Color::white(),
+        @color.Color::white(),
         if state.light_type == LightType::Spot {
           SPOT_LIGHT_INTENSITY
         } else {
@@ -401,7 +401,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ground_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.06F, 0.06F, 0.06F, 1.0F),
+      @color.Color::new(0.06F, 0.06F, 0.06F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
@@ -438,13 +438,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   contact_shadows_state.val.help_text = Some(help_text)
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
+  set_global_ambient_light(world, @color.Color::white(), 0.0F)
   apply_camera_components(world)
   apply_light_state(world)
   apply_ground_receive_shadows(world)

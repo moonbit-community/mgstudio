@@ -28,7 +28,7 @@ fn rapier2d_rope_joint2_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.87F, 0.92F, 0.96F, 1.0F),
+      @color.Color::new(0.87F, 0.92F, 0.96F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -84,7 +84,7 @@ fn rapier2d_rope_joint2_setup(world : @ecs.World) -> Unit {
     bob,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.95F, 0.55F, 0.30F, 1.0F))
+    .with_color(@color.Color::new(0.95F, 0.55F, 0.30F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(36.0F, 36.0F))),
   )
   try! world.set_by_key(

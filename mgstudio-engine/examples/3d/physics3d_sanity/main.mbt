@@ -44,7 +44,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   }
   let floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
+      @color.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
     ),
   )
   let floor_bundle = @pbr.MeshMaterial3dBundle::new(
@@ -76,9 +76,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   )
 
   let ball_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.9F, 0.2F, 0.2F, 1.0F),
-    ),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.2F, 0.2F, 1.0F)),
   )
   let ball_bundle = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -105,7 +103,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       0.45F,
     ),
   )
@@ -113,7 +111,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 100000.0F, 2000.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 100000.0F, 2000.0F, false),
   )
   try! world.set_by_key(
     light,

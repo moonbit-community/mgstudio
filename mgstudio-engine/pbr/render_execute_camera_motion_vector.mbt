@@ -217,7 +217,7 @@ fn render3d_execute_camera_motion_vector_pass(
         -1,
         0.0F,
         @math.Quat::identity(),
-        @sprite.Color::white(),
+        @color.Color::white(),
         0.0F,
         0.0F,
         render3d_mesh_flags(extracted_mesh),

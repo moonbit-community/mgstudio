@@ -97,7 +97,7 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
         (
           @text.Text2d::new(text_string),
           text_font,
-          @text.TextColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+          @text.TextColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
           @sprite.Anchor::center(),
           @text.TextBounds::new_horizontal(1000.0F),
           text_layout,

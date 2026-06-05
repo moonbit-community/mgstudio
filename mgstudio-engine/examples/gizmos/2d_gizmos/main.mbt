@@ -158,8 +158,8 @@ fn cycle_line_joint_backward(
 }
 
 ///|
-fn wave_points(seconds : Float) -> Array[(@math.Vec2, @sprite.Color)] {
-  let points : Array[(@math.Vec2, @sprite.Color)] = []
+fn wave_points(seconds : Float) -> Array[(@math.Vec2, @color.Color)] {
+  let points : Array[(@math.Vec2, @color.Color)] = []
   let steps = 64
   for i in 0..<=steps {
     let t = Float::from_double(i.to_double()) /
@@ -167,9 +167,9 @@ fn wave_points(seconds : Float) -> Array[(@math.Vec2, @sprite.Color)] {
     let x = (t - 0.5F) * 600.0F
     let y = @math.sin(x / 25.0F + seconds) * 100.0F
     let color = if t < 0.5F {
-      @sprite.Color::srgb(0.0F, 0.8F, 0.8F)
+      @color.Color::srgb(0.0F, 0.8F, 0.8F)
     } else {
-      @sprite.Color::srgb(1.0F, 0.2F, 0.6F)
+      @color.Color::srgb(1.0F, 0.2F, 0.6F)
     }
     points.push((@math.Vec2::new(x, y), color))
   }
@@ -202,7 +202,7 @@ fn spawn_help_overlay(
           "Arrow Left/Right: straight gizmo line width\nArrow Up/Down: round gizmo line width\n1 / 2: toggle straight / round gizmos\nU / I: cycle line styles\nJ / K: cycle line joins\nSpace: pause virtual time",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
@@ -258,12 +258,12 @@ fn draw_example_collection(
   gizmos.line_2d(
     @math.Vec2::new(0.0F, -sin_t_scaled),
     @math.Vec2::new(-80.0F, -80.0F),
-    @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
+    @color.Color::srgb(1.0F, 0.0F, 0.0F),
   )
   gizmos.ray_2d(
     @math.Vec2::new(0.0F, sin_t_scaled),
     @math.Vec2::new(80.0F, 80.0F),
-    @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+    @color.Color::srgb(0.0F, 1.0F, 0.0F),
   )
 
   ignore(
@@ -272,27 +272,27 @@ fn draw_example_collection(
       @gizmos.Isometry2d::identity(),
       @math.IVec2::new(16, 9),
       @math.Vec2::new(80.0F, 80.0F),
-      @sprite.Color::srgb(0.05F, 0.05F, 0.05F),
+      @color.Color::srgb(0.05F, 0.05F, 0.05F),
     )
     .outer_edges(),
   )
 
   gizmos.linestrip_gradient_2d([
-    (@math.Vec2::new(0.0F, 300.0F), @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
-    (@math.Vec2::new(-255.0F, -155.0F), @sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
-    (@math.Vec2::new(255.0F, -155.0F), @sprite.Color::srgb(0.0F, 1.0F, 0.0F)),
-    (@math.Vec2::new(0.0F, 300.0F), @sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
+    (@math.Vec2::new(0.0F, 300.0F), @color.Color::srgb(0.0F, 0.0F, 1.0F)),
+    (@math.Vec2::new(-255.0F, -155.0F), @color.Color::srgb(1.0F, 0.0F, 0.0F)),
+    (@math.Vec2::new(255.0F, -155.0F), @color.Color::srgb(0.0F, 1.0F, 0.0F)),
+    (@math.Vec2::new(0.0F, 300.0F), @color.Color::srgb(0.0F, 0.0F, 1.0F)),
   ])
 
   gizmos.rect_2d(
     @gizmos.Isometry2d::identity(),
     @math.Vec2::new(650.0F, 650.0F),
-    @sprite.Color::black(),
+    @color.Color::black(),
   )
   gizmos.cross_2d(
     @gizmos.Isometry2d::new(@math.Vec2::new(-160.0F, 120.0F), 0.0F),
     12.0F,
-    @sprite.Color::srgb(1.0F, 0.0F, 1.0F),
+    @color.Color::srgb(1.0F, 0.0F, 1.0F),
   )
   gizmos.curve_gradient_2d(wave_points(seconds))
 
@@ -301,7 +301,7 @@ fn draw_example_collection(
     .rounded_rect_2d(
       @gizmos.Isometry2d::identity(),
       @math.Vec2::new(630.0F, 630.0F),
-      @sprite.Color::black(),
+      @color.Color::black(),
     )
     .corner_radius(@math.cos(seconds / 3.0F) * 100.0F),
   )
@@ -310,7 +310,7 @@ fn draw_example_collection(
     .circle_2d(
       @gizmos.Isometry2d::identity(),
       300.0F,
-      @sprite.Color::srgb(0.0F, 0.0F, 0.5F),
+      @color.Color::srgb(0.0F, 0.0F, 0.5F),
     )
     .resolution(64),
   )
@@ -318,7 +318,7 @@ fn draw_example_collection(
     my_gizmos.ellipse_2d(
       @gizmos.Isometry2d::new(@math.Vec2::new(0.0F, 0.0F), seconds),
       @math.Vec2::new(100.0F, 200.0F),
-      @sprite.Color::srgb(0.6F, 0.8F, 0.2F),
+      @color.Color::srgb(0.6F, 0.8F, 0.2F),
     ),
   )
   ignore(
@@ -326,7 +326,7 @@ fn draw_example_collection(
       @gizmos.Isometry2d::new(@math.Vec2::new(0.0F, 0.0F), sin_t_scaled / 10.0F),
       @math.pi_half(),
       310.0F,
-      @sprite.Color::srgb(1.0F, 0.27F, 0.0F),
+      @color.Color::srgb(1.0F, 0.27F, 0.0F),
     ),
   )
   ignore(
@@ -334,7 +334,7 @@ fn draw_example_collection(
       @gizmos.Isometry2d::identity(),
       @math.pi_half(),
       80.0F,
-      @sprite.Color::srgb(1.0F, 0.27F, 0.0F),
+      @color.Color::srgb(1.0F, 0.27F, 0.0F),
     ),
   )
   ignore(
@@ -342,7 +342,7 @@ fn draw_example_collection(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(20.0F, 0.0F),
       @math.Vec2::new(0.0F, 20.0F),
-      @sprite.Color::srgb(1.0F, 0.27F, 0.0F),
+      @color.Color::srgb(1.0F, 0.27F, 0.0F),
     ),
   )
   ignore(
@@ -350,7 +350,7 @@ fn draw_example_collection(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(40.0F, 0.0F),
       @math.Vec2::new(0.0F, 40.0F),
-      @sprite.Color::srgb(1.0F, 0.27F, 0.0F),
+      @color.Color::srgb(1.0F, 0.27F, 0.0F),
     ),
   )
 
@@ -362,7 +362,7 @@ fn draw_example_collection(
         @math.cos(-sin_t_scaled / 10.0F) * 50.0F,
         @math.sin(-sin_t_scaled / 10.0F) * 50.0F,
       ),
-      @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
+      @color.Color::srgb(1.0F, 1.0F, 0.0F),
     )
     .with_double_end()
     .with_tip_length(10.0F),

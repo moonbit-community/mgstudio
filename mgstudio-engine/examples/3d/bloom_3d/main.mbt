@@ -107,7 +107,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera().with_clear_color(@sprite.Color::black()),
+      @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
       @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -120,22 +120,22 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(camera, BloomCamera::component(), BloomCamera::{  })
 
   let material_emissive1 = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
-      @sprite.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
+    @pbr.StandardMaterial::from_color(@color.Color::black()).with_emissive(
+      @color.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
     ),
   )
   let material_emissive2 = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
-      @sprite.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
+    @pbr.StandardMaterial::from_color(@color.Color::black()).with_emissive(
+      @color.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
     ),
   )
   let material_emissive3 = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
-      @sprite.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
+    @pbr.StandardMaterial::from_color(@color.Color::black()).with_emissive(
+      @color.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
   let material_non_emissive = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black()),
+    @pbr.StandardMaterial::from_color(@color.Color::black()),
   )
 
   let sphere_mesh = @mesh.Mesh3d::new(
@@ -187,7 +187,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

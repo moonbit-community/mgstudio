@@ -32,7 +32,7 @@ pub fn SpriteAlphaMode::default() -> SpriteAlphaMode {
 pub(all) struct SpriteMesh {
   mut image : @asset.Handle[@asset.Image]
   mut texture_atlas : @asset.TextureAtlas?
-  mut color : Color
+  mut color : @color.Color
   mut flip_x : Bool
   mut flip_y : Bool
   mut custom_size : @math.Vec2?
@@ -45,7 +45,7 @@ pub(all) struct SpriteMesh {
 pub struct SpriteMaterial {
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
-  color : Color
+  color : @color.Color
   flip_x : Bool
   flip_y : Bool
   custom_size : @math.Vec2?
@@ -93,7 +93,7 @@ pub fn SpriteMaterial::SpriteMaterial() -> SpriteMaterial {
   SpriteMaterial::{
     image: @asset.Handle::new(0),
     texture_atlas: None,
-    color: Color::white(),
+    color: @color.Color::white(),
     flip_x: false,
     flip_y: false,
     custom_size: None,
@@ -211,7 +211,7 @@ pub fn SpriteMesh::from_image(
   SpriteMesh::{
     image,
     texture_atlas: None,
-    color: Color::white(),
+    color: @color.Color::white(),
     flip_x: false,
     flip_y: false,
     custom_size: None,
@@ -235,7 +235,10 @@ pub fn SpriteMesh::from_atlas_image(
 }
 
 ///|
-pub fn SpriteMesh::from_color(color : Color, size : @math.Vec2) -> SpriteMesh {
+pub fn SpriteMesh::from_color(
+  color : @color.Color,
+  size : @math.Vec2,
+) -> SpriteMesh {
   SpriteMesh::{ ..SpriteMesh(), color, custom_size: Some(size) }
 }
 
@@ -248,7 +251,10 @@ pub fn SpriteMesh::with_texture_atlas(
 }
 
 ///|
-pub fn SpriteMesh::with_color(self : SpriteMesh, color : Color) -> SpriteMesh {
+pub fn SpriteMesh::with_color(
+  self : SpriteMesh,
+  color : @color.Color,
+) -> SpriteMesh {
   SpriteMesh::{ ..self, color, }
 }
 

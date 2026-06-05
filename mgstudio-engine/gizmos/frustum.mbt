@@ -23,7 +23,7 @@ let ecs_key_show_frustum_gizmo : @ecs.ComponentKey[ShowFrustumGizmo] = @ecs.regi
 ///|
 pub(all) struct FrustumGizmoConfigGroup {
   draw_all : Bool
-  default_color : @sprite.Color?
+  default_color : @color.Color?
 }
 
 ///|
@@ -84,7 +84,7 @@ pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_conf
 
 ///|
 pub struct ShowFrustumGizmo {
-  color : @sprite.Color?
+  color : @color.Color?
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn ShowFrustumGizmo::ShowFrustumGizmo() -> ShowFrustumGizmo {
 ///|
 pub fn ShowFrustumGizmo::with_color(
   self : ShowFrustumGizmo,
-  color : @sprite.Color?,
+  color : @color.Color?,
 ) -> ShowFrustumGizmo {
   ignore(self)
   ShowFrustumGizmo::{ color, }
@@ -107,21 +107,21 @@ pub impl @ecs.Component for ShowFrustumGizmo with fn component() {
 }
 
 ///|
-fn frustum_gizmo_color_from_entity(entity : @core.Entity) -> @sprite.Color {
+fn frustum_gizmo_color_from_entity(entity : @core.Entity) -> @color.Color {
   let seed = Float::from_double(entity.id.to_double()) +
     Float::from_double(entity.generation.to_double()) * 131.0F
   let r = 0.2F + 0.8F * ((@math.sin(seed * 0.67F) + 1.0F) * 0.5F)
   let g = 0.2F + 0.8F * ((@math.sin(seed * 1.37F + 0.9F) + 1.0F) * 0.5F)
   let b = 0.2F + 0.8F * ((@math.sin(seed * 1.97F + 2.1F) + 1.0F) * 0.5F)
-  @sprite.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
 fn frustum_gizmo_resolve_color(
   entity : @core.Entity,
-  override_color : @sprite.Color?,
+  override_color : @color.Color?,
   config_group : FrustumGizmoConfigGroup,
-) -> @sprite.Color {
+) -> @color.Color {
   match override_color {
     Some(color) => color
     None =>
@@ -136,7 +136,7 @@ fn frustum_gizmo_resolve_color(
 fn draw_frustum_outline(
   gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
   frustum : @camera.Frustum,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   match frustum.corners() {
     Some(corners) if corners.length() == 8 => {

@@ -24,7 +24,7 @@ fn rotate_vec2(v : @math.Vec2, radians : Float) -> @math.Vec2 {
 fn button_color_for_state(
   colors : @ui.ButtonColors,
   state : @ui.Interaction?,
-) -> @sprite.Color {
+) -> @color.Color {
   match state {
     Some(s) =>
       match s {

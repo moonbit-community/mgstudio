@@ -20,7 +20,7 @@ test "pbr fog: bridge prepares view fog uniforms from DistanceFog component" {
   try! (world.set_by_key(
     with_fog,
     ecs_key_distance_fog,
-    DistanceFog::new(@sprite.Color::white(), FogFalloff3d::exponential(0.1F)),
+    DistanceFog::new(@color.Color::white(), FogFalloff3d::exponential(0.1F)),
   )
   |> ignore)
 

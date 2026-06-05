@@ -65,7 +65,7 @@ fn setup(
           .peek()
           .add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
+              @color.Color::srgb(1.0F, 1.0F, 0.0F),
             ),
           ),
         ),
@@ -89,7 +89,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials
           .peek()
-          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
+          .add(@pbr.StandardMaterial::from_color(@color.Color::white())),
         ),
         cube_spawn,
         CubeState::{

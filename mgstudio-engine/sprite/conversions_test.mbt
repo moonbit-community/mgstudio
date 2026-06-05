@@ -119,7 +119,7 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
   let materials : @asset.Assets[
     @sprite_render_mesh2d_color_material.ColorMaterial,
   ] = @asset.Assets::new()
-  let expected_color = Color::srgb(0.25F, 0.5F, 0.75F)
+  let expected_color = @color.Color::srgb(0.25F, 0.5F, 0.75F)
   let mesh_handle = meshes |> add_mesh(Rectangle::new(10.0F, 20.0F))
   let material_handle = @sprite_render_mesh2d_color_material.add_material(
     materials, expected_color,

@@ -1422,7 +1422,7 @@ fn text_push_overlay_sprite_slice_batch(
   rotation : Float,
   draw_scale : @math.Vec2,
   z : Float,
-  color : @sprite.Color,
+  color : @color.Color,
   cull_center : @math.Vec2,
   cull_half_size : @math.Vec2,
   layers : @camera_render_layers.RenderLayers,
@@ -1889,14 +1889,14 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     }
     let no_rotation = rot > -0.000001F && rot < 0.000001F
     let mut cached_span_index = -1
-    let mut cached_span_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+    let mut cached_span_color = @color.Color::srgb(1.0F, 1.0F, 1.0F)
 
     let instance_main_batches : Array[@sprite.OverlaySpriteUvScissorSlices] = []
     let mut main_batch_slices_xy_uv : Array[Float] = []
     let mut main_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut main_batch_texture_id = -1
     let mut main_batch_span_index = -1
-    let mut main_batch_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+    let mut main_batch_color = @color.Color::srgb(1.0F, 1.0F, 1.0F)
     let main_batch_bounds = OverlaySpriteSliceBatchBounds::OverlaySpriteSliceBatchBounds()
     instance_main_batches.reserve_capacity(run_count + 1)
     main_batch_slices_xy_uv.reserve_capacity(glyph_count * 6)

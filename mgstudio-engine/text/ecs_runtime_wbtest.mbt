@@ -416,12 +416,12 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   try! world.set_by_key(
     first,
     ecs_key_text_color,
-    TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)),
+    TextColor::new(@color.Color::srgb(0.83F, 0.83F, 0.83F)),
   )
   try! world.set_by_key(
     first,
     ecs_key_text_background_color,
-    TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F)),
+    TextBackgroundColor::new(@color.Color::srgb(0.0F, 0.0F, 0.55F)),
   )
   try! (world
   .entity_mut(second)
@@ -431,12 +431,12 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   try! world.set_by_key(
     second,
     ecs_key_text_color,
-    TextColor::new(@sprite.Color::srgb(1.0F, 0.63F, 0.48F)),
+    TextColor::new(@color.Color::srgb(1.0F, 0.63F, 0.48F)),
   )
   try! world.set_by_key(
     second,
     ecs_key_text_background_color,
-    TextBackgroundColor::new(@sprite.Color::srgb(0.7F, 0.441F, 0.336F)),
+    TextBackgroundColor::new(@color.Color::srgb(0.7F, 0.441F, 0.336F)),
   )
 
   let span_bundles = text_ecs_collect_span_bundles_for_entity(
@@ -451,9 +451,9 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
     text_span_bundle_eq(
       span_bundles[0],
       TextSpanBundle::new(TextSpan::new("::"), root_font)
-      .with_color(TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)))
+      .with_color(TextColor::new(@color.Color::srgb(0.83F, 0.83F, 0.83F)))
       .with_background_color(
-        Some(TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F))),
+        Some(TextBackgroundColor::new(@color.Color::srgb(0.0F, 0.0F, 0.55F))),
       ),
     ),
     content="true",
@@ -462,11 +462,9 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
     text_span_bundle_eq(
       span_bundles[1],
       TextSpanBundle::new(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "), root_font)
-      .with_color(TextColor::new(@sprite.Color::srgb(1.0F, 0.63F, 0.48F)))
+      .with_color(TextColor::new(@color.Color::srgb(1.0F, 0.63F, 0.48F)))
       .with_background_color(
-        Some(
-          TextBackgroundColor::new(@sprite.Color::srgb(0.7F, 0.441F, 0.336F)),
-        ),
+        Some(TextBackgroundColor::new(@color.Color::srgb(0.7F, 0.441F, 0.336F))),
       ),
     ),
     content="true",

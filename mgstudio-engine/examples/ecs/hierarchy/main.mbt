@@ -52,7 +52,7 @@ fn setup(world : @ecs.World) -> Unit {
   let first_child = try! world.spawn_bundle(
     (
       @sprite.Sprite::from_image(texture).with_color(
-        @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+        @color.Color::srgb(0.0F, 0.0F, 1.0F),
       ),
       @transform.Transform::from_xyz(250.0F, 0.0F, 0.0F).with_scale(
         @math.Vec3::splat(0.75F),
@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
   let second_child = try! world.spawn_bundle(
     (
       @sprite.Sprite::from_image(texture).with_color(
-        @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+        @color.Color::srgb(0.0F, 1.0F, 0.0F),
       ),
       @transform.Transform::from_xyz(0.0F, 250.0F, 0.0F).with_scale(
         @math.Vec3::splat(0.75F),

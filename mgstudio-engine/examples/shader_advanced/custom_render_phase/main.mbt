@@ -57,7 +57,7 @@ fn setup(
       .peek()
       .add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.95F, 0.95F, 0.98F),
+          @color.Color::srgb(0.95F, 0.95F, 0.98F),
         ).with_perceptual_roughness(0.4F),
       )
     if i % 2 == 0 {
@@ -88,7 +88,7 @@ fn setup(
   }
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_400_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_400_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(0.0F, 7.0F, 4.0F),
     ),
   )

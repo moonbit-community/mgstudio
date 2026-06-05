@@ -166,7 +166,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+        @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
     ),
     @transform.Transform::identity(),
@@ -182,7 +182,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+          @color.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
         ),
       ),
     ),
@@ -234,7 +234,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   world.insert_resource(LogDiagnosticsCommandsText::resource(), {

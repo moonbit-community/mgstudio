@@ -109,7 +109,7 @@ fn setup(
       (
         @camera_components2d.Camera2d::Camera2d(),
         @camera_camera.Camera::new(
-          @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
+          @color.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),
       ),
     ),
@@ -177,8 +177,8 @@ fn[T : @math.Bounded2d] draw_bounds_for_shape(
   transform : @transform.GlobalTransform,
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
-  let red = @sprite.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
-  let blue = @sprite.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
+  let red = @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
+  let blue = @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
   let world_transform = transform.to_transform_approx()
   let translation = @math.Vec2::new(
     world_transform.translation.x,

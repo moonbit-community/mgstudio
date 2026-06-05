@@ -17,7 +17,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .insert_resource(
-    @camera_clear_color.ClearColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.9F)),
+    @camera_clear_color.ClearColor::new(@color.Color::srgb(0.5F, 0.5F, 0.9F)),
   )
   .add_systems(@app.Startup, @app.system_config_param2(setup))
   .run()
@@ -40,15 +40,15 @@ fn setup(
     @sprite_tilemap_chunk.TileOrientation::MirrorHRotate180,
     @sprite_tilemap_chunk.TileOrientation::MirrorHRotate270,
   ]
-  let colors : Array[@sprite.Color] = [
-    @sprite.Color::white(),
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.25F),
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.25F),
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.25F),
-    @sprite.Color::new(1.0F, 1.0F, 1.0F, 0.5F),
+  let colors : Array[@color.Color] = [
+    @color.Color::white(),
+    @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @color.Color::new(1.0F, 0.0F, 0.0F, 0.25F),
+    @color.Color::new(0.0F, 1.0F, 0.0F, 0.25F),
+    @color.Color::new(0.0F, 0.0F, 1.0F, 0.25F),
+    @color.Color::new(1.0F, 1.0F, 1.0F, 0.5F),
   ]
   let tile_data : Array[@sprite_tilemap_chunk.TileData?] = []
   for i in 0..<(chunk_size.x * chunk_size.y) {

@@ -129,7 +129,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn create_transparent_material(
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @asset.Handle[@pbr.StandardMaterial] {
   @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(color).with_alpha_mode(
@@ -166,13 +166,13 @@ fn spawn_scene_spheres(
   let sphere = uv_sphere_mesh(2.0F, 18, 32)
   let alpha = 0.25F
   let mat_a = create_transparent_material(
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, alpha),
+    @color.Color::new(1.0F, 0.0F, 0.0F, alpha),
   )
   let mat_b = create_transparent_material(
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, alpha),
+    @color.Color::new(0.0F, 1.0F, 0.0F, alpha),
   )
   let mat_c = create_transparent_material(
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, alpha),
+    @color.Color::new(0.0F, 0.0F, 1.0F, alpha),
   )
   entities.push(
     spawn_mesh_with_layer(
@@ -217,19 +217,19 @@ fn spawn_scene_quads(
   )
   let rotation = @math.Quat::from_rotation_y(0.5F)
   let mat0 = create_transparent_material(
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+    @color.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
   )
   let mat1 = create_transparent_material(
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.8F),
+    @color.Color::new(0.0F, 0.0F, 1.0F, 0.8F),
   )
   let mat2 = create_transparent_material(
-    @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.5F),
+    @color.Color::new(0.0F, 1.0F, 0.0F, 0.5F),
   )
   let mat3 = create_transparent_material(
-    @sprite.Color::new(1.0F, 1.0F, 0.0F, 0.3F),
+    @color.Color::new(1.0F, 1.0F, 0.0F, 0.3F),
   )
   let mat4 = create_transparent_material(
-    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
+    @color.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
   )
   entities.push(
     spawn_mesh_with_layer(
@@ -294,11 +294,11 @@ fn spawn_scene_occlusion(
 
   let solid_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
+      @color.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
     ),
   )
   let transparent = create_transparent_material(
-    @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+    @color.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
   )
 
   // Front pair.
@@ -503,7 +503,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()

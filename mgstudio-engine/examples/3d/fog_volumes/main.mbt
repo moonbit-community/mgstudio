@@ -96,7 +96,7 @@ fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
 
   let fog = @pbr.DistanceFog::DistanceFog()
     .with_color(
-      @sprite.Color::new(
+      @color.Color::new(
         clamp01(fog_color.r * brightness + ambient_lift),
         clamp01(fog_color.g * brightness + ambient_lift),
         clamp01(fog_color.b * brightness + ambient_lift),
@@ -104,7 +104,7 @@ fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
       ),
     )
     .with_directional_light_color(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+      @color.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
     )
     .with_directional_light_exponent(24.0F)
     .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
@@ -179,12 +179,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   let fog_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
+      @color.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@sprite.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
+    .with_emissive(@color.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
   )
 
   let head = @pbr.MeshMaterial3dBundle::new(
@@ -248,11 +248,11 @@ fn setup(world : @ecs.World) -> Unit {
     .with_density_factor(1.0F)
     .with_scattering(1.0F)
     .with_absorption(0.3F)
-    .with_fog_color(@sprite.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
+    .with_fog_color(@color.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
   )
 
   spawn_volume_proxy(world)
@@ -269,7 +269,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 32_000.0F, true),
   )
   fog_volumes_state.val.light = Some(light)
 

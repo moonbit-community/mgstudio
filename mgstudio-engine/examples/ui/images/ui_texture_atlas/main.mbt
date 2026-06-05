@@ -54,11 +54,11 @@ fn setup(
         @ui.Node::Node()
         .with_width(@ui.Val::Px(256.0F))
         .with_height(@ui.Val::Px(256.0F)),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
         @ui.Outline::new(
           @ui.Val::Px(8.0F),
           @ui.Val::Px(0.0F),
-          @sprite.Color::srgb(0.86F, 0.08F, 0.24F),
+          @color.Color::srgb(0.86F, 0.08F, 0.24F),
         ),
       ),
     ),
@@ -76,7 +76,7 @@ fn setup(
       (
         @hierarchy.Parent::new(prompt),
         @text.TextSpan::new("space"),
-        @text.TextColor::new(@sprite.Color::srgb(1.0F, 0.92F, 0.0F)),
+        @text.TextColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F)),
         @text.TextFont::from_font_size(@text.FontSize::Px(20.0F)).with_font(
           font,
         ),

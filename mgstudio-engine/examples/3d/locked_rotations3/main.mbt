@@ -41,7 +41,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Vec3::new(0.0F, 3.0F, 0.0F),
     @math.Vec3::new(0.2F, 0.6F, 2.0F),
-    @sprite.Color::new(0.95F, 0.55F, 0.20F, 1.0F),
+    @color.Color::new(0.95F, 0.55F, 0.20F, 1.0F),
     Some(@physics3d.RigidBody3d::dynamic()),
   )
   try! world.set_by_key(
@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Vec3::new(0.0F, 5.0F, 0.0F),
     @math.Vec3::new(0.6F, 0.4F, 0.4F),
-    @sprite.Color::new(0.20F, 0.70F, 0.95F, 1.0F),
+    @color.Color::new(0.20F, 0.70F, 0.95F, 1.0F),
     Some(@physics3d.RigidBody3d::dynamic()),
   )
   try! world.set_by_key(

@@ -90,7 +90,7 @@ fn setup_visual(world : @ecs.World) -> Unit {
     (
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera().with_clear_color(
-        @sprite.Color::srgb(0.16F, 0.12F, 0.18F),
+        @color.Color::srgb(0.16F, 0.12F, 0.18F),
       ),
       @transform.Transform::identity(),
     ),

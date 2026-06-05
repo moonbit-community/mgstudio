@@ -82,7 +82,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
         Some(asset_server.get().load_image("branding/icon.png")),
       ),
     )
@@ -112,7 +112,7 @@ fn setup(
         .peek()
         .add(
           @pbr.StandardMaterial::from_color(
-            @sprite.Color::srgb(0.1F, 0.11F, 0.15F),
+            @color.Color::srgb(0.1F, 0.11F, 0.15F),
           ),
         ),
       ),

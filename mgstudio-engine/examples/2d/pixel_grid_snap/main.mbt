@@ -163,7 +163,7 @@ fn setup_mesh(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::black(),
+              @color.Color::black(),
             ),
           ),
         ),
@@ -200,7 +200,7 @@ fn setup_camera(
         @camera_camera.Camera::Camera()
         .with_order(-1)
         .with_clear_color(
-          @sprite.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
+          @color.Color::srgba(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),
         @camera_camera.RenderTarget::Image(image_handle),
         InGameCamera::{  },

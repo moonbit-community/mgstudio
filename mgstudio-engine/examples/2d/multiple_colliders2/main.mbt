@@ -28,7 +28,7 @@ fn rapier2d_multiple_colliders2_setup(world : @ecs.World) -> Unit {
   .resource(@camera_clear_color.ClearColor::resource())
   .insert(
     @camera_clear_color.ClearColor::new(
-      @sprite.Color::new(0.62F, 0.72F, 0.54F, 1.0F),
+      @color.Color::new(0.62F, 0.72F, 0.54F, 1.0F),
     ),
   )
   try! (world.spawn_bundle(
@@ -63,7 +63,7 @@ fn rapier2d_multiple_colliders2_setup(world : @ecs.World) -> Unit {
     body,
     @sprite.ecs_key_sprite,
     @sprite.Sprite::from_image(texture)
-    .with_color(@sprite.Color::new(0.85F, 0.62F, 0.18F, 1.0F))
+    .with_color(@color.Color::new(0.85F, 0.62F, 0.18F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(90.0F, 54.0F))),
   )
   try! world.set_by_key(

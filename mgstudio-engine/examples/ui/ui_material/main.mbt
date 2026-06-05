@@ -44,7 +44,7 @@ fn setup(
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.1F, 0.14F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.1F, 0.14F)),
     ),
   )
 
@@ -59,8 +59,8 @@ fn setup(
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center)
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(18.0F))),
-      @ui.BorderColor::new(@sprite.Color::srgb(0.92F, 0.95F, 1.0F)),
-      @ui.ImageNode::new(image).with_color(@sprite.Color::white()),
+      @ui.BorderColor::new(@color.Color::srgb(0.92F, 0.95F, 1.0F)),
+      @ui.ImageNode::new(image).with_color(@color.Color::white()),
     ),
   )
   |> ignore
@@ -77,7 +77,7 @@ fn animate_material_node(
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, data) {
     let (image_node, border_color) = data
-    let tint = @sprite.Color::srgb(
+    let tint = @color.Color::srgb(
       0.45F + 0.4F * @math.sin(elapsed * 0.7F),
       0.55F + 0.35F * @math.sin(elapsed * 1.1F + 1.2F),
       0.62F + 0.3F * @math.sin(elapsed * 1.5F + 2.0F),
@@ -86,7 +86,7 @@ fn animate_material_node(
     image_node.set(image)
     border_color.set(
       @ui.BorderColor::new(
-        @sprite.Color::srgb(
+        @color.Color::srgb(
           0.7F + 0.2F * @math.sin(elapsed),
           0.75F + 0.2F * @math.sin(elapsed + 1.4F),
           0.95F,

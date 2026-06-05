@@ -84,7 +84,7 @@ fn spawn_cakes(commands : @app.Commands, count : Int) -> Unit {
       commands.spawn(
         (
           @sprite.Sprite::sized(@math.Vec2::new(28.0F, 28.0F)).with_color(
-            @sprite.Color::hsl(float_from_int(i * 37 % 360), 0.82F, 0.56F),
+            @color.Color::hsl(float_from_int(i * 37 % 360), 0.82F, 0.56F),
           ),
           @transform.Transform::from_xyz(x, y, 0.0F),
           Cake::{  },
@@ -102,7 +102,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(40.0F, 40.0F)).with_color(
-          @sprite.Color::srgb(0.25F, 0.9F, 0.4F),
+          @color.Color::srgb(0.25F, 0.9F, 0.4F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.5F),
         Player::{  },

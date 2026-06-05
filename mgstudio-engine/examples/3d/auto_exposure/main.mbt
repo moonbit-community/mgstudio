@@ -70,7 +70,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -126,7 +126,7 @@ fn spawn_wall_panel(
   let target = height
   let position = side.mul_scalar(2.0F).add(height)
 
-  let base_color = @sprite.Color::srgb(
+  let base_color = @color.Color::srgb(
     clampf(0.5F + side.x * 0.5F, 0.0F, 1.0F),
     clampf(0.75F - level_f * 0.25F, 0.0F, 1.0F),
     clampf(0.5F + side.z * 0.5F, 0.0F, 1.0F),
@@ -299,13 +299,13 @@ fn setup(world : @ecs.World) -> Unit {
     }
   }
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
+  set_global_ambient_light(world, @color.Color::white(), 0.0F)
 
   let point_light = world.spawn_empty()
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 2_000.0F, 20.0F, false),
   )
   try! world.set_by_key(
     point_light,
@@ -373,7 +373,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
           mask_entity,
           @sprite.ecs_key_sprite,
           mask_sprite.with_color(
-            @sprite.Color::new(color.r, color.g, color.b, next_alpha),
+            @color.Color::new(color.r, color.g, color.b, next_alpha),
           ),
         )
         |> ignore)

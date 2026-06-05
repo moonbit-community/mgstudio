@@ -95,14 +95,14 @@ fn setup(
   let plane_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.28F, 0.5F, 0.32F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.28F, 0.5F, 0.32F)),
     )
   let ship_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.86F, 0.86F, 0.92F),
-      ).with_reflectance(0.3F),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.86F, 0.86F, 0.92F)).with_reflectance(
+        0.3F,
+      ),
     )
 
   ignore(
@@ -129,7 +129,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::new(@sprite.Color::white(), 1_600_000.0F, 30.0F, false),
+        @pbr.PointLight::new(@color.Color::white(), 1_600_000.0F, 30.0F, false),
         @transform.Transform::from_xyz(4.0F, 7.0F, -4.0F),
       ),
     ),

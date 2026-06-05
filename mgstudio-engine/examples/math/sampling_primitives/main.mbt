@@ -39,13 +39,13 @@ fn distance_between_shapes() -> @math.Vec3 {
 }
 
 ///|
-fn inside_point_color() -> @sprite.Color {
-  @sprite.Color::srgba(0.855F, 1.1F, 0.01F, 1.0F)
+fn inside_point_color() -> @color.Color {
+  @color.Color::srgba(0.855F, 1.1F, 0.01F, 1.0F)
 }
 
 ///|
-fn sky_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.02F, 0.06F, 0.15F)
+fn sky_color() -> @color.Color {
+  @color.Color::srgb(0.02F, 0.06F, 0.15F)
 }
 
 ///|
@@ -510,7 +510,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -540,7 +540,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -575,7 +575,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     text_entity,
@@ -624,7 +624,7 @@ fn setup(
       materials
       .peek()
       .add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F))
         .with_perceptual_roughness(0.95F)
         .with_metallic(0.0F),
       ),
@@ -637,7 +637,7 @@ fn setup(
     .peek()
     .add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+        @color.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
       )
       .with_reflectance(0.0F)
       .with_alpha_mode(@pbr.AlphaMode3d::Blend)
@@ -725,16 +725,16 @@ fn setup(
     interior: materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::black())
+      @pbr.StandardMaterial::from_color(@color.Color::black())
       .with_reflectance(0.05F)
-      .with_emissive(@sprite.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
+      .with_emissive(@color.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
     ),
     boundary: materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::black())
+      @pbr.StandardMaterial::from_color(@color.Color::black())
       .with_reflectance(0.05F)
-      .with_emissive(@sprite.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),
+      .with_emissive(@color.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),
     ),
   })
 

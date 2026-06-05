@@ -53,7 +53,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_close(a : @sprite.Color, b : @sprite.Color) -> Bool {
+fn color_close(a : @color.Color, b : @color.Color) -> Bool {
   absf(a.r - b.r) < 0.0001F &&
   absf(a.g - b.g) < 0.0001F &&
   absf(a.b - b.b) < 0.0001F &&
@@ -61,22 +61,22 @@ fn color_close(a : @sprite.Color, b : @sprite.Color) -> Bool {
 }
 
 ///|
-fn color_red() -> @sprite.Color {
-  @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+fn color_red() -> @color.Color {
+  @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_green() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_green() -> @color.Color {
+  @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_default_white() -> @sprite.Color {
-  @sprite.Color::white()
+fn color_default_white() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn wireframe_color_text(color : @sprite.Color) -> String {
+fn wireframe_color_text(color : @color.Color) -> String {
   if color_close(color, color_red()) {
     "Srgba { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 }"
   } else if color_close(color, color_green()) {
@@ -103,7 +103,7 @@ fn setup(
   ],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let black = @sprite.Color::black()
+  let black = @color.Color::black()
 
   ignore(
     commands.spawn(
@@ -209,7 +209,7 @@ fn setup(
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         WireframeHelpText::{  },
       ),

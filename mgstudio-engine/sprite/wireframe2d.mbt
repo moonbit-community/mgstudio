@@ -22,6 +22,6 @@ type Mesh2dWireframe = @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe
 fn wireframe2d_material_color(
   world : @ecs.World,
   wireframe : Mesh2dWireframe,
-) -> Color {
+) -> @color.Color {
   @sprite_render_mesh2d_wireframe2d.wireframe2d_material_color(world, wireframe)
 }

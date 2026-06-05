@@ -34,14 +34,12 @@ fn setup(
   let floor_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.15F, 0.18F, 0.22F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.15F, 0.18F, 0.22F)),
     )
   let torus_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white())
+      @pbr.StandardMaterial::from_color(@color.Color::white())
       .with_base_color_texture(
         Some(asset_server.get().load_image("branding/banner.png")),
       )
@@ -68,7 +66,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_100_000.0F, 25.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_100_000.0F, 25.0F, false),
       @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F),
     ),
   )

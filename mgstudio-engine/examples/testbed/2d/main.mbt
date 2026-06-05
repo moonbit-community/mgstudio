@@ -42,7 +42,7 @@ fn setup(
             @sprite.Sprite::from_image(texture)
             .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F)))
             .with_color(
-              @sprite.Color::hsl(float_from_int(idx % 360), 0.75F, 0.62F),
+              @color.Color::hsl(float_from_int(idx % 360), 0.75F, 0.62F),
             ),
             @transform.Transform::from_xyz(
               float_from_int(x) * SPACING,

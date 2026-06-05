@@ -171,11 +171,11 @@ pub fn KeyframeWeights::new_cubic(
 ///|
 pub struct KeyframeColor {
   time : Float
-  value : @sprite.Color
+  value : @color.Color
 }
 
 ///|
-pub fn KeyframeColor::new(time : Float, value : @sprite.Color) -> KeyframeColor {
+pub fn KeyframeColor::new(time : Float, value : @color.Color) -> KeyframeColor {
   KeyframeColor::{ time, value }
 }
 
@@ -184,7 +184,7 @@ pub(all) enum AnimatableCurve {
   Translation(@math.Curve[@math.Vec3])
   Rotation(@math.Curve[@math.Quat])
   Scale(@math.Curve[@math.Vec3])
-  TextColor(@math.Curve[@sprite.Color])
+  TextColor(@math.Curve[@color.Color])
 }
 
 ///|
@@ -232,12 +232,12 @@ pub struct AnimationClip {
 }
 
 ///|
-pub impl @asset.Asset for AnimationClip with asset_debug_name() {
+pub impl @asset.Asset for AnimationClip with fn asset_debug_name() {
   "mgstudio_animation::AnimationClip"
 }
 
 ///|
-pub impl @asset.Asset for AnimationClip with asset_as_image(_self) {
+pub impl @asset.Asset for AnimationClip with fn asset_as_image(_self) {
   None
 }
 
@@ -247,7 +247,7 @@ let animation_clip_asset_resource_keys : @asset.AssetResourceKeys[AnimationClip]
 )
 
 ///|
-pub impl @asset.Asset for AnimationClip with asset_resource_keys() {
+pub impl @asset.Asset for AnimationClip with fn asset_resource_keys() {
   animation_clip_asset_resource_keys
 }
 
@@ -501,7 +501,7 @@ fn animation_curve_sample_quat_keyframes(
 
 ///|
 fn animation_curve_sample_color_keyframes(
-  curve : @math.Curve[@sprite.Color],
+  curve : @math.Curve[@color.Color],
   sample_count : Int,
 ) -> Array[KeyframeColor] {
   let keyframes : Array[KeyframeColor] = []
@@ -877,7 +877,7 @@ struct AnimationSample {
   rotation : @math.Quat?
   scale : @math.Vec3?
   weights : Array[Float]?
-  text_color : @sprite.Color?
+  text_color : @color.Color?
 }
 
 ///|
@@ -901,7 +901,7 @@ pub fn AnimationSample::weights(self : AnimationSample) -> Array[Float]? {
 }
 
 ///|
-pub fn AnimationSample::text_color(self : AnimationSample) -> @sprite.Color? {
+pub fn AnimationSample::text_color(self : AnimationSample) -> @color.Color? {
   self.text_color
 }
 
@@ -1187,7 +1187,7 @@ fn animation_sample_weights_non_empty(
 fn animation_sample_color(
   keyframes : Array[KeyframeColor],
   time_seconds : Float,
-) -> @sprite.Color? {
+) -> @color.Color? {
   if keyframes.length() == 0 {
     return None
   }
@@ -1198,7 +1198,7 @@ fn animation_sample_color(
 fn animation_sample_color_non_empty(
   keyframes : Array[KeyframeColor],
   time_seconds : Float,
-) -> @sprite.Color {
+) -> @color.Color {
   if keyframes.length() == 1 {
     return keyframes[0].value
   }

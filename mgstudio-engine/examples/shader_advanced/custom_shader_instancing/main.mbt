@@ -44,7 +44,7 @@ fn setup(
   let material_handle = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.95F, 0.96F, 1.0F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.95F, 0.96F, 1.0F)),
     )
 
   for i in 0..<INSTANCE_COUNT {

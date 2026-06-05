@@ -125,7 +125,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @sprite.Color,
+  color : @color.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
@@ -138,25 +138,25 @@ fn setup(world : @ecs.World) -> Unit {
   spotlight_state.val.spotlights.clear()
   spotlight_state.val.camera = None
 
-  set_global_ambient_light(world, @sprite.Color::white(), 20.0F)
+  set_global_ambient_light(world, @color.Color::white(), 20.0F)
 
   let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+    @pbr.StandardMaterial::from_color(@color.Color::white()),
   )
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+      @color.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
     ),
   )
   let red_emissive = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    ).with_emissive(@sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
+    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)).with_emissive(
+      @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    ),
   )
   let maroon_emissive = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
-    ).with_emissive(@sprite.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
+      @color.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
+    ).with_emissive(@color.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
   )
 
   let ground = @pbr.MeshMaterial3dBundle::new(
@@ -208,7 +208,7 @@ fn setup(world : @ecs.World) -> Unit {
         spotlight,
         @pbr.ecs_key_spot_light,
         @pbr.SpotLight::new(
-          @sprite.Color::white(),
+          @color.Color::white(),
           40_000.0F,
           20.0F,
           PI / 4.0F * 0.85F,
@@ -286,7 +286,7 @@ fn setup(world : @ecs.World) -> Unit {
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()

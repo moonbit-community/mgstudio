@@ -41,7 +41,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white())
+      @pbr.StandardMaterial::from_color(@color.Color::white())
       .with_base_color_texture(
         Some(asset_server.get().load_image("branding/banner.png")),
       )
@@ -72,7 +72,7 @@ fn setup(
         .peek()
         .add(
           @pbr.StandardMaterial::from_color(
-            @sprite.Color::srgb(0.08F, 0.1F, 0.14F),
+            @color.Color::srgb(0.08F, 0.1F, 0.14F),
           ),
         ),
       ),
@@ -82,7 +82,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_100_000.0F, 26.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_100_000.0F, 26.0F, false),
       @transform.Transform::from_xyz(5.0F, 6.0F, 0.0F),
     ),
   )

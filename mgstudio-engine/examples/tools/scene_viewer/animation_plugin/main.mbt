@@ -33,7 +33,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.add_mesh(assets, @math.Cuboid::new(1.3F, 1.3F, 1.3F))
   })
   let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.45F, 0.78F, 0.95F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.45F, 0.78F, 0.95F)),
   )
   ignore(
     try! world
@@ -62,7 +62,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(light)
     .insert(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 8000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 8000.0F, true),
         @transform.Transform::from_xyz(3.0F, 8.0F, 3.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

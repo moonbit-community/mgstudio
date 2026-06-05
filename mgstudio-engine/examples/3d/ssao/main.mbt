@@ -177,7 +177,7 @@ fn setup(
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1000.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 1000.0F),
   )
 
   let camera = @camera.Camera3dBundle::new(
@@ -226,7 +226,7 @@ fn setup(
   let base_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.5F, 0.5F, 0.5F))
       .with_perceptual_roughness(1.0F)
       .with_reflectance(0.0F),
     )
@@ -281,7 +281,7 @@ fn setup(
       materials
       .peek()
       .add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.4F, 0.4F, 0.4F))
+        @pbr.StandardMaterial::from_color(@color.Color::srgb(0.4F, 0.4F, 0.4F))
         .with_perceptual_roughness(1.0F)
         .with_reflectance(0.0F),
       ),
@@ -306,7 +306,7 @@ fn setup(
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 10_000.0F, true),
   )
 
   let instructions = @text.Text2dBundle::new(
@@ -332,7 +332,7 @@ fn setup(
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::srgba(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::srgba(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
   world.insert_resource(ssao_instructions_resource_key, SsaoInstructions::{

@@ -40,18 +40,18 @@ const HALF_CONTROL_WIDTH : Float = 250.0F
 const FULL_CONTROL_WIDTH : Float = 506.0F
 
 ///|
-fn black() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 0.0F, 0.0F)
+fn black() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn white() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+fn white() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn light_gray() -> @sprite.Color {
-  @sprite.Color::srgb(0.83F, 0.83F, 0.83F)
+fn light_gray() -> @color.Color {
+  @color.Color::srgb(0.83F, 0.83F, 0.83F)
 }
 
 ///|
@@ -285,7 +285,7 @@ fn spawn_text(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   ignore(
@@ -493,7 +493,7 @@ fn setup(world : @ecs.World) -> Unit {
     }),
   )
   let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
   )
   ignore(
     try! world

@@ -54,7 +54,7 @@ pub impl @ecs.Component for TransformTracking with fn component() {
 fn spawn_axes_cube(
   world : @ecs.World,
   mesh : @asset.Handle[@mesh.Mesh],
-  color : @sprite.Color,
+  color : @color.Color,
   tracking : TransformTracking,
 ) -> Unit {
   let material = @pbr.standard_material_add(
@@ -83,7 +83,7 @@ fn spawn_axes_cube(
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1200.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 1200.0F),
   )
 
   ignore(
@@ -105,7 +105,7 @@ fn setup(world : @ecs.World) -> Unit {
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 7000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 7000.0F, true),
       ),
     ),
   )
@@ -115,7 +115,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.add_mesh(assets, @math.Cuboid::new(20.0F, 0.1F, 20.0F))
   })
   let plane_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.1F, 0.1F, 0.1F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.1F, 0.1F, 0.1F)),
   )
   ignore(
     try! world
@@ -132,7 +132,7 @@ fn setup(world : @ecs.World) -> Unit {
   let cube_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
     @pbr.add_mesh(assets, @math.Cuboid::new(1.0F, 1.0F, 1.0F))
   })
-  spawn_axes_cube(world, cube_mesh, @sprite.Color::srgb(0.8F, 0.7F, 0.6F), TransformTracking::{
+  spawn_axes_cube(world, cube_mesh, @color.Color::srgb(0.8F, 0.7F, 0.6F), TransformTracking::{
     center: @math.Vec3::new(-1.2F, -0.6F, 0.0F),
     orbit_radius: 1.4F,
     height_amplitude: 0.7F,
@@ -140,7 +140,7 @@ fn setup(world : @ecs.World) -> Unit {
     phase: 0.0F,
     base_scale: @math.Vec3::new(1.0F, 1.0F, 1.0F),
   })
-  spawn_axes_cube(world, cube_mesh, @sprite.Color::srgb(0.6F, 0.7F, 0.8F), TransformTracking::{
+  spawn_axes_cube(world, cube_mesh, @color.Color::srgb(0.6F, 0.7F, 0.8F), TransformTracking::{
     center: @math.Vec3::new(1.5F, -0.9F, 0.8F),
     orbit_radius: 1.1F,
     height_amplitude: 0.5F,

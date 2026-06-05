@@ -38,15 +38,13 @@ fn setup(
   let plane_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.18F, 0.21F, 0.24F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.18F, 0.21F, 0.24F)),
     )
   let cube_material = materials
     .peek()
     .add(
       @pbr.StandardMaterial::StandardMaterial()
-      .with_base_color(@sprite.Color::white())
+      .with_base_color(@color.Color::white())
       .with_base_color_texture(Some(asset_server.get().load_image(IMAGE_PATH))),
     )
 
@@ -70,7 +68,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_200_000.0F, 24.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_200_000.0F, 24.0F, false),
       @transform.Transform::from_xyz(3.0F, 6.0F, 3.0F),
     ),
   )

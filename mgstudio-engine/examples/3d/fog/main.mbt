@@ -126,7 +126,7 @@ fn spawn_mesh(
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
   let initial_fog = @pbr.DistanceFog::new(
-    @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
   let camera = @camera.Camera3dBundle::new(
@@ -146,12 +146,12 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
   )
 
   let stone_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(40.0F / 255.0F, 34.0F / 255.0F, 27.0F / 255.0F, 1.0F),
+      @color.Color::new(40.0F / 255.0F, 34.0F / 255.0F, 27.0F / 255.0F, 1.0F),
     ).with_perceptual_roughness(1.0F),
   )
 
@@ -177,7 +177,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 
   let orb_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.07F, 0.38F, 0.07F, 0.8F),
+      @color.Color::new(0.07F, 0.38F, 0.07F, 0.8F),
     )
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F)
@@ -232,7 +232,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(
+        @color.Color::new(
           136.0F / 255.0F,
           136.0F / 255.0F,
           136.0F / 255.0F,
@@ -302,7 +302,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
@@ -403,7 +403,7 @@ fn update_system(world : @ecs.World) -> Unit {
 
   let mut color = fog.color
   if @input.key_pressed(@window.KeyCode::Minus) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       clamp01(color.r - 0.1F * delta),
       color.g,
       color.b,
@@ -411,7 +411,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Equal) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       clamp01(color.r + 0.1F * delta),
       color.g,
       color.b,
@@ -419,7 +419,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::BracketLeft) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       clamp01(color.g - 0.1F * delta),
       color.b,
@@ -427,7 +427,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::BracketRight) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       clamp01(color.g + 0.1F * delta),
       color.b,
@@ -435,7 +435,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Semicolon) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       color.g,
       clamp01(color.b - 0.1F * delta),
@@ -443,7 +443,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Quote) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       color.g,
       clamp01(color.b + 0.1F * delta),
@@ -451,7 +451,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Period) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       color.g,
       color.b,
@@ -459,7 +459,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Slash) {
-    color = @sprite.Color::new(
+    color = @color.Color::new(
       color.r,
       color.g,
       color.b,

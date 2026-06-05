@@ -39,8 +39,8 @@ pub impl @ecs.Component for AnimatedText with fn component() {
 }
 
 ///|
-fn gold() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.84F, 0.0F)
+fn gold() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.84F, 0.0F)
 }
 
 ///|
@@ -300,7 +300,7 @@ fn text_color_system(
   try! query.view(fn(_entity, text_color) {
     text_color.set(
       @mgtext.TextColor::new(
-        @sprite.Color::srgb(
+        @color.Color::srgb(
           @math.sin(1.25F * seconds) / 2.0F + 0.5F,
           @math.sin(0.75F * seconds) / 2.0F + 0.5F,
           @math.sin(0.50F * seconds) / 2.0F + 0.5F,

@@ -26,7 +26,7 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(
-      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       0.45F,
     ),
   )
@@ -34,7 +34,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 5000.0F, 30.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 5000.0F, 30.0F, false),
   )
   try! world.set_by_key(
     light,
@@ -44,7 +44,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ground_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.24F, 0.26F, 0.30F, 1.0F),
+      @color.Color::new(0.24F, 0.26F, 0.30F, 1.0F),
     ).with_unlit(true),
   )
   let ground = @pbr.MeshMaterial3dBundle::new(
@@ -71,7 +71,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let wall_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.80F, 0.35F, 0.35F, 1.0F),
+      @color.Color::new(0.80F, 0.35F, 0.35F, 1.0F),
     ).with_unlit(true),
   )
   let wall = @pbr.MeshMaterial3dBundle::new(

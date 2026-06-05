@@ -129,7 +129,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Visible query line.
   let ray_line_sprite = @sprite.Sprite::from_image(texture).with_color(
-    @sprite.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
+    @color.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
   )
   let ray_line_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
@@ -141,7 +141,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Visible hit marker.
   let hit_marker_sprite = @sprite.Sprite::from_image(texture).with_color(
-    @sprite.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
+    @color.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
   )
   let hit_marker_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y),

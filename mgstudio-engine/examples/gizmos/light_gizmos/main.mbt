@@ -64,11 +64,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   light_gizmos_state.val.color_text = None
 
   let base_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+    @pbr.StandardMaterial::from_color(@color.Color::white()),
   )
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+      @color.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
     ),
   )
 
@@ -108,7 +108,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @pbr.PointLight::PointLight()
         .with_shadow_maps_enabled(true)
         .with_range(2.0F)
-        .with_color(@sprite.Color::srgb(0.0F, 0.55F, 0.55F)),
+        .with_color(@color.Color::srgb(0.0F, 0.55F, 0.55F)),
         @transform.Transform::from_xyz(0.0F, 1.5F, 0.0F),
       ),
     ),
@@ -121,7 +121,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .insert(
       (
         @pbr.SpotLight::new(
-          @sprite.Color::srgb(0.5F, 0.0F, 0.5F),
+          @color.Color::srgb(0.5F, 0.0F, 0.5F),
           @pbr.SpotLight::SpotLight().intensity,
           3.5F,
           PI / 4.0F * 0.8F,
@@ -143,7 +143,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .insert(
       (
         @pbr.DirectionalLight::new(
-          @sprite.Color::srgb(1.0F, 0.84F, 0.0F),
+          @color.Color::srgb(1.0F, 0.84F, 0.0F),
           @pbr.DirectionalLight::DirectionalLight().illuminance * 0.05F,
           true,
         ),
@@ -181,7 +181,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   ignore(instructions)
@@ -199,7 +199,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   light_gizmos_state.val.color_text = Some(color_text)
@@ -301,7 +301,7 @@ fn update_config(
           Manual(_) => @light.Varied
           Varied => @light.MatchLightColor
           MatchLightColor => @light.ByLightType
-          ByLightType => @light.Manual(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
+          ByLightType => @light.Manual(@color.Color::srgb(0.5F, 0.5F, 0.5F))
         },
       }
       update_color_text(group.val)

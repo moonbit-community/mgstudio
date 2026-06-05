@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-pub type Color = @color.Color
-
-///|
 type RenderLayers = @camera_render_layers.RenderLayers
 
 ///|
@@ -1044,7 +1041,7 @@ pub fn render2d_draw_bloom_overlay(
       pass_transform,
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::new(1.0F, 1.0F, 1.0F, alpha_weight),
+      @color.Color::new(1.0F, 1.0F, 1.0F, alpha_weight),
       layers,
     )
   }
@@ -1248,7 +1245,7 @@ priv struct SpriteDrawPayload {
   transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
-  color : Color
+  color : @color.Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   uv_min : @math.Vec2
@@ -1261,7 +1258,7 @@ priv struct SpriteSliceBatchDrawPayload {
   rotation : Float
   draw_scale : @math.Vec2
   z : Float
-  color : Color
+  color : @color.Color
   cull_center : @math.Vec2
   cull_half_size : @math.Vec2
   texture : @asset.Handle[@asset.Image]
@@ -1273,7 +1270,7 @@ priv struct SpriteSliceBatchDrawPayload {
 ///|
 priv struct ComputedSpriteSlicesDrawPayload {
   transform : @transform.Transform
-  color : Color
+  color : @color.Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   flip_x : Bool
@@ -1320,7 +1317,7 @@ priv struct UiRectDrawPayload {
   transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
-  color : Color
+  color : @color.Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   uv_min : @math.Vec2
@@ -1344,7 +1341,7 @@ priv struct UiBoxShadowDrawPayload {
   anchor_offset : @math.Vec2
   // Full geometry bounds (shadow size + 6*blur), in world units.
   draw_scale : @math.Vec2
-  color : Color
+  color : @color.Color
   // Dummy texture binding (pipeline shares sprite/ui bind group layout).
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
@@ -1371,7 +1368,7 @@ priv struct UiTextureSliceDrawPayload {
   transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
-  color : Color
+  color : @color.Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
   scissor : @math.Rect?
@@ -2010,7 +2007,7 @@ pub fn render2d_push_sprite_uv(
   transform : @transform.Transform,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   layers : RenderLayers,
 ) -> Unit {
   render_state_update(world, fn(rs) {
@@ -2039,7 +2036,7 @@ pub fn render2d_push_sprite_uv_scissor(
   transform : @transform.Transform,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   layers : RenderLayers,
   scissor : @math.Rect?,
 ) -> Unit {
@@ -2068,7 +2065,7 @@ pub(all) struct OverlaySpriteUvScissor {
   transform : @transform.Transform
   uv_min : @math.Vec2
   uv_max : @math.Vec2
-  color : Color
+  color : @color.Color
   layers : RenderLayers
   scissor : @math.Rect?
   target_camera : @core.Entity?
@@ -2080,7 +2077,7 @@ pub(all) struct OverlaySpriteUvScissorSlices {
   rotation : Float
   draw_scale : @math.Vec2
   z : Float
-  color : Color
+  color : @color.Color
   cull_center : @math.Vec2
   cull_half_size : @math.Vec2
   layers : RenderLayers
@@ -2214,7 +2211,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   draw_scale : @math.Vec2,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   layers : RenderLayers,
   scissor : @math.Rect?,
   flags : Int,
@@ -2252,7 +2249,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   texture : @asset.Handle[@asset.Image],
   transform : @transform.Transform,
   draw_scale : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   layers : RenderLayers,
   scissor : @math.Rect?,
   size : @math.Vec2,
@@ -2290,7 +2287,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   texture : @asset.Handle[@asset.Image],
   transform : @transform.Transform,
   draw_scale : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   layers : RenderLayers,
   scissor : @math.Rect?,
   texture_slices : @math.Vec4,
@@ -3206,7 +3203,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       let wireframe = wireframe_component is Some(_)
       let wireframe_color = match wireframe_component {
         Some(component) => wireframe2d_material_color(source_world, component)
-        None => Color::white()
+        None => @color.Color::white()
       }
       let mesh2d = mesh2d.value()
       rs.meshes.push(ExtractedMesh2d::{
@@ -4551,7 +4548,7 @@ fn extracted_sprite_item(
   transform : @transform.Transform,
   anchor_offset : @math.Vec2,
   draw_scale : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   texture : @asset.Handle[@asset.Image],
   layers : RenderLayers,
   uv_min : @math.Vec2,
@@ -4657,7 +4654,7 @@ fn extracted_ui_rect_item(
   transform : @transform.Transform,
   anchor_offset : @math.Vec2,
   draw_scale : @math.Vec2,
-  color : Color,
+  color : @color.Color,
   texture : @asset.Handle[@asset.Image],
   layers : RenderLayers,
   uv_min : @math.Vec2,
@@ -4694,7 +4691,7 @@ fn extracted_mesh2d_item(
   transform : @transform.Transform,
   layers : RenderLayers,
   wireframe? : Bool = false,
-  wireframe_color? : Color = Color::white(),
+  wireframe_color? : @color.Color = @color.Color::white(),
 ) -> ExtractedMesh2d {
   ExtractedMesh2d::{
     entity: phase_entity_ref_for_main(entity),
@@ -4735,7 +4732,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
     @transform.Transform::identity(),
     RenderLayers::RenderLayers(),
     wireframe=true,
-    wireframe_color=Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+    wireframe_color=@color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
   )
   let ok = extracted.payload.wireframe &&
     extracted.payload.wireframe_color.r == 0.25F &&
@@ -4750,7 +4747,10 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(1)
   let prepared_materials = prepared_color_materials_for_tests([
-    (material_handle, ColorMaterial::new(Color::white(), AlphaMode2d::Blend)),
+    (
+      material_handle,
+      ColorMaterial::new(@color.Color::white(), AlphaMode2d::Blend),
+    ),
   ])
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
@@ -4763,7 +4763,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
       ),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       @asset.Handle::new(2),
       layers,
       @math.Vec2::new(0.0F, 0.0F),
@@ -4835,7 +4835,7 @@ test "render2d: UI overlay draw items route by target camera" {
       @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::white(),
+      @color.Color::white(),
       @asset.Handle::new(1),
       layers,
       @math.Vec2::new(0.0F, 0.0F),
@@ -4851,7 +4851,7 @@ test "render2d: UI overlay draw items route by target camera" {
       @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::white(),
+      @color.Color::white(),
       @asset.Handle::new(2),
       layers,
       @math.Vec2::new(0.0F, 0.0F),
@@ -4913,7 +4913,7 @@ test "render2d: scene draw items exclude UI overlays" {
         @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
-        Color::white(),
+        @color.Color::white(),
         @asset.Handle::new(1),
         layers,
         @math.Vec2::new(0.0F, 0.0F),
@@ -5056,7 +5056,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
-        Color::white(),
+        @color.Color::white(),
         @asset.Handle::new(3),
         layers,
         @math.Vec2::new(0.0F, 0.0F),
@@ -5074,7 +5074,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
-        Color::white(),
+        @color.Color::white(),
         @asset.Handle::new(4),
         layers,
         @math.Vec2::new(0.0F, 0.0F),
@@ -5120,7 +5120,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
         @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
-        Color::white(),
+        @color.Color::white(),
         @asset.Handle::new(5),
         layers,
         @math.Vec2::new(0.0F, 0.0F),
@@ -5156,13 +5156,16 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
     (
       opaque_handle,
       ColorMaterial::new(
-        Color::new(1.0F, 0.0F, 0.0F, 0.2F),
+        @color.Color::new(1.0F, 0.0F, 0.0F, 0.2F),
         AlphaMode2d::Opaque,
       ),
     ),
     (
       blend_handle,
-      ColorMaterial::new(Color::new(0.0F, 1.0F, 0.0F, 0.2F), AlphaMode2d::Blend),
+      ColorMaterial::new(
+        @color.Color::new(0.0F, 1.0F, 0.0F, 0.2F),
+        AlphaMode2d::Blend,
+      ),
     ),
   ])
   let sprites : Array[ExtractedSprite] = []
@@ -5220,7 +5223,10 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let prepared_materials = prepared_color_materials_for_tests([
     (
       material_handle,
-      ColorMaterial::new(Color::new(1.0F, 1.0F, 1.0F, 1.0F), AlphaMode2d::Blend),
+      ColorMaterial::new(
+        @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+        AlphaMode2d::Blend,
+      ),
     ),
   ])
   let sprites : Array[ExtractedSprite] = [
@@ -5229,7 +5235,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
       @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::white(),
+      @color.Color::white(),
       @asset.Handle::new(10),
       layers,
       @math.Vec2::new(0.0F, 0.0F),
@@ -5340,14 +5346,14 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
     (
       masked_low_handle,
       ColorMaterial::new(
-        Color::new(1.0F, 1.0F, 1.0F, 0.2F),
+        @color.Color::new(1.0F, 1.0F, 1.0F, 0.2F),
         AlphaMode2d::Mask(0.5F),
       ),
     ),
     (
       masked_high_handle,
       ColorMaterial::new(
-        Color::new(1.0F, 1.0F, 1.0F, 0.8F),
+        @color.Color::new(1.0F, 1.0F, 1.0F, 0.8F),
         AlphaMode2d::Mask(0.5F),
       ),
     ),

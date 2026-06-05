@@ -78,33 +78,33 @@ fn ConstraintSettings::ConstraintSettings() -> ConstraintSettings {
 }
 
 ///|
-fn title_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.9F, 0.9F, 0.9F)
+fn title_color() -> @color.Color {
+  @color.Color::srgb(0.9F, 0.9F, 0.9F)
 }
 
 ///|
-fn active_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
+fn active_button_color() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn inactive_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.07F, 0.07F, 0.3F)
+fn inactive_button_color() -> @color.Color {
+  @color.Color::srgb(0.07F, 0.07F, 0.3F)
 }
 
 ///|
-fn hovered_button_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.22F, 0.22F, 0.22F)
+fn hovered_button_color() -> @color.Color {
+  @color.Color::srgb(0.22F, 0.22F, 0.22F)
 }
 
 ///|
-fn active_border_color() -> @sprite.Color {
-  @sprite.Color::srgb(0.98F, 0.92F, 0.84F)
+fn active_border_color() -> @color.Color {
+  @color.Color::srgb(0.98F, 0.92F, 0.84F)
 }
 
 ///|
-fn inactive_border_color() -> @sprite.Color {
-  @sprite.Color::black()
+fn inactive_border_color() -> @color.Color {
+  @color.Color::black()
 }
 
 ///|
@@ -168,7 +168,7 @@ fn spawn_text(
   content : String,
   font : @asset.Handle[@asset.Font],
   size : Float,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   ignore(
@@ -261,7 +261,7 @@ fn spawn_button_row(
             @ui.Val::Px(2.0F),
           ),
         ),
-        @ui.BackgroundColor::new(@sprite.Color::black()),
+        @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
   )
@@ -287,7 +287,7 @@ fn spawn_button_row(
       constraint_label(kind),
       font,
       18.0F,
-      @sprite.Color::black(),
+      @color.Color::black(),
     ),
   )
 
@@ -338,7 +338,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_height(@ui.Val::Percent(100.0F))
         .with_justify_content(@ui.JustifyContent::Center)
         .with_align_items(@ui.AlignItems::Center),
-        @ui.BackgroundColor::new(@sprite.Color::black()),
+        @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
   )
@@ -387,7 +387,7 @@ fn setup(world : @ecs.World) -> Unit {
             @ui.Val::Px(25.0F),
           ),
         ),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.92F, 0.0F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F)),
       ),
     ),
   )
@@ -403,7 +403,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Px(100.0F))
         .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F))),
-        @ui.BackgroundColor::new(@sprite.Color::black()),
+        @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
   )
@@ -416,7 +416,7 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(frame),
         @ui.Node::Node(),
-        @ui.BackgroundColor::new(@sprite.Color::white()),
+        @ui.BackgroundColor::new(@color.Color::white()),
         Bar::{  },
       ),
     ),
@@ -440,7 +440,7 @@ fn setup(world : @ecs.World) -> Unit {
             @ui.Val::Px(0.0F),
           ),
         ),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.92F, 0.0F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F)),
       ),
     ),
   )

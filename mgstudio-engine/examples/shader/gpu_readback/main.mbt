@@ -61,7 +61,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.26F, 0.4F, 0.9F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.26F, 0.4F, 0.9F)),
     )
   for i in 0..<SAMPLE_COUNT {
     let x = Float::from_int(i % 12) - 5.5F
@@ -81,7 +81,7 @@ fn setup(
   }
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(0.0F, 5.0F, 7.0F),
     ),
   )
@@ -147,7 +147,7 @@ fn tint_from_readback(
     let handle = mesh_material.value().material
     guard materials.peek().get(handle) is Some(material) else { return }
     let updated = material.with_base_color(
-      @sprite.Color::srgb(0.18F + value * 0.3F, 0.28F + value * 0.35F, 0.7F),
+      @color.Color::srgb(0.18F + value * 0.3F, 0.28F + value * 0.35F, 0.7F),
     )
     materials.modify(fn(materials) { materials.set(handle, updated) |> ignore })
   })

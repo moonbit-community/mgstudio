@@ -33,7 +33,7 @@ fn setup(
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center)
       .with_row_gap(@ui.Val::Px(8.0F)),
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.11F, 0.12F, 0.15F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.11F, 0.12F, 0.15F)),
     ),
   )
 
@@ -42,7 +42,7 @@ fn setup(
       @hierarchy.Parent::new(root),
       @text.Text::new("Feathers plugins loaded"),
       @text.TextFont::TextFont().with_font(font).with_font_size(28.0F),
-      @text.TextColor::new(@sprite.Color::srgb(0.86F, 0.92F, 1.0F)),
+      @text.TextColor::new(@color.Color::srgb(0.86F, 0.92F, 1.0F)),
     ),
   )
   |> ignore
@@ -58,8 +58,8 @@ fn setup(
         .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center),
-        @ui.BorderColor::new(@sprite.Color::srgb(0.58F, 0.62F, 0.72F)),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.2F, 0.22F, 0.28F)),
+        @ui.BorderColor::new(@color.Color::srgb(0.58F, 0.62F, 0.72F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.22F, 0.28F)),
       ),
     )
     commands.spawn(
@@ -67,7 +67,7 @@ fn setup(
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     )
     |> ignore

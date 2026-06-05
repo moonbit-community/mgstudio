@@ -790,8 +790,6 @@ pub using @math {type CircularSector}
 
 pub using @math {type CircularSegment}
 
-pub using @color {type Color}
-
 pub using @math {type ConvexPolygon}
 
 pub using @math {type Ellipse}

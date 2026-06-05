@@ -153,7 +153,7 @@ fn spawn_plane(
 ) -> Unit {
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
+      @color.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
     )
     .with_base_color_texture(Some(base_color))
     .with_normal_map_texture(Some(normal_map))
@@ -185,7 +185,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, false),
+    @pbr.PointLight::new(@color.Color::white(), 10_000_000.0F, 100.0F, false),
   )
   try! world.set_by_key(
     point,
@@ -254,7 +254,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
@@ -271,7 +271,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   let size = random_range(DECAL_MIN_SIZE, DECAL_MAX_SIZE)
   let theta = random_range(0.0F, PI)
 
-  let mut material = @pbr.StandardMaterial::from_color(@sprite.Color::white())
+  let mut material = @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
     .with_metallic_roughness_texture(
@@ -282,7 +282,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   if clustered_decal_maps_state.emissive_decals {
     material = material
       .with_emissive_texture(Some(textures.decal_emissive_texture))
-      .with_emissive(@sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
+      .with_emissive(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
   let mut clustered_decal = @pbr.ClusteredDecal::ClusteredDecal()
     .with_base_color_texture(Some(textures.decal_base_color_texture))

@@ -53,7 +53,7 @@ fn setup(
   }
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_500_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_500_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(0.0F, 6.0F, 8.0F),
     ),
   )

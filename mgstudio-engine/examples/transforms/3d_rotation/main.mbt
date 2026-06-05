@@ -44,7 +44,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           materials
           .peek()
-          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
+          .add(@pbr.StandardMaterial::from_color(@color.Color::white())),
         ),
         @transform.Transform::from_translation(@math.Vec3::zero()),
         Rotatable::{ speed: 0.3F },

@@ -110,7 +110,7 @@ let ecs_key_diagnostics_overlay : @ecs.ComponentKey[DiagnosticsOverlay] = @ecs.r
 )
 
 ///|
-pub impl @ecs.Component for DiagnosticsOverlay with component() {
+pub impl @ecs.Component for DiagnosticsOverlay with fn component() {
   ecs_key_diagnostics_overlay
 }
 
@@ -125,7 +125,7 @@ let ecs_key_diagnostics_overlay_plane : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.Component for DiagnosticsOverlayPlane with component() {
+pub impl @ecs.Component for DiagnosticsOverlayPlane with fn component() {
   ecs_key_diagnostics_overlay_plane
 }
 
@@ -151,7 +151,7 @@ let ecs_key_diagnostics_overlay_window : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="dev_tools.DiagnosticsOverlayWindow")
 
 ///|
-impl @ecs.Component for DiagnosticsOverlayWindow with component() {
+impl @ecs.Component for DiagnosticsOverlayWindow with fn component() {
   ecs_key_diagnostics_overlay_window
 }
 
@@ -166,7 +166,7 @@ let ecs_key_diagnostics_overlay_header : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="dev_tools.DiagnosticsOverlayHeader")
 
 ///|
-impl @ecs.Component for DiagnosticsOverlayHeader with component() {
+impl @ecs.Component for DiagnosticsOverlayHeader with fn component() {
   ecs_key_diagnostics_overlay_header
 }
 
@@ -215,7 +215,7 @@ let diagnostics_overlay_drag_state_resource_key : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="dev_tools.DiagnosticsOverlayDragState")
 
 ///|
-impl @app.Resource for DiagnosticsOverlayDragState with resource() {
+impl @app.Resource for DiagnosticsOverlayDragState with fn resource() {
   diagnostics_overlay_drag_state_resource_key
 }
 
@@ -369,7 +369,7 @@ fn diagnostics_overlay_rebuild_entries(
     |> ignore)
     try! (world
     .entity_mut(label)
-    .insert_component(@text.TextColor::new(@sprite.Color::white()))
+    .insert_component(@text.TextColor::new(@color.Color::white()))
     |> ignore)
 
     let value = world.spawn_empty()
@@ -390,7 +390,7 @@ fn diagnostics_overlay_rebuild_entries(
     |> ignore)
     try! (world
     .entity_mut(value)
-    .insert_component(@text.TextColor::new(@sprite.Color::white()))
+    .insert_component(@text.TextColor::new(@color.Color::white()))
     |> ignore)
   }
 }
@@ -463,7 +463,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
         .entity_mut(overlay_entity)
         .insert_component(
           @ui.BackgroundColor::new(
-            @sprite.Color::new(0.05F, 0.05F, 0.05F, 0.75F),
+            @color.Color::new(0.05F, 0.05F, 0.05F, 0.75F),
           ),
         )
       catch {
@@ -490,7 +490,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
     try! (world
     .entity_mut(header)
     .insert_component(
-      @ui.BackgroundColor::new(@sprite.Color::new(0.16F, 0.16F, 0.16F, 0.9F)),
+      @ui.BackgroundColor::new(@color.Color::new(0.16F, 0.16F, 0.16F, 0.9F)),
     )
     |> ignore)
     try! (world
@@ -514,7 +514,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
     |> ignore)
     try! (world
     .entity_mut(title)
-    .insert_component(@text.TextColor::new(@sprite.Color::white()))
+    .insert_component(@text.TextColor::new(@color.Color::white()))
     |> ignore)
     try! (world
     .entity_mut(title)

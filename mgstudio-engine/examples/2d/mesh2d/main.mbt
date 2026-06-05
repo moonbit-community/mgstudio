@@ -45,7 +45,7 @@ fn setup(
           .peek()
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::from_color(
-              @sprite.Color::srgba(0.5019608F, 0.0F, 0.5019608F, 1.0F),
+              @color.Color::srgba(0.5019608F, 0.0F, 0.5019608F, 1.0F),
             ),
           ),
         ),

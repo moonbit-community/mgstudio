@@ -43,14 +43,14 @@ fn setup(
   let matte = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.82F, 0.24F, 0.3F)).with_perceptual_roughness(
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.82F, 0.24F, 0.3F)).with_perceptual_roughness(
         0.95F,
       ),
     )
   let glossy = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.38F, 0.95F)).with_perceptual_roughness(
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.2F, 0.38F, 0.95F)).with_perceptual_roughness(
         0.15F,
       ),
     )
@@ -88,7 +88,7 @@ fn setup(
   let floor_mat = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.26F)),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.2F, 0.22F, 0.26F)),
     )
   commands.spawn(
     (
@@ -100,7 +100,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::new(@sprite.Color::white(), 1_300_000.0F, 30.0F, false),
+      @pbr.PointLight::new(@color.Color::white(), 1_300_000.0F, 30.0F, false),
       @transform.Transform::from_xyz(4.0F, 7.0F, 4.0F),
     ),
   )

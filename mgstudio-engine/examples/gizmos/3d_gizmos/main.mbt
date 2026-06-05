@@ -164,8 +164,8 @@ fn cycle_line_joint_backward(
 }
 
 ///|
-fn gradient_curve_points(seconds : Float) -> Array[(@math.Vec3, @sprite.Color)] {
-  let points : Array[(@math.Vec3, @sprite.Color)] = []
+fn gradient_curve_points(seconds : Float) -> Array[(@math.Vec3, @color.Color)] {
+  let points : Array[(@math.Vec3, @color.Color)] = []
   let steps = 96
   for i in 0..<=steps {
     let t = Float::from_double(i.to_double()) /
@@ -175,9 +175,9 @@ fn gradient_curve_points(seconds : Float) -> Array[(@math.Vec3, @sprite.Color)] 
     let y = 1.2F + @math.sin(phase) * 0.6F
     let z = -3.0F + t * 6.0F
     let color = if t < 0.5F {
-      @sprite.Color::srgb(0.0F, 0.8F, 0.8F)
+      @color.Color::srgb(0.0F, 0.8F, 0.8F)
     } else {
-      @sprite.Color::srgb(1.0F, 0.2F, 0.6F)
+      @color.Color::srgb(1.0F, 0.2F, 0.6F)
     }
     points.push((@math.Vec3::new(x, y, z), color))
   }
@@ -215,7 +215,7 @@ fn setup(
     @pbr.add_mesh(assets, @math.Cuboid::new(8.0F, 0.1F, 8.0F))
   })
   let plane_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
   )
   ignore(
     commands.spawn(
@@ -231,7 +231,7 @@ fn setup(
     @pbr.add_mesh(assets, @math.Cuboid::new(1.0F, 1.0F, 1.0F))
   })
   let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.8F, 0.7F, 0.6F)),
   )
   ignore(
     commands.spawn(
@@ -277,7 +277,7 @@ fn draw_example_collection(
     ),
     @math.IVec2::new(10, 10),
     @math.Vec2::new(0.8F, 0.8F),
-    @sprite.Color::srgb(0.65F, 0.65F, 0.65F),
+    @color.Color::srgb(0.65F, 0.65F, 0.65F),
   )
   gizmos.grid_3d(
     @math.Isometry3d::new(
@@ -286,7 +286,7 @@ fn draw_example_collection(
     ),
     @math.IVec2::new(5, 5),
     @math.Vec2::new(0.5F, 0.5F),
-    @sprite.Color::srgb(0.6F, 0.2F, 0.8F),
+    @color.Color::srgb(0.6F, 0.2F, 0.8F),
   )
 
   gizmos.cuboid_3d(
@@ -294,7 +294,7 @@ fn draw_example_collection(
       @math.Vec3::splat(1.25F),
     ),
     @math.Vec3::new(1.0F, 1.0F, 1.0F),
-    @sprite.Color::black(),
+    @color.Color::black(),
   )
   gizmos.rect_3d(
     @math.Isometry3d::new(
@@ -302,12 +302,12 @@ fn draw_example_collection(
       @math.Quat::from_rotation_y(HALF_PI),
     ),
     @math.Vec2::new(2.0F, 2.0F),
-    @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
+    @color.Color::srgb(0.0F, 1.0F, 0.0F),
   )
   gizmos.cross_3d(
     @math.Vec3::new(-1.0F, 1.0F, 1.0F),
     0.5F,
-    @sprite.Color::srgb(1.0F, 0.0F, 1.0F),
+    @color.Color::srgb(1.0F, 0.0F, 1.0F),
   )
   gizmos.curve_gradient_3d(gradient_curve_points(seconds))
 
@@ -317,7 +317,7 @@ fn draw_example_collection(
       @math.Quat::identity(),
     ),
     0.5F,
-    @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
+    @color.Color::srgb(1.0F, 0.0F, 0.0F),
   )
   my_gizmos.circle_3d(
     @math.Isometry3d::new(
@@ -325,7 +325,7 @@ fn draw_example_collection(
       @math.Quat::from_rotation_x(HALF_PI),
     ),
     3.0F,
-    @sprite.Color::black(),
+    @color.Color::black(),
   )
   my_gizmos.circle_3d(
     @math.Isometry3d::new(
@@ -338,7 +338,7 @@ fn draw_example_collection(
       ),
     ),
     3.1F,
-    @sprite.Color::srgb(0.0F, 0.0F, 0.5F),
+    @color.Color::srgb(0.0F, 0.0F, 0.5F),
   )
   my_gizmos.arc_3d(
     @math.Isometry3d::new(
@@ -347,21 +347,21 @@ fn draw_example_collection(
     ),
     PI,
     0.2F,
-    @sprite.Color::srgb(1.0F, 0.5F, 0.0F),
+    @color.Color::srgb(1.0F, 0.5F, 0.0F),
   )
 
   for y in [0.0F, 0.5F, 1.0F] {
     gizmos.ray_3d(
       @math.Vec3::new(1.0F, y, 0.0F),
       @math.Vec3::new(-3.0F, @math.sin(seconds * 3.0F), 0.0F),
-      @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+      @color.Color::srgb(0.0F, 0.0F, 1.0F),
     )
   }
 
   gizmos.arrow_3d(
     @math.Vec3::zero(),
     @math.Vec3::splat(1.5F),
-    @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
+    @color.Color::srgb(1.0F, 1.0F, 0.0F),
   )
 }
 

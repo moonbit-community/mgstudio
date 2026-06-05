@@ -63,7 +63,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
+        @pbr.DirectionalLight::new(@color.Color::white(), 3000.0F, true),
         @transform.Transform::from_xyz(-10.0F, 20.0F, -10.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -78,7 +78,7 @@ fn setup(
     for z in 0..<grid {
       let mat_handle = materials
         .peek()
-        .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
+        .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
       let idx = x * grid + z
       ignore(
         commands.spawn(
@@ -113,7 +113,7 @@ fn animate_materials(
     let handle = mesh_material.value().material
     guard materials.peek().get(handle) is Some(material) else { return }
     let idxf = float_from_int(slot.value().index)
-    let color = @sprite.Color::hsl(
+    let color = @color.Color::hsl(
       (idxf * 2.345F + elapsed) * 100.0F % 360.0F,
       1.0F,
       0.5F,

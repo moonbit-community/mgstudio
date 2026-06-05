@@ -267,13 +267,13 @@ fn SelectedColorGradingOption::set(
 }
 
 ///|
-fn selected_button_color() -> @sprite.Color {
-  @sprite.Color::white()
+fn selected_button_color() -> @color.Color {
+  @color.Color::white()
 }
 
 ///|
-fn normal_button_color() -> @sprite.Color {
-  @sprite.Color::black()
+fn normal_button_color() -> @color.Color {
+  @color.Color::black()
 }
 
 ///|
@@ -417,7 +417,7 @@ fn spawn_row_label(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
 }
 
@@ -492,7 +492,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
@@ -524,7 +524,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     button,
@@ -561,7 +561,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@sprite.Color::white()),
+    @ui.BorderColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     button,
@@ -599,7 +599,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
@@ -615,7 +615,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(label_entity, ColorGradingOptionWidget::component(), {
     widget_type: ColorGradingOptionWidgetType::Label,
@@ -659,7 +659,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
@@ -675,7 +675,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(value_entity, ColorGradingOptionWidget::component(), {
     widget_type: ColorGradingOptionWidgetType::Value,
@@ -796,7 +796,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     help_entity,
@@ -824,7 +824,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::white()),
+    @text.TextColor::new(@color.Color::white()),
   )
   try! world.set_by_key(
     help_entity,
@@ -847,7 +847,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
-          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @color.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
           @pbr.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
@@ -912,7 +912,7 @@ fn add_basic_scene(
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
       .with_maximum_distance(3.0F)
       .with_first_cascade_far_bound(0.9F),
@@ -1043,9 +1043,9 @@ fn update_ui_state(world : @ecs.World) -> Unit {
         )
         let border = @ui.BorderColor::new(
           if is_selected {
-            @sprite.Color::black()
+            @color.Color::black()
           } else {
-            @sprite.Color::white()
+            @color.Color::white()
           },
         )
         if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {

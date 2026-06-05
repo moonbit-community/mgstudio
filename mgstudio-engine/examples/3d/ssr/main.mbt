@@ -393,7 +393,7 @@ fn apply_ssr_settings(world : @ecs.World) -> Unit {
 ///|
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
+    @pbr.StandardMaterial::from_color(@color.Color::white())
     .with_base_color_texture(Some(asset_server.load("branding/icon.png")))
     .with_perceptual_roughness(0.08F)
     .with_metallic(0.0F),
@@ -447,7 +447,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
     let material = @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::black())
+      @pbr.StandardMaterial::from_color(@color.Color::black())
       .with_perceptual_roughness(roughness)
       .with_metallic(0.0F),
     )
@@ -475,7 +475,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let metallic_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+      @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     )
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.3F),
@@ -504,7 +504,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
+      @color.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
     )
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.2F),
@@ -532,7 +532,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ssr_state.val.red_plane_base = Some(red)
 
   let water_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black())
+    @pbr.StandardMaterial::from_color(@color.Color::black())
     .with_normal_map_texture(
       Some(
         asset_server.load_with_settings("textures/water_normals.png", fn(
@@ -623,7 +623,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
   )
   try! world.set_by_key(
     directional,
@@ -639,7 +639,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     point,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::new(
-      @sprite.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
+      @color.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
       200_000.0F,
       30.0F,
       true,
@@ -653,7 +653,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.03F),
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.03F),
   )
 }
 
@@ -675,7 +675,7 @@ fn setup_text(_world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(790.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .spawn()
 
   ssr_state.val.help_text = Some(handle)
@@ -734,7 +734,7 @@ fn animate_water_material(world : @ecs.World) -> Unit {
         material
         .with_uv_transform(@transform.Affine2::from_translation(offset))
         .with_emissive(
-          @sprite.Color::new(
+          @color.Color::new(
             0.01F + @math.sin(t * 0.4F) * 0.005F,
             0.02F,
             0.025F,

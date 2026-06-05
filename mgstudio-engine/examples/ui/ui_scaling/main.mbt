@@ -64,7 +64,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     root,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
   )
 
   let red_box = world.spawn_empty()
@@ -83,7 +83,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     red_box,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
   )
 
   let red_text = world.spawn_empty()
@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     blue_box,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(0.0F, 0.0F, 1.0F)),
   )
 
   let image = world.spawn_empty()

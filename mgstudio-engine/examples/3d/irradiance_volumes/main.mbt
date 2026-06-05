@@ -199,7 +199,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(@sprite.Color::white(), brightness)
+  let ambient = @pbr.GlobalAmbientLight::new(@color.Color::white(), brightness)
   world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
@@ -299,7 +299,7 @@ fn spawn_main_scene(
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
     @camera_camera.Camera::Camera().with_clear_color(
-      @sprite.Color::srgb(0.18F, 0.20F, 0.24F),
+      @color.Color::srgb(0.18F, 0.20F, 0.24F),
     ),
     @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
       @math.Vec3::zero(),
@@ -360,7 +360,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@sprite.Color::white(), 250_000.0F, 100.0F, true),
+    @pbr.PointLight::new(@color.Color::white(), 250_000.0F, 100.0F, true),
   )
   try! world.set_by_key(
     light,
@@ -373,7 +373,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
 fn spawn_sphere(world : @ecs.World) -> Unit {
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.85F, 0.95F, 1.0F, 1.0F),
+      @color.Color::new(0.85F, 0.95F, 1.0F, 1.0F),
     ).with_unlit(true),
   )
   let sphere = @pbr.MeshMaterial3dBundle::new(
@@ -414,7 +414,7 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
+      @color.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
     )
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
@@ -480,7 +480,7 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_color(@text.TextColor::new(@color.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   irradiance_volumes_state.val.help_text = Some(text)

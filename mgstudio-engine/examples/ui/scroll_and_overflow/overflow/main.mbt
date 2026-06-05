@@ -33,8 +33,8 @@ fn padding_left_top(left : @ui.Val, top : @ui.Val) -> @ui.UiRect {
 }
 
 ///|
-fn transparent() -> @sprite.Color {
-  @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
+fn transparent() -> @color.Color {
+  @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
 }
 
 ///|
@@ -79,7 +79,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     root,
     @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
+    @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
   )
 
   let overflows : Array[@ui.Overflow] = [
@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       label_box,
       @ui.ecs_key_background_color,
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.25F, 0.25F, 0.25F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
     )
 
     let label = world.spawn_empty()
@@ -160,12 +160,12 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       panel,
       @ui.ecs_key_border_color,
-      @ui.BorderColor::new(@sprite.Color::black()),
+      @ui.BorderColor::new(@color.Color::black()),
     )
     try! world.set_by_key(
       panel,
       @ui.ecs_key_background_color,
-      @ui.BackgroundColor::new(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
+      @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
     )
 
     let image = world.spawn_empty()
@@ -200,8 +200,8 @@ fn update_outlines(
     let outline = value.0
     let interaction = value.1.value()
     let color = match interaction {
-      @ui.Interaction::Pressed => @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
-      @ui.Interaction::Hovered => @sprite.Color::white()
+      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
+      @ui.Interaction::Hovered => @color.Color::white()
       @ui.Interaction::None => transparent()
     }
     outline.set(@ui.Outline::new(@ui.Val::Px(2.0F), @ui.Val::Px(2.0F), color))

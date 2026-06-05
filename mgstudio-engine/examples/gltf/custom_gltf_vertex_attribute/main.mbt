@@ -123,7 +123,7 @@ fn spawn_converted_mesh(
   let mesh_handle = meshes.modify(fn(meshes) { meshes.add(converted) })
   let material_handle = materials.modify(fn(materials) {
     materials
-    |> @sprite_render_mesh2d_color_material.add_material(@sprite.Color::white())
+    |> @sprite_render_mesh2d_color_material.add_material(@color.Color::white())
   })
   ignore(
     commands.spawn(

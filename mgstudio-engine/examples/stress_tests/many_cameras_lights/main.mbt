@@ -62,7 +62,7 @@ fn setup(
     |> @pbr.add_mesh(@math.Cuboid::new(9.0F, 0.1F, 9.0F))
   let white_material = materials
     .peek()
-    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
+    .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
   ignore(
     commands.spawn(
       (
@@ -93,9 +93,7 @@ fn setup(
       commands.spawn(
         (
           @pbr.PointLight::PointLight()
-          .with_color(
-            @sprite.Color::hsl(float_from_int(i) * 72.0F, 1.0F, 0.55F),
-          )
+          .with_color(@color.Color::hsl(float_from_int(i) * 72.0F, 1.0F, 0.55F))
           .with_intensity(400000.0F)
           .with_range(32.0F)
           .with_shadow_maps_enabled(true),

@@ -33,12 +33,12 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn label_color(index : Int) -> @sprite.Color {
+fn label_color(index : Int) -> @color.Color {
   match index % 4 {
-    0 => @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
-    1 => @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
-    2 => @sprite.Color::srgb(0.2F, 0.4F, 1.0F)
-    _ => @sprite.Color::srgb(1.0F, 0.9F, 0.1F)
+    0 => @color.Color::srgb(1.0F, 0.0F, 0.0F)
+    1 => @color.Color::srgb(0.0F, 1.0F, 0.0F)
+    2 => @color.Color::srgb(0.2F, 0.4F, 1.0F)
+    _ => @color.Color::srgb(1.0F, 0.9F, 0.1F)
   }
 }
 
@@ -100,7 +100,7 @@ fn draw_labels(
       "fps: \{fps.to_string()}",
       25.0F,
       @math.Vec2::new(0.0F, 0.0F),
-      @sprite.Color::white(),
+      @color.Color::white(),
     )
   }
 
@@ -109,7 +109,7 @@ fn draw_labels(
     "lxgh",
     150.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    @sprite.Color::white(),
+    @color.Color::white(),
   )
 }
 
@@ -122,7 +122,7 @@ fn draw_all_glyphs(
     all_glyphs(),
     30.0F,
     @math.Vec2::new(0.0F, 0.0F),
-    @sprite.Color::white(),
+    @color.Color::white(),
   )
 }
 

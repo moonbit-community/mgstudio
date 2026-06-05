@@ -65,7 +65,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true),
+    @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
   )
   try! world.set_by_key(
     directional_light,
@@ -82,7 +82,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let black_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_perceptual_roughness(
+    @pbr.StandardMaterial::from_color(@color.Color::black()).with_perceptual_roughness(
       1.0F,
     ),
   )

@@ -94,7 +94,7 @@ fn spawn_ui_label(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
+    @text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -111,7 +111,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     (
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera().with_clear_color(
-        @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
+        @color.Color::srgb(0.14F, 0.12F, 0.20F),
       ),
       @transform.Transform::identity(),
     ),
@@ -134,7 +134,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     (
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera().with_clear_color(
-        @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
+        @color.Color::srgb(0.08F, 0.10F, 0.14F),
       ),
       @transform.Transform::identity(),
       @camera_camera.RenderTarget::Window(
@@ -157,7 +157,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     text_font,
     @transform.Transform::identity(),
   )
-  .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
+  .with_color(@text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)))
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
@@ -168,7 +168,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
     @camera_render_layers.RenderLayers::layer(1),
   )
-  .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
+  .with_color(@text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)))
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
@@ -179,7 +179,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, -50.0F, 0.0F),
     @camera_render_layers.RenderLayers::from_layers([0, 1]),
   )
-  .with_color(@text.TextColor::new(@sprite.Color::srgb(0.8784314F, 1.0F, 1.0F)))
+  .with_color(@text.TextColor::new(@color.Color::srgb(0.8784314F, 1.0F, 1.0F)))
   .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore

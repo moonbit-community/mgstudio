@@ -23,10 +23,10 @@ pub struct Physics2dDebugRenderConfig {
   colliders : Bool
   rigid_bodies : Bool
   impulse_joints : Bool
-  collider_color : @sprite.Color
-  sensor_color : @sprite.Color
-  rigid_body_color : @sprite.Color
-  joint_color : @sprite.Color
+  collider_color : @color.Color
+  sensor_color : @color.Color
+  rigid_body_color : @color.Color
+  joint_color : @color.Color
 }
 
 ///|
@@ -36,10 +36,10 @@ pub fn Physics2dDebugRenderConfig::Physics2dDebugRenderConfig() -> Physics2dDebu
     colliders: true,
     rigid_bodies: true,
     impulse_joints: true,
-    collider_color: @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    sensor_color: @sprite.Color::new(0.0F, 1.0F, 1.0F, 1.0F),
-    rigid_body_color: @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
-    joint_color: @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
+    collider_color: @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    sensor_color: @color.Color::new(0.0F, 1.0F, 1.0F, 1.0F),
+    rigid_body_color: @color.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
+    joint_color: @color.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
   }
 }
 
@@ -90,7 +90,7 @@ fn draw_shape_2d(
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   iso : @rapier_core.Isometry2,
   shape : @collision.Shape,
-  color : @sprite.Color,
+  color : @color.Color,
 ) -> Unit {
   match shape {
     Ball(r) => ignore(gizmos.circle_2d(iso2_to_gizmo(iso), r, color))

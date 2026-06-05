@@ -32,23 +32,23 @@ pub impl @ecs.Component for CameraOrderBox with fn component() {
 }
 
 ///|
-fn red() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
+fn red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn green() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 0.5F, 0.0F)
+fn green() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.5F, 0.0F)
 }
 
 ///|
-fn blue() -> @sprite.Color {
-  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
+fn blue() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn yellow() -> @sprite.Color {
-  @sprite.Color::srgb(1.0F, 1.0F, 0.0F)
+fn yellow() -> @color.Color {
+  @color.Color::srgb(1.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -67,7 +67,7 @@ fn setup(commands : @app.Commands) -> Unit {
           "Each box is rendered by a different camera\n* left-click: increase the camera's order\n* right-click: decrease the camera's order",
         ),
         @text.TextFont::from_font_size(22.0F),
-        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextColor::new(@color.Color::white()),
       ),
     ),
   )
@@ -107,7 +107,7 @@ fn setup(commands : @app.Commands) -> Unit {
         },
         @ui.UiTargetCamera::new(camera_entity),
         @ui.Button::Button(),
-        @ui.BackgroundColor::new(@sprite.Color::black()),
+        @ui.BackgroundColor::new(@color.Color::black()),
         @ui.BorderColor::new(yellow()),
         CameraOrderBox::{ camera_entity, label_entity },
       ),

@@ -358,7 +358,7 @@ fn setup(
         @pbr.MeshMaterial3d::new(
           @pbr.standard_material_add(
             @pbr.StandardMaterial::from_color(
-              @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
+              @color.Color::srgb(0.3F, 0.5F, 0.3F),
             ),
           ),
         ),
@@ -368,7 +368,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
+        @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
           @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(0.9F * radius)
           .with_maximum_distance(2.8F * radius),

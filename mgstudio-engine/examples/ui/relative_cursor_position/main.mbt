@@ -104,7 +104,7 @@ fn setup(
             @ui.Val::Px(15.0F),
           ),
         ),
-        @ui.BackgroundColor::new(@sprite.Color::srgb(0.92F, 0.14F, 0.05F)),
+        @ui.BackgroundColor::new(@color.Color::srgb(0.92F, 0.14F, 0.05F)),
       ),
     ),
   )
@@ -118,7 +118,7 @@ fn setup(
         @text.TextFont::from_font_size(33.0F).with_font(
           asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
         ),
-        @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
+        @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
   )
@@ -146,9 +146,9 @@ fn relative_cursor_position_system(
 
   let content = cursor_position_text(relative_cursor_position)
   let color = if relative_cursor_position.cursor_over() {
-    @sprite.Color::srgb(0.1F, 0.9F, 0.1F)
+    @color.Color::srgb(0.1F, 0.9F, 0.1F)
   } else {
-    @sprite.Color::srgb(0.9F, 0.1F, 0.1F)
+    @color.Color::srgb(0.9F, 0.1F, 0.1F)
   }
 
   try! outputs.view(fn(_entity, data) {

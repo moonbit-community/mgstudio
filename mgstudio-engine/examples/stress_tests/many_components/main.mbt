@@ -143,7 +143,7 @@ fn setup(commands : @app.Commands) -> Unit {
             e,
             f,
             @sprite.Sprite::sized(@math.Vec2::new(4.0F, 4.0F)).with_color(
-              @sprite.Color::hsl(float_from_int(i % 360), 0.8F, 0.6F),
+              @color.Color::hsl(float_from_int(i % 360), 0.8F, 0.6F),
             ),
             @transform.Transform::from_xyz(
               (float_from_int(col) - float_from_int(GRID_COLS) * 0.5F) *

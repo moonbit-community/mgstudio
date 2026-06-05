@@ -128,9 +128,7 @@ fn setup(
   let floor_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.16F, 0.19F, 0.24F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.16F, 0.19F, 0.24F)),
     )
   ignore(
     commands.spawn(
@@ -147,9 +145,7 @@ fn setup(
   let cube_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.78F, 0.86F, 0.95F),
-      ),
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.78F, 0.86F, 0.95F)),
     )
   let cube_assets = CubeAssets::{ mesh: cube_mesh, material: cube_material }
   commands.insert_resource(cube_assets)

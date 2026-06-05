@@ -61,7 +61,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(620.0F, 360.0F)).with_color(
-          @sprite.Color::srgb(0.14F, 0.16F, 0.24F),
+          @color.Color::srgb(0.14F, 0.16F, 0.24F),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, -1.0F),
         MenuPanel::{  },
@@ -72,7 +72,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @sprite.Sprite::sized(@math.Vec2::new(44.0F, 44.0F)).with_color(
-          @sprite.Color::srgb(0.24F, 0.94F, 0.36F),
+          @color.Color::srgb(0.24F, 0.94F, 0.36F),
         ),
         @transform.Transform::from_xyz(0.0F, -120.0F, 0.2F),
         Player::{  },
@@ -105,9 +105,9 @@ fn update_visuals(
   try! panels.for_each(fn(_entity, panel) {
     panel.modify(fn(value) {
       value.color = if playing {
-        @sprite.Color::srgb(0.09F, 0.24F, 0.18F)
+        @color.Color::srgb(0.09F, 0.24F, 0.18F)
       } else {
-        @sprite.Color::srgb(0.14F, 0.16F, 0.24F)
+        @color.Color::srgb(0.14F, 0.16F, 0.24F)
       }
     })
   })
