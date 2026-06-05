@@ -387,19 +387,19 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_bloom),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_bloom),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_tonemapping),
     content="false",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_deband_dither),
     content="false",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_color_grading),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_color_grading),
     content="true",
   )
   debug_inspect(ecs_transform_matches(world, entity, transform), content="true")
@@ -443,11 +443,15 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom),
+    ecs_has_non_null_payload(app.world(), entity, @post_process.ecs_key_bloom),
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_color_grading),
+    ecs_has_non_null_payload(
+      app.world(),
+      entity,
+      @post_process.ecs_key_color_grading,
+    ),
     content="true",
   )
 }
@@ -512,7 +516,12 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     @camera_components2d.Camera2d::Camera2d(),
   )
   |> ignore)
-  try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
+  try! (world.set_by_key(
+    entity,
+    @post_process.ecs_key_bloom,
+    @post_process.Bloom::natural(),
+  )
+  |> ignore)
 
   debug_inspect(
     ecs_has_non_null_payload(world, entity, @camera_camera.ecs_key_camera),
@@ -541,15 +550,15 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
     content="true",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_tonemapping),
     content="false",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
+    ecs_has_non_null_payload(world, entity, @post_process.ecs_key_deband_dither),
     content="false",
   )
   debug_inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_hdr),
+    ecs_has_non_null_payload(world, entity, @core_pipeline.ecs_key_hdr),
     content="true",
   )
 

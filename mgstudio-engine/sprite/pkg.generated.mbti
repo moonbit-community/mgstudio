@@ -9,7 +9,6 @@ import {
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -34,14 +33,6 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
-pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
-
-pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
-
-pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
-
-pub let ecs_key_hdr : @ecs.ComponentKey[@core_3d.Hdr]
-
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@material.MeshMaterial2d[@color_material.ColorMaterial]]
 
 pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
@@ -53,8 +44,6 @@ pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
 
 pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh]
-
-pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_resources : Array[String]
 
@@ -791,12 +780,6 @@ pub using @math {type Annulus}
 
 pub using @math {type Arc2d}
 
-pub using @post_process {type Bloom}
-
-pub using @post_process {type BloomCompositeMode}
-
-pub using @post_process {type BloomPrefilter}
-
 pub using @math {type Capsule2d}
 
 pub using @math {type Circle}
@@ -809,21 +792,9 @@ pub using @math {type CircularSegment}
 
 pub using @color {type Color}
 
-pub using @post_process {type ColorGrading}
-
-pub using @post_process {type ColorGradingGlobal}
-
-pub using @post_process {type ColorGradingRange}
-
-pub using @post_process {type ColorGradingSection}
-
 pub using @math {type ConvexPolygon}
 
-pub using @post_process {type DebandDither}
-
 pub using @math {type Ellipse}
-
-pub using @core_3d {type Hdr}
 
 pub using @math {type Line2d}
 
@@ -846,8 +817,6 @@ pub using @math {type Rhombus}
 pub using @math {type Ring}
 
 pub using @math {type Segment2d}
-
-pub using @post_process {type Tonemapping}
 
 pub using @math {type Triangle2d}
 

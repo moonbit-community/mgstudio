@@ -104,7 +104,10 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
 fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
-      (@camera_components2d.Camera2d::Camera2d(), @sprite.Bloom::natural()),
+      (
+        @camera_components2d.Camera2d::Camera2d(),
+        @post_process_bloom.Bloom::natural(),
+      ),
     ),
   )
 }

@@ -48,7 +48,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn bloom_mode_text(mode : @sprite.BloomCompositeMode) -> String {
+fn bloom_mode_text(mode : @post_process_bloom.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -56,7 +56,7 @@ fn bloom_mode_text(mode : @sprite.BloomCompositeMode) -> String {
 }
 
 ///|
-fn tonemapping_text(mode : @sprite.Tonemapping) -> String {
+fn tonemapping_text(mode : @core_pipeline_tonemapping.Tonemapping) -> String {
   match mode {
     None => "None"
     AcesFitted => "AcesFitted"
@@ -71,7 +71,9 @@ fn tonemapping_text(mode : @sprite.Tonemapping) -> String {
 }
 
 ///|
-fn next_tonemap(mode : @sprite.Tonemapping) -> @sprite.Tonemapping {
+fn next_tonemap(
+  mode : @core_pipeline_tonemapping.Tonemapping,
+) -> @core_pipeline_tonemapping.Tonemapping {
   match mode {
     None => AcesFitted
     AcesFitted => AgX
@@ -87,8 +89,8 @@ fn next_tonemap(mode : @sprite.Tonemapping) -> @sprite.Tonemapping {
 
 ///|
 fn bloom_help_text(
-  bloom : @sprite.Bloom?,
-  tonemapping : @sprite.Tonemapping,
+  bloom : @post_process_bloom.Bloom?,
+  tonemapping : @core_pipeline_tonemapping.Tonemapping,
 ) -> String {
   let mut text = match bloom {
     Some(bloom) =>
@@ -128,9 +130,9 @@ fn setup(
       (
         @camera_components2d.Camera2d::Camera2d(),
         @camera_camera.Camera::new(@sprite.Color::black()),
-        @sprite.Tonemapping::TonyMcMapface,
-        @sprite.Bloom::Bloom(),
-        @sprite.DebandDither::Enabled,
+        @core_pipeline_tonemapping.Tonemapping::TonyMcMapface,
+        @post_process_bloom.Bloom::Bloom(),
+        @core_pipeline_tonemapping.DebandDither::Enabled,
       ),
     ),
   )
@@ -202,7 +204,11 @@ fn update_bloom_settings(
   commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
   camera : @app.Single[
-    (@core.Entity, @ecs.Comp[@sprite.Tonemapping], @ecs.Optional[@sprite.Bloom]),
+    (
+      @core.Entity,
+      @ecs.Comp[@core_pipeline_tonemapping.Tonemapping],
+      @ecs.Optional[@post_process_bloom.Bloom],
+    ),
     @ecs.With[@camera_camera.Camera],
   ],
   text : @app.Single[@ecs.Mut[@text.Text], @ecs.All],
@@ -222,7 +228,9 @@ fn update_bloom_settings(
   match current_bloom {
     Some(current_bloom) =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        commands.entity(camera_entity).remove_component(@sprite.ecs_key_bloom)
+        commands
+        .entity(camera_entity)
+        .remove_component(@post_process_bloom.ecs_key_bloom)
       } else {
         let mut intensity = current_bloom.intensity
         if @input.key_pressed(@window.KeyCode::KeyA) {
@@ -316,7 +324,9 @@ fn update_bloom_settings(
       }
     None =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        commands.entity(camera_entity).insert_component(@sprite.Bloom::Bloom())
+        commands
+        .entity(camera_entity)
+        .insert_component(@post_process_bloom.Bloom::Bloom())
       }
   }
 

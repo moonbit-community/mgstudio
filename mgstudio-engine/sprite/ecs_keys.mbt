@@ -36,21 +36,6 @@ pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_compon
 )
 
 ///|
-pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
-
-///|
-pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs_key_tonemapping
-
-///|
-pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
-
-///|
-pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
-
-///|
-pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
-
-///|
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
   MeshMaterial2d[ColorMaterial],
 ] = @sprite_render_mesh2d_color_material.color_material_mesh_material2d_component()
@@ -159,9 +144,11 @@ pub fn register_render2d_required_components(
     ecs_key_render_layers,
     fn() { RenderLayers::RenderLayers() },
   )
-  world.register_required_components_with(ecs_key_bloom, ecs_key_hdr, fn() {
-    Hdr()
-  })
+  world.register_required_components_with(
+    @post_process.ecs_key_bloom,
+    @core_pipeline.ecs_key_hdr,
+    fn() { @core_pipeline.Hdr::Hdr() },
+  )
 }
 
 ///|

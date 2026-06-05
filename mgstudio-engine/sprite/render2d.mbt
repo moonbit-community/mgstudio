@@ -22,36 +22,6 @@ pub type Mesh = @mesh.Mesh
 pub type Mesh2dGeometry = @mesh.Mesh2dGeometry
 
 ///|
-pub type ColorGradingRange = @post_process.ColorGradingRange
-
-///|
-pub type ColorGradingGlobal = @post_process.ColorGradingGlobal
-
-///|
-pub type ColorGradingSection = @post_process.ColorGradingSection
-
-///|
-pub type ColorGrading = @post_process.ColorGrading
-
-///|
-pub type Tonemapping = @post_process.Tonemapping
-
-///|
-pub type DebandDither = @post_process.DebandDither
-
-///|
-pub type BloomPrefilter = @post_process.BloomPrefilter
-
-///|
-pub type BloomCompositeMode = @post_process.BloomCompositeMode
-
-///|
-pub type Bloom = @post_process.Bloom
-
-///|
-pub type Hdr = @core_pipeline.Hdr
-
-///|
 type RenderLayers = @camera_render_layers.RenderLayers
 
 ///|
@@ -933,8 +903,8 @@ fn bloom2d_safe_scale_axis(value : Float) -> Float {
 }
 
 ///|
-fn render2d_sanitize_bloom(bloom : Bloom) -> Bloom {
-  Bloom::new(bloom.intensity)
+fn render2d_sanitize_bloom(bloom : @post_process.Bloom) -> @post_process.Bloom {
+  @post_process.Bloom::new(bloom.intensity)
   .with_low_frequency_boost(bloom.low_frequency_boost)
   .with_low_frequency_boost_curvature(bloom.low_frequency_boost_curvature)
   .with_high_pass_frequency(bloom.high_pass_frequency)
@@ -963,7 +933,7 @@ fn bloom2d_log2_floor(value : Int) -> Int {
 }
 
 ///|
-fn bloom2d_mip_count(bloom : Bloom) -> Int {
+fn bloom2d_mip_count(bloom : @post_process.Bloom) -> Int {
   let logv = bloom2d_log2_floor(
     bloom2d_safe_max_mip_dimension(bloom.max_mip_dimension),
   )
@@ -976,7 +946,7 @@ fn bloom2d_mip_count(bloom : Bloom) -> Int {
 }
 
 ///|
-fn bloom2d_prefilter_weight(bloom : Bloom) -> Float {
+fn bloom2d_prefilter_weight(bloom : @post_process.Bloom) -> Float {
   let threshold = bloom2d_clamp_non_negative(bloom.prefilter.threshold)
   let softness = bloom2d_clamp_unit(bloom.prefilter.threshold_softness)
   // Approximate prefilter attenuation in sprite-overlay bloom path.
@@ -990,7 +960,7 @@ fn bloom2d_prefilter_weight(bloom : Bloom) -> Float {
 
 ///|
 fn bloom2d_compute_blend_factor(
-  bloom : Bloom,
+  bloom : @post_process.Bloom,
   mip : Float,
   max_mip : Float,
 ) -> Float {
@@ -1026,7 +996,7 @@ fn bloom2d_compute_blend_factor(
 
 ///|
 fn bloom2d_pass_scale_factor(
-  bloom : Bloom,
+  bloom : @post_process.Bloom,
   pass_index : Int,
   max_mip : Int,
 ) -> @math.Vec2 {
@@ -1046,7 +1016,7 @@ pub fn render2d_draw_bloom_overlay(
   world : @ecs.World,
   source : @asset.Handle[@asset.Image],
   base_transform : @transform.Transform,
-  bloom : Bloom,
+  bloom : @post_process.Bloom,
   layers : RenderLayers,
 ) -> Unit {
   let bloom = render2d_sanitize_bloom(bloom)
@@ -1143,9 +1113,9 @@ priv struct Render2dCameraPostprocessPlan {
 
 ///|
 fn render2d_camera_postprocess_plan(
-  bloom : Bloom?,
+  bloom : @post_process.Bloom?,
   tonemapping_mode : Int,
-  color_grading : ColorGrading?,
+  color_grading : @post_process.ColorGrading?,
   contrast_adaptive_sharpening : @cas.ContrastAdaptiveSharpening?,
 ) -> Render2dCameraPostprocessPlan {
   let tonemapping_enabled = render2d_tonemapping_stage_enabled(
@@ -1170,7 +1140,7 @@ fn render2d_draw_camera_tonemapping(
   source : @asset.Handle[@asset.Image],
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
-  color_grading : ColorGrading?,
+  color_grading : @post_process.ColorGrading?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -1436,10 +1406,10 @@ priv struct ExtractedCamera2d {
   transform : @transform.Transform
   target : @camera_camera.RenderTarget
   layers : RenderLayers
-  bloom : Bloom?
+  bloom : @post_process.Bloom?
   tonemapping_mode : Int
   deband_dither_enabled : Bool
-  color_grading : ColorGrading?
+  color_grading : @post_process.ColorGrading?
   contrast_adaptive_sharpening : @cas.ContrastAdaptiveSharpening?
   computed : CameraComputed
 }
@@ -2678,7 +2648,7 @@ fn render2d_camera_changed(entity : @core.Entity) -> Bool {
 }
 
 ///|
-fn render2d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
+fn render2d_tonemapping_mode_to_int(mode : @post_process.Tonemapping) -> Int {
   match mode {
     None => 0
     Reinhard => 1
@@ -2698,14 +2668,16 @@ fn render2d_tonemapping_mode_enabled(mode : Int) -> Bool {
 }
 
 ///|
-fn render2d_color_grading_enabled(color_grading : ColorGrading?) -> Bool {
+fn render2d_color_grading_enabled(
+  color_grading : @post_process.ColorGrading?,
+) -> Bool {
   color_grading is Some(_)
 }
 
 ///|
 fn render2d_tonemapping_stage_enabled(
   tonemapping_mode : Int,
-  color_grading : ColorGrading?,
+  color_grading : @post_process.ColorGrading?,
 ) -> Bool {
   render2d_color_grading_enabled(color_grading) ||
   render2d_tonemapping_mode_enabled(tonemapping_mode)
@@ -2713,7 +2685,7 @@ fn render2d_tonemapping_stage_enabled(
 
 ///|
 fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
-  match (try! world.get_by_key(camera, ecs_key_tonemapping)) {
+  match (try! world.get_by_key(camera, @post_process.ecs_key_tonemapping)) {
     Some(mode) => render2d_tonemapping_mode_to_int(mode)
     None => 0
   }
@@ -2724,7 +2696,7 @@ fn camera_deband_dither_enabled(
   world : @ecs.World,
   camera : @core.Entity,
 ) -> Bool {
-  match (try! world.get_by_key(camera, ecs_key_deband_dither)) {
+  match (try! world.get_by_key(camera, @post_process.ecs_key_deband_dither)) {
     Some(@post_process.DebandDither::Enabled) => true
     Some(@post_process.DebandDither::Disabled) => false
     None => false
@@ -2735,8 +2707,8 @@ fn camera_deband_dither_enabled(
 fn camera_color_grading(
   world : @ecs.World,
   camera : @core.Entity,
-) -> ColorGrading? {
-  try! world.get_by_key(camera, ecs_key_color_grading)
+) -> @post_process.ColorGrading? {
+  try! world.get_by_key(camera, @post_process.ecs_key_color_grading)
 }
 
 ///|
@@ -2962,7 +2934,7 @@ fn render2d_extract_camera_entity_ecs(
   let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
     RenderLayers::RenderLayers(),
   )
-  let bloom = try! world.get_by_key(entity, ecs_key_bloom)
+  let bloom = try! world.get_by_key(entity, @post_process.ecs_key_bloom)
   let contrast_adaptive_sharpening = try! world.get_by_key(
     entity,
     @cas.ContrastAdaptiveSharpening::component(),
@@ -4971,7 +4943,12 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_camera_postprocess_plan(Some(Bloom()), 0, None, None)
+  let plan = render2d_camera_postprocess_plan(
+    Some(@post_process.Bloom::Bloom()),
+    0,
+    None,
+    None,
+  )
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
@@ -5001,7 +4978,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
   let plan = render2d_camera_postprocess_plan(
     None,
     0,
-    Some(ColorGrading()),
+    Some(@post_process.ColorGrading::ColorGrading()),
     None,
   )
   let ok = plan.uses_intermediate_source &&
