@@ -682,27 +682,6 @@ pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
 pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
 pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
 
-pub struct TilemapChunkMaterial {
-  alpha_mode : @material.AlphaMode2d
-  tileset : @asset.Handle[@image.Image]
-  tile_data : @asset.Handle[@image.Image]
-}
-pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> Self
-pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], @material.AlphaMode2d) -> Self
-pub impl @asset.Asset for TilemapChunkMaterial
-pub impl @material.Material2d for TilemapChunkMaterial
-
-pub struct TilemapChunkMaterialPlugin {
-}
-pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> Self
-pub impl @app.Plugin for TilemapChunkMaterialPlugin
-
-pub struct TilemapChunkMeshCache {
-  // private fields
-}
-pub fn TilemapChunkMeshCache::TilemapChunkMeshCache() -> Self
-pub impl @app.Resource for TilemapChunkMeshCache
-
 pub struct UiBorderRect {
   left : Float
   top : Float

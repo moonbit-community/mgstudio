@@ -7,12 +7,6 @@ type RenderMaterial2dInstances[M] = @sprite_render_mesh2d_material.RenderMateria
 ]
 
 ///|
-type Material2dTextureSampleType = @sprite_render_mesh2d_material.Material2dTextureSampleType
-
-///|
-type Material2dTextureViewDimension = @sprite_render_mesh2d_material.Material2dTextureViewDimension
-
-///|
 type Material2dBinding = @sprite_render_mesh2d_material.Material2dBinding
 
 ///|

@@ -16,6 +16,143 @@
 // Bevy source: `bevy/crates/bevy_sprite_render/src/tilemap_chunk/tilemap_chunk_material.rs`.
 
 ///|
+const MESH2D_SHADER_PATH : String = "sprite_render/mesh2d/mesh2d.wgsl"
+
+///|
+const TILEMAP_CHUNK_MATERIAL_SHADER_PATH : String = "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl"
+
+///|
+fn register_tilemap_chunk_material_wgsl_source() -> Unit {
+  @shader_source.load_embedded_shader_source(
+    TILEMAP_CHUNK_MATERIAL_SHADER_PATH,
+    tilemap_chunk_material_wgsl_source,
+  )
+}
+
+///|
+pub struct TilemapChunkMaterial {
+  alpha_mode : @mesh2d_material.AlphaMode2d
+  tileset : @asset.Handle[@asset.Image]
+  tile_data : @asset.Handle[@asset.Image]
+}
+
+///|
+pub fn TilemapChunkMaterial::new(
+  tileset : @asset.Handle[@asset.Image],
+  tile_data : @asset.Handle[@asset.Image],
+  alpha_mode : @mesh2d_material.AlphaMode2d,
+) -> TilemapChunkMaterial {
+  TilemapChunkMaterial::{ alpha_mode, tileset, tile_data }
+}
+
+///|
+pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> TilemapChunkMaterial {
+  TilemapChunkMaterial::new(
+    @asset.Handle::new(0),
+    @asset.Handle::new(0),
+    @mesh2d_material.AlphaMode2d::Blend,
+  )
+}
+
+///|
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_debug_name() {
+  "mgstudio_sprite_render::TilemapChunkMaterial"
+}
+
+///|
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_as_image(_self) {
+  None
+}
+
+///|
+let tilemap_chunk_material_asset_resource_keys : @asset.AssetResourceKeys[
+  TilemapChunkMaterial,
+] = @asset.register_asset_resource_keys(
+  TilemapChunkMaterial::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for TilemapChunkMaterial with fn asset_resource_keys() {
+  tilemap_chunk_material_asset_resource_keys
+}
+
+///|
+fn tilemap_chunk_material_bind_group(
+  tileset : @asset.Handle[@asset.Image],
+  tile_data : @asset.Handle[@asset.Image],
+) -> @mesh2d_material.Material2dBindGroup {
+  @mesh2d_material.Material2dBindGroup::new([
+    @mesh2d_material.Material2dBinding::texture_with_layout(
+      0,
+      Some(tileset),
+      @mesh2d_material.Material2dTextureSampleType::Float,
+      @mesh2d_material.Material2dTextureViewDimension::D2Array,
+    ),
+    @mesh2d_material.Material2dBinding::sampler(1, Some(tileset)),
+    @mesh2d_material.Material2dBinding::texture_with_layout(
+      2,
+      Some(tile_data),
+      @mesh2d_material.Material2dTextureSampleType::UInt,
+      @mesh2d_material.Material2dTextureViewDimension::D2,
+    ),
+  ])
+}
+
+///|
+pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn alpha_mode(
+  self,
+) {
+  self.alpha_mode
+}
+
+///|
+pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn material2d_debug_name() {
+  "mgstudio_sprite_render::TilemapChunkMaterial"
+}
+
+///|
+let tilemap_chunk_material_material2d_keys : @mesh2d_material.Material2dKeys[
+  TilemapChunkMaterial,
+] = @mesh2d_material.register_material2d_keys(
+  TilemapChunkMaterial::material2d_debug_name(),
+)
+
+///|
+pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn material2d_keys() {
+  tilemap_chunk_material_material2d_keys
+}
+
+///|
+pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn bind_group(
+  self,
+) {
+  tilemap_chunk_material_bind_group(self.tileset, self.tile_data)
+}
+
+///|
+pub struct TilemapChunkMaterialPlugin {}
+
+///|
+pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> TilemapChunkMaterialPlugin {
+  TilemapChunkMaterialPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for TilemapChunkMaterialPlugin with fn name(_self) {
+  "mgstudio.sprite_render.TilemapChunkMaterialPlugin"
+}
+
+///|
+pub impl @app.Plugin for TilemapChunkMaterialPlugin with fn build(_self, app) {
+  register_tilemap_chunk_material_wgsl_source()
+  let plugin : @mesh2d_material.Material2dPlugin[TilemapChunkMaterial] = @mesh2d_material.Material2dPlugin::Material2dPlugin()
+    .with_asset_init(fn() { TilemapChunkMaterial::TilemapChunkMaterial() })
+    .with_vertex_shader(MESH2D_SHADER_PATH)
+    .with_fragment_shader(TILEMAP_CHUNK_MATERIAL_SHADER_PATH)
+  app.add_plugins(plugin)
+}
+
+///|
 pub(all) struct PackedTileData {
   tileset_index : Int
   color : @color.Color

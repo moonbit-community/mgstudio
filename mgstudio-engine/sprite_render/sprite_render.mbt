@@ -74,10 +74,10 @@ pub type TileOrientation = @tilemap_chunk.TileOrientation
 pub type TilemapChunk = @tilemap_chunk.TilemapChunk
 
 ///|
-pub type TilemapChunkMaterial = @sprite.TilemapChunkMaterial
+pub type TilemapChunkMaterial = @tilemap_chunk.TilemapChunkMaterial
 
 ///|
-pub type TilemapChunkMaterialPlugin = @sprite.TilemapChunkMaterialPlugin
+pub type TilemapChunkMaterialPlugin = @tilemap_chunk.TilemapChunkMaterialPlugin
 
 ///|
 pub type TilemapChunkTileData = @tilemap_chunk.TilemapChunkTileData

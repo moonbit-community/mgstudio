@@ -86,11 +86,4 @@ fn register_embedded_mesh2d_wgsl_sources_generated() -> Unit {
     "sprite_render/sprite_mesh/sprite_material.wgsl",
     @asset.asset_text_to_bytes(sprite_render_sprite_material_wgsl_source),
   )
-  @shader_source.load_embedded_shader_source(
-    "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl", sprite_render_tilemap_chunk_material_wgsl_source,
-  )
-  @asset.register_embedded_asset_virtual_bytes(
-    "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
-    @asset.asset_text_to_bytes(sprite_render_tilemap_chunk_material_wgsl_source),
-  )
 }

@@ -44,12 +44,6 @@ pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect] = @ecs.register_co
 let ecs_key_mesh2d_wireframe : @ecs.ComponentKey[Mesh2dWireframe] = @sprite_render_mesh2d_wireframe2d.ecs_key_mesh2d_wireframe
 
 ///|
-let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @sprite_tilemap_chunk.ecs_key_tilemap_chunk
-
-///|
-let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[TilemapChunkTileData] = @sprite_tilemap_chunk.ecs_key_tilemap_chunk_tile_data
-
-///|
 pub impl @ecs.Component for Sprite with fn component() {
   ecs_key_sprite
 }
@@ -432,7 +426,7 @@ pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "ScissorRect",
   "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial", "Tonemapping",
   "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
-  "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
+  "Wireframe2dColor",
 ]
 
 ///|

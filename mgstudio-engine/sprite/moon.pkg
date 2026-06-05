@@ -102,10 +102,5 @@ options(
       "input": "../sprite_render/sprite_mesh/sprite_material.wgsl",
       "output": "sprite_render_sprite_material_wgsl.mbt",
     },
-    {
-      "command": ":embed --input $input --output $output --name sprite_render_tilemap_chunk_material_wgsl_source",
-      "input": "../sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
-      "output": "sprite_render_tilemap_chunk_material_wgsl.mbt",
-    },
   ],
 )

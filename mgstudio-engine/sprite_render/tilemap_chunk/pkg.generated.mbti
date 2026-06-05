@@ -2,14 +2,17 @@
 package "Milky2018/mgstudio/sprite_render/tilemap_chunk"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
@@ -21,6 +24,8 @@ pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[TilemapChunkTileData
 pub fn make_chunk_tile_data_image(@math.UVec2, Array[PackedTileData]) -> @image.Image?
 
 pub fn tilemap_chunk_tile_data_image(TilemapChunk, TilemapChunkTileData) -> @image.Image?
+
+pub fn update_tilemap_chunk_indices(@ecs.World) -> Unit
 
 // Errors
 
@@ -78,6 +83,32 @@ pub fn TilemapChunk::tile_capacity(Self) -> Int
 pub impl @ecs.Component for TilemapChunk
 pub impl ToJson for TilemapChunk
 pub impl @json.FromJson for TilemapChunk
+
+pub struct TilemapChunkMaterial {
+  alpha_mode : @material.AlphaMode2d
+  tileset : @asset.Handle[@image.Image]
+  tile_data : @asset.Handle[@image.Image]
+}
+pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> Self
+pub fn TilemapChunkMaterial::new(@asset.Handle[@image.Image], @asset.Handle[@image.Image], @material.AlphaMode2d) -> Self
+pub impl @asset.Asset for TilemapChunkMaterial
+pub impl @material.Material2d for TilemapChunkMaterial
+
+pub struct TilemapChunkMaterialPlugin {
+}
+pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> Self
+pub impl @app.Plugin for TilemapChunkMaterialPlugin
+
+pub struct TilemapChunkMeshCache {
+  handles : @hashmap.HashMap[String, @asset.Handle[@mesh.Mesh]]
+}
+pub fn TilemapChunkMeshCache::TilemapChunkMeshCache() -> Self
+pub impl @app.Resource for TilemapChunkMeshCache
+
+pub struct TilemapChunkPlugin {
+}
+pub fn TilemapChunkPlugin::TilemapChunkPlugin() -> Self
+pub impl @app.Plugin for TilemapChunkPlugin
 
 pub struct TilemapChunkTileData {
   tile_data : Array[TileData?]

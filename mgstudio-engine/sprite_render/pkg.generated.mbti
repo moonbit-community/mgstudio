@@ -137,9 +137,9 @@ pub using @tilemap_chunk {type TileOrientation}
 
 pub using @tilemap_chunk {type TilemapChunk}
 
-pub using @sprite {type TilemapChunkMaterial}
+pub using @tilemap_chunk {type TilemapChunkMaterial}
 
-pub using @sprite {type TilemapChunkMaterialPlugin}
+pub using @tilemap_chunk {type TilemapChunkMaterialPlugin}
 
 pub using @tilemap_chunk {type TilemapChunkTileData}
 

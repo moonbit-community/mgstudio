@@ -1,11 +1,28 @@
 import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
+  "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/mgstudio/sprite_render/mesh2d/material" @mesh2d_material,
   "Milky2018/mgstudio/transform",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
   "moonbitlang/core/json",
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name tilemap_chunk_material_wgsl_source",
+      "input": "tilemap_chunk_material.wgsl",
+      "output": "tilemap_chunk_material_wgsl.mbt",
+    },
+  ],
+)
