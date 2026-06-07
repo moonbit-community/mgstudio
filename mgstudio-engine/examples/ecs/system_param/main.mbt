@@ -127,7 +127,7 @@ fn count_players(counter : PlayerCounterParam) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(PlayerCount::{ value: 0 })
-  .add_systems(@app.Startup, @app.system_config_param(spawn))
-  .add_systems(@app.Update, @app.system_config_param(count_players))
+  .add_systems_param(@app.Startup, spawn)
+  .add_systems_param(@app.Update, count_players)
   .run()
 }

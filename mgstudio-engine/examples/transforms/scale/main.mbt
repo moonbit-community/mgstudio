@@ -151,8 +151,8 @@ fn scale_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param2(change_scale_direction))
-  .add_systems(@app.Update, @app.system_config_param2(scale_cube))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, change_scale_direction)
+  .add_systems_param2(@app.Update, scale_cube)
   .run()
 }

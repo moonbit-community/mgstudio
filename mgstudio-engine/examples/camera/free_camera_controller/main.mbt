@@ -428,7 +428,7 @@ fn spawn_world(
 
 ///|
 fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_systems(@app.Startup, @app.system_config_param(spawn_camera))
+  app.add_systems_param(@app.Startup, spawn_camera)
 }
 
 ///|
@@ -440,7 +440,7 @@ fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     update_text,
   )
   app
-  .add_systems(@app.PostStartup, @app.system_config_param3(spawn_text))
+  .add_systems_param3(@app.PostStartup, spawn_text)
   .add_systems(
     @app.Update,
     (update_camera_settings_system, update_text_system) |> @app.chain(),
@@ -450,8 +450,8 @@ fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Startup, @app.system_config_param(spawn_lights))
-  .add_systems(@app.Startup, @app.system_config_param3(spawn_world))
+  .add_systems_param(@app.Startup, spawn_lights)
+  .add_systems_param3(@app.Startup, spawn_world)
 }
 
 ///|

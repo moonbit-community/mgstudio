@@ -349,7 +349,7 @@ fn move_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_mode(_world : @ecs.World) -> Unit {
+fn update_mode() -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     visibility_range_state.val.show_mode = SHOW_MODE_AUTO
@@ -421,10 +421,10 @@ fn update_visibility(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_camera))
-  .add_systems(@app.Update, @app.system(update_mode))
-  .add_systems(@app.Update, @app.system(toggle_prepass))
-  .add_systems(@app.Update, @app.system(update_visibility))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, move_camera)
+  .add_systems_fn(@app.Update, update_mode)
+  .add_systems_world(@app.Update, toggle_prepass)
+  .add_systems_world(@app.Update, update_visibility)
   .run()
 }

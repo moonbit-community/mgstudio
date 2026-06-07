@@ -421,7 +421,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_environment_map_usage(_world : @ecs.World) -> Unit {
+fn setup_environment_map_usage() -> Unit {
   if reflection_probes_state.val.environment_map_usage_ready {
     return
   }
@@ -458,7 +458,7 @@ fn cycle_reflection_mode(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn toggle_rotation(_world : @ecs.World) -> Unit {
+fn toggle_rotation() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Enter) {
     reflection_probes_state.val.rotating = !reflection_probes_state.val.rotating
     update_help_text()
@@ -466,7 +466,7 @@ fn toggle_rotation(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn change_sphere_roughness(_world : @ecs.World) -> Unit {
+fn change_sphere_roughness() -> Unit {
   let roughness_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
     0.01F
   } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
@@ -543,11 +543,11 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(setup_environment_map_usage))
-  .add_systems(@app.Update, @app.system(cycle_reflection_mode))
-  .add_systems(@app.Update, @app.system(toggle_rotation))
-  .add_systems(@app.Update, @app.system(change_sphere_roughness))
-  .add_systems(@app.Update, @app.system(rotate_camera))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_fn(@app.Update, setup_environment_map_usage)
+  .add_systems_world(@app.Update, cycle_reflection_mode)
+  .add_systems_fn(@app.Update, toggle_rotation)
+  .add_systems_fn(@app.Update, change_sphere_roughness)
+  .add_systems_world(@app.Update, rotate_camera)
   .run()
 }

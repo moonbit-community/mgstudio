@@ -13,12 +13,11 @@
 // limitations under the License.
 
 ///|
+/// Interactive distance-fog lighting example.
 ///
-/// Baseline parity: upstream voxel volumetric fog stack (`VolumetricFog`,
-/// `VolumetricLight`, `FogVolume`, bloom/skybox integration) is approximated
-/// using mgstudio's current distance-fog pipeline with light-driven scattering
-/// response and proxy fog volume geometry; camera tonemapping/bloom/skybox are
-/// aligned with upstream setup.
+/// Demonstrates a foggy corridor, moving lights, keyboard toggles, bloom,
+/// tonemapping, and skybox setup without relying on the unfinished voxel
+/// volumetric-fog render path.
 
 ///|
 const DIRECTIONAL_LIGHT_MOVEMENT_SPEED : Float = 1.2F
@@ -34,8 +33,8 @@ const POINT_LIGHT_INITIAL_SPEED : Float = -0.2F
 
 ///|
 priv struct VolumetricFogState {
-  mut volumetric_spotlight : Bool
-  mut volumetric_pointlight : Bool
+  mut spotlight_fog_enabled : Bool
+  mut point_light_fog_enabled : Bool
   mut camera : @core.Entity?
   mut directional_light : @core.Entity?
   mut point_light : @core.Entity?
@@ -46,8 +45,8 @@ priv struct VolumetricFogState {
 
 ///|
 let volumetric_fog_state : Ref[VolumetricFogState] = Ref({
-  volumetric_spotlight: true,
-  volumetric_pointlight: true,
+  spotlight_fog_enabled: true,
+  point_light_fog_enabled: true,
   camera: None,
   directional_light: None,
   point_light: None,
@@ -96,16 +95,16 @@ fn scene_focus() -> @math.Vec3 {
 
 ///|
 fn create_text() -> String {
-  let point_text = if volumetric_fog_state.val.volumetric_pointlight {
-    "Press P to turn volumetric point light off"
+  let point_text = if volumetric_fog_state.val.point_light_fog_enabled {
+    "Press P to turn point-light fog influence off"
   } else {
-    "Press P to turn volumetric point light on"
+    "Press P to turn point-light fog influence on"
   }
 
-  let spot_text = if volumetric_fog_state.val.volumetric_spotlight {
-    "Press L to turn volumetric spot light off"
+  let spot_text = if volumetric_fog_state.val.spotlight_fog_enabled {
+    "Press L to turn spot-light fog influence off"
   } else {
-    "Press L to turn volumetric spot light on"
+    "Press L to turn spot-light fog influence on"
   }
 
   "Press WASD or the arrow keys to change the direction of the directional light\n\{point_text}\n\{spot_text}"
@@ -334,7 +333,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_instructions(_world : @ecs.World) -> Unit {
+fn setup_instructions() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -368,13 +367,13 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
         @pbr.ecs_key_point_light,
         @pbr.PointLight::new(
           light.color,
-          if volumetric_fog_state.val.volumetric_pointlight {
+          if volumetric_fog_state.val.point_light_fog_enabled {
             10_000.0F
           } else {
             0.0F
           },
           light.range,
-          volumetric_fog_state.val.volumetric_pointlight,
+          volumetric_fog_state.val.point_light_fog_enabled,
         ),
       )
       |> ignore)
@@ -389,7 +388,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
         @pbr.ecs_key_spot_light,
         @pbr.SpotLight::new(
           light.color,
-          if volumetric_fog_state.val.volumetric_spotlight {
+          if volumetric_fog_state.val.spotlight_fog_enabled {
             50_000.0F
           } else {
             0.0F
@@ -397,7 +396,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           light.range,
           light.inner_angle,
           light.outer_angle,
-          volumetric_fog_state.val.volumetric_spotlight,
+          volumetric_fog_state.val.spotlight_fog_enabled,
         ),
       )
       |> ignore)
@@ -425,12 +424,12 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
     }
   }
 
-  let point_factor = if volumetric_fog_state.val.volumetric_pointlight {
+  let point_factor = if volumetric_fog_state.val.point_light_fog_enabled {
     0.22F
   } else {
     0.0F
   }
-  let spot_factor = if volumetric_fog_state.val.volumetric_spotlight {
+  let spot_factor = if volumetric_fog_state.val.spotlight_fog_enabled {
     0.26F
   } else {
     0.0F
@@ -551,12 +550,12 @@ fn adjust_app_settings(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
-    volumetric_fog_state.val.volumetric_pointlight = !volumetric_fog_state.val.volumetric_pointlight
+    volumetric_fog_state.val.point_light_fog_enabled = !volumetric_fog_state.val.point_light_fog_enabled
     changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
-    volumetric_fog_state.val.volumetric_spotlight = !volumetric_fog_state.val.volumetric_spotlight
+    volumetric_fog_state.val.spotlight_fog_enabled = !volumetric_fog_state.val.spotlight_fog_enabled
     changed = true
   }
 
@@ -576,8 +575,8 @@ fn adjust_app_settings(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   volumetric_fog_state.val = {
-    volumetric_spotlight: true,
-    volumetric_pointlight: true,
+    spotlight_fog_enabled: true,
+    point_light_fog_enabled: true,
     camera: None,
     directional_light: None,
     point_light: None,
@@ -594,7 +593,7 @@ fn setup(world : @ecs.World) -> Unit {
   setup_scene_geometry(world)
   setup_camera(world)
   setup_lights(world)
-  setup_instructions(world)
+  setup_instructions()
   apply_light_switches(world)
   apply_fog_proxy(world)
 }
@@ -603,9 +602,9 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_directional_light))
-  .add_systems(@app.Update, @app.system(move_point_light))
-  .add_systems(@app.Update, @app.system(adjust_app_settings))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, move_directional_light)
+  .add_systems_world(@app.Update, move_point_light)
+  .add_systems_world(@app.Update, adjust_app_settings)
   .run()
 }

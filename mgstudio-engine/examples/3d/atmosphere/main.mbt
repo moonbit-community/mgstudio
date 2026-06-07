@@ -354,7 +354,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_instructions(_world : @ecs.World) -> Unit {
+fn setup_instructions() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -521,7 +521,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   setup_camera(world)
   setup_scene(world)
-  setup_instructions(world)
+  setup_instructions()
   apply_atmosphere(world)
   print_controls()
 }
@@ -530,8 +530,8 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(atmosphere_controls))
-  .add_systems(@app.Update, @app.system(dynamic_scene))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, atmosphere_controls)
+  .add_systems_world(@app.Update, dynamic_scene)
   .run()
 }

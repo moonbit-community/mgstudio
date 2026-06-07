@@ -51,11 +51,11 @@ let lighting_state : Ref[LightingState] = Ref({
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_exposure))
-  .add_systems(@app.Update, @app.system(toggle_ambient_light))
-  .add_systems(@app.Update, @app.system(movement))
-  .add_systems(@app.Update, @app.system(animate_light_direction))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_fn(@app.Update, update_exposure)
+  .add_systems_world(@app.Update, toggle_ambient_light)
+  .add_systems_world(@app.Update, movement)
+  .add_systems_world(@app.Update, animate_light_direction)
   .run()
 }
 
@@ -461,7 +461,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_exposure(_world : @ecs.World) -> Unit {
+fn update_exposure() -> Unit {
   let mut changed = false
   let mut next = lighting_state.val.parameters
   if @input.key_just_pressed(@window.KeyCode::Digit2) {

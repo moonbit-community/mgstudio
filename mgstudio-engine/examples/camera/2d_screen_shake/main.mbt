@@ -105,11 +105,11 @@ impl Default for CameraShakeState with fn default() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(register_camera_shake_requirements))
-  .add_systems(@app.Startup, @app.system_config_param3(setup_scene))
-  .add_systems(@app.Startup, @app.system_config_param2(setup_instructions))
-  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
-  .add_systems(@app.PreUpdate, @app.system_config_param(reset_transform))
+  .add_systems_world(@app.Startup, register_camera_shake_requirements)
+  .add_systems_param3(@app.Startup, setup_scene)
+  .add_systems_param2(@app.Startup, setup_instructions)
+  .add_systems_param(@app.Startup, setup_camera)
+  .add_systems_param(@app.PreUpdate, reset_transform)
   .add_systems(
     @app.Update,
     @app.system_config_param(increase_trauma).run_if(

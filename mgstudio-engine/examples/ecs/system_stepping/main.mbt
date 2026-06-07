@@ -30,9 +30,9 @@ const UPDATE_SYSTEM_FOUR_NAME : String = "examples.ecs.system_stepping.update_fo
 ///|
 fn named_system(
   name : String,
-  system_fn : (@ecs.World) -> Unit,
+  system_fn : () -> Unit,
 ) -> @app.SystemConfig[@ecs.World] {
-  @app.system(system_fn).named(name).in_set(@app.system_set(name))
+  @app.system_config_fn(system_fn).named(name).in_set(@app.system_set(name))
 }
 
 ///|
@@ -142,26 +142,26 @@ fn stepping_ref(app : @app.App[@ecs.World]) -> @ecs.ResourceMut[@app.Stepping] {
 }
 
 ///|
-fn pre_update_system(_world : @ecs.World) -> Unit {
+fn pre_update_system() -> Unit {
   println("▶ pre_update_system")
 }
 
 ///|
-fn update_system_one(_world : @ecs.World) -> Unit {
+fn update_system_one() -> Unit {
   println("▶ update_system_one")
 }
 
 ///|
-fn update_system_two(_world : @ecs.World) -> Unit {
+fn update_system_two() -> Unit {
   println("▶ update_system_two")
 }
 
 ///|
-fn update_system_three(_world : @ecs.World) -> Unit {
+fn update_system_three() -> Unit {
   println("▶ update_system_three")
 }
 
 ///|
-fn update_system_four(_world : @ecs.World) -> Unit {
+fn update_system_four() -> Unit {
   println("▶ update_system_four")
 }

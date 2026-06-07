@@ -178,7 +178,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param2(rotate_cameras))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, rotate_cameras)
   .run()
 }

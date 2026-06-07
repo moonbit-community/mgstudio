@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn setup(_world : @ecs.World) -> Unit {
+fn setup() -> Unit {
   println("Press P to panic")
 }
 
 ///|
-fn panic_on_p(_world : @ecs.World) -> Unit {
+fn panic_on_p() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
     abort("P pressed, panicking")
   }
 }
 
 ///|
-fn log_system(_world : @ecs.World) -> Unit {
+fn log_system() -> Unit {
   @app.log_trace("very noisy")
   @app.log_debug("helpful for debugging")
   @app.log_info("helpful information that is worth printing by default")
@@ -36,7 +36,7 @@ fn log_system(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn log_once_system(_world : @ecs.World) -> Unit {
+fn log_once_system() -> Unit {
   @app.log_trace_once("logs::trace_once", "one time noisy message")
   @app.log_debug_once("logs::debug_once", "one time debug message")
   @app.log_info_once("logs::info_once", "some info which is printed only once")
@@ -76,11 +76,11 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@app.LogPlugin::LogPlugin())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Startup, @app.system(setup_visual))
-  .add_systems(@app.Update, @app.system(log_system))
-  .add_systems(@app.Update, @app.system(log_once_system))
-  .add_systems(@app.Update, @app.system(panic_on_p))
+  .add_systems_fn(@app.Startup, setup)
+  .add_systems_world(@app.Startup, setup_visual)
+  .add_systems_fn(@app.Update, log_system)
+  .add_systems_fn(@app.Update, log_once_system)
+  .add_systems_fn(@app.Update, panic_on_p)
   .run()
 }
 

@@ -229,9 +229,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param3(spawn_on_click))
-  .add_systems(@app.Update, @app.system_config_param2(movement_system))
-  .add_systems(@app.Update, @app.system_config_param2(counter_system))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(@app.Update, spawn_on_click)
+  .add_systems_param2(@app.Update, movement_system)
+  .add_systems_param2(@app.Update, counter_system)
   .run()
 }

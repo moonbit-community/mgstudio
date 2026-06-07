@@ -856,18 +856,18 @@ fn main {
   .add_systems(
     @app.Startup,
     (
-      @app.system(setup_camera),
-      @app.system(setup_scene_system),
-      @app.system(setup_ui),
+      @app.system_config_world(setup_camera),
+      @app.system_config_world(setup_scene_system),
+      @app.system_config_world(setup_ui),
     )
     |> @app.chain(),
   )
   .add_systems(
     @app.Update,
     (
-      @app.system(keyboard_inputs),
-      @app.system(move_cars),
-      @app.system(move_camera),
+      @app.system_config_world(keyboard_inputs),
+      @app.system_config_world(move_cars),
+      @app.system_config_world(move_camera),
     )
     |> @app.chain(),
   )

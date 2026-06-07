@@ -203,9 +203,9 @@ fn main {
   .add_plugins(@mgstudio.MinimalPlugins::MinimalPlugins())
   .insert_resource(@my_time.Time::from_max_delta(@core.Duration::from_secs(5L)))
   .insert_resource(@my_time.Time::from_duration(@core.Duration::from_secs(1L)))
-  .add_systems(@app.PreUpdate, @app.system(print_real_time))
-  .add_systems(@app.FixedUpdate, @app.system(print_fixed_time))
-  .add_systems(@app.Update, @app.system(print_time))
+  .add_systems_world(@app.PreUpdate, print_real_time)
+  .add_systems_world(@app.FixedUpdate, print_fixed_time)
+  .add_systems_world(@app.Update, print_time)
   .set_runner(time_runner_builder)
   .run()
 }

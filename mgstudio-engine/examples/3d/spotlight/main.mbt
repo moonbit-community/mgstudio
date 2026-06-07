@@ -416,9 +416,9 @@ fn rotation(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(light_sway))
-  .add_systems(@app.Update, @app.system(movement))
-  .add_systems(@app.Update, @app.system(rotation))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, light_sway)
+  .add_systems_world(@app.Update, movement)
+  .add_systems_world(@app.Update, rotation)
   .run()
 }

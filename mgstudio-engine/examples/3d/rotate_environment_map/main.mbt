@@ -204,7 +204,7 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotate_skybox_and_environment_map))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, rotate_skybox_and_environment_map)
   .run()
 }

@@ -498,7 +498,7 @@ fn move_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_parallax_controls(_world : @ecs.World) -> Unit {
+fn update_parallax_controls() -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     parallax_state.val.target_depth = clampf(
@@ -551,9 +551,9 @@ fn update_parallax_controls(_world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(spin))
-  .add_systems(@app.Update, @app.system(move_camera))
-  .add_systems(@app.Update, @app.system(update_parallax_controls))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, spin)
+  .add_systems_world(@app.Update, move_camera)
+  .add_systems_fn(@app.Update, update_parallax_controls)
   .run()
 }

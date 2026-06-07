@@ -19,8 +19,8 @@ let player_entity : Ref[@core.Entity?] = Ref(None)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.FixedUpdate, @app.system(controller_input))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.FixedUpdate, controller_input)
   .run()
 }
 

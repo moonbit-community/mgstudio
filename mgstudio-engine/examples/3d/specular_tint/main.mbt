@@ -319,7 +319,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn toggle_specular_map(_world : @ecs.World) -> Unit {
+fn toggle_specular_map() -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
@@ -349,7 +349,7 @@ fn toggle_specular_map(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn shift_hue(_world : @ecs.World) -> Unit {
+fn shift_hue() -> Unit {
   let state = specular_tint_state.val
   if state.tint_type is Map {
     return
@@ -367,7 +367,7 @@ fn shift_hue(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_help_text(_world : @ecs.World) -> Unit {
+fn update_help_text() -> Unit {
   let state = specular_tint_state.val
   guard state.help_text is Some(help_entity) else { return }
   guard @app.current_world() is Some(world) else { return }
@@ -383,10 +383,10 @@ fn update_help_text(_world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotate_camera))
-  .add_systems(@app.Update, @app.system(toggle_specular_map))
-  .add_systems(@app.Update, @app.system(update_help_text))
-  .add_systems(@app.Update, @app.system(shift_hue))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, rotate_camera)
+  .add_systems_fn(@app.Update, toggle_specular_map)
+  .add_systems_fn(@app.Update, update_help_text)
+  .add_systems_fn(@app.Update, shift_hue)
   .run()
 }

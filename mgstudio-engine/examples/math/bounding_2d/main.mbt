@@ -181,13 +181,13 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(Test::RayCast)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_text))
-  .add_systems(@app.Update, @app.system(spin))
-  .add_systems(@app.Update, @app.system(update_test_state))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update_text)
+  .add_systems_world(@app.Update, spin)
+  .add_systems_world(@app.Update, update_test_state)
   .add_systems(
     @app.PostUpdate,
-    @app.system(update_volumes).in_set(SYSTEM_SET_UPDATE_VOLUMES),
+    @app.system_config_world(update_volumes).in_set(SYSTEM_SET_UPDATE_VOLUMES),
   )
   .add_systems(
     @app.PostUpdate,

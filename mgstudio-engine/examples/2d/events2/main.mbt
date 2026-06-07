@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_events2_setup))
-  .add_systems(@app.Update, @app.system(rapier2d_events2_print))
+  .add_systems_world(@app.Startup, rapier2d_events2_setup)
+  .add_systems_world(@app.Update, rapier2d_events2_print)
   .run()
 }
 

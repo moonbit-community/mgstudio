@@ -111,6 +111,118 @@ pub fn[S : States] App::add_on_enter_system(
 }
 
 ///|
+pub fn[S : States, P : SystemParam] App::add_on_enter_system_param(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_enter_system_param2(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param2(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_enter_system_param3(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param3(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_on_enter_system_param4(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param4(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] App::add_on_enter_system_param5(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4, P5) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param5(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] App::add_on_enter_system_param6(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param6(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+] App::add_on_enter_system_param7(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param7(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+  P7 : SystemParam,
+  P8 : SystemParam,
+] App::add_on_enter_system_param8(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system_config_param8(system_fn))
+}
+
+///|
 pub fn[S : States] App::add_on_exit_system_config(
   self : App[@ecs.World],
   state : S,
@@ -129,6 +241,48 @@ pub fn[S : States] App::add_on_exit_system(
   system_fn : SystemFn[@ecs.World],
 ) -> App[@ecs.World] {
   self.add_on_exit_system_config(state, system(system_fn))
+}
+
+///|
+pub fn[S : States, P : SystemParam] App::add_on_exit_system_param(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_exit_system_config(state, system_config_param(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_exit_system_param2(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_exit_system_config(state, system_config_param2(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_exit_system_param3(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_exit_system_config(state, system_config_param3(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_on_exit_system_param4(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_exit_system_config(state, system_config_param4(system_fn))
 }
 
 ///|
@@ -155,6 +309,68 @@ pub fn[S : States] App::add_on_transition_system(
 }
 
 ///|
+pub fn[S : States, P : SystemParam] App::add_on_transition_system_param(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  system_fn : (P) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_transition_system_config(
+    exited,
+    entered,
+    system_config_param(system_fn),
+  )
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_transition_system_param2(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  system_fn : (P1, P2) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_transition_system_config(
+    exited,
+    entered,
+    system_config_param2(system_fn),
+  )
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_transition_system_param3(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_transition_system_config(
+    exited,
+    entered,
+    system_config_param3(system_fn),
+  )
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_on_transition_system_param4(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_transition_system_config(
+    exited,
+    entered,
+    system_config_param4(system_fn),
+  )
+}
+
+///|
 pub fn[S : States] App::add_on_reenter_system_config(
   self : App[@ecs.World],
   state : S,
@@ -176,6 +392,48 @@ pub fn[S : States] App::add_on_reenter_system(
 }
 
 ///|
+pub fn[S : States, P : SystemParam] App::add_on_reenter_system_param(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reenter_system_config(state, system_config_param(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_reenter_system_param2(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reenter_system_config(state, system_config_param2(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_reenter_system_param3(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reenter_system_config(state, system_config_param3(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_on_reenter_system_param4(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reenter_system_config(state, system_config_param4(system_fn))
+}
+
+///|
 pub fn[S : States] App::add_on_reexit_system_config(
   self : App[@ecs.World],
   state : S,
@@ -194,4 +452,46 @@ pub fn[S : States] App::add_on_reexit_system(
   system_fn : SystemFn[@ecs.World],
 ) -> App[@ecs.World] {
   self.add_on_reexit_system_config(state, system(system_fn))
+}
+
+///|
+pub fn[S : States, P : SystemParam] App::add_on_reexit_system_param(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reexit_system_config(state, system_config_param(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_reexit_system_param2(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reexit_system_config(state, system_config_param2(system_fn))
+}
+
+///|
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_reexit_system_param3(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reexit_system_config(state, system_config_param3(system_fn))
+}
+
+///|
+pub fn[
+  S : States,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_on_reexit_system_param4(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : (P1, P2, P3, P4) -> Unit,
+) -> App[@ecs.World] {
+  self.add_on_reexit_system_config(state, system_config_param4(system_fn))
 }

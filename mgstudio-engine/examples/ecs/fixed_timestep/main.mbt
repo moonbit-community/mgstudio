@@ -49,8 +49,8 @@ fn main {
   let fixed_time : @time.Time[@time.Fixed] = @time.Time::from_seconds(0.5F)
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Update, @app.system_config_param2(frame_update))
-  .add_systems(@app.FixedUpdate, @app.system_config_param3(fixed_update))
+  .add_systems_param2(@app.Update, frame_update)
+  .add_systems_param3(@app.FixedUpdate, fixed_update)
   .insert_resource(fixed_time)
   .run()
 }

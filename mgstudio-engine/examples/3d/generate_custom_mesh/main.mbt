@@ -295,7 +295,7 @@ fn input_handler(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param4(setup))
-  .add_systems(@app.Update, @app.system_config_param5(input_handler))
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param5(@app.Update, input_handler)
   .run()
 }

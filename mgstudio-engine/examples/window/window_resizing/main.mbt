@@ -46,10 +46,10 @@ fn main {
     small: @math.Vec2::new(640.0F, 360.0F),
   })
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup_camera))
-  .add_systems(@app.Startup, @app.system(setup_ui))
-  .add_systems(@app.Update, @app.system_config_param2(toggle_resolution))
-  .add_systems(@app.Update, @app.system_config_param(on_resize_system))
+  .add_systems_world(@app.Startup, setup_camera)
+  .add_systems_world(@app.Startup, setup_ui)
+  .add_systems_param2(@app.Update, toggle_resolution)
+  .add_systems_param(@app.Update, on_resize_system)
   .run()
 }
 

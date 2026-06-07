@@ -54,10 +54,10 @@ let spatial_audio_3d_state : Ref[SpatialAudio3dState] = Ref({
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_positions))
-  .add_systems(@app.Update, @app.system(update_listener))
-  .add_systems(@app.Update, @app.system(mute))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update_positions)
+  .add_systems_world(@app.Update, update_listener)
+  .add_systems_world(@app.Update, mute)
   .run()
 }
 

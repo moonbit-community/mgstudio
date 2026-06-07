@@ -1098,22 +1098,22 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(SelectedColorGradingOption::default())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .add_systems(
     @app.Update,
-    @app.system(handle_button_presses)
+    @app.system_config_world(handle_button_presses)
     .after(@ui.ui_set_focus)
     .in_set(color_grading_button_press_set),
   )
   .add_systems(
     @app.Update,
-    @app.system(adjust_color_grading_option)
+    @app.system_config_world(adjust_color_grading_option)
     .in_set(color_grading_adjust_set)
     .after(color_grading_button_press_set),
   )
   .add_systems(
     @app.Update,
-    @app.system(update_ui_state).after(color_grading_adjust_set),
+    @app.system_config_world(update_ui_state).after(color_grading_adjust_set),
   )
   .run()
 }

@@ -215,9 +215,9 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param(input_control))
-  .add_systems(@app.Update, @app.system_config_param2(simulate_pool))
-  .add_systems(@app.Update, @app.system_config_param3(animate_cubes))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param(@app.Update, input_control)
+  .add_systems_param2(@app.Update, simulate_pool)
+  .add_systems_param3(@app.Update, animate_cubes)
   .run()
 }

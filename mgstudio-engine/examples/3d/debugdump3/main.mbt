@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+/// Console-only diagnostic example.
+///
+/// Prints the 3D Rapier `PostUpdate` schedule graph as DOT text. This package
+/// intentionally does not create a window or screenshot.
+
+///|
 fn rapier_debugdump_include_system(name : String) -> Bool {
   !name.has_prefix("pbr.") &&
   !name.has_prefix("render.") &&

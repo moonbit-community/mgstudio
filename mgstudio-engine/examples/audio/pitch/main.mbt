@@ -55,9 +55,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_message(play_pitch_message_key)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param4(play_pitch))
-  .add_systems(@app.Update, @app.system_config_param3(keyboard_input_system))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param4(@app.Update, play_pitch)
+  .add_systems_param3(@app.Update, keyboard_input_system)
   .run()
 }
 

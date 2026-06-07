@@ -153,7 +153,7 @@ fn move_scene_entities(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system(move_scene_entities))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_world(@app.Update, move_scene_entities)
   .run()
 }

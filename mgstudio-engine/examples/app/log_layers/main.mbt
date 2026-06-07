@@ -29,7 +29,7 @@ fn fmt_layer(record : @app.LogRecord) -> Unit {
 }
 
 ///|
-fn log_system(_world : @ecs.World) -> Unit {
+fn log_system() -> Unit {
   @app.log_error("something failed")
   @app.log_warn(
     "something bad happened that isn't a failure, but thats worth calling out",
@@ -49,6 +49,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(log_plugin)
-  .add_systems(@app.Update, @app.system(log_system))
+  .add_systems_fn(@app.Update, log_system)
   .run()
 }

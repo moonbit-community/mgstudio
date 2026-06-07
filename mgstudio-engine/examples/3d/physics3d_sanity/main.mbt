@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(physics3d_sanity_setup))
-  .add_systems(@app.Update, @app.system(physics3d_sanity_print))
+  .add_systems_world(@app.Startup, physics3d_sanity_setup)
+  .add_systems_world(@app.Update, physics3d_sanity_print)
   .run()
 }
 

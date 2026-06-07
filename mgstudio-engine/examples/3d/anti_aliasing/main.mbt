@@ -956,7 +956,7 @@ fn update(keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param(update))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param(@app.Update, update)
   .run()
 }

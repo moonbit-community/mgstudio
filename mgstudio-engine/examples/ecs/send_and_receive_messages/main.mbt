@@ -208,10 +208,7 @@ fn main {
     .add_message(debug_message_key)
     .add_message(a_key)
     .add_message(b_key)
-    .add_systems(
-      @app.Update,
-      @app.system_config_param2(read_and_write_different_message_types),
-    )
+    .add_systems_param2(@app.Update, read_and_write_different_message_types)
     .add_systems(
       @app.Update,
       @app.system_config_param2(send_messages).in_set(send_messages_set),

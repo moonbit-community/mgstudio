@@ -42,11 +42,8 @@ pub impl @ecs.Component for MainCamera with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system_config_param3(player_movement_system),
-  )
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.FixedUpdate, player_movement_system)
   .run()
 }
 

@@ -387,7 +387,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update)
   .run()
 }

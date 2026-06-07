@@ -184,13 +184,13 @@ impl @ecs.Component for MixedOklcha with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(color_animation_setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_curve_linear))
-  .add_systems(@app.Update, @app.system_config_param2(animate_curve_xyza))
-  .add_systems(@app.Update, @app.system_config_param2(animate_curve_oklaba))
-  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_hsla))
-  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_srgba))
-  .add_systems(@app.Update, @app.system_config_param2(animate_mixed_oklcha))
+  .add_systems_world(@app.Startup, color_animation_setup)
+  .add_systems_param2(@app.Update, animate_curve_linear)
+  .add_systems_param2(@app.Update, animate_curve_xyza)
+  .add_systems_param2(@app.Update, animate_curve_oklaba)
+  .add_systems_param2(@app.Update, animate_mixed_hsla)
+  .add_systems_param2(@app.Update, animate_mixed_srgba)
+  .add_systems_param2(@app.Update, animate_mixed_oklcha)
   .run()
 }
 

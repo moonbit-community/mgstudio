@@ -249,7 +249,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn environment_map_load_finish(_world : @ecs.World) -> Unit {
+fn environment_map_load_finish() -> Unit {
   if pbr_state.val.env_loaded {
     return
   }
@@ -269,7 +269,7 @@ fn environment_map_load_finish(_world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(environment_map_load_finish))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_fn(@app.Update, environment_map_load_finish)
   .run()
 }

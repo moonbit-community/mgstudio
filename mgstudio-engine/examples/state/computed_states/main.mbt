@@ -303,59 +303,45 @@ fn main {
     Tutorial::MovementInstructions,
     compute_tutorial,
   )
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_on_enter_system_config(
-    AppState::Menu,
-    @app.system_config_param(setup_menu),
+  .add_systems_param(@app.Startup, setup)
+  .add_on_enter_system_param(AppState::Menu, setup_menu)
+  .add_systems(
+    @app.Update,
+    @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
+  )
+  .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
+  .add_on_enter_system_param2(InGame::{  }, setup_game)
+  .add_systems(
+    @app.Update,
+    @app.system_config_world(toggle_pause).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
     @app.Update,
-    @app.system(menu).run_if(@app.in_state(AppState::Menu)),
-  )
-  .add_on_exit_system_config(
-    AppState::Menu,
-    @app.system_config_param2(cleanup_menu),
-  )
-  .add_on_enter_system_config(
-    InGame::{  },
-    @app.system_config_param2(setup_game),
+    @app.system_config_world(change_color).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
     @app.Update,
-    @app.system(toggle_pause).run_if(@app.in_state(InGame::{  })),
+    @app.system_config_fn(quit_to_menu).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
     @app.Update,
-    @app.system(change_color).run_if(@app.in_state(InGame::{  })),
+    @app.system_config_world(toggle_turbo).run_if(
+      @app.in_state(IsPaused::NotPaused),
+    ),
   )
   .add_systems(
     @app.Update,
-    @app.system(quit_to_menu).run_if(@app.in_state(InGame::{  })),
+    @app.system_config_world(movement).run_if(
+      @app.in_state(IsPaused::NotPaused),
+    ),
   )
-  .add_systems(
-    @app.Update,
-    @app.system(toggle_turbo).run_if(@app.in_state(IsPaused::NotPaused)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(movement).run_if(@app.in_state(IsPaused::NotPaused)),
-  )
-  .add_on_enter_system_config(
-    IsPaused::Paused,
-    @app.system_config_param(setup_paused_screen),
-  )
-  .add_on_enter_system_config(
-    TurboMode::{  },
-    @app.system_config_param(setup_turbo_text),
-  )
-  .add_on_enter_system_config(
+  .add_on_enter_system_param(IsPaused::Paused, setup_paused_screen)
+  .add_on_enter_system_param(TurboMode::{  }, setup_turbo_text)
+  .add_on_enter_system_param(
     Tutorial::MovementInstructions,
-    @app.system_config_param(movement_instructions),
+    movement_instructions,
   )
-  .add_on_enter_system_config(
-    Tutorial::PauseInstructions,
-    @app.system_config_param(pause_instructions),
-  )
+  .add_on_enter_system_param(Tutorial::PauseInstructions, pause_instructions)
   .run()
 }
 
@@ -732,7 +718,7 @@ fn toggle_turbo(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn quit_to_menu(_world : @ecs.World) -> Unit {
+fn quit_to_menu() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Escape) {
     @app.set_state(AppState::Menu)
   }

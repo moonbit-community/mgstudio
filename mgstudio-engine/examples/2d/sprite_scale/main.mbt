@@ -68,10 +68,10 @@ pub impl @ecs.Component for AnimationTimer with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup_sprites))
-  .add_systems(@app.Startup, @app.system_config_param3(setup_texture_atlas))
-  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
-  .add_systems(@app.Update, @app.system_config_param2(animate_sprite))
+  .add_systems_param2(@app.Startup, setup_sprites)
+  .add_systems_param3(@app.Startup, setup_texture_atlas)
+  .add_systems_param(@app.Startup, setup_camera)
+  .add_systems_param2(@app.Update, animate_sprite)
   .run()
 }
 

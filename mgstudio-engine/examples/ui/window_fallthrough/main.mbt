@@ -106,7 +106,7 @@ fn main {
       @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     ),
   )
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param2(toggle_mouse_passthrough))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, toggle_mouse_passthrough)
   .run()
 }

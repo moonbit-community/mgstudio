@@ -383,7 +383,7 @@ fn controls(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(controls))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, controls)
   .run()
 }

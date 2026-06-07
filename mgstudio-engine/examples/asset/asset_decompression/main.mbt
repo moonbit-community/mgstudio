@@ -143,7 +143,7 @@ fn main {
       @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param4(decompress))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param4(@app.Update, decompress)
   .run()
 }

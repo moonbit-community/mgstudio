@@ -182,7 +182,7 @@ fn main {
   .configure_set(@app.Update, cubic_splines_draw_set, after=[
     cubic_splines_curve_set, cubic_splines_ui_set,
   ])
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .add_systems(
     @app.Update,
     @app.system_config_param4(handle_keypress).in_set(cubic_splines_input_set),

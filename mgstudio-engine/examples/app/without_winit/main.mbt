@@ -25,6 +25,6 @@ fn setup_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_systems(@app.Update, @app.system(setup_system))
+  .add_systems_world(@app.Update, setup_system)
   .run()
 }

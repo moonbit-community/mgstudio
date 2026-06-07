@@ -22,7 +22,7 @@ const LABEL_VERTICAL_GAP : Float = 10.0F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems_param2(@app.Startup, setup)
   .run()
 }
 

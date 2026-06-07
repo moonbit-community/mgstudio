@@ -19,7 +19,7 @@ fn main {
   .insert_resource(
     @camera_clear_color.ClearColor::new(@color.Color::srgb(0.5F, 0.5F, 0.9F)),
   )
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems_param2(@app.Startup, setup)
   .run()
 }
 

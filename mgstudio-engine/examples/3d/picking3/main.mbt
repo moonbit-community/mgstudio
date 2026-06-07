@@ -30,8 +30,8 @@ let pick_state : Ref[PickState] = Ref({
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(pick))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, pick)
   .run()
 }
 

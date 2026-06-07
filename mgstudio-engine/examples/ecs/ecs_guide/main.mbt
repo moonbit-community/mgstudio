@@ -131,7 +131,7 @@ fn player_name(index : Int) -> String {
 }
 
 ///|
-fn print_message_system(_world : @ecs.World) -> Unit {
+fn print_message_system() -> Unit {
   println("This game is fun!")
 }
 
@@ -338,15 +338,15 @@ fn main {
   @app.App::new(@ecs.World::new())
   .init_resource(fn() { GameState::GameState() })
   .add_plugins(@app.ScheduleRunnerPlugin::run_loop(0.05F))
-  .add_systems(@app.Startup, @app.system_config_param2(startup_system))
-  .add_systems(@app.Update, @app.system(print_message_system))
-  .add_systems(@app.Last, @app.system_config_param(print_at_end_round))
+  .add_systems_param2(@app.Startup, startup_system)
+  .add_systems_fn(@app.Update, print_message_system)
+  .add_systems_param(@app.Last, print_at_end_round)
   .configure_set(@app.Update, before_round_set, before=[round_set])
   .configure_set(@app.Update, round_set, before=[after_round_set])
   .add_systems(@app.Update, before_round_chain.in_set(before_round_set))
   .add_systems(
     @app.Update,
-    @app.system(exclusive_player_system).in_set(before_round_set),
+    @app.system_config_world(exclusive_player_system).in_set(before_round_set),
   )
   .add_systems(
     @app.Update,

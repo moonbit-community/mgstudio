@@ -600,7 +600,7 @@ fn toggle_voxel_visibility(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn toggle_rotation(_world : @ecs.World) -> Unit {
+fn toggle_rotation() -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Enter) {
     return
   }
@@ -689,7 +689,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_text(_world : @ecs.World) -> Unit {
+fn update_text() -> Unit {
   update_help_text()
 }
 
@@ -697,13 +697,13 @@ fn update_text(_world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotate_camera))
-  .add_systems(@app.Update, @app.system(handle_mouse_clicks))
-  .add_systems(@app.Update, @app.system(change_main_object))
-  .add_systems(@app.Update, @app.system(toggle_irradiance_volumes))
-  .add_systems(@app.Update, @app.system(toggle_voxel_visibility))
-  .add_systems(@app.Update, @app.system(toggle_rotation))
-  .add_systems(@app.Update, @app.system(update_text))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, rotate_camera)
+  .add_systems_world(@app.Update, handle_mouse_clicks)
+  .add_systems_world(@app.Update, change_main_object)
+  .add_systems_world(@app.Update, toggle_irradiance_volumes)
+  .add_systems_world(@app.Update, toggle_voxel_visibility)
+  .add_systems_fn(@app.Update, toggle_rotation)
+  .add_systems_fn(@app.Update, update_text)
   .run()
 }

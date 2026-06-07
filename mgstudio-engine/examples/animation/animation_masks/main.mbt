@@ -829,9 +829,9 @@ fn update_ui(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(setup_animation_graph_once_loaded))
-  .add_systems(@app.Update, @app.system(handle_button_toggles))
-  .add_systems(@app.Update, @app.system(update_ui))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, setup_animation_graph_once_loaded)
+  .add_systems_world(@app.Update, handle_button_toggles)
+  .add_systems_world(@app.Update, update_ui)
   .run()
 }

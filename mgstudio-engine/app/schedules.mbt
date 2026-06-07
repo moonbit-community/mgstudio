@@ -2502,6 +2502,24 @@ pub fn[W] SubApp::add_systems(
 }
 
 ///|
+pub fn[W] SubApp::add_systems_world(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : SystemFn[W],
+) -> SubApp[W] {
+  self.add_systems(schedule, system(system_fn))
+}
+
+///|
+pub fn[W] SubApp::add_systems_fn(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  system_fn : () -> Unit,
+) -> SubApp[W] {
+  self.add_systems(schedule, system_config_fn(system_fn))
+}
+
+///|
 pub fn[W, P : SystemParam] SubApp::add_systems_param(
   self : SubApp[W],
   schedule : ScheduleStage,
@@ -2706,6 +2724,26 @@ pub fn[W] App::add_systems(
   config : SystemConfig[W],
 ) -> App[W] {
   self.sub_apps.main = self.sub_apps.main.add_systems(schedule, config)
+  self
+}
+
+///|
+pub fn[W] App::add_systems_world(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : SystemFn[W],
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_world(schedule, system_fn)
+  self
+}
+
+///|
+pub fn[W] App::add_systems_fn(
+  self : App[W],
+  schedule : ScheduleStage,
+  system_fn : () -> Unit,
+) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_systems_fn(schedule, system_fn)
   self
 }
 

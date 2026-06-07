@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
+/// Distance fog example.
 ///
-/// Baseline parity: upstream `DistanceFog` is camera-attached and runtime-applied,
-/// while mgstudio currently uses a simplified fog blend path without directional
-/// inscattering parameters.
+/// Demonstrates camera-attached `DistanceFog`, keyboard-controlled falloff
+/// modes, and live text updates for the current fog settings.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -285,7 +285,7 @@ fn fog_help_text(fog : @pbr.DistanceFog) -> String {
 }
 
 ///|
-fn setup_instructions(_world : @ecs.World) -> Unit {
+fn setup_instructions() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -483,14 +483,14 @@ fn setup(world : @ecs.World) -> Unit {
   fog_example_state.val.fog = @pbr.DistanceFog::DistanceFog()
   setup_camera_fog(world)
   setup_pyramid_scene(world)
-  setup_instructions(world)
+  setup_instructions()
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_system))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update_system)
   .run()
 }

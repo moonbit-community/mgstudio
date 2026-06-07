@@ -45,11 +45,11 @@ const X_EXTENT : Float = 900.0F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(Startup, @app.system_config_param3(setup_scene))
-  .add_systems(Startup, @app.system_config_param(display_instructions))
-  .add_systems(Update, @app.system_config_param3(disable_entities_on_click))
-  .add_systems(Update, @app.system_config_param2(list_all_named_entities))
-  .add_systems(Update, @app.system_config_param2(reenable_entities_on_space))
+  .add_systems_param3(Startup, setup_scene)
+  .add_systems_param(Startup, display_instructions)
+  .add_systems_param3(Update, disable_entities_on_click)
+  .add_systems_param2(Update, list_all_named_entities)
+  .add_systems_param2(Update, reenable_entities_on_space)
   .run()
 }
 

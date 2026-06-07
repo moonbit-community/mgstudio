@@ -914,9 +914,11 @@ fn rotate_cube(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotate_cube))
-  .add_systems(@app.Update, @app.system(process_drag_input))
-  .add_system_config(@app.system(process_ui_controls).after(@ui.ui_set_focus))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, rotate_cube)
+  .add_systems_world(@app.Update, process_drag_input)
+  .add_system_config(
+    @app.system_config_world(process_ui_controls).after(@ui.ui_set_focus),
+  )
   .run()
 }

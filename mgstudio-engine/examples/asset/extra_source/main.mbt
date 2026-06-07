@@ -45,6 +45,6 @@ fn main {
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
   )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems_param2(@app.Startup, setup)
   .run()
 }

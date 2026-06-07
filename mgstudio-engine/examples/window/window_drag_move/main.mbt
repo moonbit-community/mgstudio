@@ -337,8 +337,8 @@ fn main {
       close_when_requested: true,
     }),
   )
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param3(handle_input))
-  .add_systems(@app.Update, @app.system_config_param3(move_or_resize_windows))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param3(@app.Update, handle_input)
+  .add_systems_param3(@app.Update, move_or_resize_windows)
   .run()
 }

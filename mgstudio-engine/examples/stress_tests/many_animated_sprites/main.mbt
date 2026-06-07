@@ -185,9 +185,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_sprites))
-  .add_systems(@app.Update, @app.system_config_param2(move_camera))
-  .add_systems(@app.Update, @app.system_config_param3(print_sprite_count))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, animate_sprites)
+  .add_systems_param2(@app.Update, move_camera)
+  .add_systems_param3(@app.Update, print_sprite_count)
   .run()
 }

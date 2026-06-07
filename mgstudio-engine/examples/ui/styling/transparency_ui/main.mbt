@@ -119,6 +119,6 @@ fn main {
   .insert_resource(
     @camera_clear_color.ClearColor::new(@color.Color::srgb(0.0F, 0.0F, 0.0F)),
   )
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .run()
 }

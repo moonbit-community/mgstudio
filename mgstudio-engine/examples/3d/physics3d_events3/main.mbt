@@ -20,9 +20,9 @@ fn main {
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   @physics3d.physics3d_debug_render_plugin(app)
-  .add_systems(@app.Startup, @app.system(setup_graphics))
-  .add_systems(@app.Startup, @app.system(setup_physics))
-  .add_systems(@app.PostUpdate, @app.system(display_events))
+  .add_systems_world(@app.Startup, setup_graphics)
+  .add_systems_world(@app.Startup, setup_physics)
+  .add_systems_world(@app.PostUpdate, display_events)
   .run()
 }
 

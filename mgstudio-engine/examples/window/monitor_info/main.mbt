@@ -116,7 +116,7 @@ fn main {
       exit_condition: @window.ExitCondition::DontExit,
     }),
   )
-  .add_systems(@app.Update, @app.system_config_param2(update))
-  .add_systems(@app.Update, @app.system_config_param3(close_on_esc))
+  .add_systems_param2(@app.Update, update)
+  .add_systems_param3(@app.Update, close_on_esc)
   .run()
 }

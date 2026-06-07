@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn setup(_world : @ecs.World) -> Unit {
+fn setup() -> Unit {
   println("Press O/V/D/L to trigger render runtime errors")
   println(
     "Press 1: Ignore, 2: Panic, 3: Exit app, 4: Stop rendering, 5: Recover",
@@ -50,7 +50,7 @@ fn set_recover_policy(
 }
 
 ///|
-fn input_system(_world : @ecs.World) -> Unit {
+fn input_system() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     @app.set_render_error_handler(set_ignore_policy)
     println("render policy: Ignore")
@@ -87,7 +87,7 @@ fn input_system(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn report_status(_world : @ecs.World) -> Unit {
+fn report_status() -> Unit {
   if @app.render_runtime_error() is Some(error) {
     println(
       "last render runtime error: \{to_repr(error).to_string()}, rendering_enabled=\{@app.app_rendering_enabled().to_string()}",
@@ -99,8 +99,8 @@ fn report_status(_world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(input_system))
-  .add_systems(@app.Update, @app.system(report_status))
+  .add_systems_fn(@app.Startup, setup)
+  .add_systems_fn(@app.Update, input_system)
+  .add_systems_fn(@app.Update, report_status)
   .run()
 }

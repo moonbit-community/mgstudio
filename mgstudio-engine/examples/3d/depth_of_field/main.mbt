@@ -338,7 +338,7 @@ fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(adjust_focus_and_mode))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, adjust_focus_and_mode)
   .run()
 }

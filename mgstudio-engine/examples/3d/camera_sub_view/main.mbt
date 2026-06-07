@@ -323,8 +323,8 @@ fn resize_viewports(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_camera_view))
-  .add_systems(@app.Update, @app.system(resize_viewports))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, move_camera_view)
+  .add_systems_world(@app.Update, resize_viewports)
   .run()
 }

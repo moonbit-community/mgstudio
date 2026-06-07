@@ -32,8 +32,8 @@ fn main {
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.FixedUpdate, @app.system_config_param6(controls))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param6(@app.FixedUpdate, controls)
   .add_systems(@app.PostUpdate, draw_cursor_system)
   .run()
 }

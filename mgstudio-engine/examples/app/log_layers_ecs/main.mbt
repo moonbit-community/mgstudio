@@ -50,7 +50,7 @@ fn transfer_log_messages(writer : @ecs.MessageWriter[LogMessage]) -> Unit {
 }
 
 ///|
-fn log_system(_world : @ecs.World) -> Unit {
+fn log_system() -> Unit {
   @app.log_error("Something failed")
   @app.log_warn(
     "Something bad happened that isn't a failure, but thats worth calling out",
@@ -74,8 +74,8 @@ fn main {
   .add_message(log_message_key)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(log_plugin)
-  .add_systems(@app.Update, @app.system(log_system))
-  .add_systems(@app.Update, @app.system_config_param(transfer_log_messages))
-  .add_systems(@app.Update, @app.system_config_param(print_logs))
+  .add_systems_fn(@app.Update, log_system)
+  .add_systems_param(@app.Update, transfer_log_messages)
+  .add_systems_param(@app.Update, print_logs)
   .run()
 }

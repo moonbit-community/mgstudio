@@ -399,8 +399,8 @@ fn simulate_particles(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .add_observer4(observe_on_step)
-  .add_systems(@app.Update, @app.system_config_param3(simulate_particles))
+  .add_systems_param3(@app.Update, simulate_particles)
   .run()
 }

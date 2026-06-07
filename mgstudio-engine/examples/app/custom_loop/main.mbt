@@ -67,7 +67,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(Input::{ value: "" })
   .set_runner(my_runner_builder)
-  .add_systems(@app.Update, @app.system_config_param(print_system))
-  .add_systems(@app.Update, @app.system_config_param2(exit_system))
+  .add_systems_param(@app.Update, print_system)
+  .add_systems_param2(@app.Update, exit_system)
   .run()
 }

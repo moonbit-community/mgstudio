@@ -145,10 +145,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Startup,
-    @app.system_config_param2(setup_mesh_and_animation),
-  )
-  .add_systems(@app.Startup, @app.system(setup_camera_and_environment))
+  .add_systems_param2(@app.Startup, setup_mesh_and_animation)
+  .add_systems_world(@app.Startup, setup_camera_and_environment)
   .run()
 }

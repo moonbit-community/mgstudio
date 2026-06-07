@@ -36,20 +36,20 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.LogPlugin::LogPlugin())
   // We can use a closure as a system.
-  .add_systems(@app.Update, @app.system(simple_closure))
+  .add_systems_world(@app.Update, simple_closure)
   // Or we can use a more complex closure and pass an argument to initialize state.
-  .add_systems(@app.Update, @app.system(complex_closure("foo")))
+  .add_systems(@app.Update, @app.system_config_world(complex_closure("foo")))
   // We can also inline a closure.
   .add_systems(
     @app.Update,
-    @app.system(fn(_world : @ecs.World) {
+    @app.system_config_world(fn(_world : @ecs.World) {
       @app.log_info("Hello from an inlined closure!")
     }),
   )
   // Or use variables outside a closure.
   .add_systems(
     @app.Update,
-    @app.system(fn(_world : @ecs.World) {
+    @app.system_config_world(fn(_world : @ecs.World) {
       @app.log_info(
         "Hello from an inlined closure that captured the 'outside_variable'! \{outside_variable}",
       )

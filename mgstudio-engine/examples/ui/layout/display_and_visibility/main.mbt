@@ -568,9 +568,11 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .add_system_config(
-    @app.system(display_and_visibility_system).after(@ui.ui_set_focus),
+    @app.system_config_world(display_and_visibility_system).after(
+      @ui.ui_set_focus,
+    ),
   )
   .run()
 }

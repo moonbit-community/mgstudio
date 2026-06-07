@@ -112,8 +112,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { Countdown::Countdown() })
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param2(countdown))
-  .add_systems(@app.Update, @app.system_config_param2(print_when_completed))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param2(@app.Update, countdown)
+  .add_systems_param2(@app.Update, print_when_completed)
   .run()
 }

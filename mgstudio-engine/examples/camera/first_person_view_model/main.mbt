@@ -422,11 +422,11 @@ fn change_fov(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(spawn_view_model))
-  .add_systems(@app.Startup, @app.system(spawn_world_model))
-  .add_systems(@app.Startup, @app.system(spawn_lights))
-  .add_systems(@app.Startup, @app.system(spawn_text))
-  .add_systems(@app.Update, @app.system_config_param2(move_player))
-  .add_systems(@app.Update, @app.system_config_param2(change_fov))
+  .add_systems_world(@app.Startup, spawn_view_model)
+  .add_systems_world(@app.Startup, spawn_world_model)
+  .add_systems_world(@app.Startup, spawn_lights)
+  .add_systems_world(@app.Startup, spawn_text)
+  .add_systems_param2(@app.Update, move_player)
+  .add_systems_param2(@app.Update, change_fov)
   .run()
 }

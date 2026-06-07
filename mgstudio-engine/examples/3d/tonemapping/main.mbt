@@ -477,7 +477,7 @@ fn setup_basic_scene(
 }
 
 ///|
-fn setup_color_gradient_scene(_world : @ecs.World) -> Unit {
+fn setup_color_gradient_scene() -> Unit {
   ()
 }
 
@@ -865,24 +865,15 @@ fn main {
   .insert_resource(PerMethodSettings::PerMethodSettings())
   .insert_resource(CurrentScene::CurrentScene())
   .insert_resource(SelectedParameter::SelectedParameter())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Startup, @app.system_config_param2(setup_basic_scene))
-  .add_systems(@app.Startup, @app.system(setup_color_gradient_scene))
-  .add_systems(
-    @app.Startup,
-    @app.system_config_param6(setup_image_viewer_scene),
-  )
-  .add_systems(@app.Update, @app.system_config_param6(drag_drop_image))
-  .add_systems(@app.Update, @app.system_config_param4(resize_image))
-  .add_systems(@app.Update, @app.system_config_param4(toggle_scene))
-  .add_systems(
-    @app.Update,
-    @app.system_config_param4(toggle_tonemapping_method),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system_config_param6(update_color_grading_settings),
-  )
-  .add_systems(@app.Update, @app.system_config_param6(update_ui))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Startup, setup_basic_scene)
+  .add_systems_fn(@app.Startup, setup_color_gradient_scene)
+  .add_systems_param6(@app.Startup, setup_image_viewer_scene)
+  .add_systems_param6(@app.Update, drag_drop_image)
+  .add_systems_param4(@app.Update, resize_image)
+  .add_systems_param4(@app.Update, toggle_scene)
+  .add_systems_param4(@app.Update, toggle_tonemapping_method)
+  .add_systems_param6(@app.Update, update_color_grading_settings)
+  .add_systems_param6(@app.Update, update_ui)
   .run()
 }

@@ -84,8 +84,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(120.0F))
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.FixedUpdate, @app.system_config_param5(draw))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param5(@app.FixedUpdate, draw)
   .run()
 }
 

@@ -103,8 +103,8 @@ pub impl @ecs.Component for RightSprite with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param2(execute_animations))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, execute_animations)
   .add_systems(
     @app.Update,
     @app.system_config_param(trigger_left_animation).run_if(

@@ -80,7 +80,7 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system(print_time_message)
+    @app.system_config_fn(print_time_message)
     .run_if_stateful(0.0F, time_passed(2.0F))
     .run_if(
       @app.run_condition_not(fn(world : @ecs.World) {
@@ -151,7 +151,7 @@ fn print_input_counter(counter : @app.Res[InputCounter]) -> Unit {
 }
 
 ///|
-fn print_time_message(_world : @ecs.World) -> Unit {
+fn print_time_message() -> Unit {
   @app.log_info(
     "It has been more than 2 seconds since the program started and less than 2.5 seconds",
   )

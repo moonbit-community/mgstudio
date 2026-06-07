@@ -68,6 +68,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(EmbeddedAssetPlugin::EmbeddedAssetPlugin())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
+  .add_systems_param2(@app.Startup, setup)
   .run()
 }

@@ -50,14 +50,11 @@ let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref([])
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup_scene))
-  .add_systems(@app.Update, @app.system_config_param(toggle_ime_system))
-  .add_systems(@app.Update, @app.system_config_param(listen_ime_events_system))
-  .add_systems(
-    @app.Update,
-    @app.system_config_param(listen_keyboard_input_events_system),
-  )
-  .add_systems(@app.Update, @app.system(bubbling_text_system))
+  .add_systems_world(@app.Startup, setup_scene)
+  .add_systems_param(@app.Update, toggle_ime_system)
+  .add_systems_param(@app.Update, listen_ime_events_system)
+  .add_systems_param(@app.Update, listen_keyboard_input_events_system)
+  .add_systems_world(@app.Update, bubbling_text_system)
   .run()
 }
 

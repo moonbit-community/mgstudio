@@ -126,8 +126,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param2(toggle_mode))
-  .add_systems(@app.Update, @app.system_config_param4(update_visuals))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param2(@app.Update, toggle_mode)
+  .add_systems_param4(@app.Update, update_visuals)
   .run()
 }

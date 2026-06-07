@@ -64,20 +64,14 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .insert_state(AppState::default())
-  .add_on_enter_system_config(
-    AppState::Setup,
-    @app.system_config_param2(load_textures),
-  )
+  .add_on_enter_system_param2(AppState::Setup, load_textures)
   .add_systems(
     @app.Update,
     @app.system_config_param2(check_textures).run_if(
       @app.in_state(AppState::Setup),
     ),
   )
-  .add_on_enter_system_config(
-    AppState::Finished,
-    @app.system_config_param5(setup),
-  )
+  .add_on_enter_system_param5(AppState::Finished, setup)
   .run()
 }
 

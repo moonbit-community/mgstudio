@@ -85,9 +85,9 @@ fn main {
     @app.Startup,
     (setup_system, spawn_fake_player_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system_config_param4(update_tilemap))
-  .add_systems(@app.Update, @app.system_config_param3(move_player))
-  .add_systems(@app.Update, @app.system_config_param2(log_tile))
+  .add_systems_param4(@app.Update, update_tilemap)
+  .add_systems_param3(@app.Update, move_player)
+  .add_systems_param2(@app.Update, log_tile)
   .run()
 }
 

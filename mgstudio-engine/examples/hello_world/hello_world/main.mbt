@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn hello_world_system(_world : @ecs.World) -> Unit {
+fn hello_world_system() -> Unit {
   println("hello world")
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_systems(@app.Update, @app.system(hello_world_system))
+  .add_systems_fn(@app.Update, hello_world_system)
   .run()
 }

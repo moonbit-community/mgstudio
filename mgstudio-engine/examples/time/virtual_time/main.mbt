@@ -232,17 +232,17 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn input_toggle_pressed(_world : @ecs.World) -> Bool {
+fn input_toggle_pressed() -> Bool {
   @input.key_just_pressed(@window.KeyCode::Space)
 }
 
 ///|
-fn input_speed_up_pressed(_world : @ecs.World) -> Bool {
+fn input_speed_up_pressed() -> Bool {
   @input.key_just_pressed(@window.KeyCode::ArrowUp)
 }
 
 ///|
-fn input_speed_down_pressed(_world : @ecs.World) -> Bool {
+fn input_speed_down_pressed() -> Bool {
   @input.key_just_pressed(@window.KeyCode::ArrowDown)
 }
 
@@ -316,27 +316,28 @@ fn move_virtual_time_sprites(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, move_virtual_time_sprites)
+  .add_systems_param2(@app.Update, move_real_time_sprites)
   .add_systems(
     @app.Update,
-    @app.system_config_param2(move_virtual_time_sprites),
-  )
-  .add_systems(@app.Update, @app.system_config_param2(move_real_time_sprites))
-  .add_systems(
-    @app.Update,
-    @app.system(toggle_pause).run_if(input_toggle_pressed),
+    @app.system_config_world(toggle_pause).run_if_fn(input_toggle_pressed),
   )
   .add_systems(
     @app.Update,
-    @app.system(change_time_speed_up).run_if(input_speed_up_pressed),
+    @app.system_config_world(change_time_speed_up).run_if_fn(
+      input_speed_up_pressed,
+    ),
   )
   .add_systems(
     @app.Update,
-    @app.system(change_time_speed_down).run_if(input_speed_down_pressed),
+    @app.system_config_world(change_time_speed_down).run_if_fn(
+      input_speed_down_pressed,
+    ),
   )
   .add_systems(
     @app.Update,
-    @app.system(update_info_text).run_if(
+    @app.system_config_world(update_info_text).run_if(
       @time.on_real_timer(@core.Duration::from_millis(250L)),
     ),
   )

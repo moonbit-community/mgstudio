@@ -305,6 +305,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param2(setup)
-  .add_systems(@app.Update, @app.system(button_system).after(@ui.ui_set_focus))
+  .add_systems(
+    @app.Update,
+    @app.system_config_world(button_system).after(@ui.ui_set_focus),
+  )
   .run()
 }

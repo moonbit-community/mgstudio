@@ -73,7 +73,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::desktop_app())
   .insert_resource(ExampleMode::Game)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Update, @app.system_config_param2(cycle_modes))
-  .add_systems(@app.Update, @app.system_config_param3(update_winit))
+  .add_systems_param2(@app.Update, cycle_modes)
+  .add_systems_param3(@app.Update, update_winit)
   .run()
 }

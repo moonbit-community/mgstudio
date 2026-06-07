@@ -658,7 +658,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_text(_world : @ecs.World) -> Unit {
+fn setup_text() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
@@ -949,7 +949,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_capsules(world)
   spawn_bases(world, asset_server)
   setup_camera_and_lights(world)
-  setup_text(world)
+  setup_text()
 
   apply_ssr_settings(world)
   apply_model_and_base_visibility(world)
@@ -961,9 +961,9 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(control_system))
-  .add_systems(@app.Update, @app.system(rotate_models))
-  .add_systems(@app.Update, @app.system(animate_water_material))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, control_system)
+  .add_systems_world(@app.Update, rotate_models)
+  .add_systems_world(@app.Update, animate_water_material)
   .run()
 }

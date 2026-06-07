@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.PostUpdate, @app.system(report_hits))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.PostUpdate, report_hits)
   .run()
 }
 

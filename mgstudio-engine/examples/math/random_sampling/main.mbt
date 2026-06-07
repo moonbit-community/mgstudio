@@ -490,8 +490,8 @@ fn handle_mouse(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param2(handle_keypress))
-  .add_systems(@app.Update, @app.system_config_param2(handle_mouse))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(@app.Update, handle_keypress)
+  .add_systems_param2(@app.Update, handle_mouse)
   .run()
 }

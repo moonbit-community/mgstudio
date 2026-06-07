@@ -103,7 +103,7 @@ fn animate_light_direction(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_light_direction))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(@app.Update, animate_light_direction)
   .run()
 }

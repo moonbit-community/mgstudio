@@ -32,12 +32,12 @@ let progress_text_marker_component_key : @ecs.ComponentKey[ProgressTextMarker] =
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_progress_text))
-  .add_systems(@app.Update, @app.system(update_speed))
-  .add_systems(@app.Update, @app.system(pause))
-  .add_systems(@app.Update, @app.system(mute))
-  .add_systems(@app.Update, @app.system(volume))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update_progress_text)
+  .add_systems_world(@app.Update, update_speed)
+  .add_systems_world(@app.Update, pause)
+  .add_systems_world(@app.Update, mute)
+  .add_systems_world(@app.Update, volume)
   .run()
 }
 

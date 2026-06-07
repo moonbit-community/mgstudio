@@ -94,16 +94,13 @@ fn main {
   .set_error_handler(@app.ErrorHandlers::warn)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(EnemySpawnCursor::{ next: 0 })
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
+  .add_systems_param3(@app.Startup, setup)
   .add_systems(
     @app.Update,
     (user_input_system, move_targets_system, track_targets_system)
     |> @app.chain(),
   )
-  .add_systems(
-    @app.Update,
-    @app.system_config_param(do_nothing_fail_validation),
-  )
+  .add_systems_param(@app.Update, do_nothing_fail_validation)
   .run()
 }
 

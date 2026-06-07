@@ -535,11 +535,11 @@ fn main {
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(500.0F), true),
   )
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.PreUpdate, @app.system_config_param3(navigate_ui))
-  .add_systems(@app.PreUpdate, @app.system(activate_focused_button))
-  .add_systems(@app.Update, @app.system(update_focus_display))
-  .add_systems(@app.Update, @app.system(update_last_input_display))
-  .add_systems(@app.Update, @app.system(update_button_visuals))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(@app.PreUpdate, navigate_ui)
+  .add_systems_world(@app.PreUpdate, activate_focused_button)
+  .add_systems_world(@app.Update, update_focus_display)
+  .add_systems_world(@app.Update, update_last_input_display)
+  .add_systems_world(@app.Update, update_button_visuals)
   .run()
 }

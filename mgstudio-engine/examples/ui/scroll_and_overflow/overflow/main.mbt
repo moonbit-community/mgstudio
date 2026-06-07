@@ -213,6 +213,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
-  .add_systems(@app.Update, @app.system_config_param(update_outlines))
+  .add_systems_param(@app.Update, update_outlines)
   .run()
 }

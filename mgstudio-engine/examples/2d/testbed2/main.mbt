@@ -24,8 +24,8 @@ let testbed_state : Ref[TestbedState] = Ref(TestbedState::{ spawned: [] })
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_testbed2_setup))
-  .add_systems(@app.Update, @app.system(rapier2d_testbed2_update))
+  .add_systems_world(@app.Startup, rapier2d_testbed2_setup)
+  .add_systems_world(@app.Update, rapier2d_testbed2_update)
   .run()
 }
 

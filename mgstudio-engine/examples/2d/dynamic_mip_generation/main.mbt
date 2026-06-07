@@ -331,13 +331,13 @@ fn main {
     render_app
     .add_systems(
       @render.render_schedule_stage(),
-      @app.system(extract_mipmap_source_image).in_set(
+      @app.system_config_world(extract_mipmap_source_image).in_set(
         @render.render_system_set_extract_commands,
       ),
     )
     .add_systems(
       @render.RenderGraph::schedule(),
-      @app.system(generate_mips_for_example).in_set(
+      @app.system_config_world(generate_mips_for_example).in_set(
         @render.render_graph_system_set_render,
       ),
     )

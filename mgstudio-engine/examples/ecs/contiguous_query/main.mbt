@@ -100,7 +100,7 @@ fn main {
     |> @app.chain()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
+  .add_systems_param(@app.Startup, setup)
   .add_systems(@app.Update, update_chain)
   .run()
 }

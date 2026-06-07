@@ -516,8 +516,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(ConstraintSettings::ConstraintSettings())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param2(update_buttons))
-  .add_systems(@app.Update, @app.system_config_param2(apply_settings))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, update_buttons)
+  .add_systems_param2(@app.Update, apply_settings)
   .run()
 }

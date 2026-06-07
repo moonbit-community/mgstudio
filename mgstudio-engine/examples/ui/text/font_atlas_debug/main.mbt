@@ -201,8 +201,8 @@ fn atlas_render_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param3(text_update_system))
-  .add_systems(@app.Update, @app.system_config_param4(atlas_render_system))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.Update, text_update_system)
+  .add_systems_param4(@app.Update, atlas_render_system)
   .run()
 }

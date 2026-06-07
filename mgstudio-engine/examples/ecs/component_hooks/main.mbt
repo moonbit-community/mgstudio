@@ -189,7 +189,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { MyComponentIndex::MyComponentIndex() })
   .add_message(my_message_key)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param3(trigger_hooks))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param3(@app.Update, trigger_hooks)
   .run()
 }

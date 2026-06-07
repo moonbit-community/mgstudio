@@ -541,11 +541,11 @@ fn main {
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(200.0F), true),
   )
-  .add_systems(@app.Startup, @app.system_config_param4(setup_override_ui))
-  .add_systems(@app.PreUpdate, @app.system_config_param3(navigate_override_ui))
-  .add_systems(@app.PreUpdate, @app.system(activate_override_button))
-  .add_systems(@app.Update, @app.system(update_override_focus_display))
-  .add_systems(@app.Update, @app.system(update_override_last_input_display))
-  .add_systems(@app.Update, @app.system(update_override_button_visuals))
+  .add_systems_param4(@app.Startup, setup_override_ui)
+  .add_systems_param3(@app.PreUpdate, navigate_override_ui)
+  .add_systems_world(@app.PreUpdate, activate_override_button)
+  .add_systems_world(@app.Update, update_override_focus_display)
+  .add_systems_world(@app.Update, update_override_last_input_display)
+  .add_systems_world(@app.Update, update_override_button_visuals)
   .run()
 }

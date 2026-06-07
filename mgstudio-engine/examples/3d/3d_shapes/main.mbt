@@ -559,7 +559,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_plugins(@pbr.WireframePlugin::WireframePlugin())
-  .add_systems(@app.Startup, @app.system_config_param4(setup))
+  .add_systems_param4(@app.Startup, setup)
   .add_systems(
     @app.Update,
     @app.system_config_param(toggle_wireframe).run_if(

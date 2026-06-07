@@ -388,7 +388,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(example_control_system))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, example_control_system)
   .run()
 }

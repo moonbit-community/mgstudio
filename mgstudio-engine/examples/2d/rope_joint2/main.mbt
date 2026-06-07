@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_rope_joint2_setup))
+  .add_systems_world(@app.Startup, rapier2d_rope_joint2_setup)
   .run()
 }
 

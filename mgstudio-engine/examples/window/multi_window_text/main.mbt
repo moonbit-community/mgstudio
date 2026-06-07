@@ -196,6 +196,6 @@ fn main {
       close_when_requested: true,
     }),
   )
-  .add_systems(@app.Startup, @app.system(setup_scene))
+  .add_systems_world(@app.Startup, setup_scene)
   .run()
 }

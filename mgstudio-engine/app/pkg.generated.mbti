@@ -57,6 +57,9 @@ pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
 pub fn[W] fallible_system((W) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
 #callsite(autofill(loc))
+pub fn[W] fallible_system_config_fn(() -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
 pub fn[W, P : SystemParam] fallible_system_config_param((P) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
 #callsite(autofill(loc))
@@ -218,6 +221,8 @@ pub fn[W] run_condition((W) -> Bool) -> RunConditionConfig[W]
 
 pub fn[W] run_condition_and((W) -> Bool, (W) -> Bool) -> (W) -> Bool
 
+pub fn[W] run_condition_fn(() -> Bool) -> RunConditionConfig[W]
+
 pub fn[W] run_condition_not((W) -> Bool) -> (W) -> Bool
 
 pub fn[W] run_condition_or((W) -> Bool, (W) -> Bool) -> (W) -> Bool
@@ -292,6 +297,9 @@ pub fn system_access_merge_unchecked(SystemAccess, SystemAccess) -> Unit
 pub fn system_access_merge_validated(SystemAccess, SystemAccess, @utils.IntBitSet, allowed_ambiguous_resources? : @utils.IntBitSet) -> Unit
 
 #callsite(autofill(loc))
+pub fn[W] system_config_fn(() -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
 pub fn[W, P : SystemParam] system_config_param((P) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
 #callsite(autofill(loc))
@@ -314,6 +322,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 #callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] system_config_param8((P1, P2, P3, P4, P5, P6, P7, P8) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
+
+#callsite(autofill(loc))
+pub fn[W] system_config_world((W) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
 
@@ -474,14 +485,38 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemPar
 pub fn[E : @ecs.TriggerEvent] App::add_observer_fallible(Self[@ecs.World], (@ecs.On[E]) -> Unit raise) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States, P : SystemParam] App::add_on_enter_system_param(Self[@ecs.World], S, (P) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_enter_system_param2(Self[@ecs.World], S, (P1, P2) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_enter_system_param3(Self[@ecs.World], S, (P1, P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_on_enter_system_param4(Self[@ecs.World], S, (P1, P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] App::add_on_enter_system_param5(Self[@ecs.World], S, (P1, P2, P3, P4, P5) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] App::add_on_enter_system_param6(Self[@ecs.World], S, (P1, P2, P3, P4, P5, P6) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] App::add_on_enter_system_param7(Self[@ecs.World], S, (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] App::add_on_enter_system_param8(Self[@ecs.World], S, (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States, P : SystemParam] App::add_on_exit_system_param(Self[@ecs.World], S, (P) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_exit_system_param2(Self[@ecs.World], S, (P1, P2) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_exit_system_param3(Self[@ecs.World], S, (P1, P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_on_exit_system_param4(Self[@ecs.World], S, (P1, P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_reenter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_reenter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States, P : SystemParam] App::add_on_reenter_system_param(Self[@ecs.World], S, (P) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_reenter_system_param2(Self[@ecs.World], S, (P1, P2) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_reenter_system_param3(Self[@ecs.World], S, (P1, P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_on_reenter_system_param4(Self[@ecs.World], S, (P1, P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_reexit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_reexit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States, P : SystemParam] App::add_on_reexit_system_param(Self[@ecs.World], S, (P) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_reexit_system_param2(Self[@ecs.World], S, (P1, P2) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_reexit_system_param3(Self[@ecs.World], S, (P1, P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_on_reexit_system_param4(Self[@ecs.World], S, (P1, P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States, P : SystemParam] App::add_on_transition_system_param(Self[@ecs.World], S, S, (P) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam] App::add_on_transition_system_param2(Self[@ecs.World], S, S, (P1, P2) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_on_transition_system_param3(Self[@ecs.World], S, S, (P1, P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[S : States, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_on_transition_system_param4(Self[@ecs.World], S, S, (P1, P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[P : Plugin] App::add_plugins(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
@@ -550,6 +585,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] App::add_system_param7(Self[W], (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] App::add_system_param8(Self[W], (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[W] App::add_systems_fn(Self[W], ScheduleStage, () -> Unit) -> Self[W]
 pub fn[W, P : SystemParam] App::add_systems_param(Self[W], ScheduleStage, (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_systems_param2(Self[W], ScheduleStage, (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_systems_param3(Self[W], ScheduleStage, (P1, P2, P3) -> Unit) -> Self[W]
@@ -558,6 +594,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] App::add_systems_param6(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] App::add_systems_param7(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] App::add_systems_param8(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> Self[W]
+pub fn[W] App::add_systems_world(Self[W], ScheduleStage, (W) -> Unit) -> Self[W]
 pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[T : Resource] App::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
 pub fn[W] App::cleanup(Self[W]) -> Self[W]
@@ -1257,6 +1294,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] SubApp::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[W] SubApp::add_systems_fn(Self[W], ScheduleStage, () -> Unit) -> Self[W]
 pub fn[W, P : SystemParam] SubApp::add_systems_param(Self[W], ScheduleStage, (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] SubApp::add_systems_param2(Self[W], ScheduleStage, (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] SubApp::add_systems_param3(Self[W], ScheduleStage, (P1, P2, P3) -> Unit) -> Self[W]
@@ -1265,6 +1303,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] SubApp::add_systems_param6(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam] SubApp::add_systems_param7(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6, P7) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam, P7 : SystemParam, P8 : SystemParam] SubApp::add_systems_param8(Self[W], ScheduleStage, (P1, P2, P3, P4, P5, P6, P7, P8) -> Unit) -> Self[W]
+pub fn[W] SubApp::add_systems_world(Self[W], ScheduleStage, (W) -> Unit) -> Self[W]
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
 pub fn[T : Resource] SubApp::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[RunConditionConfig[W]], in_sets? : Array[String]) -> Self[W]
@@ -1343,6 +1382,7 @@ pub fn[W] SystemConfig::handle_error_with(Self[W], (Error, ErrorContext) -> Unit
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::named(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
+pub fn[W] SystemConfig::run_if_fn(Self[W], () -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[W, S] SystemConfig::run_if_stateful(Self[W], S, (W, RunConditionState[S]) -> Bool) -> Self[W]
 

@@ -329,10 +329,10 @@ fn update_status_text(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(spin_small_cubes))
-  .add_systems(@app.Update, @app.system(spin_large_cube))
-  .add_systems(@app.Update, @app.system(update_status_text))
-  .add_systems(@app.Update, @app.system(toggle_occlusion_culling_on_request))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, spin_small_cubes)
+  .add_systems_world(@app.Update, spin_large_cube)
+  .add_systems_world(@app.Update, update_status_text)
+  .add_systems_world(@app.Update, toggle_occlusion_culling_on_request)
   .run()
 }

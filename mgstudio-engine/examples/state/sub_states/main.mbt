@@ -122,38 +122,30 @@ fn main {
   .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
   .add_sub_state(AppState::InGame, IsPaused::Running, should_exist)
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_on_enter_system_config(
-    AppState::Menu,
-    @app.system_config_param(setup_menu),
+  .add_systems_param(@app.Startup, setup)
+  .add_on_enter_system_param(AppState::Menu, setup_menu)
+  .add_systems(
+    @app.Update,
+    @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
+  )
+  .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
+  .add_on_enter_system_param2(AppState::InGame, setup_game)
+  .add_on_enter_system_param(IsPaused::Paused, setup_paused_screen)
+  .add_systems(
+    @app.Update,
+    @app.system_config_world(movement).run_if(@app.in_state(IsPaused::Running)),
   )
   .add_systems(
     @app.Update,
-    @app.system(menu).run_if(@app.in_state(AppState::Menu)),
-  )
-  .add_on_exit_system_config(
-    AppState::Menu,
-    @app.system_config_param2(cleanup_menu),
-  )
-  .add_on_enter_system_config(
-    AppState::InGame,
-    @app.system_config_param2(setup_game),
-  )
-  .add_on_enter_system_config(
-    IsPaused::Paused,
-    @app.system_config_param(setup_paused_screen),
+    @app.system_config_world(change_color).run_if(
+      @app.in_state(IsPaused::Running),
+    ),
   )
   .add_systems(
     @app.Update,
-    @app.system(movement).run_if(@app.in_state(IsPaused::Running)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(change_color).run_if(@app.in_state(IsPaused::Running)),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system(toggle_pause).run_if(@app.in_state(AppState::InGame)),
+    @app.system_config_world(toggle_pause).run_if(
+      @app.in_state(AppState::InGame),
+    ),
   )
   .run()
 }

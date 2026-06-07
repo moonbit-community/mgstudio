@@ -335,8 +335,8 @@ fn main {
   .add_plugins(@diagnostic.RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   .insert_resource(default_filters())
   .insert_resource(LogDiagnosticsStatus::Disabled)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param3(filters_inputs))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param3(@app.Update, filters_inputs)
   .add_systems(
     @app.Update,
     @app.system_config_param3(update_commands).run_if(

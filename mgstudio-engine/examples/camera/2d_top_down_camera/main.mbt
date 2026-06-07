@@ -183,9 +183,9 @@ fn main {
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param3(setup_scene))
-  .add_systems(@app.Startup, @app.system_config_param(setup_instructions))
-  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
+  .add_systems_param3(@app.Startup, setup_scene)
+  .add_systems_param(@app.Startup, setup_instructions)
+  .add_systems_param(@app.Startup, setup_camera)
   .add_systems(
     @app.Update,
     (move_player_system, update_camera_system) |> @app.chain(),

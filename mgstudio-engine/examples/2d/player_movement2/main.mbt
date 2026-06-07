@@ -26,8 +26,8 @@ let player_movement_state : Ref[PlayerMovementState] = Ref(PlayerMovementState::
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_player_movement2_setup))
-  .add_systems(@app.FixedUpdate, @app.system(rapier2d_player_movement2_fixed))
+  .add_systems_world(@app.Startup, rapier2d_player_movement2_setup)
+  .add_systems_world(@app.FixedUpdate, rapier2d_player_movement2_fixed)
   .run()
 }
 

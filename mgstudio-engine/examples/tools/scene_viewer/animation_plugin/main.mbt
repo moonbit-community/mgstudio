@@ -99,7 +99,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param2(rotate_preview))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, rotate_preview)
   .run()
 }

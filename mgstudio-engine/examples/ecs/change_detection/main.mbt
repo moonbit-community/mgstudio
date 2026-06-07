@@ -96,11 +96,11 @@ fn detect_resource_change(resource : @app.ResMut[MyResource]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param(change_component))
-  .add_systems(@app.Update, @app.system_config_param(change_resource))
-  .add_systems(@app.Update, @app.system_config_param(detect_added))
-  .add_systems(@app.Update, @app.system_config_param(detect_changed))
-  .add_systems(@app.Update, @app.system_config_param(detect_resource_change))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(@app.Update, change_component)
+  .add_systems_param(@app.Update, change_resource)
+  .add_systems_param(@app.Update, detect_added)
+  .add_systems_param(@app.Update, detect_changed)
+  .add_systems_param(@app.Update, detect_resource_change)
   .run()
 }

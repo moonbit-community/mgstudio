@@ -102,7 +102,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_contributors))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param2(@app.Update, animate_contributors)
   .run()
 }

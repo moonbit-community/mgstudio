@@ -47,11 +47,11 @@ fn main {
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, @app.system_config_param2(setup))
-    .add_systems(@app.Startup, @app.system_config_param(failing_commands))
+    .add_systems_param2(@app.Startup, setup)
+    .add_systems_param(@app.Startup, failing_commands)
     .add_systems(
       @app.PostStartup,
-      @app.fallible_system(failing_system).handle_error_with(
+      @app.fallible_system_config_fn(failing_system).handle_error_with(
         capture_failing_system_error,
       ),
     )
@@ -131,7 +131,7 @@ fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit {
 }
 
 ///|
-fn failing_system(_world : @ecs.World) -> Unit raise {
+fn failing_system() -> Unit raise {
   raise MissingUninitializedResource
 }
 

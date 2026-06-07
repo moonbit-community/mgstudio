@@ -207,8 +207,8 @@ fn draw_axes(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param2(move_cubes))
-  .add_systems(@app.Update, @app.system_config_param2(draw_axes))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, move_cubes)
+  .add_systems_param2(@app.Update, draw_axes)
   .run()
 }

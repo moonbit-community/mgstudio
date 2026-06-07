@@ -342,7 +342,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.WireframePlugin::WireframePlugin())
-  .add_systems(@app.Startup, @app.system(setup_scene))
-  .add_systems(@app.Update, @app.system(update_colors))
+  .add_systems_world(@app.Startup, setup_scene)
+  .add_systems_world(@app.Update, update_colors)
   .run()
 }

@@ -31,8 +31,8 @@ let contact_filter_enabled : Ref[Bool] = Ref(true)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_contact_filter2_setup))
-  .add_systems(@app.Update, @app.system(rapier2d_contact_filter2_toggle))
+  .add_systems_world(@app.Startup, rapier2d_contact_filter2_setup)
+  .add_systems_fn(@app.Update, rapier2d_contact_filter2_toggle)
   .run()
 }
 
@@ -184,7 +184,7 @@ fn rapier2d_contact_filter2_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn rapier2d_contact_filter2_toggle(_world : @ecs.World) -> Unit {
+fn rapier2d_contact_filter2_toggle() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
     contact_filter_enabled.val = !contact_filter_enabled.val
     println(

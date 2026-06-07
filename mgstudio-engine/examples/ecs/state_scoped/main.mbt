@@ -200,17 +200,11 @@ fn main {
   .insert_resource(TickTock::{
     timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
   })
-  .add_systems(@app.Startup, @app.system_config_param(setup_camera))
-  .add_on_enter_system_config(
-    GameState::A,
-    @app.system_config_param(on_a_enter),
-  )
-  .add_on_enter_system_config(
-    GameState::B,
-    @app.system_config_param(on_b_enter),
-  )
-  .add_on_exit_system_config(GameState::A, @app.system_config_param(on_a_exit))
-  .add_on_exit_system_config(GameState::B, @app.system_config_param(on_b_exit))
-  .add_systems(@app.Update, @app.system_config_param4(toggle))
+  .add_systems_param(@app.Startup, setup_camera)
+  .add_on_enter_system_param(GameState::A, on_a_enter)
+  .add_on_enter_system_param(GameState::B, on_b_enter)
+  .add_on_exit_system_param(GameState::A, on_a_exit)
+  .add_on_exit_system_param(GameState::B, on_b_exit)
+  .add_systems_param4(@app.Update, toggle)
   .run()
 }

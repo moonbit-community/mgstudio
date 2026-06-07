@@ -16,14 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(
-    @app.Update,
-    @app.system_config_param4(print_mouse_events_system),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system_config_param3(print_mouse_gesture_events_system),
-  )
+  .add_systems_param4(@app.Update, print_mouse_events_system)
+  .add_systems_param3(@app.Update, print_mouse_gesture_events_system)
   .run()
 }
 

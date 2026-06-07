@@ -139,8 +139,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param(input))
-  .add_systems(@app.Update, @app.system_config_param3(draw_many_lines))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(@app.Update, input)
+  .add_systems_param3(@app.Update, draw_many_lines)
   .run()
 }

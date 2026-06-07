@@ -38,8 +38,8 @@ fn main {
       color_default_white(),
     ),
   )
-  .add_systems(@app.Startup, @app.system_config_param4(setup))
-  .add_systems(@app.Update, @app.system_config_param4(update_colors))
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(@app.Update, update_colors)
   .run()
 }
 

@@ -28,7 +28,7 @@ fn main {
       " iterations",
     ),
   )
-  .add_systems(@app.Update, @app.system_config_param(my_system))
+  .add_systems_param(@app.Update, my_system)
   .run()
 }
 

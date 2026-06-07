@@ -41,8 +41,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(overlay_plugin)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param2(customize_config))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param2(@app.Update, customize_config)
   .run()
 }
 

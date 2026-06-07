@@ -872,10 +872,10 @@ fn free_camera(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_sphere))
-  .add_systems(@app.Update, @app.system(handle_keyboard_actions))
-  .add_systems(@app.Update, @app.system(orbit_camera))
-  .add_systems(@app.Update, @app.system(free_camera))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, move_sphere)
+  .add_systems_world(@app.Update, handle_keyboard_actions)
+  .add_systems_world(@app.Update, orbit_camera)
+  .add_systems_world(@app.Update, free_camera)
   .run()
 }

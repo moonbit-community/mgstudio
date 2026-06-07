@@ -213,8 +213,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param3(move_paddle))
-  .add_systems(@app.Update, @app.system_config_param5(move_ball))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param3(@app.Update, move_paddle)
+  .add_systems_param5(@app.Update, move_ball)
   .run()
 }

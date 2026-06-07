@@ -71,8 +71,8 @@ let progress_text_entity : Ref[@core.Entity?] = Ref(None)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system_config_param(display_curves))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_param(@app.Update, display_curves)
   .run()
 }
 

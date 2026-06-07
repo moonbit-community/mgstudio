@@ -21,37 +21,37 @@ let single_threaded_update : @app.ScheduleStage = @app.schedule_label(
 let custom_startup : @app.ScheduleStage = @app.schedule_label("CustomStartup")
 
 ///|
-fn pre_startup_system(_world : @ecs.World) -> Unit {
+fn pre_startup_system() -> Unit {
   println("Pre Startup")
 }
 
 ///|
-fn startup_system(_world : @ecs.World) -> Unit {
+fn startup_system() -> Unit {
   println("Startup")
 }
 
 ///|
-fn custom_startup_system(_world : @ecs.World) -> Unit {
+fn custom_startup_system() -> Unit {
   println("Custom Startup")
 }
 
 ///|
-fn first_system(_world : @ecs.World) -> Unit {
+fn first_system() -> Unit {
   println("First")
 }
 
 ///|
-fn update_system(_world : @ecs.World) -> Unit {
+fn update_system() -> Unit {
   println("Update")
 }
 
 ///|
-fn single_threaded_update_system(_world : @ecs.World) -> Unit {
+fn single_threaded_update_system() -> Unit {
   println("Single Threaded Update")
 }
 
 ///|
-fn last_system(_world : @ecs.World) -> Unit {
+fn last_system() -> Unit {
   println("Last")
 }
 
@@ -72,15 +72,12 @@ fn main {
   app.world().insert_resource(@app.main_schedule_order_resource_key, order)
 
   app
-  .add_systems(@app.PreStartup, @app.system(pre_startup_system))
-  .add_systems(custom_startup, @app.system(custom_startup_system))
-  .add_systems(@app.Startup, @app.system(startup_system))
-  .add_systems(@app.First, @app.system(first_system))
-  .add_systems(@app.Update, @app.system(update_system))
-  .add_systems(
-    single_threaded_update,
-    @app.system(single_threaded_update_system),
-  )
-  .add_systems(@app.Last, @app.system(last_system))
+  .add_systems_fn(@app.PreStartup, pre_startup_system)
+  .add_systems_fn(custom_startup, custom_startup_system)
+  .add_systems_fn(@app.Startup, startup_system)
+  .add_systems_fn(@app.First, first_system)
+  .add_systems_fn(@app.Update, update_system)
+  .add_systems_fn(single_threaded_update, single_threaded_update_system)
+  .add_systems_fn(@app.Last, last_system)
   .run()
 }

@@ -129,10 +129,9 @@ fn main {
       }),
     )
     .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-    .add_systems(@app.Startup, @app.system_config_param2(setup))
+    .add_systems_param2(@app.Startup, setup)
   if args.recompute_text {
-    app.add_systems(@app.Update, @app.system_config_param(force_recompute))
-    |> ignore
+    app.add_systems_param(@app.Update, force_recompute) |> ignore
   }
   app.run()
 }

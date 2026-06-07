@@ -215,8 +215,8 @@ fn keyboard_display_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param2(keyboard_input_system))
-  .add_systems(@app.Update, @app.system_config_param2(keyboard_display_system))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(@app.Update, keyboard_input_system)
+  .add_systems_param2(@app.Update, keyboard_display_system)
   .run()
 }

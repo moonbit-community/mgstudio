@@ -22,7 +22,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Update, @app.system_config_param(touch_event_system))
+  .add_systems_param(@app.Update, touch_event_system)
   .run()
 }
 

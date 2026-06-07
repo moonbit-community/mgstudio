@@ -40,8 +40,10 @@ fn main {
   touch_widget_button_wbtest_imports()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_system_config(@app.system(button_system).after(@ui.ui_set_focus))
+  .add_systems_world(@app.Startup, setup)
+  .add_system_config(
+    @app.system_config_world(button_system).after(@ui.ui_set_focus),
+  )
   .run()
 }
 

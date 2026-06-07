@@ -552,11 +552,11 @@ fn update_instructions(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param3(update_controls))
-  .add_systems(@app.Update, @app.system_config_param2(update_animation))
-  .add_systems(@app.Update, @app.system_config_param2(update_motion_transforms))
-  .add_systems(@app.Update, @app.system_config_param2(apply_container_settings))
-  .add_systems(@app.Update, @app.system_config_param3(update_instructions))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.Update, update_controls)
+  .add_systems_param2(@app.Update, update_animation)
+  .add_systems_param2(@app.Update, update_motion_transforms)
+  .add_systems_param2(@app.Update, apply_container_settings)
+  .add_systems_param3(@app.Update, update_instructions)
   .run()
 }

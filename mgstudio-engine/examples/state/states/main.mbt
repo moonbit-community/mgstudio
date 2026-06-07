@@ -80,23 +80,14 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_on_enter_system_config(
-    AppState::Menu,
-    @app.system_config_param(setup_menu),
-  )
+  .add_systems_param(@app.Startup, setup)
+  .add_on_enter_system_param(AppState::Menu, setup_menu)
   .add_systems(
     @app.Update,
-    @app.system(menu).run_if(@app.in_state(AppState::Menu)),
+    @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
   )
-  .add_on_exit_system_config(
-    AppState::Menu,
-    @app.system_config_param2(cleanup_menu),
-  )
-  .add_on_enter_system_config(
-    AppState::InGame,
-    @app.system_config_param2(setup_game),
-  )
+  .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
+  .add_on_enter_system_param2(AppState::InGame, setup_game)
   .add_systems(
     @app.Update,
     @app.system_config_param3(movement).run_if(@app.in_state(AppState::InGame)),

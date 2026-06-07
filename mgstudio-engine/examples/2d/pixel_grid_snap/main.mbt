@@ -104,8 +104,8 @@ fn main {
     (setup_camera_system, setup_sprite_system, setup_mesh_system)
     |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system_config_param2(rotate))
-  .add_systems(@app.Update, @app.system_config_param2(fit_canvas))
+  .add_systems_param2(@app.Update, rotate)
+  .add_systems_param2(@app.Update, fit_canvas)
   .run()
 }
 

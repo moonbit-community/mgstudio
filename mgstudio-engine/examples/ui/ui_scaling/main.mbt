@@ -159,6 +159,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
-  .add_systems(@app.Update, @app.system(change_scaling))
+  .add_systems_world(@app.Update, change_scaling)
   .run()
 }

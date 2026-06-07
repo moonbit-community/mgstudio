@@ -281,8 +281,8 @@ fn animate_cooldowns(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param4(activate_ability))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param4(@app.Update, activate_ability)
   .add_systems(
     @app.Update,
     @app.system_config_param5(animate_cooldowns).run_if(

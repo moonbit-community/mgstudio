@@ -457,11 +457,11 @@ fn stop_drag_panel(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param5(setup))
-  .add_systems(@app.Update, @app.system_config_param2(rotate_cube))
+  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param2(@app.Update, rotate_cube)
   .add_systems(
     @app.PreUpdate,
-    @app.system(drive_diegetic_pointer)
+    @app.system_config_world(drive_diegetic_pointer)
     .before(@picking.picking_set_input)
     .after(@transform.transform_set_propagate)
     .before(@picking.picking_set_hits),

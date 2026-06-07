@@ -36,7 +36,7 @@ fn main {
       @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     ),
   )
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems_world(@app.Startup, setup)
   .run()
 }
 

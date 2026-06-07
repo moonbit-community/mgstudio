@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn startup_system(_world : @ecs.World) -> Unit {
+fn startup_system() -> Unit {
   println("startup system ran first")
 }
 
 ///|
-fn normal_system(_world : @ecs.World) -> Unit {
+fn normal_system() -> Unit {
   println("normal system ran second")
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_systems(@app.Startup, @app.system(startup_system))
-  .add_systems(@app.Update, @app.system(normal_system))
+  .add_systems_fn(@app.Startup, startup_system)
+  .add_systems_fn(@app.Update, normal_system)
   .run()
 }

@@ -579,6 +579,14 @@ pub fn[W] run_condition(cond : RunConditionFn[W]) -> RunConditionConfig[W] {
 }
 
 ///|
+pub fn[W] run_condition_fn(cond : () -> Bool) -> RunConditionConfig[W] {
+  RunConditionConfig::{
+    condition: fn(_world : W) { cond() },
+    clone_condition: fn() { run_condition_fn(cond) },
+  }
+}
+
+///|
 pub fn[W, S] stateful_run_condition(
   init_state : S,
   cond : (W, RunConditionState[S]) -> Bool,
@@ -1184,6 +1192,32 @@ pub fn[W, P : SystemParam] system_config_param(
       )
       access
     },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[W] system_config_fn(
+  system : () -> Unit,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fn(_world : W) { system() },
+    fn(_world : @ecs.World) { SystemAccess::new() },
+    loc~,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[W] fallible_system_config_fn(
+  system : () -> Unit raise,
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system_config_with_access(
+    fn(_world : W) { run_fallible_system_body(system) },
+    fn(_world : @ecs.World) { SystemAccess::new() },
     loc~,
   )
 }
@@ -2481,6 +2515,15 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
 }
 
 ///|
+#callsite(autofill(loc))
+pub fn[W] system_config_world(
+  system_fn : SystemFn[W],
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
+  system(system_fn, loc~)
+}
+
+///|
 pub fn[W] SystemConfig::named(
   self : SystemConfig[W],
   name : String,
@@ -2502,6 +2545,16 @@ pub fn[W] SystemConfig::run_if(
   cond : RunConditionFn[W],
 ) -> SystemConfig[W] {
   self.run_ifs.push(run_condition(cond))
+  self.run_if_last_run_ticks.push(0)
+  self
+}
+
+///|
+pub fn[W] SystemConfig::run_if_fn(
+  self : SystemConfig[W],
+  cond : () -> Bool,
+) -> SystemConfig[W] {
+  self.run_ifs.push(run_condition_fn(cond))
   self.run_if_last_run_ticks.push(0)
   self
 }

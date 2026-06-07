@@ -268,7 +268,7 @@ fn main {
     @app.Startup,
     (setup_system, instructions_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system_config_param3(switch_projection))
-  .add_systems(@app.Update, @app.system_config_param3(zoom))
+  .add_systems_param3(@app.Update, switch_projection)
+  .add_systems_param3(@app.Update, zoom)
   .run()
 }

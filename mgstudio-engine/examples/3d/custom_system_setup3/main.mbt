@@ -31,9 +31,9 @@ fn main {
   .configure_sets(@app.PostUpdate, @physics3d.physics3d_set_step, before=[
     @physics3d.physics3d_set_writeback,
   ])
-  .add_systems(@app.Startup, @app.system(setup_graphics))
-  .add_systems(@app.Startup, @app.system(setup_physics))
-  .add_systems(@app.Update, @app.system(despawn_one_box))
+  .add_systems_world(@app.Startup, setup_graphics)
+  .add_systems_world(@app.Startup, setup_physics)
+  .add_systems_world(@app.Update, despawn_one_box)
   .run()
 }
 

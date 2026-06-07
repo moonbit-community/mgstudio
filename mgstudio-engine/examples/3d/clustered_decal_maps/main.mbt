@@ -402,9 +402,9 @@ fn spawn_loop(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(controls))
-  .add_systems(@app.Update, @app.system(spawn_loop))
-  .add_systems(@app.Update, @app.system(animate_decals))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, controls)
+  .add_systems_world(@app.Update, spawn_loop)
+  .add_systems_world(@app.Update, animate_decals)
   .run()
 }

@@ -56,7 +56,7 @@ impl @app.Plugin for PrintMessagePlugin with fn build(self, app) {
       @time.TimerMode::Repeating,
     ),
   })
-  .add_systems(@app.Update, @app.system_config_param2(print_message_system))
+  .add_systems_param2(@app.Update, print_message_system)
 }
 
 ///|

@@ -13,12 +13,12 @@
 // limitations under the License.
 
 ///|
-fn print_hello_system(_world : @ecs.World) -> Unit {
+fn print_hello_system() -> Unit {
   println("hello")
 }
 
 ///|
-fn print_world_system(_world : @ecs.World) -> Unit {
+fn print_world_system() -> Unit {
   println("world")
 }
 
@@ -37,7 +37,7 @@ impl @app.Plugin for PrintHelloPlugin with fn name(_self) {
 
 ///|
 impl @app.Plugin for PrintHelloPlugin with fn build(_self, app) {
-  app.add_systems(@app.Update, @app.system(print_hello_system))
+  app.add_systems_fn(@app.Update, print_hello_system)
 }
 
 ///|
@@ -55,7 +55,7 @@ impl @app.Plugin for PrintWorldPlugin with fn name(_self) {
 
 ///|
 impl @app.Plugin for PrintWorldPlugin with fn build(_self, app) {
-  app.add_systems(@app.Update, @app.system(print_world_system))
+  app.add_systems_fn(@app.Update, print_world_system)
 }
 
 ///|

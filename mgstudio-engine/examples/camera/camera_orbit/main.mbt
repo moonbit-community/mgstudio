@@ -234,6 +234,6 @@ fn main {
     @app.Startup,
     (setup_system, instructions_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system_config_param5(orbit))
+  .add_systems_param5(@app.Update, orbit)
   .run()
 }

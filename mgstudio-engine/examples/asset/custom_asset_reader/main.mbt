@@ -32,7 +32,7 @@ fn custom_asset_reader(base_reader : @asset.AssetReader) -> @asset.AssetReader {
 }
 
 ///|
-fn print_reads(_world : @ecs.World) -> Unit {
+fn print_reads() -> Unit {
   for path in read_paths {
     if !printed_paths.contains(path) {
       println("Reading \{path}")
@@ -71,7 +71,7 @@ fn setup(
 fn main {
   custom_asset_reader_plugin(@app.App::new(@ecs.World::new()))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system(print_reads))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_fn(@app.Update, print_reads)
   .run()
 }

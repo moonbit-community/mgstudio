@@ -197,13 +197,7 @@ fn main {
   .configure_set(@app.Update, apply_armor_to_damage_set, before=[
     apply_damage_to_health_set,
   ])
-  .add_systems(
-    @app.Update,
-    @app.system_config_param(play_damage_received_sound),
-  )
-  .add_systems(
-    @app.Update,
-    @app.system_config_param(play_damage_received_particle_effect),
-  )
+  .add_systems_param(@app.Update, play_damage_received_sound)
+  .add_systems_param(@app.Update, play_damage_received_particle_effect)
   .run()
 }

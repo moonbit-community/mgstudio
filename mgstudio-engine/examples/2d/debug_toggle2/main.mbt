@@ -19,8 +19,8 @@ let debug_toggle_state : Ref[Bool] = Ref(true)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(rapier2d_debug_toggle2_setup))
-  .add_systems(@app.Update, @app.system(rapier2d_debug_toggle2_update))
+  .add_systems_world(@app.Startup, rapier2d_debug_toggle2_setup)
+  .add_systems_fn(@app.Update, rapier2d_debug_toggle2_update)
   .run()
 }
 
@@ -116,7 +116,7 @@ fn rapier2d_debug_toggle2_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn rapier2d_debug_toggle2_update(_world : @ecs.World) -> Unit {
+fn rapier2d_debug_toggle2_update() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyV) {
     debug_toggle_state.val = !debug_toggle_state.val
     @physics2d.physics2d_debug_render_set_enabled(debug_toggle_state.val)

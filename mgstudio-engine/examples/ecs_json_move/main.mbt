@@ -52,13 +52,13 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_systems(
     @app.Startup,
-    @app.system(fn(world) {
+    @app.system_config_world(fn(world) {
       let entity = world.spawn()
       try! world.set_by_key(entity, comp_position, Position::{ x: 0.0, y: 0.0 })
       try! world.set_by_key(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
     }),
   )
-  .add_systems(@app.Update, @app.system_config_param(move_system))
+  .add_systems_param(@app.Update, move_system)
   .update()
   |> ignore
 }

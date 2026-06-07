@@ -178,21 +178,15 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
-  .add_systems(@app.Startup, @app.system_config_param(setup_system))
-  .add_systems(@app.Update, @app.system_config_param2(print_text_system))
+  .add_systems_param(@app.Startup, setup_system)
+  .add_systems_param2(@app.Update, print_text_system)
   .add_systems(
     @app.Update,
     @app.system_config_param(transition_to_in_game_system).run_if(
       @app.in_state(AppState::MainMenu),
     ),
   )
-  .add_on_exit_system_config(
-    AppState::MainMenu,
-    @app.system_config_param2(cleanup_menu_close_system),
-  )
-  .add_on_exit_system_config(
-    AppState::InGame,
-    @app.system_config_param2(cleanup_level_unload_system),
-  )
+  .add_on_exit_system_param2(AppState::MainMenu, cleanup_menu_close_system)
+  .add_on_exit_system_param2(AppState::InGame, cleanup_level_unload_system)
   .run()
 }

@@ -254,7 +254,7 @@ fn main {
     ),
   )
   .init_resource(fn() { State::State() })
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(@app.Update, @app.system_config_param3(print_on_load))
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.Update, print_on_load)
   .run()
 }

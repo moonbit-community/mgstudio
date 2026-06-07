@@ -213,7 +213,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_instructions(_world : @ecs.World) -> Unit {
+fn setup_instructions() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -268,7 +268,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   setup_camera_fog(world)
   setup_terrain_scene(world)
-  setup_instructions(world)
+  setup_instructions()
   apply_fog(world)
 }
 
@@ -276,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(toggle_system))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, toggle_system)
   .run()
 }

@@ -19,7 +19,7 @@ fn main {
   .add_plugins(
     @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin::Wireframe2dPlugin(),
   )
-  .add_systems(Startup, @app.system_config_param3(setup))
+  .add_systems_param3(Startup, setup)
   .add_systems(
     Update,
     @app.system_config_param(toggle_wireframe).run_if(

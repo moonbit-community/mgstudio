@@ -157,9 +157,9 @@ fn tint_from_readback(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param3(setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_samples))
-  .add_systems(@app.Update, @app.system_config_param2(emulate_gpu_readback))
-  .add_systems(@app.Update, @app.system_config_param3(tint_from_readback))
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, animate_samples)
+  .add_systems_param2(@app.Update, emulate_gpu_readback)
+  .add_systems_param3(@app.Update, tint_from_readback)
   .run()
 }

@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(toggle_debug))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_fn(@app.Update, toggle_debug)
   .run()
 }
 
@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn toggle_debug(_world : @ecs.World) -> Unit {
+fn toggle_debug() -> Unit {
   if !@input.mouse_button_just_pressed(@window.MouseButton::Left) &&
     !@input.key_just_pressed(@window.KeyCode::KeyV) {
     return

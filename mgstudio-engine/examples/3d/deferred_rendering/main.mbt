@@ -561,9 +561,9 @@ fn spin(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(switch_mode))
-  .add_systems(@app.Update, @app.system(animate_light_direction))
-  .add_systems(@app.Update, @app.system(spin))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, switch_mode)
+  .add_systems_world(@app.Update, animate_light_direction)
+  .add_systems_world(@app.Update, spin)
   .run()
 }

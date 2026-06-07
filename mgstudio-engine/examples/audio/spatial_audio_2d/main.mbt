@@ -54,9 +54,9 @@ fn main {
   .insert_resource(
     @audio.DefaultSpatialScale::new(@audio.SpatialScale::new_2d(AUDIO_SCALE)),
   )
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_emitters))
-  .add_systems(@app.Update, @app.system(update_listener))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, update_emitters)
+  .add_systems_world(@app.Update, update_listener)
   .run()
 }
 

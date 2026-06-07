@@ -381,9 +381,9 @@ fn handle_input(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(animate_light))
-  .add_systems(@app.Update, @app.system(animate_spheres))
-  .add_systems(@app.Update, @app.system(handle_input))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, animate_light)
+  .add_systems_world(@app.Update, animate_spheres)
+  .add_systems_world(@app.Update, handle_input)
   .run()
 }

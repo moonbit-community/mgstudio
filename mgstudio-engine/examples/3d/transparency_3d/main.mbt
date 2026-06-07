@@ -30,8 +30,8 @@ let transparency_state : Ref[TransparencyState] = Ref({ materials: [] })
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(fade_transparency))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, fade_transparency)
   .run()
 }
 

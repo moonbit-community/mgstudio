@@ -128,7 +128,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(custom_material_plugin())
-  .add_systems(@app.Startup, @app.system(mesh2d_custom_material_setup))
+  .add_systems_world(@app.Startup, mesh2d_custom_material_setup)
   .run()
 }
 

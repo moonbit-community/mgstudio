@@ -40,10 +40,10 @@ fn main {
       close_when_requested: true,
     }),
   )
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(display_override))
-  .add_systems(@app.Update, @app.system_config_param(toggle_override))
-  .add_systems(@app.Update, @app.system_config_param(change_scale_factor))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, display_override)
+  .add_systems_param(@app.Update, toggle_override)
+  .add_systems_param(@app.Update, change_scale_factor)
   .run()
 }
 

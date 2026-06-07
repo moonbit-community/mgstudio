@@ -488,7 +488,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn handle_drag_action_change(_world : @ecs.World) -> Unit {
+fn handle_drag_action_change() -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     mirror_state.val.drag_action = DragAction::MoveCamera
@@ -714,14 +714,16 @@ fn update_mirror_camera_on_main_camera_transform_change(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(handle_window_resize_messages))
-  .add_systems(@app.Update, @app.system(handle_drag_action_change))
-  .add_systems(@app.Update, @app.system(move_camera_on_mouse_down))
-  .add_systems(@app.Update, @app.system(move_fox_on_mouse_down))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, handle_window_resize_messages)
+  .add_systems_fn(@app.Update, handle_drag_action_change)
+  .add_systems_world(@app.Update, move_camera_on_mouse_down)
+  .add_systems_world(@app.Update, move_fox_on_mouse_down)
   .add_systems(
     @app.Update,
-    @app.system(update_mirror_camera_on_main_camera_transform_change),
+    @app.system_config_world(
+      update_mirror_camera_on_main_camera_transform_change,
+    ),
   )
   .run()
 }

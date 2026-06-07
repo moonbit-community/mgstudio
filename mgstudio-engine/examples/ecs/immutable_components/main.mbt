@@ -96,9 +96,9 @@ fn print_index(index : @app.Res[NameIndex]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system(rename_one_entity))
-  .add_systems(@app.Update, @app.system_config_param2(rebuild_name_index))
-  .add_systems(@app.Update, @app.system_config_param(print_index))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_world(@app.Update, rename_one_entity)
+  .add_systems_param2(@app.Update, rebuild_name_index)
+  .add_systems_param(@app.Update, print_index)
   .run()
 }

@@ -283,8 +283,8 @@ fn button_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(set_camera_viewports))
-  .add_systems(@app.Update, @app.system(button_system))
+  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(@app.Update, set_camera_viewports)
+  .add_systems_world(@app.Update, button_system)
   .run()
 }

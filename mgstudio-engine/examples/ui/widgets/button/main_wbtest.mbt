@@ -128,7 +128,7 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
 test "examples ui button: scheduled update queues ui draw items" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, @app.system(setup))
+    .add_systems_world(@app.Startup, setup)
   app = app.update()
 
   let world = app.world()

@@ -535,15 +535,9 @@ fn main {
   .add_systems(@app.Startup, spawn_text_system)
   .add_systems(@app.Startup, spawn_player_system)
   .add_systems(@app.Startup, spawn_environment_system)
-  .add_systems(
-    @app.PreUpdate,
-    @app.system_config_param(clear_fixed_timestep_flag),
-  )
-  .add_systems(
-    @app.FixedPreUpdate,
-    @app.system_config_param(set_fixed_time_step_flag),
-  )
-  .add_systems(@app.FixedUpdate, @app.system_config_param2(advance_physics))
+  .add_systems_param(@app.PreUpdate, clear_fixed_timestep_flag)
+  .add_systems_param(@app.FixedPreUpdate, set_fixed_time_step_flag)
+  .add_systems_param2(@app.FixedUpdate, advance_physics)
   .add_run_fixed_main_loop_system_config(
     @app.system_config_param2(rotate_camera)
     .in_set(SET_ROTATE_CAMERA)

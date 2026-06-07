@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system(physics2d_falling_setup))
-  .add_systems(@app.Update, @app.system(physics2d_print_events))
+  .add_systems_world(@app.Startup, physics2d_falling_setup)
+  .add_systems_world(@app.Update, physics2d_print_events)
   .run()
 }
 

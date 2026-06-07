@@ -70,19 +70,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(60.0F))
-  .add_systems(@app.Startup, @app.system_config_param2(setup))
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system_config_param3(player_movement_system),
-  )
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system_config_param2(snap_to_player_system),
-  )
-  .add_systems(
-    @app.FixedUpdate,
-    @app.system_config_param3(rotate_to_player_system),
-  )
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.FixedUpdate, player_movement_system)
+  .add_systems_param2(@app.FixedUpdate, snap_to_player_system)
+  .add_systems_param3(@app.FixedUpdate, rotate_to_player_system)
   .run()
 }
 

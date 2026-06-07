@@ -16,10 +16,10 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems(@app.Startup, @app.system(setup_physics))
-  .add_systems(@app.Startup, @app.system(setup_graphics))
+  .add_systems_world(@app.Startup, setup_physics)
+  .add_systems_world(@app.Startup, setup_graphics)
   .add_systems(
-    @app.PostUpdate,
+    @app.FixedUpdate,
     @app.system_config_param2(display_nb_colliders).after(
       @physics3d.physics3d_set_writeback,
     ),

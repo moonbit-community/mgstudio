@@ -119,7 +119,7 @@ fn animate_gradients(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, @app.system_config_param(setup))
-  .add_systems(@app.Update, @app.system_config_param2(animate_gradients))
+  .add_systems_param(@app.Startup, setup)
+  .add_systems_param2(@app.Update, animate_gradients)
   .run()
 }

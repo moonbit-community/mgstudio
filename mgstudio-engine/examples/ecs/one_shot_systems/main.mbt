@@ -96,9 +96,9 @@ fn main {
 
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, @app.system_config_param2(setup_ui))
-    .add_systems(@app.Startup, @app.system_config_param(setup_with_commands))
-    .add_systems(@app.Startup, @app.system(setup_with_world))
+    .add_systems_param2(@app.Startup, setup_ui)
+    .add_systems_param(@app.Startup, setup_with_commands)
+    .add_systems_world(@app.Startup, setup_with_world)
     .add_systems(@app.Update, update_chain)
   app.run()
 }
