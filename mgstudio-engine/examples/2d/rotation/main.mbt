@@ -153,19 +153,6 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
 }
 
 ///|
-fn player_translation(
-  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
-) -> @math.Vec2? {
-  match (player_query.single() catch { _ => None }) {
-    Some(transform) => {
-      let value = transform.value()
-      Some(@math.Vec2::new(value.translation.x, value.translation.y))
-    }
-    None => None
-  }
-}
-
-///|
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
@@ -236,58 +223,64 @@ fn setup(
 fn player_movement_system(
   time : @app.Res[@time.Time[@time.Fixed]],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query[
+  player : @app.Single[
     (@ecs.Read[Player], @ecs.Write[@transform.Transform]),
     @ecs.All,
   ],
 ) -> Unit {
-  try! query.for_each(fn(_entity, data) {
-    let (player, transform) = data
-    let player = player.value()
-    let next_transform = transform.value()
-    let mut rotation_factor = 0.0F
-    let mut movement_factor = 0.0F
+  let (ship, transform) = player.get()
+  let ship = ship.value()
+  let next_transform = transform.value()
+  let mut rotation_factor = 0.0F
+  let mut movement_factor = 0.0F
 
-    if keyboard_input.pressed(@window.KeyCode::ArrowLeft) {
-      rotation_factor += 1.0F
-    }
-    if keyboard_input.pressed(@window.KeyCode::ArrowRight) {
-      rotation_factor -= 1.0F
-    }
-    if keyboard_input.pressed(@window.KeyCode::ArrowUp) {
-      movement_factor += 1.0F
-    }
+  if keyboard_input.pressed(@window.KeyCode::ArrowLeft) {
+    rotation_factor += 1.0F
+  }
+  if keyboard_input.pressed(@window.KeyCode::ArrowRight) {
+    rotation_factor -= 1.0F
+  }
+  if keyboard_input.pressed(@window.KeyCode::ArrowUp) {
+    movement_factor += 1.0F
+  }
 
-    next_transform.rotate_z(
-      rotation_factor * player.rotation_speed * time.get().delta_seconds(),
-    )
+  next_transform.rotate_z(
+    rotation_factor * ship.rotation_speed * time.get().delta_seconds(),
+  )
 
-    let movement_direction = next_transform.local_y()
-    let movement_distance = movement_factor *
-      player.movement_speed *
-      time.get().delta_seconds()
-    next_transform.translation.x = clampf(
-      next_transform.translation.x + movement_direction.x * movement_distance,
-      -BOUNDS_X / 2.0F,
-      BOUNDS_X / 2.0F,
-    )
-    next_transform.translation.y = clampf(
-      next_transform.translation.y + movement_direction.y * movement_distance,
-      -BOUNDS_Y / 2.0F,
-      BOUNDS_Y / 2.0F,
-    )
-    transform.set(next_transform)
-  })
+  let movement_direction = next_transform.local_y()
+  let movement_distance = movement_factor *
+    ship.movement_speed *
+    time.get().delta_seconds()
+  next_transform.translation.x = clampf(
+    next_transform.translation.x + movement_direction.x * movement_distance,
+    -BOUNDS_X / 2.0F,
+    BOUNDS_X / 2.0F,
+  )
+  next_transform.translation.y = clampf(
+    next_transform.translation.y + movement_direction.y * movement_distance,
+    -BOUNDS_Y / 2.0F,
+    BOUNDS_Y / 2.0F,
+  )
+  transform.set(next_transform)
 }
 
 ///|
 fn snap_to_player_system(
-  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[SnapToPlayer]],
-  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    (@ecs.With[SnapToPlayer], @ecs.Without[Player]),
+  ],
+  player_transform : @app.Single[
+    @ecs.Read[@transform.Transform],
+    @ecs.With[Player],
+  ],
 ) -> Unit {
-  guard player_translation(player_query) is Some(player_position) else {
-    return
-  }
+  let player_value = player_transform.get().value()
+  let player_position = @math.Vec2::new(
+    player_value.translation.x,
+    player_value.translation.y,
+  )
 
   try! query.for_each(fn(_entity, enemy_transform) {
     let next_transform = enemy_transform.value()
@@ -313,13 +306,18 @@ fn rotate_to_player_system(
   time : @app.Res[@time.Time[@time.Fixed]],
   query : @ecs.Query[
     (@ecs.Read[RotateToPlayer], @ecs.Write[@transform.Transform]),
-    @ecs.All,
+    @ecs.Without[Player],
   ],
-  player_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.With[Player]],
+  player_transform : @app.Single[
+    @ecs.Read[@transform.Transform],
+    @ecs.With[Player],
+  ],
 ) -> Unit {
-  guard player_translation(player_query) is Some(player_position) else {
-    return
-  }
+  let player_value = player_transform.get().value()
+  let player_position = @math.Vec2::new(
+    player_value.translation.x,
+    player_value.translation.y,
+  )
 
   try! query.for_each(fn(_entity, data) {
     let (config, enemy_transform) = data

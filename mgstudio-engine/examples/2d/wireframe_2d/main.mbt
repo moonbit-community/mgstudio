@@ -225,17 +225,11 @@ fn update_colors(
     @ecs.Write[@sprite_render_mesh2d_wireframe2d.Wireframe2dColor],
     @ecs.All,
   ],
-  text : @ecs.Query[
-    (@ecs.Read[WireframeHelpText], @ecs.Write[@text.Text]),
-    @ecs.All,
-  ],
+  text : @app.Single[@ecs.Write[@text.Text], @ecs.With[WireframeHelpText]],
 ) -> Unit {
-  try! text.for_each(fn(_entity, data) {
-    let (_help_text, help_text) = data
-    help_text.modify(fn(value) {
-      value.content = wireframe_overlay_text(config.peek())
-    })
-  })
+  text
+  .get()
+  .modify(fn(value) { value.content = wireframe_overlay_text(config.peek()) })
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {
     let current = config.peek()

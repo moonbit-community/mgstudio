@@ -45,7 +45,7 @@ fn main {
   .add_systems(@app.Startup, @app.system_config_param2(setup))
   .add_systems(
     @app.FixedUpdate,
-    @app.system_config_param6(player_movement_system),
+    @app.system_config_param3(player_movement_system),
   )
   .run()
 }
@@ -73,55 +73,29 @@ fn setup(
 }
 
 ///|
-fn main_camera_entity(
-  main_camera_query : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
-) -> @core.Entity? {
-  let entity_ref : Ref[@core.Entity?] = Ref(None)
-  try! main_camera_query.view(fn(entity, _camera) {
-    if entity_ref.val is None {
-      entity_ref.val = Some(entity)
-    }
-  })
-  entity_ref.val
-}
-
-///|
 fn player_movement_system(
-  players : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Player]],
-  main_camera_query : @ecs.Query[@ecs.Read[MainCamera], @ecs.All],
-  camera_query : @ecs.Query[@ecs.Read[@camera_camera.Camera], @ecs.All],
-  projection_query : @ecs.Query[
-    @ecs.Read[@camera_projection2d.Projection],
-    @ecs.All,
+  player : @app.Single[@ecs.Write[@transform.Transform], @ecs.With[Player]],
+  camera_query : @app.Single[
+    (
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Read[@camera_projection2d.Projection],
+      @ecs.Read[@transform.GlobalTransform],
+    ),
+    @ecs.With[MainCamera],
   ],
-  transform_query : @ecs.Query[@ecs.Read[@transform.Transform], @ecs.All],
-  windows : @ecs.Query[
+  window : @app.Single[
     @ecs.Read[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> Unit {
-  guard main_camera_entity(main_camera_query) is Some(camera_entity) else {
-    return
-  }
-  guard (camera_query.get(camera_entity) catch { _ => None })
-    is Some(camera_comp) else {
-    return
-  }
+  let (camera_comp, projection_comp, camera_global_transform_comp) = camera_query.get()
   let camera = camera_comp.value()
-  guard (projection_query.get(camera_entity) catch { _ => None })
-    is Some(projection_comp) else {
-    return
-  }
   let projection = projection_comp.value()
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard (transform_query.get(camera_entity) catch { _ => None })
-    is Some(camera_transform_comp) else {
-    return
-  }
-  let camera_transform = camera_transform_comp.value()
-  guard (windows.single() catch { _ => None }) is Some(window_comp) else {
-    return
-  }
+  let camera_transform = camera_global_transform_comp
+    .value()
+    .to_transform_approx()
+  let window_comp = window.get()
   let window = window_comp.value()
   guard @input.mouse_position() is Some(cursor_position) else { return }
 
@@ -144,16 +118,15 @@ fn player_movement_system(
     return
   }
 
-  try! players.view(fn(_entity, player) {
-    let current = player.value()
-    player.modify(fn(value) {
-      value.rotation = @math.Quat::from_rotation_z(
-        @math.Vec2::new(
-          cursor_world_pos.x - current.translation.x,
-          cursor_world_pos.y - current.translation.y,
-        ).to_angle() -
-        @math.pi_half(),
-      )
-    })
+  let player_transform = player.get()
+  let current = player_transform.value()
+  player_transform.modify(fn(value) {
+    value.rotation = @math.Quat::from_rotation_z(
+      @math.Vec2::new(
+        cursor_world_pos.x - current.translation.x,
+        cursor_world_pos.y - current.translation.y,
+      ).to_angle() -
+      @math.pi_half(),
+    )
   })
 }
