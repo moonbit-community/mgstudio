@@ -137,6 +137,11 @@ test "camera plugin: owns Camera required components" {
     content="true",
   )
   debug_inspect(
+    (try! world.get_by_key(entity, @render.ecs_key_sync_to_render_world))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
     (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target))
     is Some(_),
     content="true",

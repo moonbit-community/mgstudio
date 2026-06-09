@@ -141,6 +141,42 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
 }
 
 ///|
+test "visibility plugin: Mesh2d and Mesh3d require visibility components" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
+  let world = app.world()
+  let mesh_handle : @asset.Handle[@mesh.Mesh] = @asset.Handle::new(1)
+  let mesh2d_entity = world.spawn_empty()
+  try! world.set_by_key(
+    mesh2d_entity,
+    @mesh.ecs_key_mesh2d,
+    @mesh.Mesh2d::new(mesh_handle),
+  )
+  let mesh3d_entity = world.spawn_empty()
+  try! world.set_by_key(
+    mesh3d_entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(mesh_handle),
+  )
+
+  for entity in [mesh2d_entity, mesh3d_entity] {
+    debug_inspect(
+      try! world.contains_by_key(entity, ecs_key_visibility),
+      content="true",
+    )
+    debug_inspect(
+      try! world.contains_by_key(entity, ecs_key_inherited_visibility),
+      content="true",
+    )
+    debug_inspect(
+      try! world.contains_by_key(entity, ecs_key_view_visibility),
+      content="true",
+    )
+  }
+}
+
+///|
 test "visibility: VisibilityRange constructors" {
   let always = @visibility.VisibilityRange::always_visible()
   debug_inspect(always.start_margin_min, content="0")

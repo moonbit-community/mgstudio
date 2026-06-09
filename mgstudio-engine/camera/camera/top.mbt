@@ -327,6 +327,11 @@ pub fn register_camera_required_components(
   )
   world.register_required_components_with(
     ecs_key_camera,
+    @render.ecs_key_sync_to_render_world,
+    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
     ecs_key_render_target,
     fn() { RenderTarget::Screen },
   )

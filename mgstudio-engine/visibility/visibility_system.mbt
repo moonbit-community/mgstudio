@@ -275,6 +275,16 @@ fn register_visibility_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
+    @mesh.ecs_key_mesh2d,
+    ecs_key_visibility,
+    fn() { Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    @mesh.ecs_key_mesh3d,
+    ecs_key_visibility,
+    fn() { Visibility::Inherited },
+  )
+  world.register_required_components_with(
     ecs_key_visibility,
     ecs_key_inherited_visibility,
     fn() { InheritedVisibility::new(true) },

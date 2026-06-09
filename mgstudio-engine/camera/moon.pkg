@@ -18,6 +18,7 @@ import {
 
 import {
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/visibility",
 } for "test"
 

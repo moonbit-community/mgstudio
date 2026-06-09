@@ -146,9 +146,6 @@ pub fn GpuBackend::draw_mesh3d(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
-  if mesh.vertex_stride_bytes != MESH3D_VERTEX_STRIDE_BYTES {
-    return
-  }
   let transparent = color_a < 0.999F
   let pass_kind_raw = ps.pass_kind
   if !pass_kind_decal_enabled(pass_kind_raw) && mesh3d_draw_is_decal(cull_mode) {

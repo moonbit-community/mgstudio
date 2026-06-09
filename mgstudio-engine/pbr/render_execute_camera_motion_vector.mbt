@@ -30,9 +30,7 @@ fn render3d_prewarm_motion_vector_material_pipeline(
     mesh_asset,
     state.peek().mesh_vertex_buffer_layouts,
   )
-  let layout = render_mesh.host_vertex_buffer_layout(
-    state.peek().mesh_vertex_buffer_layouts,
-  )
+  let layout = render_mesh.layout()
   let base_key = material_pipeline_key_for_standard_material_render_mesh(
     motion_mesh.material_properties,
     render_mesh,
