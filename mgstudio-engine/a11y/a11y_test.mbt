@@ -79,7 +79,7 @@ test "a11y: plugin init_resource keeps existing resource values" {
 ///|
 test "a11y: ActionRequest wrapper forwards accesskit payload" {
   let target = @moon_accesskit.NodeId::from_u64(42UL)
-  let request = @moon_accesskit.ActionRequest::new(
+  let request = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
     target,
@@ -101,12 +101,12 @@ test "a11y: node_id_for_entity is stable and roundtrips entity bits" {
 
 ///|
 test "a11y: AccessibilityNode mutators forward to accesskit node" {
-  let node = @moon_accesskit.Node::new(@moon_accesskit.Role::Button)
+  let node = @moon_accesskit.Node::Node(@moon_accesskit.Role::Button)
   let wrapped = AccessibilityNode::new(node)
   assert_eq(wrapped.role(), @moon_accesskit.Role::Button)
   wrapped.set_label("play")
   wrapped.set_value("enabled")
-  wrapped.set_bounds(@moon_accesskit.Rect::new(1.0, 2.0, 3.0, 4.0))
+  wrapped.set_bounds(@moon_accesskit.Rect::Rect(1.0, 2.0, 3.0, 4.0))
   wrapped.add_action(@moon_accesskit.Action::Focus)
 
   let labels = wrapped.label()

@@ -224,7 +224,7 @@ pub fn physics2d_apply_global_hooks(
   ctx : Physics2dContext,
 ) -> Unit {
   let c = physics2d_hooks_config(world)
-  let mut hooks = @pipeline.PhysicsHooks::new()
+  let mut hooks = @pipeline.PhysicsHooks::PhysicsHooks()
   match c.filter_contact_pair {
     Some(f) => hooks = hooks.filter_contact_pair(f)
     None => ()

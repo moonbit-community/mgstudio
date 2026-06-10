@@ -114,7 +114,7 @@ pub fn joint2d_fixed(
   local_anchor1 : @math.Vec2,
   local_anchor2 : @math.Vec2,
 ) -> @dynamics.GenericJoint {
-  let j = @dynamics.FixedJointBuilder::new()
+  let j = @dynamics.FixedJointBuilder::FixedJointBuilder()
     .local_anchor1(mg_vec2_to_rapier(local_anchor1))
     .local_anchor2(mg_vec2_to_rapier(local_anchor2))
     .build()
@@ -126,7 +126,7 @@ pub fn joint2d_revolute(
   local_anchor1 : @math.Vec2,
   local_anchor2 : @math.Vec2,
 ) -> @dynamics.GenericJoint {
-  let j = @dynamics.RevoluteJointBuilder::new()
+  let j = @dynamics.RevoluteJointBuilder::RevoluteJointBuilder()
     .local_anchor1(mg_vec2_to_rapier(local_anchor1))
     .local_anchor2(mg_vec2_to_rapier(local_anchor2))
     .build()
@@ -139,7 +139,9 @@ pub fn joint2d_prismatic(
   local_anchor1 : @math.Vec2,
   local_anchor2 : @math.Vec2,
 ) -> @dynamics.GenericJoint {
-  let j = @dynamics.PrismaticJointBuilder::new(mg_vec2_to_rapier(local_axis))
+  let j = @dynamics.PrismaticJointBuilder::PrismaticJointBuilder(
+      mg_vec2_to_rapier(local_axis),
+    )
     .local_anchor1(mg_vec2_to_rapier(local_anchor1))
     .local_anchor2(mg_vec2_to_rapier(local_anchor2))
     .build()
@@ -152,7 +154,7 @@ pub fn joint2d_rope(
   local_anchor1 : @math.Vec2,
   local_anchor2 : @math.Vec2,
 ) -> @dynamics.GenericJoint {
-  let j = @dynamics.RopeJointBuilder::new(max_distance)
+  let j = @dynamics.RopeJointBuilder::RopeJointBuilder(max_distance)
     .local_anchor1(mg_vec2_to_rapier(local_anchor1))
     .local_anchor2(mg_vec2_to_rapier(local_anchor2))
     .build()
@@ -165,7 +167,9 @@ pub fn joint2d_pin_slot(
   local_anchor1 : @math.Vec2,
   local_anchor2 : @math.Vec2,
 ) -> @dynamics.GenericJoint {
-  let j = @dynamics.PinSlotJointBuilder::new(mg_vec2_to_rapier(local_axis))
+  let j = @dynamics.PinSlotJointBuilder::PinSlotJointBuilder(
+      mg_vec2_to_rapier(local_axis),
+    )
     .local_anchor1(mg_vec2_to_rapier(local_anchor1))
     .local_anchor2(mg_vec2_to_rapier(local_anchor2))
     .build()

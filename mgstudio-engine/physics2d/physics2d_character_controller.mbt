@@ -227,7 +227,9 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
     let collisions : Array[CharacterCollision2d] = []
     let query = ctx
       .query()
-      .with_filter(@collision.QueryFilter::new().exclude_collider(ch.handle))
+      .with_filter(
+        @collision.QueryFilter::QueryFilter().exclude_collider(ch.handle),
+      )
     let movement = kcc.controller.move_shape(
       dt,
       query,

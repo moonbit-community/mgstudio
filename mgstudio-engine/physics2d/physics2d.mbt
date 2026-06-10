@@ -628,26 +628,26 @@ pub struct Physics2dContext {
 
 ///|
 pub fn Physics2dContext::new() -> Physics2dContext {
-  let rigid_bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let query_pipeline = @collision.QueryPipelineMut::new(
-    @collision.QueryFilter::new(),
+  let rigid_bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let colliders = @collision.ColliderSet::ColliderSet()
+  let query_pipeline = @collision.QueryPipelineMut::QueryPipelineMut(
+    @collision.QueryFilter::QueryFilter(),
     rigid_bodies,
     colliders,
   )
   Physics2dContext::{
     rigid_bodies,
     colliders,
-    islands: @dynamics.IslandManager::new(),
-    broad_phase: @collision.BroadPhaseBvh::new(),
-    narrow_phase: @collision.NarrowPhase::new(),
-    impulse_joints: @dynamics.ImpulseJointSet::new(),
-    multibody_joints: @dynamics.MultibodyJointSet::new(),
-    ccd: @dynamics_ccd.CCDSolver::new(),
-    pipeline: @pipeline.PhysicsPipeline::new(),
+    islands: @dynamics.IslandManager::IslandManager(),
+    broad_phase: @collision.BroadPhaseBvh::BroadPhaseBvh(),
+    narrow_phase: @collision.NarrowPhase::NarrowPhase(),
+    impulse_joints: @dynamics.ImpulseJointSet::ImpulseJointSet(),
+    multibody_joints: @dynamics.MultibodyJointSet::MultibodyJointSet(),
+    ccd: @dynamics_ccd.CCDSolver::CCDSolver(),
+    pipeline: @pipeline.PhysicsPipeline::PhysicsPipeline(),
     integration: @dynamics.IntegrationParameters::default(),
-    hooks: @pipeline.PhysicsHooks::new(),
-    event_handler: @pipeline.EventHandler::new(),
+    hooks: @pipeline.PhysicsHooks::PhysicsHooks(),
+    event_handler: @pipeline.EventHandler::EventHandler(),
     query_pipeline,
     entity_to_body: @hashmap.HashMap([]),
     entity_to_collider: @hashmap.HashMap([]),

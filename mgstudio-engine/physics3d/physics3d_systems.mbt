@@ -36,9 +36,9 @@ fn update_transform_from_iso3(
 fn collision_groups_to_rapier(
   groups : CollisionGroups3d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::new(
-    @dynamics.Group::new(groups.memberships),
-    @dynamics.Group::new(groups.filter),
+  @dynamics.InteractionGroups::InteractionGroups(
+    @dynamics.Group::Group(groups.memberships),
+    @dynamics.Group::Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -47,9 +47,9 @@ fn collision_groups_to_rapier(
 fn solver_groups_to_rapier(
   groups : SolverGroups3d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::new(
-    @dynamics.Group::new(groups.memberships),
-    @dynamics.Group::new(groups.filter),
+  @dynamics.InteractionGroups::InteractionGroups(
+    @dynamics.Group::Group(groups.memberships),
+    @dynamics.Group::Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -74,10 +74,10 @@ fn collider_shape3d_to_rapier(shape : ColliderShape3d) -> @collision.Shape3D {
       let c = @collision.Shape3D::capsule_y(radius, half_height)
       @collision.Shape3D::Compound([
         (
-          @rapier_core.Isometry3::new(
+          @rapier_core.Isometry3::Isometry3(
             @rapier_core.Vec3::zero(),
             @rapier_core.rotation_from_scaled_axis(
-              @rapier_core.Vec3::new(0.0F, 0.0F, -1.5707964F),
+              @rapier_core.Vec3::Vec3(0.0F, 0.0F, -1.5707964F),
             ),
           ),
           c,
@@ -90,10 +90,10 @@ fn collider_shape3d_to_rapier(shape : ColliderShape3d) -> @collision.Shape3D {
       let c = @collision.Shape3D::capsule_y(radius, half_height)
       @collision.Shape3D::Compound([
         (
-          @rapier_core.Isometry3::new(
+          @rapier_core.Isometry3::Isometry3(
             @rapier_core.Vec3::zero(),
             @rapier_core.rotation_from_scaled_axis(
-              @rapier_core.Vec3::new(1.5707964F, 0.0F, 0.0F),
+              @rapier_core.Vec3::Vec3(1.5707964F, 0.0F, 0.0F),
             ),
           ),
           c,

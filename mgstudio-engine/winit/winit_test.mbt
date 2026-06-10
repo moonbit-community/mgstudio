@@ -730,7 +730,7 @@ test "winit: plugin owns accessibility action propagation" {
   ignore(@windowing.take_accessibility_actions())
 
   let target = @moon_accesskit.NodeId::from_u64(42UL)
-  let request = @moon_accesskit.ActionRequest::new(
+  let request = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
     target,

@@ -91,7 +91,7 @@ pub fn Physics3dContext::cast_ray_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHit3d? {
-  let ray = @collision.Ray3::new(
+  let ray = @collision.Ray3::Ray3(
     mg_vec3_to_rapier(origin),
     mg_vec3_to_rapier(dir),
   )
@@ -117,7 +117,7 @@ pub fn Physics3dContext::cast_ray_entity_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter3DReal,
 ) -> RayHit3d? {
-  let ray = @collision.Ray3::new(
+  let ray = @collision.Ray3::Ray3(
     mg_vec3_to_rapier(origin),
     mg_vec3_to_rapier(dir),
   )
@@ -143,7 +143,7 @@ pub fn Physics3dContext::cast_ray_and_get_normal_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHitNormal3d? {
-  let ray = @collision.Ray3::new(
+  let ray = @collision.Ray3::Ray3(
     mg_vec3_to_rapier(origin),
     mg_vec3_to_rapier(dir),
   )
@@ -180,7 +180,7 @@ pub fn Physics3dContext::cast_ray_and_get_normal_entity_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter3DReal,
 ) -> RayHitNormal3d? {
-  let ray = @collision.Ray3::new(
+  let ray = @collision.Ray3::Ray3(
     mg_vec3_to_rapier(origin),
     mg_vec3_to_rapier(dir),
   )
@@ -222,7 +222,7 @@ pub fn Physics3dContext::intersect_ray_entities(
     dir,
     max_toi,
     solid,
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
   )
 }
 
@@ -235,7 +235,7 @@ pub fn Physics3dContext::intersect_ray_entities_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter3DReal,
 ) -> Array[RayHitNormal3d] {
-  let ray = @collision.Ray3::new(
+  let ray = @collision.Ray3::Ray3(
     mg_vec3_to_rapier(origin),
     mg_vec3_to_rapier(dir),
   )
@@ -264,7 +264,7 @@ pub fn Physics3dContext::intersect_point_entities(
 ) -> Array[@core.Entity] {
   self.intersect_point_entities_with_filter(
     point,
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
   )
 }
 
@@ -302,7 +302,7 @@ pub fn Physics3dContext::project_point_entity(
     point,
     max_dist,
     solid,
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
   )
 }
 
@@ -348,7 +348,7 @@ pub fn Physics3dContext::intersect_shape_entities(
   self.intersect_shape_entities_with_filter(
     shape_pos,
     shape,
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
   )
 }
 
@@ -390,7 +390,7 @@ pub fn Physics3dContext::cast_shape_entity(
     shape_vel,
     shape,
     options,
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
   )
 }
 

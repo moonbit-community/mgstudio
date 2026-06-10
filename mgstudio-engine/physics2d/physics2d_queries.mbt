@@ -93,7 +93,7 @@ pub fn Physics2dContext::query_filter_exclude_entity(
 
 ///|
 fn rect_to_aabb(rect : @math.Rect) -> @rapier_core.Aabb {
-  @rapier_core.Aabb::new(
+  @rapier_core.Aabb::Aabb(
     mg_vec2_to_rapier(rect.min),
     mg_vec2_to_rapier(rect.max),
   )
@@ -107,7 +107,7 @@ pub fn Physics2dContext::cast_ray_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHit2d? {
-  let ray = @collision.Ray::new(
+  let ray = @collision.Ray::Ray(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
@@ -133,7 +133,7 @@ pub fn Physics2dContext::cast_ray_entity_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter,
 ) -> RayHit2d? {
-  let ray = @collision.Ray::new(
+  let ray = @collision.Ray::Ray(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
@@ -159,7 +159,7 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHitNormal2d? {
-  let ray = @collision.Ray::new(
+  let ray = @collision.Ray::Ray(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
@@ -196,7 +196,7 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter,
 ) -> RayHitNormal2d? {
-  let ray = @collision.Ray::new(
+  let ray = @collision.Ray::Ray(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
@@ -234,7 +234,7 @@ pub fn Physics2dContext::intersect_ray_entities_with_filter(
   solid : Bool,
   filter : @collision.QueryFilter,
 ) -> Array[RayHitNormal2d] {
-  let ray = @collision.Ray::new(
+  let ray = @collision.Ray::Ray(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
@@ -269,7 +269,7 @@ pub fn Physics2dContext::intersect_ray_entities(
     dir,
     max_toi,
     solid,
-    @collision.QueryFilter::new(),
+    @collision.QueryFilter::QueryFilter(),
   )
 }
 
@@ -456,7 +456,7 @@ pub fn Physics2dContext::intersect_shape_entities(
   self.intersect_shape_entities_with_filter(
     shape,
     shape_pos,
-    @collision.QueryFilter::new(),
+    @collision.QueryFilter::QueryFilter(),
   )
 }
 
@@ -492,7 +492,7 @@ pub fn Physics2dContext::intersect_aabb_entities_conservative(
 ) -> Array[@core.Entity] {
   self.intersect_aabb_entities_conservative_with_filter(
     rect,
-    @collision.QueryFilter::new(),
+    @collision.QueryFilter::QueryFilter(),
   )
 }
 

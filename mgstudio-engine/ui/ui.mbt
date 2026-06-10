@@ -3060,11 +3060,11 @@ pub fn ui_build_a11y_tree_update(
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else {
     let root = @moon_accesskit.NodeId::root()
-    let update = @moon_accesskit.TreeUpdate::new(
+    let update = @moon_accesskit.TreeUpdate::TreeUpdate(
       @moon_accesskit.TreeId::root(),
       root,
     )
-    update.set_tree(@moon_accesskit.Tree::new(root))
+    update.set_tree(@moon_accesskit.Tree::Tree(root))
     update
   }
   // Build the set of required nodes (focusables + their ancestor chain), so
@@ -3189,9 +3189,9 @@ pub fn ui_build_a11y_tree_update(
       focus_id = root_id
     }
   }
-  let update = @moon_accesskit.TreeUpdate::new(tree_id, focus_id)
-  update.set_tree(@moon_accesskit.Tree::new(root_id))
-  let root_node = @moon_accesskit.Node::new(@moon_accesskit.Role::Window)
+  let update = @moon_accesskit.TreeUpdate::TreeUpdate(tree_id, focus_id)
+  update.set_tree(@moon_accesskit.Tree::Tree(root_id))
+  let root_node = @moon_accesskit.Node::Node(@moon_accesskit.Role::Window)
   let mut root_min_x = 0.0
   let mut root_min_y = 0.0
   let mut root_max_x = 0.0
@@ -3234,7 +3234,7 @@ pub fn ui_build_a11y_tree_update(
     }
   }
   root_node.set_bounds(
-    @moon_accesskit.Rect::new(root_min_x, root_min_y, root_max_x, root_max_y),
+    @moon_accesskit.Rect::Rect(root_min_x, root_min_y, root_max_x, root_max_y),
   )
 
   // Attach top-level required nodes under the root.
@@ -3280,7 +3280,7 @@ pub fn ui_build_a11y_tree_update(
     } else {
       @moon_accesskit.Role::GenericContainer
     }
-    let node = @moon_accesskit.Node::new(role)
+    let node = @moon_accesskit.Node::Node(role)
 
     // Children in hierarchy order (filtered to required set).
     for child in ui_collect_effective_children(world, entity) {
@@ -3297,7 +3297,7 @@ pub fn ui_build_a11y_tree_update(
     let size = rect.size()
     let x1 = (entity_ctx.viewport_origin.x + rect.min.x + size.x).to_double()
     let y1 = (entity_ctx.viewport_origin.y + rect.min.y + size.y).to_double()
-    node.set_bounds(@moon_accesskit.Rect::new(x0, y0, x1, y1))
+    node.set_bounds(@moon_accesskit.Rect::Rect(x0, y0, x1, y1))
     if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
       node.set_clips_children()
     }

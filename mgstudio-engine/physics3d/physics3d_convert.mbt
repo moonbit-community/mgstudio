@@ -19,7 +19,7 @@
 
 ///|
 pub fn mg_vec3_to_rapier(v : @math.Vec3) -> @rapier_core.Vec3 {
-  @rapier_core.Vec3::new(v.x, v.y, v.z)
+  @rapier_core.Vec3::Vec3(v.x, v.y, v.z)
 }
 
 ///|
@@ -29,7 +29,7 @@ pub fn rapier_vec3_to_mg(v : @rapier_core.Vec3) -> @math.Vec3 {
 
 ///|
 pub fn mg_quat_to_rapier(q : @math.Quat) -> @rapier_core.Quat {
-  @rapier_core.Quat::new(q.x, q.y, q.z, q.w)
+  @rapier_core.Quat::Quat(q.x, q.y, q.z, q.w)
 }
 
 ///|
@@ -39,7 +39,7 @@ pub fn rapier_quat_to_mg(q : @rapier_core.Quat) -> @math.Quat {
 
 ///|
 pub fn mg_transform_to_iso3(t : @transform.Transform) -> @rapier_core.Isometry3 {
-  @rapier_core.Isometry3::new(
+  @rapier_core.Isometry3::Isometry3(
     mg_vec3_to_rapier(t.translation),
     mg_quat_to_rapier(t.rotation),
   )

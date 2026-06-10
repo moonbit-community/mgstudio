@@ -225,7 +225,9 @@ pub fn physics3d_character_controller_system(world : @ecs.World) -> Unit {
     let query = ctx
       .query()
       .with_filter(
-        @collision.QueryFilter3DReal::new().exclude_collider(ch.handle),
+        @collision.QueryFilter3DReal::QueryFilter3DReal().exclude_collider(
+          ch.handle,
+        ),
       )
     let movement = kcc.controller.move_shape(
       dt,

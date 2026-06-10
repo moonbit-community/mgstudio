@@ -647,7 +647,7 @@ test "physics2d: query pipeline sees inserted colliders" {
   debug_inspect(at_origin.length() > 0, content="true")
   debug_inspect(at_origin[0].id == floor.id, content="true")
   let excluded = ctx.query_filter_exclude_entity(
-    @collision.QueryFilter::new(),
+    @collision.QueryFilter::QueryFilter(),
     floor,
   )
   let miss = ctx.cast_ray_entity_with_filter(
@@ -706,7 +706,7 @@ test "physics2d: query pipeline sees inserted colliders" {
       z=0.0F,
     ),
     @math.Vec2::new(0.0F, -1.0F),
-    @collision.ShapeCastOptions::new(10.0F, false),
+    @collision.ShapeCastOptions::ShapeCastOptions(10.0F, false),
   )
   debug_inspect(sweep is Some(_), content="true")
   match sweep {
@@ -937,7 +937,7 @@ test "physics2d: impulse joint is inserted and cleaned up" {
     Collider2d::new(ColliderShape2d::ball(0.2F)),
   )
   try! world.set_by_key(b, ecs_key_velocity2d, Velocity2d::zero())
-  let fixed = @dynamics.FixedJointBuilder::new().build()
+  let fixed = @dynamics.FixedJointBuilder::FixedJointBuilder().build()
   let data = @dynamics.GenericJoint::from_fixed(fixed)
   try! world.set_by_key(
     a,

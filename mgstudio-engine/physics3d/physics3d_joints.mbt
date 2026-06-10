@@ -111,7 +111,7 @@ pub fn joint3d_fixed(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  @dynamics.FixedJoint3DRealBuilder::new()
+  @dynamics.FixedJoint3DRealBuilder::FixedJoint3DRealBuilder()
   .local_anchor1(mg_vec3_to_rapier(local_anchor1))
   .local_anchor2(mg_vec3_to_rapier(local_anchor2))
   .build()
@@ -124,7 +124,9 @@ pub fn joint3d_revolute(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  @dynamics.RevoluteJoint3DRealBuilder::new(mg_vec3_to_rapier(axis))
+  @dynamics.RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+    mg_vec3_to_rapier(axis),
+  )
   .local_anchor1(mg_vec3_to_rapier(local_anchor1))
   .local_anchor2(mg_vec3_to_rapier(local_anchor2))
   .build()
@@ -137,7 +139,9 @@ pub fn joint3d_prismatic(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  @dynamics.PrismaticJoint3DRealBuilder::new(mg_vec3_to_rapier(axis))
+  @dynamics.PrismaticJoint3DRealBuilder::PrismaticJoint3DRealBuilder(
+    mg_vec3_to_rapier(axis),
+  )
   .local_anchor1(mg_vec3_to_rapier(local_anchor1))
   .local_anchor2(mg_vec3_to_rapier(local_anchor2))
   .build()
@@ -149,7 +153,7 @@ pub fn joint3d_spherical(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  @dynamics.SphericalJoint3DRealBuilder::new()
+  @dynamics.SphericalJoint3DRealBuilder::SphericalJoint3DRealBuilder()
   .local_anchor1(mg_vec3_to_rapier(local_anchor1))
   .local_anchor2(mg_vec3_to_rapier(local_anchor2))
   .build()
@@ -164,7 +168,7 @@ pub fn joint3d_spring(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  @dynamics.GenericJoint3DRealBuilder::new(
+  @dynamics.GenericJoint3DRealBuilder::GenericJoint3DRealBuilder(
     @dynamics.JointAxesMask3DReal::empty(),
   )
   .coupled_axes(@dynamics.JointAxesMask3DReal::lin_axes())
@@ -186,7 +190,7 @@ pub fn joint3d_rope(
   local_anchor1 : @math.Vec3,
   local_anchor2 : @math.Vec3,
 ) -> @dynamics.GenericJoint {
-  let joint = @dynamics.RopeJointBuilder3::new(max_distance)
+  let joint = @dynamics.RopeJointBuilder3::RopeJointBuilder3(max_distance)
     .local_anchor1(mg_vec3_to_rapier(local_anchor1))
     .local_anchor2(mg_vec3_to_rapier(local_anchor2))
     .build()

@@ -172,7 +172,7 @@ pub fn physics3d_apply_hooks(
   ctx : Physics3dContext,
 ) -> Unit {
   let c = physics3d_hooks_config(world)
-  let mut hooks = @pipeline.PhysicsHooks3D::new()
+  let mut hooks = @pipeline.PhysicsHooks3D::PhysicsHooks3D()
   match c.filter_contact_pair {
     Some(f) => hooks = hooks.filter_contact_pair(f)
     None => ()

@@ -756,7 +756,7 @@ test "picking: a11y focus action maps to hovered interaction" {
     @app.PickingEvents::PickingEvents(),
   )
   let entity = world.spawn_empty()
-  let req = @moon_accesskit.ActionRequest::new(
+  let req = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
     @a11y.node_id_for_entity(entity),
@@ -817,12 +817,12 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @hierarchy.Children::new([child]),
   )
   let node_id = @a11y.node_id_for_entity(entity)
-  let req_down = @moon_accesskit.ActionRequest::new(
+  let req_down = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::ScrollDown,
     @moon_accesskit.TreeId::root(),
     node_id,
   )
-  let req_right = @moon_accesskit.ActionRequest::new(
+  let req_right = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::ScrollRight,
     @moon_accesskit.TreeId::root(),
     node_id,
@@ -850,7 +850,7 @@ test "picking: a11y set-value action updates Text content" {
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Old"))
   let node_id = @a11y.node_id_for_entity(entity)
-  let req = @moon_accesskit.ActionRequest::new(
+  let req = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::SetValue,
     @moon_accesskit.TreeId::root(),
     node_id,
@@ -879,7 +879,7 @@ test "picking: ignores a11y actions targeting non-alive entities" {
     @app.PickingEvents::PickingEvents(),
   )
   let dead_entity = @core.Entity::new(999, 1)
-  let req = @moon_accesskit.ActionRequest::new(
+  let req = @moon_accesskit.ActionRequest::ActionRequest(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
     @a11y.node_id_for_entity(dead_entity),

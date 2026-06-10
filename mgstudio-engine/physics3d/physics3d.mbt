@@ -680,26 +680,26 @@ pub struct Physics3dContext {
 
 ///|
 pub fn Physics3dContext::new() -> Physics3dContext {
-  let rigid_bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let query_pipeline = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+  let rigid_bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
+  let query_pipeline = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    @collision.QueryFilter3DReal::QueryFilter3DReal(),
     rigid_bodies,
     colliders,
   )
   Physics3dContext::{
     rigid_bodies,
     colliders,
-    islands: @dynamics.IslandManager3D::new(),
-    broad_phase: @collision.BroadPhase3D::new(),
-    narrow_phase: @collision.NarrowPhase3D::new(),
-    rope_joints: @dynamics.RopeJointSet3DReal::new(),
-    impulse_joints: @dynamics.JointSet3DReal::new(),
-    multibody_joints: @dynamics.MultibodyJointSet3DReal::new(),
-    pipeline: @pipeline.PhysicsPipeline3DReal::new(),
+    islands: @dynamics.IslandManager3D::IslandManager3D(),
+    broad_phase: @collision.BroadPhase3D::BroadPhase3D(),
+    narrow_phase: @collision.NarrowPhase3D::NarrowPhase3D(),
+    rope_joints: @dynamics.RopeJointSet3DReal::RopeJointSet3DReal(),
+    impulse_joints: @dynamics.JointSet3DReal::JointSet3DReal(),
+    multibody_joints: @dynamics.MultibodyJointSet3DReal::MultibodyJointSet3DReal(),
+    pipeline: @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal(),
     integration: @dynamics.IntegrationParameters::default(),
-    hooks: @pipeline.PhysicsHooks3D::new(),
-    event_handler: @pipeline.EventHandler3D::new(),
+    hooks: @pipeline.PhysicsHooks3D::PhysicsHooks3D(),
+    event_handler: @pipeline.EventHandler3D::EventHandler3D(),
     query_pipeline,
     entity_to_body: @hashmap.HashMap([]),
     entity_to_collider: @hashmap.HashMap([]),

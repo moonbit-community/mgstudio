@@ -59,20 +59,24 @@ fn make_collider_builder(shape : ColliderShape2d) -> @collision.ColliderBuilder 
       for v in vertices {
         vs.push(mg_vec2_to_rapier(v))
       }
-      @collision.ColliderBuilder::new(@collision.Shape::ConvexPolygon(vs))
+      @collision.ColliderBuilder::ColliderBuilder(
+        @collision.Shape::ConvexPolygon(vs),
+      )
     }
     TriMesh(vertices, indices) => {
       let vs : Array[@rapier_core.Vec2] = []
       for v in vertices {
         vs.push(mg_vec2_to_rapier(v))
       }
-      @collision.ColliderBuilder::new(@collision.Shape::TriMesh(vs, indices))
+      @collision.ColliderBuilder::ColliderBuilder(
+        @collision.Shape::TriMesh(vs, indices),
+      )
     }
     Compound(parts) =>
-      @collision.ColliderBuilder::new(
+      @collision.ColliderBuilder::ColliderBuilder(
         collider_shape2d_to_rapier(Compound(parts)),
       )
-    Raw(shape) => @collision.ColliderBuilder::new(shape)
+    Raw(shape) => @collision.ColliderBuilder::ColliderBuilder(shape)
   }
 }
 
@@ -100,9 +104,9 @@ fn rigid_body_type_eq(
 fn collision_groups_to_rapier(
   groups : CollisionGroups2d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::new(
-    @dynamics.Group::new(groups.memberships),
-    @dynamics.Group::new(groups.filter),
+  @dynamics.InteractionGroups::InteractionGroups(
+    @dynamics.Group::Group(groups.memberships),
+    @dynamics.Group::Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -111,9 +115,9 @@ fn collision_groups_to_rapier(
 fn solver_groups_to_rapier(
   groups : SolverGroups2d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::new(
-    @dynamics.Group::new(groups.memberships),
-    @dynamics.Group::new(groups.filter),
+  @dynamics.InteractionGroups::InteractionGroups(
+    @dynamics.Group::Group(groups.memberships),
+    @dynamics.Group::Group(groups.filter),
     groups.test_mode,
   )
 }

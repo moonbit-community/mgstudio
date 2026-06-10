@@ -167,7 +167,7 @@ test "ui: interaction state observers update AccessibilityNode like Bevy" {
     entity,
     @a11y.ecs_key_accessibility_node,
     @a11y.AccessibilityNode::new(
-      @moon_accesskit.Node::new(@moon_accesskit.Role::Button),
+      @moon_accesskit.Node::Node(@moon_accesskit.Role::Button),
     ),
   )
 

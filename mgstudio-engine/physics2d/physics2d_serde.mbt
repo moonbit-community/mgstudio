@@ -70,7 +70,7 @@ fn rapier_vec2_from_json(
   path : @json.JsonPath,
 ) -> @rapier_core.Vec2 raise @json.JsonDecodeError {
   let (x, y) : (Float, Float) = @json.from_json(json, path~)
-  @rapier_core.Vec2::new(x, y)
+  @rapier_core.Vec2::Vec2(x, y)
 }
 
 ///|
@@ -101,7 +101,7 @@ fn rapier_iso2_from_json(
     json,
     path~,
   )
-  @rapier_core.Isometry2::new(
+  @rapier_core.Isometry2::Isometry2(
     rapier_vec2_from_json(translation_json, path),
     rapier_rot2_from_json(rotation_json, path),
   )
@@ -121,7 +121,7 @@ fn rapier_mass_properties_from_json(
     json,
     path~,
   )
-  @rapier_core.MassProperties::new(
+  @rapier_core.MassProperties::MassProperties(
     mass,
     inertia,
     rapier_vec2_from_json(center_of_mass_json, path),
@@ -345,7 +345,7 @@ fn joint_axes_mask_from_json(
   path : @json.JsonPath,
 ) -> @dynamics.JointAxesMask raise @json.JsonDecodeError {
   let bits : Int = @json.from_json(json, path~)
-  @dynamics.JointAxesMask::new(bits)
+  @dynamics.JointAxesMask::JointAxesMask(bits)
 }
 
 ///|
@@ -362,7 +362,9 @@ fn spring_coefficients_from_json(
     json,
     path~,
   )
-  @dynamics.SpringCoefficients::new(natural_frequency, damping_ratio)
+  @dynamics.SpringCoefficients::SpringCoefficients(
+    natural_frequency, damping_ratio,
+  )
 }
 
 ///|
@@ -422,7 +424,7 @@ fn joint_limits_from_json(
   path : @json.JsonPath,
 ) -> @dynamics.JointLimits raise @json.JsonDecodeError {
   let (min, max, impulse) : (Float, Float, Float) = @json.from_json(json, path~)
-  @dynamics.JointLimits::new(min, max).set_impulse(impulse)
+  @dynamics.JointLimits::JointLimits(min, max).set_impulse(impulse)
 }
 
 ///|
@@ -526,7 +528,7 @@ fn character_autostep_from_json(
     Json,
     Bool,
   ) = @json.from_json(json, path~)
-  @control.CharacterAutostep::new(
+  @control.CharacterAutostep::CharacterAutostep(
     character_length_from_json(max_height_json, path),
     character_length_from_json(min_width_json, path),
   ).with_include_dynamic_bodies(include_dynamic_bodies)
@@ -884,7 +886,7 @@ fn generic_joint_from_json(
   path : @json.JsonPath,
 ) -> @dynamics.GenericJoint raise @json.JsonDecodeError {
   let parts : Array[Json] = @json.from_json(json, path~)
-  let mut joint = @dynamics.GenericJoint::new(
+  let mut joint = @dynamics.GenericJoint::GenericJoint(
     joint_axes_mask_from_json(json_get(parts, 2, (0).to_json()), path),
   )
   joint = joint.set_local_frame1(
