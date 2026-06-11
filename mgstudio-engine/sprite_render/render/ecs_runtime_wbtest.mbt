@@ -210,14 +210,9 @@ fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
   let mesh_assets = @sprite.mesh_assets_mut_or_abort()
   mesh_assets.set_changed()
   @mesh.Mesh2d::new(
-    mesh_assets
-    .peek()
-    .add(
-      @mesh.Mesh::from_2d_geometry(
-        @mesh_primitives.rectangle_to_mesh2d_geometry(
-          @math.Rectangle::new(width, height),
-        ),
-      ),
+    @mesh_primitives.add_mesh(
+      mesh_assets.peek(),
+      @math.Rectangle::new(width, height),
     ),
   )
 }
@@ -670,15 +665,10 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           commands.spawn_component(@camera_components2d.Camera2d::Camera2d()),
         )
         meshes.set_changed()
-        let mesh_handle = meshes
-          .peek()
-          .add(
-            @mesh.Mesh::from_2d_geometry(
-              @mesh_primitives.rectangle_to_mesh2d_geometry(
-                @math.Rectangle::new(8.0F, 6.0F),
-              ),
-            ),
-          )
+        let mesh_handle = @mesh_primitives.add_mesh(
+          meshes.peek(),
+          @math.Rectangle::new(8.0F, 6.0F),
+        )
         materials.set_changed()
         let material_handle = materials
           .peek()
@@ -741,11 +731,7 @@ test "render2d: bloom2d scene queues bright sprite and color material meshes" {
           ),
         )
         let circle_mesh = meshes.modify(fn(mesh_assets) {
-          mesh_assets.add(
-            @mesh_primitives.circle_to_mesh2d_geometry(
-              @math.Circle::new(100.0F),
-            ).to_mesh(),
-          )
+          @mesh_primitives.add_mesh(mesh_assets, @math.Circle::new(100.0F))
         })
         let circle_material = materials.modify(fn(material_assets) {
           material_assets.add(
@@ -766,10 +752,9 @@ test "render2d: bloom2d scene queues bright sprite and color material meshes" {
           ),
         )
         let hex_mesh = meshes.modify(fn(mesh_assets) {
-          mesh_assets.add(
-            @mesh_primitives.regular_polygon_to_mesh2d_geometry(
-              @math.RegularPolygon::new(100.0F, 6),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            mesh_assets,
+            @math.RegularPolygon::new(100.0F, 6),
           )
         })
         let hex_material = materials.modify(fn(material_assets) {
@@ -811,15 +796,10 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
   mesh_assets.set_changed()
-  let mesh_handle = mesh_assets
-    .peek()
-    .add(
-      @mesh.Mesh::from_2d_geometry(
-        @mesh_primitives.rectangle_to_mesh2d_geometry(
-          @math.Rectangle::new(8.0F, 6.0F),
-        ),
-      ),
-    )
+  let mesh_handle = @mesh_primitives.add_mesh(
+    mesh_assets.peek(),
+    @math.Rectangle::new(8.0F, 6.0F),
+  )
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
@@ -855,15 +835,10 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
   mesh_assets.set_changed()
-  let mesh_handle = mesh_assets
-    .peek()
-    .add(
-      @mesh.Mesh::from_2d_geometry(
-        @mesh_primitives.rectangle_to_mesh2d_geometry(
-          @math.Rectangle::new(8.0F, 6.0F),
-        ),
-      ),
-    )
+  let mesh_handle = @mesh_primitives.add_mesh(
+    mesh_assets.peek(),
+    @math.Rectangle::new(8.0F, 6.0F),
+  )
   let entity = world.spawn()
   try! world.set_by_key(
     entity,

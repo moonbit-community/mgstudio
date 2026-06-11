@@ -4828,89 +4828,145 @@ test "render2d: shape geometry builders validate" {
     @math.Vec2::new(0.0F, -40.0F),
     @math.Vec2::new(40.0F, 40.0F),
   ]).with_half_thickness(3.0F)
-  let geometries : Array[@mesh.Mesh2dGeometry] = [
-    @mesh_primitives.circle_to_mesh2d_geometry(
+  let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+  let handles : Array[@asset.Handle[@mesh.Mesh]] = []
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Circle::new(10.0F).with_vertices(24),
     ),
-    @mesh_primitives.ellipse_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Ellipse::new(8.0F, 12.0F).with_vertices(24),
     ),
-    @mesh_primitives.annulus_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Annulus::new(4.0F, 10.0F).with_vertices(24),
     ),
-    @mesh_primitives.generic_circle_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Ring::new(
         @math.Circle::new(10.0F).with_vertices(24),
         @math.Circle::new(7.0F).with_vertices(24),
       ),
     ),
-    @mesh_primitives.generic_circular_sector_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Ring::new(
         @math.CircularSector::new(10.0F, 1.0F).with_vertices(24),
         @math.CircularSector::new(7.0F, 1.0F).with_vertices(24),
       ),
     ),
-    @mesh_primitives.circular_sector_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
-    @mesh_primitives.circular_segment_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.CircularSegment::from_turns(10.0F, 0.35F)
       .with_vertices(24)
       .to_ring(2.0F),
     ),
-    @mesh_primitives.circular_segment_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
-    @mesh_primitives.generic_ellipse_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Ring::new(
         @math.Ellipse::new(8.0F, 12.0F).with_vertices(24),
         @math.Ellipse::new(6.0F, 10.0F).with_vertices(24),
       ),
     ),
-    @mesh_primitives.rhombus_to_mesh2d_geometry(
-      @math.Rhombus::new(12.0F, 20.0F),
-    ),
-    @mesh_primitives.rhombus_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(assets, @math.Rhombus::new(12.0F, 20.0F)),
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Rhombus::new(12.0F, 20.0F).to_ring(1.5F),
     ),
-    @mesh_primitives.regular_polygon_to_mesh2d_geometry(
-      @math.RegularPolygon::new(10.0F, 6),
-    ),
-    @mesh_primitives.regular_polygon_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(assets, @math.RegularPolygon::new(10.0F, 6)),
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.RegularPolygon::new(10.0F, 6).to_ring(1.0F),
     ),
-    @mesh_primitives.triangle_to_mesh2d_geometry(
-      @math.Triangle2d::@math.Triangle2d(),
-    ),
-    @mesh_primitives.triangle_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(assets, @math.Triangle2d::@math.Triangle2d()),
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Triangle2d::@math.Triangle2d().to_ring(0.1F),
     ),
-    @mesh_primitives.segment_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Segment2d::new(
         @math.Vec2::new(-30.0F, 30.0F),
         @math.Vec2::new(30.0F, -30.0F),
       ).with_half_thickness(3.0F),
     ),
-    @mesh_primitives.polyline_to_mesh2d_geometry(polyline),
-    @mesh_primitives.capsule_to_mesh2d_geometry(
+  )
+  handles.push(@mesh_primitives.add_mesh(assets, polyline))
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Capsule2d::new(5.0F, 20.0F).with_segments(16),
     ),
-    @mesh_primitives.capsule_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Capsule2d::new(5.0F, 20.0F).with_segments(16).to_ring(1.0F),
     ),
-    @mesh_primitives.rectangle_to_mesh2d_geometry(
-      @math.Rectangle::new(10.0F, 20.0F),
-    ),
-    @mesh_primitives.rectangle_ring_to_mesh2d_geometry(
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(assets, @math.Rectangle::new(10.0F, 20.0F)),
+  )
+  handles.push(
+    @mesh_primitives.add_mesh(
+      assets,
       @math.Rectangle::new(10.0F, 20.0F).to_ring(1.0F),
     ),
-  ]
+  )
   let mut ok = true
-  for geometry in geometries {
+  for handle in handles {
+    guard assets.get(handle) is Some(mesh) else {
+      ok = false
+      continue
+    }
+    guard mesh.as_3d_geometry() is Some(geometry) else {
+      ok = false
+      continue
+    }
     if geometry.validate() is Some(_) {
       ok = false
     }
-    if geometry.triangle_count() is None {
+    if geometry.vertex_count() == 0 {
       ok = false
     }
   }

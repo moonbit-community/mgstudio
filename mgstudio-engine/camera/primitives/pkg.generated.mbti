@@ -63,5 +63,6 @@ pub(open) trait MeshAabb {
   fn compute_aabb(Self) -> Aabb?
 }
 pub impl MeshAabb for @mesh.Mesh
+pub impl MeshAabb for @mesh.Mesh2dGeometry
 pub impl MeshAabb for @mesh.Mesh3dGeometry
 

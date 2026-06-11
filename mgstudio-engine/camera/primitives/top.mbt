@@ -142,6 +142,44 @@ pub(open) trait MeshAabb {
 }
 
 ///|
+fn mesh2d_geometry_compute_aabb(geometry : @mesh.Mesh2dGeometry) -> Aabb? {
+  guard geometry.flatten_positions_xy() is Some(positions_xy) else {
+    return None
+  }
+  if positions_xy.length() < 2 {
+    return None
+  }
+  let mut min_x = Float::from_double(positions_xy[0])
+  let mut min_y = Float::from_double(positions_xy[1])
+  let mut max_x = min_x
+  let mut max_y = min_y
+  let mut index = 2
+  while index + 1 < positions_xy.length() {
+    let x = Float::from_double(positions_xy[index])
+    let y = Float::from_double(positions_xy[index + 1])
+    if x < min_x {
+      min_x = x
+    }
+    if y < min_y {
+      min_y = y
+    }
+    if x > max_x {
+      max_x = x
+    }
+    if y > max_y {
+      max_y = y
+    }
+    index = index + 2
+  }
+  Some(
+    Aabb::from_min_max(
+      @math.Vec3::new(min_x, min_y, 0.0F),
+      @math.Vec3::new(max_x, max_y, 0.0F),
+    ),
+  )
+}
+
+///|
 fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
   let vertex_count = geometry.vertex_count()
   if vertex_count == 0 {
@@ -184,23 +222,36 @@ fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
 }
 
 ///|
+pub impl MeshAabb for @mesh.Mesh2dGeometry with fn compute_aabb(self) {
+  mesh2d_geometry_compute_aabb(self)
+}
+
+///|
 pub impl MeshAabb for @mesh.Mesh3dGeometry with fn compute_aabb(self) {
   mesh3d_geometry_compute_aabb(self)
 }
 
 ///|
 pub impl MeshAabb for @mesh.Mesh with fn compute_aabb(self) {
-  match self.as_3d_geometry() {
-    Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
-    None => None
+  match self.as_2d_geometry() {
+    Some(geometry) => mesh2d_geometry_compute_aabb(geometry)
+    None =>
+      match self.as_3d_geometry() {
+        Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
+        None => None
+      }
   }
 }
 
 ///|
 pub fn mesh_compute_aabb(mesh : @mesh.Mesh) -> Aabb? {
-  match mesh.as_3d_geometry() {
-    Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
-    None => None
+  match mesh.as_2d_geometry() {
+    Some(geometry) => mesh2d_geometry_compute_aabb(geometry)
+    None =>
+      match mesh.as_3d_geometry() {
+        Some(geometry) => mesh3d_geometry_compute_aabb(geometry)
+        None => None
+      }
   }
 }
 

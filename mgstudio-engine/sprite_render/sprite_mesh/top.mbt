@@ -723,12 +723,12 @@ fn sprite_mesh_quad_handle(world : @ecs.World) -> @asset.Handle[@mesh.Mesh] {
   guard world.get_resource_mut(assets_key) is Some(meshes_ref) else {
     abort("SpriteMeshPlugin requires Assets<Mesh>")
   }
-  let mesh = @mesh.Mesh::from_2d_geometry(
-    @mesh_primitives.rectangle_to_mesh2d_geometry(
+  let handle = meshes_ref.modify(fn(meshes) {
+    @mesh_primitives.add_mesh(
+      meshes,
       @math.Rectangle::from_size(@math.Vec2::new(1.0F, 1.0F)),
-    ),
-  )
-  let handle = meshes_ref.modify(fn(meshes) { meshes.add(mesh) })
+    )
+  })
   quad_mut.modify(fn(quad) { quad.handle = Some(handle) })
   handle
 }

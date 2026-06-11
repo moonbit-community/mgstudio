@@ -48,54 +48,11 @@ fn sprite_insert_entity_key(
 }
 
 ///|
-fn sprite_mesh2d_geometry_aabb(
-  geometry : @mesh.Mesh2dGeometry,
-) -> @camera_primitives.Aabb? {
-  guard geometry.flatten_positions_xy() is Some(positions_xy) else {
-    return None
-  }
-  if positions_xy.length() < 2 {
-    return None
-  }
-  let mut min_x = Float::from_double(positions_xy[0])
-  let mut min_y = Float::from_double(positions_xy[1])
-  let mut max_x = min_x
-  let mut max_y = min_y
-  let mut index = 2
-  while index + 1 < positions_xy.length() {
-    let x = Float::from_double(positions_xy[index])
-    let y = Float::from_double(positions_xy[index + 1])
-    if x < min_x {
-      min_x = x
-    }
-    if y < min_y {
-      min_y = y
-    }
-    if x > max_x {
-      max_x = x
-    }
-    if y > max_y {
-      max_y = y
-    }
-    index = index + 2
-  }
-  Some(
-    @camera_primitives.Aabb::from_min_max(
-      @math.Vec3::new(min_x, min_y, 0.0F),
-      @math.Vec3::new(max_x, max_y, 0.0F),
-    ),
-  )
-}
-
-///|
 fn sprite_mesh2d_aabb(mesh2d : Mesh2d) -> @camera_primitives.Aabb? {
   guard render_mesh_asset_get(mesh2d.mesh()) is Some(mesh_asset) else {
     return None
   }
-  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry2d(geometry2d) else {
-    return None
-  }
-  sprite_mesh2d_geometry_aabb(geometry2d)
+  @camera_primitives.mesh_compute_aabb(mesh_asset)
 }
 
 ///|

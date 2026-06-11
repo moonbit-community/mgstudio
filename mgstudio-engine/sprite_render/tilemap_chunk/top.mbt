@@ -420,19 +420,19 @@ fn tilemap_chunk_mesh_handle(
   if cache_ref.peek().handles.get(key) is Some(handle) {
     return handle
   }
-  let mesh = @mesh.Mesh::from_2d_geometry(
-    @mesh_primitives.rectangle_to_mesh2d_geometry(
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  let mesh_assets_ref = world.get_resource_mut(mesh_assets_key).unwrap()
+  let handle = mesh_assets_ref.modify(fn(meshes) {
+    @mesh_primitives.add_mesh(
+      meshes,
       @math.Rectangle::from_size(
         @math.Vec2::new(
           Float::from_double(size.x.to_double()),
           Float::from_double(size.y.to_double()),
         ),
       ),
-    ),
-  )
-  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets_ref = world.get_resource_mut(mesh_assets_key).unwrap()
-  let handle = mesh_assets_ref.modify(fn(meshes) { meshes.add(mesh) })
+    )
+  })
   cache_ref.modify(fn(cache) { cache.handles.set(key, handle) })
   handle
 }
