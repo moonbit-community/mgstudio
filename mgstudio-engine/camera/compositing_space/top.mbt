@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,21 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/components.rs`.
+// Bevy source: `bevy/crates/bevy_camera/src/components.rs::CompositingSpace`.
 
 ///|
-pub type Camera = @camera_camera.Camera
+pub(all) enum CompositingSpace {
+  Srgb
+  Linear
+  Oklab
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
-pub type Camera2d = @camera_components2d.Camera2d
+pub let ecs_key_compositing_space : @ecs.ComponentKey[CompositingSpace] = @ecs.register_component(
+  debug_name="mgstudio.camera.CompositingSpace",
+)
 
 ///|
-pub type Hdr = @camera_hdr.Hdr
-
-///|
-pub type CompositingSpace = @camera_compositing_space.CompositingSpace
+pub impl @ecs.Component for CompositingSpace with fn component() {
+  ecs_key_compositing_space
+}

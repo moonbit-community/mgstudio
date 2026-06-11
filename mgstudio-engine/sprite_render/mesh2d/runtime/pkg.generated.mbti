@@ -2,18 +2,38 @@
 package "Milky2018/mgstudio/sprite_render/mesh2d/runtime"
 
 import {
+  "Milky2018/mgstudio/camera/compositing_space",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/transform",
 }
 
 // Values
+pub const MESH2D_PIPELINE_KEY_BLEND_ALPHA : Int = 4
+
+pub const MESH2D_PIPELINE_KEY_COLOR_TARGET_FORMAT_MASK_BITS : UInt = 0b11111
+
+pub const MESH2D_PIPELINE_KEY_COLOR_TARGET_FORMAT_SHIFT_BITS : Int = 6
+
+pub const MESH2D_PIPELINE_KEY_DEBAND_DITHER : Int = 2
+
 pub const MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS : Int = 18
+
+pub const MESH2D_PIPELINE_KEY_MAY_DISCARD : Int = 8
+
+pub const MESH2D_PIPELINE_KEY_MSAA_MASK_BITS : Int = 0b111
+
+pub const MESH2D_PIPELINE_KEY_MSAA_SHIFT_BITS : Int = 29
+
+pub const MESH2D_PIPELINE_KEY_OKLAB_COMPOSITING : Int = 32
 
 pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt = 0b111
 
 pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 26
+
+pub const MESH2D_PIPELINE_KEY_SRGB_COMPOSITING : Int = 16
 
 pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE : Int = 0
 
@@ -21,15 +41,49 @@ pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : Int = 524288
 
 pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : Int = 262144
 
+pub const MESH2D_PIPELINE_KEY_TONEMAP_IN_SHADER : Int = 1
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_ACES_FITTED : Int = 12582912
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_AGX : Int = 16777216
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_BLENDER_FILMIC : Int = 29360128
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_MASK_BITS : Int = 0b1111
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_NONE : Int = 0
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_PBR_NEUTRAL : Int = 33554432
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_REINHARD : Int = 4194304
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_REINHARD_LUMINANCE : Int = 8388608
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS : Int = 22
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM : Int = 20971520
+
+pub const MESH2D_PIPELINE_KEY_TONEMAP_METHOD_TONY_MC_MAPFACE : Int = 25165824
+
 pub const MESH2D_PRIMITIVE_TOPOLOGY_LINE_STRIP : UInt = 2
 
 pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : UInt = 3
 
 pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP : UInt = 4
 
+pub fn mesh2d_pipeline_key_bits_for_msaa_samples(Int) -> Int
+
 pub fn mesh2d_pipeline_key_bits_for_primitive(UInt, Int, Bool) -> Int
 
+pub fn mesh2d_pipeline_key_bits_for_target_format(UInt) -> Int raise Mesh2dPipelineKeyError
+
+pub fn mesh2d_pipeline_key_bits_for_tonemapping(@post_process.Tonemapping) -> Int
+
+pub fn mesh2d_pipeline_key_bits_for_view(Int, UInt, Bool, @compositing_space.CompositingSpace?, @post_process.Tonemapping?, @post_process.DebandDither?) -> Int raise Mesh2dPipelineKeyError
+
 pub fn mesh2d_primitive_topology_is_strip(UInt) -> Bool
+
+pub fn mesh2d_texture_format_to_code(UInt) -> Int?
 
 pub fn phase_entity_ref_cmp(PhaseEntityRef, PhaseEntityRef) -> Int
 
@@ -38,6 +92,9 @@ pub fn phase_entity_ref_for_main(@core.Entity) -> PhaseEntityRef
 pub fn phase_entity_ref_placeholder() -> PhaseEntityRef
 
 // Errors
+pub suberror Mesh2dPipelineKeyError {
+  UnsupportedTargetFormat(UInt)
+}
 
 // Types and methods
 pub(all) struct ExtractedMesh2d {

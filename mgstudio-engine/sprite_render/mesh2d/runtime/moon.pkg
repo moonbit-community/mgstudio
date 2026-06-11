@@ -1,8 +1,11 @@
 import {
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
+  "Milky2018/mgstudio/camera/compositing_space" @camera_compositing_space,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/transform",
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

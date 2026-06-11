@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/compositing_space"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_compositing_space : @ecs.ComponentKey[CompositingSpace]
+
+// Errors
+
+// Types and methods
+pub(all) enum CompositingSpace {
+  Srgb
+  Linear
+  Oklab
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
+pub impl @ecs.Component for CompositingSpace
+
+// Type aliases
+
+// Traits
+

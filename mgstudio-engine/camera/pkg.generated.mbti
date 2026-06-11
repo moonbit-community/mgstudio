@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/components2d",
+  "Milky2018/mgstudio/camera/compositing_space",
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/camera/primitives",
@@ -106,6 +107,8 @@ pub using @pbr {type CameraDeferredMode3d}
 pub using @clear_color {type ClearColor}
 
 pub using @clear_color {type ClearColorConfig}
+
+pub using @compositing_space {type CompositingSpace}
 
 pub using @computed_camera_values {type ComputedCameraValues}
 
