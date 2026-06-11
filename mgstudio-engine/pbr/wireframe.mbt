@@ -401,41 +401,209 @@ fn get_wireframe_material(
 }
 
 ///|
+fn[T] wireframe_has_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  key : @ecs.ComponentKey[T],
+) -> Bool {
+  if !world.is_alive(entity) {
+    false
+  } else {
+    (try! world.get_by_key(entity, key)) is Some(_)
+  }
+}
+
+///|
+fn mark_wireframe_specialization_changed(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  if world.get_resource_mut(WireframeEntitiesNeedingSpecialization::resource())
+    is Some(needs) {
+    needs.modify(fn(value) { value.changed.push(entity) })
+  }
+}
+
+///|
+fn mark_wireframe_specialization_removed(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  if world.get_resource_mut(WireframeEntitiesNeedingSpecialization::resource())
+    is Some(needs) {
+    needs.modify(fn(value) { value.removed.push(entity) })
+  }
+}
+
+///|
+fn set_mesh3d_wireframe_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  handle : @asset.Handle[WireframeMaterial],
+) -> Unit {
+  guard world.is_alive(entity) else { return }
+  let current = try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)
+  let changed = match current {
+    Some(value) => value.material().id() != handle.id()
+    None => true
+  }
+  try! world.set_by_key(
+    entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(handle),
+  )
+  if changed {
+    mark_wireframe_specialization_changed(world, entity)
+  }
+}
+
+///|
+fn remove_mesh3d_wireframe_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  guard wireframe_has_component(world, entity, ecs_key_mesh3d_wireframe) else {
+    return
+  }
+  try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+  mark_wireframe_specialization_removed(world, entity)
+}
+
+///|
+fn wireframe_material_handle_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+  config : WireframeConfig,
+  global_material : GlobalWireframeMaterial,
+) -> @asset.Handle[WireframeMaterial] {
+  let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe_color)
+  let maybe_width = try! world.get_by_key(entity, ecs_key_wireframe_line_width)
+  let maybe_topology = try! world.get_by_key(entity, ecs_key_wireframe_topology)
+  wireframe_material_assets_mut_or_abort(world).modify(fn(materials) {
+    get_wireframe_material(
+      maybe_color, maybe_width, maybe_topology, materials, global_material, config,
+    )
+  })
+}
+
+///|
+fn refresh_explicit_wireframe_material(
+  world : @ecs.World,
+  entity : @core.Entity,
+  config : WireframeConfig,
+  global_material : GlobalWireframeMaterial,
+) -> Unit {
+  guard wireframe_has_component(world, entity, ecs_key_wireframe) else {
+    return
+  }
+  guard wireframe_has_component(world, entity, ecs_key_mesh3d_wireframe) else {
+    return
+  }
+  let handle = wireframe_material_handle_for_entity(
+    world, entity, config, global_material,
+  )
+  set_mesh3d_wireframe_component(world, entity, handle)
+}
+
+///|
+fn wireframe_config_changed(world : @ecs.World) -> Unit {
+  let ticks = world.get_tick_context().ticks()
+  guard world.is_resource_changed(WireframeConfig::resource(), ticks) else {
+    return
+  }
+  guard world.get_resource(WireframeConfig::resource()) is Some(config) else {
+    return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let global_updated = wireframe_material_assets_mut_or_abort(world).modify(fn(
+    materials,
+  ) {
+    materials.set(
+      global_material.handle,
+      WireframeMaterial::new(
+        config.default_color,
+        config.default_line_width,
+        config.default_topology,
+      ),
+    )
+  })
+  if !global_updated {
+    abort(
+      "Global WireframeMaterial handle is missing from Assets<WireframeMaterial>",
+    )
+  }
+  world.for_each_component(ecs_key_wireframe, fn(entity, _marker) {
+    refresh_explicit_wireframe_material(world, entity, config, global_material)
+  })
+}
+
+///|
+fn wireframe_color_changed(world : @ecs.World) -> Unit {
+  guard world.get_resource(WireframeConfig::resource()) is Some(config) else {
+    return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let ticks = world.get_tick_context().ticks()
+  for entity in world.changed_components(ecs_key_wireframe_color, ticks).read() {
+    refresh_explicit_wireframe_material(world, entity, config, global_material)
+  }
+}
+
+///|
+fn wireframe_line_width_changed(world : @ecs.World) -> Unit {
+  guard world.get_resource(WireframeConfig::resource()) is Some(config) else {
+    return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let ticks = world.get_tick_context().ticks()
+  for
+    entity in world
+    .changed_components(ecs_key_wireframe_line_width, ticks)
+    .read() {
+    refresh_explicit_wireframe_material(world, entity, config, global_material)
+  }
+}
+
+///|
+fn wireframe_topology_changed(world : @ecs.World) -> Unit {
+  guard world.get_resource(WireframeConfig::resource()) is Some(config) else {
+    return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let ticks = world.get_tick_context().ticks()
+  for
+    entity in world.changed_components(ecs_key_wireframe_topology, ticks).read() {
+    refresh_explicit_wireframe_material(world, entity, config, global_material)
+  }
+}
+
+///|
 fn apply_wireframe_material(world : @ecs.World) -> Unit {
   let config = match world.get_resource(WireframeConfig::resource()) {
     Some(config) => config
     None => return
   }
   let global_material = global_wireframe_material_or_abort(world)
-  let assets = wireframe_material_assets_mut_or_abort(world)
+
+  for
+    entity in world
+    .removed_components(ecs_key_wireframe, world.get_tick_context().ticks())
+    .read() {
+    remove_mesh3d_wireframe_component(world, entity)
+  }
 
   world.for_each_component(ecs_key_no_wireframe, fn(entity, _marker) {
-    if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is Some(_) {
-      try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
-    }
+    remove_mesh3d_wireframe_component(world, entity)
   })
 
   world.for_each_component(ecs_key_wireframe, fn(entity, _marker) {
-    guard (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is None else {
+    guard !wireframe_has_component(world, entity, ecs_key_mesh3d_wireframe) else {
       return
     }
-    let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe_color)
-    let maybe_width = try! world.get_by_key(
-      entity, ecs_key_wireframe_line_width,
+    let handle = wireframe_material_handle_for_entity(
+      world, entity, config, global_material,
     )
-    let maybe_topology = try! world.get_by_key(
-      entity, ecs_key_wireframe_topology,
-    )
-    let handle = assets.modify(fn(materials) {
-      get_wireframe_material(
-        maybe_color, maybe_width, maybe_topology, materials, global_material, config,
-      )
-    })
-    try! world.set_by_key(
-      entity,
-      ecs_key_mesh3d_wireframe,
-      Mesh3dWireframe::new(handle),
-    )
+    set_mesh3d_wireframe_component(world, entity, handle)
   })
 }
 
@@ -446,49 +614,36 @@ fn apply_global_wireframe_material(world : @ecs.World) -> Unit {
     None => return
   }
   let global_material = global_wireframe_material_or_abort(world)
-  let assets = wireframe_material_assets_mut_or_abort(world)
 
   world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
-    guard (try! world.get_by_key(entity, ecs_key_wireframe)) is None else {
+    guard !wireframe_has_component(world, entity, ecs_key_wireframe) else {
       return
     }
-    guard (try! world.get_by_key(entity, ecs_key_no_wireframe)) is None else {
-      if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is Some(_) {
-        try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
-      }
+    guard !wireframe_has_component(world, entity, ecs_key_no_wireframe) else {
+      remove_mesh3d_wireframe_component(world, entity)
       return
     }
 
     if config.global {
-      guard (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is None else {
+      guard !wireframe_has_component(world, entity, ecs_key_mesh3d_wireframe) else {
         return
       }
-      let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe_color)
-      let maybe_width = try! world.get_by_key(
-        entity, ecs_key_wireframe_line_width,
+      let handle = wireframe_material_handle_for_entity(
+        world, entity, config, global_material,
       )
-      let maybe_topology = try! world.get_by_key(
-        entity, ecs_key_wireframe_topology,
-      )
-      let handle = assets.modify(fn(materials) {
-        get_wireframe_material(
-          maybe_color, maybe_width, maybe_topology, materials, global_material, config,
-        )
-      })
-      try! world.set_by_key(
-        entity,
-        ecs_key_mesh3d_wireframe,
-        Mesh3dWireframe::new(handle),
-      )
-    } else if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe))
-      is Some(_) {
-      try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+      set_mesh3d_wireframe_component(world, entity, handle)
+    } else {
+      remove_mesh3d_wireframe_component(world, entity)
     }
   })
 }
 
 ///|
 fn wireframe_material_application_system(world : @ecs.World) -> Unit {
+  wireframe_config_changed(world)
+  wireframe_color_changed(world)
+  wireframe_line_width_changed(world)
+  wireframe_topology_changed(world)
   apply_wireframe_material(world)
   apply_global_wireframe_material(world)
 }

@@ -220,3 +220,133 @@ test "pbr: WireframePlugin removes Mesh3dWireframe for NoWireframe entities" {
     content="true",
   )
 }
+
+///|
+test "pbr: WireframePlugin refreshes global material when config changes" {
+  let frame = Ref(0)
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(
+      WireframeConfig::new(
+        true,
+        @color.Color::srgba(0.0F, 1.0F, 0.0F, 1.0F),
+        default_line_width=2.0F,
+        default_topology=Triangles,
+      ),
+    )
+    .add_plugins(WireframePlugin::WireframePlugin())
+    .add_systems_world(@app.Update, fn(world) {
+      if frame.val == 1 {
+        world
+        .get_resource_mut(WireframeConfig::resource())
+        .unwrap()
+        .set(
+          WireframeConfig::new(
+            true,
+            @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F),
+            default_line_width=5.0F,
+            default_topology=Quads,
+          ),
+        )
+      }
+      frame.val = frame.val + 1
+    })
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  try! app
+  .world()
+  .set_by_key(entity, ecs_key_mesh3d, @mesh.Mesh3d::new(@asset.Handle::new(9)))
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  let material = wireframe_material_for_entity(app.world(), entity)
+  debug_inspect(
+    material.color.to_srgba_tuple() ==
+    @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F).to_srgba_tuple(),
+    content="true",
+  )
+  debug_inspect(material.line_width, content="5")
+  debug_inspect(material.topology, content="Quads")
+  debug_inspect(wireframe_material_assets(app.world()).len(), content="1")
+}
+
+///|
+test "pbr: WireframePlugin refreshes explicit material when color changes" {
+  let frame = Ref(0)
+  let target : Ref[@core.Entity?] = Ref(None)
+  let updated_seen = Ref(false)
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(WireframePlugin::WireframePlugin())
+    .add_systems_world(@app.Update, fn(world) {
+      if frame.val == 1 {
+        if target.val is Some(entity) {
+          let updated = world.update_by_key(entity, ecs_key_wireframe_color, fn(
+            _value,
+          ) {
+            WireframeColor::new(@color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F))
+          }) catch {
+            _ => false
+          }
+          updated_seen.val = updated
+        }
+      }
+      frame.val = frame.val + 1
+    })
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  target.val = Some(entity)
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    ecs_key_wireframe_color,
+    WireframeColor::new(@color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)),
+  )
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(updated_seen.val, content="true")
+  let material = wireframe_material_for_entity(app.world(), entity)
+  debug_inspect(
+    material.color.to_srgba_tuple() ==
+    @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F).to_srgba_tuple(),
+    content="true",
+  )
+}
+
+///|
+test "pbr: WireframePlugin removes internal material when Wireframe is removed" {
+  let frame = Ref(0)
+  let target : Ref[@core.Entity?] = Ref(None)
+  let removed_seen = Ref(false)
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(WireframePlugin::WireframePlugin())
+    .add_systems_world(@app.Update, fn(world) {
+      if frame.val == 1 {
+        if target.val is Some(entity) {
+          let removed = world.remove_by_key(entity, ecs_key_wireframe) catch {
+            _ => false
+          }
+          removed_seen.val = removed
+        }
+      }
+      frame.val = frame.val + 1
+    })
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  target.val = Some(entity)
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  app.run_once() |> ignore
+  debug_inspect(
+    try! (app.world().get_by_key(entity, ecs_key_mesh3d_wireframe) is Some(_)),
+    content="true",
+  )
+
+  app.run_once() |> ignore
+
+  debug_inspect(removed_seen.val, content="true")
+  debug_inspect(
+    try! (app.world().get_by_key(entity, ecs_key_mesh3d_wireframe) is None),
+    content="true",
+  )
+}
