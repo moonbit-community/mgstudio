@@ -941,8 +941,12 @@ pub fn DirtyWireframeSpecializations::changed_len(Self) -> Int
 pub fn DirtyWireframeSpecializations::clear(Self) -> Unit
 pub fn DirtyWireframeSpecializations::insert_changed(Self, @core.Entity) -> Unit
 pub fn DirtyWireframeSpecializations::insert_removed(Self, @core.Entity) -> Unit
+pub fn DirtyWireframeSpecializations::insert_view(Self, @core.Entity) -> Unit
+pub fn DirtyWireframeSpecializations::must_wipe_specializations_for_view(Self, @core.Entity) -> Bool
 pub fn DirtyWireframeSpecializations::removed_contains(Self, @core.Entity) -> Bool
 pub fn DirtyWireframeSpecializations::removed_len(Self) -> Int
+pub fn DirtyWireframeSpecializations::to_despecialize(Self) -> Array[@core.Entity]
+pub fn DirtyWireframeSpecializations::views_len(Self) -> Int
 pub impl @app.Resource for DirtyWireframeSpecializations
 
 pub struct DistanceFog {

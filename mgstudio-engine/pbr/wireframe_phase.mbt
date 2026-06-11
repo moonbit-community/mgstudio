@@ -770,6 +770,14 @@ pub fn DirtyWireframeSpecializations::insert_removed(
 }
 
 ///|
+pub fn DirtyWireframeSpecializations::insert_view(
+  self : DirtyWireframeSpecializations,
+  view : @core.Entity,
+) -> Unit {
+  self.views.set(view.to_bits(), view)
+}
+
+///|
 pub fn DirtyWireframeSpecializations::changed_len(
   self : DirtyWireframeSpecializations,
 ) -> Int {
@@ -781,6 +789,13 @@ pub fn DirtyWireframeSpecializations::removed_len(
   self : DirtyWireframeSpecializations,
 ) -> Int {
   self.removed_renderables.length()
+}
+
+///|
+pub fn DirtyWireframeSpecializations::views_len(
+  self : DirtyWireframeSpecializations,
+) -> Int {
+  self.views.length()
 }
 
 ///|
@@ -797,6 +812,28 @@ pub fn DirtyWireframeSpecializations::removed_contains(
   entity : @core.Entity,
 ) -> Bool {
   self.removed_renderables.contains(entity.to_bits())
+}
+
+///|
+pub fn DirtyWireframeSpecializations::must_wipe_specializations_for_view(
+  self : DirtyWireframeSpecializations,
+  view : @core.Entity,
+) -> Bool {
+  self.views.contains(view.to_bits())
+}
+
+///|
+pub fn DirtyWireframeSpecializations::to_despecialize(
+  self : DirtyWireframeSpecializations,
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  for entity in self.changed_renderables.values() {
+    entities.push(entity)
+  }
+  for entity in self.removed_renderables.values() {
+    entities.push(entity)
+  }
+  entities
 }
 
 ///|

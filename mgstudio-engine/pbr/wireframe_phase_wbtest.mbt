@@ -368,6 +368,35 @@ test "pbr: dirty wireframe specializations mirror Bevy dirty tables" {
 }
 
 ///|
+test "pbr: dirty wireframe specializations expose Bevy despecialize helpers" {
+  let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
+  let changed_entity = @core.Entity::new(1, 1)
+  let removed_entity = @core.Entity::new(2, 1)
+  let view = @core.Entity::new(3, 1)
+  dirty.insert_changed(changed_entity)
+  dirty.insert_removed(removed_entity)
+  dirty.insert_view(view)
+
+  let to_despecialize = dirty.to_despecialize()
+
+  debug_inspect(to_despecialize.length(), content="2")
+  debug_inspect(to_despecialize.contains(changed_entity), content="true")
+  debug_inspect(to_despecialize.contains(removed_entity), content="true")
+  debug_inspect(dirty.views_len(), content="1")
+  debug_inspect(dirty.must_wipe_specializations_for_view(view), content="true")
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(@core.Entity::new(4, 1)),
+    content="false",
+  )
+
+  dirty.clear()
+
+  debug_inspect(dirty.views_len(), content="0")
+  debug_inspect(to_despecialize.length(), content="2")
+  debug_inspect(dirty.to_despecialize().length(), content="0")
+}
+
+///|
 test "pbr: wireframe dirty extraction writes changed and removed render tables" {
   let world = @ecs.World::new()
   let changed_entity = @core.Entity::new(3, 1)
