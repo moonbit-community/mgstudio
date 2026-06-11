@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
-  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
@@ -167,7 +166,7 @@ pub fn host_gpu_create_depth_prepass_target(width~ : Int, height~ : Int, sample_
 
 pub fn host_gpu_create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
 
-pub fn host_gpu_create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], primitive_topology~ : Int, mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout) -> Int
+pub fn host_gpu_create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], primitive_topology~ : Int, mesh_vertex_layout~ : @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
 
 pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
@@ -256,6 +255,8 @@ pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool
 pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool
 
 pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool
+
+pub fn host_gpu_mesh_allocator_snapshot() -> @Milky2018/mgstudio/render/mesh.MeshAllocator?
 
 pub fn host_gpu_mesh_info(Int) -> @renderer.HostGpuMeshInfo?
 
@@ -496,6 +497,8 @@ pub fn[C] sync_component(@ecs.World, @core.Entity, @ecs.ComponentKey[C]) -> @ecs
 pub fn sync_component_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[C : @ecs.Component, F] sync_component_plugin_with(@app.App[@ecs.World], SyncComponentPlugin[C, F]) -> @app.App[@ecs.World]
+
+pub fn sync_mesh_allocator_resource_from_backend_system(@ecs.World) -> Unit
 
 pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 

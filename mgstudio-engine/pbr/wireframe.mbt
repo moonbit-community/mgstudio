@@ -1313,8 +1313,9 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
     Some(value) => value
     None => return
   }
-  let mesh_slabs = match
-    world.get_resource(WireframeMeshSlabCache::resource()) {
+  @render.sync_mesh_allocator_resource_from_backend_system(world)
+  let mesh_allocator = match
+    world.get_resource(@render_mesh.MeshAllocator::resource()) {
     Some(value) => value
     None => return
   }
@@ -1364,7 +1365,7 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
       dirty_wireframe_specializations,
       render_wireframe_assets.as_map(),
       render_mesh_instances,
-      mesh_slabs.as_map(),
+      mesh_allocator,
       draw_functions,
       gpu_preprocessing_support,
     )
@@ -1559,11 +1560,6 @@ fn configure_wireframe_render_sub_app(
     fn() {
       WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache()
     },
-  )
-  wireframe_init_render_resource_if_missing(
-    world,
-    WireframeMeshSlabCache::resource(),
-    fn() { WireframeMeshSlabCache::WireframeMeshSlabCache() },
   )
   let stage = @render.render_schedule_stage()
   sub_app

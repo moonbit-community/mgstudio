@@ -261,6 +261,8 @@ pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
+pub fn mesh_allocator_snapshot() -> @Milky2018/mgstudio/render/mesh.MeshAllocator?
+
 pub fn mesh_info(Int) -> HostGpuMeshInfo?
 
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool

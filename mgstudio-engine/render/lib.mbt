@@ -2069,6 +2069,11 @@ pub fn host_gpu_mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
 }
 
 ///|
+pub fn host_gpu_mesh_allocator_snapshot() -> @render_mesh.MeshAllocator? {
+  @renderer.mesh_allocator_snapshot()
+}
+
+///|
 pub fn host_gpu_update_mesh3d_xyznuvrgba(
   mesh_id~ : Int,
   vertices_xyznuvrgba~ : Array[Float],

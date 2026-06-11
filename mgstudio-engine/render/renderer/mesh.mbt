@@ -158,6 +158,14 @@ pub fn mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
 }
 
 ///|
+pub fn mesh_allocator_snapshot() -> @render_mesh.MeshAllocator? {
+  match ensure_backend() {
+    Some(backend) => Some(backend.mesh_allocator)
+    None => None
+  }
+}
+
+///|
 pub fn delete_mesh(mesh_id : Int) -> Bool {
   if ensure_backend() is Some(backend) {
     backend.delete_mesh(mesh_id)

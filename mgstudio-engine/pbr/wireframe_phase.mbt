@@ -1739,57 +1739,6 @@ pub fn WireframeRenderMeshPipelineDataCache::retain_live_views(
 }
 
 ///|
-pub struct WireframeMeshSlabCache {
-  slabs : Map[Int, @render_mesh.MeshSlabs]
-}
-
-///|
-pub fn WireframeMeshSlabCache::WireframeMeshSlabCache() -> WireframeMeshSlabCache {
-  WireframeMeshSlabCache::{ slabs: {} }
-}
-
-///|
-pub let ecs_key_wireframe_mesh_slab_cache : @ecs.ResourceKey[
-  WireframeMeshSlabCache,
-] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::MeshAllocator::WireframeSlabs",
-)
-
-///|
-pub impl @app.Resource for WireframeMeshSlabCache with fn resource() {
-  ecs_key_wireframe_mesh_slab_cache
-}
-
-///|
-pub fn WireframeMeshSlabCache::insert(
-  self : WireframeMeshSlabCache,
-  mesh_asset_id : Int,
-  slabs : @render_mesh.MeshSlabs,
-) -> Unit {
-  self.slabs.set(mesh_asset_id, slabs)
-}
-
-///|
-pub fn WireframeMeshSlabCache::get(
-  self : WireframeMeshSlabCache,
-  mesh_asset_id : Int,
-) -> @render_mesh.MeshSlabs? {
-  self.slabs.get(mesh_asset_id)
-}
-
-///|
-pub fn WireframeMeshSlabCache::as_map(
-  self : WireframeMeshSlabCache,
-) -> Map[Int, @render_mesh.MeshSlabs] {
-  self.slabs
-}
-
-///|
-pub fn WireframeMeshSlabCache::len(self : WireframeMeshSlabCache) -> Int {
-  self.slabs.length()
-}
-
-///|
 fn specialize_wireframe_pipeline_id(
   specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
   specialized_wireframe_mesh_pipelines : SpecializedWireframeMeshPipelines,
@@ -1920,7 +1869,7 @@ pub fn queue_wireframe_phase_items(
   dirty_wireframe_specializations : DirtyWireframeSpecializations,
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
   render_mesh_instances : RenderMeshInstances,
-  mesh_slabs : Map[Int, @render_mesh.MeshSlabs],
+  mesh_allocator : @render_mesh.MeshAllocator,
   draw_functions : Wireframe3dDrawFunctions,
   gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
 ) -> Unit {
@@ -1964,7 +1913,8 @@ pub fn queue_wireframe_phase_items(
     } else {
       draw_functions.thin()
     }
-    guard mesh_slabs.get(mesh_instance.mesh_asset_id()) is Some(slabs) else {
+    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
+      is Some(slabs) else {
       continue
     }
     let batch_set_key = Wireframe3dBatchSetKey::new(

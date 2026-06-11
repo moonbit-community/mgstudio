@@ -1109,7 +1109,7 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
     RenderMeshInstances::RenderMeshInstances(),
-    {},
+    @render_mesh.MeshAllocator::new(),
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
   )
@@ -1142,14 +1142,11 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     main_entity,
     RenderMeshQueueData::new(33, 9U, true),
   )
-  let mesh_slabs : Map[Int, @render_mesh.MeshSlabs] = {}
-  mesh_slabs.set(
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  let _ = mesh_allocator.allocate_render_mesh(
     33,
-    @render_mesh.MeshSlabs::new(
-      2,
-      index_slab_id=Some(5),
-      morph_target_slab_id=Some(7),
-    ),
+    @render_mesh.RenderMesh::new(vertex_count=3, indexed=true, index_count=3),
+    80,
   )
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
   let phase = Wireframe3dViewPhase::new(
@@ -1166,7 +1163,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     render_wireframe_assets,
     render_mesh_instances,
-    mesh_slabs,
+    mesh_allocator,
     draw_functions,
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
   )
@@ -1182,7 +1179,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
   debug_inspect(item.batch_set_key().slabs().index_slab_id(), content="None")
   debug_inspect(
     item.batch_set_key().slabs().morph_target_slab_id(),
-    content="Some(7)",
+    content="None",
   )
   debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
   debug_inspect(phase.phase_type(main_entity), content="Some(BatchableMesh)")
@@ -1300,9 +1297,13 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     @render.pipeline_cache_resource_key,
     @render_resource.PipelineCache::new(),
   )
-  let mesh_slabs = WireframeMeshSlabCache::WireframeMeshSlabCache()
-  mesh_slabs.insert(33, @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)))
-  world.insert_resource(WireframeMeshSlabCache::resource(), mesh_slabs)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  let _ = mesh_allocator.allocate_render_mesh(
+    33,
+    @render_mesh.RenderMesh::new(vertex_count=3, indexed=true, index_count=3),
+    80,
+  )
+  world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
   world.insert_resource(
     Wireframe3dDrawFunctions::resource(),
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
@@ -1324,7 +1325,10 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   let item = phase.items[0]
   debug_inspect(item.main_entity() == main_entity, content="true")
   debug_inspect(item.draw_function().id(), content="0")
-  debug_inspect(item.batch_set_key().slabs().index_slab_id(), content="Some(5)")
+  debug_inspect(
+    item.batch_set_key().slabs().index_slab_id() is Some(_),
+    content="true",
+  )
   debug_inspect(item.batch_set_key().mesh_asset_id(), content="None")
   debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
 }

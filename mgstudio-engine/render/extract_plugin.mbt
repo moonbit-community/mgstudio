@@ -211,6 +211,20 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub fn sync_mesh_allocator_resource_from_backend_system(
+  world : @ecs.World,
+) -> Unit {
+  match host_gpu_mesh_allocator_snapshot() {
+    Some(allocator) =>
+      if allocator.slab_count() > 0 ||
+        world.get_resource(@render_mesh.MeshAllocator::resource()) is None {
+        world.insert_resource(@render_mesh.MeshAllocator::resource(), allocator)
+      }
+    None => ()
+  }
+}
+
+///|
 pub fn try_with_render_app(
   app : @app.App[@ecs.World],
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],

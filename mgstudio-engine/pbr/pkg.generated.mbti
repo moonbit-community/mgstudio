@@ -361,8 +361,6 @@ pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[Wir
 
 pub let ecs_key_wireframe_line_width : @ecs.ComponentKey[WireframeLineWidth]
 
-pub let ecs_key_wireframe_mesh_slab_cache : @ecs.ResourceKey[WireframeMeshSlabCache]
-
 pub let ecs_key_wireframe_render_mesh_pipeline_data_cache : @ecs.ResourceKey[WireframeRenderMeshPipelineDataCache]
 
 pub let ecs_key_wireframe_topology : @ecs.ComponentKey[WireframeTopology]
@@ -533,7 +531,7 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
-pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
+pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, @Milky2018/mgstudio/render/mesh.MeshAllocator, Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -1954,16 +1952,6 @@ pub struct WireframeMaterial {
 pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
-
-pub struct WireframeMeshSlabCache {
-  slabs : Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs]
-}
-pub fn WireframeMeshSlabCache::WireframeMeshSlabCache() -> Self
-pub fn WireframeMeshSlabCache::as_map(Self) -> Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs]
-pub fn WireframeMeshSlabCache::get(Self, Int) -> @Milky2018/mgstudio/render/mesh.MeshSlabs?
-pub fn WireframeMeshSlabCache::insert(Self, Int, @Milky2018/mgstudio/render/mesh.MeshSlabs) -> Unit
-pub fn WireframeMeshSlabCache::len(Self) -> Int
-pub impl @app.Resource for WireframeMeshSlabCache
 
 pub(all) enum WireframePhaseItemExtraIndex {
   NoExtraIndex
