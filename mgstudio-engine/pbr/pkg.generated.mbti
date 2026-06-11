@@ -697,6 +697,10 @@ pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @materia
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
+pub fn wireframe_3d_phase_render_command_plans(Wireframe3dViewPhase, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Array[Wireframe3dRenderCommandPlan] raise WireframeRenderCommandError
+
+pub fn wireframe_3d_render_command_decision(Wireframe3d, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Wireframe3dRenderCommandDecision raise WireframeRenderCommandError
+
 pub fn wireframe_3d_render_node_plan(Wireframe3dPhases, @core.Entity, Bool) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason
 
 pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool) -> WireframeRenderMeshPipelineData
@@ -724,6 +728,7 @@ pub suberror WireframePipelineSpecializationError {
 
 pub suberror WireframeRenderCommandError {
   NoWireframeMaterialFoundForEntity
+  UnknownWireframeDrawFunction
 }
 
 // Types and methods
@@ -1912,6 +1917,37 @@ pub fn Wireframe3dPipeline::specialize(Self, WireframePipelineKey, @render_resou
 pub fn Wireframe3dPipeline::wide_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
 pub impl @app.Resource for Wireframe3dPipeline
 
+pub(all) enum Wireframe3dRenderCommandDecision {
+  Planned(Wireframe3dRenderCommandPlan)
+  Skipped
+}
+
+pub(all) enum Wireframe3dRenderCommandKind {
+  Thin
+  Wide
+} derive(Eq, @debug.Debug)
+
+pub struct Wireframe3dRenderCommandPlan {
+  kind : Wireframe3dRenderCommandKind
+  item : Wireframe3d
+  thin_immediates : Wireframe3dThinImmediates?
+  wide_immediates : Wireframe3dWideImmediates?
+  wide_bind_group_dynamic_offset : Int?
+  wide_direct_range : DrawWireframeMeshPulledDirectRange?
+  wide_indirect_plan : DrawWireframeMeshPulledIndirectPlan?
+}
+pub fn Wireframe3dRenderCommandPlan::batch_range(Self) -> Wireframe3dBatchRange
+pub fn Wireframe3dRenderCommandPlan::item(Self) -> Wireframe3d
+pub fn Wireframe3dRenderCommandPlan::kind(Self) -> Wireframe3dRenderCommandKind
+pub fn Wireframe3dRenderCommandPlan::new_thin(Wireframe3d, Wireframe3dThinImmediates) -> Self
+pub fn Wireframe3dRenderCommandPlan::new_wide(Wireframe3d, Wireframe3dWideImmediates, Int, DrawWireframeMeshPulledDirectRange?, DrawWireframeMeshPulledIndirectPlan?) -> Self
+pub fn Wireframe3dRenderCommandPlan::pipeline(Self) -> @render_resource.CachedRenderPipelineId
+pub fn Wireframe3dRenderCommandPlan::thin_immediates(Self) -> Wireframe3dThinImmediates?
+pub fn Wireframe3dRenderCommandPlan::wide_bind_group_dynamic_offset(Self) -> Int?
+pub fn Wireframe3dRenderCommandPlan::wide_direct_range(Self) -> DrawWireframeMeshPulledDirectRange?
+pub fn Wireframe3dRenderCommandPlan::wide_immediates(Self) -> Wireframe3dWideImmediates?
+pub fn Wireframe3dRenderCommandPlan::wide_indirect_plan(Self) -> DrawWireframeMeshPulledIndirectPlan?
+
 pub struct Wireframe3dRenderNode {
 }
 pub fn Wireframe3dRenderNode::Wireframe3dRenderNode() -> Self
@@ -1946,6 +1982,7 @@ pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
 pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
+pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> WireframeBinnedRenderPhaseType?

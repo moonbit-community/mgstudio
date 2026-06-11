@@ -1419,6 +1419,17 @@ pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
 }
 
 ///|
+pub fn Wireframe3dViewPhase::items(
+  self : Wireframe3dViewPhase,
+) -> Array[Wireframe3d] {
+  let result : Array[Wireframe3d] = []
+  for item in self.items {
+    result.push(item)
+  }
+  result
+}
+
+///|
 fn wireframe_effective_phase_type(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
   phase_type : WireframeBinnedRenderPhaseType,

@@ -27,11 +27,24 @@ fn wireframe_render_command_test_item_with_extra_index(
   main_entity : @render.MainEntity,
   extra_index : WireframePhaseItemExtraIndex,
 ) -> Wireframe3d {
+  wireframe_render_command_test_item_with_draw_function(
+    main_entity,
+    @material.DrawFunctionId::new(0U),
+    extra_index,
+  )
+}
+
+///|
+fn wireframe_render_command_test_item_with_draw_function(
+  main_entity : @render.MainEntity,
+  draw_function : @material.DrawFunctionId,
+  extra_index : WireframePhaseItemExtraIndex,
+) -> Wireframe3d {
   Wireframe3d::new(
     Wireframe3dBatchSetKey::new(
       @material.CachedRenderPipelineId::new(3UL),
       7,
-      @material.DrawFunctionId::new(0U),
+      draw_function,
       @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
     ),
     Wireframe3dBinKey::new(13),
@@ -40,6 +53,52 @@ fn wireframe_render_command_test_item_with_extra_index(
     Wireframe3dBatchRange::new(0, 1),
     extra_index,
   )
+}
+
+///|
+fn wireframe_render_command_test_assets(
+  main_entity : @render.MainEntity,
+) -> (RenderWireframeInstances, RenderWireframeAssets) {
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 7)
+  let assets = RenderWireframeAssets::RenderWireframeAssets()
+  assets.insert(
+    7,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(
+        @color.Color::new(0.2F, 0.4F, 0.6F, 1.0F),
+        2.0F,
+        Triangles,
+      ),
+    ),
+  )
+  (instances, assets)
+}
+
+///|
+fn wireframe_render_command_test_mesh_state(
+  main_entity : @render.MainEntity,
+  mesh_id : Int,
+) -> (
+  RenderMeshInstances,
+  @render_mesh.RenderMeshAssets,
+  @render_mesh.MeshAllocator,
+) {
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(mesh_id, 0U, true),
+  )
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=8,
+    indexed=true,
+    index_count=6,
+  )
+  render_meshes.insert(mesh_id, render_mesh)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(mesh_allocator.allocate_render_mesh(mesh_id, render_mesh, 80))
+  (render_mesh_instances, render_meshes, mesh_allocator)
 }
 
 ///|
@@ -285,4 +344,180 @@ test "pbr: pulled wireframe indirect plan follows Bevy offsets" {
   debug_inspect(counted_plan.indirect_parameters_offset(), content="32")
   debug_inspect(counted_plan.indirect_parameters_count(), content="3")
   debug_inspect(counted_plan.batch_set_count_offset(), content="Some(32)")
+}
+
+///|
+test "pbr: wireframe render command decision plans thin command tuple" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item_with_draw_function(
+    main_entity,
+    draw_functions.thin(),
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+  let (instances, assets) = wireframe_render_command_test_assets(main_entity)
+  let decision = wireframe_3d_render_command_decision(
+    item,
+    draw_functions,
+    instances,
+    assets,
+    RenderMeshInstances::RenderMeshInstances(),
+    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    @render_mesh.MeshAllocator::new(),
+    WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+
+  guard decision is Planned(plan) else {
+    abort("expected planned thin command")
+  }
+  debug_inspect(plan.kind() == Thin, content="true")
+  debug_inspect(plan.pipeline().id(), content="3")
+  debug_inspect(plan.thin_immediates() is Some(_), content="true")
+  debug_inspect(plan.wide_immediates() is None, content="true")
+}
+
+///|
+test "pbr: wireframe render command decision skips wide command without bind group" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item_with_draw_function(
+    main_entity,
+    draw_functions.wide(),
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+  let (instances, assets) = wireframe_render_command_test_assets(main_entity)
+  let (render_mesh_instances, render_meshes, mesh_allocator) = wireframe_render_command_test_mesh_state(
+    main_entity, 13,
+  )
+  let decision = wireframe_3d_render_command_decision(
+    item,
+    draw_functions,
+    instances,
+    assets,
+    render_mesh_instances,
+    render_meshes,
+    mesh_allocator,
+    WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+
+  debug_inspect(decision is Skipped, content="true")
+}
+
+///|
+test "pbr: wireframe render command decision plans wide pulled direct draw" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item_with_draw_function(
+    main_entity,
+    draw_functions.wide(),
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+  let (instances, assets) = wireframe_render_command_test_assets(main_entity)
+  let (render_mesh_instances, render_meshes, mesh_allocator) = wireframe_render_command_test_mesh_state(
+    main_entity, 13,
+  )
+  let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
+  ignore(bind_groups.push(13, WireframeVertexPullParams::new(0U, 20U, 0U)))
+  let decision = wireframe_3d_render_command_decision(
+    item, draw_functions, instances, assets, render_mesh_instances, render_meshes,
+    mesh_allocator, bind_groups,
+  )
+
+  guard decision is Planned(plan) else {
+    abort("expected planned wide command")
+  }
+  debug_inspect(plan.kind() == Wide, content="true")
+  debug_inspect(plan.wide_immediates().unwrap().line_width(), content="2")
+  debug_inspect(plan.wide_bind_group_dynamic_offset(), content="Some(0)")
+  debug_inspect(plan.wide_direct_range().unwrap().vertex_end(), content="6")
+  debug_inspect(plan.wide_indirect_plan() is None, content="true")
+}
+
+///|
+test "pbr: wireframe phase render command plans preserve item order and skips" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let phase = Wireframe3dViewPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  phase.add(
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      draw_functions.thin(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (@core.Entity::new(20, 1), main_entity),
+    0U,
+    WireframeBinnedRenderPhaseType::mesh(
+      true,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+  )
+  phase.add(
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(4UL),
+      7,
+      draw_functions.wide(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (@core.Entity::new(21, 1), main_entity),
+    1U,
+    WireframeBinnedRenderPhaseType::mesh(
+      true,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+  )
+  let (instances, assets) = wireframe_render_command_test_assets(main_entity)
+  let (render_mesh_instances, render_meshes, mesh_allocator) = wireframe_render_command_test_mesh_state(
+    main_entity, 13,
+  )
+  let plans = wireframe_3d_phase_render_command_plans(
+    phase,
+    draw_functions,
+    instances,
+    assets,
+    render_mesh_instances,
+    render_meshes,
+    mesh_allocator,
+    WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+
+  debug_inspect(plans.length(), content="1")
+  debug_inspect(plans[0].kind() == Thin, content="true")
+}
+
+///|
+test "pbr: wireframe render command decision fails unknown draw function" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item_with_draw_function(
+    main_entity,
+    @material.DrawFunctionId::new(99U),
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+  let (instances, assets) = wireframe_render_command_test_assets(main_entity)
+  let ok = Some(
+    wireframe_3d_render_command_decision(
+      item,
+      draw_functions,
+      instances,
+      assets,
+      RenderMeshInstances::RenderMeshInstances(),
+      @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+      @render_mesh.MeshAllocator::new(),
+      WireframeWideBindGroups::WireframeWideBindGroups(),
+    ),
+  ) catch {
+    error => {
+      debug_inspect(
+        error is WireframeRenderCommandError::UnknownWireframeDrawFunction,
+        content="true",
+      )
+      None
+    }
+  }
+  debug_inspect(ok is None, content="true")
 }

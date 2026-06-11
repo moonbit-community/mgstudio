@@ -42,6 +42,7 @@ pub fn Wireframe3dThinImmediates::float_count(
 ///|
 pub suberror WireframeRenderCommandError {
   NoWireframeMaterialFoundForEntity
+  UnknownWireframeDrawFunction
 }
 
 ///|
@@ -337,4 +338,202 @@ pub fn draw_wireframe_mesh_pulled_indirect_plan(
       batch_set_count_offset~,
     ),
   )
+}
+
+///|
+pub(all) enum Wireframe3dRenderCommandKind {
+  Thin
+  Wide
+} derive(Eq, Debug)
+
+///|
+pub(all) enum Wireframe3dRenderCommandDecision {
+  Planned(Wireframe3dRenderCommandPlan)
+  Skipped
+}
+
+///|
+pub struct Wireframe3dRenderCommandPlan {
+  kind : Wireframe3dRenderCommandKind
+  item : Wireframe3d
+  thin_immediates : Wireframe3dThinImmediates?
+  wide_immediates : Wireframe3dWideImmediates?
+  wide_bind_group_dynamic_offset : Int?
+  wide_direct_range : DrawWireframeMeshPulledDirectRange?
+  wide_indirect_plan : DrawWireframeMeshPulledIndirectPlan?
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::new_thin(
+  item : Wireframe3d,
+  immediates : Wireframe3dThinImmediates,
+) -> Wireframe3dRenderCommandPlan {
+  Wireframe3dRenderCommandPlan::{
+    kind: Thin,
+    item,
+    thin_immediates: Some(immediates),
+    wide_immediates: None,
+    wide_bind_group_dynamic_offset: None,
+    wide_direct_range: None,
+    wide_indirect_plan: None,
+  }
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::new_wide(
+  item : Wireframe3d,
+  immediates : Wireframe3dWideImmediates,
+  wide_bind_group_dynamic_offset : Int,
+  direct_range : DrawWireframeMeshPulledDirectRange?,
+  indirect_plan : DrawWireframeMeshPulledIndirectPlan?,
+) -> Wireframe3dRenderCommandPlan {
+  Wireframe3dRenderCommandPlan::{
+    kind: Wide,
+    item,
+    thin_immediates: None,
+    wide_immediates: Some(immediates),
+    wide_bind_group_dynamic_offset: Some(wide_bind_group_dynamic_offset),
+    wide_direct_range: direct_range,
+    wide_indirect_plan: indirect_plan,
+  }
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::kind(
+  self : Wireframe3dRenderCommandPlan,
+) -> Wireframe3dRenderCommandKind {
+  self.kind
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::item(
+  self : Wireframe3dRenderCommandPlan,
+) -> Wireframe3d {
+  self.item
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::pipeline(
+  self : Wireframe3dRenderCommandPlan,
+) -> @material.CachedRenderPipelineId {
+  self.item.cached_pipeline()
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::batch_range(
+  self : Wireframe3dRenderCommandPlan,
+) -> Wireframe3dBatchRange {
+  self.item.batch_range()
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::thin_immediates(
+  self : Wireframe3dRenderCommandPlan,
+) -> Wireframe3dThinImmediates? {
+  self.thin_immediates
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::wide_immediates(
+  self : Wireframe3dRenderCommandPlan,
+) -> Wireframe3dWideImmediates? {
+  self.wide_immediates
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::wide_bind_group_dynamic_offset(
+  self : Wireframe3dRenderCommandPlan,
+) -> Int? {
+  self.wide_bind_group_dynamic_offset
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::wide_direct_range(
+  self : Wireframe3dRenderCommandPlan,
+) -> DrawWireframeMeshPulledDirectRange? {
+  self.wide_direct_range
+}
+
+///|
+pub fn Wireframe3dRenderCommandPlan::wide_indirect_plan(
+  self : Wireframe3dRenderCommandPlan,
+) -> DrawWireframeMeshPulledIndirectPlan? {
+  self.wide_indirect_plan
+}
+
+///|
+pub fn wireframe_3d_render_command_decision(
+  item : Wireframe3d,
+  draw_functions : Wireframe3dDrawFunctions,
+  render_wireframe_instances : RenderWireframeInstances,
+  render_wireframe_assets : RenderWireframeAssets,
+  render_mesh_instances : RenderMeshInstances,
+  render_meshes : @render_mesh.RenderMeshAssets,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  wide_bind_groups : WireframeWideBindGroups,
+) -> Wireframe3dRenderCommandDecision raise WireframeRenderCommandError {
+  let draw_function = item.draw_function()
+  if draw_function == draw_functions.thin() {
+    return Planned(
+      Wireframe3dRenderCommandPlan::new_thin(
+        item,
+        set_wireframe_3d_thin_immediates(
+          item, render_wireframe_instances, render_wireframe_assets,
+        ),
+      ),
+    )
+  }
+  if draw_function == draw_functions.wide() {
+    let immediates = set_wireframe_3d_wide_immediates(
+      item, render_wireframe_instances, render_wireframe_assets,
+    )
+    guard set_wireframe_3d_wide_bind_group_dynamic_offset(
+        item, render_mesh_instances, wide_bind_groups,
+      )
+      is Some(dynamic_offset) else {
+      return Skipped
+    }
+    let indirect_plan = draw_wireframe_mesh_pulled_indirect_plan(item)
+    let direct_range = match indirect_plan {
+      Some(_) => None
+      None =>
+        draw_wireframe_mesh_pulled_direct_range(
+          item, render_mesh_instances, render_meshes, mesh_allocator,
+        )
+    }
+    if indirect_plan is None && direct_range is None {
+      return Skipped
+    }
+    return Planned(
+      Wireframe3dRenderCommandPlan::new_wide(
+        item, immediates, dynamic_offset, direct_range, indirect_plan,
+      ),
+    )
+  }
+  raise WireframeRenderCommandError::UnknownWireframeDrawFunction
+}
+
+///|
+pub fn wireframe_3d_phase_render_command_plans(
+  phase : Wireframe3dViewPhase,
+  draw_functions : Wireframe3dDrawFunctions,
+  render_wireframe_instances : RenderWireframeInstances,
+  render_wireframe_assets : RenderWireframeAssets,
+  render_mesh_instances : RenderMeshInstances,
+  render_meshes : @render_mesh.RenderMeshAssets,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  wide_bind_groups : WireframeWideBindGroups,
+) -> Array[Wireframe3dRenderCommandPlan] raise WireframeRenderCommandError {
+  let plans : Array[Wireframe3dRenderCommandPlan] = []
+  for item in phase.items() {
+    match
+      wireframe_3d_render_command_decision(
+        item, draw_functions, render_wireframe_instances, render_wireframe_assets,
+        render_mesh_instances, render_meshes, mesh_allocator, wide_bind_groups,
+      ) {
+      Planned(plan) => plans.push(plan)
+      Skipped => ()
+    }
+  }
+  plans
 }
