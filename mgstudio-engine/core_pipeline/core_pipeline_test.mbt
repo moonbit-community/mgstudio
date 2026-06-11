@@ -173,6 +173,135 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
 }
 
 ///|
+test "core_2d phase resources store items per retained view" {
+  let world = @ecs.World::new()
+  let view_a = @core_2d.RetainedViewEntity2d::new(world.spawn_empty())
+  let view_b = @core_2d.RetainedViewEntity2d::new(world.spawn_empty())
+
+  let opaque_phase = @core_2d.Opaque2dPhase::Opaque2dPhase()
+  opaque_phase.prepare_for_new_frame(view_a)
+  opaque_phase.prepare_for_new_frame(view_b)
+  opaque_phase.push_for_view(
+    view_a,
+    @core_2d.Opaque2d::new(
+      @core_2d.BatchSetKey2d::new(),
+      @core_2d.Opaque2dBinKey::new(
+        pipeline_id=11,
+        draw_function_id=12,
+        asset_id=13,
+      ),
+      representative_entity_id=14,
+      main_entity_id=15,
+    ),
+  )
+  opaque_phase.push_for_view(
+    view_b,
+    @core_2d.Opaque2d::new(
+      @core_2d.BatchSetKey2d::new(indexed=true),
+      @core_2d.Opaque2dBinKey::new(
+        pipeline_id=21,
+        draw_function_id=22,
+        asset_id=23,
+      ),
+      representative_entity_id=24,
+      main_entity_id=25,
+    ),
+  )
+  debug_inspect(opaque_phase.view_count(), content="2")
+  debug_inspect(opaque_phase.len(), content="2")
+  debug_inspect(opaque_phase.len_for_view(view_a), content="1")
+  debug_inspect(opaque_phase.len_for_view(view_b), content="1")
+  debug_inspect(
+    opaque_phase.items_for_view(view_b)[0].cached_pipeline_id(),
+    content="21",
+  )
+  opaque_phase.prepare_for_new_frame(view_a)
+  debug_inspect(opaque_phase.len_for_view(view_a), content="0")
+  debug_inspect(opaque_phase.len_for_view(view_b), content="1")
+  opaque_phase.retain_views([view_b])
+  debug_inspect(opaque_phase.contains_view(view_a), content="false")
+  debug_inspect(opaque_phase.contains_view(view_b), content="true")
+  debug_inspect(opaque_phase.len(), content="1")
+
+  let alpha_mask = @core_2d.AlphaMask2dPhase::AlphaMask2dPhase()
+  alpha_mask.prepare_for_new_frame(view_a)
+  alpha_mask.prepare_for_new_frame(view_b)
+  alpha_mask.push_for_view(
+    view_a,
+    @core_2d.AlphaMask2d::new(
+      @core_2d.BatchSetKey2d::new(),
+      @core_2d.AlphaMask2dBinKey::new(
+        pipeline_id=31,
+        draw_function_id=32,
+        asset_id=33,
+      ),
+      representative_entity_id=34,
+      main_entity_id=35,
+    ),
+  )
+  alpha_mask.push_for_view(
+    view_b,
+    @core_2d.AlphaMask2d::new(
+      @core_2d.BatchSetKey2d::new(indexed=true),
+      @core_2d.AlphaMask2dBinKey::new(
+        pipeline_id=41,
+        draw_function_id=42,
+        asset_id=43,
+      ),
+      representative_entity_id=44,
+      main_entity_id=45,
+    ),
+  )
+  debug_inspect(alpha_mask.len(), content="2")
+  alpha_mask.prepare_for_new_frame(view_a)
+  debug_inspect(alpha_mask.len_for_view(view_a), content="0")
+  debug_inspect(alpha_mask.len_for_view(view_b), content="1")
+  alpha_mask.retain_views([view_b])
+  debug_inspect(alpha_mask.contains_view(view_a), content="false")
+  debug_inspect(alpha_mask.contains_view(view_b), content="true")
+  debug_inspect(
+    alpha_mask.items_for_view(view_b)[0].cached_pipeline_id(),
+    content="41",
+  )
+
+  let transparent = @core_2d.Transparent2dPhase::Transparent2dPhase()
+  transparent.prepare_for_new_frame(view_a)
+  transparent.prepare_for_new_frame(view_b)
+  transparent.push_for_view(
+    view_a,
+    @core_2d.Transparent2d::new(
+      sort_key=3.0,
+      entity_id=51,
+      main_entity_id=52,
+      pipeline_id=53,
+      draw_function_id=54,
+    ),
+  )
+  transparent.push_for_view(
+    view_b,
+    @core_2d.Transparent2d::new(
+      sort_key=4.0,
+      entity_id=61,
+      main_entity_id=62,
+      pipeline_id=63,
+      draw_function_id=64,
+      indexed=true,
+    ),
+  )
+  debug_inspect(transparent.len(), content="2")
+  transparent.prepare_for_new_frame(view_a)
+  debug_inspect(transparent.len_for_view(view_a), content="0")
+  debug_inspect(transparent.len_for_view(view_b), content="1")
+  transparent.retain_views([view_b])
+  debug_inspect(transparent.contains_view(view_a), content="false")
+  debug_inspect(transparent.contains_view(view_b), content="true")
+  debug_inspect(
+    transparent.items_for_view(view_b)[0].is_indexed(),
+    content="true",
+  )
+}
+
+///|
 test "core_2d plugin owns Camera2d post-process required components" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

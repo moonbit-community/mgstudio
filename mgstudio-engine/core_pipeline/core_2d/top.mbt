@@ -472,34 +472,138 @@ fn retained_view_entity_2d_contains(
 }
 
 ///|
-pub struct Opaque2dPhase {
-  retained_views : Array[RetainedViewEntity2d]
+fn retained_view_entity_2d_equals(
+  lhs : RetainedViewEntity2d,
+  rhs : RetainedViewEntity2d,
+) -> Bool {
+  lhs.main_entity == rhs.main_entity && lhs.subview_index == rhs.subview_index
+}
+
+///|
+pub struct Opaque2dViewPhase {
+  retained_view : RetainedViewEntity2d
   items : Array[Opaque2d]
 }
 
 ///|
+pub fn Opaque2dViewPhase::new(
+  retained_view : RetainedViewEntity2d,
+) -> Opaque2dViewPhase {
+  Opaque2dViewPhase::{ retained_view, items: [] }
+}
+
+///|
+pub fn Opaque2dViewPhase::retained_view(
+  self : Opaque2dViewPhase,
+) -> RetainedViewEntity2d {
+  self.retained_view
+}
+
+///|
+pub fn Opaque2dViewPhase::items(self : Opaque2dViewPhase) -> Array[Opaque2d] {
+  self.items
+}
+
+///|
+pub struct AlphaMask2dViewPhase {
+  retained_view : RetainedViewEntity2d
+  items : Array[AlphaMask2d]
+}
+
+///|
+pub fn AlphaMask2dViewPhase::new(
+  retained_view : RetainedViewEntity2d,
+) -> AlphaMask2dViewPhase {
+  AlphaMask2dViewPhase::{ retained_view, items: [] }
+}
+
+///|
+pub fn AlphaMask2dViewPhase::retained_view(
+  self : AlphaMask2dViewPhase,
+) -> RetainedViewEntity2d {
+  self.retained_view
+}
+
+///|
+pub fn AlphaMask2dViewPhase::items(
+  self : AlphaMask2dViewPhase,
+) -> Array[AlphaMask2d] {
+  self.items
+}
+
+///|
+pub struct Transparent2dViewPhase {
+  retained_view : RetainedViewEntity2d
+  items : Array[Transparent2d]
+}
+
+///|
+pub fn Transparent2dViewPhase::new(
+  retained_view : RetainedViewEntity2d,
+) -> Transparent2dViewPhase {
+  Transparent2dViewPhase::{ retained_view, items: [] }
+}
+
+///|
+pub fn Transparent2dViewPhase::retained_view(
+  self : Transparent2dViewPhase,
+) -> RetainedViewEntity2d {
+  self.retained_view
+}
+
+///|
+pub fn Transparent2dViewPhase::items(
+  self : Transparent2dViewPhase,
+) -> Array[Transparent2d] {
+  self.items
+}
+
+///|
+pub struct Opaque2dPhase {
+  view_phases : Array[Opaque2dViewPhase]
+}
+
+///|
 pub fn Opaque2dPhase::Opaque2dPhase() -> Opaque2dPhase {
-  Opaque2dPhase::{ retained_views: [], items: [] }
+  Opaque2dPhase::{ view_phases: [] }
+}
+
+///|
+fn Opaque2dPhase::view_phase_index(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+) -> Int? {
+  for i = 0; i < self.view_phases.length(); i = i + 1 {
+    if retained_view_entity_2d_equals(self.view_phases[i].retained_view, view) {
+      return Some(i)
+    }
+  }
+  None
 }
 
 ///|
 pub fn Opaque2dPhase::is_empty(self : Opaque2dPhase) -> Bool {
-  self.items.is_empty()
+  self.len() == 0
 }
 
 ///|
 pub fn Opaque2dPhase::len(self : Opaque2dPhase) -> Int {
-  self.items.length()
+  let mut total = 0
+  for phase in self.view_phases {
+    total = total + phase.items.length()
+  }
+  total
 }
 
 ///|
-pub fn Opaque2dPhase::clear(self : Opaque2dPhase) -> Unit {
-  self.items.clear()
-}
-
-///|
-pub fn Opaque2dPhase::push(self : Opaque2dPhase, item : Opaque2d) -> Unit {
-  self.items.push(item)
+pub fn Opaque2dPhase::len_for_view(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+) -> Int {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.length()
+    None => 0
+  }
 }
 
 ///|
@@ -507,8 +611,35 @@ pub fn Opaque2dPhase::prepare_for_new_frame(
   self : Opaque2dPhase,
   view : RetainedViewEntity2d,
 ) -> Unit {
-  if !retained_view_entity_2d_contains(self.retained_views, view) {
-    self.retained_views.push(view)
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.clear()
+    None => self.view_phases.push(Opaque2dViewPhase::new(view))
+  }
+}
+
+///|
+pub fn Opaque2dPhase::push_for_view(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+  item : Opaque2d,
+) -> Unit {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.push(item)
+    None => {
+      self.view_phases.push(Opaque2dViewPhase::new(view))
+      self.view_phases[self.view_phases.length() - 1].items.push(item)
+    }
+  }
+}
+
+///|
+pub fn Opaque2dPhase::items_for_view(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+) -> Array[Opaque2d] {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items
+    None => []
   }
 }
 
@@ -517,19 +648,19 @@ pub fn Opaque2dPhase::retain_views(
   self : Opaque2dPhase,
   live_views : Array[RetainedViewEntity2d],
 ) -> Unit {
-  let retained : Array[RetainedViewEntity2d] = []
-  for view in self.retained_views {
-    if retained_view_entity_2d_contains(live_views, view) {
-      retained.push(view)
+  let retained : Array[Opaque2dViewPhase] = []
+  for phase in self.view_phases {
+    if retained_view_entity_2d_contains(live_views, phase.retained_view) {
+      retained.push(phase)
     }
   }
-  self.retained_views.clear()
-  self.retained_views.append(retained)
+  self.view_phases.clear()
+  self.view_phases.append(retained)
 }
 
 ///|
 pub fn Opaque2dPhase::view_count(self : Opaque2dPhase) -> Int {
-  self.retained_views.length()
+  self.view_phases.length()
 }
 
 ///|
@@ -537,41 +668,55 @@ pub fn Opaque2dPhase::contains_view(
   self : Opaque2dPhase,
   view : RetainedViewEntity2d,
 ) -> Bool {
-  retained_view_entity_2d_contains(self.retained_views, view)
+  self.view_phase_index(view) is Some(_)
 }
 
 ///|
 pub struct AlphaMask2dPhase {
-  retained_views : Array[RetainedViewEntity2d]
-  items : Array[AlphaMask2d]
+  view_phases : Array[AlphaMask2dViewPhase]
 }
 
 ///|
 pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> AlphaMask2dPhase {
-  AlphaMask2dPhase::{ retained_views: [], items: [] }
+  AlphaMask2dPhase::{ view_phases: [] }
+}
+
+///|
+fn AlphaMask2dPhase::view_phase_index(
+  self : AlphaMask2dPhase,
+  view : RetainedViewEntity2d,
+) -> Int? {
+  for i = 0; i < self.view_phases.length(); i = i + 1 {
+    if retained_view_entity_2d_equals(self.view_phases[i].retained_view, view) {
+      return Some(i)
+    }
+  }
+  None
 }
 
 ///|
 pub fn AlphaMask2dPhase::is_empty(self : AlphaMask2dPhase) -> Bool {
-  self.items.is_empty()
+  self.len() == 0
 }
 
 ///|
 pub fn AlphaMask2dPhase::len(self : AlphaMask2dPhase) -> Int {
-  self.items.length()
+  let mut total = 0
+  for phase in self.view_phases {
+    total = total + phase.items.length()
+  }
+  total
 }
 
 ///|
-pub fn AlphaMask2dPhase::clear(self : AlphaMask2dPhase) -> Unit {
-  self.items.clear()
-}
-
-///|
-pub fn AlphaMask2dPhase::push(
+pub fn AlphaMask2dPhase::len_for_view(
   self : AlphaMask2dPhase,
-  item : AlphaMask2d,
-) -> Unit {
-  self.items.push(item)
+  view : RetainedViewEntity2d,
+) -> Int {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.length()
+    None => 0
+  }
 }
 
 ///|
@@ -579,8 +724,35 @@ pub fn AlphaMask2dPhase::prepare_for_new_frame(
   self : AlphaMask2dPhase,
   view : RetainedViewEntity2d,
 ) -> Unit {
-  if !retained_view_entity_2d_contains(self.retained_views, view) {
-    self.retained_views.push(view)
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.clear()
+    None => self.view_phases.push(AlphaMask2dViewPhase::new(view))
+  }
+}
+
+///|
+pub fn AlphaMask2dPhase::push_for_view(
+  self : AlphaMask2dPhase,
+  view : RetainedViewEntity2d,
+  item : AlphaMask2d,
+) -> Unit {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.push(item)
+    None => {
+      self.view_phases.push(AlphaMask2dViewPhase::new(view))
+      self.view_phases[self.view_phases.length() - 1].items.push(item)
+    }
+  }
+}
+
+///|
+pub fn AlphaMask2dPhase::items_for_view(
+  self : AlphaMask2dPhase,
+  view : RetainedViewEntity2d,
+) -> Array[AlphaMask2d] {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items
+    None => []
   }
 }
 
@@ -589,19 +761,19 @@ pub fn AlphaMask2dPhase::retain_views(
   self : AlphaMask2dPhase,
   live_views : Array[RetainedViewEntity2d],
 ) -> Unit {
-  let retained : Array[RetainedViewEntity2d] = []
-  for view in self.retained_views {
-    if retained_view_entity_2d_contains(live_views, view) {
-      retained.push(view)
+  let retained : Array[AlphaMask2dViewPhase] = []
+  for phase in self.view_phases {
+    if retained_view_entity_2d_contains(live_views, phase.retained_view) {
+      retained.push(phase)
     }
   }
-  self.retained_views.clear()
-  self.retained_views.append(retained)
+  self.view_phases.clear()
+  self.view_phases.append(retained)
 }
 
 ///|
 pub fn AlphaMask2dPhase::view_count(self : AlphaMask2dPhase) -> Int {
-  self.retained_views.length()
+  self.view_phases.length()
 }
 
 ///|
@@ -609,41 +781,55 @@ pub fn AlphaMask2dPhase::contains_view(
   self : AlphaMask2dPhase,
   view : RetainedViewEntity2d,
 ) -> Bool {
-  retained_view_entity_2d_contains(self.retained_views, view)
+  self.view_phase_index(view) is Some(_)
 }
 
 ///|
 pub struct Transparent2dPhase {
-  retained_views : Array[RetainedViewEntity2d]
-  items : Array[Transparent2d]
+  view_phases : Array[Transparent2dViewPhase]
 }
 
 ///|
 pub fn Transparent2dPhase::Transparent2dPhase() -> Transparent2dPhase {
-  Transparent2dPhase::{ retained_views: [], items: [] }
+  Transparent2dPhase::{ view_phases: [] }
+}
+
+///|
+fn Transparent2dPhase::view_phase_index(
+  self : Transparent2dPhase,
+  view : RetainedViewEntity2d,
+) -> Int? {
+  for i = 0; i < self.view_phases.length(); i = i + 1 {
+    if retained_view_entity_2d_equals(self.view_phases[i].retained_view, view) {
+      return Some(i)
+    }
+  }
+  None
 }
 
 ///|
 pub fn Transparent2dPhase::is_empty(self : Transparent2dPhase) -> Bool {
-  self.items.is_empty()
+  self.len() == 0
 }
 
 ///|
 pub fn Transparent2dPhase::len(self : Transparent2dPhase) -> Int {
-  self.items.length()
+  let mut total = 0
+  for phase in self.view_phases {
+    total = total + phase.items.length()
+  }
+  total
 }
 
 ///|
-pub fn Transparent2dPhase::clear(self : Transparent2dPhase) -> Unit {
-  self.items.clear()
-}
-
-///|
-pub fn Transparent2dPhase::push(
+pub fn Transparent2dPhase::len_for_view(
   self : Transparent2dPhase,
-  item : Transparent2d,
-) -> Unit {
-  self.items.push(item)
+  view : RetainedViewEntity2d,
+) -> Int {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.length()
+    None => 0
+  }
 }
 
 ///|
@@ -651,8 +837,35 @@ pub fn Transparent2dPhase::prepare_for_new_frame(
   self : Transparent2dPhase,
   view : RetainedViewEntity2d,
 ) -> Unit {
-  if !retained_view_entity_2d_contains(self.retained_views, view) {
-    self.retained_views.push(view)
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.clear()
+    None => self.view_phases.push(Transparent2dViewPhase::new(view))
+  }
+}
+
+///|
+pub fn Transparent2dPhase::push_for_view(
+  self : Transparent2dPhase,
+  view : RetainedViewEntity2d,
+  item : Transparent2d,
+) -> Unit {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items.push(item)
+    None => {
+      self.view_phases.push(Transparent2dViewPhase::new(view))
+      self.view_phases[self.view_phases.length() - 1].items.push(item)
+    }
+  }
+}
+
+///|
+pub fn Transparent2dPhase::items_for_view(
+  self : Transparent2dPhase,
+  view : RetainedViewEntity2d,
+) -> Array[Transparent2d] {
+  match self.view_phase_index(view) {
+    Some(index) => self.view_phases[index].items
+    None => []
   }
 }
 
@@ -661,19 +874,19 @@ pub fn Transparent2dPhase::retain_views(
   self : Transparent2dPhase,
   live_views : Array[RetainedViewEntity2d],
 ) -> Unit {
-  let retained : Array[RetainedViewEntity2d] = []
-  for view in self.retained_views {
-    if retained_view_entity_2d_contains(live_views, view) {
-      retained.push(view)
+  let retained : Array[Transparent2dViewPhase] = []
+  for phase in self.view_phases {
+    if retained_view_entity_2d_contains(live_views, phase.retained_view) {
+      retained.push(phase)
     }
   }
-  self.retained_views.clear()
-  self.retained_views.append(retained)
+  self.view_phases.clear()
+  self.view_phases.append(retained)
 }
 
 ///|
 pub fn Transparent2dPhase::view_count(self : Transparent2dPhase) -> Int {
-  self.retained_views.length()
+  self.view_phases.length()
 }
 
 ///|
@@ -681,7 +894,7 @@ pub fn Transparent2dPhase::contains_view(
   self : Transparent2dPhase,
   view : RetainedViewEntity2d,
 ) -> Bool {
-  retained_view_entity_2d_contains(self.retained_views, view)
+  self.view_phase_index(view) is Some(_)
 }
 
 ///|
