@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/camera/clear_color" @camera_clear_color,
   "Milky2018/mgstudio/camera/computed_camera_values" @camera_computed,
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
+  "Milky2018/mgstudio/camera/projection2d" @camera_projection2d,
   "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",

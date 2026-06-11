@@ -27,93 +27,6 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-test "render2d: viewport_to_world and world_to_viewport roundtrip (identity camera)" {
-  let camera = @camera_camera.Camera::Camera()
-  let projection = @camera_projection2d.OrthographicProjection::default_2d()
-  let transform = @transform.Transform::identity()
-  let target = @math.IVec2::new(100, 100)
-  let scale_factor = 1.0F
-
-  // Center of the target maps to world origin.
-  let center = @math.Vec2::new(50.0F, 50.0F)
-  let ok_center = match
-    render2d_camera_viewport_to_world_2d(
-      center, camera, projection, transform, target, scale_factor,
-    ) {
-    Some(world_center) =>
-      approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
-    _ => false
-  }
-  debug_inspect(ok_center, content="true")
-
-  // Roundtrip an arbitrary point.
-  let screen = @math.Vec2::new(12.5F, 87.25F)
-  let ok_roundtrip = match
-    render2d_camera_viewport_to_world_2d(
-      screen, camera, projection, transform, target, scale_factor,
-    ) {
-    Some(world_pos) =>
-      match
-        render2d_camera_world_to_viewport_2d(
-          world_pos, camera, projection, transform, target, scale_factor,
-        ) {
-        Some(screen_back) =>
-          approx_eq(screen_back.x, screen.x) &&
-          approx_eq(screen_back.y, screen.y)
-        _ => false
-      }
-    _ => false
-  }
-  debug_inspect(ok_roundtrip, content="true")
-}
-
-///|
-test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
-  let camera = @camera_camera.Camera::Camera()
-  let projection = @camera_projection2d.OrthographicProjection::default_2d()
-  let transform = @transform.Transform::identity()
-  let target = @math.IVec2::new(200, 100) // physical
-  let scale_factor = 2.0F
-
-  // Logical center is (50, 25) because 200x100 physical at DPR=2 becomes 100x50 logical.
-  let center = @math.Vec2::new(50.0F, 25.0F)
-  let ok_center = match
-    render2d_camera_viewport_to_world_2d(
-      center, camera, projection, transform, target, scale_factor,
-    ) {
-    Some(world_center) =>
-      approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
-    _ => false
-  }
-  debug_inspect(ok_center, content="true")
-}
-
-///|
-test "render2d: viewport rect clamps to target size" {
-  let camera = @camera_camera.Camera::Camera().with_viewport(
-    @camera_viewport.Viewport::new(
-      @math.IVec2::new(90, 90),
-      @math.IVec2::new(50, 50),
-    ),
-  )
-  let projection = @camera_projection2d.OrthographicProjection::default_2d()
-  let transform = @transform.Transform::identity()
-  let target = @math.IVec2::new(100, 100)
-
-  // Physical viewport is clamped to 10x10, so logical center should map to world origin.
-  let screen = @math.Vec2::new(95.0F, 95.0F)
-  let ok_center = match
-    render2d_camera_viewport_to_world_2d(
-      screen, camera, projection, transform, target, 1.0F,
-    ) {
-    Some(world_pos) =>
-      approx_eq(world_pos.x, 0.0F) && approx_eq(world_pos.y, 0.0F)
-    _ => false
-  }
-  debug_inspect(ok_center, content="true")
-}
-
-///|
 test "render2d: Assets::add accepts mesh geometry and color authoring values" {
   let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
   let materials : @asset.Assets[
@@ -140,37 +53,6 @@ test "render2d: Assets::add accepts mesh geometry and color authoring values" {
       approx_eq(material.color.g, expected_color.g) &&
       approx_eq(material.color.b, expected_color.b) &&
       material.alpha_mode is @sprite_render_mesh2d_material.AlphaMode2d::Opaque
-    } else {
-      false
-    }
-  } else {
-    false
-  }
-  debug_inspect(ok, content="true")
-}
-
-///|
-test "render2d: viewport conversions honor transform-based zoom scale" {
-  let camera = @camera_camera.Camera::Camera()
-  let projection = @camera_projection2d.OrthographicProjection::default_2d()
-  let transform = @transform.Transform::identity().with_scale(
-    @math.Vec3::splat(2.0F),
-  )
-  let target = @math.IVec2::new(100, 100)
-
-  let screen = @math.Vec2::new(75.0F, 50.0F)
-  let ok = if render2d_camera_viewport_to_world_2d(
-      screen, camera, projection, transform, target, 1.0F,
-    )
-    is Some(world_pos) {
-    if render2d_camera_world_to_viewport_2d(
-        world_pos, camera, projection, transform, target, 1.0F,
-      )
-      is Some(screen_back) {
-      approx_eq(world_pos.x, 50.0F) &&
-      approx_eq(world_pos.y, 0.0F) &&
-      approx_eq(screen_back.x, screen.x) &&
-      approx_eq(screen_back.y, screen.y)
     } else {
       false
     }

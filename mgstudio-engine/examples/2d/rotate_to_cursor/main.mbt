@@ -103,11 +103,10 @@ fn player_movement_system(
   if window_size.x <= 0 || window_size.y <= 0 {
     return
   }
-  guard @sprite_render.render2d_camera_viewport_to_world_2d(
-      cursor_position,
-      camera,
-      orthographic_projection,
+  guard camera.viewport_to_world_2d(
       camera_transform,
+      cursor_position,
+      orthographic_projection,
       window_size,
       window.scale_factor(),
     )

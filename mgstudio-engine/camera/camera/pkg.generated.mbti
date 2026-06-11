@@ -5,12 +5,14 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/computed_camera_values",
+  "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
@@ -48,6 +50,7 @@ pub fn Camera::physical_target_size(Self) -> @math.IVec2?
 pub fn Camera::physical_viewport_size(Self) -> @math.IVec2?
 pub fn Camera::target_scaling_factor(Self) -> Float?
 pub fn Camera::to_logical(Self, @math.IVec2) -> @math.Vec2?
+pub fn Camera::viewport_to_world_2d(Self, @transform.Transform, @math.Vec2, @projection2d.OrthographicProjection, @math.IVec2, Float) -> @math.Vec2?
 pub fn Camera::with_clear_color(Self, @color.Color) -> Self
 pub fn Camera::with_clear_color_config(Self, @clear_color.ClearColorConfig) -> Self
 pub fn Camera::with_clear_color_none(Self) -> Self
@@ -55,6 +58,7 @@ pub fn Camera::with_computed(Self, @computed_camera_values.ComputedCameraValues)
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self
+pub fn Camera::world_to_viewport_2d(Self, @transform.Transform, @math.Vec2, @projection2d.OrthographicProjection, @math.IVec2, Float) -> @math.Vec2?
 pub impl @ecs.Component for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera

@@ -1032,11 +1032,10 @@ fn ui_viewport_point_to_world(
       let scale_factor = safe_scale_factor(
         camera.target_scaling_factor().unwrap_or(@window.window_scale_factor()),
       )
-      if @sprite_render.render2d_camera_viewport_to_world_2d(
-          point,
-          camera,
-          projection,
+      if camera.viewport_to_world_2d(
           entity_ctx.camera_transform,
+          point,
+          projection,
           target_size,
           scale_factor,
         )

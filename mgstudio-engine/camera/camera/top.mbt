@@ -160,6 +160,164 @@ pub fn Camera::target_scaling_factor(self : Camera) -> Float? {
 }
 
 ///|
+fn camera_transform_scale_axis(value : Float) -> Float {
+  let safe = if value < 0.0F { -value } else { value }
+  if safe == 0.0F {
+    1.0F
+  } else {
+    safe
+  }
+}
+
+///|
+fn camera_uniform_scale(
+  projection : @camera_projection2d.OrthographicProjection,
+  camera_transform : @transform.Transform,
+) -> Float {
+  let projection_scale = if projection.scale == 0.0F {
+    1.0F
+  } else {
+    projection.scale
+  }
+  projection_scale * camera_transform_scale_axis(camera_transform.scale.x)
+}
+
+///|
+fn camera_viewport_rect_physical(
+  target_width : Int,
+  target_height : Int,
+  viewport : Viewport?,
+) -> (Int, Int, Int, Int)? {
+  let width = target_width
+  let height = target_height
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let mut rect_x = 0
+  let mut rect_y = 0
+  let mut rect_width = width
+  let mut rect_height = height
+  if viewport is Some(vp) {
+    rect_x = if vp.physical_position.x < 0 { 0 } else { vp.physical_position.x }
+    rect_y = if vp.physical_position.y < 0 { 0 } else { vp.physical_position.y }
+    rect_width = if vp.physical_size.x < 0 { 0 } else { vp.physical_size.x }
+    rect_height = if vp.physical_size.y < 0 { 0 } else { vp.physical_size.y }
+    let max_width = if width - rect_x < 0 { 0 } else { width - rect_x }
+    let max_height = if height - rect_y < 0 { 0 } else { height - rect_y }
+    if rect_width > max_width {
+      rect_width = max_width
+    }
+    if rect_height > max_height {
+      rect_height = max_height
+    }
+    if rect_width <= 0 || rect_height <= 0 {
+      return None
+    }
+  }
+  Some((rect_x, rect_y, rect_width, rect_height))
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::Camera::viewport_to_world_2d`.
+pub fn Camera::viewport_to_world_2d(
+  self : Camera,
+  camera_transform : @transform.Transform,
+  viewport_position : @math.Vec2,
+  projection : @camera_projection2d.OrthographicProjection,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  let width = target_size.x
+  let height = target_size.y
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let mut safe_scale_factor = scale_factor
+  if safe_scale_factor <= 0.0F {
+    safe_scale_factor = 1.0F
+  }
+  guard camera_viewport_rect_physical(width, height, self.viewport)
+    is Some((rect_x, rect_y, rect_width, rect_height)) else {
+    return None
+  }
+  let rect_x_f = Float::from_double(rect_x.to_double()) / safe_scale_factor
+  let rect_y_f = Float::from_double(rect_y.to_double()) / safe_scale_factor
+  let rect_width_f = Float::from_double(rect_width.to_double()) /
+    safe_scale_factor
+  let rect_height_f = Float::from_double(rect_height.to_double()) /
+    safe_scale_factor
+  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
+    return None
+  }
+  let half_width = rect_width_f / 2.0F
+  let half_height = rect_height_f / 2.0F
+  let scale = camera_uniform_scale(projection, camera_transform)
+  let local_x = viewport_position.x - rect_x_f
+  let local_y = viewport_position.y - rect_y_f
+  let view_x = (local_x - half_width) * scale
+  let view_y = (half_height - local_y) * scale
+  let rot_z = camera_transform.rotation_z()
+  let cosv = @math.cos(rot_z)
+  let sinv = @math.sin(rot_z)
+  let world_x = camera_transform.translation.x + view_x * cosv + view_y * sinv
+  let world_y = camera_transform.translation.y - view_x * sinv + view_y * cosv
+  Some(@math.Vec2::new(world_x, world_y))
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::Camera::world_to_viewport`.
+pub fn Camera::world_to_viewport_2d(
+  self : Camera,
+  camera_transform : @transform.Transform,
+  world_position : @math.Vec2,
+  projection : @camera_projection2d.OrthographicProjection,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  let width = target_size.x
+  let height = target_size.y
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let mut safe_scale_factor = scale_factor
+  if safe_scale_factor <= 0.0F {
+    safe_scale_factor = 1.0F
+  }
+  guard camera_viewport_rect_physical(width, height, self.viewport)
+    is Some((rect_x, rect_y, rect_width, rect_height)) else {
+    return None
+  }
+  let rect_x_f = Float::from_double(rect_x.to_double()) / safe_scale_factor
+  let rect_y_f = Float::from_double(rect_y.to_double()) / safe_scale_factor
+  let rect_width_f = Float::from_double(rect_width.to_double()) /
+    safe_scale_factor
+  let rect_height_f = Float::from_double(rect_height.to_double()) /
+    safe_scale_factor
+  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
+    return None
+  }
+  let half_width = rect_width_f / 2.0F
+  let half_height = rect_height_f / 2.0F
+  let dx = world_position.x - camera_transform.translation.x
+  let dy = world_position.y - camera_transform.translation.y
+  let rot_z = camera_transform.rotation_z()
+  let cosv = @math.cos(rot_z)
+  let sinv = @math.sin(rot_z)
+  let view_x = dx * cosv - dy * sinv
+  let view_y = dx * sinv + dy * cosv
+  let safe_scale = camera_uniform_scale(projection, camera_transform)
+  let local_x = view_x / safe_scale + half_width
+  let local_y = half_height - view_y / safe_scale
+  if local_x < 0.0F ||
+    local_y < 0.0F ||
+    local_x > rect_width_f ||
+    local_y > rect_height_f {
+    return None
+  }
+  Some(@math.Vec2::new(local_x + rect_x_f, local_y + rect_y_f))
+}
+
+///|
 pub struct CameraMainTextureUsages {
   bits : UInt64
 }

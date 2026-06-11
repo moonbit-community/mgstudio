@@ -197,9 +197,8 @@ fn draw_cursor(
   let scale_factor = @window.window_scale_factor()
 
   if @input.mouse_position() is Some(screen_pos) {
-    if @sprite_render.render2d_camera_viewport_to_world_2d(
-        screen_pos, camera, orthographic_projection, camera_transform, window_size,
-        scale_factor,
+    if camera.viewport_to_world_2d(
+        camera_transform, screen_pos, orthographic_projection, window_size, scale_factor,
       )
       is Some(world_pos) {
       let white = @color.Color::white()
@@ -207,13 +206,12 @@ fn draw_cursor(
       let cursor_iso = @sprite.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
 
-      if @sprite_render.render2d_camera_world_to_viewport_2d(
-          world_pos, camera, orthographic_projection, camera_transform, window_size,
-          scale_factor,
+      if camera.world_to_viewport_2d(
+          camera_transform, world_pos, orthographic_projection, window_size, scale_factor,
         )
         is Some(viewport_pos) {
-        if @sprite_render.render2d_camera_viewport_to_world_2d(
-            viewport_pos, camera, orthographic_projection, camera_transform, window_size,
+        if camera.viewport_to_world_2d(
+            camera_transform, viewport_pos, orthographic_projection, window_size,
             scale_factor,
           )
           is Some(world_check) {
