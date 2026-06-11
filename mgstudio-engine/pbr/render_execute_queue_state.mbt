@@ -80,6 +80,12 @@ fn render3d_queue_take_pending_frame(
 }
 
 ///|
+fn render3d_pending_frame_snapshot(world : @ecs.World) -> Render3dPendingFrame? {
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.peek().pending_frame
+}
+
+///|
 let render3d_execute_queue_state_key : @ecs.ResourceKey[
   Render3dExecuteQueueState,
 ] = @ecs.register_resource(debug_name="mgstudio.render3d.execute_queue_state")

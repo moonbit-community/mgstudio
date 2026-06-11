@@ -40,6 +40,83 @@ fn wireframe_phase_test_descriptor() -> @material.RenderPipelineDescriptor {
 }
 
 ///|
+fn wireframe_phase_test_frame_config() -> Render3dExecuteFrameConfig {
+  Render3dExecuteFrameConfig::{
+    gpu_instance_buffer_builder_requested: false,
+    gpu_culling_supported: false,
+    gpu_instance_buffer_builder_enabled: false,
+    prepass_enabled: false,
+    deferred_lighting_enabled: false,
+    delta_seconds: 0.0F,
+    default_opaque_renderer_method: OpaqueRendererMethod::Forward,
+    point_light_shadow_map_size: 0,
+    wireframe_config: None,
+  }
+}
+
+///|
+fn wireframe_phase_test_camera(
+  view_entity : @core.Entity,
+  motion_vector_prepass_enabled? : Bool = false,
+) -> ExtractedCamera3d {
+  ExtractedCamera3d::{
+    entity: phase_entity_ref3d_for_main(view_entity),
+    payload: Camera3dViewPayload::{
+      decal_config: None,
+      deferred_config: None,
+      distance_fog: None,
+      auto_exposure: None,
+      volumetric_fog: None,
+      atmosphere: None,
+      atmosphere_settings: None,
+      camera: @camera_camera.Camera::Camera(),
+      projection: Projection::default(),
+      sub_camera_view: None,
+      oit_settings: None,
+      screen_space_transmission: None,
+      bloom: None,
+      tonemapping: None,
+      deband_dither: None,
+      chromatic_aberration: None,
+      contrast_adaptive_sharpening: None,
+      custom_post_process3d: None,
+      vignette: None,
+      motion_blur: None,
+      exposure: None,
+      color_grading: None,
+      skybox: None,
+      environment_map_light: None,
+      generated_environment_map_light: None,
+      atmosphere_environment_map_light: None,
+      irradiance_volume: None,
+      screen_space_ambient_occlusion: None,
+      screen_space_reflections: None,
+      contact_shadows: None,
+      depth_prepass_enabled: false,
+      normal_prepass_enabled: false,
+      deferred_prepass_enabled: false,
+      no_indirect_drawing: false,
+      gpu_occlusion_culling_enabled: false,
+      hdr_enabled: false,
+      fxaa: None,
+      temporal_jitter: None,
+      temporal_anti_aliasing: None,
+      shadow_filtering_method: None,
+      motion_vector_prepass_enabled,
+      msaa: None,
+      transform: @transform.Transform::Transform(),
+      previous_transform: @transform.Transform::Transform(),
+      previous_clip_from_world: None,
+      target_id: 0,
+      target_size: @math.IVec2::new(1280, 720),
+      scale_factor: 1.0F,
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      has_no_cpu_culling: false,
+    },
+  }
+}
+
+///|
 test "pbr: Wireframe3d phase item exposes Bevy phase identity fields" {
   let draw_functions = @material.DrawFunctions::new()
   let draw = draw_functions.register("Wireframe3dThinDrawFunction")
@@ -1246,6 +1323,33 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   debug_inspect(item.batch_set_key().slabs().index_slab_id(), content="Some(5)")
   debug_inspect(item.batch_set_key().mesh_asset_id(), content="None")
   debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+}
+
+///|
+test "pbr: wireframe view key cache follows pending render camera view bits" {
+  let world = @ecs.World::new()
+  let view = @core.Entity::new(51, 1)
+  let stale_view = @core.Entity::new(52, 1)
+  let cache = WireframeViewKeyCache::WireframeViewKeyCache()
+  cache.insert(stale_view, 123UL)
+  world.insert_resource(WireframeViewKeyCache::resource(), cache)
+  render3d_queue_store_pending_frame(
+    world,
+    wireframe_phase_test_frame_config(),
+    [wireframe_phase_test_camera(view, motion_vector_prepass_enabled=true)],
+    [],
+  )
+
+  prepare_wireframe_view_key_cache_system(world)
+
+  let cache = world.get_resource(WireframeViewKeyCache::resource()).unwrap()
+  let view_bits = cache.get(view).unwrap()
+  debug_inspect(cache.len(), content="1")
+  debug_inspect(cache.get(stale_view), content="None")
+  debug_inspect(
+    (view_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL,
+    content="true",
+  )
 }
 
 ///|

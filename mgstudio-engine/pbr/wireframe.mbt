@@ -335,6 +335,11 @@ let wireframe_render_set_specialize : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let wireframe_render_set_prepare_view_keys : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.prepare_view_keys",
+)
+
+///|
 let wireframe_render_set_queue : @app.SystemSet = @app.system_set(
   "mgstudio.pbr.wireframe.queue",
 )
@@ -967,6 +972,42 @@ fn wireframe_mesh_visibility_class() -> String {
 }
 
 ///|
+fn wireframe_view_key_cache_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[WireframeViewKeyCache] {
+  if world.get_resource(WireframeViewKeyCache::resource()) is None {
+    world.insert_resource(
+      WireframeViewKeyCache::resource(),
+      WireframeViewKeyCache::WireframeViewKeyCache(),
+    )
+  }
+  match world.get_resource_mut(WireframeViewKeyCache::resource()) {
+    Some(value) => value
+    None => abort("Missing WireframeViewKeyCache resource")
+  }
+}
+
+///|
+fn prepare_wireframe_view_key_cache_system(world : @ecs.World) -> Unit {
+  let live_views : Map[UInt64, Bool] = {}
+  wireframe_view_key_cache_mut_or_init(world).modify(fn(cache) {
+    match render3d_pending_frame_snapshot(world) {
+      Some(frame) =>
+        for camera in frame.cameras {
+          let retained_view_entity = camera.entity.main_entity
+          cache.insert(
+            retained_view_entity,
+            render3d_camera_mesh_pipeline_view_key_bits(camera.payload),
+          )
+          live_views.set(retained_view_entity.to_bits(), true)
+        }
+      None => ()
+    }
+    cache.retain_live_views(live_views)
+  })
+}
+
+///|
 fn specialize_wireframes_system(world : @ecs.World) -> Unit {
   let phases = match world.get_resource(Wireframe3dPhases::resource()) {
     Some(value) => value
@@ -1345,6 +1386,9 @@ fn configure_wireframe_render_sub_app(
   )
   let stage = @render.render_schedule_stage()
   sub_app
+  .configure_sets(stage, wireframe_render_set_prepare_view_keys, in_sets=[
+    render3d_set_queue,
+  ])
   .configure_sets(
     stage,
     wireframe_render_set_specialize,
@@ -1401,6 +1445,12 @@ fn configure_wireframe_render_sub_app(
     stage,
     @app.system(extract_wireframe_material_assets_system).in_set(
       render3d_set_extract,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(prepare_wireframe_view_key_cache_system).in_set(
+      wireframe_render_set_prepare_view_keys,
     ),
   )
   .add_systems(
