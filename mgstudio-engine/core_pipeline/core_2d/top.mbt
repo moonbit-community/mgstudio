@@ -66,8 +66,18 @@ pub let core_2d_set_render : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let core_2d_set_prepass : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core2d.prepass",
+)
+
+///|
 pub let core_2d_set_main_pass : @app.SystemSet = @app.system_set(
   "mgstudio.core_pipeline.core2d.main_pass",
+)
+
+///|
+pub let core_2d_set_early_post_process : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core2d.early_post_process",
 )
 
 ///|
@@ -161,7 +171,13 @@ fn core_2d_configure_render_sub_app(
     @app.Schedule::new(core_2d_stage),
   )
   sub_app
+  .configure_set(core_2d_stage, core_2d_set_prepass, before=[
+    core_2d_set_main_pass,
+  ])
   .configure_set(core_2d_stage, core_2d_set_main_pass, before=[
+    core_2d_set_early_post_process,
+  ])
+  .configure_set(core_2d_stage, core_2d_set_early_post_process, before=[
     core_2d_set_post_process,
   ])
   .configure_set(stage, @render.render_system_set_extract_commands, before=[
@@ -175,15 +191,21 @@ fn core_2d_configure_render_sub_app(
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     core_2d_set_queue,
   ])
-  .configure_set(stage, core_2d_set_queue, before=[core_2d_set_main_pass])
+  .configure_set(stage, core_2d_set_queue, before=[core_2d_set_prepass])
   .configure_set(stage, core_2d_set_queue, before=[
     @render.render_system_set_queue_sweep,
   ])
+  .configure_set(graph_stage, core_2d_set_prepass, before=[
+    core_2d_set_main_pass,
+  ])
   .configure_set(graph_stage, core_2d_set_main_pass, before=[
+    core_2d_set_early_post_process,
+  ])
+  .configure_set(graph_stage, core_2d_set_early_post_process, before=[
     core_2d_set_post_process,
   ])
   .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
-    core_2d_set_main_pass,
+    core_2d_set_prepass,
   ])
   .configure_set(graph_stage, core_2d_set_post_process, before=[
     @render.render_graph_system_set_submit,

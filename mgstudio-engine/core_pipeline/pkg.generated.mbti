@@ -25,9 +25,13 @@ pub fn camera_driver(@ecs.World) -> Unit
 
 pub fn core2d_base_schedule() -> @app.Schedule
 
+pub fn core2d_system_set_early_post_process() -> String
+
 pub fn core2d_system_set_main_pass() -> String
 
 pub fn core2d_system_set_post_process() -> String
+
+pub fn core2d_system_set_prepass() -> String
 
 pub fn core3d_base_schedule() -> @app.Schedule
 
@@ -89,7 +93,9 @@ pub struct Core2d {
 pub fn Core2d::Core2d() -> Self
 
 pub(all) enum Core2dSystems {
+  Prepass
   MainPass
+  EarlyPostProcess
   PostProcess
 } derive(Eq, @debug.Debug)
 

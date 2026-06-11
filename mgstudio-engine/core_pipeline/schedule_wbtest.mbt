@@ -21,3 +21,19 @@ test "core pipeline: Core3dSystems includes Bevy early postprocess stage" {
     content="true",
   )
 }
+
+///|
+test "core pipeline: Core2dSystems includes Bevy prepass and early postprocess stages" {
+  debug_inspect(Core2dSystems::Prepass, content="Prepass")
+  debug_inspect(Core2dSystems::EarlyPostProcess, content="EarlyPostProcess")
+  debug_inspect(
+    core2d_system_set_prepass() ==
+    @app.system_set("mgstudio.core_pipeline.core2d.prepass"),
+    content="true",
+  )
+  debug_inspect(
+    core2d_system_set_early_post_process() ==
+    @app.system_set("mgstudio.core_pipeline.core2d.early_post_process"),
+    content="true",
+  )
+}
