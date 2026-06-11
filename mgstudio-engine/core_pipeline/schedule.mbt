@@ -42,6 +42,7 @@ pub fn Core2d::Core2d() -> Core2d {
 pub(all) enum Core3dSystems {
   Prepass
   MainPass
+  EarlyPostProcess
   PostProcess
 } derive(Eq, Debug)
 
@@ -59,6 +60,11 @@ pub fn core3d_system_set_prepass() -> @app.SystemSet {
 ///|
 pub fn core3d_system_set_main_pass() -> @app.SystemSet {
   @app.system_set("mgstudio.core_pipeline.core3d.main_pass")
+}
+
+///|
+pub fn core3d_system_set_early_post_process() -> @app.SystemSet {
+  @app.system_set("mgstudio.core_pipeline.core3d.early_post_process")
 }
 
 ///|

@@ -31,6 +31,8 @@ pub fn core2d_system_set_post_process() -> String
 
 pub fn core3d_base_schedule() -> @app.Schedule
 
+pub fn core3d_system_set_early_post_process() -> String
+
 pub fn core3d_system_set_main_pass() -> String
 
 pub fn core3d_system_set_post_process() -> String
@@ -98,6 +100,7 @@ pub fn Core3d::Core3d() -> Self
 pub(all) enum Core3dSystems {
   Prepass
   MainPass
+  EarlyPostProcess
   PostProcess
 } derive(Eq, @debug.Debug)
 

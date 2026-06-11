@@ -33,6 +33,11 @@ pub let core_3d_set_main_pass : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let core_3d_set_early_post_process : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core3d.early_post_process",
+)
+
+///|
 pub let core_3d_set_post_process : @app.SystemSet = @app.system_set(
   "mgstudio.core_pipeline.core3d.post_process",
 )
@@ -64,6 +69,9 @@ fn core_3d_configure_render_sub_app(
     core_3d_set_main_pass,
   ])
   .configure_set(core_3d_stage, core_3d_set_main_pass, before=[
+    core_3d_set_early_post_process,
+  ])
+  .configure_set(core_3d_stage, core_3d_set_early_post_process, before=[
     core_3d_set_post_process,
   ])
   .configure_set(graph_stage, @render.render_graph_system_set_render, before=[
@@ -73,6 +81,9 @@ fn core_3d_configure_render_sub_app(
     core_3d_set_main_pass,
   ])
   .configure_set(graph_stage, core_3d_set_main_pass, before=[
+    core_3d_set_early_post_process,
+  ])
+  .configure_set(graph_stage, core_3d_set_early_post_process, before=[
     core_3d_set_post_process,
   ])
   .configure_set(graph_stage, core_3d_set_post_process, before=[

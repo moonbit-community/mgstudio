@@ -24,6 +24,8 @@ pub fn core_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn core_3d_plugin_with(@app.App[@ecs.World], Core3dPlugin) -> @app.App[@ecs.World]
 
+pub let core_3d_set_early_post_process : String
+
 pub let core_3d_set_main_pass : String
 
 pub let core_3d_set_post_process : String
