@@ -209,6 +209,122 @@ fn[S : IntoMeshPrimitiveAsset] primitive_parity_into_mesh_asset(
 }
 
 ///|
+test "dim2 primitives: add_mesh stores valid non-empty mesh assets" {
+  let polyline = @math.Polyline2d::new([
+    @math.Vec2::new(-40.0F, 40.0F),
+    @math.Vec2::new(0.0F, -40.0F),
+    @math.Vec2::new(40.0F, 40.0F),
+  ]).with_half_thickness(3.0F)
+  let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+  let handles : Array[@asset.Handle[@mesh.Mesh]] = []
+  handles.push(add_mesh(assets, @math.Circle::new(10.0F).with_vertices(24)))
+  handles.push(
+    add_mesh(assets, @math.Ellipse::new(8.0F, 12.0F).with_vertices(24)),
+  )
+  handles.push(
+    add_mesh(assets, @math.Annulus::new(4.0F, 10.0F).with_vertices(24)),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.Ring::new(
+        @math.Circle::new(10.0F).with_vertices(24),
+        @math.Circle::new(7.0F).with_vertices(24),
+      ),
+    ),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.Ring::new(
+        @math.CircularSector::new(10.0F, 1.0F).with_vertices(24),
+        @math.CircularSector::new(7.0F, 1.0F).with_vertices(24),
+      ),
+    ),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
+    ),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.CircularSegment::from_turns(10.0F, 0.35F)
+      .with_vertices(24)
+      .to_ring(2.0F),
+    ),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
+    ),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.Ring::new(
+        @math.Ellipse::new(8.0F, 12.0F).with_vertices(24),
+        @math.Ellipse::new(6.0F, 10.0F).with_vertices(24),
+      ),
+    ),
+  )
+  handles.push(add_mesh(assets, @math.Rhombus::new(12.0F, 20.0F)))
+  handles.push(add_mesh(assets, @math.Rhombus::new(12.0F, 20.0F).to_ring(1.5F)))
+  handles.push(add_mesh(assets, @math.RegularPolygon::new(10.0F, 6)))
+  handles.push(
+    add_mesh(assets, @math.RegularPolygon::new(10.0F, 6).to_ring(1.0F)),
+  )
+  handles.push(add_mesh(assets, @math.Triangle2d::@math.Triangle2d()))
+  handles.push(
+    add_mesh(assets, @math.Triangle2d::@math.Triangle2d().to_ring(0.1F)),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.Segment2d::new(
+        @math.Vec2::new(-30.0F, 30.0F),
+        @math.Vec2::new(30.0F, -30.0F),
+      ).with_half_thickness(3.0F),
+    ),
+  )
+  handles.push(add_mesh(assets, polyline))
+  handles.push(
+    add_mesh(assets, @math.Capsule2d::new(5.0F, 20.0F).with_segments(16)),
+  )
+  handles.push(
+    add_mesh(
+      assets,
+      @math.Capsule2d::new(5.0F, 20.0F).with_segments(16).to_ring(1.0F),
+    ),
+  )
+  handles.push(add_mesh(assets, @math.Rectangle::new(10.0F, 20.0F)))
+  handles.push(
+    add_mesh(assets, @math.Rectangle::new(10.0F, 20.0F).to_ring(1.0F)),
+  )
+  let mut ok = true
+  for handle in handles {
+    guard assets.get(handle) is Some(mesh) else {
+      ok = false
+      continue
+    }
+    guard mesh.as_3d_geometry() is Some(geometry) else {
+      ok = false
+      continue
+    }
+    if geometry.validate() is Some(_) {
+      ok = false
+    }
+    if geometry.vertex_count() == 0 {
+      ok = false
+    }
+  }
+  debug_inspect(ok, content="true")
+}
+
+///|
 fn[P : ExtrudablePrimitive] primitive_parity_extrusion(
   shape : P,
   depth : Float,

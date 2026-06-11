@@ -16,7 +16,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render" @renderer,
   "Milky2018/mgstudio/render/view" @render_view,
@@ -46,6 +45,7 @@ import {
 
 import {
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
 } for "wbtest"
 
 supported_targets = "native"
