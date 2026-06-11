@@ -479,11 +479,16 @@ test "render2d: tonemapping and deband components share post_process ownership" 
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
+      @camera_compositing_space.CompositingSpace::Oklab,
       @post_process.Tonemapping::AgX,
       @post_process.DebandDither::Enabled,
     ),
   )
 
+  let compositing_ok = match camera_compositing_space(world, entity) {
+    Some(@camera_compositing_space.CompositingSpace::Oklab) => true
+    _ => false
+  }
   let tonemapping_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_tonemapping)) {
     Some(@post_process.Tonemapping::AgX) => true
@@ -494,6 +499,7 @@ test "render2d: tonemapping and deband components share post_process ownership" 
     Some(@post_process.DebandDither::Enabled) => true
     _ => false
   }
+  debug_inspect(compositing_ok, content="true")
   debug_inspect(tonemapping_ok, content="true")
   debug_inspect(deband_ok, content="true")
 }

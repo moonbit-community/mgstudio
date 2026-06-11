@@ -926,6 +926,7 @@ priv struct ExtractedCamera2d {
   target : @camera_camera.RenderTarget
   layers : RenderLayers
   bloom : @post_process.Bloom?
+  compositing_space : @camera_compositing_space.CompositingSpace?
   tonemapping_mode : Int
   deband_dither_enabled : Bool
   color_grading : @post_process.ColorGrading?
@@ -937,6 +938,13 @@ priv struct ExtractedCamera2d {
 priv struct CameraComputed {
   target_size : @math.IVec2
   scale_factor : Float
+}
+
+///|
+fn render2d_extracted_camera_compositing_space(
+  camera : ExtractedCamera2d,
+) -> @camera_compositing_space.CompositingSpace? {
+  camera.compositing_space
 }
 
 ///|
@@ -2039,6 +2047,16 @@ fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
 }
 
 ///|
+fn camera_compositing_space(
+  world : @ecs.World,
+  camera : @core.Entity,
+) -> @camera_compositing_space.CompositingSpace? {
+  try! world.get_by_key(
+    camera, @camera_compositing_space.ecs_key_compositing_space,
+  )
+}
+
+///|
 fn camera_deband_dither_enabled(
   world : @ecs.World,
   camera : @core.Entity,
@@ -2322,6 +2340,7 @@ fn render2d_extract_camera_entity_ecs(
     target,
     layers,
     bloom,
+    compositing_space: camera_compositing_space(world, entity),
     tonemapping_mode: camera_tonemapping_mode(world, entity),
     deband_dither_enabled: camera_deband_dither_enabled(world, entity),
     color_grading: camera_color_grading(world, entity),
@@ -4373,6 +4392,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       target: @camera_camera.RenderTarget::Screen,
       layers,
       bloom: None,
+      compositing_space: None,
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
@@ -4390,6 +4410,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       target: @camera_camera.RenderTarget::Screen,
       layers,
       bloom: None,
+      compositing_space: Some(@camera_compositing_space.CompositingSpace::Oklab),
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
@@ -4445,6 +4466,14 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.extra_ui_texture_slices.clear()
   })
   |> ignore
+
+  let compositing_space_ok = match render_state_ref(world) {
+    Some(rs) =>
+      render2d_extracted_camera_compositing_space(rs.cameras[1]) ==
+      Some(@camera_compositing_space.CompositingSpace::Oklab)
+    None => false
+  }
+  debug_inspect(compositing_space_ok, content="true")
 
   render_queue_system(world)
 
