@@ -74,13 +74,10 @@ fn setup(
   ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   let texture = asset_server.get().load("branding/icon.png")
-  let quad_mesh = meshes
-    .peek()
-    .add(
-      @mesh_primitives.rectangle_to_mesh2d_geometry(
-        @math.Rectangle::new(24.0F, 24.0F),
-      ).to_mesh(),
-    )
+  let quad_mesh = @mesh_primitives.add_mesh(
+    meshes.peek(),
+    @math.Rectangle::new(24.0F, 24.0F),
+  )
   let base_material = materials
     .peek()
     .add(

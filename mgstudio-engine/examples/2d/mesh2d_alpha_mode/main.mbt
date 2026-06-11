@@ -32,13 +32,10 @@ fn setup(
   ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
   let texture = asset_server.get().load("branding/icon.png")
-  let mesh = meshes
-    .peek()
-    .add(
-      @mesh_primitives.rectangle_to_mesh2d_geometry(
-        @math.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
-      ).to_mesh(),
-    )
+  let mesh = @mesh_primitives.add_mesh(
+    meshes.peek(),
+    @math.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+  )
   let white = @color.Color::srgba(1.0F, 1.0F, 1.0F, 1.0F)
   let blue = @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
   let green = @color.Color::srgba(0.0F, 0.5019608F, 0.0F, 1.0F)

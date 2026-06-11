@@ -463,12 +463,9 @@ fn spawn_marker(
   try! world.spawn_bundle(
     (
       @mesh.Mesh2d::new(
-        @sprite.mesh_assets_mut_or_abort()
-        .peek()
-        .add(
-          @mesh_primitives.rectangle_to_mesh2d_geometry(
-            @math.Rectangle::new(size, size),
-          ).to_mesh(),
+        @mesh_primitives.add_mesh(
+          @sprite.mesh_assets_mut_or_abort().peek(),
+          @math.Rectangle::new(size, size),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(

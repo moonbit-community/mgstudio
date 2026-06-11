@@ -207,12 +207,9 @@ fn setup_scene(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::new(1000.0F, 700.0F),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Rectangle::new(1000.0F, 700.0F),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -231,12 +228,9 @@ fn setup_scene(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::new(50.0F, 100.0F),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Rectangle::new(50.0F, 100.0F),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -256,12 +250,9 @@ fn setup_scene(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::new(50.0F, 50.0F),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Rectangle::new(50.0F, 50.0F),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -281,12 +272,9 @@ fn setup_scene(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::new(70.0F, 50.0F),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Rectangle::new(70.0F, 50.0F),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(

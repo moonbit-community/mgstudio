@@ -161,13 +161,10 @@ fn setup(
     ),
   )
 
-  let mesh = meshes
-    .peek()
-    .add(
-      @mesh_primitives.rectangle_to_mesh2d_geometry(
-        @math.Rectangle::Rectangle(),
-      ).to_mesh(),
-    )
+  let mesh = @mesh_primitives.add_mesh(
+    meshes.peek(),
+    @math.Rectangle::Rectangle(),
+  )
   let material = materials
     .peek()
     .add(

@@ -125,12 +125,9 @@ fn setup(
       commands.spawn(
         (
           @mesh.Mesh2d::new(
-            meshes
-            .peek()
-            .add(
-              @mesh_primitives.circular_sector_to_mesh2d_geometry(
-                sector.with_uv_mask_angle(sector_angle),
-              ).to_mesh(),
+            @mesh_primitives.add_mesh(
+              meshes.peek(),
+              sector.with_uv_mask_angle(sector_angle),
             ),
           ),
           material,
@@ -150,12 +147,9 @@ fn setup(
       commands.spawn(
         (
           @mesh.Mesh2d::new(
-            meshes
-            .peek()
-            .add(
-              @mesh_primitives.circular_segment_to_mesh2d_geometry(
-                segment.with_uv_mask_angle(-segment_angle),
-              ).to_mesh(),
+            @mesh_primitives.add_mesh(
+              meshes.peek(),
+              segment.with_uv_mask_angle(-segment_angle),
             ),
           ),
           material,

@@ -48,12 +48,9 @@ fn setup(
   let center_panel = commands.spawn(
     (
       @mesh.Mesh2d::new(
-        meshes
-        .peek()
-        .add(
-          @mesh_primitives.rectangle_to_mesh2d_geometry(
-            @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
-          ).to_mesh(),
+        @mesh_primitives.add_mesh(
+          meshes.peek(),
+          @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -81,12 +78,9 @@ fn setup(
   let left_panel = commands.spawn(
     (
       @mesh.Mesh2d::new(
-        meshes
-        .peek()
-        .add(
-          @mesh_primitives.rectangle_to_mesh2d_geometry(
-            @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
-          ).to_mesh(),
+        @mesh_primitives.add_mesh(
+          meshes.peek(),
+          @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -116,12 +110,9 @@ fn setup(
   let right_panel = commands.spawn(
     (
       @mesh.Mesh2d::new(
-        meshes
-        .peek()
-        .add(
-          @mesh_primitives.rectangle_to_mesh2d_geometry(
-            @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
-          ).to_mesh(),
+        @mesh_primitives.add_mesh(
+          meshes.peek(),
+          @math.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
         ),
       ),
       @sprite_render_mesh2d_material.MeshMaterial2d::new(
