@@ -13,44 +13,11 @@
 // limitations under the License.
 
 ///|
-pub struct WireframeMeshSlabs {
-  vertex_slab_id : Int
-  index_slab_id : Int?
-  morph_target_slab_id : Int?
-} derive(Eq, Debug)
-
-///|
-pub fn WireframeMeshSlabs::new(
-  vertex_slab_id : Int,
-  index_slab_id? : Int? = None,
-  morph_target_slab_id? : Int? = None,
-) -> WireframeMeshSlabs {
-  WireframeMeshSlabs::{ vertex_slab_id, index_slab_id, morph_target_slab_id }
-}
-
-///|
-pub fn WireframeMeshSlabs::vertex_slab_id(self : WireframeMeshSlabs) -> Int {
-  self.vertex_slab_id
-}
-
-///|
-pub fn WireframeMeshSlabs::index_slab_id(self : WireframeMeshSlabs) -> Int? {
-  self.index_slab_id
-}
-
-///|
-pub fn WireframeMeshSlabs::morph_target_slab_id(
-  self : WireframeMeshSlabs,
-) -> Int? {
-  self.morph_target_slab_id
-}
-
-///|
 pub struct Wireframe3dBatchSetKey {
   pipeline : @material.CachedRenderPipelineId
   asset_id : Int
   draw_function : @material.DrawFunctionId
-  slabs : WireframeMeshSlabs
+  slabs : @render_mesh.MeshSlabs
   mesh_asset_id : Int?
 }
 
@@ -59,7 +26,7 @@ pub fn Wireframe3dBatchSetKey::new(
   pipeline : @material.CachedRenderPipelineId,
   asset_id : Int,
   draw_function : @material.DrawFunctionId,
-  slabs : WireframeMeshSlabs,
+  slabs : @render_mesh.MeshSlabs,
   mesh_asset_id? : Int? = None,
 ) -> Wireframe3dBatchSetKey {
   Wireframe3dBatchSetKey::{
@@ -93,7 +60,7 @@ pub fn Wireframe3dBatchSetKey::draw_function(
 ///|
 pub fn Wireframe3dBatchSetKey::slabs(
   self : Wireframe3dBatchSetKey,
-) -> WireframeMeshSlabs {
+) -> @render_mesh.MeshSlabs {
   self.slabs
 }
 
@@ -1773,7 +1740,7 @@ pub fn WireframeRenderMeshPipelineDataCache::retain_live_views(
 
 ///|
 pub struct WireframeMeshSlabCache {
-  slabs : Map[Int, WireframeMeshSlabs]
+  slabs : Map[Int, @render_mesh.MeshSlabs]
 }
 
 ///|
@@ -1797,7 +1764,7 @@ pub impl @app.Resource for WireframeMeshSlabCache with fn resource() {
 pub fn WireframeMeshSlabCache::insert(
   self : WireframeMeshSlabCache,
   mesh_asset_id : Int,
-  slabs : WireframeMeshSlabs,
+  slabs : @render_mesh.MeshSlabs,
 ) -> Unit {
   self.slabs.set(mesh_asset_id, slabs)
 }
@@ -1806,14 +1773,14 @@ pub fn WireframeMeshSlabCache::insert(
 pub fn WireframeMeshSlabCache::get(
   self : WireframeMeshSlabCache,
   mesh_asset_id : Int,
-) -> WireframeMeshSlabs? {
+) -> @render_mesh.MeshSlabs? {
   self.slabs.get(mesh_asset_id)
 }
 
 ///|
 pub fn WireframeMeshSlabCache::as_map(
   self : WireframeMeshSlabCache,
-) -> Map[Int, WireframeMeshSlabs] {
+) -> Map[Int, @render_mesh.MeshSlabs] {
   self.slabs
 }
 
@@ -1953,7 +1920,7 @@ pub fn queue_wireframe_phase_items(
   dirty_wireframe_specializations : DirtyWireframeSpecializations,
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
   render_mesh_instances : RenderMeshInstances,
-  mesh_slabs : Map[Int, WireframeMeshSlabs],
+  mesh_slabs : Map[Int, @render_mesh.MeshSlabs],
   draw_functions : Wireframe3dDrawFunctions,
   gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
 ) -> Unit {
@@ -2005,7 +1972,7 @@ pub fn queue_wireframe_phase_items(
       wireframe_asset_id,
       draw_function,
       if is_wide {
-        WireframeMeshSlabs::new(
+        @render_mesh.MeshSlabs::new(
           slabs.vertex_slab_id(),
           index_slab_id=None,
           morph_target_slab_id=slabs.morph_target_slab_id(),

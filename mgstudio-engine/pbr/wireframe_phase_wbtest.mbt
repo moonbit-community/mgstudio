@@ -124,7 +124,7 @@ test "pbr: Wireframe3d phase item exposes Bevy phase identity fields" {
     @material.CachedRenderPipelineId::new(9UL),
     17,
     draw,
-    WireframeMeshSlabs::new(2, index_slab_id=Some(3)),
+    @render_mesh.MeshSlabs::new(2, index_slab_id=Some(3)),
   )
   let bin = Wireframe3dBinKey::new(31)
   let render_entity = @core.Entity::new(4, 1)
@@ -156,7 +156,11 @@ test "pbr: Wireframe3d batch set key models wide non-indexed path" {
     @material.CachedRenderPipelineId::new(12UL),
     44,
     draw,
-    WireframeMeshSlabs::new(5, index_slab_id=None, morph_target_slab_id=Some(8)),
+    @render_mesh.MeshSlabs::new(
+      5,
+      index_slab_id=None,
+      morph_target_slab_id=Some(8),
+    ),
     mesh_asset_id=Some(99),
   )
 
@@ -1051,7 +1055,7 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
     @material.CachedRenderPipelineId::new(77UL),
     8,
     @material.DrawFunctionId::new(3U),
-    WireframeMeshSlabs::new(2, index_slab_id=Some(5)),
+    @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)),
   )
   let bin = Wireframe3dBinKey::new(8)
 
@@ -1138,10 +1142,10 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     main_entity,
     RenderMeshQueueData::new(33, 9U, true),
   )
-  let mesh_slabs : Map[Int, WireframeMeshSlabs] = {}
+  let mesh_slabs : Map[Int, @render_mesh.MeshSlabs] = {}
   mesh_slabs.set(
     33,
-    WireframeMeshSlabs::new(
+    @render_mesh.MeshSlabs::new(
       2,
       index_slab_id=Some(5),
       morph_target_slab_id=Some(7),
@@ -1297,7 +1301,7 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     @render_resource.PipelineCache::new(),
   )
   let mesh_slabs = WireframeMeshSlabCache::WireframeMeshSlabCache()
-  mesh_slabs.insert(33, WireframeMeshSlabs::new(2, index_slab_id=Some(5)))
+  mesh_slabs.insert(33, @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)))
   world.insert_resource(WireframeMeshSlabCache::resource(), mesh_slabs)
   world.insert_resource(
     Wireframe3dDrawFunctions::resource(),

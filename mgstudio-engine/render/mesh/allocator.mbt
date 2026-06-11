@@ -38,6 +38,37 @@ pub(all) enum MeshAllocatorSlabGrowthKind {
 } derive(Eq, Debug)
 
 ///|
+pub struct MeshSlabs {
+  vertex_slab_id : Int
+  index_slab_id : Int?
+  morph_target_slab_id : Int?
+} derive(Eq, Debug)
+
+///|
+pub fn MeshSlabs::new(
+  vertex_slab_id : Int,
+  index_slab_id? : Int? = None,
+  morph_target_slab_id? : Int? = None,
+) -> MeshSlabs {
+  MeshSlabs::{ vertex_slab_id, index_slab_id, morph_target_slab_id }
+}
+
+///|
+pub fn MeshSlabs::vertex_slab_id(self : MeshSlabs) -> Int {
+  self.vertex_slab_id
+}
+
+///|
+pub fn MeshSlabs::index_slab_id(self : MeshSlabs) -> Int? {
+  self.index_slab_id
+}
+
+///|
+pub fn MeshSlabs::morph_target_slab_id(self : MeshSlabs) -> Int? {
+  self.morph_target_slab_id
+}
+
+///|
 pub struct MeshAllocatorSettings {
   min_slab_size : Int
   max_slab_size : Int

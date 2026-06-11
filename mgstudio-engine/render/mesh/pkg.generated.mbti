@@ -244,6 +244,16 @@ pub fn MeshAllocatorUploadPlan::size(Self) -> Int
 pub fn MeshAllocatorUploadPlan::slab_id(Self) -> Int
 pub fn MeshAllocatorUploadPlan::usage(Self) -> MeshAllocatorBufferUsage
 
+pub struct MeshSlabs {
+  vertex_slab_id : Int
+  index_slab_id : Int?
+  morph_target_slab_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn MeshSlabs::index_slab_id(Self) -> Int?
+pub fn MeshSlabs::morph_target_slab_id(Self) -> Int?
+pub fn MeshSlabs::new(Int, index_slab_id? : Int?, morph_target_slab_id? : Int?) -> Self
+pub fn MeshSlabs::vertex_slab_id(Self) -> Int
+
 pub struct MorphTargetImagePlan {
   width : Int
   height : Int

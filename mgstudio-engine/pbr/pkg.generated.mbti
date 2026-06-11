@@ -533,7 +533,7 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
-pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeMeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
+pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -1813,16 +1813,16 @@ pub struct Wireframe3dBatchSetKey {
   pipeline : @render_resource.CachedRenderPipelineId
   asset_id : Int
   draw_function : @material.DrawFunctionId
-  slabs : WireframeMeshSlabs
+  slabs : @Milky2018/mgstudio/render/mesh.MeshSlabs
   mesh_asset_id : Int?
 }
 pub fn Wireframe3dBatchSetKey::asset_id(Self) -> Int
 pub fn Wireframe3dBatchSetKey::draw_function(Self) -> @material.DrawFunctionId
 pub fn Wireframe3dBatchSetKey::indexed(Self) -> Bool
 pub fn Wireframe3dBatchSetKey::mesh_asset_id(Self) -> Int?
-pub fn Wireframe3dBatchSetKey::new(@render_resource.CachedRenderPipelineId, Int, @material.DrawFunctionId, WireframeMeshSlabs, mesh_asset_id? : Int?) -> Self
+pub fn Wireframe3dBatchSetKey::new(@render_resource.CachedRenderPipelineId, Int, @material.DrawFunctionId, @Milky2018/mgstudio/render/mesh.MeshSlabs, mesh_asset_id? : Int?) -> Self
 pub fn Wireframe3dBatchSetKey::pipeline(Self) -> @render_resource.CachedRenderPipelineId
-pub fn Wireframe3dBatchSetKey::slabs(Self) -> WireframeMeshSlabs
+pub fn Wireframe3dBatchSetKey::slabs(Self) -> @Milky2018/mgstudio/render/mesh.MeshSlabs
 
 pub struct Wireframe3dBinKey {
   asset_id : Int
@@ -1956,24 +1956,14 @@ pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
 
 pub struct WireframeMeshSlabCache {
-  slabs : Map[Int, WireframeMeshSlabs]
+  slabs : Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs]
 }
 pub fn WireframeMeshSlabCache::WireframeMeshSlabCache() -> Self
-pub fn WireframeMeshSlabCache::as_map(Self) -> Map[Int, WireframeMeshSlabs]
-pub fn WireframeMeshSlabCache::get(Self, Int) -> WireframeMeshSlabs?
-pub fn WireframeMeshSlabCache::insert(Self, Int, WireframeMeshSlabs) -> Unit
+pub fn WireframeMeshSlabCache::as_map(Self) -> Map[Int, @Milky2018/mgstudio/render/mesh.MeshSlabs]
+pub fn WireframeMeshSlabCache::get(Self, Int) -> @Milky2018/mgstudio/render/mesh.MeshSlabs?
+pub fn WireframeMeshSlabCache::insert(Self, Int, @Milky2018/mgstudio/render/mesh.MeshSlabs) -> Unit
 pub fn WireframeMeshSlabCache::len(Self) -> Int
 pub impl @app.Resource for WireframeMeshSlabCache
-
-pub struct WireframeMeshSlabs {
-  vertex_slab_id : Int
-  index_slab_id : Int?
-  morph_target_slab_id : Int?
-} derive(Eq, @debug.Debug)
-pub fn WireframeMeshSlabs::index_slab_id(Self) -> Int?
-pub fn WireframeMeshSlabs::morph_target_slab_id(Self) -> Int?
-pub fn WireframeMeshSlabs::new(Int, index_slab_id? : Int?, morph_target_slab_id? : Int?) -> Self
-pub fn WireframeMeshSlabs::vertex_slab_id(Self) -> Int
 
 pub(all) enum WireframePhaseItemExtraIndex {
   NoExtraIndex
