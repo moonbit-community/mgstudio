@@ -470,6 +470,123 @@ test "mesh2d material vertex layout enables colors only when present" {
 }
 
 ///|
+test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
+  let mesh_layout = mesh2d_default_mesh_vertex_buffer_layout()
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
+  let base = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2",
+    None,
+    None,
+  )
+  let line_list = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_LINE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2",
+    None,
+    None,
+  )
+  let different_material_layout = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2;2:3",
+    None,
+    None,
+  )
+  let custom_shader = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2",
+    Some("shaders/custom_mesh2d_vertex.wgsl"),
+    Some("shaders/custom_mesh2d_fragment.wgsl"),
+  )
+  debug_inspect(
+    mesh2d_pipeline_cache_key(base) == mesh2d_pipeline_cache_key(line_list),
+    content="false",
+  )
+  debug_inspect(
+    mesh2d_pipeline_cache_key(base) ==
+    mesh2d_pipeline_cache_key(different_material_layout),
+    content="false",
+  )
+  debug_inspect(
+    mesh2d_pipeline_cache_key(base) == mesh2d_pipeline_cache_key(custom_shader),
+    content="false",
+  )
+}
+
+///|
+test "mesh2d material bind group cache separates layout from data" {
+  let base = HostMaterial2dBindGroup::new([
+    HostMaterial2dBinding::uniform(0U, host_material2d_f32le_pack([1.0F])),
+    HostMaterial2dBinding::texture(1U, 7),
+    HostMaterial2dBinding::sampler(2U, 7),
+  ])
+  let different_uniform = HostMaterial2dBindGroup::new([
+    HostMaterial2dBinding::uniform(0U, host_material2d_f32le_pack([2.0F])),
+    HostMaterial2dBinding::texture(1U, 7),
+    HostMaterial2dBinding::sampler(2U, 7),
+  ])
+  let different_layout = HostMaterial2dBindGroup::new([
+    HostMaterial2dBinding::uniform(0U, host_material2d_f32le_pack([1.0F])),
+    HostMaterial2dBinding::texture(
+      1U,
+      7,
+      sample_type=HostMaterial2dTextureSampleType::UInt,
+    ),
+    HostMaterial2dBinding::sampler(2U, 7),
+  ])
+  debug_inspect(
+    host_material2d_bind_group_layout_key(base) ==
+    host_material2d_bind_group_layout_key(different_uniform),
+    content="true",
+  )
+  debug_inspect(
+    host_material2d_bind_group_hash(base) ==
+    host_material2d_bind_group_hash(different_uniform),
+    content="false",
+  )
+  debug_inspect(
+    host_material2d_bind_group_layout_key(base) ==
+    host_material2d_bind_group_layout_key(different_layout),
+    content="false",
+  )
+}
+
+///|
 fn ensure_mesh2d_instance_uniform_binding(
   backend : GpuBackend,
   required_size : UInt64,
