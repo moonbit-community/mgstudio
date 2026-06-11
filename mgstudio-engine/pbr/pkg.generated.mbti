@@ -29,6 +29,7 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashset",
   "moonbitlang/core/json",
 }
 
@@ -1688,8 +1689,8 @@ pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewContactShadowsUniformOffset
 
 pub struct ViewPendingWireframeQueues {
-  current_frame : Array[(@core.Entity, @core.Entity)]
-  prev_frame : Array[(@core.Entity, @core.Entity)]
+  mut current_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
 }
 pub fn ViewPendingWireframeQueues::ViewPendingWireframeQueues() -> Self
 pub fn ViewPendingWireframeQueues::current_len(Self) -> Int

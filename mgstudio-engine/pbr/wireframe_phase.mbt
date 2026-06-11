@@ -717,37 +717,25 @@ pub fn Wireframe3dDrawFunctions::len(self : Wireframe3dDrawFunctions) -> Int {
 
 ///|
 pub struct ViewPendingWireframeQueues {
-  current_frame : Array[(@core.Entity, @core.Entity)]
-  prev_frame : Array[(@core.Entity, @core.Entity)]
+  mut current_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
 }
 
 ///|
 pub fn ViewPendingWireframeQueues::ViewPendingWireframeQueues() -> ViewPendingWireframeQueues {
-  ViewPendingWireframeQueues::{ current_frame: [], prev_frame: [] }
-}
-
-///|
-fn wireframe_pending_pair_contains(
-  entries : Array[(@core.Entity, @core.Entity)],
-  render_entity : @core.Entity,
-  main_entity : @core.Entity,
-) -> Bool {
-  for entry in entries {
-    if entry.0 == render_entity && entry.1 == main_entity {
-      return true
-    }
+  ViewPendingWireframeQueues::{
+    current_frame: @hashset.HashSet([]),
+    prev_frame: @hashset.HashSet([]),
   }
-  false
 }
 
 ///|
 pub fn ViewPendingWireframeQueues::prepare_for_new_frame(
   self : ViewPendingWireframeQueues,
 ) -> Unit {
-  self.prev_frame.clear()
-  for item in self.current_frame {
-    self.prev_frame.push(item)
-  }
+  let prev_frame = self.prev_frame
+  self.prev_frame = self.current_frame
+  self.current_frame = prev_frame
   self.current_frame.clear()
 }
 
@@ -757,13 +745,7 @@ pub fn ViewPendingWireframeQueues::push_current(
   render_entity : @core.Entity,
   main_entity : @core.Entity,
 ) -> Unit {
-  if !wireframe_pending_pair_contains(
-      self.current_frame,
-      render_entity,
-      main_entity,
-    ) {
-    self.current_frame.push((render_entity, main_entity))
-  }
+  self.current_frame.add((render_entity, main_entity))
 }
 
 ///|
