@@ -987,6 +987,8 @@ pub(all) enum WgpuSettingsPriority {
 pub fn WgpuSettingsPriority::default() -> Self
 
 // Type aliases
+pub using @render_resource {type FragmentState}
+
 pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
 
 pub type HostGpuDevice = Int
@@ -1031,7 +1033,13 @@ pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
 
 pub using @renderer {type HostMesh3dPreprocessView}
 
+pub using @render_resource {type RenderPipelineDescriptor}
+
+pub using @render_resource {type ShaderDefVal}
+
 pub type UntypedRenderAssetId = Int
+
+pub using @render_resource {type VertexState}
 
 // Traits
 pub(open) trait GpuComponentArrayBufferComponent : @ecs.Component {

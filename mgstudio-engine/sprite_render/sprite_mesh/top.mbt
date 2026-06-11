@@ -700,6 +700,17 @@ pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn bi
 }
 
 ///|
+pub impl @sprite_render_mesh2d_material.Material2d for SpriteMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  descriptor
+}
+
+///|
 pub impl @app.Plugin for SpriteMaterialPlugin with fn name(_self) {
   "mgstudio.sprite_render.SpriteMaterialPlugin"
 }

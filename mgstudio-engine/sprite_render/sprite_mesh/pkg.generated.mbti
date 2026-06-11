@@ -8,6 +8,8 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
 }

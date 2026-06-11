@@ -130,6 +130,17 @@ pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn bind_group
 }
 
 ///|
+pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  descriptor
+}
+
+///|
 pub struct TilemapChunkMaterialPlugin {}
 
 ///|

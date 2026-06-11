@@ -135,6 +135,17 @@ pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn bi
 }
 
 ///|
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  descriptor
+}
+
+///|
 fn shader_material_2d_plugin() -> @sprite_render_mesh2d_material.Material2dPlugin[
   CustomMaterial,
 ] {

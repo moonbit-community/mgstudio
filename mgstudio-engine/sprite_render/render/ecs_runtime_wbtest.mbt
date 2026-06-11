@@ -206,6 +206,21 @@ pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with f
 }
 
 ///|
+pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  let vertex = descriptor.vertex
+  vertex.shader_defs.push(
+    @renderer.ShaderDefVal::Flag("DUMMY_MATERIAL_SPECIALIZE"),
+  )
+  descriptor.with_vertex(vertex)
+}
+
+///|
 fn test_rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh2d {
   let mesh_assets = @sprite.mesh_assets_mut_or_abort()
   mesh_assets.set_changed()
@@ -1275,6 +1290,84 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   )
   debug_inspect(
     prepared.key.bind_group_data == expected.bind_group().bind_group_data(),
+    content="true",
+  )
+}
+
+///|
+fn render2d_test_shader_defs_contain(
+  shader_defs : Array[@renderer.ShaderDefVal],
+  flag : String,
+) -> Bool {
+  for shader_def in shader_defs {
+    if shader_def is @renderer.ShaderDefVal::Flag(value) && value == flag {
+      return true
+    }
+    if shader_def is @renderer.ShaderDefVal::UInt(value, _) && value == flag {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn render2d_test_mesh_vertex_layout() -> @mesh.MeshVertexBufferLayout {
+  @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=12,
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+      ],
+    ),
+  )
+}
+
+///|
+test "render2d: Material2dPipeline specialize calls material hook" {
+  let material = dummy_material_asset(
+    color=@color.Color::new(0.3F, 0.6F, 0.9F, 1.0F),
+  )
+  let pipeline : @sprite_render_mesh2d_material.Material2dPipeline[
+    DummyMaterialAsset,
+  ] = @sprite_render_mesh2d_material.Material2dPipeline::new(
+    Some("custom_vertex.wgsl"),
+    Some("custom_fragment.wgsl"),
+  )
+  let key = pipeline.key_for(material, material.bind_group())
+  let descriptor = @renderer.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    .with_vertex(@renderer.VertexState::VertexState())
+    .with_fragment(Some(@renderer.FragmentState::FragmentState()))
+  let specialized = pipeline.specialize(
+    descriptor,
+    render2d_test_mesh_vertex_layout(),
+    key,
+  )
+  debug_inspect(
+    specialized.vertex.shader,
+    content="Some(\"custom_vertex.wgsl\")",
+  )
+  debug_inspect(
+    specialized.fragment.unwrap().shader,
+    content="Some(\"custom_fragment.wgsl\")",
+  )
+  debug_inspect(
+    render2d_test_shader_defs_contain(
+      specialized.vertex.shader_defs,
+      "MATERIAL_BIND_GROUP",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render2d_test_shader_defs_contain(
+      specialized.vertex.shader_defs,
+      "DUMMY_MATERIAL_SPECIALIZE",
+    ),
     content="true",
   )
 }

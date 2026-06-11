@@ -37,6 +37,18 @@ pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
 pub type HostGpuMeshInfo = @renderer.HostGpuMeshInfo
 
 ///|
+pub type ShaderDefVal = @render_resource.ShaderDefVal
+
+///|
+pub type VertexState = @render_resource.VertexState
+
+///|
+pub type FragmentState = @render_resource.FragmentState
+
+///|
+pub type RenderPipelineDescriptor = @render_resource.RenderPipelineDescriptor
+
+///|
 pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool {
   @renderer.delete_mesh(mesh_id)
 }

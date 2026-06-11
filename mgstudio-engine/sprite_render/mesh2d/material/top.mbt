@@ -433,6 +433,11 @@ pub(open) trait Material2d {
   fn material2d_keys() -> Material2dKeys[Self]
   fn alpha_mode(self : Self) -> AlphaMode2d
   fn bind_group(self : Self) -> Material2dBindGroup
+  fn specialize(
+    descriptor : @render.RenderPipelineDescriptor,
+    layout : @mesh.MeshVertexBufferLayout,
+    key : Material2dKey[Self],
+  ) -> @render.RenderPipelineDescriptor
 }
 
 ///|
@@ -459,6 +464,55 @@ pub fn[M : Material2d] Material2dPipeline::key_for(
     bind_group.layout_key(),
     bind_group.bind_group_data(),
   )
+}
+
+///|
+fn material2d_push_material_bind_group_def(
+  shader_defs : Array[@render.ShaderDefVal],
+) -> Unit {
+  shader_defs.push(@render.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 2U))
+}
+
+///|
+pub fn[M : Material2d] Material2dPipeline::specialize(
+  self : Material2dPipeline[M],
+  descriptor : @render.RenderPipelineDescriptor,
+  layout : @mesh.MeshVertexBufferLayout,
+  key : Material2dKey[M],
+) -> @render.RenderPipelineDescriptor {
+  let vertex = descriptor.vertex
+  material2d_push_material_bind_group_def(vertex.shader_defs)
+  let descriptor = descriptor.with_vertex(
+    @render.VertexState::new(
+      match self.vertex_shader {
+        Some(shader) => Some(shader)
+        None => vertex.shader
+      },
+      vertex.shader_defs,
+      vertex.entry_point,
+      vertex.buffers,
+    ),
+  )
+  let descriptor = match descriptor.fragment {
+    Some(fragment) => {
+      material2d_push_material_bind_group_def(fragment.shader_defs)
+      descriptor.with_fragment(
+        Some(
+          @render.FragmentState::new(
+            match self.fragment_shader {
+              Some(shader) => Some(shader)
+              None => fragment.shader
+            },
+            fragment.shader_defs,
+            fragment.entry_point,
+            fragment.targets,
+          ),
+        ),
+      )
+    }
+    None => descriptor
+  }
+  M::specialize(descriptor, layout, key)
 }
 
 ///|

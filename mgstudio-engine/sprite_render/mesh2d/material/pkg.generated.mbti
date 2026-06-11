@@ -7,7 +7,9 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/sprite_render/mesh2d/runtime",
   "moonbitlang/core/debug",
@@ -122,6 +124,7 @@ pub struct Material2dPipeline[_] {
 pub fn[M] Material2dPipeline::Material2dPipeline() -> Self[M]
 pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
+pub fn[M : Material2d] Material2dPipeline::specialize(Self[M], @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayout, Material2dKey[M]) -> @render_resource.RenderPipelineDescriptor
 pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
 
 pub struct Material2dPlugin[M] {
@@ -204,5 +207,6 @@ pub(open) trait Material2d {
   fn material2d_keys() -> Material2dKeys[Self]
   fn alpha_mode(Self) -> AlphaMode2d
   fn bind_group(Self) -> Material2dBindGroup
+  fn specialize(@render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayout, Material2dKey[Self]) -> @render_resource.RenderPipelineDescriptor
 }
 

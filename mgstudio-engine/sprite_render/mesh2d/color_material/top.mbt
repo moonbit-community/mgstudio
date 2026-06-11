@@ -288,6 +288,17 @@ pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn bin
 }
 
 ///|
+pub impl @sprite_render_mesh2d_material.Material2d for ColorMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  descriptor
+}
+
+///|
 fn color_material2d_pipeline_resource() -> @sprite_render_mesh2d_material.Material2dPipeline[
   ColorMaterial,
 ] {

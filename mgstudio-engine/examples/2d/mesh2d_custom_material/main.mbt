@@ -111,6 +111,17 @@ pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with 
 }
 
 ///|
+pub impl @sprite_render_mesh2d_material.Material2d for CustomMaterialAsset with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  layout |> ignore
+  key |> ignore
+  descriptor
+}
+
+///|
 fn custom_material_plugin() -> @sprite_render_mesh2d_material.Material2dPlugin[
   CustomMaterialAsset,
 ] {
