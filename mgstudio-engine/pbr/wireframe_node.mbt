@@ -41,6 +41,9 @@ pub struct Wireframe3dRenderNodePlan {
   retained_view_entity : @core.Entity
   item_count : Int
   viewport_enabled : Bool
+  command_plan_count : Int
+  command_skip_count : Int
+  command_failure_count : Int
 } derive(Eq, Debug)
 
 ///|
@@ -48,12 +51,18 @@ pub fn Wireframe3dRenderNodePlan::new(
   retained_view_entity : @core.Entity,
   item_count : Int,
   viewport_enabled : Bool,
+  command_plan_count? : Int = 0,
+  command_skip_count? : Int = 0,
+  command_failure_count? : Int = 0,
 ) -> Wireframe3dRenderNodePlan {
   Wireframe3dRenderNodePlan::{
     label: "wireframe_3d",
     retained_view_entity,
     item_count,
     viewport_enabled,
+    command_plan_count,
+    command_skip_count,
+    command_failure_count,
   }
 }
 
@@ -86,6 +95,27 @@ pub fn Wireframe3dRenderNodePlan::viewport_enabled(
 }
 
 ///|
+pub fn Wireframe3dRenderNodePlan::command_plan_count(
+  self : Wireframe3dRenderNodePlan,
+) -> Int {
+  self.command_plan_count
+}
+
+///|
+pub fn Wireframe3dRenderNodePlan::command_skip_count(
+  self : Wireframe3dRenderNodePlan,
+) -> Int {
+  self.command_skip_count
+}
+
+///|
+pub fn Wireframe3dRenderNodePlan::command_failure_count(
+  self : Wireframe3dRenderNodePlan,
+) -> Int {
+  self.command_failure_count
+}
+
+///|
 pub fn wireframe_3d_render_node_plan(
   phases : Wireframe3dPhases,
   retained_view_entity : @core.Entity,
@@ -101,5 +131,52 @@ pub fn wireframe_3d_render_node_plan(
     retained_view_entity,
     phase.len(),
     viewport_enabled,
+  )
+}
+
+///|
+pub fn wireframe_3d_render_node_command_plan(
+  phases : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+  viewport_enabled : Bool,
+  draw_functions : Wireframe3dDrawFunctions,
+  render_wireframe_instances : RenderWireframeInstances,
+  render_wireframe_assets : RenderWireframeAssets,
+  render_mesh_instances : RenderMeshInstances,
+  render_meshes : @render_mesh.RenderMeshAssets,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  wide_bind_groups : WireframeWideBindGroups,
+) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason {
+  guard phases.phase(retained_view_entity) is Some(phase) else {
+    raise Wireframe3dRenderNodeSkipReason::MissingPhase
+  }
+  if phase.is_empty() {
+    raise Wireframe3dRenderNodeSkipReason::EmptyPhase
+  }
+  let mut command_plan_count = 0
+  let mut command_skip_count = 0
+  let mut command_failure_count = 0
+  for item in phase.items() {
+    let decision = Some(
+      wireframe_3d_render_command_decision(
+        item, draw_functions, render_wireframe_instances, render_wireframe_assets,
+        render_mesh_instances, render_meshes, mesh_allocator, wide_bind_groups,
+      ),
+    ) catch {
+      _ => None
+    }
+    match decision {
+      Some(Planned(_)) => command_plan_count = command_plan_count + 1
+      Some(Skipped) => command_skip_count = command_skip_count + 1
+      None => command_failure_count = command_failure_count + 1
+    }
+  }
+  Wireframe3dRenderNodePlan::new(
+    retained_view_entity,
+    phase.len(),
+    viewport_enabled,
+    command_plan_count~,
+    command_skip_count~,
+    command_failure_count~,
   )
 }

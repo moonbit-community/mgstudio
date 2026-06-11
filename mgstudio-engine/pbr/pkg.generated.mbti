@@ -701,6 +701,8 @@ pub fn wireframe_3d_phase_render_command_plans(Wireframe3dViewPhase, Wireframe3d
 
 pub fn wireframe_3d_render_command_decision(Wireframe3d, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Wireframe3dRenderCommandDecision raise WireframeRenderCommandError
 
+pub fn wireframe_3d_render_node_command_plan(Wireframe3dPhases, @core.Entity, Bool, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason
+
 pub fn wireframe_3d_render_node_plan(Wireframe3dPhases, @core.Entity, Bool) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason
 
 pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool) -> WireframeRenderMeshPipelineData
@@ -1958,10 +1960,16 @@ pub struct Wireframe3dRenderNodePlan {
   retained_view_entity : @core.Entity
   item_count : Int
   viewport_enabled : Bool
+  command_plan_count : Int
+  command_skip_count : Int
+  command_failure_count : Int
 } derive(Eq, @debug.Debug)
+pub fn Wireframe3dRenderNodePlan::command_failure_count(Self) -> Int
+pub fn Wireframe3dRenderNodePlan::command_plan_count(Self) -> Int
+pub fn Wireframe3dRenderNodePlan::command_skip_count(Self) -> Int
 pub fn Wireframe3dRenderNodePlan::item_count(Self) -> Int
 pub fn Wireframe3dRenderNodePlan::label(Self) -> String
-pub fn Wireframe3dRenderNodePlan::new(@core.Entity, Int, Bool) -> Self
+pub fn Wireframe3dRenderNodePlan::new(@core.Entity, Int, Bool, command_plan_count? : Int, command_skip_count? : Int, command_failure_count? : Int) -> Self
 pub fn Wireframe3dRenderNodePlan::retained_view_entity(Self) -> @core.Entity
 pub fn Wireframe3dRenderNodePlan::viewport_enabled(Self) -> Bool
 

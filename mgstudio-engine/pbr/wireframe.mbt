@@ -1426,11 +1426,64 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   guard world.get_resource(Wireframe3dPhases::resource()) is Some(phases) else {
     return
   }
+  let draw_functions = world.get_resource(Wireframe3dDrawFunctions::resource())
+  let render_wireframe_instances = world.get_resource(
+    RenderWireframeInstances::resource(),
+  )
+  let render_wireframe_assets = world.get_resource(
+    RenderWireframeAssets::resource(),
+  )
+  let render_mesh_instances = world.get_resource(
+    RenderMeshInstances::resource(),
+  )
+  let render_meshes = world.get_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+  )
+  let mesh_allocator = world.get_resource(
+    @render_mesh.MeshAllocator::resource(),
+  )
+  let wide_bind_groups = world.get_resource(WireframeWideBindGroups::resource())
   for retained_view_entity in phases.retained_view_entities() {
-    ignore(
-      wireframe_3d_render_node_plan(phases, retained_view_entity, false) catch {
-        _ => return
-      },
+    let plan = match
+      (
+        draw_functions, render_wireframe_instances, render_wireframe_assets, render_mesh_instances,
+        render_meshes, mesh_allocator, wide_bind_groups,
+      ) {
+      (
+        Some(draw_functions),
+        Some(render_wireframe_instances),
+        Some(render_wireframe_assets),
+        Some(render_mesh_instances),
+        Some(render_meshes),
+        Some(mesh_allocator),
+        Some(wide_bind_groups),
+      ) =>
+        Some(
+          wireframe_3d_render_node_command_plan(
+            phases, retained_view_entity, false, draw_functions, render_wireframe_instances,
+            render_wireframe_assets, render_mesh_instances, render_meshes, mesh_allocator,
+            wide_bind_groups,
+          ),
+        ) catch {
+          _ => None
+        }
+      _ =>
+        Some(wireframe_3d_render_node_plan(phases, retained_view_entity, false)) catch {
+          _ => None
+        }
+    }
+    guard plan is Some(plan) else { continue }
+    @app.timeline_trace_emit_counter_int(
+      "wireframe_3d_render_node_command_plans",
+      plan.command_plan_count(),
+    )
+    @app.timeline_trace_emit_counter_int(
+      "wireframe_3d_render_node_command_skips",
+      plan.command_skip_count(),
+    )
+    @app.timeline_trace_emit_counter_int(
+      "wireframe_3d_render_node_command_failures",
+      plan.command_failure_count(),
     )
   }
 }

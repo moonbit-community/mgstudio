@@ -1681,6 +1681,105 @@ test "pbr: wireframe 3d render node plans nonempty phase pass" {
 }
 
 ///|
+test "pbr: wireframe 3d render node command plan classifies planned skipped and failed items" {
+  let retained_view = @core.Entity::new(1, 1)
+  let render_entity_a = @core.Entity::new(2, 1)
+  let render_entity_b = @core.Entity::new(3, 1)
+  let render_entity_c = @core.Entity::new(4, 1)
+  let main_entity_a = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let main_entity_b = @render.MainEntity::new(@core.Entity::new(11, 1))
+  let main_entity_c = @render.MainEntity::new(@core.Entity::new(12, 1))
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    retained_view,
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  phases.add(
+    retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      draw_functions.thin(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (render_entity_a, main_entity_a),
+    0U,
+    BatchableMesh,
+  )
+  phases.add(
+    retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(4UL),
+      7,
+      draw_functions.wide(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (render_entity_b, main_entity_b),
+    1U,
+    BatchableMesh,
+  )
+  phases.add(
+    retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(5UL),
+      7,
+      @material.DrawFunctionId::new(99U),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (render_entity_c, main_entity_c),
+    2U,
+    BatchableMesh,
+  )
+  let render_wireframe_instances = RenderWireframeInstances::RenderWireframeInstances()
+  render_wireframe_instances.insert(main_entity_a, 7)
+  render_wireframe_instances.insert(main_entity_b, 7)
+  render_wireframe_instances.insert(main_entity_c, 7)
+  let render_wireframe_assets = RenderWireframeAssets::RenderWireframeAssets()
+  render_wireframe_assets.insert(
+    7,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
+    ),
+  )
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity_b,
+    RenderMeshQueueData::new(13, 0U, true),
+  )
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=8,
+    indexed=true,
+    index_count=6,
+  )
+  render_meshes.insert(13, render_mesh)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(mesh_allocator.allocate_render_mesh(13, render_mesh, 80))
+  let plan = wireframe_3d_render_node_command_plan(
+    phases,
+    retained_view,
+    true,
+    draw_functions,
+    render_wireframe_instances,
+    render_wireframe_assets,
+    render_mesh_instances,
+    render_meshes,
+    mesh_allocator,
+    WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+
+  debug_inspect(plan.item_count(), content="3")
+  debug_inspect(plan.viewport_enabled(), content="true")
+  debug_inspect(plan.command_plan_count(), content="1")
+  debug_inspect(plan.command_skip_count(), content="1")
+  debug_inspect(plan.command_failure_count(), content="1")
+}
+
+///|
 test "pbr: wireframe 3d render node is scheduled between main pass and early postprocess" {
   let log : Array[String] = []
   let graph_stage = @render.RenderGraph::schedule()
