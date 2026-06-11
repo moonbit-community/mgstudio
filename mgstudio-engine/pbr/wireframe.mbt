@@ -815,14 +815,10 @@ fn render3d_mesh_should_draw_wireframe(
   mesh : ExtractedMesh3d,
   wireframe_config : WireframeConfig?,
 ) -> Bool {
-  guard wireframe_config is Some(config) else { return false }
-  if mesh.payload.has_no_wireframe {
-    false
-  } else if mesh.payload.has_wireframe {
-    true
-  } else {
-    config.global
-  }
+  ignore(wireframe_config)
+  !mesh.payload.has_no_wireframe &&
+  mesh.payload.wireframe_asset_id is Some(_) &&
+  mesh.payload.wireframe_material is Some(_)
 }
 
 ///|
@@ -832,6 +828,8 @@ fn render3d_mesh_wireframe_color(
 ) -> @color.Color {
   if mesh.payload.wireframe_color is Some(color_component) {
     color_component.color
+  } else if mesh.payload.wireframe_material is Some(material) {
+    material.color
   } else if wireframe_config is Some(config) {
     config.default_color
   } else {
@@ -846,6 +844,8 @@ fn render3d_mesh_wireframe_line_width(
 ) -> Float {
   if mesh.payload.wireframe_line_width is Some(width_component) {
     width_component.width
+  } else if mesh.payload.wireframe_material is Some(material) {
+    material.line_width
   } else if wireframe_config is Some(config) {
     config.default_line_width
   } else {
@@ -860,6 +860,8 @@ fn render3d_mesh_wireframe_topology(
 ) -> WireframeTopology {
   if mesh.payload.wireframe_topology is Some(topology) {
     topology
+  } else if mesh.payload.wireframe_material is Some(material) {
+    material.topology
   } else if wireframe_config is Some(config) {
     config.default_topology
   } else {

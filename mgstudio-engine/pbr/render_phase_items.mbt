@@ -162,8 +162,9 @@ priv struct Mesh3dExtractedPayload {
   has_no_frustum_culling : Bool
   has_no_cpu_culling : Bool
   layers : @camera_render_layers.RenderLayers
-  has_wireframe : Bool
   has_no_wireframe : Bool
+  wireframe_asset_id : Int?
+  wireframe_material : RenderWireframeMaterial?
   wireframe_color : WireframeColor?
   wireframe_line_width : WireframeLineWidth?
   wireframe_topology : WireframeTopology?
