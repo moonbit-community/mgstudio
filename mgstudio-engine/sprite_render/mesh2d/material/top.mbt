@@ -89,20 +89,11 @@ pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M] with fn 
 }
 
 ///|
-const MATERIAL2D_PIPELINE_KEY_OPAQUE : Int = 1
-
-///|
-const MATERIAL2D_PIPELINE_KEY_ALPHA_MASK : Int = 2
-
-///|
-const MATERIAL2D_PIPELINE_KEY_BLEND : Int = 4
-
-///|
 fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
   match alpha_mode {
-    Opaque => MATERIAL2D_PIPELINE_KEY_OPAQUE
-    Mask(_) => MATERIAL2D_PIPELINE_KEY_ALPHA_MASK
-    Blend => MATERIAL2D_PIPELINE_KEY_BLEND
+    Opaque => 0
+    Mask(_) => @sprite_render_mesh2d_runtime.MESH2D_PIPELINE_KEY_MAY_DISCARD
+    Blend => @sprite_render_mesh2d_runtime.MESH2D_PIPELINE_KEY_BLEND_ALPHA
   }
 }
 
@@ -643,14 +634,45 @@ pub fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
 pub fn material2d_mesh_phase_from_properties(
   properties : Material2dProperties,
 ) -> Int? {
-  let key_bits = properties.mesh_pipeline_key_bits
-  if (key_bits & MATERIAL2D_PIPELINE_KEY_BLEND) != 0 {
-    Some(1)
-  } else if (key_bits & MATERIAL2D_PIPELINE_KEY_ALPHA_MASK) != 0 {
-    Some(0)
-  } else {
-    Some(0)
+  match properties.alpha_mode {
+    Blend => Some(1)
+    Mask(_) | Opaque => Some(0)
   }
+}
+
+///|
+test "material2d alpha mode pipeline key bits match Bevy" {
+  debug_inspect(material2d_mesh_pipeline_key_bits(Opaque), content="0")
+  debug_inspect(material2d_mesh_pipeline_key_bits(Mask(0.5F)), content="8")
+  debug_inspect(material2d_mesh_pipeline_key_bits(Blend), content="4")
+}
+
+///|
+test "material2d phase selection stays separate from pipeline key bits" {
+  debug_inspect(
+    material2d_mesh_phase_from_properties(
+      Material2dProperties::new(
+        Opaque,
+        material2d_mesh_pipeline_key_bits(Opaque),
+      ),
+    ),
+    content="Some(0)",
+  )
+  debug_inspect(
+    material2d_mesh_phase_from_properties(
+      Material2dProperties::new(
+        Mask(0.5F),
+        material2d_mesh_pipeline_key_bits(Mask(0.5F)),
+      ),
+    ),
+    content="Some(0)",
+  )
+  debug_inspect(
+    material2d_mesh_phase_from_properties(
+      Material2dProperties::new(Blend, material2d_mesh_pipeline_key_bits(Blend)),
+    ),
+    content="Some(1)",
+  )
 }
 
 ///|
