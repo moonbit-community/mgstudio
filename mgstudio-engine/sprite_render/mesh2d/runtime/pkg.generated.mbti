@@ -9,6 +9,28 @@ import {
 }
 
 // Values
+pub const MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS : Int = 18
+
+pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt = 0b111
+
+pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 26
+
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE : Int = 0
+
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : Int = 524288
+
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : Int = 262144
+
+pub const MESH2D_PRIMITIVE_TOPOLOGY_LINE_STRIP : UInt = 2
+
+pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : UInt = 3
+
+pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP : UInt = 4
+
+pub fn mesh2d_pipeline_key_bits_for_primitive(UInt, Int, Bool) -> Int
+
+pub fn mesh2d_primitive_topology_is_strip(UInt) -> Bool
+
 pub fn phase_entity_ref_cmp(PhaseEntityRef, PhaseEntityRef) -> Int
 
 pub fn phase_entity_ref_for_main(@core.Entity) -> PhaseEntityRef

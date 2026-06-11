@@ -61,6 +61,99 @@ pub fn phase_entity_ref_cmp(lhs : PhaseEntityRef, rhs : PhaseEntityRef) -> Int {
 }
 
 ///|
+pub const MESH2D_PRIMITIVE_TOPOLOGY_LINE_STRIP : UInt = 2U
+
+///|
+pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : UInt = 3U
+
+///|
+pub const MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP : UInt = 4U
+
+///|
+pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt = 0b111U
+
+///|
+pub const MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 26
+
+///|
+pub const MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS : Int = 18
+
+///|
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE : Int = 0 <<
+  MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : Int = 1 <<
+  MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
+pub const MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : Int = 2 <<
+  MESH2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
+pub fn mesh2d_primitive_topology_is_strip(primitive_topology : UInt) -> Bool {
+  primitive_topology == MESH2D_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
+  primitive_topology == MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
+}
+
+///|
+pub fn mesh2d_pipeline_key_bits_for_primitive(
+  primitive_topology : UInt,
+  index_count : Int,
+  uses_u32_indices : Bool,
+) -> Int {
+  let primitive_bits = (primitive_topology &
+    MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS).reinterpret_as_int() <<
+    MESH2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
+  let strip_index_bits = if mesh2d_primitive_topology_is_strip(
+      primitive_topology,
+    ) {
+    if index_count <= 0 {
+      MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
+    } else if uses_u32_indices {
+      MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32
+    } else {
+      MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16
+    }
+  } else {
+    MESH2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
+  }
+  primitive_bits | strip_index_bits
+}
+
+///|
+test "mesh2d pipeline key encodes primitive topology" {
+  debug_inspect(
+    mesh2d_pipeline_key_bits_for_primitive(
+      MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      0,
+      false,
+    ),
+    content="201326592",
+  )
+}
+
+///|
+test "mesh2d pipeline key encodes strip index format only for strips" {
+  debug_inspect(
+    mesh2d_pipeline_key_bits_for_primitive(
+      MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+      6,
+      false,
+    ),
+    content="268959744",
+  )
+  debug_inspect(
+    mesh2d_pipeline_key_bits_for_primitive(
+      MESH2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      6,
+      true,
+    ),
+    content="201326592",
+  )
+}
+
+///|
 pub(all) struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @transform.Transform

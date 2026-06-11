@@ -98,36 +98,6 @@ const MATERIAL2D_PIPELINE_KEY_ALPHA_MASK : Int = 2
 const MATERIAL2D_PIPELINE_KEY_BLEND : Int = 4
 
 ///|
-const MATERIAL2D_PRIMITIVE_TOPOLOGY_LINE_STRIP : UInt = 2U
-
-///|
-const MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : UInt = 3U
-
-///|
-const MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP : UInt = 4U
-
-///|
-const MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt = 0b111U
-
-///|
-const MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 26
-
-///|
-const MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS : Int = 18
-
-///|
-const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE : Int = 0 <<
-  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
-
-///|
-const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : Int = 1 <<
-  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
-
-///|
-const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : Int = 2 <<
-  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
-
-///|
 fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
   match alpha_mode {
     Opaque => MATERIAL2D_PIPELINE_KEY_OPAQUE
@@ -137,76 +107,13 @@ fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
 }
 
 ///|
-fn material2d_primitive_topology_is_strip(primitive_topology : UInt) -> Bool {
-  primitive_topology == MATERIAL2D_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
-  primitive_topology == MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
-}
-
-///|
 fn material2d_mesh_pipeline_key_bits_for_host_mesh(
   mesh_info : @render.HostGpuMeshInfo,
 ) -> Int {
-  material2d_mesh_pipeline_key_bits_for_primitive(
+  @sprite_render_mesh2d_runtime.mesh2d_pipeline_key_bits_for_primitive(
     mesh_info.primitive_topology(),
     mesh_info.index_count(),
     mesh_info.uses_u32_indices(),
-  )
-}
-
-///|
-fn material2d_mesh_pipeline_key_bits_for_primitive(
-  primitive_topology : UInt,
-  index_count : Int,
-  uses_u32_indices : Bool,
-) -> Int {
-  let primitive_bits = (primitive_topology &
-    MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS).reinterpret_as_int() <<
-    MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
-  let strip_index_bits = if material2d_primitive_topology_is_strip(
-      primitive_topology,
-    ) {
-    if index_count <= 0 {
-      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
-    } else if uses_u32_indices {
-      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32
-    } else {
-      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16
-    }
-  } else {
-    MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
-  }
-  primitive_bits | strip_index_bits
-}
-
-///|
-test "material2d mesh pipeline key encodes primitive topology" {
-  debug_inspect(
-    material2d_mesh_pipeline_key_bits_for_primitive(
-      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      0,
-      false,
-    ),
-    content="201326592",
-  )
-}
-
-///|
-test "material2d mesh pipeline key encodes strip index format only for strips" {
-  debug_inspect(
-    material2d_mesh_pipeline_key_bits_for_primitive(
-      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-      6,
-      false,
-    ),
-    content="268959744",
-  )
-  debug_inspect(
-    material2d_mesh_pipeline_key_bits_for_primitive(
-      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      6,
-      true,
-    ),
-    content="201326592",
   )
 }
 
