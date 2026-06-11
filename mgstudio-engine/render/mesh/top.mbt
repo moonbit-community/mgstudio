@@ -249,6 +249,14 @@ pub fn RenderMesh::buffer_info(self : RenderMesh) -> RenderMeshBufferInfo {
 }
 
 ///|
+pub fn RenderMesh::wireframe_index_count(self : RenderMesh) -> Int {
+  match self.buffer_info {
+    Indexed(count, _) => count
+    NonIndexed => self.vertex_count
+  }
+}
+
+///|
 pub fn RenderMesh::key_bits(
   self : RenderMesh,
 ) -> @asset_mesh.BaseMeshPipelineKey {

@@ -305,6 +305,7 @@ pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayo
 pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
 pub fn RenderMesh::primitive_topology(Self) -> @Milky2018/mgstudio/mesh.Mesh3dPrimitiveTopology
 pub fn RenderMesh::vertex_count(Self) -> Int
+pub fn RenderMesh::wireframe_index_count(Self) -> Int
 
 pub struct RenderMeshAssets {
   assets : Map[Int, RenderMesh]

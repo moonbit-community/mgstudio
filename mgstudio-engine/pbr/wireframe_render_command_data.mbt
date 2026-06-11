@@ -189,3 +189,84 @@ pub fn set_wireframe_3d_wide_bind_group_dynamic_offset(
   }
   wide_bind_groups.dynamic_offset(mesh_instance.mesh_asset_id())
 }
+
+///|
+pub struct DrawWireframeMeshPulledDirectRange {
+  first_vertex : Int
+  vertex_end : Int
+  batch_start : Int
+  batch_end : Int
+} derive(Eq, Debug)
+
+///|
+pub fn DrawWireframeMeshPulledDirectRange::new(
+  first_vertex : Int,
+  vertex_end : Int,
+  batch_start : Int,
+  batch_end : Int,
+) -> DrawWireframeMeshPulledDirectRange {
+  DrawWireframeMeshPulledDirectRange::{
+    first_vertex,
+    vertex_end,
+    batch_start,
+    batch_end,
+  }
+}
+
+///|
+pub fn DrawWireframeMeshPulledDirectRange::first_vertex(
+  self : DrawWireframeMeshPulledDirectRange,
+) -> Int {
+  self.first_vertex
+}
+
+///|
+pub fn DrawWireframeMeshPulledDirectRange::vertex_end(
+  self : DrawWireframeMeshPulledDirectRange,
+) -> Int {
+  self.vertex_end
+}
+
+///|
+pub fn DrawWireframeMeshPulledDirectRange::batch_start(
+  self : DrawWireframeMeshPulledDirectRange,
+) -> Int {
+  self.batch_start
+}
+
+///|
+pub fn DrawWireframeMeshPulledDirectRange::batch_end(
+  self : DrawWireframeMeshPulledDirectRange,
+) -> Int {
+  self.batch_end
+}
+
+///|
+pub fn draw_wireframe_mesh_pulled_direct_range(
+  item : Wireframe3d,
+  render_mesh_instances : RenderMeshInstances,
+  render_meshes : @render_mesh.RenderMeshAssets,
+  mesh_allocator : @render_mesh.MeshAllocator,
+) -> DrawWireframeMeshPulledDirectRange? {
+  guard render_mesh_instances.mesh_asset_id(item.main_entity())
+    is Some(mesh_asset_id) else {
+    return None
+  }
+  guard render_meshes.get(mesh_asset_id) is Some(render_mesh) else {
+    return None
+  }
+  guard mesh_allocator.mesh_vertex_slice(mesh_asset_id) is Some(vertex_slice) else {
+    return None
+  }
+  let first_vertex = vertex_slice.start()
+  let index_count = render_mesh.wireframe_index_count()
+  let batch_range = item.batch_range()
+  Some(
+    DrawWireframeMeshPulledDirectRange::new(
+      first_vertex,
+      first_vertex + index_count,
+      batch_range.start(),
+      batch_range.end(),
+    ),
+  )
+}

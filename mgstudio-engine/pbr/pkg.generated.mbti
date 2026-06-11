@@ -153,6 +153,8 @@ pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World
 
 pub fn despecialize_wireframe_view_cache(SpecializedWireframePipelineCache, DirtyWireframeSpecializations, @core.Entity) -> Unit
 
+pub fn draw_wireframe_mesh_pulled_direct_range(Wireframe3d, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator) -> DrawWireframeMeshPulledDirectRange?
+
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
@@ -994,6 +996,18 @@ pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
 pub impl @ecs.Component for DistanceFog
+
+pub struct DrawWireframeMeshPulledDirectRange {
+  first_vertex : Int
+  vertex_end : Int
+  batch_start : Int
+  batch_end : Int
+} derive(Eq, @debug.Debug)
+pub fn DrawWireframeMeshPulledDirectRange::batch_end(Self) -> Int
+pub fn DrawWireframeMeshPulledDirectRange::batch_start(Self) -> Int
+pub fn DrawWireframeMeshPulledDirectRange::first_vertex(Self) -> Int
+pub fn DrawWireframeMeshPulledDirectRange::new(Int, Int, Int, Int) -> Self
+pub fn DrawWireframeMeshPulledDirectRange::vertex_end(Self) -> Int
 
 pub struct EntitySpecializationTickPair {
   system_tick : Int64

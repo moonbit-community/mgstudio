@@ -177,3 +177,71 @@ test "pbr: wide wireframe bind group command returns dynamic offset" {
     content="Some(0)",
   )
 }
+
+///|
+test "pbr: pulled wireframe direct draw range follows Bevy skip rules" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item(main_entity)
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  debug_inspect(
+    draw_wireframe_mesh_pulled_direct_range(
+      item, render_mesh_instances, render_meshes, mesh_allocator,
+    ),
+    content="None",
+  )
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(13, 0U, true),
+  )
+  debug_inspect(
+    draw_wireframe_mesh_pulled_direct_range(
+      item, render_mesh_instances, render_meshes, mesh_allocator,
+    ),
+    content="None",
+  )
+  let indexed_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=8,
+    indexed=true,
+    index_count=6,
+  )
+  render_meshes.insert(13, indexed_mesh)
+  debug_inspect(
+    draw_wireframe_mesh_pulled_direct_range(
+      item, render_mesh_instances, render_meshes, mesh_allocator,
+    ),
+    content="None",
+  )
+  ignore(mesh_allocator.allocate_render_mesh(13, indexed_mesh, 80))
+  let indexed_range = draw_wireframe_mesh_pulled_direct_range(
+    item, render_mesh_instances, render_meshes, mesh_allocator,
+  ).unwrap()
+  debug_inspect(indexed_range.first_vertex(), content="0")
+  debug_inspect(indexed_range.vertex_end(), content="6")
+  debug_inspect(indexed_range.batch_start(), content="0")
+  debug_inspect(indexed_range.batch_end(), content="1")
+}
+
+///|
+test "pbr: pulled wireframe direct draw range uses vertex count for non-indexed mesh" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item(main_entity)
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(17, 0U, true),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=5)
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_meshes.insert(17, render_mesh)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(mesh_allocator.allocate_render_mesh(17, render_mesh, 80))
+
+  let range = draw_wireframe_mesh_pulled_direct_range(
+    item, render_mesh_instances, render_meshes, mesh_allocator,
+  ).unwrap()
+
+  debug_inspect(range.first_vertex(), content="0")
+  debug_inspect(range.vertex_end(), content="5")
+}
