@@ -60,7 +60,7 @@ pub fn MeshAllocator::mark_index_resident(Self, Int) -> Bool
 pub fn MeshAllocator::mark_resident(Self, Int, MeshAllocatorElementClass) -> Bool
 pub fn MeshAllocator::mark_vertex_resident(Self, Int) -> Bool
 pub fn MeshAllocator::mesh_index_slice(Self, Int) -> MeshAllocatorSlice?
-pub fn MeshAllocator::mesh_slabs(Self, Int) -> (Int?, Int?)
+pub fn MeshAllocator::mesh_slabs(Self, Int) -> MeshSlabs?
 pub fn MeshAllocator::mesh_slice_in_slab(Self, Int, Int) -> MeshAllocatorSlice?
 pub fn MeshAllocator::mesh_vertex_slice(Self, Int) -> MeshAllocatorSlice?
 pub fn MeshAllocator::new(general_vertex_slabs_supported? : Bool) -> Self

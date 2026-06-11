@@ -1328,10 +1328,19 @@ pub fn MeshAllocator::allocate_render_mesh(
 pub fn MeshAllocator::mesh_slabs(
   self : MeshAllocator,
   mesh_id : Int,
-) -> (Int?, Int?) {
-  (
-    mesh_allocator_lookup_map(self.mesh_id_to_vertex_slab, mesh_id),
-    mesh_allocator_lookup_map(self.mesh_id_to_index_slab, mesh_id),
+) -> MeshSlabs? {
+  guard mesh_allocator_lookup_map(self.mesh_id_to_vertex_slab, mesh_id)
+    is Some(vertex_slab_id) else {
+    return None
+  }
+  Some(
+    MeshSlabs::new(
+      vertex_slab_id,
+      index_slab_id=mesh_allocator_lookup_map(
+        self.mesh_id_to_index_slab,
+        mesh_id,
+      ),
+    ),
   )
 }
 

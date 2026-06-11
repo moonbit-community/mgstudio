@@ -128,9 +128,14 @@ test "render mesh allocator: state records vertex and index slab ids" {
   inspect(vertex_plan.kind() is General, content="true")
   inspect(index_plan.kind() is General, content="true")
   inspect(allocator.slab_count(), content="2")
-  let (vertex_slab, index_slab) = allocator.mesh_slabs(10)
-  inspect(vertex_slab == Some(vertex_plan.slab_id()), content="true")
-  inspect(index_slab == Some(index_plan.slab_id()), content="true")
+  guard allocator.mesh_slabs(10) is Some(mesh_slabs) else {
+    fail("expected mesh slab ids")
+  }
+  inspect(mesh_slabs.vertex_slab_id() == vertex_plan.slab_id(), content="true")
+  inspect(
+    mesh_slabs.index_slab_id() == Some(index_plan.slab_id()),
+    content="true",
+  )
   inspect(allocator.allocations(), content="1")
   guard allocator.mesh_vertex_slice(10) is Some(vertex_slice) else {
     fail("expected vertex slice")
@@ -154,9 +159,7 @@ test "render mesh allocator: free removes both maps and empty slabs" {
   inspect(allocator.slab_count(), content="2")
   allocator.free_mesh(20)
   inspect(allocator.slab_count(), content="0")
-  let (vertex_slab, index_slab) = allocator.mesh_slabs(20)
-  inspect(vertex_slab is None, content="true")
-  inspect(index_slab is None, content="true")
+  inspect(allocator.mesh_slabs(20) is None, content="true")
   inspect(allocator.mesh_vertex_slice(20) is None, content="true")
 }
 
@@ -168,10 +171,8 @@ test "render mesh allocator: modified meshes follow bevy free-before-allocate se
   ignore(allocator.allocate(31, 64, layout))
   inspect(allocator.slab_count(), content="1")
   allocator.free_meshes([], [30])
-  let (modified_vertex_slab, _) = allocator.mesh_slabs(30)
-  let (kept_vertex_slab, _) = allocator.mesh_slabs(31)
-  inspect(modified_vertex_slab is None, content="true")
-  inspect(kept_vertex_slab is Some(_), content="true")
+  inspect(allocator.mesh_slabs(30) is None, content="true")
+  inspect(allocator.mesh_slabs(31) is Some(_), content="true")
   inspect(allocator.slab_count(), content="1")
 }
 
