@@ -282,6 +282,80 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
 }
 
 ///|
+test "pbr: specialize wireframes includes previous skin and morph flags per instance" {
+  let view = @core.Entity::new(10, 1)
+  let first_render_entity = @core.Entity::new(20, 1)
+  let second_render_entity = @core.Entity::new(22, 1)
+  let first_main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let second_main_entity = wireframe_test_main_entity(@core.Entity::new(23, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([
+    (first_render_entity, first_main_entity),
+    (second_render_entity, second_main_entity),
+  ])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(first_main_entity, 8)
+  instances.insert(second_main_entity, 8)
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    first_main_entity,
+    RenderMeshQueueData::new(
+      33,
+      1U,
+      true,
+      flags=RenderMeshInstanceFlags::has_previous_skin(),
+    ),
+  )
+  render_mesh_instances.insert(
+    second_main_entity,
+    RenderMeshQueueData::new(
+      33,
+      2U,
+      true,
+      flags=RenderMeshInstanceFlags::has_previous_morph(),
+    ),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
+  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
+  pipeline_data.set(
+    33,
+    wireframe_mesh_pipeline_data_for_render_mesh(
+      render_mesh,
+      wireframe_phase_test_descriptor(),
+      view_key_bits=MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
+    ),
+  )
+  let pipeline_cache = @render_resource.PipelineCache::new()
+
+  specialize_wireframe_phase_items(
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    {},
+    render_mesh_instances,
+    pipeline_data,
+    Wireframe3dPipeline::new(),
+    pipeline_cache,
+  )
+
+  debug_inspect(cache.thin_len(), content="2")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="2")
+  debug_inspect(
+    cache.pipeline_id(view, first_main_entity).map(fn(id) { id.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(
+    cache.pipeline_id(view, second_main_entity).map(fn(id) { id.id() }),
+    content="Some(1)",
+  )
+}
+
+///|
 test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" {
   let view = @core.Entity::new(10, 1)
   let render_entity = @core.Entity::new(20, 1)

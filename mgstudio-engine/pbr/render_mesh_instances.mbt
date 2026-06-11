@@ -16,10 +16,79 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/mesh.rs`.
 
 ///|
+pub struct RenderMeshInstanceFlags {
+  bits : UInt
+} derive(Eq, Debug)
+
+///|
+pub fn RenderMeshInstanceFlags::empty() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::{ bits: 0U }
+}
+
+///|
+pub fn RenderMeshInstanceFlags::from_bits(
+  bits : UInt,
+) -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::{ bits, }
+}
+
+///|
+pub fn RenderMeshInstanceFlags::bits(self : RenderMeshInstanceFlags) -> UInt {
+  self.bits
+}
+
+///|
+pub fn RenderMeshInstanceFlags::shadow_caster() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 0)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::automatic_batching() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 1)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::has_previous_transform() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 2)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::has_previous_skin() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 3)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::has_previous_morph() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 4)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::no_cpu_culling() -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(1U << 5)
+}
+
+///|
+pub fn RenderMeshInstanceFlags::contains(
+  self : RenderMeshInstanceFlags,
+  flag : RenderMeshInstanceFlags,
+) -> Bool {
+  (self.bits & flag.bits) == flag.bits
+}
+
+///|
+pub fn RenderMeshInstanceFlags::or(
+  self : RenderMeshInstanceFlags,
+  flag : RenderMeshInstanceFlags,
+) -> RenderMeshInstanceFlags {
+  RenderMeshInstanceFlags::from_bits(self.bits | flag.bits)
+}
+
+///|
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
   current_uniform_index : UInt
   should_batch : Bool
+  flags : RenderMeshInstanceFlags
 }
 
 ///|
@@ -27,8 +96,14 @@ pub fn RenderMeshQueueData::new(
   mesh_asset_id : Int,
   current_uniform_index : UInt,
   should_batch : Bool,
+  flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
 ) -> RenderMeshQueueData {
-  RenderMeshQueueData::{ mesh_asset_id, current_uniform_index, should_batch }
+  RenderMeshQueueData::{
+    mesh_asset_id,
+    current_uniform_index,
+    should_batch,
+    flags,
+  }
 }
 
 ///|
@@ -46,6 +121,13 @@ pub fn RenderMeshQueueData::current_uniform_index(
 ///|
 pub fn RenderMeshQueueData::should_batch(self : RenderMeshQueueData) -> Bool {
   self.should_batch
+}
+
+///|
+pub fn RenderMeshQueueData::flags(
+  self : RenderMeshQueueData,
+) -> RenderMeshInstanceFlags {
+  self.flags
 }
 
 ///|

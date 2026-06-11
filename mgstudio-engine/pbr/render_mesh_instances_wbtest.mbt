@@ -16,7 +16,10 @@
 test "pbr: RenderMeshInstances exposes Bevy queue data by MainEntity" {
   let instances = RenderMeshInstances::RenderMeshInstances()
   let entity = @render.MainEntity::new(@core.Entity::new(10, 1))
-  instances.insert(entity, RenderMeshQueueData::new(33, 9U, true))
+  let flags = RenderMeshInstanceFlags::has_previous_skin().or(
+    RenderMeshInstanceFlags::automatic_batching(),
+  )
+  instances.insert(entity, RenderMeshQueueData::new(33, 9U, true, flags~))
 
   let data = match instances.render_mesh_queue_data(entity) {
     Some(value) => value
@@ -27,9 +30,39 @@ test "pbr: RenderMeshInstances exposes Bevy queue data by MainEntity" {
   debug_inspect(data.mesh_asset_id(), content="33")
   debug_inspect(data.current_uniform_index(), content="9")
   debug_inspect(data.should_batch(), content="true")
+  debug_inspect(
+    data.flags().contains(RenderMeshInstanceFlags::has_previous_skin()),
+    content="true",
+  )
+  debug_inspect(
+    data.flags().contains(RenderMeshInstanceFlags::has_previous_morph()),
+    content="false",
+  )
   debug_inspect(instances.remove(entity) is Some(_), content="true")
   debug_inspect(
     instances.render_mesh_queue_data(entity) is None,
     content="true",
+  )
+}
+
+///|
+test "pbr: RenderMeshInstanceFlags preserves Bevy bit values" {
+  let flags = RenderMeshInstanceFlags::shadow_caster()
+    .or(RenderMeshInstanceFlags::automatic_batching())
+    .or(RenderMeshInstanceFlags::has_previous_transform())
+    .or(RenderMeshInstanceFlags::has_previous_skin())
+    .or(RenderMeshInstanceFlags::has_previous_morph())
+    .or(RenderMeshInstanceFlags::no_cpu_culling())
+
+  debug_inspect(flags.bits(), content="63")
+  debug_inspect(
+    flags.contains(RenderMeshInstanceFlags::has_previous_skin()),
+    content="true",
+  )
+  debug_inspect(
+    RenderMeshInstanceFlags::empty().contains(
+      RenderMeshInstanceFlags::shadow_caster(),
+    ),
+    content="false",
   )
 }

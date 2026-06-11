@@ -1495,6 +1495,23 @@ pub fn WireframeRenderMeshPipelineData::mesh_key(
 }
 
 ///|
+pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(
+  self : WireframeRenderMeshPipelineData,
+  flags : RenderMeshInstanceFlags,
+) -> @material.ErasedMeshPipelineKey {
+  let mut mesh_key_bits = self.mesh_key.bits()
+  if (mesh_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL {
+    if flags.contains(RenderMeshInstanceFlags::has_previous_skin()) {
+      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+    }
+    if flags.contains(RenderMeshInstanceFlags::has_previous_morph()) {
+      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
+    }
+  }
+  @material.ErasedMeshPipelineKey::new(mesh_key_bits, self.mesh_key.type_tag())
+}
+
+///|
 pub fn WireframeRenderMeshPipelineData::mesh_layout(
   self : WireframeRenderMeshPipelineData,
 ) -> @material.MaterialMeshVertexLayout {
@@ -1515,20 +1532,10 @@ pub fn wireframe_mesh_pipeline_data_for_render_mesh(
   view_key_bits~ : UInt64,
   visibility_range_dither? : Bool = false,
   lightmapped? : Bool = false,
-  has_previous_skin? : Bool = false,
-  has_previous_morph? : Bool = false,
 ) -> WireframeRenderMeshPipelineData {
   let mut mesh_key_bits = view_key_bits | render_mesh.key_bits().bits()
   if visibility_range_dither {
     mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
-  }
-  if (view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL {
-    if has_previous_skin {
-      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
-    }
-    if has_previous_morph {
-      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
-    }
   }
   if lightmapped {
     mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_LIGHTMAPPED
@@ -1546,15 +1553,16 @@ fn specialize_wireframe_pipeline_id(
   pipeline_cache : @render_resource.PipelineCache,
   pipeline : Wireframe3dPipeline,
   pipeline_data : WireframeRenderMeshPipelineData,
+  mesh_instance : RenderMeshQueueData,
   material : RenderWireframeMaterial?,
 ) -> @material.CachedRenderPipelineId? {
   let wireframe_key = WireframePipelineKey::from_material(
-    pipeline_data.mesh_key(),
+    pipeline_data.mesh_key_for_instance(mesh_instance.flags()),
     material,
   )
   if wireframe_key.wide() {
     let wide_key = WireframeWidePipelineCacheKey::new(
-      pipeline_data.mesh_key(),
+      wireframe_key.mesh_key(),
       pipeline_data.mesh_layout(),
       wireframe_key.quads(),
       wireframe_key.line_mode(),
@@ -1648,7 +1656,7 @@ pub fn specialize_wireframe_phase_items(
     let material = render_wireframe_assets.get(wireframe_asset_id)
     guard specialize_wireframe_pipeline_id(
         specialized_wireframe_pipeline_cache, pipeline_cache, pipeline, pipeline_data,
-        material,
+        mesh_instance, material,
       )
       is Some(pipeline_id) else {
       continue

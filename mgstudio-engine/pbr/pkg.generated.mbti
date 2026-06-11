@@ -673,7 +673,7 @@ pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @materia
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
-pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool) -> WireframeRenderMeshPipelineData
+pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool) -> WireframeRenderMeshPipelineData
 
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -1481,6 +1481,21 @@ pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 
+pub struct RenderMeshInstanceFlags {
+  bits : UInt
+} derive(Eq, @debug.Debug)
+pub fn RenderMeshInstanceFlags::automatic_batching() -> Self
+pub fn RenderMeshInstanceFlags::bits(Self) -> UInt
+pub fn RenderMeshInstanceFlags::contains(Self, Self) -> Bool
+pub fn RenderMeshInstanceFlags::empty() -> Self
+pub fn RenderMeshInstanceFlags::from_bits(UInt) -> Self
+pub fn RenderMeshInstanceFlags::has_previous_morph() -> Self
+pub fn RenderMeshInstanceFlags::has_previous_skin() -> Self
+pub fn RenderMeshInstanceFlags::has_previous_transform() -> Self
+pub fn RenderMeshInstanceFlags::no_cpu_culling() -> Self
+pub fn RenderMeshInstanceFlags::or(Self, Self) -> Self
+pub fn RenderMeshInstanceFlags::shadow_caster() -> Self
+
 pub struct RenderMeshInstances {
   entries : Map[UInt64, RenderMeshQueueData]
 }
@@ -1496,10 +1511,12 @@ pub struct RenderMeshQueueData {
   mesh_asset_id : Int
   current_uniform_index : UInt
   should_batch : Bool
+  flags : RenderMeshInstanceFlags
 }
 pub fn RenderMeshQueueData::current_uniform_index(Self) -> UInt
+pub fn RenderMeshQueueData::flags(Self) -> RenderMeshInstanceFlags
 pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
-pub fn RenderMeshQueueData::new(Int, UInt, Bool) -> Self
+pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags) -> Self
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 
 pub struct RenderWireframeInstances {
@@ -1961,6 +1978,7 @@ pub struct WireframeRenderMeshPipelineData {
 }
 pub fn WireframeRenderMeshPipelineData::base_descriptor(Self) -> @render_resource.RenderPipelineDescriptor
 pub fn WireframeRenderMeshPipelineData::mesh_key(Self) -> @material.ErasedMeshPipelineKey
+pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(Self, RenderMeshInstanceFlags) -> @material.ErasedMeshPipelineKey
 pub fn WireframeRenderMeshPipelineData::mesh_layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 pub fn WireframeRenderMeshPipelineData::new(@material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @render_resource.RenderPipelineDescriptor) -> Self
 
