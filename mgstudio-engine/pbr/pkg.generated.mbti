@@ -1682,6 +1682,24 @@ pub struct Wireframe3dBinKey {
 pub fn Wireframe3dBinKey::asset_id(Self) -> Int
 pub fn Wireframe3dBinKey::new(Int) -> Self
 
+pub struct Wireframe3dThinImmediates {
+  color : @color.Color
+}
+pub fn Wireframe3dThinImmediates::color(Self) -> @color.Color
+pub fn Wireframe3dThinImmediates::float_count(Self) -> Int
+pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
+
+pub struct Wireframe3dWideImmediates {
+  color : @color.Color
+  line_width : Float
+  smoothing : Float
+}
+pub fn Wireframe3dWideImmediates::color(Self) -> @color.Color
+pub fn Wireframe3dWideImmediates::float_count(Self) -> Int
+pub fn Wireframe3dWideImmediates::from_material(RenderWireframeMaterial) -> Self
+pub fn Wireframe3dWideImmediates::line_width(Self) -> Float
+pub fn Wireframe3dWideImmediates::smoothing(Self) -> Float
+
 pub struct WireframeColor {
   color : @color.Color
 } derive(ToJson, @json.FromJson)
@@ -1771,6 +1789,16 @@ pub(all) enum WireframeTopology {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn WireframeTopology::default() -> Self
 pub impl @ecs.Component for WireframeTopology
+
+pub struct WireframeVertexPullParams {
+  index_offset : UInt
+  vertex_stride_u32s : UInt
+  position_offset_u32s : UInt
+} derive(Eq, @debug.Debug)
+pub fn WireframeVertexPullParams::index_offset(Self) -> UInt
+pub fn WireframeVertexPullParams::new(UInt, UInt, UInt) -> Self
+pub fn WireframeVertexPullParams::position_offset_u32s(Self) -> UInt
+pub fn WireframeVertexPullParams::vertex_stride_u32s(Self) -> UInt
 
 pub struct WireframeWidePipelineCacheKey {
   mesh_key : @material.ErasedMeshPipelineKey
