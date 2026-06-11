@@ -133,7 +133,7 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
   )
   app = app.update()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let retained_view = @core_2d.RetainedViewEntity2d::new(camera_entity)
+  let retained_view = @render_view.RetainedViewEntity::new(camera_entity)
   let opaque_phase = render_world
     .get_resource(@core_2d.ecs_key_opaque2d_phase)
     .unwrap()
@@ -175,8 +175,8 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
 ///|
 test "core_2d phase resources store items per retained view" {
   let world = @ecs.World::new()
-  let view_a = @core_2d.RetainedViewEntity2d::new(world.spawn_empty())
-  let view_b = @core_2d.RetainedViewEntity2d::new(world.spawn_empty())
+  let view_a = @render_view.RetainedViewEntity::new(world.spawn_empty())
+  let view_b = @render_view.RetainedViewEntity::new(world.spawn_empty())
 
   let opaque_phase = @core_2d.Opaque2dPhase::Opaque2dPhase()
   opaque_phase.prepare_for_new_frame(view_a)

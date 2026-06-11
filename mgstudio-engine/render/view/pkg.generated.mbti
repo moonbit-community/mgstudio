@@ -2,12 +2,15 @@
 package "Milky2018/mgstudio/render/view"
 
 import {
-  "Milky2018/mgstudio/core_pipeline/core_3d",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/debug",
 }
 
 // Values
-pub fn view_msaa_default() -> @core_3d.Msaa
+pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEntity) -> Bool
+
+pub fn retained_view_entity_equals(RetainedViewEntity, RetainedViewEntity) -> Bool
 
 pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange
 
@@ -16,6 +19,15 @@ pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange
 // Errors
 
 // Types and methods
+pub struct RetainedViewEntity {
+  main_entity : @core.Entity
+  auxiliary_entity : @core.Entity
+  subview_index : Int
+} derive(Eq, @debug.Debug)
+pub fn RetainedViewEntity::auxiliary_entity(Self) -> @core.Entity
+pub fn RetainedViewEntity::main_entity(Self) -> @core.Entity
+pub fn RetainedViewEntity::new(@core.Entity, auxiliary_entity? : @core.Entity?, subview_index? : Int) -> Self
+pub fn RetainedViewEntity::subview_index(Self) -> Int
 
 // Type aliases
 

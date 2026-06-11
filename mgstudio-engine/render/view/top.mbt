@@ -16,6 +16,68 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
 
 ///|
+pub struct RetainedViewEntity {
+  main_entity : @core.Entity
+  auxiliary_entity : @core.Entity
+  subview_index : Int
+} derive(Eq, Debug)
+
+///|
+pub fn RetainedViewEntity::new(
+  main_entity : @core.Entity,
+  auxiliary_entity? : @core.Entity? = None,
+  subview_index? : Int = 0,
+) -> RetainedViewEntity {
+  RetainedViewEntity::{
+    main_entity,
+    auxiliary_entity: auxiliary_entity.unwrap_or(@core.Entity::placeholder()),
+    subview_index,
+  }
+}
+
+///|
+pub fn RetainedViewEntity::main_entity(
+  self : RetainedViewEntity,
+) -> @core.Entity {
+  self.main_entity
+}
+
+///|
+pub fn RetainedViewEntity::auxiliary_entity(
+  self : RetainedViewEntity,
+) -> @core.Entity {
+  self.auxiliary_entity
+}
+
+///|
+pub fn RetainedViewEntity::subview_index(self : RetainedViewEntity) -> Int {
+  self.subview_index
+}
+
+///|
+pub fn retained_view_entity_equals(
+  lhs : RetainedViewEntity,
+  rhs : RetainedViewEntity,
+) -> Bool {
+  lhs.main_entity == rhs.main_entity &&
+  lhs.auxiliary_entity == rhs.auxiliary_entity &&
+  lhs.subview_index == rhs.subview_index
+}
+
+///|
+pub fn retained_view_entity_contains(
+  views : Array[RetainedViewEntity],
+  view : RetainedViewEntity,
+) -> Bool {
+  for current in views {
+    if retained_view_entity_equals(current, view) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::always_visible()
 }
@@ -23,9 +85,4 @@ pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange {
 ///|
 pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::invisible()
-}
-
-///|
-pub fn view_msaa_default() -> @core_pipeline.Msaa {
-  @core_pipeline.Msaa::default()
 }

@@ -3,9 +3,9 @@ package "Milky2018/mgstudio/core_pipeline/core_2d"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/view",
   "moonbitlang/core/debug",
 }
 
@@ -89,24 +89,24 @@ pub struct AlphaMask2dPhase {
   view_phases : Array[AlphaMask2dViewPhase]
 }
 pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> Self
-pub fn AlphaMask2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
+pub fn AlphaMask2dPhase::contains_view(Self, @view.RetainedViewEntity) -> Bool
 pub fn AlphaMask2dPhase::is_empty(Self) -> Bool
-pub fn AlphaMask2dPhase::items_for_view(Self, RetainedViewEntity2d) -> Array[AlphaMask2d]
+pub fn AlphaMask2dPhase::items_for_view(Self, @view.RetainedViewEntity) -> Array[AlphaMask2d]
 pub fn AlphaMask2dPhase::len(Self) -> Int
-pub fn AlphaMask2dPhase::len_for_view(Self, RetainedViewEntity2d) -> Int
-pub fn AlphaMask2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
-pub fn AlphaMask2dPhase::push_for_view(Self, RetainedViewEntity2d, AlphaMask2d) -> Unit
-pub fn AlphaMask2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn AlphaMask2dPhase::len_for_view(Self, @view.RetainedViewEntity) -> Int
+pub fn AlphaMask2dPhase::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> Unit
+pub fn AlphaMask2dPhase::push_for_view(Self, @view.RetainedViewEntity, AlphaMask2d) -> Unit
+pub fn AlphaMask2dPhase::retain_views(Self, Array[@view.RetainedViewEntity]) -> Unit
 pub fn AlphaMask2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for AlphaMask2dPhase
 
 pub struct AlphaMask2dViewPhase {
-  retained_view : RetainedViewEntity2d
+  retained_view : @view.RetainedViewEntity
   items : Array[AlphaMask2d]
 }
 pub fn AlphaMask2dViewPhase::items(Self) -> Array[AlphaMask2d]
-pub fn AlphaMask2dViewPhase::new(RetainedViewEntity2d) -> Self
-pub fn AlphaMask2dViewPhase::retained_view(Self) -> RetainedViewEntity2d
+pub fn AlphaMask2dViewPhase::new(@view.RetainedViewEntity) -> Self
+pub fn AlphaMask2dViewPhase::retained_view(Self) -> @view.RetainedViewEntity
 
 pub struct BatchSetKey2d {
   indexed : Bool
@@ -170,30 +170,24 @@ pub struct Opaque2dPhase {
   view_phases : Array[Opaque2dViewPhase]
 }
 pub fn Opaque2dPhase::Opaque2dPhase() -> Self
-pub fn Opaque2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
+pub fn Opaque2dPhase::contains_view(Self, @view.RetainedViewEntity) -> Bool
 pub fn Opaque2dPhase::is_empty(Self) -> Bool
-pub fn Opaque2dPhase::items_for_view(Self, RetainedViewEntity2d) -> Array[Opaque2d]
+pub fn Opaque2dPhase::items_for_view(Self, @view.RetainedViewEntity) -> Array[Opaque2d]
 pub fn Opaque2dPhase::len(Self) -> Int
-pub fn Opaque2dPhase::len_for_view(Self, RetainedViewEntity2d) -> Int
-pub fn Opaque2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
-pub fn Opaque2dPhase::push_for_view(Self, RetainedViewEntity2d, Opaque2d) -> Unit
-pub fn Opaque2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn Opaque2dPhase::len_for_view(Self, @view.RetainedViewEntity) -> Int
+pub fn Opaque2dPhase::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> Unit
+pub fn Opaque2dPhase::push_for_view(Self, @view.RetainedViewEntity, Opaque2d) -> Unit
+pub fn Opaque2dPhase::retain_views(Self, Array[@view.RetainedViewEntity]) -> Unit
 pub fn Opaque2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Opaque2dPhase
 
 pub struct Opaque2dViewPhase {
-  retained_view : RetainedViewEntity2d
+  retained_view : @view.RetainedViewEntity
   items : Array[Opaque2d]
 }
 pub fn Opaque2dViewPhase::items(Self) -> Array[Opaque2d]
-pub fn Opaque2dViewPhase::new(RetainedViewEntity2d) -> Self
-pub fn Opaque2dViewPhase::retained_view(Self) -> RetainedViewEntity2d
-
-pub struct RetainedViewEntity2d {
-  main_entity : @core.Entity
-  subview_index : Int
-} derive(Eq, @debug.Debug)
-pub fn RetainedViewEntity2d::new(@core.Entity, subview_index? : Int) -> Self
+pub fn Opaque2dViewPhase::new(@view.RetainedViewEntity) -> Self
+pub fn Opaque2dViewPhase::retained_view(Self) -> @view.RetainedViewEntity
 
 pub struct Transparent2d {
   sort_key : Float
@@ -215,24 +209,24 @@ pub struct Transparent2dPhase {
   view_phases : Array[Transparent2dViewPhase]
 }
 pub fn Transparent2dPhase::Transparent2dPhase() -> Self
-pub fn Transparent2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
+pub fn Transparent2dPhase::contains_view(Self, @view.RetainedViewEntity) -> Bool
 pub fn Transparent2dPhase::is_empty(Self) -> Bool
-pub fn Transparent2dPhase::items_for_view(Self, RetainedViewEntity2d) -> Array[Transparent2d]
+pub fn Transparent2dPhase::items_for_view(Self, @view.RetainedViewEntity) -> Array[Transparent2d]
 pub fn Transparent2dPhase::len(Self) -> Int
-pub fn Transparent2dPhase::len_for_view(Self, RetainedViewEntity2d) -> Int
-pub fn Transparent2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
-pub fn Transparent2dPhase::push_for_view(Self, RetainedViewEntity2d, Transparent2d) -> Unit
-pub fn Transparent2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn Transparent2dPhase::len_for_view(Self, @view.RetainedViewEntity) -> Int
+pub fn Transparent2dPhase::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> Unit
+pub fn Transparent2dPhase::push_for_view(Self, @view.RetainedViewEntity, Transparent2d) -> Unit
+pub fn Transparent2dPhase::retain_views(Self, Array[@view.RetainedViewEntity]) -> Unit
 pub fn Transparent2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Transparent2dPhase
 
 pub struct Transparent2dViewPhase {
-  retained_view : RetainedViewEntity2d
+  retained_view : @view.RetainedViewEntity
   items : Array[Transparent2d]
 }
 pub fn Transparent2dViewPhase::items(Self) -> Array[Transparent2d]
-pub fn Transparent2dViewPhase::new(RetainedViewEntity2d) -> Self
-pub fn Transparent2dViewPhase::retained_view(Self) -> RetainedViewEntity2d
+pub fn Transparent2dViewPhase::new(@view.RetainedViewEntity) -> Self
+pub fn Transparent2dViewPhase::retained_view(Self) -> @view.RetainedViewEntity
 
 // Type aliases
 pub using @post_process {type DebandDither}
