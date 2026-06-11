@@ -1710,7 +1710,7 @@ pub struct Wireframe3d {
   batch_set_key : Wireframe3dBatchSetKey
   bin_key : Wireframe3dBinKey
   render_entity : @core.Entity
-  main_entity : @core.Entity
+  main_entity : @Milky2018/mgstudio/render.MainEntity
   batch_range : Wireframe3dBatchRange
   extra_index : WireframePhaseItemExtraIndex
 }
@@ -1721,8 +1721,8 @@ pub fn Wireframe3d::cached_pipeline(Self) -> @render_resource.CachedRenderPipeli
 pub fn Wireframe3d::draw_function(Self) -> @material.DrawFunctionId
 pub fn Wireframe3d::entity(Self) -> @core.Entity
 pub fn Wireframe3d::extra_index(Self) -> WireframePhaseItemExtraIndex
-pub fn Wireframe3d::main_entity(Self) -> @core.Entity
-pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @core.Entity, Wireframe3dBatchRange, WireframePhaseItemExtraIndex) -> Self
+pub fn Wireframe3d::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
+pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @Milky2018/mgstudio/render.MainEntity, Wireframe3dBatchRange, WireframePhaseItemExtraIndex) -> Self
 
 pub struct Wireframe3dBatchRange {
   start : Int
@@ -1798,6 +1798,7 @@ pub struct Wireframe3dViewPhase {
   items : Array[Wireframe3d]
 }
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
+pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 

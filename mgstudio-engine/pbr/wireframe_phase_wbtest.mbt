@@ -29,7 +29,7 @@ test "pbr: Wireframe3d phase item exposes Bevy phase identity fields" {
   )
   let bin = Wireframe3dBinKey::new(31)
   let render_entity = @core.Entity::new(4, 1)
-  let main_entity = @core.Entity::new(5, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(5, 1))
   let item = Wireframe3d::new(
     batch_set,
     bin,

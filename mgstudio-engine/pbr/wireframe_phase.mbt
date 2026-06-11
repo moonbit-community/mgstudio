@@ -188,7 +188,7 @@ pub struct Wireframe3d {
   batch_set_key : Wireframe3dBatchSetKey
   bin_key : Wireframe3dBinKey
   render_entity : @core.Entity
-  main_entity : @core.Entity
+  main_entity : @render.MainEntity
   batch_range : Wireframe3dBatchRange
   extra_index : WireframePhaseItemExtraIndex
 }
@@ -198,7 +198,7 @@ pub fn Wireframe3d::new(
   batch_set_key : Wireframe3dBatchSetKey,
   bin_key : Wireframe3dBinKey,
   render_entity : @core.Entity,
-  main_entity : @core.Entity,
+  main_entity : @render.MainEntity,
   batch_range : Wireframe3dBatchRange,
   extra_index : WireframePhaseItemExtraIndex,
 ) -> Wireframe3d {
@@ -218,7 +218,7 @@ pub fn Wireframe3d::entity(self : Wireframe3d) -> @core.Entity {
 }
 
 ///|
-pub fn Wireframe3d::main_entity(self : Wireframe3d) -> @core.Entity {
+pub fn Wireframe3d::main_entity(self : Wireframe3d) -> @render.MainEntity {
   self.main_entity
 }
 
@@ -1171,6 +1171,11 @@ pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(
 ///|
 pub fn Wireframe3dViewPhase::len(self : Wireframe3dViewPhase) -> Int {
   self.items.length()
+}
+
+///|
+pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
+  self.items.length() == 0
 }
 
 ///|
