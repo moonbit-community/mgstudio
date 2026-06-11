@@ -697,7 +697,7 @@ pub fn HostGpuPresentMode::default() -> Self
 
 pub struct MainEntity {
   entity : @core.Entity
-}
+} derive(Eq, Hash, @debug.Debug)
 pub fn MainEntity::id(Self) -> @core.Entity
 pub fn MainEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for MainEntity

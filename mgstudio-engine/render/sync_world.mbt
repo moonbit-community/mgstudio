@@ -87,7 +87,7 @@ pub impl @ecs.Component for RenderEntity with fn component() {
 ///|
 pub struct MainEntity {
   entity : @core.Entity
-}
+} derive(Eq, Hash, Debug)
 
 ///|
 pub fn MainEntity::new(entity : @core.Entity) -> MainEntity {
