@@ -195,6 +195,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @post_process_effect_stack.register_embedded_wgsl_sources()
     @post_process_motion_blur.register_embedded_wgsl_sources()
     next = next.add_plugins(
+      @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),
+    )
+    next = next.add_plugins(
       @batching.GpuPreprocessingPlugin::GpuPreprocessingPlugin(),
     )
     next = next.add_plugins(

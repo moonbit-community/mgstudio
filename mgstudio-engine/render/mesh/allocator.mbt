@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_render/src/mesh/allocator.rs`.
 
 ///|
+const MESH_ALLOCATOR_PLUGIN_NAME : String = "mgstudio.render.mesh.MeshAllocatorPlugin"
+
+///|
 pub const MESH_ALLOCATOR_COPY_BUFFER_ALIGNMENT : Int = 4
 
 ///|
@@ -104,6 +107,16 @@ pub fn MeshAllocatorSettings::MeshAllocatorSettings() -> MeshAllocatorSettings {
 ///|
 pub impl Default for MeshAllocatorSettings with fn default() {
   MeshAllocatorSettings::MeshAllocatorSettings()
+}
+
+///|
+pub let mesh_allocator_settings_resource_key : @ecs.ResourceKey[
+  MeshAllocatorSettings,
+] = @ecs.register_resource(debug_name="mgstudio_render::MeshAllocatorSettings")
+
+///|
+pub impl @app.Resource for MeshAllocatorSettings with fn resource() {
+  mesh_allocator_settings_resource_key
 }
 
 ///|
@@ -742,6 +755,52 @@ pub fn MeshAllocator::MeshAllocator() -> MeshAllocator {
 ///|
 pub impl Default for MeshAllocator with fn default() {
   MeshAllocator::MeshAllocator()
+}
+
+///|
+pub let mesh_allocator_resource_key : @ecs.ResourceKey[MeshAllocator] = @ecs.register_resource(
+  debug_name="mgstudio_render::MeshAllocator",
+)
+
+///|
+pub impl @app.Resource for MeshAllocator with fn resource() {
+  mesh_allocator_resource_key
+}
+
+///|
+pub struct MeshAllocatorPlugin {}
+
+///|
+pub fn MeshAllocatorPlugin::MeshAllocatorPlugin() -> MeshAllocatorPlugin {
+  MeshAllocatorPlugin::{  }
+}
+
+///|
+pub fn mesh_allocator_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  mesh_allocator_plugin_with(app, MeshAllocatorPlugin::MeshAllocatorPlugin())
+}
+
+///|
+pub impl @app.Plugin for MeshAllocatorPlugin with fn name(_self) {
+  MESH_ALLOCATOR_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for MeshAllocatorPlugin with fn build(self, app) {
+  mesh_allocator_plugin_with(app, self)
+}
+
+///|
+pub fn mesh_allocator_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : MeshAllocatorPlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  app
+  .init_resource(fn() { MeshAllocatorSettings::MeshAllocatorSettings() })
+  .init_resource(fn() { MeshAllocator::MeshAllocator() })
 }
 
 ///|

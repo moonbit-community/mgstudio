@@ -16,6 +16,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,
+  "Milky2018/mgstudio/render/mesh" @render_mesh,
   "Milky2018/mgstudio/render/occlusion_culling",
   "Milky2018/mgstudio/render/render_phase" @render_phase_api,
   "Milky2018/mgstudio/render/render_resource",

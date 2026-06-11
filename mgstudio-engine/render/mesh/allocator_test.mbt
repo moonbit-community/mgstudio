@@ -434,3 +434,28 @@ test "render mesh allocator: webgl-style vertex allocation uses large slabs" {
   inspect(slice.start(), content="0")
   inspect(slice.end(), content="3")
 }
+
+///|
+test "render mesh allocator plugin initializes resource owners without overwriting" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    MeshAllocatorPlugin::MeshAllocatorPlugin(),
+  )
+  inspect(
+    app.contains_resource(MeshAllocatorSettings::resource()),
+    content="true",
+  )
+  inspect(app.contains_resource(MeshAllocator::resource()), content="true")
+
+  let seeded = MeshAllocator::new(general_vertex_slabs_supported=false)
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(seeded)
+    .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
+  guard app.world().get_resource(MeshAllocator::resource()) is Some(value) else {
+    fail("expected mesh allocator resource")
+  }
+  guard value.allocate(50, 96, MeshAllocatorElementLayout::vertex(32))
+    is Some(plan) else {
+    fail("expected webgl-style allocator resource")
+  }
+  inspect(plan.kind() is LargeObject, content="true")
+}

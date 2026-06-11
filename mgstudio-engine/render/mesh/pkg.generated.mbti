@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/render/mesh"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
 
@@ -25,6 +27,14 @@ pub fn mesh_allocator_grow_general_slab_if_necessary(Int, Int, MeshAllocatorElem
 pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> MeshAllocatorSlabPlan
 
 pub fn mesh_allocator_plan_new_general_slab(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabPlan
+
+pub fn mesh_allocator_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn mesh_allocator_plugin_with(@app.App[@ecs.World], MeshAllocatorPlugin) -> @app.App[@ecs.World]
+
+pub let mesh_allocator_resource_key : @ecs.ResourceKey[MeshAllocator]
+
+pub let mesh_allocator_settings_resource_key : @ecs.ResourceKey[MeshAllocatorSettings]
 
 pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> Bool
 
@@ -68,6 +78,7 @@ pub fn MeshAllocator::pending_upload_plan(Self, Int, MeshAllocatorElementClass, 
 pub fn MeshAllocator::reallocate_slab_plan(Self, Int, Int) -> MeshAllocatorReallocateSlabPlan?
 pub fn MeshAllocator::slab_count(Self) -> Int
 pub fn MeshAllocator::slabs_size(Self) -> Int
+pub impl @app.Resource for MeshAllocator
 pub impl Default for MeshAllocator
 
 pub(all) enum MeshAllocatorAllocationResidency {
@@ -124,6 +135,11 @@ pub(all) struct MeshAllocatorMeshSlabEntry {
   slab_id : Int
 }
 
+pub struct MeshAllocatorPlugin {
+}
+pub fn MeshAllocatorPlugin::MeshAllocatorPlugin() -> Self
+pub impl @app.Plugin for MeshAllocatorPlugin
+
 pub struct MeshAllocatorReallocateSlabPlan {
   slab_id : Int
   label : String
@@ -164,6 +180,7 @@ pub fn MeshAllocatorSettings::large_threshold(Self) -> Int
 pub fn MeshAllocatorSettings::max_slab_size(Self) -> Int
 pub fn MeshAllocatorSettings::min_slab_size(Self) -> Int
 pub fn MeshAllocatorSettings::new(min_slab_size~ : Int, max_slab_size~ : Int, large_threshold~ : Int, growth_factor~ : Float) -> Self
+pub impl @app.Resource for MeshAllocatorSettings
 pub impl Default for MeshAllocatorSettings
 
 pub(all) struct MeshAllocatorSlabAllocation {
