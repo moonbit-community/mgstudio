@@ -350,3 +350,44 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
     content="true",
   )
 }
+
+///|
+test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
+  let app = @app.App::new(@ecs.World::new()).insert_sub_app(
+    @app.RenderApp,
+    @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+  )
+  let app = wireframe_plugin(app)
+  let render_world = match app.get_sub_app(@app.RenderApp) {
+    Some(sub_app) => sub_app.world()
+    None => abort("missing RenderApp")
+  }
+
+  debug_inspect(
+    render_world.get_resource(Wireframe3dPipeline::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(SpecializedWireframePipelineCache::resource())
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(RenderWireframeInstances::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(WireframeWideBindGroups::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(PendingWireframeQueues::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world
+    .get_resource(Wireframe3dDrawFunctions::resource())
+    .map(fn(value) { value.len() }),
+    content="Some(2)",
+  )
+}

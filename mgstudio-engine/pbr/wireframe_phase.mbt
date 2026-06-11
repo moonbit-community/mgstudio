@@ -495,6 +495,168 @@ pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(
 }
 
 ///|
+pub struct RenderWireframeInstances {
+  entries : Map[UInt64, Int]
+}
+
+///|
+pub fn RenderWireframeInstances::RenderWireframeInstances() -> RenderWireframeInstances {
+  RenderWireframeInstances::{ entries: {} }
+}
+
+///|
+pub let ecs_key_render_wireframe_instances : @ecs.ResourceKey[
+  RenderWireframeInstances,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderWireframeInstances")
+
+///|
+pub impl @app.Resource for RenderWireframeInstances with fn resource() {
+  ecs_key_render_wireframe_instances
+}
+
+///|
+pub fn RenderWireframeInstances::len(self : RenderWireframeInstances) -> Int {
+  self.entries.length()
+}
+
+///|
+pub fn RenderWireframeInstances::get(
+  self : RenderWireframeInstances,
+  entity : @core.Entity,
+) -> Int? {
+  self.entries.get(entity.to_bits())
+}
+
+///|
+pub fn RenderWireframeInstances::insert(
+  self : RenderWireframeInstances,
+  entity : @core.Entity,
+  material_asset_id : Int,
+) -> Unit {
+  self.entries.set(entity.to_bits(), material_asset_id)
+}
+
+///|
+pub fn RenderWireframeInstances::remove(
+  self : RenderWireframeInstances,
+  entity : @core.Entity,
+) -> Bool {
+  let key = entity.to_bits()
+  if self.entries.contains(key) {
+    self.entries.remove(key)
+    true
+  } else {
+    false
+  }
+}
+
+///|
+pub struct WireframeWideBindGroups {
+  params : Array[WireframeVertexPullParams]
+  mesh_asset_dynamic_offsets : Map[Int, Int]
+}
+
+///|
+pub fn WireframeWideBindGroups::WireframeWideBindGroups() -> WireframeWideBindGroups {
+  WireframeWideBindGroups::{ params: [], mesh_asset_dynamic_offsets: {} }
+}
+
+///|
+pub let ecs_key_wireframe_wide_bind_groups : @ecs.ResourceKey[
+  WireframeWideBindGroups,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::WireframeWideBindGroups")
+
+///|
+pub impl @app.Resource for WireframeWideBindGroups with fn resource() {
+  ecs_key_wireframe_wide_bind_groups
+}
+
+///|
+pub fn WireframeWideBindGroups::clear(self : WireframeWideBindGroups) -> Unit {
+  self.params.clear()
+  self.mesh_asset_dynamic_offsets.clear()
+}
+
+///|
+pub fn WireframeWideBindGroups::len(self : WireframeWideBindGroups) -> Int {
+  self.mesh_asset_dynamic_offsets.length()
+}
+
+///|
+pub fn WireframeWideBindGroups::push(
+  self : WireframeWideBindGroups,
+  mesh_asset_id : Int,
+  params : WireframeVertexPullParams,
+) -> Int {
+  let dynamic_offset = self.params.length()
+  self.params.push(params)
+  self.mesh_asset_dynamic_offsets.set(mesh_asset_id, dynamic_offset)
+  dynamic_offset
+}
+
+///|
+pub fn WireframeWideBindGroups::dynamic_offset(
+  self : WireframeWideBindGroups,
+  mesh_asset_id : Int,
+) -> Int? {
+  self.mesh_asset_dynamic_offsets.get(mesh_asset_id)
+}
+
+///|
+pub fn WireframeWideBindGroups::params(
+  self : WireframeWideBindGroups,
+  dynamic_offset : Int,
+) -> WireframeVertexPullParams? {
+  self.params.get(dynamic_offset)
+}
+
+///|
+pub struct Wireframe3dDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  thin : @material.DrawFunctionId
+  wide : @material.DrawFunctionId
+}
+
+///|
+pub fn Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() -> Wireframe3dDrawFunctions {
+  let draw_functions = @material.DrawFunctions::new()
+  let thin = draw_functions.register("DrawWireframe3dThin")
+  let wide = draw_functions.register("DrawWireframe3dWide")
+  Wireframe3dDrawFunctions::{ draw_functions, thin, wide }
+}
+
+///|
+pub let ecs_key_wireframe_3d_draw_functions : @ecs.ResourceKey[
+  Wireframe3dDrawFunctions,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::DrawFunctions<Wireframe3d>",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dDrawFunctions with fn resource() {
+  ecs_key_wireframe_3d_draw_functions
+}
+
+///|
+pub fn Wireframe3dDrawFunctions::thin(
+  self : Wireframe3dDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.thin
+}
+
+///|
+pub fn Wireframe3dDrawFunctions::wide(
+  self : Wireframe3dDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.wide
+}
+
+///|
+pub fn Wireframe3dDrawFunctions::len(self : Wireframe3dDrawFunctions) -> Int {
+  self.draw_functions.len()
+}
+
+///|
 pub struct PendingWireframeQueues {
   current_frame : Array[(@core.Entity, @core.Entity)]
   previous_frame : Array[(@core.Entity, @core.Entity)]

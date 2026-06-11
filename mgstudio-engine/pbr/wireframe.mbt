@@ -649,6 +649,57 @@ fn wireframe_material_application_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn[T] wireframe_init_render_resource_if_missing(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+  init : () -> T,
+) -> Unit {
+  if world.get_resource(key) is None {
+    world.insert_resource(key, init())
+  }
+}
+
+///|
+fn configure_wireframe_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  wireframe_init_render_resource_if_missing(
+    world,
+    Wireframe3dPipeline::resource(),
+    fn() { Wireframe3dPipeline::new() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    SpecializedWireframePipelineCache::resource(),
+    fn() {
+      SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    RenderWireframeInstances::resource(),
+    fn() { RenderWireframeInstances::RenderWireframeInstances() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    WireframeWideBindGroups::resource(),
+    fn() { WireframeWideBindGroups::WireframeWideBindGroups() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    PendingWireframeQueues::resource(),
+    fn() { PendingWireframeQueues::PendingWireframeQueues() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    Wireframe3dDrawFunctions::resource(),
+    fn() { Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() },
+  )
+  sub_app
+}
+
+///|
 pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   wireframe_plugin_with(app, WireframePlugin::WireframePlugin())
 }
@@ -661,6 +712,9 @@ pub fn wireframe_plugin_with(
   @asset.init_asset(app, fn() { WireframeMaterial::WireframeMaterial() })
   .add_startup_system(wireframe_startup_system)
   .add_systems_world(@app.PostUpdate, wireframe_material_application_system)
+  |> fn(next) {
+    @render.try_with_render_app(next, configure_wireframe_render_sub_app)
+  }
 }
 
 ///|

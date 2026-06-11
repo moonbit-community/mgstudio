@@ -288,6 +288,8 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
 pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
 
+pub let ecs_key_render_wireframe_instances : @ecs.ResourceKey[RenderWireframeInstances]
+
 pub let ecs_key_scattering_medium_plugin_state : @ecs.ResourceKey[ScatteringMediumPluginState]
 
 pub let ecs_key_scattering_medium_sampler : @ecs.ResourceKey[ScatteringMediumSampler]
@@ -336,6 +338,10 @@ pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 
 pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
 
+pub let ecs_key_wireframe_3d_draw_functions : @ecs.ResourceKey[Wireframe3dDrawFunctions]
+
+pub let ecs_key_wireframe_3d_pipeline : @ecs.ResourceKey[Wireframe3dPipeline]
+
 pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
 
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
@@ -345,6 +351,8 @@ pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[Wir
 pub let ecs_key_wireframe_line_width : @ecs.ComponentKey[WireframeLineWidth]
 
 pub let ecs_key_wireframe_topology : @ecs.ComponentKey[WireframeTopology]
+
+pub let ecs_key_wireframe_wide_bind_groups : @ecs.ResourceKey[WireframeWideBindGroups]
 
 pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
@@ -1434,6 +1442,16 @@ pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 
+pub struct RenderWireframeInstances {
+  entries : Map[UInt64, Int]
+}
+pub fn RenderWireframeInstances::RenderWireframeInstances() -> Self
+pub fn RenderWireframeInstances::get(Self, @core.Entity) -> Int?
+pub fn RenderWireframeInstances::insert(Self, @core.Entity, Int) -> Unit
+pub fn RenderWireframeInstances::len(Self) -> Int
+pub fn RenderWireframeInstances::remove(Self, @core.Entity) -> Bool
+pub impl @app.Resource for RenderWireframeInstances
+
 pub struct RenderWireframeMaterial {
   color : @color.Color
   line_width : Float
@@ -1687,6 +1705,17 @@ pub struct Wireframe3dBinKey {
 pub fn Wireframe3dBinKey::asset_id(Self) -> Int
 pub fn Wireframe3dBinKey::new(Int) -> Self
 
+pub struct Wireframe3dDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  thin : @material.DrawFunctionId
+  wide : @material.DrawFunctionId
+}
+pub fn Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() -> Self
+pub fn Wireframe3dDrawFunctions::len(Self) -> Int
+pub fn Wireframe3dDrawFunctions::thin(Self) -> @material.DrawFunctionId
+pub fn Wireframe3dDrawFunctions::wide(Self) -> @material.DrawFunctionId
+pub impl @app.Resource for Wireframe3dDrawFunctions
+
 pub struct Wireframe3dPipeline {
   shader : String
   wide_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
@@ -1695,6 +1724,7 @@ pub fn Wireframe3dPipeline::new(shader? : String, wide_bind_group_layout_descrip
 pub fn Wireframe3dPipeline::shader(Self) -> String
 pub fn Wireframe3dPipeline::specialize(Self, WireframePipelineKey, @render_resource.RenderPipelineDescriptor) -> @render_resource.RenderPipelineDescriptor raise WireframePipelineSpecializationError
 pub fn Wireframe3dPipeline::wide_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub impl @app.Resource for Wireframe3dPipeline
 
 pub struct Wireframe3dThinImmediates {
   color : @color.Color
@@ -1813,6 +1843,18 @@ pub fn WireframeVertexPullParams::index_offset(Self) -> UInt
 pub fn WireframeVertexPullParams::new(UInt, UInt, UInt) -> Self
 pub fn WireframeVertexPullParams::position_offset_u32s(Self) -> UInt
 pub fn WireframeVertexPullParams::vertex_stride_u32s(Self) -> UInt
+
+pub struct WireframeWideBindGroups {
+  params : Array[WireframeVertexPullParams]
+  mesh_asset_dynamic_offsets : Map[Int, Int]
+}
+pub fn WireframeWideBindGroups::WireframeWideBindGroups() -> Self
+pub fn WireframeWideBindGroups::clear(Self) -> Unit
+pub fn WireframeWideBindGroups::dynamic_offset(Self, Int) -> Int?
+pub fn WireframeWideBindGroups::len(Self) -> Int
+pub fn WireframeWideBindGroups::params(Self, Int) -> WireframeVertexPullParams?
+pub fn WireframeWideBindGroups::push(Self, Int, WireframeVertexPullParams) -> Int
+pub impl @app.Resource for WireframeWideBindGroups
 
 pub struct WireframeWidePipelineCacheKey {
   mesh_key : @material.ErasedMeshPipelineKey

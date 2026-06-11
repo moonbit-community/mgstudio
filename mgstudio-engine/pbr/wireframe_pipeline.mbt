@@ -39,6 +39,16 @@ pub fn Wireframe3dPipeline::wide_bind_group_layout_descriptor(
 }
 
 ///|
+pub let ecs_key_wireframe_3d_pipeline : @ecs.ResourceKey[Wireframe3dPipeline] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Wireframe3dPipeline",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dPipeline with fn resource() {
+  ecs_key_wireframe_3d_pipeline
+}
+
+///|
 pub suberror WireframePipelineSpecializationError {
   MissingDepthStencilState
   MissingFragmentState

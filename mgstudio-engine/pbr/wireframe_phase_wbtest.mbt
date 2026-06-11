@@ -149,3 +149,37 @@ test "pbr: PendingWireframeQueues moves current frame into previous frame" {
   debug_inspect(queues.current_len(), content="0")
   debug_inspect(queues.previous_len(), content="2")
 }
+
+///|
+test "pbr: render wireframe instance resources track Bevy render asset ids" {
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  let entity = @core.Entity::new(7, 1)
+  instances.insert(entity, 42)
+  debug_inspect(instances.len(), content="1")
+  debug_inspect(instances.get(entity), content="Some(42)")
+  debug_inspect(instances.remove(entity), content="true")
+  debug_inspect(instances.get(entity), content="None")
+}
+
+///|
+test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
+  let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
+  let offset = bind_groups.push(13, WireframeVertexPullParams::new(1U, 8U, 3U))
+  debug_inspect(offset, content="0")
+  debug_inspect(bind_groups.len(), content="1")
+  debug_inspect(bind_groups.dynamic_offset(13), content="Some(0)")
+  debug_inspect(
+    bind_groups.params(0),
+    content="Some({ index_offset: 1, vertex_stride_u32s: 8, position_offset_u32s: 3 })",
+  )
+  bind_groups.clear()
+  debug_inspect(bind_groups.len(), content="0")
+}
+
+///|
+test "pbr: wireframe draw function resource registers thin and wide commands" {
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  debug_inspect(draw_functions.len(), content="2")
+  debug_inspect(draw_functions.thin().id(), content="0")
+  debug_inspect(draw_functions.wide().id(), content="1")
+}
