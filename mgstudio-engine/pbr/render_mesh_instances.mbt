@@ -84,6 +84,37 @@ pub fn RenderMeshInstanceFlags::or(
 }
 
 ///|
+pub fn RenderMeshInstanceFlags::from_extraction_components(
+  has_previous_transform : Bool,
+  has_previous_skin : Bool,
+  has_previous_morph : Bool,
+  has_not_shadow_caster : Bool,
+  has_no_automatic_batching : Bool,
+  has_no_cpu_culling : Bool,
+) -> RenderMeshInstanceFlags {
+  let mut flags = RenderMeshInstanceFlags::empty()
+  if !has_not_shadow_caster {
+    flags = flags.or(RenderMeshInstanceFlags::shadow_caster())
+  }
+  if !has_no_automatic_batching {
+    flags = flags.or(RenderMeshInstanceFlags::automatic_batching())
+  }
+  if has_previous_transform {
+    flags = flags.or(RenderMeshInstanceFlags::has_previous_transform())
+  }
+  if has_previous_skin {
+    flags = flags.or(RenderMeshInstanceFlags::has_previous_skin())
+  }
+  if has_previous_morph {
+    flags = flags.or(RenderMeshInstanceFlags::has_previous_morph())
+  }
+  if has_no_cpu_culling {
+    flags = flags.or(RenderMeshInstanceFlags::no_cpu_culling())
+  }
+  flags
+}
+
+///|
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
   current_uniform_index : UInt
@@ -189,4 +220,60 @@ pub fn RenderMeshInstances::render_mesh_queue_data(
   entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
   self.entries.get(entity.id().to_bits())
+}
+
+///|
+fn render_mesh_queue_data_for_cpu_building(
+  mesh : Mesh3dExtractedPayload,
+) -> RenderMeshQueueData {
+  let flags = RenderMeshInstanceFlags::from_extraction_components(
+    mesh.has_previous_transform,
+    mesh.has_previous_skin,
+    mesh.has_previous_morph,
+    mesh.has_not_shadow_caster,
+    mesh.has_no_automatic_batching,
+    false,
+  )
+  RenderMeshQueueData::new(
+    mesh.mesh_id,
+    0U,
+    flags.contains(RenderMeshInstanceFlags::automatic_batching()),
+    flags~,
+  )
+}
+
+///|
+fn render_mesh_instances_for_cpu_building(
+  meshes : Array[ExtractedMesh3d],
+) -> RenderMeshInstances {
+  let instances = RenderMeshInstances::RenderMeshInstances()
+  for mesh in meshes {
+    let payload = mesh.payload
+    if payload.mesh_id <= 0 {
+      continue
+    }
+    instances.insert(
+      @render.MainEntity::new(mesh.entity.main_entity),
+      render_mesh_queue_data_for_cpu_building(payload),
+    )
+  }
+  instances
+}
+
+///|
+fn render_mesh_instances_update_cpu_building_resource(
+  world : @ecs.World,
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
+  world.insert_resource(
+    RenderMeshInstances::resource(),
+    render_mesh_instances_for_cpu_building(meshes),
+  )
+}
+
+///|
+fn render_mesh_instances_remove_cpu_building_resource(
+  world : @ecs.World,
+) -> Unit {
+  ignore(world.remove_resource(RenderMeshInstances::resource()))
 }

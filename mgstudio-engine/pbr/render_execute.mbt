@@ -611,6 +611,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
   if sorted_cameras_ref.peek().entities.length() == 0 {
     render3d_queue_clear_frame(world)
+    render_mesh_instances_remove_cpu_building_resource(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
@@ -633,6 +634,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   if cameras.length() == 0 {
     @render.sorted_cameras_clear(sorted_cameras_ref)
     render3d_queue_clear_frame(world)
+    render_mesh_instances_remove_cpu_building_resource(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
@@ -650,6 +652,11 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     render3d_prewarm_mesh_pipelines(
       world, mesh_runtime_state_value, cameras, meshes,
     )
+    if frame_config.gpu_instance_buffer_builder_enabled {
+      render_mesh_instances_remove_cpu_building_resource(world)
+    } else {
+      render_mesh_instances_update_cpu_building_resource(world, meshes)
+    }
     meshes
   })
   render3d_prepare_shader_asset_paths(source_world, meshes)

@@ -66,3 +66,32 @@ test "pbr: RenderMeshInstanceFlags preserves Bevy bit values" {
     content="false",
   )
 }
+
+///|
+test "pbr: RenderMeshInstanceFlags mirrors Bevy extraction flags" {
+  let default_flags = RenderMeshInstanceFlags::from_extraction_components(
+    false, false, false, false, false, false,
+  )
+  debug_inspect(default_flags.bits(), content="3")
+  debug_inspect(
+    default_flags.contains(RenderMeshInstanceFlags::shadow_caster()),
+    content="true",
+  )
+  debug_inspect(
+    default_flags.contains(RenderMeshInstanceFlags::automatic_batching()),
+    content="true",
+  )
+
+  let disabled_flags = RenderMeshInstanceFlags::from_extraction_components(
+    true, true, true, true, true, true,
+  )
+  debug_inspect(disabled_flags.bits(), content="60")
+  debug_inspect(
+    disabled_flags.contains(RenderMeshInstanceFlags::shadow_caster()),
+    content="false",
+  )
+  debug_inspect(
+    disabled_flags.contains(RenderMeshInstanceFlags::automatic_batching()),
+    content="false",
+  )
+}

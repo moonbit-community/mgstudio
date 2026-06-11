@@ -1499,6 +1499,7 @@ pub fn RenderMeshInstanceFlags::bits(Self) -> UInt
 pub fn RenderMeshInstanceFlags::contains(Self, Self) -> Bool
 pub fn RenderMeshInstanceFlags::empty() -> Self
 pub fn RenderMeshInstanceFlags::from_bits(UInt) -> Self
+pub fn RenderMeshInstanceFlags::from_extraction_components(Bool, Bool, Bool, Bool, Bool, Bool) -> Self
 pub fn RenderMeshInstanceFlags::has_previous_morph() -> Self
 pub fn RenderMeshInstanceFlags::has_previous_skin() -> Self
 pub fn RenderMeshInstanceFlags::has_previous_transform() -> Self

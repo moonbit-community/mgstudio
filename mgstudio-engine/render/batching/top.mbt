@@ -24,6 +24,16 @@ pub fn NoAutomaticBatching::NoAutomaticBatching() -> NoAutomaticBatching {
 }
 
 ///|
+pub let ecs_key_no_automatic_batching : @ecs.ComponentKey[NoAutomaticBatching] = @ecs.register_component(
+  debug_name="mgstudio_render::NoAutomaticBatching",
+)
+
+///|
+pub impl @ecs.Component for NoAutomaticBatching with fn component() {
+  ecs_key_no_automatic_batching
+}
+
+///|
 pub struct BatchMeta[T] {
   pipeline_id : Int
   draw_function_id : Int

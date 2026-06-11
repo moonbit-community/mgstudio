@@ -123,6 +123,7 @@ priv struct Render3dExtractMeshRequiredComponents {
   clustered_decal : ClusteredDecal?
   has_not_shadow_caster : Bool
   has_no_frustum_culling : Bool
+  has_no_automatic_batching : Bool
   has_no_cpu_culling : Bool
   has_not_shadow_receiver : Bool
   has_transmitted_shadow_receiver : Bool
@@ -178,6 +179,7 @@ fn render3d_extract_mesh_for_entity(
     prefetched_clustered_decal,
     prefetched_has_not_shadow_caster,
     prefetched_has_no_frustum_culling,
+    prefetched_has_no_automatic_batching,
     prefetched_has_no_cpu_culling,
     prefetched_has_not_shadow_receiver,
     prefetched_has_transmitted_shadow_receiver,
@@ -203,6 +205,7 @@ fn render3d_extract_mesh_for_entity(
         components.clustered_decal,
         components.has_not_shadow_caster,
         components.has_no_frustum_culling,
+        components.has_no_automatic_batching,
         components.has_no_cpu_culling,
         components.has_not_shadow_receiver,
         components.has_transmitted_shadow_receiver,
@@ -281,6 +284,11 @@ fn render3d_extract_mesh_for_entity(
           entity, @visibility.ecs_key_no_frustum_culling,
         ))
         is Some(_)
+      let has_no_automatic_batching = (try! source_world.get_by_key(
+          entity,
+          @render_batching.NoAutomaticBatching::component(),
+        ))
+        is Some(_)
       let has_no_cpu_culling = (try! source_world.get_by_key(
           entity, @visibility.ecs_key_no_cpu_culling,
         ))
@@ -312,9 +320,10 @@ fn render3d_extract_mesh_for_entity(
       (
         mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
         aabb, layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
-        clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_cpu_culling,
-        has_not_shadow_receiver, has_transmitted_shadow_receiver, has_no_wireframe,
-        mesh3d_wireframe, wireframe_color, wireframe_line_width, wireframe_topology,
+        clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_automatic_batching,
+        has_no_cpu_culling, has_not_shadow_receiver, has_transmitted_shadow_receiver,
+        has_no_wireframe, mesh3d_wireframe, wireframe_color, wireframe_line_width,
+        wireframe_topology,
       )
     }
   }
@@ -346,6 +355,7 @@ fn render3d_extract_mesh_for_entity(
   } else {
     None
   }
+  let has_previous_transform = previous_global_transform is Some(_)
   let aabb = prefetched_aabb
   let entity_key = render3d_mesh_entity_key(entity)
   let has_previous_skin = skin_uniforms_value.previous_skins.contains(
@@ -421,6 +431,7 @@ fn render3d_extract_mesh_for_entity(
   let clustered_decal = prefetched_clustered_decal
   let has_not_shadow_caster = prefetched_has_not_shadow_caster
   let has_no_frustum_culling = prefetched_has_no_frustum_culling
+  let has_no_automatic_batching = prefetched_has_no_automatic_batching
   let has_no_cpu_culling = prefetched_has_no_cpu_culling
   let has_not_shadow_receiver = prefetched_has_not_shadow_receiver
   let has_transmitted_shadow_receiver = prefetched_has_transmitted_shadow_receiver
@@ -465,6 +476,7 @@ fn render3d_extract_mesh_for_entity(
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
         has_no_frustum_culling,
+        has_no_automatic_batching,
         has_no_cpu_culling,
         layers,
         has_no_wireframe,
@@ -474,7 +486,9 @@ fn render3d_extract_mesh_for_entity(
         wireframe_line_width,
         wireframe_topology,
         skinning_key_hi,
+        has_previous_transform,
         has_previous_skin,
+        has_previous_morph,
         morph_weights_index,
         previous_morph_weights_index,
         morph_targets_texture_id,
@@ -541,6 +555,9 @@ fn render3d_execute_collect_meshes(
         (
           @ecs.Has[@visibility.NoFrustumCulling],
           @ecs.Has[@visibility.NoCpuCulling],
+        ),
+        (
+          @ecs.Has[@render_batching.NoAutomaticBatching],
           @ecs.Has[NotShadowReceiver],
           @ecs.Has[TransmittedShadowReceiver],
         ),
@@ -571,11 +588,8 @@ fn render3d_execute_collect_meshes(
           clustered_decal,
           not_shadow_caster,
         ),
-        (
-          no_frustum_culling,
-          no_cpu_culling,
-          not_shadow_receiver,
-          transmitted_shadow_receiver,
+        (no_frustum_culling, no_cpu_culling),
+        (no_automatic_batching, not_shadow_receiver, transmitted_shadow_receiver
         ),
         (
           no_wireframe,
@@ -620,6 +634,7 @@ fn render3d_execute_collect_meshes(
         clustered_decal: clustered_decal.value(),
         has_not_shadow_caster: not_shadow_caster.present(),
         has_no_frustum_culling: no_frustum_culling.present(),
+        has_no_automatic_batching: no_automatic_batching.present(),
         has_no_cpu_culling: no_cpu_culling.present(),
         has_not_shadow_receiver: not_shadow_receiver.present(),
         has_transmitted_shadow_receiver: transmitted_shadow_receiver.present(),

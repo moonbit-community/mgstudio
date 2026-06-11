@@ -160,6 +160,7 @@ priv struct Mesh3dExtractedPayload {
   has_not_shadow_receiver : Bool
   has_transmitted_shadow_receiver : Bool
   has_no_frustum_culling : Bool
+  has_no_automatic_batching : Bool
   has_no_cpu_culling : Bool
   layers : @camera_render_layers.RenderLayers
   has_no_wireframe : Bool
@@ -169,7 +170,9 @@ priv struct Mesh3dExtractedPayload {
   wireframe_line_width : WireframeLineWidth?
   wireframe_topology : WireframeTopology?
   skinning_key_hi : Int
+  has_previous_transform : Bool
   has_previous_skin : Bool
+  has_previous_morph : Bool
   morph_weights_index : Int
   previous_morph_weights_index : Int
   morph_targets_texture_id : Int
