@@ -168,10 +168,26 @@ test "pbr: PendingWireframeQueues moves per-view current frame into prev frame" 
   let queues = PendingWireframeQueues::PendingWireframeQueues()
   let view_a = @core.Entity::new(10, 1)
   let view_b = @core.Entity::new(11, 1)
-  queues.push_current(view_a, @core.Entity::new(1, 1), @core.Entity::new(2, 1))
-  queues.push_current(view_a, @core.Entity::new(1, 1), @core.Entity::new(2, 1))
-  queues.push_current(view_a, @core.Entity::new(3, 1), @core.Entity::new(4, 1))
-  queues.push_current(view_b, @core.Entity::new(5, 1), @core.Entity::new(6, 1))
+  queues.push_current(
+    view_a,
+    @core.Entity::new(1, 1),
+    wireframe_test_main_entity(@core.Entity::new(2, 1)),
+  )
+  queues.push_current(
+    view_a,
+    @core.Entity::new(1, 1),
+    wireframe_test_main_entity(@core.Entity::new(2, 1)),
+  )
+  queues.push_current(
+    view_a,
+    @core.Entity::new(3, 1),
+    wireframe_test_main_entity(@core.Entity::new(4, 1)),
+  )
+  queues.push_current(
+    view_b,
+    @core.Entity::new(5, 1),
+    wireframe_test_main_entity(@core.Entity::new(6, 1)),
+  )
   debug_inspect(queues.view_len(), content="2")
   debug_inspect(queues.current_len(view_a), content="2")
   debug_inspect(queues.current_len(view_b), content="1")
@@ -195,12 +211,12 @@ test "pbr: PendingWireframeQueues expires stale views" {
   queues.push_current(
     live_view,
     @core.Entity::new(1, 1),
-    @core.Entity::new(2, 1),
+    wireframe_test_main_entity(@core.Entity::new(2, 1)),
   )
   queues.push_current(
     stale_view,
     @core.Entity::new(3, 1),
-    @core.Entity::new(4, 1),
+    wireframe_test_main_entity(@core.Entity::new(4, 1)),
   )
   let live : Map[UInt64, Bool] = {}
   live.set(live_view.to_bits(), true)
@@ -532,6 +548,83 @@ test "pbr: despecialize_wireframe_view_cache follows Bevy dirty removal branch" 
     cache.pipeline_id(view, stable_main_entity) is None,
     content="true",
   )
+}
+
+///|
+test "pbr: dirty wireframe specializations iterate Bevy specialize queue" {
+  let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
+  let view = @core.Entity::new(10, 1)
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  let stable_pair = (
+    @core.Entity::new(20, 1),
+    wireframe_test_main_entity(@core.Entity::new(21, 1)),
+  )
+  let pending_pair = (
+    @core.Entity::new(30, 1),
+    wireframe_test_main_entity(@core.Entity::new(31, 1)),
+  )
+  let added_pair = (
+    @core.Entity::new(40, 1),
+    wireframe_test_main_entity(@core.Entity::new(41, 1)),
+  )
+  visible.update_cpu_culled_entities([stable_pair, pending_pair])
+  visible.prepare_for_new_frame()
+  visible.update_cpu_culled_entities([stable_pair, pending_pair, added_pair])
+  dirty.insert_changed(stable_pair.1)
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
+  )
+  pending.add(pending_pair)
+
+  let to_specialize = dirty.iter_to_specialize(view, visible, pending)
+
+  debug_inspect(to_specialize.length(), content="3")
+  debug_inspect(to_specialize.contains(added_pair), content="true")
+  debug_inspect(to_specialize.contains(stable_pair), content="true")
+  debug_inspect(to_specialize.contains(pending_pair), content="true")
+}
+
+///|
+test "pbr: dirty wireframe specializations iterate Bevy dequeue and queue lists" {
+  let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
+  let view = @core.Entity::new(10, 1)
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  let removed_pair = (
+    @core.Entity::new(20, 1),
+    wireframe_test_main_entity(@core.Entity::new(21, 1)),
+  )
+  let changed_pair = (
+    @core.Entity::new(30, 1),
+    wireframe_test_main_entity(@core.Entity::new(31, 1)),
+  )
+  let added_pair = (
+    @core.Entity::new(40, 1),
+    wireframe_test_main_entity(@core.Entity::new(41, 1)),
+  )
+  let pending_pair = (
+    @core.Entity::new(50, 1),
+    wireframe_test_main_entity(@core.Entity::new(51, 1)),
+  )
+  let explicitly_removed = wireframe_test_main_entity(@core.Entity::new(61, 1))
+  visible.update_cpu_culled_entities([removed_pair, changed_pair, pending_pair])
+  visible.prepare_for_new_frame()
+  visible.update_cpu_culled_entities([changed_pair, pending_pair, added_pair])
+  dirty.insert_changed(changed_pair.1)
+  dirty.insert_removed(explicitly_removed)
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
+  )
+  pending.add(pending_pair)
+
+  let to_dequeue = dirty.iter_to_dequeue(view, visible)
+  let to_queue = dirty.iter_to_queue(view, visible, pending)
+
+  debug_inspect(to_dequeue.length(), content="3")
+  debug_inspect(to_dequeue.contains(removed_pair.1), content="true")
+  debug_inspect(to_dequeue.contains(changed_pair.1), content="true")
+  debug_inspect(to_dequeue.contains(explicitly_removed), content="true")
+  debug_inspect(to_queue.length(), content="3")
+  debug_inspect(to_queue.contains(added_pair), content="true")
+  debug_inspect(to_queue.contains(changed_pair), content="true")
+  debug_inspect(to_queue.contains(pending_pair), content="true")
 }
 
 ///|

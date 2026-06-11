@@ -717,8 +717,8 @@ pub fn Wireframe3dDrawFunctions::len(self : Wireframe3dDrawFunctions) -> Int {
 
 ///|
 pub struct ViewPendingWireframeQueues {
-  mut current_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
-  mut prev_frame : @hashset.HashSet[(@core.Entity, @core.Entity)]
+  mut current_frame : @hashset.HashSet[(@core.Entity, @render.MainEntity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, @render.MainEntity)]
 }
 
 ///|
@@ -743,9 +743,16 @@ pub fn ViewPendingWireframeQueues::prepare_for_new_frame(
 pub fn ViewPendingWireframeQueues::push_current(
   self : ViewPendingWireframeQueues,
   render_entity : @core.Entity,
-  main_entity : @core.Entity,
+  main_entity : @render.MainEntity,
 ) -> Unit {
   self.current_frame.add((render_entity, main_entity))
+}
+
+///|
+pub fn ViewPendingWireframeQueues::prev_frame(
+  self : ViewPendingWireframeQueues,
+) -> @hashset.HashSet[(@core.Entity, @render.MainEntity)] {
+  self.prev_frame
 }
 
 ///|
@@ -813,7 +820,7 @@ pub fn PendingWireframeQueues::push_current(
   self : PendingWireframeQueues,
   retained_view_entity : @core.Entity,
   render_entity : @core.Entity,
-  main_entity : @core.Entity,
+  main_entity : @render.MainEntity,
 ) -> Unit {
   self
   .view_or_insert(retained_view_entity)
@@ -989,6 +996,136 @@ pub fn DirtyWireframeSpecializations::to_despecialize(
     entities.push(entity)
   }
   entities
+}
+
+///|
+pub fn DirtyWireframeSpecializations::entity_pair_from_visible_main_entity(
+  _self : DirtyWireframeSpecializations,
+  render_visible_mesh_entities : @render_visibility.RenderVisibleEntitiesClass,
+  main_entity : @render.MainEntity,
+) -> (@core.Entity, @render.MainEntity)? {
+  for pair in render_visible_mesh_entities.entities_cpu_culling {
+    if pair.1 == main_entity {
+      return Some(pair)
+    }
+  }
+  match render_visible_mesh_entities.entities_gpu_culling.get(main_entity) {
+    Some(entity) => Some((entity, main_entity))
+    None => None
+  }
+}
+
+///|
+fn wireframe_main_entity_in_pairs(
+  pairs : Array[(@core.Entity, @render.MainEntity)],
+  main_entity : @render.MainEntity,
+) -> Bool {
+  for pair in pairs {
+    if pair.1 == main_entity {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn DirtyWireframeSpecializations::iter_to_specialize(
+  self : DirtyWireframeSpecializations,
+  view : @core.Entity,
+  render_visible_mesh_entities : @render_visibility.RenderVisibleEntitiesClass,
+  last_frame_view_pending_queues : @hashset.HashSet[
+    (@core.Entity, @render.MainEntity),
+  ],
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let result : Array[(@core.Entity, @render.MainEntity)] = []
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair)
+    }
+  } else {
+    for pair in render_visible_mesh_entities.added_entities() {
+      result.push(pair)
+    }
+    for main_entity in self.changed_renderables.values() {
+      match
+        self.entity_pair_from_visible_main_entity(
+          render_visible_mesh_entities, main_entity,
+        ) {
+        Some(pair) => result.push(pair)
+        None => ()
+      }
+    }
+  }
+  for pair in last_frame_view_pending_queues.iter() {
+    if render_visible_mesh_entities.entity_pair_is_visible(pair.0, pair.1) {
+      result.push(pair)
+    }
+  }
+  result
+}
+
+///|
+pub fn DirtyWireframeSpecializations::iter_to_dequeue(
+  self : DirtyWireframeSpecializations,
+  view : @core.Entity,
+  render_visible_mesh_entities : @render_visibility.RenderVisibleEntitiesClass,
+) -> Array[@render.MainEntity] {
+  let result : Array[@render.MainEntity] = []
+  for pair in render_visible_mesh_entities.removed_entities() {
+    result.push(pair.1)
+  }
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair.1)
+    }
+  } else {
+    for main_entity in self.changed_renderables.values() {
+      result.push(main_entity)
+    }
+    for main_entity in self.removed_renderables.values() {
+      result.push(main_entity)
+    }
+  }
+  result
+}
+
+///|
+pub fn DirtyWireframeSpecializations::iter_to_queue(
+  self : DirtyWireframeSpecializations,
+  view : @core.Entity,
+  render_visible_mesh_entities : @render_visibility.RenderVisibleEntitiesClass,
+  last_frame_view_pending_queues : @hashset.HashSet[
+    (@core.Entity, @render.MainEntity),
+  ],
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let result : Array[(@core.Entity, @render.MainEntity)] = []
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair)
+    }
+  } else {
+    let added = render_visible_mesh_entities.added_entities()
+    for pair in added {
+      result.push(pair)
+    }
+    for main_entity in self.changed_renderables.values() {
+      if !wireframe_main_entity_in_pairs(added, main_entity) {
+        match
+          self.entity_pair_from_visible_main_entity(
+            render_visible_mesh_entities, main_entity,
+          ) {
+          Some(pair) => result.push(pair)
+          None => ()
+        }
+      }
+    }
+  }
+  for pair in last_frame_view_pending_queues.iter() {
+    if render_visible_mesh_entities.entity_pair_is_visible(pair.0, pair.1) {
+      result.push(pair)
+    }
+  }
+  result
 }
 
 ///|
