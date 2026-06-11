@@ -1769,10 +1769,12 @@ pub struct Wireframe3dPhases {
   views : Map[UInt64, Wireframe3dViewPhase]
 }
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Self
+pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, WireframeBinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
 pub fn Wireframe3dPhases::len(Self) -> Int
 pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
 pub fn Wireframe3dPhases::prepare_for_new_frame(Self, @core.Entity, @batching.GpuPreprocessingMode) -> Unit
+pub fn Wireframe3dPhases::remove(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
 pub fn Wireframe3dPhases::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
 pub impl @app.Resource for Wireframe3dPhases
 
@@ -1795,12 +1797,18 @@ pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
 
 pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
-  items : Array[Wireframe3d]
+  mut items : Array[Wireframe3d]
+  input_uniform_indices : Map[UInt64, UInt]
+  phase_types : Map[UInt64, WireframeBinnedRenderPhaseType]
 }
+pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, WireframeBinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
+pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
+pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> WireframeBinnedRenderPhaseType?
+pub fn Wireframe3dViewPhase::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 
 pub struct Wireframe3dWideImmediates {
   color : @color.Color
@@ -1812,6 +1820,14 @@ pub fn Wireframe3dWideImmediates::float_count(Self) -> Int
 pub fn Wireframe3dWideImmediates::from_material(RenderWireframeMaterial) -> Self
 pub fn Wireframe3dWideImmediates::line_width(Self) -> Float
 pub fn Wireframe3dWideImmediates::smoothing(Self) -> Float
+
+pub(all) enum WireframeBinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, @debug.Debug)
+pub fn WireframeBinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
 
 pub struct WireframeColor {
   color : @color.Color

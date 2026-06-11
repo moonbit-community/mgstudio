@@ -259,6 +259,26 @@ pub fn Wireframe3d::bin_key(self : Wireframe3d) -> Wireframe3dBinKey {
 }
 
 ///|
+pub(all) enum WireframeBinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, Debug)
+
+///|
+pub fn WireframeBinnedRenderPhaseType::mesh(
+  batchable : Bool,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> WireframeBinnedRenderPhaseType {
+  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
+    (true, true) => MultidrawableMesh
+    (true, false) => BatchableMesh
+    (false, _) => UnbatchableMesh
+  }
+}
+
+///|
 pub struct WireframePipelineKey {
   mesh_key : @material.ErasedMeshPipelineKey
   wide : Bool
@@ -1151,14 +1171,21 @@ pub fn despecialize_wireframe_view_cache(
 ///|
 pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
-  items : Array[Wireframe3d]
+  mut items : Array[Wireframe3d]
+  input_uniform_indices : Map[UInt64, UInt]
+  phase_types : Map[UInt64, WireframeBinnedRenderPhaseType]
 }
 
 ///|
 pub fn Wireframe3dViewPhase::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Wireframe3dViewPhase {
-  Wireframe3dViewPhase::{ gpu_preprocessing_mode, items: [] }
+  Wireframe3dViewPhase::{
+    gpu_preprocessing_mode,
+    items: [],
+    input_uniform_indices: {},
+    phase_types: {},
+  }
 }
 
 ///|
@@ -1176,6 +1203,87 @@ pub fn Wireframe3dViewPhase::len(self : Wireframe3dViewPhase) -> Int {
 ///|
 pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
   self.items.length() == 0
+}
+
+///|
+fn wireframe_effective_phase_type(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+  phase_type : WireframeBinnedRenderPhaseType,
+) -> WireframeBinnedRenderPhaseType {
+  if gpu_preprocessing_mode ==
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
+    phase_type == MultidrawableMesh {
+    BatchableMesh
+  } else {
+    phase_type
+  }
+}
+
+///|
+pub fn Wireframe3dViewPhase::add(
+  self : Wireframe3dViewPhase,
+  batch_set_key : Wireframe3dBatchSetKey,
+  bin_key : Wireframe3dBinKey,
+  representative_entity : (@core.Entity, @render.MainEntity),
+  input_uniform_index : UInt,
+  phase_type : WireframeBinnedRenderPhaseType,
+) -> Unit {
+  let effective_phase_type = wireframe_effective_phase_type(
+    self.gpu_preprocessing_mode,
+    phase_type,
+  )
+  self.items.push(
+    Wireframe3d::new(
+      batch_set_key,
+      bin_key,
+      representative_entity.0,
+      representative_entity.1,
+      Wireframe3dBatchRange::new(
+        input_uniform_index.reinterpret_as_int(),
+        input_uniform_index.reinterpret_as_int() + 1,
+      ),
+      WireframePhaseItemExtraIndex::none(),
+    ),
+  )
+  let key = representative_entity.1.id().to_bits()
+  self.input_uniform_indices.set(key, input_uniform_index)
+  self.phase_types.set(key, effective_phase_type)
+}
+
+///|
+pub fn Wireframe3dViewPhase::remove(
+  self : Wireframe3dViewPhase,
+  main_entity : @render.MainEntity,
+) -> Unit {
+  let key = main_entity.id().to_bits()
+  if !self.phase_types.contains(key) {
+    return
+  }
+  let retained : Array[Wireframe3d] = []
+  for item in self.items {
+    if item.main_entity() != main_entity {
+      retained.push(item)
+    }
+  }
+  self.items = retained
+  self.input_uniform_indices.remove(key)
+  self.phase_types.remove(key)
+}
+
+///|
+pub fn Wireframe3dViewPhase::input_uniform_index(
+  self : Wireframe3dViewPhase,
+  main_entity : @render.MainEntity,
+) -> UInt? {
+  self.input_uniform_indices.get(main_entity.id().to_bits())
+}
+
+///|
+pub fn Wireframe3dViewPhase::phase_type(
+  self : Wireframe3dViewPhase,
+  main_entity : @render.MainEntity,
+) -> WireframeBinnedRenderPhaseType? {
+  self.phase_types.get(main_entity.id().to_bits())
 }
 
 ///|
@@ -1237,6 +1345,37 @@ pub fn Wireframe3dPhases::contains(
   retained_view_entity : @core.Entity,
 ) -> Bool {
   self.views.contains(retained_view_entity.to_bits())
+}
+
+///|
+pub fn Wireframe3dPhases::add(
+  self : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+  batch_set_key : Wireframe3dBatchSetKey,
+  bin_key : Wireframe3dBinKey,
+  representative_entity : (@core.Entity, @render.MainEntity),
+  input_uniform_index : UInt,
+  phase_type : WireframeBinnedRenderPhaseType,
+) -> Unit {
+  match self.views.get(retained_view_entity.to_bits()) {
+    Some(phase) =>
+      phase.add(
+        batch_set_key, bin_key, representative_entity, input_uniform_index, phase_type,
+      )
+    None => ()
+  }
+}
+
+///|
+pub fn Wireframe3dPhases::remove(
+  self : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+  main_entity : @render.MainEntity,
+) -> Unit {
+  match self.views.get(retained_view_entity.to_bits()) {
+    Some(phase) => phase.remove(main_entity)
+    None => ()
+  }
 }
 
 ///|

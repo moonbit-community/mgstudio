@@ -692,6 +692,61 @@ test "pbr: wireframe 3d phases prepare and retain views" {
 }
 
 ///|
+test "pbr: wireframe binned phase type follows Bevy mesh helper" {
+  let support = @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport()
+  debug_inspect(
+    WireframeBinnedRenderPhaseType::mesh(true, support),
+    content="BatchableMesh",
+  )
+  debug_inspect(
+    WireframeBinnedRenderPhaseType::mesh(false, support),
+    content="UnbatchableMesh",
+  )
+}
+
+///|
+test "pbr: wireframe view phase add caches Bevy bin metadata" {
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  phases.prepare_for_new_frame(
+    view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let batch_set = Wireframe3dBatchSetKey::new(
+    @material.CachedRenderPipelineId::new(77UL),
+    8,
+    @material.DrawFunctionId::new(3U),
+    WireframeMeshSlabs::new(2, index_slab_id=Some(5)),
+  )
+  let bin = Wireframe3dBinKey::new(8)
+
+  phases.add(
+    view,
+    batch_set,
+    bin,
+    (render_entity, main_entity),
+    9U,
+    MultidrawableMesh,
+  )
+
+  let phase = match phases.phase(view) {
+    Some(value) => value
+    None => abort("missing wireframe view phase")
+  }
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.is_empty(), content="false")
+  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+  debug_inspect(phase.phase_type(main_entity), content="Some(BatchableMesh)")
+
+  phases.remove(view, main_entity)
+  debug_inspect(phase.len(), content="0")
+  debug_inspect(phase.input_uniform_index(main_entity), content="None")
+  debug_inspect(phase.phase_type(main_entity), content="None")
+}
+
+///|
 test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
   let world = @ecs.World::new()
   let active_camera = world.spawn()
