@@ -207,6 +207,36 @@ pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecializ
 }
 
 ///|
+pub fn WireframeEntitiesNeedingSpecialization::changed_len(
+  self : WireframeEntitiesNeedingSpecialization,
+) -> Int {
+  self.changed.length()
+}
+
+///|
+pub fn WireframeEntitiesNeedingSpecialization::removed_len(
+  self : WireframeEntitiesNeedingSpecialization,
+) -> Int {
+  self.removed.length()
+}
+
+///|
+pub fn WireframeEntitiesNeedingSpecialization::changed_contains(
+  self : WireframeEntitiesNeedingSpecialization,
+  entity : @core.Entity,
+) -> Bool {
+  self.changed.contains(entity)
+}
+
+///|
+pub fn WireframeEntitiesNeedingSpecialization::removed_contains(
+  self : WireframeEntitiesNeedingSpecialization,
+  entity : @core.Entity,
+) -> Bool {
+  self.removed.contains(entity)
+}
+
+///|
 pub impl @app.Resource for WireframeEntitiesNeedingSpecialization with fn resource() {
   ecs_key_wireframe_entities_needing_specialization
 }
@@ -649,6 +679,119 @@ fn wireframe_material_application_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn wireframe_entities_needing_specialization_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[WireframeEntitiesNeedingSpecialization] {
+  if world.get_resource(WireframeEntitiesNeedingSpecialization::resource())
+    is None {
+    world.insert_resource(
+      WireframeEntitiesNeedingSpecialization::resource(),
+      WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+    )
+  }
+  match
+    world.get_resource_mut(WireframeEntitiesNeedingSpecialization::resource()) {
+    Some(value) => value
+    None => abort("Missing WireframeEntitiesNeedingSpecialization resource")
+  }
+}
+
+///|
+fn wireframe_collect_unique_entity(
+  entities : Array[@core.Entity],
+  seen : Map[UInt64, Bool],
+  entity : @core.Entity,
+) -> Unit {
+  let key = entity.to_bits()
+  if !seen.contains(key) {
+    seen.set(key, true)
+    entities.push(entity)
+  }
+}
+
+///|
+fn check_wireframe_entities_needing_specialization_from_world(
+  world : @ecs.World,
+  entities_needing_specialization : WireframeEntitiesNeedingSpecialization,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  entities_needing_specialization.changed.clear()
+  entities_needing_specialization.removed.clear()
+
+  let changed_seen : Map[UInt64, Bool] = {}
+  for entity in world.changed_components(ecs_key_mesh3d, system_ticks).read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.changed,
+      changed_seen,
+      entity,
+    )
+  }
+  for
+    entity in world
+    .changed_components(ecs_key_mesh3d_wireframe, system_ticks)
+    .read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.changed,
+      changed_seen,
+      entity,
+    )
+  }
+  for
+    entity in world
+    .changed_components(ecs_key_wireframe_line_width, system_ticks)
+    .read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.changed,
+      changed_seen,
+      entity,
+    )
+  }
+  for
+    entity in world
+    .changed_components(ecs_key_wireframe_topology, system_ticks)
+    .read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.changed,
+      changed_seen,
+      entity,
+    )
+  }
+
+  let removed_seen : Map[UInt64, Bool] = {}
+  for entity in world.removed_components(ecs_key_mesh3d, system_ticks).read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.removed,
+      removed_seen,
+      entity,
+    )
+  }
+  for
+    entity in world
+    .removed_components(ecs_key_mesh3d_wireframe, system_ticks)
+    .read() {
+    wireframe_collect_unique_entity(
+      entities_needing_specialization.removed,
+      removed_seen,
+      entity,
+    )
+  }
+}
+
+///|
+fn check_wireframe_entities_needing_specialization_system(
+  world : @ecs.World,
+) -> Unit {
+  let system_ticks = @app.current_system_ticks()
+  wireframe_entities_needing_specialization_mut_or_init(world).modify(fn(
+    value,
+  ) {
+    check_wireframe_entities_needing_specialization_from_world(
+      world, value, system_ticks,
+    )
+  })
+}
+
+///|
 fn render_wireframe_instances_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[RenderWireframeInstances] {
@@ -808,6 +951,10 @@ pub fn wireframe_plugin_with(
   @asset.init_asset(app, fn() { WireframeMaterial::WireframeMaterial() })
   .add_startup_system(wireframe_startup_system)
   .add_systems_world(@app.PostUpdate, wireframe_material_application_system)
+  .add_systems_world(
+    @app.PostUpdate,
+    check_wireframe_entities_needing_specialization_system,
+  )
   |> fn(next) {
     @render.try_with_render_app(next, configure_wireframe_render_sub_app)
   }

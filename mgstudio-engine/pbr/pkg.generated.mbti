@@ -1772,6 +1772,10 @@ pub struct WireframeEntitiesNeedingSpecialization {
   removed : Array[@core.Entity]
 }
 pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> Self
+pub fn WireframeEntitiesNeedingSpecialization::changed_contains(Self, @core.Entity) -> Bool
+pub fn WireframeEntitiesNeedingSpecialization::changed_len(Self) -> Int
+pub fn WireframeEntitiesNeedingSpecialization::removed_contains(Self, @core.Entity) -> Bool
+pub fn WireframeEntitiesNeedingSpecialization::removed_len(Self) -> Int
 pub impl @app.Resource for WireframeEntitiesNeedingSpecialization
 
 pub struct WireframeLineWidth {

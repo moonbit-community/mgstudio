@@ -278,6 +278,78 @@ test "pbr: extract_wireframe_materials preserves same-frame readded material" {
 }
 
 ///|
+test "pbr: wireframe specialization check collects changed source entities" {
+  let world = @ecs.World::new()
+  let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
+  let mesh_entity = world.spawn()
+  let material_entity = world.spawn()
+  let width_entity = world.spawn()
+  let topology_entity = world.spawn()
+  try! world.set_by_key(
+    mesh_entity,
+    ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(1)),
+  )
+  try! world.set_by_key(
+    material_entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(2)),
+  )
+  try! world.set_by_key(
+    width_entity,
+    ecs_key_wireframe_line_width,
+    WireframeLineWidth::new(3.0F),
+  )
+  try! world.set_by_key(topology_entity, ecs_key_wireframe_topology, Quads)
+
+  check_wireframe_entities_needing_specialization_from_world(
+    world,
+    needs,
+    @core.SystemTicks::new(0, 1),
+  )
+
+  debug_inspect(needs.changed_len(), content="4")
+  debug_inspect(needs.changed_contains(mesh_entity), content="true")
+  debug_inspect(needs.changed_contains(material_entity), content="true")
+  debug_inspect(needs.changed_contains(width_entity), content="true")
+  debug_inspect(needs.changed_contains(topology_entity), content="true")
+  debug_inspect(needs.removed_len(), content="0")
+}
+
+///|
+test "pbr: wireframe specialization check collects removed source entities" {
+  let world = @ecs.World::new()
+  let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
+  let mesh_entity = world.spawn()
+  let material_entity = world.spawn()
+  try! world.set_by_key(
+    mesh_entity,
+    ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(1)),
+  )
+  try! world.set_by_key(
+    material_entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(2)),
+  )
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! (world.remove_by_key(mesh_entity, ecs_key_mesh3d) |> ignore)
+  try! (world.remove_by_key(material_entity, ecs_key_mesh3d_wireframe) |> ignore)
+
+  check_wireframe_entities_needing_specialization_from_world(
+    world,
+    needs,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(needs.changed_len(), content="0")
+  debug_inspect(needs.removed_len(), content="2")
+  debug_inspect(needs.removed_contains(mesh_entity), content="true")
+  debug_inspect(needs.removed_contains(material_entity), content="true")
+}
+
+///|
 test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
   let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
   let offset = bind_groups.push(13, WireframeVertexPullParams::new(1U, 8U, 3U))
