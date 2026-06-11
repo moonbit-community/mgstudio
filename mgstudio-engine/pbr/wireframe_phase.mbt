@@ -520,6 +520,11 @@ pub fn RenderWireframeInstances::len(self : RenderWireframeInstances) -> Int {
 }
 
 ///|
+pub fn RenderWireframeInstances::clear(self : RenderWireframeInstances) -> Unit {
+  self.entries.clear()
+}
+
+///|
 pub fn RenderWireframeInstances::get(
   self : RenderWireframeInstances,
   entity : @core.Entity,

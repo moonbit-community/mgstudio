@@ -649,6 +649,99 @@ fn wireframe_material_application_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render_wireframe_instances_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[RenderWireframeInstances] {
+  if world.get_resource(RenderWireframeInstances::resource()) is None {
+    world.insert_resource(
+      RenderWireframeInstances::resource(),
+      RenderWireframeInstances::RenderWireframeInstances(),
+    )
+  }
+  match world.get_resource_mut(RenderWireframeInstances::resource()) {
+    Some(instances) => instances
+    None => abort("Missing RenderWireframeInstances resource")
+  }
+}
+
+///|
+fn wireframe_collect_changed_mesh_entities(
+  source_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Map[UInt64, @core.Entity] {
+  let changed : Map[UInt64, @core.Entity] = {}
+  for
+    entity in source_world
+    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
+    .read() {
+    changed.set(entity.to_bits(), entity)
+  }
+  for
+    entity in source_world
+    .changed_components(ecs_key_mesh3d_wireframe, system_ticks)
+    .read() {
+    changed.set(entity.to_bits(), entity)
+  }
+  changed
+}
+
+///|
+fn extract_wireframe_materials_from_world(
+  source_world : @ecs.World,
+  material_instances : RenderWireframeInstances,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let changed_entities = wireframe_collect_changed_mesh_entities(
+    source_world, system_ticks,
+  )
+  for _, entity in changed_entities {
+    match
+      (
+        try! source_world.get_by_key(
+          entity, @visibility.ecs_key_view_visibility,
+        ),
+        try! source_world.get_by_key(entity, ecs_key_mesh3d_wireframe),
+      ) {
+      (Some(view_visibility), Some(material)) =>
+        if view_visibility.get() {
+          material_instances.insert(entity, material.material().id())
+        } else {
+          ignore(material_instances.remove(entity))
+        }
+      _ => ()
+    }
+  }
+
+  for
+    entity in source_world
+    .removed_components(@visibility.ecs_key_view_visibility, system_ticks)
+    .read() {
+    if !changed_entities.contains(entity.to_bits()) {
+      ignore(material_instances.remove(entity))
+    }
+  }
+  for
+    entity in source_world
+    .removed_components(ecs_key_mesh3d_wireframe, system_ticks)
+    .read() {
+    if !changed_entities.contains(entity.to_bits()) {
+      ignore(material_instances.remove(entity))
+    }
+  }
+}
+
+///|
+fn extract_wireframe_materials_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let system_ticks = @app.current_system_ticks()
+  render_wireframe_instances_mut_or_init(world).modify(fn(material_instances) {
+    extract_wireframe_materials_from_world(
+      source_world, material_instances, system_ticks,
+    )
+  })
+}
+
+///|
 fn[T] wireframe_init_render_resource_if_missing(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
@@ -696,7 +789,10 @@ fn configure_wireframe_render_sub_app(
     Wireframe3dDrawFunctions::resource(),
     fn() { Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() },
   )
-  sub_app
+  sub_app.add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_wireframe_materials_system).in_set(render3d_set_extract),
+  )
 }
 
 ///|

@@ -1446,6 +1446,7 @@ pub struct RenderWireframeInstances {
   entries : Map[UInt64, Int]
 }
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> Self
+pub fn RenderWireframeInstances::clear(Self) -> Unit
 pub fn RenderWireframeInstances::get(Self, @core.Entity) -> Int?
 pub fn RenderWireframeInstances::insert(Self, @core.Entity, Int) -> Unit
 pub fn RenderWireframeInstances::len(Self) -> Int

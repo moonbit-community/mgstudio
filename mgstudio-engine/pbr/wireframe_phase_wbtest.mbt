@@ -159,6 +159,122 @@ test "pbr: render wireframe instance resources track Bevy render asset ids" {
   debug_inspect(instances.get(entity), content="Some(42)")
   debug_inspect(instances.remove(entity), content="true")
   debug_inspect(instances.get(entity), content="None")
+  instances.insert(entity, 77)
+  instances.clear()
+  debug_inspect(instances.len(), content="0")
+  debug_inspect(instances.get(entity), content="None")
+}
+
+///|
+test "pbr: extract_wireframe_materials mirrors visible Mesh3dWireframe changes" {
+  let source_world = @ecs.World::new()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  let visible_entity = source_world.spawn()
+  let hidden_entity = source_world.spawn()
+  instances.insert(hidden_entity, 99)
+  try! source_world.set_by_key(
+    visible_entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! source_world.set_by_key(
+    visible_entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(42)),
+  )
+  try! source_world.set_by_key(
+    hidden_entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  try! source_world.set_by_key(
+    hidden_entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(13)),
+  )
+
+  extract_wireframe_materials_from_world(
+    source_world,
+    instances,
+    @core.SystemTicks::new(0, 1),
+  )
+
+  debug_inspect(instances.len(), content="1")
+  debug_inspect(instances.get(visible_entity), content="Some(42)")
+  debug_inspect(instances.get(hidden_entity), content="None")
+}
+
+///|
+test "pbr: extract_wireframe_materials removes stale removed components" {
+  let source_world = @ecs.World::new()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(7)),
+  )
+  extract_wireframe_materials_from_world(
+    source_world,
+    instances,
+    @core.SystemTicks::new(0, 1),
+  )
+  debug_inspect(instances.get(entity), content="Some(7)")
+
+  source_world.increment_change_tick() |> ignore
+  source_world.increment_change_tick() |> ignore
+  try! (source_world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+  extract_wireframe_materials_from_world(
+    source_world,
+    instances,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(instances.get(entity), content="None")
+}
+
+///|
+test "pbr: extract_wireframe_materials preserves same-frame readded material" {
+  let source_world = @ecs.World::new()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(3)),
+  )
+  extract_wireframe_materials_from_world(
+    source_world,
+    instances,
+    @core.SystemTicks::new(0, 1),
+  )
+  debug_inspect(instances.get(entity), content="Some(3)")
+
+  source_world.increment_change_tick() |> ignore
+  source_world.increment_change_tick() |> ignore
+  try! (source_world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(@asset.Handle::new(11)),
+  )
+  extract_wireframe_materials_from_world(
+    source_world,
+    instances,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(instances.get(entity), content="Some(11)")
 }
 
 ///|
