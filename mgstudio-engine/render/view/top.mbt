@@ -78,6 +78,37 @@ pub fn retained_view_entity_contains(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs::normalize_bgra8`.
+pub fn normalize_bgra8_for_render_target(
+  target_is_window~ : Bool,
+  format_raw : UInt,
+) -> UInt {
+  if target_is_window && format_raw == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB {
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+  } else {
+    format_raw
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs::extract_cameras`.
+pub fn extracted_view_target_format_raw(
+  output_texture_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+  hdr? : Bool = false,
+  compositing_space? : @camera_compositing_space.CompositingSpace? = None,
+) -> UInt {
+  if hdr {
+    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT
+  } else {
+    match compositing_space {
+      Some(@camera_compositing_space.CompositingSpace::Srgb) =>
+        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
+      _ => output_texture_format_raw
+    }
+  }
+}
+
+///|
 pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::always_visible()
 }

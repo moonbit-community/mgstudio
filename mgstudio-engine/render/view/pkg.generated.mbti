@@ -2,12 +2,17 @@
 package "Milky2018/mgstudio/render/view"
 
 import {
+  "Milky2018/mgstudio/camera/compositing_space",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
+
+pub fn normalize_bgra8_for_render_target(target_is_window~ : Bool, UInt) -> UInt
+
 pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEntity) -> Bool
 
 pub fn retained_view_entity_equals(RetainedViewEntity, RetainedViewEntity) -> Bool
