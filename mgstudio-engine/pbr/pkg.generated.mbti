@@ -198,6 +198,8 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[@light.Direction
 
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[@light.DirectionalLightTexture]
 
+pub let ecs_key_dirty_wireframe_specializations : @ecs.ResourceKey[DirtyWireframeSpecializations]
+
 pub let ecs_key_distance_fog : @ecs.ComponentKey[DistanceFog]
 
 pub let ecs_key_entity_specialization_ticks : @ecs.ResourceKey[EntitySpecializationTicks]
@@ -924,6 +926,21 @@ pub(all) enum DepthOfFieldMode {
   Gaussian
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DepthOfFieldMode::default() -> Self
+
+pub struct DirtyWireframeSpecializations {
+  changed_renderables : Map[UInt64, @core.Entity]
+  removed_renderables : Map[UInt64, @core.Entity]
+  views : Map[UInt64, @core.Entity]
+}
+pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> Self
+pub fn DirtyWireframeSpecializations::changed_contains(Self, @core.Entity) -> Bool
+pub fn DirtyWireframeSpecializations::changed_len(Self) -> Int
+pub fn DirtyWireframeSpecializations::clear(Self) -> Unit
+pub fn DirtyWireframeSpecializations::insert_changed(Self, @core.Entity) -> Unit
+pub fn DirtyWireframeSpecializations::insert_removed(Self, @core.Entity) -> Unit
+pub fn DirtyWireframeSpecializations::removed_contains(Self, @core.Entity) -> Bool
+pub fn DirtyWireframeSpecializations::removed_len(Self) -> Int
+pub impl @app.Resource for DirtyWireframeSpecializations
 
 pub struct DistanceFog {
   color : @color.Color

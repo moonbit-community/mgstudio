@@ -315,6 +315,21 @@ pub impl @app.Resource for WireframeConfig with fn resource() {
 const WIREFRAME_PLUGIN_NAME : String = "mgstudio.pbr.WireframePlugin"
 
 ///|
+let wireframe_dirty_specialization_set_clear : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.dirty_specialization.clear",
+)
+
+///|
+let wireframe_dirty_specialization_set_check_for_changes : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.dirty_specialization.check_for_changes",
+)
+
+///|
+let wireframe_dirty_specialization_set_check_for_removals : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.dirty_specialization.check_for_removals",
+)
+
+///|
 pub struct WireframePlugin {}
 
 ///|
@@ -885,6 +900,65 @@ fn extract_wireframe_materials_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn dirty_wireframe_specializations_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[DirtyWireframeSpecializations] {
+  if world.get_resource(DirtyWireframeSpecializations::resource()) is None {
+    world.insert_resource(
+      DirtyWireframeSpecializations::resource(),
+      DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    )
+  }
+  match world.get_resource_mut(DirtyWireframeSpecializations::resource()) {
+    Some(value) => value
+    None => abort("Missing DirtyWireframeSpecializations resource")
+  }
+}
+
+///|
+fn clear_dirty_wireframe_specializations_system(world : @ecs.World) -> Unit {
+  dirty_wireframe_specializations_mut_or_init(world).modify(fn(value) {
+    value.clear()
+  })
+}
+
+///|
+fn extract_wireframe_entities_needing_specialization_system(
+  world : @ecs.World,
+) -> Unit {
+  let source_world = @render.render_source_world(world)
+  guard source_world.get_resource(
+      WireframeEntitiesNeedingSpecialization::resource(),
+    )
+    is Some(entities_needing_specialization) else {
+    return
+  }
+  dirty_wireframe_specializations_mut_or_init(world).modify(fn(dirty) {
+    for entity in entities_needing_specialization.changed {
+      dirty.insert_changed(entity)
+    }
+  })
+}
+
+///|
+fn extract_wireframe_entities_that_need_specializations_removed_system(
+  world : @ecs.World,
+) -> Unit {
+  let source_world = @render.render_source_world(world)
+  guard source_world.get_resource(
+      WireframeEntitiesNeedingSpecialization::resource(),
+    )
+    is Some(entities_needing_specialization) else {
+    return
+  }
+  dirty_wireframe_specializations_mut_or_init(world).modify(fn(dirty) {
+    for entity in entities_needing_specialization.removed {
+      dirty.insert_removed(entity)
+    }
+  })
+}
+
+///|
 fn[T] wireframe_init_render_resource_if_missing(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
@@ -932,8 +1006,50 @@ fn configure_wireframe_render_sub_app(
     Wireframe3dDrawFunctions::resource(),
     fn() { Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() },
   )
-  sub_app.add_systems(
-    @render.render_schedule_stage(),
+  wireframe_init_render_resource_if_missing(
+    world,
+    DirtyWireframeSpecializations::resource(),
+    fn() { DirtyWireframeSpecializations::DirtyWireframeSpecializations() },
+  )
+  let stage = @render.render_schedule_stage()
+  sub_app
+  .configure_sets(
+    stage,
+    wireframe_dirty_specialization_set_clear,
+    before=[wireframe_dirty_specialization_set_check_for_changes],
+    in_sets=[render3d_set_extract],
+  )
+  .configure_sets(
+    stage,
+    wireframe_dirty_specialization_set_check_for_changes,
+    before=[wireframe_dirty_specialization_set_check_for_removals],
+    in_sets=[render3d_set_extract],
+  )
+  .configure_sets(
+    stage,
+    wireframe_dirty_specialization_set_check_for_removals,
+    in_sets=[render3d_set_extract],
+  )
+  .add_systems(
+    stage,
+    @app.system(clear_dirty_wireframe_specializations_system).in_set(
+      wireframe_dirty_specialization_set_clear,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(extract_wireframe_entities_needing_specialization_system).in_set(
+      wireframe_dirty_specialization_set_check_for_changes,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(
+      extract_wireframe_entities_that_need_specializations_removed_system,
+    ).in_set(wireframe_dirty_specialization_set_check_for_removals),
+  )
+  .add_systems(
+    stage,
     @app.system(extract_wireframe_materials_system).in_set(render3d_set_extract),
   )
 }

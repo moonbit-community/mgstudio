@@ -715,3 +715,86 @@ pub fn PendingWireframeQueues::previous_len(
 ) -> Int {
   self.previous_frame.length()
 }
+
+///|
+pub struct DirtyWireframeSpecializations {
+  changed_renderables : Map[UInt64, @core.Entity]
+  removed_renderables : Map[UInt64, @core.Entity]
+  views : Map[UInt64, @core.Entity]
+}
+
+///|
+pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> DirtyWireframeSpecializations {
+  DirtyWireframeSpecializations::{
+    changed_renderables: {},
+    removed_renderables: {},
+    views: {},
+  }
+}
+
+///|
+pub let ecs_key_dirty_wireframe_specializations : @ecs.ResourceKey[
+  DirtyWireframeSpecializations,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::DirtyWireframeSpecializations",
+)
+
+///|
+pub impl @app.Resource for DirtyWireframeSpecializations with fn resource() {
+  ecs_key_dirty_wireframe_specializations
+}
+
+///|
+pub fn DirtyWireframeSpecializations::clear(
+  self : DirtyWireframeSpecializations,
+) -> Unit {
+  self.changed_renderables.clear()
+  self.removed_renderables.clear()
+  self.views.clear()
+}
+
+///|
+pub fn DirtyWireframeSpecializations::insert_changed(
+  self : DirtyWireframeSpecializations,
+  entity : @core.Entity,
+) -> Unit {
+  self.changed_renderables.set(entity.to_bits(), entity)
+}
+
+///|
+pub fn DirtyWireframeSpecializations::insert_removed(
+  self : DirtyWireframeSpecializations,
+  entity : @core.Entity,
+) -> Unit {
+  self.removed_renderables.set(entity.to_bits(), entity)
+}
+
+///|
+pub fn DirtyWireframeSpecializations::changed_len(
+  self : DirtyWireframeSpecializations,
+) -> Int {
+  self.changed_renderables.length()
+}
+
+///|
+pub fn DirtyWireframeSpecializations::removed_len(
+  self : DirtyWireframeSpecializations,
+) -> Int {
+  self.removed_renderables.length()
+}
+
+///|
+pub fn DirtyWireframeSpecializations::changed_contains(
+  self : DirtyWireframeSpecializations,
+  entity : @core.Entity,
+) -> Bool {
+  self.changed_renderables.contains(entity.to_bits())
+}
+
+///|
+pub fn DirtyWireframeSpecializations::removed_contains(
+  self : DirtyWireframeSpecializations,
+  entity : @core.Entity,
+) -> Bool {
+  self.removed_renderables.contains(entity.to_bits())
+}

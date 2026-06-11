@@ -350,6 +350,55 @@ test "pbr: wireframe specialization check collects removed source entities" {
 }
 
 ///|
+test "pbr: dirty wireframe specializations mirror Bevy dirty tables" {
+  let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
+  let changed_entity = @core.Entity::new(1, 1)
+  let removed_entity = @core.Entity::new(2, 1)
+  dirty.insert_changed(changed_entity)
+  dirty.insert_removed(removed_entity)
+  debug_inspect(dirty.changed_len(), content="1")
+  debug_inspect(dirty.removed_len(), content="1")
+  debug_inspect(dirty.changed_contains(changed_entity), content="true")
+  debug_inspect(dirty.removed_contains(removed_entity), content="true")
+
+  dirty.clear()
+
+  debug_inspect(dirty.changed_len(), content="0")
+  debug_inspect(dirty.removed_len(), content="0")
+}
+
+///|
+test "pbr: wireframe dirty extraction writes changed and removed render tables" {
+  let world = @ecs.World::new()
+  let changed_entity = @core.Entity::new(3, 1)
+  let removed_entity = @core.Entity::new(4, 1)
+  let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
+  needs.changed.push(changed_entity)
+  needs.removed.push(removed_entity)
+  world.insert_resource(
+    WireframeEntitiesNeedingSpecialization::resource(),
+    needs,
+  )
+  world.insert_resource(
+    DirtyWireframeSpecializations::resource(),
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+  )
+
+  extract_wireframe_entities_needing_specialization_system(world)
+  extract_wireframe_entities_that_need_specializations_removed_system(world)
+
+  let dirty = match
+    world.get_resource(DirtyWireframeSpecializations::resource()) {
+    Some(value) => value
+    None => abort("missing DirtyWireframeSpecializations")
+  }
+  debug_inspect(dirty.changed_len(), content="1")
+  debug_inspect(dirty.removed_len(), content="1")
+  debug_inspect(dirty.changed_contains(changed_entity), content="true")
+  debug_inspect(dirty.removed_contains(removed_entity), content="true")
+}
+
+///|
 test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
   let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
   let offset = bind_groups.push(13, WireframeVertexPullParams::new(1U, 8U, 3U))
