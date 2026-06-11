@@ -103,10 +103,35 @@ pub impl Default for FragmentState with fn default() {
 }
 
 ///|
+pub fn FragmentState::with_shader(
+  self : FragmentState,
+  shader : String?,
+) -> FragmentState {
+  FragmentState::{ ..self, shader, }
+}
+
+///|
+pub fn FragmentState::with_shader_defs(
+  self : FragmentState,
+  shader_defs : Array[ShaderDefVal],
+) -> FragmentState {
+  FragmentState::{ ..self, shader_defs, }
+}
+
+///|
+pub fn FragmentState::with_entry_point(
+  self : FragmentState,
+  entry_point : String?,
+) -> FragmentState {
+  FragmentState::{ ..self, entry_point, }
+}
+
+///|
 pub struct PrimitiveState {
   topology : UInt
   front_face : UInt
   cull_mode : UInt?
+  polygon_mode : UInt?
 }
 
 ///|
@@ -115,6 +140,7 @@ pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
     topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     front_face: @wgpu.FRONT_FACE_CCW,
     cull_mode: Some(@wgpu.CULL_MODE_BACK),
+    polygon_mode: None,
   }
 }
 
@@ -124,10 +150,19 @@ pub impl Default for PrimitiveState with fn default() {
 }
 
 ///|
+pub fn PrimitiveState::with_polygon_mode(
+  self : PrimitiveState,
+  polygon_mode : UInt?,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, polygon_mode, }
+}
+
+///|
 pub struct DepthStencilState {
   format : UInt
   depth_write_enabled : Bool
   depth_compare : UInt
+  bias_slope_scale : Float
 }
 
 ///|
@@ -136,6 +171,7 @@ pub fn DepthStencilState::DepthStencilState() -> DepthStencilState {
     format: @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
     depth_write_enabled: true,
     depth_compare: @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+    bias_slope_scale: 0.0F,
   }
 }
 
@@ -145,7 +181,20 @@ pub fn DepthStencilState::new(
   depth_write_enabled : Bool,
   depth_compare : UInt,
 ) -> DepthStencilState {
-  DepthStencilState::{ format, depth_write_enabled, depth_compare }
+  DepthStencilState::{
+    format,
+    depth_write_enabled,
+    depth_compare,
+    bias_slope_scale: 0.0F,
+  }
+}
+
+///|
+pub fn DepthStencilState::with_bias_slope_scale(
+  self : DepthStencilState,
+  bias_slope_scale : Float,
+) -> DepthStencilState {
+  DepthStencilState::{ ..self, bias_slope_scale, }
 }
 
 ///|
@@ -245,6 +294,22 @@ pub fn RenderPipelineDescriptor::with_depth_stencil(
   depth_stencil : DepthStencilState?,
 ) -> RenderPipelineDescriptor {
   RenderPipelineDescriptor::{ ..self, depth_stencil, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_immediate_size(
+  self : RenderPipelineDescriptor,
+  immediate_size : UInt,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, immediate_size, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_primitive(
+  self : RenderPipelineDescriptor,
+  primitive : PrimitiveState,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, primitive, }
 }
 
 ///|

@@ -301,9 +301,11 @@ pub struct DepthStencilState {
   format : UInt
   depth_write_enabled : Bool
   depth_compare : UInt
+  bias_slope_scale : Float
 }
 pub fn DepthStencilState::DepthStencilState() -> Self
 pub fn DepthStencilState::new(UInt, Bool, UInt) -> Self
+pub fn DepthStencilState::with_bias_slope_scale(Self, Float) -> Self
 pub impl Default for DepthStencilState
 
 pub struct FragmentState {
@@ -315,6 +317,9 @@ pub struct FragmentState {
 pub fn FragmentState::FragmentState() -> Self
 pub fn FragmentState::new(String?, Array[ShaderDefVal], String?, Array[ColorTargetState?]) -> Self
 pub fn FragmentState::set_target(Self, Int, ColorTargetState) -> Self
+pub fn FragmentState::with_entry_point(Self, String?) -> Self
+pub fn FragmentState::with_shader(Self, String?) -> Self
+pub fn FragmentState::with_shader_defs(Self, Array[ShaderDefVal]) -> Self
 pub impl Default for FragmentState
 
 pub struct GpuArrayBuffer[T] {
@@ -390,8 +395,10 @@ pub struct PrimitiveState {
   topology : UInt
   front_face : UInt
   cull_mode : UInt?
+  polygon_mode : UInt?
 }
 pub fn PrimitiveState::PrimitiveState() -> Self
+pub fn PrimitiveState::with_polygon_mode(Self, UInt?) -> Self
 pub impl Default for PrimitiveState
 
 pub struct RenderPipeline {
@@ -421,8 +428,10 @@ pub fn RenderPipelineDescriptor::fragment_or_error(Self) -> FragmentState raise 
 pub fn RenderPipelineDescriptor::set_layout(Self, Int, BindGroupLayoutDescriptor) -> Self
 pub fn RenderPipelineDescriptor::with_depth_stencil(Self, DepthStencilState?) -> Self
 pub fn RenderPipelineDescriptor::with_fragment(Self, FragmentState?) -> Self
+pub fn RenderPipelineDescriptor::with_immediate_size(Self, UInt) -> Self
 pub fn RenderPipelineDescriptor::with_label(Self, String?) -> Self
 pub fn RenderPipelineDescriptor::with_layout(Self, Array[BindGroupLayoutDescriptor]) -> Self
+pub fn RenderPipelineDescriptor::with_primitive(Self, PrimitiveState) -> Self
 pub fn RenderPipelineDescriptor::with_vertex(Self, VertexState) -> Self
 pub impl Default for RenderPipelineDescriptor
 

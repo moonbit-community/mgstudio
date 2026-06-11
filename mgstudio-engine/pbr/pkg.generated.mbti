@@ -665,6 +665,11 @@ pub(all) suberror AutoExposureCompensationCurveError {
   NotMonotonic
 }
 
+pub suberror WireframePipelineSpecializationError {
+  MissingDepthStencilState
+  MissingFragmentState
+}
+
 // Types and methods
 pub struct AutoExposure {
   min_ev100 : Float
@@ -1681,6 +1686,15 @@ pub struct Wireframe3dBinKey {
 } derive(Eq, @debug.Debug)
 pub fn Wireframe3dBinKey::asset_id(Self) -> Int
 pub fn Wireframe3dBinKey::new(Int) -> Self
+
+pub struct Wireframe3dPipeline {
+  shader : String
+  wide_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
+}
+pub fn Wireframe3dPipeline::new(shader? : String, wide_bind_group_layout_descriptor? : @render_resource.BindGroupLayoutDescriptor) -> Self
+pub fn Wireframe3dPipeline::shader(Self) -> String
+pub fn Wireframe3dPipeline::specialize(Self, WireframePipelineKey, @render_resource.RenderPipelineDescriptor) -> @render_resource.RenderPipelineDescriptor raise WireframePipelineSpecializationError
+pub fn Wireframe3dPipeline::wide_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
 
 pub struct Wireframe3dThinImmediates {
   color : @color.Color
