@@ -183,6 +183,10 @@ fn core_2d_configure_render_sub_app(
   .configure_set(stage, @render.render_system_set_extract_commands, before=[
     core_2d_set_extract,
   ])
+  .add_systems(
+    stage,
+    @app.system(extract_core_2d_camera_phases).in_set(core_2d_set_extract),
+  )
   .configure_set(stage, core_2d_set_extract, before=[core_2d_set_prepare])
   .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     core_2d_set_prepare,
@@ -440,13 +444,42 @@ pub fn Transparent2d::distance(self : Transparent2d) -> Float {
 }
 
 ///|
+pub struct RetainedViewEntity2d {
+  main_entity : @core.Entity
+  subview_index : Int
+} derive(Eq, Debug)
+
+///|
+pub fn RetainedViewEntity2d::new(
+  main_entity : @core.Entity,
+  subview_index? : Int = 0,
+) -> RetainedViewEntity2d {
+  RetainedViewEntity2d::{ main_entity, subview_index }
+}
+
+///|
+fn retained_view_entity_2d_contains(
+  views : Array[RetainedViewEntity2d],
+  view : RetainedViewEntity2d,
+) -> Bool {
+  for current in views {
+    if current.main_entity == view.main_entity &&
+      current.subview_index == view.subview_index {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub struct Opaque2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[Opaque2d]
 }
 
 ///|
 pub fn Opaque2dPhase::Opaque2dPhase() -> Opaque2dPhase {
-  Opaque2dPhase::{ items: [] }
+  Opaque2dPhase::{ retained_views: [], items: [] }
 }
 
 ///|
@@ -470,13 +503,52 @@ pub fn Opaque2dPhase::push(self : Opaque2dPhase, item : Opaque2d) -> Unit {
 }
 
 ///|
+pub fn Opaque2dPhase::prepare_for_new_frame(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+) -> Unit {
+  if !retained_view_entity_2d_contains(self.retained_views, view) {
+    self.retained_views.push(view)
+  }
+}
+
+///|
+pub fn Opaque2dPhase::retain_views(
+  self : Opaque2dPhase,
+  live_views : Array[RetainedViewEntity2d],
+) -> Unit {
+  let retained : Array[RetainedViewEntity2d] = []
+  for view in self.retained_views {
+    if retained_view_entity_2d_contains(live_views, view) {
+      retained.push(view)
+    }
+  }
+  self.retained_views.clear()
+  self.retained_views.append(retained)
+}
+
+///|
+pub fn Opaque2dPhase::view_count(self : Opaque2dPhase) -> Int {
+  self.retained_views.length()
+}
+
+///|
+pub fn Opaque2dPhase::contains_view(
+  self : Opaque2dPhase,
+  view : RetainedViewEntity2d,
+) -> Bool {
+  retained_view_entity_2d_contains(self.retained_views, view)
+}
+
+///|
 pub struct AlphaMask2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[AlphaMask2d]
 }
 
 ///|
 pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> AlphaMask2dPhase {
-  AlphaMask2dPhase::{ items: [] }
+  AlphaMask2dPhase::{ retained_views: [], items: [] }
 }
 
 ///|
@@ -503,13 +575,52 @@ pub fn AlphaMask2dPhase::push(
 }
 
 ///|
+pub fn AlphaMask2dPhase::prepare_for_new_frame(
+  self : AlphaMask2dPhase,
+  view : RetainedViewEntity2d,
+) -> Unit {
+  if !retained_view_entity_2d_contains(self.retained_views, view) {
+    self.retained_views.push(view)
+  }
+}
+
+///|
+pub fn AlphaMask2dPhase::retain_views(
+  self : AlphaMask2dPhase,
+  live_views : Array[RetainedViewEntity2d],
+) -> Unit {
+  let retained : Array[RetainedViewEntity2d] = []
+  for view in self.retained_views {
+    if retained_view_entity_2d_contains(live_views, view) {
+      retained.push(view)
+    }
+  }
+  self.retained_views.clear()
+  self.retained_views.append(retained)
+}
+
+///|
+pub fn AlphaMask2dPhase::view_count(self : AlphaMask2dPhase) -> Int {
+  self.retained_views.length()
+}
+
+///|
+pub fn AlphaMask2dPhase::contains_view(
+  self : AlphaMask2dPhase,
+  view : RetainedViewEntity2d,
+) -> Bool {
+  retained_view_entity_2d_contains(self.retained_views, view)
+}
+
+///|
 pub struct Transparent2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[Transparent2d]
 }
 
 ///|
 pub fn Transparent2dPhase::Transparent2dPhase() -> Transparent2dPhase {
-  Transparent2dPhase::{ items: [] }
+  Transparent2dPhase::{ retained_views: [], items: [] }
 }
 
 ///|
@@ -533,6 +644,83 @@ pub fn Transparent2dPhase::push(
   item : Transparent2d,
 ) -> Unit {
   self.items.push(item)
+}
+
+///|
+pub fn Transparent2dPhase::prepare_for_new_frame(
+  self : Transparent2dPhase,
+  view : RetainedViewEntity2d,
+) -> Unit {
+  if !retained_view_entity_2d_contains(self.retained_views, view) {
+    self.retained_views.push(view)
+  }
+}
+
+///|
+pub fn Transparent2dPhase::retain_views(
+  self : Transparent2dPhase,
+  live_views : Array[RetainedViewEntity2d],
+) -> Unit {
+  let retained : Array[RetainedViewEntity2d] = []
+  for view in self.retained_views {
+    if retained_view_entity_2d_contains(live_views, view) {
+      retained.push(view)
+    }
+  }
+  self.retained_views.clear()
+  self.retained_views.append(retained)
+}
+
+///|
+pub fn Transparent2dPhase::view_count(self : Transparent2dPhase) -> Int {
+  self.retained_views.length()
+}
+
+///|
+pub fn Transparent2dPhase::contains_view(
+  self : Transparent2dPhase,
+  view : RetainedViewEntity2d,
+) -> Bool {
+  retained_view_entity_2d_contains(self.retained_views, view)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_2d/mod.rs::extract_core_2d_camera_phases`.
+pub fn extract_core_2d_camera_phases(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  guard render_world.get_resource(ecs_key_opaque2d_phase) is Some(opaque_phase) else {
+    return
+  }
+  guard render_world.get_resource(ecs_key_alpha_mask2d_phase)
+    is Some(alpha_mask) else {
+    return
+  }
+  guard render_world.get_resource(ecs_key_transparent2d_phase)
+    is Some(transparent) else {
+    return
+  }
+  let live_views : Array[RetainedViewEntity2d] = []
+  let cameras_2d : @ecs.Query[
+    @ecs.Read[@camera_components2d.Camera2d],
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! cameras_2d.view(fn(entity, _camera2d) {
+    guard (try! source_world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) else {
+      return
+    }
+    if !camera.is_active {
+      return
+    }
+    let retained_view_entity = RetainedViewEntity2d::new(entity)
+    transparent.prepare_for_new_frame(retained_view_entity)
+    opaque_phase.prepare_for_new_frame(retained_view_entity)
+    alpha_mask.prepare_for_new_frame(retained_view_entity)
+    live_views.push(retained_view_entity)
+  })
+  transparent.retain_views(live_views)
+  opaque_phase.retain_views(live_views)
+  alpha_mask.retain_views(live_views)
 }
 
 ///|

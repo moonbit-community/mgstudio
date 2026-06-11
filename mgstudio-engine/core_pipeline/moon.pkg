@@ -17,6 +17,7 @@ import {
 
 import {
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/shader",
 } for "test"

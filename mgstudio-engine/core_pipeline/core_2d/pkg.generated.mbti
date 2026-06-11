@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/core_pipeline/core_2d"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
   "moonbitlang/core/debug",
@@ -47,6 +48,8 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transparent2d_phase : @ecs.ResourceKey[Transparent2dPhase]
 
+pub fn extract_core_2d_camera_phases(@ecs.World) -> Unit
+
 pub fn main_opaque_pass_2d_should_draw_alpha_mask(MainOpaquePass2dState) -> Bool
 
 pub fn main_opaque_pass_2d_should_draw_opaque(MainOpaquePass2dState) -> Bool
@@ -83,13 +86,18 @@ pub struct AlphaMask2dBinKey {
 pub fn AlphaMask2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset_id~ : Int, material_bind_group_id? : Int?) -> Self
 
 pub struct AlphaMask2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[AlphaMask2d]
 }
 pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> Self
 pub fn AlphaMask2dPhase::clear(Self) -> Unit
+pub fn AlphaMask2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
 pub fn AlphaMask2dPhase::is_empty(Self) -> Bool
 pub fn AlphaMask2dPhase::len(Self) -> Int
+pub fn AlphaMask2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
 pub fn AlphaMask2dPhase::push(Self, AlphaMask2d) -> Unit
+pub fn AlphaMask2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn AlphaMask2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for AlphaMask2dPhase
 
 pub struct BatchSetKey2d {
@@ -151,14 +159,25 @@ pub struct Opaque2dBinKey {
 pub fn Opaque2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset_id~ : Int, material_bind_group_id? : Int?) -> Self
 
 pub struct Opaque2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[Opaque2d]
 }
 pub fn Opaque2dPhase::Opaque2dPhase() -> Self
 pub fn Opaque2dPhase::clear(Self) -> Unit
+pub fn Opaque2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
 pub fn Opaque2dPhase::is_empty(Self) -> Bool
 pub fn Opaque2dPhase::len(Self) -> Int
+pub fn Opaque2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
 pub fn Opaque2dPhase::push(Self, Opaque2d) -> Unit
+pub fn Opaque2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn Opaque2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Opaque2dPhase
+
+pub struct RetainedViewEntity2d {
+  main_entity : @core.Entity
+  subview_index : Int
+} derive(Eq, @debug.Debug)
+pub fn RetainedViewEntity2d::new(@core.Entity, subview_index? : Int) -> Self
 
 pub struct Transparent2d {
   sort_key : Float
@@ -177,13 +196,18 @@ pub fn Transparent2d::is_indexed(Self) -> Bool
 pub fn Transparent2d::new(sort_key~ : Float, entity_id~ : Int, main_entity_id~ : Int, pipeline_id~ : Int, draw_function_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extracted_index? : Int, extra_index? : Int, indexed? : Bool) -> Self
 
 pub struct Transparent2dPhase {
+  retained_views : Array[RetainedViewEntity2d]
   items : Array[Transparent2d]
 }
 pub fn Transparent2dPhase::Transparent2dPhase() -> Self
 pub fn Transparent2dPhase::clear(Self) -> Unit
+pub fn Transparent2dPhase::contains_view(Self, RetainedViewEntity2d) -> Bool
 pub fn Transparent2dPhase::is_empty(Self) -> Bool
 pub fn Transparent2dPhase::len(Self) -> Int
+pub fn Transparent2dPhase::prepare_for_new_frame(Self, RetainedViewEntity2d) -> Unit
 pub fn Transparent2dPhase::push(Self, Transparent2d) -> Unit
+pub fn Transparent2dPhase::retain_views(Self, Array[RetainedViewEntity2d]) -> Unit
+pub fn Transparent2dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Transparent2dPhase
 
 // Type aliases

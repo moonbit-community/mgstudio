@@ -113,6 +113,66 @@ test "core_2d plugin initializes phase resources in render sub-app only" {
 }
 
 ///|
+test "core_2d extracts active Camera2d phase views and retains live views" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
+  let world = app.world()
+  let camera_entity = world.spawn_empty()
+  try! world.set_by_key(
+    camera_entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  try! world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  app = app.update()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let retained_view = @core_2d.RetainedViewEntity2d::new(camera_entity)
+  let opaque_phase = render_world
+    .get_resource(@core_2d.ecs_key_opaque2d_phase)
+    .unwrap()
+  let alpha_mask_phase = render_world
+    .get_resource(@core_2d.ecs_key_alpha_mask2d_phase)
+    .unwrap()
+  let transparent_phase = render_world
+    .get_resource(@core_2d.ecs_key_transparent2d_phase)
+    .unwrap()
+  debug_inspect(opaque_phase.view_count(), content="1")
+  debug_inspect(alpha_mask_phase.view_count(), content="1")
+  debug_inspect(transparent_phase.view_count(), content="1")
+  debug_inspect(opaque_phase.contains_view(retained_view), content="true")
+  debug_inspect(alpha_mask_phase.contains_view(retained_view), content="true")
+  debug_inspect(transparent_phase.contains_view(retained_view), content="true")
+
+  let world = app.world()
+  try! world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  app = app.update()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let opaque_phase = render_world
+    .get_resource(@core_2d.ecs_key_opaque2d_phase)
+    .unwrap()
+  let alpha_mask_phase = render_world
+    .get_resource(@core_2d.ecs_key_alpha_mask2d_phase)
+    .unwrap()
+  let transparent_phase = render_world
+    .get_resource(@core_2d.ecs_key_transparent2d_phase)
+    .unwrap()
+  debug_inspect(opaque_phase.view_count(), content="0")
+  debug_inspect(alpha_mask_phase.view_count(), content="0")
+  debug_inspect(transparent_phase.view_count(), content="0")
+}
+
+///|
 test "core_2d plugin owns Camera2d post-process required components" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
