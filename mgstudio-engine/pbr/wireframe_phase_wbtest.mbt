@@ -399,6 +399,70 @@ test "pbr: wireframe dirty extraction writes changed and removed render tables" 
 }
 
 ///|
+test "pbr: wireframe 3d phases prepare and retain views" {
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  let live_view = @core.Entity::new(10, 1)
+  let stale_view = @core.Entity::new(11, 1)
+  phases.prepare_for_new_frame(
+    live_view,
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  phases.prepare_for_new_frame(
+    stale_view,
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let live : Map[UInt64, Bool] = {}
+  live.set(live_view.to_bits(), true)
+
+  phases.retain_live_views(live)
+
+  debug_inspect(phases.len(), content="1")
+  debug_inspect(phases.contains(live_view), content="true")
+  debug_inspect(phases.contains(stale_view), content="false")
+  debug_inspect(
+    phases.phase(live_view).map(fn(phase) { phase.gpu_preprocessing_mode() }),
+    content="Some(None)",
+  )
+}
+
+///|
+test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
+  let world = @ecs.World::new()
+  let active_camera = world.spawn()
+  let inactive_camera = world.spawn()
+  let stale_view = @core.Entity::new(12, 1)
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    stale_view,
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  world.insert_resource(Wireframe3dPhases::resource(), phases)
+  try! world.set_by_key(active_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    active_camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(inactive_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    inactive_camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+
+  extract_wireframe_3d_camera_system(world)
+
+  let phases = match world.get_resource(Wireframe3dPhases::resource()) {
+    Some(value) => value
+    None => abort("missing Wireframe3dPhases")
+  }
+  debug_inspect(phases.len(), content="1")
+  debug_inspect(phases.contains(active_camera), content="true")
+  debug_inspect(phases.contains(inactive_camera), content="false")
+  debug_inspect(phases.contains(stale_view), content="false")
+}
+
+///|
 test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
   let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
   let offset = bind_groups.push(13, WireframeVertexPullParams::new(1U, 8U, 3U))

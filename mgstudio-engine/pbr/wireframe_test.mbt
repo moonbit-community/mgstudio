@@ -390,6 +390,10 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     content="true",
   )
   debug_inspect(
+    render_world.get_resource(Wireframe3dPhases::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
     render_world
     .get_resource(Wireframe3dDrawFunctions::resource())
     .map(fn(value) { value.len() }),

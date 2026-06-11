@@ -916,6 +916,70 @@ fn dirty_wireframe_specializations_mut_or_init(
 }
 
 ///|
+fn wireframe_3d_phases_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[Wireframe3dPhases] {
+  if world.get_resource(Wireframe3dPhases::resource()) is None {
+    world.insert_resource(
+      Wireframe3dPhases::resource(),
+      Wireframe3dPhases::Wireframe3dPhases(),
+    )
+  }
+  match world.get_resource_mut(Wireframe3dPhases::resource()) {
+    Some(value) => value
+    None => abort("Missing Wireframe3dPhases resource")
+  }
+}
+
+///|
+fn wireframe_3d_gpu_preprocessing_support(
+  world : @ecs.World,
+) -> @render_batching.GpuPreprocessingSupport {
+  match
+    world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
+    Some(value) => value
+    None => @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport()
+  }
+}
+
+///|
+fn extract_wireframe_3d_camera_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let gpu_preprocessing_support = wireframe_3d_gpu_preprocessing_support(world)
+  let live_views : Map[UInt64, Bool] = {}
+  wireframe_3d_phases_mut_or_init(world).modify(fn(phases) {
+    let query : @ecs.Query[
+      (
+        @core.Entity,
+        @ecs.Read[Camera3d],
+        @ecs.Optional[@camera_camera.Camera],
+        @ecs.Has[NoIndirectDrawing],
+      ),
+      @ecs.All,
+    ] = @ecs.query(source_world)
+    try! query.view(fn(_query_entity, data) {
+      let (main_entity, _camera3d, camera_opt, no_indirect_drawing) = data
+      let camera = match camera_opt.value() {
+        Some(value) => value
+        None => @camera_camera.Camera::Camera()
+      }
+      if !camera.is_active {
+        return
+      }
+      let requested_mode = if no_indirect_drawing.present() {
+        @render_batching.GpuPreprocessingMode::PreprocessingOnly
+      } else {
+        @render_batching.GpuPreprocessingMode::Culling
+      }
+      let gpu_preprocessing_mode = gpu_preprocessing_support.min(requested_mode)
+      phases.prepare_for_new_frame(main_entity, gpu_preprocessing_mode)
+      live_views.set(main_entity.to_bits(), true)
+    })
+    phases.retain_live_views(live_views)
+  })
+}
+
+///|
 fn clear_dirty_wireframe_specializations_system(world : @ecs.World) -> Unit {
   dirty_wireframe_specializations_mut_or_init(world).modify(fn(value) {
     value.clear()
@@ -1011,6 +1075,11 @@ fn configure_wireframe_render_sub_app(
     DirtyWireframeSpecializations::resource(),
     fn() { DirtyWireframeSpecializations::DirtyWireframeSpecializations() },
   )
+  wireframe_init_render_resource_if_missing(
+    world,
+    Wireframe3dPhases::resource(),
+    fn() { Wireframe3dPhases::Wireframe3dPhases() },
+  )
   let stage = @render.render_schedule_stage()
   sub_app
   .configure_sets(
@@ -1029,6 +1098,10 @@ fn configure_wireframe_render_sub_app(
     stage,
     wireframe_dirty_specialization_set_check_for_removals,
     in_sets=[render3d_set_extract],
+  )
+  .add_systems(
+    stage,
+    @app.system(extract_wireframe_3d_camera_system).in_set(render3d_set_extract),
   )
   .add_systems(
     stage,

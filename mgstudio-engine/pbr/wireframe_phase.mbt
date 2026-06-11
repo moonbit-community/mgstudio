@@ -798,3 +798,97 @@ pub fn DirtyWireframeSpecializations::removed_contains(
 ) -> Bool {
   self.removed_renderables.contains(entity.to_bits())
 }
+
+///|
+pub struct Wireframe3dViewPhase {
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
+  items : Array[Wireframe3d]
+}
+
+///|
+pub fn Wireframe3dViewPhase::new(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+) -> Wireframe3dViewPhase {
+  Wireframe3dViewPhase::{ gpu_preprocessing_mode, items: [] }
+}
+
+///|
+pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(
+  self : Wireframe3dViewPhase,
+) -> @render_batching.GpuPreprocessingMode {
+  self.gpu_preprocessing_mode
+}
+
+///|
+pub fn Wireframe3dViewPhase::len(self : Wireframe3dViewPhase) -> Int {
+  self.items.length()
+}
+
+///|
+pub struct Wireframe3dPhases {
+  views : Map[UInt64, Wireframe3dViewPhase]
+}
+
+///|
+pub fn Wireframe3dPhases::Wireframe3dPhases() -> Wireframe3dPhases {
+  Wireframe3dPhases::{ views: {} }
+}
+
+///|
+pub let ecs_key_wireframe_3d_phases : @ecs.ResourceKey[Wireframe3dPhases] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Wireframe3dPhases",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dPhases with fn resource() {
+  ecs_key_wireframe_3d_phases
+}
+
+///|
+pub fn Wireframe3dPhases::prepare_for_new_frame(
+  self : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+) -> Unit {
+  self.views.set(
+    retained_view_entity.to_bits(),
+    Wireframe3dViewPhase::new(gpu_preprocessing_mode),
+  )
+}
+
+///|
+pub fn Wireframe3dPhases::retain_live_views(
+  self : Wireframe3dPhases,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _phase in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
+}
+
+///|
+pub fn Wireframe3dPhases::len(self : Wireframe3dPhases) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn Wireframe3dPhases::contains(
+  self : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+) -> Bool {
+  self.views.contains(retained_view_entity.to_bits())
+}
+
+///|
+pub fn Wireframe3dPhases::phase(
+  self : Wireframe3dPhases,
+  retained_view_entity : @core.Entity,
+) -> Wireframe3dViewPhase? {
+  self.views.get(retained_view_entity.to_bits())
+}

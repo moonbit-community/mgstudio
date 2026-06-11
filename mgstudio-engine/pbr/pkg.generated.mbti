@@ -24,6 +24,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
+  "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -341,6 +342,8 @@ pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
 
 pub let ecs_key_wireframe_3d_draw_functions : @ecs.ResourceKey[Wireframe3dDrawFunctions]
+
+pub let ecs_key_wireframe_3d_phases : @ecs.ResourceKey[Wireframe3dPhases]
 
 pub let ecs_key_wireframe_3d_pipeline : @ecs.ResourceKey[Wireframe3dPipeline]
 
@@ -1734,6 +1737,17 @@ pub fn Wireframe3dDrawFunctions::thin(Self) -> @material.DrawFunctionId
 pub fn Wireframe3dDrawFunctions::wide(Self) -> @material.DrawFunctionId
 pub impl @app.Resource for Wireframe3dDrawFunctions
 
+pub struct Wireframe3dPhases {
+  views : Map[UInt64, Wireframe3dViewPhase]
+}
+pub fn Wireframe3dPhases::Wireframe3dPhases() -> Self
+pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
+pub fn Wireframe3dPhases::len(Self) -> Int
+pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
+pub fn Wireframe3dPhases::prepare_for_new_frame(Self, @core.Entity, @batching.GpuPreprocessingMode) -> Unit
+pub fn Wireframe3dPhases::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
+pub impl @app.Resource for Wireframe3dPhases
+
 pub struct Wireframe3dPipeline {
   shader : String
   wide_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
@@ -1750,6 +1764,14 @@ pub struct Wireframe3dThinImmediates {
 pub fn Wireframe3dThinImmediates::color(Self) -> @color.Color
 pub fn Wireframe3dThinImmediates::float_count(Self) -> Int
 pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
+
+pub struct Wireframe3dViewPhase {
+  gpu_preprocessing_mode : @batching.GpuPreprocessingMode
+  items : Array[Wireframe3d]
+}
+pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
+pub fn Wireframe3dViewPhase::len(Self) -> Int
+pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 
 pub struct Wireframe3dWideImmediates {
   color : @color.Color
