@@ -108,7 +108,9 @@ pub struct Material2dKey[_] {
   bind_group_layout_key : String
   bind_group_data : String
 }
+pub fn[M] Material2dKey::mesh_key(Self[M]) -> Int
 pub fn[M] Material2dKey::new(Int, String, String) -> Self[M]
+pub fn[M] Material2dKey::with_mesh_key(Self[M], Int) -> Self[M]
 
 pub struct Material2dKeys[M] {
   mesh_material2d_component : @ecs.ComponentKey[MeshMaterial2d[M]]

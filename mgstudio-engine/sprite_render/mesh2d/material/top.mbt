@@ -98,12 +98,116 @@ const MATERIAL2D_PIPELINE_KEY_ALPHA_MASK : Int = 2
 const MATERIAL2D_PIPELINE_KEY_BLEND : Int = 4
 
 ///|
+const MATERIAL2D_PRIMITIVE_TOPOLOGY_LINE_STRIP : UInt = 2U
+
+///|
+const MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : UInt = 3U
+
+///|
+const MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP : UInt = 4U
+
+///|
+const MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt = 0b111U
+
+///|
+const MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 26
+
+///|
+const MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS : Int = 18
+
+///|
+const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE : Int = 0 <<
+  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
+const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : Int = 1 <<
+  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
+const MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : Int = 2 <<
+  MATERIAL2D_PIPELINE_KEY_INDEX_FORMAT_SHIFT_BITS
+
+///|
 fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
   match alpha_mode {
     Opaque => MATERIAL2D_PIPELINE_KEY_OPAQUE
     Mask(_) => MATERIAL2D_PIPELINE_KEY_ALPHA_MASK
     Blend => MATERIAL2D_PIPELINE_KEY_BLEND
   }
+}
+
+///|
+fn material2d_primitive_topology_is_strip(primitive_topology : UInt) -> Bool {
+  primitive_topology == MATERIAL2D_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
+  primitive_topology == MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
+}
+
+///|
+fn material2d_mesh_pipeline_key_bits_for_host_mesh(
+  mesh_info : @render.HostGpuMeshInfo,
+) -> Int {
+  material2d_mesh_pipeline_key_bits_for_primitive(
+    mesh_info.primitive_topology(),
+    mesh_info.index_count(),
+    mesh_info.uses_u32_indices(),
+  )
+}
+
+///|
+fn material2d_mesh_pipeline_key_bits_for_primitive(
+  primitive_topology : UInt,
+  index_count : Int,
+  uses_u32_indices : Bool,
+) -> Int {
+  let primitive_bits = (primitive_topology &
+    MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS).reinterpret_as_int() <<
+    MATERIAL2D_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
+  let strip_index_bits = if material2d_primitive_topology_is_strip(
+      primitive_topology,
+    ) {
+    if index_count <= 0 {
+      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
+    } else if uses_u32_indices {
+      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32
+    } else {
+      MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16
+    }
+  } else {
+    MATERIAL2D_PIPELINE_KEY_STRIP_INDEX_FORMAT_NONE
+  }
+  primitive_bits | strip_index_bits
+}
+
+///|
+test "material2d mesh pipeline key encodes primitive topology" {
+  debug_inspect(
+    material2d_mesh_pipeline_key_bits_for_primitive(
+      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      0,
+      false,
+    ),
+    content="201326592",
+  )
+}
+
+///|
+test "material2d mesh pipeline key encodes strip index format only for strips" {
+  debug_inspect(
+    material2d_mesh_pipeline_key_bits_for_primitive(
+      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+      6,
+      false,
+    ),
+    content="268959744",
+  )
+  debug_inspect(
+    material2d_mesh_pipeline_key_bits_for_primitive(
+      MATERIAL2D_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      6,
+      true,
+    ),
+    content="201326592",
+  )
 }
 
 ///|
@@ -355,6 +459,19 @@ pub fn[M] Material2dKey::new(
   bind_group_data : String,
 ) -> Material2dKey[M] {
   Material2dKey::{ mesh_key, bind_group_layout_key, bind_group_data }
+}
+
+///|
+pub fn[M] Material2dKey::mesh_key(self : Material2dKey[M]) -> Int {
+  self.mesh_key
+}
+
+///|
+pub fn[M] Material2dKey::with_mesh_key(
+  self : Material2dKey[M],
+  mesh_key : Int,
+) -> Material2dKey[M] {
+  Material2dKey::{ ..self, mesh_key, }
 }
 
 ///|
@@ -1028,7 +1145,10 @@ pub fn[M : Material2d] draw_material2d_mesh_item_with_prepared_material(
   let pipeline_descriptor = pipeline.specialize(
     material2d_base_pipeline_descriptor(mesh_info.primitive_topology()),
     mesh_vertex_layout,
-    material.key,
+    material.key.with_mesh_key(
+      material.key.mesh_key |
+      material2d_mesh_pipeline_key_bits_for_host_mesh(mesh_info),
+    ),
   )
   let transform = payload.transform
   @render.host_gpu_draw_mesh_material(
