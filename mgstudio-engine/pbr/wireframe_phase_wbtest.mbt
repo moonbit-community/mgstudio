@@ -18,6 +18,28 @@ fn wireframe_test_main_entity(entity : @core.Entity) -> @render.MainEntity {
 }
 
 ///|
+fn wireframe_phase_test_descriptor() -> @material.RenderPipelineDescriptor {
+  @material.RenderPipelineDescriptor::RenderPipelineDescriptor()
+  .with_vertex(
+    @material.VertexState::new(Some("base.wgsl"), [], Some("vertex"), [
+      @mesh.VertexBufferLayout::new(
+        array_stride=12,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[],
+      ),
+    ]),
+  )
+  .with_fragment(
+    Some(
+      @material.FragmentState::new(Some("base.wgsl"), [], Some("fragment"), [
+        Some(@material.ColorTargetState::new(1U, 0xffffffffffffffffUL)),
+      ]),
+    ),
+  )
+  .with_depth_stencil(Some(@material.DepthStencilState::DepthStencilState()))
+}
+
+///|
 test "pbr: Wireframe3d phase item exposes Bevy phase identity fields" {
   let draw_functions = @material.DrawFunctions::new()
   let draw = draw_functions.register("Wireframe3dThinDrawFunction")
@@ -148,7 +170,7 @@ test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines"
 
   let wide_key = WireframeWidePipelineCacheKey::new(
     @material.ErasedMeshPipelineKey::new(3UL, "MeshPipelineKey"),
-    "pos_norm_uv",
+    @render_mesh.RenderMesh::new(vertex_count=3).layout(),
     true,
     true,
   )
@@ -160,6 +182,158 @@ test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines"
   debug_inspect(
     cache.wide_pipeline_id(wide_key).map(fn(id) { id.id() }),
     content="Some(88)",
+  )
+}
+
+///|
+test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([(render_entity, main_entity)])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 8)
+
+  specialize_wireframe_phase_items(
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    {},
+    RenderMeshInstances::RenderMeshInstances(),
+    {},
+    Wireframe3dPipeline::new(),
+    @render_resource.PipelineCache::new(),
+  )
+
+  debug_inspect(cache.pipeline_id(view, main_entity) is None, content="true")
+  debug_inspect(pending.current_len(), content="1")
+}
+
+///|
+test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
+  let view = @core.Entity::new(10, 1)
+  let first_render_entity = @core.Entity::new(20, 1)
+  let second_render_entity = @core.Entity::new(22, 1)
+  let first_main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let second_main_entity = wireframe_test_main_entity(@core.Entity::new(23, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([
+    (first_render_entity, first_main_entity),
+    (second_render_entity, second_main_entity),
+  ])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(first_main_entity, 8)
+  instances.insert(second_main_entity, 8)
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    first_main_entity,
+    RenderMeshQueueData::new(33, 1U, true),
+  )
+  render_mesh_instances.insert(
+    second_main_entity,
+    RenderMeshQueueData::new(33, 2U, true),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
+  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
+  pipeline_data.set(
+    33,
+    wireframe_mesh_pipeline_data_for_render_mesh(
+      render_mesh,
+      wireframe_phase_test_descriptor(),
+      view_key_bits=0UL,
+    ),
+  )
+  let pipeline_cache = @render_resource.PipelineCache::new()
+
+  specialize_wireframe_phase_items(
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    {},
+    render_mesh_instances,
+    pipeline_data,
+    Wireframe3dPipeline::new(),
+    pipeline_cache,
+  )
+
+  debug_inspect(cache.thin_len(), content="1")
+  debug_inspect(cache.wide_len(), content="0")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="1")
+  debug_inspect(
+    cache.pipeline_id(view, first_main_entity).map(fn(id) { id.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(
+    cache.pipeline_id(view, second_main_entity).map(fn(id) { id.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(pending.current_len(), content="0")
+}
+
+///|
+test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" {
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([(render_entity, main_entity)])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 8)
+  let materials : Map[Int, RenderWireframeMaterial] = {}
+  materials.set(
+    8,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 1.0F, Quads),
+    ),
+  )
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(33, 1U, true),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
+  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
+  pipeline_data.set(
+    33,
+    wireframe_mesh_pipeline_data_for_render_mesh(
+      render_mesh,
+      @material.RenderPipelineDescriptor::RenderPipelineDescriptor(),
+      view_key_bits=0UL,
+    ),
+  )
+
+  specialize_wireframe_phase_items(
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    materials,
+    render_mesh_instances,
+    pipeline_data,
+    Wireframe3dPipeline::new(),
+    @render_resource.PipelineCache::new(),
+  )
+
+  debug_inspect(cache.thin_len(), content="0")
+  debug_inspect(cache.wide_len(), content="1")
+  debug_inspect(
+    cache.pipeline_id(view, main_entity).map(fn(id) { id.id() }),
+    content="Some(18446744073709551615)",
   )
 }
 

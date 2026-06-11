@@ -284,7 +284,7 @@ pub struct WireframePipelineKey {
   wide : Bool
   quads : Bool
   line_mode : Bool
-}
+} derive(Eq, Debug)
 
 ///|
 pub fn WireframePipelineKey::new(
@@ -338,7 +338,7 @@ pub fn WireframePipelineKey::from_material(
 ///|
 pub struct WireframeWidePipelineCacheKey {
   mesh_key : @material.ErasedMeshPipelineKey
-  mesh_layout_key : String
+  mesh_layout : @material.MaterialMeshVertexLayout
   quads : Bool
   line_mode : Bool
 }
@@ -346,18 +346,56 @@ pub struct WireframeWidePipelineCacheKey {
 ///|
 pub fn WireframeWidePipelineCacheKey::new(
   mesh_key : @material.ErasedMeshPipelineKey,
-  mesh_layout_key : String,
+  mesh_layout : @material.MaterialMeshVertexLayout,
   quads : Bool,
   line_mode : Bool,
 ) -> WireframeWidePipelineCacheKey {
-  WireframeWidePipelineCacheKey::{ mesh_key, mesh_layout_key, quads, line_mode }
+  WireframeWidePipelineCacheKey::{ mesh_key, mesh_layout, quads, line_mode }
 }
 
 ///|
-fn wireframe_wide_pipeline_cache_key_id(
-  key : WireframeWidePipelineCacheKey,
-) -> String {
-  "\{key.mesh_key.type_tag()}:\{key.mesh_key.bits()}:\{key.mesh_layout_key}:\{key.quads}:\{key.line_mode}"
+fn wireframe_wide_pipeline_cache_key_equal(
+  left : WireframeWidePipelineCacheKey,
+  right : WireframeWidePipelineCacheKey,
+) -> Bool {
+  left.mesh_key == right.mesh_key &&
+  left.mesh_layout.equal(right.mesh_layout) &&
+  left.quads == right.quads &&
+  left.line_mode == right.line_mode
+}
+
+///|
+pub struct WireframePipelineCacheKey {
+  key : WireframePipelineKey
+  mesh_layout : @material.MaterialMeshVertexLayout
+}
+
+///|
+pub fn WireframePipelineCacheKey::new(
+  key : WireframePipelineKey,
+  mesh_layout : @material.MaterialMeshVertexLayout,
+) -> WireframePipelineCacheKey {
+  WireframePipelineCacheKey::{ key, mesh_layout }
+}
+
+///|
+fn wireframe_pipeline_cache_key_equal(
+  left : WireframePipelineCacheKey,
+  right : WireframePipelineCacheKey,
+) -> Bool {
+  left.key == right.key && left.mesh_layout.equal(right.mesh_layout)
+}
+
+///|
+struct WireframeThinPipelineCacheEntry {
+  key : WireframePipelineCacheKey
+  pipeline_id : @material.CachedRenderPipelineId
+}
+
+///|
+struct WireframeWidePipelineCacheEntry {
+  key : WireframeWidePipelineCacheKey
+  pipeline_id : @material.CachedRenderPipelineId
 }
 
 ///|
@@ -418,12 +456,13 @@ pub fn SpecializedWireframeViewPipelineCache::remove(
 ///|
 pub struct SpecializedWireframePipelineCache {
   views : Map[UInt64, SpecializedWireframeViewPipelineCache]
-  wide : Map[String, @material.CachedRenderPipelineId]
+  thin : Array[WireframeThinPipelineCacheEntry]
+  wide : Array[WireframeWidePipelineCacheEntry]
 }
 
 ///|
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> SpecializedWireframePipelineCache {
-  SpecializedWireframePipelineCache::{ views: {}, wide: {} }
+  SpecializedWireframePipelineCache::{ views: {}, thin: [], wide: [] }
 }
 
 ///|
@@ -450,6 +489,13 @@ pub fn SpecializedWireframePipelineCache::wide_len(
   self : SpecializedWireframePipelineCache,
 ) -> Int {
   self.wide.length()
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::thin_len(
+  self : SpecializedWireframePipelineCache,
+) -> Int {
+  self.thin.length()
 }
 
 ///|
@@ -556,7 +602,12 @@ pub fn SpecializedWireframePipelineCache::wide_pipeline_id(
   self : SpecializedWireframePipelineCache,
   key : WireframeWidePipelineCacheKey,
 ) -> @material.CachedRenderPipelineId? {
-  self.wide.get(wireframe_wide_pipeline_cache_key_id(key))
+  for entry in self.wide {
+    if wireframe_wide_pipeline_cache_key_equal(entry.key, key) {
+      return Some(entry.pipeline_id)
+    }
+  }
+  None
 }
 
 ///|
@@ -565,7 +616,41 @@ pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(
   key : WireframeWidePipelineCacheKey,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> Unit {
-  self.wide.set(wireframe_wide_pipeline_cache_key_id(key), pipeline_id)
+  for index in 0..<self.wide.length() {
+    if wireframe_wide_pipeline_cache_key_equal(self.wide[index].key, key) {
+      self.wide[index] = WireframeWidePipelineCacheEntry::{ key, pipeline_id }
+      return
+    }
+  }
+  self.wide.push(WireframeWidePipelineCacheEntry::{ key, pipeline_id })
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::thin_pipeline_id(
+  self : SpecializedWireframePipelineCache,
+  key : WireframePipelineCacheKey,
+) -> @material.CachedRenderPipelineId? {
+  for entry in self.thin {
+    if wireframe_pipeline_cache_key_equal(entry.key, key) {
+      return Some(entry.pipeline_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::insert_thin_pipeline(
+  self : SpecializedWireframePipelineCache,
+  key : WireframePipelineCacheKey,
+  pipeline_id : @material.CachedRenderPipelineId,
+) -> Unit {
+  for index in 0..<self.thin.length() {
+    if wireframe_pipeline_cache_key_equal(self.thin[index].key, key) {
+      self.thin[index] = WireframeThinPipelineCacheEntry::{ key, pipeline_id }
+      return
+    }
+  }
+  self.thin.push(WireframeThinPipelineCacheEntry::{ key, pipeline_id })
 }
 
 ///|
@@ -1384,6 +1469,194 @@ pub fn Wireframe3dPhases::phase(
   retained_view_entity : @core.Entity,
 ) -> Wireframe3dViewPhase? {
   self.views.get(retained_view_entity.to_bits())
+}
+
+///|
+pub struct WireframeRenderMeshPipelineData {
+  mesh_key : @material.ErasedMeshPipelineKey
+  mesh_layout : @material.MaterialMeshVertexLayout
+  base_descriptor : @material.RenderPipelineDescriptor
+}
+
+///|
+pub fn WireframeRenderMeshPipelineData::new(
+  mesh_key : @material.ErasedMeshPipelineKey,
+  mesh_layout : @material.MaterialMeshVertexLayout,
+  base_descriptor : @material.RenderPipelineDescriptor,
+) -> WireframeRenderMeshPipelineData {
+  WireframeRenderMeshPipelineData::{ mesh_key, mesh_layout, base_descriptor }
+}
+
+///|
+pub fn WireframeRenderMeshPipelineData::mesh_key(
+  self : WireframeRenderMeshPipelineData,
+) -> @material.ErasedMeshPipelineKey {
+  self.mesh_key
+}
+
+///|
+pub fn WireframeRenderMeshPipelineData::mesh_layout(
+  self : WireframeRenderMeshPipelineData,
+) -> @material.MaterialMeshVertexLayout {
+  self.mesh_layout
+}
+
+///|
+pub fn WireframeRenderMeshPipelineData::base_descriptor(
+  self : WireframeRenderMeshPipelineData,
+) -> @material.RenderPipelineDescriptor {
+  self.base_descriptor
+}
+
+///|
+pub fn wireframe_mesh_pipeline_data_for_render_mesh(
+  render_mesh : @render_mesh.RenderMesh,
+  base_descriptor : @material.RenderPipelineDescriptor,
+  view_key_bits~ : UInt64,
+  visibility_range_dither? : Bool = false,
+  lightmapped? : Bool = false,
+  has_previous_skin? : Bool = false,
+  has_previous_morph? : Bool = false,
+) -> WireframeRenderMeshPipelineData {
+  let mut mesh_key_bits = view_key_bits | render_mesh.key_bits().bits()
+  if visibility_range_dither {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
+  }
+  if (view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL {
+    if has_previous_skin {
+      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+    }
+    if has_previous_morph {
+      mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
+    }
+  }
+  if lightmapped {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_LIGHTMAPPED
+  }
+  WireframeRenderMeshPipelineData::new(
+    @material.ErasedMeshPipelineKey::new(mesh_key_bits, "MeshPipelineKey"),
+    render_mesh.layout(),
+    base_descriptor,
+  )
+}
+
+///|
+fn specialize_wireframe_pipeline_id(
+  specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
+  pipeline_cache : @render_resource.PipelineCache,
+  pipeline : Wireframe3dPipeline,
+  pipeline_data : WireframeRenderMeshPipelineData,
+  material : RenderWireframeMaterial?,
+) -> @material.CachedRenderPipelineId? {
+  let wireframe_key = WireframePipelineKey::from_material(
+    pipeline_data.mesh_key(),
+    material,
+  )
+  if wireframe_key.wide() {
+    let wide_key = WireframeWidePipelineCacheKey::new(
+      pipeline_data.mesh_key(),
+      pipeline_data.mesh_layout(),
+      wireframe_key.quads(),
+      wireframe_key.line_mode(),
+    )
+    match specialized_wireframe_pipeline_cache.wide_pipeline_id(wide_key) {
+      Some(pipeline_id) => Some(pipeline_id)
+      None => {
+        let descriptor = Some(
+          pipeline.specialize(wireframe_key, pipeline_data.base_descriptor()),
+        ) catch {
+          _ => None
+        }
+        let pipeline_id = match descriptor {
+          Some(value) => pipeline_cache.queue_render_pipeline(value)
+          None => @material.CachedRenderPipelineId::invalid()
+        }
+        specialized_wireframe_pipeline_cache.insert_wide_pipeline(
+          wide_key, pipeline_id,
+        )
+        Some(pipeline_id)
+      }
+    }
+  } else {
+    let thin_key = WireframePipelineCacheKey::new(
+      wireframe_key,
+      pipeline_data.mesh_layout(),
+    )
+    match specialized_wireframe_pipeline_cache.thin_pipeline_id(thin_key) {
+      Some(pipeline_id) => Some(pipeline_id)
+      None => {
+        let descriptor = Some(
+          pipeline.specialize(wireframe_key, pipeline_data.base_descriptor()),
+        ) catch {
+          _ => None
+        }
+        guard descriptor is Some(value) else { return None }
+        let pipeline_id = pipeline_cache.queue_render_pipeline(value)
+        specialized_wireframe_pipeline_cache.insert_thin_pipeline(
+          thin_key, pipeline_id,
+        )
+        Some(pipeline_id)
+      }
+    }
+  }
+}
+
+///|
+pub fn specialize_wireframe_phase_items(
+  retained_view_entity : @core.Entity,
+  render_mesh_visible_entities : @render_visibility.RenderVisibleEntitiesClass,
+  view_pending_wireframe_queues : ViewPendingWireframeQueues,
+  specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
+  render_wireframe_instances : RenderWireframeInstances,
+  dirty_wireframe_specializations : DirtyWireframeSpecializations,
+  render_wireframe_assets : Map[Int, RenderWireframeMaterial],
+  render_mesh_instances : RenderMeshInstances,
+  render_mesh_pipeline_data : Map[Int, WireframeRenderMeshPipelineData],
+  pipeline : Wireframe3dPipeline,
+  pipeline_cache : @render_resource.PipelineCache,
+) -> Unit {
+  despecialize_wireframe_view_cache(
+    specialized_wireframe_pipeline_cache, dirty_wireframe_specializations, retained_view_entity,
+  )
+  for
+    pair in dirty_wireframe_specializations.iter_to_specialize(
+      retained_view_entity,
+      render_mesh_visible_entities,
+      view_pending_wireframe_queues.prev_frame(),
+    ) {
+    let render_entity = pair.0
+    let visible_entity = pair.1
+    if specialized_wireframe_pipeline_cache.pipeline_id(
+        retained_view_entity, visible_entity,
+      )
+      is Some(_) {
+      continue
+    }
+    guard render_wireframe_instances.get(visible_entity)
+      is Some(wireframe_asset_id) else {
+      continue
+    }
+    guard render_mesh_instances.render_mesh_queue_data(visible_entity)
+      is Some(mesh_instance) else {
+      view_pending_wireframe_queues.push_current(render_entity, visible_entity)
+      continue
+    }
+    guard render_mesh_pipeline_data.get(mesh_instance.mesh_asset_id())
+      is Some(pipeline_data) else {
+      continue
+    }
+    let material = render_wireframe_assets.get(wireframe_asset_id)
+    guard specialize_wireframe_pipeline_id(
+        specialized_wireframe_pipeline_cache, pipeline_cache, pipeline, pipeline_data,
+        material,
+      )
+      is Some(pipeline_id) else {
+      continue
+    }
+    specialized_wireframe_pipeline_cache.insert(
+      retained_view_entity, visible_entity, pipeline_id,
+    )
+  }
 }
 
 ///|

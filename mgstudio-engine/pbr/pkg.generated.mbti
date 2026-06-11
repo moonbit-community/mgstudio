@@ -16,7 +16,6 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr/decal",
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/transmission",
@@ -132,7 +131,7 @@ pub const VIEW_FRUSTUM_PLANE_COUNT : Int = 6
 
 pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMaterial], S) -> @asset.Handle[@material.StandardMaterial]
 
-pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
+pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mesh], S) -> @asset.Handle[@Milky2018/mgstudio/mesh.Mesh]
 
 pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -242,7 +241,7 @@ pub let ecs_key_material_bind_group_allocators : @ecs.ResourceKey[MaterialBindGr
 
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
-pub let ecs_key_mesh3d : @ecs.ComponentKey[@mesh.Mesh3d]
+pub let ecs_key_mesh3d : @ecs.ComponentKey[@Milky2018/mgstudio/mesh.Mesh3d]
 
 pub let ecs_key_mesh3d_wireframe : @ecs.ComponentKey[Mesh3dWireframe]
 
@@ -394,7 +393,7 @@ pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
 
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
+pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@Milky2018/mgstudio/mesh.Mesh]]
 
 pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
@@ -640,6 +639,8 @@ pub fn scattering_medium_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scattering_medium_plugin_with(@app.App[@ecs.World], ScatteringMediumPlugin) -> @app.App[@ecs.World]
 
+pub fn specialize_wireframe_phase_items(@core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeRenderMeshPipelineData], Wireframe3dPipeline, @render_resource.PipelineCache) -> Unit
+
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
 
 pub fn standard_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@material.StandardMaterial]]
@@ -671,6 +672,8 @@ pub fn standard_material_render_phase_type(@material.StandardMaterial) -> @mater
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
+
+pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool) -> WireframeRenderMeshPipelineData
 
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -1254,7 +1257,7 @@ pub fn Mesh3dWireframe::new(@asset.Handle[WireframeMaterial]) -> Self
 pub impl @ecs.Component for Mesh3dWireframe
 
 pub struct MeshMaterial3dBundle {
-  mesh : @mesh.Mesh3d
+  mesh : @Milky2018/mgstudio/mesh.Mesh3d
   material : @material.MeshMaterial3d
   transform : @transform.Transform
   layers : @render_layers.RenderLayers
@@ -1262,7 +1265,7 @@ pub struct MeshMaterial3dBundle {
   inherited_visibility : @Milky2018/mgstudio/visibility.InheritedVisibility
   view_visibility : @Milky2018/mgstudio/visibility.ViewVisibility
 }
-pub fn MeshMaterial3dBundle::new(@mesh.Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
+pub fn MeshMaterial3dBundle::new(@Milky2018/mgstudio/mesh.Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @ecs.Bundle for MeshMaterial3dBundle
@@ -1361,7 +1364,7 @@ pub struct PbrMaterialPipelineSpecializer {
   binding_arrays_are_usable : Bool
 }
 pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
-pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
+pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
@@ -1404,7 +1407,7 @@ pub struct PbrPrepassPipelineSpecializer {
   binding_arrays_are_usable : Bool
 }
 pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
-pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
+pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub struct PendingWireframeQueues {
   views : Map[UInt64, ViewPendingWireframeQueues]
@@ -1618,18 +1621,22 @@ pub fn SpecializedMaterialViewPipelineCache::remove(Self, @core.Entity) -> Bool
 
 pub struct SpecializedWireframePipelineCache {
   views : Map[UInt64, SpecializedWireframeViewPipelineCache]
-  wide : Map[String, @render_resource.CachedRenderPipelineId]
+  thin : Array[WireframeThinPipelineCacheEntry]
+  wide : Array[WireframeWidePipelineCacheEntry]
 }
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> Self
 pub fn SpecializedWireframePipelineCache::clear_view(Self, @core.Entity) -> Unit
 pub fn SpecializedWireframePipelineCache::contains_view(Self, @core.Entity) -> Bool
 pub fn SpecializedWireframePipelineCache::expire_stale_views(Self, Map[UInt64, Bool]) -> Unit
 pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframePipelineCache::insert_thin_pipeline(Self, WireframePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(Self, WireframeWidePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
 pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @Milky2018/mgstudio/render.MainEntity) -> Int
 pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn SpecializedWireframePipelineCache::thin_len(Self) -> Int
+pub fn SpecializedWireframePipelineCache::thin_pipeline_id(Self, WireframePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
 pub fn SpecializedWireframePipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedWireframeViewPipelineCache
 pub fn SpecializedWireframePipelineCache::wide_len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::wide_pipeline_id(Self, WireframeWidePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
@@ -1923,12 +1930,18 @@ pub fn WireframePhaseItemExtraIndex::dynamic_offset(Int) -> Self
 pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
 pub fn WireframePhaseItemExtraIndex::none() -> Self
 
+pub struct WireframePipelineCacheKey {
+  key : WireframePipelineKey
+  mesh_layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+}
+pub fn WireframePipelineCacheKey::new(WireframePipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
+
 pub struct WireframePipelineKey {
   mesh_key : @material.ErasedMeshPipelineKey
   wide : Bool
   quads : Bool
   line_mode : Bool
-}
+} derive(Eq, @debug.Debug)
 pub fn WireframePipelineKey::from_material(@material.ErasedMeshPipelineKey, RenderWireframeMaterial?) -> Self
 pub fn WireframePipelineKey::line_mode(Self) -> Bool
 pub fn WireframePipelineKey::mesh_key(Self) -> @material.ErasedMeshPipelineKey
@@ -1940,6 +1953,18 @@ pub struct WireframePlugin {
 }
 pub fn WireframePlugin::WireframePlugin() -> Self
 pub impl @app.Plugin for WireframePlugin
+
+pub struct WireframeRenderMeshPipelineData {
+  mesh_key : @material.ErasedMeshPipelineKey
+  mesh_layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+  base_descriptor : @render_resource.RenderPipelineDescriptor
+}
+pub fn WireframeRenderMeshPipelineData::base_descriptor(Self) -> @render_resource.RenderPipelineDescriptor
+pub fn WireframeRenderMeshPipelineData::mesh_key(Self) -> @material.ErasedMeshPipelineKey
+pub fn WireframeRenderMeshPipelineData::mesh_layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+pub fn WireframeRenderMeshPipelineData::new(@material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @render_resource.RenderPipelineDescriptor) -> Self
+
+type WireframeThinPipelineCacheEntry
 
 pub(all) enum WireframeTopology {
   Triangles
@@ -1970,13 +1995,15 @@ pub fn WireframeWideBindGroups::params(Self, Int) -> WireframeVertexPullParams?
 pub fn WireframeWideBindGroups::push(Self, Int, WireframeVertexPullParams) -> Int
 pub impl @app.Resource for WireframeWideBindGroups
 
+type WireframeWidePipelineCacheEntry
+
 pub struct WireframeWidePipelineCacheKey {
   mesh_key : @material.ErasedMeshPipelineKey
-  mesh_layout_key : String
+  mesh_layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
   quads : Bool
   line_mode : Bool
 }
-pub fn WireframeWidePipelineCacheKey::new(@material.ErasedMeshPipelineKey, String, Bool, Bool) -> Self
+pub fn WireframeWidePipelineCacheKey::new(@material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, Bool, Bool) -> Self
 
 // Type aliases
 pub using @material {type AlphaMode3d}
@@ -2181,7 +2208,7 @@ pub impl IntoPbrMaterialAsset for @color.Color
 pub impl IntoPbrMaterialAsset for @material.StandardMaterial
 
 pub(open) trait IntoPbrMeshAsset {
-  fn into_pbr_mesh_asset(Self) -> @mesh.Mesh
+  fn into_pbr_mesh_asset(Self) -> @Milky2018/mgstudio/mesh.Mesh
 }
 pub impl IntoPbrMeshAsset for @math.Capsule3d
 pub impl IntoPbrMeshAsset for @math.Cone
@@ -2195,7 +2222,7 @@ pub impl IntoPbrMeshAsset for @math.Sphere
 pub impl IntoPbrMeshAsset for @math.Tetrahedron
 pub impl IntoPbrMeshAsset for @math.Torus
 pub impl IntoPbrMeshAsset for @math.Triangle3d
-pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry
+pub impl IntoPbrMeshAsset for @Milky2018/mgstudio/mesh.Mesh3dGeometry
 
 pub(open) trait MaterialExtension {
   fn extension_tag(Self) -> Int
