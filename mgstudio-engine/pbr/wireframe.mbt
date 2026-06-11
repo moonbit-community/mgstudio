@@ -1055,6 +1055,13 @@ fn configure_wireframe_render_sub_app(
   )
   wireframe_init_render_resource_if_missing(
     world,
+    SpecializedWireframeMeshPipelines::resource(),
+    fn() {
+      SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
     RenderWireframeInstances::resource(),
     fn() { RenderWireframeInstances::RenderWireframeInstances() },
   )

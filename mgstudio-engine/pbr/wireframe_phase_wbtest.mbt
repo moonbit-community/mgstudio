@@ -194,6 +194,7 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
   visible.update_cpu_culled_entities([(render_entity, main_entity)])
   let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
   let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 8)
 
@@ -202,6 +203,7 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     visible,
     pending,
     cache,
+    pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
@@ -229,6 +231,7 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
   ])
   let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
   let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(first_main_entity, 8)
   instances.insert(second_main_entity, 8)
@@ -258,6 +261,7 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     visible,
     pending,
     cache,
+    pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
@@ -267,7 +271,7 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     pipeline_cache,
   )
 
-  debug_inspect(cache.thin_len(), content="1")
+  debug_inspect(pipelines.len(), content="1")
   debug_inspect(cache.wide_len(), content="0")
   debug_inspect(pipeline_cache.queued_pipeline_count(), content="1")
   debug_inspect(
@@ -295,6 +299,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
   ])
   let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
   let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(first_main_entity, 8)
   instances.insert(second_main_entity, 8)
@@ -334,6 +339,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     visible,
     pending,
     cache,
+    pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
@@ -343,7 +349,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     pipeline_cache,
   )
 
-  debug_inspect(cache.thin_len(), content="2")
+  debug_inspect(pipelines.len(), content="2")
   debug_inspect(pipeline_cache.queued_pipeline_count(), content="2")
   debug_inspect(
     cache.pipeline_id(view, first_main_entity).map(fn(id) { id.id() }),
@@ -364,6 +370,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
   visible.update_cpu_culled_entities([(render_entity, main_entity)])
   let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
   let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 8)
   let materials : Map[Int, RenderWireframeMaterial] = {}
@@ -394,6 +401,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
     visible,
     pending,
     cache,
+    pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     materials,
@@ -403,7 +411,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
     @render_resource.PipelineCache::new(),
   )
 
-  debug_inspect(cache.thin_len(), content="0")
+  debug_inspect(pipelines.len(), content="0")
   debug_inspect(cache.wide_len(), content="1")
   debug_inspect(
     cache.pipeline_id(view, main_entity).map(fn(id) { id.id() }),

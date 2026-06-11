@@ -456,13 +456,12 @@ pub fn SpecializedWireframeViewPipelineCache::remove(
 ///|
 pub struct SpecializedWireframePipelineCache {
   views : Map[UInt64, SpecializedWireframeViewPipelineCache]
-  thin : Array[WireframeThinPipelineCacheEntry]
   wide : Array[WireframeWidePipelineCacheEntry]
 }
 
 ///|
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> SpecializedWireframePipelineCache {
-  SpecializedWireframePipelineCache::{ views: {}, thin: [], wide: [] }
+  SpecializedWireframePipelineCache::{ views: {}, wide: [] }
 }
 
 ///|
@@ -489,13 +488,6 @@ pub fn SpecializedWireframePipelineCache::wide_len(
   self : SpecializedWireframePipelineCache,
 ) -> Int {
   self.wide.length()
-}
-
-///|
-pub fn SpecializedWireframePipelineCache::thin_len(
-  self : SpecializedWireframePipelineCache,
-) -> Int {
-  self.thin.length()
 }
 
 ///|
@@ -626,11 +618,40 @@ pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(
 }
 
 ///|
-pub fn SpecializedWireframePipelineCache::thin_pipeline_id(
-  self : SpecializedWireframePipelineCache,
+pub struct SpecializedWireframeMeshPipelines {
+  entries : Array[WireframeThinPipelineCacheEntry]
+}
+
+///|
+pub fn SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines() -> SpecializedWireframeMeshPipelines {
+  SpecializedWireframeMeshPipelines::{ entries: [] }
+}
+
+///|
+pub let ecs_key_specialized_wireframe_mesh_pipelines : @ecs.ResourceKey[
+  SpecializedWireframeMeshPipelines,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::SpecializedMeshPipelines<Wireframe3dPipeline>",
+)
+
+///|
+pub impl @app.Resource for SpecializedWireframeMeshPipelines with fn resource() {
+  ecs_key_specialized_wireframe_mesh_pipelines
+}
+
+///|
+pub fn SpecializedWireframeMeshPipelines::len(
+  self : SpecializedWireframeMeshPipelines,
+) -> Int {
+  self.entries.length()
+}
+
+///|
+pub fn SpecializedWireframeMeshPipelines::pipeline_id(
+  self : SpecializedWireframeMeshPipelines,
   key : WireframePipelineCacheKey,
 ) -> @material.CachedRenderPipelineId? {
-  for entry in self.thin {
+  for entry in self.entries {
     if wireframe_pipeline_cache_key_equal(entry.key, key) {
       return Some(entry.pipeline_id)
     }
@@ -639,18 +660,21 @@ pub fn SpecializedWireframePipelineCache::thin_pipeline_id(
 }
 
 ///|
-pub fn SpecializedWireframePipelineCache::insert_thin_pipeline(
-  self : SpecializedWireframePipelineCache,
+pub fn SpecializedWireframeMeshPipelines::insert(
+  self : SpecializedWireframeMeshPipelines,
   key : WireframePipelineCacheKey,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> Unit {
-  for index in 0..<self.thin.length() {
-    if wireframe_pipeline_cache_key_equal(self.thin[index].key, key) {
-      self.thin[index] = WireframeThinPipelineCacheEntry::{ key, pipeline_id }
+  for index in 0..<self.entries.length() {
+    if wireframe_pipeline_cache_key_equal(self.entries[index].key, key) {
+      self.entries[index] = WireframeThinPipelineCacheEntry::{
+        key,
+        pipeline_id,
+      }
       return
     }
   }
-  self.thin.push(WireframeThinPipelineCacheEntry::{ key, pipeline_id })
+  self.entries.push(WireframeThinPipelineCacheEntry::{ key, pipeline_id })
 }
 
 ///|
@@ -1550,6 +1574,7 @@ pub fn wireframe_mesh_pipeline_data_for_render_mesh(
 ///|
 fn specialize_wireframe_pipeline_id(
   specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
+  specialized_wireframe_mesh_pipelines : SpecializedWireframeMeshPipelines,
   pipeline_cache : @render_resource.PipelineCache,
   pipeline : Wireframe3dPipeline,
   pipeline_data : WireframeRenderMeshPipelineData,
@@ -1590,7 +1615,7 @@ fn specialize_wireframe_pipeline_id(
       wireframe_key,
       pipeline_data.mesh_layout(),
     )
-    match specialized_wireframe_pipeline_cache.thin_pipeline_id(thin_key) {
+    match specialized_wireframe_mesh_pipelines.pipeline_id(thin_key) {
       Some(pipeline_id) => Some(pipeline_id)
       None => {
         let descriptor = Some(
@@ -1600,9 +1625,7 @@ fn specialize_wireframe_pipeline_id(
         }
         guard descriptor is Some(value) else { return None }
         let pipeline_id = pipeline_cache.queue_render_pipeline(value)
-        specialized_wireframe_pipeline_cache.insert_thin_pipeline(
-          thin_key, pipeline_id,
-        )
+        specialized_wireframe_mesh_pipelines.insert(thin_key, pipeline_id)
         Some(pipeline_id)
       }
     }
@@ -1615,6 +1638,7 @@ pub fn specialize_wireframe_phase_items(
   render_mesh_visible_entities : @render_visibility.RenderVisibleEntitiesClass,
   view_pending_wireframe_queues : ViewPendingWireframeQueues,
   specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
+  specialized_wireframe_mesh_pipelines : SpecializedWireframeMeshPipelines,
   render_wireframe_instances : RenderWireframeInstances,
   dirty_wireframe_specializations : DirtyWireframeSpecializations,
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
@@ -1655,8 +1679,8 @@ pub fn specialize_wireframe_phase_items(
     }
     let material = render_wireframe_assets.get(wireframe_asset_id)
     guard specialize_wireframe_pipeline_id(
-        specialized_wireframe_pipeline_cache, pipeline_cache, pipeline, pipeline_data,
-        mesh_instance, material,
+        specialized_wireframe_pipeline_cache, specialized_wireframe_mesh_pipelines,
+        pipeline_cache, pipeline, pipeline_data, mesh_instance, material,
       )
       is Some(pipeline_id) else {
       continue
