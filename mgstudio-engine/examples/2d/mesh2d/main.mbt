@@ -34,13 +34,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::Rectangle(),
-            ).to_mesh(),
-          ),
+          @mesh_primitives.add_mesh(meshes.peek(), @math.Rectangle::Rectangle()),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials

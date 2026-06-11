@@ -149,12 +149,9 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   })
 
   let mesh = @mesh.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort()
-    .peek()
-    .add(
-      @mesh_primitives.rectangle_to_mesh2d_geometry(
-        @math.Rectangle::new(180.0F, 180.0F),
-      ).to_mesh(),
+    @mesh_primitives.add_mesh(
+      @sprite.mesh_assets_mut_or_abort().peek(),
+      @math.Rectangle::new(180.0F, 180.0F),
     ),
   )
   let entity = world.spawn_empty()

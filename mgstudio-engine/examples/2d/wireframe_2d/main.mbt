@@ -109,16 +109,13 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.triangle_to_mesh2d_geometry(
-              @math.Triangle2d::new(
-                @math.Vec2::new(0.0F, 50.0F),
-                @math.Vec2::new(-50.0F, -50.0F),
-                @math.Vec2::new(50.0F, -50.0F),
-              ),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Triangle2d::new(
+              @math.Vec2::new(0.0F, 50.0F),
+              @math.Vec2::new(-50.0F, -50.0F),
+              @math.Vec2::new(50.0F, -50.0F),
+            ),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -140,12 +137,9 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.rectangle_to_mesh2d_geometry(
-              @math.Rectangle::new(100.0F, 100.0F),
-            ).to_mesh(),
+          @mesh_primitives.add_mesh(
+            meshes.peek(),
+            @math.Rectangle::new(100.0F, 100.0F),
           ),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
@@ -166,11 +160,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.circle_to_mesh2d_geometry(@math.Circle::new(50.0F)).to_mesh(),
-          ),
+          @mesh_primitives.add_mesh(meshes.peek(), @math.Circle::new(50.0F)),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials.modify(fn(materials) {

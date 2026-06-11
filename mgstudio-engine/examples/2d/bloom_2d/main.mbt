@@ -147,9 +147,7 @@ fn setup(
     ),
   )
   let circle_mesh = meshes.modify(fn(mesh_assets) {
-    mesh_assets.add(
-      @mesh_primitives.circle_to_mesh2d_geometry(@math.Circle::new(100.0F)).to_mesh(),
-    )
+    @mesh_primitives.add_mesh(mesh_assets, @math.Circle::new(100.0F))
   })
   let circle_material = materials.modify(fn(material_assets) {
     material_assets.add(
@@ -169,11 +167,7 @@ fn setup(
   )
 
   let hex_mesh = meshes.modify(fn(mesh_assets) {
-    mesh_assets.add(
-      @mesh_primitives.regular_polygon_to_mesh2d_geometry(
-        @math.RegularPolygon::new(100.0F, 6),
-      ).to_mesh(),
-    )
+    @mesh_primitives.add_mesh(mesh_assets, @math.RegularPolygon::new(100.0F, 6))
   })
   let hex_material = materials.modify(fn(material_assets) {
     material_assets.add(

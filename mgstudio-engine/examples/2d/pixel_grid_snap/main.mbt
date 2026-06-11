@@ -152,13 +152,7 @@ fn setup_mesh(
     commands.spawn(
       (
         @mesh.Mesh2d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh_primitives.capsule_to_mesh2d_geometry(
-              @math.Capsule2d::Capsule2d(),
-            ).to_mesh(),
-          ),
+          @mesh_primitives.add_mesh(meshes.peek(), @math.Capsule2d::Capsule2d()),
         ),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
           materials
