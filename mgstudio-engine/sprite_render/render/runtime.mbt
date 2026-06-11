@@ -927,6 +927,7 @@ priv struct ExtractedCamera2d {
   layers : RenderLayers
   bloom : @post_process.Bloom?
   compositing_space : @camera_compositing_space.CompositingSpace?
+  target_format_raw : UInt
   tonemapping_mode : Int
   deband_dither_enabled : Bool
   color_grading : @post_process.ColorGrading?
@@ -945,6 +946,13 @@ fn render2d_extracted_camera_compositing_space(
   camera : ExtractedCamera2d,
 ) -> @camera_compositing_space.CompositingSpace? {
   camera.compositing_space
+}
+
+///|
+fn render2d_extracted_camera_target_format_raw(
+  camera : ExtractedCamera2d,
+) -> UInt {
+  camera.target_format_raw
 }
 
 ///|
@@ -2057,6 +2065,28 @@ fn camera_compositing_space(
 }
 
 ///|
+fn camera_hdr_enabled(world : @ecs.World, camera : @core.Entity) -> Bool {
+  (try! world.get_by_key(camera, @camera_hdr.ecs_key_hdr)) is Some(_)
+}
+
+///|
+fn camera_target_format_raw(
+  world : @ecs.World,
+  camera : @core.Entity,
+  target : @camera_camera.RenderTarget,
+) -> UInt {
+  let output_texture_format_raw = @render_view.normalize_bgra8_for_render_target(
+    target_is_window=render2d_targets_host_window(target),
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+  )
+  @render_view.extracted_view_target_format_raw(
+    output_texture_format_raw~,
+    hdr=camera_hdr_enabled(world, camera),
+    compositing_space=camera_compositing_space(world, camera),
+  )
+}
+
+///|
 fn camera_deband_dither_enabled(
   world : @ecs.World,
   camera : @core.Entity,
@@ -2341,6 +2371,7 @@ fn render2d_extract_camera_entity_ecs(
     layers,
     bloom,
     compositing_space: camera_compositing_space(world, entity),
+    target_format_raw: camera_target_format_raw(world, entity, target),
     tonemapping_mode: camera_tonemapping_mode(world, entity),
     deband_dither_enabled: camera_deband_dither_enabled(world, entity),
     color_grading: camera_color_grading(world, entity),
@@ -4393,6 +4424,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       layers,
       bloom: None,
       compositing_space: None,
+      target_format_raw: @render_view.extracted_view_target_format_raw(),
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
@@ -4411,6 +4443,11 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       layers,
       bloom: None,
       compositing_space: Some(@camera_compositing_space.CompositingSpace::Oklab),
+      target_format_raw: @render_view.extracted_view_target_format_raw(
+        compositing_space=Some(
+          @camera_compositing_space.CompositingSpace::Oklab,
+        ),
+      ),
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
@@ -4474,6 +4511,13 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     None => false
   }
   debug_inspect(compositing_space_ok, content="true")
+  let target_format_ok = match render_state_ref(world) {
+    Some(rs) =>
+      render2d_extracted_camera_target_format_raw(rs.cameras[1]) ==
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+    None => false
+  }
+  debug_inspect(target_format_ok, content="true")
 
   render_queue_system(world)
 
@@ -4493,6 +4537,12 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
     @camera_camera.Camera::Camera(),
   )
   |> ignore)
+  try! world.set_by_key(camera, @camera_hdr.ecs_key_hdr, @camera_hdr.Hdr::Hdr())
+  try! world.set_by_key(
+    camera,
+    @camera_compositing_space.ecs_key_compositing_space,
+    @camera_compositing_space.CompositingSpace::Srgb,
+  )
 
   render_state_update(world, fn(rs) {
     rs.extra_ui_sprites.clear()
@@ -4526,7 +4576,9 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let cameras = render_state_ref(world).unwrap().cameras
   let ok = cameras.length() == 1 &&
     cameras[0].entity.id == camera.id &&
-    cameras[0].entity.generation == camera.generation
+    cameras[0].entity.generation == camera.generation &&
+    render2d_extracted_camera_target_format_raw(cameras[0]) ==
+    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT
   debug_inspect(ok, content="true")
 }
 
