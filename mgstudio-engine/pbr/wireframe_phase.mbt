@@ -367,26 +367,26 @@ pub fn SpecializedWireframeViewPipelineCache::clear(
 ///|
 pub fn SpecializedWireframeViewPipelineCache::get(
   self : SpecializedWireframeViewPipelineCache,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> @material.CachedRenderPipelineId? {
-  self.map.get(entity.to_bits())
+  self.map.get(entity.id().to_bits())
 }
 
 ///|
 pub fn SpecializedWireframeViewPipelineCache::insert(
   self : SpecializedWireframeViewPipelineCache,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> Unit {
-  self.map.set(entity.to_bits(), pipeline_id)
+  self.map.set(entity.id().to_bits(), pipeline_id)
 }
 
 ///|
 pub fn SpecializedWireframeViewPipelineCache::remove(
   self : SpecializedWireframeViewPipelineCache,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Bool {
-  let key = entity.to_bits()
+  let key = entity.id().to_bits()
   if self.map.contains(key) {
     self.map.remove(key)
     true
@@ -452,7 +452,7 @@ pub fn SpecializedWireframePipelineCache::view_or_insert(
 pub fn SpecializedWireframePipelineCache::insert(
   self : SpecializedWireframePipelineCache,
   view : @core.Entity,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> Unit {
   self.view_or_insert(view).insert(entity, pipeline_id)
@@ -462,7 +462,7 @@ pub fn SpecializedWireframePipelineCache::insert(
 pub fn SpecializedWireframePipelineCache::pipeline_id(
   self : SpecializedWireframePipelineCache,
   view : @core.Entity,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> @material.CachedRenderPipelineId? {
   match self.views.get(view.to_bits()) {
     Some(cache) => cache.get(entity)
@@ -485,7 +485,7 @@ pub fn SpecializedWireframePipelineCache::clear_view(
 pub fn SpecializedWireframePipelineCache::remove_from_view(
   self : SpecializedWireframePipelineCache,
   view : @core.Entity,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Bool {
   match self.views.get(view.to_bits()) {
     Some(cache) => cache.remove(entity)
@@ -496,7 +496,7 @@ pub fn SpecializedWireframePipelineCache::remove_from_view(
 ///|
 pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(
   self : SpecializedWireframePipelineCache,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Int {
   let mut removed = 0
   for _, cache in self.views {
@@ -581,26 +581,26 @@ pub fn RenderWireframeInstances::clear(self : RenderWireframeInstances) -> Unit 
 ///|
 pub fn RenderWireframeInstances::get(
   self : RenderWireframeInstances,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Int? {
-  self.entries.get(entity.to_bits())
+  self.entries.get(entity.id().to_bits())
 }
 
 ///|
 pub fn RenderWireframeInstances::insert(
   self : RenderWireframeInstances,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
   material_asset_id : Int,
 ) -> Unit {
-  self.entries.set(entity.to_bits(), material_asset_id)
+  self.entries.set(entity.id().to_bits(), material_asset_id)
 }
 
 ///|
 pub fn RenderWireframeInstances::remove(
   self : RenderWireframeInstances,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Bool {
-  let key = entity.to_bits()
+  let key = entity.id().to_bits()
   if self.entries.contains(key) {
     self.entries.remove(key)
     true
@@ -873,8 +873,8 @@ pub fn PendingWireframeQueues::expire_stale_views(
 
 ///|
 pub struct DirtyWireframeSpecializations {
-  changed_renderables : Map[UInt64, @core.Entity]
-  removed_renderables : Map[UInt64, @core.Entity]
+  changed_renderables : Map[UInt64, @render.MainEntity]
+  removed_renderables : Map[UInt64, @render.MainEntity]
   views : Map[UInt64, @core.Entity]
 }
 
@@ -911,17 +911,17 @@ pub fn DirtyWireframeSpecializations::clear(
 ///|
 pub fn DirtyWireframeSpecializations::insert_changed(
   self : DirtyWireframeSpecializations,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Unit {
-  self.changed_renderables.set(entity.to_bits(), entity)
+  self.changed_renderables.set(entity.id().to_bits(), entity)
 }
 
 ///|
 pub fn DirtyWireframeSpecializations::insert_removed(
   self : DirtyWireframeSpecializations,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Unit {
-  self.removed_renderables.set(entity.to_bits(), entity)
+  self.removed_renderables.set(entity.id().to_bits(), entity)
 }
 
 ///|
@@ -956,17 +956,17 @@ pub fn DirtyWireframeSpecializations::views_len(
 ///|
 pub fn DirtyWireframeSpecializations::changed_contains(
   self : DirtyWireframeSpecializations,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Bool {
-  self.changed_renderables.contains(entity.to_bits())
+  self.changed_renderables.contains(entity.id().to_bits())
 }
 
 ///|
 pub fn DirtyWireframeSpecializations::removed_contains(
   self : DirtyWireframeSpecializations,
-  entity : @core.Entity,
+  entity : @render.MainEntity,
 ) -> Bool {
-  self.removed_renderables.contains(entity.to_bits())
+  self.removed_renderables.contains(entity.id().to_bits())
 }
 
 ///|
@@ -980,8 +980,8 @@ pub fn DirtyWireframeSpecializations::must_wipe_specializations_for_view(
 ///|
 pub fn DirtyWireframeSpecializations::to_despecialize(
   self : DirtyWireframeSpecializations,
-) -> Array[@core.Entity] {
-  let entities : Array[@core.Entity] = []
+) -> Array[@render.MainEntity] {
+  let entities : Array[@render.MainEntity] = []
   for entity in self.changed_renderables.values() {
     entities.push(entity)
   }

@@ -13,6 +13,11 @@
 // limitations under the License.
 
 ///|
+fn wireframe_test_main_entity(entity : @core.Entity) -> @render.MainEntity {
+  @render.MainEntity::new(entity)
+}
+
+///|
 test "pbr: Wireframe3d phase item exposes Bevy phase identity fields" {
   let draw_functions = @material.DrawFunctions::new()
   let draw = draw_functions.register("Wireframe3dThinDrawFunction")
@@ -110,26 +115,28 @@ test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines"
   let stale_view = @core.Entity::new(12, 1)
   let entity = @core.Entity::new(11, 1)
   let stale_entity = @core.Entity::new(13, 1)
+  let main_entity = wireframe_test_main_entity(entity)
+  let stale_main_entity = wireframe_test_main_entity(stale_entity)
   let pipeline = @material.CachedRenderPipelineId::new(77UL)
-  cache.insert(view, entity, pipeline)
+  cache.insert(view, main_entity, pipeline)
   cache.insert(
     stale_view,
-    stale_entity,
+    stale_main_entity,
     @material.CachedRenderPipelineId::new(79UL),
   )
 
   debug_inspect(cache.len(), content="2")
   debug_inspect(
-    cache.pipeline_id(view, entity).map(fn(id) { id.id() }),
+    cache.pipeline_id(view, main_entity).map(fn(id) { id.id() }),
     content="Some(77)",
   )
-  debug_inspect(cache.remove_from_view(view, entity), content="true")
-  debug_inspect(cache.pipeline_id(view, entity) is None, content="true")
-  cache.insert(view, entity, pipeline)
+  debug_inspect(cache.remove_from_view(view, main_entity), content="true")
+  debug_inspect(cache.pipeline_id(view, main_entity) is None, content="true")
+  cache.insert(view, main_entity, pipeline)
   cache.clear_view(view)
-  debug_inspect(cache.pipeline_id(view, entity) is None, content="true")
+  debug_inspect(cache.pipeline_id(view, main_entity) is None, content="true")
   debug_inspect(
-    cache.pipeline_id(stale_view, stale_entity) is Some(_),
+    cache.pipeline_id(stale_view, stale_main_entity) is Some(_),
     content="true",
   )
 
@@ -209,15 +216,16 @@ test "pbr: PendingWireframeQueues expires stale views" {
 test "pbr: render wireframe instance resources track Bevy render asset ids" {
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   let entity = @core.Entity::new(7, 1)
-  instances.insert(entity, 42)
+  let main_entity = wireframe_test_main_entity(entity)
+  instances.insert(main_entity, 42)
   debug_inspect(instances.len(), content="1")
-  debug_inspect(instances.get(entity), content="Some(42)")
-  debug_inspect(instances.remove(entity), content="true")
-  debug_inspect(instances.get(entity), content="None")
-  instances.insert(entity, 77)
+  debug_inspect(instances.get(main_entity), content="Some(42)")
+  debug_inspect(instances.remove(main_entity), content="true")
+  debug_inspect(instances.get(main_entity), content="None")
+  instances.insert(main_entity, 77)
   instances.clear()
   debug_inspect(instances.len(), content="0")
-  debug_inspect(instances.get(entity), content="None")
+  debug_inspect(instances.get(main_entity), content="None")
 }
 
 ///|
@@ -226,7 +234,7 @@ test "pbr: extract_wireframe_materials mirrors visible Mesh3dWireframe changes" 
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   let visible_entity = source_world.spawn()
   let hidden_entity = source_world.spawn()
-  instances.insert(hidden_entity, 99)
+  instances.insert(wireframe_test_main_entity(hidden_entity), 99)
   try! source_world.set_by_key(
     visible_entity,
     @visibility.ecs_key_view_visibility,
@@ -255,8 +263,14 @@ test "pbr: extract_wireframe_materials mirrors visible Mesh3dWireframe changes" 
   )
 
   debug_inspect(instances.len(), content="1")
-  debug_inspect(instances.get(visible_entity), content="Some(42)")
-  debug_inspect(instances.get(hidden_entity), content="None")
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(visible_entity)),
+    content="Some(42)",
+  )
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(hidden_entity)),
+    content="None",
+  )
 }
 
 ///|
@@ -279,7 +293,10 @@ test "pbr: extract_wireframe_materials removes stale removed components" {
     instances,
     @core.SystemTicks::new(0, 1),
   )
-  debug_inspect(instances.get(entity), content="Some(7)")
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(entity)),
+    content="Some(7)",
+  )
 
   source_world.increment_change_tick() |> ignore
   source_world.increment_change_tick() |> ignore
@@ -290,7 +307,10 @@ test "pbr: extract_wireframe_materials removes stale removed components" {
     @core.SystemTicks::new(1, 2),
   )
 
-  debug_inspect(instances.get(entity), content="None")
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(entity)),
+    content="None",
+  )
 }
 
 ///|
@@ -313,7 +333,10 @@ test "pbr: extract_wireframe_materials preserves same-frame readded material" {
     instances,
     @core.SystemTicks::new(0, 1),
   )
-  debug_inspect(instances.get(entity), content="Some(3)")
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(entity)),
+    content="Some(3)",
+  )
 
   source_world.increment_change_tick() |> ignore
   source_world.increment_change_tick() |> ignore
@@ -329,7 +352,10 @@ test "pbr: extract_wireframe_materials preserves same-frame readded material" {
     @core.SystemTicks::new(1, 2),
   )
 
-  debug_inspect(instances.get(entity), content="Some(11)")
+  debug_inspect(
+    instances.get(wireframe_test_main_entity(entity)),
+    content="Some(11)",
+  )
 }
 
 ///|
@@ -409,12 +435,14 @@ test "pbr: dirty wireframe specializations mirror Bevy dirty tables" {
   let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
   let changed_entity = @core.Entity::new(1, 1)
   let removed_entity = @core.Entity::new(2, 1)
-  dirty.insert_changed(changed_entity)
-  dirty.insert_removed(removed_entity)
+  let changed_main_entity = wireframe_test_main_entity(changed_entity)
+  let removed_main_entity = wireframe_test_main_entity(removed_entity)
+  dirty.insert_changed(changed_main_entity)
+  dirty.insert_removed(removed_main_entity)
   debug_inspect(dirty.changed_len(), content="1")
   debug_inspect(dirty.removed_len(), content="1")
-  debug_inspect(dirty.changed_contains(changed_entity), content="true")
-  debug_inspect(dirty.removed_contains(removed_entity), content="true")
+  debug_inspect(dirty.changed_contains(changed_main_entity), content="true")
+  debug_inspect(dirty.removed_contains(removed_main_entity), content="true")
 
   dirty.clear()
 
@@ -427,16 +455,18 @@ test "pbr: dirty wireframe specializations expose Bevy despecialize helpers" {
   let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
   let changed_entity = @core.Entity::new(1, 1)
   let removed_entity = @core.Entity::new(2, 1)
+  let changed_main_entity = wireframe_test_main_entity(changed_entity)
+  let removed_main_entity = wireframe_test_main_entity(removed_entity)
   let view = @core.Entity::new(3, 1)
-  dirty.insert_changed(changed_entity)
-  dirty.insert_removed(removed_entity)
+  dirty.insert_changed(changed_main_entity)
+  dirty.insert_removed(removed_main_entity)
   dirty.insert_view(view)
 
   let to_despecialize = dirty.to_despecialize()
 
   debug_inspect(to_despecialize.length(), content="2")
-  debug_inspect(to_despecialize.contains(changed_entity), content="true")
-  debug_inspect(to_despecialize.contains(removed_entity), content="true")
+  debug_inspect(to_despecialize.contains(changed_main_entity), content="true")
+  debug_inspect(to_despecialize.contains(removed_main_entity), content="true")
   debug_inspect(dirty.views_len(), content="1")
   debug_inspect(dirty.must_wipe_specializations_for_view(view), content="true")
   debug_inspect(
@@ -459,25 +489,49 @@ test "pbr: despecialize_wireframe_view_cache follows Bevy dirty removal branch" 
   let changed_entity = @core.Entity::new(11, 1)
   let removed_entity = @core.Entity::new(12, 1)
   let stable_entity = @core.Entity::new(13, 1)
-  cache.insert(view, changed_entity, @material.CachedRenderPipelineId::new(1UL))
-  cache.insert(view, removed_entity, @material.CachedRenderPipelineId::new(2UL))
-  cache.insert(view, stable_entity, @material.CachedRenderPipelineId::new(3UL))
-  dirty.insert_changed(changed_entity)
-  dirty.insert_removed(removed_entity)
+  let changed_main_entity = wireframe_test_main_entity(changed_entity)
+  let removed_main_entity = wireframe_test_main_entity(removed_entity)
+  let stable_main_entity = wireframe_test_main_entity(stable_entity)
+  cache.insert(
+    view,
+    changed_main_entity,
+    @material.CachedRenderPipelineId::new(1UL),
+  )
+  cache.insert(
+    view,
+    removed_main_entity,
+    @material.CachedRenderPipelineId::new(2UL),
+  )
+  cache.insert(
+    view,
+    stable_main_entity,
+    @material.CachedRenderPipelineId::new(3UL),
+  )
+  dirty.insert_changed(changed_main_entity)
+  dirty.insert_removed(removed_main_entity)
 
   despecialize_wireframe_view_cache(cache, dirty, view)
 
-  debug_inspect(cache.pipeline_id(view, changed_entity) is None, content="true")
-  debug_inspect(cache.pipeline_id(view, removed_entity) is None, content="true")
   debug_inspect(
-    cache.pipeline_id(view, stable_entity).map(fn(id) { id.id() }),
+    cache.pipeline_id(view, changed_main_entity) is None,
+    content="true",
+  )
+  debug_inspect(
+    cache.pipeline_id(view, removed_main_entity) is None,
+    content="true",
+  )
+  debug_inspect(
+    cache.pipeline_id(view, stable_main_entity).map(fn(id) { id.id() }),
     content="Some(3)",
   )
 
   dirty.insert_view(view)
   despecialize_wireframe_view_cache(cache, dirty, view)
 
-  debug_inspect(cache.pipeline_id(view, stable_entity) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(view, stable_main_entity) is None,
+    content="true",
+  )
 }
 
 ///|
@@ -507,8 +561,14 @@ test "pbr: wireframe dirty extraction writes changed and removed render tables" 
   }
   debug_inspect(dirty.changed_len(), content="1")
   debug_inspect(dirty.removed_len(), content="1")
-  debug_inspect(dirty.changed_contains(changed_entity), content="true")
-  debug_inspect(dirty.removed_contains(removed_entity), content="true")
+  debug_inspect(
+    dirty.changed_contains(wireframe_test_main_entity(changed_entity)),
+    content="true",
+  )
+  debug_inspect(
+    dirty.removed_contains(wireframe_test_main_entity(removed_entity)),
+    content="true",
+  )
 }
 
 ///|

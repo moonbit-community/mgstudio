@@ -862,9 +862,12 @@ fn extract_wireframe_materials_from_world(
       ) {
       (Some(view_visibility), Some(material)) =>
         if view_visibility.get() {
-          material_instances.insert(entity, material.material().id())
+          material_instances.insert(
+            @render.MainEntity::new(entity),
+            material.material().id(),
+          )
         } else {
-          ignore(material_instances.remove(entity))
+          ignore(material_instances.remove(@render.MainEntity::new(entity)))
         }
       _ => ()
     }
@@ -875,7 +878,7 @@ fn extract_wireframe_materials_from_world(
     .removed_components(@visibility.ecs_key_view_visibility, system_ticks)
     .read() {
     if !changed_entities.contains(entity.to_bits()) {
-      ignore(material_instances.remove(entity))
+      ignore(material_instances.remove(@render.MainEntity::new(entity)))
     }
   }
   for
@@ -883,7 +886,7 @@ fn extract_wireframe_materials_from_world(
     .removed_components(ecs_key_mesh3d_wireframe, system_ticks)
     .read() {
     if !changed_entities.contains(entity.to_bits()) {
-      ignore(material_instances.remove(entity))
+      ignore(material_instances.remove(@render.MainEntity::new(entity)))
     }
   }
 }
@@ -999,7 +1002,7 @@ fn extract_wireframe_entities_needing_specialization_system(
   }
   dirty_wireframe_specializations_mut_or_init(world).modify(fn(dirty) {
     for entity in entities_needing_specialization.changed {
-      dirty.insert_changed(entity)
+      dirty.insert_changed(@render.MainEntity::new(entity))
     }
   })
 }
@@ -1017,7 +1020,7 @@ fn extract_wireframe_entities_that_need_specializations_removed_system(
   }
   dirty_wireframe_specializations_mut_or_init(world).modify(fn(dirty) {
     for entity in entities_needing_specialization.removed {
-      dirty.insert_removed(entity)
+      dirty.insert_removed(@render.MainEntity::new(entity))
     }
   })
 }

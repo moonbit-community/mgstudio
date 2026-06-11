@@ -19,7 +19,6 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr/decal",
   "Milky2018/mgstudio/pbr/lightmap",
-  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/post_process/effect_stack",
@@ -222,7 +221,7 @@ pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
 
-pub let ecs_key_frustum : @ecs.ComponentKey[@render.Frustum]
+pub let ecs_key_frustum : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/render.Frustum]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
@@ -322,7 +321,7 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/render.SubCameraView3d]
 
 pub let ecs_key_sun_disk : @ecs.ComponentKey[@light.SunDisk]
 
@@ -548,7 +547,7 @@ pub fn render3d_diagnostics_snapshot(@ecs.World) -> Render3dDiagnosticsSnapshot
 
 pub fn render3d_execute_system(@ecs.World) -> Unit
 
-pub fn render3d_extract_morphs(@ecs.World, @render.MorphIndices, @render.MorphUniforms) -> Unit
+pub fn render3d_extract_morphs(@ecs.World, @Milky2018/mgstudio/pbr/render.MorphIndices, @Milky2018/mgstudio/pbr/render.MorphUniforms) -> Unit
 
 pub fn render3d_extract_system(@ecs.World) -> Unit
 
@@ -566,15 +565,15 @@ pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators,
 
 pub fn render3d_material_properties_for_standard_material(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?, @material.OpaqueRendererMethod, Bool) -> @material.MaterialProperties
 
-pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
+pub fn render3d_orthographic_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
 
-pub fn render3d_perspective_projection_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
+pub fn render3d_perspective_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
 
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render3d_prepare_bind_groups_system(@ecs.World) -> Unit
 
-pub fn render3d_prepare_camera_fog_uniforms(@ecs.World, Array[@core.Entity], @render.FogMeta) -> Array[(@core.Entity, @render.ViewFogUniformOffset)]
+pub fn render3d_prepare_camera_fog_uniforms(@ecs.World, Array[@core.Entity], @Milky2018/mgstudio/pbr/render.FogMeta) -> Array[(@core.Entity, @Milky2018/mgstudio/pbr/render.ViewFogUniformOffset)]
 
 pub fn render3d_prepare_contact_shadows_settings(@ecs.World, Array[@core.Entity], ContactShadowsBuffer) -> Array[(@core.Entity, ViewContactShadowsUniformOffset)]
 
@@ -584,7 +583,7 @@ pub fn render3d_prepare_fog_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_meshes_system(@ecs.World) -> Unit
 
-pub fn render3d_prepare_morphs(@ecs.World, @render.MorphIndices, @render.MorphUniforms) -> Unit
+pub fn render3d_prepare_morphs(@ecs.World, @Milky2018/mgstudio/pbr/render.MorphIndices, @Milky2018/mgstudio/pbr/render.MorphUniforms) -> Unit
 
 pub fn render3d_prepare_morphs_system(@ecs.World) -> Unit
 
@@ -630,7 +629,7 @@ pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
 
 pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 
-pub fn render3d_view_fog_data(DistanceFog) -> @render.Render3dViewFogData
+pub fn render3d_view_fog_data(DistanceFog) -> @Milky2018/mgstudio/pbr/render.Render3dViewFogData
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -730,7 +729,7 @@ pub impl @ecs.Component for Camera3d
 pub struct Camera3dBundle {
   camera : @camera.Camera
   projection : Projection
-  sub_camera_view : @render.SubCameraView3d?
+  sub_camera_view : @Milky2018/mgstudio/pbr/render.SubCameraView3d?
   screen_space_transmission : @transmission.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
   bloom : @post_process.Bloom?
@@ -776,7 +775,7 @@ pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
-pub fn Camera3dBundle::with_sub_camera_view(Self, @render.SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_sub_camera_view(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_target(Self, @camera.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
@@ -897,10 +896,10 @@ pub struct CustomProjection3d {
   // private fields
 }
 pub fn CustomProjection3d::CustomProjection3d() -> Self
-pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @render.Frustum
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
 pub fn CustomProjection3d::far(Self) -> Float
-pub fn CustomProjection3d::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
-pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
@@ -934,21 +933,21 @@ pub(all) enum DepthOfFieldMode {
 pub fn DepthOfFieldMode::default() -> Self
 
 pub struct DirtyWireframeSpecializations {
-  changed_renderables : Map[UInt64, @core.Entity]
-  removed_renderables : Map[UInt64, @core.Entity]
+  changed_renderables : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
+  removed_renderables : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
   views : Map[UInt64, @core.Entity]
 }
 pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> Self
-pub fn DirtyWireframeSpecializations::changed_contains(Self, @core.Entity) -> Bool
+pub fn DirtyWireframeSpecializations::changed_contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn DirtyWireframeSpecializations::changed_len(Self) -> Int
 pub fn DirtyWireframeSpecializations::clear(Self) -> Unit
-pub fn DirtyWireframeSpecializations::insert_changed(Self, @core.Entity) -> Unit
-pub fn DirtyWireframeSpecializations::insert_removed(Self, @core.Entity) -> Unit
+pub fn DirtyWireframeSpecializations::insert_changed(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn DirtyWireframeSpecializations::insert_removed(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 pub fn DirtyWireframeSpecializations::insert_view(Self, @core.Entity) -> Unit
 pub fn DirtyWireframeSpecializations::must_wipe_specializations_for_view(Self, @core.Entity) -> Bool
-pub fn DirtyWireframeSpecializations::removed_contains(Self, @core.Entity) -> Bool
+pub fn DirtyWireframeSpecializations::removed_contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn DirtyWireframeSpecializations::removed_len(Self) -> Int
-pub fn DirtyWireframeSpecializations::to_despecialize(Self) -> Array[@core.Entity]
+pub fn DirtyWireframeSpecializations::to_despecialize(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
 pub fn DirtyWireframeSpecializations::views_len(Self) -> Int
 pub impl @app.Resource for DirtyWireframeSpecializations
 
@@ -1424,16 +1423,16 @@ pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> Self
 pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum Projection {
-  Perspective(@render.PerspectiveProjection3d)
-  Orthographic(@render.OrthographicProjection3d)
+  Perspective(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d)
+  Orthographic(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
-pub fn Projection::compute_frustum(Self, @transform.Transform) -> @render.Frustum
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
-pub fn Projection::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
-pub fn Projection::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
+pub fn Projection::get_clip_from_view(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
 pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
@@ -1477,10 +1476,10 @@ pub struct RenderWireframeInstances {
 }
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> Self
 pub fn RenderWireframeInstances::clear(Self) -> Unit
-pub fn RenderWireframeInstances::get(Self, @core.Entity) -> Int?
-pub fn RenderWireframeInstances::insert(Self, @core.Entity, Int) -> Unit
+pub fn RenderWireframeInstances::get(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderWireframeInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, Int) -> Unit
 pub fn RenderWireframeInstances::len(Self) -> Int
-pub fn RenderWireframeInstances::remove(Self, @core.Entity) -> Bool
+pub fn RenderWireframeInstances::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub impl @app.Resource for RenderWireframeInstances
 
 pub struct RenderWireframeMaterial {
@@ -1597,12 +1596,12 @@ pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() ->
 pub fn SpecializedWireframePipelineCache::clear_view(Self, @core.Entity) -> Unit
 pub fn SpecializedWireframePipelineCache::contains_view(Self, @core.Entity) -> Bool
 pub fn SpecializedWireframePipelineCache::expire_stale_views(Self, Map[UInt64, Bool]) -> Unit
-pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(Self, WireframeWidePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::len(Self) -> Int
-pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @core.Entity) -> @render_resource.CachedRenderPipelineId?
-pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
-pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @core.Entity) -> Bool
+pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @Milky2018/mgstudio/render.MainEntity) -> Int
+pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn SpecializedWireframePipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedWireframeViewPipelineCache
 pub fn SpecializedWireframePipelineCache::wide_len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::wide_pipeline_id(Self, WireframeWidePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
@@ -1613,10 +1612,10 @@ pub struct SpecializedWireframeViewPipelineCache {
 }
 pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> Self
 pub fn SpecializedWireframeViewPipelineCache::clear(Self) -> Unit
-pub fn SpecializedWireframeViewPipelineCache::get(Self, @core.Entity) -> @render_resource.CachedRenderPipelineId?
-pub fn SpecializedWireframeViewPipelineCache::insert(Self, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframeViewPipelineCache::get(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframeViewPipelineCache::insert(Self, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframeViewPipelineCache::len(Self) -> Int
-pub fn SpecializedWireframeViewPipelineCache::remove(Self, @core.Entity) -> Bool
+pub fn SpecializedWireframeViewPipelineCache::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 
 pub struct StandardMaterialKey {
   bits : UInt64
@@ -2014,7 +2013,7 @@ pub using @decal {type ForwardDecal}
 
 pub using @material {type ForwardDecalMaterialExt}
 
-pub using @render {type Frustum}
+pub using @Milky2018/mgstudio/pbr/render {type Frustum}
 
 pub using @post_process {type Fxaa}
 
@@ -2050,9 +2049,9 @@ pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 
 pub using @material {type OpaqueRendererMethod}
 
-pub using @render {type OrthographicProjection3d}
+pub using @Milky2018/mgstudio/pbr/render {type OrthographicProjection3d}
 
-pub using @render {type OrthographicScalingMode3d}
+pub using @Milky2018/mgstudio/pbr/render {type OrthographicScalingMode3d}
 
 pub using @light {type ParallaxCorrection}
 
@@ -2060,7 +2059,7 @@ pub using @material {type ParallaxMappingMethod}
 
 pub using @Milky2018/mgstudio/pbr/deferred {type PbrDeferredLightingDepthId}
 
-pub using @render {type PerspectiveProjection3d}
+pub using @Milky2018/mgstudio/pbr/render {type PerspectiveProjection3d}
 
 pub using @light {type PointLight}
 
@@ -2068,7 +2067,7 @@ pub using @light {type PointLightShadowMap}
 
 pub using @light {type PointLightTexture}
 
-pub using @render {type ProjectionMatrix3d}
+pub using @Milky2018/mgstudio/pbr/render {type ProjectionMatrix3d}
 
 pub using @light {type ScatteringMedium}
 
@@ -2092,7 +2091,7 @@ pub using @light {type SpotLightTexture}
 
 pub using @material {type StandardMaterial}
 
-pub using @render {type SubCameraView3d}
+pub using @Milky2018/mgstudio/pbr/render {type SubCameraView3d}
 
 pub using @light {type SunDisk}
 
@@ -2102,7 +2101,7 @@ pub using @post_process {type TemporalJitter}
 
 pub using @post_process {type Tonemapping}
 
-pub using @render {type ViewFrustum}
+pub using @Milky2018/mgstudio/pbr/render {type ViewFrustum}
 
 pub using @effect_stack {type Vignette}
 
@@ -2118,15 +2117,15 @@ pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
 pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]
 
 pub(open) trait CameraProjection3d {
-  fn get_clip_from_view(Self) -> @render.ProjectionMatrix3d
-  fn get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
+  fn get_clip_from_view(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
+  fn get_clip_from_view_for_sub(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
   fn update(Self, Float, Float) -> Self
   fn far(Self) -> Float
-  fn compute_frustum(Self, @transform.Transform) -> @render.Frustum
+  fn compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
   fn get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
-pub impl CameraProjection3d for @render.OrthographicProjection3d
-pub impl CameraProjection3d for @render.PerspectiveProjection3d
+pub impl CameraProjection3d for @Milky2018/mgstudio/pbr/render.OrthographicProjection3d
+pub impl CameraProjection3d for @Milky2018/mgstudio/pbr/render.PerspectiveProjection3d
 
 pub(open) trait IntoPbrMaterialAsset {
   fn into_pbr_material_asset(Self) -> @material.StandardMaterial
