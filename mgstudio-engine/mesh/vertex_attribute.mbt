@@ -281,6 +281,21 @@ pub fn VertexAttribute::new(
 }
 
 ///|
+pub fn VertexAttribute::offset(self : VertexAttribute) -> Int {
+  self.offset
+}
+
+///|
+pub fn VertexAttribute::format(self : VertexAttribute) -> MeshVertexFormat {
+  self.format
+}
+
+///|
+pub fn VertexAttribute::shader_location(self : VertexAttribute) -> Int {
+  self.shader_location
+}
+
+///|
 pub struct VertexBufferLayout {
   array_stride : Int
   step_mode : MeshVertexStepMode
@@ -294,6 +309,25 @@ pub fn VertexBufferLayout::new(
   attributes~ : Array[VertexAttribute],
 ) -> VertexBufferLayout {
   VertexBufferLayout::{ array_stride, step_mode, attributes }
+}
+
+///|
+pub fn VertexBufferLayout::array_stride(self : VertexBufferLayout) -> Int {
+  self.array_stride
+}
+
+///|
+pub fn VertexBufferLayout::step_mode(
+  self : VertexBufferLayout,
+) -> MeshVertexStepMode {
+  self.step_mode
+}
+
+///|
+pub fn VertexBufferLayout::attributes(
+  self : VertexBufferLayout,
+) -> Array[VertexAttribute] {
+  self.attributes
 }
 
 ///|

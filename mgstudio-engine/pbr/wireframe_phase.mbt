@@ -822,6 +822,76 @@ pub fn WireframeWideBindGroups::params(
 }
 
 ///|
+fn wireframe_render_mesh_vertex_layout(
+  render_mesh : @render_mesh.RenderMesh,
+) -> @mesh.VertexBufferLayout {
+  render_mesh.layout().layout().layout()
+}
+
+///|
+fn wireframe_position_offset_bytes(
+  vertex_layout : @mesh.VertexBufferLayout,
+) -> Int {
+  let attributes = vertex_layout.attributes()
+  match attributes.get(0) {
+    Some(attribute) => attribute.offset()
+    None => 0
+  }
+}
+
+///|
+pub fn prepare_wireframe_wide_bind_groups(
+  render_mesh_instances : RenderMeshInstances,
+  render_meshes : @render_mesh.RenderMeshAssets,
+  render_wireframe_instances : RenderWireframeInstances,
+  render_wireframe_assets : RenderWireframeAssets,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  wide_bind_groups : WireframeWideBindGroups,
+) -> Unit {
+  wide_bind_groups.clear()
+  let seen : Map[Int, Bool] = {}
+  for entity_bits, wireframe_asset_id in render_wireframe_instances.entries {
+    guard render_wireframe_assets.get(wireframe_asset_id) is Some(material) else {
+      continue
+    }
+    if material.line_width <= 1.0F &&
+      material.topology != WireframeTopology::Quads {
+      continue
+    }
+    let entity = @render.MainEntity::new(@core.Entity::from_bits(entity_bits))
+    guard render_mesh_instances.render_mesh_queue_data(entity)
+      is Some(mesh_instance) else {
+      continue
+    }
+    let mesh_asset_id = mesh_instance.mesh_asset_id()
+    guard !seen.contains(mesh_asset_id) else { continue }
+    seen.set(mesh_asset_id, true)
+    guard render_meshes.get(mesh_asset_id) is Some(render_mesh) else {
+      continue
+    }
+    guard mesh_allocator.mesh_vertex_slice(mesh_asset_id) is Some(_vertex_slice) else {
+      continue
+    }
+    guard mesh_allocator.mesh_index_slice(mesh_asset_id) is Some(index_slice) else {
+      continue
+    }
+    let vertex_layout = wireframe_render_mesh_vertex_layout(render_mesh)
+    let vertex_stride_bytes = vertex_layout.array_stride()
+    let position_offset_bytes = wireframe_position_offset_bytes(vertex_layout)
+    ignore(
+      wide_bind_groups.push(
+        mesh_asset_id,
+        WireframeVertexPullParams::new(
+          index_slice.start().reinterpret_as_uint(),
+          (vertex_stride_bytes / 4).reinterpret_as_uint(),
+          (position_offset_bytes / 4).reinterpret_as_uint(),
+        ),
+      ),
+    )
+  }
+}
+
+///|
 pub struct Wireframe3dDrawFunctions {
   draw_functions : @material.DrawFunctions
   thin : @material.DrawFunctionId

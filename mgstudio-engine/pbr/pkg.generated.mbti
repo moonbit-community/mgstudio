@@ -531,6 +531,8 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
+pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
+
 pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, @Milky2018/mgstudio/render/mesh.MeshAllocator, Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError

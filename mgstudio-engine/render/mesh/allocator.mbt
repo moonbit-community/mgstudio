@@ -801,6 +801,7 @@ pub fn mesh_allocator_plugin_with(
   app
   .init_resource(fn() { MeshAllocatorSettings::MeshAllocatorSettings() })
   .init_resource(fn() { MeshAllocator::MeshAllocator() })
+  .init_resource(fn() { RenderMeshAssets::RenderMeshAssets() })
 }
 
 ///|

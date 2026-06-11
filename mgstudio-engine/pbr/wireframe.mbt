@@ -335,6 +335,11 @@ let wireframe_render_set_specialize : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let wireframe_render_set_prepare_bind_groups : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.prepare_bind_groups",
+)
+
+///|
 let wireframe_render_set_prepare_view_keys : @app.SystemSet = @app.system_set(
   "mgstudio.pbr.wireframe.prepare_view_keys",
 )
@@ -1373,6 +1378,45 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_meshes = match
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_instances = match
+    world.get_resource(RenderWireframeInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_assets = match
+    world.get_resource(RenderWireframeAssets::resource()) {
+    Some(value) => value
+    None => return
+  }
+  @render.sync_mesh_allocator_resource_from_backend_system(world)
+  let mesh_allocator = match
+    world.get_resource(@render_mesh.MeshAllocator::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let wide_bind_groups = match
+    world.get_resource(WireframeWideBindGroups::resource()) {
+    Some(value) => value
+    None => return
+  }
+  prepare_wireframe_wide_bind_groups(
+    render_mesh_instances, render_meshes, render_wireframe_instances, render_wireframe_assets,
+    mesh_allocator, wide_bind_groups,
+  )
+}
+
+///|
 fn wireframe_3d_phases_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Wireframe3dPhases] {
@@ -1569,6 +1613,12 @@ fn configure_wireframe_render_sub_app(
   .configure_sets(
     stage,
     wireframe_render_set_specialize,
+    before=[wireframe_render_set_prepare_bind_groups],
+    in_sets=[render3d_set_queue_meshes],
+  )
+  .configure_sets(
+    stage,
+    wireframe_render_set_prepare_bind_groups,
     before=[wireframe_render_set_queue],
     in_sets=[render3d_set_queue_meshes],
   )
@@ -1640,6 +1690,12 @@ fn configure_wireframe_render_sub_app(
     stage,
     @app.system(specialize_wireframes_system).in_set(
       wireframe_render_set_specialize,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(prepare_wireframe_wide_bind_groups_system).in_set(
+      wireframe_render_set_prepare_bind_groups,
     ),
   )
   .add_systems(

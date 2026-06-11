@@ -1533,6 +1533,78 @@ test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
 }
 
 ///|
+test "pbr: prepare wide wireframe bind groups mirrors Bevy filtering" {
+  let mesh_layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let layout = mesh_layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=80,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=8,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=0,
+          ),
+        ],
+      ),
+    ),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    indexed=true,
+    index_count=3,
+    layout~,
+  )
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_meshes.insert(13, render_mesh)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(mesh_allocator.allocate_render_mesh(13, render_mesh, 80))
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let first = @render.MainEntity::new(@core.Entity::new(1, 1))
+  let duplicate = @render.MainEntity::new(@core.Entity::new(2, 1))
+  let thin = @render.MainEntity::new(@core.Entity::new(3, 1))
+  render_mesh_instances.insert(first, RenderMeshQueueData::new(13, 0U, true))
+  render_mesh_instances.insert(
+    duplicate,
+    RenderMeshQueueData::new(13, 1U, true),
+  )
+  render_mesh_instances.insert(thin, RenderMeshQueueData::new(14, 2U, true))
+  let render_wireframe_instances = RenderWireframeInstances::RenderWireframeInstances()
+  render_wireframe_instances.insert(first, 7)
+  render_wireframe_instances.insert(duplicate, 7)
+  render_wireframe_instances.insert(thin, 8)
+  let render_wireframe_assets = RenderWireframeAssets::RenderWireframeAssets()
+  render_wireframe_assets.insert(
+    7,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
+    ),
+  )
+  render_wireframe_assets.insert(
+    8,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 1.0F, Triangles),
+    ),
+  )
+  let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
+
+  prepare_wireframe_wide_bind_groups(
+    render_mesh_instances, render_meshes, render_wireframe_instances, render_wireframe_assets,
+    mesh_allocator, bind_groups,
+  )
+
+  debug_inspect(bind_groups.len(), content="1")
+  debug_inspect(bind_groups.dynamic_offset(13), content="Some(0)")
+  debug_inspect(bind_groups.dynamic_offset(14), content="None")
+  let params = bind_groups.params(0).unwrap()
+  debug_inspect(params.index_offset(), content="0")
+  debug_inspect(params.vertex_stride_u32s(), content="20")
+  debug_inspect(params.position_offset_u32s(), content="2")
+}
+
+///|
 test "pbr: wireframe draw function resource registers thin and wide commands" {
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
   debug_inspect(draw_functions.len(), content="2")

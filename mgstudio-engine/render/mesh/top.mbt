@@ -279,3 +279,60 @@ pub fn RenderMesh::primitive_topology(
 ) -> @asset_mesh.Mesh3dPrimitiveTopology {
   self.key_bits.primitive_topology()
 }
+
+///|
+pub struct RenderMeshAssets {
+  assets : Map[Int, RenderMesh]
+}
+
+///|
+pub fn RenderMeshAssets::RenderMeshAssets() -> RenderMeshAssets {
+  RenderMeshAssets::{ assets: {} }
+}
+
+///|
+pub let render_mesh_assets_resource_key : @ecs.ResourceKey[RenderMeshAssets] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderAssets<RenderMesh>",
+)
+
+///|
+pub impl @app.Resource for RenderMeshAssets with fn resource() {
+  render_mesh_assets_resource_key
+}
+
+///|
+pub fn RenderMeshAssets::clear(self : RenderMeshAssets) -> Unit {
+  self.assets.clear()
+}
+
+///|
+pub fn RenderMeshAssets::insert(
+  self : RenderMeshAssets,
+  mesh_asset_id : Int,
+  render_mesh : RenderMesh,
+) -> Unit {
+  self.assets.set(mesh_asset_id, render_mesh)
+}
+
+///|
+pub fn RenderMeshAssets::remove(
+  self : RenderMeshAssets,
+  mesh_asset_id : Int,
+) -> RenderMesh? {
+  let value = self.assets.get(mesh_asset_id)
+  self.assets.remove(mesh_asset_id)
+  value
+}
+
+///|
+pub fn RenderMeshAssets::get(
+  self : RenderMeshAssets,
+  mesh_asset_id : Int,
+) -> RenderMesh? {
+  self.assets.get(mesh_asset_id)
+}
+
+///|
+pub fn RenderMeshAssets::len(self : RenderMeshAssets) -> Int {
+  self.assets.length()
+}

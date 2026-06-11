@@ -552,7 +552,10 @@ pub struct VertexAttribute {
   shader_location : Int
 } derive(@debug.Debug)
 pub fn VertexAttribute::equal(Self, Self) -> Bool
+pub fn VertexAttribute::format(Self) -> MeshVertexFormat
 pub fn VertexAttribute::new(offset~ : Int, format~ : MeshVertexFormat, shader_location~ : Int) -> Self
+pub fn VertexAttribute::offset(Self) -> Int
+pub fn VertexAttribute::shader_location(Self) -> Int
 
 pub struct VertexAttributeDescriptor {
   shader_location : Int
@@ -589,10 +592,13 @@ pub struct VertexBufferLayout {
   step_mode : MeshVertexStepMode
   attributes : Array[VertexAttribute]
 } derive(@debug.Debug)
+pub fn VertexBufferLayout::array_stride(Self) -> Int
+pub fn VertexBufferLayout::attributes(Self) -> Array[VertexAttribute]
 pub fn VertexBufferLayout::equal(Self, Self) -> Bool
 pub fn VertexBufferLayout::from_vertex_formats(MeshVertexStepMode, Array[MeshVertexFormat]) -> Self
 pub fn VertexBufferLayout::new(array_stride~ : Int, step_mode~ : MeshVertexStepMode, attributes~ : Array[VertexAttribute]) -> Self
 pub fn VertexBufferLayout::offset_locations_by(Self, Int) -> Self
+pub fn VertexBufferLayout::step_mode(Self) -> MeshVertexStepMode
 
 // Type aliases
 

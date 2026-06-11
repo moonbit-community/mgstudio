@@ -409,6 +409,19 @@ fn render3d_prewarm_material_pipeline(
     mesh_asset,
     mesh_runtime_state_value.mesh_vertex_buffer_layouts,
   )
+  if world.get_resource(@render_mesh.RenderMeshAssets::resource()) is None {
+    world.insert_resource(
+      @render_mesh.RenderMeshAssets::resource(),
+      @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    )
+  }
+  match world.get_resource_mut(@render_mesh.RenderMeshAssets::resource()) {
+    Some(render_mesh_assets) =>
+      render_mesh_assets.modify(fn(assets) {
+        assets.insert(mesh.mesh_handle.id(), render_mesh)
+      })
+    None => ()
+  }
   let layout = render_mesh.layout()
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,

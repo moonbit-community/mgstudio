@@ -40,6 +40,8 @@ pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, set
 
 pub fn render_mesh3d_host_vertex_buffer_layout(@Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 
+pub let render_mesh_assets_resource_key : @ecs.ResourceKey[RenderMeshAssets]
+
 pub fn render_morph_lowest_2d(Int, max_edge? : Int) -> RenderMorphTextureRect?
 
 pub fn render_morph_pack_attribute_components(position_x~ : Float, position_y~ : Float, position_z~ : Float, normal_x~ : Float, normal_y~ : Float, normal_z~ : Float, tangent_x~ : Float, tangent_y~ : Float, tangent_z~ : Float) -> Array[Float]
@@ -303,6 +305,17 @@ pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayo
 pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
 pub fn RenderMesh::primitive_topology(Self) -> @Milky2018/mgstudio/mesh.Mesh3dPrimitiveTopology
 pub fn RenderMesh::vertex_count(Self) -> Int
+
+pub struct RenderMeshAssets {
+  assets : Map[Int, RenderMesh]
+}
+pub fn RenderMeshAssets::RenderMeshAssets() -> Self
+pub fn RenderMeshAssets::clear(Self) -> Unit
+pub fn RenderMeshAssets::get(Self, Int) -> RenderMesh?
+pub fn RenderMeshAssets::insert(Self, Int, RenderMesh) -> Unit
+pub fn RenderMeshAssets::len(Self) -> Int
+pub fn RenderMeshAssets::remove(Self, Int) -> RenderMesh?
+pub impl @app.Resource for RenderMeshAssets
 
 pub(all) enum RenderMeshBufferInfo {
   Indexed(Int, RenderMeshIndexFormat)
