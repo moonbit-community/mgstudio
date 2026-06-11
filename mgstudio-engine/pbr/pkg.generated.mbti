@@ -272,6 +272,8 @@ pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[@Milky2018/mg
 
 pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[PbrPluginRuntimeConfig]
 
+pub let ecs_key_pending_wireframe_queues : @ecs.ResourceKey[PendingWireframeQueues]
+
 pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
 
 pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[@light.PointLightShadowMap]
@@ -303,6 +305,8 @@ pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[@Milky2018/mgstudio/p
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
 pub let ecs_key_specialized_material_pipeline_cache : @ecs.ResourceKey[SpecializedMaterialPipelineCache]
+
+pub let ecs_key_specialized_wireframe_pipeline_cache : @ecs.ResourceKey[SpecializedWireframePipelineCache]
 
 pub let ecs_key_spot_light : @ecs.ComponentKey[@light.SpotLight]
 
@@ -1356,6 +1360,17 @@ pub struct PbrPrepassPipelineSpecializer {
 pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
 pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
+pub struct PendingWireframeQueues {
+  current_frame : Array[(@core.Entity, @core.Entity)]
+  previous_frame : Array[(@core.Entity, @core.Entity)]
+}
+pub fn PendingWireframeQueues::PendingWireframeQueues() -> Self
+pub fn PendingWireframeQueues::current_len(Self) -> Int
+pub fn PendingWireframeQueues::prepare_for_new_frame(Self) -> Unit
+pub fn PendingWireframeQueues::previous_len(Self) -> Int
+pub fn PendingWireframeQueues::push_current(Self, @core.Entity, @core.Entity) -> Unit
+pub impl @app.Resource for PendingWireframeQueues
+
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float
   mut shutter_speed_s : Float
@@ -1520,6 +1535,30 @@ pub fn SpecializedMaterialViewPipelineCache::insert(Self, @core.Entity, Speciali
 pub fn SpecializedMaterialViewPipelineCache::len(Self) -> Int
 pub fn SpecializedMaterialViewPipelineCache::remove(Self, @core.Entity) -> Bool
 
+pub struct SpecializedWireframePipelineCache {
+  views : Map[UInt64, SpecializedWireframeViewPipelineCache]
+  wide : Map[String, @render_resource.CachedRenderPipelineId]
+}
+pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> Self
+pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(Self, WireframeWidePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframePipelineCache::len(Self) -> Int
+pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @core.Entity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
+pub fn SpecializedWireframePipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedWireframeViewPipelineCache
+pub fn SpecializedWireframePipelineCache::wide_len(Self) -> Int
+pub fn SpecializedWireframePipelineCache::wide_pipeline_id(Self, WireframeWidePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
+pub impl @app.Resource for SpecializedWireframePipelineCache
+
+pub struct SpecializedWireframeViewPipelineCache {
+  map : Map[UInt64, @render_resource.CachedRenderPipelineId]
+}
+pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> Self
+pub fn SpecializedWireframeViewPipelineCache::get(Self, @core.Entity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframeViewPipelineCache::insert(Self, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframeViewPipelineCache::len(Self) -> Int
+pub fn SpecializedWireframeViewPipelineCache::remove(Self, @core.Entity) -> Bool
+
 pub struct StandardMaterialKey {
   bits : UInt64
 } derive(Eq, @debug.Debug)
@@ -1595,6 +1634,54 @@ pub struct Wireframe {
 pub fn Wireframe::Wireframe() -> Self
 pub impl @ecs.Component for Wireframe
 
+pub struct Wireframe3d {
+  batch_set_key : Wireframe3dBatchSetKey
+  bin_key : Wireframe3dBinKey
+  render_entity : @core.Entity
+  main_entity : @core.Entity
+  batch_range : Wireframe3dBatchRange
+  extra_index : WireframePhaseItemExtraIndex
+}
+pub fn Wireframe3d::batch_range(Self) -> Wireframe3dBatchRange
+pub fn Wireframe3d::batch_set_key(Self) -> Wireframe3dBatchSetKey
+pub fn Wireframe3d::bin_key(Self) -> Wireframe3dBinKey
+pub fn Wireframe3d::cached_pipeline(Self) -> @render_resource.CachedRenderPipelineId
+pub fn Wireframe3d::draw_function(Self) -> @material.DrawFunctionId
+pub fn Wireframe3d::entity(Self) -> @core.Entity
+pub fn Wireframe3d::extra_index(Self) -> WireframePhaseItemExtraIndex
+pub fn Wireframe3d::main_entity(Self) -> @core.Entity
+pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @core.Entity, Wireframe3dBatchRange, WireframePhaseItemExtraIndex) -> Self
+
+pub struct Wireframe3dBatchRange {
+  start : Int
+  end : Int
+} derive(Eq, @debug.Debug)
+pub fn Wireframe3dBatchRange::count(Self) -> Int
+pub fn Wireframe3dBatchRange::end(Self) -> Int
+pub fn Wireframe3dBatchRange::new(Int, Int) -> Self
+pub fn Wireframe3dBatchRange::start(Self) -> Int
+
+pub struct Wireframe3dBatchSetKey {
+  pipeline : @render_resource.CachedRenderPipelineId
+  asset_id : Int
+  draw_function : @material.DrawFunctionId
+  slabs : WireframeMeshSlabs
+  mesh_asset_id : Int?
+}
+pub fn Wireframe3dBatchSetKey::asset_id(Self) -> Int
+pub fn Wireframe3dBatchSetKey::draw_function(Self) -> @material.DrawFunctionId
+pub fn Wireframe3dBatchSetKey::indexed(Self) -> Bool
+pub fn Wireframe3dBatchSetKey::mesh_asset_id(Self) -> Int?
+pub fn Wireframe3dBatchSetKey::new(@render_resource.CachedRenderPipelineId, Int, @material.DrawFunctionId, WireframeMeshSlabs, mesh_asset_id? : Int?) -> Self
+pub fn Wireframe3dBatchSetKey::pipeline(Self) -> @render_resource.CachedRenderPipelineId
+pub fn Wireframe3dBatchSetKey::slabs(Self) -> WireframeMeshSlabs
+
+pub struct Wireframe3dBinKey {
+  asset_id : Int
+} derive(Eq, @debug.Debug)
+pub fn Wireframe3dBinKey::asset_id(Self) -> Int
+pub fn Wireframe3dBinKey::new(Int) -> Self
+
 pub struct WireframeColor {
   color : @color.Color
 } derive(ToJson, @json.FromJson)
@@ -1641,6 +1728,38 @@ pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
 
+pub struct WireframeMeshSlabs {
+  vertex_slab_id : Int
+  index_slab_id : Int?
+  morph_target_slab_id : Int?
+} derive(Eq, @debug.Debug)
+pub fn WireframeMeshSlabs::index_slab_id(Self) -> Int?
+pub fn WireframeMeshSlabs::morph_target_slab_id(Self) -> Int?
+pub fn WireframeMeshSlabs::new(Int, index_slab_id? : Int?, morph_target_slab_id? : Int?) -> Self
+pub fn WireframeMeshSlabs::vertex_slab_id(Self) -> Int
+
+pub(all) enum WireframePhaseItemExtraIndex {
+  NoExtraIndex
+  DynamicOffset(Int)
+  IndirectParametersIndex(Int, Int, Int?)
+} derive(Eq, @debug.Debug)
+pub fn WireframePhaseItemExtraIndex::dynamic_offset(Int) -> Self
+pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
+pub fn WireframePhaseItemExtraIndex::none() -> Self
+
+pub struct WireframePipelineKey {
+  mesh_key : @material.ErasedMeshPipelineKey
+  wide : Bool
+  quads : Bool
+  line_mode : Bool
+}
+pub fn WireframePipelineKey::from_material(@material.ErasedMeshPipelineKey, RenderWireframeMaterial?) -> Self
+pub fn WireframePipelineKey::line_mode(Self) -> Bool
+pub fn WireframePipelineKey::mesh_key(Self) -> @material.ErasedMeshPipelineKey
+pub fn WireframePipelineKey::new(@material.ErasedMeshPipelineKey, Bool, Bool, Bool) -> Self
+pub fn WireframePipelineKey::quads(Self) -> Bool
+pub fn WireframePipelineKey::wide(Self) -> Bool
+
 pub struct WireframePlugin {
 }
 pub fn WireframePlugin::WireframePlugin() -> Self
@@ -1652,6 +1771,14 @@ pub(all) enum WireframeTopology {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn WireframeTopology::default() -> Self
 pub impl @ecs.Component for WireframeTopology
+
+pub struct WireframeWidePipelineCacheKey {
+  mesh_key : @material.ErasedMeshPipelineKey
+  mesh_layout_key : String
+  quads : Bool
+  line_mode : Bool
+}
+pub fn WireframeWidePipelineCacheKey::new(@material.ErasedMeshPipelineKey, String, Bool, Bool) -> Self
 
 // Type aliases
 pub using @material {type AlphaMode3d}
