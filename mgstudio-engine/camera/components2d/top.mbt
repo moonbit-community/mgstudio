@@ -59,6 +59,11 @@ pub fn register_camera2d_required_components(
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
     ecs_key_camera2d,
+    @camera_primitives.ecs_key_frustum,
+    fn() { @camera_primitives.Frustum::default_2d() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
     @camera_camera.ecs_key_camera,
     fn() { @camera_camera.Camera::Camera() },
   )

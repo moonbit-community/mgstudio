@@ -686,7 +686,7 @@ fn render3d_host_preprocess_frustum_planes_from_half_spaces(
 fn render3d_host_preprocess_view_frustum_planes_from_clip_from_world(
   clip_from_world : @pbr_render.ProjectionMatrix3d,
 ) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
-  let frustum = @pbr_render.Frustum::new(
+  let frustum = @pbr_render.render3d_frustum_from_view_frustum(
     @pbr_render.ViewFrustum::from_clip_from_world(clip_from_world),
   )
   render3d_host_preprocess_frustum_planes_from_half_spaces(frustum.half_spaces)

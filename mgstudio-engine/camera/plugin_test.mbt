@@ -89,6 +89,13 @@ test "camera plugin: owns Camera2d authoring required components" {
     is Some(_),
     content="true",
   )
+  let camera2d_frustum : @camera_primitives.Frustum? = try! world.get_by_key(
+    entity, @camera_primitives.ecs_key_frustum,
+  )
+  debug_inspect(
+    camera2d_frustum.map(fn(frustum) { frustum.half_spaces.length() == 6 }),
+    content="Some(true)",
+  )
   debug_inspect(
     (try! world.get_by_key(entity, @transform.ecs_key_transform)) is Some(_),
     content="true",
@@ -113,6 +120,11 @@ test "camera plugin: owns Camera required components" {
     @camera_camera.Camera::Camera(),
   )
 
+  debug_inspect(
+    (try! world.get_by_key(entity, @camera_primitives.ecs_key_frustum))
+    is Some(_),
+    content="true",
+  )
   debug_inspect(
     (try! world.get_by_key(
       entity, @camera_camera.ecs_key_camera_main_texture_usages,
@@ -160,16 +172,18 @@ test "camera projection plugin: updates frustum when transform changes" {
   let initial_frustum = projection.compute_frustum(transform)
   try! world.set_by_key(entity, @pbr.ecs_key_projection, projection)
   try! world.set_by_key(entity, @transform.ecs_key_transform, transform)
-  try! world.set_by_key(entity, @pbr.ecs_key_frustum, initial_frustum)
+  try! world.set_by_key(
+    entity, @camera_primitives.ecs_key_frustum, initial_frustum,
+  )
 
   let moved_transform = @transform.Transform::from_xyz(2.0F, 0.0F, 0.0F)
   try! (world.replace(entity, @transform.ecs_key_transform, moved_transform)
   |> ignore)
   app = app.update()
 
-  let frustum_after_transform : @pbr.Frustum? = try! app
+  let frustum_after_transform : @camera_primitives.Frustum? = try! app
     .world()
-    .get_by_key(entity, @pbr.ecs_key_frustum)
+    .get_by_key(entity, @camera_primitives.ecs_key_frustum)
   let expected_after_transform = projection.compute_frustum(moved_transform)
   let frustum_after_transform_ok = match frustum_after_transform {
     Some(frustum) => frustum == expected_after_transform

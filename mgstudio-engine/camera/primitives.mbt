@@ -22,13 +22,19 @@ pub using @camera_primitives {type Aabb}
 pub using @camera_primitives {type Sphere}
 
 ///|
-pub type Frustum = @pbr.Frustum
+pub using @camera_primitives {type Frustum}
+
+///|
+pub using @camera_primitives {type ViewFrustum}
 
 ///|
 pub using @camera_primitives {trait MeshAabb}
 
 ///|
 pub using @camera_primitives {ecs_key_aabb}
+
+///|
+pub using @camera_primitives {ecs_key_frustum}
 
 ///|
 pub using @camera_primitives {mesh_compute_aabb}

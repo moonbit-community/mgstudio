@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/hdr",
+  "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -227,7 +228,7 @@ pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
 
-pub let ecs_key_frustum : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/render.Frustum]
+pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
@@ -585,9 +586,9 @@ pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators,
 
 pub fn render3d_material_properties_for_standard_material(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?, @material.OpaqueRendererMethod, Bool) -> @material.MaterialProperties
 
-pub fn render3d_orthographic_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
+pub fn render3d_orthographic_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d, @transform.Transform) -> @primitives.Frustum
 
-pub fn render3d_perspective_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
+pub fn render3d_perspective_projection_compute_frustum(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d, @transform.Transform) -> @primitives.Frustum
 
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -944,7 +945,7 @@ pub struct CustomProjection3d {
   // private fields
 }
 pub fn CustomProjection3d::CustomProjection3d() -> Self
-pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn CustomProjection3d::get_clip_from_view(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
@@ -1501,7 +1502,7 @@ pub(all) enum Projection {
   Orthographic(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
-pub fn Projection::compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
@@ -2252,7 +2253,7 @@ pub using @decal {type ForwardDecal}
 
 pub using @material {type ForwardDecalMaterialExt}
 
-pub using @Milky2018/mgstudio/pbr/render {type Frustum}
+pub using @primitives {type Frustum}
 
 pub using @post_process {type Fxaa}
 
@@ -2360,7 +2361,7 @@ pub(open) trait CameraProjection3d {
   fn get_clip_from_view_for_sub(Self, @Milky2018/mgstudio/pbr/render.SubCameraView3d) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
   fn update(Self, Float, Float) -> Self
   fn far(Self) -> Float
-  fn compute_frustum(Self, @transform.Transform) -> @Milky2018/mgstudio/pbr/render.Frustum
+  fn compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
   fn get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
 pub impl CameraProjection3d for @Milky2018/mgstudio/pbr/render.OrthographicProjection3d

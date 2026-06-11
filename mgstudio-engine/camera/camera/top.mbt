@@ -307,6 +307,11 @@ pub fn register_camera_required_components(
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
     ecs_key_camera,
+    @camera_primitives.ecs_key_frustum,
+    fn() { @camera_primitives.Frustum::Frustum() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera,
     ecs_key_camera_main_texture_usages,
     fn() { CameraMainTextureUsages::CameraMainTextureUsages() },
   )

@@ -5,12 +5,19 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "moonbitlang/core/json",
 }
 
 // Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
 pub fn calculate_bounds_system(@ecs.World) -> Unit
 
 pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
+
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
 
@@ -29,7 +36,26 @@ pub fn Aabb::half_size(Self) -> @math.Vec3
 pub fn Aabb::to_math(Self) -> @math.Aabb3d
 pub impl @ecs.Component for Aabb
 
+pub struct Frustum {
+  half_spaces : Array[@math.HalfSpace]
+} derive(Eq, ToJson, @json.FromJson)
+pub fn Frustum::Frustum() -> Self
+pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
+pub fn Frustum::default_2d() -> Self
+pub fn Frustum::new(ViewFrustum) -> Self
+pub fn Frustum::view_frustum(Self) -> ViewFrustum
+pub impl @ecs.Component for Frustum
+
+pub struct ViewFrustum {
+  inner : @math.ViewFrustum
+} derive(Eq, ToJson, @json.FromJson)
+pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
+pub fn ViewFrustum::half_spaces(Self) -> Array[@math.HalfSpace]
+pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
+
 // Type aliases
+pub using @math {type HalfSpace}
+
 pub using @math {type BoundingSphere as Sphere}
 
 // Traits

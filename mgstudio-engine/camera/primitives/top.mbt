@@ -24,13 +24,91 @@ pub struct Aabb {
 pub type Sphere = @math.BoundingSphere
 
 ///|
+pub type HalfSpace = @math.HalfSpace
+
+///|
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
+
+///|
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
+
+///|
+pub struct ViewFrustum {
+  inner : @math.ViewFrustum
+} derive(Eq, ToJson, FromJson)
+
+///|
+pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
+  ViewFrustum::{ inner: @math.ViewFrustum::new(half_spaces) }
+}
+
+///|
+pub fn ViewFrustum::half_spaces(self : ViewFrustum) -> Array[HalfSpace] {
+  self.inner.half_spaces
+}
+
+///|
+pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[@math.Vec3]? {
+  @math.ViewFrustum::corners(self.inner)
+}
+
+///|
+pub struct Frustum {
+  half_spaces : Array[HalfSpace]
+} derive(Eq, ToJson, FromJson)
+
+///|
+pub fn Frustum::new(view_frustum : ViewFrustum) -> Frustum {
+  Frustum::{ half_spaces: view_frustum.half_spaces() }
+}
+
+///|
+pub fn Frustum::Frustum() -> Frustum {
+  Frustum::{ half_spaces: [] }
+}
+
+///|
+pub fn Frustum::default_2d() -> Frustum {
+  Frustum::new(
+    ViewFrustum::new([
+      HalfSpace::new(@math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F)),
+      HalfSpace::new(@math.Vec4::new(-1.0F, 0.0F, 0.0F, 1.0F)),
+      HalfSpace::new(@math.Vec4::new(0.0F, 1.0F, 0.0F, 1.0F)),
+      HalfSpace::new(@math.Vec4::new(0.0F, -1.0F, 0.0F, 1.0F)),
+      HalfSpace::new(@math.Vec4::new(0.0F, 0.0F, 1.0F, 1000.0F)),
+      HalfSpace::new(@math.Vec4::new(0.0F, 0.0F, -1.0F, 1000.0F)),
+    ]),
+  )
+}
+
+///|
+pub fn Frustum::view_frustum(self : Frustum) -> ViewFrustum {
+  ViewFrustum::new(self.half_spaces)
+}
+
+///|
+pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
+  self.view_frustum().corners()
+}
+
+///|
 pub let ecs_key_aabb : @ecs.ComponentKey[Aabb] = @ecs.register_component(
   debug_name="mgstudio_camera::Aabb",
 )
 
 ///|
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
+  debug_name="mgstudio_camera::Frustum",
+)
+
+///|
 pub impl @ecs.Component for Aabb with fn component() {
   ecs_key_aabb
+}
+
+///|
+pub impl @ecs.Component for Frustum with fn component() {
+  ecs_key_frustum
 }
 
 ///|

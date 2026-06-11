@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -38,9 +37,9 @@ pub fn draw_aabb_gizmos(@ecs.Query[(@ecs.Read[@primitives.Aabb], @ecs.Read[@tran
 
 pub fn draw_all_aabb_gizmos(@ecs.Query[(@ecs.Read[@primitives.Aabb], @ecs.Read[@transform.GlobalTransform], @ecs.Read[@visibility.ViewVisibility]?), @ecs.Without[ShowAabbGizmo]], @sprite.Gizmos[AabbGizmoConfigGroup]) -> Unit
 
-pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Read[@render.Frustum], @ecs.Without[ShowFrustumGizmo]], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
+pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Read[@primitives.Frustum], @ecs.Without[ShowFrustumGizmo]], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
 
-pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Read[@render.Frustum], @ecs.Read[ShowFrustumGizmo]), @ecs.All], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
+pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Read[@primitives.Frustum], @ecs.Read[ShowFrustumGizmo]), @ecs.All], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
 
 pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig]
 

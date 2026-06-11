@@ -45,6 +45,8 @@ pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
 
 pub let ecs_key_clear_color_config : @ecs.ComponentKey[@clear_color.ClearColorConfig]
 
+pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
+
 pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
 
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
@@ -57,9 +59,9 @@ pub fn orthographic_projection_2d_default() -> @projection2d.OrthographicProject
 
 pub fn orthographic_projection_2d_with_scale(Float) -> @projection2d.OrthographicProjection
 
-pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
+pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @primitives.Frustum
 
-pub fn perspective_projection_3d_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @render.Frustum
+pub fn perspective_projection_3d_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @primitives.Frustum
 
 pub fn perspective_projection_3d_default() -> @render.PerspectiveProjection3d
 
@@ -113,7 +115,7 @@ pub using @pbr {type DepthOfFieldMode}
 
 pub using @pbr {type Exposure}
 
-pub using @render {type Frustum}
+pub using @primitives {type Frustum}
 
 pub using @hdr {type Hdr}
 
@@ -140,6 +142,8 @@ pub using @computed_camera_values {type RenderTargetInfo}
 pub using @math {type BoundingSphere as Sphere}
 
 pub using @render {type SubCameraView3d}
+
+pub using @primitives {type ViewFrustum}
 
 pub using @viewport {type Viewport}
 

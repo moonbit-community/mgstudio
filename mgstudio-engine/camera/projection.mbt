@@ -77,7 +77,7 @@ pub fn perspective_projection_3d_with_aspect_ratio(
 pub fn perspective_projection_3d_compute_frustum(
   projection : PerspectiveProjection3d,
   camera_transform : @transform.Transform,
-) -> @pbr.Frustum {
+) -> @camera_primitives.Frustum {
   @pbr.render3d_perspective_projection_compute_frustum(
     projection, camera_transform,
   )
@@ -87,7 +87,7 @@ pub fn perspective_projection_3d_compute_frustum(
 pub fn orthographic_projection_3d_compute_frustum(
   projection : OrthographicProjection3d,
   camera_transform : @transform.Transform,
-) -> @pbr.Frustum {
+) -> @camera_primitives.Frustum {
   @pbr.render3d_orthographic_projection_compute_frustum(
     projection, camera_transform,
   )

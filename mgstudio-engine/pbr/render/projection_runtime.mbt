@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-pub type HalfSpace = @math.HalfSpace
+pub type HalfSpace = @camera_primitives.HalfSpace
 
 ///|
-pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @camera_primitives.VIEW_FRUSTUM_NEAR_PLANE_IDX
 
 ///|
-pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @camera_primitives.VIEW_FRUSTUM_FAR_PLANE_IDX
 
 ///|
 pub(open) trait CameraProjection3d {
@@ -45,7 +45,7 @@ fn view_frustum_vec4_sub(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
 
 ///|
 pub struct ViewFrustum {
-  inner : @math.ViewFrustum
+  inner : @camera_primitives.ViewFrustum
 } derive(Eq, ToJson, FromJson)
 
 ///|
@@ -97,32 +97,27 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
 
 ///|
 pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
-  ViewFrustum::{ inner: @math.ViewFrustum::new(half_spaces) }
+  ViewFrustum::{ inner: @camera_primitives.ViewFrustum::new(half_spaces) }
+}
+
+///|
+pub fn ViewFrustum::half_spaces(self : ViewFrustum) -> Array[HalfSpace] {
+  self.inner.half_spaces()
 }
 
 ///|
 pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[@math.Vec3]? {
-  @math.ViewFrustum::corners(self.inner)
+  self.inner.corners()
 }
 
 ///|
-pub struct Frustum {
-  half_spaces : Array[HalfSpace]
-} derive(Eq, ToJson, FromJson)
+pub type Frustum = @camera_primitives.Frustum
 
 ///|
-pub fn Frustum::new(view_frustum : ViewFrustum) -> Frustum {
-  Frustum::{ half_spaces: view_frustum.inner.half_spaces }
-}
-
-///|
-pub fn Frustum::view_frustum(self : Frustum) -> ViewFrustum {
-  ViewFrustum::new(self.half_spaces)
-}
-
-///|
-pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
-  self.view_frustum().corners()
+pub fn render3d_frustum_from_view_frustum(
+  view_frustum : ViewFrustum,
+) -> Frustum {
+  @camera_primitives.Frustum::new(view_frustum.inner)
 }
 
 ///|
@@ -134,7 +129,7 @@ pub fn render3d_compute_frustum(
   let clip_from_world = clip_from_view.mul(
     render3d_view_from_world_matrix(camera_transform),
   )
-  Frustum::new(
+  render3d_frustum_from_view_frustum(
     ViewFrustum::from_clip_from_world_custom_far(
       clip_from_world,
       camera_transform.translation,
@@ -598,11 +593,4 @@ pub impl @ecs.Component for ProjectionRuntime3d with fn component() {
 }
 
 ///|
-pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
-  debug_name="render3d.frustum",
-)
-
-///|
-pub impl @ecs.Component for Frustum with fn component() {
-  ecs_key_frustum
-}
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @camera_primitives.ecs_key_frustum
