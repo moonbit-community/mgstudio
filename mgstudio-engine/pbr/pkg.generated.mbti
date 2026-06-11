@@ -697,6 +697,8 @@ pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @materia
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
+pub fn wireframe_3d_render_node_plan(Wireframe3dPhases, @core.Entity, Bool) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason
+
 pub fn wireframe_mesh_pipeline_data_for_render_mesh(@Milky2018/mgstudio/render/mesh.RenderMesh, @render_resource.RenderPipelineDescriptor, view_key_bits~ : UInt64, visibility_range_dither? : Bool, lightmapped? : Bool) -> WireframeRenderMeshPipelineData
 
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -708,6 +710,11 @@ pub(all) suberror AutoExposureCompensationCurveError {
   InvalidCurve
   DiscontinuityFound
   NotMonotonic
+}
+
+pub suberror Wireframe3dRenderNodeSkipReason {
+  MissingPhase
+  EmptyPhase
 }
 
 pub suberror WireframePipelineSpecializationError {
@@ -1903,6 +1910,23 @@ pub fn Wireframe3dPipeline::shader(Self) -> String
 pub fn Wireframe3dPipeline::specialize(Self, WireframePipelineKey, @render_resource.RenderPipelineDescriptor) -> @render_resource.RenderPipelineDescriptor raise WireframePipelineSpecializationError
 pub fn Wireframe3dPipeline::wide_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
 pub impl @app.Resource for Wireframe3dPipeline
+
+pub struct Wireframe3dRenderNode {
+}
+pub fn Wireframe3dRenderNode::Wireframe3dRenderNode() -> Self
+pub fn Wireframe3dRenderNode::label(Self) -> String
+
+pub struct Wireframe3dRenderNodePlan {
+  label : String
+  retained_view_entity : @core.Entity
+  item_count : Int
+  viewport_enabled : Bool
+} derive(Eq, @debug.Debug)
+pub fn Wireframe3dRenderNodePlan::item_count(Self) -> Int
+pub fn Wireframe3dRenderNodePlan::label(Self) -> String
+pub fn Wireframe3dRenderNodePlan::new(@core.Entity, Int, Bool) -> Self
+pub fn Wireframe3dRenderNodePlan::retained_view_entity(Self) -> @core.Entity
+pub fn Wireframe3dRenderNodePlan::viewport_enabled(Self) -> Bool
 
 pub struct Wireframe3dThinImmediates {
   color : @color.Color

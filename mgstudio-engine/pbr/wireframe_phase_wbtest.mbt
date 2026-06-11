@@ -1611,3 +1611,71 @@ test "pbr: wireframe draw function resource registers thin and wide commands" {
   debug_inspect(draw_functions.thin().id(), content="0")
   debug_inspect(draw_functions.wide().id(), content="1")
 }
+
+///|
+test "pbr: wireframe 3d render node mirrors Bevy skip branches" {
+  let node = Wireframe3dRenderNode::Wireframe3dRenderNode()
+  debug_inspect(node.label(), content="\"wireframe_3d\"")
+  let retained_view = @core.Entity::new(1, 1)
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  let missing_phase = Some(
+    wireframe_3d_render_node_plan(phases, retained_view, false),
+  ) catch {
+    error => {
+      debug_inspect(
+        error is Wireframe3dRenderNodeSkipReason::MissingPhase,
+        content="true",
+      )
+      None
+    }
+  }
+  debug_inspect(missing_phase is None, content="true")
+  phases.prepare_for_new_frame(
+    retained_view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let empty_phase = Some(
+    wireframe_3d_render_node_plan(phases, retained_view, false),
+  ) catch {
+    error => {
+      debug_inspect(
+        error is Wireframe3dRenderNodeSkipReason::EmptyPhase,
+        content="true",
+      )
+      None
+    }
+  }
+  debug_inspect(empty_phase is None, content="true")
+}
+
+///|
+test "pbr: wireframe 3d render node plans nonempty phase pass" {
+  let retained_view = @core.Entity::new(1, 1)
+  let render_entity = @core.Entity::new(2, 1)
+  let main_entity = @render.MainEntity::new(@core.Entity::new(3, 1))
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    retained_view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.add(
+    retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      @material.DrawFunctionId::new(0U),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (render_entity, main_entity),
+    9U,
+    BatchableMesh,
+  )
+
+  let plan = wireframe_3d_render_node_plan(phases, retained_view, true)
+
+  debug_inspect(plan.label(), content="\"wireframe_3d\"")
+  debug_inspect(plan.retained_view_entity(), content="{ id: 1, generation: 1 }")
+  debug_inspect(plan.item_count(), content="1")
+  debug_inspect(plan.viewport_enabled(), content="true")
+}
