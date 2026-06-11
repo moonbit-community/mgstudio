@@ -255,7 +255,7 @@ fn material2d_runtime_phase_for_draw(
 }
 
 ///|
-fn[M] draw_material2d_mesh_item(
+fn[M : @sprite_render_mesh2d_material.Material2d] draw_material2d_mesh_item(
   mesh : ExtractedMesh2d,
   prepared_assets : @renderer.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
@@ -267,7 +267,7 @@ fn[M] draw_material2d_mesh_item(
 }
 
 ///|
-fn[M] draw_material2d_mesh_item_with_prepared_material(
+fn[M : @sprite_render_mesh2d_material.Material2d] draw_material2d_mesh_item_with_prepared_material(
   mesh : ExtractedMesh2d,
   material : PreparedMaterial2d[M],
   pipeline : @sprite_render_mesh2d_material.Material2dPipeline[M],

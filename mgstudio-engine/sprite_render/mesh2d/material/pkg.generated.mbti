@@ -18,9 +18,9 @@ import {
 }
 
 // Values
-pub fn[M] draw_material2d_mesh_item(@runtime.ExtractedMesh2d, @render.RenderAssets[PreparedMaterial2d[M]], RenderMaterial2dInstances[M], Material2dPipeline[M]) -> Unit
+pub fn[M : Material2d] draw_material2d_mesh_item(@runtime.ExtractedMesh2d, @render.RenderAssets[PreparedMaterial2d[M]], RenderMaterial2dInstances[M], Material2dPipeline[M]) -> Unit
 
-pub fn[M] draw_material2d_mesh_item_with_prepared_material(@runtime.ExtractedMesh2d, PreparedMaterial2d[M], Material2dPipeline[M]) -> Unit
+pub fn[M : Material2d] draw_material2d_mesh_item_with_prepared_material(@runtime.ExtractedMesh2d, PreparedMaterial2d[M], Material2dPipeline[M]) -> Unit
 
 pub fn draw_registered_material2d_mesh_item(@ecs.World, Material2dRuntimeRegistry, Int, @runtime.ExtractedMesh2d) -> Unit
 

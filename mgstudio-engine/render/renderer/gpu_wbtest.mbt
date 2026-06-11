@@ -361,6 +361,7 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     "0:uniform;1:texture;2:sampler",
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom_material_2d.wgsl"),
+    None,
   )
   debug_inspect(
     key.material_layout_key,
@@ -394,6 +395,7 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
     "0:uniform",
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
     Some("sprite_render/mesh2d/wireframe2d.wgsl"),
+    None,
   )
   let wireframe = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
@@ -409,6 +411,7 @@ test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline"
     "0:uniform",
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
     Some("sprite_render/mesh2d/wireframe2d.wgsl"),
+    None,
   )
   let ok = !fill.wireframe &&
     wireframe.wireframe &&

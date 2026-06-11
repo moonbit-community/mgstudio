@@ -516,6 +516,18 @@ pub fn[M : Material2d] Material2dPipeline::specialize(
 }
 
 ///|
+fn material2d_base_pipeline_descriptor(
+  primitive_topology : UInt,
+) -> @render.RenderPipelineDescriptor {
+  @render.RenderPipelineDescriptor::RenderPipelineDescriptor()
+  .with_vertex(@render.VertexState::VertexState())
+  .with_fragment(Some(@render.FragmentState::FragmentState()))
+  .with_primitive(
+    @render.PrimitiveState::PrimitiveState().with_topology(primitive_topology),
+  )
+}
+
+///|
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
   mesh_pipeline_key_bits : Int
@@ -982,7 +994,7 @@ pub fn[M] prepared_material2d_handle_for_mesh(
 }
 
 ///|
-pub fn[M] draw_material2d_mesh_item(
+pub fn[M : Material2d] draw_material2d_mesh_item(
   mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
   prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
@@ -1000,12 +1012,24 @@ pub fn[M] draw_material2d_mesh_item(
 }
 
 ///|
-pub fn[M] draw_material2d_mesh_item_with_prepared_material(
+pub fn[M : Material2d] draw_material2d_mesh_item_with_prepared_material(
   mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
   material : PreparedMaterial2d[M],
   pipeline : Material2dPipeline[M],
 ) -> Unit {
   let payload = mesh.payload
+  guard @render.host_gpu_mesh2d_vertex_layout(mesh_id=payload.mesh_id)
+    is Some(mesh_vertex_layout) else {
+    return
+  }
+  guard @render.host_gpu_mesh_info(payload.mesh_id) is Some(mesh_info) else {
+    return
+  }
+  let pipeline_descriptor = pipeline.specialize(
+    material2d_base_pipeline_descriptor(mesh_info.primitive_topology()),
+    mesh_vertex_layout,
+    material.key,
+  )
   let transform = payload.transform
   @render.host_gpu_draw_mesh_material(
     mesh_id=payload.mesh_id,
@@ -1018,6 +1042,7 @@ pub fn[M] draw_material2d_mesh_item_with_prepared_material(
     material_bind_group=material.host_bind_group,
     vertex_shader_path=pipeline.vertex_shader,
     fragment_shader_path=pipeline.fragment_shader,
+    pipeline_descriptor=Some(pipeline_descriptor),
   )
 }
 

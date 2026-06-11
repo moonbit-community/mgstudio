@@ -216,6 +216,7 @@ pub fn GpuBackend::new(
     mesh2d_batch_wireframe: false,
     mesh2d_batch_vertex_shader_path: "",
     mesh2d_batch_fragment_shader_path: "",
+    mesh2d_batch_pipeline_cache_key: "",
     mesh2d_batch_material_hash: 0UL,
     mesh2d_batch_material_key: [],
     mesh2d_batch_uniform_base_offset: 0,

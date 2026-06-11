@@ -132,6 +132,7 @@ pub struct GpuBackend {
   mut mesh2d_batch_wireframe : Bool
   mut mesh2d_batch_vertex_shader_path : String
   mut mesh2d_batch_fragment_shader_path : String
+  mut mesh2d_batch_pipeline_cache_key : String
   mut mesh2d_batch_material_hash : UInt64
   mut mesh2d_batch_material_key : Array[HostMaterial2dBinding]
   mut mesh2d_batch_uniform_base_offset : Int

@@ -230,6 +230,8 @@ priv struct Mesh2dPipelineKey {
   vertex_buffer_layout : @mesh.VertexBufferLayout
   vertex_shader_path : String
   fragment_shader_path : String
+  descriptor_cache_key : String
+  pipeline_descriptor : @render_resource.RenderPipelineDescriptor?
 }
 
 ///|
@@ -256,7 +258,7 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   let deband_bits = if key.deband_dither { "1" } else { "0" }
   let discard_bits = if key.may_discard { "1" } else { "0" }
   let wireframe_bits = if key.wireframe { "1" } else { "0" }
-  "\{format_bits}_\{topology_bits}_\{blend_bits}\{depth_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}"
+  "\{format_bits}_\{topology_bits}_\{blend_bits}\{depth_bits}\{hdr_bits}\{tonemap_bits}\{deband_bits}\{discard_bits}\{wireframe_bits}_\{key.material_layout_key}_\{key.vertex_layout_key}_\{key.vertex_shader_path}_\{key.fragment_shader_path}_\{key.descriptor_cache_key}"
 }
 
 ///|
@@ -288,6 +290,102 @@ fn mesh2d_pipeline_define_keys(key : Mesh2dPipelineKey) -> Array[String] {
     defines.push("MAY_DISCARD")
   }
   defines
+}
+
+///|
+fn mesh2d_vertex_layouts_cache_key(
+  layouts : Array[@mesh.VertexBufferLayout],
+) -> String {
+  let mut key = ""
+  for layout in layouts {
+    if key != "" {
+      key = key + ";"
+    }
+    key = key + mesh2d_vertex_layout_cache_key(layout)
+  }
+  key
+}
+
+///|
+fn mesh2d_option_string_cache_key(value : String?) -> String {
+  match value {
+    Some(text) => "some(\{text})"
+    None => "none"
+  }
+}
+
+///|
+fn mesh2d_option_uint_cache_key(value : UInt?) -> String {
+  match value {
+    Some(bits) => "some(\{bits.to_string()})"
+    None => "none"
+  }
+}
+
+///|
+fn mesh2d_shader_def_cache_key(def : @render_resource.ShaderDefVal) -> String {
+  match def {
+    Flag(name) => "flag:\{name}"
+    Bool(name, value) => "bool:\{name}=\{value.to_string()}"
+    Int(name, value) => "int:\{name}=\{value.to_string()}"
+    UInt(name, value) => "uint:\{name}=\{value.to_string()}"
+    String(name, value) => "string:\{name}=\{value}"
+  }
+}
+
+///|
+fn mesh2d_shader_defs_cache_key(
+  defs : Array[@render_resource.ShaderDefVal],
+) -> String {
+  let mut key = ""
+  for def in defs {
+    if key != "" {
+      key = key + ","
+    }
+    key = key + mesh2d_shader_def_cache_key(def)
+  }
+  key
+}
+
+///|
+fn mesh2d_color_targets_cache_key(
+  targets : Array[@render_resource.ColorTargetState?],
+) -> String {
+  let mut key = ""
+  for target in targets {
+    if key != "" {
+      key = key + ","
+    }
+    let target_key = match target {
+      Some(value) =>
+        "target(\{value.format.to_string()}:\{value.write_mask.to_string()})"
+      None => "none"
+    }
+    key = key + target_key
+  }
+  key
+}
+
+///|
+fn mesh2d_descriptor_cache_key(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> String {
+  match descriptor {
+    None => "descriptor:none"
+    Some(desc) => {
+      let fragment_key = match desc.fragment {
+        Some(fragment) =>
+          "fragment(\{mesh2d_option_string_cache_key(fragment.shader)}:\{mesh2d_shader_defs_cache_key(fragment.shader_defs)}:\{mesh2d_option_string_cache_key(fragment.entry_point)}:\{mesh2d_color_targets_cache_key(fragment.targets)})"
+        None => "fragment:none"
+      }
+      let depth_key = match desc.depth_stencil {
+        Some(depth) =>
+          "depth(\{depth.format.to_string()}:\{depth.depth_write_enabled.to_string()}:\{depth.depth_compare.to_string()}:\{depth.bias_slope_scale.to_string()})"
+        None => "depth:none"
+      }
+      "descriptor(\{mesh2d_option_string_cache_key(desc.label)}:\{mesh2d_option_string_cache_key(desc.vertex.shader)}:\{mesh2d_shader_defs_cache_key(desc.vertex.shader_defs)}:\{mesh2d_option_string_cache_key(desc.vertex.entry_point)}:\{mesh2d_vertex_layouts_cache_key(desc.vertex.buffers)}:\{desc.primitive.topology.to_string()}:\{desc.primitive.front_face.to_string()}:\{mesh2d_option_uint_cache_key(desc.primitive.cull_mode)}:\{mesh2d_option_uint_cache_key(desc.primitive.polygon_mode)}:\{depth_key}:\{desc.multisample.count.to_string()}:\{desc.multisample.mask.to_string()}:\{desc.multisample.alpha_to_coverage_enabled.to_string()}:\{fragment_key})"
+    }
+  }
 }
 
 ///|
@@ -437,6 +535,7 @@ test "mesh2d material vertex layout follows Bevy attribute descriptors" {
     "default",
     None,
     None,
+    None,
   )
   let defines = mesh2d_pipeline_define_keys(key)
   debug_inspect(defines.contains("VERTEX_POSITIONS"), content="true")
@@ -464,6 +563,7 @@ test "mesh2d material vertex layout enables colors only when present" {
     "default",
     None,
     None,
+    None,
   )
   let defines = mesh2d_pipeline_define_keys(key)
   debug_inspect(defines.contains("VERTEX_COLORS"), content="true")
@@ -487,6 +587,7 @@ test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
     "0:1;1:2",
     None,
     None,
+    None,
   )
   let line_list = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
@@ -500,6 +601,7 @@ test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
     false,
     false,
     "0:1;1:2",
+    None,
     None,
     None,
   )
@@ -517,6 +619,7 @@ test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
     "0:1;1:2;2:3",
     None,
     None,
+    None,
   )
   let custom_shader = mesh2d_pipeline_key_for_format(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
@@ -532,6 +635,7 @@ test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
     "0:1;1:2",
     Some("shaders/custom_mesh2d_vertex.wgsl"),
     Some("shaders/custom_mesh2d_fragment.wgsl"),
+    None,
   )
   debug_inspect(
     mesh2d_pipeline_cache_key(base) == mesh2d_pipeline_cache_key(line_list),
@@ -545,6 +649,75 @@ test "mesh2d pipeline cache key tracks Bevy specialization inputs" {
   debug_inspect(
     mesh2d_pipeline_cache_key(base) == mesh2d_pipeline_cache_key(custom_shader),
     content="false",
+  )
+}
+
+///|
+test "mesh2d pipeline cache key tracks descriptor specialization inputs" {
+  let mesh_layout = mesh2d_default_mesh_vertex_buffer_layout()
+  let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    .with_vertex(
+      @render_resource.VertexState::new(
+        Some("shaders/specialized_vertex.wgsl"),
+        [@render_resource.ShaderDefVal::UInt("SPECIALIZED_MODE", 7U)],
+        Some("vertex"),
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @render_resource.FragmentState::new(
+          Some("shaders/specialized_fragment.wgsl"),
+          [@render_resource.ShaderDefVal::Flag("SPECIALIZED_FRAGMENT")],
+          Some("fragment"),
+          [],
+        ),
+      ),
+    )
+  let base = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2",
+    None,
+    None,
+    None,
+  )
+  let specialized = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    mesh_layout,
+    vertex_layout,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    "0:1;1:2",
+    None,
+    None,
+    Some(descriptor),
+  )
+  debug_inspect(
+    mesh2d_pipeline_cache_key(base) == mesh2d_pipeline_cache_key(specialized),
+    content="false",
+  )
+  debug_inspect(
+    specialized.vertex_shader_path,
+    content="\"shaders/specialized_vertex.wgsl\"",
+  )
+  debug_inspect(
+    specialized.fragment_shader_path,
+    content="\"shaders/specialized_fragment.wgsl\"",
   )
 }
 
@@ -900,6 +1073,7 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   vertex_shader_path : String?,
   fragment_shader_path : String?,
   define_keys : Array[String],
+  pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for key in define_keys {
@@ -911,6 +1085,30 @@ fn load_wgsl_with_defines_required_mesh2d_material(
     "PER_OBJECT_BUFFER_BATCH_SIZE",
     wgsl_def_int(MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE),
   )
+  match pipeline_descriptor {
+    Some(descriptor) => {
+      let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+        for shader_def in shader_defs {
+          match shader_def {
+            Flag(name) => defines.set(name, true)
+            Bool(name, value) => defines.set(name, value)
+            Int(name, value) =>
+              value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
+            UInt(name, value) =>
+              value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
+            String(name, value) =>
+              value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+          }
+        }
+      }
+      apply_defs(descriptor.vertex.shader_defs)
+      match descriptor.fragment {
+        Some(fragment) => apply_defs(fragment.shader_defs)
+        None => ()
+      }
+    }
+    None => ()
+  }
   let mesh_source = registered_wgsl_source_required(
     mesh2d_vertex_shader_path_or_default(vertex_shader_path),
   )
@@ -1220,6 +1418,7 @@ fn create_mesh2d_pipeline(
     Some(key.vertex_shader_path),
     Some(key.fragment_shader_path),
     mesh2d_pipeline_define_keys(key),
+    pipeline_descriptor=key.pipeline_descriptor,
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = try {
@@ -1227,28 +1426,103 @@ fn create_mesh2d_pipeline(
       sm,
       layout=material_pipeline_layout,
     )
-    builder.set_entry_points("vertex", "fragment")
-    builder.set_color_target_format(key.color_format)
-    builder.set_topology_u32(key.primitive_topology)
-    if key.wireframe {
-      builder.set_polygon_mode_u32(@wgpu.POLYGON_MODE_LINE)
+    let vertex_entry = match key.pipeline_descriptor {
+      Some(desc) =>
+        match desc.vertex.entry_point {
+          Some(entry) => entry
+          None => "vertex"
+        }
+      None => "vertex"
+    }
+    let fragment_entry = match key.pipeline_descriptor {
+      Some(desc) =>
+        match desc.fragment {
+          Some(fragment) =>
+            match fragment.entry_point {
+              Some(entry) => entry
+              None => "fragment"
+            }
+          None => "fragment"
+        }
+      None => "fragment"
+    }
+    builder.set_entry_points(vertex_entry, fragment_entry)
+    mesh2d_render_pipeline_builder_set_color_targets(
+      builder,
+      key.color_format,
+      key.pipeline_descriptor,
+    )
+    let topology = match key.pipeline_descriptor {
+      Some(desc) => desc.primitive.topology
+      None => key.primitive_topology
+    }
+    builder.set_topology_u32(topology)
+    match key.pipeline_descriptor {
+      Some(desc) =>
+        match desc.primitive.polygon_mode {
+          Some(mode) => builder.set_polygon_mode_u32(mode)
+          None =>
+            if key.wireframe {
+              builder.set_polygon_mode_u32(@wgpu.POLYGON_MODE_LINE)
+            }
+        }
+      None =>
+        if key.wireframe {
+          builder.set_polygon_mode_u32(@wgpu.POLYGON_MODE_LINE)
+        }
+    }
+    match key.pipeline_descriptor {
+      Some(desc) =>
+        match desc.primitive.cull_mode {
+          Some(mode) => builder.set_cull_mode_u32(mode)
+          None => ()
+        }
+      None => ()
     }
     if key.blend_alpha {
       builder.enable_alpha_blend()
     } else {
       builder.disable_blend()
     }
-    if key.with_depth {
-      builder.set_depth_stencil(
-        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-        depth_write_enabled=!key.blend_alpha,
-        depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
-      )
+    match key.pipeline_descriptor {
+      Some(desc) =>
+        match desc.depth_stencil {
+          Some(depth) =>
+            builder.set_depth_stencil(
+              tf(depth.format),
+              depth_write_enabled=depth.depth_write_enabled,
+              depth_compare_u32=depth.depth_compare,
+            )
+          None =>
+            if key.with_depth {
+              builder.set_depth_stencil(
+                tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+                depth_write_enabled=!key.blend_alpha,
+                depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+              )
+            }
+        }
+      None =>
+        if key.with_depth {
+          builder.set_depth_stencil(
+            tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+            depth_write_enabled=!key.blend_alpha,
+            depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+          )
+        }
     }
-    mesh2d_render_pipeline_builder_set_vertex_layout(
-      builder,
+    match key.pipeline_descriptor {
+      Some(desc) =>
+        if desc.multisample.count != 1U {
+          builder.set_multisample(desc.multisample.count)
+        }
+      None => ()
+    }
+    let vertex_layout = mesh2d_descriptor_vertex_buffer_layout(
+      key.pipeline_descriptor,
       key.vertex_buffer_layout,
     )
+    mesh2d_render_pipeline_builder_set_vertex_layout(builder, vertex_layout)
     builder.create_pipeline(backend.device)
   } catch {
     err => {
@@ -1260,6 +1534,55 @@ fn create_mesh2d_pipeline(
   pipeline.set_label(label)
   sm.release()
   pipeline
+}
+
+///|
+fn mesh2d_render_pipeline_builder_set_color_targets(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  fallback_format : @wgpu.TextureFormat,
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  guard descriptor is Some(desc) else {
+    builder.set_color_target_format(fallback_format)
+    return
+  }
+  guard desc.fragment is Some(fragment) else {
+    builder.set_color_target_count(0U)
+    return
+  }
+  if fragment.targets.length() == 0 {
+    builder.set_color_target_format(fallback_format)
+    return
+  }
+  builder.set_color_target_count(
+    fragment.targets.length().reinterpret_as_uint(),
+  )
+  for index in 0..<fragment.targets.length() {
+    let index_u = index.reinterpret_as_uint()
+    match fragment.targets[index] {
+      Some(target) => {
+        builder.set_color_target_format_at(index_u, tf(target.format))
+        builder.set_color_target_write_mask_at(index_u, target.write_mask)
+      }
+      None => builder.set_color_target_unused_at(index_u)
+    }
+  }
+}
+
+///|
+fn mesh2d_descriptor_vertex_buffer_layout(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  fallback : @mesh.VertexBufferLayout,
+) -> @mesh.VertexBufferLayout {
+  match descriptor {
+    Some(desc) =>
+      if desc.vertex.buffers.length() > 0 {
+        desc.vertex.buffers[0]
+      } else {
+        fallback
+      }
+    None => fallback
+  }
 }
 
 ///|
@@ -1739,8 +2062,29 @@ fn mesh2d_pipeline_key_for_format(
   material_layout_key : String,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
+  pipeline_descriptor : @render_resource.RenderPipelineDescriptor?,
 ) -> Mesh2dPipelineKey {
   let hdr = format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  let resolved_vertex_shader_path = match pipeline_descriptor {
+    Some(desc) =>
+      match desc.vertex.shader {
+        Some(shader) => shader
+        None => mesh2d_vertex_shader_path_or_default(vertex_shader_path)
+      }
+    None => mesh2d_vertex_shader_path_or_default(vertex_shader_path)
+  }
+  let resolved_fragment_shader_path = match pipeline_descriptor {
+    Some(desc) =>
+      match desc.fragment {
+        Some(fragment) =>
+          match fragment.shader {
+            Some(shader) => shader
+            None => mesh2d_fragment_shader_path_or_default(fragment_shader_path)
+          }
+        None => mesh2d_fragment_shader_path_or_default(fragment_shader_path)
+      }
+    None => mesh2d_fragment_shader_path_or_default(fragment_shader_path)
+  }
   Mesh2dPipelineKey::{
     color_format: format,
     primitive_topology,
@@ -1771,10 +2115,10 @@ fn mesh2d_pipeline_key_for_format(
       @mesh.MeshVertexAttribute::color().id(),
     ),
     vertex_buffer_layout,
-    vertex_shader_path: mesh2d_vertex_shader_path_or_default(vertex_shader_path),
-    fragment_shader_path: mesh2d_fragment_shader_path_or_default(
-      fragment_shader_path,
-    ),
+    vertex_shader_path: resolved_vertex_shader_path,
+    fragment_shader_path: resolved_fragment_shader_path,
+    descriptor_cache_key: mesh2d_descriptor_cache_key(pipeline_descriptor),
+    pipeline_descriptor,
   }
 }
 
@@ -1845,6 +2189,7 @@ fn mesh_pipeline_for_draw(
   wireframe : Bool,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
+  pipeline_descriptor : @render_resource.RenderPipelineDescriptor?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let format = match current_pass_color_format(backend) {
     Some(v) => v
@@ -1878,6 +2223,7 @@ fn mesh_pipeline_for_draw(
       material_layout_key,
       vertex_shader_path,
       fragment_shader_path,
+      pipeline_descriptor,
     ),
     material_pipeline_layout,
   )
@@ -1891,6 +2237,7 @@ fn mesh2d_reset_pending_batch(backend : GpuBackend) -> Unit {
   backend.mesh2d_batch_wireframe = false
   backend.mesh2d_batch_vertex_shader_path = ""
   backend.mesh2d_batch_fragment_shader_path = ""
+  backend.mesh2d_batch_pipeline_cache_key = ""
   backend.mesh2d_batch_material_hash = 0UL
   backend.mesh2d_batch_material_key.clear()
   backend.mesh2d_batch_uniform_base_offset = 0
@@ -1909,6 +2256,7 @@ fn mesh2d_pending_batch_matches(
   wireframe : Bool,
   vertex_shader_path : String,
   fragment_shader_path : String,
+  pipeline_cache_key : String,
 ) -> Bool {
   backend.mesh2d_batch_active &&
   backend.mesh2d_batch_mesh_id == mesh_id &&
@@ -1916,6 +2264,7 @@ fn mesh2d_pending_batch_matches(
   backend.mesh2d_batch_wireframe == wireframe &&
   backend.mesh2d_batch_vertex_shader_path == vertex_shader_path &&
   backend.mesh2d_batch_fragment_shader_path == fragment_shader_path &&
+  backend.mesh2d_batch_pipeline_cache_key == pipeline_cache_key &&
   backend.mesh2d_batch_material_hash == material_bind_group_hash &&
   host_material2d_bind_group_key_eq(
     backend.mesh2d_batch_material_key,
@@ -2436,6 +2785,7 @@ fn GpuBackend::draw_mesh_material_with_options(
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
   wireframe? : Bool = false,
+  pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     render_diagnostics_record_mesh2d_drop_no_frame()
@@ -2457,7 +2807,12 @@ fn GpuBackend::draw_mesh_material_with_options(
     render_diagnostics_record_mesh2d_drop_missing_mesh()
     return
   }
-  if mesh.mesh_vertex_layout is None {
+  guard mesh.mesh_vertex_layout is Some(mesh_vertex_layout) else {
+    render_diagnostics_record_mesh2d_drop_bad_stride()
+    return
+  }
+  guard mesh2d_material_vertex_buffer_layout(mesh_vertex_layout)
+    is Some(vertex_buffer_layout) else {
     render_diagnostics_record_mesh2d_drop_bad_stride()
     return
   }
@@ -2468,6 +2823,27 @@ fn GpuBackend::draw_mesh_material_with_options(
   let resolved_fragment_shader_path = mesh2d_fragment_shader_path_or_default(
     fragment_shader_path,
   )
+  let pipeline_cache_key = mesh2d_pipeline_cache_key(
+    mesh2d_pipeline_key_for_format(
+      match current_pass_color_format(self) {
+        Some(v) => v
+        None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+      },
+      mesh.primitive_topology,
+      mesh_vertex_layout,
+      vertex_buffer_layout,
+      mesh2d_pipeline_blend_alpha(alpha_mode_kind),
+      self.pass_has_depth,
+      false,
+      false,
+      mesh2d_pipeline_may_discard(alpha_mode_kind),
+      wireframe,
+      host_material2d_bind_group_layout_key(material_bind_group),
+      Some(resolved_vertex_shader_path),
+      Some(resolved_fragment_shader_path),
+      pipeline_descriptor,
+    ),
+  )
   guard mesh_pipeline_for_draw(
       self,
       mesh,
@@ -2476,6 +2852,7 @@ fn GpuBackend::draw_mesh_material_with_options(
       wireframe,
       Some(resolved_vertex_shader_path),
       Some(resolved_fragment_shader_path),
+      pipeline_descriptor,
     )
     is Some(pipeline) else {
     render_diagnostics_record_mesh2d_drop_no_pipeline()
@@ -2496,7 +2873,7 @@ fn GpuBackend::draw_mesh_material_with_options(
   }
   if !mesh2d_pending_batch_matches(
       self, mesh_id, alpha_mode_kind, material_bind_group, material_bind_group_hash,
-      wireframe, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      wireframe, resolved_vertex_shader_path, resolved_fragment_shader_path, pipeline_cache_key,
     ) {
     flush_mesh2d_batches(self)
     self.mesh2d_batch_active = true
@@ -2505,6 +2882,7 @@ fn GpuBackend::draw_mesh_material_with_options(
     self.mesh2d_batch_wireframe = wireframe
     self.mesh2d_batch_vertex_shader_path = resolved_vertex_shader_path
     self.mesh2d_batch_fragment_shader_path = resolved_fragment_shader_path
+    self.mesh2d_batch_pipeline_cache_key = pipeline_cache_key
     self.mesh2d_batch_material_hash = material_bind_group_hash
     self.mesh2d_batch_material_key = host_material2d_bind_group_cache_key(
       material_bind_group,
@@ -2567,6 +2945,7 @@ pub fn GpuBackend::draw_mesh_material(
   material_bind_group : HostMaterial2dBindGroup,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> Unit raise GpuBackendError {
   self.draw_mesh_material_with_options(
     mesh_id,
@@ -2580,6 +2959,7 @@ pub fn GpuBackend::draw_mesh_material(
     vertex_shader_path~,
     fragment_shader_path~,
     wireframe=false,
+    pipeline_descriptor~,
   )
 }
 
@@ -2773,6 +3153,7 @@ pub fn draw_mesh_material(
   material_bind_group~ : HostMaterial2dBindGroup,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> Unit {
   render_diagnostics_record_mesh2d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
@@ -2787,6 +3168,7 @@ pub fn draw_mesh_material(
       material_bind_group,
       vertex_shader_path~,
       fragment_shader_path~,
+      pipeline_descriptor~,
     ) catch {
       err => debug_runtime_error("draw_mesh_material", err)
     }

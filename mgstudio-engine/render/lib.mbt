@@ -46,7 +46,17 @@ pub type VertexState = @render_resource.VertexState
 pub type FragmentState = @render_resource.FragmentState
 
 ///|
+pub type PrimitiveState = @render_resource.PrimitiveState
+
+///|
 pub type RenderPipelineDescriptor = @render_resource.RenderPipelineDescriptor
+
+///|
+pub fn host_gpu_mesh2d_vertex_layout(
+  mesh_id~ : Int,
+) -> @mesh.MeshVertexBufferLayout? {
+  @renderer.mesh2d_vertex_layout(mesh_id)
+}
 
 ///|
 pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool {
@@ -1294,6 +1304,7 @@ pub fn host_gpu_draw_mesh_material(
   material_bind_group~ : @renderer.HostMaterial2dBindGroup,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> Unit {
   @renderer.draw_mesh_material(
     mesh_id~,
@@ -1306,6 +1317,7 @@ pub fn host_gpu_draw_mesh_material(
     material_bind_group~,
     vertex_shader_path~,
     fragment_shader_path~,
+    pipeline_descriptor~,
   )
 }
 

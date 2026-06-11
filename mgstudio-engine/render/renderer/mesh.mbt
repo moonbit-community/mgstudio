@@ -131,6 +131,11 @@ pub fn HostGpuMeshInfo::uses_u32_indices(self : HostGpuMeshInfo) -> Bool {
 }
 
 ///|
+pub fn HostGpuMeshInfo::primitive_topology(self : HostGpuMeshInfo) -> UInt {
+  self.primitive_topology
+}
+
+///|
 fn host_gpu_mesh_info_from_gpu(mesh : GpuMeshInfo) -> HostGpuMeshInfo {
   HostGpuMeshInfo::{
     id: mesh.id,
@@ -155,6 +160,13 @@ pub fn mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
   } else {
     None
   }
+}
+
+///|
+pub fn mesh2d_vertex_layout(mesh_id : Int) -> @mesh.MeshVertexBufferLayout? {
+  guard ensure_backend() is Some(backend) else { return None }
+  guard find_mesh(backend, mesh_id) is Some(mesh) else { return None }
+  mesh.mesh_vertex_layout
 }
 
 ///|

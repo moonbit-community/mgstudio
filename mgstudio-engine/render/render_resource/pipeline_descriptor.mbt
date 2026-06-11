@@ -158,6 +158,30 @@ pub fn PrimitiveState::with_polygon_mode(
 }
 
 ///|
+pub fn PrimitiveState::with_topology(
+  self : PrimitiveState,
+  topology : UInt,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, topology, }
+}
+
+///|
+pub fn PrimitiveState::with_front_face(
+  self : PrimitiveState,
+  front_face : UInt,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, front_face, }
+}
+
+///|
+pub fn PrimitiveState::with_cull_mode(
+  self : PrimitiveState,
+  cull_mode : UInt?,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, cull_mode, }
+}
+
+///|
 pub struct DepthStencilState {
   format : UInt
   depth_write_enabled : Bool
