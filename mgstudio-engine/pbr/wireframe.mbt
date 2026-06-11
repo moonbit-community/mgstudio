@@ -181,6 +181,21 @@ pub fn RenderWireframeMaterial::from_material(
 }
 
 ///|
+priv struct GlobalWireframeMaterial {
+  handle : @asset.Handle[WireframeMaterial]
+}
+
+///|
+let global_wireframe_material_key : @ecs.ResourceKey[GlobalWireframeMaterial] = @ecs.register_resource(
+  debug_name="mgstudio.render3d.global_wireframe_material",
+)
+
+///|
+impl @app.Resource for GlobalWireframeMaterial with fn resource() {
+  global_wireframe_material_key
+}
+
+///|
 pub struct WireframeEntitiesNeedingSpecialization {
   changed : Array[@core.Entity]
   removed : Array[@core.Entity]
@@ -303,6 +318,182 @@ fn init_wireframe_resources(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn wireframe_material_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[WireframeMaterial]] {
+  let key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "Assets<WireframeMaterial> is missing; WireframePlugin must initialize the asset store before wireframe systems run",
+      )
+  }
+}
+
+///|
+fn global_wireframe_material_or_abort(
+  world : @ecs.World,
+) -> GlobalWireframeMaterial {
+  match world.get_resource(GlobalWireframeMaterial::resource()) {
+    Some(material) => material
+    None =>
+      abort(
+        "GlobalWireframeMaterial is missing; WireframePlugin startup must run before wireframe material systems",
+      )
+  }
+}
+
+///|
+fn setup_global_wireframe_material(world : @ecs.World) -> Unit {
+  let config = match world.get_resource(WireframeConfig::resource()) {
+    Some(config) => config
+    None => abort("WireframeConfig is missing during global wireframe setup")
+  }
+  let handle = wireframe_material_assets_mut_or_abort(world).modify(fn(assets) {
+    assets.add(
+      WireframeMaterial::new(
+        config.default_color,
+        config.default_line_width,
+        config.default_topology,
+      ),
+    )
+  })
+  world.insert_resource(GlobalWireframeMaterial::resource(), GlobalWireframeMaterial::{
+    handle,
+  })
+}
+
+///|
+fn wireframe_startup_system(world : @ecs.World) -> Unit {
+  init_wireframe_resources(world)
+  setup_global_wireframe_material(world)
+}
+
+///|
+fn get_wireframe_material(
+  maybe_color : WireframeColor?,
+  maybe_width : WireframeLineWidth?,
+  maybe_topology : WireframeTopology?,
+  materials : @asset.Assets[WireframeMaterial],
+  global_material : GlobalWireframeMaterial,
+  config : WireframeConfig,
+) -> @asset.Handle[WireframeMaterial] {
+  if maybe_color is Some(_) ||
+    maybe_width is Some(_) ||
+    maybe_topology is Some(_) {
+    let color = match maybe_color {
+      Some(value) => value.color
+      None => config.default_color
+    }
+    let line_width = match maybe_width {
+      Some(value) => value.width
+      None => config.default_line_width
+    }
+    let topology = match maybe_topology {
+      Some(value) => value
+      None => config.default_topology
+    }
+    materials.add(WireframeMaterial::new(color, line_width, topology))
+  } else {
+    global_material.handle
+  }
+}
+
+///|
+fn apply_wireframe_material(world : @ecs.World) -> Unit {
+  let config = match world.get_resource(WireframeConfig::resource()) {
+    Some(config) => config
+    None => return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let assets = wireframe_material_assets_mut_or_abort(world)
+
+  world.for_each_component(ecs_key_no_wireframe, fn(entity, _marker) {
+    if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is Some(_) {
+      try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+    }
+  })
+
+  world.for_each_component(ecs_key_wireframe, fn(entity, _marker) {
+    guard (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is None else {
+      return
+    }
+    let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe_color)
+    let maybe_width = try! world.get_by_key(
+      entity, ecs_key_wireframe_line_width,
+    )
+    let maybe_topology = try! world.get_by_key(
+      entity, ecs_key_wireframe_topology,
+    )
+    let handle = assets.modify(fn(materials) {
+      get_wireframe_material(
+        maybe_color, maybe_width, maybe_topology, materials, global_material, config,
+      )
+    })
+    try! world.set_by_key(
+      entity,
+      ecs_key_mesh3d_wireframe,
+      Mesh3dWireframe::new(handle),
+    )
+  })
+}
+
+///|
+fn apply_global_wireframe_material(world : @ecs.World) -> Unit {
+  let config = match world.get_resource(WireframeConfig::resource()) {
+    Some(config) => config
+    None => return
+  }
+  let global_material = global_wireframe_material_or_abort(world)
+  let assets = wireframe_material_assets_mut_or_abort(world)
+
+  world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
+    guard (try! world.get_by_key(entity, ecs_key_wireframe)) is None else {
+      return
+    }
+    guard (try! world.get_by_key(entity, ecs_key_no_wireframe)) is None else {
+      if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is Some(_) {
+        try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+      }
+      return
+    }
+
+    if config.global {
+      guard (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) is None else {
+        return
+      }
+      let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe_color)
+      let maybe_width = try! world.get_by_key(
+        entity, ecs_key_wireframe_line_width,
+      )
+      let maybe_topology = try! world.get_by_key(
+        entity, ecs_key_wireframe_topology,
+      )
+      let handle = assets.modify(fn(materials) {
+        get_wireframe_material(
+          maybe_color, maybe_width, maybe_topology, materials, global_material, config,
+        )
+      })
+      try! world.set_by_key(
+        entity,
+        ecs_key_mesh3d_wireframe,
+        Mesh3dWireframe::new(handle),
+      )
+    } else if (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe))
+      is Some(_) {
+      try! (world.remove_by_key(entity, ecs_key_mesh3d_wireframe) |> ignore)
+    }
+  })
+}
+
+///|
+fn wireframe_material_application_system(world : @ecs.World) -> Unit {
+  apply_wireframe_material(world)
+  apply_global_wireframe_material(world)
+}
+
+///|
 pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   wireframe_plugin_with(app, WireframePlugin::WireframePlugin())
 }
@@ -312,9 +503,9 @@ pub fn wireframe_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : WireframePlugin,
 ) -> @app.App[@ecs.World] {
-  @asset.init_asset(app, fn() { WireframeMaterial::WireframeMaterial() }).add_startup_system(
-    init_wireframe_resources,
-  )
+  @asset.init_asset(app, fn() { WireframeMaterial::WireframeMaterial() })
+  .add_startup_system(wireframe_startup_system)
+  .add_systems_world(@app.PostUpdate, wireframe_material_application_system)
 }
 
 ///|

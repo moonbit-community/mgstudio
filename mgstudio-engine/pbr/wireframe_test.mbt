@@ -92,3 +92,131 @@ test "pbr: WireframePlugin initializes config and specialization resources" {
   let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
   debug_inspect(app.world().resource(asset_key).is_present(), content="true")
 }
+
+///|
+fn wireframe_material_assets(
+  world : @ecs.World,
+) -> @asset.Assets[WireframeMaterial] {
+  let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  match world.get_resource(asset_key) {
+    Some(assets) => assets
+    None => abort("missing WireframeMaterial assets")
+  }
+}
+
+///|
+fn wireframe_material_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> WireframeMaterial {
+  let component = match
+    (try! world.get_by_key(entity, ecs_key_mesh3d_wireframe)) {
+    Some(component) => component
+    None => abort("missing Mesh3dWireframe")
+  }
+  match wireframe_material_assets(world).get(component.material()) {
+    Some(material) => material
+    None => abort("missing WireframeMaterial")
+  }
+}
+
+///|
+test "pbr: WireframePlugin applies explicit wireframe material in PostUpdate" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    WireframePlugin::WireframePlugin(),
+  )
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    ecs_key_wireframe_color,
+    WireframeColor::new(@color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)),
+  )
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    ecs_key_wireframe_line_width,
+    WireframeLineWidth::new(4.0F),
+  )
+  try! app.world().set_by_key(entity, ecs_key_wireframe_topology, Quads)
+
+  app.run_once() |> ignore
+
+  let material = wireframe_material_for_entity(app.world(), entity)
+  debug_inspect(
+    material.color.to_srgba_tuple() ==
+    @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F).to_srgba_tuple(),
+    content="true",
+  )
+  debug_inspect(material.line_width, content="4")
+  debug_inspect(material.topology, content="Quads")
+}
+
+///|
+test "pbr: WireframePlugin applies global wireframe material to Mesh3d entities" {
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(
+      WireframeConfig::new(
+        true,
+        @color.Color::srgba(0.0F, 1.0F, 0.0F, 1.0F),
+        default_line_width=2.0F,
+        default_topology=Triangles,
+      ),
+    )
+    .add_plugins(WireframePlugin::WireframePlugin())
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  try! app
+  .world()
+  .set_by_key(entity, ecs_key_mesh3d, @mesh.Mesh3d::new(@asset.Handle::new(7)))
+
+  app.run_once() |> ignore
+
+  let material = wireframe_material_for_entity(app.world(), entity)
+  debug_inspect(
+    material.color.to_srgba_tuple() ==
+    @color.Color::srgba(0.0F, 1.0F, 0.0F, 1.0F).to_srgba_tuple(),
+    content="true",
+  )
+  debug_inspect(material.line_width, content="2")
+  debug_inspect(material.topology, content="Triangles")
+  debug_inspect(wireframe_material_assets(app.world()).len(), content="1")
+}
+
+///|
+test "pbr: WireframePlugin removes Mesh3dWireframe for NoWireframe entities" {
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(
+      WireframeConfig::new(
+        true,
+        @color.Color::white(),
+        default_line_width=1.0F,
+        default_topology=Triangles,
+      ),
+    )
+    .add_plugins(WireframePlugin::WireframePlugin())
+  app.run_startup() |> ignore
+  let entity = app.world().spawn()
+  try! app
+  .world()
+  .set_by_key(entity, ecs_key_mesh3d, @mesh.Mesh3d::new(@asset.Handle::new(8)))
+  app.run_once() |> ignore
+  debug_inspect(
+    try! (app.world().get_by_key(entity, ecs_key_mesh3d_wireframe) is Some(_)),
+    content="true",
+  )
+
+  try! app
+  .world()
+  .set_by_key(entity, ecs_key_no_wireframe, NoWireframe::NoWireframe())
+  app.run_once() |> ignore
+
+  debug_inspect(
+    try! (app.world().get_by_key(entity, ecs_key_mesh3d_wireframe) is None),
+    content="true",
+  )
+}
