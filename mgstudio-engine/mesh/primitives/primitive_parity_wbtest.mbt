@@ -134,6 +134,74 @@ fn primitive_parity_assert_z_bounds(
 }
 
 ///|
+fn primitive_parity_float_close(a : Float, b : Float) -> Bool {
+  (a - b).abs() <= 0.0001F
+}
+
+///|
+fn primitive_parity_fix_float(value : Float) -> Float {
+  let rounded = (value * 2.0F).round() / 2.0F
+  if (value - rounded).abs() < 0.00001F {
+    rounded
+  } else {
+    value
+  }
+}
+
+///|
+fn primitive_parity_assert_vec3(
+  name : String,
+  actual : @math.Vec3,
+  expected : @math.Vec3,
+) -> Unit {
+  if !primitive_parity_float_close(
+      primitive_parity_fix_float(actual.x),
+      expected.x,
+    ) ||
+    !primitive_parity_float_close(
+      primitive_parity_fix_float(actual.y),
+      expected.y,
+    ) ||
+    !primitive_parity_float_close(
+      primitive_parity_fix_float(actual.z),
+      expected.z,
+    ) {
+    abort("\{name}: vec3 mismatch")
+  }
+}
+
+///|
+fn primitive_parity_assert_vec2(
+  name : String,
+  actual : @math.Vec2,
+  expected : @math.Vec2,
+) -> Unit {
+  if !primitive_parity_float_close(
+      primitive_parity_fix_float(actual.x),
+      expected.x,
+    ) ||
+    !primitive_parity_float_close(
+      primitive_parity_fix_float(actual.y),
+      expected.y,
+    ) {
+    abort("\{name}: vec2 mismatch")
+  }
+}
+
+///|
+fn primitive_parity_count_distinct_positions(
+  geometry : @mesh.Mesh3dGeometry,
+) -> Int {
+  let seen : @hashset.HashSet[String] = @hashset.HashSet([])
+  for index in 0..<geometry.vertex_count() {
+    guard geometry.vertex_position(index) is Some(position) else { continue }
+    let key = "\{primitive_parity_fix_float(position.x).to_string()},\{primitive_parity_fix_float(position.y).to_string()},\{primitive_parity_fix_float(position.z).to_string()}"
+    seen.add(key)
+  }
+  seen.length()
+}
+
+///|
 fn[S : IntoMeshPrimitiveAsset] primitive_parity_into_mesh_asset(
   value : S,
 ) -> @mesh.Mesh {
@@ -498,4 +566,113 @@ test "dim2 primitive asset conversion follows Bevy Meshable path" {
   debug_inspect(ring_geometry.vertex_count(), content="64")
   debug_inspect(ring_geometry.indices_or_sequential().length(), content="192")
   debug_inspect(ring_geometry.primitive_topology(), content="TriangleList")
+}
+
+///|
+test "dim2 primitives: Bevy annulus distinct positions parity" {
+  let geometry = AnnulusMeshBuilder::new(1.0F, 1.2F, 16).build()
+  debug_inspect(
+    primitive_parity_count_distinct_positions(geometry),
+    content="32",
+  )
+}
+
+///|
+test "dim2 primitives: Bevy regular polygon attribute parity" {
+  let geometry = regular_polygon_mesh(@math.RegularPolygon::new(7.0F, 4))
+  let expected_positions = [
+    @math.Vec3::new(0.0F, 7.0F, 0.0F),
+    @math.Vec3::new(-7.0F, 0.0F, 0.0F),
+    @math.Vec3::new(0.0F, -7.0F, 0.0F),
+    @math.Vec3::new(7.0F, 0.0F, 0.0F),
+  ]
+  for index in 0..<expected_positions.length() {
+    guard geometry.vertex_position(index) is Some(position) else {
+      abort("regular_polygon: missing position")
+    }
+    primitive_parity_assert_vec3(
+      "regular_polygon.position",
+      position,
+      expected_positions[index],
+    )
+  }
+  guard geometry.uvs() is Some(uvs) else {
+    abort("regular_polygon: missing uvs")
+  }
+  let expected_uvs = [
+    @math.Vec2::new(0.5F, 0.0F),
+    @math.Vec2::new(0.0F, 0.5F),
+    @math.Vec2::new(0.5F, 1.0F),
+    @math.Vec2::new(1.0F, 0.5F),
+  ]
+  for index in 0..<expected_uvs.length() {
+    primitive_parity_assert_vec2(
+      "regular_polygon.uv",
+      uvs[index],
+      expected_uvs[index],
+    )
+  }
+  guard geometry.normals() is Some(normals) else {
+    abort("regular_polygon: missing normals")
+  }
+  for normal in normals {
+    primitive_parity_assert_vec3(
+      "regular_polygon.normal",
+      normal,
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    )
+  }
+}
+
+///|
+test "dim2 primitives: Bevy convex polygon attribute parity" {
+  let polygon = @math.ConvexPolygon::new([
+    @math.Vec2::new(-2.0F, -1.0F),
+    @math.Vec2::new(2.0F, -1.0F),
+    @math.Vec2::new(1.0F, 3.0F),
+    @math.Vec2::new(-1.0F, 2.0F),
+  ])
+  let geometry = convex_polygon_mesh(polygon)
+  let expected_positions = [
+    @math.Vec3::new(-2.0F, -1.0F, 0.0F),
+    @math.Vec3::new(2.0F, -1.0F, 0.0F),
+    @math.Vec3::new(1.0F, 3.0F, 0.0F),
+    @math.Vec3::new(-1.0F, 2.0F, 0.0F),
+  ]
+  for index in 0..<expected_positions.length() {
+    guard geometry.vertex_position(index) is Some(position) else {
+      abort("convex_polygon: missing position")
+    }
+    primitive_parity_assert_vec3(
+      "convex_polygon.position",
+      position,
+      expected_positions[index],
+    )
+  }
+  guard geometry.uvs() is Some(uvs) else {
+    abort("convex_polygon: missing uvs")
+  }
+  let expected_uvs = [
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.75F, 1.0F),
+    @math.Vec2::new(0.25F, 0.75F),
+  ]
+  for index in 0..<expected_uvs.length() {
+    primitive_parity_assert_vec2(
+      "convex_polygon.uv",
+      uvs[index],
+      expected_uvs[index],
+    )
+  }
+  guard geometry.normals() is Some(normals) else {
+    abort("convex_polygon: missing normals")
+  }
+  for normal in normals {
+    primitive_parity_assert_vec3(
+      "convex_polygon.normal",
+      normal,
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    )
+  }
 }

@@ -525,17 +525,51 @@ pub fn circular_segment_mesh(
 pub fn convex_polygon_mesh(
   polygon : @math.ConvexPolygon,
 ) -> @mesh.Mesh3dGeometry {
+  let len = polygon.vertices.length()
   let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
+  if len == 0 {
+    return primitive2d_geometry_with_normals([], [], [], Some([]))
+  }
+  let first = polygon.vertices[0]
+  let mut min_x = first.x
+  let mut min_y = first.y
+  let mut max_x = first.x
+  let mut max_y = first.y
+  for vertex in polygon.vertices {
+    if vertex.x < min_x {
+      min_x = vertex.x
+    }
+    if vertex.y < min_y {
+      min_y = vertex.y
+    }
+    if vertex.x > max_x {
+      max_x = vertex.x
+    }
+    if vertex.y > max_y {
+      max_y = vertex.y
+    }
+  }
+  let size_x = if max_x - min_x < 0.000001F { 0.000001F } else { max_x - min_x }
+  let size_y = if max_y - min_y < 0.000001F { 0.000001F } else { max_y - min_y }
   for vertex in polygon.vertices {
     positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
+    uvs.push(
+      @math.Vec2::new((vertex.x - min_x) / size_x, (vertex.y - min_y) / size_y),
+    )
   }
-  for i in 2..<polygon.vertices.length() {
+  for i in 2..<len {
     indices.push(0)
     indices.push(i - 1)
     indices.push(i)
   }
-  @mesh.Mesh3dGeometry::new_with_positions(positions, Some(indices))
+  primitive2d_geometry_with_normals(
+    positions,
+    primitive2d_normal_z(len, 1.0F),
+    uvs,
+    Some(indices),
+  )
 }
 
 ///|
