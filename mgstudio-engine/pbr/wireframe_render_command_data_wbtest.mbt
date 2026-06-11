@@ -16,6 +16,17 @@
 fn wireframe_render_command_test_item(
   main_entity : @render.MainEntity,
 ) -> Wireframe3d {
+  wireframe_render_command_test_item_with_extra_index(
+    main_entity,
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+}
+
+///|
+fn wireframe_render_command_test_item_with_extra_index(
+  main_entity : @render.MainEntity,
+  extra_index : WireframePhaseItemExtraIndex,
+) -> Wireframe3d {
   Wireframe3d::new(
     Wireframe3dBatchSetKey::new(
       @material.CachedRenderPipelineId::new(3UL),
@@ -27,7 +38,7 @@ fn wireframe_render_command_test_item(
     @core.Entity::new(20, 1),
     main_entity,
     Wireframe3dBatchRange::new(0, 1),
-    WireframePhaseItemExtraIndex::dynamic_offset(0),
+    extra_index,
   )
 }
 
@@ -244,4 +255,34 @@ test "pbr: pulled wireframe direct draw range uses vertex count for non-indexed 
 
   debug_inspect(range.first_vertex(), content="0")
   debug_inspect(range.vertex_end(), content="5")
+}
+
+///|
+test "pbr: pulled wireframe indirect plan follows Bevy offsets" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let direct_item = wireframe_render_command_test_item(main_entity)
+  debug_inspect(
+    draw_wireframe_mesh_pulled_indirect_plan(direct_item),
+    content="None",
+  )
+  let indirect_item = wireframe_render_command_test_item_with_extra_index(
+    main_entity,
+    WireframePhaseItemExtraIndex::indirect_parameters_index(2, 5),
+  )
+  let indirect_plan = draw_wireframe_mesh_pulled_indirect_plan(indirect_item).unwrap()
+  debug_inspect(indirect_plan.indirect_parameters_offset(), content="32")
+  debug_inspect(indirect_plan.indirect_parameters_count(), content="3")
+  debug_inspect(indirect_plan.batch_set_count_offset(), content="None")
+  let counted_item = wireframe_render_command_test_item_with_extra_index(
+    main_entity,
+    WireframePhaseItemExtraIndex::indirect_parameters_index(
+      2,
+      5,
+      batch_set_index=Some(4),
+    ),
+  )
+  let counted_plan = draw_wireframe_mesh_pulled_indirect_plan(counted_item).unwrap()
+  debug_inspect(counted_plan.indirect_parameters_offset(), content="32")
+  debug_inspect(counted_plan.indirect_parameters_count(), content="3")
+  debug_inspect(counted_plan.batch_set_count_offset(), content="Some(32)")
 }

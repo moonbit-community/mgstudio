@@ -45,6 +45,12 @@ pub suberror WireframeRenderCommandError {
 }
 
 ///|
+pub const WIREFRAME_INDIRECT_PARAMETERS_NON_INDEXED_SIZE_BYTES : Int = 16
+
+///|
+pub const WIREFRAME_INDIRECT_BATCH_SET_SIZE_BYTES : Int = 8
+
+///|
 fn wireframe_render_command_material(
   item : Wireframe3d,
   wireframe_instances : RenderWireframeInstances,
@@ -267,6 +273,68 @@ pub fn draw_wireframe_mesh_pulled_direct_range(
       first_vertex + index_count,
       batch_range.start(),
       batch_range.end(),
+    ),
+  )
+}
+
+///|
+pub struct DrawWireframeMeshPulledIndirectPlan {
+  indirect_parameters_offset : Int
+  indirect_parameters_count : Int
+  batch_set_count_offset : Int?
+} derive(Eq, Debug)
+
+///|
+pub fn DrawWireframeMeshPulledIndirectPlan::new(
+  indirect_parameters_offset : Int,
+  indirect_parameters_count : Int,
+  batch_set_count_offset? : Int? = None,
+) -> DrawWireframeMeshPulledIndirectPlan {
+  DrawWireframeMeshPulledIndirectPlan::{
+    indirect_parameters_offset,
+    indirect_parameters_count,
+    batch_set_count_offset,
+  }
+}
+
+///|
+pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_offset(
+  self : DrawWireframeMeshPulledIndirectPlan,
+) -> Int {
+  self.indirect_parameters_offset
+}
+
+///|
+pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_count(
+  self : DrawWireframeMeshPulledIndirectPlan,
+) -> Int {
+  self.indirect_parameters_count
+}
+
+///|
+pub fn DrawWireframeMeshPulledIndirectPlan::batch_set_count_offset(
+  self : DrawWireframeMeshPulledIndirectPlan,
+) -> Int? {
+  self.batch_set_count_offset
+}
+
+///|
+pub fn draw_wireframe_mesh_pulled_indirect_plan(
+  item : Wireframe3d,
+) -> DrawWireframeMeshPulledIndirectPlan? {
+  guard item.extra_index().indirect_parameters_range()
+    is Some((range_start, range_end, batch_set_index)) else {
+    return None
+  }
+  let batch_set_count_offset = match batch_set_index {
+    Some(index) => Some(index * WIREFRAME_INDIRECT_BATCH_SET_SIZE_BYTES)
+    None => None
+  }
+  Some(
+    DrawWireframeMeshPulledIndirectPlan::new(
+      range_start * WIREFRAME_INDIRECT_PARAMETERS_NON_INDEXED_SIZE_BYTES,
+      range_end - range_start,
+      batch_set_count_offset~,
     ),
   )
 }

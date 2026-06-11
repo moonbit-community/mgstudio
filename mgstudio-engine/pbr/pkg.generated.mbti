@@ -129,6 +129,10 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 pub const VIEW_FRUSTUM_PLANE_COUNT : Int = 6
 
+pub const WIREFRAME_INDIRECT_BATCH_SET_SIZE_BYTES : Int = 8
+
+pub const WIREFRAME_INDIRECT_PARAMETERS_NON_INDEXED_SIZE_BYTES : Int = 16
+
 pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMaterial], S) -> @asset.Handle[@material.StandardMaterial]
 
 pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mesh], S) -> @asset.Handle[@Milky2018/mgstudio/mesh.Mesh]
@@ -154,6 +158,8 @@ pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World
 pub fn despecialize_wireframe_view_cache(SpecializedWireframePipelineCache, DirtyWireframeSpecializations, @core.Entity) -> Unit
 
 pub fn draw_wireframe_mesh_pulled_direct_range(Wireframe3d, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator) -> DrawWireframeMeshPulledDirectRange?
+
+pub fn draw_wireframe_mesh_pulled_indirect_plan(Wireframe3d) -> DrawWireframeMeshPulledIndirectPlan?
 
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
 
@@ -1008,6 +1014,16 @@ pub fn DrawWireframeMeshPulledDirectRange::batch_start(Self) -> Int
 pub fn DrawWireframeMeshPulledDirectRange::first_vertex(Self) -> Int
 pub fn DrawWireframeMeshPulledDirectRange::new(Int, Int, Int, Int) -> Self
 pub fn DrawWireframeMeshPulledDirectRange::vertex_end(Self) -> Int
+
+pub struct DrawWireframeMeshPulledIndirectPlan {
+  indirect_parameters_offset : Int
+  indirect_parameters_count : Int
+  batch_set_count_offset : Int?
+} derive(Eq, @debug.Debug)
+pub fn DrawWireframeMeshPulledIndirectPlan::batch_set_count_offset(Self) -> Int?
+pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_count(Self) -> Int
+pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_offset(Self) -> Int
+pub fn DrawWireframeMeshPulledIndirectPlan::new(Int, Int, batch_set_count_offset? : Int?) -> Self
 
 pub struct EntitySpecializationTickPair {
   system_tick : Int64
@@ -1986,6 +2002,7 @@ pub(all) enum WireframePhaseItemExtraIndex {
 } derive(Eq, @debug.Debug)
 pub fn WireframePhaseItemExtraIndex::dynamic_offset(Int) -> Self
 pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
+pub fn WireframePhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
 pub fn WireframePhaseItemExtraIndex::none() -> Self
 
 pub struct WireframePipelineCacheKey {

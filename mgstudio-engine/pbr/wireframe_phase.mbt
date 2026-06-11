@@ -120,6 +120,17 @@ pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(
 }
 
 ///|
+pub fn WireframePhaseItemExtraIndex::indirect_parameters_range(
+  self : WireframePhaseItemExtraIndex,
+) -> (Int, Int, Int?)? {
+  match self {
+    IndirectParametersIndex(range_start, range_end, batch_set_index) =>
+      Some((range_start, range_end, batch_set_index))
+    _ => None
+  }
+}
+
+///|
 pub struct Wireframe3dBatchRange {
   start : Int
   end : Int
