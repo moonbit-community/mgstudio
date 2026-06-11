@@ -1390,6 +1390,126 @@ test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
 }
 
 ///|
+test "pbr: extract_wireframe_render_visible_entities mirrors camera visible Mesh3d pairs" {
+  let world = @ecs.World::new()
+  let main_camera = world.spawn()
+  let render_camera = world.spawn()
+  let main_mesh = world.spawn()
+  let render_mesh = world.spawn()
+  try! world.set_by_key(main_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    main_camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    main_camera,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_camera),
+  )
+  try! world.set_by_key(
+    render_camera,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(main_camera),
+  )
+  try! world.set_by_key(
+    main_mesh,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_mesh),
+  )
+  let visible = @camera_camera.VisibleEntities::VisibleEntities()
+  visible.push(main_mesh, @mesh.ecs_key_mesh3d.id())
+  try! world.set_by_key(
+    main_camera, @camera_camera.ecs_key_visible_entities, visible,
+  )
+
+  extract_wireframe_render_visible_entities_system(world)
+
+  match
+    (try! world.get_by_key(
+      render_camera, @render_visibility.ecs_key_render_visible_entities,
+    )) {
+    Some(render_visible) =>
+      match render_visible.get(wireframe_mesh_visibility_class()) {
+        Some(mesh_visible) => {
+          debug_inspect(mesh_visible.visible_len(), content="1")
+          debug_inspect(mesh_visible.added_entities().length(), content="1")
+          debug_inspect(mesh_visible.removed_entities().length(), content="0")
+          debug_inspect(
+            mesh_visible.entity_pair_is_visible(
+              render_mesh,
+              @render.MainEntity::new(main_mesh),
+            ),
+            content="true",
+          )
+        }
+        None => debug_inspect(false, content="true")
+      }
+    None => debug_inspect(false, content="true")
+  }
+
+  let no_visible_meshes = @camera_camera.VisibleEntities::VisibleEntities()
+  try! world.set_by_key(
+    main_camera, @camera_camera.ecs_key_visible_entities, no_visible_meshes,
+  )
+  extract_wireframe_render_visible_entities_system(world)
+
+  match
+    (try! world.get_by_key(
+      render_camera, @render_visibility.ecs_key_render_visible_entities,
+    )) {
+    Some(render_visible) =>
+      match render_visible.get(wireframe_mesh_visibility_class()) {
+        Some(mesh_visible) => {
+          debug_inspect(mesh_visible.visible_len(), content="0")
+          debug_inspect(mesh_visible.added_entities().length(), content="0")
+          debug_inspect(mesh_visible.removed_entities().length(), content="1")
+        }
+        None => debug_inspect(false, content="true")
+      }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "pbr: extract_wireframe_render_visible_entities removes inactive camera component" {
+  let world = @ecs.World::new()
+  let main_camera = world.spawn()
+  let render_camera = world.spawn()
+  try! world.set_by_key(main_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    main_camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  try! world.set_by_key(
+    main_camera,
+    @camera_camera.ecs_key_visible_entities,
+    @camera_camera.VisibleEntities::VisibleEntities(),
+  )
+  try! world.set_by_key(
+    main_camera,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_camera),
+  )
+  try! world.set_by_key(
+    render_camera,
+    @render_visibility.ecs_key_render_visible_entities,
+    @render_visibility.RenderVisibleEntities::RenderVisibleEntities(),
+  )
+
+  extract_wireframe_render_visible_entities_system(world)
+
+  debug_inspect(
+    (try! world.get_by_key(
+      render_camera, @render_visibility.ecs_key_render_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
   let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
   let offset = bind_groups.push(13, WireframeVertexPullParams::new(1U, 8U, 3U))
