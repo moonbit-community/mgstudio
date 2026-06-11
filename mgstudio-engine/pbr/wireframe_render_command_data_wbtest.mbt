@@ -13,6 +13,25 @@
 // limitations under the License.
 
 ///|
+fn wireframe_render_command_test_item(
+  main_entity : @render.MainEntity,
+) -> Wireframe3d {
+  Wireframe3d::new(
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      @material.DrawFunctionId::new(0U),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    @core.Entity::new(20, 1),
+    main_entity,
+    Wireframe3dBatchRange::new(0, 1),
+    WireframePhaseItemExtraIndex::dynamic_offset(0),
+  )
+}
+
+///|
 test "pbr: thin wireframe immediates carry only material color" {
   let material = RenderWireframeMaterial::from_material(
     WireframeMaterial::new(
@@ -50,6 +69,72 @@ test "pbr: wide wireframe immediates follow Bevy smoothing rule" {
 }
 
 ///|
+test "pbr: wireframe immediate commands resolve material by phase item" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item(main_entity)
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 7)
+  let assets = RenderWireframeAssets::RenderWireframeAssets()
+  assets.insert(
+    7,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(
+        @color.Color::new(0.2F, 0.4F, 0.6F, 1.0F),
+        2.0F,
+        Triangles,
+      ),
+    ),
+  )
+
+  let thin = set_wireframe_3d_thin_immediates(item, instances, assets)
+  let wide = set_wireframe_3d_wide_immediates(item, instances, assets)
+
+  debug_inspect(thin.color().r, content="0.20000000298023224")
+  debug_inspect(wide.line_width(), content="2")
+  debug_inspect(wide.smoothing(), content="1")
+}
+
+///|
+test "pbr: wireframe immediate commands fail when material is missing" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item(main_entity)
+  let missing_instance = Some(
+    set_wireframe_3d_thin_immediates(
+      item,
+      RenderWireframeInstances::RenderWireframeInstances(),
+      RenderWireframeAssets::RenderWireframeAssets(),
+    ),
+  ) catch {
+    error => {
+      debug_inspect(
+        error is WireframeRenderCommandError::NoWireframeMaterialFoundForEntity,
+        content="true",
+      )
+      None
+    }
+  }
+  debug_inspect(missing_instance is None, content="true")
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 7)
+  let missing_asset = Some(
+    set_wireframe_3d_wide_immediates(
+      item,
+      instances,
+      RenderWireframeAssets::RenderWireframeAssets(),
+    ),
+  ) catch {
+    error => {
+      debug_inspect(
+        error is WireframeRenderCommandError::NoWireframeMaterialFoundForEntity,
+        content="true",
+      )
+      None
+    }
+  }
+  debug_inspect(missing_asset is None, content="true")
+}
+
+///|
 test "pbr: wireframe vertex pull params preserve Bevy field order" {
   let params = WireframeVertexPullParams::new(3U, 8U, 1U)
 
@@ -60,4 +145,35 @@ test "pbr: wireframe vertex pull params preserve Bevy field order" {
   debug_inspect(params.index_offset(), content="3")
   debug_inspect(params.vertex_stride_u32s(), content="8")
   debug_inspect(params.position_offset_u32s(), content="1")
+}
+
+///|
+test "pbr: wide wireframe bind group command returns dynamic offset" {
+  let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
+  let item = wireframe_render_command_test_item(main_entity)
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
+  debug_inspect(
+    set_wireframe_3d_wide_bind_group_dynamic_offset(
+      item, render_mesh_instances, bind_groups,
+    ),
+    content="None",
+  )
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(13, 0U, true),
+  )
+  debug_inspect(
+    set_wireframe_3d_wide_bind_group_dynamic_offset(
+      item, render_mesh_instances, bind_groups,
+    ),
+    content="None",
+  )
+  ignore(bind_groups.push(13, WireframeVertexPullParams::new(0U, 20U, 0U)))
+  debug_inspect(
+    set_wireframe_3d_wide_bind_group_dynamic_offset(
+      item, render_mesh_instances, bind_groups,
+    ),
+    content="Some(0)",
+  )
 }

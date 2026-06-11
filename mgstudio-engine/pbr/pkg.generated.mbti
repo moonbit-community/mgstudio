@@ -649,6 +649,12 @@ pub fn scattering_medium_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scattering_medium_plugin_with(@app.App[@ecs.World], ScatteringMediumPlugin) -> @app.App[@ecs.World]
 
+pub fn set_wireframe_3d_thin_immediates(Wireframe3d, RenderWireframeInstances, RenderWireframeAssets) -> Wireframe3dThinImmediates raise WireframeRenderCommandError
+
+pub fn set_wireframe_3d_wide_bind_group_dynamic_offset(Wireframe3d, RenderMeshInstances, WireframeWideBindGroups) -> Int?
+
+pub fn set_wireframe_3d_wide_immediates(Wireframe3d, RenderWireframeInstances, RenderWireframeAssets) -> Wireframe3dWideImmediates raise WireframeRenderCommandError
+
 pub fn specialize_wireframe_phase_items(@core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, SpecializedWireframeMeshPipelines, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeRenderMeshPipelineData], Wireframe3dPipeline, @render_resource.PipelineCache) -> Unit
 
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
@@ -699,6 +705,10 @@ pub(all) suberror AutoExposureCompensationCurveError {
 pub suberror WireframePipelineSpecializationError {
   MissingDepthStencilState
   MissingFragmentState
+}
+
+pub suberror WireframeRenderCommandError {
+  NoWireframeMaterialFoundForEntity
 }
 
 // Types and methods

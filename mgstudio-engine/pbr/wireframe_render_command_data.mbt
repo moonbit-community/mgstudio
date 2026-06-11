@@ -40,6 +40,39 @@ pub fn Wireframe3dThinImmediates::float_count(
 }
 
 ///|
+pub suberror WireframeRenderCommandError {
+  NoWireframeMaterialFoundForEntity
+}
+
+///|
+fn wireframe_render_command_material(
+  item : Wireframe3d,
+  wireframe_instances : RenderWireframeInstances,
+  wireframe_assets : RenderWireframeAssets,
+) -> RenderWireframeMaterial raise WireframeRenderCommandError {
+  guard wireframe_instances.get(item.main_entity()) is Some(material_asset_id) else {
+    raise WireframeRenderCommandError::NoWireframeMaterialFoundForEntity
+  }
+  guard wireframe_assets.get(material_asset_id) is Some(material) else {
+    raise WireframeRenderCommandError::NoWireframeMaterialFoundForEntity
+  }
+  material
+}
+
+///|
+pub fn set_wireframe_3d_thin_immediates(
+  item : Wireframe3d,
+  wireframe_instances : RenderWireframeInstances,
+  wireframe_assets : RenderWireframeAssets,
+) -> Wireframe3dThinImmediates raise WireframeRenderCommandError {
+  Wireframe3dThinImmediates::from_material(
+    wireframe_render_command_material(
+      item, wireframe_instances, wireframe_assets,
+    ),
+  )
+}
+
+///|
 pub struct Wireframe3dWideImmediates {
   color : @color.Color
   line_width : Float
@@ -91,6 +124,19 @@ pub fn Wireframe3dWideImmediates::float_count(
 }
 
 ///|
+pub fn set_wireframe_3d_wide_immediates(
+  item : Wireframe3d,
+  wireframe_instances : RenderWireframeInstances,
+  wireframe_assets : RenderWireframeAssets,
+) -> Wireframe3dWideImmediates raise WireframeRenderCommandError {
+  Wireframe3dWideImmediates::from_material(
+    wireframe_render_command_material(
+      item, wireframe_instances, wireframe_assets,
+    ),
+  )
+}
+
+///|
 pub struct WireframeVertexPullParams {
   index_offset : UInt
   vertex_stride_u32s : UInt
@@ -129,4 +175,17 @@ pub fn WireframeVertexPullParams::position_offset_u32s(
   self : WireframeVertexPullParams,
 ) -> UInt {
   self.position_offset_u32s
+}
+
+///|
+pub fn set_wireframe_3d_wide_bind_group_dynamic_offset(
+  item : Wireframe3d,
+  render_mesh_instances : RenderMeshInstances,
+  wide_bind_groups : WireframeWideBindGroups,
+) -> Int? {
+  guard render_mesh_instances.render_mesh_queue_data(item.main_entity())
+    is Some(mesh_instance) else {
+    return None
+  }
+  wide_bind_groups.dynamic_offset(mesh_instance.mesh_asset_id())
 }
