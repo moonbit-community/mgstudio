@@ -292,6 +292,8 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
 pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
 
+pub let ecs_key_render_mesh_instances : @ecs.ResourceKey[RenderMeshInstances]
+
 pub let ecs_key_render_wireframe_instances : @ecs.ResourceKey[RenderWireframeInstances]
 
 pub let ecs_key_scattering_medium_plugin_state : @ecs.ResourceKey[ScatteringMediumPluginState]
@@ -522,7 +524,7 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
-pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], Map[UInt64, WireframeMeshQueueData], Map[Int, WireframeMeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
+pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeMeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -1476,6 +1478,27 @@ pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 
+pub struct RenderMeshInstances {
+  entries : Map[UInt64, RenderMeshQueueData]
+}
+pub fn RenderMeshInstances::RenderMeshInstances() -> Self
+pub fn RenderMeshInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstances::len(Self) -> Int
+pub fn RenderMeshInstances::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderMeshInstances::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstances::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub impl @app.Resource for RenderMeshInstances
+
+pub struct RenderMeshQueueData {
+  mesh_asset_id : Int
+  current_uniform_index : UInt
+  should_batch : Bool
+}
+pub fn RenderMeshQueueData::current_uniform_index(Self) -> UInt
+pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
+pub fn RenderMeshQueueData::new(Int, UInt, Bool) -> Self
+pub fn RenderMeshQueueData::should_batch(Self) -> Bool
+
 pub struct RenderWireframeInstances {
   entries : Map[UInt64, Int]
 }
@@ -1880,16 +1903,6 @@ pub struct WireframeMaterial {
 pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
-
-pub struct WireframeMeshQueueData {
-  mesh_asset_id : Int
-  current_uniform_index : UInt
-  should_batch : Bool
-}
-pub fn WireframeMeshQueueData::current_uniform_index(Self) -> UInt
-pub fn WireframeMeshQueueData::mesh_asset_id(Self) -> Int
-pub fn WireframeMeshQueueData::new(Int, UInt, Bool) -> Self
-pub fn WireframeMeshQueueData::should_batch(Self) -> Bool
 
 pub struct WireframeMeshSlabs {
   vertex_slab_id : Int

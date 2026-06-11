@@ -630,43 +630,6 @@ pub fn RenderWireframeInstances::remove(
 }
 
 ///|
-pub struct WireframeMeshQueueData {
-  mesh_asset_id : Int
-  current_uniform_index : UInt
-  should_batch : Bool
-}
-
-///|
-pub fn WireframeMeshQueueData::new(
-  mesh_asset_id : Int,
-  current_uniform_index : UInt,
-  should_batch : Bool,
-) -> WireframeMeshQueueData {
-  WireframeMeshQueueData::{ mesh_asset_id, current_uniform_index, should_batch }
-}
-
-///|
-pub fn WireframeMeshQueueData::mesh_asset_id(
-  self : WireframeMeshQueueData,
-) -> Int {
-  self.mesh_asset_id
-}
-
-///|
-pub fn WireframeMeshQueueData::current_uniform_index(
-  self : WireframeMeshQueueData,
-) -> UInt {
-  self.current_uniform_index
-}
-
-///|
-pub fn WireframeMeshQueueData::should_batch(
-  self : WireframeMeshQueueData,
-) -> Bool {
-  self.should_batch
-}
-
-///|
 pub struct WireframeWideBindGroups {
   params : Array[WireframeVertexPullParams]
   mesh_asset_dynamic_offsets : Map[Int, Int]
@@ -1433,7 +1396,7 @@ pub fn queue_wireframe_phase_items(
   render_wireframe_instances : RenderWireframeInstances,
   dirty_wireframe_specializations : DirtyWireframeSpecializations,
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
-  render_mesh_queue_data : Map[UInt64, WireframeMeshQueueData],
+  render_mesh_instances : RenderMeshInstances,
   mesh_slabs : Map[Int, WireframeMeshSlabs],
   draw_functions : Wireframe3dDrawFunctions,
   gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
@@ -1462,7 +1425,7 @@ pub fn queue_wireframe_phase_items(
       is Some(pipeline_id) else {
       continue
     }
-    guard render_mesh_queue_data.get(visible_entity.id().to_bits())
+    guard render_mesh_instances.render_mesh_queue_data(visible_entity)
       is Some(mesh_instance) else {
       view_pending_wireframe_queues.push_current(render_entity, visible_entity)
       continue

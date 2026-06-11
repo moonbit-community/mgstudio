@@ -771,7 +771,7 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
-    {},
+    RenderMeshInstances::RenderMeshInstances(),
     {},
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
@@ -800,10 +800,10 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
       WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
     ),
   )
-  let render_mesh_queue_data : Map[UInt64, WireframeMeshQueueData] = {}
-  render_mesh_queue_data.set(
-    main_entity.id().to_bits(),
-    WireframeMeshQueueData::new(33, 9U, true),
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(33, 9U, true),
   )
   let mesh_slabs : Map[Int, WireframeMeshSlabs] = {}
   mesh_slabs.set(
@@ -828,7 +828,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     render_wireframe_assets,
-    render_mesh_queue_data,
+    render_mesh_instances,
     mesh_slabs,
     draw_functions,
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
