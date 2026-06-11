@@ -293,6 +293,8 @@ pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInsta
 
 pub let ecs_key_render_mesh_instances : @ecs.ResourceKey[RenderMeshInstances]
 
+pub let ecs_key_render_wireframe_assets : @ecs.ResourceKey[RenderWireframeAssets]
+
 pub let ecs_key_render_wireframe_instances : @ecs.ResourceKey[RenderWireframeInstances]
 
 pub let ecs_key_scattering_medium_plugin_state : @ecs.ResourceKey[ScatteringMediumPluginState]
@@ -359,7 +361,13 @@ pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[Wir
 
 pub let ecs_key_wireframe_line_width : @ecs.ComponentKey[WireframeLineWidth]
 
+pub let ecs_key_wireframe_mesh_slab_cache : @ecs.ResourceKey[WireframeMeshSlabCache]
+
+pub let ecs_key_wireframe_render_mesh_pipeline_data_cache : @ecs.ResourceKey[WireframeRenderMeshPipelineDataCache]
+
 pub let ecs_key_wireframe_topology : @ecs.ComponentKey[WireframeTopology]
+
+pub let ecs_key_wireframe_view_key_cache : @ecs.ResourceKey[WireframeViewKeyCache]
 
 pub let ecs_key_wireframe_wide_bind_groups : @ecs.ResourceKey[WireframeWideBindGroups]
 
@@ -1521,6 +1529,17 @@ pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
 pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags) -> Self
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 
+pub struct RenderWireframeAssets {
+  assets : Map[Int, RenderWireframeMaterial]
+}
+pub fn RenderWireframeAssets::RenderWireframeAssets() -> Self
+pub fn RenderWireframeAssets::as_map(Self) -> Map[Int, RenderWireframeMaterial]
+pub fn RenderWireframeAssets::clear(Self) -> Unit
+pub fn RenderWireframeAssets::get(Self, Int) -> RenderWireframeMaterial?
+pub fn RenderWireframeAssets::insert(Self, Int, RenderWireframeMaterial) -> Unit
+pub fn RenderWireframeAssets::len(Self) -> Int
+pub impl @app.Resource for RenderWireframeAssets
+
 pub struct RenderWireframeInstances {
   entries : Map[UInt64, Int]
 }
@@ -1935,6 +1954,16 @@ pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
 
+pub struct WireframeMeshSlabCache {
+  slabs : Map[Int, WireframeMeshSlabs]
+}
+pub fn WireframeMeshSlabCache::WireframeMeshSlabCache() -> Self
+pub fn WireframeMeshSlabCache::as_map(Self) -> Map[Int, WireframeMeshSlabs]
+pub fn WireframeMeshSlabCache::get(Self, Int) -> WireframeMeshSlabs?
+pub fn WireframeMeshSlabCache::insert(Self, Int, WireframeMeshSlabs) -> Unit
+pub fn WireframeMeshSlabCache::len(Self) -> Int
+pub impl @app.Resource for WireframeMeshSlabCache
+
 pub struct WireframeMeshSlabs {
   vertex_slab_id : Int
   index_slab_id : Int?
@@ -1989,6 +2018,16 @@ pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(Self, RenderMeshIn
 pub fn WireframeRenderMeshPipelineData::mesh_layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 pub fn WireframeRenderMeshPipelineData::new(@material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @render_resource.RenderPipelineDescriptor) -> Self
 
+pub struct WireframeRenderMeshPipelineDataCache {
+  views : Map[UInt64, Map[Int, WireframeRenderMeshPipelineData]]
+}
+pub fn WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache() -> Self
+pub fn WireframeRenderMeshPipelineDataCache::insert(Self, @core.Entity, Int, WireframeRenderMeshPipelineData) -> Unit
+pub fn WireframeRenderMeshPipelineDataCache::len(Self) -> Int
+pub fn WireframeRenderMeshPipelineDataCache::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
+pub fn WireframeRenderMeshPipelineDataCache::view_data(Self, @core.Entity) -> Map[Int, WireframeRenderMeshPipelineData]
+pub impl @app.Resource for WireframeRenderMeshPipelineDataCache
+
 type WireframeThinPipelineCacheEntry
 
 pub(all) enum WireframeTopology {
@@ -2007,6 +2046,16 @@ pub fn WireframeVertexPullParams::index_offset(Self) -> UInt
 pub fn WireframeVertexPullParams::new(UInt, UInt, UInt) -> Self
 pub fn WireframeVertexPullParams::position_offset_u32s(Self) -> UInt
 pub fn WireframeVertexPullParams::vertex_stride_u32s(Self) -> UInt
+
+pub struct WireframeViewKeyCache {
+  views : Map[UInt64, UInt64]
+}
+pub fn WireframeViewKeyCache::WireframeViewKeyCache() -> Self
+pub fn WireframeViewKeyCache::get(Self, @core.Entity) -> UInt64?
+pub fn WireframeViewKeyCache::insert(Self, @core.Entity, UInt64) -> Unit
+pub fn WireframeViewKeyCache::len(Self) -> Int
+pub fn WireframeViewKeyCache::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
+pub impl @app.Resource for WireframeViewKeyCache
 
 pub struct WireframeWideBindGroups {
   params : Array[WireframeVertexPullParams]

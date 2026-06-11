@@ -382,6 +382,10 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     content="true",
   )
   debug_inspect(
+    render_world.get_resource(RenderWireframeAssets::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
     render_world.get_resource(WireframeWideBindGroups::resource()) is Some(_),
     content="true",
   )
@@ -396,6 +400,19 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
   )
   debug_inspect(
     render_world.get_resource(Wireframe3dPhases::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(WireframeViewKeyCache::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(WireframeRenderMeshPipelineDataCache::resource())
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(WireframeMeshSlabCache::resource()) is Some(_),
     content="true",
   )
   debug_inspect(

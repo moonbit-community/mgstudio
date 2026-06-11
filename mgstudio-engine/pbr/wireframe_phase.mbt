@@ -739,6 +739,62 @@ pub fn RenderWireframeInstances::remove(
 }
 
 ///|
+pub struct RenderWireframeAssets {
+  assets : Map[Int, RenderWireframeMaterial]
+}
+
+///|
+pub fn RenderWireframeAssets::RenderWireframeAssets() -> RenderWireframeAssets {
+  RenderWireframeAssets::{ assets: {} }
+}
+
+///|
+pub let ecs_key_render_wireframe_assets : @ecs.ResourceKey[
+  RenderWireframeAssets,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::RenderAssets<RenderWireframeMaterial>",
+)
+
+///|
+pub impl @app.Resource for RenderWireframeAssets with fn resource() {
+  ecs_key_render_wireframe_assets
+}
+
+///|
+pub fn RenderWireframeAssets::clear(self : RenderWireframeAssets) -> Unit {
+  self.assets.clear()
+}
+
+///|
+pub fn RenderWireframeAssets::insert(
+  self : RenderWireframeAssets,
+  asset_id : Int,
+  material : RenderWireframeMaterial,
+) -> Unit {
+  self.assets.set(asset_id, material)
+}
+
+///|
+pub fn RenderWireframeAssets::get(
+  self : RenderWireframeAssets,
+  asset_id : Int,
+) -> RenderWireframeMaterial? {
+  self.assets.get(asset_id)
+}
+
+///|
+pub fn RenderWireframeAssets::as_map(
+  self : RenderWireframeAssets,
+) -> Map[Int, RenderWireframeMaterial] {
+  self.assets
+}
+
+///|
+pub fn RenderWireframeAssets::len(self : RenderWireframeAssets) -> Int {
+  self.assets.length()
+}
+
+///|
 pub struct WireframeWideBindGroups {
   params : Array[WireframeVertexPullParams]
   mesh_asset_dynamic_offsets : Map[Int, Int]
@@ -1496,6 +1552,64 @@ pub fn Wireframe3dPhases::phase(
 }
 
 ///|
+pub struct WireframeViewKeyCache {
+  views : Map[UInt64, UInt64]
+}
+
+///|
+pub fn WireframeViewKeyCache::WireframeViewKeyCache() -> WireframeViewKeyCache {
+  WireframeViewKeyCache::{ views: {} }
+}
+
+///|
+pub let ecs_key_wireframe_view_key_cache : @ecs.ResourceKey[
+  WireframeViewKeyCache,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::ViewKeyCache")
+
+///|
+pub impl @app.Resource for WireframeViewKeyCache with fn resource() {
+  ecs_key_wireframe_view_key_cache
+}
+
+///|
+pub fn WireframeViewKeyCache::insert(
+  self : WireframeViewKeyCache,
+  retained_view_entity : @core.Entity,
+  view_key_bits : UInt64,
+) -> Unit {
+  self.views.set(retained_view_entity.to_bits(), view_key_bits)
+}
+
+///|
+pub fn WireframeViewKeyCache::get(
+  self : WireframeViewKeyCache,
+  retained_view_entity : @core.Entity,
+) -> UInt64? {
+  self.views.get(retained_view_entity.to_bits())
+}
+
+///|
+pub fn WireframeViewKeyCache::len(self : WireframeViewKeyCache) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn WireframeViewKeyCache::retain_live_views(
+  self : WireframeViewKeyCache,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _key in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
+}
+
+///|
 pub struct WireframeRenderMeshPipelineData {
   mesh_key : @material.ErasedMeshPipelineKey
   mesh_layout : @material.MaterialMeshVertexLayout
@@ -1569,6 +1683,143 @@ pub fn wireframe_mesh_pipeline_data_for_render_mesh(
     render_mesh.layout(),
     base_descriptor,
   )
+}
+
+///|
+pub struct WireframeRenderMeshPipelineDataCache {
+  views : Map[UInt64, Map[Int, WireframeRenderMeshPipelineData]]
+}
+
+///|
+pub fn WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache() -> WireframeRenderMeshPipelineDataCache {
+  WireframeRenderMeshPipelineDataCache::{ views: {} }
+}
+
+///|
+pub let ecs_key_wireframe_render_mesh_pipeline_data_cache : @ecs.ResourceKey[
+  WireframeRenderMeshPipelineDataCache,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::RenderAssets<RenderMesh>::WireframePipelineData",
+)
+
+///|
+pub impl @app.Resource for WireframeRenderMeshPipelineDataCache with fn resource() {
+  ecs_key_wireframe_render_mesh_pipeline_data_cache
+}
+
+///|
+fn WireframeRenderMeshPipelineDataCache::view_or_insert(
+  self : WireframeRenderMeshPipelineDataCache,
+  retained_view_entity : @core.Entity,
+) -> Map[Int, WireframeRenderMeshPipelineData] {
+  let view_bits = retained_view_entity.to_bits()
+  match self.views.get(view_bits) {
+    Some(entries) => entries
+    None => {
+      let entries : Map[Int, WireframeRenderMeshPipelineData] = {}
+      self.views.set(view_bits, entries)
+      entries
+    }
+  }
+}
+
+///|
+pub fn WireframeRenderMeshPipelineDataCache::insert(
+  self : WireframeRenderMeshPipelineDataCache,
+  retained_view_entity : @core.Entity,
+  mesh_asset_id : Int,
+  data : WireframeRenderMeshPipelineData,
+) -> Unit {
+  self.view_or_insert(retained_view_entity).set(mesh_asset_id, data)
+}
+
+///|
+pub fn WireframeRenderMeshPipelineDataCache::view_data(
+  self : WireframeRenderMeshPipelineDataCache,
+  retained_view_entity : @core.Entity,
+) -> Map[Int, WireframeRenderMeshPipelineData] {
+  match self.views.get(retained_view_entity.to_bits()) {
+    Some(entries) => entries
+    None => {}
+  }
+}
+
+///|
+pub fn WireframeRenderMeshPipelineDataCache::len(
+  self : WireframeRenderMeshPipelineDataCache,
+) -> Int {
+  let mut count = 0
+  for _, entries in self.views {
+    count = count + entries.length()
+  }
+  count
+}
+
+///|
+pub fn WireframeRenderMeshPipelineDataCache::retain_live_views(
+  self : WireframeRenderMeshPipelineDataCache,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _entries in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
+}
+
+///|
+pub struct WireframeMeshSlabCache {
+  slabs : Map[Int, WireframeMeshSlabs]
+}
+
+///|
+pub fn WireframeMeshSlabCache::WireframeMeshSlabCache() -> WireframeMeshSlabCache {
+  WireframeMeshSlabCache::{ slabs: {} }
+}
+
+///|
+pub let ecs_key_wireframe_mesh_slab_cache : @ecs.ResourceKey[
+  WireframeMeshSlabCache,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::MeshAllocator::WireframeSlabs",
+)
+
+///|
+pub impl @app.Resource for WireframeMeshSlabCache with fn resource() {
+  ecs_key_wireframe_mesh_slab_cache
+}
+
+///|
+pub fn WireframeMeshSlabCache::insert(
+  self : WireframeMeshSlabCache,
+  mesh_asset_id : Int,
+  slabs : WireframeMeshSlabs,
+) -> Unit {
+  self.slabs.set(mesh_asset_id, slabs)
+}
+
+///|
+pub fn WireframeMeshSlabCache::get(
+  self : WireframeMeshSlabCache,
+  mesh_asset_id : Int,
+) -> WireframeMeshSlabs? {
+  self.slabs.get(mesh_asset_id)
+}
+
+///|
+pub fn WireframeMeshSlabCache::as_map(
+  self : WireframeMeshSlabCache,
+) -> Map[Int, WireframeMeshSlabs] {
+  self.slabs
+}
+
+///|
+pub fn WireframeMeshSlabCache::len(self : WireframeMeshSlabCache) -> Int {
+  self.slabs.length()
 }
 
 ///|

@@ -1109,6 +1109,146 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
 }
 
 ///|
+test "pbr: render wireframe assets mirror source WireframeMaterial assets" {
+  let world = @ecs.World::new()
+  let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  let source_assets : @asset.Assets[WireframeMaterial] = @asset.Assets::new()
+  let handle = source_assets.add(
+    WireframeMaterial::new(@color.Color::white(), 2.0F, Quads),
+  )
+  world.insert_resource(asset_key, source_assets)
+  world.insert_resource(
+    RenderWireframeAssets::resource(),
+    RenderWireframeAssets::RenderWireframeAssets(),
+  )
+
+  extract_wireframe_material_assets_system(world)
+
+  let render_assets = match
+    world.get_resource(RenderWireframeAssets::resource()) {
+    Some(value) => value
+    None => abort("missing RenderWireframeAssets")
+  }
+  debug_inspect(render_assets.len(), content="1")
+  let material = render_assets.get(handle.id()).unwrap()
+  debug_inspect(material.line_width, content="2")
+  debug_inspect(material.topology, content="Quads")
+}
+
+///|
+test "pbr: wireframe render systems specialize and queue visible Mesh3d phase items" {
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let visible_class = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible_class.update_cpu_culled_entities([(render_entity, main_entity)])
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  visible_entities.insert(wireframe_mesh_visibility_class(), visible_class)
+  try! world.set_by_key(
+    view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    view,
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  world.insert_resource(Wireframe3dPhases::resource(), phases)
+  let view_key_cache = WireframeViewKeyCache::WireframeViewKeyCache()
+  view_key_cache.insert(view, 0UL)
+  world.insert_resource(WireframeViewKeyCache::resource(), view_key_cache)
+  world.insert_resource(
+    PendingWireframeQueues::resource(),
+    PendingWireframeQueues::PendingWireframeQueues(),
+  )
+  world.insert_resource(
+    SpecializedWireframePipelineCache::resource(),
+    SpecializedWireframePipelineCache::SpecializedWireframePipelineCache(),
+  )
+  world.insert_resource(
+    SpecializedWireframeMeshPipelines::resource(),
+    SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines(),
+  )
+  let wireframe_instances = RenderWireframeInstances::RenderWireframeInstances()
+  wireframe_instances.insert(main_entity, 8)
+  world.insert_resource(
+    RenderWireframeInstances::resource(),
+    wireframe_instances,
+  )
+  let render_wireframe_assets = RenderWireframeAssets::RenderWireframeAssets()
+  render_wireframe_assets.insert(
+    8,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 1.0F, Triangles),
+    ),
+  )
+  world.insert_resource(
+    RenderWireframeAssets::resource(),
+    render_wireframe_assets,
+  )
+  world.insert_resource(
+    DirtyWireframeSpecializations::resource(),
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+  )
+  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(33, 9U, true),
+  )
+  world.insert_resource(RenderMeshInstances::resource(), render_mesh_instances)
+  let pipeline_data_cache = WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache()
+  pipeline_data_cache.insert(
+    view,
+    33,
+    wireframe_mesh_pipeline_data_for_render_mesh(
+      @render_mesh.RenderMesh::new(vertex_count=3),
+      wireframe_phase_test_descriptor(),
+      view_key_bits=0UL,
+    ),
+  )
+  world.insert_resource(
+    WireframeRenderMeshPipelineDataCache::resource(),
+    pipeline_data_cache,
+  )
+  world.insert_resource(
+    Wireframe3dPipeline::resource(),
+    Wireframe3dPipeline::new(),
+  )
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
+  let mesh_slabs = WireframeMeshSlabCache::WireframeMeshSlabCache()
+  mesh_slabs.insert(33, WireframeMeshSlabs::new(2, index_slab_id=Some(5)))
+  world.insert_resource(WireframeMeshSlabCache::resource(), mesh_slabs)
+  world.insert_resource(
+    Wireframe3dDrawFunctions::resource(),
+    Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
+  )
+
+  specialize_wireframes_system(world)
+  queue_wireframes_system(world)
+
+  let pipeline_cache = world
+    .get_resource(SpecializedWireframePipelineCache::resource())
+    .unwrap()
+  let phases = world.get_resource(Wireframe3dPhases::resource()).unwrap()
+  let phase = phases.phase(view).unwrap()
+  debug_inspect(
+    pipeline_cache.pipeline_id(view, main_entity).map(fn(value) { value.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(phase.len(), content="1")
+  let item = phase.items[0]
+  debug_inspect(item.main_entity() == main_entity, content="true")
+  debug_inspect(item.draw_function().id(), content="0")
+  debug_inspect(item.batch_set_key().slabs().index_slab_id(), content="Some(5)")
+  debug_inspect(item.batch_set_key().mesh_asset_id(), content="None")
+  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+}
+
+///|
 test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
   let world = @ecs.World::new()
   let active_camera = world.spawn()

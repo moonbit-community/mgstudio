@@ -330,6 +330,16 @@ let wireframe_dirty_specialization_set_check_for_removals : @app.SystemSet = @ap
 )
 
 ///|
+let wireframe_render_set_specialize : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.specialize",
+)
+
+///|
+let wireframe_render_set_queue : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.queue",
+)
+
+///|
 pub struct WireframePlugin {}
 
 ///|
@@ -903,6 +913,39 @@ fn extract_wireframe_materials_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render_wireframe_assets_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[RenderWireframeAssets] {
+  if world.get_resource(RenderWireframeAssets::resource()) is None {
+    world.insert_resource(
+      RenderWireframeAssets::resource(),
+      RenderWireframeAssets::RenderWireframeAssets(),
+    )
+  }
+  match world.get_resource_mut(RenderWireframeAssets::resource()) {
+    Some(assets) => assets
+    None => abort("Missing RenderWireframeAssets resource")
+  }
+}
+
+///|
+fn extract_wireframe_material_assets_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  guard source_world.get_resource(key) is Some(source_assets) else { return }
+  render_wireframe_assets_mut_or_init(world).modify(fn(render_assets) {
+    render_assets.clear()
+    for item in source_assets.iter() {
+      let (handle, material) = item
+      render_assets.insert(
+        handle.id(),
+        RenderWireframeMaterial::from_material(material),
+      )
+    }
+  })
+}
+
+///|
 fn dirty_wireframe_specializations_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[DirtyWireframeSpecializations] {
@@ -916,6 +959,194 @@ fn dirty_wireframe_specializations_mut_or_init(
     Some(value) => value
     None => abort("Missing DirtyWireframeSpecializations resource")
   }
+}
+
+///|
+fn wireframe_mesh_visibility_class() -> String {
+  ecs_key_mesh3d.id().to_string()
+}
+
+///|
+fn specialize_wireframes_system(world : @ecs.World) -> Unit {
+  let phases = match world.get_resource(Wireframe3dPhases::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let view_key_cache = match
+    world.get_resource(WireframeViewKeyCache::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let pending_wireframe_queues = match
+    world.get_resource(PendingWireframeQueues::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let specialized_wireframe_pipeline_cache = match
+    world.get_resource(SpecializedWireframePipelineCache::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let specialized_wireframe_mesh_pipelines = match
+    world.get_resource(SpecializedWireframeMeshPipelines::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_instances = match
+    world.get_resource(RenderWireframeInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let dirty_wireframe_specializations = match
+    world.get_resource(DirtyWireframeSpecializations::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_assets = match
+    world.get_resource(RenderWireframeAssets::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_mesh_pipeline_data_cache = match
+    world.get_resource(WireframeRenderMeshPipelineDataCache::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let pipeline = match world.get_resource(Wireframe3dPipeline::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let pipeline_cache = match
+    world.get_resource(@render.pipeline_cache_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  let live_views : Map[UInt64, Bool] = {}
+  let mesh_visibility_class = wireframe_mesh_visibility_class()
+  let view_query : @ecs.Query[
+    (@core.Entity, @ecs.Read[@render_visibility.RenderVisibleEntities]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! view_query.view(fn(_query_entity, data) {
+    let (retained_view_entity, visible_entities) = data
+    live_views.set(retained_view_entity.to_bits(), true)
+    guard phases.contains(retained_view_entity) else { return }
+    guard view_key_cache.get(retained_view_entity) is Some(_) else { return }
+    guard visible_entities.value().get(mesh_visibility_class)
+      is Some(render_visible_mesh_entities) else {
+      return
+    }
+    let view_pending_wireframe_queues = pending_wireframe_queues.prepare_for_new_frame(
+      retained_view_entity,
+    )
+    specialize_wireframe_phase_items(
+      retained_view_entity,
+      render_visible_mesh_entities,
+      view_pending_wireframe_queues,
+      specialized_wireframe_pipeline_cache,
+      specialized_wireframe_mesh_pipelines,
+      render_wireframe_instances,
+      dirty_wireframe_specializations,
+      render_wireframe_assets.as_map(),
+      render_mesh_instances,
+      render_mesh_pipeline_data_cache.view_data(retained_view_entity),
+      pipeline,
+      pipeline_cache,
+    )
+  })
+  pending_wireframe_queues.expire_stale_views(live_views)
+  specialized_wireframe_pipeline_cache.expire_stale_views(live_views)
+  view_key_cache.retain_live_views(live_views)
+  render_mesh_pipeline_data_cache.retain_live_views(live_views)
+}
+
+///|
+fn queue_wireframes_system(world : @ecs.World) -> Unit {
+  let phases = match world.get_resource(Wireframe3dPhases::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let pending_wireframe_queues = match
+    world.get_resource(PendingWireframeQueues::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let specialized_wireframe_pipeline_cache = match
+    world.get_resource(SpecializedWireframePipelineCache::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_instances = match
+    world.get_resource(RenderWireframeInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let dirty_wireframe_specializations = match
+    world.get_resource(DirtyWireframeSpecializations::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_wireframe_assets = match
+    world.get_resource(RenderWireframeAssets::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let mesh_slabs = match
+    world.get_resource(WireframeMeshSlabCache::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let draw_functions = match
+    world.get_resource(Wireframe3dDrawFunctions::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let gpu_preprocessing_support = wireframe_3d_gpu_preprocessing_support(world)
+  let mesh_visibility_class = wireframe_mesh_visibility_class()
+  let view_query : @ecs.Query[
+    (@core.Entity, @ecs.Read[@render_visibility.RenderVisibleEntities]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! view_query.view(fn(_query_entity, data) {
+    let (retained_view_entity, visible_entities) = data
+    guard phases.phase(retained_view_entity) is Some(wireframe_phase) else {
+      return
+    }
+    guard pending_wireframe_queues.contains_view(retained_view_entity) else {
+      return
+    }
+    guard visible_entities.value().get(mesh_visibility_class)
+      is Some(render_mesh_visible_entities) else {
+      return
+    }
+    let view_pending_wireframe_queues = pending_wireframe_queues.view_or_insert(
+      retained_view_entity,
+    )
+    queue_wireframe_phase_items(
+      wireframe_phase,
+      retained_view_entity,
+      render_mesh_visible_entities,
+      view_pending_wireframe_queues,
+      specialized_wireframe_pipeline_cache,
+      render_wireframe_instances,
+      dirty_wireframe_specializations,
+      render_wireframe_assets.as_map(),
+      render_mesh_instances,
+      mesh_slabs.as_map(),
+      draw_functions,
+      gpu_preprocessing_support,
+    )
+  })
 }
 
 ///|
@@ -1067,6 +1298,11 @@ fn configure_wireframe_render_sub_app(
   )
   wireframe_init_render_resource_if_missing(
     world,
+    RenderWireframeAssets::resource(),
+    fn() { RenderWireframeAssets::RenderWireframeAssets() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
     WireframeWideBindGroups::resource(),
     fn() { WireframeWideBindGroups::WireframeWideBindGroups() },
   )
@@ -1090,8 +1326,34 @@ fn configure_wireframe_render_sub_app(
     Wireframe3dPhases::resource(),
     fn() { Wireframe3dPhases::Wireframe3dPhases() },
   )
+  wireframe_init_render_resource_if_missing(
+    world,
+    WireframeViewKeyCache::resource(),
+    fn() { WireframeViewKeyCache::WireframeViewKeyCache() },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    WireframeRenderMeshPipelineDataCache::resource(),
+    fn() {
+      WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    WireframeMeshSlabCache::resource(),
+    fn() { WireframeMeshSlabCache::WireframeMeshSlabCache() },
+  )
   let stage = @render.render_schedule_stage()
   sub_app
+  .configure_sets(
+    stage,
+    wireframe_render_set_specialize,
+    before=[wireframe_render_set_queue],
+    in_sets=[render3d_set_queue_meshes],
+  )
+  .configure_sets(stage, wireframe_render_set_queue, in_sets=[
+    render3d_set_queue_meshes,
+  ])
   .configure_sets(
     stage,
     wireframe_dirty_specialization_set_clear,
@@ -1134,6 +1396,22 @@ fn configure_wireframe_render_sub_app(
   .add_systems(
     stage,
     @app.system(extract_wireframe_materials_system).in_set(render3d_set_extract),
+  )
+  .add_systems(
+    stage,
+    @app.system(extract_wireframe_material_assets_system).in_set(
+      render3d_set_extract,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(specialize_wireframes_system).in_set(
+      wireframe_render_set_specialize,
+    ),
+  )
+  .add_systems(
+    stage,
+    @app.system(queue_wireframes_system).in_set(wireframe_render_set_queue),
   )
 }
 
