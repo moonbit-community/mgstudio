@@ -1679,3 +1679,35 @@ test "pbr: wireframe 3d render node plans nonempty phase pass" {
   debug_inspect(plan.item_count(), content="1")
   debug_inspect(plan.viewport_enabled(), content="true")
 }
+
+///|
+test "pbr: wireframe 3d render node is scheduled between main pass and early postprocess" {
+  let log : Array[String] = []
+  let graph_stage = @render.RenderGraph::schedule()
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(graph_stage))
+    .add_schedule(@render.RenderGraph::base_schedule())
+  let render_sub_app = configure_wireframe_render_sub_app(render_sub_app)
+    .add_systems(
+      graph_stage,
+      @app.system(fn(_world : @ecs.World) { log.push("main") }).in_set(
+        @core_pipeline.core3d_system_set_main_pass(),
+      ),
+    )
+    .add_systems(
+      graph_stage,
+      @app.system(fn(_world : @ecs.World) { log.push("wireframe") }).in_set(
+        wireframe_render_set_node,
+      ),
+    )
+    .add_systems(
+      graph_stage,
+      @app.system(fn(_world : @ecs.World) { log.push("early_post") }).in_set(
+        @core_pipeline.core3d_system_set_early_post_process(),
+      ),
+    )
+
+  ignore(render_sub_app.update())
+
+  debug_inspect(log.join(","), content="\"main,wireframe,early_post\"")
+}

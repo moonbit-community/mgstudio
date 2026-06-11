@@ -1600,6 +1600,17 @@ pub fn Wireframe3dPhases::phase(
 }
 
 ///|
+pub fn Wireframe3dPhases::retained_view_entities(
+  self : Wireframe3dPhases,
+) -> Array[@core.Entity] {
+  let result : Array[@core.Entity] = []
+  for view_bits, _phase in self.views {
+    result.push(@core.Entity::from_bits(view_bits))
+  }
+  result
+}
+
+///|
 pub struct WireframeViewKeyCache {
   views : Map[UInt64, UInt64]
 }

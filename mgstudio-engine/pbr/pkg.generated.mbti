@@ -1899,6 +1899,7 @@ pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
 pub fn Wireframe3dPhases::prepare_for_new_frame(Self, @core.Entity, @batching.GpuPreprocessingMode) -> Unit
 pub fn Wireframe3dPhases::remove(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
 pub fn Wireframe3dPhases::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
+pub fn Wireframe3dPhases::retained_view_entities(Self) -> Array[@core.Entity]
 pub impl @app.Resource for Wireframe3dPhases
 
 pub struct Wireframe3dPipeline {

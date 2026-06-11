@@ -350,6 +350,11 @@ let wireframe_render_set_queue : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let wireframe_render_set_node : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.wireframe.node",
+)
+
+///|
 pub struct WireframePlugin {}
 
 ///|
@@ -1417,6 +1422,20 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
+  guard world.get_resource(Wireframe3dPhases::resource()) is Some(phases) else {
+    return
+  }
+  for retained_view_entity in phases.retained_view_entities() {
+    ignore(
+      wireframe_3d_render_node_plan(phases, retained_view_entity, false) catch {
+        _ => return
+      },
+    )
+  }
+}
+
+///|
 fn wireframe_3d_phases_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Wireframe3dPhases] {
@@ -1606,7 +1625,14 @@ fn configure_wireframe_render_sub_app(
     },
   )
   let stage = @render.render_schedule_stage()
+  let graph_stage = @render.RenderGraph::schedule()
   sub_app
+  .configure_sets(
+    graph_stage,
+    wireframe_render_set_node,
+    after=[@core_pipeline.core3d_system_set_main_pass()],
+    before=[@core_pipeline.core3d_system_set_early_post_process()],
+  )
   .configure_sets(stage, wireframe_render_set_prepare_view_keys, in_sets=[
     render3d_set_queue,
   ])
@@ -1701,6 +1727,12 @@ fn configure_wireframe_render_sub_app(
   .add_systems(
     stage,
     @app.system(queue_wireframes_system).in_set(wireframe_render_set_queue),
+  )
+  .add_systems(
+    graph_stage,
+    @app.system(wireframe_3d_render_node_system).in_set(
+      wireframe_render_set_node,
+    ),
   )
 }
 
