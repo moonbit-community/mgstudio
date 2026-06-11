@@ -1010,6 +1010,26 @@ pub fn DirtyWireframeSpecializations::to_despecialize(
 }
 
 ///|
+pub fn despecialize_wireframe_view_cache(
+  specialized_material_pipeline_cache : SpecializedWireframePipelineCache,
+  dirty_wireframe_specializations : DirtyWireframeSpecializations,
+  retained_view_entity : @core.Entity,
+) -> Unit {
+  if dirty_wireframe_specializations.must_wipe_specializations_for_view(
+      retained_view_entity,
+    ) {
+    specialized_material_pipeline_cache.clear_view(retained_view_entity)
+  } else {
+    for renderable_entity in dirty_wireframe_specializations.to_despecialize() {
+      specialized_material_pipeline_cache.remove_from_view(
+        retained_view_entity, renderable_entity,
+      )
+      |> ignore
+    }
+  }
+}
+
+///|
 pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
   items : Array[Wireframe3d]

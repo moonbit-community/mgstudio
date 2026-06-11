@@ -452,6 +452,35 @@ test "pbr: dirty wireframe specializations expose Bevy despecialize helpers" {
 }
 
 ///|
+test "pbr: despecialize_wireframe_view_cache follows Bevy dirty removal branch" {
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let dirty = DirtyWireframeSpecializations::DirtyWireframeSpecializations()
+  let view = @core.Entity::new(10, 1)
+  let changed_entity = @core.Entity::new(11, 1)
+  let removed_entity = @core.Entity::new(12, 1)
+  let stable_entity = @core.Entity::new(13, 1)
+  cache.insert(view, changed_entity, @material.CachedRenderPipelineId::new(1UL))
+  cache.insert(view, removed_entity, @material.CachedRenderPipelineId::new(2UL))
+  cache.insert(view, stable_entity, @material.CachedRenderPipelineId::new(3UL))
+  dirty.insert_changed(changed_entity)
+  dirty.insert_removed(removed_entity)
+
+  despecialize_wireframe_view_cache(cache, dirty, view)
+
+  debug_inspect(cache.pipeline_id(view, changed_entity) is None, content="true")
+  debug_inspect(cache.pipeline_id(view, removed_entity) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(view, stable_entity).map(fn(id) { id.id() }),
+    content="Some(3)",
+  )
+
+  dirty.insert_view(view)
+  despecialize_wireframe_view_cache(cache, dirty, view)
+
+  debug_inspect(cache.pipeline_id(view, stable_entity) is None, content="true")
+}
+
+///|
 test "pbr: wireframe dirty extraction writes changed and removed render tables" {
   let world = @ecs.World::new()
   let changed_entity = @core.Entity::new(3, 1)

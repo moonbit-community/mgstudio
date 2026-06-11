@@ -153,6 +153,8 @@ pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn despecialize_wireframe_view_cache(SpecializedWireframePipelineCache, DirtyWireframeSpecializations, @core.Entity) -> Unit
+
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
