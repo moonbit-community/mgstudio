@@ -57,6 +57,14 @@ test "pipeline cache: process_queue exposes descriptors and waiting ids" {
   debug_inspect(cache.pipeline_count(), content="2")
   debug_inspect(cache.queued_pipeline_count(), content="0")
   debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
+  debug_inspect(
+    cache.get_render_pipeline_state(render_id).is_creating(),
+    content="true",
+  )
+  debug_inspect(
+    cache.get_compute_pipeline_state(compute_id).is_creating(),
+    content="true",
+  )
   let render_descriptor = cache.get_render_pipeline_descriptor(render_id)
   debug_inspect(render_descriptor.label, content="Some(\"render\")")
   let compute_descriptor = cache.get_compute_pipeline_descriptor(compute_id)

@@ -237,7 +237,10 @@ pub fn PipelineCache::get_compute_pipeline(
 pub fn PipelineCache::process_queue(self : PipelineCache) -> Unit {
   for new_pipeline in self.new_pipelines {
     let id = self.pipelines.length().to_uint64()
-    self.pipelines.push(new_pipeline)
+    self.pipelines.push(CachedPipeline::{
+      descriptor: new_pipeline.descriptor,
+      state: CachedPipelineState::Creating,
+    })
     self.waiting_pipelines.push(id)
   }
   self.new_pipelines.clear()
