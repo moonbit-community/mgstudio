@@ -290,6 +290,8 @@ pub fn window_scale_factor() -> Float
 
 pub fn window_scale_factor_for(@ecs.World, WindowRef) -> Float
 
+pub let window_screenshot_trigger_system_set : String
+
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
 
 pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit

@@ -145,6 +145,7 @@ pub fn ci_testing_plugin_with(
     @app.Update,
     @app.system(ci_testing_send_events_system)
     .in_set(ci_testing_event_sender_system_set)
+    .before(@window.window_screenshot_trigger_system_set)
     .before(@window.window_close_when_requested_system_set)
     .before(@app.terminal_ctrl_c_exit_on_flag_system_set),
   )

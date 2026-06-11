@@ -41,3 +41,36 @@ test "ci testing: MoveCamera inserts CameraMovement component" {
     content="true",
   )
 }
+
+///|
+test "ci testing: send_events runs before screenshot trigger set" {
+  let observed : Array[String] = []
+  let app = @app.App::new(@ecs.World::new())
+    .insert_world_resource(
+      ci_testing_config_resource_key,
+      CiTestingConfig::CiTestingConfig().with_event(0, Custom("same-frame")),
+    )
+    .insert_world_resource(
+      ci_testing_runtime_state_resource_key,
+      CiTestingRuntimeState::CiTestingRuntimeState(),
+    )
+    .add_message(ci_testing_custom_event_message_key)
+    .add_systems(
+      @app.Update,
+      @app.system(ci_testing_send_events_system)
+      .in_set(ci_testing_event_sender_system_set)
+      .before(@window.window_screenshot_trigger_system_set),
+    )
+    .add_systems(
+      @app.Update,
+      @app.system_config_param(fn(
+        reader : @ecs.MessageReader[CiTestingCustomEvent],
+      ) {
+        for event in reader.read() {
+          observed.push(event.value())
+        }
+      }).in_set(@window.window_screenshot_trigger_system_set),
+    )
+  let _app = app.run_once()
+  debug_inspect(observed, content="[\"same-frame\"]")
+}
