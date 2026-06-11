@@ -22,7 +22,7 @@ if [[ $# -ne 2 ]]; then
 fi
 
 PACKAGE="$1"
-OUTPUT_PNG="$2"
+FINAL_OUTPUT_PNG="$2"
 RUN_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS:-60}"
 CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-120}"
 CAPTURE_RETRY_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_RETRY_DELAY_FRAMES:-1}"
@@ -36,10 +36,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_DIR="$(cd "${ENGINE_DIR}/.." && pwd)"
 
-mkdir -p "$(dirname "${OUTPUT_PNG}")"
-RUN_LOG="${OUTPUT_PNG%.png}.run.log"
-META_JSON="${OUTPUT_PNG%.png}.meta.json"
-RGBA8_BLOB="${OUTPUT_PNG%.png}.rgba8.blob"
+mkdir -p "$(dirname "${FINAL_OUTPUT_PNG}")"
+OUTPUT_PNG="${FINAL_OUTPUT_PNG%.png}.tmp.$$.png"
+RUN_LOG="${FINAL_OUTPUT_PNG%.png}.run.log"
+META_JSON="${FINAL_OUTPUT_PNG%.png}.meta.json"
+RGBA8_BLOB="${FINAL_OUTPUT_PNG%.png}.rgba8.blob"
 
 echo "[capture] moon build --target native --release ${PACKAGE}"
 moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
@@ -136,6 +137,7 @@ wait_for_capture() {
 
 cleanup() {
   stop_app
+  rm -f "${OUTPUT_PNG}"
 }
 trap cleanup EXIT
 
@@ -163,7 +165,7 @@ fi
 if [[ "${blob_ready}" -eq 1 ]]; then
   if [[ "${capture_png_ready}" -eq 1 && ! -s "${RGBA8_BLOB}" ]]; then
     capture_mode="window-screenshot-png"
-    capture_source="${OUTPUT_PNG}"
+    capture_source="${FINAL_OUTPUT_PNG}"
   elif ! command -v python3 >/dev/null 2>&1; then
     echo "[capture] python3 missing; cannot decode engine-native rgba8 blob" >&2
     exit 3
@@ -228,14 +230,16 @@ if [[ "${blob_ready}" -eq 0 ]]; then
 fi
 
 if [[ ! -s "${OUTPUT_PNG}" ]]; then
-  echo "[capture] output image missing or empty: ${OUTPUT_PNG}" >&2
+  echo "[capture] output image missing or empty: ${FINAL_OUTPUT_PNG}" >&2
   exit 5
 fi
+
+mv -f "${OUTPUT_PNG}" "${FINAL_OUTPUT_PNG}"
 
 cat >"${META_JSON}" <<EOF
 {
   "package": "${PACKAGE}",
-  "output_png": "${OUTPUT_PNG}",
+  "output_png": "${FINAL_OUTPUT_PNG}",
   "run_log": "${RUN_LOG}",
   "run_timeout_seconds": ${RUN_TIMEOUT_SECONDS},
   "capture_delay_frames": ${CAPTURE_DELAY_FRAMES},
@@ -248,4 +252,4 @@ cat >"${META_JSON}" <<EOF
 }
 EOF
 
-echo "[capture] done: ${OUTPUT_PNG}"
+echo "[capture] done: ${FINAL_OUTPUT_PNG}"
