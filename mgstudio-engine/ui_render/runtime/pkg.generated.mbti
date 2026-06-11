@@ -1,0 +1,175 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ui_render/runtime"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn clear_extracted_ui_box_shadows(@ecs.World) -> Unit
+
+pub fn clear_extracted_ui_nodes(@ecs.World) -> Unit
+
+pub fn clear_extracted_ui_rects(@ecs.World) -> Unit
+
+pub fn clear_extracted_ui_sprites(@ecs.World) -> Unit
+
+pub fn clear_extracted_ui_texture_slices(@ecs.World) -> Unit
+
+pub fn ensure_extracted_ui_nodes_resource(@ecs.World) -> Unit
+
+pub let extracted_ui_nodes_key : @ecs.ResourceKey[ExtractedUiNodes]
+
+pub fn extracted_ui_nodes_or_empty(@ecs.World) -> ExtractedUiNodes
+
+pub fn push_extracted_ui_box_shadow(@ecs.World, @core.Entity, @core.Entity?, UiBoxShadowDrawPayload) -> Unit
+
+pub fn push_extracted_ui_rect(@ecs.World, @core.Entity, @core.Entity?, UiRectDrawPayload) -> Unit
+
+pub fn push_extracted_ui_sprite(@ecs.World, @core.Entity?, UiSpriteDrawPayload) -> Unit
+
+pub fn push_extracted_ui_sprite_slice_batch(@ecs.World, @core.Entity?, UiSpriteSliceBatchDrawPayload) -> Unit
+
+pub fn push_extracted_ui_texture_slice(@ecs.World, @core.Entity, @core.Entity?, UiTextureSliceDrawPayload) -> Unit
+
+pub fn ui_overlay_matches_camera(@core.Entity, @core.Entity) -> Bool
+
+pub fn ui_overlay_target_camera(@core.Entity?) -> @core.Entity
+
+// Errors
+
+// Types and methods
+pub(all) struct ExtractedUiBoxShadow {
+  entity : @Milky2018/mgstudio/sprite_render/mesh2d/runtime.PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiBoxShadowDrawPayload
+}
+
+pub(all) struct ExtractedUiNodes {
+  sprites : Array[ExtractedUiSprite]
+  sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch]
+  rects : Array[ExtractedUiRect]
+  box_shadows : Array[ExtractedUiBoxShadow]
+  texture_slices : Array[ExtractedUiTextureSlice]
+}
+pub fn ExtractedUiNodes::new() -> Self
+pub impl @app.Resource for ExtractedUiNodes
+
+pub(all) struct ExtractedUiRect {
+  entity : @Milky2018/mgstudio/sprite_render/mesh2d/runtime.PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiRectDrawPayload
+}
+
+pub(all) struct ExtractedUiSprite {
+  entity : @Milky2018/mgstudio/sprite_render/mesh2d/runtime.PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiSpriteDrawPayload
+}
+
+pub(all) struct ExtractedUiSpriteSliceBatch {
+  entity : @Milky2018/mgstudio/sprite_render/mesh2d/runtime.PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiSpriteSliceBatchDrawPayload
+}
+
+pub(all) struct ExtractedUiTextureSlice {
+  entity : @Milky2018/mgstudio/sprite_render/mesh2d/runtime.PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiTextureSliceDrawPayload
+}
+
+pub(all) struct UiBoxShadowDrawPayload {
+  transform : @transform.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]
+  layers : @render_layers.RenderLayers
+  size : @math.Vec2
+  radius : UiCornerRadii
+  blur : Float
+  samples : Int
+  scissor : @math.Rect?
+}
+
+pub(all) struct UiCornerRadii {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+} derive(ToJson, @json.FromJson)
+pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
+pub fn UiCornerRadii::zero() -> Self
+
+pub(all) struct UiRectDrawPayload {
+  transform : @transform.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]
+  layers : @render_layers.RenderLayers
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  scissor : @math.Rect?
+  flags : Int
+  radius : UiCornerRadii
+  border : @sprite.BorderRect
+}
+
+pub(all) struct UiSpriteDrawPayload {
+  transform : @transform.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]
+  layers : @render_layers.RenderLayers
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  scissor : @math.Rect?
+}
+
+pub(all) struct UiSpriteSliceBatchDrawPayload {
+  rotation : Float
+  draw_scale : @math.Vec2
+  z : Float
+  color : @color.Color
+  cull_center : @math.Vec2
+  cull_half_size : @math.Vec2
+  texture : @asset.Handle[@image.Image]
+  layers : @render_layers.RenderLayers
+  scissor : @math.Rect?
+  slices_xy_uv : Array[Float]
+}
+
+pub(all) struct UiTextureSliceDrawPayload {
+  transform : @transform.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]
+  layers : @render_layers.RenderLayers
+  scissor : @math.Rect?
+  texture_slices : @math.Vec4
+  target_slices : @math.Vec4
+  repeat : @math.Vec4
+  atlas_rect : @math.Vec4
+}
+
+// Type aliases
+pub using @sprite {type BorderRect}
+
+pub using @Milky2018/mgstudio/sprite_render/mesh2d/runtime {type PhaseEntityRef}
+
+// Traits
+

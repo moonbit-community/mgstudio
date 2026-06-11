@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui_render/runtime",
   "moonbitlang/core/json",
 }
 
@@ -32,13 +33,7 @@ pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
 pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
-pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
-
 pub fn render2d_clear_overlay_ui_sprites(@ecs.World) -> Unit
-
-pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
 
 pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
 
@@ -71,12 +66,6 @@ pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
 
 pub fn render2d_push_sprite_uv_scissor_slices_batch(@ecs.World, Array[OverlaySpriteUvScissorSlices]) -> Unit
-
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
-
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, Int, UiCornerRadii, @sprite.BorderRect) -> Unit
-
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @render_layers.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
 
@@ -180,17 +169,10 @@ pub struct SceneCullContext {
 pub fn SceneCullContext::new(Float, Float, Float, Float, Float, Float) -> Self
 pub fn SceneCullContext::values(Self) -> (Float, Float, Float, Float, Float, Float)
 
-pub struct UiCornerRadii {
-  top_left : Float
-  top_right : Float
-  bottom_right : Float
-  bottom_left : Float
-} derive(ToJson, @json.FromJson)
-pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
-pub fn UiCornerRadii::zero() -> Self
-
 // Type aliases
 pub using @sprite {type BorderRect}
+
+pub using @runtime {type UiCornerRadii}
 
 // Traits
 

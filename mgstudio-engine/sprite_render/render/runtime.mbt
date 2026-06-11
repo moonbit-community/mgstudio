@@ -353,27 +353,7 @@ fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
 
 ///|
 /// UI corner radii (top-left, top-right, bottom-right, bottom-left) in logical pixels.
-pub struct UiCornerRadii {
-  top_left : Float
-  top_right : Float
-  bottom_right : Float
-  bottom_left : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiCornerRadii::new(
-  top_left : Float,
-  top_right : Float,
-  bottom_right : Float,
-  bottom_left : Float,
-) -> UiCornerRadii {
-  UiCornerRadii::{ top_left, top_right, bottom_right, bottom_left }
-}
-
-///|
-pub fn UiCornerRadii::zero() -> UiCornerRadii {
-  UiCornerRadii::new(0.0F, 0.0F, 0.0F, 0.0F)
-}
+pub type UiCornerRadii = @ui_render_runtime.UiCornerRadii
 
 ///|
 type Mesh2d = @mesh.Mesh2d
@@ -821,11 +801,7 @@ priv struct ExtractedComputedSpriteSlices {
 }
 
 ///|
-priv struct ExtractedUiSprite {
-  entity : PhaseEntityRef
-  extracted_camera_entity : @core.Entity
-  payload : SpriteDrawPayload
-}
+type ExtractedUiSprite = @ui_render_runtime.ExtractedUiSprite
 
 ///|
 priv struct ExtractedSpriteSliceBatch {
@@ -834,88 +810,19 @@ priv struct ExtractedSpriteSliceBatch {
 }
 
 ///|
-priv struct ExtractedUiSpriteSliceBatch {
-  entity : PhaseEntityRef
-  extracted_camera_entity : @core.Entity
-  payload : SpriteSliceBatchDrawPayload
-}
+type ExtractedUiSpriteSliceBatch = @ui_render_runtime.ExtractedUiSpriteSliceBatch
 
 ///|
-priv struct UiRectDrawPayload {
-  transform : @transform.Transform
-  anchor_offset : @math.Vec2
-  draw_scale : @math.Vec2
-  color : @color.Color
-  texture : @asset.Handle[@asset.Image]
-  layers : RenderLayers
-  uv_min : @math.Vec2
-  uv_max : @math.Vec2
-  scissor : @math.Rect?
-  flags : Int
-  radius : UiCornerRadii
-  border : BorderRect
-}
+type UiRectDrawPayload = @ui_render_runtime.UiRectDrawPayload
 
 ///|
-priv struct ExtractedUiRect {
-  entity : PhaseEntityRef
-  extracted_camera_entity : @core.Entity
-  payload : UiRectDrawPayload
-}
+type ExtractedUiRect = @ui_render_runtime.ExtractedUiRect
 
 ///|
-priv struct UiBoxShadowDrawPayload {
-  transform : @transform.Transform
-  anchor_offset : @math.Vec2
-  // Full geometry bounds (shadow size + 6*blur), in world units.
-  draw_scale : @math.Vec2
-  color : @color.Color
-  // Dummy texture binding (pipeline shares sprite/ui bind group layout).
-  texture : @asset.Handle[@asset.Image]
-  layers : RenderLayers
-  // Inner shadow size (node size + spread), in world units.
-  size : @math.Vec2
-  // Corner radii: top-left, top-right, bottom-right, bottom-left (world units).
-  radius : UiCornerRadii
-  // Blur radius (world units).
-  blur : Float
-  // Shadow samples (host shader integration steps).
-  samples : Int
-  scissor : @math.Rect?
-}
+type ExtractedUiBoxShadow = @ui_render_runtime.ExtractedUiBoxShadow
 
 ///|
-priv struct ExtractedUiBoxShadow {
-  entity : PhaseEntityRef
-  extracted_camera_entity : @core.Entity
-  payload : UiBoxShadowDrawPayload
-}
-
-///|
-priv struct UiTextureSliceDrawPayload {
-  transform : @transform.Transform
-  anchor_offset : @math.Vec2
-  draw_scale : @math.Vec2
-  color : @color.Color
-  texture : @asset.Handle[@asset.Image]
-  layers : RenderLayers
-  scissor : @math.Rect?
-  // Normalized texture slice dividing lines (left, top, right, bottom).
-  texture_slices : @math.Vec4
-  // Normalized target slice dividing lines (left, top, right, bottom).
-  target_slices : @math.Vec4
-  // Repeat factors (side_x, side_y, center_x, center_y).
-  repeat : @math.Vec4
-  // Normalized atlas rect (left, top, right, bottom).
-  atlas_rect : @math.Vec4
-}
-
-///|
-priv struct ExtractedUiTextureSlice {
-  entity : PhaseEntityRef
-  extracted_camera_entity : @core.Entity
-  payload : UiTextureSliceDrawPayload
-}
+type ExtractedUiTextureSlice = @ui_render_runtime.ExtractedUiTextureSlice
 
 ///|
 priv struct ExtractedCamera2d {
@@ -1027,11 +934,6 @@ struct RenderState {
   sprite_slice_batches : Array[ExtractedComputedSpriteSlices]
   extra_sprites : Array[ExtractedSprite]
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch]
-  extra_ui_sprites : Array[ExtractedUiSprite]
-  extra_ui_sprite_slice_batches : Array[ExtractedUiSpriteSliceBatch]
-  extra_ui_rects : Array[ExtractedUiRect]
-  extra_ui_box_shadows : Array[ExtractedUiBoxShadow]
-  extra_ui_texture_slices : Array[ExtractedUiTextureSlice]
   cameras : Array[ExtractedCamera2d]
   meshes : Array[ExtractedMesh2d]
   render_targets : Array[RuntimeRenderTargetInfo]
@@ -1071,11 +973,6 @@ fn RenderState::new() -> RenderState {
     sprite_slice_batches: [],
     extra_sprites: [],
     extra_sprite_slice_batches: [],
-    extra_ui_sprites: [],
-    extra_ui_sprite_slice_batches: [],
-    extra_ui_rects: [],
-    extra_ui_box_shadows: [],
-    extra_ui_texture_slices: [],
     cameras: [],
     meshes: [],
     render_targets: [],
@@ -1484,13 +1381,21 @@ pub fn render2d_push_sprite_uv_scissor_batch(
       }
       match sprite.target_camera {
         Some(camera_entity) =>
-          rs.extra_ui_sprites.push(ExtractedUiSprite::{
-            entity: phase_entity_ref_placeholder(),
-            extracted_camera_entity: render2d_ui_overlay_target_camera(
-              Some(camera_entity),
-            ),
-            payload,
-          })
+          @ui_render_runtime.push_extracted_ui_sprite(
+            world,
+            Some(camera_entity),
+            @ui_render_runtime.UiSpriteDrawPayload::{
+              transform: payload.transform,
+              anchor_offset: payload.anchor_offset,
+              draw_scale: payload.draw_scale,
+              color: payload.color,
+              texture: payload.texture,
+              layers: payload.layers,
+              uv_min: payload.uv_min,
+              uv_max: payload.uv_max,
+              scissor: payload.scissor,
+            },
+          )
         None =>
           rs.extra_sprites.push(ExtractedSprite::{
             entity: phase_entity_ref_placeholder(),
@@ -1529,13 +1434,22 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
       }
       match batch.target_camera {
         Some(camera_entity) =>
-          rs.extra_ui_sprite_slice_batches.push(ExtractedUiSpriteSliceBatch::{
-            entity: phase_entity_ref_placeholder(),
-            extracted_camera_entity: render2d_ui_overlay_target_camera(
-              Some(camera_entity),
-            ),
-            payload,
-          })
+          @ui_render_runtime.push_extracted_ui_sprite_slice_batch(
+            world,
+            Some(camera_entity),
+            @ui_render_runtime.UiSpriteSliceBatchDrawPayload::{
+              rotation: payload.rotation,
+              draw_scale: payload.draw_scale,
+              z: payload.z,
+              color: payload.color,
+              cull_center: payload.cull_center,
+              cull_half_size: payload.cull_half_size,
+              texture: payload.texture,
+              layers: payload.layers,
+              scissor: payload.scissor,
+              slices_xy_uv: payload.slices_xy_uv,
+            },
+          )
         None =>
           rs.extra_sprite_slice_batches.push(ExtractedSpriteSliceBatch::{
             entity: phase_entity_ref_placeholder(),
@@ -1549,144 +1463,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
 
 ///|
 pub fn render2d_clear_overlay_ui_sprites(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) {
-    rs.extra_ui_sprites.clear()
-    rs.extra_ui_sprite_slice_batches.clear()
-  })
-  |> ignore
-}
-
-///|
-pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.extra_ui_rects.clear() }) |> ignore
-}
-
-///|
-pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.extra_ui_box_shadows.clear() })
-  |> ignore
-}
-
-///|
-pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) { rs.extra_ui_texture_slices.clear() })
-  |> ignore
-}
-
-///|
-pub fn render2d_push_ui_rect_uv_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-  color : @color.Color,
-  layers : RenderLayers,
-  scissor : @math.Rect?,
-  flags : Int,
-  radius : UiCornerRadii,
-  border : BorderRect,
-) -> Unit {
-  render_state_update(world, fn(rs) {
-    rs.extra_ui_rects.push(ExtractedUiRect::{
-      entity: phase_entity_ref_for_main(entity),
-      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
-      payload: UiRectDrawPayload::{
-        transform,
-        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-        draw_scale,
-        color,
-        texture,
-        layers,
-        uv_min,
-        uv_max,
-        scissor,
-        flags,
-        radius,
-        border,
-      },
-    })
-  })
-  |> ignore
-}
-
-///|
-pub fn render2d_push_ui_box_shadow_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  color : @color.Color,
-  layers : RenderLayers,
-  scissor : @math.Rect?,
-  size : @math.Vec2,
-  radius : UiCornerRadii,
-  blur : Float,
-  samples : Int,
-) -> Unit {
-  render_state_update(world, fn(rs) {
-    rs.extra_ui_box_shadows.push(ExtractedUiBoxShadow::{
-      entity: phase_entity_ref_for_main(entity),
-      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
-      payload: UiBoxShadowDrawPayload::{
-        transform,
-        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-        draw_scale,
-        color,
-        texture,
-        layers,
-        size,
-        radius,
-        blur,
-        samples,
-        scissor,
-      },
-    })
-  })
-  |> ignore
-}
-
-///|
-pub fn render2d_push_ui_texture_slice_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  color : @color.Color,
-  layers : RenderLayers,
-  scissor : @math.Rect?,
-  texture_slices : @math.Vec4,
-  target_slices : @math.Vec4,
-  repeat : @math.Vec4,
-  atlas_rect : @math.Vec4,
-) -> Unit {
-  render_state_update(world, fn(rs) {
-    rs.extra_ui_texture_slices.push(ExtractedUiTextureSlice::{
-      entity: phase_entity_ref_for_main(entity),
-      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
-      payload: UiTextureSliceDrawPayload::{
-        transform,
-        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-        draw_scale,
-        color,
-        texture,
-        layers,
-        scissor,
-        texture_slices,
-        target_slices,
-        repeat,
-        atlas_rect,
-      },
-    })
-  })
-  |> ignore
+  @ui_render_runtime.clear_extracted_ui_sprites(world)
 }
 
 ///|
@@ -1766,20 +1543,11 @@ fn render2d_same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
-fn render2d_ui_overlay_target_camera(camera : @core.Entity?) -> @core.Entity {
-  match camera {
-    Some(entity) => entity
-    None => @core.Entity::placeholder()
-  }
-}
-
-///|
 fn render2d_ui_overlay_matches_camera(
   target_camera : @core.Entity,
   camera_entity : @core.Entity,
 ) -> Bool {
-  !target_camera.is_placeholder() &&
-  render2d_same_entity(target_camera, camera_entity)
+  @ui_render_runtime.ui_overlay_matches_camera(target_camera, camera_entity)
 }
 
 ///|
@@ -2385,20 +2153,21 @@ fn render2d_extract_ui_only_cameras_ecs(
   world : @ecs.World,
   rs : RenderState,
 ) -> Unit {
+  let ui_nodes = @ui_render_runtime.extracted_ui_nodes_or_empty(world)
   let ui_cameras : Array[@core.Entity] = []
-  for item in rs.extra_ui_sprites {
+  for item in ui_nodes.sprites {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.extra_ui_sprite_slice_batches {
+  for item in ui_nodes.sprite_slice_batches {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.extra_ui_rects {
+  for item in ui_nodes.rects {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.extra_ui_box_shadows {
+  for item in ui_nodes.box_shadows {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
-  for item in rs.extra_ui_texture_slices {
+  for item in ui_nodes.texture_slices {
     render2d_push_ui_camera_entity(ui_cameras, item.extracted_camera_entity)
   }
   for entity in ui_cameras {
@@ -2672,6 +2441,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
   let color_material_instances = render_material2d_instances_or_empty(
     world, color_material_probe,
   )
+  let ui_nodes = @ui_render_runtime.extracted_ui_nodes_or_empty(world)
   render_state_update(world, fn(rs) {
     if !rs.draw_enabled {
       rs.queued_draw_item_counts.clear()
@@ -2704,11 +2474,11 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         rs.sprite_slice_batches,
         rs.extra_sprites,
         rs.extra_sprite_slice_batches,
-        rs.extra_ui_sprites,
-        rs.extra_ui_sprite_slice_batches,
-        rs.extra_ui_rects,
-        rs.extra_ui_box_shadows,
-        rs.extra_ui_texture_slices,
+        ui_nodes.sprites,
+        ui_nodes.sprite_slice_batches,
+        ui_nodes.rects,
+        ui_nodes.box_shadows,
+        ui_nodes.texture_slices,
         rs.meshes,
         color_prepared_materials,
         color_material_instances,
@@ -4091,6 +3861,19 @@ fn extracted_ui_rect_item(
 }
 
 ///|
+fn render2d_push_extracted_ui_rect_for_test(
+  world : @ecs.World,
+  item : ExtractedUiRect,
+) -> Unit {
+  @ui_render_runtime.push_extracted_ui_rect(
+    world,
+    item.entity.main_entity,
+    Some(item.extracted_camera_entity),
+    item.payload,
+  )
+}
+
+///|
 fn extracted_mesh2d_item(
   entity : @core.Entity,
   mesh_id : Int,
@@ -4409,6 +4192,7 @@ test "render2d: CAS alone uses Bevy postprocess source path" {
 test "render2d: queue counts keep overlay UI isolated per camera pass" {
   let world = @ecs.World::new()
   ensure_render_state_resource(world)
+  @ui_render_runtime.clear_extracted_ui_nodes(world)
   let layers = RenderLayers::RenderLayers()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
@@ -4460,49 +4244,46 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.prepared_camera_indices.clear()
     rs.prepared_camera_indices.push(0)
     rs.prepared_camera_indices.push(1)
-    rs.extra_ui_sprites.clear()
-    rs.extra_ui_sprite_slice_batches.clear()
-    rs.extra_ui_rects.clear()
-    rs.extra_ui_rects.push(
-      extracted_ui_rect_item(
-        @core.Entity::new(200, 0),
-        camera_a,
-        @transform.Transform::identity(),
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        @color.Color::white(),
-        @asset.Handle::new(3),
-        layers,
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        None,
-        0,
-        UiCornerRadii::zero(),
-        BorderRect::BorderRect(),
-      ),
-    )
-    rs.extra_ui_rects.push(
-      extracted_ui_rect_item(
-        @core.Entity::new(201, 0),
-        camera_b,
-        @transform.Transform::identity(),
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        @color.Color::white(),
-        @asset.Handle::new(4),
-        layers,
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        None,
-        0,
-        UiCornerRadii::zero(),
-        BorderRect::BorderRect(),
-      ),
-    )
-    rs.extra_ui_box_shadows.clear()
-    rs.extra_ui_texture_slices.clear()
   })
   |> ignore
+  render2d_push_extracted_ui_rect_for_test(
+    world,
+    extracted_ui_rect_item(
+      @core.Entity::new(200, 0),
+      camera_a,
+      @transform.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @color.Color::white(),
+      @asset.Handle::new(3),
+      layers,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+      0,
+      UiCornerRadii::zero(),
+      BorderRect::BorderRect(),
+    ),
+  )
+  render2d_push_extracted_ui_rect_for_test(
+    world,
+    extracted_ui_rect_item(
+      @core.Entity::new(201, 0),
+      camera_b,
+      @transform.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @color.Color::white(),
+      @asset.Handle::new(4),
+      layers,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+      0,
+      UiCornerRadii::zero(),
+      BorderRect::BorderRect(),
+    ),
+  )
 
   let compositing_space_ok = match render_state_ref(world) {
     Some(rs) =>
@@ -4529,6 +4310,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let world = @ecs.World::new()
   ensure_render_state_resource(world)
+  @ui_render_runtime.clear_extracted_ui_nodes(world)
   let layers = RenderLayers::RenderLayers()
   let camera = world.spawn_empty()
   try! (world.set_by_key(
@@ -4544,32 +4326,25 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
     @camera_compositing_space.CompositingSpace::Srgb,
   )
 
-  render_state_update(world, fn(rs) {
-    rs.extra_ui_sprites.clear()
-    rs.extra_ui_sprite_slice_batches.clear()
-    rs.extra_ui_rects.clear()
-    rs.extra_ui_rects.push(
-      extracted_ui_rect_item(
-        @core.Entity::new(300, 0),
-        camera,
-        @transform.Transform::identity(),
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        @color.Color::white(),
-        @asset.Handle::new(5),
-        layers,
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.Vec2::new(1.0F, 1.0F),
-        None,
-        0,
-        UiCornerRadii::zero(),
-        BorderRect::BorderRect(),
-      ),
-    )
-    rs.extra_ui_box_shadows.clear()
-    rs.extra_ui_texture_slices.clear()
-  })
-  |> ignore
+  render2d_push_extracted_ui_rect_for_test(
+    world,
+    extracted_ui_rect_item(
+      @core.Entity::new(300, 0),
+      camera,
+      @transform.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @color.Color::white(),
+      @asset.Handle::new(5),
+      layers,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+      0,
+      UiCornerRadii::zero(),
+      BorderRect::BorderRect(),
+    ),
+  )
 
   render_extract_system_ecs(world)
 
@@ -5119,6 +4894,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
   let color_material_pipeline = material2d_pipeline_or_default(
     world, color_material_probe,
   )
+  let ui_nodes = @ui_render_runtime.extracted_ui_nodes_or_empty(world)
   render_state_update(world, fn(rs) {
     if !rs.draw_enabled {
       render2d_runtime_state.diagnostic_prepared_camera_count = 0
@@ -5137,22 +4913,18 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       render2d_runtime_state.diagnostic_queued_draw_item_count = 0
       rs.extra_sprites.clear()
       rs.extra_sprite_slice_batches.clear()
-      rs.extra_ui_sprites.clear()
-      rs.extra_ui_sprite_slice_batches.clear()
-      rs.extra_ui_rects.clear()
-      rs.extra_ui_box_shadows.clear()
-      rs.extra_ui_texture_slices.clear()
+      @ui_render_runtime.clear_extracted_ui_nodes(world)
       return
     }
     let sprites = rs.sprites
     let sprite_slice_batches = rs.sprite_slice_batches
     let extra_sprites = rs.extra_sprites
     let extra_sprite_slice_batches = rs.extra_sprite_slice_batches
-    let extra_ui_sprites = rs.extra_ui_sprites
-    let extra_ui_sprite_slice_batches = rs.extra_ui_sprite_slice_batches
-    let extra_ui_rects = rs.extra_ui_rects
-    let extra_ui_box_shadows = rs.extra_ui_box_shadows
-    let extra_ui_texture_slices = rs.extra_ui_texture_slices
+    let extra_ui_sprites = ui_nodes.sprites
+    let extra_ui_sprite_slice_batches = ui_nodes.sprite_slice_batches
+    let extra_ui_rects = ui_nodes.rects
+    let extra_ui_box_shadows = ui_nodes.box_shadows
+    let extra_ui_texture_slices = ui_nodes.texture_slices
     let meshes = rs.meshes
     fn int_from_f32_floor_nonneg(x : Float) -> Int {
       if x <= 0.0F {
@@ -5451,6 +5223,39 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         fn sprite_payload_append_slice_xy_uv(
           out : Array[Float],
           payload : SpriteDrawPayload,
+        ) -> Unit {
+          let transform = payload.transform
+          out.push(transform.translation.x + payload.anchor_offset.x)
+          out.push(transform.translation.y + payload.anchor_offset.y)
+          out.push(payload.uv_min.x)
+          out.push(payload.uv_min.y)
+          out.push(payload.uv_max.x)
+          out.push(payload.uv_max.y)
+        }
+
+        fn ui_sprite_payload_can_merge(
+          lhs : @ui_render_runtime.UiSpriteDrawPayload,
+          rhs : @ui_render_runtime.UiSpriteDrawPayload,
+          lhs_rotation : Float,
+          rhs_rotation : Float,
+          lhs_z : Float,
+          rhs_z : Float,
+        ) -> Bool {
+          lhs.texture.id() == rhs.texture.id() &&
+          lhs_rotation == rhs_rotation &&
+          lhs.draw_scale.x == rhs.draw_scale.x &&
+          lhs.draw_scale.y == rhs.draw_scale.y &&
+          lhs_z == rhs_z &&
+          lhs.color.r == rhs.color.r &&
+          lhs.color.g == rhs.color.g &&
+          lhs.color.b == rhs.color.b &&
+          lhs.color.a == rhs.color.a &&
+          sprite_slice_batch_scissor_eq(lhs.scissor, rhs.scissor)
+        }
+
+        fn ui_sprite_payload_append_slice_xy_uv(
+          out : Array[Float],
+          payload : @ui_render_runtime.UiSpriteDrawPayload,
         ) -> Unit {
           let transform = payload.transform
           out.push(transform.translation.x + payload.anchor_offset.x)
@@ -5896,7 +5701,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                     UiSpriteExtra(next_i) => {
                       let next_sprite = extra_ui_sprites[next_i].payload
                       let next_rotation = next_sprite.transform.rotation_z()
-                      if !sprite_payload_can_merge(
+                      if !ui_sprite_payload_can_merge(
                           first_sprite,
                           next_sprite,
                           first_rotation,
@@ -5915,12 +5720,12 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 merged_slice_xy_uv.reserve_capacity(
                   (merged_end - item_index) * 6,
                 )
-                sprite_payload_append_slice_xy_uv(
+                ui_sprite_payload_append_slice_xy_uv(
                   merged_slice_xy_uv, first_sprite,
                 )
                 for merged_index in (item_index + 1)..<merged_end {
                   if item_array[merged_index].kind is UiSpriteExtra(next_i) {
-                    sprite_payload_append_slice_xy_uv(
+                    ui_sprite_payload_append_slice_xy_uv(
                       merged_slice_xy_uv,
                       extra_ui_sprites[next_i].payload,
                     )
@@ -6315,11 +6120,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     rs.queued_camera_draw_items.clear()
     rs.extra_sprites.clear()
     rs.extra_sprite_slice_batches.clear()
-    rs.extra_ui_sprites.clear()
-    rs.extra_ui_sprite_slice_batches.clear()
-    rs.extra_ui_rects.clear()
-    rs.extra_ui_box_shadows.clear()
-    rs.extra_ui_texture_slices.clear()
+    @ui_render_runtime.clear_extracted_ui_nodes(world)
   })
   |> ignore
   render2d_runtime_state.diagnostic_execute_cpu_ms = (

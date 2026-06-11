@@ -118,9 +118,6 @@ pub type OverlaySpriteUvScissor = @sprite_render_render.OverlaySpriteUvScissor
 pub type OverlaySpriteUvScissorSlices = @sprite_render_render.OverlaySpriteUvScissorSlices
 
 ///|
-pub type UiCornerRadii = @sprite_render_render.UiCornerRadii
-
-///|
 pub type BorderRect = @sprite_render_render.BorderRect
 
 ///|
@@ -193,88 +190,6 @@ pub fn render2d_scene_cull_context_values(
   context : SceneCullContext,
 ) -> (Float, Float, Float, Float, Float, Float) {
   context.values()
-}
-
-///|
-pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
-  @sprite_render_render.render2d_clear_overlay_ui_rects(world)
-}
-
-///|
-pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
-  @sprite_render_render.render2d_clear_overlay_ui_box_shadows(world)
-}
-
-///|
-pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
-  @sprite_render_render.render2d_clear_overlay_ui_texture_slices(world)
-}
-
-///|
-pub fn render2d_push_ui_rect_uv_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-  color : @color.Color,
-  layers : @camera_render_layers.RenderLayers,
-  scissor : @math.Rect?,
-  flags : Int,
-  radius : UiCornerRadii,
-  border : BorderRect,
-) -> Unit {
-  @sprite_render_render.render2d_push_ui_rect_uv_scissor(
-    world, entity, target_camera, texture, transform, draw_scale, uv_min, uv_max,
-    color, layers, scissor, flags, radius, border,
-  )
-}
-
-///|
-pub fn render2d_push_ui_box_shadow_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  color : @color.Color,
-  layers : @camera_render_layers.RenderLayers,
-  scissor : @math.Rect?,
-  size : @math.Vec2,
-  radius : UiCornerRadii,
-  blur : Float,
-  samples : Int,
-) -> Unit {
-  @sprite_render_render.render2d_push_ui_box_shadow_scissor(
-    world, entity, target_camera, texture, transform, draw_scale, color, layers,
-    scissor, size, radius, blur, samples,
-  )
-}
-
-///|
-pub fn render2d_push_ui_texture_slice_scissor(
-  world : @ecs.World,
-  entity : @core.Entity,
-  target_camera : @core.Entity?,
-  texture : @asset.Handle[@asset.Image],
-  transform : @transform.Transform,
-  draw_scale : @math.Vec2,
-  color : @color.Color,
-  layers : @camera_render_layers.RenderLayers,
-  scissor : @math.Rect?,
-  texture_slices : @math.Vec4,
-  target_slices : @math.Vec4,
-  repeat : @math.Vec4,
-  atlas_rect : @math.Vec4,
-) -> Unit {
-  @sprite_render_render.render2d_push_ui_texture_slice_scissor(
-    world, entity, target_camera, texture, transform, draw_scale, color, layers,
-    scissor, texture_slices, target_slices, repeat, atlas_rect,
-  )
 }
 
 ///|

@@ -30,9 +30,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   )
   let stack_res = @ui.get_ui_stack_resource(source_world)
   guard stack_res.get() is Some(stack0) else { return }
-  @sprite_render_render.render2d_clear_overlay_ui_rects(world)
-  @sprite_render_render.render2d_clear_overlay_ui_box_shadows(world)
-  @sprite_render_render.render2d_clear_overlay_ui_texture_slices(world)
+  @ui_render_runtime.clear_extracted_ui_rects(world)
+  @ui_render_runtime.clear_extracted_ui_box_shadows(world)
+  @ui_render_runtime.clear_extracted_ui_texture_slices(world)
 
   fn atlas_rect_for(
     layouts : @asset.Assets[@asset.TextureAtlasLayout]?,
@@ -129,7 +129,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       border_left, border_right, border_top, border_bottom,
     )
     let r = layout.border_radius()
-    let radius = @sprite_render_render.UiCornerRadii::new(
+    let radius = @ui_render_runtime.UiCornerRadii::new(
       r.top_left * scale_min,
       r.top_right * scale_min,
       r.bottom_right * scale_min,
@@ -200,7 +200,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 @math.Vec2::new(t0.scale.x, t0.scale.y),
                 z=z_base + UI_STACK_Z_SHADOW,
               )
-              let radius_shadow = @sprite_render_render.UiCornerRadii::new(
+              let radius_shadow = @ui_render_runtime.UiCornerRadii::new(
                 r.top_left * spread_ratio * scale_min,
                 r.top_right * spread_ratio * scale_min,
                 r.bottom_right * spread_ratio * scale_min,
@@ -214,20 +214,23 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * shadow_size.x,
                 scale_y * shadow_size.y,
               )
-              @sprite_render_render.render2d_push_ui_box_shadow_scissor(
+              @ui_render_runtime.push_extracted_ui_box_shadow(
                 world,
                 entity,
                 entity_ctx.camera_entity,
-                ctx0.white_texture,
-                t_shadow,
-                draw_scale_shadow,
-                shadow.color,
-                layers,
-                scissor,
-                size_shadow_world,
-                radius_shadow,
-                blur * scale_min,
-                shadow_samples,
+                @ui_render_runtime.UiBoxShadowDrawPayload::{
+                  transform: t_shadow,
+                  anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+                  draw_scale: draw_scale_shadow,
+                  color: shadow.color,
+                  texture: ctx0.white_texture,
+                  layers,
+                  size: size_shadow_world,
+                  radius: radius_shadow,
+                  blur: blur * scale_min,
+                  samples: shadow_samples,
+                  scissor,
+                },
               )
             }
           }
@@ -256,21 +259,24 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       Some(color) =>
         if color.a > 0.0F {
           let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
-          @sprite_render_render.render2d_push_ui_rect_uv_scissor(
+          @ui_render_runtime.push_extracted_ui_rect(
             world,
             entity,
             entity_ctx.camera_entity,
-            ctx0.white_texture,
-            t_bg,
-            draw_scale,
-            uv_min,
-            uv_max,
-            color,
-            layers,
-            scissor,
-            flags,
-            radius,
-            border,
+            @ui_render_runtime.UiRectDrawPayload::{
+              transform: t_bg,
+              anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+              draw_scale,
+              color,
+              texture: ctx0.white_texture,
+              layers,
+              uv_min,
+              uv_max,
+              scissor,
+              flags,
+              radius,
+              border,
+            },
           )
         }
       None => ()
@@ -377,37 +383,43 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             uv_max_img.x,
             uv_max_img.y,
           )
-          @sprite_render_render.render2d_push_ui_texture_slice_scissor(
+          @ui_render_runtime.push_extracted_ui_texture_slice(
             world,
             entity,
             entity_ctx.camera_entity,
-            texture,
-            t_content,
-            draw_scale,
-            color,
-            layers,
-            scissor,
-            texture_slices,
-            target_slices,
-            repeat,
-            atlas_rect_uv,
+            @ui_render_runtime.UiTextureSliceDrawPayload::{
+              transform: t_content,
+              anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+              draw_scale,
+              color,
+              texture,
+              layers,
+              scissor,
+              texture_slices,
+              target_slices,
+              repeat,
+              atlas_rect: atlas_rect_uv,
+            },
           )
         } else if color.a > 0.0F {
-          @sprite_render_render.render2d_push_ui_rect_uv_scissor(
+          @ui_render_runtime.push_extracted_ui_rect(
             world,
             entity,
             entity_ctx.camera_entity,
-            texture,
-            t_content,
-            draw_scale,
-            uv_min_img,
-            uv_max_img,
-            color,
-            layers,
-            scissor,
-            flags | UI_DRAW_FLAG_TEXTURED,
-            radius,
-            border,
+            @ui_render_runtime.UiRectDrawPayload::{
+              transform: t_content,
+              anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+              draw_scale,
+              color,
+              texture,
+              layers,
+              uv_min: uv_min_img,
+              uv_max: uv_max_img,
+              scissor,
+              flags: flags | UI_DRAW_FLAG_TEXTURED,
+              radius,
+              border,
+            },
           )
         }
       }
@@ -424,21 +436,24 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       is Some(bc) &&
       bc.color.a > 0.0F {
       let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
-      @sprite_render_render.render2d_push_ui_rect_uv_scissor(
+      @ui_render_runtime.push_extracted_ui_rect(
         world,
         entity,
         entity_ctx.camera_entity,
-        ctx0.white_texture,
-        t_border,
-        draw_scale,
-        uv_min,
-        uv_max,
-        bc.color,
-        layers,
-        scissor,
-        flags | border_flags,
-        radius,
-        border,
+        @ui_render_runtime.UiRectDrawPayload::{
+          transform: t_border,
+          anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+          draw_scale,
+          color: bc.color,
+          texture: ctx0.white_texture,
+          layers,
+          uv_min,
+          uv_max,
+          scissor,
+          flags: flags | border_flags,
+          radius,
+          border,
+        },
       )
     }
 
@@ -467,7 +482,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 outline_width * scale_y,
                 outline_width * scale_y,
               )
-              let outline_radius = @sprite_render_render.UiCornerRadii::new(
+              let outline_radius = @ui_render_runtime.UiCornerRadii::new(
                 clamp_radius_nonneg(outline_r.top_left, outline_size) *
                 scale_min,
                 clamp_radius_nonneg(outline_r.top_right, outline_size) *
@@ -477,27 +492,30 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 clamp_radius_nonneg(outline_r.bottom_left, outline_size) *
                 scale_min,
               )
-              @sprite_render_render.render2d_push_ui_rect_uv_scissor(
+              @ui_render_runtime.push_extracted_ui_rect(
                 world,
                 entity,
                 entity_ctx.camera_entity,
-                ctx0.white_texture,
-                t_outline,
-                outline_draw_scale,
-                uv_min,
-                uv_max,
-                outline.color,
-                layers,
-                scissor,
-                flags |
-                ui_draw_border_flags(
-                  outline_border.left,
-                  outline_border.top,
-                  outline_border.right,
-                  outline_border.bottom,
-                ),
-                outline_radius,
-                outline_border,
+                @ui_render_runtime.UiRectDrawPayload::{
+                  transform: t_outline,
+                  anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+                  draw_scale: outline_draw_scale,
+                  color: outline.color,
+                  texture: ctx0.white_texture,
+                  layers,
+                  uv_min,
+                  uv_max,
+                  scissor,
+                  flags: flags |
+                  ui_draw_border_flags(
+                    outline_border.left,
+                    outline_border.top,
+                    outline_border.right,
+                    outline_border.bottom,
+                  ),
+                  radius: outline_radius,
+                  border: outline_border,
+                },
               )
             }
           }

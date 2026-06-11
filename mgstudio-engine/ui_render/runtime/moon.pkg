@@ -1,0 +1,15 @@
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render/mesh2d/runtime" @sprite_render_mesh2d_runtime,
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
