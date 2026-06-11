@@ -256,6 +256,36 @@ test "mesh: attributes and packed vertex buffer follow Bevy attribute id order" 
 }
 
 ///|
+test "mesh: Mesh3dGeometry wireframe line-list keeps packed vertex count aligned" {
+  let geometry = Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(-1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(1.0F, 1.0F, 0.0F),
+      @math.Vec3::new(-1.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 0.0F),
+    ],
+    Some([0, 1, 2, 0, 2, 3]),
+  )
+  ignore(geometry.with_computed_flat_normals())
+  guard geometry.to_wireframe_line_list() is Some(wireframe) else {
+    abort("expected wireframe line-list")
+  }
+  let mesh = Mesh::from_3d_geometry(wireframe)
+  debug_inspect(mesh.vertex_count(), content="12")
+  debug_inspect(mesh.count_vertices(), content="12")
+  debug_inspect(
+    mesh.create_packed_vertex_buffer_data().length() / mesh.get_vertex_size(),
+    content="12",
+  )
+}
+
+///|
 test "mesh: vertex buffer layout mirrors Bevy attribute id order" {
   let geometry = Mesh3dGeometry::new_with_positions(
     [@math.Vec3::new(1.0F, 2.0F, 3.0F)],

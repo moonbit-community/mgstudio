@@ -185,7 +185,7 @@ pub fn ScatteringMediumRuntime::from_medium(
   let default_runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
   ScatteringMediumRuntime::{
     medium,
-    density_multiplier: default_runtime.density_multiplier,
+    density_multiplier: medium.density_multiplier(),
     lut_config: default_runtime.lut_config,
   }
 }
@@ -344,6 +344,77 @@ pub fn GpuScatteringMedium::scattering_lut(
   self : GpuScatteringMedium,
 ) -> Array[@math.Vec4] {
   self.scattering_lut
+}
+
+///|
+fn pbr_scattering_medium_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn pbr_scattering_medium_vec4_rgba32f_bytes(
+  values : Array[@math.Vec4],
+) -> Bytes {
+  let words : Array[UInt] = []
+  for value in values {
+    words.push(value.x.reinterpret_as_uint())
+    words.push(value.y.reinterpret_as_uint())
+    words.push(value.z.reinterpret_as_uint())
+    words.push(value.w.reinterpret_as_uint())
+  }
+  pbr_scattering_medium_u32le_pack(words)
+}
+
+///|
+pub fn GpuScatteringMedium::density_lut_width(
+  self : GpuScatteringMedium,
+) -> Int {
+  pbr_scattering_medium_sanitize_resolution(
+    self.runtime.lut_config.falloff_resolution,
+  )
+}
+
+///|
+pub fn GpuScatteringMedium::density_lut_height(
+  _self : GpuScatteringMedium,
+) -> Int {
+  2
+}
+
+///|
+pub fn GpuScatteringMedium::scattering_lut_width(
+  self : GpuScatteringMedium,
+) -> Int {
+  pbr_scattering_medium_sanitize_resolution(
+    self.runtime.lut_config.falloff_resolution,
+  )
+}
+
+///|
+pub fn GpuScatteringMedium::scattering_lut_height(
+  self : GpuScatteringMedium,
+) -> Int {
+  pbr_scattering_medium_sanitize_resolution(
+    self.runtime.lut_config.phase_resolution,
+  )
+}
+
+///|
+pub fn GpuScatteringMedium::density_lut_rgba32f_bytes(
+  self : GpuScatteringMedium,
+) -> Bytes {
+  pbr_scattering_medium_vec4_rgba32f_bytes(self.density_lut)
+}
+
+///|
+pub fn GpuScatteringMedium::scattering_lut_rgba32f_bytes(
+  self : GpuScatteringMedium,
+) -> Bytes {
+  pbr_scattering_medium_vec4_rgba32f_bytes(self.scattering_lut)
 }
 
 ///|

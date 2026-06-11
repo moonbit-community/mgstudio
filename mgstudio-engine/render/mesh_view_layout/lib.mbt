@@ -330,6 +330,7 @@ fn mesh_view_layout_min_binding_size(binding : Int) -> UInt64 {
     14 => 16UL
     15 => 64UL
     16 => 16UL
+    33 => 96UL
     _ => 0UL
   }
 }

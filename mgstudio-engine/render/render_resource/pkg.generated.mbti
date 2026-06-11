@@ -246,9 +246,11 @@ pub fn CachedPipeline::state(Self) -> CachedPipelineState
 
 pub(all) enum CachedPipelineState {
   Queued
+  Creating
   Ok(Pipeline)
   Err(String)
 }
+pub fn CachedPipelineState::is_creating(Self) -> Bool
 pub fn CachedPipelineState::is_err(Self) -> Bool
 pub fn CachedPipelineState::is_ok(Self) -> Bool
 pub fn CachedPipelineState::is_queued(Self) -> Bool
@@ -354,7 +356,6 @@ pub struct PipelineCache {
   waiting_pipelines : Array[UInt64]
   new_pipelines : Array[CachedPipeline]
 }
-pub fn PipelineCache::accept_new_pipelines_for_processing(Self) -> Unit
 pub fn PipelineCache::drain_waiting_pipelines(Self) -> Array[UInt64]
 pub fn PipelineCache::get_compute_pipeline(Self, CachedComputePipelineId) -> ComputePipeline?
 pub fn PipelineCache::get_compute_pipeline_descriptor(Self, CachedComputePipelineId) -> ComputePipelineDescriptor raise PipelineCacheAccessError
@@ -365,6 +366,7 @@ pub fn PipelineCache::get_render_pipeline_state(Self, CachedRenderPipelineId) ->
 pub fn PipelineCache::new() -> Self
 pub fn PipelineCache::pipeline_count(Self) -> Int
 pub fn PipelineCache::pipelines(Self) -> Array[CachedPipeline]
+pub fn PipelineCache::process_queue(Self) -> Unit
 pub fn PipelineCache::queue_compute_pipeline(Self, ComputePipelineDescriptor) -> CachedComputePipelineId
 pub fn PipelineCache::queue_render_pipeline(Self, RenderPipelineDescriptor) -> CachedRenderPipelineId
 pub fn PipelineCache::queued_pipeline_count(Self) -> Int

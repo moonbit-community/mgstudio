@@ -30,6 +30,7 @@ pub struct CachedPipeline {
 ///|
 pub(all) enum CachedPipelineState {
   Queued
+  Creating
   Ok(Pipeline)
   Err(String)
 }
@@ -37,6 +38,11 @@ pub(all) enum CachedPipelineState {
 ///|
 pub fn CachedPipelineState::is_queued(self : CachedPipelineState) -> Bool {
   self is Queued
+}
+
+///|
+pub fn CachedPipelineState::is_creating(self : CachedPipelineState) -> Bool {
+  self is Creating
 }
 
 ///|
@@ -228,9 +234,7 @@ pub fn PipelineCache::get_compute_pipeline(
 }
 
 ///|
-pub fn PipelineCache::accept_new_pipelines_for_processing(
-  self : PipelineCache,
-) -> Unit {
+pub fn PipelineCache::process_queue(self : PipelineCache) -> Unit {
   for new_pipeline in self.new_pipelines {
     let id = self.pipelines.length().to_uint64()
     self.pipelines.push(new_pipeline)

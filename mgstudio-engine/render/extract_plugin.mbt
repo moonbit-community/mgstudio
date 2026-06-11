@@ -94,7 +94,6 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @render_texture.register_asset_texture_backend()
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
-      init_renderer_context_resources(render_sub_app.world())
       init_render_state(render_sub_app.world())
       render_sub_app
       .world()
@@ -117,6 +116,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
         RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
       )
       render_sub_app
+      .add_systems(
+        render_startup_schedule_stage(),
+        @app.system(init_pending_command_buffers_resource).named(
+          "mgstudio_render::init_pending_command_buffers_resource",
+        ),
+      )
       .add_systems(
         render_recovery_schedule_stage(),
         @app.system(run_render_recovery_schedule).named(
@@ -157,7 +162,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
-        @app.system(render_graph_driver_system).in_set(render_system_set_render),
+        @app.system(render_graph_driver_system).in_set(
+          render_system_set_render_graph_driver,
+        ),
       )
       .add_systems(
         RenderGraph::schedule(),

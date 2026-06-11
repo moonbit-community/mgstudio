@@ -165,6 +165,8 @@ priv struct Mesh3dExtractedPayload {
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
+  wireframe_line_width : WireframeLineWidth?
+  wireframe_topology : WireframeTopology?
   skinning_key_hi : Int
   has_previous_skin : Bool
   morph_weights_index : Int

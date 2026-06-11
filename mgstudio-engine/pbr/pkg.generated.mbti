@@ -240,6 +240,8 @@ pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
 pub let ecs_key_mesh3d : @ecs.ComponentKey[@mesh.Mesh3d]
 
+pub let ecs_key_mesh3d_wireframe : @ecs.ComponentKey[Mesh3dWireframe]
+
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
@@ -333,6 +335,12 @@ pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
 pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
 
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
+
+pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[WireframeEntitiesNeedingSpecialization]
+
+pub let ecs_key_wireframe_line_width : @ecs.ComponentKey[WireframeLineWidth]
+
+pub let ecs_key_wireframe_topology : @ecs.ComponentKey[WireframeTopology]
 
 pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
@@ -1040,12 +1048,18 @@ pub struct GpuScatteringMedium {
   scattering_lut : Array[@math.Vec4]
 }
 pub fn GpuScatteringMedium::density_lut(Self) -> Array[@math.Vec4]
+pub fn GpuScatteringMedium::density_lut_height(Self) -> Int
 pub fn GpuScatteringMedium::density_lut_len(Self) -> Int
+pub fn GpuScatteringMedium::density_lut_rgba32f_bytes(Self) -> Bytes
+pub fn GpuScatteringMedium::density_lut_width(Self) -> Int
 pub fn GpuScatteringMedium::new(ScatteringMediumRuntime, ScatteringMediumSampler) -> Self
 pub fn GpuScatteringMedium::runtime(Self) -> ScatteringMediumRuntime
 pub fn GpuScatteringMedium::sampler(Self) -> ScatteringMediumSampler
 pub fn GpuScatteringMedium::scattering_lut(Self) -> Array[@math.Vec4]
+pub fn GpuScatteringMedium::scattering_lut_height(Self) -> Int
 pub fn GpuScatteringMedium::scattering_lut_len(Self) -> Int
+pub fn GpuScatteringMedium::scattering_lut_rgba32f_bytes(Self) -> Bytes
+pub fn GpuScatteringMedium::scattering_lut_width(Self) -> Int
 
 pub struct MaterialAllocatorDiagnosticsSnapshot {
   slabs : Int
@@ -1181,6 +1195,13 @@ pub struct MaterialsPluginState {
 }
 pub fn MaterialsPluginState::MaterialsPluginState() -> Self
 pub fn MaterialsPluginState::new() -> Self
+
+pub struct Mesh3dWireframe {
+  material : @asset.Handle[WireframeMaterial]
+} derive(ToJson, @json.FromJson)
+pub fn Mesh3dWireframe::material(Self) -> @asset.Handle[WireframeMaterial]
+pub fn Mesh3dWireframe::new(@asset.Handle[WireframeMaterial]) -> Self
+pub impl @ecs.Component for Mesh3dWireframe
 
 pub struct MeshMaterial3dBundle {
   mesh : @mesh.Mesh3d
@@ -1393,6 +1414,13 @@ pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 
+pub struct RenderWireframeMaterial {
+  color : @color.Color
+  line_width : Float
+  topology : WireframeTopology
+} derive(ToJson, @json.FromJson)
+pub fn RenderWireframeMaterial::from_material(WireframeMaterial) -> Self
+
 pub struct ScatteringMediumLutConfig {
   falloff_resolution : Int
   phase_resolution : Int
@@ -1578,17 +1606,52 @@ pub impl @ecs.Component for WireframeColor
 pub struct WireframeConfig {
   global : Bool
   default_color : @color.Color
+  default_line_width : Float
+  default_topology : WireframeTopology
 } derive(ToJson, @json.FromJson)
 pub fn WireframeConfig::WireframeConfig() -> Self
-pub fn WireframeConfig::new(Bool, @color.Color) -> Self
+pub fn WireframeConfig::new(Bool, @color.Color, default_line_width? : Float, default_topology? : WireframeTopology) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
+pub fn WireframeConfig::with_default_line_width(Self, Float) -> Self
+pub fn WireframeConfig::with_default_topology(Self, WireframeTopology) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for WireframeConfig
+
+pub struct WireframeEntitiesNeedingSpecialization {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+}
+pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> Self
+pub impl @app.Resource for WireframeEntitiesNeedingSpecialization
+
+pub struct WireframeLineWidth {
+  width : Float
+} derive(ToJson, @json.FromJson)
+pub fn WireframeLineWidth::WireframeLineWidth() -> Self
+pub fn WireframeLineWidth::new(Float) -> Self
+pub fn WireframeLineWidth::with_width(Self, Float) -> Self
+pub impl @ecs.Component for WireframeLineWidth
+
+pub struct WireframeMaterial {
+  color : @color.Color
+  line_width : Float
+  topology : WireframeTopology
+} derive(ToJson, @json.FromJson)
+pub fn WireframeMaterial::WireframeMaterial() -> Self
+pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
+pub impl @asset.Asset for WireframeMaterial
 
 pub struct WireframePlugin {
 }
 pub fn WireframePlugin::WireframePlugin() -> Self
 pub impl @app.Plugin for WireframePlugin
+
+pub(all) enum WireframeTopology {
+  Triangles
+  Quads
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn WireframeTopology::default() -> Self
+pub impl @ecs.Component for WireframeTopology
 
 // Type aliases
 pub using @material {type AlphaMode3d}

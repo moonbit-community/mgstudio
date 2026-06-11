@@ -142,6 +142,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
   tonemapping_lut_texture_id : Int
+  atmosphere_resource_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
 }
@@ -175,8 +176,56 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
+  atmosphere_resource_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
+}
+
+///|
+struct GpuAtmosphereResources {
+  transmittance_texture : @wgpu.Texture
+  transmittance_view : @wgpu.TextureView
+  multiscattering_texture : @wgpu.Texture
+  multiscattering_view : @wgpu.TextureView
+  sky_view_texture : @wgpu.Texture
+  sky_view_view : @wgpu.TextureView
+  aerial_view_texture : @wgpu.Texture
+  aerial_view_view : @wgpu.TextureView
+  sampler : @wgpu.Sampler
+  atmosphere_buffer : @wgpu.Buffer
+  settings_buffer : @wgpu.Buffer
+  transmittance_lut_bgl : @wgpu.BindGroupLayout
+  transmittance_lut_pipeline_layout : @wgpu.PipelineLayout
+  transmittance_lut_pipeline : @wgpu.ComputePipeline
+  multiscattering_lut_bgl : @wgpu.BindGroupLayout
+  multiscattering_lut_pipeline_layout : @wgpu.PipelineLayout
+  multiscattering_lut_pipeline : @wgpu.ComputePipeline
+  transmittance_width : Int
+  transmittance_height : Int
+  multiscattering_width : Int
+  multiscattering_height : Int
+  sky_view_width : Int
+  sky_view_height : Int
+  aerial_view_width : Int
+  aerial_view_height : Int
+  aerial_view_depth : Int
+  revision : Int
+}
+
+///|
+struct GpuScatteringMediumResources {
+  density_texture : @wgpu.Texture
+  density_view : @wgpu.TextureView
+  scattering_texture : @wgpu.Texture
+  scattering_view : @wgpu.TextureView
+  sampler : @wgpu.Sampler
+  density_bytes : Bytes
+  scattering_bytes : Bytes
+  density_width : Int
+  density_height : Int
+  scattering_width : Int
+  scattering_height : Int
+  revision : Int
 }
 
 ///|

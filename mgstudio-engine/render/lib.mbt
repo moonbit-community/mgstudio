@@ -291,6 +291,105 @@ pub fn host_gpu_prepare_mesh3d_view_bind_group(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
+  ground_albedo_x~ : Float,
+  ground_albedo_y~ : Float,
+  ground_albedo_z~ : Float,
+  inner_radius~ : Float,
+  outer_radius~ : Float,
+  world_to_atmosphere_x_axis_x~ : Float,
+  world_to_atmosphere_x_axis_y~ : Float,
+  world_to_atmosphere_x_axis_z~ : Float,
+  world_to_atmosphere_y_axis_x~ : Float,
+  world_to_atmosphere_y_axis_y~ : Float,
+  world_to_atmosphere_y_axis_z~ : Float,
+  world_to_atmosphere_z_axis_x~ : Float,
+  world_to_atmosphere_z_axis_y~ : Float,
+  world_to_atmosphere_z_axis_z~ : Float,
+  world_to_atmosphere_translation_x~ : Float,
+  world_to_atmosphere_translation_y~ : Float,
+  world_to_atmosphere_translation_z~ : Float,
+  transmittance_width~ : Int,
+  transmittance_height~ : Int,
+  transmittance_lut_samples~ : Int,
+  multiscattering_width~ : Int,
+  multiscattering_height~ : Int,
+  multiscattering_lut_dirs~ : Int,
+  multiscattering_lut_samples~ : Int,
+  sky_view_width~ : Int,
+  sky_view_height~ : Int,
+  sky_view_lut_samples~ : Int,
+  aerial_view_width~ : Int,
+  aerial_view_height~ : Int,
+  aerial_view_depth~ : Int,
+  aerial_view_lut_samples~ : Int,
+  aerial_view_lut_max_distance~ : Float,
+  sky_max_samples~ : Int,
+  rendering_method~ : Int,
+) -> Unit {
+  @renderer.prepare_mesh3d_atmosphere_resources(
+    ground_albedo_x~,
+    ground_albedo_y~,
+    ground_albedo_z~,
+    inner_radius~,
+    outer_radius~,
+    world_to_atmosphere_x_axis_x~,
+    world_to_atmosphere_x_axis_y~,
+    world_to_atmosphere_x_axis_z~,
+    world_to_atmosphere_y_axis_x~,
+    world_to_atmosphere_y_axis_y~,
+    world_to_atmosphere_y_axis_z~,
+    world_to_atmosphere_z_axis_x~,
+    world_to_atmosphere_z_axis_y~,
+    world_to_atmosphere_z_axis_z~,
+    world_to_atmosphere_translation_x~,
+    world_to_atmosphere_translation_y~,
+    world_to_atmosphere_translation_z~,
+    transmittance_width~,
+    transmittance_height~,
+    transmittance_lut_samples~,
+    multiscattering_width~,
+    multiscattering_height~,
+    multiscattering_lut_dirs~,
+    multiscattering_lut_samples~,
+    sky_view_width~,
+    sky_view_height~,
+    sky_view_lut_samples~,
+    aerial_view_width~,
+    aerial_view_height~,
+    aerial_view_depth~,
+    aerial_view_lut_samples~,
+    aerial_view_lut_max_distance~,
+    sky_max_samples~,
+    rendering_method~,
+  )
+}
+
+///|
+pub fn host_gpu_dispatch_mesh3d_atmosphere_luts() -> Unit {
+  @renderer.dispatch_mesh3d_atmosphere_luts()
+}
+
+///|
+pub fn host_gpu_prepare_mesh3d_scattering_medium_resources(
+  density_width~ : Int,
+  density_height~ : Int,
+  density_bytes~ : Bytes,
+  scattering_width~ : Int,
+  scattering_height~ : Int,
+  scattering_bytes~ : Bytes,
+) -> Unit {
+  @renderer.prepare_mesh3d_scattering_medium_resources(
+    density_width~,
+    density_height~,
+    density_bytes~,
+    scattering_width~,
+    scattering_height~,
+    scattering_bytes~,
+  )
+}
+
+///|
 pub type HostGpuClipMatrix = @renderer.GpuClipMatrix
 
 ///|

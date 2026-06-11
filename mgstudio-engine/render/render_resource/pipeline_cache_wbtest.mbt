@@ -34,7 +34,16 @@ test "pipeline cache: queued render and compute pipelines allocate stable ids" {
 }
 
 ///|
-test "pipeline cache: accepting new pipelines exposes descriptors and waiting ids" {
+test "pipeline cache: creating state is distinct from queued and ok" {
+  let state = CachedPipelineState::Creating
+  debug_inspect(state.is_creating(), content="true")
+  debug_inspect(state.is_queued(), content="false")
+  debug_inspect(state.is_ok(), content="false")
+  debug_inspect(state.is_err(), content="false")
+}
+
+///|
+test "pipeline cache: process_queue exposes descriptors and waiting ids" {
   let cache = PipelineCache::new()
   let render_id = cache.queue_render_pipeline(
     RenderPipelineDescriptor::RenderPipelineDescriptor().with_label(
@@ -44,7 +53,7 @@ test "pipeline cache: accepting new pipelines exposes descriptors and waiting id
   let compute_id = cache.queue_compute_pipeline(
     ComputePipelineDescriptor::ComputePipelineDescriptor(),
   )
-  cache.accept_new_pipelines_for_processing()
+  cache.process_queue()
   debug_inspect(cache.pipeline_count(), content="2")
   debug_inspect(cache.queued_pipeline_count(), content="0")
   debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
@@ -70,7 +79,7 @@ test "pipeline cache: waiting pipeline ids drain once" {
       ComputePipelineDescriptor::ComputePipelineDescriptor(),
     ),
   )
-  cache.accept_new_pipelines_for_processing()
+  cache.process_queue()
   debug_inspect(cache.drain_waiting_pipelines(), content="[0, 1]")
   debug_inspect(cache.waiting_pipelines(), content="[]")
   debug_inspect(cache.drain_waiting_pipelines(), content="[]")
@@ -89,7 +98,7 @@ test "pipeline cache: descriptor access rejects unprocessed ids and wrong kinds"
     PipelineNotProcessed(id) => debug_inspect(id, content="0")
     _ => fail("expected PipelineNotProcessed")
   }
-  cache.accept_new_pipelines_for_processing()
+  cache.process_queue()
   try {
     cache.get_compute_pipeline_descriptor(CachedComputePipelineId::new(0UL))
     |> ignore

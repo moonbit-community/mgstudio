@@ -129,6 +129,96 @@ fn render3d_draw_gizmo_lines_3d(
 }
 
 ///|
+fn render3d_camera_world_to_atmosphere(
+  transform : @transform.Transform,
+) -> @math.Affine3 {
+  @math.Affine3::from_scale_rotation_translation(
+    transform.scale,
+    transform.rotation,
+    transform.translation,
+  ).inverse()
+}
+
+///|
+fn render3d_atmosphere_mode_to_int(
+  mode : @pbr_atmosphere.AtmosphereMode,
+) -> Int {
+  match mode {
+    LookupTexture => 0
+    Raymarched => 1
+  }
+}
+
+///|
+fn render3d_prepare_camera_atmosphere_resources(
+  camera : Camera3dViewPayload,
+) -> Unit {
+  guard camera.atmosphere is Some(atmosphere) else { return }
+  let settings = match camera.atmosphere_settings {
+    Some(value) => value
+    None => @pbr_atmosphere.pbr_atmosphere_settings_default()
+  }
+  let gpu_medium = GpuScatteringMedium::new(
+    ScatteringMediumRuntime::from_medium(atmosphere.medium),
+    ScatteringMediumSampler::ScatteringMediumSampler(),
+  )
+  @render.host_gpu_prepare_mesh3d_scattering_medium_resources(
+    density_width=gpu_medium.density_lut_width(),
+    density_height=gpu_medium.density_lut_height(),
+    density_bytes=gpu_medium.density_lut_rgba32f_bytes(),
+    scattering_width=gpu_medium.scattering_lut_width(),
+    scattering_height=gpu_medium.scattering_lut_height(),
+    scattering_bytes=gpu_medium.scattering_lut_rgba32f_bytes(),
+  )
+  let gpu_settings = @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings)
+  let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere(
+    atmosphere,
+    render3d_camera_world_to_atmosphere(camera.transform),
+  )
+  let textures = @pbr_atmosphere.AtmosphereTextures::from_settings(gpu_settings)
+  let world_to_atmosphere = gpu_atmosphere.world_to_atmosphere
+  @render.host_gpu_prepare_mesh3d_atmosphere_resources(
+    ground_albedo_x=gpu_atmosphere.ground_albedo.x,
+    ground_albedo_y=gpu_atmosphere.ground_albedo.y,
+    ground_albedo_z=gpu_atmosphere.ground_albedo.z,
+    inner_radius=gpu_atmosphere.inner_radius,
+    outer_radius=gpu_atmosphere.outer_radius,
+    world_to_atmosphere_x_axis_x=world_to_atmosphere.matrix3.x_axis.x,
+    world_to_atmosphere_x_axis_y=world_to_atmosphere.matrix3.x_axis.y,
+    world_to_atmosphere_x_axis_z=world_to_atmosphere.matrix3.x_axis.z,
+    world_to_atmosphere_y_axis_x=world_to_atmosphere.matrix3.y_axis.x,
+    world_to_atmosphere_y_axis_y=world_to_atmosphere.matrix3.y_axis.y,
+    world_to_atmosphere_y_axis_z=world_to_atmosphere.matrix3.y_axis.z,
+    world_to_atmosphere_z_axis_x=world_to_atmosphere.matrix3.z_axis.x,
+    world_to_atmosphere_z_axis_y=world_to_atmosphere.matrix3.z_axis.y,
+    world_to_atmosphere_z_axis_z=world_to_atmosphere.matrix3.z_axis.z,
+    world_to_atmosphere_translation_x=world_to_atmosphere.translation.x,
+    world_to_atmosphere_translation_y=world_to_atmosphere.translation.y,
+    world_to_atmosphere_translation_z=world_to_atmosphere.translation.z,
+    transmittance_width=textures.transmittance_lut.width,
+    transmittance_height=textures.transmittance_lut.height,
+    transmittance_lut_samples=gpu_settings.transmittance_lut_samples,
+    multiscattering_width=textures.multiscattering_lut.width,
+    multiscattering_height=textures.multiscattering_lut.height,
+    multiscattering_lut_dirs=gpu_settings.multiscattering_lut_dirs,
+    multiscattering_lut_samples=gpu_settings.multiscattering_lut_samples,
+    sky_view_width=textures.sky_view_lut.width,
+    sky_view_height=textures.sky_view_lut.height,
+    sky_view_lut_samples=gpu_settings.sky_view_lut_samples,
+    aerial_view_width=textures.aerial_view_lut.width,
+    aerial_view_height=textures.aerial_view_lut.height,
+    aerial_view_depth=textures.aerial_view_lut.depth_or_array_layers,
+    aerial_view_lut_samples=gpu_settings.aerial_view_lut_samples,
+    aerial_view_lut_max_distance=gpu_settings.aerial_view_lut_max_distance,
+    sky_max_samples=gpu_settings.sky_max_samples,
+    rendering_method=render3d_atmosphere_mode_to_int(
+      gpu_settings.rendering_method,
+    ),
+  )
+  @render.host_gpu_dispatch_mesh3d_atmosphere_luts()
+}
+
+///|
 fn render3d_execute_camera_main_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -184,6 +274,7 @@ fn render3d_execute_camera_main_pass(
       environment_specular_texture_id=environment_map_state.specular_texture_id,
     )
   }
+  render3d_prepare_camera_atmosphere_resources(camera)
   let scene_view_bind_group_prepared = point_shadow_binding.texture_id >= 0 ||
     directional_shadow_binding.texture_id >= 0
   if scene_view_bind_group_prepared {
@@ -571,6 +662,12 @@ fn render3d_execute_camera_main_pass(
     let wireframe_color = render3d_mesh_wireframe_color(
       extracted_mesh, wireframe_config,
     )
+    let _wireframe_line_width = render3d_mesh_wireframe_line_width(
+      extracted_mesh, wireframe_config,
+    )
+    let _wireframe_topology = render3d_mesh_wireframe_topology(
+      extracted_mesh, wireframe_config,
+    )
     let wireframe_material = StandardMaterial::from_color(wireframe_color)
       .with_unlit(true)
       .with_cull_mode(mesh.material.cull_mode)
@@ -778,6 +875,7 @@ fn render3d_execute_camera_main_pass(
         tonemapping_tony_lut_texture_id=tony_lut_texture_id,
         tonemapping_blender_lut_texture_id=blender_lut_texture_id,
         deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
+        msaa_sample_count~,
         point_shadow_near~,
         pass_kind=scene_pass_kind,
         clear_enabled=0,
@@ -845,6 +943,7 @@ fn render3d_execute_camera_main_pass(
       tonemapping_tony_lut_texture_id=tony_lut_texture_id,
       tonemapping_blender_lut_texture_id=blender_lut_texture_id,
       deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
+      msaa_sample_count~,
       point_shadow_near~,
       pass_kind=scene_pass_kind,
       clear_enabled=0,

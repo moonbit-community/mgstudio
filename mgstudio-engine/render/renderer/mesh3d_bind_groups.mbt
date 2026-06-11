@@ -13,14 +13,38 @@
 // limitations under the License.
 
 ///|
+fn mesh3d_retire_or_release_bind_group(
+  backend : GpuBackend,
+  bind_group : @wgpu.BindGroup,
+) -> Unit {
+  if backend.frame is Some(_) {
+    backend.frame_retired_bind_groups.push(bind_group)
+  } else {
+    bind_group.release()
+  }
+}
+
+///|
+fn mesh3d_retire_or_release_buffer(
+  backend : GpuBackend,
+  buffer : @wgpu.Buffer,
+) -> Unit {
+  if backend.frame is Some(_) {
+    backend.frame_retired_buffers.push(buffer)
+  } else {
+    buffer.release()
+  }
+}
+
+///|
 fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
   for entry in backend.mesh3d_view_bg_cache {
-    entry.bind_group.release()
+    mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
   }
   backend.mesh3d_view_bg_cache.clear()
   for entry in backend.mesh3d_material_bg_cache {
-    entry.bind_group.release()
-    entry.material_uniform_buffer.release()
+    mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
+    mesh3d_retire_or_release_buffer(backend, entry.material_uniform_buffer)
   }
   backend.mesh3d_material_bg_cache.clear()
 }
@@ -159,7 +183,10 @@ fn mesh3d_add_view_bind_group_layout_entry(
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
-) -> Bool {
+  atmosphere_transmittance_view : @wgpu.TextureView?,
+  atmosphere_transmittance_sampler : @wgpu.Sampler?,
+  atmosphere_buffer : @wgpu.Buffer?,
+) -> Bool raise GpuBackendError {
   if entry.binding() < 0 {
     return false
   }
@@ -276,6 +303,30 @@ fn mesh3d_add_view_bind_group_layout_entry(
         transmission_source_texture.sampler,
         entry,
       )
+    31 =>
+      match atmosphere_transmittance_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => fatal("wgpu: missing atmosphere transmittance texture")
+      }
+    32 =>
+      match atmosphere_transmittance_sampler {
+        Some(sampler) =>
+          mesh3d_add_sampler_for_layout_entry(builder, binding, sampler, entry)
+        None => fatal("wgpu: missing atmosphere transmittance sampler")
+      }
+    33 =>
+      match atmosphere_buffer {
+        Some(buffer) =>
+          builder.add_buffer(
+            binding,
+            buffer,
+            size=MESH3D_ATMOSPHERE_BUFFER_SIZE,
+          )
+        None => fatal("wgpu: missing atmosphere storage buffer")
+      }
     _ => false
   }
 }
@@ -306,6 +357,9 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
+  atmosphere_transmittance_view : @wgpu.TextureView?,
+  atmosphere_transmittance_sampler : @wgpu.Sampler?,
+  atmosphere_buffer : @wgpu.Buffer?,
   error_message : String,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let entries = descriptor.entries()
@@ -319,7 +373,8 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
         point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
         normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, transmission_source_texture,
-        dt_lut_sample_view, dt_lut_sampler,
+        dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view, atmosphere_transmittance_sampler,
+        atmosphere_buffer,
       ) {
       builder.free()
       fatal(
@@ -406,6 +461,34 @@ fn mesh3d_prepass_texture_view_for_id(
 }
 
 ///|
+fn mesh3d_atmosphere_resource_revision(backend : GpuBackend) -> Int {
+  match backend.mesh3d_atmosphere_resources {
+    Some(resources) => resources.revision
+    None => 0
+  }
+}
+
+///|
+fn mesh3d_atmosphere_resources_keepalive(
+  resources : GpuAtmosphereResources,
+) -> Unit {
+  ignore(resources.transmittance_texture)
+  ignore(resources.multiscattering_texture)
+  ignore(resources.multiscattering_view)
+  ignore(resources.sky_view_texture)
+  ignore(resources.sky_view_view)
+  ignore(resources.aerial_view_texture)
+  ignore(resources.aerial_view_view)
+  ignore(resources.settings_buffer)
+  ignore(resources.transmittance_lut_bgl)
+  ignore(resources.transmittance_lut_pipeline_layout)
+  ignore(resources.transmittance_lut_pipeline)
+  ignore(resources.multiscattering_lut_bgl)
+  ignore(resources.multiscattering_lut_pipeline_layout)
+  ignore(resources.multiscattering_lut_pipeline)
+}
+
+///|
 fn mesh3d_view_bg_cache_get_or_create(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
@@ -424,6 +507,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   let dt_lut_texture = tonemapping_selected_lut_texture(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
+  let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -432,7 +516,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
-      entry.tonemapping_lut_texture_id == dt_lut_texture.id {
+      entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
+      entry.atmosphere_resource_revision == atmosphere_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -511,6 +596,21 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
+  let (
+    atmosphere_transmittance_view,
+    atmosphere_transmittance_sampler,
+    atmosphere_buffer,
+  ) = match backend.mesh3d_atmosphere_resources {
+    Some(resources) => {
+      mesh3d_atmosphere_resources_keepalive(resources)
+      (
+        Some(resources.transmittance_view),
+        Some(resources.sampler),
+        Some(resources.atmosphere_buffer),
+      )
+    }
+    None => (None, None, None)
+  }
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
@@ -554,6 +654,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
+    atmosphere_transmittance_view,
+    atmosphere_transmittance_sampler,
+    atmosphere_buffer,
     "wgpu: failed to build mesh3d view bind group",
   )
   let binding_arrays_bind_group = mesh3d_build_binding_arrays_bind_group_from_descriptor(
@@ -574,6 +677,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
+    atmosphere_resource_revision: atmosphere_revision,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -604,6 +708,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let dt_lut_texture = tonemapping_selected_lut_texture(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
+  let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -620,7 +725,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.prepass_normal_texture_id == prepass_normal_texture_id &&
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
       entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
-      entry.tonemapping_lut_texture_id == dt_lut_texture.id {
+      entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
+      entry.atmosphere_resource_revision == atmosphere_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -699,6 +805,21 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
+  let (
+    atmosphere_transmittance_view,
+    atmosphere_transmittance_sampler,
+    atmosphere_buffer,
+  ) = match backend.mesh3d_atmosphere_resources {
+    Some(resources) => {
+      mesh3d_atmosphere_resources_keepalive(resources)
+      (
+        Some(resources.transmittance_view),
+        Some(resources.sampler),
+        Some(resources.atmosphere_buffer),
+      )
+    }
+    None => (None, None, None)
+  }
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
@@ -751,6 +872,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
+    atmosphere_transmittance_view,
+    atmosphere_transmittance_sampler,
+    atmosphere_buffer,
     "wgpu: failed to build mesh3d frame view bind group",
   )
   let binding_arrays_bind_group = mesh3d_build_binding_arrays_bind_group_from_descriptor(
@@ -781,6 +905,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
+    atmosphere_resource_revision: atmosphere_revision,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -802,7 +927,8 @@ fn mesh3d_material_cache_get_or_create(
   specular_tint_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
 ) -> @wgpu.BindGroup raise GpuBackendError {
-  if mesh3d_descriptor_material_layout(material_descriptor) is None {
+  if material_descriptor is Some(_) &&
+    mesh3d_descriptor_material_layout(material_descriptor) is None {
     let empty_bytes = Bytes::new(0)
     for entry in backend.mesh3d_material_bg_cache {
       if entry.material_pipeline_id == material_pipeline_id &&

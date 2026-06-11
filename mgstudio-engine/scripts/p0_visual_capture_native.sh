@@ -47,15 +47,23 @@ moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
 rm -f "${OUTPUT_PNG}" "${RGBA8_BLOB}"
 
 APP_PID=""
+capture_png_ready=0
 
 start_app() {
   local delay_frames="$1"
+  local screenshot_frame="$delay_frames"
+  if [[ "${screenshot_frame}" -le 0 ]]; then
+    screenshot_frame=1
+  fi
   rm -f "${RGBA8_BLOB}"
   : >"${RUN_LOG}"
   echo "[capture] moon run --target native --release ${PACKAGE} (delay_frames=${delay_frames})"
   (
     MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
       MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}" \
+      MGSTUDIO_SCREENSHOT_PATH="${OUTPUT_PNG}" \
+      MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE=1 \
+      MGSTUDIO_SCREENSHOT_FRAME="${screenshot_frame}" \
       MGSTUDIO_RENDER3D_DISABLE_GPU_PREPROCESS="${DISABLE_GPU_PREPROCESS}" \
       moon -C "${ENGINE_DIR}" run --target native --release "${PACKAGE}" >"${RUN_LOG}" 2>&1
   ) &
@@ -92,11 +100,15 @@ stop_app() {
   APP_PID=""
 }
 
-wait_for_blob() {
+wait_for_capture() {
   local timeout_seconds="$1"
   local elapsed_local=0
   while [[ "${elapsed_local}" -lt "${timeout_seconds}" ]]; do
     if [[ -s "${RGBA8_BLOB}" ]]; then
+      return 0
+    fi
+    if [[ -s "${OUTPUT_PNG}" ]]; then
+      capture_png_ready=1
       return 0
     fi
     if [[ -n "${APP_PID}" ]] && ! kill -0 "${APP_PID}" >/dev/null 2>&1; then
@@ -105,6 +117,10 @@ wait_for_blob() {
       local grace_ms=0
       while [[ "${grace_ms}" -lt 1000 ]]; do
         if [[ -s "${RGBA8_BLOB}" ]]; then
+          return 0
+        fi
+        if [[ -s "${OUTPUT_PNG}" ]]; then
+          capture_png_ready=1
           return 0
         fi
         sleep 0.1
@@ -129,7 +145,7 @@ capture_source="${RGBA8_BLOB}"
 capture_delay_frames_used="${CAPTURE_DELAY_FRAMES}"
 
 start_app "${CAPTURE_DELAY_FRAMES}"
-if wait_for_blob "${RUN_TIMEOUT_SECONDS}"; then
+if wait_for_capture "${RUN_TIMEOUT_SECONDS}"; then
   blob_ready=1
 fi
 
@@ -145,7 +161,10 @@ if [[ "${blob_ready}" -eq 0 && "${CAPTURE_DELAY_FRAMES}" != "${CAPTURE_RETRY_DEL
 fi
 
 if [[ "${blob_ready}" -eq 1 ]]; then
-  if ! command -v python3 >/dev/null 2>&1; then
+  if [[ "${capture_png_ready}" -eq 1 && ! -s "${RGBA8_BLOB}" ]]; then
+    capture_mode="window-screenshot-png"
+    capture_source="${OUTPUT_PNG}"
+  elif ! command -v python3 >/dev/null 2>&1; then
     echo "[capture] python3 missing; cannot decode engine-native rgba8 blob" >&2
     exit 3
   else

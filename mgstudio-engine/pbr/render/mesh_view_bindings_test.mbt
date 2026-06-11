@@ -26,6 +26,22 @@ fn has_binding(
 }
 
 ///|
+fn binding_min_size(
+  entries : Array[@render_resource.BindGroupLayoutEntry],
+  binding : Int,
+) -> UInt64 {
+  for entry in entries {
+    if entry.binding() == binding {
+      match entry.kind() {
+        @render_resource.BindingType::BufferBinding(_, _, size) => return size
+        _ => return 0UL
+      }
+    }
+  }
+  0UL
+}
+
+///|
 test "pbr/render: mesh_view layout base bindings follow bevy slots" {
   let key = @mesh_view_layout.mesh_view_layout_key(
     false, false, false, false, false, false, false, false,
@@ -144,6 +160,19 @@ test "pbr/render: mesh_view layout table builds all key variants" {
     content="\"mesh_view_layout:multisampled,atmosphere\"",
   )
   debug_inspect(flagged_layout.texture_count > 0, content="true")
+}
+
+///|
+test "pbr/render: atmosphere view storage binding matches bevy shader layout" {
+  let layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
+    true,
+    true,
+    @mesh_view_layout.mesh_view_layout_key(
+      false, false, false, false, false, false, true, false,
+    ),
+  )
+  let descriptor = layout.main_bind_group_layout_descriptor()
+  inspect(binding_min_size(descriptor.entries(), 33), content="96")
 }
 
 ///|

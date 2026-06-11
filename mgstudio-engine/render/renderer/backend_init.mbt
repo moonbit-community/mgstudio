@@ -48,6 +48,11 @@ pub fn GpuBackend::new(
   if adapter.has_feature_native_subgroup_barrier() {
     required_features.push(@wgpu.NATIVE_FEATURE_SUBGROUP_BARRIER)
   }
+  if adapter.has_feature_native_texture_adapter_specific_format_features() {
+    required_features.push(
+      @wgpu.NATIVE_FEATURE_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
+    )
+  }
   if adapter.supported_features_contains_u32(
       @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
     ) {
@@ -57,6 +62,11 @@ pub fn GpuBackend::new(
       @wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE,
     ) {
     required_features.push(@wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE)
+  }
+  if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_FLOAT32_FILTERABLE,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_FLOAT32_FILTERABLE)
   }
   if adapter.has_feature_native_polygon_mode_line() {
     required_features.push(@wgpu.NATIVE_FEATURE_POLYGON_MODE_LINE)
@@ -542,6 +552,10 @@ pub fn GpuBackend::new(
     auto_exposure_view_states: [],
     mesh3d_view_bg_cache: [],
     mesh3d_material_bg_cache: [],
+    mesh3d_atmosphere_resources: None,
+    mesh3d_atmosphere_resource_revision: 0,
+    mesh3d_scattering_medium_resources: None,
+    mesh3d_scattering_medium_resource_revision: 0,
     sampler_cache: @hashmap.HashMap([]),
     next_id: 1,
     normal_map_fallback_texture_id: -1,

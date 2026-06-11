@@ -143,6 +143,8 @@ pub fn delete_mesh(Int) -> Bool
 
 pub fn delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
 
+pub fn dispatch_mesh3d_atmosphere_luts() -> Unit
+
 pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn draw_blit(scene_texture_id~ : Int) -> Unit
@@ -311,6 +313,8 @@ pub fn meshlet_visibility_buffer_software_raster_dispatch_count() -> Int
 
 pub fn prepare_active_frame_submissions(PendingCommandBuffers) -> Unit
 
+pub fn prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albedo_y~ : Float, ground_albedo_z~ : Float, inner_radius~ : Float, outer_radius~ : Float, world_to_atmosphere_x_axis_x~ : Float, world_to_atmosphere_x_axis_y~ : Float, world_to_atmosphere_x_axis_z~ : Float, world_to_atmosphere_y_axis_x~ : Float, world_to_atmosphere_y_axis_y~ : Float, world_to_atmosphere_y_axis_z~ : Float, world_to_atmosphere_z_axis_x~ : Float, world_to_atmosphere_z_axis_y~ : Float, world_to_atmosphere_z_axis_z~ : Float, world_to_atmosphere_translation_x~ : Float, world_to_atmosphere_translation_y~ : Float, world_to_atmosphere_translation_z~ : Float, transmittance_width~ : Int, transmittance_height~ : Int, transmittance_lut_samples~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, multiscattering_lut_dirs~ : Int, multiscattering_lut_samples~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, sky_view_lut_samples~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int, aerial_view_lut_samples~ : Int, aerial_view_lut_max_distance~ : Float, sky_max_samples~ : Int, rendering_method~ : Int) -> Unit
+
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
 pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
@@ -318,6 +322,8 @@ pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, prep
 pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
 
 pub fn prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> Unit
+
+pub fn prepare_mesh3d_scattering_medium_resources(density_width~ : Int, density_height~ : Int, density_bytes~ : Bytes, scattering_width~ : Int, scattering_height~ : Int, scattering_bytes~ : Bytes) -> Unit
 
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
@@ -360,6 +366,8 @@ pub fn register_mesh2d_pipeline_descriptor(pipeline_id~ : UInt64, shader_path~ :
 pub fn register_mesh3d_material_pipeline_descriptor(material_pipeline_id~ : UInt64, descriptor~ : @render_resource.RenderPipelineDescriptor) -> Unit
 
 pub fn register_wgsl_source(String, String) -> Unit
+
+pub fn release_frame_retired_resources() -> Unit
 
 pub fn render_context_backend_for_test() -> GpuBackend?
 
@@ -447,6 +455,8 @@ pub(all) suberror GpuBackendError {
 type CasPipelineCacheEntry
 
 type CustomPostProcessPipelineCacheEntry
+
+type GpuAtmosphereResources
 
 type GpuAutoExposureViewState
 
@@ -906,6 +916,10 @@ pub struct GpuBackend {
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_view_bg_cache : Array[Mesh3dViewBindGroupCacheEntry]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
+  mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
+  mut mesh3d_atmosphere_resource_revision : Int
+  mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
+  mut mesh3d_scattering_medium_resource_revision : Int
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int
@@ -1015,6 +1029,7 @@ pub fn GpuBackend::prepare_motion_blur(Self, Int, Float, Int) -> Unit raise GpuB
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::present_active_frames(Self) -> Unit
 pub fn GpuBackend::register_mesh2d_pipeline_descriptor(Self, UInt64, String) -> Unit
+pub fn GpuBackend::release_frame_retired_resources(Self) -> Unit
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
@@ -1190,6 +1205,8 @@ pub fn GpuPassState::target_layer(Self) -> Int
 pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
 
 type GpuPrepassDepthTextureInfo
+
+type GpuScatteringMediumResources
 
 type GpuStorageSlot
 
@@ -1572,6 +1589,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
   tonemapping_lut_texture_id : Int
+  atmosphere_resource_revision : Int
   bind_group : @wgpu_mbt.BindGroup
   binding_arrays_bind_group : @wgpu_mbt.BindGroup
 }

@@ -33,3 +33,62 @@ test "pbr: WireframeConfig can be accessed through ResMut" {
     content="Some(true)",
   )
 }
+
+///|
+test "pbr: WireframeConfig carries Bevy line width and topology defaults" {
+  let config = WireframeConfig::WireframeConfig()
+  debug_inspect(config.global, content="false")
+  debug_inspect(
+    config.default_color.to_srgba_tuple() ==
+    @color.Color::white().to_srgba_tuple(),
+    content="true",
+  )
+  debug_inspect(config.default_line_width, content="1")
+  debug_inspect(config.default_topology, content="Triangles")
+  let custom = WireframeConfig::new(
+    true,
+    @color.Color::white(),
+    default_line_width=3.0F,
+    default_topology=Quads,
+  )
+  debug_inspect(custom.global, content="true")
+  debug_inspect(custom.default_line_width, content="3")
+  debug_inspect(custom.default_topology, content="Quads")
+}
+
+///|
+test "pbr: WireframeMaterial is an asset-backed authoring material" {
+  let material = WireframeMaterial::new(@color.Color::white(), 2.0F, Quads)
+  let rendered = RenderWireframeMaterial::from_material(material)
+  debug_inspect(
+    rendered.color.to_srgba_tuple() == @color.Color::white().to_srgba_tuple(),
+    content="true",
+  )
+  debug_inspect(rendered.line_width, content="2")
+  debug_inspect(rendered.topology, content="Quads")
+  let assets : @asset.Assets[WireframeMaterial] = @asset.Assets::new()
+  let handle = assets.add(material)
+  let component = Mesh3dWireframe::new(handle)
+  debug_inspect(assets.contains(component.material()), content="true")
+}
+
+///|
+test "pbr: WireframePlugin initializes config and specialization resources" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    WireframePlugin::WireframePlugin(),
+  )
+  app.run_startup() |> ignore
+  debug_inspect(
+    app.world().resource(ecs_key_wireframe_config).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    app
+    .world()
+    .resource(ecs_key_wireframe_entities_needing_specialization)
+    .is_present(),
+    content="true",
+  )
+  let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  debug_inspect(app.world().resource(asset_key).is_present(), content="true")
+}

@@ -129,6 +129,8 @@ priv struct Render3dExtractMeshRequiredComponents {
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
+  wireframe_line_width : WireframeLineWidth?
+  wireframe_topology : WireframeTopology?
 }
 
 ///|
@@ -168,6 +170,8 @@ fn render3d_extract_mesh_for_entity(
     prefetched_has_wireframe,
     prefetched_has_no_wireframe,
     prefetched_wireframe_color,
+    prefetched_wireframe_line_width,
+    prefetched_wireframe_topology,
   ) = match required_components {
     Some(components) =>
       (
@@ -191,6 +195,8 @@ fn render3d_extract_mesh_for_entity(
         components.has_wireframe,
         components.has_no_wireframe,
         components.wireframe_color,
+        components.wireframe_line_width,
+        components.wireframe_topology,
       )
     None => {
       let mesh3d = match
@@ -284,12 +290,18 @@ fn render3d_extract_mesh_for_entity(
       let wireframe_color = try! source_world.get_by_key(
         entity, ecs_key_wireframe_color,
       )
+      let wireframe_line_width = try! source_world.get_by_key(
+        entity, ecs_key_wireframe_line_width,
+      )
+      let wireframe_topology = try! source_world.get_by_key(
+        entity, ecs_key_wireframe_topology,
+      )
       (
         mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
         aabb, layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
         clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_cpu_culling,
         has_not_shadow_receiver, has_transmitted_shadow_receiver, has_wireframe,
-        has_no_wireframe, wireframe_color,
+        has_no_wireframe, wireframe_color, wireframe_line_width, wireframe_topology,
       )
     }
   }
@@ -402,6 +414,8 @@ fn render3d_extract_mesh_for_entity(
   let has_wireframe = prefetched_has_wireframe
   let has_no_wireframe = prefetched_has_no_wireframe
   let wireframe_color = prefetched_wireframe_color
+  let wireframe_line_width = prefetched_wireframe_line_width
+  let wireframe_topology = prefetched_wireframe_topology
   (
     Some(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
@@ -437,6 +451,8 @@ fn render3d_extract_mesh_for_entity(
         has_wireframe,
         has_no_wireframe,
         wireframe_color,
+        wireframe_line_width,
+        wireframe_topology,
         skinning_key_hi,
         has_previous_skin,
         morph_weights_index,
@@ -512,6 +528,8 @@ fn render3d_execute_collect_meshes(
           @ecs.Has[Wireframe],
           @ecs.Has[NoWireframe],
           @ecs.Optional[WireframeColor],
+          @ecs.Optional[WireframeLineWidth],
+          @ecs.Optional[WireframeTopology],
         ),
       ),
     ),
@@ -539,7 +557,13 @@ fn render3d_execute_collect_meshes(
           not_shadow_receiver,
           transmitted_shadow_receiver,
         ),
-        (wireframe, no_wireframe, wireframe_color),
+        (
+          wireframe,
+          no_wireframe,
+          wireframe_color,
+          wireframe_line_width,
+          wireframe_topology,
+        ),
       ),
     ) = data
     render_material_instances.modify(fn(instances) {
@@ -582,6 +606,8 @@ fn render3d_execute_collect_meshes(
         has_wireframe: wireframe.present(),
         has_no_wireframe: no_wireframe.present(),
         wireframe_color: wireframe_color.value(),
+        wireframe_line_width: wireframe_line_width.value(),
+        wireframe_topology: wireframe_topology.value(),
       }),
     )
     match next_mesh {

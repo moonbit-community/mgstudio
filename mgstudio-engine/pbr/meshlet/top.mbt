@@ -76,7 +76,7 @@ let meshlet_render3d_set_extract : @app.SystemSet = @render.render_system_set_ex
 let meshlet_render3d_set_prepare_assets : @app.SystemSet = @render.render_system_set_prepare_assets
 
 ///|
-let meshlet_render3d_set_manage_views : @app.SystemSet = @render.render_system_set_manage_views
+let meshlet_render3d_set_create_views : @app.SystemSet = @render.render_system_set_create_views
 
 ///|
 let meshlet_render3d_set_prepare_resources : @app.SystemSet = @render.render_system_set_prepare_resources
@@ -1570,7 +1570,7 @@ fn meshlet_configure_render_sub_app(
   .add_systems(
     stage,
     @app.system(meshlet_configure_views_system).in_set(
-      meshlet_render3d_set_manage_views,
+      meshlet_render3d_set_create_views,
     ),
   )
   .add_systems(
@@ -1619,7 +1619,7 @@ fn meshlet_configure_render_sub_app(
       @core_3d.core_3d_set_main_pass,
     ),
   )
-  .configure_set(stage, meshlet_render3d_set_manage_views, before=[
+  .configure_set(stage, meshlet_render3d_set_create_views, before=[
     meshlet_render3d_set_queue_meshes_prepare_materials,
   ])
   .configure_set(stage, @render.render_system_set_queue, before=[

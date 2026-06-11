@@ -650,14 +650,6 @@ pub fn GpuBackend::begin_frame_binding(
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
     return false
   }
-  for bind_group in self.frame_retired_bind_groups {
-    bind_group.release()
-  }
-  self.frame_retired_bind_groups.clear()
-  for buffer in self.frame_retired_buffers {
-    buffer.release()
-  }
-  self.frame_retired_buffers.clear()
   self.mesh3d_pass_uniform_states.clear()
   self.mesh3d_frame_view_bg_cache.clear()
   self.mesh3d_motion_vector_view_bg_cache.clear()
@@ -849,6 +841,24 @@ pub fn GpuBackend::present_active_frames(self : GpuBackend) -> Unit {
   for binding in frames {
     self.present_frame_binding(binding.surface_id)
   }
+}
+
+///|
+pub fn GpuBackend::release_frame_retired_resources(self : GpuBackend) -> Unit {
+  for bind_group in self.frame_retired_bind_groups {
+    bind_group.release()
+  }
+  self.frame_retired_bind_groups.clear()
+  for buffer in self.frame_retired_buffers {
+    buffer.release()
+  }
+  self.frame_retired_buffers.clear()
+}
+
+///|
+pub fn release_frame_retired_resources() -> Unit {
+  guard ensure_backend() is Some(backend) else { return }
+  backend.release_frame_retired_resources()
 }
 
 ///|

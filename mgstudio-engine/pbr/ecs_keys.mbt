@@ -150,6 +150,21 @@ pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.regis
 )
 
 ///|
+pub let ecs_key_wireframe_line_width : @ecs.ComponentKey[WireframeLineWidth] = @ecs.register_component(
+  debug_name="render3d.wireframe_line_width",
+)
+
+///|
+pub let ecs_key_wireframe_topology : @ecs.ComponentKey[WireframeTopology] = @ecs.register_component(
+  debug_name="render3d.wireframe_topology",
+)
+
+///|
+pub let ecs_key_mesh3d_wireframe : @ecs.ComponentKey[Mesh3dWireframe] = @ecs.register_component(
+  debug_name="render3d.mesh3d_wireframe",
+)
+
+///|
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @pbr_prepass.ecs_key_deferred_prepass
 
 ///|
@@ -352,6 +367,21 @@ pub impl @ecs.Component for WireframeColor with fn component() {
 }
 
 ///|
+pub impl @ecs.Component for WireframeLineWidth with fn component() {
+  ecs_key_wireframe_line_width
+}
+
+///|
+pub impl @ecs.Component for WireframeTopology with fn component() {
+  ecs_key_wireframe_topology
+}
+
+///|
+pub impl @ecs.Component for Mesh3dWireframe with fn component() {
+  ecs_key_mesh3d_wireframe
+}
+
+///|
 pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
 }
@@ -399,6 +429,13 @@ pub impl @ecs.Component for OrderIndependentTransparencySettings with fn compone
 ///|
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig] = @ecs.register_resource(
   debug_name="render3d.wireframe_config",
+)
+
+///|
+pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[
+  WireframeEntitiesNeedingSpecialization,
+] = @ecs.register_resource(
+  debug_name="render3d.wireframe_entities_needing_specialization",
 )
 
 ///|

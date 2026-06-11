@@ -506,7 +506,7 @@ test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
   inspect(compatible_vertex_layout_id.id(), content="0")
   inspect(pipelines.mesh_layout_cache_len(), content="2")
   inspect(pipelines.vertex_layout_cache_len(), content="1")
-  pipeline_cache.accept_new_pipelines_for_processing()
+  pipeline_cache.process_queue()
   let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   inspect(descriptor.vertex.buffers.length(), content="1")
 }

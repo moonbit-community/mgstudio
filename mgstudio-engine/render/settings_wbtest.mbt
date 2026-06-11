@@ -128,7 +128,101 @@ test "render schedule: order inserts stages around render" {
 }
 
 ///|
-test "render schedule: pipeline queue is admitted before render set" {
+test "render schedule: view and specialization sets match bevy order" {
+  let log : Array[String] = []
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(render_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_schedule_stage()))
+  let render_sub_app = configure_base_render_sets(render_sub_app)
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("prepare_meshes") }).in_set(
+        render_system_set_prepare_meshes,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("create_views") }).in_set(
+        render_system_set_create_views,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("specialize") }).in_set(
+        render_system_set_specialize,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("prepare_views") }).in_set(
+        render_system_set_prepare_views,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("queue") }).in_set(
+        render_system_set_queue,
+      ),
+    )
+  ignore(render_sub_app.update())
+  debug_inspect(
+    log.join(","),
+    content="\"prepare_meshes,create_views,specialize,prepare_views,queue\"",
+  )
+}
+
+///|
+test "render schedule: prepare resource sets match bevy order" {
+  let log : Array[String] = []
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(render_schedule_stage()))
+    .add_schedule(@app.Schedule::new(render_schedule_stage()))
+  let render_sub_app = configure_base_render_sets(render_sub_app)
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("prepare_resources") }).in_set(
+        render_system_set_prepare_resources,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("batch_phases") }).in_set(
+        render_system_set_prepare_resources_batch_phases,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("write_phase_buffers") }).in_set(
+        render_system_set_prepare_resources_write_phase_buffers,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("collect_phase_buffers") }).in_set(
+        render_system_set_prepare_resources_collect_phase_buffers,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("flush") }).in_set(
+        render_system_set_prepare_resources_flush,
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("bind_groups") }).in_set(
+        render_system_set_prepare_bind_groups,
+      ),
+    )
+  ignore(render_sub_app.update())
+  debug_inspect(
+    log.join(","),
+    content="\"prepare_resources,batch_phases,write_phase_buffers,collect_phase_buffers,flush,bind_groups\"",
+  )
+}
+
+///|
+test "render schedule: pipeline queue is chained inside render set" {
   let log : Array[String] = []
   let cache = @render_resource.PipelineCache::new()
   ignore(
@@ -143,8 +237,15 @@ test "render schedule: pipeline queue is admitted before render set" {
   let render_sub_app = configure_base_render_sets(render_sub_app)
     .add_systems(
       render_schedule_stage(),
-      @app.system(process_pipeline_queue_system).in_set(
-        render_system_set_process_pipeline_queue,
+      @app.system(fn(world : @ecs.World) {
+        process_pipeline_queue_system(world)
+        log.push("process")
+      }).in_set(render_system_set_process_pipeline_queue),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(_world : @ecs.World) { log.push("register") }).in_set(
+        render_system_set_register_pipeline_descriptors,
       ),
     )
     .add_systems(
@@ -152,12 +253,12 @@ test "render schedule: pipeline queue is admitted before render set" {
       @app.system(fn(world : @ecs.World) {
         let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
         log.push(
-          "\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{to_repr(cache.waiting_pipelines()).to_string()}",
+          "driver:\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{to_repr(cache.waiting_pipelines()).to_string()}",
         )
-      }).in_set(render_system_set_render),
+      }).in_set(render_system_set_render_graph_driver),
     )
   ignore(render_sub_app.update())
-  debug_inspect(log.join(","), content="\"1:0:[0]\"")
+  debug_inspect(log.join(","), content="\"process,register,driver:1:0:[0]\"")
 }
 
 ///|
@@ -224,12 +325,47 @@ test "render settings: current view stores the render entity" {
 }
 
 ///|
-test "render plugin: initializes pending command buffers in render app" {
+test "render plugin: initializes pending command buffers from render startup" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
-  let render_sub_app = app.get_sub_app(@app.RenderApp).unwrap()
+  let render_sub_app = app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .set_update_schedule(Some(render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="false",
+  )
+  ignore(render_sub_app.run_startup())
+  let pending = render_world
+    .get_resource(pending_command_buffers_resource_key)
+    .unwrap()
+  debug_inspect(pending.is_empty(), content="true")
+}
+
+///|
+test "render startup: gpu resources can be initialized repeatedly" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  let render_sub_app = app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .set_update_schedule(Some(render_startup_schedule_stage()))
+  let render_world = render_sub_app.world()
+  ignore(render_sub_app.run_startup())
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="true",
+  )
+  render_world.remove_resource(pending_command_buffers_resource_key) |> ignore
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="false",
+  )
+  ignore(render_sub_app.run_startup())
   let pending = render_world
     .get_resource(pending_command_buffers_resource_key)
     .unwrap()

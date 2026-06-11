@@ -167,6 +167,9 @@ pub struct AtmosphereSettings {
   rendering_method : AtmosphereMode
 } derive(ToJson, @json.FromJson)
 pub fn AtmosphereSettings::AtmosphereSettings() -> Self
+pub fn AtmosphereSettings::rendering_method(Self) -> AtmosphereMode
+pub fn AtmosphereSettings::scene_units_to_m(Self) -> Float
+pub fn AtmosphereSettings::sky_max_samples(Self) -> Int
 pub fn AtmosphereSettings::with_rendering_method(Self, AtmosphereMode) -> Self
 pub fn AtmosphereSettings::with_scene_units_to_m(Self, Float) -> Self
 pub fn AtmosphereSettings::with_sky_max_samples(Self, Int) -> Self
@@ -462,6 +465,7 @@ pub struct ScatteringMedium {
   density_multiplier : Float
 } derive(ToJson, @json.FromJson)
 pub fn ScatteringMedium::ScatteringMedium() -> Self
+pub fn ScatteringMedium::density_multiplier(Self) -> Float
 pub fn ScatteringMedium::earthlike() -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
 pub impl @asset.Asset for ScatteringMedium

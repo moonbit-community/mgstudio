@@ -296,6 +296,23 @@ pub fn AtmosphereSettings::with_rendering_method(
 }
 
 ///|
+pub fn AtmosphereSettings::scene_units_to_m(self : AtmosphereSettings) -> Float {
+  self.scene_units_to_m
+}
+
+///|
+pub fn AtmosphereSettings::sky_max_samples(self : AtmosphereSettings) -> Int {
+  self.sky_max_samples
+}
+
+///|
+pub fn AtmosphereSettings::rendering_method(
+  self : AtmosphereSettings,
+) -> AtmosphereMode {
+  self.rendering_method
+}
+
+///|
 pub struct ScatteringMedium {
   density_multiplier : Float
 } derive(ToJson, FromJson)
@@ -339,6 +356,11 @@ pub fn ScatteringMedium::with_density_multiplier(
   ScatteringMedium::{
     density_multiplier: light_sanitize_non_negative(density_multiplier),
   }
+}
+
+///|
+pub fn ScatteringMedium::density_multiplier(self : ScatteringMedium) -> Float {
+  self.density_multiplier
 }
 
 ///|

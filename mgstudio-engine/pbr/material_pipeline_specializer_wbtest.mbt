@@ -549,7 +549,7 @@ test "pbr material base specialization caches descriptors from real material pro
     state.peek().specialized_material_pipelines.vertex_layout_cache_len(),
     content="1",
   )
-  pipeline_cache.accept_new_pipelines_for_processing()
+  pipeline_cache.process_queue()
   let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   inspect(descriptor.layout.length(), content="4")
   debug_inspect(
@@ -806,7 +806,7 @@ test "pbr material prepass specialization caches descriptors separately" {
     state.peek().specialized_prepass_material_pipelines.mesh_layout_cache_len(),
     content="1",
   )
-  pipeline_cache.accept_new_pipelines_for_processing()
+  pipeline_cache.process_queue()
   let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   debug_inspect(descriptor.label, content="Some(\"prepass_pipeline\")")
 }

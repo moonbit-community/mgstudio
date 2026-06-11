@@ -230,13 +230,11 @@ fn[T] render_world_resource_present(
 }
 
 ///|
-pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
-  if !render_world_resource_present(world, pending_command_buffers_resource_key) {
-    world.insert_resource(
-      pending_command_buffers_resource_key,
-      @renderer.PendingCommandBuffers::PendingCommandBuffers(),
-    )
-  }
+pub fn init_pending_command_buffers_resource(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    pending_command_buffers_resource_key,
+    @renderer.PendingCommandBuffers::PendingCommandBuffers(),
+  )
 }
 
 ///|
@@ -256,6 +254,7 @@ pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
       buffer.release()
     }
   }
+  @renderer.release_frame_retired_resources()
   world.insert_resource(pending_command_buffers_resource_key, pending)
 }
 
@@ -279,7 +278,7 @@ fn process_pipeline_queue_system(world : @ecs.World) -> Unit {
   guard world.get_resource(pipeline_cache_resource_key) is Some(cache) else {
     return
   }
-  cache.accept_new_pipelines_for_processing()
+  cache.process_queue()
 }
 
 ///|
@@ -326,7 +325,6 @@ pub fn RenderResources::unpack_into(
     pipeline_cache_resource_key,
     @render_resource.PipelineCache::new(),
   )
-  init_renderer_context_resources(render_world)
   render_world.insert_resource(render_device_resource_key, self.device)
   render_world.insert_resource(render_queue_resource_key, self.queue)
   render_world.insert_resource(render_adapter_resource_key, self.render_adapter)
@@ -386,7 +384,6 @@ pub fn ensure_primary_render_resources(
       @render_resource.PipelineCache::new(),
     )
   }
-  init_renderer_context_resources(render_world)
   if !render_world_resource_present(render_world, render_device_resource_key) {
     render_world.insert_resource(render_device_resource_key, device)
   }

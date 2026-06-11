@@ -480,6 +480,10 @@ pub struct GpuBackend {
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_view_bg_cache : Array[Mesh3dViewBindGroupCacheEntry]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
+  mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
+  mut mesh3d_atmosphere_resource_revision : Int
+  mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
+  mut mesh3d_scattering_medium_resource_revision : Int
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int

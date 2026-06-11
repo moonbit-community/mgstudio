@@ -203,6 +203,8 @@ pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool
 
 pub fn host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
 
+pub fn host_gpu_dispatch_mesh3d_atmosphere_luts() -> Unit
+
 pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn host_gpu_draw_blit(scene_texture_id~ : Int) -> Unit
@@ -257,6 +259,8 @@ pub fn host_gpu_mesh3d_preprocess_disabled() -> Bool
 
 pub fn host_gpu_mesh_info(Int) -> @renderer.HostGpuMeshInfo?
 
+pub fn host_gpu_prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albedo_y~ : Float, ground_albedo_z~ : Float, inner_radius~ : Float, outer_radius~ : Float, world_to_atmosphere_x_axis_x~ : Float, world_to_atmosphere_x_axis_y~ : Float, world_to_atmosphere_x_axis_z~ : Float, world_to_atmosphere_y_axis_x~ : Float, world_to_atmosphere_y_axis_y~ : Float, world_to_atmosphere_y_axis_z~ : Float, world_to_atmosphere_z_axis_x~ : Float, world_to_atmosphere_z_axis_y~ : Float, world_to_atmosphere_z_axis_z~ : Float, world_to_atmosphere_translation_x~ : Float, world_to_atmosphere_translation_y~ : Float, world_to_atmosphere_translation_z~ : Float, transmittance_width~ : Int, transmittance_height~ : Int, transmittance_lut_samples~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, multiscattering_lut_dirs~ : Int, multiscattering_lut_samples~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, sky_view_lut_samples~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int, aerial_view_lut_samples~ : Int, aerial_view_lut_max_distance~ : Float, sky_max_samples~ : Int, rendering_method~ : Int) -> Unit
+
 pub fn host_gpu_prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[@renderer.HostMesh3dMainPassDrawEntry]) -> Unit
@@ -264,6 +268,8 @@ pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : 
 pub fn host_gpu_prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> Unit
+
+pub fn host_gpu_prepare_mesh3d_scattering_medium_resources(density_width~ : Int, density_height~ : Int, density_bytes~ : Bytes, scattering_width~ : Int, scattering_height~ : Int, scattering_bytes~ : Bytes) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
@@ -303,9 +309,9 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, ca
 
 pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, world_from_local? : Array[Float]?, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, emissive_exposure_weight? : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, attenuation_color_r? : Float, attenuation_color_g? : Float, attenuation_color_b? : Float, attenuation_distance? : Float, clearcoat? : Float, clearcoat_perceptual_roughness? : Float, alpha_cutoff~ : Float, material_flags~ : UInt, lightmap_exposure? : Float, lightmap_texture_id? : Int, lightmap_uv_min_x? : Float, lightmap_uv_min_y? : Float, lightmap_uv_max_x? : Float, lightmap_uv_max_y? : Float, deferred_lighting_pass_id? : Int, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, mesh_flags~ : UInt, skinning_key_hi~ : Int, morph_weights_index? : Int, previous_morph_weights_index? : Int, morph_targets_texture_id? : Int, first_vertex_index? : UInt) -> @renderer.HostMesh3dMainPassDrawEntry
 
-pub fn init_render_state(@ecs.World) -> Unit
+pub fn init_pending_command_buffers_resource(@ecs.World) -> Unit
 
-pub fn init_renderer_context_resources(@ecs.World) -> Unit
+pub fn init_render_state(@ecs.World) -> Unit
 
 pub fn mark_renderer_ready(@ecs.World) -> Unit
 
@@ -393,9 +399,9 @@ pub let render_state_resource_key : @ecs.ResourceKey[RenderState]
 
 pub let render_system_set_cleanup : String
 
-pub let render_system_set_extract_commands : String
+pub let render_system_set_create_views : String
 
-pub let render_system_set_manage_views : String
+pub let render_system_set_extract_commands : String
 
 pub let render_system_set_phase_sort : String
 
@@ -411,9 +417,15 @@ pub let render_system_set_prepare_meshes : String
 
 pub let render_system_set_prepare_resources : String
 
+pub let render_system_set_prepare_resources_batch_phases : String
+
 pub let render_system_set_prepare_resources_collect_phase_buffers : String
 
 pub let render_system_set_prepare_resources_flush : String
+
+pub let render_system_set_prepare_resources_write_phase_buffers : String
+
+pub let render_system_set_prepare_views : String
 
 pub let render_system_set_process_pipeline_queue : String
 
@@ -426,6 +438,8 @@ pub let render_system_set_queue_sweep : String
 pub let render_system_set_register_pipeline_descriptors : String
 
 pub let render_system_set_render : String
+
+pub let render_system_set_specialize : String
 
 pub fn renderer_is_ready(@ecs.World) -> Bool
 

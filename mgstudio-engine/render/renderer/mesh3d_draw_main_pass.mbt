@@ -469,30 +469,37 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     ps.tonemapping_tony_lut_texture_id,
     ps.tonemapping_blender_lut_texture_id,
   )
-  let material_bg = mesh3d_material_cache_get_or_create(
-    self,
-    material_pipeline_id,
-    material_descriptor,
-    base_texture,
-    normal_texture,
-    emissive_texture,
-    metallic_roughness_texture,
-    occlusion_texture,
-    depth_texture,
-    anisotropy_texture,
-    specular_tint_texture,
-    mesh3d_standard_material_uniform_bytes(
-      color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
-      uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
-      emissive_r, emissive_g, emissive_b, emissive_exposure_weight, metallic, roughness,
-      reflectance, attenuation_color_r, attenuation_color_g, attenuation_color_b,
-      attenuation_distance, clearcoat, clearcoat_perceptual_roughness, parallax_depth_scale,
-      max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
-      anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
-      specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
-      lightmap_exposure, deferred_lighting_pass_id,
-    ),
-  )
+  let material_bg = if material_descriptor is Some(_) &&
+    mesh3d_descriptor_material_layout(material_descriptor) is None {
+    None
+  } else {
+    Some(
+      mesh3d_material_cache_get_or_create(
+        self,
+        material_pipeline_id,
+        material_descriptor,
+        base_texture,
+        normal_texture,
+        emissive_texture,
+        metallic_roughness_texture,
+        occlusion_texture,
+        depth_texture,
+        anisotropy_texture,
+        specular_tint_texture,
+        mesh3d_standard_material_uniform_bytes(
+          color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
+          uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
+          emissive_r, emissive_g, emissive_b, emissive_exposure_weight, metallic,
+          roughness, reflectance, attenuation_color_r, attenuation_color_g, attenuation_color_b,
+          attenuation_distance, clearcoat, clearcoat_perceptual_roughness, parallax_depth_scale,
+          max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
+          anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b,
+          diffuse_transmission, specular_transmission, thickness, ior, alpha_cutoff,
+          runtime_material_flags, lightmap_exposure, deferred_lighting_pass_id,
+        ),
+      ),
+    )
+  }
   pass.set_pipeline(pipeline)
   pass.set_bind_group(
     0U,
@@ -509,7 +516,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       previous_morph_weights_index,
     ),
   )
-  pass.set_bind_group(3U, material_bg, [])
+  if material_bg is Some(bind_group) {
+    pass.set_bind_group(3U, bind_group, [])
+  }
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   render_diagnostics_record_mesh3d_executed_draw()
   if use_indirect &&

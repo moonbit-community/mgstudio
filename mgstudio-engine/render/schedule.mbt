@@ -190,8 +190,18 @@ pub let render_system_set_prepare_meshes : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub let render_system_set_manage_views : @app.SystemSet = @app.system_set(
-  "mgstudio.render.manage_views",
+pub let render_system_set_create_views : @app.SystemSet = @app.system_set(
+  "mgstudio.render.create_views",
+)
+
+///|
+pub let render_system_set_specialize : @app.SystemSet = @app.system_set(
+  "mgstudio.render.specialize",
+)
+
+///|
+pub let render_system_set_prepare_views : @app.SystemSet = @app.system_set(
+  "mgstudio.render.prepare_views",
 )
 
 ///|
@@ -225,6 +235,16 @@ pub let render_system_set_prepare_resources : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render_system_set_prepare_resources_batch_phases : @app.SystemSet = @app.system_set(
+  "mgstudio.render.prepare_resources_batch_phases",
+)
+
+///|
+pub let render_system_set_prepare_resources_write_phase_buffers : @app.SystemSet = @app.system_set(
+  "mgstudio.render.prepare_resources_write_phase_buffers",
+)
+
+///|
 pub let render_system_set_prepare_resources_collect_phase_buffers : @app.SystemSet = @app.system_set(
   "mgstudio.render.prepare_resources_collect_phase_buffers",
 )
@@ -252,6 +272,11 @@ pub let render_system_set_register_pipeline_descriptors : @app.SystemSet = @app.
 ///|
 pub let render_system_set_render : @app.SystemSet = @app.system_set(
   "mgstudio.render.render",
+)
+
+///|
+let render_system_set_render_graph_driver : @app.SystemSet = @app.system_set(
+  "mgstudio.render.render_graph_driver",
 )
 
 ///|
@@ -355,9 +380,15 @@ pub fn configure_base_render_sets(
     render_system_set_prepare_meshes,
   ])
   .configure_set(stage, render_system_set_prepare_meshes, before=[
-    render_system_set_manage_views,
+    render_system_set_create_views,
   ])
-  .configure_set(stage, render_system_set_manage_views, before=[
+  .configure_set(stage, render_system_set_create_views, before=[
+    render_system_set_specialize,
+  ])
+  .configure_set(stage, render_system_set_specialize, before=[
+    render_system_set_prepare_views,
+  ])
+  .configure_set(stage, render_system_set_prepare_views, before=[
     render_system_set_queue,
   ])
   .configure_set(stage, render_system_set_queue, before=[
@@ -390,27 +421,55 @@ pub fn configure_base_render_sets(
   .configure_set(stage, render_system_set_prepare_assets, before=[
     render_system_set_prepare_meshes, render_system_set_prepare,
   ])
-  .configure_set(stage, render_system_set_prepare_resources, before=[
-    render_system_set_prepare_resources_collect_phase_buffers,
-  ])
-  .configure_set(stage, render_system_set_prepare, before=[
+  .configure_set(
+    stage,
     render_system_set_prepare_resources,
-  ])
+    before=[render_system_set_prepare_resources_batch_phases],
+    in_sets=[render_system_set_prepare],
+  )
+  .configure_set(
+    stage,
+    render_system_set_prepare_resources_batch_phases,
+    before=[render_system_set_prepare_resources_write_phase_buffers],
+    in_sets=[render_system_set_prepare],
+  )
+  .configure_set(
+    stage,
+    render_system_set_prepare_resources_write_phase_buffers,
+    before=[render_system_set_prepare_resources_collect_phase_buffers],
+    in_sets=[render_system_set_prepare],
+  )
   .configure_set(
     stage,
     render_system_set_prepare_resources_collect_phase_buffers,
     before=[render_system_set_prepare_resources_flush],
+    in_sets=[render_system_set_prepare],
   )
-  .configure_set(stage, render_system_set_prepare_resources_flush, before=[
+  .configure_set(
+    stage,
+    render_system_set_prepare_resources_flush,
+    before=[render_system_set_prepare_bind_groups],
+    in_sets=[render_system_set_prepare],
+  )
+  .configure_set(
+    stage,
     render_system_set_prepare_bind_groups,
-  ])
-  .configure_set(stage, render_system_set_prepare_bind_groups, before=[
+    before=[render_system_set_process_pipeline_queue],
+    in_sets=[render_system_set_prepare],
+  )
+  .configure_set(
+    stage,
     render_system_set_process_pipeline_queue,
-  ])
-  .configure_set(stage, render_system_set_process_pipeline_queue, before=[
+    before=[render_system_set_register_pipeline_descriptors],
+    in_sets=[render_system_set_render],
+  )
+  .configure_set(
+    stage,
     render_system_set_register_pipeline_descriptors,
-  ])
-  .configure_set(stage, render_system_set_register_pipeline_descriptors, before=[
+    before=[render_system_set_render_graph_driver],
+    in_sets=[render_system_set_render],
+  )
+  .configure_set(stage, render_system_set_render_graph_driver, in_sets=[
     render_system_set_render,
   ])
 }

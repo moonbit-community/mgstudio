@@ -34,4 +34,22 @@ test "pbr medium: gpu medium LUT lengths follow config" {
   )
   inspect(gpu_medium.density_lut_len(), content="16")
   inspect(gpu_medium.scattering_lut_len(), content="32")
+  inspect(gpu_medium.density_lut_rgba32f_bytes().length(), content="256")
+  inspect(gpu_medium.scattering_lut_rgba32f_bytes().length(), content="512")
+}
+
+///|
+test "pbr medium: source density multiplier reaches GPU LUT" {
+  let medium = ScatteringMedium::earthlike().with_density_multiplier(2.0F)
+  let runtime = ScatteringMediumRuntime::from_medium(medium).with_lut_config(
+    ScatteringMediumLutConfig::ScatteringMediumLutConfig()
+    .with_falloff_resolution(1)
+    .with_phase_resolution(1),
+  )
+  let gpu_medium = GpuScatteringMedium::new(
+    runtime,
+    ScatteringMediumSampler::ScatteringMediumSampler(),
+  )
+  inspect(gpu_medium.density_lut()[0].x, content="1")
+  inspect(gpu_medium.scattering_lut()[0].x, content="0.5")
 }

@@ -293,7 +293,14 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     return
   }
   guard self.mesh3d_shadow_empty_bg is Some(empty_bg) else { return }
-  let material_bg = if material_path || emulate_unclipped_depth {
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self, material_pipeline_id,
+  )
+  let material_bg = if (material_path || emulate_unclipped_depth) &&
+    (
+      material_descriptor is None ||
+      mesh3d_descriptor_material_layout(material_descriptor) is Some(_)
+    ) {
     let default_texture = ensure_default_texture(self)
     guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
       return
@@ -302,7 +309,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     mesh3d_material_cache_get_or_create(
       self,
       material_pipeline_id,
-      mesh3d_material_pipeline_descriptor_find(self, material_pipeline_id),
+      material_descriptor,
       base_color_texture,
       normal_texture,
       default_texture,
