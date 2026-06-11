@@ -747,6 +747,112 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
 }
 
 ///|
+test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([(render_entity, main_entity)])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  cache.insert(view, main_entity, @material.CachedRenderPipelineId::new(77UL))
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 8)
+  let phase = Wireframe3dViewPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+
+  queue_wireframe_phase_items(
+    phase,
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    {},
+    {},
+    {},
+    Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
+    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  )
+
+  debug_inspect(phase.len(), content="0")
+  debug_inspect(pending.current_len(), content="1")
+}
+
+///|
+test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([(render_entity, main_entity)])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  cache.insert(view, main_entity, @material.CachedRenderPipelineId::new(77UL))
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(main_entity, 8)
+  let render_wireframe_assets : Map[Int, RenderWireframeMaterial] = {}
+  render_wireframe_assets.set(
+    8,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
+    ),
+  )
+  let render_mesh_queue_data : Map[UInt64, WireframeMeshQueueData] = {}
+  render_mesh_queue_data.set(
+    main_entity.id().to_bits(),
+    WireframeMeshQueueData::new(33, 9U, true),
+  )
+  let mesh_slabs : Map[Int, WireframeMeshSlabs] = {}
+  mesh_slabs.set(
+    33,
+    WireframeMeshSlabs::new(
+      2,
+      index_slab_id=Some(5),
+      morph_target_slab_id=Some(7),
+    ),
+  )
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let phase = Wireframe3dViewPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+
+  queue_wireframe_phase_items(
+    phase,
+    view,
+    visible,
+    pending,
+    cache,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    render_wireframe_assets,
+    render_mesh_queue_data,
+    mesh_slabs,
+    draw_functions,
+    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  )
+
+  debug_inspect(phase.len(), content="1")
+  let item = phase.items[0]
+  debug_inspect(item.main_entity() == main_entity, content="true")
+  debug_inspect(item.cached_pipeline().id(), content="77")
+  debug_inspect(item.draw_function().id(), content="1")
+  debug_inspect(item.bin_key().asset_id(), content="33")
+  debug_inspect(item.batch_set_key().asset_id(), content="8")
+  debug_inspect(item.batch_set_key().mesh_asset_id(), content="Some(33)")
+  debug_inspect(item.batch_set_key().slabs().index_slab_id(), content="None")
+  debug_inspect(
+    item.batch_set_key().slabs().morph_target_slab_id(),
+    content="Some(7)",
+  )
+  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+  debug_inspect(phase.phase_type(main_entity), content="Some(BatchableMesh)")
+  debug_inspect(pending.current_len(), content="0")
+}
+
+///|
 test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
   let world = @ecs.World::new()
   let active_camera = world.spawn()

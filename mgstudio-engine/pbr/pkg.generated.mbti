@@ -522,6 +522,8 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
+pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], Map[UInt64, WireframeMeshQueueData], Map[Int, WireframeMeshSlabs], Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
+
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 pub fn render3d_apply_view_contact_shadows_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewContactShadowsUniformOffset)]) -> Unit
@@ -1878,6 +1880,16 @@ pub struct WireframeMaterial {
 pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
+
+pub struct WireframeMeshQueueData {
+  mesh_asset_id : Int
+  current_uniform_index : UInt
+  should_batch : Bool
+}
+pub fn WireframeMeshQueueData::current_uniform_index(Self) -> UInt
+pub fn WireframeMeshQueueData::mesh_asset_id(Self) -> Int
+pub fn WireframeMeshQueueData::new(Int, UInt, Bool) -> Self
+pub fn WireframeMeshQueueData::should_batch(Self) -> Bool
 
 pub struct WireframeMeshSlabs {
   vertex_slab_id : Int

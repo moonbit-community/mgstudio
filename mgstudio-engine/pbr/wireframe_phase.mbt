@@ -630,6 +630,43 @@ pub fn RenderWireframeInstances::remove(
 }
 
 ///|
+pub struct WireframeMeshQueueData {
+  mesh_asset_id : Int
+  current_uniform_index : UInt
+  should_batch : Bool
+}
+
+///|
+pub fn WireframeMeshQueueData::new(
+  mesh_asset_id : Int,
+  current_uniform_index : UInt,
+  should_batch : Bool,
+) -> WireframeMeshQueueData {
+  WireframeMeshQueueData::{ mesh_asset_id, current_uniform_index, should_batch }
+}
+
+///|
+pub fn WireframeMeshQueueData::mesh_asset_id(
+  self : WireframeMeshQueueData,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn WireframeMeshQueueData::current_uniform_index(
+  self : WireframeMeshQueueData,
+) -> UInt {
+  self.current_uniform_index
+}
+
+///|
+pub fn WireframeMeshQueueData::should_batch(
+  self : WireframeMeshQueueData,
+) -> Bool {
+  self.should_batch
+}
+
+///|
 pub struct WireframeWideBindGroups {
   params : Array[WireframeVertexPullParams]
   mesh_asset_dynamic_offsets : Map[Int, Int]
@@ -1384,4 +1421,95 @@ pub fn Wireframe3dPhases::phase(
   retained_view_entity : @core.Entity,
 ) -> Wireframe3dViewPhase? {
   self.views.get(retained_view_entity.to_bits())
+}
+
+///|
+pub fn queue_wireframe_phase_items(
+  wireframe_phase : Wireframe3dViewPhase,
+  retained_view_entity : @core.Entity,
+  render_mesh_visible_entities : @render_visibility.RenderVisibleEntitiesClass,
+  view_pending_wireframe_queues : ViewPendingWireframeQueues,
+  specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
+  render_wireframe_instances : RenderWireframeInstances,
+  dirty_wireframe_specializations : DirtyWireframeSpecializations,
+  render_wireframe_assets : Map[Int, RenderWireframeMaterial],
+  render_mesh_queue_data : Map[UInt64, WireframeMeshQueueData],
+  mesh_slabs : Map[Int, WireframeMeshSlabs],
+  draw_functions : Wireframe3dDrawFunctions,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Unit {
+  for
+    main_entity in dirty_wireframe_specializations.iter_to_dequeue(
+      retained_view_entity, render_mesh_visible_entities,
+    ) {
+    wireframe_phase.remove(main_entity)
+  }
+  for
+    pair in dirty_wireframe_specializations.iter_to_queue(
+      retained_view_entity,
+      render_mesh_visible_entities,
+      view_pending_wireframe_queues.prev_frame(),
+    ) {
+    let render_entity = pair.0
+    let visible_entity = pair.1
+    guard render_wireframe_instances.get(visible_entity)
+      is Some(wireframe_asset_id) else {
+      continue
+    }
+    guard specialized_wireframe_pipeline_cache.pipeline_id(
+        retained_view_entity, visible_entity,
+      )
+      is Some(pipeline_id) else {
+      continue
+    }
+    guard render_mesh_queue_data.get(visible_entity.id().to_bits())
+      is Some(mesh_instance) else {
+      view_pending_wireframe_queues.push_current(render_entity, visible_entity)
+      continue
+    }
+    let is_wide = match render_wireframe_assets.get(wireframe_asset_id) {
+      Some(material) =>
+        material.line_width > 1.0F ||
+        material.topology == WireframeTopology::Quads
+      None => false
+    }
+    let draw_function = if is_wide {
+      draw_functions.wide()
+    } else {
+      draw_functions.thin()
+    }
+    guard mesh_slabs.get(mesh_instance.mesh_asset_id()) is Some(slabs) else {
+      continue
+    }
+    let batch_set_key = Wireframe3dBatchSetKey::new(
+      pipeline_id,
+      wireframe_asset_id,
+      draw_function,
+      if is_wide {
+        WireframeMeshSlabs::new(
+          slabs.vertex_slab_id(),
+          index_slab_id=None,
+          morph_target_slab_id=slabs.morph_target_slab_id(),
+        )
+      } else {
+        slabs
+      },
+      mesh_asset_id=if is_wide {
+        Some(mesh_instance.mesh_asset_id())
+      } else {
+        None
+      },
+    )
+    let bin_key = Wireframe3dBinKey::new(mesh_instance.mesh_asset_id())
+    wireframe_phase.add(
+      batch_set_key,
+      bin_key,
+      (render_entity, visible_entity),
+      mesh_instance.current_uniform_index(),
+      WireframeBinnedRenderPhaseType::mesh(
+        mesh_instance.should_batch(),
+        gpu_preprocessing_support,
+      ),
+    )
+  }
 }
