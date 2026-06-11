@@ -662,14 +662,78 @@ pub fn Wireframe3dDrawFunctions::len(self : Wireframe3dDrawFunctions) -> Int {
 }
 
 ///|
-pub struct PendingWireframeQueues {
+pub struct ViewPendingWireframeQueues {
   current_frame : Array[(@core.Entity, @core.Entity)]
-  previous_frame : Array[(@core.Entity, @core.Entity)]
+  prev_frame : Array[(@core.Entity, @core.Entity)]
+}
+
+///|
+pub fn ViewPendingWireframeQueues::ViewPendingWireframeQueues() -> ViewPendingWireframeQueues {
+  ViewPendingWireframeQueues::{ current_frame: [], prev_frame: [] }
+}
+
+///|
+fn wireframe_pending_pair_contains(
+  entries : Array[(@core.Entity, @core.Entity)],
+  render_entity : @core.Entity,
+  main_entity : @core.Entity,
+) -> Bool {
+  for entry in entries {
+    if entry.0 == render_entity && entry.1 == main_entity {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn ViewPendingWireframeQueues::prepare_for_new_frame(
+  self : ViewPendingWireframeQueues,
+) -> Unit {
+  self.prev_frame.clear()
+  for item in self.current_frame {
+    self.prev_frame.push(item)
+  }
+  self.current_frame.clear()
+}
+
+///|
+pub fn ViewPendingWireframeQueues::push_current(
+  self : ViewPendingWireframeQueues,
+  render_entity : @core.Entity,
+  main_entity : @core.Entity,
+) -> Unit {
+  if !wireframe_pending_pair_contains(
+      self.current_frame,
+      render_entity,
+      main_entity,
+    ) {
+    self.current_frame.push((render_entity, main_entity))
+  }
+}
+
+///|
+pub fn ViewPendingWireframeQueues::current_len(
+  self : ViewPendingWireframeQueues,
+) -> Int {
+  self.current_frame.length()
+}
+
+///|
+pub fn ViewPendingWireframeQueues::prev_len(
+  self : ViewPendingWireframeQueues,
+) -> Int {
+  self.prev_frame.length()
+}
+
+///|
+pub struct PendingWireframeQueues {
+  views : Map[UInt64, ViewPendingWireframeQueues]
 }
 
 ///|
 pub fn PendingWireframeQueues::PendingWireframeQueues() -> PendingWireframeQueues {
-  PendingWireframeQueues::{ current_frame: [], previous_frame: [] }
+  PendingWireframeQueues::{ views: {} }
 }
 
 ///|
@@ -683,37 +747,92 @@ pub impl @app.Resource for PendingWireframeQueues with fn resource() {
 }
 
 ///|
+pub fn PendingWireframeQueues::view_or_insert(
+  self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
+) -> ViewPendingWireframeQueues {
+  let key = retained_view_entity.to_bits()
+  match self.views.get(key) {
+    Some(queues) => queues
+    None => {
+      let queues = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+      self.views.set(key, queues)
+      queues
+    }
+  }
+}
+
+///|
 pub fn PendingWireframeQueues::prepare_for_new_frame(
   self : PendingWireframeQueues,
-) -> Unit {
-  self.previous_frame.clear()
-  for item in self.current_frame {
-    self.previous_frame.push(item)
-  }
-  self.current_frame.clear()
+  retained_view_entity : @core.Entity,
+) -> ViewPendingWireframeQueues {
+  let queues = self.view_or_insert(retained_view_entity)
+  queues.prepare_for_new_frame()
+  queues
 }
 
 ///|
 pub fn PendingWireframeQueues::push_current(
   self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
   render_entity : @core.Entity,
   main_entity : @core.Entity,
 ) -> Unit {
-  self.current_frame.push((render_entity, main_entity))
+  self
+  .view_or_insert(retained_view_entity)
+  .push_current(render_entity, main_entity)
 }
 
 ///|
 pub fn PendingWireframeQueues::current_len(
   self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
 ) -> Int {
-  self.current_frame.length()
+  match self.views.get(retained_view_entity.to_bits()) {
+    Some(queues) => queues.current_len()
+    None => 0
+  }
 }
 
 ///|
-pub fn PendingWireframeQueues::previous_len(
+pub fn PendingWireframeQueues::prev_len(
   self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
 ) -> Int {
-  self.previous_frame.length()
+  match self.views.get(retained_view_entity.to_bits()) {
+    Some(queues) => queues.prev_len()
+    None => 0
+  }
+}
+
+///|
+pub fn PendingWireframeQueues::contains_view(
+  self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
+) -> Bool {
+  self.views.contains(retained_view_entity.to_bits())
+}
+
+///|
+pub fn PendingWireframeQueues::view_len(self : PendingWireframeQueues) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn PendingWireframeQueues::expire_stale_views(
+  self : PendingWireframeQueues,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _queues in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
 }
 
 ///|

@@ -137,17 +137,52 @@ test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines"
 }
 
 ///|
-test "pbr: PendingWireframeQueues moves current frame into previous frame" {
+test "pbr: PendingWireframeQueues moves per-view current frame into prev frame" {
   let queues = PendingWireframeQueues::PendingWireframeQueues()
-  queues.push_current(@core.Entity::new(1, 1), @core.Entity::new(2, 1))
-  queues.push_current(@core.Entity::new(3, 1), @core.Entity::new(4, 1))
-  debug_inspect(queues.current_len(), content="2")
-  debug_inspect(queues.previous_len(), content="0")
+  let view_a = @core.Entity::new(10, 1)
+  let view_b = @core.Entity::new(11, 1)
+  queues.push_current(view_a, @core.Entity::new(1, 1), @core.Entity::new(2, 1))
+  queues.push_current(view_a, @core.Entity::new(1, 1), @core.Entity::new(2, 1))
+  queues.push_current(view_a, @core.Entity::new(3, 1), @core.Entity::new(4, 1))
+  queues.push_current(view_b, @core.Entity::new(5, 1), @core.Entity::new(6, 1))
+  debug_inspect(queues.view_len(), content="2")
+  debug_inspect(queues.current_len(view_a), content="2")
+  debug_inspect(queues.current_len(view_b), content="1")
+  debug_inspect(queues.prev_len(view_a), content="0")
 
-  queues.prepare_for_new_frame()
+  let view_a_queues = queues.prepare_for_new_frame(view_a)
 
-  debug_inspect(queues.current_len(), content="0")
-  debug_inspect(queues.previous_len(), content="2")
+  debug_inspect(view_a_queues.current_len(), content="0")
+  debug_inspect(view_a_queues.prev_len(), content="2")
+  debug_inspect(queues.current_len(view_a), content="0")
+  debug_inspect(queues.prev_len(view_a), content="2")
+  debug_inspect(queues.current_len(view_b), content="1")
+  debug_inspect(queues.prev_len(view_b), content="0")
+}
+
+///|
+test "pbr: PendingWireframeQueues expires stale views" {
+  let queues = PendingWireframeQueues::PendingWireframeQueues()
+  let live_view = @core.Entity::new(10, 1)
+  let stale_view = @core.Entity::new(11, 1)
+  queues.push_current(
+    live_view,
+    @core.Entity::new(1, 1),
+    @core.Entity::new(2, 1),
+  )
+  queues.push_current(
+    stale_view,
+    @core.Entity::new(3, 1),
+    @core.Entity::new(4, 1),
+  )
+  let live : Map[UInt64, Bool] = {}
+  live.set(live_view.to_bits(), true)
+
+  queues.expire_stale_views(live)
+
+  debug_inspect(queues.view_len(), content="1")
+  debug_inspect(queues.contains_view(live_view), content="true")
+  debug_inspect(queues.contains_view(stale_view), content="false")
 }
 
 ///|
