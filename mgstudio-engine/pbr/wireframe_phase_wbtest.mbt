@@ -107,17 +107,37 @@ test "pbr: WireframePipelineKey follows Bevy wide quads line-mode rules" {
 test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines" {
   let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
   let view = @core.Entity::new(10, 1)
+  let stale_view = @core.Entity::new(12, 1)
   let entity = @core.Entity::new(11, 1)
+  let stale_entity = @core.Entity::new(13, 1)
   let pipeline = @material.CachedRenderPipelineId::new(77UL)
   cache.insert(view, entity, pipeline)
+  cache.insert(
+    stale_view,
+    stale_entity,
+    @material.CachedRenderPipelineId::new(79UL),
+  )
 
-  debug_inspect(cache.len(), content="1")
+  debug_inspect(cache.len(), content="2")
   debug_inspect(
     cache.pipeline_id(view, entity).map(fn(id) { id.id() }),
     content="Some(77)",
   )
-  debug_inspect(cache.remove_entity_from_all_views(entity), content="1")
+  debug_inspect(cache.remove_from_view(view, entity), content="true")
   debug_inspect(cache.pipeline_id(view, entity) is None, content="true")
+  cache.insert(view, entity, pipeline)
+  cache.clear_view(view)
+  debug_inspect(cache.pipeline_id(view, entity) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(stale_view, stale_entity) is Some(_),
+    content="true",
+  )
+
+  let live : Map[UInt64, Bool] = {}
+  live.set(view.to_bits(), true)
+  cache.expire_stale_views(live)
+  debug_inspect(cache.contains_view(view), content="true")
+  debug_inspect(cache.contains_view(stale_view), content="false")
 
   let wide_key = WireframeWidePipelineCacheKey::new(
     @material.ErasedMeshPipelineKey::new(3UL, "MeshPipelineKey"),

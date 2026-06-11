@@ -1591,11 +1591,15 @@ pub struct SpecializedWireframePipelineCache {
   wide : Map[String, @render_resource.CachedRenderPipelineId]
 }
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> Self
+pub fn SpecializedWireframePipelineCache::clear_view(Self, @core.Entity) -> Unit
+pub fn SpecializedWireframePipelineCache::contains_view(Self, @core.Entity) -> Bool
+pub fn SpecializedWireframePipelineCache::expire_stale_views(Self, Map[UInt64, Bool]) -> Unit
 pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(Self, WireframeWidePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @core.Entity) -> @render_resource.CachedRenderPipelineId?
 pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
+pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @core.Entity) -> Bool
 pub fn SpecializedWireframePipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedWireframeViewPipelineCache
 pub fn SpecializedWireframePipelineCache::wide_len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::wide_pipeline_id(Self, WireframeWidePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
@@ -1605,6 +1609,7 @@ pub struct SpecializedWireframeViewPipelineCache {
   map : Map[UInt64, @render_resource.CachedRenderPipelineId]
 }
 pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> Self
+pub fn SpecializedWireframeViewPipelineCache::clear(Self) -> Unit
 pub fn SpecializedWireframeViewPipelineCache::get(Self, @core.Entity) -> @render_resource.CachedRenderPipelineId?
 pub fn SpecializedWireframeViewPipelineCache::insert(Self, @core.Entity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframeViewPipelineCache::len(Self) -> Int

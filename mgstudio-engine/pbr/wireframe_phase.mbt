@@ -358,6 +358,13 @@ pub fn SpecializedWireframeViewPipelineCache::len(
 }
 
 ///|
+pub fn SpecializedWireframeViewPipelineCache::clear(
+  self : SpecializedWireframeViewPipelineCache,
+) -> Unit {
+  self.map.clear()
+}
+
+///|
 pub fn SpecializedWireframeViewPipelineCache::get(
   self : SpecializedWireframeViewPipelineCache,
   entity : @core.Entity,
@@ -464,6 +471,29 @@ pub fn SpecializedWireframePipelineCache::pipeline_id(
 }
 
 ///|
+pub fn SpecializedWireframePipelineCache::clear_view(
+  self : SpecializedWireframePipelineCache,
+  view : @core.Entity,
+) -> Unit {
+  match self.views.get(view.to_bits()) {
+    Some(cache) => cache.clear()
+    None => ()
+  }
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::remove_from_view(
+  self : SpecializedWireframePipelineCache,
+  view : @core.Entity,
+  entity : @core.Entity,
+) -> Bool {
+  match self.views.get(view.to_bits()) {
+    Some(cache) => cache.remove(entity)
+    None => false
+  }
+}
+
+///|
 pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(
   self : SpecializedWireframePipelineCache,
   entity : @core.Entity,
@@ -475,6 +505,30 @@ pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(
     }
   }
   removed
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::contains_view(
+  self : SpecializedWireframePipelineCache,
+  view : @core.Entity,
+) -> Bool {
+  self.views.contains(view.to_bits())
+}
+
+///|
+pub fn SpecializedWireframePipelineCache::expire_stale_views(
+  self : SpecializedWireframePipelineCache,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _cache in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
 }
 
 ///|
