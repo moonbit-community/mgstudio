@@ -575,14 +575,12 @@ pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
   cull_mode~ : Int,
   vertex_shader_path~ : String?,
   fragment_shader_path~ : String?,
-  forward_decal~ : Bool,
 ) -> Unit {
   @renderer.host_gpu_prewarm_mesh3d_pipeline_variants(
     mesh_topology_kind~,
     cull_mode~,
     vertex_shader_path~,
     fragment_shader_path~,
-    forward_decal~,
   )
 }
 
@@ -1474,6 +1472,7 @@ pub fn host_gpu_draw_mesh3d(
   clearcoat_perceptual_roughness? : Float = 0.5F,
   alpha_cutoff~ : Float,
   material_flags~ : UInt,
+  forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   material_pipeline_id? : UInt64 = 0xffffffffffffffffUL,
   lightmap_exposure? : Float = 1.0F,
   lightmap_texture_id? : Int = -1,
@@ -1582,6 +1581,7 @@ pub fn host_gpu_draw_mesh3d(
     clearcoat_perceptual_roughness~,
     alpha_cutoff~,
     material_flags~,
+    forward_decal_inv_depth_fade_factor~,
     material_pipeline_id~,
     lightmap_exposure~,
     lightmap_texture_id~,

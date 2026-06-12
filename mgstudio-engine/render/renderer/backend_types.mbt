@@ -115,6 +115,8 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   specular_tint_texture_id : Int
   material_uniform_bytes : Bytes
   material_uniform_buffer : @wgpu.Buffer
+  forward_decal_uniform_bytes : Bytes
+  forward_decal_uniform_buffer : @wgpu.Buffer?
   bind_group : @wgpu.BindGroup
 }
 

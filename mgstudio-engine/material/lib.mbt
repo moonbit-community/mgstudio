@@ -1089,6 +1089,7 @@ pub struct ExtendedMaterialMetadata3d {
   requires_depth_prepass : Bool
   requires_deferred_prepass : Bool
   disable_shadows : Bool
+  user_specialize : UserSpecializeFn?
 }
 
 ///|
@@ -1109,6 +1110,7 @@ pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMater
     requires_depth_prepass: false,
     requires_deferred_prepass: false,
     disable_shadows: false,
+    user_specialize: None,
   }
 }
 
@@ -1279,6 +1281,14 @@ pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
   disable_shadows : Bool,
 ) -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{ ..self, disable_shadows, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_user_specialize(
+  self : ExtendedMaterialMetadata3d,
+  user_specialize : UserSpecializeFn?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, user_specialize, }
 }
 
 ///|

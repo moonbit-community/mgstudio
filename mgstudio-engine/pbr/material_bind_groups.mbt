@@ -165,6 +165,27 @@ pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLa
 }
 
 ///|
+pub fn forward_decal_material_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+  let entries = standard_material_bind_group_layout_descriptor()
+    .entries()
+    .copy()
+  entries.push(
+    @render_resource.BindGroupLayoutEntry::new(
+      200,
+      @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        4UL,
+      ),
+    ),
+  )
+  @material.BindGroupLayoutDescriptor::new(
+    "ForwardDecalMaterial<StandardMaterial>", entries,
+  )
+}
+
+///|
 pub fn material_uses_bindless_resources(
   bindless_supported : Bool,
   bindless_slot_count : Int?,

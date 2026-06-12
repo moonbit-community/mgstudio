@@ -276,11 +276,14 @@ fn render3d_queue_camera_phase_items(
 }
 
 ///|
-fn render3d_mesh_phase_kind(material : StandardMaterial, alpha : Float) -> Int? {
-  match standard_material_render_phase_type(material) {
+fn render3d_mesh_phase_kind(
+  properties : @material.MaterialProperties,
+  alpha : Float,
+) -> Int? {
+  match properties.render_phase_type {
     @material.RenderPhaseType::Opaque => Some(RENDER3D_PHASE_OPAQUE)
     @material.RenderPhaseType::AlphaMask =>
-      match material.alpha_mode {
+      match properties.alpha_mode {
         Mask(cutoff) =>
           if alpha >= cutoff {
             Some(RENDER3D_PHASE_ALPHA_MASK)

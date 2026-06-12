@@ -6,6 +6,8 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",

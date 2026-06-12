@@ -60,20 +60,19 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let decal_material_ext = @pbr.ForwardDecalMaterialExt::new(1.0F)
-  let decal = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives.RectangleMeshBuilder::new(1.0F, 1.0F).build(),
-        )
-      }),
-    ),
+  let decal = world.spawn_empty()
+  try! world.set_by_key(
+    decal,
+    @pbr.ecs_key_mesh_material3d,
     @pbr.MeshMaterial3d::new(decal_material).with_extended_material(
       Some(@pbr.forward_decal_material_extension_metadata(decal_material_ext)),
     ),
+  )
+  try! world.set_by_key(
+    decal,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
-  ).spawn(world)
+  )
   try! world.set_by_key(
     decal,
     @pbr.ecs_key_forward_decal,

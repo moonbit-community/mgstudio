@@ -90,6 +90,7 @@ pub fn GpuBackend::draw_mesh3d(
   clearcoat_perceptual_roughness : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  forward_decal_inv_depth_fade_factor : Float,
   material_pipeline_id : UInt64,
   lightmap_exposure : Float,
   lightmap_texture_id : Int,
@@ -159,7 +160,8 @@ pub fn GpuBackend::draw_mesh3d(
     return
   }
   let pass_kind = pass_kind_base_kind(pass_kind_raw)
-  if pass_kind == PASS_KIND_BASE_MOTION_VECTOR {
+  if pass_kind == PASS_KIND_BASE_MOTION_VECTOR ||
+    pass_kind == PASS_KIND_BASE_PREPASS {
     self.draw_mesh3d_motion_vector_pass(
       pass, ps, mesh, preprocess_camera_key_hi, preprocess_camera_key_lo, draw_storage_index,
       indirect_kind, indirect_parameters_index, x, y, z, rotation_x, rotation_y,
@@ -270,11 +272,11 @@ pub fn GpuBackend::draw_mesh3d(
     anisotropy_rotation, specular_tint_texture_id, specular_tint_r, specular_tint_g,
     specular_tint_b, diffuse_transmission, specular_transmission, thickness, ior,
     attenuation_color_r, attenuation_color_g, attenuation_color_b, attenuation_distance,
-    clearcoat, clearcoat_perceptual_roughness, alpha_cutoff, material_flags, lightmap_exposure,
-    lightmap_texture_id, lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x,
-    lightmap_uv_max_y, deferred_lighting_pass_id, point_shadow_enabled, point_shadow_depth_bias,
-    mesh_flags, cull_mode, vertex_shader_path, fragment_shader_path, skinning_key_hi,
-    skinning_key_lo, morph_weights_index, previous_morph_weights_index, morph_targets_texture_id,
-    material_pipeline_id, transparent,
+    clearcoat, clearcoat_perceptual_roughness, alpha_cutoff, material_flags, forward_decal_inv_depth_fade_factor,
+    lightmap_exposure, lightmap_texture_id, lightmap_uv_min_x, lightmap_uv_min_y,
+    lightmap_uv_max_x, lightmap_uv_max_y, deferred_lighting_pass_id, point_shadow_enabled,
+    point_shadow_depth_bias, mesh_flags, cull_mode, vertex_shader_path, fragment_shader_path,
+    skinning_key_hi, skinning_key_lo, morph_weights_index, previous_morph_weights_index,
+    morph_targets_texture_id, material_pipeline_id, transparent,
   )
 }

@@ -1063,6 +1063,41 @@ pub fn Mesh3dGeometry::replace_tangents(
 }
 
 ///|
+pub fn Mesh3dGeometry::rotated_by(
+  self : Mesh3dGeometry,
+  rotation : @math.Quat,
+) -> Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  for position in self.positions {
+    positions.push(rotation.mul_vec3(position))
+  }
+  let normals = match self.normals {
+    Some(values) => {
+      let out : Array[@math.Vec3] = []
+      for normal in values {
+        out.push(rotation.mul_vec3(normal.normalize_or_zero()))
+      }
+      Some(out)
+    }
+    None => None
+  }
+  let tangents = match self.tangents {
+    Some(values) => {
+      let out : Array[@math.Vec4] = []
+      for tangent in values {
+        let rotated = rotation.mul_vec3(
+          @math.Vec3::new(tangent.x, tangent.y, tangent.z).normalize_or_zero(),
+        )
+        out.push(@math.Vec4::new(rotated.x, rotated.y, rotated.z, tangent.w))
+      }
+      Some(out)
+    }
+    None => None
+  }
+  Mesh3dGeometry::{ ..self, positions, normals, tangents }
+}
+
+///|
 pub fn Mesh3dGeometry::clear_tangents(self : Mesh3dGeometry) -> Unit {
   self.tangents = None
 }

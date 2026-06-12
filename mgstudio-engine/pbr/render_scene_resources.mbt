@@ -24,6 +24,15 @@ priv struct MotionBlurTargetsEntry {
 }
 
 ///|
+priv struct PrepassTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  sample_count : Int
+  depth_target_id : Int
+}
+
+///|
 priv struct TransmissionSourceTargetsEntry {
   entity : @core.Entity
   width : Int
@@ -34,6 +43,7 @@ priv struct TransmissionSourceTargetsEntry {
 ///|
 priv struct Render3dSceneTargetsState {
   mut motion_blur_targets : Array[MotionBlurTargetsEntry]
+  mut prepass_targets : Array[PrepassTargetsEntry]
   mut transmission_source_targets : Array[TransmissionSourceTargetsEntry]
 }
 
@@ -54,6 +64,7 @@ fn render3d_scene_targets_state_mut_or_init(
   if world.get_resource(Render3dSceneTargetsState::resource()) is None {
     world.insert_resource(Render3dSceneTargetsState::resource(), {
       motion_blur_targets: [],
+      prepass_targets: [],
       transmission_source_targets: [],
     })
   }
@@ -61,6 +72,63 @@ fn render3d_scene_targets_state_mut_or_init(
     Some(state) => state
     None => abort("Missing Render3dSceneTargetsState resource")
   }
+}
+
+///|
+fn render3d_prepass_targets_get_or_create(
+  world : @ecs.World,
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+  sample_count : Int,
+) -> Int {
+  let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
+  let prepass_targets = scene_targets_state.peek().prepass_targets
+  let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
+  for item in prepass_targets {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height &&
+      item.sample_count == safe_sample_count {
+      return item.depth_target_id
+    }
+  }
+  let depth_target_id = @render.host_gpu_create_depth_prepass_target(
+    width~,
+    height~,
+    sample_count=safe_sample_count,
+  )
+  let next : Array[PrepassTargetsEntry] = []
+  let mut replaced = false
+  for item in prepass_targets {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({
+          entity,
+          width,
+          height,
+          sample_count: safe_sample_count,
+          depth_target_id,
+        })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({
+      entity,
+      width,
+      height,
+      sample_count: safe_sample_count,
+      depth_target_id,
+    })
+  }
+  scene_targets_state.modify(fn(state) { state.prepass_targets = next })
+  depth_target_id
 }
 
 ///|

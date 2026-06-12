@@ -219,6 +219,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   material_flags : UInt
+  forward_decal_inv_depth_fade_factor : Float
   lightmap_exposure : Float
   lightmap_texture_id : Int
   lightmap_uv_min_x : Float
@@ -323,6 +324,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   mesh_flags : UInt,
   draw_flags : Int,
   forward_decal? : Bool = false,
+  forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
   material_pipeline_id? : @material.CachedRenderPipelineId? = None,
@@ -402,6 +404,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
     alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
     material_flags,
+    forward_decal_inv_depth_fade_factor,
     lightmap_exposure: material.lightmap_exposure,
     lightmap_texture_id,
     lightmap_uv_min_x,
@@ -606,6 +609,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     clearcoat_perceptual_roughness=payload.clearcoat_perceptual_roughness,
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
+    forward_decal_inv_depth_fade_factor=payload.forward_decal_inv_depth_fade_factor,
     material_pipeline_id=match payload.material_pipeline_id {
       Some(id) => id.id()
       None => @material.CachedRenderPipelineId::invalid().id()

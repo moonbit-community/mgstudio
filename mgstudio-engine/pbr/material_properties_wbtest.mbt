@@ -139,6 +139,90 @@ test "render3d: forward decal material extension metadata matches Bevy hooks" {
 }
 
 ///|
+fn shader_defs_has_flag(
+  shader_defs : Array[@material.ShaderDefVal],
+  expected : String,
+) -> Bool {
+  for shader_def in shader_defs {
+    if shader_def is @material.ShaderDefVal::Flag(name) && name == expected {
+      return true
+    }
+  }
+  false
+}
+
+///|
+test "render3d: forward decal extension specialize mutates descriptor like Bevy" {
+  let metadata = forward_decal_material_extension_metadata(
+    ForwardDecalMaterialExt::new(1.0F),
+  )
+  guard metadata.user_specialize is Some(user_specialize) else {
+    fail("forward decal metadata must carry a descriptor specialize hook")
+  }
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    .with_label(Some("opaque_mesh_pipeline"))
+    .with_depth_stencil(
+      Some(
+        @render_resource.DepthStencilState::new(
+          @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+          true,
+          @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+        ),
+      ),
+    )
+    .with_vertex(
+      @render_resource.VertexState::new(
+        Some("pbr/render/mesh.wgsl"),
+        [@material.ShaderDefVal::Flag("VERTEX_TANGENTS")],
+        None,
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @render_resource.FragmentState::new(
+          Some("pbr/render/pbr.wgsl"),
+          [@material.ShaderDefVal::Flag("VERTEX_TANGENTS")],
+          None,
+          [],
+        ),
+      ),
+    )
+  let specialized = try! @material.material_specialize_user(
+    user_specialize,
+    "PbrMaterialPipeline",
+    descriptor,
+    pbr_material_specializer_test_layout(),
+    pbr_material_specializer_test_key(),
+  )
+  debug_inspect(
+    specialized.label,
+    content="Some(\"forward_decal_opaque_mesh_pipeline\")",
+  )
+  debug_inspect(
+    specialized.depth_stencil.map(fn(state) { state.depth_compare }),
+    content="Some(8)",
+  )
+  debug_inspect(
+    shader_defs_has_flag(specialized.vertex.shader_defs, "VERTEX_TANGENTS"),
+    content="true",
+  )
+  debug_inspect(
+    shader_defs_has_flag(specialized.vertex.shader_defs, "FORWARD_DECAL"),
+    content="true",
+  )
+  let fragment = specialized.fragment.unwrap()
+  debug_inspect(
+    shader_defs_has_flag(fragment.shader_defs, "VERTEX_TANGENTS"),
+    content="true",
+  )
+  debug_inspect(
+    shader_defs_has_flag(fragment.shader_defs, "FORWARD_DECAL"),
+    content="true",
+  )
+}
+
+///|
 test "render3d: standard material properties carry Bevy meshlet shader labels" {
   let props = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),

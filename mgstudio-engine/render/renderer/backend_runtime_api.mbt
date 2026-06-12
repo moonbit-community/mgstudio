@@ -117,14 +117,12 @@ pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
   cull_mode~ : Int,
   vertex_shader_path~ : String?,
   fragment_shader_path~ : String?,
-  forward_decal~ : Bool,
 ) -> Unit {
   prewarm_mesh3d_pipeline_variants(
     mesh_topology_kind~,
     cull_mode~,
     vertex_shader_path~,
     fragment_shader_path~,
-    forward_decal~,
   )
 }
 

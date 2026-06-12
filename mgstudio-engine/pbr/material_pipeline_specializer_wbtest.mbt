@@ -761,6 +761,67 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
 }
 
 ///|
+test "pbr material specialization keeps tangent defs for forward decal meshes" {
+  let geometry = @mesh.Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(-0.5F, -0.5F, 0.0F),
+      @math.Vec3::new(0.5F, -0.5F, 0.0F),
+      @math.Vec3::new(0.5F, 0.5F, 0.0F),
+      @math.Vec3::new(-0.5F, 0.5F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    ],
+    Some([0, 1, 2, 0, 2, 3]),
+  )
+  match geometry.generate_tangents() {
+    Some(err) => {
+      ignore(err)
+      fail("forward decal test mesh must generate tangents")
+    }
+    None => ()
+  }
+  let render_mesh = @render_mesh.RenderMesh::from_mesh(
+    @mesh.Mesh::from_3d_geometry(geometry),
+    @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
+  )
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(
+      forward_decal_material_extension_metadata(
+        ForwardDecalMaterialExt::new(1.0F),
+      ),
+    ),
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties, render_mesh,
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pipeline_key,
+    render_mesh.layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "VERTEX_TANGENTS",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "FORWARD_DECAL",
+    ),
+    content="true",
+  )
+}
+
+///|
 test "pbr material prepass specialization caches descriptors separately" {
   let world = @ecs.World::new()
   let pipeline_cache = @render_resource.PipelineCache::new()

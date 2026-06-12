@@ -37,6 +37,7 @@ priv struct Render3dExecuteCameraPassConfig {
   motion_vector_prepass_enabled : Bool
   fog_enabled : Bool
   scene_pass_kind : Int
+  prepass_pass_kind : Int
   motion_vector_pass_kind : Int
   point_shadow_pass_kind : Int
   directional_shadow_pass_kind : Int
@@ -196,6 +197,12 @@ fn render3d_execute_camera_pass_config(
     false,
     false,
   )
+  let prepass_pass_kind = @pbr_render.render3d_pass_kind_encode(
+    @pbr_render.RENDER3D_PASS_KIND_BASE_PREPASS,
+    false,
+    false,
+    false,
+  )
   let point_shadow_pass_kind = @pbr_render.render3d_pass_kind_encode(
     @pbr_render.RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
     false,
@@ -237,6 +244,7 @@ fn render3d_execute_camera_pass_config(
     motion_vector_prepass_enabled,
     fog_enabled,
     scene_pass_kind,
+    prepass_pass_kind,
     motion_vector_pass_kind,
     point_shadow_pass_kind,
     directional_shadow_pass_kind,

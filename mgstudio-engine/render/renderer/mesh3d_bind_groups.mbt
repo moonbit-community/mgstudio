@@ -37,6 +37,19 @@ fn mesh3d_retire_or_release_buffer(
 }
 
 ///|
+fn mesh3d_bind_group_layout_has_binding(
+  layout : @render_resource.BindGroupLayoutDescriptor,
+  binding : Int,
+) -> Bool {
+  for entry in layout.entries() {
+    if entry.binding() == binding {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
   for entry in backend.mesh3d_view_bg_cache {
     mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
@@ -45,6 +58,10 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
   for entry in backend.mesh3d_material_bg_cache {
     mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
     mesh3d_retire_or_release_buffer(backend, entry.material_uniform_buffer)
+    match entry.forward_decal_uniform_buffer {
+      Some(buffer) => mesh3d_retire_or_release_buffer(backend, buffer)
+      None => ()
+    }
   }
   backend.mesh3d_material_bg_cache.clear()
 }
@@ -926,9 +943,19 @@ fn mesh3d_material_cache_get_or_create(
   anisotropy_texture : GpuTextureInfo,
   specular_tint_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
+  forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
 ) -> @wgpu.BindGroup raise GpuBackendError {
-  if material_descriptor is Some(_) &&
-    mesh3d_descriptor_material_layout(material_descriptor) is None {
+  let material_layout = mesh3d_descriptor_material_layout(material_descriptor)
+  let uses_forward_decal_uniform = match material_layout {
+    Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 200)
+    None => false
+  }
+  let forward_decal_uniform_bytes = if uses_forward_decal_uniform {
+    u32le_pack([f32_bits(forward_decal_inv_depth_fade_factor)])
+  } else {
+    Bytes::new(0)
+  }
+  if material_descriptor is Some(_) && material_layout is None {
     let empty_bytes = Bytes::new(0)
     for entry in backend.mesh3d_material_bg_cache {
       if entry.material_pipeline_id == material_pipeline_id &&
@@ -940,7 +967,8 @@ fn mesh3d_material_cache_get_or_create(
         entry.depth_texture_id == -2 &&
         entry.anisotropy_texture_id == -2 &&
         entry.specular_tint_texture_id == -2 &&
-        entry.material_uniform_bytes == empty_bytes {
+        entry.material_uniform_bytes == empty_bytes &&
+        entry.forward_decal_uniform_bytes == empty_bytes {
         return entry.bind_group
       }
     }
@@ -968,6 +996,8 @@ fn mesh3d_material_cache_get_or_create(
       specular_tint_texture_id: -2,
       material_uniform_bytes: empty_bytes,
       material_uniform_buffer: material_uniform_buf,
+      forward_decal_uniform_bytes: empty_bytes,
+      forward_decal_uniform_buffer: None,
       bind_group,
     })
     return bind_group
@@ -982,7 +1012,8 @@ fn mesh3d_material_cache_get_or_create(
       entry.depth_texture_id == depth_texture.id &&
       entry.anisotropy_texture_id == anisotropy_texture.id &&
       entry.specular_tint_texture_id == specular_tint_texture.id &&
-      entry.material_uniform_bytes == material_uniform_bytes {
+      entry.material_uniform_bytes == material_uniform_bytes &&
+      entry.forward_decal_uniform_bytes == forward_decal_uniform_bytes {
       return entry.bind_group
     }
   }
@@ -995,7 +1026,17 @@ fn mesh3d_material_cache_get_or_create(
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
   )
   backend.queue.write_buffer(material_uniform_buf, 0UL, material_uniform_bytes)
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=17UL)
+  let forward_decal_uniform_buf = if uses_forward_decal_uniform {
+    let buffer = backend.device.create_buffer(
+      size=4UL,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+    )
+    backend.queue.write_buffer(buffer, 0UL, forward_decal_uniform_bytes)
+    Some(buffer)
+  } else {
+    None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=18UL)
   let ok = builder.add_buffer(
       0U,
       material_uniform_buf,
@@ -1017,9 +1058,21 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_sampler(14U, anisotropy_texture.sampler) &&
     builder.add_texture_view(29U, specular_tint_texture.view) &&
     builder.add_sampler(30U, specular_tint_texture.sampler)
+  let ok = if ok && uses_forward_decal_uniform {
+    match forward_decal_uniform_buf {
+      Some(buffer) => builder.add_buffer(200U, buffer, size=4UL)
+      None => false
+    }
+  } else {
+    ok
+  }
   if !ok {
     builder.free()
     material_uniform_buf.release()
+    match forward_decal_uniform_buf {
+      Some(buffer) => buffer.release()
+      None => ()
+    }
     fatal("wgpu: failed to build mesh3d material bind group")
   }
   let bind_group = mesh3d_finish_bind_group_checked(
@@ -1037,6 +1090,8 @@ fn mesh3d_material_cache_get_or_create(
     specular_tint_texture_id: specular_tint_texture.id,
     material_uniform_bytes,
     material_uniform_buffer: material_uniform_buf,
+    forward_decal_uniform_bytes,
+    forward_decal_uniform_buffer: forward_decal_uniform_buf,
     bind_group,
   })
   bind_group
@@ -1262,7 +1317,7 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
       directional_shadow_texture,
       environment_diffuse_texture,
       environment_specular_texture,
-      0,
+      -1,
       -1,
       -1,
       -1,

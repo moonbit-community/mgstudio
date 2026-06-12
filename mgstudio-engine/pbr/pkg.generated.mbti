@@ -382,6 +382,8 @@ pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadat
 
 pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
 
+pub fn forward_decal_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
+
 pub fn forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
 
 pub fn forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
@@ -2403,5 +2405,6 @@ pub(open) trait MaterialExtension {
   fn opaque_render_method(Self) -> @material.OpaqueRendererMethod?
   fn enable_prepass(Self) -> Bool
   fn enable_shadows(Self) -> Bool
+  fn specialize(Self) -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
 }
 

@@ -629,11 +629,18 @@ pub fn GpuBackend::begin_pass_3d(
   }
   let is_shadow_depth_pass = base_kind == PASS_KIND_BASE_POINT_SHADOW ||
     base_kind == PASS_KIND_BASE_DIRECTIONAL_SHADOW
+  let is_prepass_depth_pass = base_kind == PASS_KIND_BASE_PREPASS
   let (color_view, color_resolve_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
     (None, None, None, shadow_depth_view)
+  } else if is_prepass_depth_pass {
+    guard find_prepass_depth_texture(self, prepass_depth_texture_id)
+      is Some(prepass_depth_texture) else {
+      return
+    }
+    (None, None, None, prepass_depth_texture.view)
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
     guard target_view(self, target_id, target_layer) is Some(primary_view) else {

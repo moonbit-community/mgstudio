@@ -185,6 +185,7 @@ fn render_pass_timing_reset_counters() -> Unit {
 fn render_pass_timing_phase_from_3d_pass_kind(pass_kind : Int) -> Int {
   match pass_kind_base_kind(pass_kind) {
     PASS_KIND_BASE_MOTION_VECTOR => RENDER_PASS_PHASE_3D_MOTION_VECTOR
+    PASS_KIND_BASE_PREPASS => RENDER_PASS_PHASE_3D_MOTION_VECTOR
     PASS_KIND_BASE_POINT_SHADOW => RENDER_PASS_PHASE_3D_POINT_SHADOW
     _ => RENDER_PASS_PHASE_3D_MAIN
   }

@@ -82,6 +82,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   clearcoat_perceptual_roughness : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  forward_decal_inv_depth_fade_factor : Float,
   lightmap_exposure : Float,
   lightmap_texture_id : Int,
   lightmap_uv_min_x : Float,
@@ -497,6 +498,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
           diffuse_transmission, specular_transmission, thickness, ior, alpha_cutoff,
           runtime_material_flags, lightmap_exposure, deferred_lighting_pass_id,
         ),
+        forward_decal_inv_depth_fade_factor~,
       ),
     )
   }

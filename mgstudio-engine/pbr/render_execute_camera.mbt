@@ -47,7 +47,6 @@ fn render3d_execute_camera(
   let view_height_logical = viewport_state.view_height_logical
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
   let camera_pass_projection = prepared_queue.camera_pass_projection
-  let camera_near = camera_pass_projection.camera_near
   let camera_far = camera_pass_projection.camera_far
   let pass_lighting = render3d_camera_apply_environment_map_lighting(
     lighting, extracted_camera,
@@ -89,6 +88,7 @@ fn render3d_execute_camera(
   let motion_vector_prepass_enabled = pass_config.motion_vector_prepass_enabled
   let fog_enabled = pass_config.fog_enabled
   let scene_pass_kind = pass_config.scene_pass_kind
+  let prepass_pass_kind = pass_config.prepass_pass_kind
   let motion_vector_pass_kind = pass_config.motion_vector_pass_kind
   let point_shadow_pass_kind = pass_config.point_shadow_pass_kind
   let directional_shadow_pass_kind = pass_config.directional_shadow_pass_kind
@@ -106,13 +106,35 @@ fn render3d_execute_camera(
     scene_target_id_next,
     velocity_target_id_next,
     prepass_depth_target_id_next,
-  ) = render3d_execute_camera_motion_vector_pass(
-    world, camera_entity, camera, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
-    indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, motion_vector_prepass_enabled,
-    motion_blur_active, scene_target_id, velocity_target_id, view_width, view_height,
-    msaa_sample_count, view_width_logical, view_height_logical, viewport_x, viewport_y,
-    viewport_width, viewport_height, camera_pass_projection, pass_lighting, camera_exposure_value,
-    point_shadow_near, motion_vector_pass_kind,
+  ) = render3d_execute_camera_prepass(
+    world,
+    camera_entity,
+    camera,
+    draw_queue_entry,
+    meshes,
+    opaque_alpha_draw_item_indices,
+    indexed_indirect_parameter_indices,
+    non_indexed_indirect_parameter_indices,
+    camera.depth_prepass_enabled,
+    motion_vector_prepass_enabled,
+    motion_blur_active,
+    scene_target_id,
+    velocity_target_id,
+    view_width,
+    view_height,
+    msaa_sample_count,
+    view_width_logical,
+    view_height_logical,
+    viewport_x,
+    viewport_y,
+    viewport_width,
+    viewport_height,
+    camera_pass_projection,
+    pass_lighting,
+    camera_exposure_value,
+    point_shadow_near,
+    motion_vector_pass_kind,
+    prepass_pass_kind,
   )
   scene_target_id = scene_target_id_next
   velocity_target_id = velocity_target_id_next
@@ -193,7 +215,6 @@ fn render3d_execute_camera(
     camera_forward_decal_enabled,
     camera_clustered_decal_enabled,
     camera_deferred_enabled,
-    camera_near,
     camera_far,
     distance_fog,
     fog_enabled,

@@ -13,15 +13,16 @@
 // limitations under the License.
 
 ///|
-fn render3d_prewarm_motion_vector_material_pipeline(
+fn render3d_prewarm_prepass_material_pipeline(
   world : @ecs.World,
-  motion_mesh : Mesh3dExtractedPayload,
+  prepass_mesh : Mesh3dExtractedPayload,
+  motion_vector_prepass_enabled : Bool,
 ) -> @material.CachedRenderPipelineId? {
-  guard motion_mesh.material_properties.prepass_specialize
+  guard prepass_mesh.material_properties.prepass_specialize
     is Some(prepass_specialize) else {
     return None
   }
-  guard @sprite.render_mesh_asset_get(motion_mesh.mesh_handle)
+  guard @sprite.render_mesh_asset_get(prepass_mesh.mesh_handle)
     is Some(mesh_asset) else {
     return None
   }
@@ -32,25 +33,29 @@ fn render3d_prewarm_motion_vector_material_pipeline(
   )
   let layout = render_mesh.layout()
   let base_key = material_pipeline_key_for_standard_material_render_mesh(
-    motion_mesh.material_properties,
+    prepass_mesh.material_properties,
     render_mesh,
-    lightmapped=match motion_mesh.lightmap {
+    lightmapped=match prepass_mesh.lightmap {
       Some(lightmap) => lightmap.image.id() > 0
       None => false
     },
     lightmap_bicubic_sampling=false,
   )
-  let mut motion_bits = base_key.mesh_key().bits() |
-    MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
-  if motion_mesh.has_previous_skin {
-    motion_bits = motion_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+  let mut prepass_bits = base_key.mesh_key().bits() |
+    MESH_PIPELINE_KEY_DEPTH_PREPASS
+  if motion_vector_prepass_enabled {
+    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
   }
-  if motion_mesh.previous_morph_weights_index >= 0 {
-    motion_bits = motion_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
+  if motion_vector_prepass_enabled && prepass_mesh.has_previous_skin {
+    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+  }
+  if motion_vector_prepass_enabled &&
+    prepass_mesh.previous_morph_weights_index >= 0 {
+    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
   }
   let motion_key = @material.ErasedMaterialPipelineKey::new(
-    @material.ErasedMeshPipelineKey::new(motion_bits, "MeshPipelineKey"),
-    motion_mesh.material_properties.material_key,
+    @material.ErasedMeshPipelineKey::new(prepass_bits, "MeshPipelineKey"),
+    prepass_mesh.material_properties.material_key,
     "StandardMaterial",
   )
   let prepass_pipeline_id = @material.material_specialize_prepass(
@@ -58,11 +63,11 @@ fn render3d_prewarm_motion_vector_material_pipeline(
     world,
     motion_key,
     layout,
-    motion_mesh.material_properties,
+    prepass_mesh.material_properties,
   ) catch {
     err =>
       abort(
-        "failed to specialize pbr motion-vector prepass material pipeline for mesh \{motion_mesh.mesh_handle.id()}: \{err}",
+        "failed to specialize pbr prepass material pipeline for mesh \{prepass_mesh.mesh_handle.id()}: \{err}",
       )
   }
   let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
@@ -70,7 +75,15 @@ fn render3d_prewarm_motion_vector_material_pipeline(
 }
 
 ///|
-fn render3d_execute_camera_motion_vector_pass(
+fn render3d_prewarm_motion_vector_material_pipeline(
+  world : @ecs.World,
+  motion_mesh : Mesh3dExtractedPayload,
+) -> @material.CachedRenderPipelineId? {
+  render3d_prewarm_prepass_material_pipeline(world, motion_mesh, true)
+}
+
+///|
+fn render3d_execute_camera_prepass(
   world : @ecs.World,
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
@@ -79,6 +92,7 @@ fn render3d_execute_camera_motion_vector_pass(
   opaque_alpha_draw_item_indices : Array[Int],
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
+  depth_prepass_enabled : Bool,
   motion_vector_prepass_enabled : Bool,
   motion_blur_active : Bool,
   scene_target_id : Int,
@@ -97,26 +111,42 @@ fn render3d_execute_camera_motion_vector_pass(
   camera_exposure_value : Float,
   point_shadow_near : Float,
   motion_vector_pass_kind : Int,
+  prepass_pass_kind : Int,
 ) -> (Int, Int, Int) {
-  if !motion_vector_prepass_enabled {
+  if !depth_prepass_enabled && !motion_vector_prepass_enabled {
     return (scene_target_id, velocity_target_id, -1)
   }
   let mut next_scene_target_id = scene_target_id
   let mut next_velocity_target_id = velocity_target_id
-  let (shared_scene_id, shared_velocity_id, shared_depth_id) = render3d_motion_blur_targets_get_or_create(
-    world, camera_entity, view_width, view_height, msaa_sample_count,
-  )
-  if motion_blur_active {
-    next_scene_target_id = shared_scene_id
+  let (
+    prepass_target_id,
+    prepass_secondary_target_id,
+    shared_depth_id,
+    active_prepass_kind,
+  ) = if motion_vector_prepass_enabled {
+    let (shared_scene_id, shared_velocity_id, shared_depth_id) = render3d_motion_blur_targets_get_or_create(
+      world, camera_entity, view_width, view_height, msaa_sample_count,
+    )
+    if motion_blur_active {
+      next_scene_target_id = shared_scene_id
+    }
+    next_velocity_target_id = shared_velocity_id
+    (
+      shared_scene_id, shared_velocity_id, shared_depth_id, motion_vector_pass_kind,
+    )
+  } else {
+    let shared_depth_id = render3d_prepass_targets_get_or_create(
+      world, camera_entity, view_width, view_height, msaa_sample_count,
+    )
+    (shared_depth_id, -1, shared_depth_id, prepass_pass_kind)
   }
-  next_velocity_target_id = shared_velocity_id
   let (
     motion_viewport_x,
     motion_viewport_y,
     motion_viewport_width,
     motion_viewport_height,
   ) = @pbr_render.render3d_pass_viewport_for_target(
-    shared_scene_id,
+    prepass_target_id,
     camera.target_id,
     viewport_x,
     viewport_y,
@@ -124,8 +154,8 @@ fn render3d_execute_camera_motion_vector_pass(
     viewport_height,
   )
   @pbr_render.render3d_begin_pass_3d(
-    target_id=shared_scene_id,
-    secondary_target_id=next_velocity_target_id,
+    target_id=prepass_target_id,
+    secondary_target_id=prepass_secondary_target_id,
     width=view_width_logical,
     height=view_height_logical,
     clear_r=0.0F,
@@ -143,7 +173,7 @@ fn render3d_execute_camera_motion_vector_pass(
     previous_clip_from_world=camera.previous_clip_from_world,
     prepass_depth_texture_id=shared_depth_id,
     point_shadow_near~,
-    pass_kind=motion_vector_pass_kind,
+    pass_kind=active_prepass_kind,
     msaa_sample_count~,
     clear_enabled=1,
   )
@@ -156,11 +186,8 @@ fn render3d_execute_camera_motion_vector_pass(
     }
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
-    if !mesh.motion_vector_enabled {
-      continue
-    }
-    let material_pipeline_id = render3d_prewarm_motion_vector_material_pipeline(
-      world, mesh,
+    let material_pipeline_id = render3d_prewarm_prepass_material_pipeline(
+      world, mesh, motion_vector_prepass_enabled,
     )
     let motion_vector_indexed = mesh.mesh_is_indexed
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {

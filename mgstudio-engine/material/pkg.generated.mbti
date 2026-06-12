@@ -208,6 +208,7 @@ pub struct ExtendedMaterialMetadata3d {
   requires_depth_prepass : Bool
   requires_deferred_prepass : Bool
   disable_shadows : Bool
+  user_specialize : ((String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
 }
 pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> Self
 pub fn ExtendedMaterialMetadata3d::new(Int) -> Self
@@ -225,6 +226,7 @@ pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(Self, Strin
 pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(Self, Bool) -> Self
+pub fn ExtendedMaterialMetadata3d::with_user_specialize(Self, ((String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError)?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_vertex_shader_path(Self, String?) -> Self
 
 pub(all) enum Face3d {

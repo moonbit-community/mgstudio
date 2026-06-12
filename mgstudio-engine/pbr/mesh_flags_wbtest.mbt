@@ -349,6 +349,44 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
 }
 
 ///|
+test "render3d: queue phase uses bevy MaterialProperties render phase" {
+  let base = render3d_test_extracted_mesh_for_flags(
+    false,
+    false,
+    false,
+    @math.Vec3::splat(1.0F),
+  )
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_alpha_mode(@material.AlphaMode3d::Blend)
+    .with_render_phase_type(@material.RenderPhaseType::Transparent)
+  let mesh = ExtractedMesh3d::{
+    ..base,
+    payload: Mesh3dExtractedPayload::{
+      ..base.payload,
+      material_properties: properties,
+    },
+  }
+  let cpu_items = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+  )
+  let gpu_items = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    true,
+  )
+  debug_inspect(cpu_items[0].phase, content="3")
+  debug_inspect(gpu_items[0].phase, content="3")
+}
+
+///|
 test "render3d: transmissive materials use a distinct sorted phase" {
   let material = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.5F,

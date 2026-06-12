@@ -542,7 +542,7 @@ fn render3d_prewarm_mesh_pipelines(
       None => ""
     }
     let cull_mode = @pbr_render.render3d_cull_mode_value(mesh.material, 0)
-    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{mesh.is_forward_decal}|\{vertex_shader_key}|\{fragment_shader_key}"
+    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{vertex_shader_key}|\{fragment_shader_key}"
     if prewarmed_keys.contains(prewarm_key) {
       continue
     }
@@ -552,7 +552,6 @@ fn render3d_prewarm_mesh_pipelines(
       cull_mode~,
       vertex_shader_path~,
       fragment_shader_path~,
-      forward_decal=mesh.is_forward_decal,
     )
   }
 }

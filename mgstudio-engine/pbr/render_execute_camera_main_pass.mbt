@@ -251,7 +251,6 @@ fn render3d_execute_camera_main_pass(
   camera_forward_decal_enabled : Bool,
   camera_clustered_decal_enabled : Bool,
   camera_deferred_enabled : Bool,
-  camera_near : Float,
   camera_far : Float,
   distance_fog : DistanceFog,
   fog_enabled : Bool,
@@ -397,7 +396,7 @@ fn render3d_execute_camera_main_pass(
       }
       _ => (-1, 0.0F, 0.0F, 0.0F, 0.0F)
     }
-    let mut draw_alpha = base_draw_alpha
+    let draw_alpha = base_draw_alpha
     let mut texture_id = match draw_material.base_color_texture {
       Some(texture) => texture.id()
       None => -1
@@ -454,7 +453,7 @@ fn render3d_execute_camera_main_pass(
     let max_relief_mapping_search_steps = Float::from_double(
       draw_material.parallax_mapping_method.max_steps().to_double(),
     )
-    let mut clearcoat_reflectance = @pbr_render.maxf(
+    let clearcoat_reflectance = @pbr_render.maxf(
       0.0F,
       draw_material.reflectance + draw_material.clearcoat * 0.5F,
     )
@@ -462,18 +461,18 @@ fn render3d_execute_camera_main_pass(
       draw_material.perceptual_roughness,
       draw_material.clearcoat_perceptual_roughness,
     )
-    let mut draw_roughness = if draw_material.clearcoat > 0.0F {
+    let draw_roughness = if draw_material.clearcoat > 0.0F {
       clearcoat_roughness
     } else {
       draw_material.perceptual_roughness
     }
-    let needs_mesh_distance = fog_enabled || mesh.is_forward_decal
+    let needs_mesh_distance = fog_enabled
     let mesh_distance = if needs_mesh_distance {
       mesh.transform.translation.sub(camera.transform.translation).length()
     } else {
       0.0F
     }
-    if mesh.is_forward_decal {
+    let forward_decal_inv_depth_fade_factor = if mesh.is_forward_decal {
       let depth_fade_factor = if mesh.forward_decal_material_ext
         is Some(extension) {
         extension.depth_fade_factor
@@ -485,15 +484,9 @@ fn render3d_execute_camera_main_pass(
       } else {
         depth_fade_factor
       }
-      let decal_alpha = safe_depth_fade_factor /
-        (
-          safe_depth_fade_factor +
-          @pbr_render.maxf(0.0F, mesh_distance - camera_near)
-        )
-      draw_alpha = draw_alpha *
-        @pbr_render.render3d_float_clamp(decal_alpha, 0.0F, 1.0F)
-      clearcoat_reflectance = 0.0F
-      draw_roughness = @pbr_render.maxf(draw_roughness, 0.85F)
+      1.0F / safe_depth_fade_factor
+    } else {
+      1.0F / 8.0F
     }
     let (fogged_r, fogged_g, fogged_b) = if fog_enabled {
       render3d_apply_distance_fog(
@@ -616,6 +609,7 @@ fn render3d_execute_camera_main_pass(
       mesh_flags,
       draw_flags,
       forward_decal=mesh.is_forward_decal,
+      forward_decal_inv_depth_fade_factor~,
       vertex_shader_path=draw_vertex_shader_path,
       fragment_shader_path=draw_fragment_shader_path,
       material_pipeline_id=draw_item.pipeline_id,
@@ -875,6 +869,8 @@ fn render3d_execute_camera_main_pass(
         tonemapping_tony_lut_texture_id=tony_lut_texture_id,
         tonemapping_blender_lut_texture_id=blender_lut_texture_id,
         deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
+        prepass_depth_texture_id~,
+        prepass_motion_vector_texture_id~,
         msaa_sample_count~,
         point_shadow_near~,
         pass_kind=scene_pass_kind,
@@ -943,6 +939,8 @@ fn render3d_execute_camera_main_pass(
       tonemapping_tony_lut_texture_id=tony_lut_texture_id,
       tonemapping_blender_lut_texture_id=blender_lut_texture_id,
       deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
+      prepass_depth_texture_id~,
+      prepass_motion_vector_texture_id~,
       msaa_sample_count~,
       point_shadow_near~,
       pass_kind=scene_pass_kind,

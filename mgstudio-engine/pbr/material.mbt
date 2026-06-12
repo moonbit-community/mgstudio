@@ -501,7 +501,13 @@ pub fn render3d_material_properties_for_standard_material(
       standard_material_render_phase_type(effective_material),
     )
     .with_material_layout(
-      Some(standard_material_bind_group_layout_descriptor()),
+      Some(
+        match extension {
+          Some(metadata) if metadata.extension_tag == 1 =>
+            forward_decal_material_bind_group_layout_descriptor()
+          _ => standard_material_bind_group_layout_descriptor()
+        },
+      ),
     )
     .with_material_key(
       @material.ErasedMaterialKey::new(
@@ -511,6 +517,12 @@ pub fn render3d_material_properties_for_standard_material(
     )
     .with_base_specialize(Some(pbr_material_base_specialize))
     .with_prepass_specialize(Some(pbr_material_prepass_specialize))
+    .with_user_specialize(
+      match extension {
+        Some(metadata) => metadata.user_specialize
+        None => None
+      },
+    )
     .with_shadows_enabled(shadows_enabled)
     .with_prepass_enabled(prepass_enabled)
     .add_shader(

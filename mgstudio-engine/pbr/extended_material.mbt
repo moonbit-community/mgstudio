@@ -98,6 +98,7 @@ pub(open) trait MaterialExtension {
   fn opaque_render_method(Self) -> @material.OpaqueRendererMethod?
   fn enable_prepass(Self) -> Bool
   fn enable_shadows(Self) -> Bool
+  fn specialize(Self) -> @material.UserSpecializeFn?
 }
 
 ///|
@@ -117,6 +118,7 @@ pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   .with_requires_depth_prepass(extension.enable_prepass())
   .with_requires_deferred_prepass(extension.enable_prepass())
   .with_disable_shadows(!extension.enable_shadows())
+  .with_user_specialize(extension.specialize())
 }
 
 ///|
@@ -298,6 +300,70 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn enable_shad
   _self,
 ) {
   false
+}
+
+///|
+fn forward_decal_specialize(
+  _pipeline : String,
+  descriptor : @material.RenderPipelineDescriptor,
+  layout : @material.MaterialMeshVertexLayout,
+  _key : @material.ErasedMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  if layout.index() < 0 {
+    raise @material.missing_vertex_attribute_error("forward decal mesh layout")
+  }
+  let vertex_shader_defs = descriptor.vertex.shader_defs.copy()
+  vertex_shader_defs.push(@render_resource.ShaderDefVal::Flag("FORWARD_DECAL"))
+  let depth_stencil = match descriptor.depth_stencil {
+    Some(depth_stencil) =>
+      Some(
+        @render_resource.DepthStencilState::new(
+          depth_stencil.format,
+          depth_stencil.depth_write_enabled,
+          @wgpu.COMPARE_FUNCTION_ALWAYS,
+        ).with_bias_slope_scale(depth_stencil.bias_slope_scale),
+      )
+    None => None
+  }
+  let vertex = @render_resource.VertexState::new(
+    descriptor.vertex.shader,
+    vertex_shader_defs,
+    descriptor.vertex.entry_point,
+    descriptor.vertex.buffers,
+  )
+  let fragment = match descriptor.fragment {
+    Some(fragment) => {
+      let fragment_shader_defs = fragment.shader_defs.copy()
+      fragment_shader_defs.push(
+        @render_resource.ShaderDefVal::Flag("FORWARD_DECAL"),
+      )
+      Some(
+        @render_resource.FragmentState::new(
+          fragment.shader,
+          fragment_shader_defs,
+          fragment.entry_point,
+          fragment.targets,
+        ),
+      )
+    }
+    None => None
+  }
+  let label = match descriptor.label {
+    Some(label) => Some(@pbr_decal.pbr_forward_decal_specialized_label(label))
+    None => None
+  }
+  descriptor
+  .with_label(label)
+  .with_vertex(vertex)
+  .with_fragment(fragment)
+  .with_depth_stencil(depth_stencil)
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn specialize(
+  _self,
+) {
+  Some(forward_decal_specialize)
 }
 
 ///|

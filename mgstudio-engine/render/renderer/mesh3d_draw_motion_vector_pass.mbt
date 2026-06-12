@@ -45,22 +45,37 @@ fn mesh3d_motion_vector_descriptor_view_bind_groups_get_or_create(
     is Some(visibility_ranges_buf) else {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
-  let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
-    builder.add_buffer(1U, globals_buf, size=MESH3D_PREPASS_GLOBALS_BUFFER_SIZE) &&
-    builder.add_buffer(
-      2U,
-      previous_view_buf,
-      size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
-    ) &&
-    builder.add_buffer(
-      14U,
-      visibility_ranges_buf,
-      size=MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE,
-    )
-  if !ok {
-    builder.free()
-    return None
+  let view_entries = layout_entry.view_bind_group_layout_descriptor.entries()
+  let builder = @wgpu.BindGroupBuilder::new(
+    max_entries=view_entries.length().to_uint64(),
+  )
+  for entry in view_entries {
+    let ok = match entry.binding() {
+      0 => builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE)
+      1 =>
+        builder.add_buffer(
+          1U,
+          globals_buf,
+          size=MESH3D_PREPASS_GLOBALS_BUFFER_SIZE,
+        )
+      2 =>
+        builder.add_buffer(
+          2U,
+          previous_view_buf,
+          size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+        )
+      14 =>
+        builder.add_buffer(
+          14U,
+          visibility_ranges_buf,
+          size=MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE,
+        )
+      _ => false
+    }
+    if !ok {
+      builder.free()
+      return None
+    }
   }
   let view_bg = builder.finish(
     backend.device,
