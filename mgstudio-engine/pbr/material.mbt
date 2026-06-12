@@ -455,11 +455,25 @@ pub fn render3d_material_properties_for_standard_material(
   default_opaque_renderer_method : OpaqueRendererMethod,
   prepass_enabled : Bool,
 ) -> @material.MaterialProperties {
+  let mut effective_material = material
+  if extension is Some(metadata) {
+    if metadata.alpha_mode_override is Some(alpha_mode_override) {
+      effective_material = effective_material.with_alpha_mode(
+        alpha_mode_override,
+      )
+    }
+    if metadata.opaque_render_method_override
+      is Some(opaque_render_method_override) {
+      effective_material = effective_material.with_opaque_render_method(
+        opaque_render_method_override,
+      )
+    }
+  }
   let render_method = standard_material_opaque_render_method(
-    material, default_opaque_renderer_method,
+    effective_material, default_opaque_renderer_method,
   )
   let reads_view_transmission_texture = standard_material_reads_view_transmission_texture(
-    material,
+    effective_material,
   )
   let mut mesh_pipeline_key_bits : UInt64 = 0UL
   if reads_view_transmission_texture {
@@ -470,18 +484,22 @@ pub fn render3d_material_properties_for_standard_material(
     Some(metadata) => !metadata.disable_shadows
     None => true
   }
-  let standard_material_key = standard_material_key_from_material(material)
+  let standard_material_key = standard_material_key_from_material(
+    effective_material,
+  )
   let mut properties = @material.MaterialProperties::MaterialProperties()
     .with_render_method(render_method)
-    .with_alpha_mode(material.alpha_mode)
+    .with_alpha_mode(effective_material.alpha_mode)
     .with_mesh_pipeline_key_bits(
       @material.ErasedMeshPipelineKey::new(
         mesh_pipeline_key_bits, "MeshPipelineKey",
       ),
     )
-    .with_depth_bias(material.depth_bias)
+    .with_depth_bias(effective_material.depth_bias)
     .with_reads_view_transmission_texture(reads_view_transmission_texture)
-    .with_render_phase_type(standard_material_render_phase_type(material))
+    .with_render_phase_type(
+      standard_material_render_phase_type(effective_material),
+    )
     .with_material_layout(
       Some(standard_material_bind_group_layout_descriptor()),
     )

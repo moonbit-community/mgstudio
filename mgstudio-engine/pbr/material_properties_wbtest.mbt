@@ -112,6 +112,33 @@ test "render3d: extended material metadata is reflected into extracted propertie
 }
 
 ///|
+test "render3d: forward decal material extension metadata matches Bevy hooks" {
+  let metadata = forward_decal_material_extension_metadata(
+    ForwardDecalMaterialExt::new(1.0F),
+  )
+  let props = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(metadata),
+    OpaqueRendererMethod::Deferred,
+    true,
+  )
+  debug_inspect(
+    props.alpha_mode is @material.AlphaMode3d::Blend,
+    content="true",
+  )
+  debug_inspect(
+    props.render_phase_type is @material.RenderPhaseType::Transparent,
+    content="true",
+  )
+  debug_inspect(
+    props.render_method is OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  debug_inspect(!props.shadows_enabled, content="true")
+  debug_inspect(props.prepass_enabled, content="true")
+}
+
+///|
 test "render3d: standard material properties carry Bevy meshlet shader labels" {
   let props = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),

@@ -276,7 +276,7 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn deferred_fr
 pub impl MaterialExtension for ForwardDecalMaterialExtension with fn alpha_mode(
   _self,
 ) {
-  None
+  Some(@material.AlphaMode3d::Blend)
 }
 
 ///|
