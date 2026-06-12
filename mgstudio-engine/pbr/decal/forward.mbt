@@ -23,6 +23,130 @@ const FORWARD_DECAL_PLUGIN_NAME : String = "mgstudio.pbr.decal.ForwardDecalPlugi
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
 
 ///|
+pub struct ForwardDecalMaterial {
+  base : @material.StandardMaterial
+  extension : ForwardDecalMaterialExt
+}
+
+///|
+pub fn ForwardDecalMaterial::ForwardDecalMaterial() -> ForwardDecalMaterial {
+  ForwardDecalMaterial::{
+    base: @material.StandardMaterial::StandardMaterial(),
+    extension: ForwardDecalMaterialExt::ForwardDecalMaterialExt(),
+  }
+}
+
+///|
+pub fn ForwardDecalMaterial::new(
+  base : @material.StandardMaterial,
+  extension : ForwardDecalMaterialExt,
+) -> ForwardDecalMaterial {
+  ForwardDecalMaterial::{ base, extension }
+}
+
+///|
+pub fn ForwardDecalMaterial::base(
+  self : ForwardDecalMaterial,
+) -> @material.StandardMaterial {
+  self.base
+}
+
+///|
+pub fn ForwardDecalMaterial::extension(
+  self : ForwardDecalMaterial,
+) -> ForwardDecalMaterialExt {
+  self.extension
+}
+
+///|
+pub impl @asset.Asset for ForwardDecalMaterial with fn asset_debug_name() {
+  "mgstudio_pbr::ForwardDecalMaterial"
+}
+
+///|
+pub impl @asset.Asset for ForwardDecalMaterial with fn asset_as_image(_self) {
+  None
+}
+
+///|
+let forward_decal_material_asset_resource_keys : @asset.AssetResourceKeys[
+  ForwardDecalMaterial,
+] = @asset.register_asset_resource_keys(
+  ForwardDecalMaterial::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for ForwardDecalMaterial with fn asset_resource_keys() {
+  forward_decal_material_asset_resource_keys
+}
+
+///|
+fn forward_decal_material_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => @render.render_source_world(world)
+    None =>
+      abort(
+        "forward decal material asset helpers require an active app world; use the world-owned Assets<ForwardDecalMaterial> resource directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn forward_decal_material_assets_or_abort() -> @asset.Assets[
+  ForwardDecalMaterial,
+] {
+  let world = forward_decal_material_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[ForwardDecalMaterial]] = @asset.assets_resource_key()
+  match world.get_resource(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "forward decal material asset resource is missing; ForwardDecalPlugin must initialize Assets<ForwardDecalMaterial> before use",
+      )
+  }
+}
+
+///|
+fn forward_decal_material_assets_mut_or_abort() -> @ecs.ResourceMut[
+  @asset.Assets[ForwardDecalMaterial],
+] {
+  let world = forward_decal_material_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[ForwardDecalMaterial]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "forward decal material asset resource is missing; ForwardDecalPlugin must initialize Assets<ForwardDecalMaterial> before use",
+      )
+  }
+}
+
+///|
+pub fn forward_decal_material_add(
+  material : ForwardDecalMaterial,
+) -> @asset.Handle[ForwardDecalMaterial] {
+  let assets = forward_decal_material_assets_mut_or_abort()
+  assets.modify(fn(store) { store.add(material) })
+}
+
+///|
+pub fn forward_decal_material_get(
+  handle : @asset.Handle[ForwardDecalMaterial],
+) -> ForwardDecalMaterial? {
+  forward_decal_material_assets_or_abort().get(handle)
+}
+
+///|
+pub fn forward_decal_mesh_material3d(
+  handle : @asset.Handle[ForwardDecalMaterial],
+) -> @material.MeshMaterial3d {
+  @material.MeshMaterial3d::from_erased_material_id(
+    @material.Material3dFamily::ForwardDecal,
+    handle.id(),
+  )
+}
+
+///|
 pub struct ForwardDecalPlugin {}
 
 ///|
@@ -137,6 +261,9 @@ pub impl @app.Plugin for ForwardDecalPlugin with fn name(_self) {
 ///|
 pub impl @app.Plugin for ForwardDecalPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
+  let app = @asset.init_asset(app, fn() {
+    ForwardDecalMaterial::ForwardDecalMaterial()
+  })
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let app = if app.contains_resource(mesh_assets_key) {
     app
@@ -244,6 +371,16 @@ test "pbr decal forward: plugin mesh carries generated tangents" {
   }
   debug_inspect(mesh.has_tangents(), content="true")
   debug_inspect(has_tangent_attribute, content="true")
+}
+
+///|
+test "pbr decal forward: material handle maps to forward decal family" {
+  let mesh_material = forward_decal_mesh_material3d(@asset.Handle::new(17))
+  debug_inspect(
+    mesh_material.material_family is @material.Material3dFamily::ForwardDecal,
+    content="true",
+  )
+  debug_inspect(mesh_material.material.id(), content="17")
 }
 
 ///|

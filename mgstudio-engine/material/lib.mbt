@@ -108,6 +108,7 @@ pub const MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL : ShaderLabel = "MeshletDeferre
 ///|
 pub(all) enum Material3dFamily {
   Standard
+  ForwardDecal
   MeshletDebug
 } derive(Eq, Debug)
 

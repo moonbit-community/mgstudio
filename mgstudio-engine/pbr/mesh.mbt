@@ -167,6 +167,30 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
 pub type ForwardDecal = @pbr_decal.ForwardDecal
 
 ///|
+pub type ForwardDecalMaterial = @pbr_decal.ForwardDecalMaterial
+
+///|
+pub fn forward_decal_material_add(
+  material : ForwardDecalMaterial,
+) -> @asset.Handle[ForwardDecalMaterial] {
+  @pbr_decal.forward_decal_material_add(material)
+}
+
+///|
+pub fn forward_decal_material_get(
+  handle : @asset.Handle[ForwardDecalMaterial],
+) -> ForwardDecalMaterial? {
+  @pbr_decal.forward_decal_material_get(handle)
+}
+
+///|
+pub fn forward_decal_mesh_material3d(
+  handle : @asset.Handle[ForwardDecalMaterial],
+) -> @material.MeshMaterial3d {
+  @pbr_decal.forward_decal_mesh_material3d(handle)
+}
+
+///|
 pub type ClusteredDecal = @pbr_decal.ClusteredDecal
 
 ///|

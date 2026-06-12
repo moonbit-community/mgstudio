@@ -535,7 +535,8 @@ fn meshlet_material_pipeline_family_id(
 ) -> Int {
   let family_id = match material_family {
     @material.Material3dFamily::Standard => 0
-    @material.Material3dFamily::MeshletDebug => 1
+    @material.Material3dFamily::ForwardDecal => 1
+    @material.Material3dFamily::MeshletDebug => 2
   }
   guard extension is Some(extension) else { return family_id }
   let mut hash = 1 + extension.extension_tag % 8191
@@ -659,6 +660,7 @@ fn meshlet_collect_material_inputs(
             )
           None => ()
         }
+      @material.Material3dFamily::ForwardDecal => ()
       @material.Material3dFamily::MeshletDebug => ()
     }
     material_inputs.push(material_input)
@@ -1375,6 +1377,7 @@ fn meshlet_main_opaque_material_shade_draws(
         }
         (material, descriptor)
       }
+      @material.Material3dFamily::ForwardDecal => continue
       @material.Material3dFamily::MeshletDebug => {
         guard meshlet_main_opaque_debug_material_descriptor(
             default_opaque_renderer_method,

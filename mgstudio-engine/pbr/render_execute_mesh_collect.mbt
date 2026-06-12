@@ -42,11 +42,26 @@ fn render3d_resolve_standard_material(
 }
 
 ///|
+fn render3d_resolve_forward_decal_material(
+  material_handle : MeshMaterial3d,
+) -> @pbr_decal.ForwardDecalMaterial? {
+  if !(material_handle.material_family
+    is @material.Material3dFamily::ForwardDecal) {
+    return None
+  }
+  @pbr_decal.forward_decal_material_get(
+    @asset.Handle::new(material_handle.material.id()),
+  )
+}
+
+///|
 priv struct Render3dResolvedMeshMaterial {
   material : StandardMaterial
+  material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_vertex_shader_path : String?
   material_fragment_shader_path : String?
+  forward_decal_material_ext : ForwardDecalMaterialExt?
 }
 
 ///|
@@ -66,22 +81,38 @@ fn render3d_resolve_mesh_material(
       None => ()
     }
   }
-  let base_material = match
-    render3d_resolve_standard_material(
-      material_handle, standard_material_frame_cache,
-    ) {
-    Some(v) => v
-    None => return None
+  let (base_material, material_extension, forward_decal_material_ext) = match
+    material_handle.material_family {
+    @material.Material3dFamily::Standard => {
+      let base_material = match
+        render3d_resolve_standard_material(
+          material_handle, standard_material_frame_cache,
+        ) {
+        Some(v) => v
+        None => return None
+      }
+      (base_material, material_handle.extended_material, None)
+    }
+    @material.Material3dFamily::ForwardDecal => {
+      let forward_decal_material = match
+        render3d_resolve_forward_decal_material(material_handle) {
+        Some(v) => v
+        None => return None
+      }
+      let ext = forward_decal_material.extension()
+      (
+        forward_decal_material.base(),
+        Some(forward_decal_material_extension_metadata(ext)),
+        Some(ext),
+      )
+    }
+    @material.Material3dFamily::MeshletDebug => return None
   }
   let material = @pbr_render.render3d_apply_extended_material_metadata(
-    base_material,
-    material_handle.extended_material,
+    base_material, material_extension,
   )
   let material_properties = render3d_material_properties_for_standard_material(
-    material,
-    material_handle.extended_material,
-    default_opaque_renderer_method,
-    material_prepass_enabled,
+    material, material_extension, default_opaque_renderer_method, material_prepass_enabled,
   )
   let material_vertex_shader_path = material_properties.get_shader(
     @material.MATERIAL_VERTEX_SHADER_LABEL,
@@ -90,18 +121,21 @@ fn render3d_resolve_mesh_material(
     material_properties.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL) {
     Some(path) => Some(path)
     None =>
-      match material_handle.extended_material {
+      match material_extension {
         Some(extension) => extension.fragment_shader_path
         None => None
       }
   }
   let resolved = Render3dResolvedMeshMaterial::{
     material,
+    material_extension,
     material_properties,
     material_vertex_shader_path,
     material_fragment_shader_path,
+    forward_decal_material_ext,
   }
-  if material_handle.extended_material is None {
+  if material_handle.material_family is @material.Material3dFamily::Standard &&
+    material_handle.extended_material is None {
     resolved_material_frame_cache.set(material_handle_id, resolved)
   }
   Some(resolved)
@@ -339,6 +373,7 @@ fn render3d_extract_mesh_for_entity(
     None => return (None, true)
   }
   let material = resolved_material.material
+  let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
   let material_vertex_shader_path = resolved_material.material_vertex_shader_path
   let material_fragment_shader_path = resolved_material.material_fragment_shader_path
@@ -427,7 +462,11 @@ fn render3d_extract_mesh_for_entity(
   )
   let lightmap = prefetched_lightmap
   let is_forward_decal = prefetched_is_forward_decal
-  let forward_decal_material_ext = prefetched_forward_decal_material_ext
+  let forward_decal_material_ext = match
+    resolved_material.forward_decal_material_ext {
+    Some(ext) => Some(ext)
+    None => prefetched_forward_decal_material_ext
+  }
   let clustered_decal = prefetched_clustered_decal
   let has_not_shadow_caster = prefetched_has_not_shadow_caster
   let has_no_frustum_culling = prefetched_has_no_frustum_culling
@@ -463,7 +502,7 @@ fn render3d_extract_mesh_for_entity(
         aabb,
         aabb_center_world,
         material,
-        material_extension: material_handle.extended_material,
+        material_extension: resolved_material_extension,
         material_properties,
         material_vertex_shader_path,
         material_fragment_shader_path,

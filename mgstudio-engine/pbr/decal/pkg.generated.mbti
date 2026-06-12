@@ -38,6 +38,12 @@ pub let ecs_key_render_clustered_decals : @ecs.ResourceKey[RenderClusteredDecals
 
 pub fn forward_decal() -> ForwardDecal
 
+pub fn forward_decal_material_add(ForwardDecalMaterial) -> @asset.Handle[ForwardDecalMaterial]
+
+pub fn forward_decal_material_get(@asset.Handle[ForwardDecalMaterial]) -> ForwardDecalMaterial?
+
+pub fn forward_decal_mesh_material3d(@asset.Handle[ForwardDecalMaterial]) -> @material.MeshMaterial3d
+
 pub fn pbr_forward_decal_material_ext_uniform(Float) -> ForwardDecalMaterialExtUniform
 
 pub fn pbr_forward_decal_shader_defs(ForwardDecalPipelineKey) -> Array[String]
@@ -99,6 +105,16 @@ pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
 pub fn ForwardDecal::ForwardDecal() -> Self
 pub impl @ecs.Component for ForwardDecal
+
+pub struct ForwardDecalMaterial {
+  base : @material.StandardMaterial
+  extension : @material.ForwardDecalMaterialExt
+}
+pub fn ForwardDecalMaterial::ForwardDecalMaterial() -> Self
+pub fn ForwardDecalMaterial::base(Self) -> @material.StandardMaterial
+pub fn ForwardDecalMaterial::extension(Self) -> @material.ForwardDecalMaterialExt
+pub fn ForwardDecalMaterial::new(@material.StandardMaterial, @material.ForwardDecalMaterialExt) -> Self
+pub impl @asset.Asset for ForwardDecalMaterial
 
 pub struct ForwardDecalMaterialExtUniform {
   inv_depth_fade_factor : Float

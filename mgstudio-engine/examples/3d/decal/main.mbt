@@ -54,19 +54,19 @@ fn obstacle_rotation(i : Int, j : Int) -> @math.Quat {
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
-  let decal_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
-      Some(asset_server.load("textures/uv_checker_bw.png")),
+  let decal_material = @pbr.forward_decal_material_add(
+    @pbr.ForwardDecalMaterial::new(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
+        Some(asset_server.load("textures/uv_checker_bw.png")),
+      ),
+      @pbr.ForwardDecalMaterialExt::new(1.0F),
     ),
   )
-  let decal_material_ext = @pbr.ForwardDecalMaterialExt::new(1.0F)
   let decal = world.spawn_empty()
   try! world.set_by_key(
     decal,
     @pbr.ecs_key_mesh_material3d,
-    @pbr.MeshMaterial3d::new(decal_material).with_extended_material(
-      Some(@pbr.forward_decal_material_extension_metadata(decal_material_ext)),
-    ),
+    @pbr.forward_decal_mesh_material3d(decal_material),
   )
   try! world.set_by_key(
     decal,
@@ -77,9 +77,6 @@ fn setup(world : @ecs.World) -> Unit {
     decal,
     @pbr.ecs_key_forward_decal,
     @pbr.ForwardDecal::ForwardDecal(),
-  )
-  try! world.set_by_key(
-    decal, @pbr.ecs_key_forward_decal_material_ext, decal_material_ext,
   )
 
   let camera = @camera.Camera3dBundle::new(
