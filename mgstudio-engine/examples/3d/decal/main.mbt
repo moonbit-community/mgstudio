@@ -20,6 +20,9 @@
 const PI : Float = 3.141592653589793F
 
 ///|
+const FRAC_PI_2 : Float = 1.5707963267948966F
+
+///|
 const GRID_COUNT : Int = 10
 
 ///|
@@ -113,14 +116,14 @@ fn setup(world : @ecs.World) -> Unit {
       @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
         assets
         |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(10.0F, 10.0F),
-          ).build(),
+          @mesh_primitives.RectangleMeshBuilder::new(10.0F, 10.0F).build(),
         )
       }),
     ),
     @pbr.MeshMaterial3d::new(white_material),
-    @transform.Transform::identity(),
+    @transform.Transform::identity().with_rotation(
+      @math.Quat::from_rotation_x(-FRAC_PI_2),
+    ),
   ).spawn(world)
   |> ignore
 
