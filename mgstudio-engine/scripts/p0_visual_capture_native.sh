@@ -23,6 +23,8 @@ fi
 
 PACKAGE="$1"
 FINAL_OUTPUT_PNG="$2"
+PACKAGE_BASENAME="$(basename "${PACKAGE}")"
+CALLER_DIR="$(pwd)"
 RUN_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS:-60}"
 CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-120}"
 CAPTURE_RETRY_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_RETRY_DELAY_FRAMES:-1}"
@@ -35,6 +37,12 @@ FORCE_KILL_AFTER_GRACE="${MGSTUDIO_PARITY_FORCE_KILL_AFTER_GRACE:-1}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_DIR="$(cd "${ENGINE_DIR}/.." && pwd)"
+APP_EXE="${ENGINE_DIR}/_build/native/release/build/${PACKAGE}/${PACKAGE_BASENAME}.exe"
+
+case "${FINAL_OUTPUT_PNG}" in
+  /*) ;;
+  *) FINAL_OUTPUT_PNG="${CALLER_DIR}/${FINAL_OUTPUT_PNG}" ;;
+esac
 
 mkdir -p "$(dirname "${FINAL_OUTPUT_PNG}")"
 OUTPUT_PNG="${FINAL_OUTPUT_PNG%.png}.tmp.$$.png"
@@ -42,8 +50,12 @@ RUN_LOG="${FINAL_OUTPUT_PNG%.png}.run.log"
 META_JSON="${FINAL_OUTPUT_PNG%.png}.meta.json"
 RGBA8_BLOB="${FINAL_OUTPUT_PNG%.png}.rgba8.blob"
 
-echo "[capture] moon build --target native --release ${PACKAGE}"
-moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
+echo "[capture] moon run --build-only --target native --release ${PACKAGE}"
+moon -C "${ENGINE_DIR}" run --build-only --target native --release "${PACKAGE}"
+if [[ ! -x "${APP_EXE}" ]]; then
+  echo "[capture] built executable missing: ${APP_EXE}" >&2
+  exit 6
+fi
 
 rm -f "${OUTPUT_PNG}" "${RGBA8_BLOB}"
 
@@ -58,15 +70,16 @@ start_app() {
   fi
   rm -f "${RGBA8_BLOB}"
   : >"${RUN_LOG}"
-  echo "[capture] moon run --target native --release ${PACKAGE} (delay_frames=${delay_frames})"
+  echo "[capture] native exe ${PACKAGE} (delay_frames=${delay_frames})"
   (
+    cd "${ENGINE_DIR}"
     MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
       MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}" \
       MGSTUDIO_SCREENSHOT_PATH="${OUTPUT_PNG}" \
       MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE=1 \
       MGSTUDIO_SCREENSHOT_FRAME="${screenshot_frame}" \
       MGSTUDIO_RENDER3D_DISABLE_GPU_PREPROCESS="${DISABLE_GPU_PREPROCESS}" \
-      moon -C "${ENGINE_DIR}" run --target native --release "${PACKAGE}" >"${RUN_LOG}" 2>&1
+      "${APP_EXE}" >"${RUN_LOG}" 2>&1
   ) &
   APP_PID=$!
 }
@@ -158,7 +171,7 @@ if [[ "${blob_ready}" -eq 0 && "${CAPTURE_DELAY_FRAMES}" != "${CAPTURE_RETRY_DEL
   MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${CAPTURE_RETRY_DELAY_FRAMES}" \
     MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS="${CAPTURE_RETRY_TIMEOUT_SECONDS}" \
     MGSTUDIO_PARITY_CAPTURE_DISABLE_RETRY=1 \
-    "${BASH_SOURCE[0]}" "${PACKAGE}" "${OUTPUT_PNG}"
+    "${BASH_SOURCE[0]}" "${PACKAGE}" "${FINAL_OUTPUT_PNG}"
   exit $?
 fi
 

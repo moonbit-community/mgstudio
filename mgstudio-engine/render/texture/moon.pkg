@@ -4,4 +4,8 @@ import {
   "Milky2018/wgpu_mbt" @wgpu,
 }
 
+import {
+  "Milky2018/mgstudio/ecs",
+} for "wbtest"
+
 supported_targets = "native"
