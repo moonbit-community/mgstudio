@@ -45,7 +45,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @color.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
-    ),
+    ).with_unlit(true),
   )
   let floor_bundle = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -76,7 +76,9 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   )
 
   let ball_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.2F, 0.2F, 1.0F)),
+    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.2F, 0.2F, 1.0F)).with_unlit(
+      true,
+    ),
   )
   let ball_bundle = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
