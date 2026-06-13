@@ -31,6 +31,9 @@ pub type IrradianceVolumeComponent = IrradianceVolume
 pub type ParallaxCorrectionComponent = ParallaxCorrection
 
 ///|
+pub type SkyboxComponent = Skybox
+
+///|
 pub let ecs_key_light_probe_component : @ecs.ComponentKey[LightProbeComponent] = ecs_key_light_probe
 
 ///|
@@ -52,6 +55,62 @@ pub let ecs_key_irradiance_volume_component : @ecs.ComponentKey[
 pub let ecs_key_parallax_correction_component : @ecs.ComponentKey[
   ParallaxCorrectionComponent,
 ] = ecs_key_parallax_correction
+
+///|
+pub let ecs_key_skybox_component : @ecs.ComponentKey[SkyboxComponent] = ecs_key_skybox
+
+///|
+/// Camera skybox settings aligned with Bevy's `bevy_light::Skybox`.
+pub struct Skybox {
+  image : @asset.Handle[@asset.Image]?
+  brightness : Float
+  rotation : @math.Quat
+} derive(ToJson, FromJson)
+
+///|
+pub fn Skybox::Skybox() -> Skybox {
+  Skybox::{ image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
+}
+
+///|
+pub fn Skybox::new(
+  image : @asset.Handle[@asset.Image],
+  brightness : Float,
+) -> Skybox {
+  Skybox::{
+    ..Skybox(),
+    image: Some(image),
+    brightness: light_sanitize_non_negative(brightness),
+  }
+}
+
+///|
+pub fn Skybox::with_image(
+  self : Skybox,
+  image : @asset.Handle[@asset.Image]?,
+) -> Skybox {
+  Skybox::{ ..self, image, }
+}
+
+///|
+pub fn Skybox::with_brightness(self : Skybox, brightness : Float) -> Skybox {
+  Skybox::{ ..self, brightness: light_sanitize_non_negative(brightness) }
+}
+
+///|
+pub fn Skybox::with_rotation(self : Skybox, rotation : @math.Quat) -> Skybox {
+  Skybox::{ ..self, rotation, }
+}
+
+///|
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
+  debug_name="mgstudio_light::Skybox",
+)
+
+///|
+pub impl @ecs.Component for Skybox with fn component() {
+  ecs_key_skybox
+}
 
 ///|
 // Bevy source: `bevy/crates/bevy_light/src/probe.rs::automatically_add_parallax_correction_components`.

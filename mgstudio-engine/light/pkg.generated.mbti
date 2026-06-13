@@ -93,6 +93,10 @@ pub let ecs_key_point_light_texture_component : @ecs.ComponentKey[PointLightText
 
 pub let ecs_key_rect_light : @ecs.ComponentKey[RectLight]
 
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
+
+pub let ecs_key_skybox_component : @ecs.ComponentKey[Skybox]
+
 pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight]
 
 pub let ecs_key_spot_light_component : @ecs.ComponentKey[SpotLight]
@@ -476,6 +480,19 @@ pub struct ShowLightGizmo {
 pub fn ShowLightGizmo::ShowLightGizmo() -> Self
 pub fn ShowLightGizmo::with_color(Self, LightGizmoColor?) -> Self
 pub impl @ecs.Component for ShowLightGizmo
+
+#alias(SkyboxComponent)
+pub struct Skybox {
+  image : @asset.Handle[@image.Image]?
+  brightness : Float
+  rotation : @math.Quat
+} derive(ToJson, @json.FromJson)
+pub fn Skybox::Skybox() -> Self
+pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
+pub fn Skybox::with_brightness(Self, Float) -> Self
+pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
+pub impl @ecs.Component for Skybox
 
 #alias(SpotLightComponent)
 pub struct SpotLight {

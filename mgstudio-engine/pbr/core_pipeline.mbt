@@ -663,58 +663,7 @@ pub type BloomCompositeMode = @post_process.BloomCompositeMode
 pub type Bloom = @post_process.Bloom
 
 ///|
-/// Camera skybox settings aligned with Bevy's `Skybox`.
-pub struct Skybox {
-  image : @asset.Handle[@asset.Image]?
-  brightness : Float
-  rotation : @math.Quat
-} derive(ToJson, FromJson)
-
-///|
-pub fn Skybox::Skybox() -> Skybox {
-  Skybox::{ image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
-}
-
-///|
-pub fn Skybox::new(
-  image : @asset.Handle[@asset.Image],
-  brightness : Float,
-) -> Skybox {
-  Skybox::{
-    ..Skybox(),
-    image: Some(image),
-    brightness: if brightness < 0.0F {
-      0.0F
-    } else {
-      brightness
-    },
-  }
-}
-
-///|
-pub fn Skybox::with_image(
-  self : Skybox,
-  image : @asset.Handle[@asset.Image]?,
-) -> Skybox {
-  Skybox::{ ..self, image, }
-}
-
-///|
-pub fn Skybox::with_brightness(self : Skybox, brightness : Float) -> Skybox {
-  Skybox::{
-    ..self,
-    brightness: if brightness < 0.0F {
-      0.0F
-    } else {
-      brightness
-    },
-  }
-}
-
-///|
-pub fn Skybox::with_rotation(self : Skybox, rotation : @math.Quat) -> Skybox {
-  Skybox::{ ..self, rotation, }
-}
+pub type Skybox = @light.Skybox
 
 ///|
 pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbientOcclusionQualityLevel

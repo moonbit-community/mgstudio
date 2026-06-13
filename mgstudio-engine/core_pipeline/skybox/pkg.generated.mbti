@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
-  "moonbitlang/core/json",
 }
 
 // Values
@@ -16,8 +15,6 @@ pub const SKYBOX_PREPASS_BIND_GROUP_LABEL : String = "skybox_prepass_bind_group"
 pub const SKYBOX_PREPASS_LABEL : String = "skybox_prepass"
 
 pub const SKYBOX_PREPASS_PIPELINE_LABEL : String = "skybox_prepass_pipeline"
-
-pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
 pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState]
 
@@ -46,11 +43,6 @@ pub struct RenderSkyboxPrepassPipeline {
   pipeline_id : Int
 }
 pub fn RenderSkyboxPrepassPipeline::new(pipeline_id~ : Int) -> Self
-
-pub struct Skybox {
-} derive(ToJson, @json.FromJson)
-pub fn Skybox::Skybox() -> Self
-pub impl @ecs.Component for Skybox
 
 pub struct SkyboxBindGroup {
   bind_group_id : Int

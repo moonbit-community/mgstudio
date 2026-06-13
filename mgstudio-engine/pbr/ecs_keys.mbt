@@ -37,9 +37,7 @@ pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
 pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d] = @post_process.ecs_key_custom_post_process3d
 
 ///|
-pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
-  debug_name="render3d.skybox",
-)
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @light.ecs_key_skybox
 
 ///|
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @ecs.register_component(
@@ -300,11 +298,6 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ] = @ecs.register_component(
   debug_name="render3d.order_independent_transparency_settings",
 )
-
-///|
-pub impl @ecs.Component for Skybox with fn component() {
-  ecs_key_skybox
-}
 
 ///|
 pub impl @ecs.Component for Camera3d with fn component() {

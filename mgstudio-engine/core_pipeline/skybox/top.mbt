@@ -28,14 +28,6 @@ pub fn SkyboxPlugin::SkyboxPlugin() -> SkyboxPlugin {
 }
 
 ///|
-pub struct Skybox {} derive(ToJson, FromJson)
-
-///|
-pub fn Skybox::Skybox() -> Skybox {
-  Skybox::{  }
-}
-
-///|
 pub const SKYBOX_PIPELINE_LABEL : String = "skybox_pipeline"
 
 ///|
@@ -131,16 +123,6 @@ pub fn skybox_should_prepare_bind_group(state : SkyboxPrepareViewState) -> Bool 
   state.has_view_uniform_binding &&
   state.has_skybox_uniform_binding &&
   state.has_skybox_gpu_image
-}
-
-///|
-pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
-  debug_name="core_pipeline.skybox",
-)
-
-///|
-pub impl @ecs.Component for Skybox with fn component() {
-  ecs_key_skybox
 }
 
 ///|

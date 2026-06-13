@@ -69,7 +69,7 @@ pub using @fullscreen_vertex_shader {type FullscreenShader}
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/lib.rs`.
-pub using @skybox {type Skybox}
+pub using @light {type Skybox}
 
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/tonemapping/mod.rs`.

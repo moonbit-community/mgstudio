@@ -8,9 +8,9 @@ import {
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/core_pipeline/prepass",
-  "Milky2018/mgstudio/core_pipeline/skybox",
   "Milky2018/mgstudio/core_pipeline/tonemapping",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
 }
 
@@ -158,7 +158,7 @@ pub using @core_3d {type Msaa}
 
 pub using @prepass {type NormalPrepass}
 
-pub using @skybox {type Skybox}
+pub using @light {type Skybox}
 
 pub using @tonemapping {type TonemappingLuts}
 

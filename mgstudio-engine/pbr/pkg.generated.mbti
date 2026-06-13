@@ -318,7 +318,7 @@ pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMetho
 
 pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/deferred.SkipDeferredLighting]
 
-pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
+pub let ecs_key_skybox : @ecs.ComponentKey[@light.Skybox]
 
 pub let ecs_key_specialized_material_pipeline_cache : @ecs.ResourceKey[SpecializedMaterialPipelineCache]
 
@@ -1678,18 +1678,6 @@ pub(all) enum ShadowFilteringMethod {
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
 
-pub struct Skybox {
-  image : @asset.Handle[@image.Image]?
-  brightness : Float
-  rotation : @math.Quat
-} derive(ToJson, @json.FromJson)
-pub fn Skybox::Skybox() -> Self
-pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
-pub fn Skybox::with_brightness(Self, Float) -> Self
-pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
-pub impl @ecs.Component for Skybox
-
 pub struct SpecializedMaterialPipelineCache {
   views : Map[UInt64, SpecializedMaterialViewPipelineCache]
 }
@@ -2331,6 +2319,8 @@ pub using @transmission {type ScreenSpaceTransmissionQuality}
 pub using @light {type ShowLightGizmo}
 
 pub using @Milky2018/mgstudio/pbr/deferred {type SkipDeferredLighting}
+
+pub using @light {type Skybox}
 
 pub using @light {type SpotLight}
 
