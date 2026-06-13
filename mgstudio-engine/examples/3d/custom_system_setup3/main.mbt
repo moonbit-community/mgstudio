@@ -13,24 +13,38 @@
 // limitations under the License.
 
 ///|
+priv struct DespawnTarget {}
+
+///|
+let despawn_target_component_key : @ecs.ComponentKey[DespawnTarget] = @ecs.register_component(
+  debug_name="examples.3d.custom_system_setup3.DespawnTarget",
+)
+
+///|
+impl @ecs.Component for DespawnTarget with fn component() {
+  despawn_target_component_key
+}
+
+///|
 fn main {
   let app = @app.App::new(@ecs.World::new())
   app
-  .add_plugins(@rapier_examples.rapier3d_plugins())
-  .configure_sets(@app.PostUpdate, @physics3d.physics3d_set_sync_insertions, before=[
-    @physics3d.physics3d_set_sync_joints,
-  ])
-  .configure_sets(@app.PostUpdate, @physics3d.physics3d_set_sync_joints, before=[
-    @physics3d.physics3d_set_sync_world_to_rapier,
-  ])
-  .configure_sets(
-    @app.PostUpdate,
-    @physics3d.physics3d_set_sync_world_to_rapier,
-    before=[@physics3d.physics3d_set_step],
+  .add_plugins(
+    @mgstudio.DefaultPlugins::build()
+    .disable(@physics3d.Physics3dPlugin::Physics3dPlugin())
+    .add(
+      @rapier_examples.Rapier3dDebugRenderPlugin::Rapier3dDebugRenderPlugin(),
+    ),
   )
-  .configure_sets(@app.PostUpdate, @physics3d.physics3d_set_step, before=[
-    @physics3d.physics3d_set_writeback,
-  ])
+  .add_startup_system(@physics3d.physics3d_init_resources_system)
+  .add_pre_update_system(@physics3d.physics3d_clear_events_system)
+  .add_pre_update_system(@physics3d.physics3d_cleanup_despawned_system)
+  .add_fixed_update_system(@physics3d.physics3d_sync_insertions_system)
+  .add_fixed_update_system(@physics3d.physics3d_sync_joints_system)
+  .add_fixed_update_system(@physics3d.physics3d_sync_world_to_rapier_system)
+  .add_fixed_update_system(@physics3d.physics3d_character_controller_system)
+  .add_fixed_update_system(@physics3d.physics3d_step_system)
+  .add_fixed_update_system(@physics3d.physics3d_writeback_system)
   .add_systems_world(@app.Startup, setup_graphics)
   .add_systems_world(@app.Startup, setup_physics)
   .add_systems_world(@app.Update, despawn_one_box)
@@ -70,15 +84,15 @@ fn setup_physics(world : @ecs.World) -> Unit {
         let x = Float::from_int(i) * shift - centerx + offset
         let y = Float::from_int(j) * shift + centery + 3.0F
         let z = Float::from_int(k) * shift - centerz + offset
-        ignore(
-          @rapier_examples.rapier3d_spawn_cuboid(
-            world,
-            @math.Vec3::new(x, y, z),
-            @math.Vec3::splat(rad),
-            @rapier_examples.rapier3d_color(i + j + k),
-            Some(@physics3d.RigidBody3d::dynamic()),
-          ),
+        let box = @rapier_examples.rapier3d_spawn_cuboid(
+          world,
+          @math.Vec3::new(x, y, z),
+          @math.Vec3::splat(rad),
+          @rapier_examples.rapier3d_color(i + j + k),
+          Some(@physics3d.RigidBody3d::dynamic()),
         )
+        let target = DespawnTarget::{  }
+        try! world.set_by_key(box, DespawnTarget::component(), target)
       }
     }
     offset -= 0.05F * rad * Float::from_int(num - 1)
@@ -95,7 +109,10 @@ fn despawn_one_box(world : @ecs.World) -> Unit {
     return
   }
   let boxes : Array[@core.Entity] = []
-  world.for_each_component(@physics3d.ecs_key_rigid_body3d, fn(entity, _rb) {
+  world.for_each_component(DespawnTarget::component(), fn(entity, _target) {
+    if !(try! world.contains_by_key(entity, @physics3d.ecs_key_rigid_body3d)) {
+      return
+    }
     if (try! world.contains_by_key(entity, @physics3d.ecs_key_collider3d)) {
       boxes.push(entity)
     }
