@@ -197,6 +197,7 @@ fn mesh3d_add_view_bind_group_layout_entry(
   normal_prepass_view : @wgpu.TextureView?,
   motion_vector_prepass_view : @wgpu.TextureView?,
   deferred_prepass_view : @wgpu.TextureView?,
+  ssao_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -266,6 +267,14 @@ fn mesh3d_add_view_bind_group_layout_entry(
         contact_shadows_settings_buf,
         size=MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
       )
+    17 =>
+      match ssao_view {
+        Some(view) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder, binding, view, entry,
+          )
+        None => fatal("wgpu: missing screen space ambient occlusion texture")
+      }
     18 =>
       mesh3d_add_texture_view_for_layout_entry(
         builder, binding, dt_lut_sample_view, entry,
@@ -371,6 +380,7 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   normal_prepass_view : @wgpu.TextureView?,
   motion_vector_prepass_view : @wgpu.TextureView?,
   deferred_prepass_view : @wgpu.TextureView?,
+  ssao_view : @wgpu.TextureView?,
   transmission_source_texture : GpuTextureInfo,
   dt_lut_sample_view : @wgpu.TextureView,
   dt_lut_sampler : @wgpu.Sampler,
@@ -389,9 +399,9 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         cluster_offsets_and_counts_buf, globals_buf, fog_buf, light_probes_buf, visibility_ranges_buf,
         ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
         point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
-        normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, transmission_source_texture,
-        dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view, atmosphere_transmittance_sampler,
-        atmosphere_buffer,
+        normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, ssao_view,
+        transmission_source_texture, dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view,
+        atmosphere_transmittance_sampler, atmosphere_buffer,
       ) {
       builder.free()
       fatal(
@@ -486,6 +496,27 @@ fn mesh3d_atmosphere_resource_revision(backend : GpuBackend) -> Int {
 }
 
 ///|
+fn mesh3d_ssao_resource_revision(backend : GpuBackend) -> Int {
+  match backend.mesh3d_ssao_resources {
+    Some(resources) => resources.revision
+    None => 0
+  }
+}
+
+///|
+fn mesh3d_ssao_resources_keepalive(resources : GpuSsaoResources) -> Unit {
+  ignore(resources.preprocessed_depth_texture)
+  ignore(resources.preprocessed_depth_view)
+  ignore(resources.ssao_noisy_texture)
+  ignore(resources.ssao_noisy_view)
+  ignore(resources.screen_space_ambient_occlusion_texture)
+  ignore(resources.screen_space_ambient_occlusion_view)
+  ignore(resources.depth_differences_texture)
+  ignore(resources.depth_differences_view)
+  ignore(resources.thickness_buffer)
+}
+
+///|
 fn mesh3d_atmosphere_resources_keepalive(
   resources : GpuAtmosphereResources,
 ) -> Unit {
@@ -525,6 +556,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
+  let ssao_revision = mesh3d_ssao_resource_revision(backend)
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -534,7 +566,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
-      entry.atmosphere_resource_revision == atmosphere_revision {
+      entry.atmosphere_resource_revision == atmosphere_revision &&
+      entry.ssao_resource_revision == ssao_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -628,6 +661,13 @@ fn mesh3d_view_bg_cache_get_or_create(
     }
     None => (None, None, None)
   }
+  let ssao_view = match backend.mesh3d_ssao_resources {
+    Some(resources) => {
+      mesh3d_ssao_resources_keepalive(resources)
+      Some(resources.screen_space_ambient_occlusion_view)
+    }
+    None => None
+  }
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
@@ -668,6 +708,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     None,
     None,
     None,
+    ssao_view,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
@@ -695,6 +736,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_specular_texture_id: environment_specular_texture.id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
+    ssao_resource_revision: ssao_revision,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -726,6 +768,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
+  let ssao_revision = mesh3d_ssao_resource_revision(backend)
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -743,7 +786,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
       entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
-      entry.atmosphere_resource_revision == atmosphere_revision {
+      entry.atmosphere_resource_revision == atmosphere_revision &&
+      entry.ssao_resource_revision == ssao_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -837,6 +881,13 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     }
     None => (None, None, None)
   }
+  let ssao_view = match backend.mesh3d_ssao_resources {
+    Some(resources) => {
+      mesh3d_ssao_resources_keepalive(resources)
+      Some(resources.screen_space_ambient_occlusion_view)
+    }
+    None => None
+  }
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
@@ -886,6 +937,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     normal_prepass_view,
     motion_vector_prepass_view,
     deferred_prepass_view,
+    ssao_view,
     transmission_source_texture,
     dt_lut_sample_view,
     dt_lut_texture.sampler,
@@ -923,6 +975,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     prepass_deferred_texture_id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
+    ssao_resource_revision: ssao_revision,
     bind_group,
     binding_arrays_bind_group,
   })

@@ -87,6 +87,7 @@ fn ssao_quality_index(ssao : @post_process.ScreenSpaceAmbientOcclusion?) -> Int 
         Medium => 2
         High => 3
         Ultra => 4
+        Custom(_, _) => 5
       }
   }
 }
@@ -102,6 +103,7 @@ fn ssao_ui_text(
   let m = marker(quality, 2)
   let h = marker(quality, 3)
   let u = marker(quality, 4)
+  let c = marker(quality, 5)
 
   let mut text = ""
   if ssao is Some(ssao) {
@@ -113,7 +115,8 @@ fn ssao_ui_text(
   text = "\{text}(2) \{l}Low\{l}\n"
   text = "\{text}(3) \{m}Medium\{m}\n"
   text = "\{text}(4) \{h}High\{h}\n"
-  text = "\{text}(5) \{u}Ultra\{u}\n\n"
+  text = "\{text}(5) \{u}Ultra\{u}\n"
+  text = "\{text}\{c}Custom\{c}\n\n"
   text = "\{text}Temporal Antialiasing:\n"
   text = text +
     (if temporal_jitter_enabled {

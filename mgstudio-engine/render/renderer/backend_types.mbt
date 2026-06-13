@@ -154,6 +154,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_specular_texture_id : Int
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
+  ssao_resource_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
 }
@@ -188,8 +189,27 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
+  ssao_resource_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
+}
+
+///|
+struct GpuSsaoResources {
+  width : Int
+  height : Int
+  depth_format : @wgpu.TextureFormat
+  preprocessed_depth_texture : @wgpu.Texture
+  preprocessed_depth_view : @wgpu.TextureView
+  ssao_noisy_texture : @wgpu.Texture
+  ssao_noisy_view : @wgpu.TextureView
+  screen_space_ambient_occlusion_texture : @wgpu.Texture
+  screen_space_ambient_occlusion_view : @wgpu.TextureView
+  depth_differences_texture : @wgpu.Texture
+  depth_differences_view : @wgpu.TextureView
+  thickness_buffer : @wgpu.Buffer
+  constant_object_thickness : Float
+  revision : Int
 }
 
 ///|

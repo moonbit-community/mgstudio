@@ -295,6 +295,13 @@ fn render3d_execute_camera_main_pass(
     scene_viewport_width,
     scene_viewport_height,
   ) = pass_viewport(scene_target_id)
+  if camera.screen_space_ambient_occlusion is Some(ssao_settings) {
+    @render.host_gpu_prepare_mesh3d_ssao_resources(
+      width=viewport_width,
+      height=viewport_height,
+      constant_object_thickness=ssao_settings.constant_object_thickness,
+    )
+  }
   let (agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id) = render3d_main_pass_tonemapping_lut_ids(
     world, camera,
   )

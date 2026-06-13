@@ -313,6 +313,19 @@ pub fn host_gpu_prepare_mesh3d_view_bind_group(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_ssao_resources(
+  width~ : Int,
+  height~ : Int,
+  constant_object_thickness~ : Float,
+) -> Unit {
+  @renderer.prepare_mesh3d_ssao_resources(
+    width~,
+    height~,
+    constant_object_thickness~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
   ground_albedo_x~ : Float,
   ground_albedo_y~ : Float,

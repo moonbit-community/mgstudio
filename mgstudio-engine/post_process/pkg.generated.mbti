@@ -228,6 +228,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
+  Custom(Int, Int)
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
 

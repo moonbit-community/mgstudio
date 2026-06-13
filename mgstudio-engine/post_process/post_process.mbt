@@ -714,6 +714,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
+  Custom(Int, Int)
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|

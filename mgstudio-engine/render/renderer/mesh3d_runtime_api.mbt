@@ -940,6 +940,19 @@ pub fn prepare_mesh3d_view_bind_group(
 }
 
 ///|
+pub fn prepare_mesh3d_ssao_resources(
+  width~ : Int,
+  height~ : Int,
+  constant_object_thickness~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_ssao_resources(
+      width, height, constant_object_thickness,
+    )
+  }
+}
+
+///|
 pub fn draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,

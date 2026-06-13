@@ -331,6 +331,8 @@ pub fn prepare_mesh3d_scattering_medium_resources(density_width~ : Int, density_
 
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
+pub fn prepare_mesh3d_ssao_resources(width~ : Int, height~ : Int, constant_object_thickness~ : Float) -> Unit
+
 pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id? : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
 
 pub fn prepare_meshlet_frame_resources(cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
@@ -924,6 +926,8 @@ pub struct GpuBackend {
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_view_bg_cache : Array[Mesh3dViewBindGroupCacheEntry]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
+  mut mesh3d_ssao_resources : GpuSsaoResources?
+  mut mesh3d_ssao_resource_revision : Int
   mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
   mut mesh3d_atmosphere_resource_revision : Int
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
@@ -1028,6 +1032,7 @@ pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Arra
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_morph_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_ssao_resources(Self, Int, Int, Float) -> Unit
 pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
 pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
@@ -1217,6 +1222,8 @@ pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
 type GpuPrepassDepthTextureInfo
 
 type GpuScatteringMediumResources
+
+type GpuSsaoResources
 
 type GpuStorageSlot
 
@@ -1603,6 +1610,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_specular_texture_id : Int
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
+  ssao_resource_revision : Int
   bind_group : @wgpu_mbt.BindGroup
   binding_arrays_bind_group : @wgpu_mbt.BindGroup
 }

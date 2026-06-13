@@ -5,12 +5,19 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const SSAO_HILBERT_WIDTH : Int = 64
+
 pub fn pbr_ssao_default() -> @post_process.ScreenSpaceAmbientOcclusion
 
 pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn ssao_generate_hilbert_index_lut() -> Array[Array[Int]]
+
+pub fn ssao_hilbert_index(Int, Int) -> Int
 
 pub fn ssao_pipeline_key(@post_process.ScreenSpaceAmbientOcclusionQualityLevel, Bool) -> SsaoPipelineKey
 
@@ -34,6 +41,24 @@ pub struct ScreenSpaceAmbientOcclusionPluginState {
 }
 pub fn ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState() -> Self
 pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState
+
+pub struct ScreenSpaceAmbientOcclusionResources {
+  preprocessed_depth_texture_id : Int
+  ssao_noisy_texture_id : Int
+  screen_space_ambient_occlusion_texture_id : Int
+  depth_differences_texture_id : Int
+  thickness_buffer_id : Int
+} derive(Eq, @debug.Debug)
+pub fn ScreenSpaceAmbientOcclusionResources::ScreenSpaceAmbientOcclusionResources() -> Self
+pub fn ScreenSpaceAmbientOcclusionResources::screen_space_ambient_occlusion_texture_id(Self) -> Int
+
+pub struct SsaoBindGroups {
+  common_bind_group_id : Int
+  preprocess_depth_bind_group_id : Int
+  ssao_bind_group_id : Int
+  spatial_denoise_bind_group_id : Int
+} derive(Eq, @debug.Debug)
+pub fn SsaoBindGroups::SsaoBindGroups() -> Self
 
 pub struct SsaoPipelineId {
   id : Int
