@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/3d/auto_exposure"
 // Errors
 
 // Types and methods
+type ExampleDisplay
+
+type ExampleResources
+
+type MeteringMaskOverlay
 
 // Type aliases
 

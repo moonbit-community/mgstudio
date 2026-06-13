@@ -14,161 +14,74 @@
 
 ///|
 ///
-/// Uses `Camera3d.auto_exposure` with the render3d GPU histogram pipeline.
+/// Bevy source: `bevy/examples/3d/auto_exposure.rs`.
 
 ///|
-const CAMERA_ORBIT_RADIUS : Float = 1.0F
+struct ExampleDisplay {}
 
 ///|
-const CAMERA_ROTATE_SPEED : Float = 1.0F
+struct MeteringMaskOverlay {}
 
 ///|
-const MASK_OVERLAY_ALPHA : Float = 0.65F
-
-///|
-priv struct AutoExposureState {
-  mut camera : @core.Entity?
-  mut camera_angle : Float
-  mut mask_overlay : @core.Entity?
-  mut compensation_curve_enabled : Bool
-  mut metering_mask_enabled : Bool
-  mut display_text : @text.TextHandle?
-  mut basic_compensation_curve : @asset.Handle[
-    @pbr.AutoExposureCompensationCurve,
-  ]?
-  mut basic_metering_mask : @asset.Handle[@asset.Image]?
+struct ExampleResources {
+  basic_compensation_curve : @asset.Handle[@pbr.AutoExposureCompensationCurve]
+  basic_metering_mask : @asset.Handle[@asset.Image]
 }
 
 ///|
-let auto_exposure_state : Ref[AutoExposureState] = Ref({
-  camera: None,
-  camera_angle: 0.0F,
-  mask_overlay: None,
-  compensation_curve_enabled: true,
-  metering_mask_enabled: true,
-  display_text: None,
-  basic_compensation_curve: None,
-  basic_metering_mask: None,
-})
+let example_display_component_key : @ecs.ComponentKey[ExampleDisplay] = @ecs.register_component(
+  debug_name="examples.3d.auto_exposure.ExampleDisplay",
+)
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+let metering_mask_overlay_component_key : @ecs.ComponentKey[MeteringMaskOverlay] = @ecs.register_component(
+  debug_name="examples.3d.auto_exposure.MeteringMaskOverlay",
+)
+
+///|
+let example_resources_resource_key : @ecs.ResourceKey[ExampleResources] = @ecs.register_resource(
+  debug_name="examples.3d.auto_exposure.ExampleResources",
+)
+
+///|
+impl @ecs.Component for ExampleDisplay with fn component() {
+  example_display_component_key
 }
 
 ///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
+impl @ecs.Component for MeteringMaskOverlay with fn component() {
+  metering_mask_overlay_component_key
+}
+
+///|
+impl @app.Resource for ExampleResources with fn resource() {
+  example_resources_resource_key
+}
+
+///|
+fn auto_exposure_curve_error_message(
+  err : @pbr.AutoExposureCompensationCurveError,
+) -> String {
+  match err {
+    @pbr.InvalidCurve => "invalid curve"
+    @pbr.DiscontinuityFound => "discontinuity found"
+    @pbr.NotMonotonic => "not monotonic"
   }
 }
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @color.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
-}
-
-///|
-fn camera_transform_for_angle(angle : Float) -> @transform.Transform {
-  @transform.Transform::from_xyz(
-    @math.cos(angle) * CAMERA_ORBIT_RADIUS,
-    0.0F,
-    @math.sin(angle) * CAMERA_ORBIT_RADIUS,
-  ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-}
-
-///|
-fn auto_exposure_wall_geometry(
-  width : Float,
-  height : Float,
-) -> @mesh.Mesh3dGeometry {
-  let half_width = width * 0.5F
-  let half_height = height * 0.5F
-  @mesh.Mesh3dGeometry::new(
-    [
-      @math.Vec3::new(-half_width, half_height, 0.0F),
-      @math.Vec3::new(half_width, -half_height, 0.0F),
-      @math.Vec3::new(-half_width, -half_height, 0.0F),
-      @math.Vec3::new(-half_width, half_height, 0.0F),
-      @math.Vec3::new(half_width, half_height, 0.0F),
-      @math.Vec3::new(half_width, -half_height, 0.0F),
-    ],
-    [
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-      @math.Vec2::new(0.0F, 1.0F),
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-    ],
-    None,
-  )
-}
-
-///|
-fn spawn_wall_panel(
-  world : @ecs.World,
-  wall_mesh : @asset.Handle[@mesh.Mesh],
-  side : @math.Vec3,
-  level : Int,
-) -> Unit {
-  let level_f = float_from_int(level)
-  let height = @math.Vec3::new(0.0F, level_f, 0.0F)
-  let target = height
-  let position = side.mul_scalar(2.0F).add(height)
-
-  let base_color = @color.Color::srgb(
-    clampf(0.5F + side.x * 0.5F, 0.0F, 1.0F),
-    clampf(0.75F - level_f * 0.25F, 0.0F, 1.0F),
-    clampf(0.5F + side.z * 0.5F, 0.0F, 1.0F),
-  )
-
-  let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color),
-  )
-
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(wall_mesh),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
-      target,
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn update_display_text() -> Unit {
-  if auto_exposure_state.val.display_text is Some(handle) {
-    let compensation_label = if auto_exposure_state.val.compensation_curve_enabled {
-      "Enabled"
-    } else {
-      "Disabled"
-    }
-    let metering_label = if auto_exposure_state.val.metering_mask_enabled {
-      "Enabled"
-    } else {
-      "Disabled"
-    }
-    @text.text_set_content(
-      handle,
-      "Compensation Curve: \{compensation_label}\nMetering Mask: \{metering_label}",
-    )
+fn asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
+  match world.get_resource(@asset.asset_server_resource_key) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "auto_exposure requires the world-owned AssetServer resource; add AssetPlugin before the example startup system runs",
+      )
   }
 }
 
 ///|
-fn auto_exposure_curve_assets_ref_mut_or_abort(
+fn auto_exposure_curve_assets_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
@@ -198,92 +111,172 @@ fn build_basic_compensation_curve(
         "Failed to build auto exposure compensation curve in example: \{auto_exposure_curve_error_message(err)}",
       )
   }
-  auto_exposure_curve_assets_ref_mut_or_abort(world).modify(fn(assets) {
+  auto_exposure_curve_assets_or_abort(world).modify(fn(assets) {
     assets.add(curve)
   })
 }
 
 ///|
-fn auto_exposure_curve_error_message(
-  err : @pbr.AutoExposureCompensationCurveError,
-) -> String {
-  match err {
-    @pbr.InvalidCurve => "invalid curve"
-    @pbr.DiscontinuityFound => "discontinuity found"
-    @pbr.NotMonotonic => "not monotonic"
+fn[T] handle_matches(
+  handle : @asset.Handle[T]?,
+  expected : @asset.Handle[T],
+) -> Bool {
+  match handle {
+    Some(value) => value.id() == expected.id()
+    None => false
   }
 }
 
 ///|
-fn example_auto_exposure_settings() -> @pbr.AutoExposure {
-  let compensation_curve = if auto_exposure_state.val.compensation_curve_enabled {
-    auto_exposure_state.val.basic_compensation_curve
-  } else {
+fn[T] toggle_handle(
+  handle : @asset.Handle[T]?,
+  expected : @asset.Handle[T],
+) -> @asset.Handle[T]? {
+  if handle_matches(handle, expected) {
     None
-  }
-  let metering_mask = if auto_exposure_state.val.metering_mask_enabled {
-    auto_exposure_state.val.basic_metering_mask
   } else {
-    None
+    Some(expected)
   }
-  @pbr.AutoExposure::AutoExposure()
-  .with_compensation_curve(compensation_curve)
-  .with_metering_mask(metering_mask)
 }
 
 ///|
-fn apply_example_auto_exposure_to_camera(
+fn first_auto_exposure_camera(world : @ecs.World) -> @core.Entity? {
+  let mut camera : @core.Entity? = None
+  try! world
+  .query_entities_filtered(
+    (
+      @ecs.With::new(@camera.Camera::component()),
+      @ecs.With::new(@camera.ecs_key_camera3d),
+      @ecs.With::new(@pbr.ecs_key_auto_exposure),
+    ),
+  )
+  .view(fn(_query_entity, entity) {
+    if camera is None {
+      camera = Some(entity)
+    }
+  })
+  camera
+}
+
+///|
+fn first_example_display(world : @ecs.World) -> @core.Entity? {
+  let mut display : @core.Entity? = None
+  try! world
+  .query_entities_filtered(@ecs.With::new(ExampleDisplay::component()))
+  .view(fn(_query_entity, entity) {
+    if display is None {
+      display = Some(entity)
+    }
+  })
+  display
+}
+
+///|
+fn first_metering_mask_overlay(world : @ecs.World) -> @core.Entity? {
+  let mut overlay : @core.Entity? = None
+  try! world
+  .query_entities_filtered(@ecs.With::new(MeteringMaskOverlay::component()))
+  .view(fn(_query_entity, entity) {
+    if overlay is None {
+      overlay = Some(entity)
+    }
+  })
+  overlay
+}
+
+///|
+fn example_resources_or_abort(world : @ecs.World) -> ExampleResources {
+  match world.get_resource(ExampleResources::resource()) {
+    Some(resources) => resources
+    None => abort("Missing ExampleResources in auto_exposure example")
+  }
+}
+
+///|
+fn camera_auto_exposure_or_default(
   world : @ecs.World,
-  camera_entity : @core.Entity,
-) -> Unit {
-  try! (world.set_by_key(
-    camera_entity,
-    @pbr.ecs_key_auto_exposure,
-    example_auto_exposure_settings(),
+  camera : @core.Entity,
+) -> @pbr.AutoExposure {
+  match (try! world.get_by_key(camera, @pbr.ecs_key_auto_exposure)) {
+    Some(auto_exposure) => auto_exposure
+    None => @pbr.AutoExposure::AutoExposure()
+  }
+}
+
+///|
+fn update_display_text(world : @ecs.World) -> Unit {
+  guard first_example_display(world) is Some(display) else { return }
+  guard first_auto_exposure_camera(world) is Some(camera) else { return }
+  let resources = example_resources_or_abort(world)
+  let auto_exposure = camera_auto_exposure_or_default(world, camera)
+  let compensation_label = if handle_matches(
+      auto_exposure.compensation_curve,
+      resources.basic_compensation_curve,
+    ) {
+    "Enabled"
+  } else {
+    "Disabled"
+  }
+  let metering_label = if handle_matches(
+      auto_exposure.metering_mask,
+      resources.basic_metering_mask,
+    ) {
+    "Enabled"
+  } else {
+    "Disabled"
+  }
+  try! (world.replace(
+    display,
+    @text.ecs_key_text,
+    @text.Text::new(
+      "Compensation Curve: \{compensation_label}\nMetering Mask: \{metering_label}",
+    ),
   )
   |> ignore)
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  auto_exposure_state.val.camera = None
-  auto_exposure_state.val.camera_angle = 0.0F
-  auto_exposure_state.val.mask_overlay = None
-  auto_exposure_state.val.compensation_curve_enabled = true
-  auto_exposure_state.val.metering_mask_enabled = true
-  auto_exposure_state.val.display_text = None
-  auto_exposure_state.val.basic_compensation_curve = None
-  auto_exposure_state.val.basic_metering_mask = None
-
-  let asset_server = @asset.AssetServer::new()
-  let metering_mask = asset_server.load("textures/basic_metering_mask.png")
-
-  let basic_curve = build_basic_compensation_curve(world)
-  auto_exposure_state.val.basic_compensation_curve = Some(basic_curve)
-  auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
-
-  let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      camera_transform_for_angle(auto_exposure_state.val.camera_angle),
-    )
-    .with_auto_exposure(Some(example_auto_exposure_settings()))
-    .spawn(world)
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(
-      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
-      100_000.0F,
+fn spawn_wall_panel(
+  world : @ecs.World,
+  wall_mesh : @asset.Handle[@mesh.Mesh],
+  side : @math.Vec3,
+  level : Int,
+) -> Unit {
+  let level_f = Float::from_double(level.to_double())
+  let height = @math.Vec3::new(0.0F, level_f, 0.0F)
+  let position = side.mul_scalar(2.0F).add(height)
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @color.Color::srgb(
+        0.5F + side.x * 0.5F,
+        0.75F - level_f * 0.25F,
+        0.5F + side.z * 0.5F,
+      ),
     ),
   )
-  auto_exposure_state.val.camera = Some(camera)
 
+  @pbr.MeshMaterial3dBundle::new(
+    @mesh.Mesh3d::new(wall_mesh),
+    @pbr.MeshMaterial3d::new(material),
+    @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
+      height,
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  ).spawn(world)
+  |> ignore
+}
+
+///|
+fn spawn_walls(world : @ecs.World) -> Unit {
   let wall_mesh = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-    assets.add(
-      @mesh.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
+    @pbr.add_mesh(
+      assets,
+      @math.Plane3d::new(
+        @math.Vec3::new(0.0F, 0.0F, -1.0F),
+        @math.Vec2::new(2.0F, 0.5F),
+      ),
     )
   })
-
   for level in [-1, 0, 1] {
     for
       side in [
@@ -298,8 +291,144 @@ fn setup(world : @ecs.World) -> Unit {
       spawn_wall_panel(world, wall_mesh, side, level)
     }
   }
+}
 
-  set_global_ambient_light(world, @color.Color::white(), 0.0F)
+///|
+fn spawn_mask_overlay(
+  world : @ecs.World,
+  metering_mask : @asset.Handle[@asset.Image],
+) -> Unit {
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_image_node,
+    @ui.ImageNode::new(metering_mask),
+  )
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_node,
+    @ui.Node::Node()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F))
+    .with_display(@ui.Display::None),
+  )
+  try! world.set_by_key(entity, MeteringMaskOverlay::component(), MeteringMaskOverlay::{
+
+  })
+}
+
+///|
+fn spawn_instruction_text(world : @ecs.World) -> Unit {
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_node,
+    @ui.Node::Node()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text,
+    @text.Text::new(
+      "Left / Right - Rotate Camera\nC - Toggle Compensation Curve\nM - Toggle Metering Mask\nV - Visualize Metering Mask",
+    ),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::TextFont(),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::TextColor(),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::TextLayout(),
+  )
+}
+
+///|
+fn spawn_display_text(world : @ecs.World) -> Unit {
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @ui.ecs_key_node,
+    @ui.Node::Node()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_right(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::Text())
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::TextFont(),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::TextColor(),
+  )
+  try! world.set_by_key(
+    entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::TextLayout(),
+  )
+  try! world.set_by_key(entity, ExampleDisplay::component(), ExampleDisplay::{
+
+  })
+}
+
+///|
+fn set_global_ambient_light(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
+  )
+}
+
+///|
+fn setup(world : @ecs.World) -> Unit {
+  let asset_server = asset_server_or_abort(world)
+  let metering_mask = asset_server.load("textures/basic_metering_mask.png")
+  let basic_compensation_curve = build_basic_compensation_curve(world)
+
+  let camera = @camera.Camera3dBundle::new(
+      @camera_camera.Camera::Camera(),
+      @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_auto_exposure(
+      Some(
+        @pbr.AutoExposure::AutoExposure().with_metering_mask(
+          Some(metering_mask),
+        ),
+      ),
+    )
+    .spawn(world)
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_skybox,
+    @pbr.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      100_000.0F,
+    ),
+  )
+
+  world.insert_resource(ExampleResources::resource(), ExampleResources::{
+    basic_compensation_curve,
+    basic_metering_mask: metering_mask,
+  })
+
+  spawn_walls(world)
+  set_global_ambient_light(world)
 
   let point_light = world.spawn_empty()
   try! world.set_by_key(
@@ -313,10 +442,10 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   )
 
-  auto_exposure_state.val.mask_overlay = None
-  auto_exposure_state.val.display_text = None
-
-  update_display_text()
+  spawn_mask_overlay(world, metering_mask)
+  spawn_instruction_text(world)
+  spawn_display_text(world)
+  update_display_text(world)
 }
 
 ///|
@@ -328,60 +457,81 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 }
 
 ///|
-fn example_control_system(world : @ecs.World) -> Unit {
-  let delta = world_time(world).delta_seconds()
+fn update_camera_rotation(
+  world : @ecs.World,
+  camera : @core.Entity,
+  rotation : Float,
+) -> Unit {
+  guard rotation != 0.0F else { return }
+  guard (try! world.get_by_key(camera, @transform.ecs_key_transform))
+    is Some(transform) else {
+    return
+  }
+  transform.rotate_around(
+    @math.Vec3::zero(),
+    @math.Quat::from_rotation_y(rotation),
+  )
+  try! (world.replace(camera, @transform.ecs_key_transform, transform) |> ignore)
+}
 
+///|
+fn update_auto_exposure_toggles(
+  world : @ecs.World,
+  camera : @core.Entity,
+  resources : ExampleResources,
+) -> Unit {
+  let auto_exposure = camera_auto_exposure_or_default(world, camera)
+  let mut next = auto_exposure
+  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+    next = next.with_compensation_curve(
+      toggle_handle(next.compensation_curve, resources.basic_compensation_curve),
+    )
+  }
+  if @input.key_just_pressed(@window.KeyCode::KeyM) {
+    next = next.with_metering_mask(
+      toggle_handle(next.metering_mask, resources.basic_metering_mask),
+    )
+  }
+  try! (world.replace(camera, @pbr.ecs_key_auto_exposure, next) |> ignore)
+}
+
+///|
+fn update_metering_mask_overlay(world : @ecs.World) -> Unit {
+  guard first_metering_mask_overlay(world) is Some(overlay) else { return }
+  guard (try! world.get_by_key(overlay, @ui.ecs_key_node)) is Some(node) else {
+    return
+  }
+  let next_display = if @input.key_pressed(@window.KeyCode::KeyV) {
+    @ui.Display::Flex
+  } else {
+    @ui.Display::None
+  }
+  if node.display != next_display {
+    try! (world.replace(
+      overlay,
+      @ui.ecs_key_node,
+      node.with_display(next_display),
+    )
+    |> ignore)
+  }
+}
+
+///|
+fn example_control_system(world : @ecs.World) -> Unit {
+  guard first_auto_exposure_camera(world) is Some(camera) else { return }
+  let delta = world_time(world).delta_seconds()
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    CAMERA_ROTATE_SPEED * delta
+    delta
   } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    -CAMERA_ROTATE_SPEED * delta
+    -delta
   } else {
     0.0F
   }
-
-  if rotation != 0.0F {
-    auto_exposure_state.val.camera_angle = auto_exposure_state.val.camera_angle +
-      rotation
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    auto_exposure_state.val.compensation_curve_enabled = !auto_exposure_state.val.compensation_curve_enabled
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyM) {
-    auto_exposure_state.val.metering_mask_enabled = !auto_exposure_state.val.metering_mask_enabled
-  }
-
-  if auto_exposure_state.val.camera is Some(camera_entity) {
-    try! (world.replace(
-      camera_entity,
-      @transform.ecs_key_transform,
-      camera_transform_for_angle(auto_exposure_state.val.camera_angle),
-    )
-    |> ignore)
-    apply_example_auto_exposure_to_camera(world, camera_entity)
-  }
-
-  if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
-    let show_mask = @input.key_pressed(@window.KeyCode::KeyV)
-    if (try! world.get_by_key(mask_entity, @sprite.ecs_key_sprite))
-      is Some(mask_sprite) {
-      let color = mask_sprite.color
-      let next_alpha = if show_mask { MASK_OVERLAY_ALPHA } else { 0.0F }
-      if color.a != next_alpha {
-        try! (world.replace(
-          mask_entity,
-          @sprite.ecs_key_sprite,
-          mask_sprite.with_color(
-            @color.Color::new(color.r, color.g, color.b, next_alpha),
-          ),
-        )
-        |> ignore)
-      }
-    }
-  }
-
-  update_display_text()
+  let resources = example_resources_or_abort(world)
+  update_camera_rotation(world, camera, rotation)
+  update_auto_exposure_toggles(world, camera, resources)
+  update_metering_mask_overlay(world)
+  update_display_text(world)
 }
 
 ///|
