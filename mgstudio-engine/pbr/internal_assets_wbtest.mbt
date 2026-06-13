@@ -23,22 +23,12 @@ fn render3d_test_world_with_asset_server() -> @ecs.World {
 }
 
 ///|
-test "render3d: internal assets are stored per world resource" {
+test "render3d: tonemapping LUT handles are stored per world resource" {
   let world_a = render3d_test_world_with_asset_server()
   let world_b = render3d_test_world_with_asset_server()
 
   init_mesh_render_resources(world_a)
   init_mesh_render_resources(world_b)
-  debug_inspect(
-    render3d_internal_assets_mut(world_a).unwrap().peek().skybox_proxy_mesh
-    is None,
-    content="true",
-  )
-  debug_inspect(
-    render3d_internal_assets_mut(world_b).unwrap().peek().skybox_proxy_mesh
-    is None,
-    content="true",
-  )
   debug_inspect(
     world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
@@ -48,21 +38,8 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
 
-  render3d_internal_assets_mut(world_a)
-  .unwrap()
-  .modify(fn(state) { state.skybox_proxy_mesh = Some(@asset.Handle::new(17)) })
   render3d_tonemapping_lut_handles(world_a) |> ignore
 
-  debug_inspect(
-    render3d_internal_assets_mut(world_a).unwrap().peek().skybox_proxy_mesh
-    is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    render3d_internal_assets_mut(world_b).unwrap().peek().skybox_proxy_mesh
-    is None,
-    content="true",
-  )
   debug_inspect(
     world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is Some(_),
     content="true",

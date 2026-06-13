@@ -41,7 +41,6 @@ import {
   "Milky2018/mgstudio/pbr/render" @pbr_render,
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/sprite",
-  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",

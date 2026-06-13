@@ -162,6 +162,9 @@ pub fn host_mesh3d_main_pass_draw_entry(
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
   specular_tint_texture_id~ : Int,
+  clearcoat_texture_id? : Int = -1,
+  clearcoat_roughness_texture_id? : Int = -1,
+  clearcoat_normal_texture_id? : Int = -1,
   specular_tint_r~ : Float,
   specular_tint_g~ : Float,
   specular_tint_b~ : Float,
@@ -238,6 +241,9 @@ pub fn host_mesh3d_main_pass_draw_entry(
     anisotropy_strength~,
     anisotropy_rotation~,
     specular_tint_texture_id~,
+    clearcoat_texture_id~,
+    clearcoat_roughness_texture_id~,
+    clearcoat_normal_texture_id~,
     specular_tint_r~,
     specular_tint_g~,
     specular_tint_b~,
@@ -282,6 +288,9 @@ pub fn host_gpu_prepare_mesh3d_material_bind_group(
   depth_texture_id~ : Int,
   anisotropy_texture_id~ : Int,
   specular_tint_texture_id~ : Int,
+  clearcoat_texture_id? : Int = -1,
+  clearcoat_roughness_texture_id? : Int = -1,
+  clearcoat_normal_texture_id? : Int = -1,
 ) -> Unit {
   @renderer.prepare_mesh3d_material_bind_group(
     texture_id~,
@@ -292,6 +301,9 @@ pub fn host_gpu_prepare_mesh3d_material_bind_group(
     depth_texture_id~,
     anisotropy_texture_id~,
     specular_tint_texture_id~,
+    clearcoat_texture_id~,
+    clearcoat_roughness_texture_id~,
+    clearcoat_normal_texture_id~,
   )
 }
 
@@ -1493,6 +1505,9 @@ pub fn host_gpu_draw_mesh3d(
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
   specular_tint_texture_id~ : Int,
+  clearcoat_texture_id? : Int = -1,
+  clearcoat_roughness_texture_id? : Int = -1,
+  clearcoat_normal_texture_id? : Int = -1,
   specular_tint_r~ : Float,
   specular_tint_g~ : Float,
   specular_tint_b~ : Float,
@@ -1602,6 +1617,9 @@ pub fn host_gpu_draw_mesh3d(
     anisotropy_strength~,
     anisotropy_rotation~,
     specular_tint_texture_id~,
+    clearcoat_texture_id~,
+    clearcoat_roughness_texture_id~,
+    clearcoat_normal_texture_id~,
     specular_tint_r~,
     specular_tint_g~,
     specular_tint_b~,
@@ -1649,6 +1667,25 @@ pub fn host_gpu_draw_mesh3d(
     previous_morph_weights_index~,
     morph_targets_texture_id~,
     skinning_matrices~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_skybox(
+  texture_id~ : Int,
+  brightness~ : Float,
+  rotation_x~ : Float,
+  rotation_y~ : Float,
+  rotation_z~ : Float,
+  rotation_w~ : Float,
+) -> Unit {
+  @renderer.draw_skybox(
+    texture_id~,
+    brightness~,
+    rotation_x~,
+    rotation_y~,
+    rotation_z~,
+    rotation_w~,
   )
 }
 

@@ -207,6 +207,9 @@ pub(all) struct MeshGpuDrawPayload3d {
   anisotropy_texture_id : Int
   anisotropy_rotation : Float
   specular_tint_texture_id : Int
+  clearcoat_texture_id : Int
+  clearcoat_roughness_texture_id : Int
+  clearcoat_normal_texture_id : Int
   parallax_depth_scale : Float
   max_parallax_layer_count : Float
   surface_roughness : Float
@@ -304,6 +307,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
+  clearcoat_texture_id : Int,
+  clearcoat_roughness_texture_id : Int,
+  clearcoat_normal_texture_id : Int,
   draw_surface_roughness : Float,
   draw_reflectance : Float,
   draw_diffuse_transmission : Float,
@@ -392,6 +398,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     anisotropy_texture_id,
     anisotropy_rotation: material.anisotropy_rotation,
     specular_tint_texture_id,
+    clearcoat_texture_id,
+    clearcoat_roughness_texture_id,
+    clearcoat_normal_texture_id,
     parallax_depth_scale: material.parallax_depth_scale,
     max_parallax_layer_count: material.max_parallax_layer_count,
     surface_roughness: draw_surface_roughness,
@@ -495,6 +504,9 @@ pub fn render3d_host_main_pass_draw_entry(
     anisotropy_strength=payload.anisotropy_strength,
     anisotropy_rotation=payload.anisotropy_rotation,
     specular_tint_texture_id=payload.specular_tint_texture_id,
+    clearcoat_texture_id=payload.clearcoat_texture_id,
+    clearcoat_roughness_texture_id=payload.clearcoat_roughness_texture_id,
+    clearcoat_normal_texture_id=payload.clearcoat_normal_texture_id,
     specular_tint_r=payload.specular_tint.r,
     specular_tint_g=payload.specular_tint.g,
     specular_tint_b=payload.specular_tint.b,

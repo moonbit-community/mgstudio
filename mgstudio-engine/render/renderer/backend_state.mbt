@@ -424,6 +424,10 @@ pub struct GpuBackend {
   custom_postprocess3d_pipeline_cache : Array[
     CustomPostProcessPipelineCacheEntry,
   ]
+  mut skybox_bgl : @wgpu.BindGroupLayout?
+  mut skybox_pipeline_layout : @wgpu.PipelineLayout?
+  mut skybox_uniform_buf : @wgpu.Buffer?
+  skybox_pipeline_cache : Array[SkyboxPipelineCacheEntry]
   mut cas_bgl : @wgpu.BindGroupLayout?
   mut cas_pipeline_layout : @wgpu.PipelineLayout?
   mut cas_sampler : @wgpu.Sampler?

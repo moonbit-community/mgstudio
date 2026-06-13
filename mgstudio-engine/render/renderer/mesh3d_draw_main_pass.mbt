@@ -67,6 +67,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   anisotropy_strength : Float,
   anisotropy_rotation : Float,
   specular_tint_texture_id : Int,
+  clearcoat_texture_id : Int,
+  clearcoat_roughness_texture_id : Int,
+  clearcoat_normal_texture_id : Int,
   specular_tint_r : Float,
   specular_tint_g : Float,
   specular_tint_b : Float,
@@ -253,6 +256,22 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   } else {
     specular_tint_texture_id
   }
+  let resolved_clearcoat_texture_id = if clearcoat_texture_id < 0 {
+    -1
+  } else {
+    clearcoat_texture_id
+  }
+  let resolved_clearcoat_roughness_texture_id = if clearcoat_roughness_texture_id <
+    0 {
+    -1
+  } else {
+    clearcoat_roughness_texture_id
+  }
+  let resolved_clearcoat_normal_texture_id = if clearcoat_normal_texture_id < 0 {
+    ensure_normal_map_fallback_texture(self).id
+  } else {
+    clearcoat_normal_texture_id
+  }
   let resolved_transmission_source_texture_id = if ps.transmission_source_texture_id <
     0 {
     -1
@@ -321,6 +340,18 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     is Some(specular_tint_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_texture_id)
+    is Some(clearcoat_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_roughness_texture_id)
+    is Some(clearcoat_roughness_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_normal_texture_id)
+    is Some(clearcoat_normal_texture) else {
+    return
+  }
   guard resolve_mesh3d_texture(self, resolved_transmission_source_texture_id)
     is Some(transmission_source_texture) else {
     return
@@ -349,6 +380,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let depth_textured = depth_texture_id >= 0
   let anisotropy_textured = anisotropy_texture_id >= 0
   let specular_tint_textured = specular_tint_texture_id >= 0
+  let clearcoat_textured = clearcoat_texture_id >= 0
+  let clearcoat_roughness_textured = clearcoat_roughness_texture_id >= 0
+  let clearcoat_normal_textured = clearcoat_normal_texture_id >= 0
   let point_shadow_textured = ps.point_shadow_texture_id >= 0
   ignore(point_shadow_enabled)
   let draw_point_shadow_depth_bias = if point_shadow_textured {
@@ -374,7 +408,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     occlusion_textured ||
     depth_textured ||
     anisotropy_textured ||
-    specular_tint_textured {
+    specular_tint_textured ||
+    clearcoat_textured ||
+    clearcoat_roughness_textured ||
+    clearcoat_normal_textured {
     1.0F
   } else {
     0.0F
@@ -497,6 +534,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         depth_texture,
         anisotropy_texture,
         specular_tint_texture,
+        clearcoat_texture,
+        clearcoat_roughness_texture,
+        clearcoat_normal_texture,
         mesh3d_standard_material_uniform_bytes(
           color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
           uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,

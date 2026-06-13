@@ -53,12 +53,14 @@ test "render3d: standard material properties carry bevy material bind group layo
     abort("expected StandardMaterial material layout")
   }
   inspect(layout.label, content="StandardMaterial")
-  inspect(layout.entries.length(), content="17")
+  inspect(layout.entries.length(), content="23")
   inspect(layout.entries[0].binding(), content="0")
   inspect(layout.entries[1].binding(), content="1")
   inspect(layout.entries[14].binding(), content="14")
-  inspect(layout.entries[15].binding(), content="29")
-  inspect(layout.entries[16].binding(), content="30")
+  inspect(layout.entries[15].binding(), content="21")
+  inspect(layout.entries[20].binding(), content="26")
+  inspect(layout.entries[21].binding(), content="29")
+  inspect(layout.entries[22].binding(), content="30")
   debug_inspect(
     match layout.entries[0].kind() {
       @render_resource.BindingType::BufferBinding(

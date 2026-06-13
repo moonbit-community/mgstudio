@@ -238,8 +238,6 @@ pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLigh
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
-pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
-
 pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
@@ -1530,8 +1528,6 @@ pub struct Render3dDiagnosticsSnapshot {
   execute_cpu_ms : Float
 }
 pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Self
-
-type Render3dInternalAssetsState
 
 pub struct RenderMaterialInstance {
   asset_id : Int

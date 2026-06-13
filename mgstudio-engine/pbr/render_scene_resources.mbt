@@ -470,14 +470,8 @@ fn render3d_camera_apply_environment_map_lighting(
 
 ///|
 fn render3d_draw_camera_skybox(
-  world : @ecs.World,
   camera : ExtractedCamera3d,
-  camera_far : Float,
   camera_exposure_value : Float,
-  point_shadow_texture_id : Int,
-  point_shadow_enabled : Float,
-  point_shadow_depth_bias : Float,
-  environment_map_state : Render3dEnvironmentMapState,
 ) -> Unit {
   guard camera.payload.skybox is Some(skybox) else { return }
   guard skybox.image is Some(image) else { return }
@@ -486,100 +480,19 @@ fn render3d_draw_camera_skybox(
     !@render.asset_is_texture_loaded(texture_id=skybox_texture_id) {
     return
   }
-  let mesh_id = render3d_skybox_proxy_mesh_id(world)
-  if mesh_id <= 0 {
-    return
-  }
   let brightness = @pbr_render.maxf(
     0.0F,
     skybox.brightness * camera_exposure_value,
   )
-  let skybox_extent = @pbr_render.maxf(
-    5.0F,
-    @pbr_render.minf(camera_far * 0.45F, 20_000.0F),
-  )
   let skybox_rotation_inverse = @pbr_render.render3d_quat_inverse(
     skybox.rotation,
   )
-  // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
-  @render.host_gpu_draw_mesh3d(
-    mesh_id~,
-    x=camera.payload.transform.translation.x,
-    y=camera.payload.transform.translation.y,
-    z=camera.payload.transform.translation.z,
+  @render.host_gpu_draw_skybox(
+    texture_id=skybox_texture_id,
+    brightness~,
     rotation_x=skybox_rotation_inverse.x,
     rotation_y=skybox_rotation_inverse.y,
     rotation_z=skybox_rotation_inverse.z,
     rotation_w=skybox_rotation_inverse.w,
-    scale_x=skybox_extent,
-    scale_y=skybox_extent,
-    scale_z=skybox_extent,
-    previous_x=camera.payload.previous_transform.translation.x,
-    previous_y=camera.payload.previous_transform.translation.y,
-    previous_z=camera.payload.previous_transform.translation.z,
-    previous_rotation_x=camera.payload.previous_transform.rotation.x,
-    previous_rotation_y=camera.payload.previous_transform.rotation.y,
-    previous_rotation_z=camera.payload.previous_transform.rotation.z,
-    previous_rotation_w=camera.payload.previous_transform.rotation.w,
-    previous_scale_x=camera.payload.previous_transform.scale.x,
-    previous_scale_y=camera.payload.previous_transform.scale.y,
-    previous_scale_z=camera.payload.previous_transform.scale.z,
-    color_r=brightness,
-    color_g=brightness,
-    color_b=brightness,
-    color_a=1.0F,
-    texture_id=skybox_texture_id,
-    uv_transform_a=1.0F,
-    uv_transform_b=0.0F,
-    uv_transform_c=0.0F,
-    uv_transform_d=-1.0F,
-    uv_transform_tx=0.0F,
-    uv_transform_ty=0.0F,
-    uv_transform_mode=-1.0F,
-    normal_texture_id=-1,
-    emissive_texture_id=-1,
-    metallic_roughness_texture_id=-1,
-    occlusion_texture_id=-1,
-    depth_texture_id=-1,
-    emissive_r=0.0F,
-    emissive_g=0.0F,
-    emissive_b=0.0F,
-    metallic=0.0F,
-    roughness=1.0F,
-    reflectance=0.0F,
-    parallax_depth_scale=0.0F,
-    max_parallax_layer_count=0.0F,
-    max_relief_mapping_search_steps=0.0F,
-    anisotropy_texture_id=-1,
-    anisotropy_strength=0.0F,
-    anisotropy_rotation=0.0F,
-    specular_tint_texture_id=-1,
-    specular_tint_r=1.0F,
-    specular_tint_g=1.0F,
-    specular_tint_b=1.0F,
-    diffuse_transmission=0.0F,
-    specular_transmission=0.0F,
-    thickness=0.0F,
-    ior=1.5F,
-    alpha_cutoff=0.5F,
-    material_flags=@pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT |
-      @pbr_render.STANDARD_MATERIAL_FLAGS_UNLIT_BIT |
-      @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
-    transmission_source_texture_id=-1,
-    transmission_blur_taps=0.0F,
-    transmission_steps=0.0F,
-    point_shadow_texture_id~,
-    point_shadow_enabled~,
-    point_shadow_depth_bias~,
-    mesh_flags=RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
-      RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3,
-    environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
-    environment_specular_texture_id=environment_map_state.specular_texture_id,
-    environment_map_intensity=environment_map_state.intensity,
-    environment_map_rotation_x=environment_map_state.rotation.x,
-    environment_map_rotation_y=environment_map_state.rotation.y,
-    environment_map_rotation_z=environment_map_state.rotation.z,
-    environment_map_rotation_w=environment_map_state.rotation.w,
-    cull_mode=1,
   )
 }

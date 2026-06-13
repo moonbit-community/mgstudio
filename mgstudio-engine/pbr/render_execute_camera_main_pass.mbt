@@ -115,6 +115,9 @@ fn render3d_draw_gizmo_lines_3d(
       -1,
       -1,
       -1,
+      -1,
+      -1,
+      -1,
       0.5F,
       0.5F,
       0.0F,
@@ -264,7 +267,6 @@ fn render3d_execute_camera_main_pass(
   camera_forward_decal_enabled : Bool,
   camera_clustered_decal_enabled : Bool,
   camera_deferred_enabled : Bool,
-  camera_far : Float,
   distance_fog : DistanceFog,
   fog_enabled : Bool,
   transmission_enabled : Bool,
@@ -448,11 +450,9 @@ fn render3d_execute_camera_main_pass(
       Some(texture) => texture.id()
       None => -1
     }
-    let mut normal_texture_id = match
-      (draw_material.normal_map_texture, draw_material.clearcoat_normal_texture) {
-      (Some(texture), _) => texture.id()
-      (None, Some(texture)) => texture.id()
-      (None, None) => -1
+    let mut normal_texture_id = match draw_material.normal_map_texture {
+      Some(texture) => texture.id()
+      None => -1
     }
     let mut emissive_texture_id = match draw_material.emissive_texture {
       Some(texture) => texture.id()
@@ -476,6 +476,20 @@ fn render3d_execute_camera_main_pass(
       None => -1
     }
     let specular_tint_texture_id = match draw_material.specular_tint_texture {
+      Some(texture) => texture.id()
+      None => -1
+    }
+    let clearcoat_texture_id = match draw_material.clearcoat_texture {
+      Some(texture) => texture.id()
+      None => -1
+    }
+    let clearcoat_roughness_texture_id = match
+      draw_material.clearcoat_roughness_texture {
+      Some(texture) => texture.id()
+      None => -1
+    }
+    let clearcoat_normal_texture_id = match
+      draw_material.clearcoat_normal_texture {
       Some(texture) => texture.id()
       None => -1
     }
@@ -634,6 +648,9 @@ fn render3d_execute_camera_main_pass(
       depth_texture_id,
       anisotropy_texture_id,
       specular_tint_texture_id,
+      clearcoat_texture_id,
+      clearcoat_roughness_texture_id,
+      clearcoat_normal_texture_id,
       draw_surface_roughness,
       draw_reflectance,
       draw_diffuse_transmission,
@@ -742,6 +759,9 @@ fn render3d_execute_camera_main_pass(
         -1,
         -1,
         -1,
+        -1,
+        -1,
+        -1,
         0.5F,
         0.5F,
         0.0F,
@@ -827,16 +847,7 @@ fn render3d_execute_camera_main_pass(
   )
   render3d_draw_mesh_gpu_binned_phase(main_phase)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
-  render3d_draw_camera_skybox(
-    world,
-    extracted_camera,
-    camera_far,
-    camera_exposure_value,
-    point_shadow_binding.texture_id,
-    point_shadow_binding.enabled,
-    point_shadow_binding.depth_bias,
-    environment_map_state,
-  )
+  render3d_draw_camera_skybox(extracted_camera, camera_exposure_value)
   @render.host_gpu_end_pass()
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,

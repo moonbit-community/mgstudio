@@ -885,6 +885,14 @@ pub fn GpuBackend::begin_pass_3d(
     deband_dither_enabled,
   }
   self.pass_state = Some(pass_state)
+  ensure_mesh3d_view_binding_buffers(self)
+  if self.mesh3d_light_probes_buf is Some(light_probes_buf) {
+    self.queue.write_buffer(
+      light_probes_buf,
+      0UL,
+      mesh3d_light_probes_uniform_bytes(self, pass_state),
+    )
+  }
   mesh3d_dispatch_pending_ssao_for_pass(self, pass_state)
   let pass = match color_view {
     None =>

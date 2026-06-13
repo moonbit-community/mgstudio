@@ -387,6 +387,63 @@ fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
 }
 
 ///|
+fn mesh3d_light_probes_uniform_bytes(
+  backend : GpuBackend,
+  pass_state : GpuPassState,
+) -> Bytes {
+  let environment_map_enabled = pass_state.environment_map_intensity > 0.0F &&
+    pass_state.environment_diffuse_texture_id >= 0 &&
+    pass_state.environment_specular_texture_id >= 0
+  let specular_mip_level = if environment_map_enabled {
+    match find_texture(backend, pass_state.environment_specular_texture_id) {
+      Some(texture) =>
+        if texture.mip_level_count <= 0 {
+          0
+        } else {
+          texture.mip_level_count - 1
+        }
+      None => 0
+    }
+  } else {
+    0
+  }
+  let intensity = if environment_map_enabled {
+    pass_state.environment_map_intensity
+  } else {
+    1.0F
+  }
+  let (rotation_x, rotation_y, rotation_z, rotation_w) = if environment_map_enabled {
+    (
+      -pass_state.environment_map_rotation_x,
+      -pass_state.environment_map_rotation_y,
+      -pass_state.environment_map_rotation_z,
+      pass_state.environment_map_rotation_w,
+    )
+  } else {
+    (0.0F, 0.0F, 0.0F, 1.0F)
+  }
+  let view_cubemap_index : Int = if environment_map_enabled { 0 } else { -1 }
+  let words : Array[UInt] = []
+  for _ in 0..<448 {
+    words.push(0U)
+  }
+  words.push(0U)
+  words.push(0U)
+  words.push(view_cubemap_index.reinterpret_as_uint())
+  words.push(specular_mip_level.reinterpret_as_uint())
+  words.push(f32_bits(rotation_x))
+  words.push(f32_bits(rotation_y))
+  words.push(f32_bits(rotation_z))
+  words.push(f32_bits(rotation_w))
+  words.push(f32_bits(intensity))
+  words.push(1U)
+  while words.length() < MESH3D_LIGHT_PROBES_BUFFER_SIZE.to_int() / 4 {
+    words.push(0U)
+  }
+  u32le_pack(words)
+}
+
+///|
 fn mesh3d_quat_rotate_vec3(
   qx : Float,
   qy : Float,

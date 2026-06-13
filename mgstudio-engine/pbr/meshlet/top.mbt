@@ -1237,12 +1237,7 @@ fn meshlet_host_material_shade_draw_entry(
   material : @material.StandardMaterial,
 ) -> @renderer.HostMeshletMaterialShadeDrawEntry {
   let texture_id = meshlet_texture_id(material.base_color_texture)
-  let normal_texture_id = match
-    (material.normal_map_texture, material.clearcoat_normal_texture) {
-    (Some(texture), _) => texture.id()
-    (None, Some(texture)) => texture.id()
-    (None, None) => -1
-  }
+  let normal_texture_id = meshlet_texture_id(material.normal_map_texture)
   let emissive_texture_id = meshlet_texture_id(material.emissive_texture)
   let metallic_roughness_texture_id = meshlet_texture_id(
     material.metallic_roughness_texture,
@@ -1252,6 +1247,13 @@ fn meshlet_host_material_shade_draw_entry(
   let anisotropy_texture_id = meshlet_texture_id(material.anisotropy_texture)
   let specular_tint_texture_id = meshlet_texture_id(
     material.specular_tint_texture,
+  )
+  let clearcoat_texture_id = meshlet_texture_id(material.clearcoat_texture)
+  let clearcoat_roughness_texture_id = meshlet_texture_id(
+    material.clearcoat_roughness_texture,
+  )
+  let clearcoat_normal_texture_id = meshlet_texture_id(
+    material.clearcoat_normal_texture,
   )
   let anisotropy_strength = meshlet_clamp01(material.anisotropy_strength)
   let max_relief_mapping_search_steps = Float::from_double(
@@ -1292,6 +1294,9 @@ fn meshlet_host_material_shade_draw_entry(
     depth_texture_id,
     anisotropy_texture_id,
     specular_tint_texture_id,
+    clearcoat_texture_id,
+    clearcoat_roughness_texture_id,
+    clearcoat_normal_texture_id,
     draw_roughness,
     clearcoat_reflectance,
     meshlet_clamp01(material.diffuse_transmission),

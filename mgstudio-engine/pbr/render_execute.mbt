@@ -215,11 +215,9 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
     Some(texture) => texture.id()
     None => -1
   }
-  let mut normal_texture_id = match
-    (draw_material.normal_map_texture, draw_material.clearcoat_normal_texture) {
-    (Some(texture), _) => texture.id()
-    (None, Some(texture)) => texture.id()
-    (None, None) => -1
+  let mut normal_texture_id = match draw_material.normal_map_texture {
+    Some(texture) => texture.id()
+    None => -1
   }
   let mut emissive_texture_id = match draw_material.emissive_texture {
     Some(texture) => texture.id()
@@ -246,6 +244,20 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
     Some(texture) => texture.id()
     None => -1
   }
+  let clearcoat_texture_id = match draw_material.clearcoat_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let clearcoat_roughness_texture_id = match
+    draw_material.clearcoat_roughness_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let clearcoat_normal_texture_id = match
+    draw_material.clearcoat_normal_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
   if mesh.payload.clustered_decal is Some(clustered_decal) {
     if clustered_decal.base_color_texture is Some(texture) {
       texture_id = texture.id()
@@ -260,7 +272,7 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
       emissive_texture_id = texture.id()
     }
   }
-  let key = "\{texture_id}|\{normal_texture_id}|\{emissive_texture_id}|\{metallic_roughness_texture_id}|\{occlusion_texture_id}|\{depth_texture_id}|\{anisotropy_texture_id}|\{specular_tint_texture_id}"
+  let key = "\{texture_id}|\{normal_texture_id}|\{emissive_texture_id}|\{metallic_roughness_texture_id}|\{occlusion_texture_id}|\{depth_texture_id}|\{anisotropy_texture_id}|\{specular_tint_texture_id}|\{clearcoat_texture_id}|\{clearcoat_roughness_texture_id}|\{clearcoat_normal_texture_id}"
   if prepared_material_bind_groups.contains(key) {
     return
   }
@@ -274,6 +286,9 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
     depth_texture_id~,
     anisotropy_texture_id~,
     specular_tint_texture_id~,
+    clearcoat_texture_id~,
+    clearcoat_roughness_texture_id~,
+    clearcoat_normal_texture_id~,
   )
 }
 

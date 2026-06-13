@@ -120,10 +120,11 @@ fn pbr_material_specializer_test_render_mesh() -> @render_mesh.RenderMesh {
 ///|
 fn pbr_material_specializer_test_key(
   mesh_bits? : UInt64 = 0UL,
+  material_bits? : UInt64 = STANDARD_MATERIAL_KEY_CULL_BACK,
 ) -> @material.ErasedMaterialPipelineKey {
   @material.ErasedMaterialPipelineKey::new(
     @material.ErasedMeshPipelineKey::new(mesh_bits, "MeshPipelineKey"),
-    @material.ErasedMaterialKey::new(3UL, "StandardMaterialKey"),
+    @material.ErasedMaterialKey::new(material_bits, "StandardMaterialKey"),
     "MaterialPipelineKey",
   )
 }
@@ -214,11 +215,85 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
     ),
     content="true",
   )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      vertex_defs, "PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      vertex_defs, "PBR_ANISOTROPY_TEXTURE_SUPPORTED",
+    ),
+    content="true",
+  )
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[0].shader_location, content="0")
   inspect(vertex_layout.attributes[1].shader_location, content="1")
   inspect(vertex_layout.attributes[2].shader_location, content="2")
   inspect(vertex_layout.attributes[3].shader_location, content="5")
+}
+
+///|
+test "pbr material pipeline specializer mirrors StandardMaterial shader defs" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let material_bits = STANDARD_MATERIAL_KEY_CULL_BACK |
+    STANDARD_MATERIAL_KEY_NORMAL_MAP |
+    STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION |
+    STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION |
+    STANDARD_MATERIAL_KEY_CLEARCOAT |
+    STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP |
+    STANDARD_MATERIAL_KEY_ANISOTROPY
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(material_bits~),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(descriptor.label, content="Some(\"pbr_opaque_mesh_pipeline\")")
+  debug_inspect(
+    descriptor.primitive.cull_mode == Some(@wgpu.CULL_MODE_BACK),
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  for
+    shader_def in [
+      "STANDARD_MATERIAL_NORMAL_MAP", "STANDARD_MATERIAL_DIFFUSE_TRANSMISSION", "STANDARD_MATERIAL_SPECULAR_TRANSMISSION",
+      "STANDARD_MATERIAL_DIFFUSE_OR_SPECULAR_TRANSMISSION", "STANDARD_MATERIAL_CLEARCOAT",
+      "STANDARD_MATERIAL_CLEARCOAT_NORMAL_MAP", "STANDARD_MATERIAL_ANISOTROPY",
+    ] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
+}
+
+///|
+test "pbr material pipeline specializer mirrors StandardMaterial inverted culling" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_INVERT_CULLING,
+      material_bits=STANDARD_MATERIAL_KEY_CULL_BACK,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    descriptor.primitive.cull_mode == Some(@wgpu.CULL_MODE_FRONT),
+    content="true",
+  )
 }
 
 ///|

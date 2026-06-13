@@ -82,6 +82,9 @@ const MESH_PIPELINE_KEY_DISTANCE_FOG : UInt64 = 1048576UL
 const MESH_PIPELINE_KEY_ATMOSPHERE : UInt64 = 2097152UL
 
 ///|
+const MESH_PIPELINE_KEY_INVERT_CULLING : UInt64 = 4194304UL
+
+///|
 const MESH_PIPELINE_KEY_CONTACT_SHADOWS : UInt64 = 16777216UL
 
 ///|
@@ -130,6 +133,80 @@ fn pbr_shader_defs_clone(
     cloned.push(shader_def)
   }
   cloned
+}
+
+///|
+fn pbr_standard_material_fragment_shader_defs() -> Array[(UInt64, String)] {
+  [
+    (STANDARD_MATERIAL_KEY_NORMAL_MAP, "STANDARD_MATERIAL_NORMAL_MAP"),
+    (STANDARD_MATERIAL_KEY_RELIEF_MAPPING, "RELIEF_MAPPING"),
+    (
+      STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION,
+      "STANDARD_MATERIAL_DIFFUSE_TRANSMISSION",
+    ),
+    (
+      STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION,
+      "STANDARD_MATERIAL_SPECULAR_TRANSMISSION",
+    ),
+    (
+      STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION |
+      STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION,
+      "STANDARD_MATERIAL_DIFFUSE_OR_SPECULAR_TRANSMISSION",
+    ),
+    (STANDARD_MATERIAL_KEY_CLEARCOAT, "STANDARD_MATERIAL_CLEARCOAT"),
+    (
+      STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP,
+      "STANDARD_MATERIAL_CLEARCOAT_NORMAL_MAP",
+    ),
+    (STANDARD_MATERIAL_KEY_ANISOTROPY, "STANDARD_MATERIAL_ANISOTROPY"),
+  ]
+}
+
+///|
+fn pbr_standard_material_cull_mode(
+  material_key_bits : UInt64,
+  mesh_key_bits : UInt64,
+) -> UInt? {
+  let cull_front = (material_key_bits & STANDARD_MATERIAL_KEY_CULL_FRONT) != 0UL
+  let cull_back = (material_key_bits & STANDARD_MATERIAL_KEY_CULL_BACK) != 0UL
+  let invert_culling = (mesh_key_bits & MESH_PIPELINE_KEY_INVERT_CULLING) != 0UL
+  match (cull_front, cull_back, invert_culling) {
+    (true, false, false) | (false, true, true) => Some(@wgpu.CULL_MODE_FRONT)
+    (false, true, false) | (true, false, true) => Some(@wgpu.CULL_MODE_BACK)
+    _ => None
+  }
+}
+
+///|
+fn pbr_specialize_standard_material_descriptor(
+  descriptor : @material.RenderPipelineDescriptor,
+  key : @material.ErasedMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor {
+  let material_key = key.material_key()
+  guard material_key.type_tag() == "StandardMaterialKey" else {
+    return descriptor
+  }
+  let material_key_bits = material_key.bits()
+  let mesh_key_bits = key.mesh_key().downcast_u64("MeshPipelineKey")
+  let mut specialized = descriptor
+  if specialized.fragment is Some(fragment) {
+    for item in pbr_standard_material_fragment_shader_defs() {
+      let (flags, shader_def) = item
+      if (material_key_bits & flags) != 0UL {
+        fragment.shader_defs.push(pbr_shader_def(shader_def))
+      }
+    }
+    specialized = specialized.with_fragment(Some(fragment))
+  }
+  specialized = specialized.with_primitive(
+    specialized.primitive.with_cull_mode(
+      pbr_standard_material_cull_mode(material_key_bits, mesh_key_bits),
+    ),
+  )
+  if specialized.label is Some(label) {
+    specialized = specialized.with_label(Some("pbr_" + label))
+  }
+  specialized
 }
 
 ///|
@@ -509,6 +586,10 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
+  shader_defs.push(
+    pbr_shader_def("PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED"),
+  )
+  shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
   }
@@ -923,6 +1004,7 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
     )
   }
   descriptor = descriptor.set_layout(MATERIAL_BIND_GROUP_INDEX, material_layout)
+  descriptor = pbr_specialize_standard_material_descriptor(descriptor, key)
   if self.properties.user_specialize is Some(specialize) {
     descriptor = specialize("PbrMaterialPipeline", descriptor, layout, key)
   }

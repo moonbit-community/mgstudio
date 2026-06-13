@@ -21,68 +21,14 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-const TWO_PI : Float = 6.283185307179586F
-
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
 fn create_sphere_mesh(
   meshes : @asset.Assets[@mesh.Mesh],
 ) -> @asset.Handle[@mesh.Mesh] {
-  let radius = 1.0F
-  let stacks = 24
-  let sectors = 40
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = TWO_PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  geometry.generate_tangents() |> ignore
-  meshes.add(@mesh.Mesh::from_3d_geometry(geometry))
+  let sphere_mesh = @mesh_primitives_dim3.Meshable::mesh(
+    @math.Sphere::new(1.0F),
+  )
+  sphere_mesh.generate_tangents() |> ignore
+  meshes.add(@mesh.Mesh::from_3d_geometry(sphere_mesh))
 }
 
 ///|

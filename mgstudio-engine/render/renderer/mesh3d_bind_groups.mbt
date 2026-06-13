@@ -1113,6 +1113,9 @@ fn mesh3d_material_cache_get_or_create(
   depth_texture : GpuTextureInfo,
   anisotropy_texture : GpuTextureInfo,
   specular_tint_texture : GpuTextureInfo,
+  clearcoat_texture : GpuTextureInfo,
+  clearcoat_roughness_texture : GpuTextureInfo,
+  clearcoat_normal_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
 ) -> @wgpu.BindGroup raise GpuBackendError {
@@ -1138,6 +1141,9 @@ fn mesh3d_material_cache_get_or_create(
         entry.depth_texture_id == -2 &&
         entry.anisotropy_texture_id == -2 &&
         entry.specular_tint_texture_id == -2 &&
+        entry.clearcoat_texture_id == -2 &&
+        entry.clearcoat_roughness_texture_id == -2 &&
+        entry.clearcoat_normal_texture_id == -2 &&
         entry.material_uniform_bytes == empty_bytes &&
         entry.forward_decal_uniform_bytes == empty_bytes {
         return entry.bind_group
@@ -1165,6 +1171,9 @@ fn mesh3d_material_cache_get_or_create(
       depth_texture_id: -2,
       anisotropy_texture_id: -2,
       specular_tint_texture_id: -2,
+      clearcoat_texture_id: -2,
+      clearcoat_roughness_texture_id: -2,
+      clearcoat_normal_texture_id: -2,
       material_uniform_bytes: empty_bytes,
       material_uniform_buffer: material_uniform_buf,
       forward_decal_uniform_bytes: empty_bytes,
@@ -1183,6 +1192,9 @@ fn mesh3d_material_cache_get_or_create(
       entry.depth_texture_id == depth_texture.id &&
       entry.anisotropy_texture_id == anisotropy_texture.id &&
       entry.specular_tint_texture_id == specular_tint_texture.id &&
+      entry.clearcoat_texture_id == clearcoat_texture.id &&
+      entry.clearcoat_roughness_texture_id == clearcoat_roughness_texture.id &&
+      entry.clearcoat_normal_texture_id == clearcoat_normal_texture.id &&
       entry.material_uniform_bytes == material_uniform_bytes &&
       entry.forward_decal_uniform_bytes == forward_decal_uniform_bytes {
       return entry.bind_group
@@ -1207,7 +1219,7 @@ fn mesh3d_material_cache_get_or_create(
   } else {
     None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=18UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=24UL)
   let ok = builder.add_buffer(
       0U,
       material_uniform_buf,
@@ -1227,6 +1239,12 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_sampler(12U, depth_texture.sampler) &&
     builder.add_texture_view(13U, anisotropy_texture.view) &&
     builder.add_sampler(14U, anisotropy_texture.sampler) &&
+    builder.add_texture_view(21U, clearcoat_texture.view) &&
+    builder.add_sampler(22U, clearcoat_texture.sampler) &&
+    builder.add_texture_view(23U, clearcoat_roughness_texture.view) &&
+    builder.add_sampler(24U, clearcoat_roughness_texture.sampler) &&
+    builder.add_texture_view(25U, clearcoat_normal_texture.view) &&
+    builder.add_sampler(26U, clearcoat_normal_texture.sampler) &&
     builder.add_texture_view(29U, specular_tint_texture.view) &&
     builder.add_sampler(30U, specular_tint_texture.sampler)
   let ok = if ok && uses_forward_decal_uniform {
@@ -1259,6 +1277,9 @@ fn mesh3d_material_cache_get_or_create(
     depth_texture_id: depth_texture.id,
     anisotropy_texture_id: anisotropy_texture.id,
     specular_tint_texture_id: specular_tint_texture.id,
+    clearcoat_texture_id: clearcoat_texture.id,
+    clearcoat_roughness_texture_id: clearcoat_roughness_texture.id,
+    clearcoat_normal_texture_id: clearcoat_normal_texture.id,
     material_uniform_bytes,
     material_uniform_buffer: material_uniform_buf,
     forward_decal_uniform_bytes,
@@ -1329,6 +1350,9 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
+  clearcoat_texture_id : Int,
+  clearcoat_roughness_texture_id : Int,
+  clearcoat_normal_texture_id : Int,
 ) -> Unit raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(self)
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
@@ -1368,6 +1392,22 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   } else {
     specular_tint_texture_id
   }
+  let resolved_clearcoat_texture_id = if clearcoat_texture_id < 0 {
+    -1
+  } else {
+    clearcoat_texture_id
+  }
+  let resolved_clearcoat_roughness_texture_id = if clearcoat_roughness_texture_id <
+    0 {
+    -1
+  } else {
+    clearcoat_roughness_texture_id
+  }
+  let resolved_clearcoat_normal_texture_id = if clearcoat_normal_texture_id < 0 {
+    ensure_normal_map_fallback_texture(self).id
+  } else {
+    clearcoat_normal_texture_id
+  }
   guard resolve_mesh3d_texture(self, resolved_base_texture_id)
     is Some(base_texture) else {
     return
@@ -1400,6 +1440,18 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
     is Some(specular_tint_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_texture_id)
+    is Some(clearcoat_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_roughness_texture_id)
+    is Some(clearcoat_roughness_texture) else {
+    return
+  }
+  guard resolve_mesh3d_texture(self, resolved_clearcoat_normal_texture_id)
+    is Some(clearcoat_normal_texture) else {
+    return
+  }
   ignore(
     mesh3d_material_cache_get_or_create(
       self,
@@ -1413,6 +1465,9 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
       depth_texture,
       anisotropy_texture,
       specular_tint_texture,
+      clearcoat_texture,
+      clearcoat_roughness_texture,
+      clearcoat_normal_texture,
       mesh3d_standard_material_default_uniform_bytes(),
     ),
   )

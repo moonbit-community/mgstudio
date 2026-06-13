@@ -455,11 +455,6 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 ] = @material.ecs_key_default_opaque_renderer_method
 
 ///|
-pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
-  debug_name="render3d.internal_assets",
-)
-
-///|
 pub fn get_wireframe_config_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[WireframeConfig] {

@@ -122,6 +122,9 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
+  clearcoat_texture_id : Int
+  clearcoat_roughness_texture_id : Int
+  clearcoat_normal_texture_id : Int
   material_uniform_bytes : Bytes
   material_uniform_buffer : @wgpu.Buffer
   forward_decal_uniform_bytes : Bytes
@@ -420,6 +423,13 @@ struct CustomPostProcessPipelineCacheEntry {
   shader_path : String
   fragment_entry : String
   surface_format : @wgpu.TextureFormat
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
+struct SkyboxPipelineCacheEntry {
+  surface_format : @wgpu.TextureFormat
+  samples : Int
   pipeline : @wgpu.RenderPipeline
 }
 

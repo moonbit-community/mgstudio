@@ -107,63 +107,6 @@ pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 }
 
 ///|
-struct Render3dInternalAssetsState {
-  mut skybox_proxy_mesh : @asset.Handle[@mesh.Mesh]?
-}
-
-///|
-fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
-  Render3dInternalAssetsState::{ skybox_proxy_mesh: None }
-}
-
-///|
-fn render3d_internal_assets_mut(
-  world : @ecs.World,
-) -> @ecs.ResourceMut[Render3dInternalAssetsState]? {
-  match world.get_resource_mut(ecs_key_internal_assets) {
-    Some(state) => Some(state)
-    None => None
-  }
-}
-
-///|
-fn render3d_internal_assets_mut_or_abort(
-  world : @ecs.World,
-) -> @ecs.ResourceMut[Render3dInternalAssetsState] {
-  if render3d_internal_assets_mut(world) is None {
-    world.insert_resource(
-      ecs_key_internal_assets,
-      Render3dInternalAssetsState::new(),
-    )
-  }
-  match render3d_internal_assets_mut(world) {
-    Some(state) => state
-    None =>
-      abort(
-        "render3d internal assets resource is missing after lazy initialization",
-      )
-  }
-}
-
-///|
-fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
-  let internal_assets = render3d_internal_assets_mut_or_abort(world)
-  let handle = match internal_assets.peek().skybox_proxy_mesh {
-    Some(handle) => handle
-    None => {
-      let handle = mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
-      })
-      internal_assets.modify(fn(state) {
-        state.skybox_proxy_mesh = Some(handle)
-      })
-      handle
-    }
-  }
-  @sprite_render.render2d_upload_mesh_handle(handle)
-}
-
-///|
 pub type ForwardDecal = @pbr_decal.ForwardDecal
 
 ///|

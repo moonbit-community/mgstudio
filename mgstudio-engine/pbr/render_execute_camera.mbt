@@ -47,7 +47,6 @@ fn render3d_execute_camera(
   let view_height_logical = viewport_state.view_height_logical
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
   let camera_pass_projection = prepared_queue.camera_pass_projection
-  let camera_far = camera_pass_projection.camera_far
   let pass_lighting = render3d_camera_apply_environment_map_lighting(
     lighting, extracted_camera,
   )
@@ -214,7 +213,6 @@ fn render3d_execute_camera(
     camera_forward_decal_enabled,
     camera_clustered_decal_enabled,
     camera_deferred_enabled,
-    camera_far,
     distance_fog,
     fog_enabled,
     transmission_enabled,

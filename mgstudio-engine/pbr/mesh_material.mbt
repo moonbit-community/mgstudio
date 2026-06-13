@@ -58,12 +58,6 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   @pbr_render.render3d_set_runtime_initialized(world, true)
-  if world.get_resource(ecs_key_internal_assets) is None {
-    world.insert_resource(
-      ecs_key_internal_assets,
-      Render3dInternalAssetsState::new(),
-    )
-  }
 }
 
 ///|

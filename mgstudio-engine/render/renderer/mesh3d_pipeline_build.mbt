@@ -976,7 +976,7 @@ fn ensure_mesh3d_pipeline_layout_resources(
     let material_uniform_stage = ss(
       @wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT,
     )
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=17UL)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=23UL)
     let material_ok = material_builder.add_buffer(
         0U,
         material_uniform_stage,
@@ -1057,6 +1057,39 @@ fn ensure_mesh3d_pipeline_layout_resources(
       ) &&
       material_builder.add_sampler(
         14U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        21U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        22U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        23U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        24U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        25U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        26U,
         frag,
         @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       ) &&

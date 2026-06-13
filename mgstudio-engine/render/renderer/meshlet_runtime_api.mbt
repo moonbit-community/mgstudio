@@ -2921,6 +2921,9 @@ fn meshlet_bind_material_shade_draw(
     depth_texture,
     anisotropy_texture,
     specular_tint_texture,
+    base_texture,
+    metallic_roughness_texture,
+    normal_texture,
     mesh3d_standard_material_uniform_bytes(
       draw.color_r,
       draw.color_g,
