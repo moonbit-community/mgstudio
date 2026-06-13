@@ -29,6 +29,8 @@ pub fn asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, addre
 
 pub fn asset_supported_compressed_image_formats() -> Int
 
+pub fn asset_texture_format_raw(texture_id~ : Int) -> UInt
+
 pub fn asset_texture_height(texture_id~ : Int) -> Int
 
 pub fn asset_texture_width(texture_id~ : Int) -> Int

@@ -1531,7 +1531,16 @@ fn render2d_target_info(
           scale_factor: 1.0F,
         })
       } else {
-        None
+        let width = @renderer.asset_texture_width(texture_id=target_id)
+        let height = @renderer.asset_texture_height(texture_id=target_id)
+        if width > 0 && height > 0 {
+          Some(RenderTargetComputed::{
+            size: @math.IVec2::new(width, height),
+            scale_factor: 1.0F,
+          })
+        } else {
+          None
+        }
       }
     }
   }
@@ -1843,10 +1852,18 @@ fn camera_target_format_raw(
   camera : @core.Entity,
   target : @camera_camera.RenderTarget,
 ) -> UInt {
-  let output_texture_format_raw = @render_view.normalize_bgra8_for_render_target(
-    target_is_window=render2d_targets_host_window(target),
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
-  )
+  let output_texture_format_raw = match target {
+    Image(handle) =>
+      match @renderer.asset_texture_format_raw(texture_id=handle.id()) {
+        0U => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+        format => format
+      }
+    _ =>
+      @render_view.normalize_bgra8_for_render_target(
+        target_is_window=render2d_targets_host_window(target),
+        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+      )
+  }
   @render_view.extracted_view_target_format_raw(
     output_texture_format_raw~,
     hdr=camera_hdr_enabled(world, camera),

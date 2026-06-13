@@ -249,6 +249,14 @@ pub fn asset_texture_height(texture_id~ : Int) -> Int {
 }
 
 ///|
+pub fn asset_texture_format_raw(texture_id~ : Int) -> UInt {
+  match @renderer.asset_texture_info(texture_id~) {
+    Some(info) => info.format.to_u32()
+    None => 0U
+  }
+}
+
+///|
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool {
   @renderer.asset_is_texture_loaded(texture_id~)
 }

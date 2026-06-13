@@ -28,12 +28,6 @@ const UI_TEXTURE_SIZE_F : Float = 512.0F
 const CUBE_SIZE : Float = 4.0F
 
 ///|
-const PANEL_WIDTH : Float = 180.0F
-
-///|
-const PANEL_HEIGHT : Float = 100.0F
-
-///|
 const DIEGETIC_POINTER_ID : @pointer_events.PointerId = 1
 
 ///|
@@ -214,8 +208,8 @@ fn setup(
       @asset.Image::new_target_texture(
         UI_TEXTURE_SIZE,
         UI_TEXTURE_SIZE,
-        @asset.TextureFormat::Rgba8Unorm,
-        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+        @asset.TextureFormat::Bgra8UnormSrgb,
+        None,
       ),
     )
   let cube_mesh = meshes.peek()
@@ -233,7 +227,6 @@ fn setup(
       @camera_camera.Camera::Camera().with_order(-1),
       @transform.Transform::identity(),
       @camera_camera.RenderTarget::Image(image_handle),
-      @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
     ),
   )
 
@@ -242,7 +235,10 @@ fn setup(
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      .with_height(@ui.Val::Percent(100.0F))
+      .with_flex_direction(@ui.FlexDirection::Column)
+      .with_justify_content(@ui.JustifyContent::Center)
+      .with_align_items(@ui.AlignItems::Center),
       @ui.BackgroundColor::new(gray()),
       @ui.UiTargetCamera::new(texture_camera),
     ),
@@ -255,12 +251,11 @@ fn setup(
       @ui.Button::Button(),
       @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
-      .with_width(@ui.Val::Px(PANEL_WIDTH))
-      .with_height(@ui.Val::Px(PANEL_HEIGHT))
-      .with_left(@ui.Val::Px((UI_TEXTURE_SIZE_F - PANEL_WIDTH) / 2.0F))
-      .with_top(@ui.Val::Px((UI_TEXTURE_SIZE_F - PANEL_HEIGHT) / 2.0F))
+      .with_width(@ui.Val::Auto)
+      .with_height(@ui.Val::Auto)
       .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(10.0F))),
       @ui.BackgroundColor::new(blue()),
     ),
   )
@@ -305,10 +300,7 @@ fn setup(
     commands.spawn(
       (
         @pbr.DirectionalLight::DirectionalLight(),
-        @transform.Transform::from_xyz(0.0F, 3.0F, 6.0F).looking_at(
-          @math.Vec3::zero(),
-          @math.Vec3::new(0.0F, 1.0F, 0.0F),
-        ),
+        @transform.Transform::identity(),
       ),
     ),
   )
@@ -430,17 +422,22 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
 fn drag_panel(
   pointer : @app.OnPointer[@app.PointerMove],
   drag_state : @app.ResMut[PanelDragState],
-  panels : @ecs.Query[@ecs.Write[@ui.Node], @ecs.With[DraggablePanel]],
+  panels : @ecs.Query[
+    (@ecs.Write[@ui.Node], @ecs.Read[@ui.UiLayout]),
+    @ecs.With[DraggablePanel],
+  ],
 ) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
   guard drag_state.get().active else { return }
-  let panel_node = panels.single() catch { _ => None }
-  guard panel_node is Some(panel_node) else { return }
+  let panel = panels.single() catch { _ => None }
+  guard panel is Some((panel_node, panel_layout)) else { return }
   panel_node.set(
     panel_node
     .value()
-    .with_left(@ui.Val::Px(pointer.position().x - PANEL_WIDTH / 2.0F))
-    .with_top(@ui.Val::Px(pointer.position().y - PANEL_HEIGHT / 2.0F)),
+    .with_left(
+      @ui.Val::Px(pointer.position().x - panel_layout.value().size().x / 2.0F),
+    )
+    .with_top(@ui.Val::Px(pointer.position().y - 50.0F)),
   )
 }
 
