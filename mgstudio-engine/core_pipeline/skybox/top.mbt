@@ -82,6 +82,16 @@ pub fn SkyboxBindGroup::new(
 }
 
 ///|
+pub fn SkyboxBindGroup::bind_group_id(self : SkyboxBindGroup) -> Int {
+  self.bind_group_id
+}
+
+///|
+pub fn SkyboxBindGroup::skybox_uniform_index(self : SkyboxBindGroup) -> Int {
+  self.skybox_uniform_index
+}
+
+///|
 pub let ecs_key_skybox_bind_group : @ecs.ComponentKey[SkyboxBindGroup] = @ecs.register_component(
   debug_name="core_pipeline.skybox.bind_group",
 )
@@ -153,39 +163,35 @@ priv struct SkyboxDrawParams {
 }
 
 ///|
-fn skybox_draw_params(
-  skybox : @light.Skybox,
-  camera_exposure_value : Float,
+fn skybox_draw_params_from_extracted(
+  entry : ExtractedSkybox,
 ) -> SkyboxDrawParams? {
-  guard skybox.image is Some(image) else { return None }
+  guard entry.skybox.image is Some(image) else { return None }
   let texture_id = image.id()
   guard texture_id >= 0 else { return None }
   Some(SkyboxDrawParams::{
     texture_id,
-    brightness: skybox.brightness * camera_exposure_value,
-    rotation: skybox.rotation.inverse(),
+    brightness: entry.uniforms.brightness,
+    rotation: entry.skybox.rotation.inverse(),
   })
 }
 
 ///|
-pub fn draw_skybox(
-  skybox : @light.Skybox,
-  camera_exposure_value : Float,
-) -> Unit {
-  guard skybox_draw_params(skybox, camera_exposure_value) is Some(params) else {
-    return
+pub fn draw_prepared_skybox(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Bool {
+  if !world.is_alive(render_entity) {
+    return false
   }
-  if !@render.asset_is_texture_loaded(texture_id=params.texture_id) {
-    return
+  guard (try! world.get_by_key(render_entity, ecs_key_skybox_bind_group))
+    is Some(bind_group) else {
+    return false
   }
-  @render.host_gpu_draw_skybox(
-    texture_id=params.texture_id,
-    brightness=params.brightness,
-    rotation_x=params.rotation.x,
-    rotation_y=params.rotation.y,
-    rotation_z=params.rotation.z,
-    rotation_w=params.rotation.w,
+  @render.host_gpu_draw_prepared_skybox(
+    bind_group_id=bind_group.bind_group_id(),
   )
+  true
 }
 
 ///|
@@ -510,17 +516,19 @@ fn remove_stale_skybox_bind_group_components(
   world : @ecs.World,
   extracted : ExtractedSkyboxes,
 ) -> Unit {
-  let stale : Array[@core.Entity] = []
+  let stale : Array[(@core.Entity, Int)] = []
   let query : @ecs.Query[(@core.Entity, @ecs.Read[SkyboxBindGroup]), @ecs.All] = @ecs.query(
     world,
   )
   try! query.view(fn(_query_entity, data) {
-    let (entity, _bind_group) = data
+    let (entity, bind_group) = data
     if !extracted_skybox_bind_group_ready(extracted, entity) {
-      stale.push(entity)
+      stale.push((entity, bind_group.value().bind_group_id()))
     }
   })
-  for entity in stale {
+  for entry in stale {
+    let (entity, bind_group_id) = entry
+    ignore(@render.host_gpu_release_skybox_bind_group(bind_group_id~))
     ignore(try! world.remove_by_key(entity, ecs_key_skybox_bind_group))
   }
 }
@@ -569,17 +577,25 @@ fn extract_skybox(world : @ecs.World) -> Unit {
   extracted_skyboxes_mut_or_init(world).modify(fn(extracted) {
     extracted.clear()
     let query : @ecs.Query[
-      (@ecs.Read[@render.RenderEntity], @ecs.Read[@light.Skybox]),
+      (
+        @ecs.Read[@render.RenderEntity],
+        @ecs.Read[@light.Skybox],
+        @ecs.Optional[@camera_camera.Exposure],
+      ),
       @ecs.All,
     ] = @ecs.query(source_world)
     try! query.view(fn(_query_entity, data) {
-      let (render_entity_ref, skybox_ref) = data
+      let (render_entity_ref, skybox_ref, exposure_ref) = data
       let skybox = skybox_ref.value()
+      let exposure = match exposure_ref.value() {
+        Some(value) => value.exposure()
+        None => @camera_camera.Exposure::Exposure().exposure()
+      }
       extracted.push(
         ExtractedSkybox::new(
           render_entity=render_entity_ref.value().id(),
           skybox~,
-          uniforms=SkyboxUniforms::from_skybox(skybox, 1.0F),
+          uniforms=SkyboxUniforms::from_skybox(skybox, exposure),
         ),
       )
     })
@@ -618,20 +634,56 @@ fn prepare_skybox_bind_groups(world : @ecs.World) -> Unit {
       remove_stale_skybox_bind_group_components(world, extracted)
       for entry in extracted.entries {
         if entry.is_ready_for_bind_group() {
-          match entry.skybox.image {
-            Some(image) =>
-              if @asset.asset_is_texture_loaded(image) {
-                try! world.set_by_key(
-                  entry.render_entity,
-                  ecs_key_skybox_bind_group,
-                  SkyboxBindGroup::new(
-                    bind_group_id=image.id(),
-                    skybox_uniform_index=0,
+          guard skybox_draw_params_from_extracted(entry) is Some(params) else {
+            continue
+          }
+          if @render.asset_is_texture_loaded(texture_id=params.texture_id) {
+            let previous = try! world.get_by_key(
+              entry.render_entity,
+              ecs_key_skybox_bind_group,
+            )
+            guard @render.host_gpu_prepare_skybox_bind_group(
+                texture_id=params.texture_id,
+                brightness=params.brightness,
+                rotation_x=params.rotation.x,
+                rotation_y=params.rotation.y,
+                rotation_z=params.rotation.z,
+                rotation_w=params.rotation.w,
+              )
+              is Some(bind_group_id) else {
+              match previous {
+                Some(old) => {
+                  ignore(
+                    @render.host_gpu_release_skybox_bind_group(
+                      bind_group_id=old.bind_group_id(),
+                    ),
+                  )
+                  ignore(
+                    try! world.remove_by_key(
+                      entry.render_entity,
+                      ecs_key_skybox_bind_group,
+                    ),
+                  )
+                }
+                None => ()
+              }
+              continue
+            }
+            match previous {
+              Some(old) =>
+                ignore(
+                  @render.host_gpu_release_skybox_bind_group(
+                    bind_group_id=old.bind_group_id(),
                   ),
                 )
-                bind_group_count = bind_group_count + 1
-              }
-            None => ()
+              None => ()
+            }
+            try! world.set_by_key(
+              entry.render_entity,
+              ecs_key_skybox_bind_group,
+              SkyboxBindGroup::new(bind_group_id~, skybox_uniform_index=0),
+            )
+            bind_group_count = bind_group_count + 1
           }
         }
       }

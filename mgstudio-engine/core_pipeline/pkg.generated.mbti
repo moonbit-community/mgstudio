@@ -48,8 +48,6 @@ pub fn core_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn core_pipeline_plugin_with(@app.App[@ecs.World], CorePipelinePlugin) -> @app.App[@ecs.World]
 
-pub fn draw_skybox(@light.Skybox, Float) -> Unit
-
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]
@@ -86,7 +84,7 @@ pub fn fullscreen_material_requires_bind_group_update(FullscreenMaterialPrepareV
 
 pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader
 
-pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity, @light.Skybox, Float) -> Bool
+pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity) -> Bool
 
 pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.TonemappingLuts
 

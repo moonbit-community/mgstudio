@@ -104,20 +104,11 @@ pub fn tonemapping_luts_from_world_or_init(
 }
 
 ///|
-pub fn draw_skybox(skybox : Skybox, camera_exposure_value : Float) -> Unit {
-  @skybox.draw_skybox(skybox, camera_exposure_value)
-}
-
-///|
 pub fn main_opaque_pass_3d_draw_skybox(
   world : @ecs.World,
   render_entity : @core.Entity,
-  skybox : Skybox,
-  camera_exposure_value : Float,
 ) -> Bool {
-  @core_3d.main_opaque_pass_3d_draw_skybox(
-    world, render_entity, skybox, camera_exposure_value,
-  )
+  @core_3d.main_opaque_pass_3d_draw_skybox(world, render_entity)
 }
 
 ///|

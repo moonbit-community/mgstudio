@@ -434,6 +434,13 @@ struct SkyboxPipelineCacheEntry {
 }
 
 ///|
+struct SkyboxPreparedBindGroupEntry {
+  id : Int
+  bind_group : @wgpu.BindGroup
+  uniform_buffer : @wgpu.Buffer
+}
+
+///|
 struct CasPipelineCacheEntry {
   surface_format : @wgpu.TextureFormat
   denoise : Bool

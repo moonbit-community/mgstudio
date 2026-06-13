@@ -162,7 +162,6 @@ fn render3d_execute_collect_cameras(
     let color_grading = try! source_world.get_by_key(
       entity, ecs_key_color_grading,
     )
-    let skybox = try! source_world.get_by_key(entity, ecs_key_skybox)
     let environment_map_light = try! source_world.get_by_key(
       entity, ecs_key_environment_map_light,
     )
@@ -308,7 +307,6 @@ fn render3d_execute_collect_cameras(
             motion_blur,
             exposure,
             color_grading,
-            skybox,
             environment_map_light,
             generated_environment_map_light,
             atmosphere_environment_map_light,

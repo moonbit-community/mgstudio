@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -44,7 +43,7 @@ pub let ecs_key_opaque3d_phase : @ecs.ResourceKey[Opaque3dPhase]
 
 pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase]
 
-pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity, @light.Skybox, Float) -> Bool
+pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity) -> Bool
 
 pub fn main_opaque_pass_3d_should_draw_alpha_mask(MainOpaquePass3dState) -> Bool
 

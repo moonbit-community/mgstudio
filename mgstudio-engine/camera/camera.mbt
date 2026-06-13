@@ -47,10 +47,10 @@ pub type CameraDeferredConfig3d = @pbr.CameraDeferredConfig3d
 pub type CameraDeferredMode3d = @pbr.CameraDeferredMode3d
 
 ///|
-pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
+pub type PhysicalCameraParameters = @camera_camera.PhysicalCameraParameters
 
 ///|
-pub type Exposure = @pbr.Exposure
+pub type Exposure = @camera_camera.Exposure
 
 ///|
 pub type AutoExposure = @pbr.AutoExposure

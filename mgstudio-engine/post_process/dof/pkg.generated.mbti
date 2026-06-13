@@ -2,12 +2,13 @@
 package "Milky2018/mgstudio/post_process/dof"
 
 import {
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/pbr",
   "moonbitlang/core/json",
 }
 
 // Values
-pub fn depth_of_field_from_physical_camera(@pbr.PhysicalCameraParameters) -> @pbr.DepthOfField
+pub fn depth_of_field_from_physical_camera(@camera.PhysicalCameraParameters) -> @pbr.DepthOfField
 
 // Errors
 

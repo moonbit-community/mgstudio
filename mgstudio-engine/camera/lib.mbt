@@ -96,8 +96,8 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   }
   world.register_required_components_with(
     @pbr.ecs_key_camera3d,
-    @pbr.ecs_key_exposure,
-    fn() { @pbr.Exposure::Exposure() },
+    @camera_camera.ecs_key_exposure,
+    fn() { @camera_camera.Exposure::Exposure() },
   ) catch {
     @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
     @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>

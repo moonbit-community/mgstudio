@@ -175,7 +175,7 @@ pub fn draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : F
 
 pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int) -> Unit
 
-pub fn draw_skybox(texture_id~ : Int, brightness~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float) -> Unit
+pub fn draw_prepared_skybox(bind_group_id~ : Int) -> Unit
 
 pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
@@ -355,6 +355,8 @@ pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_w
 
 pub fn prepare_motion_blur(velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
+pub fn prepare_skybox_bind_group(texture_id~ : Int, brightness~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float) -> Int?
+
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn present_active_frames() -> Unit
@@ -384,6 +386,8 @@ pub fn register_mesh3d_material_pipeline_descriptor(material_pipeline_id~ : UInt
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn release_frame_retired_resources() -> Unit
+
+pub fn release_skybox_prepared_bind_group(bind_group_id~ : Int) -> Bool
 
 pub fn render_context_backend_for_test() -> GpuBackend?
 
@@ -880,6 +884,8 @@ pub struct GpuBackend {
   mut skybox_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut skybox_uniform_buf : @wgpu_mbt.Buffer?
   skybox_pipeline_cache : Array[SkyboxPipelineCacheEntry]
+  skybox_prepared_bind_groups : Array[SkyboxPreparedBindGroupEntry]
+  mut skybox_next_prepared_bind_group_id : Int
   mut cas_bgl : @wgpu_mbt.BindGroupLayout?
   mut cas_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut cas_sampler : @wgpu_mbt.Sampler?
@@ -1021,7 +1027,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, Gp
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Bool, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int, Int, Int, Int, UInt64) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?, pipeline_descriptor? : @render_resource.RenderPipelineDescriptor?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_skybox(Self, Int, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_prepared_skybox(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -1064,10 +1070,12 @@ pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Byt
 pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(Self, view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(Self, view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
 pub fn GpuBackend::prepare_motion_blur(Self, Int, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::prepare_skybox_bind_group(Self, Int, Float, Float, Float, Float, Float) -> Int? raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::present_active_frames(Self) -> Unit
 pub fn GpuBackend::register_mesh2d_pipeline_descriptor(Self, UInt64, String) -> Unit
 pub fn GpuBackend::release_frame_retired_resources(Self) -> Unit
+pub fn GpuBackend::release_skybox_prepared_bind_group(Self, Int) -> Bool
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
@@ -1826,6 +1834,8 @@ pub struct ScreenshotTextureRef {
 }
 
 type SkyboxPipelineCacheEntry
+
+type SkyboxPreparedBindGroupEntry
 
 pub struct SpriteBatch {
   texture_id : Int

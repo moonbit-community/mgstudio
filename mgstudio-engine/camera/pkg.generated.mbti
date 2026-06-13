@@ -116,7 +116,7 @@ pub using @pbr {type DepthOfField}
 
 pub using @pbr {type DepthOfFieldMode}
 
-pub using @pbr {type Exposure}
+pub using @Milky2018/mgstudio/camera/camera {type Exposure}
 
 pub using @primitives {type Frustum}
 
@@ -132,7 +132,7 @@ pub using @render {type PerspectiveProjection3d as PerspectiveProjection}
 
 pub using @render {type PerspectiveProjection3d}
 
-pub using @pbr {type PhysicalCameraParameters}
+pub using @Milky2018/mgstudio/camera/camera {type PhysicalCameraParameters}
 
 pub using @pbr {type Projection}
 

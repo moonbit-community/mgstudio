@@ -500,6 +500,8 @@ pub fn GpuBackend::new(
     skybox_pipeline_layout: None,
     skybox_uniform_buf: None,
     skybox_pipeline_cache: [],
+    skybox_prepared_bind_groups: [],
+    skybox_next_prepared_bind_group_id: 1,
     cas_bgl: None,
     cas_pipeline_layout: None,
     cas_sampler: None,

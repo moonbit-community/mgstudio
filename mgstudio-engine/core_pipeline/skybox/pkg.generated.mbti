@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
 }
 
@@ -18,7 +17,7 @@ pub const SKYBOX_PREPASS_LABEL : String = "skybox_prepass"
 
 pub const SKYBOX_PREPASS_PIPELINE_LABEL : String = "skybox_prepass_pipeline"
 
-pub fn draw_skybox(@light.Skybox, Float) -> Unit
+pub fn draw_prepared_skybox(@ecs.World, @core.Entity) -> Bool
 
 pub let ecs_key_skybox_bind_group : @ecs.ComponentKey[SkyboxBindGroup]
 
@@ -60,7 +59,9 @@ pub struct SkyboxBindGroup {
   bind_group_id : Int
   skybox_uniform_index : Int
 }
+pub fn SkyboxBindGroup::bind_group_id(Self) -> Int
 pub fn SkyboxBindGroup::new(bind_group_id~ : Int, skybox_uniform_index~ : Int) -> Self
+pub fn SkyboxBindGroup::skybox_uniform_index(Self) -> Int
 pub impl @ecs.Component for SkyboxBindGroup
 
 pub struct SkyboxPipelineId {

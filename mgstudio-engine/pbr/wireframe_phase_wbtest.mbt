@@ -84,7 +84,6 @@ fn wireframe_phase_test_camera(
       motion_blur: None,
       exposure: None,
       color_grading: None,
-      skybox: None,
       environment_map_light: None,
       generated_environment_map_light: None,
       atmosphere_environment_map_light: None,

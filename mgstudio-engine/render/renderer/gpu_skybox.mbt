@@ -193,7 +193,44 @@ fn skybox_pipeline_get_or_create(
 }
 
 ///|
-pub fn GpuBackend::draw_skybox(
+fn skybox_prepared_bind_group_find(
+  backend : GpuBackend,
+  id : Int,
+) -> SkyboxPreparedBindGroupEntry? {
+  for entry in backend.skybox_prepared_bind_groups {
+    if entry.id == id {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn GpuBackend::release_skybox_prepared_bind_group_by_index(
+  self : GpuBackend,
+  index : Int,
+) -> Unit {
+  let removed = self.skybox_prepared_bind_groups.remove(index)
+  removed.bind_group.release()
+  removed.uniform_buffer.release()
+}
+
+///|
+pub fn GpuBackend::release_skybox_prepared_bind_group(
+  self : GpuBackend,
+  id : Int,
+) -> Bool {
+  for i in 0..<self.skybox_prepared_bind_groups.length() {
+    if self.skybox_prepared_bind_groups[i].id == id {
+      self.release_skybox_prepared_bind_group_by_index(i)
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn GpuBackend::prepare_skybox_bind_group(
   self : GpuBackend,
   texture_id : Int,
   brightness : Float,
@@ -201,31 +238,18 @@ pub fn GpuBackend::draw_skybox(
   rotation_y : Float,
   rotation_z : Float,
   rotation_w : Float,
-) -> Unit raise GpuBackendError {
-  guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(active_pass) else { return }
-  guard self.pass_state is Some(pass_state) else { return }
-  guard texture_id >= 0 else { return }
-  guard find_texture(self, texture_id) is Some(texture) else { return }
-  guard texture.sample_view is Some(cube_view) else { return }
-  let format = match current_pass_color_format(self) {
-    Some(format) => format
-    None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
-  }
-  let sample_count = if pass_state.msaa_sample_count <= 1 {
-    1
-  } else {
-    pass_state.msaa_sample_count
-  }
-  guard skybox_pipeline_get_or_create(self, format, sample_count)
-    is Some(pipeline) else {
-    return
-  }
+) -> Int? raise GpuBackendError {
+  guard texture_id >= 0 else { return None }
+  guard find_texture(self, texture_id) is Some(texture) else { return None }
+  guard texture.sample_view is Some(cube_view) else { return None }
+  ensure_skybox_resources(self)
   ensure_mesh3d_view_binding_buffers(self)
-  guard self.skybox_bgl is Some(bind_layout) else { return }
-  guard self.skybox_uniform_buf is Some(skybox_uniform_buf) else { return }
-  guard self.mesh3d_view_buf is Some(view_buf) else { return }
-  self.queue.write_buffer(view_buf, 0UL, mesh3d_view_uniform_bytes(pass_state))
+  guard self.skybox_bgl is Some(bind_layout) else { return None }
+  guard self.mesh3d_view_buf is Some(view_buf) else { return None }
+  let skybox_uniform_buf = self.device.create_buffer(
+    size=SKYBOX_UNIFORM_BUFFER_SIZE,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
   self.queue.write_buffer(
     skybox_uniform_buf,
     0UL,
@@ -240,33 +264,91 @@ pub fn GpuBackend::draw_skybox(
     builder.add_buffer(3U, skybox_uniform_buf, size=SKYBOX_UNIFORM_BUFFER_SIZE)
   if !ok {
     builder.free()
-    return
+    return None
   }
   let bind_group = builder.finish(
     self.device,
     bind_layout,
     label="mgstudio_skybox_bind_group",
   )
-  active_pass.set_pipeline(pipeline)
-  active_pass.set_bind_group(0U, bind_group, [])
-  active_pass.draw(3U, 1U, 0U, 0U)
-  bind_group.release()
+  let id = self.skybox_next_prepared_bind_group_id
+  self.skybox_next_prepared_bind_group_id = id + 1
+  self.skybox_prepared_bind_groups.push(SkyboxPreparedBindGroupEntry::{
+    id,
+    bind_group,
+    uniform_buffer: skybox_uniform_buf,
+  })
+  Some(id)
 }
 
 ///|
-pub fn draw_skybox(
+pub fn GpuBackend::draw_prepared_skybox(
+  self : GpuBackend,
+  bind_group_id : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(active_pass) else { return }
+  guard self.pass_state is Some(pass_state) else { return }
+  guard skybox_prepared_bind_group_find(self, bind_group_id) is Some(entry) else {
+    return
+  }
+  let format = match current_pass_color_format(self) {
+    Some(format) => format
+    None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  let sample_count = if pass_state.msaa_sample_count <= 1 {
+    1
+  } else {
+    pass_state.msaa_sample_count
+  }
+  guard skybox_pipeline_get_or_create(self, format, sample_count)
+    is Some(pipeline) else {
+    return
+  }
+  ensure_mesh3d_view_binding_buffers(self)
+  guard self.mesh3d_view_buf is Some(view_buf) else { return }
+  self.queue.write_buffer(view_buf, 0UL, mesh3d_view_uniform_bytes(pass_state))
+  active_pass.set_pipeline(pipeline)
+  active_pass.set_bind_group(0U, entry.bind_group, [])
+  active_pass.draw(3U, 1U, 0U, 0U)
+}
+
+///|
+pub fn prepare_skybox_bind_group(
   texture_id~ : Int,
   brightness~ : Float,
   rotation_x~ : Float,
   rotation_y~ : Float,
   rotation_z~ : Float,
   rotation_w~ : Float,
-) -> Unit {
+) -> Int? {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.prepare_skybox_bind_group(
+        texture_id, brightness, rotation_x, rotation_y, rotation_z, rotation_w,
+      ) catch {
+        err => {
+          debug_runtime_error("prepare_skybox_bind_group", err)
+          None
+        }
+      }
+    None => None
+  }
+}
+
+///|
+pub fn release_skybox_prepared_bind_group(bind_group_id~ : Int) -> Bool {
+  match ensure_backend() {
+    Some(backend) => backend.release_skybox_prepared_bind_group(bind_group_id)
+    None => false
+  }
+}
+
+///|
+pub fn draw_prepared_skybox(bind_group_id~ : Int) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.draw_skybox(
-      texture_id, brightness, rotation_x, rotation_y, rotation_z, rotation_w,
-    ) catch {
-      err => debug_runtime_error("draw_skybox", err)
+    backend.draw_prepared_skybox(bind_group_id) catch {
+      err => debug_runtime_error("draw_prepared_skybox", err)
     }
   }
 }

@@ -96,7 +96,6 @@ priv struct Camera3dViewPayload {
   motion_blur : MotionBlur?
   exposure : Exposure?
   color_grading : ColorGrading?
-  skybox : Skybox?
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   atmosphere_environment_map_light : AtmosphereEnvironmentMapLight?

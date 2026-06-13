@@ -64,12 +64,17 @@ test "skybox: uniforms match Bevy brightness and inverse-rotation transform" {
 }
 
 ///|
-test "skybox: draw params come from image, exposure, and inverse rotation" {
+test "skybox: draw params come from extracted uniforms and inverse rotation" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(11)
   let skybox = @light.Skybox::new(image, 4.0F).with_rotation(
     @math.Quat::new(0.25F, 0.0F, 0.0F, 1.0F),
   )
-  guard skybox_draw_params(skybox, 0.5F) is Some(params) else {
+  let entry = ExtractedSkybox::new(
+    render_entity=@core.Entity::new(2, 1),
+    skybox~,
+    uniforms=SkyboxUniforms::from_skybox(skybox, 0.5F),
+  )
+  guard skybox_draw_params_from_extracted(entry) is Some(params) else {
     abort("expected skybox draw params")
   }
 

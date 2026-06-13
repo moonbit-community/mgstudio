@@ -79,9 +79,7 @@ pub let ecs_key_atmosphere : @ecs.ComponentKey[Atmosphere] = @light.ecs_key_atmo
 pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[AtmosphereSettings] = @light.ecs_key_atmosphere_settings
 
 ///|
-pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @ecs.register_component(
-  debug_name="render3d.exposure",
-)
+pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @camera_camera.ecs_key_exposure
 
 ///|
 pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette
@@ -330,9 +328,6 @@ pub impl @ecs.Component for DepthOfField with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for Exposure with fn component() {
-  ecs_key_exposure
-}
 
 ///|
 pub impl @ecs.Component for Wireframe with fn component() {

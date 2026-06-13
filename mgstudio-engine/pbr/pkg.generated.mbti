@@ -216,7 +216,7 @@ pub let ecs_key_entity_specialization_ticks : @ecs.ResourceKey[EntitySpecializat
 
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapLight]
 
-pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
+pub let ecs_key_exposure : @ecs.ComponentKey[@camera.Exposure]
 
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
@@ -794,7 +794,7 @@ pub struct Camera3dBundle {
   custom_post_process3d : @post_process.CustomPostProcess3d?
   vignette : @effect_stack.Vignette?
   motion_blur : @motion_blur.MotionBlur?
-  exposure : Exposure?
+  exposure : @camera.Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
   decal_config : CameraDecalConfig3d?
@@ -826,7 +826,7 @@ pub fn Camera3dBundle::with_decal_config(Self, CameraDecalConfig3d) -> Self
 pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
-pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
+pub fn Camera3dBundle::with_exposure(Self, @camera.Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
@@ -978,7 +978,7 @@ pub(all) struct DepthOfField {
   mut max_depth : Float
 } derive(ToJson, @json.FromJson)
 pub fn DepthOfField::DepthOfField() -> Self
-pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
+pub fn DepthOfField::from_physical_camera(@camera.PhysicalCameraParameters) -> Self
 pub impl @ecs.Component for DepthOfField
 
 pub(all) enum DepthOfFieldMode {
@@ -1063,20 +1063,6 @@ pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializatio
 pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
 pub fn EntitySpecializationTicks::len(Self) -> Int
 pub fn EntitySpecializationTicks::remove(Self, @core.Entity) -> Bool
-
-pub struct Exposure {
-  ev100 : Float
-} derive(ToJson, @json.FromJson)
-pub fn Exposure::Exposure() -> Self
-pub fn Exposure::blender() -> Self
-pub fn Exposure::exposure(Self) -> Float
-pub fn Exposure::from_physical_camera(PhysicalCameraParameters) -> Self
-pub fn Exposure::indoor() -> Self
-pub fn Exposure::new(Float) -> Self
-pub fn Exposure::overcast() -> Self
-pub fn Exposure::sunlight() -> Self
-pub fn Exposure::with_ev100(Self, Float) -> Self
-pub impl @ecs.Component for Exposure
 
 #alias(ExtendedMaterial3d)
 pub struct ExtendedMaterial[B, E] {
@@ -1494,15 +1480,6 @@ pub fn PendingWireframeQueues::push_current(Self, @core.Entity, @core.Entity, @M
 pub fn PendingWireframeQueues::view_len(Self) -> Int
 pub fn PendingWireframeQueues::view_or_insert(Self, @core.Entity) -> ViewPendingWireframeQueues
 pub impl @app.Resource for PendingWireframeQueues
-
-pub(all) struct PhysicalCameraParameters {
-  mut aperture_f_stops : Float
-  mut shutter_speed_s : Float
-  mut sensitivity_iso : Float
-  mut sensor_height : Float
-} derive(ToJson, @json.FromJson)
-pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> Self
-pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum Projection {
   Perspective(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d)
@@ -2234,6 +2211,8 @@ pub using @light {type DirectionalLightTexture}
 
 pub using @light {type EnvironmentMapLight}
 
+pub using @camera {type Exposure}
+
 pub using @material {type ExtendedMaterialMetadata3d as ExtendedMaterialMetadata}
 
 pub using @material {type ExtendedMaterialMetadata3d}
@@ -2295,6 +2274,8 @@ pub using @material {type ParallaxMappingMethod}
 pub using @Milky2018/mgstudio/pbr/deferred {type PbrDeferredLightingDepthId}
 
 pub using @Milky2018/mgstudio/pbr/render {type PerspectiveProjection3d}
+
+pub using @camera {type PhysicalCameraParameters}
 
 pub using @light {type PointLight}
 

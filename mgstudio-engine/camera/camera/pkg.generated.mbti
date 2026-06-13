@@ -23,6 +23,8 @@ pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 
 pub let ecs_key_camera_main_texture_usages : @ecs.ComponentKey[CameraMainTextureUsages]
 
+pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
+
 pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
 
 pub let ecs_key_visible_entities : @ecs.ComponentKey[VisibleEntities]
@@ -71,6 +73,29 @@ pub fn CameraMainTextureUsages::bits(Self) -> UInt64
 pub fn CameraMainTextureUsages::new(UInt64) -> Self
 pub fn CameraMainTextureUsages::with_usage(Self, UInt64) -> Self
 pub impl @ecs.Component for CameraMainTextureUsages
+
+pub struct Exposure {
+  ev100 : Float
+} derive(ToJson, @json.FromJson)
+pub fn Exposure::Exposure() -> Self
+pub fn Exposure::blender() -> Self
+pub fn Exposure::exposure(Self) -> Float
+pub fn Exposure::from_physical_camera(PhysicalCameraParameters) -> Self
+pub fn Exposure::indoor() -> Self
+pub fn Exposure::new(Float) -> Self
+pub fn Exposure::overcast() -> Self
+pub fn Exposure::sunlight() -> Self
+pub fn Exposure::with_ev100(Self, Float) -> Self
+pub impl @ecs.Component for Exposure
+
+pub(all) struct PhysicalCameraParameters {
+  mut aperture_f_stops : Float
+  mut shutter_speed_s : Float
+  mut sensitivity_iso : Float
+  mut sensor_height : Float
+} derive(ToJson, @json.FromJson)
+pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> Self
+pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum RenderTarget {
   Screen

@@ -428,6 +428,8 @@ pub struct GpuBackend {
   mut skybox_pipeline_layout : @wgpu.PipelineLayout?
   mut skybox_uniform_buf : @wgpu.Buffer?
   skybox_pipeline_cache : Array[SkyboxPipelineCacheEntry]
+  skybox_prepared_bind_groups : Array[SkyboxPreparedBindGroupEntry]
+  mut skybox_next_prepared_bind_group_id : Int
   mut cas_bgl : @wgpu.BindGroupLayout?
   mut cas_pipeline_layout : @wgpu.PipelineLayout?
   mut cas_sampler : @wgpu.Sampler?

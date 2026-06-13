@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/post_process/auto_exposure"
 
 import {
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/pbr",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -46,9 +47,9 @@ pub fn auto_exposure_uses_mask(@pbr.AutoExposure) -> Bool
 
 pub fn auto_exposure_with_range(@pbr.AutoExposure, Float, Float) -> @pbr.AutoExposure
 
-pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters
+pub fn physical_camera_parameters_default() -> @camera.PhysicalCameraParameters
 
-pub fn physical_camera_parameters_ev100(@pbr.PhysicalCameraParameters) -> Float
+pub fn physical_camera_parameters_ev100(@camera.PhysicalCameraParameters) -> Float
 
 // Errors
 
@@ -97,7 +98,7 @@ pub using @pbr {type AutoExposureCompensationCurve}
 
 pub using @pbr {type AutoExposureCompensationCurveError}
 
-pub using @pbr {type PhysicalCameraParameters}
+pub using @camera {type PhysicalCameraParameters}
 
 // Traits
 

@@ -1671,15 +1671,15 @@ pub fn host_gpu_draw_mesh3d(
 }
 
 ///|
-pub fn host_gpu_draw_skybox(
+pub fn host_gpu_prepare_skybox_bind_group(
   texture_id~ : Int,
   brightness~ : Float,
   rotation_x~ : Float,
   rotation_y~ : Float,
   rotation_z~ : Float,
   rotation_w~ : Float,
-) -> Unit {
-  @renderer.draw_skybox(
+) -> Int? {
+  @renderer.prepare_skybox_bind_group(
     texture_id~,
     brightness~,
     rotation_x~,
@@ -1687,6 +1687,16 @@ pub fn host_gpu_draw_skybox(
     rotation_z~,
     rotation_w~,
   )
+}
+
+///|
+pub fn host_gpu_release_skybox_bind_group(bind_group_id~ : Int) -> Bool {
+  @renderer.release_skybox_prepared_bind_group(bind_group_id~)
+}
+
+///|
+pub fn host_gpu_draw_prepared_skybox(bind_group_id~ : Int) -> Unit {
+  @renderer.draw_prepared_skybox(bind_group_id~)
 }
 
 ///|

@@ -102,13 +102,10 @@ pub fn main_opaque_pass_3d_skybox_state(
 pub fn main_opaque_pass_3d_draw_skybox(
   world : @ecs.World,
   render_entity : @core.Entity,
-  skybox : @light.Skybox,
-  camera_exposure_value : Float,
 ) -> Bool {
   let state = main_opaque_pass_3d_skybox_state(world, render_entity)
   if !main_opaque_pass_3d_should_draw_skybox(state) {
     return false
   }
-  @skybox.draw_skybox(skybox, camera_exposure_value)
-  true
+  @skybox.draw_prepared_skybox(world, render_entity)
 }
