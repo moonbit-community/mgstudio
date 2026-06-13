@@ -488,6 +488,7 @@ pub struct GpuBackend {
   mut mesh3d_ssao_resource_revision : Int
   mut mesh3d_ssao_pipelines : GpuSsaoPipelines?
   mesh3d_ssao_pipeline_cache : Array[GpuSsaoPipelineCacheEntry]
+  mut mesh3d_ssao_pending_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
   mut mesh3d_atmosphere_resource_revision : Int
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?

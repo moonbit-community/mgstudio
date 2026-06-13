@@ -565,6 +565,235 @@ fn ensure_mesh3d_ssao_pipeline_for_key(
 }
 
 ///|
+fn ssao_dispatch_group_count(value : Int, divisor : Int) -> UInt {
+  if value <= 0 {
+    1U
+  } else {
+    ((value + divisor - 1) / divisor).reinterpret_as_uint()
+  }
+}
+
+///|
+fn mesh3d_ssao_create_common_bind_group(
+  backend : GpuBackend,
+  pipelines : GpuSsaoPipelines,
+  view_buffer : @wgpu.Buffer,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_sampler(0U, pipelines.point_clamp_sampler) &&
+    builder.add_sampler(1U, pipelines.linear_clamp_sampler) &&
+    builder.add_buffer(2U, view_buffer, size=MESH3D_VIEW_BUFFER_SIZE)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(
+    builder.finish(
+      backend.device,
+      pipelines.common_bind_group_layout,
+      label="mgstudio_ssao_common_bind_group",
+    ),
+  )
+}
+
+///|
+fn mesh3d_ssao_create_preprocess_depth_bind_group(
+  backend : GpuBackend,
+  pipelines : GpuSsaoPipelines,
+  resources : GpuSsaoResources,
+  input_depth_view : @wgpu.TextureView,
+) -> @wgpu.BindGroup? {
+  if resources.preprocessed_depth_mip_views.length() < 5 {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
+  let ok = builder.add_texture_view(0U, input_depth_view) &&
+    builder.add_texture_view(1U, resources.preprocessed_depth_mip_views[0]) &&
+    builder.add_texture_view(2U, resources.preprocessed_depth_mip_views[1]) &&
+    builder.add_texture_view(3U, resources.preprocessed_depth_mip_views[2]) &&
+    builder.add_texture_view(4U, resources.preprocessed_depth_mip_views[3]) &&
+    builder.add_texture_view(5U, resources.preprocessed_depth_mip_views[4])
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(
+    builder.finish(
+      backend.device,
+      pipelines.preprocess_depth_bind_group_layout,
+      label="mgstudio_ssao_preprocess_depth_bind_group",
+    ),
+  )
+}
+
+///|
+fn mesh3d_ssao_create_ssao_bind_group(
+  backend : GpuBackend,
+  pipelines : GpuSsaoPipelines,
+  resources : GpuSsaoResources,
+  normal_view : @wgpu.TextureView,
+) -> @wgpu.BindGroup? {
+  guard backend.mesh3d_globals_buf is Some(globals_buf) else { return None }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
+  let ok = builder.add_texture_view(0U, resources.preprocessed_depth_view) &&
+    builder.add_texture_view(1U, normal_view) &&
+    builder.add_texture_view(2U, pipelines.hilbert_index_lut_view) &&
+    builder.add_texture_view(3U, resources.ssao_noisy_view) &&
+    builder.add_texture_view(4U, resources.depth_differences_view) &&
+    builder.add_buffer(5U, globals_buf, size=MESH3D_GLOBALS_BUFFER_SIZE) &&
+    builder.add_buffer(6U, resources.thickness_buffer, size=4UL)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(
+    builder.finish(
+      backend.device,
+      pipelines.ssao_bind_group_layout,
+      label="mgstudio_ssao_bind_group",
+    ),
+  )
+}
+
+///|
+fn mesh3d_ssao_create_spatial_denoise_bind_group(
+  backend : GpuBackend,
+  pipelines : GpuSsaoPipelines,
+  resources : GpuSsaoResources,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_texture_view(0U, resources.ssao_noisy_view) &&
+    builder.add_texture_view(1U, resources.depth_differences_view) &&
+    builder.add_texture_view(2U, resources.screen_space_ambient_occlusion_view)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(
+    builder.finish(
+      backend.device,
+      pipelines.spatial_denoise_bind_group_layout,
+      label="mgstudio_ssao_spatial_denoise_bind_group",
+    ),
+  )
+}
+
+///|
+fn mesh3d_dispatch_ssao_for_pass(
+  backend : GpuBackend,
+  pass_state : GpuPassState,
+  ssao_pipeline : @wgpu.ComputePipeline,
+) -> Unit {
+  if pass_kind_base_kind(pass_state.pass_kind) != 0 ||
+    pass_state.prepass_depth_texture_id < 0 ||
+    pass_state.prepass_normal_texture_id < 0 ||
+    pass_state.msaa_sample_count > 1 {
+    return
+  }
+  guard backend.mesh3d_ssao_resources is Some(resources) else { return }
+  guard backend.mesh3d_ssao_pipelines is Some(pipelines) else { return }
+  guard backend.frame is Some(frame) else { return }
+  guard find_prepass_depth_texture(backend, pass_state.prepass_depth_texture_id)
+    is Some(prepass_depth_texture) else {
+    return
+  }
+  guard target_view(
+      backend,
+      pass_state.prepass_normal_texture_id,
+      pass_state.target_layer,
+    )
+    is Some(normal_view) else {
+    return
+  }
+  guard mesh3d_pass_uniform_state_get_or_create(
+      backend,
+      pass_state,
+      0,
+      0,
+      pass_state.pass_kind,
+    )
+    is Some(pass_uniforms) else {
+    return
+  }
+  guard mesh3d_ssao_create_common_bind_group(
+      backend,
+      pipelines,
+      pass_uniforms.view_buffer,
+    )
+    is Some(common_bind_group) else {
+    return
+  }
+  guard mesh3d_ssao_create_preprocess_depth_bind_group(
+      backend,
+      pipelines,
+      resources,
+      prepass_depth_texture.view,
+    )
+    is Some(preprocess_depth_bind_group) else {
+    common_bind_group.release()
+    return
+  }
+  guard mesh3d_ssao_create_ssao_bind_group(
+      backend, pipelines, resources, normal_view,
+    )
+    is Some(ssao_bind_group) else {
+    common_bind_group.release()
+    preprocess_depth_bind_group.release()
+    return
+  }
+  guard mesh3d_ssao_create_spatial_denoise_bind_group(
+      backend, pipelines, resources,
+    )
+    is Some(spatial_denoise_bind_group) else {
+    common_bind_group.release()
+    preprocess_depth_bind_group.release()
+    ssao_bind_group.release()
+    return
+  }
+  let dispatch_width_16 = ssao_dispatch_group_count(resources.width, 16)
+  let dispatch_height_16 = ssao_dispatch_group_count(resources.height, 16)
+  let dispatch_width_8 = ssao_dispatch_group_count(resources.width, 8)
+  let dispatch_height_8 = ssao_dispatch_group_count(resources.height, 8)
+  let preprocess_pass = frame.encoder.begin_compute_pass()
+  preprocess_pass.set_pipeline(pipelines.preprocess_depth_pipeline)
+  preprocess_pass.set_bind_group(0U, preprocess_depth_bind_group, [])
+  preprocess_pass.set_bind_group(1U, common_bind_group, [])
+  preprocess_pass.dispatch_workgroups(dispatch_width_16, dispatch_height_16, 1U)
+  preprocess_pass.end()
+  preprocess_pass.release()
+  let ssao_pass = frame.encoder.begin_compute_pass()
+  ssao_pass.set_pipeline(ssao_pipeline)
+  ssao_pass.set_bind_group(0U, ssao_bind_group, [])
+  ssao_pass.set_bind_group(1U, common_bind_group, [])
+  ssao_pass.dispatch_workgroups(dispatch_width_8, dispatch_height_8, 1U)
+  ssao_pass.end()
+  ssao_pass.release()
+  let spatial_denoise_pass = frame.encoder.begin_compute_pass()
+  spatial_denoise_pass.set_pipeline(pipelines.spatial_denoise_pipeline)
+  spatial_denoise_pass.set_bind_group(0U, spatial_denoise_bind_group, [])
+  spatial_denoise_pass.set_bind_group(1U, common_bind_group, [])
+  spatial_denoise_pass.dispatch_workgroups(
+    dispatch_width_8, dispatch_height_8, 1U,
+  )
+  spatial_denoise_pass.end()
+  spatial_denoise_pass.release()
+  common_bind_group.release()
+  preprocess_depth_bind_group.release()
+  ssao_bind_group.release()
+  spatial_denoise_bind_group.release()
+}
+
+///|
+fn mesh3d_dispatch_pending_ssao_for_pass(
+  backend : GpuBackend,
+  pass_state : GpuPassState,
+) -> Unit {
+  guard backend.mesh3d_ssao_pending_pipeline is Some(pipeline) else { return }
+  backend.mesh3d_ssao_pending_pipeline = None
+  mesh3d_dispatch_ssao_for_pass(backend, pass_state, pipeline)
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_ssao_resources(
   self : GpuBackend,
   width : Int,
@@ -637,9 +866,11 @@ pub fn GpuBackend::prepare_mesh3d_ssao_pipeline(
 ) -> Unit raise GpuBackendError {
   let depth_format = tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT)
   ensure_mesh3d_ssao_pipelines(self, depth_format)
-  ignore(
+  match
     ensure_mesh3d_ssao_pipeline_for_key(
       self, quality_level, custom_slice_count, custom_samples_per_slice_side, temporal_jitter,
-    ),
-  )
+    ) {
+    Some(pipeline) => self.mesh3d_ssao_pending_pipeline = Some(pipeline)
+    None => ()
+  }
 }

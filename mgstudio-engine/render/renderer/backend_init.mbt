@@ -560,6 +560,7 @@ pub fn GpuBackend::new(
     mesh3d_ssao_resource_revision: 0,
     mesh3d_ssao_pipelines: None,
     mesh3d_ssao_pipeline_cache: [],
+    mesh3d_ssao_pending_pipeline: None,
     mesh3d_atmosphere_resources: None,
     mesh3d_atmosphere_resource_revision: 0,
     mesh3d_scattering_medium_resources: None,
