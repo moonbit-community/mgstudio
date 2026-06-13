@@ -47,6 +47,8 @@ pub fn core_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn core_pipeline_plugin_with(@app.App[@ecs.World], CorePipelinePlugin) -> @app.App[@ecs.World]
 
+pub fn draw_skybox(@light.Skybox, Float) -> Unit
+
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@deferred.DeferredPrepass]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@prepass.DepthPrepass]

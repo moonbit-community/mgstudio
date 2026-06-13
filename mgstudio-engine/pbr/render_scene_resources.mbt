@@ -467,32 +467,3 @@ fn render3d_camera_apply_environment_map_lighting(
     ),
   }
 }
-
-///|
-fn render3d_draw_camera_skybox(
-  camera : ExtractedCamera3d,
-  camera_exposure_value : Float,
-) -> Unit {
-  guard camera.payload.skybox is Some(skybox) else { return }
-  guard skybox.image is Some(image) else { return }
-  let skybox_texture_id = image.id()
-  if skybox_texture_id < 0 ||
-    !@render.asset_is_texture_loaded(texture_id=skybox_texture_id) {
-    return
-  }
-  let brightness = @pbr_render.maxf(
-    0.0F,
-    skybox.brightness * camera_exposure_value,
-  )
-  let skybox_rotation_inverse = @pbr_render.render3d_quat_inverse(
-    skybox.rotation,
-  )
-  @render.host_gpu_draw_skybox(
-    texture_id=skybox_texture_id,
-    brightness~,
-    rotation_x=skybox_rotation_inverse.x,
-    rotation_y=skybox_rotation_inverse.y,
-    rotation_z=skybox_rotation_inverse.z,
-    rotation_w=skybox_rotation_inverse.w,
-  )
-}

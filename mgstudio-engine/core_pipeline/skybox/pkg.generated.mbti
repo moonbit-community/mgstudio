@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/core_pipeline/skybox"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
 }
 
@@ -15,6 +16,8 @@ pub const SKYBOX_PREPASS_BIND_GROUP_LABEL : String = "skybox_prepass_bind_group"
 pub const SKYBOX_PREPASS_LABEL : String = "skybox_prepass"
 
 pub const SKYBOX_PREPASS_PIPELINE_LABEL : String = "skybox_prepass_pipeline"
+
+pub fn draw_skybox(@light.Skybox, Float) -> Unit
 
 pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState]
 

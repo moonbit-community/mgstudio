@@ -847,7 +847,10 @@ fn render3d_execute_camera_main_pass(
   )
   render3d_draw_mesh_gpu_binned_phase(main_phase)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
-  render3d_draw_camera_skybox(extracted_camera, camera_exposure_value)
+  match extracted_camera.payload.skybox {
+    Some(skybox) => @core_pipeline.draw_skybox(skybox, camera_exposure_value)
+    None => ()
+  }
   @render.host_gpu_end_pass()
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,

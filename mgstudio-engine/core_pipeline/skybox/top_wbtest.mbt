@@ -62,3 +62,19 @@ test "skybox: uniforms match Bevy brightness and inverse-rotation transform" {
     content="true",
   )
 }
+
+///|
+test "skybox: draw params come from image, exposure, and inverse rotation" {
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(11)
+  let skybox = @light.Skybox::new(image, 4.0F).with_rotation(
+    @math.Quat::new(0.25F, 0.0F, 0.0F, 1.0F),
+  )
+  guard skybox_draw_params(skybox, 0.5F) is Some(params) else {
+    abort("expected skybox draw params")
+  }
+
+  debug_inspect(params.texture_id, content="11")
+  debug_inspect(skybox_test_approx(params.brightness, 2.0F), content="true")
+  debug_inspect(skybox_test_approx(params.rotation.x, -0.25F), content="true")
+  debug_inspect(skybox_test_approx(params.rotation.w, 1.0F), content="true")
+}

@@ -104,6 +104,11 @@ pub fn tonemapping_luts_from_world_or_init(
 }
 
 ///|
+pub fn draw_skybox(skybox : Skybox, camera_exposure_value : Float) -> Unit {
+  @skybox.draw_skybox(skybox, camera_exposure_value)
+}
+
+///|
 fn core_pipeline_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {

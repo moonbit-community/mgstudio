@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/core_pipeline/mip_generation",
   "Milky2018/mgstudio/core_pipeline/oit",
   "Milky2018/mgstudio/core_pipeline/prepass",
+  "Milky2018/mgstudio/core_pipeline/skybox",
   "Milky2018/mgstudio/core_pipeline/tonemapping",
   "Milky2018/mgstudio/core_pipeline/upscaling",
   "Milky2018/mgstudio/light",

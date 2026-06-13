@@ -126,6 +126,49 @@ pub fn skybox_should_prepare_bind_group(state : SkyboxPrepareViewState) -> Bool 
 }
 
 ///|
+priv struct SkyboxDrawParams {
+  texture_id : Int
+  brightness : Float
+  rotation : @math.Quat
+}
+
+///|
+fn skybox_draw_params(
+  skybox : @light.Skybox,
+  camera_exposure_value : Float,
+) -> SkyboxDrawParams? {
+  guard skybox.image is Some(image) else { return None }
+  let texture_id = image.id()
+  guard texture_id >= 0 else { return None }
+  Some(SkyboxDrawParams::{
+    texture_id,
+    brightness: skybox.brightness * camera_exposure_value,
+    rotation: skybox.rotation.inverse(),
+  })
+}
+
+///|
+pub fn draw_skybox(
+  skybox : @light.Skybox,
+  camera_exposure_value : Float,
+) -> Unit {
+  guard skybox_draw_params(skybox, camera_exposure_value) is Some(params) else {
+    return
+  }
+  if !@render.asset_is_texture_loaded(texture_id=params.texture_id) {
+    return
+  }
+  @render.host_gpu_draw_skybox(
+    texture_id=params.texture_id,
+    brightness=params.brightness,
+    rotation_x=params.rotation.x,
+    rotation_y=params.rotation.y,
+    rotation_z=params.rotation.z,
+    rotation_w=params.rotation.w,
+  )
+}
+
+///|
 priv struct SkyboxUniforms {
   brightness : Float
   transform : Array[Float]
