@@ -24,20 +24,17 @@ const PI : Float = 3.141592653589793F
 const TWO_PI : Float = 6.283185307179586F
 
 ///|
-priv struct RotateEnvState {
-  mut camera : @core.Entity?
-}
-
-///|
-let rotate_env_state : Ref[RotateEnvState] = Ref({ camera: None })
-
-///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
+fn create_sphere_mesh(
+  meshes : @asset.Assets[@mesh.Mesh],
+) -> @asset.Handle[@mesh.Mesh] {
+  let radius = 1.0F
+  let stacks = 24
+  let sectors = 40
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -85,20 +82,17 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
   geometry.generate_tangents() |> ignore
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
-    }),
-  )
+  meshes.add(@mesh.Mesh::from_3d_geometry(geometry))
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  rotate_env_state.val.camera = None
-
-  let asset_server = @asset.AssetServer::new()
-
-  let sphere_material = @pbr.standard_material_add(
+fn spawn_sphere(
+  commands : @app.Commands,
+  materials : @asset.Assets[@pbr.StandardMaterial],
+  asset_server : @asset.AssetServer,
+  sphere_mesh : @asset.Handle[@mesh.Mesh],
+) -> Unit {
+  let sphere_material = materials.add(
     @pbr.StandardMaterial::from_color(
       @color.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
@@ -116,87 +110,97 @@ fn setup(world : @ecs.World) -> Unit {
     .with_metallic(0.9F)
     .with_perceptual_roughness(0.1F),
   )
-  @pbr.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(1.0F, 24, 40),
-    @pbr.MeshMaterial3d::new(sphere_material),
-    @transform.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight().with_intensity(100_000.0F),
-  )
-  let camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::Camera(),
-    @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
-      fov: 27.0F * PI / 180.0F,
-    }),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
-  ).spawn(world)
-  rotate_env_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::AcesFitted,
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(
-      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
-      5000.0F,
-    ),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
-      2000.0F,
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3d::new(sphere_material),
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
+      ),
     ),
   )
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None =>
-      abort("Missing Time<Unit> resource in rotate_environment_map example")
-  }
+fn spawn_light(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::PointLight()
+        .with_color(@color.Color::white())
+        .with_intensity(100_000.0F),
+        @transform.Transform::identity(),
+      ),
+    ),
+  )
 }
 
 ///|
-fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
-  let now = world_time(world).elapsed_seconds()
+fn spawn_camera(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let camera = commands.spawn(
+    (
+      @camera.Camera3d::Camera3d(),
+      @pbr.Hdr::Hdr(),
+      @camera_camera.Camera::Camera(),
+      @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
+        ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
+        fov: 27.0F * PI / 180.0F,
+      }),
+      @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
+      @post_process.Tonemapping::AcesFitted,
+      @pbr.Skybox::new(
+        asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+        5000.0F,
+      ),
+      @pbr.EnvironmentMapLight::new(
+        Some(
+          asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+        ),
+        Some(
+          asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+        ),
+        2000.0F,
+      ),
+    ),
+  )
+  ignore(camera)
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let sphere_mesh = create_sphere_mesh(meshes.peek())
+  spawn_sphere(commands, materials.peek(), asset_server.get(), sphere_mesh)
+  spawn_light(commands)
+  spawn_camera(commands, asset_server.get())
+}
+
+///|
+fn rotate_skybox_and_environment_map(
+  environments : @ecs.Query[
+    (@ecs.Write[@pbr.Skybox], @ecs.Write[@pbr.EnvironmentMapLight]),
+    @ecs.All,
+  ],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let now = time.get().elapsed_seconds()
   let angle = 0.2F * now
   let rotation = @math.Quat::from_rotation_y(angle)
-
-  if rotate_env_state.val.camera is Some(camera_entity) {
-    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_skybox))
-      is Some(skybox) {
-      try! (world.replace(
-        camera_entity,
-        @pbr.ecs_key_skybox,
-        skybox.with_rotation(rotation),
-      )
-      |> ignore)
-    }
-    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_environment_map_light))
-      is Some(environment_map_light) {
-      try! (world.replace(
-        camera_entity,
-        @pbr.ecs_key_environment_map_light,
-        environment_map_light.with_rotation(rotation),
-      )
-      |> ignore)
-    }
+  environments.view(fn(_entity, pair) {
+    let (skybox, environment_map_light) = pair
+    skybox.set(skybox.value().with_rotation(rotation))
+    environment_map_light.set(
+      environment_map_light.value().with_rotation(rotation),
+    )
+  }) catch {
+    _ => return
   }
 }
 
@@ -204,7 +208,7 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, rotate_skybox_and_environment_map)
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param2(@app.Update, rotate_skybox_and_environment_map)
   .run()
 }
