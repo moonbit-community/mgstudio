@@ -59,6 +59,47 @@ fn test_cluster_offsets_has_point_light(
 }
 
 ///|
+fn test_cluster_offsets_has_decal(bytes : Bytes, cluster_count : Int) -> Bool {
+  let mut cluster_index = 0
+  while cluster_index < cluster_count {
+    if test_u32le_at(bytes, cluster_index * 32 + 20) > 0U {
+      return true
+    }
+    cluster_index += 1
+  }
+  false
+}
+
+///|
+fn test_cluster_decal_index_matches(
+  offsets : Bytes,
+  indices : Bytes,
+  cluster_count : Int,
+  expected_index : UInt,
+) -> Bool {
+  let mut cluster_index = 0
+  while cluster_index < cluster_count {
+    let cluster_offset = cluster_index * 32
+    let base = test_u32le_at(offsets, cluster_offset).reinterpret_as_int()
+    let point_count = test_u32le_at(offsets, cluster_offset + 4).reinterpret_as_int()
+    let spot_count = test_u32le_at(offsets, cluster_offset + 8).reinterpret_as_int()
+    let reflection_count = test_u32le_at(offsets, cluster_offset + 12).reinterpret_as_int()
+    let irradiance_count = test_u32le_at(offsets, cluster_offset + 16).reinterpret_as_int()
+    let decal_count = test_u32le_at(offsets, cluster_offset + 20).reinterpret_as_int()
+    if decal_count > 0 {
+      let decal_offset = base +
+        point_count +
+        spot_count +
+        reflection_count +
+        irradiance_count
+      return test_u32le_at(indices, decal_offset * 4) == expected_index
+    }
+    cluster_index += 1
+  }
+  false
+}
+
+///|
 fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
   @hierarchy.hierarchy_install_component_metadata()
   @transform.transform_install_component_metadata()
@@ -882,6 +923,73 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
   inspect(indices.length(), content="65536")
   inspect(offsets.length(), content="131072")
   inspect(test_cluster_offsets_has_point_light(offsets, 3456), content="true")
+}
+
+///|
+test "pbr render light: storage cluster buffers include clustered decal ranges" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  )
+  |> ignore)
+  let decal = world.spawn()
+  try! (world.set_by_key(
+    decal,
+    @light.ecs_key_clustered_decal,
+    @light.ClusteredDecal::ClusteredDecal(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    decal,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
+      @math.Vec3::new(4.0F, 4.0F, 4.0F),
+    ),
+  )
+  |> ignore)
+
+  light_test_propagate_transforms(world)
+  @light_cluster.cluster_assign_lights_system(world)
+  let render_decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
+  let decal_index = render_decals.insert_decal(
+    decal,
+    @pbr_decal.ClusteredDecal::ClusteredDecal(),
+  )
+  world.insert_resource(
+    @pbr_decal.ecs_key_render_clustered_decals, render_decals,
+  )
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clusterable_object_index_lists_bytes is Some(indices) else {
+    inspect("missing", content="indices")
+    return
+  }
+  guard lighting.gpu_cluster_offsets_and_counts_bytes is Some(offsets) else {
+    inspect("missing", content="offsets")
+    return
+  }
+
+  inspect(test_cluster_offsets_has_decal(offsets, 3456), content="true")
+  inspect(
+    test_cluster_decal_index_matches(
+      offsets,
+      indices,
+      3456,
+      decal_index.reinterpret_as_uint(),
+    ),
+    content="true",
+  )
 }
 
 ///|

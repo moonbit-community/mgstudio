@@ -97,6 +97,7 @@ pub struct DecalsBuffer {
 }
 pub fn DecalsBuffer::DecalsBuffer() -> Self
 pub fn DecalsBuffer::clear(Self) -> Unit
+pub fn DecalsBuffer::gpu_words(Self) -> Array[UInt]
 pub fn DecalsBuffer::is_empty(Self) -> Bool
 pub fn DecalsBuffer::push(Self, RenderClusteredDecal) -> Unit
 pub impl @app.Resource for DecalsBuffer
@@ -138,13 +139,15 @@ pub struct RenderClusteredDecal {
   normal_map_texture_index : Int
   metallic_roughness_texture_index : Int
   emissive_texture_index : Int
+  world_position : @math.Vec3
+  bounding_sphere_radius : Float
   tag : Int
   pad_a : Int
   pad_b : Int
   pad_c : Int
 }
 pub fn RenderClusteredDecal::RenderClusteredDecal() -> Self
-pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, Int) -> Self
+pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, Int, world_position? : @math.Vec3, bounding_sphere_radius? : Float) -> Self
 
 pub struct RenderClusteredDecals {
   binding_index_to_textures : Array[Int]
@@ -157,7 +160,8 @@ pub fn RenderClusteredDecals::clear(Self) -> Unit
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int
-pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, @light.ClusteredDecal, @math.Affine3) -> Int
+pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, @light.ClusteredDecal, @math.Affine3, world_position? : @math.Vec3, bounding_sphere_radius? : Float) -> Int
+pub fn RenderClusteredDecals::texture_ids(Self) -> Array[Int]
 pub impl @app.Resource for RenderClusteredDecals
 
 pub struct RenderViewClusteredDecalBindGroupEntries {

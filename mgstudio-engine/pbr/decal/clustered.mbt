@@ -28,6 +28,8 @@ pub struct RenderClusteredDecal {
   normal_map_texture_index : Int
   metallic_roughness_texture_index : Int
   emissive_texture_index : Int
+  world_position : @math.Vec3
+  bounding_sphere_radius : Float
   tag : Int
   pad_a : Int
   pad_b : Int
@@ -42,6 +44,8 @@ pub fn RenderClusteredDecal::new(
   metallic_roughness_texture_index : Int,
   emissive_texture_index : Int,
   tag : Int,
+  world_position? : @math.Vec3 = @math.Vec3::zero(),
+  bounding_sphere_radius? : Float = 0.0F,
 ) -> RenderClusteredDecal {
   RenderClusteredDecal::{
     local_from_world,
@@ -49,6 +53,8 @@ pub fn RenderClusteredDecal::new(
     normal_map_texture_index,
     metallic_roughness_texture_index,
     emissive_texture_index,
+    world_position,
+    bounding_sphere_radius,
     tag: if tag < 0 {
       0
     } else {
@@ -126,6 +132,8 @@ pub fn RenderClusteredDecals::insert_decal_with_local_from_world(
   entity : @core.Entity,
   decal : ClusteredDecal,
   local_from_world : @math.Affine3,
+  world_position? : @math.Vec3 = @math.Vec3::zero(),
+  bounding_sphere_radius? : Float = 0.0F,
 ) -> Int {
   let base_color_texture_index = match decal.base_color_texture_id() {
     Some(texture_id) => self.get_or_insert_texture(texture_id)
@@ -153,6 +161,8 @@ pub fn RenderClusteredDecals::insert_decal_with_local_from_world(
       metallic_roughness_texture_index,
       emissive_texture_index,
       decal.tag,
+      world_position~,
+      bounding_sphere_radius~,
     ),
   )
   self.entity_to_decal_index.set(entity.id, decal_index)
@@ -256,6 +266,87 @@ pub fn DecalsBuffer::push(
 ///|
 pub fn DecalsBuffer::is_empty(self : DecalsBuffer) -> Bool {
   self.decals.length() == 0
+}
+
+///|
+fn render_clustered_decal_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render_clustered_decal_push_i32(words : Array[UInt], value : Int) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render_clustered_decal_push_u32(words : Array[UInt], value : UInt) -> Unit {
+  words.push(value)
+}
+
+///|
+fn render_clustered_decal_push_affine3(
+  words : Array[UInt],
+  affine : @math.Affine3,
+) -> Unit {
+  render_clustered_decal_push_f32(words, affine.matrix3.x_axis.x)
+  render_clustered_decal_push_f32(words, affine.matrix3.x_axis.y)
+  render_clustered_decal_push_f32(words, affine.matrix3.x_axis.z)
+  render_clustered_decal_push_f32(words, 0.0F)
+  render_clustered_decal_push_f32(words, affine.matrix3.y_axis.x)
+  render_clustered_decal_push_f32(words, affine.matrix3.y_axis.y)
+  render_clustered_decal_push_f32(words, affine.matrix3.y_axis.z)
+  render_clustered_decal_push_f32(words, 0.0F)
+  render_clustered_decal_push_f32(words, affine.matrix3.z_axis.x)
+  render_clustered_decal_push_f32(words, affine.matrix3.z_axis.y)
+  render_clustered_decal_push_f32(words, affine.matrix3.z_axis.z)
+  render_clustered_decal_push_f32(words, 0.0F)
+  render_clustered_decal_push_f32(words, affine.translation.x)
+  render_clustered_decal_push_f32(words, affine.translation.y)
+  render_clustered_decal_push_f32(words, affine.translation.z)
+  render_clustered_decal_push_f32(words, 1.0F)
+}
+
+///|
+fn render_clustered_decal_push_gpu_words(
+  words : Array[UInt],
+  decal : RenderClusteredDecal,
+) -> Unit {
+  render_clustered_decal_push_affine3(words, decal.local_from_world)
+  render_clustered_decal_push_i32(words, decal.base_color_texture_index)
+  render_clustered_decal_push_i32(words, decal.normal_map_texture_index)
+  render_clustered_decal_push_i32(words, decal.metallic_roughness_texture_index)
+  render_clustered_decal_push_i32(words, decal.emissive_texture_index)
+  render_clustered_decal_push_f32(words, decal.world_position.x)
+  render_clustered_decal_push_f32(words, decal.world_position.y)
+  render_clustered_decal_push_f32(words, decal.world_position.z)
+  render_clustered_decal_push_f32(words, decal.bounding_sphere_radius)
+  render_clustered_decal_push_u32(words, decal.tag.reinterpret_as_uint())
+  render_clustered_decal_push_u32(words, decal.pad_a.reinterpret_as_uint())
+  render_clustered_decal_push_u32(words, decal.pad_b.reinterpret_as_uint())
+  render_clustered_decal_push_u32(words, decal.pad_c.reinterpret_as_uint())
+}
+
+///|
+pub fn DecalsBuffer::gpu_words(self : DecalsBuffer) -> Array[UInt] {
+  let words : Array[UInt] = []
+  if self.decals.length() == 0 {
+    render_clustered_decal_push_gpu_words(
+      words,
+      RenderClusteredDecal::RenderClusteredDecal(),
+    )
+    return words
+  }
+  for decal in self.decals {
+    render_clustered_decal_push_gpu_words(words, decal)
+  }
+  words
+}
+
+///|
+pub fn RenderClusteredDecals::texture_ids(
+  self : RenderClusteredDecals,
+) -> Array[Int] {
+  self.binding_index_to_textures.copy()
 }
 
 ///|
@@ -401,8 +492,49 @@ fn clustered_decal_local_from_world(
 ) -> @math.Affine3 {
   match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
     Some(global_transform) => global_transform.affine().inverse()
-    None => @math.Affine3::identity()
+    None =>
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(transform) =>
+          @transform.GlobalTransform::from_transform(transform)
+          .affine()
+          .inverse()
+        None => @math.Affine3::identity()
+      }
   }
+}
+
+///|
+fn clustered_decal_world_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => global_transform.compute_transform()
+    None =>
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(transform) => transform
+        None => @transform.Transform::Transform()
+      }
+  }
+}
+
+///|
+fn clustered_decal_insert_render_decal(
+  world : @ecs.World,
+  render_decals : RenderClusteredDecals,
+  entity : @core.Entity,
+  decal : ClusteredDecal,
+) -> Unit {
+  let transform = clustered_decal_world_transform(world, entity)
+  ignore(
+    render_decals.insert_decal_with_local_from_world(
+      entity,
+      decal,
+      clustered_decal_local_from_world(world, entity),
+      world_position=transform.translation,
+      bounding_sphere_radius=transform.scale.length(),
+    ),
+  )
 }
 
 ///|
@@ -414,12 +546,8 @@ fn clustered_decal_extract_scene_decals(
     if !clustered_decal_is_view_visible(source_world, entity) {
       return
     }
-    ignore(
-      render_decals.insert_decal_with_local_from_world(
-        entity,
-        decal,
-        clustered_decal_local_from_world(source_world, entity),
-      ),
+    clustered_decal_insert_render_decal(
+      source_world, render_decals, entity, decal,
     )
   })
 }
@@ -436,13 +564,12 @@ fn clustered_decal_extract_spot_light_textures(
     if !clustered_decal_is_view_visible(source_world, entity) {
       return
     }
-    ignore(
-      render_decals.insert_decal_with_local_from_world(
-        entity,
-        @light.ClusteredDecal::ClusteredDecal().with_base_color_texture(
-          texture.image,
-        ),
-        clustered_decal_local_from_world(source_world, entity),
+    clustered_decal_insert_render_decal(
+      source_world,
+      render_decals,
+      entity,
+      @light.ClusteredDecal::ClusteredDecal().with_base_color_texture(
+        texture.image,
       ),
     )
   })
@@ -460,14 +587,13 @@ fn clustered_decal_extract_point_light_textures(
     if !clustered_decal_is_view_visible(source_world, entity) {
       return
     }
-    ignore(
-      render_decals.insert_decal_with_local_from_world(
-        entity,
-        @light.ClusteredDecal::ClusteredDecal()
-        .with_base_color_texture(texture.image)
-        .with_tag(clustered_decal_cubemap_layout_tag(texture.cubemap_layout)),
-        clustered_decal_local_from_world(source_world, entity),
-      ),
+    clustered_decal_insert_render_decal(
+      source_world,
+      render_decals,
+      entity,
+      @light.ClusteredDecal::ClusteredDecal()
+      .with_base_color_texture(texture.image)
+      .with_tag(clustered_decal_cubemap_layout_tag(texture.cubemap_layout)),
     )
   })
 }
@@ -484,14 +610,13 @@ fn clustered_decal_extract_directional_light_textures(
     if !clustered_decal_is_view_visible(source_world, entity) {
       return
     }
-    ignore(
-      render_decals.insert_decal_with_local_from_world(
-        entity,
-        @light.ClusteredDecal::ClusteredDecal()
-        .with_base_color_texture(texture.image)
-        .with_tag(if texture.tiled { 1 } else { 0 }),
-        clustered_decal_local_from_world(source_world, entity),
-      ),
+    clustered_decal_insert_render_decal(
+      source_world,
+      render_decals,
+      entity,
+      @light.ClusteredDecal::ClusteredDecal()
+      .with_base_color_texture(texture.image)
+      .with_tag(if texture.tiled { 1 } else { 0 }),
     )
   })
 }

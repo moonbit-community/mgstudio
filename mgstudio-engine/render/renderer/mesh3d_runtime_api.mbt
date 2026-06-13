@@ -922,6 +922,16 @@ pub fn prepare_mesh3d_material_bind_group(
 }
 
 ///|
+pub fn prepare_mesh3d_clustered_decals(
+  decal_words~ : Array[UInt],
+  texture_ids~ : Array[Int],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_clustered_decals(decal_words, texture_ids)
+  }
+}
+
+///|
 pub fn prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,

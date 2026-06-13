@@ -323,6 +323,8 @@ pub fn prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albe
 
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
+pub fn prepare_mesh3d_clustered_decals(decal_words~ : Array[UInt], texture_ids~ : Array[Int]) -> Unit
+
 pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
 
 pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, anisotropy_texture_id~ : Int, specular_tint_texture_id~ : Int) -> Unit
@@ -628,6 +630,10 @@ pub struct GpuBackend {
   mut mesh3d_clustered_lights_buf : @wgpu_mbt.Buffer?
   mut mesh3d_clusterable_object_index_lists_buf : @wgpu_mbt.Buffer?
   mut mesh3d_cluster_offsets_and_counts_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_clustered_decals_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_clustered_decals_capacity : UInt64
+  mut mesh3d_clustered_decals_revision : Int
+  mesh3d_clustered_decal_texture_ids : Array[Int]
   mut mesh3d_globals_buf : @wgpu_mbt.Buffer?
   mut mesh3d_fog_buf : @wgpu_mbt.Buffer?
   mut mesh3d_light_probes_buf : @wgpu_mbt.Buffer?
@@ -1036,6 +1042,7 @@ pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
+pub fn GpuBackend::prepare_mesh3d_clustered_decals(Self, Array[UInt], Array[Int]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_morph_bindings(Self, Array[Float]) -> Unit
@@ -1624,6 +1631,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
+  clustered_decals_revision : Int
   bind_group : @wgpu_mbt.BindGroup
   binding_arrays_bind_group : @wgpu_mbt.BindGroup
 }

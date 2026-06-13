@@ -56,14 +56,15 @@ test "pbr/render mesh bindings: prepare phase builds bevy mesh bind group famili
     morphed_skinned_motion.layout_name(),
     content="morphed_skinned_motion_mesh_layout",
   )
-  inspect(morphed_skinned_motion.binding_count(), content="6")
+  inspect(morphed_skinned_motion.binding_count(), content="7")
   let bindings = morphed_skinned_motion.bindings()
   inspect(bindings[0].1, content="0")
   inspect(bindings[1].1, content="1")
   inspect(bindings[2].1, content="2")
   inspect(bindings[3].1, content="3")
-  inspect(bindings[4].1, content="6")
-  inspect(bindings[5].1, content="7")
+  inspect(bindings[4].1, content="8")
+  inspect(bindings[5].1, content="6")
+  inspect(bindings[6].1, content="7")
 }
 
 ///|
@@ -130,5 +131,5 @@ test "pbr/render mesh bindings: dynamic offsets follow SetMeshBindGroup order" {
     motion_vectors=true,
     skins_use_uniform_buffers=false,
   )
-  debug_inspect(storage_skin_offsets, content="[128, 0]")
+  debug_inspect(storage_skin_offsets, content="[]")
 }

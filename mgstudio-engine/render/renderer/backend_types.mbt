@@ -155,6 +155,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
+  clustered_decals_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
 }
@@ -190,6 +191,7 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
+  clustered_decals_revision : Int
   bind_group : @wgpu.BindGroup
   binding_arrays_bind_group : @wgpu.BindGroup
 }

@@ -1435,8 +1435,9 @@ pub struct PbrMaterialDrawFunctionIds {
 pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
 }
-pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
+pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool, clustered_decals_are_usable? : Bool) -> Self
 pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {

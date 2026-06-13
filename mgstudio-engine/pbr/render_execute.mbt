@@ -282,6 +282,7 @@ fn render3d_prepare_extracted_camera_view_bind_group(
   camera : ExtractedCamera3d,
 ) -> Unit {
   let environment_map_state = render3d_camera_environment_map_state(camera)
+  @render.host_gpu_prepare_mesh3d_clustered_decals(decal_words=[], texture_ids=[])
   @render.host_gpu_prepare_mesh3d_view_bind_group(
     transmission_source_texture_id=-1,
     point_shadow_texture_id=-1,

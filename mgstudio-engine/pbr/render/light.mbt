@@ -557,6 +557,21 @@ fn render3d_clustered_light_index(
 }
 
 ///|
+fn render3d_clustered_decal_index(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  match world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
+    Some(decals) =>
+      match decals.get_decal_index(entity) {
+        Some(index) => index
+        None => -1
+      }
+    None => -1
+  }
+}
+
+///|
 fn render3d_lights_push_clustered_light(
   words : Array[UInt],
   item : ExtractedClusterablePointLight3d?,
@@ -695,6 +710,9 @@ fn render3d_gpu_cluster_buffers(
   for cluster_index in 0..<MAX_STORAGE_BUFFER_CLUSTERS {
     let point_indices : Array[UInt] = []
     let spot_indices : Array[UInt] = []
+    let reflection_probe_indices : Array[UInt] = []
+    let irradiance_volume_indices : Array[UInt] = []
+    let decal_indices : Array[UInt] = []
     if cluster_index < cluster_objects.length() {
       for entity in cluster_objects[cluster_index].iter() {
         let light_index = render3d_clustered_light_index(
@@ -706,15 +724,32 @@ fn render3d_gpu_cluster_buffers(
           } else {
             point_indices.push(light_index.reinterpret_as_uint())
           }
+        } else if (try! world.contains_by_key(
+            entity, @light.ecs_key_environment_map_light,
+          )) {
+          reflection_probe_indices.push(0xFFFF_FFFFU)
+        } else if (try! world.contains_by_key(
+            entity, @light.ecs_key_irradiance_volume,
+          )) {
+          irradiance_volume_indices.push(0xFFFF_FFFFU)
+        } else if (try! world.contains_by_key(
+            entity, @light.ecs_key_clustered_decal,
+          )) {
+          let decal_index = render3d_clustered_decal_index(world, entity)
+          if decal_index >= 0 {
+            decal_indices.push(decal_index.reinterpret_as_uint())
+          } else {
+            decal_indices.push(0xFFFF_FFFFU)
+          }
         }
       }
     }
     offset_words.push(next_index_offset.reinterpret_as_uint())
     offset_words.push(point_indices.length().reinterpret_as_uint())
     offset_words.push(spot_indices.length().reinterpret_as_uint())
-    offset_words.push(0U)
-    offset_words.push(0U)
-    offset_words.push(0U)
+    offset_words.push(reflection_probe_indices.length().reinterpret_as_uint())
+    offset_words.push(irradiance_volume_indices.length().reinterpret_as_uint())
+    offset_words.push(decal_indices.length().reinterpret_as_uint())
     offset_words.push(0U)
     offset_words.push(0U)
     for index in point_indices {
@@ -724,6 +759,24 @@ fn render3d_gpu_cluster_buffers(
       }
     }
     for index in spot_indices {
+      if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+        index_words.push(index)
+        next_index_offset += 1
+      }
+    }
+    for index in reflection_probe_indices {
+      if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+        index_words.push(index)
+        next_index_offset += 1
+      }
+    }
+    for index in irradiance_volume_indices {
+      if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+        index_words.push(index)
+        next_index_offset += 1
+      }
+    }
+    for index in decal_indices {
       if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
         index_words.push(index)
         next_index_offset += 1

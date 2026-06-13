@@ -421,6 +421,9 @@ fn mesh3d_add_binding_array_layout_entry(
   environment_diffuse_sample_view : @wgpu.TextureView,
   environment_specular_sample_view : @wgpu.TextureView,
   environment_sampler : @wgpu.Sampler,
+  clustered_decals_buf : @wgpu.Buffer,
+  clustered_decal_texture_views : Array[@wgpu.TextureView],
+  clustered_decal_sampler : @wgpu.Sampler,
 ) -> Bool {
   if entry.binding() < 0 {
     return false
@@ -439,6 +442,19 @@ fn mesh3d_add_binding_array_layout_entry(
       mesh3d_add_sampler_for_layout_entry(
         builder, binding, environment_sampler, entry,
       )
+    5 => builder.add_buffer(binding, clustered_decals_buf)
+    6 =>
+      if clustered_decal_texture_views.length() > 1 {
+        builder.add_texture_view_array(binding, clustered_decal_texture_views)
+      } else if clustered_decal_texture_views.length() == 1 {
+        builder.add_texture_view(binding, clustered_decal_texture_views[0])
+      } else {
+        false
+      }
+    7 =>
+      mesh3d_add_sampler_for_layout_entry(
+        builder, binding, clustered_decal_sampler, entry,
+      )
     _ => false
   }
 }
@@ -451,6 +467,9 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   environment_diffuse_sample_view : @wgpu.TextureView,
   environment_specular_sample_view : @wgpu.TextureView,
   environment_sampler : @wgpu.Sampler,
+  clustered_decals_buf : @wgpu.Buffer,
+  clustered_decal_texture_views : Array[@wgpu.TextureView],
+  clustered_decal_sampler : @wgpu.Sampler,
   error_message : String,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let entries = descriptor.entries()
@@ -460,7 +479,8 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   for entry in entries {
     if !mesh3d_add_binding_array_layout_entry(
         builder, entry, environment_diffuse_sample_view, environment_specular_sample_view,
-        environment_sampler,
+        environment_sampler, clustered_decals_buf, clustered_decal_texture_views,
+        clustered_decal_sampler,
       ) {
       builder.free()
       fatal(
@@ -501,6 +521,81 @@ fn mesh3d_ssao_resource_revision(backend : GpuBackend) -> Int {
     Some(resources) => resources.revision
     None => 0
   }
+}
+
+///|
+fn mesh3d_clustered_decals_default_words() -> Array[UInt] {
+  [
+    1.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    1.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    1.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    1.0F.reinterpret_as_uint(),
+    (-1).reinterpret_as_uint(),
+    (-1).reinterpret_as_uint(),
+    (-1).reinterpret_as_uint(),
+    (-1).reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0.0F.reinterpret_as_uint(),
+    0U,
+    0U,
+    0U,
+    0U,
+  ]
+}
+
+///|
+fn ensure_mesh3d_clustered_decals_buffer(backend : GpuBackend) -> @wgpu.Buffer {
+  match backend.mesh3d_clustered_decals_buf {
+    Some(buffer) => buffer
+    None => {
+      let bytes = u32le_pack(mesh3d_clustered_decals_default_words())
+      let buffer = backend.device.create_buffer(
+        size=bytes.length().to_uint64(),
+        usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
+      )
+      backend.queue.write_buffer(buffer, 0UL, bytes)
+      backend.mesh3d_clustered_decals_buf = Some(buffer)
+      backend.mesh3d_clustered_decals_capacity = bytes.length().to_uint64()
+      buffer
+    }
+  }
+}
+
+///|
+fn mesh3d_clustered_decal_texture_views(
+  backend : GpuBackend,
+  fallback_texture : GpuTextureInfo,
+  count : Int,
+) -> Array[@wgpu.TextureView] raise GpuBackendError {
+  let views : Array[@wgpu.TextureView] = []
+  for index in 0..<count {
+    let texture_id = if index <
+      backend.mesh3d_clustered_decal_texture_ids.length() {
+      backend.mesh3d_clustered_decal_texture_ids[index]
+    } else {
+      -1
+    }
+    let texture = match resolve_mesh3d_texture(backend, texture_id) {
+      Some(value) => value
+      None => fallback_texture
+    }
+    views.push(texture.view)
+  }
+  views
 }
 
 ///|
@@ -558,6 +653,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   )
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   let ssao_revision = mesh3d_ssao_resource_revision(backend)
+  let clustered_decals_revision = backend.mesh3d_clustered_decals_revision
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -568,7 +664,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.environment_specular_texture_id == environment_specular_texture.id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
-      entry.ssao_resource_revision == ssao_revision {
+      entry.ssao_resource_revision == ssao_revision &&
+      entry.clustered_decals_revision == clustered_decals_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -672,6 +769,8 @@ fn mesh3d_view_bg_cache_get_or_create(
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
+  let fallback_decal_texture = ensure_normal_map_fallback_texture(backend)
+  let clustered_decals_buf = ensure_mesh3d_clustered_decals_buffer(backend)
   let fallback_environment_sample_view = match
     fallback_environment_texture.sample_view {
     Some(view) => view
@@ -687,6 +786,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => fallback_environment_sample_view
   }
+  let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
+    backend, fallback_decal_texture, 8,
+  )
   let bind_group = mesh3d_build_view_bind_group_from_descriptor(
     backend,
     layout,
@@ -725,6 +827,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_diffuse_sample_view,
     environment_specular_sample_view,
     environment_diffuse_texture.sampler,
+    clustered_decals_buf,
+    clustered_decal_texture_views,
+    fallback_decal_texture.sampler,
     "wgpu: failed to build mesh3d binding-array bind group",
   )
   backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
@@ -738,6 +843,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
+    clustered_decals_revision,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -770,6 +876,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   )
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   let ssao_revision = mesh3d_ssao_resource_revision(backend)
+  let clustered_decals_revision = backend.mesh3d_clustered_decals_revision
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -788,7 +895,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
-      entry.ssao_resource_revision == ssao_revision {
+      entry.ssao_resource_revision == ssao_revision &&
+      entry.clustered_decals_revision == clustered_decals_revision {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -892,6 +1000,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
+  let fallback_decal_texture = ensure_normal_map_fallback_texture(backend)
+  let clustered_decals_buf = ensure_mesh3d_clustered_decals_buffer(backend)
   let fallback_environment_sample_view = match
     fallback_environment_texture.sample_view {
     Some(view) => view
@@ -907,6 +1017,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     Some(view) => view
     None => fallback_environment_sample_view
   }
+  let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
+    backend, fallback_decal_texture, 8,
+  )
   let normal_prepass_view = mesh3d_prepass_texture_view_for_id(
     backend, prepass_normal_texture_id,
   )
@@ -954,6 +1067,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     environment_diffuse_sample_view,
     environment_specular_sample_view,
     environment_diffuse_texture.sampler,
+    clustered_decals_buf,
+    clustered_decal_texture_views,
+    fallback_decal_texture.sampler,
     "wgpu: failed to build mesh3d frame binding-array bind group",
   )
   frame.transient_bind_groups.push(bind_group)
@@ -977,6 +1093,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
+    clustered_decals_revision,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -1299,6 +1416,45 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
       mesh3d_standard_material_default_uniform_bytes(),
     ),
   )
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_clustered_decals(
+  self : GpuBackend,
+  decal_words : Array[UInt],
+  texture_ids : Array[Int],
+) -> Unit {
+  let words = if decal_words.length() == 0 {
+    mesh3d_clustered_decals_default_words()
+  } else {
+    decal_words
+  }
+  let bytes = u32le_pack(words)
+  let size = bytes.length().to_uint64()
+  let needs_new_buffer = match self.mesh3d_clustered_decals_buf {
+    Some(_) => self.mesh3d_clustered_decals_capacity < size
+    None => true
+  }
+  if needs_new_buffer {
+    match self.mesh3d_clustered_decals_buf {
+      Some(buffer) => mesh3d_retire_or_release_buffer(self, buffer)
+      None => ()
+    }
+    let buffer = self.device.create_buffer(
+      size~,
+      usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
+    )
+    self.mesh3d_clustered_decals_buf = Some(buffer)
+    self.mesh3d_clustered_decals_capacity = size
+  }
+  guard self.mesh3d_clustered_decals_buf is Some(buffer) else { return }
+  self.queue.write_buffer(buffer, 0UL, bytes)
+  self.mesh3d_clustered_decal_texture_ids.clear()
+  for texture_id in texture_ids {
+    self.mesh3d_clustered_decal_texture_ids.push(texture_id)
+  }
+  self.mesh3d_clustered_decals_revision = self.mesh3d_clustered_decals_revision +
+    1
 }
 
 ///|

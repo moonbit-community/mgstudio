@@ -21,6 +21,7 @@ pub struct Render3dMeshRuntimeState {
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
   binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
   specialized_material_pipelines : @material.SpecializedMeshPipelines
   specialized_prepass_material_pipelines : @material.SpecializedMeshPipelines
 }
@@ -33,6 +34,7 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
     mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
+    clustered_decals_are_usable: false,
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
     specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
   }

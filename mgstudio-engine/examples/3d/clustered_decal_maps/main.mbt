@@ -17,9 +17,8 @@
 /// Baseline parity:
 /// - This example now attaches `ClusteredDecal` components directly with upstream-
 ///   aligned map channels.
-/// - This port keeps the same runtime behavior model (continuous spawn,
-///   animated in/out lifetime, emissive toggle) using textured translucent
-///   proxy meshes.
+/// - This port keeps the same runtime behavior model: continuous spawn,
+///   animated in/out lifetime, seeded ChaCha8 randomness, and emissive toggle.
 
 ///|
 const PLANE_HALF_SIZE : Float = 2.0F
@@ -46,13 +45,7 @@ const DECAL_ANIMATE_OUT_DURATION : Float = 0.30F
 const DECAL_SPAWN_INTERVAL : Float = 1.0F
 
 ///|
-const LCG_MOD : Int = 2147483647
-
-///|
-const LCG_MULTIPLIER : Int = 1103515245
-
-///|
-const LCG_INCREMENT : Int = 12345
+const DECAL_MAPS_ASSET_BASE : String = "https://raw.githubusercontent.com/bevyengine/bevy_asset_files/refs/heads/main/clustered_decal_maps/"
 
 ///|
 priv struct ActiveDecal {
@@ -65,14 +58,14 @@ priv struct ActiveDecal {
 priv struct AppTextures {
   decal_base_color_texture : @asset.Handle[@asset.Image]
   decal_normal_map_texture : @asset.Handle[@asset.Image]
-  decal_metallic_roughness_texture : @asset.Handle[@asset.Image]
+  decal_metallic_roughness_map_texture : @asset.Handle[@asset.Image]
   decal_emissive_texture : @asset.Handle[@asset.Image]
 }
 
 ///|
 priv struct ClusteredDecalMapsState {
   mut spawn_accumulator : Float
-  mut random_seed : Int
+  mut seeded_rng : @example_rng.ChaCha8Rng
   mut emissive_decals : Bool
   mut decals : Array[ActiveDecal]
   mut textures : AppTextures?
@@ -82,16 +75,11 @@ priv struct ClusteredDecalMapsState {
 ///|
 let clustered_decal_maps_state : ClusteredDecalMapsState = {
   spawn_accumulator: 0.0F,
-  random_seed: 1_987_836_747,
+  seeded_rng: @example_rng.ChaCha8Rng::seed_from_u64(19878367467712UL),
   emissive_decals: true,
   decals: [],
   textures: None,
   help_text: None,
-}
-
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
 }
 
 ///|
@@ -106,26 +94,18 @@ fn clamp01(value : Float) -> Float {
 }
 
 ///|
-fn lcg_next(seed : Int) -> Int {
-  let mut next = (seed * LCG_MULTIPLIER + LCG_INCREMENT) % LCG_MOD
-  if next < 0 {
-    next = next + LCG_MOD
-  }
-  next
-}
-
-///|
 fn random_unit() -> Float {
-  clustered_decal_maps_state.random_seed = lcg_next(
-    clustered_decal_maps_state.random_seed,
-  )
-  float_from_int(clustered_decal_maps_state.random_seed) /
-  float_from_int(LCG_MOD)
+  clustered_decal_maps_state.seeded_rng.random_float()
 }
 
 ///|
 fn random_range(min_value : Float, max_value : Float) -> Float {
   min_value + random_unit() * (max_value - min_value)
+}
+
+///|
+fn decal_maps_asset_url(name : String) -> String {
+  DECAL_MAPS_ASSET_BASE + name
 }
 
 ///|
@@ -148,33 +128,35 @@ fn update_help_text() -> Unit {
 ///|
 fn spawn_plane(
   world : @ecs.World,
-  base_color : @asset.Handle[@asset.Image],
   normal_map : @asset.Handle[@asset.Image],
 ) -> Unit {
+  let plane_geometry = @mesh_primitives_dim3.PlaneMeshBuilder::new(
+    @math.Dir3::from_xyz_unchecked(0.0F, 0.0F, -1.0F),
+    @math.Vec2::new(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
+  ).build()
+  guard plane_geometry.with_duplicated_vertices() is Some(duplicated) else {
+    abort("clustered_decal_maps plane must duplicate vertices")
+  }
+  guard duplicated.with_computed_flat_normals() is Some(flat_normals) else {
+    abort("clustered_decal_maps plane must compute flat normals")
+  }
+  match flat_normals.generate_tangents() {
+    Some(_) => abort("clustered_decal_maps plane must generate tangents")
+    None => ()
+  }
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @color.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
-    )
-    .with_base_color_texture(Some(base_color))
-    .with_normal_map_texture(Some(normal_map))
-    .with_metallic_roughness_texture(Some(base_color))
-    .with_perceptual_roughness(0.35F),
+    ).with_normal_map_texture(Some(normal_map)),
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
-          ).build(),
-        )
+        assets |> @pbr.add_mesh(flat_normals)
       }),
     ),
     @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(PI),
-    ),
+    @transform.Transform::Transform(),
   ).spawn(world)
   |> ignore
 }
@@ -210,30 +192,37 @@ fn spawn_camera(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   clustered_decal_maps_state.spawn_accumulator = 0.0F
-  clustered_decal_maps_state.random_seed = 1_987_836_747
+  clustered_decal_maps_state.seeded_rng = @example_rng.ChaCha8Rng::seed_from_u64(
+    19878367467712UL,
+  )
   clustered_decal_maps_state.emissive_decals = true
   clustered_decal_maps_state.decals = []
   clustered_decal_maps_state.textures = None
   clustered_decal_maps_state.help_text = None
 
   let textures : AppTextures = {
-    decal_base_color_texture: asset_server.load("branding/icon.png"),
+    decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
     decal_normal_map_texture: asset_server.load_with_settings(
-      "textures/ScratchedGold-Normal.png",
+      decal_maps_asset_url("BevyLogo-Normal.png"),
       fn(settings) { settings.is_srgb = false },
     ),
-    decal_metallic_roughness_texture: asset_server.load_with_settings(
-      "branding/icon.png",
+    decal_metallic_roughness_map_texture: asset_server.load_with_settings(
+      decal_maps_asset_url("BevyLogo-MetallicRoughness.png"),
       fn(settings) { settings.is_srgb = false },
     ),
-    decal_emissive_texture: asset_server.load("branding/icon.png"),
+    decal_emissive_texture: asset_server.load(
+      decal_maps_asset_url("BevyLogo-Emissive.png"),
+    ),
   }
   clustered_decal_maps_state.textures = Some(textures)
 
   spawn_plane(
     world,
-    textures.decal_base_color_texture,
-    textures.decal_normal_map_texture,
+    asset_server.load_with_settings("textures/ScratchedGold-Normal.png", fn(
+      settings,
+    ) {
+      settings.is_srgb = false
+    }),
   )
   spawn_light(world)
   spawn_camera(world)
@@ -271,42 +260,29 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   let size = random_range(DECAL_MIN_SIZE, DECAL_MAX_SIZE)
   let theta = random_range(0.0F, PI)
 
-  let mut material = @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_base_color_texture(Some(textures.decal_base_color_texture))
-    .with_normal_map_texture(Some(textures.decal_normal_map_texture))
-    .with_metallic_roughness_texture(
-      Some(textures.decal_metallic_roughness_texture),
-    )
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_perceptual_roughness(0.25F)
-  if clustered_decal_maps_state.emissive_decals {
-    material = material
-      .with_emissive_texture(Some(textures.decal_emissive_texture))
-      .with_emissive(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
-  }
   let mut clustered_decal = @pbr.ClusteredDecal::ClusteredDecal()
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
     .with_metallic_roughness_texture(
-      Some(textures.decal_metallic_roughness_texture),
+      Some(textures.decal_metallic_roughness_map_texture),
     )
   if clustered_decal_maps_state.emissive_decals {
     clustered_decal = clustered_decal.with_emissive_texture(
       Some(textures.decal_emissive_texture),
     )
   }
-  let entity = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 0.02F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
-    @transform.Transform::from_xyz(x, y, -0.01F)
-    .with_rotation(@math.Quat::from_rotation_z(theta))
-    .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
-  ).spawn(world)
+  let entity = world.spawn_empty()
   try! world.set_by_key(entity, @pbr.ecs_key_clustered_decal, clustered_decal)
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_translation(@math.Vec3::new(x, y, 0.0F))
+    .with_scale(@math.Vec3::zero())
+    .looking_to(
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      @math.Vec3::new(@math.cos(theta), @math.sin(theta), 0.0F),
+    ),
+  )
   clustered_decal_maps_state.decals.push({ entity, base_scale: size, age: 0.0F })
 }
 
@@ -354,7 +330,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
           @math.Vec3::new(
             decal.base_scale * scale_factor,
             decal.base_scale * scale_factor,
-            0.02F,
+            1.0F,
           ),
         ),
       )

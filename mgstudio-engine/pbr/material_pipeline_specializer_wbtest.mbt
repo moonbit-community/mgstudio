@@ -515,6 +515,47 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
 }
 
 ///|
+test "pbr material pipeline keeps clustered decal shader defs and layout in sync" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let default_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      default_descriptor.vertex.shader_defs,
+      "CLUSTERED_DECALS_ARE_USABLE",
+    ),
+    content="false",
+  )
+  inspect(default_descriptor.layout[1].entries().length(), content="0")
+  let decal_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+    binding_arrays_are_usable=true,
+    clustered_decals_are_usable=true,
+  ).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      decal_descriptor.vertex.shader_defs,
+      "CLUSTERED_DECALS_ARE_USABLE",
+    ),
+    content="true",
+  )
+  inspect(decal_descriptor.layout[1].entries().length(), content="3")
+  inspect(decal_descriptor.layout[1].entries()[0].binding(), content="5")
+  inspect(decal_descriptor.layout[1].entries()[1].binding(), content="6")
+  inspect(decal_descriptor.layout[1].entries()[1].count(), content="8")
+  inspect(decal_descriptor.layout[1].entries()[2].binding(), content="7")
+}
+
+///|
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
   let pipeline_cache = @render_resource.PipelineCache::new()

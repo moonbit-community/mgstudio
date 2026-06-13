@@ -164,6 +164,11 @@ fn cluster_assign_collect_objects(
   world : @ecs.World,
 ) -> Array[ClusterableObjectAssignmentData] {
   let objects : Array[ClusterableObjectAssignmentData] = []
+  let global_cluster_settings = match
+    world.get_resource(ecs_key_global_cluster_settings) {
+    Some(settings) => settings
+    None => GlobalClusterSettings::GlobalClusterSettings()
+  }
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     if !cluster_assign_is_view_visible(world, entity) {
       return
@@ -221,6 +226,23 @@ fn cluster_assign_collect_objects(
       object_type: ClusterableObjectType::IrradianceVolume,
     })
   })
+  if global_cluster_settings.clustered_decals_are_usable {
+    world.for_each_component(@light.ecs_key_clustered_decal, fn(
+      entity,
+      _decal,
+    ) {
+      if !cluster_assign_is_view_visible(world, entity) {
+        return
+      }
+      let transform = cluster_assign_entity_transform(world, entity)
+      objects.push(ClusterableObjectAssignmentData::{
+        entity,
+        transform,
+        range: transform.scale.length(),
+        object_type: ClusterableObjectType::Decal,
+      })
+    })
+  }
   objects
 }
 

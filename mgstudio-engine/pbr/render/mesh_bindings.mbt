@@ -595,9 +595,9 @@ pub fn render3d_mesh_bind_group_dynamic_offsets(
     Some(index) => if skins_use_uniform_buffers { offsets.push(index) }
     None => ()
   }
-  if motion_vectors {
+  if motion_vectors && skins_use_uniform_buffers {
     match current_skin_byte_offset {
-      Some(offset) => if skins_use_uniform_buffers { offsets.push(offset) }
+      Some(offset) => offsets.push(offset)
       None => ()
     }
     if current_morph_index is Some(_) {

@@ -278,6 +278,20 @@ fn render3d_execute_camera_main_pass(
   let draw_items = draw_queue_entry.draw_items
   let point_shadow_binding = shadow_bindings.point
   let directional_shadow_binding = shadow_bindings.directional
+  let render_decals = match
+    world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
+    Some(decals) => decals
+    None => @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
+  }
+  let decals_buffer = match
+    world.get_resource(@pbr_decal.DecalsBuffer::resource()) {
+    Some(buffer) => buffer
+    None => @pbr_decal.DecalsBuffer::DecalsBuffer()
+  }
+  @render.host_gpu_prepare_mesh3d_clustered_decals(
+    decal_words=decals_buffer.gpu_words(),
+    texture_ids=render_decals.texture_ids(),
+  )
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
     @render.host_gpu_prepare_mesh3d_view_bind_group(
       transmission_source_texture_id~,

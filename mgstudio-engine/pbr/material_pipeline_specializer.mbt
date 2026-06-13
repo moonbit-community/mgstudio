@@ -180,12 +180,15 @@ fn pbr_mesh_pipeline_view_layout_key(
 ///|
 fn pbr_mesh_pipeline_view_layout(
   mesh_key_bits : UInt64,
+  binding_arrays_are_usable : Bool,
+  clustered_decals_are_usable : Bool,
 ) -> @mesh_view_layout.MeshPipelineViewLayout {
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
     pbr_mesh_pipeline_view_layout_key(mesh_key_bits),
-    clustered_decals_usable=false,
+    multiple_light_probes_in_array=binding_arrays_are_usable,
+    clustered_decals_usable=clustered_decals_are_usable,
     irradiance_volumes_usable=false,
     oit_supported=false,
   )
@@ -448,6 +451,7 @@ fn pbr_mesh_pipeline_descriptor(
   mesh_key : @material.ErasedMeshPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
   binding_arrays_are_usable : Bool,
+  clustered_decals_are_usable : Bool,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
   let mesh_key_bits = mesh_key.downcast_u64("MeshPipelineKey")
   let shader_defs : Array[@material.ShaderDefVal] = []
@@ -564,6 +568,9 @@ fn pbr_mesh_pipeline_descriptor(
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHT_PROBES_IN_ARRAY"))
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
   }
+  if clustered_decals_are_usable {
+    shader_defs.push(pbr_shader_def("CLUSTERED_DECALS_ARE_USABLE"))
+  }
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 6, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
@@ -574,7 +581,9 @@ fn pbr_mesh_pipeline_descriptor(
       )
   }
   let fragment_defs = pbr_shader_defs_clone(shader_defs)
-  let mesh_view_layout = pbr_mesh_pipeline_view_layout(mesh_key_bits)
+  let mesh_view_layout = pbr_mesh_pipeline_view_layout(
+    mesh_key_bits, binding_arrays_are_usable, clustered_decals_are_usable,
+  )
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("opaque_mesh_pipeline"))
   .with_layout([
@@ -835,14 +844,20 @@ fn pbr_prepass_pipeline_descriptor(
 pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
 }
 
 ///|
 pub fn PbrMaterialPipelineSpecializer::new(
   properties : @material.MaterialProperties,
   binding_arrays_are_usable? : Bool = false,
+  clustered_decals_are_usable? : Bool = false,
 ) -> PbrMaterialPipelineSpecializer {
-  PbrMaterialPipelineSpecializer::{ properties, binding_arrays_are_usable }
+  PbrMaterialPipelineSpecializer::{
+    properties,
+    binding_arrays_are_usable,
+    clustered_decals_are_usable,
+  }
 }
 
 ///|
@@ -855,6 +870,7 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
     key.mesh_key(),
     layout,
     self.binding_arrays_are_usable,
+    self.clustered_decals_are_usable,
   )
   descriptor.vertex.shader_defs.push(
     pbr_shader_def_uint(
@@ -999,6 +1015,7 @@ fn pbr_material_base_specialize(
   let specializer = PbrMaterialPipelineSpecializer::new(
     properties,
     binding_arrays_are_usable=state_value.binding_arrays_are_usable,
+    clustered_decals_are_usable=state_value.clustered_decals_are_usable,
   )
   let result = state_value.specialized_material_pipelines.specialize(
     pipeline_cache,
