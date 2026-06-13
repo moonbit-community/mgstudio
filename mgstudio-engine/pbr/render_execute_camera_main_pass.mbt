@@ -61,6 +61,19 @@ fn render3d_main_pass_deband_dither_enabled(
 }
 
 ///|
+fn render3d_ssao_quality_level_to_int(
+  quality_level : ScreenSpaceAmbientOcclusionQualityLevel,
+) -> Int {
+  match quality_level {
+    Low => 0
+    Medium => 1
+    High => 2
+    Ultra => 3
+    Custom(_, _) => 4
+  }
+}
+
+///|
 fn render3d_main_pass_skips_deferred_opaque(
   material_properties : @material.MaterialProperties,
 ) -> Bool {
@@ -297,10 +310,21 @@ fn render3d_execute_camera_main_pass(
     scene_viewport_height,
   ) = pass_viewport(scene_target_id)
   if camera.screen_space_ambient_occlusion is Some(ssao_settings) {
+    let (slice_count, samples_per_slice_side) = @pbr_ssao.ssao_quality_sample_counts(
+      ssao_settings.quality_level,
+    )
     @render.host_gpu_prepare_mesh3d_ssao_resources(
       width=viewport_width,
       height=viewport_height,
       constant_object_thickness=ssao_settings.constant_object_thickness,
+    )
+    @render.host_gpu_prepare_mesh3d_ssao_pipeline(
+      quality_level=render3d_ssao_quality_level_to_int(
+        ssao_settings.quality_level,
+      ),
+      custom_slice_count=slice_count,
+      custom_samples_per_slice_side=samples_per_slice_side,
+      temporal_jitter=camera.temporal_jitter is Some(_),
     )
   }
   let (agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id) = render3d_main_pass_tonemapping_lut_ids(

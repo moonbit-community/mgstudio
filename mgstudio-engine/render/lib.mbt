@@ -326,6 +326,21 @@ pub fn host_gpu_prepare_mesh3d_ssao_resources(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_ssao_pipeline(
+  quality_level~ : Int,
+  custom_slice_count~ : Int,
+  custom_samples_per_slice_side~ : Int,
+  temporal_jitter~ : Bool,
+) -> Unit {
+  @renderer.prepare_mesh3d_ssao_pipeline(
+    quality_level~,
+    custom_slice_count~,
+    custom_samples_per_slice_side~,
+    temporal_jitter~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
   ground_albedo_x~ : Float,
   ground_albedo_y~ : Float,

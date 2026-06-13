@@ -507,6 +507,7 @@ fn mesh3d_ssao_resource_revision(backend : GpuBackend) -> Int {
 fn mesh3d_ssao_resources_keepalive(resources : GpuSsaoResources) -> Unit {
   ignore(resources.preprocessed_depth_texture)
   ignore(resources.preprocessed_depth_view)
+  ignore(resources.preprocessed_depth_mip_views)
   ignore(resources.ssao_noisy_texture)
   ignore(resources.ssao_noisy_view)
   ignore(resources.screen_space_ambient_occlusion_texture)

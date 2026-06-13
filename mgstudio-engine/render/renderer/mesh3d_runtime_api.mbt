@@ -948,7 +948,25 @@ pub fn prepare_mesh3d_ssao_resources(
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_ssao_resources(
       width, height, constant_object_thickness,
-    )
+    ) catch {
+      err => debug_runtime_error("prepare_mesh3d_ssao_resources", err)
+    }
+  }
+}
+
+///|
+pub fn prepare_mesh3d_ssao_pipeline(
+  quality_level~ : Int,
+  custom_slice_count~ : Int,
+  custom_samples_per_slice_side~ : Int,
+  temporal_jitter~ : Bool,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_ssao_pipeline(
+      quality_level, custom_slice_count, custom_samples_per_slice_side, temporal_jitter,
+    ) catch {
+      err => debug_runtime_error("prepare_mesh3d_ssao_pipeline", err)
+    }
   }
 }
 

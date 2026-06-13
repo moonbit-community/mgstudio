@@ -201,6 +201,7 @@ struct GpuSsaoResources {
   depth_format : @wgpu.TextureFormat
   preprocessed_depth_texture : @wgpu.Texture
   preprocessed_depth_view : @wgpu.TextureView
+  preprocessed_depth_mip_views : Array[@wgpu.TextureView]
   ssao_noisy_texture : @wgpu.Texture
   ssao_noisy_view : @wgpu.TextureView
   screen_space_ambient_occlusion_texture : @wgpu.Texture
@@ -210,6 +211,33 @@ struct GpuSsaoResources {
   thickness_buffer : @wgpu.Buffer
   constant_object_thickness : Float
   revision : Int
+}
+
+///|
+struct GpuSsaoPipelines {
+  common_bind_group_layout : @wgpu.BindGroupLayout
+  preprocess_depth_bind_group_layout : @wgpu.BindGroupLayout
+  ssao_bind_group_layout : @wgpu.BindGroupLayout
+  spatial_denoise_bind_group_layout : @wgpu.BindGroupLayout
+  preprocess_depth_pipeline_layout : @wgpu.PipelineLayout
+  ssao_pipeline_layout : @wgpu.PipelineLayout
+  spatial_denoise_pipeline_layout : @wgpu.PipelineLayout
+  preprocess_depth_pipeline : @wgpu.ComputePipeline
+  spatial_denoise_pipeline : @wgpu.ComputePipeline
+  hilbert_index_lut_texture : @wgpu.Texture
+  hilbert_index_lut_view : @wgpu.TextureView
+  point_clamp_sampler : @wgpu.Sampler
+  linear_clamp_sampler : @wgpu.Sampler
+  depth_format : @wgpu.TextureFormat
+}
+
+///|
+struct GpuSsaoPipelineCacheEntry {
+  quality_level : Int
+  slice_count : Int
+  samples_per_slice_side : Int
+  temporal_jitter : Bool
+  pipeline : @wgpu.ComputePipeline
 }
 
 ///|

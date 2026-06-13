@@ -278,6 +278,8 @@ pub fn host_gpu_prepare_mesh3d_scattering_medium_resources(density_width~ : Int,
 
 pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
+pub fn host_gpu_prepare_mesh3d_ssao_pipeline(quality_level~ : Int, custom_slice_count~ : Int, custom_samples_per_slice_side~ : Int, temporal_jitter~ : Bool) -> Unit
+
 pub fn host_gpu_prepare_mesh3d_ssao_resources(width~ : Int, height~ : Int, constant_object_thickness~ : Float) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id? : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
