@@ -78,3 +78,29 @@ test "skybox: draw params come from image, exposure, and inverse rotation" {
   debug_inspect(skybox_test_approx(params.rotation.x, -0.25F), content="true")
   debug_inspect(skybox_test_approx(params.rotation.w, 1.0F), content="true")
 }
+
+///|
+test "skybox: prepare pipelines writes render-world view component" {
+  let world = @ecs.World::new()
+  let render_entity = world.spawn()
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
+  let skybox = @light.Skybox::new(image, 1.0F)
+  let extracted = ExtractedSkyboxes::ExtractedSkyboxes()
+  extracted.push(
+    ExtractedSkybox::new(
+      render_entity~,
+      skybox~,
+      uniforms=SkyboxUniforms::from_skybox(skybox, 1.0F),
+    ),
+  )
+  world.insert_resource(ExtractedSkyboxes::resource(), extracted)
+
+  prepare_skybox_pipelines(world)
+
+  debug_inspect(view_has_skybox_pipeline(world, render_entity), content="true")
+  debug_inspect(
+    (try! world.get_by_key(render_entity, ecs_key_skybox_pipeline_id))
+    is Some(_),
+    content="true",
+  )
+}

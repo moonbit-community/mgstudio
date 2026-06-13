@@ -58,6 +58,16 @@ pub fn SkyboxPipelineId::new(pipeline_id~ : Int) -> SkyboxPipelineId {
 }
 
 ///|
+pub let ecs_key_skybox_pipeline_id : @ecs.ComponentKey[SkyboxPipelineId] = @ecs.register_component(
+  debug_name="core_pipeline.skybox.pipeline_id",
+)
+
+///|
+pub impl @ecs.Component for SkyboxPipelineId with fn component() {
+  ecs_key_skybox_pipeline_id
+}
+
+///|
 pub struct SkyboxBindGroup {
   bind_group_id : Int
   skybox_uniform_index : Int
@@ -69,6 +79,16 @@ pub fn SkyboxBindGroup::new(
   skybox_uniform_index~ : Int,
 ) -> SkyboxBindGroup {
   SkyboxBindGroup::{ bind_group_id, skybox_uniform_index }
+}
+
+///|
+pub let ecs_key_skybox_bind_group : @ecs.ComponentKey[SkyboxBindGroup] = @ecs.register_component(
+  debug_name="core_pipeline.skybox.bind_group",
+)
+
+///|
+pub impl @ecs.Component for SkyboxBindGroup with fn component() {
+  ecs_key_skybox_bind_group
 }
 
 ///|
@@ -173,16 +193,10 @@ pub fn view_has_skybox_pipeline(
   world : @ecs.World,
   render_entity : @core.Entity,
 ) -> Bool {
-  match world.get_resource(ExtractedSkyboxes::resource()) {
-    Some(extracted) =>
-      for entry in extracted.entries {
-        if entry.render_entity == render_entity && entry.is_ready_for_pipeline() {
-          return true
-        }
-      }
-    None => ()
+  if !world.is_alive(render_entity) {
+    return false
   }
-  false
+  (try! world.get_by_key(render_entity, ecs_key_skybox_pipeline_id)) is Some(_)
 }
 
 ///|
@@ -190,23 +204,10 @@ pub fn view_has_skybox_bind_group(
   world : @ecs.World,
   render_entity : @core.Entity,
 ) -> Bool {
-  match world.get_resource(ExtractedSkyboxes::resource()) {
-    Some(extracted) =>
-      for entry in extracted.entries {
-        if entry.render_entity == render_entity &&
-          entry.is_ready_for_bind_group() {
-          match entry.skybox.image {
-            Some(image) =>
-              if @asset.asset_is_texture_loaded(image) {
-                return true
-              }
-            None => ()
-          }
-        }
-      }
-    None => ()
+  if !world.is_alive(render_entity) {
+    return false
   }
-  false
+  (try! world.get_by_key(render_entity, ecs_key_skybox_bind_group)) is Some(_)
 }
 
 ///|
@@ -456,6 +457,75 @@ fn extracted_skyboxes_mut_or_init(
 }
 
 ///|
+fn extracted_skybox_pipeline_ready(
+  extracted : ExtractedSkyboxes,
+  render_entity : @core.Entity,
+) -> Bool {
+  for entry in extracted.entries {
+    if entry.render_entity == render_entity && entry.is_ready_for_pipeline() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn extracted_skybox_bind_group_ready(
+  extracted : ExtractedSkyboxes,
+  render_entity : @core.Entity,
+) -> Bool {
+  for entry in extracted.entries {
+    if entry.render_entity == render_entity && entry.is_ready_for_bind_group() {
+      match entry.skybox.image {
+        Some(image) => if @asset.asset_is_texture_loaded(image) { return true }
+        None => ()
+      }
+    }
+  }
+  false
+}
+
+///|
+fn remove_stale_skybox_pipeline_components(
+  world : @ecs.World,
+  extracted : ExtractedSkyboxes,
+) -> Unit {
+  let stale : Array[@core.Entity] = []
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[SkyboxPipelineId]), @ecs.All] = @ecs.query(
+    world,
+  )
+  try! query.view(fn(_query_entity, data) {
+    let (entity, _pipeline_id) = data
+    if !extracted_skybox_pipeline_ready(extracted, entity) {
+      stale.push(entity)
+    }
+  })
+  for entity in stale {
+    ignore(try! world.remove_by_key(entity, ecs_key_skybox_pipeline_id))
+  }
+}
+
+///|
+fn remove_stale_skybox_bind_group_components(
+  world : @ecs.World,
+  extracted : ExtractedSkyboxes,
+) -> Unit {
+  let stale : Array[@core.Entity] = []
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[SkyboxBindGroup]), @ecs.All] = @ecs.query(
+    world,
+  )
+  try! query.view(fn(_query_entity, data) {
+    let (entity, _bind_group) = data
+    if !extracted_skybox_bind_group_ready(extracted, entity) {
+      stale.push(entity)
+    }
+  })
+  for entity in stale {
+    ignore(try! world.remove_by_key(entity, ecs_key_skybox_bind_group))
+  }
+}
+
+///|
 fn configure_skybox_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -520,12 +590,19 @@ fn extract_skybox(world : @ecs.World) -> Unit {
 fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
   let mut pipeline_count = 0
   match world.get_resource(ExtractedSkyboxes::resource()) {
-    Some(extracted) =>
+    Some(extracted) => {
+      remove_stale_skybox_pipeline_components(world, extracted)
       for entry in extracted.entries {
         if entry.is_ready_for_pipeline() {
+          try! world.set_by_key(
+            entry.render_entity,
+            ecs_key_skybox_pipeline_id,
+            SkyboxPipelineId::new(pipeline_id=entry.render_entity.id),
+          )
           pipeline_count = pipeline_count + 1
         }
       }
+    }
     None => ()
   }
   skybox_pipeline_state_mut_or_init(world).modify(fn(state) {
@@ -537,18 +614,28 @@ fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
 fn prepare_skybox_bind_groups(world : @ecs.World) -> Unit {
   let mut bind_group_count = 0
   match world.get_resource(ExtractedSkyboxes::resource()) {
-    Some(extracted) =>
+    Some(extracted) => {
+      remove_stale_skybox_bind_group_components(world, extracted)
       for entry in extracted.entries {
         if entry.is_ready_for_bind_group() {
           match entry.skybox.image {
             Some(image) =>
               if @asset.asset_is_texture_loaded(image) {
+                try! world.set_by_key(
+                  entry.render_entity,
+                  ecs_key_skybox_bind_group,
+                  SkyboxBindGroup::new(
+                    bind_group_id=image.id(),
+                    skybox_uniform_index=0,
+                  ),
+                )
                 bind_group_count = bind_group_count + 1
               }
             None => ()
           }
         }
       }
+    }
     None => ()
   }
   skybox_pipeline_state_mut_or_init(world).modify(fn(state) {

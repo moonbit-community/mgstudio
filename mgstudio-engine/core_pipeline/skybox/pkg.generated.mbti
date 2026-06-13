@@ -20,6 +20,10 @@ pub const SKYBOX_PREPASS_PIPELINE_LABEL : String = "skybox_prepass_pipeline"
 
 pub fn draw_skybox(@light.Skybox, Float) -> Unit
 
+pub let ecs_key_skybox_bind_group : @ecs.ComponentKey[SkyboxBindGroup]
+
+pub let ecs_key_skybox_pipeline_id : @ecs.ComponentKey[SkyboxPipelineId]
+
 pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState]
 
 pub fn register_embedded_wgsl_sources() -> Unit
@@ -57,11 +61,13 @@ pub struct SkyboxBindGroup {
   skybox_uniform_index : Int
 }
 pub fn SkyboxBindGroup::new(bind_group_id~ : Int, skybox_uniform_index~ : Int) -> Self
+pub impl @ecs.Component for SkyboxBindGroup
 
 pub struct SkyboxPipelineId {
   pipeline_id : Int
 }
 pub fn SkyboxPipelineId::new(pipeline_id~ : Int) -> Self
+pub impl @ecs.Component for SkyboxPipelineId
 
 pub struct SkyboxPipelineKey {
   hdr : Bool
