@@ -84,3 +84,31 @@ pub fn main_opaque_pass_3d_should_draw_skybox(
 ) -> Bool {
   state.has_skybox_pipeline && state.has_skybox_bind_group
 }
+
+///|
+pub fn main_opaque_pass_3d_skybox_state(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+) -> MainOpaquePass3dState {
+  MainOpaquePass3dState::new(
+    has_skybox_pipeline=@skybox.view_has_skybox_pipeline(world, render_entity),
+    has_skybox_bind_group=@skybox.view_has_skybox_bind_group(
+      world, render_entity,
+    ),
+  )
+}
+
+///|
+pub fn main_opaque_pass_3d_draw_skybox(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+  skybox : @light.Skybox,
+  camera_exposure_value : Float,
+) -> Bool {
+  let state = main_opaque_pass_3d_skybox_state(world, render_entity)
+  if !main_opaque_pass_3d_should_draw_skybox(state) {
+    return false
+  }
+  @skybox.draw_skybox(skybox, camera_exposure_value)
+  true
+}

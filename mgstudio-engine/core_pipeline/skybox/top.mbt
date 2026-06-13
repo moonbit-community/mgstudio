@@ -169,6 +169,47 @@ pub fn draw_skybox(
 }
 
 ///|
+pub fn view_has_skybox_pipeline(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Bool {
+  match world.get_resource(ExtractedSkyboxes::resource()) {
+    Some(extracted) =>
+      for entry in extracted.entries {
+        if entry.render_entity == render_entity && entry.is_ready_for_pipeline() {
+          return true
+        }
+      }
+    None => ()
+  }
+  false
+}
+
+///|
+pub fn view_has_skybox_bind_group(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Bool {
+  match world.get_resource(ExtractedSkyboxes::resource()) {
+    Some(extracted) =>
+      for entry in extracted.entries {
+        if entry.render_entity == render_entity &&
+          entry.is_ready_for_bind_group() {
+          match entry.skybox.image {
+            Some(image) =>
+              if @asset.asset_is_texture_loaded(image) {
+                return true
+              }
+            None => ()
+          }
+        }
+      }
+    None => ()
+  }
+  false
+}
+
+///|
 priv struct SkyboxUniforms {
   brightness : Float
   transform : Array[Float]

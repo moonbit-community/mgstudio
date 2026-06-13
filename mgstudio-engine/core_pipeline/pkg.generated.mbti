@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/core_pipeline"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/hdr",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
@@ -84,6 +85,8 @@ pub fn fullscreen_material_requires_bind_group_build(FullscreenMaterialPrepareVi
 pub fn fullscreen_material_requires_bind_group_update(FullscreenMaterialPrepareViewState, FullscreenMaterialBindGroupState) -> Bool
 
 pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader
+
+pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity, @light.Skybox, Float) -> Bool
 
 pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.TonemappingLuts
 

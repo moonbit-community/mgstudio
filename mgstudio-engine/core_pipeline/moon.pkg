@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/blit",
   "Milky2018/mgstudio/core_pipeline/core_2d",
   "Milky2018/mgstudio/core_pipeline/core_3d",

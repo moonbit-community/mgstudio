@@ -49,3 +49,15 @@ test "core3d: graph systems run main pass before early postprocess" {
 
   debug_inspect(log.join(","), content="\"prepass,main,early_post,post\"")
 }
+
+///|
+test "core3d: main opaque pass skybox draw requires prepared skybox state" {
+  let world = @ecs.World::new()
+  let render_entity = @core.Entity::new(1, 1)
+  let skybox = @light.Skybox::Skybox()
+
+  debug_inspect(
+    main_opaque_pass_3d_draw_skybox(world, render_entity, skybox, 1.0F),
+    content="false",
+  )
+}

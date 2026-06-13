@@ -109,6 +109,18 @@ pub fn draw_skybox(skybox : Skybox, camera_exposure_value : Float) -> Unit {
 }
 
 ///|
+pub fn main_opaque_pass_3d_draw_skybox(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+  skybox : Skybox,
+  camera_exposure_value : Float,
+) -> Bool {
+  @core_3d.main_opaque_pass_3d_draw_skybox(
+    world, render_entity, skybox, camera_exposure_value,
+  )
+}
+
+///|
 fn core_pipeline_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {

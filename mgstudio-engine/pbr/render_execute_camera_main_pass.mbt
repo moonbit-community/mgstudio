@@ -848,7 +848,15 @@ fn render3d_execute_camera_main_pass(
   render3d_draw_mesh_gpu_binned_phase(main_phase)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
   match extracted_camera.payload.skybox {
-    Some(skybox) => @core_pipeline.draw_skybox(skybox, camera_exposure_value)
+    Some(skybox) =>
+      ignore(
+        @core_pipeline.main_opaque_pass_3d_draw_skybox(
+          world,
+          extracted_camera.entity.render_entity,
+          skybox,
+          camera_exposure_value,
+        ),
+      )
     None => ()
   }
   @render.host_gpu_end_pass()

@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/core_pipeline/skybox"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
@@ -38,6 +39,10 @@ pub fn skybox_prepass_should_prepare_pipeline(SkyboxPrepassViewState) -> Bool
 pub fn skybox_should_prepare_bind_group(SkyboxPrepareViewState) -> Bool
 
 pub fn skybox_should_prepare_pipeline(SkyboxPrepareViewState) -> Bool
+
+pub fn view_has_skybox_bind_group(@ecs.World, @core.Entity) -> Bool
+
+pub fn view_has_skybox_pipeline(@ecs.World, @core.Entity) -> Bool
 
 // Errors
 
