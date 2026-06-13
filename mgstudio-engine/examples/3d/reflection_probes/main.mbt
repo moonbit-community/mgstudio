@@ -87,11 +87,6 @@ let reflection_probes_state : Ref[ReflectionProbesState] = Ref({
 })
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   if value < min_value {
     min_value
@@ -130,59 +125,16 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
+fn spawn_sphere_mesh() -> @mesh.Mesh3d {
+  let sphere_mesh = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+    @math.Sphere::new(1.0F),
+  ).ico(7) catch {
+    @mesh_primitives_dim3.IcosphereError::TooManyVertices(_, _) =>
+      abort("reflection_probes sphere subdivisions produce too many vertices")
   }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
   @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
+      assets.add(@mesh.Mesh::from_3d_geometry(sphere_mesh))
     }),
   )
 }
@@ -348,12 +300,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ecs_key_exposure,
     @pbr.Exposure::new(11.0F),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_exposure,
-    @pbr.Exposure::new(11.0F),
-  )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
@@ -375,7 +321,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   reflection_probes_state.val.sphere_material = Some(sphere_material)
   @pbr.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(1.0F, 20, 36),
+    spawn_sphere_mesh(),
     @pbr.MeshMaterial3d::new(sphere_material),
     @transform.Transform::identity(),
   ).spawn(world)
