@@ -343,6 +343,32 @@ pub fn GpuSparseBufferUpdateMetadata::new(element_size~ : Int, updated_page_coun
 pub fn GpuSparseBufferUpdateMetadata::page_size_log2(Self) -> Int
 pub fn GpuSparseBufferUpdateMetadata::updated_page_count(Self) -> Int
 
+pub struct MaterialBindGroupResolvedData {
+  entries : Array[MaterialBindGroupResolvedEntry]
+}
+pub fn MaterialBindGroupResolvedData::MaterialBindGroupResolvedData() -> Self
+pub fn MaterialBindGroupResolvedData::entries(Self) -> Array[MaterialBindGroupResolvedEntry]
+pub fn MaterialBindGroupResolvedData::equals(Self, Self) -> Bool
+pub fn MaterialBindGroupResolvedData::is_empty(Self) -> Bool
+pub fn MaterialBindGroupResolvedData::new(Array[MaterialBindGroupResolvedEntry]) -> Self
+pub impl Default for MaterialBindGroupResolvedData
+
+pub struct MaterialBindGroupResolvedEntry {
+  binding : Int
+  resource : MaterialBindGroupResolvedResource
+} derive(Eq)
+pub fn MaterialBindGroupResolvedEntry::binding(Self) -> Int
+pub fn MaterialBindGroupResolvedEntry::resource(Self) -> MaterialBindGroupResolvedResource
+pub fn MaterialBindGroupResolvedEntry::sampler(Int, Int) -> Self
+pub fn MaterialBindGroupResolvedEntry::texture(Int, Int) -> Self
+pub fn MaterialBindGroupResolvedEntry::uniform(Int, Bytes) -> Self
+
+pub(all) enum MaterialBindGroupResolvedResource {
+  Texture(Int)
+  Sampler(Int)
+  Uniform(Bytes)
+} derive(Eq)
+
 pub struct MultisampleState {
   count : UInt
   mask : UInt64

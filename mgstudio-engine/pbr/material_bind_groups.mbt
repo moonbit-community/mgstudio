@@ -234,6 +234,19 @@ pub fn forward_decal_material_bind_group_layout_descriptor() -> @material.BindGr
 }
 
 ///|
+pub fn extended_material_bind_group_layout_descriptor(
+  base : @material.BindGroupLayoutDescriptor,
+  extension_entries : Array[@render_resource.BindGroupLayoutEntry],
+  label : String,
+) -> @material.BindGroupLayoutDescriptor {
+  let entries = base.entries().copy()
+  for entry in extension_entries {
+    entries.push(entry)
+  }
+  @material.BindGroupLayoutDescriptor::new(label, entries)
+}
+
+///|
 pub fn material_uses_bindless_resources(
   bindless_supported : Bool,
   bindless_slot_count : Int?,

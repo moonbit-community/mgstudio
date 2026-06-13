@@ -99,6 +99,10 @@ pub(open) trait MaterialExtension {
   fn enable_prepass(Self) -> Bool
   fn enable_shadows(Self) -> Bool
   fn specialize(Self) -> @material.UserSpecializeFn?
+  fn bind_group_layout_entries(Self) -> Array[
+    @render_resource.BindGroupLayoutEntry,
+  ]
+  fn bind_group_bindings(Self) -> Array[@material.MaterialExtensionBinding3d]
 }
 
 ///|
@@ -119,6 +123,10 @@ pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   .with_requires_deferred_prepass(extension.enable_prepass())
   .with_disable_shadows(!extension.enable_shadows())
   .with_user_specialize(extension.specialize())
+  .with_extension_bind_group_layout_entries(
+    extension.bind_group_layout_entries(),
+  )
+  .with_extension_bind_group_bindings(extension.bind_group_bindings())
 }
 
 ///|
@@ -364,6 +372,20 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn specialize(
   _self,
 ) {
   Some(forward_decal_specialize)
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn bind_group_layout_entries(
+  _self,
+) {
+  []
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fn bind_group_bindings(
+  _self,
+) {
+  []
 }
 
 ///|

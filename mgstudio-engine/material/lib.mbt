@@ -1070,10 +1070,70 @@ pub fn standard_material_set(
 }
 
 ///|
+pub(all) enum MaterialExtensionBindingResource3d {
+  Texture(@asset.Handle[@asset.Image])
+  Sampler(@asset.Handle[@asset.Image])
+  Uniform(Bytes)
+}
+
+///|
+pub struct MaterialExtensionBinding3d {
+  binding : Int
+  resource : MaterialExtensionBindingResource3d
+}
+
+///|
+pub fn MaterialExtensionBinding3d::texture(
+  binding : Int,
+  image : @asset.Handle[@asset.Image],
+) -> MaterialExtensionBinding3d {
+  MaterialExtensionBinding3d::{
+    binding,
+    resource: MaterialExtensionBindingResource3d::Texture(image),
+  }
+}
+
+///|
+pub fn MaterialExtensionBinding3d::sampler(
+  binding : Int,
+  image : @asset.Handle[@asset.Image],
+) -> MaterialExtensionBinding3d {
+  MaterialExtensionBinding3d::{
+    binding,
+    resource: MaterialExtensionBindingResource3d::Sampler(image),
+  }
+}
+
+///|
+pub fn MaterialExtensionBinding3d::uniform(
+  binding : Int,
+  bytes : Bytes,
+) -> MaterialExtensionBinding3d {
+  MaterialExtensionBinding3d::{
+    binding,
+    resource: MaterialExtensionBindingResource3d::Uniform(bytes),
+  }
+}
+
+///|
+pub fn MaterialExtensionBinding3d::binding(
+  self : MaterialExtensionBinding3d,
+) -> Int {
+  self.binding
+}
+
+///|
+pub fn MaterialExtensionBinding3d::resource(
+  self : MaterialExtensionBinding3d,
+) -> MaterialExtensionBindingResource3d {
+  self.resource
+}
+
+///|
 /// Metadata-only hook aligned with Bevy's `ExtendedMaterial`.
 ///
-/// Runtime can consume this metadata to select an alternative mesh3d shader
-/// path while keeping the same draw contract.
+/// Runtime consumes this metadata to select alternative mesh3d shaders and to
+/// mirror Bevy `AsBindGroup` extension resources in the material bind group.
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
   vertex_shader_path : String?
@@ -1091,6 +1151,10 @@ pub struct ExtendedMaterialMetadata3d {
   requires_deferred_prepass : Bool
   disable_shadows : Bool
   user_specialize : UserSpecializeFn?
+  extension_bind_group_layout_entries : Array[
+    @render_resource.BindGroupLayoutEntry,
+  ]
+  extension_bind_group_bindings : Array[MaterialExtensionBinding3d]
 }
 
 ///|
@@ -1112,6 +1176,8 @@ pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMater
     requires_deferred_prepass: false,
     disable_shadows: false,
     user_specialize: None,
+    extension_bind_group_layout_entries: [],
+    extension_bind_group_bindings: [],
   }
 }
 
@@ -1290,6 +1356,38 @@ pub fn ExtendedMaterialMetadata3d::with_user_specialize(
   user_specialize : UserSpecializeFn?,
 ) -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{ ..self, user_specialize, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_layout_entries(
+  self : ExtendedMaterialMetadata3d,
+  extension_bind_group_layout_entries : Array[
+    @render_resource.BindGroupLayoutEntry,
+  ],
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, extension_bind_group_layout_entries, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_bindings(
+  self : ExtendedMaterialMetadata3d,
+  extension_bind_group_bindings : Array[MaterialExtensionBinding3d],
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, extension_bind_group_bindings, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::extension_bind_group_layout_entries(
+  self : ExtendedMaterialMetadata3d,
+) -> Array[@render_resource.BindGroupLayoutEntry] {
+  self.extension_bind_group_layout_entries
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::extension_bind_group_bindings(
+  self : ExtendedMaterialMetadata3d,
+) -> Array[MaterialExtensionBinding3d] {
+  self.extension_bind_group_bindings
 }
 
 ///|

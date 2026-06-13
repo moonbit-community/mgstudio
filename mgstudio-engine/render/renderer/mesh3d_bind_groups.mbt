@@ -62,8 +62,64 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
       Some(buffer) => mesh3d_retire_or_release_buffer(backend, buffer)
       None => ()
     }
+    for buffer in entry.material_extension_uniform_buffers {
+      mesh3d_retire_or_release_buffer(backend, buffer)
+    }
   }
   backend.mesh3d_material_bg_cache.clear()
+}
+
+///|
+fn mesh3d_extension_bind_group_data_empty() -> @render_resource.MaterialBindGroupResolvedData {
+  @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+}
+
+///|
+fn mesh3d_extension_bind_group_data_matches(
+  left : @render_resource.MaterialBindGroupResolvedData,
+  right : @render_resource.MaterialBindGroupResolvedData,
+) -> Bool {
+  left.equals(right)
+}
+
+///|
+fn mesh3d_add_material_extension_bindings(
+  backend : GpuBackend,
+  builder : @wgpu.BindGroupBuilder,
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
+  uniform_buffers : Array[@wgpu.Buffer],
+) -> Bool raise GpuBackendError {
+  let mut ok = true
+  for entry in material_extension_bind_group_data.entries() {
+    if ok {
+      let binding = entry.binding().reinterpret_as_uint()
+      match entry.resource() {
+        @render_resource.MaterialBindGroupResolvedResource::Texture(texture_id) => {
+          guard resolve_mesh3d_texture(backend, texture_id) is Some(texture) else {
+            return false
+          }
+          ok = builder.add_texture_view(binding, texture.view)
+        }
+        @render_resource.MaterialBindGroupResolvedResource::Sampler(texture_id) => {
+          guard resolve_mesh3d_texture(backend, texture_id) is Some(texture) else {
+            return false
+          }
+          ok = builder.add_sampler(binding, texture.sampler)
+        }
+        @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) => {
+          let size = bytes.length().to_uint64()
+          let buffer = backend.device.create_buffer(
+            size~,
+            usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+          )
+          backend.queue.write_buffer(buffer, 0UL, bytes)
+          uniform_buffers.push(buffer)
+          ok = builder.add_buffer(binding, buffer, size~)
+        }
+      }
+    }
+  }
+  ok
 }
 
 ///|
@@ -1118,6 +1174,7 @@ fn mesh3d_material_cache_get_or_create(
   clearcoat_normal_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let material_layout = mesh3d_descriptor_material_layout(material_descriptor)
   let uses_forward_decal_uniform = match material_layout {
@@ -1145,7 +1202,11 @@ fn mesh3d_material_cache_get_or_create(
         entry.clearcoat_roughness_texture_id == -2 &&
         entry.clearcoat_normal_texture_id == -2 &&
         entry.material_uniform_bytes == empty_bytes &&
-        entry.forward_decal_uniform_bytes == empty_bytes {
+        entry.forward_decal_uniform_bytes == empty_bytes &&
+        mesh3d_extension_bind_group_data_matches(
+          entry.material_extension_bind_group_data,
+          mesh3d_extension_bind_group_data_empty(),
+        ) {
         return entry.bind_group
       }
     }
@@ -1178,6 +1239,8 @@ fn mesh3d_material_cache_get_or_create(
       material_uniform_buffer: material_uniform_buf,
       forward_decal_uniform_bytes: empty_bytes,
       forward_decal_uniform_buffer: None,
+      material_extension_bind_group_data: mesh3d_extension_bind_group_data_empty(),
+      material_extension_uniform_buffers: [],
       bind_group,
     })
     return bind_group
@@ -1196,7 +1259,11 @@ fn mesh3d_material_cache_get_or_create(
       entry.clearcoat_roughness_texture_id == clearcoat_roughness_texture.id &&
       entry.clearcoat_normal_texture_id == clearcoat_normal_texture.id &&
       entry.material_uniform_bytes == material_uniform_bytes &&
-      entry.forward_decal_uniform_bytes == forward_decal_uniform_bytes {
+      entry.forward_decal_uniform_bytes == forward_decal_uniform_bytes &&
+      mesh3d_extension_bind_group_data_matches(
+        entry.material_extension_bind_group_data,
+        material_extension_bind_group_data,
+      ) {
       return entry.bind_group
     }
   }
@@ -1219,7 +1286,10 @@ fn mesh3d_material_cache_get_or_create(
   } else {
     None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=24UL)
+  let material_extension_uniform_buffers : Array[@wgpu.Buffer] = []
+  let builder = @wgpu.BindGroupBuilder::new(
+    max_entries=(24 + material_extension_bind_group_data.entries().length()).to_uint64(),
+  )
   let ok = builder.add_buffer(
       0U,
       material_uniform_buf,
@@ -1255,12 +1325,22 @@ fn mesh3d_material_cache_get_or_create(
   } else {
     ok
   }
+  let ok = if ok {
+    mesh3d_add_material_extension_bindings(
+      backend, builder, material_extension_bind_group_data, material_extension_uniform_buffers,
+    )
+  } else {
+    ok
+  }
   if !ok {
     builder.free()
     material_uniform_buf.release()
     match forward_decal_uniform_buf {
       Some(buffer) => buffer.release()
       None => ()
+    }
+    for buffer in material_extension_uniform_buffers {
+      buffer.release()
     }
     fatal("wgpu: failed to build mesh3d material bind group")
   }
@@ -1284,6 +1364,8 @@ fn mesh3d_material_cache_get_or_create(
     material_uniform_buffer: material_uniform_buf,
     forward_decal_uniform_bytes,
     forward_decal_uniform_buffer: forward_decal_uniform_buf,
+    material_extension_bind_group_data,
+    material_extension_uniform_buffers,
     bind_group,
   })
   bind_group

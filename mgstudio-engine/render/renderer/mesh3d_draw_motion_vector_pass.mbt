@@ -186,6 +186,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   cull_mode : Int,
   material_pipeline_id : UInt64,
   transparent : Bool,
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
 ) -> Unit raise GpuBackendError {
   if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
     return
@@ -410,6 +411,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
         specular_transmission, thickness, ior, alpha_cutoff, material_flags, lightmap_exposure,
         deferred_lighting_pass_id,
       ),
+      material_extension_bind_group_data~,
     )
   } else {
     empty_material_bg

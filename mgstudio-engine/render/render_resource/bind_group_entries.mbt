@@ -86,6 +86,24 @@ pub struct BindGroupDescriptor {
 }
 
 ///|
+pub(all) enum MaterialBindGroupResolvedResource {
+  Texture(Int)
+  Sampler(Int)
+  Uniform(Bytes)
+} derive(Eq)
+
+///|
+pub struct MaterialBindGroupResolvedEntry {
+  binding : Int
+  resource : MaterialBindGroupResolvedResource
+} derive(Eq)
+
+///|
+pub struct MaterialBindGroupResolvedData {
+  entries : Array[MaterialBindGroupResolvedEntry]
+}
+
+///|
 pub fn BindGroupEntry::buffer(
   binding : Int,
   buffer : BufferId,
@@ -134,4 +152,100 @@ pub fn BindGroupDescriptor::entries(
   self : BindGroupDescriptor,
 ) -> Array[BindGroupEntry] {
   self.entries
+}
+
+///|
+pub fn MaterialBindGroupResolvedEntry::texture(
+  binding : Int,
+  texture_id : Int,
+) -> MaterialBindGroupResolvedEntry {
+  MaterialBindGroupResolvedEntry::{
+    binding,
+    resource: MaterialBindGroupResolvedResource::Texture(texture_id),
+  }
+}
+
+///|
+pub fn MaterialBindGroupResolvedEntry::sampler(
+  binding : Int,
+  texture_id : Int,
+) -> MaterialBindGroupResolvedEntry {
+  MaterialBindGroupResolvedEntry::{
+    binding,
+    resource: MaterialBindGroupResolvedResource::Sampler(texture_id),
+  }
+}
+
+///|
+pub fn MaterialBindGroupResolvedEntry::uniform(
+  binding : Int,
+  bytes : Bytes,
+) -> MaterialBindGroupResolvedEntry {
+  MaterialBindGroupResolvedEntry::{
+    binding,
+    resource: MaterialBindGroupResolvedResource::Uniform(bytes),
+  }
+}
+
+///|
+pub fn MaterialBindGroupResolvedEntry::binding(
+  self : MaterialBindGroupResolvedEntry,
+) -> Int {
+  self.binding
+}
+
+///|
+pub fn MaterialBindGroupResolvedEntry::resource(
+  self : MaterialBindGroupResolvedEntry,
+) -> MaterialBindGroupResolvedResource {
+  self.resource
+}
+
+///|
+pub fn MaterialBindGroupResolvedData::MaterialBindGroupResolvedData() -> MaterialBindGroupResolvedData {
+  MaterialBindGroupResolvedData::{ entries: [] }
+}
+
+///|
+pub impl Default for MaterialBindGroupResolvedData with fn default() {
+  MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+}
+
+///|
+pub fn MaterialBindGroupResolvedData::new(
+  entries : Array[MaterialBindGroupResolvedEntry],
+) -> MaterialBindGroupResolvedData {
+  MaterialBindGroupResolvedData::{ entries, }
+}
+
+///|
+pub fn MaterialBindGroupResolvedData::entries(
+  self : MaterialBindGroupResolvedData,
+) -> Array[MaterialBindGroupResolvedEntry] {
+  self.entries
+}
+
+///|
+pub fn MaterialBindGroupResolvedData::is_empty(
+  self : MaterialBindGroupResolvedData,
+) -> Bool {
+  self.entries.length() == 0
+}
+
+///|
+pub fn MaterialBindGroupResolvedData::equals(
+  self : MaterialBindGroupResolvedData,
+  other : MaterialBindGroupResolvedData,
+) -> Bool {
+  let entries = self.entries
+  let other_entries = other.entries
+  if entries.length() != other_entries.length() {
+    return false
+  }
+  for index in 0..<entries.length() {
+    if entries[index] != other_entries[index] {
+      return false
+    }
+  }
+  true
 }

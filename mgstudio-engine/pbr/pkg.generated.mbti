@@ -376,6 +376,8 @@ pub let ecs_key_wireframe_view_key_cache : @ecs.ResourceKey[WireframeViewKeyCach
 
 pub let ecs_key_wireframe_wide_bind_groups : @ecs.ResourceKey[WireframeWideBindGroups]
 
+pub fn extended_material_bind_group_layout_descriptor(@render_resource.BindGroupLayoutDescriptor, Array[@render_resource.BindGroupLayoutEntry], String) -> @render_resource.BindGroupLayoutDescriptor
+
 pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
 pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
@@ -2382,5 +2384,7 @@ pub(open) trait MaterialExtension {
   fn enable_prepass(Self) -> Bool
   fn enable_shadows(Self) -> Bool
   fn specialize(Self) -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
+  fn bind_group_layout_entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
+  fn bind_group_bindings(Self) -> Array[@material.MaterialExtensionBinding3d]
 }
 

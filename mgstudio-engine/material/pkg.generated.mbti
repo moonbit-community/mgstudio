@@ -209,13 +209,19 @@ pub struct ExtendedMaterialMetadata3d {
   requires_deferred_prepass : Bool
   disable_shadows : Bool
   user_specialize : ((String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
+  extension_bind_group_layout_entries : Array[@render_resource.BindGroupLayoutEntry]
+  extension_bind_group_bindings : Array[MaterialExtensionBinding3d]
 }
 pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> Self
+pub fn ExtendedMaterialMetadata3d::extension_bind_group_bindings(Self) -> Array[MaterialExtensionBinding3d]
+pub fn ExtendedMaterialMetadata3d::extension_bind_group_layout_entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
 pub fn ExtendedMaterialMetadata3d::new(Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(Self, AlphaMode3d?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_deferred_vertex_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_disable_shadows(Self, Bool) -> Self
+pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_bindings(Self, Array[MaterialExtensionBinding3d]) -> Self
+pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_layout_entries(Self, Array[@render_resource.BindGroupLayoutEntry]) -> Self
 pub fn ExtendedMaterialMetadata3d::with_extension_tag(Self, Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_meshlet_deferred_fragment_shader_path(Self, String?) -> Self
@@ -248,6 +254,22 @@ pub(all) enum Material3dFamily {
   ForwardDecal
   MeshletDebug
 } derive(Eq, @debug.Debug)
+
+pub struct MaterialExtensionBinding3d {
+  binding : Int
+  resource : MaterialExtensionBindingResource3d
+}
+pub fn MaterialExtensionBinding3d::binding(Self) -> Int
+pub fn MaterialExtensionBinding3d::resource(Self) -> MaterialExtensionBindingResource3d
+pub fn MaterialExtensionBinding3d::sampler(Int, @asset.Handle[@image.Image]) -> Self
+pub fn MaterialExtensionBinding3d::texture(Int, @asset.Handle[@image.Image]) -> Self
+pub fn MaterialExtensionBinding3d::uniform(Int, Bytes) -> Self
+
+pub(all) enum MaterialExtensionBindingResource3d {
+  Texture(@asset.Handle[@image.Image])
+  Sampler(@asset.Handle[@image.Image])
+  Uniform(Bytes)
+}
 
 pub struct MaterialProperties {
   render_method : OpaqueRendererMethod

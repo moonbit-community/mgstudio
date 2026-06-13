@@ -15,8 +15,10 @@
 ///|
 ///
 /// Baseline parity: deferred SSR controls and upstream scene interaction flow are
-/// mapped to mgstudio APIs. Upstream custom deferred water material extension is
-/// still represented with closest available standard-material behavior.
+/// mapped to mgstudio APIs.
+
+///|
+const SHADER_ASSET_PATH : String = "shaders/water_material.wgsl"
 
 ///|
 const CAMERA_HEIGHT : Float = 2.25F
@@ -41,6 +43,160 @@ const RANGE_STEP_ROUGHNESS : Float = 0.005F
 
 ///|
 const RANGE_STEP_EDGE : Float = 0.001F
+
+///|
+struct WaterSettings {
+  octave_vectors : Array[@math.Vec4]
+  octave_scales : @math.Vec4
+  octave_strengths : @math.Vec4
+}
+
+///|
+struct Water {
+  normals : @asset.Handle[@asset.Image]
+  settings : WaterSettings
+}
+
+///|
+fn ssr_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn ssr_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn ssr_push_vec4(words : Array[UInt], value : @math.Vec4) -> Unit {
+  ssr_push_f32(words, value.x)
+  ssr_push_f32(words, value.y)
+  ssr_push_f32(words, value.z)
+  ssr_push_f32(words, value.w)
+}
+
+///|
+fn WaterSettings::as_uniform_bytes(self : WaterSettings) -> Bytes {
+  let words : Array[UInt] = []
+  for vector in self.octave_vectors {
+    ssr_push_vec4(words, vector)
+  }
+  ssr_push_vec4(words, self.octave_scales)
+  ssr_push_vec4(words, self.octave_strengths)
+  ssr_u32le_pack(words)
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn extension_tag(_self) {
+  81
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn fragment_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn prepass_vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn prepass_fragment_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn deferred_vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn deferred_fragment_shader(
+  _self,
+) {
+  Some(SHADER_ASSET_PATH)
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn alpha_mode(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn opaque_render_method(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn enable_prepass(_self) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn enable_shadows(_self) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn specialize(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn bind_group_layout_entries(
+  _self,
+) {
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  [
+    @render_resource.BindGroupLayoutEntry::new(
+      100,
+      fragment,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      101,
+      fragment,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      102,
+      fragment,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        64UL,
+      ),
+    ),
+  ]
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn bind_group_bindings(self) {
+  [
+    @material.MaterialExtensionBinding3d::texture(100, self.normals),
+    @material.MaterialExtensionBinding3d::sampler(101, self.normals),
+    @material.MaterialExtensionBinding3d::uniform(
+      102,
+      self.settings.as_uniform_bytes(),
+    ),
+  ]
+}
 
 ///|
 pub(all) enum DisplayedModel {
@@ -81,7 +237,6 @@ priv struct SsrState {
   mut metallic_base : @core.Entity?
   mut red_plane_base : @core.Entity?
   mut water_base : @core.Entity?
-  mut water_material : @asset.Handle[@pbr.StandardMaterial]?
   mut help_text : @text.TextHandle?
 }
 
@@ -110,7 +265,6 @@ let ssr_state : Ref[SsrState] = Ref({
   metallic_base: None,
   red_plane_base: None,
   water_base: None,
-  water_material: None,
   help_text: None,
 })
 
@@ -488,25 +642,36 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   |> ignore)
   ssr_state.val.red_plane_base = Some(red)
 
-  let water_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::black())
-    .with_normal_map_texture(
-      Some(
-        asset_server.load_with_settings("textures/water_normals.png", fn(
-          settings,
-        ) {
-          settings.is_srgb = false
-          settings.sampler = @asset.ImageSampler::Descriptor(
-            @asset.ImageSamplerDescriptor::linear().set_address_mode(
-              @asset.ImageAddressMode::Repeat,
-            ),
-          )
-        }),
-      ),
-    )
-    .with_perceptual_roughness(0.09F)
-    .with_reflectance(0.6F)
-    .with_metallic(0.0F),
+  let water_normals = asset_server.load_with_settings(
+    "textures/water_normals.png",
+    fn(settings) {
+      settings.is_srgb = false
+      settings.sampler = @asset.ImageSampler::Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(
+          @asset.ImageAddressMode::Repeat,
+        ),
+      )
+    },
+  )
+  let water_extension = Water::{
+    normals: water_normals,
+    settings: WaterSettings::{
+      octave_vectors: [
+        @math.Vec4::new(0.080F, 0.059F, 0.073F, -0.062F),
+        @math.Vec4::new(0.153F, 0.138F, -0.149F, -0.195F),
+      ],
+      octave_scales: @math.Vec4::new(5.0F, 10.5F, 39.5F, 74.5F),
+      octave_strengths: @math.Vec4::new(0.16F, 0.18F, 0.093F, 0.044F),
+    },
+  }
+  let water_base_material = @pbr.StandardMaterial::from_color(
+    @color.Color::black(),
+  ).with_perceptual_roughness(0.09F)
+  let water_material = @pbr.standard_material_add(water_base_material)
+  let water_mesh_material = @pbr.MeshMaterial3d::new(water_material).with_extended_material(
+    Some(
+      @pbr.ExtendedMaterial::new(water_base_material, water_extension).metadata(),
+    ),
   )
   let water = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -519,11 +684,10 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(water_material),
+    water_mesh_material,
     @transform.Transform::identity(),
   ).spawn(world)
   ssr_state.val.water_base = Some(water)
-  ssr_state.val.water_material = Some(water_material)
 }
 
 ///|
@@ -673,33 +837,6 @@ fn rotate_models(world : @ecs.World) -> Unit {
         transform.with_rotation(rotation),
       )
       |> ignore)
-    }
-  }
-}
-
-///|
-fn animate_water_material(world : @ecs.World) -> Unit {
-  if ssr_state.val.water_material is Some(handle) {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      let t = world_time(world).elapsed_seconds()
-      let offset = @math.Vec2::new(
-        @math.sin(t * 0.31F) * 0.04F,
-        @math.cos(t * 0.27F) * 0.04F,
-      )
-      @pbr.standard_material_set(
-        handle,
-        material
-        .with_uv_transform(@transform.Affine2::from_translation(offset))
-        .with_emissive(
-          @color.Color::new(
-            0.01F + @math.sin(t * 0.4F) * 0.005F,
-            0.02F,
-            0.025F,
-            1.0F,
-          ),
-        ),
-      )
-      |> ignore
     }
   }
 }
@@ -896,7 +1033,6 @@ fn setup(world : @ecs.World) -> Unit {
   ssr_state.val.metallic_base = None
   ssr_state.val.red_plane_base = None
   ssr_state.val.water_base = None
-  ssr_state.val.water_material = None
   ssr_state.val.help_text = None
 
   let asset_server = @asset.AssetServer::new()
@@ -921,6 +1057,5 @@ fn main {
   .add_systems_world(@app.Startup, setup)
   .add_systems_world(@app.Update, control_system)
   .add_systems_world(@app.Update, rotate_models)
-  .add_systems_world(@app.Update, animate_water_material)
   .run()
 }

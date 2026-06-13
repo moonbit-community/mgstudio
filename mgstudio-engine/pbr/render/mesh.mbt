@@ -249,6 +249,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   cull_mode : Int
   vertex_shader_path : String?
   fragment_shader_path : String?
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_pipeline_id : @material.CachedRenderPipelineId?
   skinning_key_hi : Int
   skinning_key_lo : Int
@@ -282,6 +283,42 @@ fn render3d_affine3_transpose_values(affine : @math.Affine3) -> Array[Float] {
     affine.matrix3.z_axis.z,
     affine.translation.z,
   ]
+}
+
+///|
+pub fn render3d_resolve_material_extension_bind_group_data(
+  extension : @material.ExtendedMaterialMetadata3d?,
+) -> @render_resource.MaterialBindGroupResolvedData {
+  guard extension is Some(extension0) else {
+    return @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+  }
+  let entries : Array[@render_resource.MaterialBindGroupResolvedEntry] = []
+  for binding in extension0.extension_bind_group_bindings() {
+    match binding.resource() {
+      @material.MaterialExtensionBindingResource3d::Texture(image) =>
+        entries.push(
+          @render_resource.MaterialBindGroupResolvedEntry::texture(
+            binding.binding(),
+            image.id(),
+          ),
+        )
+      @material.MaterialExtensionBindingResource3d::Sampler(image) =>
+        entries.push(
+          @render_resource.MaterialBindGroupResolvedEntry::sampler(
+            binding.binding(),
+            image.id(),
+          ),
+        )
+      @material.MaterialExtensionBindingResource3d::Uniform(bytes) =>
+        entries.push(
+          @render_resource.MaterialBindGroupResolvedEntry::uniform(
+            binding.binding(),
+            bytes,
+          ),
+        )
+    }
+  }
+  @render_resource.MaterialBindGroupResolvedData::new(entries)
 }
 
 ///|
@@ -335,6 +372,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
   material_pipeline_id? : @material.CachedRenderPipelineId? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
@@ -440,6 +478,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     cull_mode: render3d_cull_mode_value(material, draw_flags),
     vertex_shader_path,
     fragment_shader_path,
+    material_extension_bind_group_data,
     material_pipeline_id,
     skinning_key_hi,
     skinning_key_lo,
@@ -652,6 +691,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     cull_mode=payload.cull_mode,
     vertex_shader_path=payload.vertex_shader_path,
     fragment_shader_path=payload.fragment_shader_path,
+    material_extension_bind_group_data=payload.material_extension_bind_group_data,
     skinning_key_hi=payload.skinning_key_hi,
     skinning_key_lo=payload.skinning_key_lo,
     morph_weights_index=payload.morph_weights_index,

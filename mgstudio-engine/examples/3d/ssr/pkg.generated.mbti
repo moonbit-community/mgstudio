@@ -1,6 +1,13 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/ssr"
 
+import {
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/render/render_resource",
+}
+
 // Values
 
 // Errors
@@ -17,6 +24,11 @@ pub(all) enum DisplayedModel {
   FlightHelmet
   Capsules
 }
+
+type Water
+pub impl @pbr.MaterialExtension for Water
+
+type WaterSettings
 
 // Type aliases
 

@@ -487,6 +487,24 @@ pub fn render3d_material_properties_for_standard_material(
   let standard_material_key = standard_material_key_from_material(
     effective_material,
   )
+  let base_material_layout = match extension {
+    Some(metadata) if metadata.extension_tag == 1 =>
+      forward_decal_material_bind_group_layout_descriptor()
+    _ => standard_material_bind_group_layout_descriptor()
+  }
+  let material_layout = match extension {
+    Some(metadata) =>
+      if metadata.extension_bind_group_layout_entries().length() > 0 {
+        extended_material_bind_group_layout_descriptor(
+          base_material_layout,
+          metadata.extension_bind_group_layout_entries(),
+          "ExtendedMaterial<StandardMaterial>",
+        )
+      } else {
+        base_material_layout
+      }
+    _ => base_material_layout
+  }
   let mut properties = @material.MaterialProperties::MaterialProperties()
     .with_render_method(render_method)
     .with_alpha_mode(effective_material.alpha_mode)
@@ -500,15 +518,7 @@ pub fn render3d_material_properties_for_standard_material(
     .with_render_phase_type(
       standard_material_render_phase_type(effective_material),
     )
-    .with_material_layout(
-      Some(
-        match extension {
-          Some(metadata) if metadata.extension_tag == 1 =>
-            forward_decal_material_bind_group_layout_descriptor()
-          _ => standard_material_bind_group_layout_descriptor()
-        },
-      ),
-    )
+    .with_material_layout(Some(material_layout))
     .with_material_key(
       @material.ErasedMaterialKey::new(
         standard_material_key.bits(),

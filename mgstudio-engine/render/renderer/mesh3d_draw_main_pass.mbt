@@ -106,6 +106,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   morph_targets_texture_id : Int,
   material_pipeline_id : UInt64,
   transparent : Bool,
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
 ) -> Unit raise GpuBackendError {
   let draw_vertex_shader_path = if pass_kind == 0 {
     vertex_shader_path
@@ -549,6 +550,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
           runtime_material_flags, lightmap_exposure, deferred_lighting_pass_id,
         ),
         forward_decal_inv_depth_fade_factor~,
+        material_extension_bind_group_data~,
       ),
     )
   }

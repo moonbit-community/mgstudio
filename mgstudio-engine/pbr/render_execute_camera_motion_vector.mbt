@@ -298,6 +298,9 @@ fn render3d_execute_camera_prepass(
           0
         },
         material_pipeline_id~,
+        material_extension_bind_group_data=@pbr_render.render3d_resolve_material_extension_bind_group_data(
+          mesh.material_extension,
+        ),
         morph_weights_index=mesh.morph_weights_index,
         previous_morph_weights_index=mesh.previous_morph_weights_index,
         morph_targets_texture_id=mesh.morph_targets_texture_id,

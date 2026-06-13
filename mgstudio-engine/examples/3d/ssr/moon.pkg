@@ -7,12 +7,14 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/text",
@@ -21,6 +23,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

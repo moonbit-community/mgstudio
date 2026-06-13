@@ -119,6 +119,7 @@ pub fn GpuBackend::draw_mesh3d(
   cull_mode : Int,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
   morph_weights_index? : Int = -1,
@@ -181,7 +182,7 @@ pub fn GpuBackend::draw_mesh3d(
       max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
       specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
       thickness, ior, alpha_cutoff, material_flags, lightmap_exposure, deferred_lighting_pass_id,
-      cull_mode, material_pipeline_id, transparent,
+      cull_mode, material_pipeline_id, transparent, material_extension_bind_group_data,
     )
     return
   }
@@ -259,6 +260,7 @@ pub fn GpuBackend::draw_mesh3d(
       previous_morph_weights_index,
       morph_targets_texture_id,
       material_pipeline_id,
+      material_extension_bind_group_data,
     )
     return
   }
@@ -281,6 +283,6 @@ pub fn GpuBackend::draw_mesh3d(
     lightmap_uv_max_y, deferred_lighting_pass_id, point_shadow_enabled, point_shadow_depth_bias,
     mesh_flags, cull_mode, vertex_shader_path, fragment_shader_path, skinning_key_hi,
     skinning_key_lo, morph_weights_index, previous_morph_weights_index, morph_targets_texture_id,
-    material_pipeline_id, transparent,
+    material_pipeline_id, transparent, material_extension_bind_group_data,
   )
 }

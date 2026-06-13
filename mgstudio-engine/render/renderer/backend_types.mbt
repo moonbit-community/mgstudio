@@ -129,6 +129,8 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   material_uniform_buffer : @wgpu.Buffer
   forward_decal_uniform_bytes : Bytes
   forward_decal_uniform_buffer : @wgpu.Buffer?
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  material_extension_uniform_buffers : Array[@wgpu.Buffer]
   bind_group : @wgpu.BindGroup
 }
 

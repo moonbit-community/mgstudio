@@ -117,6 +117,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   previous_morph_weights_index : Int,
   morph_target_texture_id : Int,
   material_pipeline_id : UInt64,
+  material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   let skinned = skinning_key_hi >= 0
@@ -342,6 +343,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
         specular_transmission, thickness, ior, alpha_cutoff, material_flags, lightmap_exposure,
         deferred_lighting_pass_id,
       ),
+      material_extension_bind_group_data~,
     )
   } else {
     empty_bg
