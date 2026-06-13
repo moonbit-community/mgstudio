@@ -13,6 +13,36 @@
 // limitations under the License.
 
 ///|
+fn render3d_extract_ssao_settings(
+  entity : @core.Entity,
+  settings : ScreenSpaceAmbientOcclusion?,
+  msaa : Msaa?,
+) -> ScreenSpaceAmbientOcclusion? {
+  guard settings is Some(ssao_settings) else { return None }
+  let effective_msaa = match msaa {
+    Some(value) => value
+    None => Msaa::default()
+  }
+  if effective_msaa != Msaa::Off {
+    @app.log_error(
+      "SSAO is being used which requires Msaa::Off, but camera \{entity.id} has Msaa::\{render3d_msaa_variant_name(effective_msaa)}",
+    )
+    return None
+  }
+  Some(ssao_settings)
+}
+
+///|
+fn render3d_msaa_variant_name(msaa : Msaa) -> String {
+  match msaa {
+    Off => "Off"
+    Sample2 => "Sample2"
+    Sample4 => "Sample4"
+    Sample8 => "Sample8"
+  }
+}
+
+///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
   world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
@@ -145,9 +175,6 @@ fn render3d_execute_collect_cameras(
     let irradiance_volume = try! source_world.get_by_key(
       entity, ecs_key_irradiance_volume,
     )
-    let screen_space_ambient_occlusion = try! source_world.get_by_key(
-      entity, ecs_key_screen_space_ambient_occlusion,
-    )
     let screen_space_reflections = try! source_world.get_by_key(
       entity, ecs_key_screen_space_reflections,
     )
@@ -191,6 +218,13 @@ fn render3d_execute_collect_cameras(
       entity, ecs_key_shadow_filtering_method,
     )
     let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
+    let screen_space_ambient_occlusion = render3d_extract_ssao_settings(
+      entity,
+      try! source_world.get_by_key(
+        entity, ecs_key_screen_space_ambient_occlusion,
+      ),
+      msaa,
+    )
     let target = match target_opt.value() {
       Some(v) => v
       None => @camera_camera.RenderTarget::Screen
