@@ -1244,6 +1244,72 @@ pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(
 }
 
 ///|
+pub fn GpuBackend::create_normal_prepass_target_rgb10a2unorm(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  sample_count? : Int = 1,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+  )
+  let format = tf(@wgpu.TEXTURE_FORMAT_RGB10_A2_UNORM)
+  let tex = self.device.create_texture_u32(
+    w,
+    h,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=safe_sample_count,
+  )
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let sampler = self.device.create_sampler_nearest_clamp()
+  let bind_group = if safe_sample_count == 1U {
+    Some(create_cached_texture_bind_group(self, sampler, view))
+  } else {
+    None
+  }
+  let info = GpuTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format,
+    texture: tex,
+    view,
+    sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: safe_sample_count.reinterpret_as_int(),
+    layer_views: [],
+    sampler,
+    bind_group,
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
 pub fn GpuBackend::create_depth_prepass_target(
   self : GpuBackend,
   width : Int,
@@ -1883,7 +1949,11 @@ fn target_size_for_pass(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
   } else {
     match find_texture(backend, target_id) {
       Some(info) => Some((info.width, info.height))
-      None => None
+      None =>
+        match find_prepass_depth_texture(backend, target_id) {
+          Some(info) => Some((info.width, info.height))
+          None => None
+        }
     }
   }
 }
@@ -2058,6 +2128,26 @@ pub fn create_motion_vector_prepass_target_rg16f(
         width,
         height,
         nearest,
+        sample_count~,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_normal_prepass_target_rgb10a2unorm(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_normal_prepass_target_rgb10a2unorm(
+        width,
+        height,
         sample_count~,
       )
     } catch {

@@ -259,6 +259,7 @@ fn render3d_execute_camera_main_pass(
   transmission_blur_taps : Int,
   wireframe_config : WireframeConfig?,
   prepass_depth_texture_id~ : Int,
+  prepass_normal_texture_id~ : Int,
   prepass_motion_vector_texture_id~ : Int,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
@@ -344,6 +345,7 @@ fn render3d_execute_camera_main_pass(
     tonemapping_blender_lut_texture_id=blender_lut_texture_id,
     deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
     prepass_depth_texture_id~,
+    prepass_normal_texture_id~,
     prepass_motion_vector_texture_id~,
     msaa_sample_count~,
     point_shadow_near~,
@@ -877,6 +879,7 @@ fn render3d_execute_camera_main_pass(
         tonemapping_blender_lut_texture_id=blender_lut_texture_id,
         deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
         prepass_depth_texture_id~,
+        prepass_normal_texture_id~,
         prepass_motion_vector_texture_id~,
         msaa_sample_count~,
         point_shadow_near~,
@@ -947,6 +950,7 @@ fn render3d_execute_camera_main_pass(
       tonemapping_blender_lut_texture_id=blender_lut_texture_id,
       deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
       prepass_depth_texture_id~,
+      prepass_normal_texture_id~,
       prepass_motion_vector_texture_id~,
       msaa_sample_count~,
       point_shadow_near~,

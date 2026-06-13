@@ -21,6 +21,7 @@ priv struct MotionBlurTargetsEntry {
   scene_target_id : Int
   velocity_target_id : Int
   depth_target_id : Int
+  normal_target_id : Int
 }
 
 ///|
@@ -30,6 +31,13 @@ priv struct PrepassTargetsEntry {
   height : Int
   sample_count : Int
   depth_target_id : Int
+  normal_target_id : Int
+}
+
+///|
+priv struct Render3dPrepassTargetIds {
+  depth_texture_id : Int
+  normal_texture_id : Int
 }
 
 ///|
@@ -81,7 +89,8 @@ fn render3d_prepass_targets_get_or_create(
   width : Int,
   height : Int,
   sample_count : Int,
-) -> Int {
+  normal_prepass_enabled : Bool,
+) -> Render3dPrepassTargetIds {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let prepass_targets = scene_targets_state.peek().prepass_targets
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
@@ -91,7 +100,16 @@ fn render3d_prepass_targets_get_or_create(
       item.width == width &&
       item.height == height &&
       item.sample_count == safe_sample_count {
-      return item.depth_target_id
+      if !normal_prepass_enabled || item.normal_target_id >= 0 {
+        return Render3dPrepassTargetIds::{
+          depth_texture_id: item.depth_target_id,
+          normal_texture_id: if normal_prepass_enabled {
+            item.normal_target_id
+          } else {
+            -1
+          },
+        }
+      }
     }
   }
   let depth_target_id = @render.host_gpu_create_depth_prepass_target(
@@ -99,6 +117,15 @@ fn render3d_prepass_targets_get_or_create(
     height~,
     sample_count=safe_sample_count,
   )
+  let normal_target_id = if normal_prepass_enabled {
+    @render.host_gpu_create_normal_prepass_target_rgb10a2unorm(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
   let next : Array[PrepassTargetsEntry] = []
   let mut replaced = false
   for item in prepass_targets {
@@ -111,6 +138,7 @@ fn render3d_prepass_targets_get_or_create(
           height,
           sample_count: safe_sample_count,
           depth_target_id,
+          normal_target_id,
         })
         replaced = true
       }
@@ -125,10 +153,14 @@ fn render3d_prepass_targets_get_or_create(
       height,
       sample_count: safe_sample_count,
       depth_target_id,
+      normal_target_id,
     })
   }
   scene_targets_state.modify(fn(state) { state.prepass_targets = next })
-  depth_target_id
+  Render3dPrepassTargetIds::{
+    depth_texture_id: depth_target_id,
+    normal_texture_id: normal_target_id,
+  }
 }
 
 ///|
@@ -138,7 +170,8 @@ fn render3d_motion_blur_targets_get_or_create(
   width : Int,
   height : Int,
   sample_count : Int,
-) -> (Int, Int, Int) {
+  normal_prepass_enabled? : Bool = false,
+) -> (Int, Int, Int, Int) {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let motion_blur_targets = scene_targets_state.peek().motion_blur_targets
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
@@ -148,11 +181,18 @@ fn render3d_motion_blur_targets_get_or_create(
       item.width == width &&
       item.height == height &&
       item.sample_count == safe_sample_count {
-      return (
-        item.scene_target_id,
-        item.velocity_target_id,
-        item.depth_target_id,
-      )
+      if !normal_prepass_enabled || item.normal_target_id >= 0 {
+        return (
+          item.scene_target_id,
+          item.velocity_target_id,
+          item.depth_target_id,
+          if normal_prepass_enabled {
+            item.normal_target_id
+          } else {
+            -1
+          },
+        )
+      }
     }
   }
   let scene_target_id = @render.host_gpu_create_render_target_rgba16f(
@@ -172,6 +212,15 @@ fn render3d_motion_blur_targets_get_or_create(
     height~,
     sample_count=safe_sample_count,
   )
+  let normal_target_id = if normal_prepass_enabled {
+    @render.host_gpu_create_normal_prepass_target_rgb10a2unorm(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
   let next : Array[MotionBlurTargetsEntry] = []
   let mut replaced = false
   for item in motion_blur_targets {
@@ -186,6 +235,7 @@ fn render3d_motion_blur_targets_get_or_create(
           scene_target_id,
           velocity_target_id,
           depth_target_id,
+          normal_target_id,
         })
         replaced = true
       }
@@ -202,10 +252,11 @@ fn render3d_motion_blur_targets_get_or_create(
       scene_target_id,
       velocity_target_id,
       depth_target_id,
+      normal_target_id,
     })
   }
   scene_targets_state.modify(fn(state) { state.motion_blur_targets = next })
-  (scene_target_id, velocity_target_id, depth_target_id)
+  (scene_target_id, velocity_target_id, depth_target_id, normal_target_id)
 }
 
 ///|

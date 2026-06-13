@@ -640,7 +640,26 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(prepass_depth_texture) else {
       return
     }
-    (None, None, None, prepass_depth_texture.view)
+    if prepass_normal_texture_id >= 0 {
+      guard target_color_attachment(
+          self, prepass_normal_texture_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((normal_view, normal_resolve_view)) else {
+        return
+      }
+      guard target_size_for_pass(self, prepass_normal_texture_id)
+        is Some((normal_w, normal_h)) else {
+        return
+      }
+      if prepass_depth_texture.width != normal_w ||
+        prepass_depth_texture.height != normal_h ||
+        prepass_depth_texture.sample_count != safe_msaa_sample_count {
+        return
+      }
+      (Some(normal_view), normal_resolve_view, None, prepass_depth_texture.view)
+    } else {
+      (None, None, None, prepass_depth_texture.view)
+    }
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
     guard target_view(self, target_id, target_layer) is Some(primary_view) else {
@@ -723,25 +742,54 @@ pub fn GpuBackend::begin_pass_3d(
       match secondary_color_view {
         Some(color1_view) =>
           if base_kind == PASS_KIND_BASE_MOTION_VECTOR {
-            frame.encoder.begin_render_pass_color1_depth_u32(
-              color1_view,
-              depth_view,
-              color1_load_op_u32=color_load_op_u32,
-              color1_store_op_u32=@wgpu.STORE_OP_STORE,
-              color1_clear_r_f32=0.0F,
-              color1_clear_g_f32=0.0F,
-              color1_clear_b_f32=0.0F,
-              color1_clear_a_f32=0.0F,
-              depth_load_op_u32~,
-              depth_store_op_u32=@wgpu.STORE_OP_STORE,
-              depth_clear_value_f32=0.0F,
-              depth_read_only=false,
-              // Bevy-aligned reverse-Z: clear depth to far plane.
-              stencil_load_op_u32~,
-              stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-              stencil_clear_value_u32=0U,
-              stencil_read_only=true,
-            )
+            if prepass_normal_texture_id >= 0 {
+              frame.encoder.begin_render_pass_color2_depth_u32(
+                color0_view,
+                color1_view,
+                depth_view,
+                color0_load_op_u32=color_load_op_u32,
+                color0_store_op_u32=@wgpu.STORE_OP_STORE,
+                color0_clear_r_f32=0.0F,
+                color0_clear_g_f32=0.0F,
+                color0_clear_b_f32=0.0F,
+                color0_clear_a_f32=0.0F,
+                color1_load_op_u32=color_load_op_u32,
+                color1_store_op_u32=@wgpu.STORE_OP_STORE,
+                color1_clear_r_f32=0.0F,
+                color1_clear_g_f32=0.0F,
+                color1_clear_b_f32=0.0F,
+                color1_clear_a_f32=0.0F,
+                depth_load_op_u32~,
+                depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                depth_clear_value_f32=0.0F,
+                depth_read_only=false,
+                // Bevy-aligned reverse-Z: clear depth to far plane.
+                stencil_load_op_u32~,
+                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                stencil_clear_value_u32=0U,
+                stencil_read_only=true,
+              )
+            } else {
+              frame.encoder.begin_render_pass_color1_depth_u32(
+                color1_view,
+                depth_view,
+                color1_load_op_u32=color_load_op_u32,
+                color1_store_op_u32=@wgpu.STORE_OP_STORE,
+                color1_clear_r_f32=0.0F,
+                color1_clear_g_f32=0.0F,
+                color1_clear_b_f32=0.0F,
+                color1_clear_a_f32=0.0F,
+                depth_load_op_u32~,
+                depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                depth_clear_value_f32=0.0F,
+                depth_read_only=false,
+                // Bevy-aligned reverse-Z: clear depth to far plane.
+                stencil_load_op_u32~,
+                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                stencil_clear_value_u32=0U,
+                stencil_read_only=true,
+              )
+            }
           } else {
             frame.encoder.begin_render_pass_color2_depth_u32(
               color0_view,

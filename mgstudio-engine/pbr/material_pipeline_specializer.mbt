@@ -972,6 +972,21 @@ fn pbr_pipeline_cache_or_abort(
 }
 
 ///|
+fn pbr_register_pipeline_descriptor_for_same_frame_draw(
+  pipeline_cache : @render_resource.PipelineCache,
+  pipeline_id : @material.CachedRenderPipelineId,
+) -> Unit {
+  pipeline_cache.process_queue()
+  let descriptor = pipeline_cache.get_render_pipeline_descriptor(pipeline_id) catch {
+    _ => return
+  }
+  @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
+    material_pipeline_id=pipeline_id.id(),
+    descriptor~,
+  )
+}
+
+///|
 fn pbr_material_base_specialize(
   world : @ecs.World,
   key : @material.ErasedMaterialPipelineKey,
@@ -1020,6 +1035,7 @@ fn pbr_material_prepass_specialize(
     layout,
   )
   state.set(state_value)
+  pbr_register_pipeline_descriptor_for_same_frame_draw(pipeline_cache, result)
   result
 }
 

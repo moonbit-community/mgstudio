@@ -96,17 +96,14 @@ fn render3d_execute_camera(
   let mut scene_target_id = camera.target_id
   let mut velocity_target_id = -1
   let mut prepass_depth_target_id = -1
+  let mut prepass_normal_target_id = -1
   let mut shadow_bindings = render3d_view_shadow_bindings_none()
   let point_shadow_near = pass_config.point_shadow_near
   let draw_queue_entry = prepared_queue.draw_queue_entry
   let opaque_alpha_draw_item_indices = prepared_queue.opaque_alpha_draw_item_indices
   let indexed_indirect_parameter_indices = prepared_queue.indexed_indirect_parameter_indices
   let non_indexed_indirect_parameter_indices = prepared_queue.non_indexed_indirect_parameter_indices
-  let (
-    scene_target_id_next,
-    velocity_target_id_next,
-    prepass_depth_target_id_next,
-  ) = render3d_execute_camera_prepass(
+  let prepass_result = render3d_execute_camera_prepass(
     world,
     camera_entity,
     camera,
@@ -116,6 +113,7 @@ fn render3d_execute_camera(
     indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices,
     camera.depth_prepass_enabled,
+    camera.normal_prepass_enabled,
     motion_vector_prepass_enabled,
     motion_blur_active,
     scene_target_id,
@@ -136,9 +134,10 @@ fn render3d_execute_camera(
     motion_vector_pass_kind,
     prepass_pass_kind,
   )
-  scene_target_id = scene_target_id_next
-  velocity_target_id = velocity_target_id_next
-  prepass_depth_target_id = prepass_depth_target_id_next
+  scene_target_id = prepass_result.scene_target_id
+  velocity_target_id = prepass_result.velocity_target_id
+  prepass_depth_target_id = prepass_result.depth_texture_id
+  prepass_normal_target_id = prepass_result.normal_texture_id
   ignore(
     @render.host_gpu_reserve_mesh3d_draw_storage(
       count=draw_queue_entry.draw_items.length(),
@@ -171,7 +170,7 @@ fn render3d_execute_camera(
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
     ) {
-    let (scene_id, _velocity_id, _depth_id) = render3d_motion_blur_targets_get_or_create(
+    let (scene_id, _velocity_id, _depth_id, _normal_id) = render3d_motion_blur_targets_get_or_create(
       world, camera_entity, view_width, view_height, msaa_sample_count,
     )
     scene_target_id = scene_id
@@ -223,6 +222,7 @@ fn render3d_execute_camera(
     transmission_blur_taps,
     wireframe_config,
     prepass_depth_texture_id=prepass_depth_target_id,
+    prepass_normal_texture_id=prepass_normal_target_id,
     prepass_motion_vector_texture_id=velocity_target_id,
   )
   @app.timeline_trace_end_span(

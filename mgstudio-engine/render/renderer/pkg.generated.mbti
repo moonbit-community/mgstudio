@@ -125,6 +125,8 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
 
 pub fn create_motion_vector_prepass_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
+pub fn create_normal_prepass_target_rgb10a2unorm(width~ : Int, height~ : Int, sample_count? : Int) -> Int
+
 pub fn create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
@@ -972,6 +974,7 @@ pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
+pub fn GpuBackend::create_normal_prepass_target_rgb10a2unorm(Self, Int, Int, sample_count? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_point_light_shadow_target(Self, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError

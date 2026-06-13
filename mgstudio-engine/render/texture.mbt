@@ -65,6 +65,19 @@ pub fn host_gpu_create_motion_vector_prepass_target_rg16f(
 }
 
 ///|
+pub fn host_gpu_create_normal_prepass_target_rgb10a2unorm(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  @renderer.create_normal_prepass_target_rgb10a2unorm(
+    width~,
+    height~,
+    sample_count~,
+  )
+}
+
+///|
 pub fn host_gpu_create_depth_prepass_target(
   width~ : Int,
   height~ : Int,

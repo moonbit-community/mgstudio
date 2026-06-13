@@ -510,6 +510,16 @@ pub fn register_render3d_required_components(
     ecs_key_motion_vector_prepass,
     fn() { MotionVectorPrepass() },
   )
+  world.register_required_components_with(
+    ecs_key_screen_space_ambient_occlusion,
+    ecs_key_depth_prepass,
+    fn() { DepthPrepass() },
+  )
+  world.register_required_components_with(
+    ecs_key_screen_space_ambient_occlusion,
+    ecs_key_normal_prepass,
+    fn() { NormalPrepass() },
+  )
 }
 
 ///|
