@@ -31,6 +31,9 @@ pub type ImageContainerFormat = @image.ImageContainerFormat
 pub type ImageArrayLayout = @image.ImageArrayLayout
 
 ///|
+pub type ImageTextureViewDimension = @image.ImageTextureViewDimension
+
+///|
 pub type ImageAddressMode = @image.ImageAddressMode
 
 ///|

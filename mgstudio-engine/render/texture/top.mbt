@@ -192,6 +192,25 @@ pub fn asset_create_texture_cube_with_format(
 }
 
 ///|
+pub fn asset_replace_texture_cube_with_format(
+  texture_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  format~ : @wgpu.TextureFormat,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Bool {
+  @renderer.asset_replace_texture_cube_with_format(
+    texture_id~,
+    width~,
+    height~,
+    format~,
+    levels~,
+    nearest~,
+  )
+}
+
+///|
 pub fn asset_write_texture_region_rgba8(
   texture_id~ : Int,
   x~ : Int,
@@ -389,6 +408,23 @@ pub fn register_asset_texture_backend() -> Unit {
         nearest,
       ) {
         asset_create_texture_cube_with_format(
+          width~,
+          height~,
+          format~,
+          levels~,
+          nearest~,
+        )
+      },
+      replace_texture_cube_with_format_fn=fn(
+        texture_id,
+        width,
+        height,
+        format,
+        levels,
+        nearest,
+      ) {
+        asset_replace_texture_cube_with_format(
+          texture_id~,
           width~,
           height~,
           format~,

@@ -339,6 +339,29 @@ fn asset_loaded(world : @ecs.World) -> Unit {
   if !@asset.asset_is_texture_loaded(handle) {
     return
   }
+  let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+  match world.get_resource_mut(image_assets_key) {
+    Some(images_ref) =>
+      images_ref.modify(fn(images) {
+        match images.get_mut(handle) {
+          Some(image) =>
+            if image.array_layout() is None {
+              let layers = image.height() / image.width()
+              if image.reinterpret_stacked_2d_as_array(layers) {
+                image.set_texture_view_dimension(
+                  Some(@asset.ImageTextureViewDimension::Cube),
+                )
+              } else {
+                abort(
+                  "skybox image must be a stacked 2D texture with evenly divisible layers",
+                )
+              }
+            }
+          None => abort("skybox image asset missing after texture load")
+        }
+      })
+    None => abort("Assets<Image> resource missing in skybox example")
+  }
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
   if (try! world.get_by_key(camera_entity, @pbr.ecs_key_skybox)) is Some(skybox) {
     println("Swapping to \{cubemap_path(cubemap_state.val.index)}")

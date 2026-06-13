@@ -131,13 +131,19 @@ pub(all) struct Image {
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
+  mut array_layout : ImageArrayLayout?
+  mut texture_view_dimension : ImageTextureViewDimension?
 }
+pub fn Image::array_layout(Self) -> ImageArrayLayout?
 pub fn Image::height(Self) -> Int
 pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::mip_level_count(Self) -> Int
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
+pub fn Image::reinterpret_stacked_2d_as_array(Self, Int) -> Bool
+pub fn Image::set_texture_view_dimension(Self, ImageTextureViewDimension?) -> Unit
 pub fn Image::texture_usage_bits(Self) -> Int
+pub fn Image::texture_view_dimension(Self) -> ImageTextureViewDimension?
 pub fn Image::width(Self) -> Int
 pub fn Image::with_added_texture_usage(Self, Int) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
@@ -156,7 +162,7 @@ pub fn ImageAddressMode::default() -> Self
 pub(all) enum ImageArrayLayout {
   RowCount(Int)
   RowHeight(Int)
-}
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ImageCompareFunction {
   Never
@@ -261,6 +267,15 @@ pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self
 pub fn ImageSamplerDescriptor::set_anisotropic_filter(Self, Int) -> Self
 pub fn ImageSamplerDescriptor::set_filter(Self, ImageFilterMode) -> Self
 
+pub(all) enum ImageTextureViewDimension {
+  D1
+  D2
+  D2Array
+  Cube
+  CubeArray
+  D3
+} derive(Eq, @debug.Debug)
+
 pub struct SerializedImage {
   width : Int
   height : Int
@@ -271,6 +286,8 @@ pub struct SerializedImage {
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
+  array_layout : ImageArrayLayout?
+  texture_view_dimension : ImageTextureViewDimension?
 }
 pub fn SerializedImage::from_image(Image) -> Self
 pub fn SerializedImage::into_image(Self) -> Image

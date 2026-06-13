@@ -26,6 +26,8 @@ pub(all) struct Image {
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
+  mut array_layout : ImageArrayLayout?
+  mut texture_view_dimension : ImageTextureViewDimension?
 }
 
 ///|
@@ -84,6 +86,8 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
     kind: ImageKind::Data,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_SAMPLED,
+    array_layout: None,
+    texture_view_dimension: None,
   }
 }
 
@@ -99,6 +103,8 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
+    array_layout: self.array_layout,
+    texture_view_dimension: self.texture_view_dimension,
   }
 }
 
@@ -114,6 +120,8 @@ pub fn Image::with_sampler(self : Image, sampler : ImageSampler) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
+    array_layout: self.array_layout,
+    texture_view_dimension: self.texture_view_dimension,
   }
 }
 
@@ -132,6 +140,8 @@ pub fn Image::with_mip_level_count(
     kind: self.kind,
     mip_level_count: image_mip_count_sanitize(mip_level_count),
     usage_bits: self.usage_bits,
+    array_layout: self.array_layout,
+    texture_view_dimension: self.texture_view_dimension,
   }
 }
 
@@ -147,6 +157,8 @@ pub fn Image::with_texture_usage_bits(self : Image, usage_bits : Int) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: image_usage_sanitize(usage_bits),
+    array_layout: self.array_layout,
+    texture_view_dimension: self.texture_view_dimension,
   }
 }
 
@@ -175,6 +187,39 @@ pub fn Image::mip_level_count(self : Image) -> Int {
 ///|
 pub fn Image::texture_usage_bits(self : Image) -> Int {
   self.usage_bits
+}
+
+///|
+pub fn Image::texture_view_dimension(
+  self : Image,
+) -> ImageTextureViewDimension? {
+  self.texture_view_dimension
+}
+
+///|
+pub fn Image::array_layout(self : Image) -> ImageArrayLayout? {
+  self.array_layout
+}
+
+///|
+pub fn Image::set_texture_view_dimension(
+  self : Image,
+  dimension : ImageTextureViewDimension?,
+) -> Unit {
+  self.texture_view_dimension = dimension
+}
+
+///|
+pub fn Image::reinterpret_stacked_2d_as_array(
+  self : Image,
+  layers : Int,
+) -> Bool {
+  if layers <= 0 || self.height <= 0 || self.height % layers != 0 {
+    false
+  } else {
+    self.array_layout = Some(ImageArrayLayout::RowCount(layers))
+    true
+  }
 }
 
 ///|
@@ -216,6 +261,8 @@ pub fn Image::new_target_texture(
     kind: ImageKind::TargetTexture,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_TARGET,
+    array_layout: None,
+    texture_view_dimension: None,
   }
 }
 
@@ -248,7 +295,17 @@ pub fn texture_format(format : TextureFormat) -> @wgpu.TextureFormat {
 pub(all) enum ImageArrayLayout {
   RowCount(Int)
   RowHeight(Int)
-}
+} derive(Eq, Debug)
+
+///|
+pub(all) enum ImageTextureViewDimension {
+  D1
+  D2
+  D2Array
+  Cube
+  CubeArray
+  D3
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum ImageAddressMode {

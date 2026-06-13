@@ -25,6 +25,8 @@ pub fn asset_create_texture_stacked_2d_with_format(width~ : Int, height_per_slic
 
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool
 
+pub fn asset_replace_texture_cube_with_format(texture_id~ : Int, width~ : Int, height~ : Int, format~ : @wgpu_mbt.TextureFormat, levels~ : Array[Bytes], nearest~ : Bool) -> Bool
+
 pub fn asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
 pub fn asset_supported_compressed_image_formats() -> Int

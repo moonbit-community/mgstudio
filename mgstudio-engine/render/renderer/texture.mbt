@@ -1511,6 +1511,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
+  replace_texture_id? : Int = -2147483648,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   if levels.length() == 0 {
@@ -1523,7 +1524,8 @@ pub fn GpuBackend::create_texture_cube_with_format(
     )
   }
 
-  let id = alloc_id(self)
+  let replacing = replace_texture_id >= 0
+  let id = if replacing { replace_texture_id } else { alloc_id(self) }
   let w = if width <= 0 { 1 } else { width }
   let h = if height <= 0 { 1 } else { height }
   let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
@@ -1664,6 +1666,18 @@ pub fn GpuBackend::create_texture_cube_with_format(
     layer_views,
     sampler,
     bind_group: Some(bind_group),
+  }
+  if replacing {
+    let kept : Array[GpuTextureInfo] = []
+    for texture in self.textures {
+      if texture.id != id {
+        kept.push(texture)
+      }
+    }
+    self.textures.clear()
+    for texture in kept {
+      self.textures.push(texture)
+    }
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
@@ -2350,6 +2364,38 @@ pub fn asset_create_texture_cube_with_format(
     }
   }
   0
+}
+
+///|
+pub fn asset_replace_texture_cube_with_format(
+  texture_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  format~ : @wgpu.TextureFormat,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Bool {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  if texture_id < 0 {
+    return false
+  }
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_cube_with_format(
+          safe_width,
+          safe_height,
+          format,
+          levels,
+          nearest,
+          replace_texture_id=texture_id,
+        ) ==
+        texture_id
+    } catch {
+      _ => ()
+    }
+  }
+  false
 }
 
 ///|

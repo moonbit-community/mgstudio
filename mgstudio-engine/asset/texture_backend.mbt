@@ -70,6 +70,14 @@ pub(all) struct AssetTextureBackend {
     Array[Bytes],
     Bool,
   ) -> Int
+  replace_texture_cube_with_format_fn : (
+    Int,
+    Int,
+    Int,
+    @wgpu.TextureFormat,
+    Array[Bytes],
+    Bool,
+  ) -> Bool
   write_texture_region_rgba8_fn : (Int, Int, Int, Int, Int, Bytes) -> Unit
   write_texture_region_rgba8_mip_fn : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit
   create_texture_mip_view_fn : (Int, Int) -> Int
@@ -128,6 +136,14 @@ pub fn AssetTextureBackend::new(
     Array[Bytes],
     Bool,
   ) -> Int,
+  replace_texture_cube_with_format_fn~ : (
+    Int,
+    Int,
+    Int,
+    @wgpu.TextureFormat,
+    Array[Bytes],
+    Bool,
+  ) -> Bool,
   write_texture_region_rgba8_fn~ : (Int, Int, Int, Int, Int, Bytes) -> Unit,
   write_texture_region_rgba8_mip_fn~ : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit,
   create_texture_mip_view_fn~ : (Int, Int) -> Int,
@@ -158,6 +174,7 @@ pub fn AssetTextureBackend::new(
     create_texture_3d_with_format_fn,
     create_texture_stacked_2d_with_format_fn,
     create_texture_cube_with_format_fn,
+    replace_texture_cube_with_format_fn,
     write_texture_region_rgba8_fn,
     write_texture_region_rgba8_mip_fn,
     create_texture_mip_view_fn,
@@ -349,6 +366,36 @@ fn asset_texture_backend_create_texture_cube_with_format(
         [] => ()
       }
       id
+    }
+  }
+}
+
+///|
+fn asset_texture_backend_replace_texture_cube_with_format(
+  texture_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  format~ : @wgpu.TextureFormat,
+  levels~ : Array[Bytes],
+  nearest~ : Bool,
+) -> Bool {
+  format |> ignore
+  nearest |> ignore
+  if texture_id <= 0 {
+    return false
+  }
+  match asset_texture_backend() {
+    Some(backend) =>
+      (backend.replace_texture_cube_with_format_fn)(
+        texture_id, width, height, format, levels, nearest,
+      )
+    None => {
+      texture_record_set(texture_id, width, height, true)
+      match levels {
+        [first, ..] => set_texture_pixels(texture_id, first)
+        [] => ()
+      }
+      true
     }
   }
 }

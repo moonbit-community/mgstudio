@@ -44,5 +44,7 @@ pub fn image_with_srgb_view(image : Image) -> Image {
     kind: image.kind,
     mip_level_count: image.mip_level_count,
     usage_bits: image.usage_bits,
+    array_layout: image.array_layout,
+    texture_view_dimension: image.texture_view_dimension,
   }
 }

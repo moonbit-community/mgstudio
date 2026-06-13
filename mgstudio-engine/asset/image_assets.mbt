@@ -144,13 +144,32 @@ fn image_asset_create_gpu_texture_with_array_layout(
   if image.is_target_texture() {
     return 0
   }
-  let (height_per_slice, slice_count) = match array_layout {
+  let effective_array_layout = match image.array_layout {
+    Some(layout) => Some(layout)
+    None => array_layout
+  }
+  let (height_per_slice, slice_count) = match effective_array_layout {
     Some(layout) =>
       match @image.image_array_layout_layers(image.height, layout) {
         Some(layers) if layers > 1 => (image.height / layers, layers)
         _ => (image.height, 1)
       }
     None => (image.height, 1)
+  }
+  if image.texture_view_dimension == Some(ImageTextureViewDimension::Cube) &&
+    slice_count == 6 &&
+    height_per_slice == image.width {
+    let id = asset_texture_backend_create_texture_cube_with_format(
+      width=image.width,
+      height=height_per_slice,
+      format=@image.texture_format(image.format),
+      levels=image_asset_mip_levels(image, height_per_slice, slice_count),
+      nearest~,
+    )
+    if id > 0 {
+      set_texture_pixels(id, image.pixels)
+    }
+    return id
   }
   let id = asset_texture_backend_create_texture_stacked_2d_with_format(
     width=image.width,
@@ -175,15 +194,52 @@ fn image_asset_can_update_in_place(previous : Image, next : Image) -> Bool {
   previous.view_format == next.view_format &&
   previous.kind == next.kind &&
   previous.mip_level_count() == next.mip_level_count() &&
-  previous.texture_usage_bits() == next.texture_usage_bits()
+  previous.texture_usage_bits() == next.texture_usage_bits() &&
+  previous.array_layout == next.array_layout &&
+  previous.texture_view_dimension == next.texture_view_dimension
+}
+
+///|
+fn image_asset_replace_gpu_texture_if_needed(
+  handle : Handle[Image],
+  image : Image,
+) -> Bool {
+  let array_layout = image.array_layout
+  let (height_per_slice, slice_count) = match array_layout {
+    Some(layout) =>
+      match @image.image_array_layout_layers(image.height, layout) {
+        Some(layers) if layers > 1 => (image.height / layers, layers)
+        _ => (image.height, 1)
+      }
+    None => (image.height, 1)
+  }
+  if image.texture_view_dimension == Some(ImageTextureViewDimension::Cube) &&
+    slice_count == 6 &&
+    height_per_slice == image.width {
+    asset_texture_backend_replace_texture_cube_with_format(
+      texture_id=handle.id(),
+      width=image.width,
+      height=height_per_slice,
+      format=@image.texture_format(image.format),
+      levels=image_asset_mip_levels(image, height_per_slice, slice_count),
+      nearest=asset_server_or_abort().image_sampler_uses_nearest(image.sampler),
+    )
+  } else {
+    false
+  }
 }
 
 ///|
 fn image_asset_sync_dirty(handle : Handle[Image], image : Image) -> Unit {
-  image_asset_sync_metadata(handle, image)
   if image.is_target_texture() || handle.id() <= 0 {
+    image_asset_sync_metadata(handle, image)
     return
   }
+  if image_asset_replace_gpu_texture_if_needed(handle, image) {
+    image_asset_sync_metadata(handle, image)
+    return
+  }
+  image_asset_sync_metadata(handle, image)
   if asset_texture_width(handle) != image.width ||
     asset_texture_height(handle) != image.height {
     return
@@ -212,9 +268,18 @@ fn[T : Asset] image_asset_sync_on_set(
     return Some(false)
   }
   if !image_asset_can_update_in_place(previous_image, next_image) {
+    let image_handle : Handle[Image] = Handle::new(handle.id())
+    if image_asset_replace_gpu_texture_if_needed(image_handle, next_image) {
+      image_asset_sync_metadata(image_handle, next_image)
+      return Some(true)
+    }
     return Some(false)
   }
   let image_handle : Handle[Image] = Handle::new(handle.id())
+  if image_asset_replace_gpu_texture_if_needed(image_handle, next_image) {
+    image_asset_sync_metadata(image_handle, next_image)
+    return Some(true)
+  }
   if !next_image.is_target_texture() && handle.id() > 0 {
     asset_texture_backend_write_texture_region_rgba8_mip(
       texture_id=handle.id(),
