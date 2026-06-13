@@ -21,6 +21,9 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
   draw_size : UInt64,
   lightmap_texture_id : Int,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
   label : String,
 ) -> @wgpu.BindGroup? {
   let entries = layout_descriptor.entries()
@@ -59,14 +62,15 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
         )
       }
       3 => {
-        guard morph_target_texture_id >= 0 else { false }
-        guard (resolve_mesh3d_texture(self, morph_target_texture_id) catch {
-            _ => None
-          })
-          is Some(morph_target_texture) else {
+        guard find_mesh3d_morph_target_buffer(self, morph_target_texture_id)
+          is Some(morph_target_buffer) else {
           false
         }
-        builder.add_texture_view(3U, morph_target_texture.view)
+        builder.add_buffer(
+          3U,
+          morph_target_buffer.buffer,
+          size=morph_target_buffer.byte_size,
+        )
       }
       6 => {
         guard ensure_mesh3d_skin_buffers(
@@ -87,6 +91,22 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
         }
         guard self.mesh3d_morph_prev_buf is Some(prev_morph_buf) else { false }
         builder.add_buffer(7U, prev_morph_buf, size=self.mesh3d_morph_capacity)
+      }
+      8 => {
+        guard self.write_mesh3d_morph_descriptor(
+          morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+          morph_target_texture_id,
+        ) else {
+          false
+        }
+        guard self.mesh3d_morph_descriptor_buf is Some(descriptor_buf) else {
+          false
+        }
+        builder.add_buffer(
+          8U,
+          descriptor_buf,
+          size=self.mesh3d_morph_descriptor_capacity,
+        )
       }
       4 => {
         guard lightmap_texture_id >= 0 else { false }
@@ -137,7 +157,8 @@ fn mesh3d_draw_layout_morph_revision(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
 ) -> Int {
   if mesh3d_draw_layout_has_binding(layout_descriptor, 2) ||
-    mesh3d_draw_layout_has_binding(layout_descriptor, 7) {
+    mesh3d_draw_layout_has_binding(layout_descriptor, 7) ||
+    mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
     backend.mesh3d_morph_revision
   } else {
     -1
@@ -177,6 +198,9 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   lightmap_texture_id : Int,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
 ) -> GpuStorageSlot? {
   let morph_revision = mesh3d_draw_layout_morph_revision(
     self, layout_descriptor,
@@ -199,6 +223,14 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     lightmap_texture_id &&
     self.mesh3d_draw_slot_morph_target_texture_ids[slot_index] ==
     resolved_morph_target_texture_id {
+    if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
+      guard self.write_mesh3d_morph_descriptor(
+        morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+        morph_target_texture_id,
+      ) else {
+        return None
+      }
+    }
     return Some(self.mesh3d_draw_slots[slot_index])
   }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
@@ -214,6 +246,9 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         lightmap_texture_id,
         morph_target_texture_id,
+        morph_descriptor_index,
+        current_morph_weights_byte_offset,
+        previous_morph_weights_byte_offset,
         "mgstudio_mesh3d_draw_slot_bg",
       )
       is Some(draw_bg) else {
@@ -248,6 +283,9 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         lightmap_texture_id,
         morph_target_texture_id,
+        morph_descriptor_index,
+        current_morph_weights_byte_offset,
+        previous_morph_weights_byte_offset,
         "mgstudio_mesh3d_draw_slot_bg",
       )
       is Some(draw_bg) else {
@@ -280,6 +318,9 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
     mesh3d_default_draw_bind_group_layout_descriptor(),
     -1,
     -1,
+    0U,
+    -1,
+    -1,
   )
 }
 
@@ -292,6 +333,9 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   required_size : UInt64,
   lightmap_texture_id : Int,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
   let morph_revision = mesh3d_draw_layout_morph_revision(
     self, layout_descriptor,
@@ -308,6 +352,14 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
     self.mesh3d_instance_draw_lightmap_texture_id == lightmap_texture_id &&
     self.mesh3d_instance_draw_morph_target_texture_id ==
     resolved_morph_target_texture_id {
+    if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
+      guard self.write_mesh3d_morph_descriptor(
+        morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+        morph_target_texture_id,
+      ) else {
+        return None
+      }
+    }
     return Some((draw_buf, draw_bg))
   }
   let mut next_capacity = if self.mesh3d_instance_draw_capacity > 0UL {
@@ -326,6 +378,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   }
   guard self.create_mesh3d_draw_bind_group(
       bgl, layout_descriptor, draw_buf, next_capacity, lightmap_texture_id, morph_target_texture_id,
+      morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
       "mgstudio_mesh3d_instance_draw_bg",
     )
     is Some(draw_bg) else {
@@ -358,6 +411,9 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
     bgl,
     mesh3d_default_draw_bind_group_layout_descriptor(),
     required_size,
+    -1,
+    -1,
+    0U,
     -1,
     -1,
   )

@@ -90,13 +90,13 @@ pub fn host_gpu_prepare_mesh3d_morph_bindings(
 }
 
 ///|
-pub fn host_gpu_create_mesh3d_morph_target_texture(
+pub fn host_gpu_create_mesh3d_morph_target_buffer(
   width~ : Int,
   height~ : Int,
   depth~ : Int,
   components~ : Array[Float],
 ) -> Int {
-  @renderer.create_mesh3d_morph_target_texture(
+  @renderer.create_mesh3d_morph_target_buffer(
     width~,
     height~,
     depth~,

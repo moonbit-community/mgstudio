@@ -739,6 +739,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     1.0F,
     1.0F,
     -1,
+    0U,
   )
   debug_inspect(
     mesh3d_motion_vector_view_uniform_bytes(pass_state).length(),
@@ -957,6 +958,7 @@ test "renderer: mesh uniform stores caller supplied mesh flags" {
     0.0F,
     0.0F,
     0U,
+    0U,
   )
   debug_inspect(words[33], content="2684420095")
 }
@@ -1023,6 +1025,7 @@ test "renderer: mesh uniform preserves caller supplied affine transform" {
     0.0F,
     0.0F,
     0U,
+    0U,
   )
   debug_inspect(words[0], content="3221225472")
   debug_inspect(words[3], content="1082130432")
@@ -1065,6 +1068,7 @@ test "renderer: mesh uniform packs lightmap uv rect and slot" {
     0.75F,
     1.0F,
     13U,
+    0U,
   )
   debug_inspect(words[34], content="2147500032")
   debug_inspect(words[35], content="4294950911")
@@ -1104,6 +1108,7 @@ test "renderer: mesh uniform marks absent lightmap with max slot" {
     0.0F,
     0.0F,
     0.0F,
+    0U,
     0U,
   )
   debug_inspect(words[34], content="0")
@@ -1808,7 +1813,7 @@ test "renderer: surface acquire status follows Bevy window prepare semantics" {
 }
 
 ///|
-test "renderer: motion-vector mesh layout keeps morph dynamic offsets after current skin" {
+test "renderer: motion-vector mesh layout uses storage morph descriptors" {
   let descriptor = mesh3d_motion_vector_mesh_layout_descriptor(
     true, true, true, true,
   )
@@ -1816,10 +1821,10 @@ test "renderer: motion-vector mesh layout keeps morph dynamic offsets after curr
   for entry in descriptor.entries() {
     bindings.push(entry.binding())
   }
-  debug_inspect(bindings, content="[0, 1, 2, 3, 6, 7]")
+  debug_inspect(bindings, content="[0, 1, 2, 3, 8, 6, 7]")
   debug_inspect(
     mesh3d_draw_bind_group_dynamic_offsets(descriptor, 256, 512),
-    content="[256, 512]",
+    content="[]",
   )
 }
 

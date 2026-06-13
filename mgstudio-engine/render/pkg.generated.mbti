@@ -170,7 +170,7 @@ pub fn host_gpu_create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~
 
 pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
-pub fn host_gpu_create_mesh3d_morph_target_texture(width~ : Int, height~ : Int, depth~ : Int, components~ : Array[Float]) -> Int
+pub fn host_gpu_create_mesh3d_morph_target_buffer(width~ : Int, height~ : Int, depth~ : Int, components~ : Array[Float]) -> Int
 
 pub fn host_gpu_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
 

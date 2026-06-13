@@ -1120,7 +1120,7 @@ fn mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
   }
   guard create_mesh3d_motion_vector_mesh_bind_group(
       backend, mesh_bgl, layout_descriptor, output_buffer, output_capacity, morph_target_texture_id,
-      "mgstudio_motion_vector_preprocess_mesh_bg",
+      0U, -1, -1, "mgstudio_motion_vector_preprocess_mesh_bg",
     )
     is Some(bind_group) else {
     return None

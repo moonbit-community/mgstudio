@@ -150,6 +150,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let mut draw_bind_group : @wgpu.BindGroup? = None
   let mut draw_write_offset = 0UL
   let mut draw_index = 0U
+  let mut morph_descriptor_index = 0U
   if draw_storage_index >= 0 ||
     self.mesh3d_gpu_instance_builder_enabled ||
     use_indirect {
@@ -176,11 +177,15 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         required_size,
         lightmap_texture_id,
         morph_targets_texture_id,
+        desired_draw_index.reinterpret_as_uint(),
+        morph_weights_index,
+        previous_morph_weights_index,
       )
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
     draw_index = desired_draw_index.reinterpret_as_uint()
+    morph_descriptor_index = desired_draw_index.reinterpret_as_uint()
     draw_buffer = Some(instance_draw_buf)
     draw_bind_group = Some(instance_draw_bg)
     draw_write_offset = desired_draw_index.to_uint64() *
@@ -197,6 +202,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         material_layout_entry.draw_bind_group_layout_descriptor,
         lightmap_texture_id,
         morph_targets_texture_id,
+        mesh3d_draw_slot_index.reinterpret_as_uint(),
+        morph_weights_index,
+        previous_morph_weights_index,
       )
       is Some(draw_slot) else {
       return
@@ -206,6 +214,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     draw_bind_group = Some(draw_slot.bind_group)
     draw_write_offset = 0UL
     draw_index = 0U
+    morph_descriptor_index = mesh3d_draw_slot_index.reinterpret_as_uint()
   }
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
   let resolved_normal_texture_id = if normal_texture_id < 0 {
@@ -447,6 +456,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       lightmap_uv_max_x,
       lightmap_uv_max_y,
       mesh.vertex_start,
+      morph_descriptor_index,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }

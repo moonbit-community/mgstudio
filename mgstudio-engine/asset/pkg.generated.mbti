@@ -425,6 +425,7 @@ pub struct AssetServer {
 pub fn[T : Asset] AssetServer::add(Self, T) -> Handle[T]
 pub fn[T : Asset] AssetServer::dependency_load_state(Self, Handle[T]) -> DependencyLoadState
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
+pub fn[T : Asset] AssetServer::get_path(Self, Handle[T]) -> String?
 pub fn AssetServer::gltf_loader_settings_for_asset_path(Self, String) -> ImageLoaderSettings
 pub fn[T : Asset] AssetServer::is_loaded_with_dependencies(Self, Handle[T]) -> Bool
 pub fn[T : Asset, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]

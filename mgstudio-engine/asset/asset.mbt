@@ -488,6 +488,35 @@ fn AssetServer::record_path(self : AssetServer, path : String) -> Unit {
 }
 
 ///|
+fn string_starts_with(input : String, prefix : String) -> Bool {
+  input.length() >= prefix.length() &&
+  input[0:prefix.length()].to_owned() == prefix
+}
+
+///|
+pub fn[T : Asset] AssetServer::get_path(
+  self : AssetServer,
+  handle : Handle[T],
+) -> String? {
+  let type_name = assets_type_name((None : T?))
+  let key_prefix = "\{type_name}::"
+  for entry in self.typed_asset_paths.iter() {
+    let (key, handle_id) = entry
+    if handle_id == handle.id() && string_starts_with(key, key_prefix) {
+      return Some(key[key_prefix.length():key.length()].to_owned())
+    }
+  }
+  if type_name == asset_image_assets_type_name() {
+    for pair in self.image_paths {
+      if pair.1.id() == handle.id() {
+        return Some(pair.0)
+      }
+    }
+  }
+  None
+}
+
+///|
 fn AssetServer::register_image_path(
   self : AssetServer,
   path : String,

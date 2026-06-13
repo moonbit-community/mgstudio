@@ -912,6 +912,26 @@ fn ensure_tonemapping_fallback_lut_texture(
 }
 
 ///|
+fn tonemapping_is_3d_lut_texture(texture : GpuTextureInfo) -> Bool {
+  texture.texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_3D &&
+  texture.texture.sample_count_u32() == 1U
+}
+
+///|
+fn tonemapping_find_3d_lut_texture(
+  backend : GpuBackend,
+  texture_id : Int,
+) -> GpuTextureInfo? {
+  if texture_id < 0 {
+    return None
+  }
+  match find_texture(backend, texture_id) {
+    Some(texture) if tonemapping_is_3d_lut_texture(texture) => Some(texture)
+    _ => None
+  }
+}
+
+///|
 fn tonemapping_selected_lut_texture(
   backend : GpuBackend,
   tonemapping_mode : Int,
@@ -928,25 +948,21 @@ fn tonemapping_selected_lut_texture(
   } else {
     -1
   }
-  if selected_lut_texture_id >= 0 {
-    if find_texture(backend, selected_lut_texture_id) is Some(lut_texture) {
-      return lut_texture
-    }
+  if tonemapping_find_3d_lut_texture(backend, selected_lut_texture_id)
+    is Some(lut_texture) {
+    return lut_texture
   }
-  if agx_lut_texture_id >= 0 {
-    if find_texture(backend, agx_lut_texture_id) is Some(lut_texture) {
-      return lut_texture
-    }
+  if tonemapping_find_3d_lut_texture(backend, agx_lut_texture_id)
+    is Some(lut_texture) {
+    return lut_texture
   }
-  if tony_lut_texture_id >= 0 {
-    if find_texture(backend, tony_lut_texture_id) is Some(lut_texture) {
-      return lut_texture
-    }
+  if tonemapping_find_3d_lut_texture(backend, tony_lut_texture_id)
+    is Some(lut_texture) {
+    return lut_texture
   }
-  if blender_lut_texture_id >= 0 {
-    if find_texture(backend, blender_lut_texture_id) is Some(lut_texture) {
-      return lut_texture
-    }
+  if tonemapping_find_3d_lut_texture(backend, blender_lut_texture_id)
+    is Some(lut_texture) {
+    return lut_texture
   }
   ensure_tonemapping_fallback_lut_texture(backend)
 }

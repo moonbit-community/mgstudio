@@ -1516,7 +1516,8 @@ fn flush_ui_slice_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
     guard resolve_draw_texture(backend, batch.texture_id) is Some(tex) else {
       continue
     }
-    pass.set_bind_group(1U, tex.bind_group, [])
+    guard tex.bind_group is Some(texture_bind_group) else { continue }
+    pass.set_bind_group(1U, texture_bind_group, [])
     pass.draw(batch.instance_count, 1U, batch.first_instance, 0U)
   }
   backend.ui_slice_vertex_data.clear()
@@ -1567,7 +1568,8 @@ fn flush_ui_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
       continue
     }
     pass.set_pipeline(pipeline)
-    pass.set_bind_group(1U, tex.bind_group, [])
+    guard tex.bind_group is Some(texture_bind_group) else { continue }
+    pass.set_bind_group(1U, texture_bind_group, [])
     pass.draw(batch.instance_count, 1U, batch.first_instance, 0U)
   }
   backend.ui_vertex_data.clear()

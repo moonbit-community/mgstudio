@@ -109,7 +109,7 @@ pub fn create_mesh2d_vertex_buffer(vertex_bytes~ : Bytes, vertex_count~ : Int, i
 
 pub fn create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
-pub fn create_mesh3d_morph_target_texture(width~ : Int, height~ : Int, depth~ : Int, components~ : Array[Float]) -> Int
+pub fn create_mesh3d_morph_target_buffer(width~ : Int, height~ : Int, depth~ : Int, components~ : Array[Float]) -> Int
 
 pub fn create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
 
@@ -651,6 +651,9 @@ pub struct GpuBackend {
   mut mesh3d_morph_prev_buf : @wgpu_mbt.Buffer?
   mut mesh3d_morph_capacity : UInt64
   mut mesh3d_morph_revision : Int
+  mut mesh3d_morph_descriptor_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_morph_descriptor_capacity : UInt64
+  mesh3d_morph_target_buffers : Array[GpuMesh3dMorphTargetBufferInfo]
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu_mbt.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu_mbt.BindGroup?
@@ -956,7 +959,7 @@ pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_depth_prepass_target(Self, Int, Int, sample_count? : Int) -> Int
 pub fn GpuBackend::create_directional_light_shadow_target(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_mesh2d_vertex_buffer(Self, Bytes, Int, Array[Int], Int, @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
-pub fn GpuBackend::create_mesh3d_morph_target_texture(Self, Int, Int, Int, Array[Float]) -> Int raise GpuBackendError
+pub fn GpuBackend::create_mesh3d_morph_target_buffer(Self, Int, Int, Int, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh3d_xyznuvrgba(Self, Array[Float], Int) -> Int
 pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(Self, Array[Float], Array[Int], Int) -> Int
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
@@ -1079,6 +1082,8 @@ pub struct GpuFrameState {
   transient_buffers : Array[@wgpu_mbt.Buffer]
   transient_bind_groups : Array[@wgpu_mbt.BindGroup]
 }
+
+type GpuMesh3dMorphTargetBufferInfo
 
 type GpuMesh3dPreprocessCameraUploadState
 
@@ -1244,7 +1249,7 @@ pub struct GpuTextureInfo {
   sample_count : Int
   layer_views : Array[@wgpu_mbt.TextureView]
   sampler : @wgpu_mbt.Sampler
-  bind_group : @wgpu_mbt.BindGroup
+  bind_group : @wgpu_mbt.BindGroup?
 }
 
 pub struct HostGpuMeshInfo {

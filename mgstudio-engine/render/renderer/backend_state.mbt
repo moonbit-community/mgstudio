@@ -203,6 +203,9 @@ pub struct GpuBackend {
   mut mesh3d_morph_prev_buf : @wgpu.Buffer?
   mut mesh3d_morph_capacity : UInt64
   mut mesh3d_morph_revision : Int
+  mut mesh3d_morph_descriptor_buf : @wgpu.Buffer?
+  mut mesh3d_morph_descriptor_capacity : UInt64
+  mesh3d_morph_target_buffers : Array[GpuMesh3dMorphTargetBufferInfo]
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu.BindGroup?

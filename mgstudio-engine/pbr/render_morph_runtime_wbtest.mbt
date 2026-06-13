@@ -42,24 +42,24 @@ test "render3d morph runtime: target texture components mirror bevy position nor
     is Some((width, height, depth, components)) else {
     fail("expected morph target texture")
   }
-  inspect(width, content="1")
-  inspect(height, content="18")
+  inspect(width, content="2")
+  inspect(height, content="1")
   inspect(depth, content="1")
-  inspect(components.length(), content="18")
+  inspect(components.length(), content="24")
   debug_inspect(
     morph_runtime_wbtest_approx_eq(components[0], 0.1F),
     content="true",
   )
   debug_inspect(
-    morph_runtime_wbtest_approx_eq(components[3], 0.7F),
+    morph_runtime_wbtest_approx_eq(components[4], 0.7F),
     content="true",
   )
   debug_inspect(
-    morph_runtime_wbtest_approx_eq(components[6], 1.3F),
+    morph_runtime_wbtest_approx_eq(components[8], 1.3F),
     content="true",
   )
   debug_inspect(
-    morph_runtime_wbtest_approx_eq(components[9], 0.4F),
+    morph_runtime_wbtest_approx_eq(components[12], 0.4F),
     content="true",
   )
 }

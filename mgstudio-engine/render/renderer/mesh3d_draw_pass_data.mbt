@@ -508,6 +508,7 @@ fn mesh3d_mesh_uniform_words(
   lightmap_uv_max_x : Float,
   lightmap_uv_max_y : Float,
   first_vertex_index : UInt,
+  morph_descriptor_index : UInt,
 ) -> Array[UInt] {
   let inverse_transpose = mesh3d_inverse_transpose_words_resolved(
     world_from_local, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
@@ -547,7 +548,7 @@ fn mesh3d_mesh_uniform_words(
   words.push(current_skin_index)
   words.push(mesh3d_material_and_lightmap_bind_group_slot(lightmap_texture_id))
   words.push(0U)
-  words.push(0U)
+  words.push(morph_descriptor_index)
   for _ in 0..<3 {
     words.push(0U)
   }
@@ -620,6 +621,7 @@ fn mesh3d_draw_uniform_bytes(
   lightmap_uv_max_x : Float,
   lightmap_uv_max_y : Float,
   first_vertex_index : UInt,
+  morph_descriptor_index : UInt,
 ) -> Bytes {
   ignore(color_r)
   ignore(color_g)
@@ -658,6 +660,7 @@ fn mesh3d_draw_uniform_bytes(
     rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
     rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
     lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
+    morph_descriptor_index,
   )
   u32le_pack(words)
 }
@@ -860,6 +863,7 @@ fn mesh3d_draw_uniform_write(
   lightmap_uv_max_x : Float,
   lightmap_uv_max_y : Float,
   first_vertex_index : UInt,
+  morph_descriptor_index : UInt,
 ) -> Unit {
   ignore(color_r)
   ignore(color_g)
@@ -901,7 +905,7 @@ fn mesh3d_draw_uniform_write(
       rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
       rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
       lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y,
-      first_vertex_index,
+      first_vertex_index, morph_descriptor_index,
     ),
   )
 }
@@ -1329,6 +1333,7 @@ fn mesh3d_motion_vector_mesh_bytes(
   previous_scale_y : Float,
   previous_scale_z : Float,
   skinning_key_hi : Int,
+  morph_descriptor_index : UInt,
 ) -> Bytes {
   let determinant = match world_from_local {
     Some(values) =>
@@ -1378,7 +1383,7 @@ fn mesh3d_motion_vector_mesh_bytes(
   words.push(current_skin_index)
   words.push(0U)
   words.push(0U)
-  words.push(0U)
+  words.push(morph_descriptor_index)
   for _ in 0..<3 {
     words.push(0U)
   }
@@ -1437,8 +1442,8 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
         2,
         stage,
         @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Uniform,
-          true,
+          @render_resource.BufferBindingType::Storage(true),
+          false,
           MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
         ),
       ),
@@ -1447,10 +1452,21 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         3,
         stage,
-        @render_resource.BindingType::TextureBinding(
-          @render_resource.TextureSampleType::Float(false),
-          @render_resource.TextureViewDimension::D3,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
           false,
+          MESH3D_MORPH_ATTRIBUTE_STRIDE_BYTES,
+        ),
+      ),
+    )
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        8,
+        stage,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          MESH3D_MORPH_DESCRIPTOR_STRIDE_BYTES,
         ),
       ),
     )
@@ -1474,8 +1490,8 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
         7,
         stage,
         @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Uniform,
-          true,
+          @render_resource.BufferBindingType::Storage(true),
+          false,
           MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
         ),
       ),
@@ -1517,6 +1533,9 @@ fn create_mesh3d_motion_vector_mesh_bind_group(
   mesh_buf : @wgpu.Buffer,
   mesh_buf_size : UInt64,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
   label : String,
 ) -> @wgpu.BindGroup? {
   let entries = layout_descriptor.entries()
@@ -1554,14 +1573,15 @@ fn create_mesh3d_motion_vector_mesh_bind_group(
         )
       }
       3 => {
-        guard morph_target_texture_id >= 0 else { false }
-        guard (resolve_mesh3d_texture(backend, morph_target_texture_id) catch {
-            _ => None
-          })
-          is Some(morph_target_texture) else {
+        guard find_mesh3d_morph_target_buffer(backend, morph_target_texture_id)
+          is Some(morph_target_buffer) else {
           false
         }
-        builder.add_texture_view(3U, morph_target_texture.view)
+        builder.add_buffer(
+          3U,
+          morph_target_buffer.buffer,
+          size=morph_target_buffer.byte_size,
+        )
       }
       6 => {
         guard mesh3d_motion_vector_skin_buffers(backend)
@@ -1586,6 +1606,22 @@ fn create_mesh3d_motion_vector_mesh_bind_group(
           size=backend.mesh3d_morph_capacity,
         )
       }
+      8 => {
+        guard backend.write_mesh3d_morph_descriptor(
+          morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+          morph_target_texture_id,
+        ) else {
+          false
+        }
+        guard backend.mesh3d_morph_descriptor_buf is Some(descriptor_buf) else {
+          false
+        }
+        builder.add_buffer(
+          8U,
+          descriptor_buf,
+          size=backend.mesh3d_morph_descriptor_capacity,
+        )
+      }
       _ => false
     }
     if !ok {
@@ -1604,6 +1640,9 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   layout_mask : Int,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
 ) -> GpuStorageSlot? {
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
   while backend.mesh3d_motion_vector_mesh_slots.length() <= slot_index {
@@ -1618,6 +1657,9 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
         mesh_buf,
         MESH3D_PREPASS_MESH_BUFFER_SIZE,
         morph_target_texture_id,
+        morph_descriptor_index,
+        current_morph_weights_byte_offset,
+        previous_morph_weights_byte_offset,
         "mgstudio_motion_vector_mesh_slot_bg",
       )
       is Some(mesh_bg) else {
@@ -1662,6 +1704,9 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
         mesh_buf,
         MESH3D_PREPASS_MESH_BUFFER_SIZE,
         morph_target_texture_id,
+        morph_descriptor_index,
+        current_morph_weights_byte_offset,
+        previous_morph_weights_byte_offset,
         "mgstudio_motion_vector_mesh_slot_bg",
       )
       is Some(mesh_bg) else {
@@ -1676,6 +1721,14 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
     backend.mesh3d_motion_vector_mesh_slot_morph_target_texture_ids[slot_index] = resolved_morph_target_texture_id
     backend.mesh3d_motion_vector_mesh_slot_layout_masks[slot_index] = layout_mask
   }
+  if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
+    guard backend.write_mesh3d_morph_descriptor(
+      morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+      morph_target_texture_id,
+    ) else {
+      return None
+    }
+  }
   Some(backend.mesh3d_motion_vector_mesh_slots[slot_index])
 }
 
@@ -1687,6 +1740,9 @@ fn ensure_mesh3d_motion_vector_instance_mesh_binding(
   layout_mask : Int,
   required_size : UInt64,
   morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
   let morph_revision = mesh3d_draw_layout_morph_revision(
     backend, layout_descriptor,
@@ -1703,6 +1759,14 @@ fn ensure_mesh3d_motion_vector_instance_mesh_binding(
     backend.mesh3d_motion_vector_instance_mesh_morph_target_texture_id ==
     resolved_morph_target_texture_id &&
     backend.mesh3d_motion_vector_instance_mesh_layout_mask == layout_mask {
+    if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
+      guard backend.write_mesh3d_morph_descriptor(
+        morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+        morph_target_texture_id,
+      ) else {
+        return None
+      }
+    }
     return Some((mesh_buf, mesh_bg))
   }
   let mesh_buf = if backend.mesh3d_motion_vector_instance_mesh_buf
@@ -1730,6 +1794,9 @@ fn ensure_mesh3d_motion_vector_instance_mesh_binding(
       mesh_buf,
       backend.mesh3d_motion_vector_instance_mesh_capacity,
       morph_target_texture_id,
+      morph_descriptor_index,
+      current_morph_weights_byte_offset,
+      previous_morph_weights_byte_offset,
       "mgstudio_motion_vector_instance_mesh_bg",
     )
     is Some(mesh_bg) else {

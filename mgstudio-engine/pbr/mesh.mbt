@@ -538,40 +538,6 @@ fn render3d_push_morph_weights_to_uniform_buffer(
 }
 
 ///|
-const RENDER3D_MORPH_TEXTURE_MAX_EDGE : Int = 2048
-
-///|
-const RENDER3D_MORPH_ATTRIBUTE_COMPONENTS : Int = 9
-
-///|
-fn render3d_lowest_morph_texture_rect(min_includes : Int) -> (Int, Int, Int)? {
-  if min_includes <= 0 {
-    return Some((1, 1, 1))
-  }
-  let mut best_width = 0
-  let mut best_height = 0
-  let mut best_padding = 0
-  for width in 1..<=RENDER3D_MORPH_TEXTURE_MAX_EDGE {
-    let height = (min_includes + width - 1) / width
-    if height > RENDER3D_MORPH_TEXTURE_MAX_EDGE {
-      continue
-    }
-    let padding = width * height - min_includes
-    if best_width == 0 || padding < best_padding {
-      best_width = width
-      best_height = height
-      best_padding = padding
-      if padding == 0 {
-        break
-      }
-    }
-  }
-  if best_width == 0 {
-    None
-  } else {
-    Some((best_width, best_height, best_padding))
-  }
-}
 
 ///|
 fn render3d_morph_target_texture_components(
@@ -585,11 +551,6 @@ fn render3d_morph_target_texture_components(
     return None
   }
   let vertex_count = geometry.positions.length()
-  let component_count = vertex_count * RENDER3D_MORPH_ATTRIBUTE_COMPONENTS
-  guard render3d_lowest_morph_texture_rect(component_count)
-    is Some((width, height, padding)) else {
-    return None
-  }
   let morph_target_normals = geometry.morph_target_normals()
   let morph_target_tangents = geometry.morph_target_tangents()
   let components : Array[Float] = []
@@ -615,18 +576,18 @@ fn render3d_morph_target_texture_components(
       components.push(position.x)
       components.push(position.y)
       components.push(position.z)
+      components.push(0.0F)
       components.push(normal.x)
       components.push(normal.y)
       components.push(normal.z)
+      components.push(0.0F)
       components.push(tangent.x)
       components.push(tangent.y)
       components.push(tangent.z)
-    }
-    for _ in 0..<padding {
       components.push(0.0F)
     }
   }
-  Some((width, height, morph_targets.length(), components))
+  Some((vertex_count, morph_targets.length(), 1, components))
 }
 
 ///|
@@ -651,7 +612,7 @@ fn render3d_morph_target_texture_id(
         is Some((width, height, depth, components)) else {
         return -1
       }
-      let texture_id = @render.host_gpu_create_mesh3d_morph_target_texture(
+      let texture_id = @render.host_gpu_create_mesh3d_morph_target_buffer(
         width~,
         height~,
         depth~,

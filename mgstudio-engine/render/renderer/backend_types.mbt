@@ -28,7 +28,7 @@ pub struct GpuTextureInfo {
   sample_count : Int
   layer_views : Array[@wgpu.TextureView]
   sampler : @wgpu.Sampler
-  bind_group : @wgpu.BindGroup
+  bind_group : @wgpu.BindGroup?
 }
 
 ///|
@@ -39,6 +39,15 @@ struct GpuPrepassDepthTextureInfo {
   sample_count : Int
   texture : @wgpu.Texture
   view : @wgpu.TextureView
+}
+
+///|
+struct GpuMesh3dMorphTargetBufferInfo {
+  id : Int
+  buffer : @wgpu.Buffer
+  byte_size : UInt64
+  vertex_count : Int
+  weight_count : Int
 }
 
 ///|

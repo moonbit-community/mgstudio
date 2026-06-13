@@ -45,6 +45,7 @@ pub enum MeshBindingSlot3d {
   LightmapSampler
   SkinPrevious
   MorphWeightsPrevious
+  MorphDescriptors
 } derive(Eq, ToJson, FromJson)
 
 ///|
@@ -58,6 +59,7 @@ pub fn mesh_binding_slot_index(slot : MeshBindingSlot3d) -> Int {
     MeshBindingSlot3d::LightmapSampler => 5
     MeshBindingSlot3d::SkinPrevious => 6
     MeshBindingSlot3d::MorphWeightsPrevious => 7
+    MeshBindingSlot3d::MorphDescriptors => 8
   }
 }
 
@@ -181,6 +183,9 @@ fn mesh_binding_layout_slots(
       mesh_binding_layout_entry(MeshBindingSlot3d::MorphWeightsCurrent),
     )
     slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::MorphTargets))
+    if !skins_use_uniform_buffers() {
+      slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::MorphDescriptors))
+    }
   }
   if skinned && motion_vectors {
     slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::SkinPrevious))
@@ -587,7 +592,7 @@ pub fn render3d_mesh_bind_group_dynamic_offsets(
     None => ()
   }
   match current_morph_index {
-    Some(index) => offsets.push(index)
+    Some(index) => if skins_use_uniform_buffers { offsets.push(index) }
     None => ()
   }
   if motion_vectors {

@@ -217,15 +217,21 @@ fn pbr_mesh_binding_layout_entry(
     @pbr_render.MeshBindingSlot3d::MorphWeightsCurrent
     | @pbr_render.MeshBindingSlot3d::MorphWeightsPrevious =>
       @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        true,
+        @render_resource.BufferBindingType::Storage(true),
+        false,
         @pbr_render.RENDER3D_MORPH_BUFFER_SIZE_BYTES.to_uint64(),
       )
     @pbr_render.MeshBindingSlot3d::MorphTargets =>
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(false),
-        @render_resource.TextureViewDimension::D3,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
         false,
+        48UL,
+      )
+    @pbr_render.MeshBindingSlot3d::MorphDescriptors =>
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        20UL,
       )
     @pbr_render.MeshBindingSlot3d::LightmapTexture =>
       @render_resource.BindingType::TextureBinding(

@@ -65,18 +65,16 @@ pub fn prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> Unit {
 }
 
 ///|
-pub fn create_mesh3d_morph_target_texture(
+pub fn create_mesh3d_morph_target_buffer(
   width~ : Int,
   height~ : Int,
   depth~ : Int,
   components~ : Array[Float],
 ) -> Int {
   if ensure_backend() is Some(backend) {
-    return backend.create_mesh3d_morph_target_texture(
+    return backend.create_mesh3d_morph_target_buffer(
       width, height, depth, components,
-    ) catch {
-      _ => -1
-    }
+    )
   }
   -1
 }
@@ -467,6 +465,7 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     entry.lightmap_uv_max_x,
     entry.lightmap_uv_max_y,
     entry.first_vertex_index,
+    0U,
   )
   true
 }

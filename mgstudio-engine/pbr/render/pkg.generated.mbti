@@ -740,6 +740,7 @@ pub enum MeshBindingSlot3d {
   LightmapSampler
   SkinPrevious
   MorphWeightsPrevious
+  MorphDescriptors
 } derive(Eq, ToJson, @json.FromJson)
 
 pub(all) struct MeshGpuDrawPayload3d {

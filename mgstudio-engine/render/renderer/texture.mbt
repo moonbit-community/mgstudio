@@ -155,7 +155,7 @@ fn ensure_default_texture(
       sample_count: 1,
       layer_views: [],
       sampler,
-      bind_group: bg,
+      bind_group: Some(bg),
     }
     backend.textures.push(info)
     mesh3d_material_cache_clear(backend)
@@ -212,7 +212,7 @@ fn ensure_normal_map_fallback_texture(
     sample_count: 1,
     layer_views: [],
     sampler,
-    bind_group: bg,
+    bind_group: Some(bg),
   }
   backend.normal_map_fallback_texture_id = info.id
   backend.textures.push(info)
@@ -384,7 +384,7 @@ pub fn GpuBackend::create_texture_rgba8(
     sample_count: 1,
     layer_views: [],
     sampler,
-    bind_group: bg,
+    bind_group: Some(bg),
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
@@ -546,7 +546,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     sample_count: 1,
     layer_views: [],
     sampler,
-    bind_group: bg,
+    bind_group: Some(bg),
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
@@ -1021,7 +1021,7 @@ pub fn GpuBackend::create_texture_mip_view(
     sample_count: 1,
     layer_views: [],
     sampler: source.sampler,
-    bind_group,
+    bind_group: Some(bind_group),
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
@@ -1089,11 +1089,17 @@ pub fn GpuBackend::set_texture_sampler(
         self, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
         mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
       )
-      let sampled_view = match info.sample_view {
-        Some(sample) => sample
-        None => info.view
+      let bind_group = if info.texture.dimension_u32().raw ==
+        @wgpu.TEXTURE_DIMENSION_2D &&
+        info.texture.sample_count_u32() == 1U {
+        let sampled_view = match info.sample_view {
+          Some(sample) => sample
+          None => info.view
+        }
+        Some(create_cached_texture_bind_group(self, sampler, sampled_view))
+      } else {
+        None
       }
-      let bg = create_cached_texture_bind_group(self, sampler, sampled_view)
       self.textures[i] = GpuTextureInfo::{
         id: info.id,
         width: info.width,
@@ -1109,7 +1115,7 @@ pub fn GpuBackend::set_texture_sampler(
         sample_count: info.sample_count,
         layer_views: info.layer_views,
         sampler,
-        bind_group: bg,
+        bind_group,
       }
       mesh3d_material_cache_clear(self)
       break
@@ -1210,7 +1216,11 @@ pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bind_group = create_cached_texture_bind_group(self, sampler, view)
+  let bind_group = if safe_sample_count == 1U {
+    Some(create_cached_texture_bind_group(self, sampler, view))
+  } else {
+    None
+  }
   let info = GpuTextureInfo::{
     id,
     width: w.reinterpret_as_int(),
@@ -1587,7 +1597,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     sample_count: 1,
     layer_views,
     sampler,
-    bind_group,
+    bind_group: Some(bind_group),
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
@@ -1706,7 +1716,7 @@ pub fn GpuBackend::create_render_target_with_formats(
     sample_count: safe_sample_count.reinterpret_as_int(),
     layer_views: [],
     sampler,
-    bind_group,
+    bind_group: Some(bind_group),
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)

@@ -261,6 +261,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   let mut mesh_bind_group : @wgpu.BindGroup? = None
   let mut mesh_write_offset = 0UL
   let mut mesh_index = 0U
+  let mut morph_descriptor_index = 0U
   let mut writes_motion_vector_mesh = true
   if (use_indirect || draw_storage_index >= 0) &&
     preprocess_state is Some(preprocess_state) &&
@@ -276,6 +277,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     } else {
       draw_storage_index.reinterpret_as_uint()
     }
+    morph_descriptor_index = mesh_index
     writes_motion_vector_mesh = false
   } else if self.mesh3d_gpu_instance_builder_enabled || use_indirect {
     let desired_mesh_index = if draw_storage_index >= 0 {
@@ -291,13 +293,21 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     }
     let required_size = next_used_int.to_uint64()
     guard ensure_mesh3d_motion_vector_instance_mesh_binding(
-        self, mesh_bgl, mesh_layout_descriptor, mesh_layout_mask, required_size,
+        self,
+        mesh_bgl,
+        mesh_layout_descriptor,
+        mesh_layout_mask,
+        required_size,
         morph_target_texture_id,
+        desired_mesh_index.reinterpret_as_uint(),
+        morph_weights_index,
+        previous_morph_weights_index,
       )
       is Some((instance_mesh_buf, instance_mesh_bg)) else {
       return
     }
     mesh_index = desired_mesh_index.reinterpret_as_uint()
+    morph_descriptor_index = desired_mesh_index.reinterpret_as_uint()
     mesh_buffer = Some(instance_mesh_buf)
     mesh_bind_group = Some(instance_mesh_bg)
     mesh_write_offset = desired_mesh_index.to_uint64() *
@@ -308,8 +318,15 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   } else {
     let mesh_slot_index = self.mesh3d_motion_vector_mesh_slot_used
     guard ensure_mesh3d_motion_vector_mesh_slot(
-        self, mesh_slot_index, mesh_bgl, mesh_layout_descriptor, mesh_layout_mask,
+        self,
+        mesh_slot_index,
+        mesh_bgl,
+        mesh_layout_descriptor,
+        mesh_layout_mask,
         morph_target_texture_id,
+        mesh_slot_index.reinterpret_as_uint(),
+        morph_weights_index,
+        previous_morph_weights_index,
       )
       is Some(mesh_slot) else {
       return
@@ -319,6 +336,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     mesh_bind_group = Some(mesh_slot.bind_group)
     mesh_write_offset = 0UL
     mesh_index = 0U
+    morph_descriptor_index = mesh_slot_index.reinterpret_as_uint()
   }
   guard mesh_bind_group is Some(active_mesh_bg) else { return }
   let motion_view_bytes = mesh3d_motion_vector_view_uniform_bytes(ps)
@@ -355,7 +373,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
         rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x, previous_y,
         previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
         previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
-        skinning_key_hi,
+        skinning_key_hi, morph_descriptor_index,
       ),
     )
   }

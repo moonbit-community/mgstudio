@@ -248,11 +248,12 @@ test "pbr material pipeline specializer selects morphed skinned mesh layout" {
     content="true",
   )
   inspect(descriptor.layout[2].label(), content="morphed_skinned_mesh_layout")
-  inspect(descriptor.layout[2].entries().length(), content="4")
+  inspect(descriptor.layout[2].entries().length(), content="5")
   inspect(descriptor.layout[2].entries()[0].binding(), content="0")
   inspect(descriptor.layout[2].entries()[1].binding(), content="1")
   inspect(descriptor.layout[2].entries()[2].binding(), content="2")
   inspect(descriptor.layout[2].entries()[3].binding(), content="3")
+  inspect(descriptor.layout[2].entries()[4].binding(), content="8")
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[4].shader_location, content="6")
   inspect(vertex_layout.attributes[5].shader_location, content="7")
@@ -695,13 +696,14 @@ test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
     descriptor.layout[2].label(),
     content="morphed_skinned_motion_mesh_layout",
   )
-  inspect(descriptor.layout[2].entries().length(), content="6")
+  inspect(descriptor.layout[2].entries().length(), content="7")
   inspect(descriptor.layout[2].entries()[0].binding(), content="0")
   inspect(descriptor.layout[2].entries()[1].binding(), content="1")
   inspect(descriptor.layout[2].entries()[2].binding(), content="2")
   inspect(descriptor.layout[2].entries()[3].binding(), content="3")
-  inspect(descriptor.layout[2].entries()[4].binding(), content="6")
-  inspect(descriptor.layout[2].entries()[5].binding(), content="7")
+  inspect(descriptor.layout[2].entries()[4].binding(), content="8")
+  inspect(descriptor.layout[2].entries()[5].binding(), content="6")
+  inspect(descriptor.layout[2].entries()[6].binding(), content="7")
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[3].shader_location, content="5")
   inspect(vertex_layout.attributes[4].shader_location, content="6")
