@@ -126,6 +126,131 @@ pub fn skybox_should_prepare_bind_group(state : SkyboxPrepareViewState) -> Bool 
 }
 
 ///|
+priv struct SkyboxUniforms {
+  brightness : Float
+  transform : Array[Float]
+}
+
+///|
+fn SkyboxUniforms::new(
+  brightness~ : Float,
+  transform~ : Array[Float],
+) -> SkyboxUniforms {
+  SkyboxUniforms::{ brightness, transform }
+}
+
+///|
+fn SkyboxUniforms::from_skybox(
+  skybox : @light.Skybox,
+  exposure : Float,
+) -> SkyboxUniforms {
+  SkyboxUniforms::new(
+    brightness=skybox.brightness * exposure,
+    transform=skybox_rotation_matrix(skybox.rotation.inverse()),
+  )
+}
+
+///|
+fn SkyboxUniforms::is_ready_for_bind_group(self : SkyboxUniforms) -> Bool {
+  self.transform.length() == 16 && self.brightness >= 0.0F
+}
+
+///|
+fn skybox_rotation_matrix(rotation : @math.Quat) -> Array[Float] {
+  let len_sq = rotation.x * rotation.x +
+    rotation.y * rotation.y +
+    rotation.z * rotation.z +
+    rotation.w * rotation.w
+  let (x, y, z, w) = if len_sq <= 1.0e-8F {
+    (0.0F, 0.0F, 0.0F, 1.0F)
+  } else {
+    let inv_len = 1.0F / Float::sqrt(len_sq)
+    (
+      rotation.x * inv_len,
+      rotation.y * inv_len,
+      rotation.z * inv_len,
+      rotation.w * inv_len,
+    )
+  }
+  let xx = x * x
+  let yy = y * y
+  let zz = z * z
+  let xy = x * y
+  let xz = x * z
+  let yz = y * z
+  let wx = w * x
+  let wy = w * y
+  let wz = w * z
+  [
+    1.0F - 2.0F * (yy + zz),
+    2.0F * (xy + wz),
+    2.0F * (xz - wy),
+    0.0F,
+    2.0F * (xy - wz),
+    1.0F - 2.0F * (xx + zz),
+    2.0F * (yz + wx),
+    0.0F,
+    2.0F * (xz + wy),
+    2.0F * (yz - wx),
+    1.0F - 2.0F * (xx + yy),
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+  ]
+}
+
+///|
+priv struct ExtractedSkybox {
+  render_entity : @core.Entity
+  skybox : @light.Skybox
+  uniforms : SkyboxUniforms
+}
+
+///|
+fn ExtractedSkybox::new(
+  render_entity~ : @core.Entity,
+  skybox~ : @light.Skybox,
+  uniforms~ : SkyboxUniforms,
+) -> ExtractedSkybox {
+  ExtractedSkybox::{ render_entity, skybox, uniforms }
+}
+
+///|
+fn ExtractedSkybox::is_ready_for_pipeline(self : ExtractedSkybox) -> Bool {
+  !self.render_entity.is_placeholder()
+}
+
+///|
+fn ExtractedSkybox::is_ready_for_bind_group(self : ExtractedSkybox) -> Bool {
+  self.is_ready_for_pipeline() && self.uniforms.is_ready_for_bind_group()
+}
+
+///|
+priv struct ExtractedSkyboxes {
+  entries : Array[ExtractedSkybox]
+}
+
+///|
+fn ExtractedSkyboxes::ExtractedSkyboxes() -> ExtractedSkyboxes {
+  ExtractedSkyboxes::{ entries: [] }
+}
+
+///|
+fn ExtractedSkyboxes::clear(self : ExtractedSkyboxes) -> Unit {
+  self.entries.clear()
+}
+
+///|
+fn ExtractedSkyboxes::push(
+  self : ExtractedSkyboxes,
+  entry : ExtractedSkybox,
+) -> Unit {
+  self.entries.push(entry)
+}
+
+///|
 pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_plugins(SkyboxPlugin::SkyboxPlugin())
 }
@@ -155,7 +280,10 @@ fn skybox_plugin_install_with(
   plugin : SkyboxPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { SkyboxPipelineState::SkyboxPipelineState() })
+  let next = app.init_resource(fn() {
+    SkyboxPipelineState::SkyboxPipelineState()
+  })
+  @render.with_render_app(next, configure_skybox_render_sub_app)
 }
 
 ///|
@@ -167,6 +295,16 @@ pub struct SkyboxPipelineState {
 ///|
 pub fn SkyboxPipelineState::SkyboxPipelineState() -> SkyboxPipelineState {
   SkyboxPipelineState::{ pipeline_count: 0, bind_group_count: 0 }
+}
+
+///|
+fn SkyboxPipelineState::set_counts(
+  self : SkyboxPipelineState,
+  pipeline_count~ : Int,
+  bind_group_count~ : Int,
+) -> Unit {
+  self.pipeline_count = pipeline_count
+  self.bind_group_count = bind_group_count
 }
 
 ///|
@@ -189,4 +327,147 @@ pub let ecs_key_skybox_pipeline_state : @ecs.ResourceKey[SkyboxPipelineState] = 
 ///|
 pub impl @app.Resource for SkyboxPipelineState with fn resource() {
   ecs_key_skybox_pipeline_state
+}
+
+///|
+let ecs_key_extracted_skyboxes : @ecs.ResourceKey[ExtractedSkyboxes] = @ecs.register_resource(
+  debug_name="core_pipeline.skybox.extracted_skyboxes",
+)
+
+///|
+impl @app.Resource for ExtractedSkyboxes with fn resource() {
+  ecs_key_extracted_skyboxes
+}
+
+///|
+fn skybox_pipeline_state_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[SkyboxPipelineState] {
+  if world.get_resource(SkyboxPipelineState::resource()) is None {
+    world.insert_resource(
+      SkyboxPipelineState::resource(),
+      SkyboxPipelineState::SkyboxPipelineState(),
+    )
+  }
+  match world.get_resource_mut(SkyboxPipelineState::resource()) {
+    Some(value) => value
+    None => abort("Missing SkyboxPipelineState resource")
+  }
+}
+
+///|
+fn extracted_skyboxes_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[ExtractedSkyboxes] {
+  if world.get_resource(ExtractedSkyboxes::resource()) is None {
+    world.insert_resource(
+      ExtractedSkyboxes::resource(),
+      ExtractedSkyboxes::ExtractedSkyboxes(),
+    )
+  }
+  match world.get_resource_mut(ExtractedSkyboxes::resource()) {
+    Some(value) => value
+    None => abort("Missing ExtractedSkyboxes resource")
+  }
+}
+
+///|
+fn configure_skybox_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  if !world.resource(SkyboxPipelineState::resource()).is_present() {
+    world.insert_resource(
+      SkyboxPipelineState::resource(),
+      SkyboxPipelineState::SkyboxPipelineState(),
+    )
+  }
+  if !world.resource(ExtractedSkyboxes::resource()).is_present() {
+    world.insert_resource(
+      ExtractedSkyboxes::resource(),
+      ExtractedSkyboxes::ExtractedSkyboxes(),
+    )
+  }
+  @render.configure_base_render_sets(sub_app)
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_skybox).in_set(
+      @render.render_system_set_extract_commands,
+    ),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_skybox_pipelines).in_set(
+      @render.render_system_set_prepare,
+    ),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_skybox_bind_groups).in_set(
+      @render.render_system_set_prepare_bind_groups,
+    ),
+  )
+}
+
+///|
+fn extract_skybox(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  extracted_skyboxes_mut_or_init(world).modify(fn(extracted) {
+    extracted.clear()
+    let query : @ecs.Query[
+      (@ecs.Read[@render.RenderEntity], @ecs.Read[@light.Skybox]),
+      @ecs.All,
+    ] = @ecs.query(source_world)
+    try! query.view(fn(_query_entity, data) {
+      let (render_entity_ref, skybox_ref) = data
+      let skybox = skybox_ref.value()
+      extracted.push(
+        ExtractedSkybox::new(
+          render_entity=render_entity_ref.value().id(),
+          skybox~,
+          uniforms=SkyboxUniforms::from_skybox(skybox, 1.0F),
+        ),
+      )
+    })
+  })
+}
+
+///|
+fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
+  let mut pipeline_count = 0
+  match world.get_resource(ExtractedSkyboxes::resource()) {
+    Some(extracted) =>
+      for entry in extracted.entries {
+        if entry.is_ready_for_pipeline() {
+          pipeline_count = pipeline_count + 1
+        }
+      }
+    None => ()
+  }
+  skybox_pipeline_state_mut_or_init(world).modify(fn(state) {
+    state.set_counts(pipeline_count~, bind_group_count=state.bind_group_count)
+  })
+}
+
+///|
+fn prepare_skybox_bind_groups(world : @ecs.World) -> Unit {
+  let mut bind_group_count = 0
+  match world.get_resource(ExtractedSkyboxes::resource()) {
+    Some(extracted) =>
+      for entry in extracted.entries {
+        if entry.is_ready_for_bind_group() {
+          match entry.skybox.image {
+            Some(image) =>
+              if @asset.asset_is_texture_loaded(image) {
+                bind_group_count = bind_group_count + 1
+              }
+            None => ()
+          }
+        }
+      }
+    None => ()
+  }
+  skybox_pipeline_state_mut_or_init(world).modify(fn(state) {
+    state.set_counts(pipeline_count=state.pipeline_count, bind_group_count~)
+  })
 }
