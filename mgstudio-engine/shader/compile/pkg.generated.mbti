@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/shader/compile"
 
 import {
-  "Milky2018/moon_wgsl/common",
+  "Milky2018/wgsl/common",
   "moonbitlang/core/hashmap",
 }
 

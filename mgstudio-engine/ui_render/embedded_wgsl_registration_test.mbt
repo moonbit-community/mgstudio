@@ -38,10 +38,6 @@ test "ui_render: embedded wgsl sources are registered by ui owner" {
     content="true",
   )
   debug_inspect(
-    ui_render_wgsl_registered("ui_render/color_space.wgsl"),
-    content="true",
-  )
-  debug_inspect(
     ui_render_wgsl_registered("ui_render/ui_vertex_output.wgsl"),
     content="true",
   )

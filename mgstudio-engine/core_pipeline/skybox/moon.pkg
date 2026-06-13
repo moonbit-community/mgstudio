@@ -11,11 +11,6 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
-      "command": ":embed --input $input --output $output --name skybox_prepass_wgsl_source",
-      "input": "skybox_prepass.wgsl",
-      "output": "skybox_prepass_wgsl.mbt",
-    },
-    {
       "command": ":embed --input $input --output $output --name skybox_wgsl_source",
       "input": "skybox.wgsl",
       "output": "skybox_wgsl.mbt",

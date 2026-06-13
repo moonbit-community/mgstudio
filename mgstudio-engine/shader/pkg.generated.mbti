@@ -7,8 +7,8 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/moon_wesl",
-  "Milky2018/moon_wgsl/common",
-  "Milky2018/moon_wgsl/compose",
+  "Milky2018/moon_wgsl_naga_oil/compose",
+  "Milky2018/wgsl/common",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }

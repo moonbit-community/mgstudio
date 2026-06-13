@@ -2,8 +2,8 @@
 package "Milky2018/mgstudio/shader/source"
 
 import {
-  "Milky2018/moon_wgsl/common",
-  "Milky2018/moon_wgsl/compose",
+  "Milky2018/moon_wgsl_naga_oil/compose",
+  "Milky2018/wgsl/common",
   "moonbitlang/core/hashmap",
   "moonbitlang/x/fs",
 }

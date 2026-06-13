@@ -29,11 +29,6 @@ options(
       "output": "box_shadow_wgsl.mbt",
     },
     {
-      "command": ":embed --input $input --output $output --name color_space_wgsl_source",
-      "input": "color_space.wgsl",
-      "output": "color_space_wgsl.mbt",
-    },
-    {
       "command": ":embed --input $input --output $output --name gradient_wgsl_source",
       "input": "gradient.wgsl",
       "output": "gradient_wgsl.mbt",

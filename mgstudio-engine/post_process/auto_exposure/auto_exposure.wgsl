@@ -96,7 +96,7 @@ fn compute_histogram(
 ) {
     // Clear the workgroup shared histogram
     if local_invocation_index < 64 {
-        atomicStore(&histogram_shared[local_invocation_index], 0u);
+        histogram_shared[local_invocation_index] = 0u;
     }
 
     // Wait for all workgroup threads to clear the shared histogram
@@ -120,7 +120,7 @@ fn compute_histogram(
     // Accumulate the workgroup histogram into the global histogram.
     // Note that the global histogram was not cleared at the beginning,
     // as it will be cleared in compute_average.
-    atomicAdd(&histogram[local_invocation_index], atomicLoad(&histogram_shared[local_invocation_index]));
+    atomicAdd(&histogram[local_invocation_index], histogram_shared[local_invocation_index]);
 }
 
 @compute @workgroup_size(1, 1, 1)
@@ -132,11 +132,11 @@ fn compute_average(@builtin(local_invocation_index) local_index: u32) {
     // This way we can quickly exclude the portion of lowest and highest samples as required by
     // the low_percent and high_percent settings.
     for (var i=0u; i<64u; i+=1u) {
-        histogram_sum += atomicLoad(&histogram[i]);
-        atomicStore(&histogram_shared[i], histogram_sum);
+        histogram_sum += histogram[i];
+        histogram_shared[i] = histogram_sum;
 
         // Clear the histogram bin for the next frame
-        atomicStore(&histogram[i], 0u);
+        histogram[i] = 0u;
     }
 
     let first_index = u32(f32(histogram_sum) * settings.low_percent);
@@ -148,8 +148,8 @@ fn compute_average(@builtin(local_invocation_index) local_index: u32) {
         // The number of pixels in the bin. The histogram values are clamped to
         // first_index and last_index to exclude the lowest and highest samples.
         let bin_count =
-            clamp(atomicLoad(&histogram_shared[i]), first_index, last_index) -
-            clamp(atomicLoad(&histogram_shared[i - 1u]), first_index, last_index);
+            clamp(histogram_shared[i], first_index, last_index) -
+            clamp(histogram_shared[i - 1u], first_index, last_index);
 
         sum += f32(bin_count) * f32(i);
         count += bin_count;

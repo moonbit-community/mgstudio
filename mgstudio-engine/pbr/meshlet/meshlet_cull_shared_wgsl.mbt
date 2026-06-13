@@ -175,9 +175,9 @@ let meshlet_cull_shared_wgsl_source : String =
   #|
   #|fn occlusion_cull_projection() -> mat4x4<f32> {
   #|#ifdef MESHLET_FIRST_CULLING_PASS
-  #|    return view.clip_from_world;
-  #|#else
   #|    return previous_view.clip_from_world;
+  #|#else
+  #|    return view.clip_from_world;
   #|#endif
   #|}
   #|

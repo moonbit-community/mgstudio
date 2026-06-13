@@ -10,13 +10,6 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     @asset.asset_text_to_bytes(box_shadow_wgsl_source),
   )
   @shader_source.load_embedded_shader_source(
-    "ui_render/color_space.wgsl", color_space_wgsl_source,
-  )
-  @asset.register_embedded_asset_virtual_bytes(
-    "ui_render/color_space.wgsl",
-    @asset.asset_text_to_bytes(color_space_wgsl_source),
-  )
-  @shader_source.load_embedded_shader_source(
     "ui_render/gradient.wgsl", gradient_wgsl_source,
   )
   @shader_source.load_embedded_shader_source(
