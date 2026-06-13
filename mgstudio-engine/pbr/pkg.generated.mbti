@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -25,6 +24,7 @@ import {
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashset",
@@ -260,7 +260,7 @@ pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.MotionVectorPrepass]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
 pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
 
@@ -2257,7 +2257,7 @@ pub using @motion_blur {type MotionBlur}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
 
-pub using @core_3d {type Msaa}
+pub using @view {type Msaa}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 

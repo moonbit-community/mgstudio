@@ -6,8 +6,8 @@ import {
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/view",
   "moonbitlang/core/debug",
-  "moonbitlang/core/json",
 }
 
 // Values
@@ -37,7 +37,7 @@ pub let ecs_key_alpha_mask3d_phase : @ecs.ResourceKey[AlphaMask3dPhase]
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
 pub let ecs_key_opaque3d_phase : @ecs.ResourceKey[Opaque3dPhase]
 
@@ -122,17 +122,6 @@ pub struct MainTransparentPass3dState {
 }
 pub fn MainTransparentPass3dState::new(has_transparent_phase? : Bool, has_oit? : Bool, has_oit_resolve_pipeline? : Bool, has_custom_viewport? : Bool, webgl_requires_viewport_reset? : Bool) -> Self
 
-pub(all) enum Msaa {
-  Off
-  Sample2
-  Sample4
-  Sample8
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn Msaa::default() -> Self
-pub fn Msaa::from_samples(Int) -> Self
-pub fn Msaa::samples(Self) -> Int
-pub impl @ecs.Component for Msaa
-
 pub struct Opaque3d {
   batch_set_key : Opaque3dBatchSetKey
   bin_key : Opaque3dBinKey
@@ -211,6 +200,8 @@ pub impl @app.Resource for Transparent3dPhase
 
 // Type aliases
 pub using @hdr {type Hdr}
+
+pub using @view {type Msaa}
 
 // Traits
 

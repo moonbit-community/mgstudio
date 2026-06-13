@@ -16,6 +16,51 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
+pub(all) enum Msaa {
+  Off
+  Sample2
+  Sample4
+  Sample8
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn Msaa::default() -> Msaa {
+  Msaa::Sample4
+}
+
+///|
+pub fn Msaa::samples(self : Msaa) -> Int {
+  match self {
+    Off => 1
+    Sample2 => 2
+    Sample4 => 4
+    Sample8 => 8
+  }
+}
+
+///|
+pub fn Msaa::from_samples(samples : Int) -> Msaa {
+  match samples {
+    1 => Msaa::Off
+    2 => Msaa::Sample2
+    4 => Msaa::Sample4
+    8 => Msaa::Sample8
+    _ => abort("Unsupported MSAA sample count: \{samples}")
+  }
+}
+
+///|
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
+  debug_name="render.view.msaa",
+)
+
+///|
+pub impl @ecs.Component for Msaa with fn component() {
+  ecs_key_msaa
+}
+
+///|
 pub struct RetainedViewEntity {
   main_entity : @core.Entity
   auxiliary_entity : @core.Entity

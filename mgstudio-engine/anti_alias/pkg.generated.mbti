@@ -8,9 +8,9 @@ import {
   "Milky2018/mgstudio/anti_alias/smaa",
   "Milky2018/mgstudio/anti_alias/taa",
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/view",
 }
 
 // Values
@@ -34,7 +34,7 @@ pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
 pub let ecs_key_mip_bias : @ecs.ComponentKey[@post_process.MipBias]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
 pub let ecs_key_smaa : @ecs.ComponentKey[@smaa.Smaa]
 
@@ -75,7 +75,7 @@ pub using @post_process {type FxaaSensitivity}
 
 pub using @post_process {type MipBias}
 
-pub using @core_3d {type Msaa}
+pub using @view {type Msaa}
 
 pub using @smaa {type Smaa}
 

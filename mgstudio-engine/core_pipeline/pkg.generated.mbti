@@ -5,13 +5,13 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/core_pipeline/prepass",
   "Milky2018/mgstudio/core_pipeline/tonemapping",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/render/view",
   "moonbitlang/core/debug",
 }
 
@@ -58,7 +58,7 @@ pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@prepass.MotionVectorPrepass]
 
-pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
+pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[@prepass.NormalPrepass]
 
@@ -157,7 +157,7 @@ pub using @hdr {type Hdr}
 
 pub using @prepass {type MotionVectorPrepass}
 
-pub using @core_3d {type Msaa}
+pub using @view {type Msaa}
 
 pub using @prepass {type NormalPrepass}
 

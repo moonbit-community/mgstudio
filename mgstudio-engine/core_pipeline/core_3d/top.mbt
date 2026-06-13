@@ -116,41 +116,7 @@ pub fn core_3d_plugin_with(
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`.
-pub(all) enum Msaa {
-  Off
-  Sample2
-  Sample4
-  Sample8
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
-pub fn Msaa::default() -> Msaa {
-  Msaa::Sample4
-}
-
-///|
-pub fn Msaa::samples(self : Msaa) -> Int {
-  match self {
-    Off => 1
-    Sample2 => 2
-    Sample4 => 4
-    Sample8 => 8
-  }
-}
-
-///|
-pub fn Msaa::from_samples(samples : Int) -> Msaa {
-  if samples <= 1 {
-    Msaa::Off
-  } else if samples <= 2 {
-    Msaa::Sample2
-  } else if samples <= 4 {
-    Msaa::Sample4
-  } else {
-    Msaa::Sample8
-  }
-}
+pub type Msaa = @render_view.Msaa
 
 ///|
 pub type Hdr = @camera_hdr.Hdr
@@ -159,14 +125,7 @@ pub type Hdr = @camera_hdr.Hdr
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @camera_hdr.ecs_key_hdr
 
 ///|
-pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
-  debug_name="render3d.msaa",
-)
-
-///|
-pub impl @ecs.Component for Msaa with fn component() {
-  ecs_key_msaa
-}
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @render_view.ecs_key_msaa
 
 ///|
 pub struct Opaque3dBatchSetKey {
