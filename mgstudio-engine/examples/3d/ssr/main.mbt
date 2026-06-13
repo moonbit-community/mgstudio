@@ -19,9 +19,6 @@
 /// still represented with closest available standard-material behavior.
 
 ///|
-const PI : Float = 3.141592653589793F
-
-///|
 const CAMERA_HEIGHT : Float = 2.25F
 
 ///|
@@ -187,64 +184,6 @@ fn update_help_text() -> Unit {
   if ssr_state.val.help_text is Some(handle) {
     @text.text_set_content(handle, ssr_ui_text())
   }
-}
-
-///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
-  )
 }
 
 ///|
@@ -444,6 +383,23 @@ fn spawn_flight_helmet(
 ///|
 fn spawn_capsules(world : @ecs.World) -> Unit {
   ssr_state.val.capsule_models.clear()
+  let capsule_mesh = @mesh.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Capsule3d::new(0.4F, 0.5F))
+    }),
+  )
+  let parent = world.spawn_empty()
+  try! world.set_by_key(
+    parent,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+  )
+  try! world.set_by_key(
+    parent,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  ssr_state.val.capsule_models.push(parent)
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
     let material = @pbr.standard_material_add(
@@ -452,7 +408,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       .with_metallic(0.0F),
     )
     let entity = @pbr.MeshMaterial3dBundle::new(
-      uv_sphere_mesh(0.4F, 20, 28),
+      capsule_mesh,
       @pbr.MeshMaterial3d::new(material),
       @transform.Transform::from_xyz(
         float_from_int(i) * 1.1F - 2.2F,
@@ -467,6 +423,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       @visibility.Visibility::Hidden,
     )
     |> ignore)
+    @transform.set_parent_in_place(world, entity, parent)
     ssr_state.val.capsule_models.push(entity)
   }
 }
