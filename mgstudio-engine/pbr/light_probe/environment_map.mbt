@@ -59,15 +59,33 @@ pub struct RenderViewEnvironmentMapBindGroupEntriesSingle {
 }
 
 ///|
+pub struct RenderViewEnvironmentMapTextureIdEntriesSingle {
+  diffuse_texture_id : Int
+  specular_texture_id : Int
+}
+
+///|
 pub struct RenderViewEnvironmentMapBindGroupEntriesMultiple {
   diffuse_textures : Array[@asset.Handle[@asset.Image]?]
   specular_textures : Array[@asset.Handle[@asset.Image]?]
 }
 
 ///|
+pub struct RenderViewEnvironmentMapTextureIdEntriesMultiple {
+  diffuse_texture_ids : Array[Int]
+  specular_texture_ids : Array[Int]
+}
+
+///|
 pub(all) enum RenderViewEnvironmentMapBindGroupEntries {
   Single(RenderViewEnvironmentMapBindGroupEntriesSingle)
   Multiple(RenderViewEnvironmentMapBindGroupEntriesMultiple)
+}
+
+///|
+pub(all) enum RenderViewEnvironmentMapTextureIdEntries {
+  Single(RenderViewEnvironmentMapTextureIdEntriesSingle)
+  Multiple(RenderViewEnvironmentMapTextureIdEntriesMultiple)
 }
 
 ///|
@@ -136,6 +154,88 @@ pub fn pbr_environment_map_bind_group_entries_counts(
     Single(_) => (1, 1)
     Multiple(payload) =>
       (payload.diffuse_textures.length(), payload.specular_textures.length())
+  }
+}
+
+///|
+pub fn pbr_environment_map_texture_id_entries(
+  diffuse_texture_ids : Array[Int],
+  specular_texture_ids : Array[Int],
+  use_binding_arrays : Bool,
+  max_view_light_probes : Int,
+) -> RenderViewEnvironmentMapTextureIdEntries {
+  if !use_binding_arrays {
+    return RenderViewEnvironmentMapTextureIdEntries::Single(RenderViewEnvironmentMapTextureIdEntriesSingle::{
+      diffuse_texture_id: if diffuse_texture_ids.length() == 0 {
+        -1
+      } else {
+        diffuse_texture_ids[0]
+      },
+      specular_texture_id: if specular_texture_ids.length() == 0 {
+        -1
+      } else {
+        specular_texture_ids[0]
+      },
+    })
+  }
+  let max_count = if max_view_light_probes <= 0 {
+    1
+  } else {
+    max_view_light_probes
+  }
+  let diffuse_entries : Array[Int] = []
+  let specular_entries : Array[Int] = []
+  for index in 0..<max_count {
+    diffuse_entries.push(
+      if index < diffuse_texture_ids.length() {
+        diffuse_texture_ids[index]
+      } else {
+        -1
+      },
+    )
+    specular_entries.push(
+      if index < specular_texture_ids.length() {
+        specular_texture_ids[index]
+      } else {
+        -1
+      },
+    )
+  }
+  RenderViewEnvironmentMapTextureIdEntries::Multiple(RenderViewEnvironmentMapTextureIdEntriesMultiple::{
+    diffuse_texture_ids: diffuse_entries,
+    specular_texture_ids: specular_entries,
+  })
+}
+
+///|
+pub fn pbr_environment_map_texture_id_entries_diffuse_ids(
+  entries : RenderViewEnvironmentMapTextureIdEntries,
+) -> Array[Int] {
+  match entries {
+    Single(single) => [single.diffuse_texture_id]
+    Multiple(multiple) => multiple.diffuse_texture_ids
+  }
+}
+
+///|
+pub fn pbr_environment_map_texture_id_entries_specular_ids(
+  entries : RenderViewEnvironmentMapTextureIdEntries,
+) -> Array[Int] {
+  match entries {
+    Single(single) => [single.specular_texture_id]
+    Multiple(multiple) => multiple.specular_texture_ids
+  }
+}
+
+///|
+pub fn pbr_environment_map_texture_id_entries_ids(
+  entries : RenderViewEnvironmentMapTextureIdEntries,
+) -> (Array[Int], Array[Int]) {
+  match entries {
+    Single(single) =>
+      ([single.diffuse_texture_id], [single.specular_texture_id])
+    Multiple(multiple) =>
+      (multiple.diffuse_texture_ids, multiple.specular_texture_ids)
   }
 }
 

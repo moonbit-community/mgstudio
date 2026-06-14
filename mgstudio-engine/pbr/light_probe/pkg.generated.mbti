@@ -49,6 +49,14 @@ pub fn pbr_environment_map_bind_group_layout_count(Bool, Int) -> Int
 
 pub fn pbr_environment_map_light_default() -> @light.EnvironmentMapLight
 
+pub fn pbr_environment_map_texture_id_entries(Array[Int], Array[Int], Bool, Int) -> RenderViewEnvironmentMapTextureIdEntries
+
+pub fn pbr_environment_map_texture_id_entries_diffuse_ids(RenderViewEnvironmentMapTextureIdEntries) -> Array[Int]
+
+pub fn pbr_environment_map_texture_id_entries_ids(RenderViewEnvironmentMapTextureIdEntries) -> (Array[Int], Array[Int])
+
+pub fn pbr_environment_map_texture_id_entries_specular_ids(RenderViewEnvironmentMapTextureIdEntries) -> Array[Int]
+
 pub fn pbr_generated_environment_map_light_default() -> @light.GeneratedEnvironmentMapLight
 
 pub fn pbr_generated_environment_map_light_new() -> @light.GeneratedEnvironmentMapLight
@@ -60,6 +68,10 @@ pub fn pbr_irradiance_volume_bind_group_entries(Array[RenderViewIrradianceVolume
 pub fn pbr_irradiance_volume_bind_group_layout_counts(Bool, Int) -> (Int, Int)
 
 pub fn pbr_irradiance_volume_default() -> @light.IrradianceVolume
+
+pub fn pbr_irradiance_volume_texture_id_entries(Array[Int], Bool, Int) -> RenderViewIrradianceVolumeTextureIdEntries
+
+pub fn pbr_irradiance_volume_texture_id_entries_ids(RenderViewIrradianceVolumeTextureIdEntries) -> Array[Int]
 
 pub fn pbr_light_probe_default() -> @light.LightProbe
 
@@ -190,6 +202,21 @@ pub struct RenderViewEnvironmentMapBindGroupEntriesSingle {
   specular_texture : @asset.Handle[@image.Image]?
 }
 
+pub(all) enum RenderViewEnvironmentMapTextureIdEntries {
+  Single(RenderViewEnvironmentMapTextureIdEntriesSingle)
+  Multiple(RenderViewEnvironmentMapTextureIdEntriesMultiple)
+}
+
+pub struct RenderViewEnvironmentMapTextureIdEntriesMultiple {
+  diffuse_texture_ids : Array[Int]
+  specular_texture_ids : Array[Int]
+}
+
+pub struct RenderViewEnvironmentMapTextureIdEntriesSingle {
+  diffuse_texture_id : Int
+  specular_texture_id : Int
+}
+
 pub(all) enum RenderViewIrradianceVolumeBindGroupEntries {
   Single(@asset.Handle[@image.Image]?)
   Multiple(Array[@asset.Handle[@image.Image]?])
@@ -202,6 +229,11 @@ pub struct RenderViewIrradianceVolumeInfo {
 pub fn RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo() -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_intensity(Self, Float) -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_texture(Self, @asset.Handle[@image.Image]?) -> Self
+
+pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
+  Single(Int)
+  Multiple(Array[Int])
+}
 
 pub struct RenderViewLightProbes {
   binding_index_to_textures : Array[@asset.Handle[@image.Image]?]

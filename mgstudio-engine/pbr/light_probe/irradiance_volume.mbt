@@ -31,6 +31,12 @@ pub(all) enum RenderViewIrradianceVolumeBindGroupEntries {
 }
 
 ///|
+pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
+  Single(Int)
+  Multiple(Array[Int])
+}
+
+///|
 pub struct RenderViewIrradianceVolumeInfo {
   texture : @asset.Handle[@asset.Image]?
   intensity : Float
@@ -102,6 +108,49 @@ pub fn pbr_irradiance_volume_bind_group_layout_counts(
     (if max_view_light_probes <= 0 { 1 } else { max_view_light_probes }, 1)
   } else {
     (1, 1)
+  }
+}
+
+///|
+pub fn pbr_irradiance_volume_texture_id_entries(
+  texture_ids : Array[Int],
+  use_binding_arrays : Bool,
+  max_view_light_probes : Int,
+) -> RenderViewIrradianceVolumeTextureIdEntries {
+  if !use_binding_arrays {
+    return RenderViewIrradianceVolumeTextureIdEntries::Single(
+      if texture_ids.length() == 0 {
+        -1
+      } else {
+        texture_ids[0]
+      },
+    )
+  }
+  let max_count = if max_view_light_probes <= 0 {
+    1
+  } else {
+    max_view_light_probes
+  }
+  let entries : Array[Int] = []
+  for index in 0..<max_count {
+    entries.push(
+      if index < texture_ids.length() {
+        texture_ids[index]
+      } else {
+        -1
+      },
+    )
+  }
+  RenderViewIrradianceVolumeTextureIdEntries::Multiple(entries)
+}
+
+///|
+pub fn pbr_irradiance_volume_texture_id_entries_ids(
+  entries : RenderViewIrradianceVolumeTextureIdEntries,
+) -> Array[Int] {
+  match entries {
+    Single(texture_id) => [texture_id]
+    Multiple(texture_ids) => texture_ids
   }
 }
 

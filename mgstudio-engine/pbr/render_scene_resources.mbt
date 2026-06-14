@@ -428,6 +428,14 @@ fn render3d_push_view_light_probes_uniform(
 }
 
 ///|
+fn render3d_light_probe_binding_arrays_are_usable() -> Bool {
+  @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+  )
+}
+
+///|
 fn render3d_loaded_image_texture_id(
   image_handle : @asset.Handle[@asset.Image]?,
 ) -> Int? {
@@ -988,12 +996,29 @@ fn render3d_camera_light_probe_state(
     camera.entity.main_entity,
     uniform_bytes,
   )
+  let binding_arrays_are_usable = render3d_light_probe_binding_arrays_are_usable()
+  let environment_map_entries = @pbr_light_probe.pbr_environment_map_texture_id_entries(
+    diffuse_texture_ids,
+    specular_texture_ids,
+    binding_arrays_are_usable,
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES,
+  )
+  let (environment_diffuse_texture_ids, environment_specular_texture_ids) = @pbr_light_probe.pbr_environment_map_texture_id_entries_ids(
+    environment_map_entries,
+  )
+  let irradiance_volume_entries = @pbr_light_probe.pbr_irradiance_volume_texture_id_entries(
+    irradiance_volume_texture_ids,
+    binding_arrays_are_usable,
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES,
+  )
   Render3dLightProbeState::{
     uniform_bytes,
     uniform_offset,
-    diffuse_texture_ids,
-    specular_texture_ids,
-    irradiance_volume_texture_ids,
+    diffuse_texture_ids: environment_diffuse_texture_ids,
+    specular_texture_ids: environment_specular_texture_ids,
+    irradiance_volume_texture_ids: @pbr_light_probe.pbr_irradiance_volume_texture_id_entries_ids(
+      irradiance_volume_entries,
+    ),
     reflection_probe_entities,
     irradiance_volume_entities,
   }

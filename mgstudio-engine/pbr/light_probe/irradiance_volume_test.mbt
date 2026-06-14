@@ -33,3 +33,21 @@ test "pbr light probe: multiple entry mode padded to max size" {
     Multiple(textures) => inspect(textures.length(), content="4")
   }
 }
+
+///|
+test "pbr light probe: irradiance texture id entries select single mode" {
+  let entries = pbr_irradiance_volume_texture_id_entries([31, 32], false, 4)
+  debug_inspect(
+    pbr_irradiance_volume_texture_id_entries_ids(entries),
+    content="[31]",
+  )
+}
+
+///|
+test "pbr light probe: irradiance texture id entries pad binding arrays" {
+  let entries = pbr_irradiance_volume_texture_id_entries([31, 32], true, 4)
+  debug_inspect(
+    pbr_irradiance_volume_texture_id_entries_ids(entries),
+    content="[31, 32, -1, -1]",
+  )
+}

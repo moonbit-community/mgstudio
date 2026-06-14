@@ -287,11 +287,10 @@ fn mesh3d_pass_environment_texture_ids(
   }
   let diffuse_ids : Array[Int] = []
   let specular_ids : Array[Int] = []
-  let target_len = if diffuse_source.length() > 1 ||
-    specular_source.length() > 1 {
-    8
+  let target_len = if diffuse_source.length() > specular_source.length() {
+    diffuse_source.length()
   } else {
-    1
+    specular_source.length()
   }
   for i in 0..<target_len {
     let diffuse_id = if i < diffuse_source.length() {
@@ -359,15 +358,8 @@ fn mesh3d_pass_irradiance_volume_texture_ids(
     source.push(fallback_irradiance_volume_texture.id)
   }
   let texture_ids : Array[Int] = []
-  let target_len = if source.length() > 1 { 8 } else { 1 }
-  for i in 0..<target_len {
-    texture_ids.push(
-      if i < source.length() {
-        source[i]
-      } else {
-        fallback_irradiance_volume_texture.id
-      },
-    )
+  for texture_id in source {
+    texture_ids.push(texture_id)
   }
   (texture_ids, mesh3d_texture_ids_signature(texture_ids))
 }
