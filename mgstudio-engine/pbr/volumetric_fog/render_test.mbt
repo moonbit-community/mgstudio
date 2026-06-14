@@ -46,8 +46,8 @@ test "pbr volumetric fog: prepares view volume metadata and uniforms" {
   )
   inspect(prepared.uniform_count, content="1")
   inspect(prepared.view_fog.count(), content="1")
-  inspect(prepared.view_fog.volumes[0].exterior, content="false")
-  inspect(prepared.view_fog.volumes[0].has_density_texture(), content="true")
+  inspect(prepared.view_fog.volumes()[0].exterior(), content="false")
+  inspect(prepared.view_fog.volumes()[0].has_density_texture(), content="true")
   inspect(buffer.count(), content="1")
   inspect(buffer.bytes().length(), content="512")
 }

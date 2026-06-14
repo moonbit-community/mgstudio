@@ -382,9 +382,9 @@ fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
 
 ///|
 pub struct ViewFogVolume {
-  density_texture : @asset.Handle[@asset.Image]?
-  uniform_buffer_offset : UInt
-  exterior : Bool
+  priv density_texture : @asset.Handle[@asset.Image]?
+  priv uniform_buffer_offset : UInt
+  priv exterior : Bool
 }
 
 ///|
@@ -412,7 +412,7 @@ pub fn ViewFogVolume::exterior(self : ViewFogVolume) -> Bool {
 
 ///|
 pub struct ViewVolumetricFog {
-  volumes : Array[ViewFogVolume]
+  priv volumes : Array[ViewFogVolume]
 }
 
 ///|
@@ -441,6 +441,13 @@ fn ViewVolumetricFog::push(
 ///|
 pub fn ViewVolumetricFog::count(self : ViewVolumetricFog) -> Int {
   self.volumes.length()
+}
+
+///|
+pub fn ViewVolumetricFog::volumes(
+  self : ViewVolumetricFog,
+) -> ArrayView[ViewFogVolume] {
+  self.volumes[:]
 }
 
 ///|

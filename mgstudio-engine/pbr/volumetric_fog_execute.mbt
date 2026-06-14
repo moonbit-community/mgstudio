@@ -228,7 +228,7 @@ fn render3d_draw_volumetric_fog(
     return
   }
   let volumes : Array[@render.HostMesh3dVolumetricFogVolume] = []
-  for volume in view_fog.volumes {
+  for volume in view_fog.volumes() {
     volumes.push(
       @render.host_mesh3d_volumetric_fog_volume(
         density_texture_id=volume.density_texture_id(),

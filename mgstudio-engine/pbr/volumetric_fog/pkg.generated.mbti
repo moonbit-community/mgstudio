@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -46,9 +45,7 @@ pub struct PreparedVolumetricFogView {
 pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> Self
 
 pub struct ViewFogVolume {
-  density_texture : @asset.Handle[@image.Image]?
-  uniform_buffer_offset : UInt
-  exterior : Bool
+  // private fields
 }
 pub fn ViewFogVolume::density_texture_id(Self) -> Int
 pub fn ViewFogVolume::exterior(Self) -> Bool
@@ -56,9 +53,10 @@ pub fn ViewFogVolume::has_density_texture(Self) -> Bool
 pub fn ViewFogVolume::uniform_buffer_offset(Self) -> UInt
 
 pub struct ViewVolumetricFog {
-  volumes : Array[ViewFogVolume]
+  // private fields
 }
 pub fn ViewVolumetricFog::count(Self) -> Int
+pub fn ViewVolumetricFog::volumes(Self) -> ArrayView[ViewFogVolume]
 pub impl @ecs.Component for ViewVolumetricFog
 
 pub struct ViewVolumetricFogPipelines {
