@@ -140,16 +140,6 @@ pub fn volumetric_fog_plugin_state_with_extracted_counts(
 }
 
 ///|
-pub fn pbr_volumetric_fog_default() -> VolumetricFog {
-  VolumetricFog()
-}
-
-///|
-pub fn pbr_fog_volume_default() -> FogVolume {
-  FogVolume()
-}
-
-///|
 pub fn volumetric_fog_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

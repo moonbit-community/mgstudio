@@ -18,10 +18,6 @@ pub const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
 
 pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
 
-pub fn pbr_fog_volume_default() -> @light.FogVolume
-
-pub fn pbr_volumetric_fog_default() -> @light.VolumetricFog
-
 pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.VolumetricFog, @math.Affine3, VolumetricFogMat4, Array[(@light.FogVolume, @math.Affine3)]) -> PreparedVolumetricFogView
 
 pub fn register_embedded_wgsl_sources() -> Unit
