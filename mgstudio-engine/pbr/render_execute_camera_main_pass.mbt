@@ -892,6 +892,11 @@ fn render3d_execute_camera_main_pass(
   let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
     world, source_world, volumetric_fog_prepare,
   )
+  render3d_write_volumetric_fog_view_components(
+    world,
+    extracted_camera.entity.render_entity,
+    volumetric_fog_prepare,
+  )
   render3d_upload_volumetric_fog_uniform_buffer(world)
   render3d_prepare_volumetric_fog_pipelines(
     volumetric_fog_prepare,
@@ -905,11 +910,6 @@ fn render3d_execute_camera_main_pass(
     camera.atmosphere is Some(_),
   )
   @render.host_gpu_end_pass()
-  render3d_write_volumetric_fog_view_components(
-    world,
-    extracted_camera.entity.render_entity,
-    volumetric_fog_prepare,
-  )
   render3d_update_volumetric_fog_plugin_state(world, volumetric_fog_prepare)
   @app.timeline_trace_emit_counter_int(
     "render_3d_volumetric_fog_views",
