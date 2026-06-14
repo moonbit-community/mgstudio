@@ -333,6 +333,14 @@ pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Vol
 }
 
 ///|
+pub fn VolumetricFogBindGroupLayoutKey::new(
+  multisampled~ : Bool,
+  density_texture~ : Bool,
+) -> VolumetricFogBindGroupLayoutKey {
+  VolumetricFogBindGroupLayoutKey::{ multisampled, density_texture }
+}
+
+///|
 pub fn volumetric_fog_bind_group_layout_index(
   key : VolumetricFogBindGroupLayoutKey,
 ) -> Int {
@@ -344,6 +352,23 @@ pub fn volumetric_fog_bind_group_layout_index(
     bits = bits | 2
   }
   bits
+}
+
+///|
+pub fn volumetric_fog_bind_group_layout_description(
+  key : VolumetricFogBindGroupLayoutKey,
+) -> String {
+  if !key.multisampled && !key.density_texture {
+    return "volumetric lighting view bind group layout"
+  }
+  let flags : Array[String] = []
+  if key.density_texture {
+    flags.push("density texture")
+  }
+  if key.multisampled {
+    flags.push("multisampled")
+  }
+  "volumetric lighting view bind group layout (" + flags.join(", ") + ")"
 }
 
 ///|
@@ -866,10 +891,10 @@ pub fn volumetric_fog_specialize_pipeline(
       ),
     ])
   let shader_defs = ["SHADOW_FILTER_METHOD_HARDWARE_2X2"]
-  let bind_group_layout_key = VolumetricFogBindGroupLayoutKey::{
-    multisampled: key.mesh_pipeline_view_key.multisampled(),
-    density_texture: key.has_density_texture,
-  }
+  let bind_group_layout_key = VolumetricFogBindGroupLayoutKey::new(
+    multisampled=key.mesh_pipeline_view_key.multisampled(),
+    density_texture=key.has_density_texture,
+  )
   if key.mesh_pipeline_view_key.multisampled() {
     shader_defs.push("MULTISAMPLED")
   }

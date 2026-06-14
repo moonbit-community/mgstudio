@@ -32,6 +32,8 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
 
+pub fn volumetric_fog_bind_group_layout_description(VolumetricFogBindGroupLayoutKey) -> String
+
 pub fn volumetric_fog_bind_group_layout_index(VolumetricFogBindGroupLayoutKey) -> Int
 
 pub fn volumetric_fog_camera_is_inside(@math.Affine3) -> Bool
@@ -108,6 +110,7 @@ pub struct VolumetricFogBindGroupLayoutKey {
   density_texture : Bool
 }
 pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Self
+pub fn VolumetricFogBindGroupLayoutKey::new(multisampled~ : Bool, density_texture~ : Bool) -> Self
 
 pub struct VolumetricFogMat4 {
   x_axis : @math.Vec4
