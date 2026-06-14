@@ -599,6 +599,21 @@ fn render3d_light_probe_flags(
 }
 
 ///|
+fn render3d_camera_visible_reflection_probe_entities(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> Array[@core.Entity] {
+  match
+    (try! world.get_by_key(
+      camera_entity,
+      @light_cluster.VisibleClusterableObjects::component(),
+    )) {
+    Some(visible) => visible.reflection_probe_entities()
+    None => []
+  }
+}
+
+///|
 fn render3d_light_probe_entry(
   world : @ecs.World,
   camera_transform : @transform.Transform,
@@ -710,13 +725,18 @@ fn render3d_camera_light_probe_state(
     -1
   }
   let probes : Array[Render3dLightProbeEntry] = []
-  world.for_each_component(@light.ecs_key_environment_map_light, fn(
-    entity,
-    environment_map_light,
-  ) {
+  for
+    entity in render3d_camera_visible_reflection_probe_entities(
+      world,
+      camera.entity.main_entity,
+    ) {
+    guard (try! world.get_by_key(entity, @light.ecs_key_environment_map_light))
+      is Some(environment_map_light) else {
+      continue
+    }
     guard (try! world.get_by_key(entity, @light.ecs_key_light_probe))
       is Some(light_probe) else {
-      return
+      continue
     }
     match
       render3d_light_probe_entry(
@@ -729,7 +749,7 @@ fn render3d_camera_light_probe_state(
       Some(entry) => probes.push(entry)
       None => ()
     }
-  })
+  }
   let sorted_probes = render3d_light_probe_sort(probes)
   let words : Array[UInt] = []
   let probe_cubemap_indices : Array[Int] = []
