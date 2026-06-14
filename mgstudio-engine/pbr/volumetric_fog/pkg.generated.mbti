@@ -40,7 +40,6 @@ pub struct PreparedVolumetricFogView {
   view_fog : ViewVolumetricFog
   uniform_count : Int
 }
-pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> Self
 
 pub struct ViewFogVolume {
   // private fields

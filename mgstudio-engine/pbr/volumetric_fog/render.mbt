@@ -511,14 +511,6 @@ pub struct PreparedVolumetricFogView {
 }
 
 ///|
-pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> PreparedVolumetricFogView {
-  PreparedVolumetricFogView::{
-    view_fog: ViewVolumetricFog::ViewVolumetricFog(),
-    uniform_count: 0,
-  }
-}
-
-///|
 pub fn prepare_volumetric_fog_view_uniforms(
   uniform_buffer : VolumetricFogUniformBuffer,
   volumetric_fog : VolumetricFog,
