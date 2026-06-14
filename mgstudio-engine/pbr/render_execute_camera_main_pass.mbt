@@ -886,58 +886,7 @@ fn render3d_execute_camera_main_pass(
       extracted_camera.entity.render_entity,
     ),
   )
-  let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
-    world, source_world, camera, camera_pass_projection,
-  )
-  let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
-    world, source_world, volumetric_fog_prepare,
-  )
-  render3d_write_volumetric_fog_view_components(
-    world,
-    extracted_camera.entity.render_entity,
-    volumetric_fog_prepare,
-  )
-  render3d_upload_volumetric_fog_uniform_buffer(world)
-  render3d_prepare_volumetric_fog_pipelines(
-    volumetric_fog_prepare,
-    scene_target_id,
-    msaa_sample_count,
-    camera.atmosphere is Some(_),
-  )
-  render3d_draw_volumetric_fog(
-    volumetric_fog_prepare,
-    camera_entity,
-    camera.atmosphere is Some(_),
-  )
   @render.host_gpu_end_pass()
-  render3d_update_volumetric_fog_plugin_state(world, volumetric_fog_prepare)
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_views",
-    volumetric_fog_prepare.view_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_volumes",
-    render3d_volumetric_fog_view_volume_count(
-      world,
-      extracted_camera.entity.render_entity,
-    ),
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_lights",
-    volumetric_fog_prepare.light_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_uniforms",
-    volumetric_fog_prepare.uniform_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_plane_mesh_id",
-    volumetric_fog_prepare.plane_mesh_id,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_cube_mesh_id",
-    volumetric_fog_prepare.cube_mesh_id,
-  )
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,
   )
@@ -1104,4 +1053,56 @@ fn render3d_execute_camera_main_pass(
     }
     @render.host_gpu_end_pass()
   }
+  let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
+    world, source_world, camera, camera_pass_projection,
+  )
+  let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
+    world, source_world, volumetric_fog_prepare,
+  )
+  render3d_write_volumetric_fog_view_components(
+    world,
+    extracted_camera.entity.render_entity,
+    volumetric_fog_prepare,
+  )
+  render3d_upload_volumetric_fog_uniform_buffer(world)
+  render3d_prepare_volumetric_fog_pipelines(
+    volumetric_fog_prepare,
+    scene_target_id,
+    msaa_sample_count,
+    camera.atmosphere is Some(_),
+  )
+  render3d_draw_volumetric_fog(
+    volumetric_fog_prepare,
+    camera_entity,
+    camera.atmosphere is Some(_),
+  )
+  @render.host_gpu_end_pass()
+  render3d_update_volumetric_fog_plugin_state(world, volumetric_fog_prepare)
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_views",
+    volumetric_fog_prepare.view_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_volumes",
+    render3d_volumetric_fog_view_volume_count(
+      world,
+      extracted_camera.entity.render_entity,
+    ),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_lights",
+    volumetric_fog_prepare.light_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_uniforms",
+    volumetric_fog_prepare.uniform_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_plane_mesh_id",
+    volumetric_fog_prepare.plane_mesh_id,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_cube_mesh_id",
+    volumetric_fog_prepare.cube_mesh_id,
+  )
 }
