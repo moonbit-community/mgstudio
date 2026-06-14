@@ -281,6 +281,97 @@ impl @ecs.Component for RangeValueText with fn component() {
 }
 
 ///|
+priv struct CubeModel {}
+
+///|
+priv struct FlightHelmetModel {}
+
+///|
+priv struct CapsuleModel {}
+
+///|
+priv struct CapsulesParent {}
+
+///|
+priv struct MetallicBaseModel {}
+
+///|
+priv struct RedPlaneBaseModel {}
+
+///|
+priv struct WaterModel {}
+
+///|
+let cube_model_key : @ecs.ComponentKey[CubeModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.CubeModel",
+)
+
+///|
+let flight_helmet_model_key : @ecs.ComponentKey[FlightHelmetModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.FlightHelmetModel",
+)
+
+///|
+let capsule_model_key : @ecs.ComponentKey[CapsuleModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.CapsuleModel",
+)
+
+///|
+let capsules_parent_key : @ecs.ComponentKey[CapsulesParent] = @ecs.register_component(
+  debug_name="examples.3d.ssr.CapsulesParent",
+)
+
+///|
+let metallic_base_model_key : @ecs.ComponentKey[MetallicBaseModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.MetallicBaseModel",
+)
+
+///|
+let red_plane_base_model_key : @ecs.ComponentKey[RedPlaneBaseModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.RedPlaneBaseModel",
+)
+
+///|
+let water_model_key : @ecs.ComponentKey[WaterModel] = @ecs.register_component(
+  debug_name="examples.3d.ssr.WaterModel",
+)
+
+///|
+impl @ecs.Component for CubeModel with fn component() {
+  cube_model_key
+}
+
+///|
+impl @ecs.Component for FlightHelmetModel with fn component() {
+  flight_helmet_model_key
+}
+
+///|
+impl @ecs.Component for CapsuleModel with fn component() {
+  capsule_model_key
+}
+
+///|
+impl @ecs.Component for CapsulesParent with fn component() {
+  capsules_parent_key
+}
+
+///|
+impl @ecs.Component for MetallicBaseModel with fn component() {
+  metallic_base_model_key
+}
+
+///|
+impl @ecs.Component for RedPlaneBaseModel with fn component() {
+  red_plane_base_model_key
+}
+
+///|
+impl @ecs.Component for WaterModel with fn component() {
+  water_model_key
+}
+
+///|
 priv struct AppSettings {
   mut ssr_on : Bool
   mut displayed_model : DisplayedModel
@@ -317,38 +408,6 @@ fn AppSettings::AppSettings() -> AppSettings {
     edge_fadeout_end: 0.0F,
   }
 }
-
-///|
-priv struct SsrSceneEntities {
-  mut thickness : Float
-  mut linear_steps : Int
-  mut bisection_steps : Int
-  mut linear_march_exponent : Float
-  mut use_secant : Bool
-  mut camera : @core.Entity?
-  mut cube_model : @core.Entity?
-  mut flight_helmet_model : @core.Entity?
-  capsule_models : Array[@core.Entity]
-  mut metallic_base : @core.Entity?
-  mut red_plane_base : @core.Entity?
-  mut water_base : @core.Entity?
-}
-
-///|
-let ssr_scene_entities : Ref[SsrSceneEntities] = Ref({
-  thickness: 0.25F,
-  linear_steps: 10,
-  bisection_steps: 5,
-  linear_march_exponent: 1.0F,
-  use_secant: true,
-  camera: None,
-  cube_model: None,
-  flight_helmet_model: None,
-  capsule_models: [],
-  metallic_base: None,
-  red_plane_base: None,
-  water_base: None,
-})
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -403,6 +462,21 @@ fn set_entity_visibility(
 }
 
 ///|
+fn[T] set_component_visibility(
+  world : @ecs.World,
+  component : @ecs.ComponentKey[T],
+  visible : Bool,
+) -> Unit {
+  let entities : @ecs.Query[@core.Entity, @ecs.With[T]] = @ecs.query_filtered(
+    world,
+    @ecs.With::new(component),
+  )
+  try! entities.view(fn(_query_entity, entity) {
+    set_entity_visibility(world, Some(entity), visible)
+  })
+}
+
+///|
 fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
   let settings = match world.get_resource(AppSettings::resource()) {
     Some(value) => value
@@ -411,25 +485,27 @@ fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
   let model = settings.displayed_model
   let base = settings.displayed_base
 
-  set_entity_visibility(world, ssr_scene_entities.val.cube_model, model is Cube)
-  set_entity_visibility(
+  set_component_visibility(world, CubeModel::component(), model is Cube)
+  set_component_visibility(
     world,
-    ssr_scene_entities.val.flight_helmet_model,
+    FlightHelmetModel::component(),
     model is FlightHelmet,
   )
-  for capsule in ssr_scene_entities.val.capsule_models {
-    set_entity_visibility(world, Some(capsule), model is Capsules)
-  }
-
-  set_entity_visibility(world, ssr_scene_entities.val.water_base, base is Water)
-  set_entity_visibility(
+  set_component_visibility(world, CapsuleModel::component(), model is Capsules)
+  set_component_visibility(
     world,
-    ssr_scene_entities.val.metallic_base,
+    CapsulesParent::component(),
+    model is Capsules,
+  )
+  set_component_visibility(world, WaterModel::component(), base is Water)
+  set_component_visibility(
+    world,
+    MetallicBaseModel::component(),
     base is Metallic,
   )
-  set_entity_visibility(
+  set_component_visibility(
     world,
-    ssr_scene_entities.val.red_plane_base,
+    RedPlaneBaseModel::component(),
     base is RedPlane,
   )
 }
@@ -456,29 +532,6 @@ fn sanitize_ssr_ranges(settings : AppSettings) -> Unit {
   )
   settings.edge_fadeout_start = edge_start
   settings.edge_fadeout_end = edge_end
-
-  ssr_scene_entities.val.thickness = clampf(
-    ssr_scene_entities.val.thickness,
-    0.0F,
-    5.0F,
-  )
-  ssr_scene_entities.val.linear_steps = if ssr_scene_entities.val.linear_steps <=
-    0 {
-    1
-  } else {
-    ssr_scene_entities.val.linear_steps
-  }
-  ssr_scene_entities.val.bisection_steps = if ssr_scene_entities.val.bisection_steps <
-    0 {
-    0
-  } else {
-    ssr_scene_entities.val.bisection_steps
-  }
-  ssr_scene_entities.val.linear_march_exponent = clampf(
-    ssr_scene_entities.val.linear_march_exponent,
-    0.1F,
-    4.0F,
-  )
 }
 
 ///|
@@ -495,17 +548,22 @@ fn build_ssr_settings(
     settings.max_roughness_end,
   )
   .with_edge_fadeout(settings.edge_fadeout_start, settings.edge_fadeout_end)
-  .with_thickness(ssr_scene_entities.val.thickness)
-  .with_linear_steps(ssr_scene_entities.val.linear_steps)
-  .with_bisection_steps(ssr_scene_entities.val.bisection_steps)
-  .with_linear_march_exponent(ssr_scene_entities.val.linear_march_exponent)
-  .with_use_secant(ssr_scene_entities.val.use_secant)
 }
 
 ///|
 fn apply_ssr_settings(world : @ecs.World, settings : AppSettings) -> Unit {
   sanitize_ssr_ranges(settings)
-  if ssr_scene_entities.val.camera is Some(camera) {
+  let cameras : @ecs.Query[
+    @core.Entity,
+    (@ecs.With[@camera_camera.Camera], @ecs.With[@camera.Camera3d]),
+  ] = @ecs.query_filtered(
+    world,
+    (
+      @ecs.With::new(@camera_camera.Camera::component()),
+      @ecs.With::new(@camera.Camera3d::component()),
+    ),
+  )
+  try! cameras.view(fn(_query_entity, camera) {
     if settings.ssr_on {
       if !(try! world.replace(
           camera,
@@ -522,7 +580,7 @@ fn apply_ssr_settings(world : @ecs.World, settings : AppSettings) -> Unit {
       try! (world.take(camera, @post_process.ecs_key_screen_space_reflections)
       |> ignore)
     }
-  }
+  })
 }
 
 ///|
@@ -542,7 +600,7 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
-  ssr_scene_entities.val.cube_model = Some(cube)
+  try! world.set_by_key(cube, CubeModel::component(), CubeModel::{  })
 }
 
 ///|
@@ -573,12 +631,13 @@ fn spawn_flight_helmet(
     @visibility.ecs_key_visibility,
     @visibility.Visibility::Hidden,
   )
-  ssr_scene_entities.val.flight_helmet_model = Some(entity)
+  try! world.set_by_key(entity, FlightHelmetModel::component(), FlightHelmetModel::{
+
+  })
 }
 
 ///|
 fn spawn_capsules(world : @ecs.World) -> Unit {
-  ssr_scene_entities.val.capsule_models.clear()
   let capsule_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
       assets |> @pbr.add_mesh(@math.Capsule3d::new(0.4F, 0.5F))
@@ -595,7 +654,9 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     @visibility.ecs_key_visibility,
     @visibility.Visibility::Hidden,
   )
-  ssr_scene_entities.val.capsule_models.push(parent)
+  try! world.set_by_key(parent, CapsulesParent::component(), CapsulesParent::{
+
+  })
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
     let material = @pbr.standard_material_add(
@@ -620,7 +681,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     )
     |> ignore)
     @transform.set_parent_in_place(world, entity, parent)
-    ssr_scene_entities.val.capsule_models.push(entity)
+    try! world.set_by_key(entity, CapsuleModel::component(), CapsuleModel::{  })
   }
 }
 
@@ -653,7 +714,9 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @visibility.Visibility::Hidden,
   )
   |> ignore)
-  ssr_scene_entities.val.metallic_base = Some(metallic)
+  try! world.set_by_key(metallic, MetallicBaseModel::component(), MetallicBaseModel::{
+
+  })
 
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -682,7 +745,9 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @visibility.Visibility::Hidden,
   )
   |> ignore)
-  ssr_scene_entities.val.red_plane_base = Some(red)
+  try! world.set_by_key(red, RedPlaneBaseModel::component(), RedPlaneBaseModel::{
+
+  })
 
   let water_normals = asset_server.load_with_settings(
     "textures/water_normals.png",
@@ -729,7 +794,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     water_mesh_material,
     @transform.Transform::identity(),
   ).spawn(world)
-  ssr_scene_entities.val.water_base = Some(water)
+  try! world.set_by_key(water, WaterModel::component(), WaterModel::{  })
 }
 
 ///|
@@ -747,7 +812,6 @@ fn setup_camera_and_lights(
     )
     .with_screen_space_reflections(Some(build_ssr_settings(app_settings)))
     .spawn(world)
-  ssr_scene_entities.val.camera = Some(camera)
 
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
@@ -824,42 +888,37 @@ fn setup_camera_and_lights(
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in ssr example")
-  }
+fn[T] rotate_model_component(
+  world : @ecs.World,
+  component : @ecs.ComponentKey[T],
+  rotation : @math.Quat,
+) -> Unit {
+  let entities : @ecs.Query[@core.Entity, @ecs.With[T]] = @ecs.query_filtered(
+    world,
+    @ecs.With::new(component),
+  )
+  try! entities.view(fn(_query_entity, entity) {
+    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
+      is Some(transform) {
+      try! (world.replace(
+        entity,
+        @transform.ecs_key_transform,
+        transform.with_rotation(rotation),
+      )
+      |> ignore)
+    }
+  })
 }
 
 ///|
 fn rotate_models(world : @ecs.World) -> Unit {
-  let rotation = @math.Quat::from_rotation_y(
-    world_time(world).elapsed_seconds(),
-  )
-
-  if ssr_scene_entities.val.cube_model is Some(cube) {
-    if (try! world.get_by_key(cube, @transform.ecs_key_transform))
-      is Some(transform) {
-      try! (world.replace(
-        cube,
-        @transform.ecs_key_transform,
-        transform.with_rotation(rotation),
-      )
-      |> ignore)
-    }
+  let time = match world.get_resource(@time.default_time_resource_key) {
+    Some(value) => value
+    None => abort("Missing Time<Unit> resource in ssr example")
   }
-
-  if ssr_scene_entities.val.flight_helmet_model is Some(helmet) {
-    if (try! world.get_by_key(helmet, @transform.ecs_key_transform))
-      is Some(transform) {
-      try! (world.replace(
-        helmet,
-        @transform.ecs_key_transform,
-        transform.with_rotation(rotation),
-      )
-      |> ignore)
-    }
-  }
+  let rotation = @math.Quat::from_rotation_y(time.elapsed_seconds())
+  rotate_model_component(world, CubeModel::component(), rotation)
+  rotate_model_component(world, FlightHelmetModel::component(), rotation)
 }
 
 ///|
@@ -1324,19 +1383,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ecs_key_default_opaque_renderer_method,
     @pbr.DefaultOpaqueRendererMethod::deferred(),
   )
-
-  ssr_scene_entities.val.thickness = 0.25F
-  ssr_scene_entities.val.linear_steps = 10
-  ssr_scene_entities.val.bisection_steps = 5
-  ssr_scene_entities.val.linear_march_exponent = 1.0F
-  ssr_scene_entities.val.use_secant = true
-  ssr_scene_entities.val.camera = None
-  ssr_scene_entities.val.cube_model = None
-  ssr_scene_entities.val.flight_helmet_model = None
-  ssr_scene_entities.val.capsule_models.clear()
-  ssr_scene_entities.val.metallic_base = None
-  ssr_scene_entities.val.red_plane_base = None
-  ssr_scene_entities.val.water_base = None
 
   let asset_server = @asset.AssetServer::new()
   let app_settings = match world.get_resource(AppSettings::resource()) {
