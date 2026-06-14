@@ -7,9 +7,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
-  "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/shader/source" @shader_source,
-  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

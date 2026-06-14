@@ -9,8 +9,6 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render/mesh_view_layout",
-  "Milky2018/wgpu_mbt",
 }
 
 // Values
@@ -39,10 +37,6 @@ pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlu
 pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
 
 pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int, Int) -> VolumetricFogPluginState
-
-pub fn volumetric_fog_select_pipeline(ViewVolumetricFogPipelines, VolumetricFogPipelineKey) -> Int
-
-pub fn volumetric_fog_specialize_pipeline(VolumetricFogPipelineKey) -> VolumetricFogPipelineDescriptor
 
 pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4
 
@@ -101,39 +95,6 @@ pub fn VolumetricFogMat4::identity() -> Self
 pub fn VolumetricFogMat4::mul(Self, Self) -> Self
 pub fn VolumetricFogMat4::mul_affine3(Self, @math.Affine3) -> Self
 pub fn VolumetricFogMat4::to_cols_array(Self) -> Array[Float]
-
-pub struct VolumetricFogPipeline {
-  shader_label : String
-  bind_group_layout_count : Int
-}
-pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> Self
-
-pub struct VolumetricFogPipelineDescriptor {
-  label : String
-  shader_defs : Array[String]
-  vertex_buffer_layout : @mesh.VertexBufferLayout
-  bind_group_layout_index : Int
-  target_format : @wgpu_mbt.TextureFormat
-  cull_mode_back : Bool
-  blend_color_src_one : Bool
-  blend_color_dst_one_minus_src_alpha : Bool
-  blend_alpha_src_zero : Bool
-  blend_alpha_dst_one : Bool
-}
-pub fn VolumetricFogPipelineDescriptor::bind_group_layout_index(Self) -> Int
-pub fn VolumetricFogPipelineDescriptor::shader_defs(Self) -> Array[String]
-pub fn VolumetricFogPipelineDescriptor::target_format(Self) -> @wgpu_mbt.TextureFormat
-pub fn VolumetricFogPipelineDescriptor::uses_bevy_blend_state(Self) -> Bool
-pub fn VolumetricFogPipelineDescriptor::vertex_buffer_layout(Self) -> @mesh.VertexBufferLayout
-
-pub struct VolumetricFogPipelineKey {
-  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
-  vertex_buffer_layout : @mesh.MeshVertexBufferLayoutRef
-  target_format : @wgpu_mbt.TextureFormat
-  has_density_texture : Bool
-}
-pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> Self
-pub fn VolumetricFogPipelineKey::new(@mesh_view_layout.MeshPipelineViewLayoutKey, @mesh.MeshVertexBufferLayoutRef, @wgpu_mbt.TextureFormat, Bool) -> Self
 
 pub struct VolumetricFogPlugin {
 }
