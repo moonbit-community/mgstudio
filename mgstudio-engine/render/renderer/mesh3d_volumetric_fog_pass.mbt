@@ -251,22 +251,27 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
       atmosphere~,
     ),
   )
+  guard mesh3d_volumetric_fog_pipeline_get_by_id(self, textureless_pipeline_id)
+    is Some(textureless_pipeline) else {
+    return
+  }
+  guard mesh3d_volumetric_fog_pipeline_get_by_id(self, textured_pipeline_id)
+    is Some(textured_pipeline) else {
+    return
+  }
+  guard self.mesh3d_volumetric_fog_buf is Some(_) else { return }
   mesh3d_end_active_pass_preserving_state(self)
   for volume in volumes {
     let mesh_id = if volume.exterior { cube_mesh_id } else { plane_mesh_id }
-    guard find_mesh(self, mesh_id) is Some(mesh) else { continue }
+    guard find_mesh(self, mesh_id) is Some(mesh) else { return }
     let density_texture = mesh3d_volumetric_fog_resolved_texture(
       self,
       volume.density_texture_id,
     )
-    let pipeline_id = if density_texture is Some(_) {
-      textured_pipeline_id
+    let pipeline = if density_texture is Some(_) {
+      textured_pipeline
     } else {
-      textureless_pipeline_id
-    }
-    guard mesh3d_volumetric_fog_pipeline_get_by_id(self, pipeline_id)
-      is Some(pipeline) else {
-      continue
+      textureless_pipeline
     }
     guard mesh3d_volumetric_fog_bind_group(
         self,
