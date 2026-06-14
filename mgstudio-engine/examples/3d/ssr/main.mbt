@@ -818,10 +818,7 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 }
 
 ///|
-fn setup_camera_and_lights(
-  world : @ecs.World,
-  app_settings : AppSettings,
-) -> Unit {
+fn spawn_camera(world : @ecs.World, app_settings : AppSettings) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
       @camera_camera.Camera::Camera(),
@@ -1429,7 +1426,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_metallic_base(world)
   spawn_non_metallic_base(world)
   spawn_water(world, asset_server)
-  setup_camera_and_lights(world, app_settings)
+  spawn_camera(world, app_settings)
 
   apply_model_and_base_visibility(world)
 }
