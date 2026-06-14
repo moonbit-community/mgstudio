@@ -114,9 +114,10 @@ fn render3d_prepare_volumetric_fog_pipelines(
   }
   match (textureless_pipeline_id, textured_pipeline_id) {
     (Some(textureless), Some(textured)) =>
-      Some(
-        @pbr_volumetric_fog.view_volumetric_fog_pipelines(textureless, textured),
-      )
+      Some(@pbr_volumetric_fog.ViewVolumetricFogPipelines::{
+        textureless,
+        textured,
+      })
     _ => None
   }
 }

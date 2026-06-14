@@ -15,8 +15,6 @@ pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.V
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
-pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
-
 pub fn volumetric_fog_create_fog_assets(@ecs.World) -> FogAssets
 
 pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -59,11 +57,10 @@ pub fn ViewVolumetricFog::count(Self) -> Int
 pub fn ViewVolumetricFog::volumes(Self) -> ArrayView[ViewFogVolume]
 pub impl @ecs.Component for ViewVolumetricFog
 
-pub struct ViewVolumetricFogPipelines {
+pub(all) struct ViewVolumetricFogPipelines {
   textureless : Int
   textured : Int
 }
-pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> Self
 pub impl @ecs.Component for ViewVolumetricFogPipelines
 
 pub struct VolumetricFogMat4 {

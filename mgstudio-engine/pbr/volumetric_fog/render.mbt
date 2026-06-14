@@ -293,7 +293,7 @@ fn volumetric_fog_clip_from_local(
 }
 
 ///|
-pub struct ViewVolumetricFogPipelines {
+pub(all) struct ViewVolumetricFogPipelines {
   textureless : Int
   textured : Int
 }
@@ -308,19 +308,6 @@ let ecs_key_view_volumetric_fog_pipelines : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for ViewVolumetricFogPipelines with fn component() {
   ecs_key_view_volumetric_fog_pipelines
-}
-
-///|
-pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> ViewVolumetricFogPipelines {
-  ViewVolumetricFogPipelines::{ textureless: -1, textured: -1 }
-}
-
-///|
-pub fn view_volumetric_fog_pipelines(
-  textureless : Int,
-  textured : Int,
-) -> ViewVolumetricFogPipelines {
-  ViewVolumetricFogPipelines::{ textureless, textured }
 }
 
 ///|

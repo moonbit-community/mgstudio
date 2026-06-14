@@ -128,7 +128,10 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
   render3d_write_volumetric_fog_pipeline_components(
     world,
     view_entity,
-    Some(@pbr_volumetric_fog.view_volumetric_fog_pipelines(11, 29)),
+    Some(@pbr_volumetric_fog.ViewVolumetricFogPipelines::{
+      textureless: 11,
+      textured: 29,
+    }),
   )
   match
     (try! world.get_by_key(
