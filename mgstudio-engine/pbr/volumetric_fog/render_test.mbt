@@ -29,8 +29,18 @@ fn volumetric_fog_test_approx_eq(lhs : Float, rhs : Float) -> Bool {
 ///|
 test "pbr volumetric fog: pipeline selection by density texture flag" {
   let pipelines = view_volumetric_fog_pipelines(11, 29)
-  let key_without_texture = volumetric_fog_pipeline_key(false, 1, false)
-  let key_with_texture = volumetric_fog_pipeline_key(true, 4, true)
+  let key_without_texture = VolumetricFogPipelineKey::new(
+    @mesh_view_layout.mesh_view_layout_key_from_msaa(1),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    false,
+  )
+  let key_with_texture = VolumetricFogPipelineKey::new(
+    @mesh_view_layout.mesh_view_layout_key(
+      true, false, false, false, false, false, true, false,
+    ),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    true,
+  )
   inspect(
     volumetric_fog_select_pipeline(pipelines, key_without_texture),
     content="11",
@@ -39,6 +49,19 @@ test "pbr volumetric fog: pipeline selection by density texture flag" {
     volumetric_fog_select_pipeline(pipelines, key_with_texture),
     content="29",
   )
+  let descriptor = volumetric_fog_specialize_pipeline(key_with_texture)
+  let shader_defs = descriptor.shader_defs()
+  inspect(shader_defs.length(), content="4")
+  inspect(shader_defs[0], content="SHADOW_FILTER_METHOD_HARDWARE_2X2")
+  inspect(shader_defs[1], content="MULTISAMPLED")
+  inspect(shader_defs[2], content="ATMOSPHERE")
+  inspect(shader_defs[3], content="DENSITY_TEXTURE")
+  inspect(descriptor.bind_group_layout_index(), content="3")
+  inspect(
+    descriptor.target_format().to_u32(),
+    content="\{@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT}",
+  )
+  inspect(descriptor.uses_bevy_blend_state(), content="true")
 }
 
 ///|

@@ -174,6 +174,20 @@ pub fn MeshPipelineViewLayoutKey::contains(
 }
 
 ///|
+pub fn MeshPipelineViewLayoutKey::multisampled(
+  self : MeshPipelineViewLayoutKey,
+) -> Bool {
+  self.contains(MESH_VIEW_LAYOUT_MULTISAMPLED)
+}
+
+///|
+pub fn MeshPipelineViewLayoutKey::atmosphere(
+  self : MeshPipelineViewLayoutKey,
+) -> Bool {
+  self.contains(MESH_VIEW_LAYOUT_ATMOSPHERE)
+}
+
+///|
 pub fn MeshPipelineViewLayoutKey::label(
   self : MeshPipelineViewLayoutKey,
 ) -> String {

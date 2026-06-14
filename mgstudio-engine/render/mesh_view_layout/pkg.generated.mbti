@@ -56,9 +56,11 @@ pub struct MeshPipelineViewLayoutKey {
   bits : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey() -> Self
+pub fn MeshPipelineViewLayoutKey::atmosphere(Self) -> Bool
 pub fn MeshPipelineViewLayoutKey::bits(Self) -> UInt
 pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
 pub fn MeshPipelineViewLayoutKey::label(Self) -> String
+pub fn MeshPipelineViewLayoutKey::multisampled(Self) -> Bool
 
 pub struct MeshPipelineViewLayouts {
   clustered_forward_buffer_read_only : Bool

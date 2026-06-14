@@ -301,27 +301,33 @@ pub fn volumetric_fog_bind_group_layout_index(
 }
 
 ///|
-pub struct VolumetricFogPipelineKeyFlags {
-  hdr : Bool
-  density_texture : Bool
-}
-
-///|
-pub fn VolumetricFogPipelineKeyFlags::VolumetricFogPipelineKeyFlags() -> VolumetricFogPipelineKeyFlags {
-  VolumetricFogPipelineKeyFlags::{ hdr: false, density_texture: false }
-}
-
-///|
 pub struct VolumetricFogPipelineKey {
-  msaa_samples : Int
-  flags : VolumetricFogPipelineKeyFlags
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
+  target_format : @wgpu.TextureFormat
+  has_density_texture : Bool
 }
 
 ///|
 pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> VolumetricFogPipelineKey {
   VolumetricFogPipelineKey::{
-    msaa_samples: 1,
-    flags: VolumetricFogPipelineKeyFlags::VolumetricFogPipelineKeyFlags(),
+    mesh_pipeline_view_key: @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    target_format: @wgpu.TextureFormat::from_u32(
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    ),
+    has_density_texture: false,
+  }
+}
+
+///|
+pub fn VolumetricFogPipelineKey::new(
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
+  target_format : @wgpu.TextureFormat,
+  has_density_texture : Bool,
+) -> VolumetricFogPipelineKey {
+  VolumetricFogPipelineKey::{
+    mesh_pipeline_view_key,
+    target_format,
+    has_density_texture,
   }
 }
 
@@ -356,6 +362,51 @@ pub fn view_volumetric_fog_pipelines(
   textured : Int,
 ) -> ViewVolumetricFogPipelines {
   ViewVolumetricFogPipelines::{ textureless, textured }
+}
+
+///|
+pub struct VolumetricFogPipelineDescriptor {
+  label : String
+  shader_defs : Array[String]
+  bind_group_layout_index : Int
+  target_format : @wgpu.TextureFormat
+  cull_mode_back : Bool
+  blend_color_src_one : Bool
+  blend_color_dst_one_minus_src_alpha : Bool
+  blend_alpha_src_zero : Bool
+  blend_alpha_dst_one : Bool
+}
+
+///|
+pub fn VolumetricFogPipelineDescriptor::shader_defs(
+  self : VolumetricFogPipelineDescriptor,
+) -> Array[String] {
+  self.shader_defs
+}
+
+///|
+pub fn VolumetricFogPipelineDescriptor::bind_group_layout_index(
+  self : VolumetricFogPipelineDescriptor,
+) -> Int {
+  self.bind_group_layout_index
+}
+
+///|
+pub fn VolumetricFogPipelineDescriptor::target_format(
+  self : VolumetricFogPipelineDescriptor,
+) -> @wgpu.TextureFormat {
+  self.target_format
+}
+
+///|
+pub fn VolumetricFogPipelineDescriptor::uses_bevy_blend_state(
+  self : VolumetricFogPipelineDescriptor,
+) -> Bool {
+  self.cull_mode_back &&
+  self.blend_color_src_one &&
+  self.blend_color_dst_one_minus_src_alpha &&
+  self.blend_alpha_src_zero &&
+  self.blend_alpha_dst_one
 }
 
 ///|
@@ -594,29 +645,49 @@ pub fn prepare_volumetric_fog_view_uniforms(
 }
 
 ///|
-pub fn volumetric_fog_pipeline_key(
-  is_hdr : Bool,
-  msaa_samples : Int,
-  has_density_texture : Bool,
-) -> VolumetricFogPipelineKey {
-  VolumetricFogPipelineKey::{
-    msaa_samples: volumetric_fog_sanitize_int(msaa_samples, 1),
-    flags: VolumetricFogPipelineKeyFlags::{
-      hdr: is_hdr,
-      density_texture: has_density_texture,
-    },
-  }
-}
 
 ///|
 pub fn volumetric_fog_select_pipeline(
   pipelines : ViewVolumetricFogPipelines,
   key : VolumetricFogPipelineKey,
 ) -> Int {
-  if key.flags.density_texture {
+  if key.has_density_texture {
     pipelines.textured
   } else {
     pipelines.textureless
+  }
+}
+
+///|
+pub fn volumetric_fog_specialize_pipeline(
+  key : VolumetricFogPipelineKey,
+) -> VolumetricFogPipelineDescriptor {
+  let shader_defs = ["SHADOW_FILTER_METHOD_HARDWARE_2X2"]
+  let bind_group_layout_key = VolumetricFogBindGroupLayoutKey::{
+    multisampled: key.mesh_pipeline_view_key.multisampled(),
+    density_texture: key.has_density_texture,
+  }
+  if key.mesh_pipeline_view_key.multisampled() {
+    shader_defs.push("MULTISAMPLED")
+  }
+  if key.mesh_pipeline_view_key.atmosphere() {
+    shader_defs.push("ATMOSPHERE")
+  }
+  if key.has_density_texture {
+    shader_defs.push("DENSITY_TEXTURE")
+  }
+  VolumetricFogPipelineDescriptor::{
+    label: "volumetric lighting pipeline",
+    shader_defs,
+    bind_group_layout_index: volumetric_fog_bind_group_layout_index(
+      bind_group_layout_key,
+    ),
+    target_format: key.target_format,
+    cull_mode_back: true,
+    blend_color_src_one: true,
+    blend_color_dst_one_minus_src_alpha: true,
+    blend_alpha_src_zero: true,
+    blend_alpha_dst_one: true,
   }
 }
 
