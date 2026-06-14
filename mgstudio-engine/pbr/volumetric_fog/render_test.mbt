@@ -121,43 +121,6 @@ test "pbr volumetric fog: pipeline shader label matches embedded owner path" {
 }
 
 ///|
-test "pbr volumetric fog: bind group layout description follows Bevy flags" {
-  inspect(
-    volumetric_fog_bind_group_layout_description(
-      VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey(),
-    ),
-    content="volumetric lighting view bind group layout",
-  )
-  inspect(
-    volumetric_fog_bind_group_layout_description(
-      VolumetricFogBindGroupLayoutKey::new(
-        multisampled=false,
-        density_texture=true,
-      ),
-    ),
-    content="volumetric lighting view bind group layout (density texture)",
-  )
-  inspect(
-    volumetric_fog_bind_group_layout_description(
-      VolumetricFogBindGroupLayoutKey::new(
-        multisampled=true,
-        density_texture=false,
-      ),
-    ),
-    content="volumetric lighting view bind group layout (multisampled)",
-  )
-  inspect(
-    volumetric_fog_bind_group_layout_description(
-      VolumetricFogBindGroupLayoutKey::new(
-        multisampled=true,
-        density_texture=true,
-      ),
-    ),
-    content="volumetric lighting view bind group layout (density texture, multisampled)",
-  )
-}
-
-///|
 test "pbr volumetric fog: uniform buffer push and clear" {
   let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
   let offset0 = buffer.push(

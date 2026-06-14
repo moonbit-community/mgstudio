@@ -301,21 +301,13 @@ pub fn volumetric_fog_clip_from_local(
 }
 
 ///|
-pub struct VolumetricFogBindGroupLayoutKey {
+priv struct VolumetricFogBindGroupLayoutKey {
   multisampled : Bool
   density_texture : Bool
 }
 
 ///|
-pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> VolumetricFogBindGroupLayoutKey {
-  VolumetricFogBindGroupLayoutKey::{
-    multisampled: false,
-    density_texture: false,
-  }
-}
-
-///|
-pub fn VolumetricFogBindGroupLayoutKey::new(
+fn VolumetricFogBindGroupLayoutKey::new(
   multisampled~ : Bool,
   density_texture~ : Bool,
 ) -> VolumetricFogBindGroupLayoutKey {
@@ -323,7 +315,7 @@ pub fn VolumetricFogBindGroupLayoutKey::new(
 }
 
 ///|
-pub fn volumetric_fog_bind_group_layout_index(
+fn volumetric_fog_bind_group_layout_index(
   key : VolumetricFogBindGroupLayoutKey,
 ) -> Int {
   let mut bits = 0
@@ -334,23 +326,6 @@ pub fn volumetric_fog_bind_group_layout_index(
     bits = bits | 2
   }
   bits
-}
-
-///|
-pub fn volumetric_fog_bind_group_layout_description(
-  key : VolumetricFogBindGroupLayoutKey,
-) -> String {
-  if !key.multisampled && !key.density_texture {
-    return "volumetric lighting view bind group layout"
-  }
-  let flags : Array[String] = []
-  if key.density_texture {
-    flags.push("density texture")
-  }
-  if key.multisampled {
-    flags.push("multisampled")
-  }
-  "volumetric lighting view bind group layout (" + flags.join(", ") + ")"
 }
 
 ///|
