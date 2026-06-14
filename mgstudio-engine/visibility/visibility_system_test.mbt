@@ -60,6 +60,120 @@ test "visibility: inherited child is hidden when parent is hidden" {
 }
 
 ///|
+test "visibility: incrementally added child inherits hidden parent after initial propagation" {
+  let world = @ecs.World::new()
+  ignore(world.increment_change_tick())
+  let initial_ctx = @core.SystemTickContext::new()
+  initial_ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(initial_ctx)
+  let parent = world.spawn_empty()
+  try! world.set_by_key(
+    parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  @visibility.visibility_propagate_system(world)
+  ignore(world.increment_change_tick())
+  let incremental_ctx = @core.SystemTickContext::new()
+  incremental_ctx.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(incremental_ctx)
+
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  @visibility.visibility_propagate_system(world)
+
+  let inherited = try! world.get_by_key(child, ecs_key_inherited_visibility)
+  debug_inspect(inherited.unwrap().is_visible(), content="false")
+}
+
+///|
+test "visibility: incrementally added child honors hidden parent before parent propagation" {
+  let world = @ecs.World::new()
+  ignore(world.increment_change_tick())
+  let initial_ctx = @core.SystemTickContext::new()
+  initial_ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(initial_ctx)
+  @visibility.visibility_propagate_system(world)
+
+  ignore(world.increment_change_tick())
+  let parent = world.spawn_empty()
+  try! world.set_by_key(
+    parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  ignore(world.increment_change_tick())
+  let incremental_ctx = @core.SystemTickContext::new()
+  incremental_ctx.set(@core.SystemTicks::new(2, 3))
+  world.set_tick_context(incremental_ctx)
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  @visibility.visibility_propagate_system(world)
+
+  let inherited = try! world.get_by_key(child, ecs_key_inherited_visibility)
+  debug_inspect(inherited.unwrap().is_visible(), content="false")
+}
+
+///|
 test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -174,6 +288,38 @@ test "visibility plugin: Mesh2d and Mesh3d require visibility components" {
       content="true",
     )
   }
+}
+
+///|
+test "visibility plugin: hidden parent clears child view visibility" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
+  let world = app.world()
+  let parent = world.spawn_empty()
+  try! world.set_by_key(
+    parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    child,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(1)),
+  )
+  app = app.update()
+  let inherited = try! app
+    .world()
+    .get_by_key(child, ecs_key_inherited_visibility)
+  let view = try! app.world().get_by_key(child, ecs_key_view_visibility)
+  debug_inspect(inherited.unwrap().is_visible(), content="false")
+  debug_inspect(view.unwrap().is_visible(), content="false")
 }
 
 ///|

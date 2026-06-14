@@ -535,6 +535,10 @@ fn scene_spawn_instance_when_ready(
         @hierarchy.Parent::new(parent_entity),
       ),
       @ecs.component_writer(@transform.ecs_key_transform, node.transform),
+      @ecs.component_writer(
+        @visibility.ecs_key_visibility,
+        @visibility.Visibility::Inherited,
+      ),
     ]
     if node.name is Some(name) {
       child_writers.push(@ecs.component_writer(@ecs.Name::component(), name))

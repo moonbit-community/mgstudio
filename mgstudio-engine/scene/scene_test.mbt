@@ -982,6 +982,64 @@ test "scene: SceneRoot inserts default transform and visibility" {
 }
 
 ///|
+test "scene: spawned gltf nodes include default visibility" {
+  let empty_node_has_visibility = Ref(false)
+  let mesh_node_has_visibility = Ref(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let mesh = scene_test_mesh3d_from_mesh_asset(
+      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#node-default-visibility",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::identity(),
+          None,
+          None,
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(7)),
+        ),
+        @scene.SceneNode3d::new(
+          mesh,
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          parent_node_index=Some(0),
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(8)),
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
+      entity,
+      node_index,
+    ) {
+      if node_index.index() == 7 {
+        empty_node_has_visibility.val = try! world.contains_by_key(
+          entity, @visibility.ecs_key_visibility,
+        )
+      } else if node_index.index() == 8 {
+        mesh_node_has_visibility.val = try! world.contains_by_key(
+          entity, @visibility.ecs_key_visibility,
+        )
+      }
+    })
+  })
+  debug_inspect(empty_node_has_visibility.val, content="true")
+  debug_inspect(mesh_node_has_visibility.val, content="true")
+}
+
+///|
 test "scene: removing SceneRoot despawns spawned children" {
   let child_alive_after_remove = Ref(true)
   let has_instance_after_remove = Ref(true)

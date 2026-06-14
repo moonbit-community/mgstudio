@@ -45,6 +45,21 @@ const RANGE_STEP_ROUGHNESS : Float = 0.005F
 const RANGE_STEP_EDGE : Float = 0.001F
 
 ///|
+let ssr_set_handle_widgets : @app.SystemSet = @app.system_set(
+  "examples.3d.ssr.handle_widgets",
+)
+
+///|
+let ssr_set_adjust_settings : @app.SystemSet = @app.system_set(
+  "examples.3d.ssr.adjust_settings",
+)
+
+///|
+let ssr_set_apply_settings : @app.SystemSet = @app.system_set(
+  "examples.3d.ssr.apply_settings",
+)
+
+///|
 struct WaterSettings {
   octave_vectors : Array[@math.Vec4]
   octave_scales : @math.Vec4
@@ -1418,11 +1433,42 @@ fn main {
   .add_message(widget_click_message_key)
   .add_systems_world(@app.Startup, setup)
   .add_systems_param2(@app.Startup, setup_buttons)
-  .add_systems_param2(@app.Update, handle_widget_interactions)
-  .add_systems_param2(@app.Update, adjust_app_settings)
-  .add_systems_world(@app.Update, apply_app_settings)
-  .add_systems_param3(@app.Update, update_radio_buttons)
-  .add_systems_param2(@app.Update, update_range_value_text)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_widget_interactions).in_set(
+      ssr_set_handle_widgets,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(adjust_app_settings)
+    .in_set(ssr_set_adjust_settings)
+    .run_if_on_message(widget_click_message_key),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(apply_app_settings)
+    .in_set(ssr_set_apply_settings)
+    .run_if_on_message(widget_click_message_key),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(update_radio_buttons)
+    .in_set(ssr_set_apply_settings)
+    .run_if_on_message(widget_click_message_key),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(update_range_value_text)
+    .in_set(ssr_set_apply_settings)
+    .run_if_on_message(widget_click_message_key),
+  )
+  .configure_set(@app.Update, ssr_set_handle_widgets, before=[
+    ssr_set_adjust_settings,
+  ])
+  .configure_set(@app.Update, ssr_set_adjust_settings, before=[
+    ssr_set_apply_settings,
+  ])
   .add_systems_param3(@app.Update, move_camera)
   .add_systems_world(@app.Update, rotate_models)
   .run()

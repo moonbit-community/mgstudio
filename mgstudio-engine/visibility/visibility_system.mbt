@@ -57,6 +57,15 @@ let ecs_key_visibility_propagation_state : @ecs.ResourceKey[
 )
 
 ///|
+fn visibility_effective(visibility : Visibility, parent_visible : Bool) -> Bool {
+  match visibility {
+    Visibility::Visible => true
+    Visibility::Hidden => false
+    Visibility::Inherited => parent_visible
+  }
+}
+
+///|
 fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
   let roots : Array[@core.Entity] = []
   let parent_children : Map[UInt64, Array[@core.Entity]] = {}
@@ -92,11 +101,7 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
       is Some(visibility) else {
       continue
     }
-    let is_visible = match visibility {
-      Visibility::Hidden => false
-      Visibility::Visible => true
-      Visibility::Inherited => parent_visible
-    }
+    let is_visible = visibility_effective(visibility, parent_visible)
     let needs_inherited_update = match
       (try! world.get_by_key(entity, ecs_key_inherited_visibility)) {
       Some(v) => v.is_visible() != is_visible
@@ -108,19 +113,6 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
         try! (world.replace(entity, ecs_key_inherited_visibility, v) |> ignore)
       } else {
         try! world.set_by_key(entity, ecs_key_inherited_visibility, v)
-      }
-    }
-    let needs_view_update = match
-      (try! world.get_by_key(entity, ecs_key_view_visibility)) {
-      Some(v) => v.is_visible() != is_visible
-      None => true
-    }
-    if needs_view_update {
-      let v = ViewVisibility::new(is_visible)
-      if (try! world.contains_by_key(entity, ecs_key_view_visibility)) {
-        try! (world.replace(entity, ecs_key_view_visibility, v) |> ignore)
-      } else {
-        try! world.set_by_key(entity, ecs_key_view_visibility, v)
       }
     }
     if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
@@ -179,7 +171,8 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
               _ => None
             },
           ) {
-          (Some(_), Some(inherited)) => inherited.is_visible()
+          (Some(parent_visibility), Some(inherited)) =>
+            visibility_effective(parent_visibility, inherited.is_visible())
           _ => true
         }
       }
@@ -191,7 +184,13 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   for entity in world.changed_components(ecs_key_visibility, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
+  for entity in world.added_components(ecs_key_visibility, tick).read() {
+    add_start_entity(world, start_entities, start_seen, entity)
+  }
   for entity in world.changed_components(@hierarchy.ecs_key_parent, tick).read() {
+    add_start_entity(world, start_entities, start_seen, entity)
+  }
+  for entity in world.added_components(@hierarchy.ecs_key_parent, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
   if start_entities.length() == 0 {
@@ -208,11 +207,7 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
       is Some(visibility) else {
       continue
     }
-    let is_visible = match visibility {
-      Visibility::Hidden => false
-      Visibility::Visible => true
-      Visibility::Inherited => parent_visible
-    }
+    let is_visible = visibility_effective(visibility, parent_visible)
     let inherited_visible_before = match
       (try! world.get_by_key(entity, ecs_key_inherited_visibility)) {
       Some(v) => v.is_visible()
@@ -227,18 +222,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
         |> ignore)
       } else {
         try! world.set_by_key(entity, ecs_key_inherited_visibility, inherited)
-      }
-    }
-    if !(try! world.contains_by_key(entity, ecs_key_view_visibility)) ||
-      (try! world.get_by_key(entity, ecs_key_view_visibility))
-      .map(fn(v) { v.is_visible() })
-      .unwrap_or(!is_visible) !=
-      is_visible {
-      let view = ViewVisibility::new(is_visible)
-      if (try! world.contains_by_key(entity, ecs_key_view_visibility)) {
-        try! (world.replace(entity, ecs_key_view_visibility, view) |> ignore)
-      } else {
-        try! world.set_by_key(entity, ecs_key_view_visibility, view)
       }
     }
     if !inherited_changed {
@@ -256,6 +239,18 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::reset_view_visibility`.
+fn reset_view_visibility_system(world : @ecs.World) -> Unit {
+  let query : @ecs.Query[@ecs.Write[ViewVisibility], @ecs.Without[NoCpuCulling]] = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(ecs_key_no_cpu_culling),
+  )
+  try! query.view(fn(_entity, view_visibility) {
+    view_visibility.modify(fn(value) { value.update() })
+  })
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
 pub fn check_visibility_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
@@ -267,6 +262,22 @@ pub fn check_visibility_system(world : @ecs.World) -> Unit {
     if inherited_visibility.value().get() {
       view_visibility.modify(fn(value) { value.set_visible() })
     }
+  })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::mark_newly_hidden_entities_invisible`.
+fn mark_newly_hidden_entities_invisible_system(world : @ecs.World) -> Unit {
+  let query : @ecs.Query[@ecs.Write[ViewVisibility], @ecs.Without[NoCpuCulling]] = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(ecs_key_no_cpu_culling),
+  )
+  try! query.view(fn(_entity, view_visibility) {
+    view_visibility.modify(fn(value) {
+      if value.was_visible_now_hidden() {
+        value.bits = 0
+      }
+    })
   })
 }
 
@@ -304,9 +315,32 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(@app.PostUpdate, visibility_set_visibility_propagate, after=[
     @transform.transform_set_propagate,
   ])
+  .configure_set(@app.PostUpdate, visibility_set_check_visibility, after=[
+    visibility_set_visibility_propagate,
+  ])
+  .configure_set(
+    @app.PostUpdate,
+    visibility_set_mark_newly_hidden_entities_invisible,
+    after=[visibility_set_check_visibility],
+  )
   .add_post_update_system_config(
     @app.system(visibility_propagate_system)
     .named("mgstudio.visibility.visibility_propagate_system")
     .in_set(visibility_set_visibility_propagate),
+  )
+  .add_post_update_system_config(
+    @app.system(reset_view_visibility_system)
+    .named("mgstudio.visibility.reset_view_visibility")
+    .in_set(visibility_set_visibility_propagate),
+  )
+  .add_post_update_system_config(
+    @app.system(check_visibility_system)
+    .named("mgstudio.visibility.check_visibility")
+    .in_set(visibility_set_check_visibility),
+  )
+  .add_post_update_system_config(
+    @app.system(mark_newly_hidden_entities_invisible_system)
+    .named("mgstudio.visibility.mark_newly_hidden_entities_invisible")
+    .in_set(visibility_set_mark_newly_hidden_entities_invisible),
   )
 }
