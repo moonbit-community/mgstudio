@@ -223,7 +223,7 @@ pub fn VolumetricFogMat4::to_cols_array(
 }
 
 ///|
-pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4 {
+fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4 {
   VolumetricFogMat4::from_cols(
     @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
     @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
@@ -233,7 +233,7 @@ pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4 {
 }
 
 ///|
-pub fn volumetric_fog_camera_is_inside(local_from_view : @math.Affine3) -> Bool {
+fn volumetric_fog_camera_is_inside(local_from_view : @math.Affine3) -> Bool {
   let translation = local_from_view.translation
   volumetric_fog_abs(translation.x) <= 0.5F &&
   volumetric_fog_abs(translation.y) <= 0.5F &&
@@ -241,7 +241,7 @@ pub fn volumetric_fog_camera_is_inside(local_from_view : @math.Affine3) -> Bool 
 }
 
 ///|
-pub fn volumetric_fog_far_planes(
+fn volumetric_fog_far_planes(
   view_from_local : @math.Affine3,
 ) -> Array[@math.Vec4] {
   let far_planes : Array[@math.Vec4] = [
@@ -283,7 +283,7 @@ pub fn volumetric_fog_far_planes(
 }
 
 ///|
-pub fn volumetric_fog_clip_from_local(
+fn volumetric_fog_clip_from_local(
   interior : Bool,
   clip_from_view : VolumetricFogMat4,
   view_from_local : @math.Affine3,

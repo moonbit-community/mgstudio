@@ -22,13 +22,7 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
 
-pub fn volumetric_fog_camera_is_inside(@math.Affine3) -> Bool
-
-pub fn volumetric_fog_clip_from_local(Bool, VolumetricFogMat4, @math.Affine3) -> VolumetricFogMat4
-
 pub fn volumetric_fog_create_fog_assets(@ecs.World) -> FogAssets
-
-pub fn volumetric_fog_far_planes(@math.Affine3) -> Array[@math.Vec4]
 
 pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -37,8 +31,6 @@ pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlu
 pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
 
 pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int, Int) -> VolumetricFogPluginState
-
-pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4
 
 // Errors
 

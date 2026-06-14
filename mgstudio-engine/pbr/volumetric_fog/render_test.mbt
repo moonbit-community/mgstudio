@@ -110,49 +110,6 @@ test "pbr volumetric fog: matrices pack in WGSL column order" {
 }
 
 ///|
-test "pbr volumetric fog: camera inside volume follows Bevy local cube test" {
-  inspect(
-    @volumetric_fog.volumetric_fog_camera_is_inside(@math.Affine3::identity()),
-    content="true",
-  )
-  inspect(
-    @volumetric_fog.volumetric_fog_camera_is_inside(
-      @math.Affine3::from_translation(@math.Vec3::new(0.6F, 0.0F, 0.0F)),
-    ),
-    content="false",
-  )
-}
-
-///|
-test "pbr volumetric fog: far planes keep only view-facing cube faces" {
-  let far_planes = @volumetric_fog.volumetric_fog_far_planes(
-    @math.Affine3::identity(),
-  )
-  inspect(far_planes.length(), content="3")
-  inspect(
-    volumetric_fog_test_approx_eq(far_planes[0].x, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[0].y, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[0].z, 1.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[0].w, 0.5F),
-    content="true",
-  )
-  inspect(
-    volumetric_fog_test_approx_eq(far_planes[1].x, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[1].y, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[1].z, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[1].w, 0.0F),
-    content="true",
-  )
-  inspect(
-    volumetric_fog_test_approx_eq(far_planes[2].x, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[2].y, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[2].z, 0.0F) &&
-    volumetric_fog_test_approx_eq(far_planes[2].w, 0.0F),
-    content="true",
-  )
-}
-
-///|
 test "pbr volumetric fog: prepares view volume metadata and uniforms" {
   let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
   let fog = @light.VolumetricFog::VolumetricFog()
