@@ -1841,6 +1841,49 @@ fn ensure_mesh3d_light_probes_buffer_capacity(
 }
 
 ///|
+fn ensure_mesh3d_volumetric_fog_buffer_capacity(
+  backend : GpuBackend,
+  required_size : UInt64,
+) -> @wgpu.Buffer? {
+  guard required_size > 0UL else { return None }
+  let mut target_size = MESH3D_VOLUMETRIC_FOG_BUFFER_SIZE
+  while target_size < required_size {
+    target_size = target_size * 2UL
+  }
+  let needs_new_buffer = match backend.mesh3d_volumetric_fog_buf {
+    Some(buffer) => buffer.size() < required_size
+    None => true
+  }
+  if needs_new_buffer {
+    match backend.mesh3d_volumetric_fog_buf {
+      Some(buffer) => mesh3d_retire_or_release_buffer(backend, buffer)
+      None => ()
+    }
+    backend.mesh3d_volumetric_fog_buf = Some(
+      backend.device.create_buffer(
+        size=target_size,
+        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+      ),
+    )
+    backend.mesh3d_volumetric_fog_capacity = target_size
+  }
+  backend.mesh3d_volumetric_fog_buf
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_volumetric_fog_uniforms(
+  self : GpuBackend,
+  volumetric_fog_uniform_bytes : Bytes,
+) -> Unit {
+  let required_size = volumetric_fog_uniform_bytes.length().to_uint64()
+  guard ensure_mesh3d_volumetric_fog_buffer_capacity(self, required_size)
+    is Some(buffer) else {
+    return
+  }
+  self.queue.write_buffer(buffer, 0UL, volumetric_fog_uniform_bytes)
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_light_probes(
   self : GpuBackend,
   light_probes_uniform_bytes : Bytes,

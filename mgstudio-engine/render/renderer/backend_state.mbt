@@ -180,6 +180,8 @@ pub struct GpuBackend {
   mesh3d_clustered_decal_texture_ids : Array[Int]
   mut mesh3d_globals_buf : @wgpu.Buffer?
   mut mesh3d_fog_buf : @wgpu.Buffer?
+  mut mesh3d_volumetric_fog_buf : @wgpu.Buffer?
+  mut mesh3d_volumetric_fog_capacity : UInt64
   mut mesh3d_light_probes_buf : @wgpu.Buffer?
   mut mesh3d_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_ssr_settings_buf : @wgpu.Buffer?

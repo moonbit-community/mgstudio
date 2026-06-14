@@ -342,6 +342,15 @@ pub fn host_gpu_prepare_mesh3d_light_probes(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_volumetric_fog_uniforms(
+  volumetric_fog_uniform_bytes~ : Bytes,
+) -> Unit {
+  @renderer.prepare_mesh3d_volumetric_fog_uniforms(
+    volumetric_fog_uniform_bytes~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,

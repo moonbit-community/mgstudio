@@ -62,6 +62,20 @@ fn render3d_reset_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_upload_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
+  match
+    world.get_resource(
+      @pbr_volumetric_fog.VolumetricFogUniformBuffer::resource(),
+    ) {
+    Some(buffer) =>
+      @render.host_gpu_prepare_mesh3d_volumetric_fog_uniforms(
+        volumetric_fog_uniform_bytes=buffer.bytes(),
+      )
+    None => ()
+  }
+}
+
+///|
 fn render3d_collect_volumetric_light_count(world : @ecs.World) -> Int {
   let mut count = 0
   world.for_each_component(@light.ecs_key_volumetric_light, fn(

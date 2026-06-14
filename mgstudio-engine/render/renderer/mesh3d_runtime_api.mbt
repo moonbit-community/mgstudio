@@ -995,6 +995,15 @@ pub fn prepare_mesh3d_light_probes(
 }
 
 ///|
+pub fn prepare_mesh3d_volumetric_fog_uniforms(
+  volumetric_fog_uniform_bytes~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes)
+  }
+}
+
+///|
 pub fn prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,
