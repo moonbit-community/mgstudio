@@ -56,6 +56,8 @@ pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Hand
 
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
+pub fn scene_load_gltf_scene_from_world(@ecs.World, @asset.AssetServer, String) -> @asset.Handle[Scene]
+
 pub fn scene_load_pending_system(@ecs.World) -> Unit
 
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

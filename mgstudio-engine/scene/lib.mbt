@@ -265,8 +265,9 @@ fn scene_clone_mesh_asset(mesh_asset : @mesh.Mesh) -> @mesh.Mesh {
 }
 
 ///|
-fn scene_registry_mut_or_abort() -> @ecs.ResourceMut[SceneAssetRegistryState] {
-  let world = scene_current_world_or_abort()
+fn scene_registry_mut_from_world_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[SceneAssetRegistryState] {
   match world.get_resource_mut(scene_asset_registry_resource_key) {
     Some(state) => state
     None =>
@@ -277,8 +278,9 @@ fn scene_registry_mut_or_abort() -> @ecs.ResourceMut[SceneAssetRegistryState] {
 }
 
 ///|
-fn scene_registry_or_abort() -> SceneAssetRegistryState {
-  let world = scene_current_world_or_abort()
+fn scene_registry_from_world_or_abort(
+  world : @ecs.World,
+) -> SceneAssetRegistryState {
   match world.get_resource(scene_asset_registry_resource_key) {
     Some(state) => state
     None =>
@@ -286,6 +288,18 @@ fn scene_registry_or_abort() -> SceneAssetRegistryState {
         "scene registry resource is missing; ScenePlugin must initialize SceneAssetRegistryState before use",
       )
   }
+}
+
+///|
+fn scene_registry_mut_or_abort() -> @ecs.ResourceMut[SceneAssetRegistryState] {
+  let world = scene_current_world_or_abort()
+  scene_registry_mut_from_world_or_abort(world)
+}
+
+///|
+fn scene_registry_or_abort() -> SceneAssetRegistryState {
+  let world = scene_current_world_or_abort()
+  scene_registry_from_world_or_abort(world)
 }
 
 ///|
@@ -365,13 +379,21 @@ pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
 }
 
 ///|
-fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
-  for entry in scene_registry_or_abort().scene_registry {
+fn scene_registry_get_from_world(
+  world : @ecs.World,
+  asset_path : String,
+) -> @asset.Handle[Scene]? {
+  for entry in scene_registry_from_world_or_abort(world).scene_registry {
     if entry.0 == asset_path {
       return Some(entry.1)
     }
   }
   None
+}
+
+///|
+fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
+  scene_registry_get_from_world(scene_current_world_or_abort(), asset_path)
 }
 
 ///|
@@ -425,13 +447,22 @@ pub fn scene_load_gltf_scene(
   asset_path : String,
 ) -> @asset.Handle[Scene] {
   let world = scene_current_world_or_abort()
-  if scene_registry_get(asset_path) is Some(handle) {
+  scene_load_gltf_scene_from_world(world, asset_server, asset_path)
+}
+
+///|
+pub fn scene_load_gltf_scene_from_world(
+  world : @ecs.World,
+  asset_server : @asset.AssetServer,
+  asset_path : String,
+) -> @asset.Handle[Scene] {
+  if scene_registry_get_from_world(world, asset_path) is Some(handle) {
     return handle
   }
   let handle = scene_assets_from_world_mut_or_abort(world).modify(fn(assets) {
     assets.add(scene_pending())
   })
-  scene_registry_mut_or_abort().modify(fn(state) {
+  scene_registry_mut_from_world_or_abort(world).modify(fn(state) {
     state.scene_registry.push((asset_path, handle))
   })
   scene_queue_gltf_request(world, asset_server, handle, asset_path)

@@ -599,18 +599,58 @@ fn apply_ssr_settings(world : @ecs.World, settings : AppSettings) -> Unit {
 }
 
 ///|
+fn ssr_mesh_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None => abort("SSR setup expected initialized Assets<Mesh> resource")
+  }
+}
+
+///|
+fn ssr_standard_material_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[@pbr.StandardMaterial]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None =>
+      abort("SSR setup expected initialized Assets<StandardMaterial> resource")
+  }
+}
+
+///|
+fn[S : @pbr.IntoPbrMeshAsset] ssr_add_mesh(
+  world : @ecs.World,
+  value : S,
+) -> @asset.Handle[@mesh.Mesh] {
+  ssr_mesh_assets_mut_or_abort(world).modify(fn(assets) {
+    assets |> @pbr.add_mesh(value)
+  })
+}
+
+///|
+fn ssr_standard_material_add(
+  world : @ecs.World,
+  material : @pbr.StandardMaterial,
+) -> @asset.Handle[@pbr.StandardMaterial] {
+  ssr_standard_material_assets_mut_or_abort(world).modify(fn(assets) {
+    assets.add(material)
+  })
+}
+
+///|
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let material = @pbr.standard_material_add(
+  let material = ssr_standard_material_add(
+    world,
     @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-      }),
-    ),
+    @mesh.Mesh3d::new(ssr_add_mesh(world, @math.Cuboid::new(1.0F, 1.0F, 1.0F))),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
@@ -627,7 +667,8 @@ fn spawn_flight_helmet(
     entity,
     @scene.ecs_key_scene_root,
     @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
+      @scene.scene_load_gltf_scene_from_world(
+        world,
         asset_server,
         @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/FlightHelmet/FlightHelmet.gltf",
@@ -653,9 +694,7 @@ fn spawn_flight_helmet(
 ///|
 fn spawn_capsules(world : @ecs.World) -> Unit {
   let capsule_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets |> @pbr.add_mesh(@math.Capsule3d::new(0.4F, 0.5F))
-    }),
+    ssr_add_mesh(world, @math.Capsule3d::new(0.4F, 0.5F)),
   )
   let parent = world.spawn_empty()
   try! world.set_by_key(
@@ -673,7 +712,8 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
   })
   for i in 0..<5 {
     let roughness = (float_from_int(i) * 0.25F).max(0.08F)
-    let material = @pbr.standard_material_add(
+    let material = ssr_standard_material_add(
+      world,
       @pbr.StandardMaterial::from_color(@color.Color::black()).with_perceptual_roughness(
         roughness,
       ),
@@ -701,7 +741,8 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_metallic_base(world : @ecs.World) -> Unit {
-  let metallic_material = @pbr.standard_material_add(
+  let metallic_material = ssr_standard_material_add(
+    world,
     @pbr.StandardMaterial::from_color(
       @color.Color::srgba(0.663F, 0.663F, 0.663F, 1.0F),
     )
@@ -710,14 +751,12 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
   )
   let metallic = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::splat(1.0F),
-          ).build(),
-        )
-      }),
+      ssr_add_mesh(
+        world,
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::splat(1.0F),
+        ).build(),
+      ),
     ),
     @pbr.MeshMaterial3d::new(metallic_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
@@ -735,7 +774,8 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
-  let red_material = @pbr.standard_material_add(
+  let red_material = ssr_standard_material_add(
+    world,
     @pbr.StandardMaterial::from_color(
       @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F),
     )
@@ -744,14 +784,12 @@ fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
   )
   let red = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::splat(1.0F),
-          ).build(),
-        )
-      }),
+      ssr_add_mesh(
+        world,
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::splat(1.0F),
+        ).build(),
+      ),
     ),
     @pbr.MeshMaterial3d::new(red_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
@@ -794,7 +832,7 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let water_base_material = @pbr.StandardMaterial::from_color(
     @color.Color::black(),
   ).with_perceptual_roughness(0.09F)
-  let water_material = @pbr.standard_material_add(water_base_material)
+  let water_material = ssr_standard_material_add(world, water_base_material)
   let water_mesh_material = @pbr.MeshMaterial3d::new(water_material).with_extended_material(
     Some(
       @pbr.ExtendedMaterial::new(water_base_material, water_extension).metadata(),
@@ -802,14 +840,12 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let water = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::splat(1.0F),
-          ).build(),
-        )
-      }),
+      ssr_add_mesh(
+        world,
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::splat(1.0F),
+        ).build(),
+      ),
     ),
     water_mesh_material,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
@@ -1413,12 +1449,8 @@ fn move_camera(
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
+fn setup_scene(world : @ecs.World, app_settings : AppSettings) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let app_settings = match world.get_resource(AppSettings::resource()) {
-    Some(value) => value
-    None => AppSettings::AppSettings()
-  }
 
   spawn_cube(world, asset_server)
   spawn_flight_helmet(world, asset_server)
@@ -1432,11 +1464,13 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_buttons(
+fn setup(
   commands : @app.Commands,
   app_settings : @app.Res[AppSettings],
 ) -> Unit {
-  spawn_buttons(commands, app_settings.get())
+  let settings = app_settings.get()
+  commands.queue(fn(world) { setup_scene(world, settings) })
+  spawn_buttons(commands, settings)
 }
 
 ///|
@@ -1452,8 +1486,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(AppSettings::AppSettings())
   .add_message(widget_click_message_key)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Startup, setup_buttons)
+  .add_systems_param2(@app.Startup, setup)
   .add_systems(
     @app.Update,
     @app.system_config_param2(handle_widget_interactions).in_set(
