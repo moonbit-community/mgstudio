@@ -28,6 +28,9 @@ const MESH3D_PREPASS_VERTEX_SHADER_PATH : String = "pbr/prepass/prepass.wgsl"
 const MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr_prepass.wgsl"
 
 ///|
+const MESH3D_VOLUMETRIC_FOG_SHADER_PATH : String = "pbr/volumetric_fog/volumetric_fog.wgsl"
+
+///|
 fn cosf(x : Float) -> Float {
   Float::from_double(@coremath.cos(x.to_double()))
 }

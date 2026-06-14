@@ -1006,6 +1006,22 @@ pub fn prepare_mesh3d_volumetric_fog_uniforms(
 }
 
 ///|
+pub fn prepare_mesh3d_volumetric_fog_pipeline(
+  target_id~ : Int,
+  msaa_sample_count~ : Int,
+  has_density_texture~ : Bool,
+  atmosphere~ : Bool,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_volumetric_fog_pipeline(
+      target_id, msaa_sample_count, has_density_texture, atmosphere,
+    ) catch {
+      err => debug_runtime_error("prepare_mesh3d_volumetric_fog_pipeline", err)
+    }
+  }
+}
+
+///|
 pub fn prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,

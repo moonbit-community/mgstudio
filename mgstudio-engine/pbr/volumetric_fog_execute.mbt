@@ -76,6 +76,41 @@ fn render3d_upload_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_prepare_volumetric_fog_pipelines(
+  prepared : Render3dVolumetricFogPrepareOutput,
+  target_id : Int,
+  msaa_sample_count : Int,
+  atmosphere : Bool,
+) -> Unit {
+  guard prepared.light_count > 0 && prepared.view_count > 0 else { return }
+  let mut needs_textureless = false
+  let mut needs_textured = false
+  for volume in prepared.view_fog.volumes {
+    if volume.has_density_texture() {
+      needs_textured = true
+    } else {
+      needs_textureless = true
+    }
+  }
+  if needs_textureless {
+    @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
+      target_id~,
+      msaa_sample_count~,
+      has_density_texture=false,
+      atmosphere~,
+    )
+  }
+  if needs_textured {
+    @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
+      target_id~,
+      msaa_sample_count~,
+      has_density_texture=true,
+      atmosphere~,
+    )
+  }
+}
+
+///|
 fn render3d_collect_volumetric_light_count(world : @ecs.World) -> Int {
   let mut count = 0
   world.for_each_component(@light.ecs_key_volumetric_light, fn(

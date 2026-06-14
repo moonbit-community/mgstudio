@@ -351,6 +351,21 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_uniforms(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
+  target_id~ : Int,
+  msaa_sample_count~ : Int,
+  has_density_texture~ : Bool,
+  atmosphere~ : Bool,
+) -> Unit {
+  @renderer.prepare_mesh3d_volumetric_fog_pipeline(
+    target_id~,
+    msaa_sample_count~,
+    has_density_texture~,
+    atmosphere~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,

@@ -258,6 +258,7 @@ pub fn GpuBackend::new(
     mesh3d_material_pipeline_layout_cache: [],
     mesh3d_custom_pipeline_cache: Map([]),
     mesh3d_shadow_pipeline_cache: [],
+    mesh3d_volumetric_fog_pipeline_cache: [],
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_view_buf: None,
     mesh3d_lights_buf: None,

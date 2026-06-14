@@ -254,6 +254,148 @@ fn mesh3d_custom_pipeline_cache_clear(backend : GpuBackend) -> Unit {
 }
 
 ///|
+struct Mesh3dVolumetricFogPipelineCacheEntry {
+  color_format : UInt
+  msaa_sample_count : Int
+  has_density_texture : Bool
+  atmosphere : Bool
+  pipeline_layout : @wgpu.PipelineLayout?
+  state : RenderPipelineCacheState
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_get(
+  backend : GpuBackend,
+  color_format : UInt,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> @wgpu.RenderPipeline? {
+  for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
+    if entry.color_format == color_format &&
+      entry.msaa_sample_count == msaa_sample_count &&
+      entry.has_density_texture == has_density_texture &&
+      entry.atmosphere == atmosphere {
+      match entry.state {
+        RenderPipelineOk(pipeline) => {
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_volumetric_fog_pipeline_cache_hits", 1,
+          )
+          return Some(pipeline)
+        }
+        RenderPipelineErr(message) => {
+          ignore(message)
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_volumetric_fog_pipeline_cache_failed_hits", 1,
+          )
+          return None
+        }
+      }
+    }
+  }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_cache_misses", 1,
+  )
+  None
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_failed(
+  backend : GpuBackend,
+  color_format : UInt,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> Bool {
+  for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
+    if entry.color_format == color_format &&
+      entry.msaa_sample_count == msaa_sample_count &&
+      entry.has_density_texture == has_density_texture &&
+      entry.atmosphere == atmosphere {
+      match entry.state {
+        RenderPipelineOk(_) => return false
+        RenderPipelineErr(message) => {
+          ignore(message)
+          return true
+        }
+      }
+    }
+  }
+  false
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_set(
+  backend : GpuBackend,
+  color_format : UInt,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+  pipeline_layout : @wgpu.PipelineLayout,
+  pipeline : @wgpu.RenderPipeline,
+) -> Unit {
+  backend.mesh3d_volumetric_fog_pipeline_cache.push({
+    color_format,
+    msaa_sample_count,
+    has_density_texture,
+    atmosphere,
+    pipeline_layout: Some(pipeline_layout),
+    state: RenderPipelineOk(pipeline),
+  })
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_cache_inserts", 1,
+  )
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_set_failed(
+  backend : GpuBackend,
+  color_format : UInt,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+  message : String,
+) -> Unit {
+  if mesh3d_volumetric_fog_pipeline_get(
+      backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+    )
+    is Some(_) {
+    return
+  }
+  if mesh3d_volumetric_fog_pipeline_failed(
+      backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+    ) {
+    return
+  }
+  backend.mesh3d_volumetric_fog_pipeline_cache.push({
+    color_format,
+    msaa_sample_count,
+    has_density_texture,
+    atmosphere,
+    pipeline_layout: None,
+    state: RenderPipelineErr(message),
+  })
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_cache_failed_inserts", 1,
+  )
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
+    match entry.state {
+      RenderPipelineOk(pipeline) => pipeline.release()
+      RenderPipelineErr(message) => ignore(message)
+    }
+    match entry.pipeline_layout {
+      Some(layout) => layout.release()
+      None => ()
+    }
+  }
+  backend.mesh3d_volumetric_fog_pipeline_cache.clear()
+}
+
+///|
 struct Mesh3dShadowPipelineCacheEntry {
   topology : UInt
   material_pipeline_id : UInt64

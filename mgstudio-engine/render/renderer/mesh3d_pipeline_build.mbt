@@ -1278,10 +1278,240 @@ fn ensure_mesh3d_pipeline_layout_resources(
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
     mesh3d_pipeline_cache_clear(backend)
+    mesh3d_volumetric_fog_pipeline_cache_clear(backend)
     ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES)
     |> ignore
   }
   ensure_mesh3d_view_binding_buffers(backend)
+}
+
+///|
+fn mesh3d_volumetric_fog_color_format_for_target(
+  backend : GpuBackend,
+  target_id : Int,
+) -> UInt? {
+  if target_id < 0 {
+    match surface_target_format(backend, target_id) {
+      Some(format) => Some(format.to_u32())
+      None => None
+    }
+  } else {
+    match find_texture(backend, target_id) {
+      Some(texture) => Some(texture.format.to_u32())
+      None => None
+    }
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_shader_defines(
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> @hashmap.HashMap[String, Bool] {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
+  if msaa_sample_count > 1 {
+    defines.set("MULTISAMPLED", true)
+  }
+  if atmosphere {
+    defines.set("ATMOSPHERE", true)
+  }
+  if has_density_texture {
+    defines.set("DENSITY_TEXTURE", true)
+  }
+  defines
+}
+
+///|
+fn mesh3d_volumetric_fog_bind_group_layout_index(
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+) -> Int {
+  let mut bits = 0
+  if msaa_sample_count > 1 {
+    bits = bits | 1
+  }
+  if has_density_texture {
+    bits = bits | 2
+  }
+  bits
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_label(
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> String {
+  let msaa_suffix = if msaa_sample_count > 1 { "msaa" } else { "single" }
+  let density_suffix = if has_density_texture {
+    "textured"
+  } else {
+    "textureless"
+  }
+  let atmosphere_suffix = if atmosphere {
+    "atmosphere"
+  } else {
+    "no_atmosphere"
+  }
+  "mgstudio_volumetric_fog_" +
+  msaa_suffix +
+  "_" +
+  density_suffix +
+  "_" +
+  atmosphere_suffix
+}
+
+///|
+fn mesh3d_build_volumetric_fog_pipeline(
+  backend : GpuBackend,
+  color_format : UInt,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  if mesh3d_volumetric_fog_pipeline_get(
+      backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+    )
+    is Some(pipeline) {
+    return Some(pipeline)
+  }
+  if mesh3d_volumetric_fog_pipeline_failed(
+      backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+    ) {
+    return None
+  }
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  ensure_mesh3d_volumetric_fog_bind_group_layouts(backend)
+  guard backend.mesh3d_bgl_view is Some(view_bgl) else { return None }
+  let layout_index = mesh3d_volumetric_fog_bind_group_layout_index(
+    msaa_sample_count, has_density_texture,
+  )
+  guard layout_index >= 0 &&
+    layout_index < backend.mesh3d_volumetric_fog_bgls.length() else {
+    return None
+  }
+  let volumetric_bgl = backend.mesh3d_volumetric_fog_bgls[layout_index]
+  let shader_source = load_wgsl_preprocessed(
+    backend.assets_base,
+    MESH3D_VOLUMETRIC_FOG_SHADER_PATH,
+    mesh3d_volumetric_fog_shader_defines(
+      msaa_sample_count, has_density_texture, atmosphere,
+    ),
+    default_wgsl_value_defines(),
+  ) catch {
+    Fatal(message) => {
+      mesh3d_volumetric_fog_pipeline_set_failed(
+        backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+        message,
+      )
+      debug("[renderer] volumetric fog pipeline failed: \{message}")
+      return None
+    }
+  }
+  let shader = mesh3d_create_forward_shader_module(
+    backend, shader_source, "wgpu: failed to create volumetric fog shader module",
+  ) catch {
+    Fatal(message) => {
+      mesh3d_volumetric_fog_pipeline_set_failed(
+        backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+        message,
+      )
+      debug("[renderer] volumetric fog pipeline failed: \{message}")
+      return None
+    }
+  }
+  let pipeline_layout = backend.device.create_pipeline_layout_2(
+    view_bgl, volumetric_bgl,
+  )
+  let label = mesh3d_volumetric_fog_pipeline_label(
+    msaa_sample_count, has_density_texture, atmosphere,
+  )
+  pipeline_layout.set_label(label + "_layout")
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      shader,
+      layout=pipeline_layout,
+    )
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_fragment_module(shader)
+    builder.set_color_target_format(tf(color_format))
+    builder.set_blend_components(
+      @wgpu.BLEND_FACTOR_ONE,
+      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      @wgpu.BLEND_OPERATION_ADD,
+      @wgpu.BLEND_FACTOR_ZERO,
+      @wgpu.BLEND_FACTOR_ONE,
+      @wgpu.BLEND_OPERATION_ADD,
+    )
+    builder.set_vertex_buffer_layout(
+      MESH3D_VERTEX_STRIDE_BYTES,
+      @wgpu.VERTEX_STEP_MODE_VERTEX,
+    )
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    builder.set_cull_mode_u32(@wgpu.CULL_MODE_BACK)
+    builder.set_multisample(msaa_sample_count.reinterpret_as_uint())
+    backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+    let created = builder.create_pipeline(backend.device)
+    let result = backend.device.pop_error_scope_sync_result(backend.instance)
+    if result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+      let message = mesh3d_error_scope_message(
+        result, "wgpu: failed to create volumetric fog pipeline",
+      )
+      created.release()
+      builder.free()
+      mesh3d_volumetric_fog_pipeline_set_failed(
+        backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+        message,
+      )
+      debug("[renderer] volumetric fog pipeline failed: \{message}")
+      shader.release()
+      pipeline_layout.release()
+      return None
+    }
+    builder.free()
+    created
+  } catch {
+    err => {
+      let message = "wgpu: failed to build volumetric fog pipeline: \{err.message()}"
+      mesh3d_volumetric_fog_pipeline_set_failed(
+        backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
+        message,
+      )
+      debug("[renderer] volumetric fog pipeline failed: \{message}")
+      shader.release()
+      pipeline_layout.release()
+      return None
+    }
+  }
+  pipeline.set_label(label)
+  mesh3d_volumetric_fog_pipeline_set(
+    backend, color_format, msaa_sample_count, has_density_texture, atmosphere, pipeline_layout,
+    pipeline,
+  )
+  shader.release()
+  Some(pipeline)
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
+  self : GpuBackend,
+  target_id : Int,
+  msaa_sample_count : Int,
+  has_density_texture : Bool,
+  atmosphere : Bool,
+) -> Unit raise GpuBackendError {
+  guard mesh3d_volumetric_fog_color_format_for_target(self, target_id)
+    is Some(color_format) else {
+    return
+  }
+  ignore(
+    mesh3d_build_volumetric_fog_pipeline(
+      self, color_format, msaa_sample_count, has_density_texture, atmosphere,
+    ),
+  )
 }
 
 ///|
