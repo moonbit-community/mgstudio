@@ -2970,7 +2970,11 @@ fn meshlet_bind_material_shade_draw(
   pass.set_bind_group(
     0U,
     view_bg,
-    mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
+    mesh3d_descriptor_view_bind_group_dynamic_offsets(
+      material_descriptor,
+      0,
+      light_probes_uniform_offset=pass_state.light_probes_uniform_offset,
+    ),
   )
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(2U, material_shade_bind_group, [])

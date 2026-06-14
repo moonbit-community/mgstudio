@@ -558,7 +558,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   pass.set_bind_group(
     0U,
     view_bg,
-    mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
+    mesh3d_descriptor_view_bind_group_dynamic_offsets(
+      material_descriptor,
+      0,
+      light_probes_uniform_offset=ps.light_probes_uniform_offset,
+    ),
   )
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(

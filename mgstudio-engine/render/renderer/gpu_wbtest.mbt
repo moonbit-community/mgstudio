@@ -723,6 +723,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     environment_specular_texture_ids: [],
     irradiance_volume_texture_ids: [],
     mesh3d_light_probes_uniform_bytes: None,
+    light_probes_uniform_offset: 0U,
     point_shadow_near: 0.0F,
     directional_shadow_texture_id: -1,
     directional_shadow_enabled: 0.0F,

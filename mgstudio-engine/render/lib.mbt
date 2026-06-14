@@ -327,12 +327,14 @@ pub fn host_gpu_prepare_mesh3d_clustered_decals(
 ///|
 pub fn host_gpu_prepare_mesh3d_light_probes(
   light_probes_uniform_bytes~ : Bytes,
+  uniform_offset~ : UInt,
   diffuse_texture_ids~ : Array[Int],
   specular_texture_ids~ : Array[Int],
   irradiance_volume_texture_ids~ : Array[Int],
 ) -> Unit {
   @renderer.prepare_mesh3d_light_probes(
     light_probes_uniform_bytes~,
+    uniform_offset~,
     diffuse_texture_ids~,
     specular_texture_ids~,
     irradiance_volume_texture_ids~,

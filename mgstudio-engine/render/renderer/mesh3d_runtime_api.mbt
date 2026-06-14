@@ -981,13 +981,15 @@ pub fn prepare_mesh3d_clustered_decals(
 ///|
 pub fn prepare_mesh3d_light_probes(
   light_probes_uniform_bytes~ : Bytes,
+  uniform_offset~ : UInt,
   diffuse_texture_ids~ : Array[Int],
   specular_texture_ids~ : Array[Int],
   irradiance_volume_texture_ids~ : Array[Int],
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_light_probes(
-      light_probes_uniform_bytes, diffuse_texture_ids, specular_texture_ids, irradiance_volume_texture_ids,
+      light_probes_uniform_bytes, uniform_offset, diffuse_texture_ids, specular_texture_ids,
+      irradiance_volume_texture_ids,
     )
   }
 }

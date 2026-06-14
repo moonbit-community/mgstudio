@@ -316,6 +316,7 @@ fn render3d_execute_camera_main_pass(
     )
     @render.host_gpu_prepare_mesh3d_light_probes(
       light_probes_uniform_bytes=light_probe_state.uniform_bytes,
+      uniform_offset=light_probe_state.uniform_offset,
       diffuse_texture_ids=light_probe_state.diffuse_texture_ids,
       specular_texture_ids=light_probe_state.specular_texture_ids,
       irradiance_volume_texture_ids=light_probe_state.irradiance_volume_texture_ids,

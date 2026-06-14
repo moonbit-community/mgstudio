@@ -99,6 +99,7 @@ pub struct GpuPassState {
   environment_specular_texture_ids : Array[Int]
   irradiance_volume_texture_ids : Array[Int]
   mesh3d_light_probes_uniform_bytes : Bytes?
+  light_probes_uniform_offset : UInt
   point_shadow_near : Float
   directional_shadow_texture_id : Int
   directional_shadow_enabled : Float

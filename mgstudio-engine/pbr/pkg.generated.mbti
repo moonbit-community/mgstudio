@@ -584,6 +584,8 @@ pub fn render3d_frustum_plane_count() -> Int
 
 pub fn render3d_frustum_plane_index_clamp(Int) -> Int
 
+pub fn render3d_light_probes_buffer_clear(@ecs.World) -> Unit
+
 pub fn render3d_material_allocator_allocations_path(String) -> String
 
 pub fn render3d_material_allocator_slabs_path(String) -> String

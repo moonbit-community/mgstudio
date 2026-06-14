@@ -1543,15 +1543,20 @@ fn mesh3d_descriptor_bind_group_layout(
 }
 
 ///|
-fn mesh3d_bind_group_layout_descriptor_dynamic_offsets(
+fn mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
   layout : @render_resource.BindGroupLayoutDescriptor,
+  light_probes_uniform_offset~ : UInt,
 ) -> Array[UInt] {
   let offsets : Array[UInt] = []
   for entry in layout.entries() {
     match entry.kind() {
       BufferBinding(_, has_dynamic_offset, _) =>
         if has_dynamic_offset {
-          offsets.push(0U)
+          if entry.binding() == 12 {
+            offsets.push(light_probes_uniform_offset)
+          } else {
+            offsets.push(0U)
+          }
         }
       _ => ()
     }
@@ -1560,19 +1565,24 @@ fn mesh3d_bind_group_layout_descriptor_dynamic_offsets(
 }
 
 ///|
-fn mesh3d_descriptor_bind_group_dynamic_offsets(
+fn mesh3d_descriptor_view_bind_group_dynamic_offsets(
   descriptor : @render_resource.RenderPipelineDescriptor?,
   index : Int,
+  light_probes_uniform_offset~ : UInt,
 ) -> Array[UInt] {
   guard mesh3d_descriptor_bind_group_layout(descriptor, index) is Some(layout) else {
     if descriptor is None && index == 0 {
-      return mesh3d_bind_group_layout_descriptor_dynamic_offsets(
+      return mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
         mesh3d_default_mesh_view_layout().main_bind_group_layout_descriptor(),
+        light_probes_uniform_offset~,
       )
     }
     return []
   }
-  mesh3d_bind_group_layout_descriptor_dynamic_offsets(layout)
+  mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
+    layout,
+    light_probes_uniform_offset~,
+  )
 }
 
 ///|

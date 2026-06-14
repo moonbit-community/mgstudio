@@ -39,7 +39,7 @@ test "pbr light probe: plugin initializes plugin state and uniform resources" {
     app.contains_resource(ecs_key_light_probe_plugin_state),
     content="true",
   )
-  inspect(app.contains_resource(ecs_key_light_probes_uniform), content="true")
+  inspect(app.contains_resource(ecs_key_light_probes_buffer), content="true")
 }
 
 ///|
@@ -63,4 +63,19 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   |> ignore)
   let probes = try! world.get_by_key(entity, ecs_key_render_view_light_probes)
   inspect(probes is Some(_), content="true")
+}
+
+///|
+test "pbr light probe: buffer returns byte offsets for view uniforms" {
+  let buffer = LightProbesBuffer::LightProbesBuffer()
+  let first = buffer.push_uniform_bytes(
+    Bytes::make(LIGHT_PROBES_UNIFORM_SIZE_BYTES, b'\x00'),
+  )
+  let second = buffer.push_uniform_bytes(
+    Bytes::make(LIGHT_PROBES_UNIFORM_SIZE_BYTES, b'\x01'),
+  )
+  inspect(first, content="0")
+  inspect(second, content="2048")
+  inspect(buffer.uniform_count(), content="2")
+  inspect(buffer.uniform_bytes_at(1) is Some(_), content="true")
 }

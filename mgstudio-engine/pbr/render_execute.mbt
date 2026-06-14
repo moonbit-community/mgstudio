@@ -31,6 +31,7 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     )
   }
   let source_world = @render.render_source_world(world)
+  render3d_light_probes_buffer_clear(source_world)
   let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
   guard render3d_queue_take_frame(world) is Some(queued_frame) else {
     @render.sorted_cameras_clear(sorted_cameras_ref)

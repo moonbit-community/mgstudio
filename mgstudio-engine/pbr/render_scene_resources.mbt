@@ -384,11 +384,47 @@ priv struct Render3dLightProbeEntry {
 ///|
 priv struct Render3dLightProbeState {
   uniform_bytes : Bytes
+  uniform_offset : UInt
   diffuse_texture_ids : Array[Int]
   specular_texture_ids : Array[Int]
   irradiance_volume_texture_ids : Array[Int]
   reflection_probe_entities : Array[@core.Entity]
   irradiance_volume_entities : Array[@core.Entity]
+}
+
+///|
+pub fn render3d_light_probes_buffer_clear(world : @ecs.World) -> Unit {
+  if world.get_resource(@pbr_light_probe.LightProbesBuffer::resource())
+    is Some(buffer) {
+    buffer.clear()
+  }
+}
+
+///|
+fn render3d_push_view_light_probes_uniform(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  uniform_bytes : Bytes,
+) -> UInt {
+  let buffer = match
+    world.get_resource(@pbr_light_probe.LightProbesBuffer::resource()) {
+    Some(value) => value
+    None => {
+      let value = @pbr_light_probe.LightProbesBuffer::LightProbesBuffer()
+      world.insert_resource(
+        @pbr_light_probe.LightProbesBuffer::resource(),
+        value,
+      )
+      value
+    }
+  }
+  let uniform_offset = buffer.push_uniform_bytes(uniform_bytes)
+  try! world.set_by_key(
+    camera_entity,
+    @pbr_light_probe.ecs_key_view_light_probes_uniform_offset,
+    @pbr_light_probe.ViewLightProbesUniformOffset::new(uniform_offset),
+  )
+  uniform_offset
 }
 
 ///|
@@ -946,8 +982,15 @@ fn render3d_camera_light_probe_state(
   while words.length() < 512 {
     words.push(0U)
   }
+  let uniform_bytes = render3d_light_probe_u32le_pack(words)
+  let uniform_offset = render3d_push_view_light_probes_uniform(
+    world,
+    camera.entity.main_entity,
+    uniform_bytes,
+  )
   Render3dLightProbeState::{
-    uniform_bytes: render3d_light_probe_u32le_pack(words),
+    uniform_bytes,
+    uniform_offset,
     diffuse_texture_ids,
     specular_texture_ids,
     irradiance_volume_texture_ids,

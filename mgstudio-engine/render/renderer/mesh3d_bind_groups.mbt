@@ -51,10 +51,7 @@ fn mesh3d_bind_group_layout_has_binding(
 
 ///|
 fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
-  for entry in backend.mesh3d_view_bg_cache {
-    mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
-  }
-  backend.mesh3d_view_bg_cache.clear()
+  mesh3d_view_bind_group_cache_clear(backend)
   for entry in backend.mesh3d_material_bg_cache {
     mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
     mesh3d_retire_or_release_buffer(backend, entry.material_uniform_buffer)
@@ -67,6 +64,19 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
     }
   }
   backend.mesh3d_material_bg_cache.clear()
+}
+
+///|
+fn mesh3d_view_bind_group_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_view_bg_cache {
+    mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
+    mesh3d_retire_or_release_bind_group(
+      backend,
+      entry.binding_arrays_bind_group,
+    )
+  }
+  backend.mesh3d_view_bg_cache.clear()
+  backend.mesh3d_frame_view_bg_cache.clear()
 }
 
 ///|
@@ -1810,9 +1820,39 @@ pub fn GpuBackend::prepare_mesh3d_clustered_decals(
 }
 
 ///|
+fn ensure_mesh3d_light_probes_buffer_capacity(
+  backend : GpuBackend,
+  required_size : UInt64,
+) -> @wgpu.Buffer? {
+  let mut target_size = MESH3D_LIGHT_PROBES_BUFFER_SIZE
+  while target_size < required_size {
+    target_size = target_size * 2UL
+  }
+  let needs_new_buffer = match backend.mesh3d_light_probes_buf {
+    Some(buffer) => buffer.size() < required_size
+    None => true
+  }
+  if needs_new_buffer {
+    match backend.mesh3d_light_probes_buf {
+      Some(buffer) => mesh3d_retire_or_release_buffer(backend, buffer)
+      None => ()
+    }
+    backend.mesh3d_light_probes_buf = Some(
+      backend.device.create_buffer(
+        size=target_size,
+        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+      ),
+    )
+    mesh3d_view_bind_group_cache_clear(backend)
+  }
+  backend.mesh3d_light_probes_buf
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_light_probes(
   self : GpuBackend,
   light_probes_uniform_bytes : Bytes,
+  uniform_offset : UInt,
   diffuse_texture_ids : Array[Int],
   specular_texture_ids : Array[Int],
   irradiance_volume_texture_ids : Array[Int],
@@ -1824,9 +1864,16 @@ pub fn GpuBackend::prepare_mesh3d_light_probes(
     environment_specular_texture_ids: specular_texture_ids,
     irradiance_volume_texture_ids,
     mesh3d_light_probes_uniform_bytes: Some(light_probes_uniform_bytes),
+    light_probes_uniform_offset: uniform_offset,
   })
-  if self.mesh3d_light_probes_buf is Some(light_probes_buf) {
-    self.queue.write_buffer(light_probes_buf, 0UL, light_probes_uniform_bytes)
+  let write_offset = uniform_offset.to_uint64()
+  let required_size = write_offset +
+    light_probes_uniform_bytes.length().to_uint64()
+  if ensure_mesh3d_light_probes_buffer_capacity(self, required_size)
+    is Some(light_probes_buf) {
+    self.queue.write_buffer(
+      light_probes_buf, write_offset, light_probes_uniform_bytes,
+    )
   }
 }
 

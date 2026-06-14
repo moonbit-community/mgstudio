@@ -25,6 +25,9 @@ pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 pub const STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : Int = 16
 
 ///|
+pub const LIGHT_PROBES_UNIFORM_SIZE_BYTES : Int = 2048
+
+///|
 pub fn max_view_light_probes() -> Int {
   MAX_VIEW_LIGHT_PROBES
 }
@@ -74,7 +77,7 @@ pub fn light_probe_plugin_with(
 ) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { LightProbePluginState::LightProbePluginState() })
-  .init_resource(fn() { LightProbesUniform::LightProbesUniform() })
+  .init_resource(fn() { LightProbesBuffer::LightProbesBuffer() })
 }
 
 ///|
@@ -256,8 +259,50 @@ pub fn LightProbesUniform::view_cubemap_index(self : LightProbesUniform) -> Int 
 }
 
 ///|
-pub let ecs_key_light_probes_uniform : @ecs.ResourceKey[LightProbesUniform] = @ecs.register_resource(
-  debug_name="mgstudio.pbr.light_probe.uniform",
+pub struct LightProbesBuffer {
+  uniform_bytes : Array[Bytes]
+}
+
+///|
+pub fn LightProbesBuffer::LightProbesBuffer() -> LightProbesBuffer {
+  LightProbesBuffer::{ uniform_bytes: [] }
+}
+
+///|
+pub fn LightProbesBuffer::clear(self : LightProbesBuffer) -> Unit {
+  self.uniform_bytes.clear()
+}
+
+///|
+pub fn LightProbesBuffer::push_uniform_bytes(
+  self : LightProbesBuffer,
+  uniform_bytes : Bytes,
+) -> UInt {
+  let offset = self.uniform_bytes.length() * LIGHT_PROBES_UNIFORM_SIZE_BYTES
+  self.uniform_bytes.push(uniform_bytes)
+  offset.reinterpret_as_uint()
+}
+
+///|
+pub fn LightProbesBuffer::uniform_count(self : LightProbesBuffer) -> Int {
+  self.uniform_bytes.length()
+}
+
+///|
+pub fn LightProbesBuffer::uniform_bytes_at(
+  self : LightProbesBuffer,
+  index : Int,
+) -> Bytes? {
+  if index < 0 || index >= self.uniform_bytes.length() {
+    None
+  } else {
+    Some(self.uniform_bytes[index])
+  }
+}
+
+///|
+pub let ecs_key_light_probes_buffer : @ecs.ResourceKey[LightProbesBuffer] = @ecs.register_resource(
+  debug_name="mgstudio.pbr.light_probe.buffer",
 )
 
 ///|
@@ -268,6 +313,20 @@ pub struct ViewLightProbesUniformOffset {
 ///|
 pub fn ViewLightProbesUniformOffset::ViewLightProbesUniformOffset() -> ViewLightProbesUniformOffset {
   ViewLightProbesUniformOffset::{ offset: 0U }
+}
+
+///|
+pub fn ViewLightProbesUniformOffset::new(
+  offset : UInt,
+) -> ViewLightProbesUniformOffset {
+  ViewLightProbesUniformOffset::{ offset, }
+}
+
+///|
+pub fn ViewLightProbesUniformOffset::offset(
+  self : ViewLightProbesUniformOffset,
+) -> UInt {
+  self.offset
 }
 
 ///|
@@ -288,8 +347,8 @@ pub impl @ecs.Component for RenderViewLightProbes with fn component() {
 }
 
 ///|
-pub impl @app.Resource for LightProbesUniform with fn resource() {
-  ecs_key_light_probes_uniform
+pub impl @app.Resource for LightProbesBuffer with fn resource() {
+  ecs_key_light_probes_buffer
 }
 
 ///|
