@@ -467,7 +467,7 @@ fn set_entity_visibility(
       value,
       @visibility.ecs_key_visibility,
       if visible {
-        @visibility.Visibility::Inherited
+        @visibility.Visibility::Visible
       } else {
         @visibility.Visibility::Hidden
       },
