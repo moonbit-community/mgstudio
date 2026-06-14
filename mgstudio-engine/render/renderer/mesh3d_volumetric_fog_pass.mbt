@@ -48,11 +48,13 @@ fn mesh3d_volumetric_fog_depth_view(
 fn mesh3d_volumetric_fog_resolved_texture(
   backend : GpuBackend,
   texture_id : Int,
-) -> GpuTextureInfo? raise GpuBackendError {
+) -> GpuTextureInfo? {
   if texture_id < 0 {
     return None
   }
-  resolve_mesh3d_texture(backend, texture_id)
+  // Bevy uses `RenderAssets<Image>::get(id)` here: a missing density image
+  // means this volume uses the textureless pipeline, not a fallback 2D texture.
+  find_texture(backend, texture_id)
 }
 
 ///|
@@ -223,6 +225,10 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     is Some(pass_uniforms) else {
     return
   }
+  let mesh_pipeline_view_key = mesh3d_pass_mesh_view_layout_key(
+    pass_state,
+    atmosphere~,
+  )
   let (view_bg, _) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
     0UL,
@@ -242,6 +248,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     pass_state.tonemapping_agx_lut_texture_id,
     pass_state.tonemapping_tony_lut_texture_id,
     pass_state.tonemapping_blender_lut_texture_id,
+    default_view_layout_key=mesh_pipeline_view_key,
   )
   guard mesh3d_volumetric_fog_color_format_for_target(
       self,
@@ -264,6 +271,8 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
         pass_state.msaa_sample_count,
         density_texture is Some(_),
         atmosphere,
+        mesh_pipeline_view_key,
+        mesh.vertex_stride_bytes,
       )
       is Some(pipeline) else {
       continue

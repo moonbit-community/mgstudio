@@ -40,7 +40,7 @@ pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
 pub const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
 
 ///|
-fn volumetric_fog_identity_matrix_row_major() -> Array[Float] {
+fn volumetric_fog_identity_matrix_cols_array() -> Array[Float] {
   [
     1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 1.0F,
@@ -100,7 +100,7 @@ fn volumetric_fog_push_vec4(words : Array[UInt], value : @math.Vec4) -> Unit {
 }
 
 ///|
-fn volumetric_fog_push_mat4_row_major(
+fn volumetric_fog_push_mat4_cols(
   words : Array[UInt],
   values : Array[Float],
 ) -> Unit {
@@ -217,25 +217,25 @@ pub fn VolumetricFogMat4::mul_affine3(
 }
 
 ///|
-pub fn VolumetricFogMat4::to_row_major_array(
+pub fn VolumetricFogMat4::to_cols_array(
   self : VolumetricFogMat4,
 ) -> Array[Float] {
   [
     self.x_axis.x,
-    self.y_axis.x,
-    self.z_axis.x,
-    self.w_axis.x,
     self.x_axis.y,
-    self.y_axis.y,
-    self.z_axis.y,
-    self.w_axis.y,
     self.x_axis.z,
-    self.y_axis.z,
-    self.z_axis.z,
-    self.w_axis.z,
     self.x_axis.w,
+    self.y_axis.x,
+    self.y_axis.y,
+    self.y_axis.z,
     self.y_axis.w,
+    self.z_axis.x,
+    self.z_axis.y,
+    self.z_axis.z,
     self.z_axis.w,
+    self.w_axis.x,
+    self.w_axis.y,
+    self.w_axis.z,
     self.w_axis.w,
   ]
 }
@@ -472,8 +472,8 @@ pub fn VolumetricFogPipelineDescriptor::uses_bevy_blend_state(
 
 ///|
 pub struct VolumetricFogUniform {
-  clip_from_local_row_major : Array[Float]
-  uvw_from_world_row_major : Array[Float]
+  clip_from_local : Array[Float]
+  uvw_from_world : Array[Float]
   far_planes : Array[@math.Vec4]
   fog_color : @math.Vec3
   light_tint : @math.Vec3
@@ -493,8 +493,8 @@ pub struct VolumetricFogUniform {
 ///|
 pub fn VolumetricFogUniform::VolumetricFogUniform() -> VolumetricFogUniform {
   VolumetricFogUniform::{
-    clip_from_local_row_major: volumetric_fog_identity_matrix_row_major(),
-    uvw_from_world_row_major: volumetric_fog_identity_matrix_row_major(),
+    clip_from_local: volumetric_fog_identity_matrix_cols_array(),
+    uvw_from_world: volumetric_fog_identity_matrix_cols_array(),
     far_planes: [
       @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
       @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
@@ -552,8 +552,8 @@ pub fn VolumetricFogUniform::with_jitter_strength(
 ///|
 pub fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
   let words : Array[UInt] = []
-  volumetric_fog_push_mat4_row_major(words, self.clip_from_local_row_major)
-  volumetric_fog_push_mat4_row_major(words, self.uvw_from_world_row_major)
+  volumetric_fog_push_mat4_cols(words, self.clip_from_local)
+  volumetric_fog_push_mat4_cols(words, self.uvw_from_world)
   for index in 0..<3 {
     let plane = if index < self.far_planes.length() {
       self.far_planes[index]
@@ -776,10 +776,10 @@ pub fn prepare_volumetric_fog_view_uniforms(
       @math.Vec3::splat(0.5F),
     ).length()
     let uniform = VolumetricFogUniform::{
-      clip_from_local_row_major: clip_from_local.to_row_major_array(),
-      uvw_from_world_row_major: volumetric_fog_uvw_from_local()
+      clip_from_local: clip_from_local.to_cols_array(),
+      uvw_from_world: volumetric_fog_uvw_from_local()
       .mul_affine3(local_from_world)
-      .to_row_major_array(),
+      .to_cols_array(),
       far_planes: volumetric_fog_far_planes(view_from_local),
       fog_color: volumetric_fog_color_to_vec3(fog_volume.fog_color),
       light_tint: volumetric_fog_color_to_vec3(fog_volume.light_tint),

@@ -130,6 +130,20 @@ test "pbr volumetric fog: uniform bytes match WGSL host layout" {
 }
 
 ///|
+test "pbr volumetric fog: matrices pack in WGSL column order" {
+  let matrix = @volumetric_fog.VolumetricFogMat4::from_cols(
+    @math.Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
+    @math.Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
+    @math.Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
+    @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
+  )
+  debug_inspect(
+    matrix.to_cols_array(),
+    content="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]",
+  )
+}
+
+///|
 test "pbr volumetric fog: camera inside volume follows Bevy local cube test" {
   inspect(
     @volumetric_fog.volumetric_fog_camera_is_inside(@math.Affine3::identity()),

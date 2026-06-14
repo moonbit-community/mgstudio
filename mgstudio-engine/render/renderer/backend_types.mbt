@@ -181,6 +181,7 @@ struct Mesh3dPassUniformState {
 ///|
 struct Mesh3dFrameViewBindGroupCacheEntry {
   material_pipeline_id : UInt64
+  view_layout_key_bits : UInt
   tonemap_in_shader : Bool
   frame_count : UInt
   camera_key_hi : Int

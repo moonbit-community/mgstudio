@@ -890,7 +890,7 @@ fn render3d_execute_camera_main_pass(
     world, source_world, camera, camera_pass_projection,
   )
   let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
-    world, volumetric_fog_prepare,
+    world, source_world, volumetric_fog_prepare,
   )
   render3d_upload_volumetric_fog_uniform_buffer(world)
   render3d_prepare_volumetric_fog_pipelines(

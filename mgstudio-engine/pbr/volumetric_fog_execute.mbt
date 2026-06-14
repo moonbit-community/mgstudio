@@ -86,7 +86,11 @@ fn render3d_prepare_volumetric_fog_pipelines(
   msaa_sample_count : Int,
   atmosphere : Bool,
 ) -> Unit {
-  guard prepared.light_count > 0 && prepared.view_count > 0 else { return }
+  guard prepared.light_count > 0 &&
+    prepared.view_count > 0 &&
+    prepared.plane_mesh_id >= 0 else {
+    return
+  }
   let mut needs_textureless = false
   let mut needs_textured = false
   for volume in prepared.view_fog.volumes {
@@ -102,6 +106,7 @@ fn render3d_prepare_volumetric_fog_pipelines(
       msaa_sample_count~,
       has_density_texture=false,
       atmosphere~,
+      hull_mesh_id=prepared.plane_mesh_id,
     )
   }
   if needs_textured {
@@ -110,13 +115,15 @@ fn render3d_prepare_volumetric_fog_pipelines(
       msaa_sample_count~,
       has_density_texture=true,
       atmosphere~,
+      hull_mesh_id=prepared.plane_mesh_id,
     )
   }
 }
 
 ///|
 fn render3d_prepare_volumetric_fog_hull_meshes(
-  world : @ecs.World,
+  render_world : @ecs.World,
+  source_world : @ecs.World,
   prepared : Render3dVolumetricFogPrepareOutput,
 ) -> Render3dVolumetricFogPrepareOutput {
   guard prepared.light_count > 0 &&
@@ -124,7 +131,7 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
     prepared.volume_count > 0 else {
     return prepared
   }
-  guard world.get_resource(
+  guard source_world.get_resource(
       @pbr_volumetric_fog.VolumetricFogPluginState::resource(),
     )
     is Some(plugin_state) else {
@@ -132,7 +139,7 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
   }
   guard plugin_state.fog_assets() is Some(fog_assets) else { return prepared }
   let (plane_mesh_id, cube_mesh_id) = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
-    world,
+    render_world,
   ).modify(fn(mesh_runtime_state) {
     (
       @pbr_render.render3d_upload_mesh_handle_cached(

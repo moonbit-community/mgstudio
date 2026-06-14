@@ -372,12 +372,14 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
   msaa_sample_count~ : Int,
   has_density_texture~ : Bool,
   atmosphere~ : Bool,
+  hull_mesh_id~ : Int,
 ) -> Unit {
   @renderer.prepare_mesh3d_volumetric_fog_pipeline(
     target_id~,
     msaa_sample_count~,
     has_density_texture~,
     atmosphere~,
+    hull_mesh_id~,
   )
 }
 

@@ -120,7 +120,7 @@ pub fn VolumetricFogMat4::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Ve
 pub fn VolumetricFogMat4::identity() -> Self
 pub fn VolumetricFogMat4::mul(Self, Self) -> Self
 pub fn VolumetricFogMat4::mul_affine3(Self, @math.Affine3) -> Self
-pub fn VolumetricFogMat4::to_row_major_array(Self) -> Array[Float]
+pub fn VolumetricFogMat4::to_cols_array(Self) -> Array[Float]
 
 pub struct VolumetricFogPipeline {
   shader_label : String
@@ -168,8 +168,8 @@ pub fn VolumetricFogPluginState::fog_assets(Self) -> FogAssets?
 pub impl @app.Resource for VolumetricFogPluginState
 
 pub struct VolumetricFogUniform {
-  clip_from_local_row_major : Array[Float]
-  uvw_from_world_row_major : Array[Float]
+  clip_from_local : Array[Float]
+  uvw_from_world : Array[Float]
   far_planes : Array[@math.Vec4]
   fog_color : @math.Vec3
   light_tint : @math.Vec3

@@ -1128,7 +1128,15 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(),
 ) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+  let default_view_layout_key = if default_view_layout_key.bits() == 0U &&
+    tonemap_in_shader {
+    mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
+  } else {
+    default_view_layout_key
+  }
+  let view_layout_key_bits = default_view_layout_key.bits()
   let dt_lut_texture = tonemapping_selected_lut_texture(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
@@ -1153,6 +1161,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   )
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
+      entry.view_layout_key_bits == view_layout_key_bits &&
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.frame_count == uniforms.frame_count &&
       entry.camera_key_hi == uniforms.camera_key_hi &&
@@ -1190,9 +1199,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     backend,
     material_pipeline_id,
     material_descriptor,
-    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
-      tonemap_in_shader~,
-    ),
+    default_view_layout_key~,
   )
   let layout = layout_entry.view_bind_group_layout
   let layout_descriptor = layout_entry.view_bind_group_layout_descriptor
@@ -1347,6 +1354,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   frame.transient_bind_groups.push(binding_arrays_bind_group)
   backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
     material_pipeline_id,
+    view_layout_key_bits,
     tonemap_in_shader,
     frame_count: uniforms.frame_count,
     camera_key_hi: uniforms.camera_key_hi,

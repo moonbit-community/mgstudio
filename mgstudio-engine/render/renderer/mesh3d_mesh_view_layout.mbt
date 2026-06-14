@@ -46,6 +46,26 @@ fn mesh3d_default_mesh_view_layout(
 }
 
 ///|
+fn mesh3d_pass_mesh_view_layout_key(
+  pass_state : GpuPassState,
+  atmosphere? : Bool = false,
+) -> @mesh_view_layout.MeshPipelineViewLayoutKey {
+  @mesh_view_layout.mesh_view_layout_key(
+    pass_state.msaa_sample_count > 1,
+    pass_state.prepass_depth_texture_id >= 0,
+    pass_state.prepass_normal_texture_id >= 0,
+    pass_state.prepass_motion_vector_texture_id >= 0,
+    pass_state.prepass_deferred_texture_id >= 0,
+    false,
+    atmosphere,
+    false,
+    tonemap_in_shader=pass_state.tonemap_in_shader,
+    environment_map=pass_state.environment_map_intensity > 0.0F,
+    irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
+  )
+}
+
+///|
 fn mesh3d_mesh_view_stage(
   stage : @mesh_view_layout.MeshViewBindGroupLayoutEntryStage,
 ) -> @wgpu.ShaderStage {

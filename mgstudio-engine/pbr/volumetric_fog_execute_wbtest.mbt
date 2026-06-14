@@ -61,11 +61,11 @@ test "pbr volumetric fog execute: converts clip projection columns without trans
     @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
   )
   let converted = render3d_projection_matrix_to_volumetric_mat4(projection)
-  let row_major = converted.to_row_major_array()
-  inspect(row_major[0], content="1")
-  inspect(row_major[1], content="5")
-  inspect(row_major[4], content="2")
-  inspect(row_major[15], content="16")
+  let cols = converted.to_cols_array()
+  inspect(cols[0], content="1")
+  inspect(cols[1], content="2")
+  inspect(cols[4], content="5")
+  inspect(cols[15], content="16")
 }
 
 ///|
