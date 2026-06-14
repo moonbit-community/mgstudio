@@ -42,6 +42,237 @@ fn volumetric_fog_identity_matrix_row_major() -> Array[Float] {
 }
 
 ///|
+fn volumetric_fog_color_to_vec3(color : @color.Color) -> @math.Vec3 {
+  let tuple = color.to_linear_rgba_tuple()
+  @math.Vec3::new(tuple.0, tuple.1, tuple.2)
+}
+
+///|
+fn volumetric_fog_affine_transform_vector3(
+  transform : @math.Affine3,
+  vector : @math.Vec3,
+) -> @math.Vec3 {
+  transform.matrix3.mul_vec3(vector)
+}
+
+///|
+fn volumetric_fog_abs(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F - value
+  } else {
+    value
+  }
+}
+
+///|
+pub struct VolumetricFogMat4 {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+
+///|
+pub fn VolumetricFogMat4::identity() -> VolumetricFogMat4 {
+  VolumetricFogMat4::{
+    x_axis: @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    y_axis: @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    z_axis: @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    w_axis: @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+  }
+}
+
+///|
+pub fn VolumetricFogMat4::from_cols(
+  x_axis : @math.Vec4,
+  y_axis : @math.Vec4,
+  z_axis : @math.Vec4,
+  w_axis : @math.Vec4,
+) -> VolumetricFogMat4 {
+  VolumetricFogMat4::{ x_axis, y_axis, z_axis, w_axis }
+}
+
+///|
+pub fn VolumetricFogMat4::from_affine3(
+  transform : @math.Affine3,
+) -> VolumetricFogMat4 {
+  VolumetricFogMat4::{
+    x_axis: @math.Vec4::new(
+      transform.matrix3.x_axis.x,
+      transform.matrix3.x_axis.y,
+      transform.matrix3.x_axis.z,
+      0.0F,
+    ),
+    y_axis: @math.Vec4::new(
+      transform.matrix3.y_axis.x,
+      transform.matrix3.y_axis.y,
+      transform.matrix3.y_axis.z,
+      0.0F,
+    ),
+    z_axis: @math.Vec4::new(
+      transform.matrix3.z_axis.x,
+      transform.matrix3.z_axis.y,
+      transform.matrix3.z_axis.z,
+      0.0F,
+    ),
+    w_axis: @math.Vec4::new(
+      transform.translation.x,
+      transform.translation.y,
+      transform.translation.z,
+      1.0F,
+    ),
+  }
+}
+
+///|
+fn volumetric_fog_mat4_mul_vec4(
+  matrix : VolumetricFogMat4,
+  vector : @math.Vec4,
+) -> @math.Vec4 {
+  @math.Vec4::new(
+    matrix.x_axis.x * vector.x +
+    matrix.y_axis.x * vector.y +
+    matrix.z_axis.x * vector.z +
+    matrix.w_axis.x * vector.w,
+    matrix.x_axis.y * vector.x +
+    matrix.y_axis.y * vector.y +
+    matrix.z_axis.y * vector.z +
+    matrix.w_axis.y * vector.w,
+    matrix.x_axis.z * vector.x +
+    matrix.y_axis.z * vector.y +
+    matrix.z_axis.z * vector.z +
+    matrix.w_axis.z * vector.w,
+    matrix.x_axis.w * vector.x +
+    matrix.y_axis.w * vector.y +
+    matrix.z_axis.w * vector.z +
+    matrix.w_axis.w * vector.w,
+  )
+}
+
+///|
+pub fn VolumetricFogMat4::mul(
+  self : VolumetricFogMat4,
+  other : VolumetricFogMat4,
+) -> VolumetricFogMat4 {
+  VolumetricFogMat4::from_cols(
+    volumetric_fog_mat4_mul_vec4(self, other.x_axis),
+    volumetric_fog_mat4_mul_vec4(self, other.y_axis),
+    volumetric_fog_mat4_mul_vec4(self, other.z_axis),
+    volumetric_fog_mat4_mul_vec4(self, other.w_axis),
+  )
+}
+
+///|
+pub fn VolumetricFogMat4::mul_affine3(
+  self : VolumetricFogMat4,
+  transform : @math.Affine3,
+) -> VolumetricFogMat4 {
+  self.mul(VolumetricFogMat4::from_affine3(transform))
+}
+
+///|
+pub fn VolumetricFogMat4::to_row_major_array(
+  self : VolumetricFogMat4,
+) -> Array[Float] {
+  [
+    self.x_axis.x,
+    self.y_axis.x,
+    self.z_axis.x,
+    self.w_axis.x,
+    self.x_axis.y,
+    self.y_axis.y,
+    self.z_axis.y,
+    self.w_axis.y,
+    self.x_axis.z,
+    self.y_axis.z,
+    self.z_axis.z,
+    self.w_axis.z,
+    self.x_axis.w,
+    self.y_axis.w,
+    self.z_axis.w,
+    self.w_axis.w,
+  ]
+}
+
+///|
+pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4 {
+  VolumetricFogMat4::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(0.5F, 0.5F, 0.5F, 1.0F),
+  )
+}
+
+///|
+pub fn volumetric_fog_camera_is_inside(local_from_view : @math.Affine3) -> Bool {
+  let translation = local_from_view.translation
+  volumetric_fog_abs(translation.x) <= 0.5F &&
+  volumetric_fog_abs(translation.y) <= 0.5F &&
+  volumetric_fog_abs(translation.z) <= 0.5F
+}
+
+///|
+pub fn volumetric_fog_far_planes(
+  view_from_local : @math.Affine3,
+) -> Array[@math.Vec4] {
+  let far_planes : Array[@math.Vec4] = [
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+  ]
+  let mut next_index = 0
+  let local_normals = [
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+  ]
+  for local_normal in local_normals {
+    let view_normal = volumetric_fog_affine_transform_vector3(
+      view_from_local, local_normal,
+    ).normalize_or_zero()
+    if view_normal.z <= 0.0F {
+      continue
+    }
+    let view_position = view_from_local.transform_point3(
+      local_normal.neg().mul_scalar(0.5F),
+    )
+    far_planes[next_index] = @math.Vec4::new(
+      view_normal.x,
+      view_normal.y,
+      view_normal.z,
+      0.0F - view_normal.dot(view_position),
+    )
+    next_index = next_index + 1
+    if next_index == far_planes.length() {
+      break
+    }
+  }
+  far_planes
+}
+
+///|
+pub fn volumetric_fog_clip_from_local(
+  interior : Bool,
+  clip_from_view : VolumetricFogMat4,
+  view_from_local : @math.Affine3,
+) -> VolumetricFogMat4 {
+  if !interior {
+    return clip_from_view.mul_affine3(view_from_local)
+  }
+  let z_near = clip_from_view.w_axis.z
+  VolumetricFogMat4::from_cols(
+    @math.Vec4::new(z_near, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, z_near, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, z_near, z_near),
+  )
+}
+
+///|
 pub struct VolumetricFogBindGroupLayoutKey {
   multisampled : Bool
   density_texture : Bool
@@ -282,6 +513,84 @@ pub fn VolumetricFogUniformBuffer::count(
   self : VolumetricFogUniformBuffer,
 ) -> Int {
   self.uniforms.length()
+}
+
+///|
+pub fn VolumetricFogUniformBuffer::uniform_at(
+  self : VolumetricFogUniformBuffer,
+  index : Int,
+) -> VolumetricFogUniform? {
+  if index < 0 || index >= self.uniforms.length() {
+    None
+  } else {
+    Some(self.uniforms[index])
+  }
+}
+
+///|
+pub struct PreparedVolumetricFogView {
+  view_fog : ViewVolumetricFog
+  uniform_count : Int
+}
+
+///|
+pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> PreparedVolumetricFogView {
+  PreparedVolumetricFogView::{
+    view_fog: ViewVolumetricFog::ViewVolumetricFog(),
+    uniform_count: 0,
+  }
+}
+
+///|
+pub fn prepare_volumetric_fog_view_uniforms(
+  uniform_buffer : VolumetricFogUniformBuffer,
+  volumetric_fog : VolumetricFog,
+  world_from_view : @math.Affine3,
+  clip_from_view : VolumetricFogMat4,
+  fog_volumes : Array[(FogVolume, @math.Affine3)],
+) -> PreparedVolumetricFogView {
+  let view_fog = ViewVolumetricFog::ViewVolumetricFog()
+  for entry in fog_volumes {
+    let fog_volume = entry.0
+    let local_from_world = entry.1.inverse()
+    let local_from_view = local_from_world.mul(world_from_view)
+    let view_from_local = local_from_view.inverse()
+    let interior = volumetric_fog_camera_is_inside(local_from_view)
+    let clip_from_local = volumetric_fog_clip_from_local(
+      interior, clip_from_view, view_from_local,
+    )
+    let bounding_radius = volumetric_fog_affine_transform_vector3(
+      view_from_local,
+      @math.Vec3::splat(0.5F),
+    ).length()
+    let uniform = VolumetricFogUniform::{
+      clip_from_local_row_major: clip_from_local.to_row_major_array(),
+      uvw_from_world_row_major: volumetric_fog_uvw_from_local()
+      .mul_affine3(local_from_world)
+      .to_row_major_array(),
+      far_planes: volumetric_fog_far_planes(view_from_local),
+      fog_color: volumetric_fog_color_to_vec3(fog_volume.fog_color),
+      light_tint: volumetric_fog_color_to_vec3(fog_volume.light_tint),
+      ambient_color: volumetric_fog_color_to_vec3(volumetric_fog.ambient_color),
+      ambient_intensity: volumetric_fog.ambient_intensity,
+      step_count: volumetric_fog.step_count,
+      bounding_radius,
+      absorption: fog_volume.absorption,
+      scattering: fog_volume.scattering,
+      density: fog_volume.density_factor,
+      density_texture_offset: fog_volume.density_texture_offset,
+      scattering_asymmetry: fog_volume.scattering_asymmetry,
+      light_intensity: fog_volume.light_intensity,
+      jitter_strength: volumetric_fog.jitter,
+    }
+    let uniform_buffer_offset = uniform_buffer.push(uniform)
+    view_fog.push(ViewFogVolume::{
+      density_texture: fog_volume.density_texture,
+      uniform_buffer_offset,
+      exterior: !interior,
+    })
+  }
+  PreparedVolumetricFogView::{ view_fog, uniform_count: fog_volumes.length() }
 }
 
 ///|

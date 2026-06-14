@@ -20,13 +20,21 @@ pub fn pbr_fog_volume_default() -> @light.FogVolume
 
 pub fn pbr_volumetric_fog_default() -> @light.VolumetricFog
 
+pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.VolumetricFog, @math.Affine3, VolumetricFogMat4, Array[(@light.FogVolume, @math.Affine3)]) -> PreparedVolumetricFogView
+
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn view_volumetric_fog_pipelines(Int, Int) -> ViewVolumetricFogPipelines
 
 pub fn volumetric_fog_bind_group_layout_index(VolumetricFogBindGroupLayoutKey) -> Int
 
+pub fn volumetric_fog_camera_is_inside(@math.Affine3) -> Bool
+
+pub fn volumetric_fog_clip_from_local(Bool, VolumetricFogMat4, @math.Affine3) -> VolumetricFogMat4
+
 pub fn volumetric_fog_default_settings() -> @light.VolumetricFog
+
+pub fn volumetric_fog_far_planes(@math.Affine3) -> Array[@math.Vec4]
 
 pub fn volumetric_fog_pipeline_key(Bool, Int, Bool) -> VolumetricFogPipelineKey
 
@@ -40,6 +48,8 @@ pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginStat
 
 pub fn volumetric_fog_select_pipeline(ViewVolumetricFogPipelines, VolumetricFogPipelineKey) -> Int
 
+pub fn volumetric_fog_uvw_from_local() -> VolumetricFogMat4
+
 pub fn volumetric_fog_with_step_count(@light.VolumetricFog, Int) -> @light.VolumetricFog
 
 // Errors
@@ -50,6 +60,12 @@ pub struct FogAssets {
   cube_mesh : @asset.Handle[@mesh.Mesh]?
 }
 pub fn FogAssets::FogAssets() -> Self
+
+pub struct PreparedVolumetricFogView {
+  view_fog : ViewVolumetricFog
+  uniform_count : Int
+}
+pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> Self
 
 pub struct ViewFogVolume {
   density_texture : @asset.Handle[@image.Image]?
@@ -77,6 +93,19 @@ pub struct VolumetricFogBindGroupLayoutKey {
   density_texture : Bool
 }
 pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Self
+
+pub struct VolumetricFogMat4 {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn VolumetricFogMat4::from_affine3(@math.Affine3) -> Self
+pub fn VolumetricFogMat4::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn VolumetricFogMat4::identity() -> Self
+pub fn VolumetricFogMat4::mul(Self, Self) -> Self
+pub fn VolumetricFogMat4::mul_affine3(Self, @math.Affine3) -> Self
+pub fn VolumetricFogMat4::to_row_major_array(Self) -> Array[Float]
 
 pub struct VolumetricFogPipeline {
   shader_label : String
@@ -139,6 +168,7 @@ pub fn VolumetricFogUniformBuffer::VolumetricFogUniformBuffer() -> Self
 pub fn VolumetricFogUniformBuffer::clear(Self) -> Unit
 pub fn VolumetricFogUniformBuffer::count(Self) -> Int
 pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> Int
+pub fn VolumetricFogUniformBuffer::uniform_at(Self, Int) -> VolumetricFogUniform?
 
 // Type aliases
 pub using @light {type FogVolume}
