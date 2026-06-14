@@ -383,7 +383,7 @@ fn mesh2d_descriptor_cache_key(
           "depth(\{depth.format.to_string()}:\{depth.depth_write_enabled.to_string()}:\{depth.depth_compare.to_string()}:\{depth.bias_slope_scale.to_string()})"
         None => "depth:none"
       }
-      "descriptor(\{mesh2d_option_string_cache_key(desc.label)}:\{mesh2d_option_string_cache_key(desc.vertex.shader)}:\{mesh2d_shader_defs_cache_key(desc.vertex.shader_defs)}:\{mesh2d_option_string_cache_key(desc.vertex.entry_point)}:\{mesh2d_vertex_layouts_cache_key(desc.vertex.buffers)}:\{desc.primitive.topology.to_string()}:\{desc.primitive.front_face.to_string()}:\{mesh2d_option_uint_cache_key(desc.primitive.cull_mode)}:\{mesh2d_option_uint_cache_key(desc.primitive.polygon_mode)}:\{depth_key}:\{desc.multisample.count.to_string()}:\{desc.multisample.mask.to_string()}:\{desc.multisample.alpha_to_coverage_enabled.to_string()}:\{fragment_key})"
+      "descriptor(\{mesh2d_option_string_cache_key(desc.label)}:\{mesh2d_option_string_cache_key(desc.vertex.shader)}:\{mesh2d_shader_defs_cache_key(desc.vertex.shader_defs)}:\{mesh2d_option_string_cache_key(desc.vertex.entry_point)}:\{mesh2d_vertex_layouts_cache_key(desc.vertex.buffers)}:\{desc.primitive.topology.to_string()}:\{mesh2d_option_uint_cache_key(desc.primitive.strip_index_format)}:\{desc.primitive.front_face.to_string()}:\{mesh2d_option_uint_cache_key(desc.primitive.cull_mode)}:\{mesh2d_option_uint_cache_key(desc.primitive.polygon_mode)}:\{depth_key}:\{desc.multisample.count.to_string()}:\{desc.multisample.mask.to_string()}:\{desc.multisample.alpha_to_coverage_enabled.to_string()}:\{fragment_key})"
     }
   }
 }
@@ -2682,7 +2682,8 @@ pub fn GpuBackend::create_mesh2d_vertex_buffer(
   if usable_vertex_count <= 0 {
     return 0
   }
-  if indexed && !mesh3d_indices_valid(indices, usable_vertex_count) {
+  if indexed &&
+    !mesh3d_indices_valid(indices, usable_vertex_count, primitive_topology) {
     return 0
   }
   let id = alloc_id(self)

@@ -28,8 +28,15 @@ pub struct Mesh3dGeometry {
   mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   mut indices : Array[Int]?
+  mut index_format : Mesh3dIndexFormat?
   topology : Mesh3dPrimitiveTopology
 }
+
+///|
+pub(all) enum Mesh3dIndexFormat {
+  Uint16
+  Uint32
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Mesh3dPrimitiveTopology {
@@ -45,6 +52,58 @@ pub fn Mesh3dPrimitiveTopology::to_int(self : Mesh3dPrimitiveTopology) -> Int {
     LineList => 1
     LineStrip => 2
   }
+}
+
+///|
+pub fn Mesh3dIndexFormat::to_int(self : Mesh3dIndexFormat) -> Int {
+  match self {
+    Uint16 => 0
+    Uint32 => 1
+  }
+}
+
+///|
+pub fn Mesh3dIndexFormat::restart_index(self : Mesh3dIndexFormat) -> Int {
+  match self {
+    Uint16 => 0xffff
+    Uint32 => 0xffff_ffff
+  }
+}
+
+///|
+fn mesh3d_indices_need_u32(indices : Array[Int]) -> Bool {
+  for index in indices {
+    if index >= 0xffff {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn mesh3d_index_format_from_indices(
+  indices : Array[Int]?,
+) -> Mesh3dIndexFormat? {
+  match indices {
+    Some(values) =>
+      if mesh3d_indices_need_u32(values) {
+        Some(Mesh3dIndexFormat::Uint32)
+      } else {
+        Some(Mesh3dIndexFormat::Uint16)
+      }
+    None => None
+  }
+}
+
+///|
+fn mesh3d_index_is_restart(
+  topology : Mesh3dPrimitiveTopology,
+  index_format : Mesh3dIndexFormat?,
+  index : Int,
+) -> Bool {
+  guard topology == Mesh3dPrimitiveTopology::LineStrip else { return false }
+  guard index_format is Some(format) else { return false }
+  index == format.restart_index()
 }
 
 ///|
@@ -90,6 +149,7 @@ pub fn Mesh3dGeometry::new(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology: Mesh3dPrimitiveTopology::TriangleList,
   }
 }
@@ -116,6 +176,7 @@ pub fn Mesh3dGeometry::new_with_colors(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology: Mesh3dPrimitiveTopology::TriangleList,
   }
 }
@@ -142,6 +203,7 @@ pub fn Mesh3dGeometry::new_with_topology(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology,
   }
 }
@@ -169,6 +231,7 @@ pub fn Mesh3dGeometry::new_with_colors_and_topology(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology,
   }
 }
@@ -193,6 +256,7 @@ pub fn Mesh3dGeometry::with_topology(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices: self.indices,
+    index_format: self.index_format,
     topology,
   }
 }
@@ -227,6 +291,7 @@ pub fn Mesh3dGeometry::new_with_positions(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology: Mesh3dPrimitiveTopology::TriangleList,
   }
 }
@@ -252,6 +317,7 @@ pub fn Mesh3dGeometry::new_with_positions_and_topology(
     custom_attributes_vec3: [],
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology,
   }
 }
@@ -385,6 +451,7 @@ pub fn Mesh3dGeometry::with_uvs(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -409,6 +476,7 @@ pub fn Mesh3dGeometry::with_uv1s(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -433,6 +501,7 @@ pub fn Mesh3dGeometry::with_normals(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -611,6 +680,7 @@ pub fn Mesh3dGeometry::with_duplicated_vertices(
     custom_attributes_vec3,
     tangents,
     indices: None,
+    index_format: None,
     topology: self.topology,
   })
 }
@@ -922,6 +992,7 @@ pub fn Mesh3dGeometry::with_indices(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
     indices,
+    index_format: mesh3d_index_format_from_indices(indices),
     topology: self.topology,
   }
 }
@@ -932,6 +1003,7 @@ pub fn Mesh3dGeometry::insert_indices(
   indices : Array[Int]?,
 ) -> Unit {
   self.indices = indices
+  self.index_format = mesh3d_index_format_from_indices(indices)
   self.tangents = None
 }
 
@@ -941,6 +1013,28 @@ pub fn Mesh3dGeometry::with_inserted_indices(
   indices : Array[Int]?,
 ) -> Mesh3dGeometry {
   self.insert_indices(indices)
+  self
+}
+
+///|
+pub fn Mesh3dGeometry::insert_indices_u16(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Unit {
+  self.indices = indices
+  self.index_format = match indices {
+    Some(_) => Some(Mesh3dIndexFormat::Uint16)
+    None => None
+  }
+  self.tangents = None
+}
+
+///|
+pub fn Mesh3dGeometry::with_inserted_indices_u16(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Mesh3dGeometry {
+  self.insert_indices_u16(indices)
   self
 }
 
@@ -964,6 +1058,7 @@ pub fn Mesh3dGeometry::with_colors(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -989,6 +1084,7 @@ pub fn Mesh3dGeometry::with_joint_data(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -1030,6 +1126,7 @@ pub fn Mesh3dGeometry::with_morph_targets(
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -1096,6 +1193,7 @@ pub fn Mesh3dGeometry::with_custom_attribute_vec3(
     custom_attributes_vec3: next,
     tangents: self.tangents,
     indices: self.indices,
+    index_format: self.index_format,
     topology: self.topology,
   }
 }
@@ -1324,6 +1422,9 @@ pub fn Mesh3dGeometry::validate(
       let index_count = indices.length()
       for i in 0..<index_count {
         let idx = indices[i]
+        if mesh3d_index_is_restart(self.topology, self.index_format, idx) {
+          continue
+        }
         if idx < 0 || idx >= vertex_count {
           return Some(
             Mesh3dValidationError::IndexOutOfBounds(idx, vertex_count),

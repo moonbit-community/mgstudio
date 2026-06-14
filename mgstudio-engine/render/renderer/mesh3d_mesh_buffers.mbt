@@ -300,11 +300,23 @@ fn mesh3d_usable_non_indexed_vertex_count(
 }
 
 ///|
-fn mesh3d_indices_valid(indices : Array[Int], vertex_count : Int) -> Bool {
+fn mesh3d_index_is_restart(primitive_topology : UInt, index : Int) -> Bool {
+  primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP && index == 0xffff
+}
+
+///|
+fn mesh3d_indices_valid(
+  indices : Array[Int],
+  vertex_count : Int,
+  primitive_topology : UInt,
+) -> Bool {
   if indices.length() <= 0 || vertex_count <= 0 {
     return false
   }
   for index in indices {
+    if mesh3d_index_is_restart(primitive_topology, index) {
+      continue
+    }
     if index < 0 || index >= vertex_count {
       return false
     }
@@ -433,7 +445,7 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(
   let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
   let vertex_count = expanded_vertices.length() /
     MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
-  if !mesh3d_indices_valid(indices, vertex_count) {
+  if !mesh3d_indices_valid(indices, vertex_count, primitive_topology) {
     return 0
   }
   let uses_u32_indices = mesh3d_indices_use_u32(indices)
@@ -575,7 +587,7 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba_indexed(
   let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
   let vertex_count = expanded_vertices.length() /
     MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
-  if !mesh3d_indices_valid(indices, vertex_count) {
+  if !mesh3d_indices_valid(indices, vertex_count, primitive_topology) {
     return false
   }
   let uses_u32_indices = mesh3d_indices_use_u32(indices)

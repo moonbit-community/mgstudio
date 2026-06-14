@@ -62,6 +62,13 @@ pub fn Mesh3dGeometry::indices_or_sequential(
 }
 
 ///|
+pub fn Mesh3dGeometry::index_format(
+  self : Mesh3dGeometry,
+) -> Mesh3dIndexFormat? {
+  self.index_format
+}
+
+///|
 pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
   match self.geometry {
     MeshGeometry::Geometry2d(geometry) =>
@@ -74,6 +81,14 @@ pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
         Some(indices) => Some(indices.copy())
         None => None
       }
+  }
+}
+
+///|
+pub fn Mesh::index_format(self : Mesh) -> Mesh3dIndexFormat? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry) => geometry.index_format()
   }
 }
 

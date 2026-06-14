@@ -29,6 +29,18 @@ const BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS : UInt64 = 0b111UL
 const BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS : Int = 60
 
 ///|
+const BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_MASK_BITS : UInt64 = 0b11UL
+
+///|
+const BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_SHIFT_BITS : Int = 58
+
+///|
+const BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 : UInt64 = 0x0400_0000_0000_0000UL
+
+///|
+const BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 : UInt64 = 0x0800_0000_0000_0000UL
+
+///|
 pub let mesh_set_inherit_weight : @app.SystemSet = "mgstudio.mesh.InheritWeightSystems"
 
 ///|
@@ -62,12 +74,32 @@ pub fn BaseMeshPipelineKey::contains_morph_targets(
 pub fn BaseMeshPipelineKey::from_primitive_topology(
   primitive_topology : Mesh3dPrimitiveTopology,
 ) -> BaseMeshPipelineKey {
+  BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+    primitive_topology,
+    None,
+  )
+}
+
+///|
+pub fn BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+  primitive_topology : Mesh3dPrimitiveTopology,
+  strip_index_format : Mesh3dIndexFormat?,
+) -> BaseMeshPipelineKey {
+  let index_bits = match primitive_topology {
+    LineStrip =>
+      match strip_index_format {
+        Some(Uint16) => BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16
+        Some(Uint32) => BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32
+        None => 0UL
+      }
+    _ => 0UL
+  }
   let primitive_topology_bits = (
       primitive_topology.to_int().to_uint64() &
       BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS
     ) <<
     BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_SHIFT_BITS
-  BaseMeshPipelineKey::new(primitive_topology_bits)
+  BaseMeshPipelineKey::new(primitive_topology_bits | index_bits)
 }
 
 ///|
@@ -84,6 +116,24 @@ pub fn BaseMeshPipelineKey::primitive_topology(
     Mesh3dPrimitiveTopology::LineStrip
   } else {
     Mesh3dPrimitiveTopology::TriangleList
+  }
+}
+
+///|
+pub fn BaseMeshPipelineKey::strip_index_format(
+  self : BaseMeshPipelineKey,
+) -> Mesh3dIndexFormat? {
+  let index_bits = self.bits &
+    (
+      BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_MASK_BITS <<
+      BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_SHIFT_BITS
+    )
+  if index_bits == BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 {
+    Some(Mesh3dIndexFormat::Uint16)
+  } else if index_bits == BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 {
+    Some(Mesh3dIndexFormat::Uint32)
+  } else {
+    None
   }
 }
 

@@ -85,6 +85,19 @@ test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba gives default
 }
 
 ///|
+test "mesh: indexed line strip accepts Bevy u16 primitive restart" {
+  let geometry = mesh3d_test_line_strip().with_inserted_indices_u16(
+    Some([0, 1, 0xffff, 2, 3, 4]),
+  )
+  debug_inspect(geometry.validate() is None, content="true")
+  debug_inspect(
+    geometry.indices_or_sequential(),
+    content="[0, 1, 65535, 2, 3, 4]",
+  )
+  debug_inspect(geometry.index_format(), content="Some(Uint16)")
+}
+
+///|
 test "mesh: Mesh3dGeometry vertex-order flatten preserves indexed source vertices" {
   let geometry = Mesh3dGeometry::new(
     [

@@ -178,6 +178,16 @@ fn pbr_standard_material_cull_mode(
 }
 
 ///|
+fn pbr_mesh_key_strip_index_format(mesh_key_bits : UInt64) -> UInt? {
+  let mesh_key = @mesh.BaseMeshPipelineKey::new(mesh_key_bits)
+  match mesh_key.strip_index_format() {
+    Some(Uint16) => Some(@wgpu.INDEX_FORMAT_UINT16)
+    Some(Uint32) => Some(@wgpu.INDEX_FORMAT_UINT32)
+    None => None
+  }
+}
+
+///|
 fn pbr_specialize_standard_material_descriptor(
   descriptor : @material.RenderPipelineDescriptor,
   key : @material.ErasedMaterialPipelineKey,
@@ -199,9 +209,11 @@ fn pbr_specialize_standard_material_descriptor(
     specialized = specialized.with_fragment(Some(fragment))
   }
   specialized = specialized.with_primitive(
-    specialized.primitive.with_cull_mode(
+    specialized.primitive
+    .with_cull_mode(
       pbr_standard_material_cull_mode(material_key_bits, mesh_key_bits),
-    ),
+    )
+    .with_strip_index_format(pbr_mesh_key_strip_index_format(mesh_key_bits)),
   )
   if specialized.label is Some(label) {
     specialized = specialized.with_label(Some("pbr_" + label))

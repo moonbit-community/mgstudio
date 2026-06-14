@@ -157,6 +157,9 @@ fn scene_clone_mesh3d_geometry(
     .with_normals(normals)
     .with_uvs(uvs)
     .with_colors(colors)
+  if geometry.index_format() is Some(@mesh.Mesh3dIndexFormat::Uint16) {
+    cloned.insert_indices_u16(indices)
+  }
   if geometry.joint_indices is Some(joint_indices) {
     let copied_indices : Array[@mesh.MeshJointIndices] = []
     for joint_index in joint_indices {

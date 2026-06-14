@@ -666,6 +666,24 @@ test "pbr material pipeline keeps clustered decal shader defs and layout in sync
 }
 
 ///|
+test "pbr material pipeline carries Bevy strip index format into primitive state" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let mesh_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+    @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    Some(@mesh.Mesh3dIndexFormat::Uint16),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(mesh_bits=mesh_key.bits()),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(descriptor.primitive.strip_index_format, content="Some(1)")
+}
+
+///|
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
   let pipeline_cache = @render_resource.PipelineCache::new()

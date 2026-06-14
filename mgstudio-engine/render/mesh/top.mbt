@@ -187,11 +187,7 @@ pub fn RenderMesh::from_mesh(
   let vertex_count = mesh.count_vertices()
   let buffer_info = match mesh.indices() {
     Some(indices) => {
-      let index_format = if render_mesh_indices_use_u32(indices) {
-        RenderMeshIndexFormat::Uint32
-      } else {
-        RenderMeshIndexFormat::Uint16
-      }
+      let index_format = render_mesh_index_format_from_mesh(mesh, indices)
       RenderMeshBufferInfo::Indexed(indices.length(), index_format)
     }
     None => RenderMeshBufferInfo::NonIndexed
@@ -200,8 +196,13 @@ pub fn RenderMesh::from_mesh(
     Some(topology) => topology
     None => @asset_mesh.Mesh3dPrimitiveTopology::TriangleList
   }
-  let base_key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
-    primitive_topology,
+  let strip_index_format = match buffer_info {
+    Indexed(_, Uint16) => Some(@asset_mesh.Mesh3dIndexFormat::Uint16)
+    Indexed(_, Uint32) => Some(@asset_mesh.Mesh3dIndexFormat::Uint32)
+    NonIndexed => None
+  }
+  let base_key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+    primitive_topology, strip_index_format,
   )
   let key_bits = if mesh.has_morph_targets() {
     @asset_mesh.BaseMeshPipelineKey::new(
@@ -216,9 +217,26 @@ pub fn RenderMesh::from_mesh(
 }
 
 ///|
+fn render_mesh_index_format_from_mesh(
+  mesh : @asset_mesh.Mesh,
+  indices : Array[Int],
+) -> RenderMeshIndexFormat {
+  match mesh.index_format() {
+    Some(Uint16) => RenderMeshIndexFormat::Uint16
+    Some(Uint32) => RenderMeshIndexFormat::Uint32
+    None =>
+      if render_mesh_indices_use_u32(indices) {
+        RenderMeshIndexFormat::Uint32
+      } else {
+        RenderMeshIndexFormat::Uint16
+      }
+  }
+}
+
+///|
 fn render_mesh_indices_use_u32(indices : Array[Int]) -> Bool {
   for index in indices {
-    if index > 0xffff {
+    if index >= 0xffff {
       return true
     }
   }

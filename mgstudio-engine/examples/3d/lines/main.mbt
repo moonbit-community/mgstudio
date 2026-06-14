@@ -30,6 +30,7 @@ priv struct LineList {
 ///|
 priv struct LineStrip {
   points : Array[@math.Vec3]
+  indices : Array[Int]
 }
 
 ///|
@@ -65,7 +66,7 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @mesh.Mesh3dGeometry {
     uvs,
     None,
     @mesh.Mesh3dPrimitiveTopology::LineStrip,
-  )
+  ).with_inserted_indices_u16(Some(line_strip.indices))
 }
 
 ///|
@@ -119,8 +120,11 @@ fn setup(
                 points: [
                   @math.Vec3::zero(),
                   @math.Vec3::new(1.0F, 1.0F, 0.0F),
-                  @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                  @math.Vec3::new(2.0F, 0.0F, 0.0F),
+                  @math.Vec3::new(2.0F, 1.0F, 0.0F),
+                  @math.Vec3::new(3.0F, 1.0F, 0.0F),
                 ],
+                indices: [0, 1, 0xffff, 2, 3, 4],
               }),
             )
           }),

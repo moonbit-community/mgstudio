@@ -79,9 +79,11 @@ pub struct BaseMeshPipelineKey {
 pub fn BaseMeshPipelineKey::bits(Self) -> UInt64
 pub fn BaseMeshPipelineKey::contains_morph_targets(Self) -> Bool
 pub fn BaseMeshPipelineKey::from_primitive_topology(Mesh3dPrimitiveTopology) -> Self
+pub fn BaseMeshPipelineKey::from_primitive_topology_and_strip_index(Mesh3dPrimitiveTopology, Mesh3dIndexFormat?) -> Self
 pub fn BaseMeshPipelineKey::morph_targets() -> Self
 pub fn BaseMeshPipelineKey::new(UInt64) -> Self
 pub fn BaseMeshPipelineKey::primitive_topology(Self) -> Mesh3dPrimitiveTopology
+pub fn BaseMeshPipelineKey::strip_index_format(Self) -> Mesh3dIndexFormat?
 
 pub struct DynamicSkinnedMeshBounds {
 }
@@ -142,6 +144,7 @@ pub fn Mesh::get_mesh_vertex_buffer_layout(Self, MeshVertexBufferLayouts) -> Mes
 pub fn Mesh::get_vertex_buffer_size(Self) -> Int
 pub fn Mesh::get_vertex_size(Self) -> Int
 pub fn Mesh::has_morph_targets(Self) -> Bool
+pub fn Mesh::index_format(Self) -> Mesh3dIndexFormat?
 pub fn Mesh::indexed(Self) -> Bool
 pub fn Mesh::indices(Self) -> Array[Int]?
 pub fn Mesh::morph_target_names(Self) -> Array[String]?
@@ -239,6 +242,7 @@ pub struct Mesh3dGeometry {
   mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   mut indices : Array[Int]?
+  mut index_format : Mesh3dIndexFormat?
   topology : Mesh3dPrimitiveTopology
 }
 pub fn Mesh3dGeometry::attribute(Self, MeshVertexAttributeId) -> VertexAttributeValues?
@@ -264,9 +268,11 @@ pub fn Mesh3dGeometry::has_normals(Self) -> Bool
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
 pub fn Mesh3dGeometry::has_uv1s(Self) -> Bool
 pub fn Mesh3dGeometry::has_uvs(Self) -> Bool
+pub fn Mesh3dGeometry::index_format(Self) -> Mesh3dIndexFormat?
 pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh3dGeometry::insert_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Bool
 pub fn Mesh3dGeometry::insert_indices(Self, Array[Int]?) -> Unit
+pub fn Mesh3dGeometry::insert_indices_u16(Self, Array[Int]?) -> Unit
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
 pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
@@ -318,6 +324,7 @@ pub fn Mesh3dGeometry::with_duplicated_vertices(Self) -> Self?
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn Mesh3dGeometry::with_inserted_indices(Self, Array[Int]?) -> Self
+pub fn Mesh3dGeometry::with_inserted_indices_u16(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?, morph_target_normals? : Array[Array[@math.Vec3]]?, morph_target_tangents? : Array[Array[@math.Vec3]]?) -> Self
 pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self
@@ -326,6 +333,13 @@ pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::with_uv1s(Self, Array[@math.Vec2]?) -> Self
 pub fn Mesh3dGeometry::with_uvs(Self, Array[@math.Vec2]?) -> Self
 pub impl IntoMeshAsset for Mesh3dGeometry
+
+pub(all) enum Mesh3dIndexFormat {
+  Uint16
+  Uint32
+} derive(Eq, @debug.Debug)
+pub fn Mesh3dIndexFormat::restart_index(Self) -> Int
+pub fn Mesh3dIndexFormat::to_int(Self) -> Int
 
 pub(all) enum Mesh3dPrimitiveTopology {
   TriangleList

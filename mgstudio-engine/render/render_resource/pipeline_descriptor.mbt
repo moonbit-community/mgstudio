@@ -129,6 +129,7 @@ pub fn FragmentState::with_entry_point(
 ///|
 pub struct PrimitiveState {
   topology : UInt
+  strip_index_format : UInt?
   front_face : UInt
   cull_mode : UInt?
   polygon_mode : UInt?
@@ -138,6 +139,7 @@ pub struct PrimitiveState {
 pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
   PrimitiveState::{
     topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    strip_index_format: None,
     front_face: @wgpu.FRONT_FACE_CCW,
     cull_mode: Some(@wgpu.CULL_MODE_BACK),
     polygon_mode: None,
@@ -163,6 +165,14 @@ pub fn PrimitiveState::with_topology(
   topology : UInt,
 ) -> PrimitiveState {
   PrimitiveState::{ ..self, topology, }
+}
+
+///|
+pub fn PrimitiveState::with_strip_index_format(
+  self : PrimitiveState,
+  strip_index_format : UInt?,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, strip_index_format, }
 }
 
 ///|
