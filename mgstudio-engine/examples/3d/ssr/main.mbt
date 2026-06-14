@@ -1444,11 +1444,6 @@ fn move_camera(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_default_opaque_renderer_method,
-    @pbr.DefaultOpaqueRendererMethod::deferred(),
-  )
-
   let asset_server = @asset.AssetServer::new()
   let app_settings = match world.get_resource(AppSettings::resource()) {
     Some(value) => value
@@ -1480,6 +1475,10 @@ fn main {
     @widgets_lib.WidgetClickEvent[ExampleSetting],
   ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
+  .insert_world_resource(
+    @pbr.ecs_key_default_opaque_renderer_method,
+    @pbr.DefaultOpaqueRendererMethod::deferred(),
+  )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(AppSettings::AppSettings())
   .add_message(widget_click_message_key)
