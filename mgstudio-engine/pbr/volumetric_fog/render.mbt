@@ -16,24 +16,6 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/render.rs`.
 
 ///|
-fn volumetric_fog_sanitize_non_negative(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
-
-///|
-fn volumetric_fog_sanitize_int(value : Int, min_ : Int) -> Int {
-  if value < min_ {
-    min_
-  } else {
-    value
-  }
-}
-
-///|
 pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
 
 ///|
@@ -575,39 +557,6 @@ pub fn VolumetricFogUniform::VolumetricFogUniform() -> VolumetricFogUniform {
 }
 
 ///|
-pub fn VolumetricFogUniform::with_step_count(
-  self : VolumetricFogUniform,
-  step_count : Int,
-) -> VolumetricFogUniform {
-  VolumetricFogUniform::{
-    ..self,
-    step_count: volumetric_fog_sanitize_int(step_count, 1),
-  }
-}
-
-///|
-pub fn VolumetricFogUniform::with_density(
-  self : VolumetricFogUniform,
-  density : Float,
-) -> VolumetricFogUniform {
-  VolumetricFogUniform::{
-    ..self,
-    density: volumetric_fog_sanitize_non_negative(density),
-  }
-}
-
-///|
-pub fn VolumetricFogUniform::with_jitter_strength(
-  self : VolumetricFogUniform,
-  jitter_strength : Float,
-) -> VolumetricFogUniform {
-  VolumetricFogUniform::{
-    ..self,
-    jitter_strength: volumetric_fog_sanitize_non_negative(jitter_strength),
-  }
-}
-
-///|
 pub fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
   let words : Array[UInt] = []
   volumetric_fog_push_mat4_cols(words, self.clip_from_local)
@@ -626,9 +575,7 @@ pub fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
   words.push(0U)
   volumetric_fog_push_vec3(words, self.ambient_color)
   volumetric_fog_push_f32(words, self.ambient_intensity)
-  words.push(
-    volumetric_fog_sanitize_int(self.step_count, 1).reinterpret_as_uint(),
-  )
+  words.push(self.step_count.reinterpret_as_uint())
   volumetric_fog_push_f32(words, self.bounding_radius)
   volumetric_fog_push_f32(words, self.absorption)
   volumetric_fog_push_f32(words, self.scattering)
@@ -918,30 +865,4 @@ pub fn volumetric_fog_specialize_pipeline(
     blend_alpha_src_zero: true,
     blend_alpha_dst_one: true,
   }
-}
-
-///|
-pub fn volumetric_fog_default_settings() -> VolumetricFog {
-  VolumetricFog()
-}
-
-///|
-pub fn fog_volume_default_settings() -> FogVolume {
-  FogVolume()
-}
-
-///|
-pub fn volumetric_fog_with_step_count(
-  fog : VolumetricFog,
-  step_count : Int,
-) -> VolumetricFog {
-  fog.with_step_count(step_count)
-}
-
-///|
-pub fn fog_volume_with_density(
-  volume : FogVolume,
-  density_factor : Float,
-) -> FogVolume {
-  volume.with_density_factor(density_factor)
 }

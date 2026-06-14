@@ -164,9 +164,7 @@ test "pbr volumetric fog: uniform buffer push and clear" {
     @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform(),
   )
   let offset1 = buffer.push(
-    @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform().with_step_count(
-      96,
-    ),
+    @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform(),
   )
   inspect(offset0, content="0")
   inspect(offset1, content="512")
@@ -178,10 +176,26 @@ test "pbr volumetric fog: uniform buffer push and clear" {
 
 ///|
 test "pbr volumetric fog: uniform bytes match WGSL host layout" {
-  let uniform = @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform()
+  let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
+  let fog = @light.VolumetricFog::VolumetricFog()
     .with_step_count(96)
-    .with_density(0.75F)
-    .with_jitter_strength(0.25F)
+    .with_jitter(0.25F)
+  let volume = @light.FogVolume::FogVolume().with_density_factor(0.75F)
+  ignore(
+    @volumetric_fog.prepare_volumetric_fog_view_uniforms(
+      buffer,
+      fog,
+      @math.Affine3::identity(),
+      @volumetric_fog.VolumetricFogMat4::identity(),
+      [
+        (
+          volume,
+          @math.Affine3::from_translation(@math.Vec3::new(10.0F, 0.0F, 0.0F)),
+        ),
+      ],
+    ),
+  )
+  let uniform = buffer.uniform_at(0).unwrap()
   let bytes = uniform.bytes()
   inspect(bytes.length(), content="288")
   inspect(
@@ -259,11 +273,11 @@ test "pbr volumetric fog: far planes keep only view-facing cube faces" {
 ///|
 test "pbr volumetric fog: prepares view volume metadata and uniforms" {
   let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
-  let fog = @volumetric_fog.volumetric_fog_default_settings()
+  let fog = @light.VolumetricFog::VolumetricFog()
     .with_step_count(96)
     .with_jitter(0.25F)
   let density_texture : @asset.Handle[@asset.Image] = @asset.Handle::new(42)
-  let volume = @volumetric_fog.fog_volume_default_settings()
+  let volume = @light.FogVolume::FogVolume()
     .with_density_factor(0.75F)
     .with_density_texture(Some(density_texture))
     .with_density_texture_offset(@math.Vec3::new(0.0F, 0.0F, 1.25F))
