@@ -74,9 +74,14 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
   let buffer = render3d_volumetric_fog_uniform_buffer_mut(world)
   ignore(
     buffer.modify(fn(uniform_buffer) {
-      uniform_buffer.push(
-        @pbr_volumetric_fog.VolumetricFogUniform::VolumetricFogUniform(),
+      @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+        uniform_buffer,
+        @light.VolumetricFog::VolumetricFog(),
+        @math.Affine3::identity(),
+        @pbr_volumetric_fog.VolumetricFogMat4::identity(),
+        [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
       )
+      |> ignore
     }),
   )
   inspect(

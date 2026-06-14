@@ -16,18 +16,10 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/volumetric_fog/render.rs`.
 
 ///|
-pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
+const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
 
 ///|
-pub const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
-
-///|
-fn volumetric_fog_identity_matrix_cols_array() -> Array[Float] {
-  [
-    1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F,
-  ]
-}
+const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
 
 ///|
 fn volumetric_fog_color_to_vec3(color : @color.Color) -> @math.Vec3 {
@@ -332,7 +324,7 @@ pub fn view_volumetric_fog_pipelines(
 }
 
 ///|
-pub struct VolumetricFogUniform {
+struct VolumetricFogUniform {
   clip_from_local : Array[Float]
   uvw_from_world : Array[Float]
   far_planes : Array[@math.Vec4]
@@ -352,33 +344,7 @@ pub struct VolumetricFogUniform {
 }
 
 ///|
-pub fn VolumetricFogUniform::VolumetricFogUniform() -> VolumetricFogUniform {
-  VolumetricFogUniform::{
-    clip_from_local: volumetric_fog_identity_matrix_cols_array(),
-    uvw_from_world: volumetric_fog_identity_matrix_cols_array(),
-    far_planes: [
-      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-      @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
-      @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
-    ],
-    fog_color: @math.Vec3::new(1.0F, 1.0F, 1.0F),
-    light_tint: @math.Vec3::new(1.0F, 1.0F, 1.0F),
-    ambient_color: @math.Vec3::new(1.0F, 1.0F, 1.0F),
-    ambient_intensity: 0.1F,
-    step_count: 64,
-    bounding_radius: 1.0F,
-    absorption: 0.3F,
-    scattering: 0.3F,
-    density: 0.1F,
-    density_texture_offset: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    scattering_asymmetry: 0.0F,
-    light_intensity: 1.0F,
-    jitter_strength: 0.0F,
-  }
-}
-
-///|
-pub fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
+fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
   let words : Array[UInt] = []
   volumetric_fog_push_mat4_cols(words, self.clip_from_local)
   volumetric_fog_push_mat4_cols(words, self.uvw_from_world)
@@ -488,7 +454,7 @@ pub fn ViewVolumetricFog::count(self : ViewVolumetricFog) -> Int {
 
 ///|
 pub struct VolumetricFogUniformBuffer {
-  mut uniforms : Array[VolumetricFogUniform]
+  priv mut uniforms : Array[VolumetricFogUniform]
 }
 
 ///|
@@ -516,7 +482,7 @@ pub fn VolumetricFogUniformBuffer::clear(
 }
 
 ///|
-pub fn VolumetricFogUniformBuffer::push(
+fn VolumetricFogUniformBuffer::push(
   self : VolumetricFogUniformBuffer,
   uniform : VolumetricFogUniform,
 ) -> UInt {
@@ -531,18 +497,6 @@ pub fn VolumetricFogUniformBuffer::count(
   self : VolumetricFogUniformBuffer,
 ) -> Int {
   self.uniforms.length()
-}
-
-///|
-pub fn VolumetricFogUniformBuffer::uniform_at(
-  self : VolumetricFogUniformBuffer,
-  index : Int,
-) -> VolumetricFogUniform? {
-  if index < 0 || index >= self.uniforms.length() {
-    None
-  } else {
-    Some(self.uniforms[index])
-  }
 }
 
 ///|
