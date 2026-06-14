@@ -15,8 +15,6 @@ pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.V
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
-pub fn volumetric_fog_create_fog_assets(@ecs.World) -> FogAssets
-
 pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlugin) -> @app.App[@ecs.World]

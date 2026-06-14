@@ -116,7 +116,7 @@ fn volumetric_fog_mesh_assets_mut_or_abort(
 }
 
 ///|
-pub fn volumetric_fog_create_fog_assets(world : @ecs.World) -> FogAssets {
+fn volumetric_fog_create_fog_assets(world : @ecs.World) -> FogAssets {
   let meshes = volumetric_fog_mesh_assets_mut_or_abort(world)
   meshes.modify(fn(mesh_assets) {
     let plane_mesh = mesh_assets.add(
