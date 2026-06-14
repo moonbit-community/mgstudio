@@ -21,8 +21,6 @@ pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.Worl
 
 pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlugin) -> @app.App[@ecs.World]
 
-pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int, Int) -> VolumetricFogPluginState
-
 // Errors
 
 // Types and methods
@@ -77,10 +75,7 @@ pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> Self
 pub impl @app.Plugin for VolumetricFogPlugin
 
 pub struct VolumetricFogPluginState {
-  fog_assets : FogAssets?
-  extracted_view_count : Int
-  extracted_volume_count : Int
-  extracted_light_count : Int
+  // private fields
 }
 pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> Self
 pub fn VolumetricFogPluginState::fog_assets(Self) -> FogAssets?

@@ -52,20 +52,3 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     None => inspect("missing state", content="present state")
   }
 }
-
-///|
-test "pbr volumetric fog: extract count state clears when no volumetric lights exist" {
-  let initial = @volumetric_fog.VolumetricFogPluginState::VolumetricFogPluginState()
-  let with_lights = @volumetric_fog.volumetric_fog_plugin_state_with_extracted_counts(
-    initial, 2, 3, 1,
-  )
-  inspect(with_lights.extracted_view_count, content="2")
-  inspect(with_lights.extracted_volume_count, content="3")
-  inspect(with_lights.extracted_light_count, content="1")
-  let without_lights = @volumetric_fog.volumetric_fog_plugin_state_with_extracted_counts(
-    with_lights, 2, 3, 0,
-  )
-  inspect(without_lights.extracted_view_count, content="0")
-  inspect(without_lights.extracted_volume_count, content="0")
-  inspect(without_lights.extracted_light_count, content="0")
-}

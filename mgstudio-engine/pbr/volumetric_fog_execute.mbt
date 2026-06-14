@@ -428,25 +428,3 @@ fn render3d_volumetric_fog_view_volume_count(
 }
 
 ///|
-fn render3d_update_volumetric_fog_plugin_state(
-  world : @ecs.World,
-  prepared : Render3dVolumetricFogPrepareOutput,
-) -> Unit {
-  match
-    world.get_resource_mut(
-      @pbr_volumetric_fog.VolumetricFogPluginState::resource(),
-    ) {
-    Some(state) =>
-      ignore(
-        state.modify(fn(value) {
-          @pbr_volumetric_fog.volumetric_fog_plugin_state_with_extracted_counts(
-            value,
-            prepared.view_count,
-            prepared.volume_count,
-            prepared.light_count,
-          )
-        }),
-      )
-    None => ()
-  }
-}

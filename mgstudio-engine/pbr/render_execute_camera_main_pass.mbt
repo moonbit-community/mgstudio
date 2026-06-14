@@ -1084,7 +1084,6 @@ fn render3d_execute_camera_main_pass(
     camera.atmosphere is Some(_),
   )
   @render.host_gpu_end_pass()
-  render3d_update_volumetric_fog_plugin_state(world, volumetric_fog_prepare)
   @app.timeline_trace_emit_counter_int(
     "render_3d_volumetric_fog_views",
     volumetric_fog_prepare.view_count,

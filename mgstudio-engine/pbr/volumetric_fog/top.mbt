@@ -69,20 +69,12 @@ pub fn FogAssets::cube_mesh(self : FogAssets) -> @asset.Handle[@mesh.Mesh] {
 
 ///|
 pub struct VolumetricFogPluginState {
-  fog_assets : FogAssets?
-  extracted_view_count : Int
-  extracted_volume_count : Int
-  extracted_light_count : Int
+  priv fog_assets : FogAssets?
 }
 
 ///|
 pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> VolumetricFogPluginState {
-  VolumetricFogPluginState::{
-    fog_assets: None,
-    extracted_view_count: 0,
-    extracted_volume_count: 0,
-    extracted_light_count: 0,
-  }
+  VolumetricFogPluginState::{ fog_assets: None }
 }
 
 ///|
@@ -96,47 +88,10 @@ pub impl @app.Resource for VolumetricFogPluginState with fn resource() {
 }
 
 ///|
-fn volumetric_fog_plugin_state_with_assets(
-  state : VolumetricFogPluginState,
-  fog_assets : FogAssets,
-) -> VolumetricFogPluginState {
-  VolumetricFogPluginState::{ ..state, fog_assets: Some(fog_assets) }
-}
-
-///|
 pub fn VolumetricFogPluginState::fog_assets(
   self : VolumetricFogPluginState,
 ) -> FogAssets? {
   self.fog_assets
-}
-
-///|
-pub fn volumetric_fog_plugin_state_with_extracted_counts(
-  state : VolumetricFogPluginState,
-  extracted_view_count : Int,
-  extracted_volume_count : Int,
-  extracted_light_count : Int,
-) -> VolumetricFogPluginState {
-  if extracted_light_count <= 0 {
-    return VolumetricFogPluginState::{
-      ..state,
-      extracted_view_count: 0,
-      extracted_volume_count: 0,
-      extracted_light_count: 0,
-    }
-  }
-  VolumetricFogPluginState::{
-    ..state,
-    extracted_view_count: volumetric_fog_non_negative_count(
-      extracted_view_count,
-    ),
-    extracted_volume_count: volumetric_fog_non_negative_count(
-      extracted_volume_count,
-    ),
-    extracted_light_count: volumetric_fog_non_negative_count(
-      extracted_light_count,
-    ),
-  }
 }
 
 ///|
@@ -159,20 +114,9 @@ pub fn volumetric_fog_plugin_install_with(
     app
   } else {
     let fog_assets = volumetric_fog_create_fog_assets(app.world())
-    app.insert_world_resource(
-      ecs_key_volumetric_fog_plugin_state,
-      VolumetricFogPluginState::VolumetricFogPluginState()
-      |> volumetric_fog_plugin_state_with_assets(fog_assets),
-    )
-  }
-}
-
-///|
-fn volumetric_fog_non_negative_count(value : Int) -> Int {
-  if value < 0 {
-    0
-  } else {
-    value
+    app.insert_world_resource(ecs_key_volumetric_fog_plugin_state, VolumetricFogPluginState::{
+      fog_assets: Some(fog_assets),
+    })
   }
 }
 
