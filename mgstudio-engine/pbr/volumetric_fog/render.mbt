@@ -388,15 +388,6 @@ pub struct ViewFogVolume {
 }
 
 ///|
-pub fn ViewFogVolume::ViewFogVolume() -> ViewFogVolume {
-  ViewFogVolume::{
-    density_texture: None,
-    uniform_buffer_offset: 0U,
-    exterior: true,
-  }
-}
-
-///|
 pub fn ViewFogVolume::has_density_texture(self : ViewFogVolume) -> Bool {
   self.density_texture is Some(_)
 }
@@ -435,12 +426,12 @@ pub impl @ecs.Component for ViewVolumetricFog with fn component() {
 }
 
 ///|
-pub fn ViewVolumetricFog::ViewVolumetricFog() -> ViewVolumetricFog {
+fn ViewVolumetricFog::ViewVolumetricFog() -> ViewVolumetricFog {
   ViewVolumetricFog::{ volumes: [] }
 }
 
 ///|
-pub fn ViewVolumetricFog::push(
+fn ViewVolumetricFog::push(
   self : ViewVolumetricFog,
   volume : ViewFogVolume,
 ) -> Unit {

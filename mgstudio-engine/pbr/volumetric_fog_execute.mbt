@@ -14,7 +14,7 @@
 
 ///|
 priv struct Render3dVolumetricFogPrepareOutput {
-  view_fog : @pbr_volumetric_fog.ViewVolumetricFog
+  view_fog : @pbr_volumetric_fog.ViewVolumetricFog?
   view_count : Int
   volume_count : Int
   light_count : Int
@@ -26,7 +26,7 @@ priv struct Render3dVolumetricFogPrepareOutput {
 ///|
 fn Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput() -> Render3dVolumetricFogPrepareOutput {
   Render3dVolumetricFogPrepareOutput::{
-    view_fog: @pbr_volumetric_fog.ViewVolumetricFog::ViewVolumetricFog(),
+    view_fog: None,
     view_count: 0,
     volume_count: 0,
     light_count: 0,
@@ -339,7 +339,7 @@ fn render3d_prepare_camera_volumetric_fog(
     .peek()
     .count()
   Render3dVolumetricFogPrepareOutput::{
-    view_fog: prepared.view_fog,
+    view_fog: Some(prepared.view_fog),
     view_count: 1,
     volume_count: prepared.view_fog.count(),
     light_count,
@@ -355,7 +355,9 @@ fn render3d_write_volumetric_fog_view_components(
   view_entity : @core.Entity,
   prepared : Render3dVolumetricFogPrepareOutput,
 ) -> Unit {
-  if prepared.light_count <= 0 || prepared.view_count <= 0 {
+  if prepared.light_count <= 0 ||
+    prepared.view_count <= 0 ||
+    prepared.view_fog is None {
     ignore(
       world.remove_by_key(
         view_entity,
@@ -374,10 +376,11 @@ fn render3d_write_volumetric_fog_view_components(
     )
     return
   }
+  guard prepared.view_fog is Some(view_fog) else { return }
   try! (world.set_by_key(
     view_entity,
     @pbr_volumetric_fog.ViewVolumetricFog::component(),
-    prepared.view_fog,
+    view_fog,
   )
   |> ignore)
 }

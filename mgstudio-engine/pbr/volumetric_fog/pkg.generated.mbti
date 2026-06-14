@@ -50,7 +50,6 @@ pub struct ViewFogVolume {
   uniform_buffer_offset : UInt
   exterior : Bool
 }
-pub fn ViewFogVolume::ViewFogVolume() -> Self
 pub fn ViewFogVolume::density_texture_id(Self) -> Int
 pub fn ViewFogVolume::exterior(Self) -> Bool
 pub fn ViewFogVolume::has_density_texture(Self) -> Bool
@@ -59,9 +58,7 @@ pub fn ViewFogVolume::uniform_buffer_offset(Self) -> UInt
 pub struct ViewVolumetricFog {
   volumes : Array[ViewFogVolume]
 }
-pub fn ViewVolumetricFog::ViewVolumetricFog() -> Self
 pub fn ViewVolumetricFog::count(Self) -> Int
-pub fn ViewVolumetricFog::push(Self, ViewFogVolume) -> Unit
 pub impl @ecs.Component for ViewVolumetricFog
 
 pub struct ViewVolumetricFogPipelines {

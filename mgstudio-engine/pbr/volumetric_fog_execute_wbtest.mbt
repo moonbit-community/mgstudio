@@ -101,10 +101,19 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
   )
 
   let view_entity = world.spawn()
-  let view_fog = @pbr_volumetric_fog.ViewVolumetricFog::ViewVolumetricFog()
-  view_fog.push(@pbr_volumetric_fog.ViewFogVolume::ViewFogVolume())
+  let prepared_view = render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(
+    uniform_buffer,
+  ) {
+    @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+      uniform_buffer,
+      @light.VolumetricFog::VolumetricFog(),
+      @math.Affine3::identity(),
+      @pbr_volumetric_fog.VolumetricFogMat4::identity(),
+      [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
+    )
+  })
   render3d_write_volumetric_fog_view_components(world, view_entity, Render3dVolumetricFogPrepareOutput::{
-    view_fog,
+    view_fog: Some(prepared_view.view_fog),
     view_count: 1,
     volume_count: 1,
     light_count: 1,
