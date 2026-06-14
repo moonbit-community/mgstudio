@@ -999,7 +999,9 @@ pub fn prepare_mesh3d_volumetric_fog_uniforms(
   volumetric_fog_uniform_bytes~ : Bytes,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes)
+    backend.prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes) catch {
+      err => debug_runtime_error("prepare_mesh3d_volumetric_fog_uniforms", err)
+    }
   }
 }
 

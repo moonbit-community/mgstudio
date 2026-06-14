@@ -272,6 +272,7 @@ pub fn GpuBackend::new(
     mesh3d_fog_buf: None,
     mesh3d_volumetric_fog_buf: None,
     mesh3d_volumetric_fog_capacity: 0UL,
+    mesh3d_volumetric_fog_bgls: [],
     mesh3d_light_probes_buf: None,
     mesh3d_visibility_ranges_buf: None,
     mesh3d_ssr_settings_buf: None,
