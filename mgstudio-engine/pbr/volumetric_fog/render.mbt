@@ -384,9 +384,12 @@ pub struct VolumetricFogPipeline {
 }
 
 ///|
+const VOLUMETRIC_FOG_SHADER_LABEL : String = "pbr/volumetric_fog/volumetric_fog.wgsl"
+
+///|
 pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> VolumetricFogPipeline {
   VolumetricFogPipeline::{
-    shader_label: "pbr/volumetric_fog.wgsl",
+    shader_label: VOLUMETRIC_FOG_SHADER_LABEL,
     bind_group_layout_count: 4,
   }
 }

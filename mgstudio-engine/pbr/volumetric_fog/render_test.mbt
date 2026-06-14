@@ -78,6 +78,16 @@ test "pbr volumetric fog: pipeline selection by density texture flag" {
 }
 
 ///|
+test "pbr volumetric fog: pipeline shader label matches embedded owner path" {
+  let pipeline = VolumetricFogPipeline::VolumetricFogPipeline()
+  inspect(
+    pipeline.shader_label,
+    content="pbr/volumetric_fog/volumetric_fog.wgsl",
+  )
+  inspect(pipeline.bind_group_layout_count, content="4")
+}
+
+///|
 test "pbr volumetric fog: uniform buffer push and clear" {
   let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
   let offset0 = buffer.push(
