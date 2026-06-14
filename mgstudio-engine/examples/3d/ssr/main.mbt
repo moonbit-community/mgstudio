@@ -601,10 +601,9 @@ fn apply_ssr_settings(world : @ecs.World, settings : AppSettings) -> Unit {
 ///|
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_base_color_texture(Some(asset_server.load("branding/icon.png")))
-    .with_perceptual_roughness(0.08F)
-    .with_metallic(0.0F),
+    @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
+      Some(asset_server.load("branding/icon.png")),
+    ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -673,11 +672,11 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 
   })
   for i in 0..<5 {
-    let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
+    let roughness = (float_from_int(i) * 0.25F).max(0.08F)
     let material = @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(@color.Color::black())
-      .with_perceptual_roughness(roughness)
-      .with_metallic(0.0F),
+      @pbr.StandardMaterial::from_color(@color.Color::black()).with_perceptual_roughness(
+        roughness,
+      ),
     )
     let entity = @pbr.MeshMaterial3dBundle::new(
       capsule_mesh,
@@ -701,10 +700,10 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
+fn spawn_metallic_base(world : @ecs.World) -> Unit {
   let metallic_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+      @color.Color::srgba(0.663F, 0.663F, 0.663F, 1.0F),
     )
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.3F),
@@ -715,13 +714,13 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         assets
         |> @pbr.add_mesh(
           @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(100.0F, 100.0F),
+            @math.Vec2::splat(1.0F),
           ).build(),
         )
       }),
     ),
     @pbr.MeshMaterial3d::new(metallic_material),
-    @transform.Transform::identity(),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
   try! (world.replace(
     metallic,
@@ -732,10 +731,13 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(metallic, MetallicBaseModel::component(), MetallicBaseModel::{
 
   })
+}
 
+///|
+fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
+      @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F),
     )
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.2F),
@@ -746,13 +748,13 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         assets
         |> @pbr.add_mesh(
           @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(100.0F, 100.0F),
+            @math.Vec2::splat(1.0F),
           ).build(),
         )
       }),
     ),
     @pbr.MeshMaterial3d::new(red_material),
-    @transform.Transform::identity(),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
   try! (world.replace(
     red,
@@ -763,7 +765,10 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(red, RedPlaneBaseModel::component(), RedPlaneBaseModel::{
 
   })
+}
 
+///|
+fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let water_normals = asset_server.load_with_settings(
     "textures/water_normals.png",
     fn(settings) {
@@ -801,13 +806,13 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         assets
         |> @pbr.add_mesh(
           @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(100.0F, 100.0F),
+            @math.Vec2::splat(1.0F),
           ).build(),
         )
       }),
     ),
     water_mesh_material,
-    @transform.Transform::identity(),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
   try! world.set_by_key(water, WaterModel::component(), WaterModel::{  })
 }
@@ -835,12 +840,6 @@ fn setup_camera_and_lights(
     @post_process.ecs_key_temporal_anti_aliasing,
     @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
@@ -862,43 +861,6 @@ fn setup_camera_and_lights(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
-  )
-
-  let directional = world.spawn_empty()
-  try! world.set_by_key(
-    directional,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
-  )
-  try! world.set_by_key(
-    directional,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(2.5F, 5.5F, 2.8F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-
-  let point = world.spawn_empty()
-  try! world.set_by_key(
-    point,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(
-      @color.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
-      200_000.0F,
-      30.0F,
-      true,
-    ),
-  )
-  try! world.set_by_key(
-    point,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F),
-  )
-
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.03F),
   )
 }
 
@@ -1408,7 +1370,9 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_cube(world, asset_server)
   spawn_flight_helmet(world, asset_server)
   spawn_capsules(world)
-  spawn_bases(world, asset_server)
+  spawn_metallic_base(world)
+  spawn_non_metallic_base(world)
+  spawn_water(world, asset_server)
   setup_camera_and_lights(world, app_settings)
 
   apply_model_and_base_visibility(world)
