@@ -203,17 +203,85 @@ pub(all) enum DisplayedModel {
   Cube
   FlightHelmet
   Capsules
-}
+} derive(Eq)
 
 ///|
 pub(all) enum DisplayedBase {
   Water
   Metallic
   RedPlane
+} derive(Eq)
+
+///|
+priv enum ExampleSetting {
+  Ssr(Bool)
+  Model(DisplayedModel)
+  Base(DisplayedBase)
+  MinRoughnessStart(Adjustment)
+  MinRoughnessEnd(Adjustment)
+  MaxRoughnessStart(Adjustment)
+  MaxRoughnessEnd(Adjustment)
+  EdgeFadeoutStart(Adjustment)
+  EdgeFadeoutEnd(Adjustment)
 }
 
 ///|
-priv struct SsrState {
+priv enum Adjustment {
+  Increase
+  Decrease
+}
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_debug_name() {
+  "examples.3d.ssr.ExampleSetting"
+}
+
+///|
+let example_setting_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[ExampleSetting],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.3d.ssr.ExampleSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_click_event_key() {
+  example_setting_widget_click_event_key
+}
+
+///|
+let example_setting_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[ExampleSetting],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.3d.ssr.ExampleSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_click_sender_key() {
+  example_setting_widget_click_sender_key
+}
+
+///|
+priv enum RangeValueText {
+  MinRoughnessStart
+  MinRoughnessEnd
+  MaxRoughnessStart
+  MaxRoughnessEnd
+  EdgeFadeoutStart
+  EdgeFadeoutEnd
+}
+
+///|
+let range_value_text_key : @ecs.ComponentKey[RangeValueText] = @ecs.register_component(
+  debug_name="examples.3d.ssr.RangeValueText",
+)
+
+///|
+impl @ecs.Component for RangeValueText with fn component() {
+  range_value_text_key
+}
+
+///|
+priv struct AppSettings {
   mut ssr_on : Bool
   mut displayed_model : DisplayedModel
   mut displayed_base : DisplayedBase
@@ -223,13 +291,40 @@ priv struct SsrState {
   mut max_roughness_end : Float
   mut edge_fadeout_start : Float
   mut edge_fadeout_end : Float
+}
+
+///|
+let app_settings_resource_key : @ecs.ResourceKey[AppSettings] = @ecs.register_resource(
+  debug_name="examples.3d.ssr.AppSettings",
+)
+
+///|
+impl @app.Resource for AppSettings with fn resource() {
+  app_settings_resource_key
+}
+
+///|
+fn AppSettings::AppSettings() -> AppSettings {
+  AppSettings::{
+    ssr_on: true,
+    displayed_model: DisplayedModel::Cube,
+    displayed_base: DisplayedBase::Water,
+    min_roughness_start: 0.0F,
+    min_roughness_end: 0.01F,
+    max_roughness_start: 0.99F,
+    max_roughness_end: 1.0F,
+    edge_fadeout_start: 0.0F,
+    edge_fadeout_end: 0.0F,
+  }
+}
+
+///|
+priv struct SsrSceneEntities {
   mut thickness : Float
   mut linear_steps : Int
   mut bisection_steps : Int
   mut linear_march_exponent : Float
   mut use_secant : Bool
-  mut camera_radius : Float
-  mut camera_theta : Float
   mut camera : @core.Entity?
   mut cube_model : @core.Entity?
   mut flight_helmet_model : @core.Entity?
@@ -237,27 +332,15 @@ priv struct SsrState {
   mut metallic_base : @core.Entity?
   mut red_plane_base : @core.Entity?
   mut water_base : @core.Entity?
-  mut help_text : @text.TextHandle?
 }
 
 ///|
-let ssr_state : Ref[SsrState] = Ref({
-  ssr_on: true,
-  displayed_model: DisplayedModel::Cube,
-  displayed_base: DisplayedBase::Water,
-  min_roughness_start: 0.0F,
-  min_roughness_end: 0.01F,
-  max_roughness_start: 0.99F,
-  max_roughness_end: 1.0F,
-  edge_fadeout_start: 0.0F,
-  edge_fadeout_end: 0.0F,
+let ssr_scene_entities : Ref[SsrSceneEntities] = Ref({
   thickness: 0.25F,
   linear_steps: 10,
   bisection_steps: 5,
   linear_march_exponent: 1.0F,
   use_secant: true,
-  camera_radius: 4.67F,
-  camera_theta: -0.2709468503F,
   camera: None,
   cube_model: None,
   flight_helmet_model: None,
@@ -265,7 +348,6 @@ let ssr_state : Ref[SsrState] = Ref({
   metallic_base: None,
   red_plane_base: None,
   water_base: None,
-  help_text: None,
 })
 
 ///|
@@ -301,46 +383,6 @@ fn ordered_unit_range(start : Float, end_ : Float) -> (Float, Float) {
 }
 
 ///|
-fn model_name(model : DisplayedModel) -> String {
-  match model {
-    Cube => "Cube"
-    FlightHelmet => "Flight Helmet"
-    Capsules => "Capsules"
-  }
-}
-
-///|
-fn base_name(base : DisplayedBase) -> String {
-  match base {
-    Water => "Water"
-    Metallic => "Metallic"
-    RedPlane => "Red Plane"
-  }
-}
-
-///|
-fn on_off_label(value : Bool) -> String {
-  if value {
-    "On"
-  } else {
-    "Off"
-  }
-}
-
-///|
-fn ssr_ui_text() -> String {
-  let state = ssr_state.val
-  "SSR Example (upstream-aligned scene flow, adapted render path)\n\nSSR: 1=On 2=Off | Current: \{on_off_label(state.ssr_on)}\nModel: 3=Cube 4=FlightHelmet 5=Capsules | Current: \{model_name(state.displayed_model)}\nBase: 6=Water Q=Metallic E=RedPlane | Current: \{base_name(state.displayed_base)}\n\nCamera: W/S zoom, A/D orbit, Mouse Wheel zoom\n\nMin Roughness Start: J-/U+ = \{state.min_roughness_start}\nMin Roughness End:   K-/I+ = \{state.min_roughness_end}\nMax Roughness Start: N-/M+ = \{state.max_roughness_start}\nMax Roughness End: ,-/ .+ = \{state.max_roughness_end}\nEdge Fadeout Start: R-/T+ = \{state.edge_fadeout_start}\nEdge Fadeout End:   F-/G+ = \{state.edge_fadeout_end}\n"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if ssr_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, ssr_ui_text())
-  }
-}
-
-///|
 fn set_entity_visibility(
   world : @ecs.World,
   entity : @core.Entity?,
@@ -362,118 +404,118 @@ fn set_entity_visibility(
 
 ///|
 fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
-  let model = ssr_state.val.displayed_model
-  let base = ssr_state.val.displayed_base
+  let settings = match world.get_resource(AppSettings::resource()) {
+    Some(value) => value
+    None => AppSettings::AppSettings()
+  }
+  let model = settings.displayed_model
+  let base = settings.displayed_base
 
-  set_entity_visibility(world, ssr_state.val.cube_model, model is Cube)
+  set_entity_visibility(world, ssr_scene_entities.val.cube_model, model is Cube)
   set_entity_visibility(
     world,
-    ssr_state.val.flight_helmet_model,
+    ssr_scene_entities.val.flight_helmet_model,
     model is FlightHelmet,
   )
-  for capsule in ssr_state.val.capsule_models {
+  for capsule in ssr_scene_entities.val.capsule_models {
     set_entity_visibility(world, Some(capsule), model is Capsules)
   }
 
-  set_entity_visibility(world, ssr_state.val.water_base, base is Water)
-  set_entity_visibility(world, ssr_state.val.metallic_base, base is Metallic)
-  set_entity_visibility(world, ssr_state.val.red_plane_base, base is RedPlane)
-}
-
-///|
-fn apply_camera_transform(world : @ecs.World) -> Unit {
-  if ssr_state.val.camera is Some(camera) {
-    let x = @math.sin(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
-    let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
-    try! (world.replace(
-      camera,
-      @transform.ecs_key_transform,
-      @transform.Transform::from_xyz(x, CAMERA_HEIGHT, z).looking_at(
-        @math.Vec3::zero(),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    )
-    |> ignore)
-  }
-}
-
-///|
-fn sanitize_ssr_ranges() -> Unit {
-  let (min_start, min_end) = ordered_unit_range(
-    ssr_state.val.min_roughness_start,
-    ssr_state.val.min_roughness_end,
+  set_entity_visibility(world, ssr_scene_entities.val.water_base, base is Water)
+  set_entity_visibility(
+    world,
+    ssr_scene_entities.val.metallic_base,
+    base is Metallic,
   )
-  ssr_state.val.min_roughness_start = min_start
-  ssr_state.val.min_roughness_end = min_end
+  set_entity_visibility(
+    world,
+    ssr_scene_entities.val.red_plane_base,
+    base is RedPlane,
+  )
+}
+
+///|
+fn sanitize_ssr_ranges(settings : AppSettings) -> Unit {
+  let (min_start, min_end) = ordered_unit_range(
+    settings.min_roughness_start,
+    settings.min_roughness_end,
+  )
+  settings.min_roughness_start = min_start
+  settings.min_roughness_end = min_end
 
   let (max_start, max_end) = ordered_unit_range(
-    ssr_state.val.max_roughness_start,
-    ssr_state.val.max_roughness_end,
+    settings.max_roughness_start,
+    settings.max_roughness_end,
   )
-  ssr_state.val.max_roughness_start = max_start
-  ssr_state.val.max_roughness_end = max_end
+  settings.max_roughness_start = max_start
+  settings.max_roughness_end = max_end
 
   let (edge_start, edge_end) = ordered_unit_range(
-    ssr_state.val.edge_fadeout_start,
-    ssr_state.val.edge_fadeout_end,
+    settings.edge_fadeout_start,
+    settings.edge_fadeout_end,
   )
-  ssr_state.val.edge_fadeout_start = edge_start
-  ssr_state.val.edge_fadeout_end = edge_end
+  settings.edge_fadeout_start = edge_start
+  settings.edge_fadeout_end = edge_end
 
-  ssr_state.val.thickness = clampf(ssr_state.val.thickness, 0.0F, 5.0F)
-  ssr_state.val.linear_steps = if ssr_state.val.linear_steps <= 0 {
+  ssr_scene_entities.val.thickness = clampf(
+    ssr_scene_entities.val.thickness,
+    0.0F,
+    5.0F,
+  )
+  ssr_scene_entities.val.linear_steps = if ssr_scene_entities.val.linear_steps <=
+    0 {
     1
   } else {
-    ssr_state.val.linear_steps
+    ssr_scene_entities.val.linear_steps
   }
-  ssr_state.val.bisection_steps = if ssr_state.val.bisection_steps < 0 {
+  ssr_scene_entities.val.bisection_steps = if ssr_scene_entities.val.bisection_steps <
+    0 {
     0
   } else {
-    ssr_state.val.bisection_steps
+    ssr_scene_entities.val.bisection_steps
   }
-  ssr_state.val.linear_march_exponent = clampf(
-    ssr_state.val.linear_march_exponent,
+  ssr_scene_entities.val.linear_march_exponent = clampf(
+    ssr_scene_entities.val.linear_march_exponent,
     0.1F,
     4.0F,
   )
 }
 
 ///|
-fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
+fn build_ssr_settings(
+  settings : AppSettings,
+) -> @post_process.ScreenSpaceReflections {
   @post_process.ScreenSpaceReflections::ScreenSpaceReflections()
   .with_min_perceptual_roughness(
-    ssr_state.val.min_roughness_start,
-    ssr_state.val.min_roughness_end,
+    settings.min_roughness_start,
+    settings.min_roughness_end,
   )
   .with_max_perceptual_roughness(
-    ssr_state.val.max_roughness_start,
-    ssr_state.val.max_roughness_end,
+    settings.max_roughness_start,
+    settings.max_roughness_end,
   )
-  .with_edge_fadeout(
-    ssr_state.val.edge_fadeout_start,
-    ssr_state.val.edge_fadeout_end,
-  )
-  .with_thickness(ssr_state.val.thickness)
-  .with_linear_steps(ssr_state.val.linear_steps)
-  .with_bisection_steps(ssr_state.val.bisection_steps)
-  .with_linear_march_exponent(ssr_state.val.linear_march_exponent)
-  .with_use_secant(ssr_state.val.use_secant)
+  .with_edge_fadeout(settings.edge_fadeout_start, settings.edge_fadeout_end)
+  .with_thickness(ssr_scene_entities.val.thickness)
+  .with_linear_steps(ssr_scene_entities.val.linear_steps)
+  .with_bisection_steps(ssr_scene_entities.val.bisection_steps)
+  .with_linear_march_exponent(ssr_scene_entities.val.linear_march_exponent)
+  .with_use_secant(ssr_scene_entities.val.use_secant)
 }
 
 ///|
-fn apply_ssr_settings(world : @ecs.World) -> Unit {
-  sanitize_ssr_ranges()
-  if ssr_state.val.camera is Some(camera) {
-    if ssr_state.val.ssr_on {
+fn apply_ssr_settings(world : @ecs.World, settings : AppSettings) -> Unit {
+  sanitize_ssr_ranges(settings)
+  if ssr_scene_entities.val.camera is Some(camera) {
+    if settings.ssr_on {
       if !(try! world.replace(
           camera,
           @post_process.ecs_key_screen_space_reflections,
-          build_ssr_settings(),
+          build_ssr_settings(settings),
         )) {
         try! world.set_by_key(
           camera,
           @post_process.ecs_key_screen_space_reflections,
-          build_ssr_settings(),
+          build_ssr_settings(settings),
         )
       }
     } else {
@@ -500,7 +542,7 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
-  ssr_state.val.cube_model = Some(cube)
+  ssr_scene_entities.val.cube_model = Some(cube)
 }
 
 ///|
@@ -531,12 +573,12 @@ fn spawn_flight_helmet(
     @visibility.ecs_key_visibility,
     @visibility.Visibility::Hidden,
   )
-  ssr_state.val.flight_helmet_model = Some(entity)
+  ssr_scene_entities.val.flight_helmet_model = Some(entity)
 }
 
 ///|
 fn spawn_capsules(world : @ecs.World) -> Unit {
-  ssr_state.val.capsule_models.clear()
+  ssr_scene_entities.val.capsule_models.clear()
   let capsule_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
       assets |> @pbr.add_mesh(@math.Capsule3d::new(0.4F, 0.5F))
@@ -553,7 +595,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     @visibility.ecs_key_visibility,
     @visibility.Visibility::Hidden,
   )
-  ssr_state.val.capsule_models.push(parent)
+  ssr_scene_entities.val.capsule_models.push(parent)
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
     let material = @pbr.standard_material_add(
@@ -578,7 +620,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     )
     |> ignore)
     @transform.set_parent_in_place(world, entity, parent)
-    ssr_state.val.capsule_models.push(entity)
+    ssr_scene_entities.val.capsule_models.push(entity)
   }
 }
 
@@ -611,7 +653,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @visibility.Visibility::Hidden,
   )
   |> ignore)
-  ssr_state.val.metallic_base = Some(metallic)
+  ssr_scene_entities.val.metallic_base = Some(metallic)
 
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -640,7 +682,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @visibility.Visibility::Hidden,
   )
   |> ignore)
-  ssr_state.val.red_plane_base = Some(red)
+  ssr_scene_entities.val.red_plane_base = Some(red)
 
   let water_normals = asset_server.load_with_settings(
     "textures/water_normals.png",
@@ -687,11 +729,14 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     water_mesh_material,
     @transform.Transform::identity(),
   ).spawn(world)
-  ssr_state.val.water_base = Some(water)
+  ssr_scene_entities.val.water_base = Some(water)
 }
 
 ///|
-fn setup_camera_and_lights(world : @ecs.World) -> Unit {
+fn setup_camera_and_lights(
+  world : @ecs.World,
+  app_settings : AppSettings,
+) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
       @camera_camera.Camera::Camera(),
@@ -700,9 +745,9 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_screen_space_reflections(Some(build_ssr_settings()))
+    .with_screen_space_reflections(Some(build_ssr_settings(app_settings)))
     .spawn(world)
-  ssr_state.val.camera = Some(camera)
+  ssr_scene_entities.val.camera = Some(camera)
 
   try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
@@ -779,30 +824,6 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_text() -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(ssr_ui_text()),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(790.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@color.Color::white()))
-    .spawn()
-
-  ssr_state.val.help_text = Some(handle)
-}
-
-///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
   match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
@@ -816,7 +837,7 @@ fn rotate_models(world : @ecs.World) -> Unit {
     world_time(world).elapsed_seconds(),
   )
 
-  if ssr_state.val.cube_model is Some(cube) {
+  if ssr_scene_entities.val.cube_model is Some(cube) {
     if (try! world.get_by_key(cube, @transform.ecs_key_transform))
       is Some(transform) {
       try! (world.replace(
@@ -828,7 +849,7 @@ fn rotate_models(world : @ecs.World) -> Unit {
     }
   }
 
-  if ssr_state.val.flight_helmet_model is Some(helmet) {
+  if ssr_scene_entities.val.flight_helmet_model is Some(helmet) {
     if (try! world.get_by_key(helmet, @transform.ecs_key_transform))
       is Some(transform) {
       try! (world.replace(
@@ -842,165 +863,459 @@ fn rotate_models(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn adjust_camera_controls(world : @ecs.World) -> Bool {
-  let mut changed = false
-
-  if @input.key_pressed(@window.KeyCode::KeyW) {
-    ssr_state.val.camera_radius = clampf(
-      ssr_state.val.camera_radius - CAMERA_KEYBOARD_ZOOM_SPEED,
-      CAMERA_MIN_RADIUS,
-      CAMERA_MAX_RADIUS,
-    )
-    changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyS) {
-    ssr_state.val.camera_radius = clampf(
-      ssr_state.val.camera_radius + CAMERA_KEYBOARD_ZOOM_SPEED,
-      CAMERA_MIN_RADIUS,
-      CAMERA_MAX_RADIUS,
-    )
-    changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyA) {
-    ssr_state.val.camera_theta = ssr_state.val.camera_theta +
-      CAMERA_KEYBOARD_ORBIT_SPEED
-    changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyD) {
-    ssr_state.val.camera_theta = ssr_state.val.camera_theta -
-      CAMERA_KEYBOARD_ORBIT_SPEED
-    changed = true
-  }
-
-  if @input.mouse_wheel_delta_opt() is Some(wheel) {
-    ssr_state.val.camera_radius = clampf(
-      ssr_state.val.camera_radius - wheel.y * CAMERA_MOUSE_WHEEL_ZOOM_SPEED,
-      CAMERA_MIN_RADIUS,
-      CAMERA_MAX_RADIUS,
-    )
-    changed = true
-  }
-
-  if changed {
-    apply_camera_transform(world)
-  }
-  changed
+fn format_range_value(value : Float) -> String {
+  let scaled = (value * 100.0F + 0.5F).to_int()
+  let whole = scaled / 100
+  let fractional = (scaled % 100).to_string().pad_start(2, '0')
+  "\{whole}.\{fractional}"
 }
 
 ///|
-fn control_system(world : @ecs.World) -> Unit {
-  let mut settings_changed = false
-  let mut visibility_changed = false
+fn adjust(value : Float, adjustment : Adjustment, amount : Float) -> Float {
+  match adjustment {
+    Increase => (value + amount).min(1.0F)
+    Decrease => (value - amount).max(0.0F)
+  }
+}
 
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    ssr_state.val.ssr_on = true
-    settings_changed = true
+///|
+fn app_setting_selected(
+  setting : ExampleSetting,
+  settings : AppSettings,
+) -> Bool {
+  match setting {
+    Ssr(on) => settings.ssr_on == on
+    Model(model) => settings.displayed_model == model
+    Base(base) => settings.displayed_base == base
+    _ => false
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    ssr_state.val.ssr_on = false
-    settings_changed = true
+}
+
+///|
+fn range_value(settings : AppSettings, marker : RangeValueText) -> Float {
+  match marker {
+    MinRoughnessStart => settings.min_roughness_start
+    MinRoughnessEnd => settings.min_roughness_end
+    MaxRoughnessStart => settings.max_roughness_start
+    MaxRoughnessEnd => settings.max_roughness_end
+    EdgeFadeoutStart => settings.edge_fadeout_start
+    EdgeFadeoutEnd => settings.edge_fadeout_end
+  }
+}
+
+///|
+fn spawn_range_controls(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  value : Float,
+  marker : RangeValueText,
+  decrease_setting : ExampleSetting,
+  increase_setting : ExampleSetting,
+) -> Unit {
+  let row = commands.spawn(
+    (
+      @hierarchy.Parent::new(parent),
+      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
+    ),
+  )
+  ignore(@widgets_lib.spawn_action_button(commands, row, decrease_setting, "<"))
+  let (text, text_font, text_color) = @widgets_lib.ui_text(
+    format_range_value(value),
+    @color.Color::black(),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(row),
+        @ui.Node::Node()
+        .with_width(@ui.Val::Px(50.0F))
+        .with_height(@ui.Val::Px(33.0F))
+        .with_justify_content(@ui.JustifyContent::Center)
+        .with_align_items(@ui.AlignItems::Center),
+        @ui.BackgroundColor::new(@color.Color::white()),
+        marker,
+        text,
+        text_font,
+        text_color,
+      ),
+    ),
+  )
+  ignore(@widgets_lib.spawn_action_button(commands, row, increase_setting, ">"))
+}
+
+///|
+fn spawn_range_row(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  title : String,
+  start_value : Float,
+  end_value : Float,
+  start_marker : RangeValueText,
+  end_marker : RangeValueText,
+  start_decrease : ExampleSetting,
+  start_increase : ExampleSetting,
+  end_decrease : ExampleSetting,
+  end_increase : ExampleSetting,
+) -> Unit {
+  let row = commands.spawn(
+    (
+      @hierarchy.Parent::new(parent),
+      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
+    ),
+  )
+  let (title_text, title_font, title_color) = @widgets_lib.ui_text(
+    title,
+    @color.Color::white(),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(row),
+        @ui.Node::Node().with_width(@ui.Val::Px(150.0F)),
+        title_text,
+        title_font,
+        title_color,
+      ),
+    ),
+  )
+  spawn_range_controls(
+    commands, row, start_value, start_marker, start_decrease, start_increase,
+  )
+  let (to_text, to_font, to_color) = @widgets_lib.ui_text(
+    "to",
+    @color.Color::white(),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(row),
+        @ui.Node::Node().with_margin(
+          @ui.UiRect::new(
+            @ui.Val::Px(10.0F),
+            @ui.Val::Px(0.0F),
+            @ui.Val::Px(10.0F),
+            @ui.Val::Px(0.0F),
+          ),
+        ),
+        to_text,
+        to_font,
+        to_color,
+      ),
+    ),
+  )
+  spawn_range_controls(
+    commands, row, end_value, end_marker, end_decrease, end_increase,
+  )
+}
+
+///|
+fn spawn_buttons(commands : @app.Commands, app_settings : AppSettings) -> Unit {
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+  let panel = commands.spawn(
+    (@hierarchy.Parent::new(root), @widgets_lib.main_ui_node()),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(
+      commands,
+      panel,
+      "SSR",
+      [(Ssr(true), "On"), (Ssr(false), "Off")],
+      if app_settings.ssr_on {
+        0
+      } else {
+        1
+      },
+    ),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(
+      commands,
+      panel,
+      "Model",
+      [
+        (Model(Cube), "Cube"),
+        (Model(FlightHelmet), "Flight Helmet"),
+        (Model(Capsules), "Capsules"),
+      ],
+      match app_settings.displayed_model {
+        Cube => 0
+        FlightHelmet => 1
+        Capsules => 2
+      },
+    ),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(
+      commands,
+      panel,
+      "Base",
+      [
+        (Base(Water), "Water"),
+        (Base(Metallic), "Metallic"),
+        (Base(RedPlane), "Red Plane"),
+      ],
+      match app_settings.displayed_base {
+        Water => 0
+        Metallic => 1
+        RedPlane => 2
+      },
+    ),
+  )
+  spawn_range_row(
+    commands,
+    panel,
+    "Min Roughness",
+    app_settings.min_roughness_start,
+    app_settings.min_roughness_end,
+    MinRoughnessStart,
+    MinRoughnessEnd,
+    MinRoughnessStart(Decrease),
+    MinRoughnessStart(Increase),
+    MinRoughnessEnd(Decrease),
+    MinRoughnessEnd(Increase),
+  )
+  spawn_range_row(
+    commands,
+    panel,
+    "Max Roughness",
+    app_settings.max_roughness_start,
+    app_settings.max_roughness_end,
+    MaxRoughnessStart,
+    MaxRoughnessEnd,
+    MaxRoughnessStart(Decrease),
+    MaxRoughnessStart(Increase),
+    MaxRoughnessEnd(Decrease),
+    MaxRoughnessEnd(Increase),
+  )
+  spawn_range_row(
+    commands,
+    panel,
+    "Edge Fadeout",
+    app_settings.edge_fadeout_start,
+    app_settings.edge_fadeout_end,
+    EdgeFadeoutStart,
+    EdgeFadeoutEnd,
+    EdgeFadeoutStart(Decrease),
+    EdgeFadeoutStart(Increase),
+    EdgeFadeoutEnd(Decrease),
+    EdgeFadeoutEnd(Increase),
+  )
+}
+
+///|
+fn handle_widget_interactions(
+  interactions : @ecs.Query[
+    (
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+  widget_click_events : @ecs.MessageWriter[
+    @widgets_lib.WidgetClickEvent[ExampleSetting],
+  ],
+) -> Unit {
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
+}
+
+///|
+fn update_radio_buttons(
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+      @ecs.Write[@ui.BackgroundColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+      @ecs.Write[@text.TextColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButtonText],
+  ],
+  app_settings : @app.Res[AppSettings],
+) -> Unit {
+  let settings = app_settings.get()
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
+    @widgets_lib.update_ui_radio_button(
+      background_color,
+      app_setting_selected(sender.value().get(), settings),
+    )
+  })
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
+    @widgets_lib.update_ui_radio_button_text(
+      text_color,
+      app_setting_selected(sender.value().get(), settings),
+    )
+  })
+}
+
+///|
+fn update_range_value_text(
+  range_values : @ecs.Query[
+    (@ecs.Read[RangeValueText], @ecs.Write[@text.Text]),
+    @ecs.All,
+  ],
+  app_settings : @app.Res[AppSettings],
+) -> Unit {
+  let settings = app_settings.get()
+  try! range_values.view(fn(_entity, data) {
+    let (marker, text) = data
+    text.set(
+      @text.Text::new(format_range_value(range_value(settings, marker.value()))),
+    )
+  })
+}
+
+///|
+fn adjust_app_settings(
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[ExampleSetting]],
+  app_settings : @app.ResMut[AppSettings],
+) -> Unit {
+  let mut any_changes = false
+  app_settings.modify(fn(settings) {
+    for event in events.read() {
+      any_changes = true
+      match event.get() {
+        Ssr(on) => settings.ssr_on = on
+        Model(model) => settings.displayed_model = model
+        Base(base) => settings.displayed_base = base
+        MinRoughnessStart(adjustment) =>
+          settings.min_roughness_start = adjust(
+            settings.min_roughness_start,
+            adjustment,
+            RANGE_STEP_ROUGHNESS,
+          )
+        MinRoughnessEnd(adjustment) =>
+          settings.min_roughness_end = adjust(
+            settings.min_roughness_end,
+            adjustment,
+            RANGE_STEP_ROUGHNESS,
+          )
+        MaxRoughnessStart(adjustment) =>
+          settings.max_roughness_start = adjust(
+            settings.max_roughness_start,
+            adjustment,
+            RANGE_STEP_ROUGHNESS,
+          )
+        MaxRoughnessEnd(adjustment) =>
+          settings.max_roughness_end = adjust(
+            settings.max_roughness_end,
+            adjustment,
+            RANGE_STEP_ROUGHNESS,
+          )
+        EdgeFadeoutStart(adjustment) =>
+          settings.edge_fadeout_start = adjust(
+            settings.edge_fadeout_start,
+            adjustment,
+            RANGE_STEP_EDGE,
+          )
+        EdgeFadeoutEnd(adjustment) =>
+          settings.edge_fadeout_end = adjust(
+            settings.edge_fadeout_end,
+            adjustment,
+            RANGE_STEP_EDGE,
+          )
+      }
+    }
+    if any_changes {
+      sanitize_ssr_ranges(settings)
+    }
+  })
+  ignore(any_changes)
+}
+
+///|
+fn apply_app_settings(world : @ecs.World) -> Unit {
+  let settings = match world.get_resource(AppSettings::resource()) {
+    Some(value) => value
+    None => return
+  }
+  apply_model_and_base_visibility(world)
+  apply_ssr_settings(world, settings)
+}
+
+///|
+fn move_camera(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  mouse_wheel_reader : @ecs.MessageReader[@input.MouseWheel],
+  cameras : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@camera_camera.Camera],
+  ],
+) -> Unit {
+  let mut distance_delta = 0.0F
+  let mut theta_delta = 0.0F
+  if keyboard_input.pressed(@window.KeyCode::KeyW) {
+    distance_delta = distance_delta - CAMERA_KEYBOARD_ZOOM_SPEED
+  }
+  if keyboard_input.pressed(@window.KeyCode::KeyS) {
+    distance_delta = distance_delta + CAMERA_KEYBOARD_ZOOM_SPEED
+  }
+  if keyboard_input.pressed(@window.KeyCode::KeyA) {
+    theta_delta = theta_delta + CAMERA_KEYBOARD_ORBIT_SPEED
+  }
+  if keyboard_input.pressed(@window.KeyCode::KeyD) {
+    theta_delta = theta_delta - CAMERA_KEYBOARD_ORBIT_SPEED
+  }
+  for mouse_wheel in mouse_wheel_reader.read() {
+    distance_delta = distance_delta -
+      mouse_wheel.y * CAMERA_MOUSE_WHEEL_ZOOM_SPEED
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    ssr_state.val.displayed_model = DisplayedModel::Cube
-    visibility_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    ssr_state.val.displayed_model = DisplayedModel::FlightHelmet
-    visibility_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    ssr_state.val.displayed_model = DisplayedModel::Capsules
-    visibility_changed = true
+  if distance_delta == 0.0F && theta_delta == 0.0F {
+    return
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    ssr_state.val.displayed_base = DisplayedBase::Water
-    visibility_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    ssr_state.val.displayed_base = DisplayedBase::Metallic
-    visibility_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyE) {
-    ssr_state.val.displayed_base = DisplayedBase::RedPlane
-    visibility_changed = true
-  }
-
-  if @input.key_pressed(@window.KeyCode::KeyU) {
-    ssr_state.val.min_roughness_start = ssr_state.val.min_roughness_start +
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyJ) {
-    ssr_state.val.min_roughness_start = ssr_state.val.min_roughness_start -
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyI) {
-    ssr_state.val.min_roughness_end = ssr_state.val.min_roughness_end +
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyK) {
-    ssr_state.val.min_roughness_end = ssr_state.val.min_roughness_end -
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyM) {
-    ssr_state.val.max_roughness_start = ssr_state.val.max_roughness_start +
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyN) {
-    ssr_state.val.max_roughness_start = ssr_state.val.max_roughness_start -
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::Period) {
-    ssr_state.val.max_roughness_end = ssr_state.val.max_roughness_end +
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::Comma) {
-    ssr_state.val.max_roughness_end = ssr_state.val.max_roughness_end -
-      RANGE_STEP_ROUGHNESS
-    settings_changed = true
-  }
-
-  if @input.key_pressed(@window.KeyCode::KeyT) {
-    ssr_state.val.edge_fadeout_start = ssr_state.val.edge_fadeout_start +
-      RANGE_STEP_EDGE
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyR) {
-    ssr_state.val.edge_fadeout_start = ssr_state.val.edge_fadeout_start -
-      RANGE_STEP_EDGE
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyG) {
-    ssr_state.val.edge_fadeout_end = ssr_state.val.edge_fadeout_end +
-      RANGE_STEP_EDGE
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyF) {
-    ssr_state.val.edge_fadeout_end = ssr_state.val.edge_fadeout_end -
-      RANGE_STEP_EDGE
-    settings_changed = true
-  }
-
-  let camera_changed = adjust_camera_controls(world)
-
-  if settings_changed {
-    apply_ssr_settings(world)
-  }
-  if visibility_changed {
-    apply_model_and_base_visibility(world)
-  }
-
-  if settings_changed || visibility_changed || camera_changed {
-    update_help_text()
-  }
+  try! cameras.view(fn(_entity, camera_transform) {
+    camera_transform.modify(fn(transform) {
+      let local_z = transform.local_z().normalize_or_zero()
+      if distance_delta != 0.0F {
+        transform.translation = local_z.mul_scalar(
+          clampf(
+            transform.translation.length() + distance_delta,
+            CAMERA_MIN_RADIUS,
+            CAMERA_MAX_RADIUS,
+          ),
+        )
+      }
+      if theta_delta != 0.0F {
+        transform.translate_around(
+          @math.Vec3::zero(),
+          @math.Quat::from_axis_angle(
+            @math.Vec3::new(0.0F, 1.0F, 0.0F),
+            theta_delta,
+          ),
+        )
+        let next = transform.looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        )
+        transform.rotation = next.rotation
+      }
+    })
+  })
 }
 
 ///|
@@ -1010,52 +1325,59 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.DefaultOpaqueRendererMethod::deferred(),
   )
 
-  ssr_state.val.ssr_on = true
-  ssr_state.val.displayed_model = DisplayedModel::Cube
-  ssr_state.val.displayed_base = DisplayedBase::Water
-  ssr_state.val.min_roughness_start = 0.0F
-  ssr_state.val.min_roughness_end = 0.01F
-  ssr_state.val.max_roughness_start = 0.99F
-  ssr_state.val.max_roughness_end = 1.0F
-  ssr_state.val.edge_fadeout_start = 0.0F
-  ssr_state.val.edge_fadeout_end = 0.0F
-  ssr_state.val.thickness = 0.25F
-  ssr_state.val.linear_steps = 10
-  ssr_state.val.bisection_steps = 5
-  ssr_state.val.linear_march_exponent = 1.0F
-  ssr_state.val.use_secant = true
-  ssr_state.val.camera_radius = 4.67F
-  ssr_state.val.camera_theta = -0.2709468503F
-  ssr_state.val.camera = None
-  ssr_state.val.cube_model = None
-  ssr_state.val.flight_helmet_model = None
-  ssr_state.val.capsule_models.clear()
-  ssr_state.val.metallic_base = None
-  ssr_state.val.red_plane_base = None
-  ssr_state.val.water_base = None
-  ssr_state.val.help_text = None
+  ssr_scene_entities.val.thickness = 0.25F
+  ssr_scene_entities.val.linear_steps = 10
+  ssr_scene_entities.val.bisection_steps = 5
+  ssr_scene_entities.val.linear_march_exponent = 1.0F
+  ssr_scene_entities.val.use_secant = true
+  ssr_scene_entities.val.camera = None
+  ssr_scene_entities.val.cube_model = None
+  ssr_scene_entities.val.flight_helmet_model = None
+  ssr_scene_entities.val.capsule_models.clear()
+  ssr_scene_entities.val.metallic_base = None
+  ssr_scene_entities.val.red_plane_base = None
+  ssr_scene_entities.val.water_base = None
 
   let asset_server = @asset.AssetServer::new()
+  let app_settings = match world.get_resource(AppSettings::resource()) {
+    Some(value) => value
+    None => AppSettings::AppSettings()
+  }
 
   spawn_cube(world, asset_server)
   spawn_flight_helmet(world, asset_server)
   spawn_capsules(world)
   spawn_bases(world, asset_server)
-  setup_camera_and_lights(world)
-  setup_text()
+  setup_camera_and_lights(world, app_settings)
 
-  apply_ssr_settings(world)
   apply_model_and_base_visibility(world)
-  apply_camera_transform(world)
-  update_help_text()
+}
+
+///|
+fn setup_buttons(
+  commands : @app.Commands,
+  app_settings : @app.Res[AppSettings],
+) -> Unit {
+  spawn_buttons(commands, app_settings.get())
 }
 
 ///|
 fn main {
+  let widget_click_message_key : @ecs.MessageKey[
+    @widgets_lib.WidgetClickEvent[ExampleSetting],
+  ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(AppSettings::AppSettings())
+  .add_message(widget_click_message_key)
   .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, control_system)
+  .add_systems_param2(@app.Startup, setup_buttons)
+  .add_systems_param2(@app.Update, handle_widget_interactions)
+  .add_systems_param2(@app.Update, adjust_app_settings)
+  .add_systems_world(@app.Update, apply_app_settings)
+  .add_systems_param3(@app.Update, update_radio_buttons)
+  .add_systems_param2(@app.Update, update_range_value_text)
+  .add_systems_param3(@app.Update, move_camera)
   .add_systems_world(@app.Update, rotate_models)
   .run()
 }

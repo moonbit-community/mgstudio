@@ -17,13 +17,13 @@ pub(all) enum DisplayedBase {
   Water
   Metallic
   RedPlane
-}
+} derive(Eq)
 
 pub(all) enum DisplayedModel {
   Cube
   FlightHelmet
   Capsules
-}
+} derive(Eq)
 
 type Water
 pub impl @pbr.MaterialExtension for Water
