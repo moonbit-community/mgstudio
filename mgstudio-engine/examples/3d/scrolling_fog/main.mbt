@@ -13,101 +13,105 @@
 // limitations under the License.
 
 ///|
-///
-/// Parity note:
-/// - `FogVolume` / `VolumetricLight` follow the upstream-shaped component API in mgstudio.
-///   The example keeps upstream-equivalent scene/setup structure and update flow.
-
-///|
 const FOG_DENSITY_TEXTURE_SCROLL_SPEED : Float = 0.04F
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_directional_light_shadow_map,
-    @pbr.DirectionalLightShadowMap::new(4096),
-  )
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Scrolling Fog"
+  window
+}
 
-  let camera = @camera.Camera3dBundle::new(
+///|
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new(
       @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
         @math.Vec3::new(-5.0F, 3.5F, -6.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-    )
-    .with_volumetric_fog(
+    ).with_volumetric_fog(
       Some(
         @pbr.VolumetricFog::VolumetricFog()
         .with_ambient_intensity(0.0F)
         .with_jitter(0.5F),
       ),
+    ),
+  )
+  commands.entity(camera).insert_component(@pbr.Msaa::Off)
+  commands
+  .entity(camera)
+  .insert_component(@post_process.TemporalAntiAliasing::TemporalAntiAliasing())
+  commands.entity(camera).insert_component(@post_process.Bloom::Bloom())
+}
+
+///|
+fn spawn_directional_light(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.VolumetricLight::VolumetricLight(),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_scene_geometry(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let ground_mesh = meshes.modify(fn(mesh_assets) {
+    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(64.0F, 1.0F, 64.0F))
+  })
+  let pillar_mesh = meshes.modify(fn(mesh_assets) {
+    mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 9.0F, 2.0F))
+  })
+  let ground_material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @pbr.StandardMaterial::from_color(@color.Color::black()).with_perceptual_roughness(
+        1.0F,
+      ),
     )
-    .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::Bloom(),
-  )
+  })
+  let pillar_material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @pbr.StandardMaterial::from_color(@color.Color::black()),
+    )
+  })
 
-  let directional_light = world.spawn_empty()
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
-  )
-  try! world.set_by_key(
-    directional_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(ground_mesh),
+        @pbr.MeshMaterial3d::new(ground_material),
+        @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
+      ),
     ),
   )
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::VolumetricLight(),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(pillar_mesh),
+        @pbr.MeshMaterial3d::new(pillar_material),
+        @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
+      ),
+    ),
   )
+}
 
-  let black_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::black()).with_perceptual_roughness(
-      1.0F,
-    ),
-  )
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(64.0F, 1.0F, 64.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(black_material),
-    @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 9.0F, 2.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(black_material),
-    @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
-  ).spawn(world)
-  |> ignore
-
-  let asset_server = @asset.AssetServer::new()
+///|
+fn spawn_fog_volume(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
   let noise_texture = asset_server.load_with_settings(
     "volumes/fog_noise.ktx2",
     fn(settings) {
@@ -118,55 +122,69 @@ fn setup(world : @ecs.World) -> Unit {
       )
     },
   )
-  let fog_volume = world.spawn_empty()
-  try! world.set_by_key(
-    fog_volume,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
-      @math.Vec3::splat(64.0F),
+  ignore(
+    commands.spawn(
+      (
+        @transform.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
+          @math.Vec3::splat(64.0F),
+        ),
+        @pbr.FogVolume::FogVolume()
+        .with_density_texture(Some(noise_texture))
+        .with_density_factor(0.05F),
+      ),
     ),
   )
-  try! world.set_by_key(
-    fog_volume,
-    @pbr.ecs_key_fog_volume,
-    @pbr.FogVolume::FogVolume()
-    .with_density_texture(Some(noise_texture))
-    .with_density_factor(0.05F),
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  commands.insert_world_resource(
+    @pbr.ecs_key_directional_light_shadow_map,
+    @pbr.DirectionalLightShadowMap::new(4096),
   )
+  spawn_camera(commands)
+  spawn_directional_light(commands)
+  spawn_scene_geometry(commands, meshes, materials)
+  spawn_fog_volume(commands, asset_server.get())
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in scrolling_fog example")
-  }
-}
-
-///|
-fn scroll_fog(world : @ecs.World) -> Unit {
+fn scroll_fog(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[@ecs.Write[@pbr.FogVolume], @ecs.All],
+) -> Unit {
   let offset_delta = @math.Vec3::new(
     0.0F,
     0.0F,
     FOG_DENSITY_TEXTURE_SCROLL_SPEED,
-  ).mul_scalar(world_time(world).delta_seconds())
-  world.for_each_component(@pbr.ecs_key_fog_volume, fn(entity, fog_volume) {
-    try! (world.replace(
-      entity,
-      @pbr.ecs_key_fog_volume,
-      fog_volume.with_density_texture_offset(
-        fog_volume.density_texture_offset.add(offset_delta),
+  ).mul_scalar(time.get().delta_seconds())
+  try! query.for_each(fn(_entity, fog_volume) {
+    let current = fog_volume.value()
+    fog_volume.set(
+      current.with_density_texture_offset(
+        current.density_texture_offset.add(offset_delta),
       ),
     )
-    |> ignore)
   })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, scroll_fog)
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param2(@app.Update, scroll_fog)
   .run()
 }
