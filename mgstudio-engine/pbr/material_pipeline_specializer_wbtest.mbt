@@ -555,6 +555,13 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       default_descriptor.vertex.shader_defs,
+      "LIGHTMAP",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      default_descriptor.vertex.shader_defs,
       "MULTIPLE_LIGHTMAPS_IN_ARRAY",
     ),
     content="false",
@@ -577,6 +584,34 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
     pbr_material_specializer_shader_defs_contain_flag(
       binding_array_descriptor.vertex.shader_defs,
       "MULTIPLE_LIGHT_PROBES_IN_ARRAY",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      binding_array_descriptor.vertex.shader_defs,
+      "LIGHTMAP",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      binding_array_descriptor.vertex.shader_defs,
+      "LIGHTMAP_BICUBIC_SAMPLING",
+    ),
+    content="false",
+  )
+  let bicubic_descriptor = try! binding_array_specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_LIGHTMAPPED |
+        MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      bicubic_descriptor.vertex.shader_defs,
+      "LIGHTMAP_BICUBIC_SAMPLING",
     ),
     content="true",
   )

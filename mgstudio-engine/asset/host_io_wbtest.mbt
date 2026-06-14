@@ -722,4 +722,19 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
     agx_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
     content="true",
   )
+
+  let cornell_path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("lightmaps/CornellBox-Large.zstd.ktx2")
+  })
+  let cornell_payload = ktx2_decode_2d_payload(
+    @fs.read_file_to_bytes(cornell_path),
+  ).unwrap()
+  debug_inspect(cornell_payload.width, content="1024")
+  debug_inspect(cornell_payload.height, content="1024")
+  debug_inspect(cornell_payload.slice_count, content="1")
+  debug_inspect(
+    cornell_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT,
+    content="true",
+  )
+  debug_inspect(cornell_payload.levels[0].length(), content="4194304")
 }

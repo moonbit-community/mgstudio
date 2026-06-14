@@ -41,6 +41,9 @@ pub using @gltf_gltf_ext {type GltfMaterialName}
 pub using @gltf_gltf_ext {type GltfMeshExtras}
 
 ///|
+pub using @gltf_gltf_ext {type GltfMeshName}
+
+///|
 pub using @gltf_gltf_ext {type GltfMeshIndex}
 
 ///|
@@ -647,6 +650,11 @@ pub fn gltf_material_extras(value : String) -> GltfMaterialExtras {
 ///|
 pub fn gltf_mesh_extras(value : String) -> GltfMeshExtras {
   @gltf_gltf_ext.gltf_mesh_extras(value)
+}
+
+///|
+pub fn gltf_mesh_name(name : String) -> GltfMeshName {
+  @gltf_gltf_ext.gltf_mesh_name(name)
 }
 
 ///|

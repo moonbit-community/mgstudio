@@ -116,7 +116,12 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
           is Some(lightmap_texture) else {
           false
         }
-        builder.add_texture_view(4U, lightmap_texture.view)
+        mesh3d_add_texture_view_for_layout_entry(
+          builder,
+          4U,
+          lightmap_texture.view,
+          entry,
+        )
       }
       5 => {
         guard lightmap_texture_id >= 0 else { false }
@@ -126,7 +131,12 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
           is Some(lightmap_texture) else {
           false
         }
-        builder.add_sampler(5U, lightmap_texture.sampler)
+        mesh3d_add_sampler_for_layout_entry(
+          builder,
+          5U,
+          lightmap_texture.sampler,
+          entry,
+        )
       }
       _ => false
     }

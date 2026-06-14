@@ -138,6 +138,9 @@ const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
 const KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 : Int = 123
 
 ///|
+const KTX2_VK_FORMAT_B10G11R11_UFLOAT_PACK32 : Int = 122
+
+///|
 const KTX2_VK_FORMAT_BC7_UNORM_BLOCK : Int = 145
 
 ///|
@@ -2293,6 +2296,16 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
     return Some(Ktx2FormatInfo::{
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_B10G11R11_UFLOAT_PACK32 {
+    return Some(Ktx2FormatInfo::{
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT,
+      ),
       block_width: 1,
       block_height: 1,
       block_bytes: 4,

@@ -57,6 +57,8 @@ pub fn gltf_mesh_extras(String) -> @gltf_ext.GltfMeshExtras
 
 pub fn gltf_mesh_index(Int) -> @gltf_ext.GltfMeshIndex
 
+pub fn gltf_mesh_name(String) -> @gltf_ext.GltfMeshName
+
 pub fn gltf_node_asset_label(Int) -> @gltf_ext.GltfAssetLabel
 
 pub fn gltf_node_index(Int) -> @gltf_ext.GltfNodeIndex
@@ -171,6 +173,8 @@ pub using @gltf_ext {type GltfMaterialName}
 pub using @gltf_ext {type GltfMeshExtras}
 
 pub using @gltf_ext {type GltfMeshIndex}
+
+pub using @gltf_ext {type GltfMeshName}
 
 pub using @gltf_ext {type GltfNodeIndex}
 

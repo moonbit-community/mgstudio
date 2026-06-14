@@ -165,6 +165,31 @@ pub fn GltfMeshExtras::as_str(self : GltfMeshExtras) -> String {
 }
 
 ///|
+pub struct GltfMeshName {
+  name : String
+}
+
+///|
+let gltf_mesh_name_component_key : @ecs.ComponentKey[GltfMeshName] = @ecs.register_component(
+  debug_name="gltf.mesh_name",
+)
+
+///|
+pub impl @ecs.Component for GltfMeshName with fn component() {
+  gltf_mesh_name_component_key
+}
+
+///|
+pub fn GltfMeshName::new(name : String) -> GltfMeshName {
+  { name, }
+}
+
+///|
+pub fn GltfMeshName::as_str(self : GltfMeshName) -> String {
+  self.name
+}
+
+///|
 pub struct GltfMaterialExtras {
   value : String
 }

@@ -17,6 +17,9 @@
 /// Rendering a scene with baked lightmaps.
 
 ///|
+const LIGHTMAP_EXPOSURE : Float = 250.0F
+
+///|
 const LIGHTMAP_PATH_LARGE : String = "lightmaps/CornellBox-Large.zstd.ktx2"
 
 ///|
@@ -26,145 +29,65 @@ const LIGHTMAP_PATH_SMALL : String = "lightmaps/CornellBox-Small.zstd.ktx2"
 const LIGHTMAP_PATH_BOX : String = "lightmaps/CornellBox-Box.zstd.ktx2"
 
 ///|
-const DEFAULT_DEFERRED : Bool = false
-
-///|
-const DEFAULT_BICUBIC : Bool = false
-
-///|
 pub(all) struct Args {
   deferred : Bool
   bicubic : Bool
 }
 
 ///|
-fn default_args() -> Args {
-  { deferred: DEFAULT_DEFERRED, bicubic: DEFAULT_BICUBIC }
+fn Args::Args() -> Args {
+  { deferred: false, bicubic: false }
 }
 
 ///|
-priv struct LightmapsState {
-  mut args : Args
-  mut scene_root : @core.Entity?
-  mut lightmaps_applied : Bool
-  mut help_text : @text.TextHandle?
+let args_resource_key : @ecs.ResourceKey[Args] = @ecs.register_resource(
+  debug_name="examples.3d.lightmaps.Args",
+)
+
+///|
+impl @app.Resource for Args with fn resource() {
+  args_resource_key
 }
 
 ///|
-let lightmaps_state : Ref[LightmapsState] = Ref({
-  args: default_args(),
-  scene_root: None,
-  lightmaps_applied: false,
-  help_text: None,
-})
-
-///|
-fn bool_label(value : Bool) -> String {
-  if value {
-    "true"
-  } else {
-    "false"
-  }
-}
-
-///|
-fn status_text() -> String {
-  let args = lightmaps_state.val.args
-  let applied = if lightmaps_state.val.lightmaps_applied {
-    "Applied"
-  } else {
-    "Waiting for SceneInstanceReady"
-  }
-
-  "Bevy lightmaps\nScene: models/CornellBox/CornellBox.glb\nArgs.deferred = \{bool_label(args.deferred)}, Args.bicubic = \{bool_label(args.bicubic)}\nLightmap status: \{applied}"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if lightmaps_state.val.help_text is Some(help_text) {
-    @text.text_set_content(help_text, status_text())
-  }
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  lightmaps_state.val.args = default_args()
-  lightmaps_state.val.scene_root = None
-  lightmaps_state.val.lightmaps_applied = false
-  lightmaps_state.val.help_text = None
-
-  let asset_server = @asset.AssetServer::new()
-
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(
-      @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-      0.0F,
-    ),
-  )
-
-  let scene_root = world.spawn_empty()
-  try! world.set_by_key(
-    scene_root,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/CornellBox/CornellBox.glb",
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  args : @app.Res[Args],
+) -> Unit {
+  let server = asset_server.get()
+  ignore(
+    commands.spawn_component(
+      @scene.SceneRoot::new(
+        @scene.scene_load_gltf_scene(
+          server,
+          @gltf.GltfAssetLabel::Scene(0).from_asset(
+            "models/CornellBox/CornellBox.glb",
+          ),
         ),
       ),
     ),
   )
-  lightmaps_state.val.scene_root = Some(scene_root)
 
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
-  ).spawn(world)
-  if lightmaps_state.val.args.deferred {
-    world.insert_resource(
-      @pbr.ecs_key_default_opaque_renderer_method,
-      @pbr.DefaultOpaqueRendererMethod::deferred(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::DepthPrepass(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_motion_vector_prepass,
-      @pbr.MotionVectorPrepass::MotionVectorPrepass(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_deferred_prepass,
-      @pbr.DeferredPrepass::DeferredPrepass(),
-    )
-    try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  }
+  let camera = commands.spawn(
+    (
+      @camera.Camera3d::Camera3d(),
+      @transform.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
+    ),
+  )
 
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(status_text()),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  if args.get().deferred {
+    commands
+    .entity(camera)
+    .insert(
+      (
+        @pbr.DepthPrepass::DepthPrepass(),
+        @pbr.MotionVectorPrepass::MotionVectorPrepass(),
+        @pbr.DeferredPrepass::DeferredPrepass(),
+        @pbr.Msaa::Off,
       ),
     )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  lightmaps_state.val.help_text = Some(help_text)
+  }
 }
 
 ///|
@@ -172,56 +95,92 @@ fn lightmap_handle_for_name(
   asset_server : @asset.AssetServer,
   name : String,
 ) -> @asset.Handle[@asset.Image]? {
-  if name.contains("large_box") {
+  if name == "large_box" {
     return Some(asset_server.load(LIGHTMAP_PATH_LARGE))
   }
-  if name.contains("small_box") {
+  if name == "small_box" {
     return Some(asset_server.load(LIGHTMAP_PATH_SMALL))
   }
-  if name.contains("cornell_box") {
+  if name.has_prefix("cornell_box") {
     return Some(asset_server.load(LIGHTMAP_PATH_BOX))
   }
   None
 }
 
 ///|
-fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
-  if lightmaps_state.val.lightmaps_applied {
+fn set_material_lightmap_exposure(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  mesh_material : @pbr.MeshMaterial3d,
+) -> Unit {
+  if !mesh_material.is_standard_material() {
     return
   }
-
-  guard lightmaps_state.val.scene_root is Some(scene_root) else { return }
-  if !@scene.scene_components_has_scene_instance_ready(world, scene_root) {
-    return
-  }
-
-  let asset_server = @asset.AssetServer::new()
-  world.for_each_component(@pbr.ecs_key_mesh_material3d, fn(entity, _material) {
-    guard (try! world.get_by_key(entity, @ecs.ecs_key_name))
-      is Some(name_component) else {
-      return
-    }
-    guard lightmap_handle_for_name(asset_server, name_component.as_str())
-      is Some(lightmap_image) else {
-      return
-    }
-    try! world.set_by_key(
-      entity,
-      @pbr.ecs_key_lightmap,
-      @pbr.Lightmap::new(lightmap_image).with_bicubic_sampling(
-        lightmaps_state.val.args.bicubic,
+  let material_handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
+    mesh_material.material_asset_id(),
+  )
+  materials.modify(fn(material_assets) {
+    guard material_assets.get(material_handle) is Some(material) else { return }
+    ignore(
+      material_assets.set(
+        material_handle,
+        material.with_lightmap_exposure(LIGHTMAP_EXPOSURE),
       ),
     )
   })
-  lightmaps_state.val.lightmaps_applied = true
-  update_help_text()
+}
+
+///|
+type LightmappedMeshQuery = @ecs.Query[
+  (@ecs.Read[@gltf.GltfMeshName], @ecs.Read[@pbr.MeshMaterial3d]),
+  (@ecs.With[@mesh.Mesh3d], @ecs.Without[@pbr.Lightmap]),
+]
+
+///|
+fn add_lightmaps_to_meshes(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : LightmappedMeshQuery,
+  args : @app.Res[Args],
+) -> Unit {
+  let server = asset_server.get()
+  try! meshes.view(fn(entity, mesh) {
+    let (mesh_name, mesh_material) = mesh
+    let name = mesh_name.value().as_str()
+    guard lightmap_handle_for_name(server, name) is Some(lightmap_image) else {
+      return
+    }
+    set_material_lightmap_exposure(materials, mesh_material.value())
+    commands
+    .entity(entity)
+    .insert_component(
+      @pbr.Lightmap::new(lightmap_image).with_bicubic_sampling(
+        args.get().bicubic,
+      ),
+    )
+  })
 }
 
 ///|
 fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, add_lightmaps_to_meshes)
+  let args = Args::Args()
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .insert_resource(
+      @pbr.GlobalAmbientLight::new(
+        @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+        0.0F,
+      ),
+    )
+  if args.deferred {
+    app = app.insert_world_resource(
+      @pbr.ecs_key_default_opaque_renderer_method,
+      @pbr.DefaultOpaqueRendererMethod::deferred(),
+    )
+  }
+  app
+  .insert_resource(args)
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param5(@app.Update, add_lightmaps_to_meshes)
   .run()
 }

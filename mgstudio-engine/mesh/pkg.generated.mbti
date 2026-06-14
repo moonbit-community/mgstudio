@@ -228,6 +228,7 @@ pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   mut normals : Array[@math.Vec3]?
   mut uvs : Array[@math.Vec2]?
+  mut uv1s : Array[@math.Vec2]?
   mut colors : Array[@math.Vec4]?
   mut joint_indices : Array[MeshJointIndices]?
   mut joint_weights : Array[@math.Vec4]?
@@ -261,6 +262,7 @@ pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
 pub fn Mesh3dGeometry::has_indices(Self) -> Bool
 pub fn Mesh3dGeometry::has_normals(Self) -> Bool
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
+pub fn Mesh3dGeometry::has_uv1s(Self) -> Bool
 pub fn Mesh3dGeometry::has_uvs(Self) -> Bool
 pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh3dGeometry::insert_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Bool
@@ -289,16 +291,20 @@ pub fn Mesh3dGeometry::remove_attribute(Self, MeshVertexAttributeId) -> VertexAt
 pub fn Mesh3dGeometry::replace_normals(Self, Array[@math.Vec3]?) -> Bool
 pub fn Mesh3dGeometry::replace_positions(Self, Array[@math.Vec3]) -> Bool
 pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
+pub fn Mesh3dGeometry::replace_uv1s(Self, Array[@math.Vec2]) -> Bool
 pub fn Mesh3dGeometry::replace_uvs(Self, Array[@math.Vec2]) -> Bool
 pub fn Mesh3dGeometry::rotated_by(Self, @math.Quat) -> Self
 pub fn Mesh3dGeometry::set_normal(Self, Int, @math.Vec3) -> Bool
 pub fn Mesh3dGeometry::set_position(Self, Int, @math.Vec3) -> Bool
 pub fn Mesh3dGeometry::set_uv(Self, Int, @math.Vec2) -> Bool
+pub fn Mesh3dGeometry::set_uv1(Self, Int, @math.Vec2) -> Bool
 pub fn Mesh3dGeometry::tangent(Self, Int) -> @math.Vec4?
 pub fn Mesh3dGeometry::to_mesh(Self) -> Mesh
 pub fn Mesh3dGeometry::to_wireframe_line_list(Self) -> Self?
 pub fn Mesh3dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh3dGeometry::uv(Self, Int) -> @math.Vec2?
+pub fn Mesh3dGeometry::uv1(Self, Int) -> @math.Vec2?
+pub fn Mesh3dGeometry::uv1s(Self) -> Array[@math.Vec2]?
 pub fn Mesh3dGeometry::uvs(Self) -> Array[@math.Vec2]?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
 pub fn Mesh3dGeometry::vertex_color(Self, Int) -> @math.Vec4?
@@ -317,6 +323,7 @@ pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph
 pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self
 pub fn Mesh3dGeometry::with_removed_attribute(Self, MeshVertexAttributeId) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::with_uv1s(Self, Array[@math.Vec2]?) -> Self
 pub fn Mesh3dGeometry::with_uvs(Self, Array[@math.Vec2]?) -> Self
 pub impl IntoMeshAsset for Mesh3dGeometry
 

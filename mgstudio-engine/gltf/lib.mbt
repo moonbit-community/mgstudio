@@ -38,6 +38,9 @@ pub type GltfPrimitiveIndex = @gltf_loader.GltfPrimitiveIndex
 pub type GltfMaterialName = @gltf_loader.GltfMaterialName
 
 ///|
+pub type GltfMeshName = @gltf_loader.GltfMeshName
+
+///|
 pub type GltfSkinIndex = @gltf_loader.GltfSkinIndex
 
 ///|

@@ -636,6 +636,12 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_IRRADIANCE_VOLUME) != 0UL {
     shader_defs.push(pbr_shader_def("IRRADIANCE_VOLUME"))
   }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_LIGHTMAPPED) != 0UL {
+    shader_defs.push(pbr_shader_def("LIGHTMAP"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING) != 0UL {
+    shader_defs.push(pbr_shader_def("LIGHTMAP_BICUBIC_SAMPLING"))
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_TEMPORAL_JITTER) != 0UL {
     shader_defs.push(pbr_shader_def("TEMPORAL_JITTER"))
   }
@@ -1108,6 +1114,7 @@ fn pbr_material_base_specialize(
     layout,
   )
   state.set(state_value)
+  pbr_register_pipeline_descriptor_for_same_frame_draw(pipeline_cache, result)
   result
 }
 

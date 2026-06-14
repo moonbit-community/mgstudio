@@ -576,6 +576,11 @@ fn scene_spawn_instance_when_ready(
         @ecs.component_writer(@gltf.GltfSkinIndex::component(), skin_index),
       )
     }
+    if node.gltf_mesh_name is Some(mesh_name) {
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfMeshName::component(), mesh_name),
+      )
+    }
     if node.gltf_material_name is Some(material_name) {
       child_writers.push(
         @ecs.component_writer(

@@ -438,7 +438,7 @@ fn render3d_execute_camera_main_pass(
       lightmap_uv_max_x,
       lightmap_uv_max_y,
     ) = match mesh.lightmap {
-      Some(lightmap) if lightmap.image.id() > 0 => {
+      Some(lightmap) if lightmap.image.id() >= 0 => {
         let uv_min = lightmap.uv_rect.min()
         let uv_max = lightmap.uv_rect.max()
         (lightmap.image.id(), uv_min.x, uv_min.y, uv_max.x, uv_max.y)

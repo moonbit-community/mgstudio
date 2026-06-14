@@ -27,6 +27,8 @@ pub fn gltf_mesh_extras(String) -> GltfMeshExtras
 
 pub fn gltf_mesh_index(Int) -> GltfMeshIndex
 
+pub fn gltf_mesh_name(String) -> GltfMeshName
+
 pub fn gltf_node_asset_label(Int) -> GltfAssetLabel
 
 pub fn gltf_node_index(Int) -> GltfNodeIndex
@@ -100,6 +102,13 @@ pub struct GltfMeshIndex {
 pub fn GltfMeshIndex::index(Self) -> Int
 pub fn GltfMeshIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfMeshIndex
+
+pub struct GltfMeshName {
+  name : String
+}
+pub fn GltfMeshName::as_str(Self) -> String
+pub fn GltfMeshName::new(String) -> Self
+pub impl @ecs.Component for GltfMeshName
 
 pub struct GltfNodeIndex {
   node_index : Int

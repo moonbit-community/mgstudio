@@ -450,11 +450,11 @@ fn render3d_prewarm_material_pipeline(
       mesh.previous_morph_weights_index >= 0,
     visibility_range_dither=mesh.visibility_range is Some(_),
     lightmapped=match mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() > 0
+      Some(lightmap) => lightmap.image.id() >= 0
       None => false
     },
     lightmap_bicubic_sampling=match mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() > 0 && lightmap.bicubic_sampling
+      Some(lightmap) => lightmap.image.id() >= 0 && lightmap.bicubic_sampling
       None => false
     },
   )

@@ -654,6 +654,12 @@ fn mesh3d_attribute_values_for_standard_id(
       None => None
     }
   }
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_1().id()) {
+    return match geometry.uv1s {
+      Some(values) => Some(VertexAttributeValues::Float32x2(values))
+      None => None
+    }
+  }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::tangent().id()) {
     return match geometry.tangents {
       Some(values) => Some(VertexAttributeValues::Float32x4(values))
@@ -803,6 +809,11 @@ pub fn Mesh3dGeometry::insert_attribute(
     self.tangents = None
     return true
   }
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_1().id()) {
+    guard values is VertexAttributeValues::Float32x2(uv1s) else { return false }
+    self.uv1s = Some(uv1s)
+    return true
+  }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::tangent().id()) {
     guard values is VertexAttributeValues::Float32x4(tangents) else {
       return false
@@ -891,6 +902,15 @@ pub fn Mesh3dGeometry::remove_attribute(
       Some(values) => {
         self.uvs = None
         self.tangents = None
+        Some(VertexAttributeValues::Float32x2(values))
+      }
+      None => None
+    }
+  }
+  if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_1().id()) {
+    return match self.uv1s {
+      Some(values) => {
+        self.uv1s = None
         Some(VertexAttributeValues::Float32x2(values))
       }
       None => None

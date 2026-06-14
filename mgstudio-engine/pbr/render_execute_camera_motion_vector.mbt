@@ -37,7 +37,7 @@ fn render3d_prewarm_prepass_material_pipeline(
     prepass_mesh.material_properties,
     render_mesh,
     lightmapped=match prepass_mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() > 0
+      Some(lightmap) => lightmap.image.id() >= 0
       None => false
     },
     lightmap_bicubic_sampling=false,

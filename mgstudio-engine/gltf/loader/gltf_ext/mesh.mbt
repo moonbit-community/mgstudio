@@ -19,6 +19,11 @@ pub fn gltf_mesh_extras(value : String) -> GltfMeshExtras {
 }
 
 ///|
+pub fn gltf_mesh_name(name : String) -> GltfMeshName {
+  GltfMeshName::new(name)
+}
+
+///|
 pub fn gltf_mesh_index(mesh_index : Int) -> GltfMeshIndex {
   GltfMeshIndex::new(mesh_index)
 }

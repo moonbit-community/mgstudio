@@ -77,6 +77,15 @@ pub fn Mesh3dGeometry::attributes(
       ),
     )
   }
+  if self.uv1s is Some(uv1s) {
+    mesh_attribute_data_insert_sorted(
+      attributes,
+      MeshAttributeData::new(
+        MeshVertexAttribute::uv_1(),
+        VertexAttributeValues::Float32x2(uv1s),
+      ),
+    )
+  }
   if self.tangents is Some(tangents) {
     mesh_attribute_data_insert_sorted(
       attributes,

@@ -443,6 +443,7 @@ pub fn StandardMaterial::with_emissive(Self, @color.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_flip_normal_map_y(Self, Bool) -> Self
 pub fn StandardMaterial::with_ior(Self, Float) -> Self
+pub fn StandardMaterial::with_lightmap_exposure(Self, Float) -> Self
 pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self

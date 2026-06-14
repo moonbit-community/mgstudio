@@ -116,6 +116,8 @@ pub using @gltf_ext {type GltfMeshExtras}
 
 pub using @gltf_ext {type GltfMeshIndex}
 
+pub using @gltf_ext {type GltfMeshName}
+
 pub using @gltf_ext {type GltfNodeIndex}
 
 pub using @loader {type GltfPlugin}

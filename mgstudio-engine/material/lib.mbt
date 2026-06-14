@@ -670,6 +670,14 @@ pub fn StandardMaterial::with_depth_bias(
 }
 
 ///|
+pub fn StandardMaterial::with_lightmap_exposure(
+  self : StandardMaterial,
+  lightmap_exposure : Float,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, lightmap_exposure, }
+}
+
+///|
 pub fn StandardMaterial::with_opaque_render_method(
   self : StandardMaterial,
   opaque_render_method : OpaqueRendererMethod,
