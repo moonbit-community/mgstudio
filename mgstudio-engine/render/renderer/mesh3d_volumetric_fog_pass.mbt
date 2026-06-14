@@ -274,7 +274,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
         mesh_pipeline_view_key,
         mesh.vertex_stride_bytes,
       )
-      is Some(pipeline) else {
+      is Some(prepared_pipeline) else {
       continue
     }
     guard mesh3d_volumetric_fog_bind_group(
@@ -304,7 +304,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
       pass_state.viewport_h,
     )
     render_pass.set_scissor_rect(sx, sy, sw, sh)
-    render_pass.set_pipeline(pipeline)
+    render_pass.set_pipeline(prepared_pipeline.pipeline)
     render_pass.set_bind_group(
       0U,
       view_bg,

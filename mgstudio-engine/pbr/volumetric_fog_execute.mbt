@@ -85,12 +85,12 @@ fn render3d_prepare_volumetric_fog_pipelines(
   target_id : Int,
   msaa_sample_count : Int,
   atmosphere : Bool,
-) -> Unit {
+) -> @pbr_volumetric_fog.ViewVolumetricFogPipelines? {
   let (needs_textureless, needs_textured) = render3d_volumetric_fog_pipeline_variants(
     prepared,
   )
-  guard needs_textureless || needs_textured else { return }
-  if needs_textureless {
+  guard needs_textureless || needs_textured else { return None }
+  let textureless_pipeline_id = if needs_textureless {
     @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
       target_id~,
       msaa_sample_count~,
@@ -98,8 +98,10 @@ fn render3d_prepare_volumetric_fog_pipelines(
       atmosphere~,
       hull_mesh_id=prepared.plane_mesh_id,
     )
+  } else {
+    None
   }
-  if needs_textured {
+  let textured_pipeline_id = if needs_textured {
     @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
       target_id~,
       msaa_sample_count~,
@@ -107,6 +109,15 @@ fn render3d_prepare_volumetric_fog_pipelines(
       atmosphere~,
       hull_mesh_id=prepared.plane_mesh_id,
     )
+  } else {
+    None
+  }
+  match (textureless_pipeline_id, textured_pipeline_id) {
+    (Some(textureless), Some(textured)) =>
+      Some(
+        @pbr_volumetric_fog.view_volumetric_fog_pipelines(textureless, textured),
+      )
+    _ => None
   }
 }
 
@@ -344,6 +355,32 @@ fn render3d_write_volumetric_fog_view_components(
     prepared.view_fog,
   )
   |> ignore)
+}
+
+///|
+fn render3d_write_volumetric_fog_pipeline_components(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+  pipelines : @pbr_volumetric_fog.ViewVolumetricFogPipelines?,
+) -> Unit {
+  match pipelines {
+    Some(pipelines) =>
+      try! (world.set_by_key(
+        view_entity,
+        @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+        pipelines,
+      )
+      |> ignore)
+    None =>
+      ignore(
+        world.remove_by_key(
+          view_entity,
+          @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+        ) catch {
+          _ => false
+        },
+      )
+  }
 }
 
 ///|

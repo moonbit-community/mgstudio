@@ -111,6 +111,30 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
     render3d_volumetric_fog_view_volume_count(world, view_entity),
     content="1",
   )
+  render3d_write_volumetric_fog_pipeline_components(
+    world,
+    view_entity,
+    Some(@pbr_volumetric_fog.view_volumetric_fog_pipelines(11, 29)),
+  )
+  match
+    (try! world.get_by_key(
+      view_entity,
+      @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+    )) {
+    Some(pipelines) => {
+      inspect(pipelines.textureless, content="11")
+      inspect(pipelines.textured, content="29")
+    }
+    None => fail("expected ViewVolumetricFogPipelines")
+  }
+  render3d_write_volumetric_fog_pipeline_components(world, view_entity, None)
+  assert_true(
+    (try! world.get_by_key(
+      view_entity,
+      @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+    ))
+    is None,
+  )
   render3d_write_volumetric_fog_view_components(
     world,
     view_entity,

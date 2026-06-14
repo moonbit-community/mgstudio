@@ -1012,14 +1012,18 @@ pub fn prepare_mesh3d_volumetric_fog_pipeline(
   has_density_texture~ : Bool,
   atmosphere~ : Bool,
   hull_mesh_id~ : Int,
-) -> Unit {
+) -> Int? {
   if ensure_backend() is Some(backend) {
-    backend.prepare_mesh3d_volumetric_fog_pipeline(
+    return backend.prepare_mesh3d_volumetric_fog_pipeline(
       target_id, msaa_sample_count, has_density_texture, atmosphere, hull_mesh_id,
     ) catch {
-      err => debug_runtime_error("prepare_mesh3d_volumetric_fog_pipeline", err)
+      err => {
+        debug_runtime_error("prepare_mesh3d_volumetric_fog_pipeline", err)
+        None
+      }
     }
   }
+  None
 }
 
 ///|

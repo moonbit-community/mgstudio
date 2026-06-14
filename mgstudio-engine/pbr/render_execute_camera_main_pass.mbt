@@ -1065,11 +1065,16 @@ fn render3d_execute_camera_main_pass(
     volumetric_fog_prepare,
   )
   render3d_upload_volumetric_fog_uniform_buffer(world)
-  render3d_prepare_volumetric_fog_pipelines(
+  let volumetric_fog_pipelines = render3d_prepare_volumetric_fog_pipelines(
     volumetric_fog_prepare,
     scene_target_id,
     msaa_sample_count,
     camera.atmosphere is Some(_),
+  )
+  render3d_write_volumetric_fog_pipeline_components(
+    world,
+    extracted_camera.entity.render_entity,
+    volumetric_fog_pipelines,
   )
   render3d_draw_volumetric_fog(
     volumetric_fog_prepare,
