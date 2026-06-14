@@ -134,14 +134,19 @@ fn render3d_volumetric_fog_pipeline_variants(
 }
 
 ///|
+fn render3d_volumetric_fog_should_prepare_hull_meshes(
+  prepared : Render3dVolumetricFogPrepareOutput,
+) -> Bool {
+  prepared.light_count > 0 && prepared.view_count > 0
+}
+
+///|
 fn render3d_prepare_volumetric_fog_hull_meshes(
   render_world : @ecs.World,
   source_world : @ecs.World,
   prepared : Render3dVolumetricFogPrepareOutput,
 ) -> Render3dVolumetricFogPrepareOutput {
-  guard prepared.light_count > 0 &&
-    prepared.view_count > 0 &&
-    prepared.volume_count > 0 else {
+  guard render3d_volumetric_fog_should_prepare_hull_meshes(prepared) else {
     return prepared
   }
   guard source_world.get_resource(

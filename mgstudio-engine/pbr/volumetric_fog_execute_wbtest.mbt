@@ -168,6 +168,17 @@ test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog v
     render3d_volumetric_fog_pipeline_variants(active),
     content="(true, true)",
   )
+  assert_true(render3d_volumetric_fog_should_prepare_hull_meshes(active))
+  let view_without_volume = Render3dVolumetricFogPrepareOutput::{
+    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    view_count: 1,
+    volume_count: 0,
+    light_count: 1,
+    plane_mesh_id: -1,
+  }
+  assert_true(
+    render3d_volumetric_fog_should_prepare_hull_meshes(view_without_volume),
+  )
 }
 
 ///|
