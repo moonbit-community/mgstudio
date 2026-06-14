@@ -67,6 +67,9 @@ pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool {
 pub type HostMesh3dMainPassDrawEntry = @renderer.HostMesh3dMainPassDrawEntry
 
 ///|
+pub type HostMesh3dVolumetricFogVolume = @renderer.HostMesh3dVolumetricFogVolume
+
+///|
 pub type HostMesh3dPreprocessShaderWorkItem = @renderer.HostMesh3dPreprocessShaderWorkItem
 
 ///|
@@ -123,6 +126,19 @@ pub fn host_gpu_prepare_mesh3d_cluster_buffers(
     clustered_lights_bytes~,
     clusterable_object_index_lists_bytes~,
     cluster_offsets_and_counts_bytes~,
+  )
+}
+
+///|
+pub fn host_mesh3d_volumetric_fog_volume(
+  density_texture_id~ : Int,
+  uniform_buffer_offset~ : UInt,
+  exterior~ : Bool,
+) -> HostMesh3dVolumetricFogVolume {
+  @renderer.HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
+    density_texture_id~,
+    uniform_buffer_offset~,
+    exterior~,
   )
 }
 
@@ -1485,6 +1501,25 @@ pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(
     preprocess_camera_key_lo~,
     pass_kind~,
     entries~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_mesh3d_volumetric_fog(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  plane_mesh_id~ : Int,
+  cube_mesh_id~ : Int,
+  atmosphere~ : Bool,
+  volumes~ : Array[@renderer.HostMesh3dVolumetricFogVolume],
+) -> Unit {
+  @renderer.draw_mesh3d_volumetric_fog(
+    camera_key_hi~,
+    camera_key_lo~,
+    plane_mesh_id~,
+    cube_mesh_id~,
+    atmosphere~,
+    volumes~,
   )
 }
 

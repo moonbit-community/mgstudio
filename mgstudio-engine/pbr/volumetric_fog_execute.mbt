@@ -153,6 +153,39 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
 }
 
 ///|
+fn render3d_draw_volumetric_fog(
+  prepared : Render3dVolumetricFogPrepareOutput,
+  camera_entity : @core.Entity,
+  atmosphere : Bool,
+) -> Unit {
+  guard prepared.light_count > 0 &&
+    prepared.view_count > 0 &&
+    prepared.volume_count > 0 &&
+    prepared.plane_mesh_id >= 0 &&
+    prepared.cube_mesh_id >= 0 else {
+    return
+  }
+  let volumes : Array[@render.HostMesh3dVolumetricFogVolume] = []
+  for volume in prepared.view_fog.volumes {
+    volumes.push(
+      @render.host_mesh3d_volumetric_fog_volume(
+        density_texture_id=volume.density_texture_id(),
+        uniform_buffer_offset=volume.uniform_buffer_offset(),
+        exterior=volume.exterior(),
+      ),
+    )
+  }
+  @render.host_gpu_draw_mesh3d_volumetric_fog(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    plane_mesh_id=prepared.plane_mesh_id,
+    cube_mesh_id=prepared.cube_mesh_id,
+    atmosphere~,
+    volumes~,
+  )
+}
+
+///|
 fn render3d_collect_volumetric_light_count(world : @ecs.World) -> Int {
   let mut count = 0
   world.for_each_component(@light.ecs_key_volumetric_light, fn(

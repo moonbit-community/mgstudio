@@ -615,6 +615,19 @@ pub fn ViewFogVolume::uniform_buffer_offset(self : ViewFogVolume) -> UInt {
 }
 
 ///|
+pub fn ViewFogVolume::density_texture_id(self : ViewFogVolume) -> Int {
+  match self.density_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+}
+
+///|
+pub fn ViewFogVolume::exterior(self : ViewFogVolume) -> Bool {
+  self.exterior
+}
+
+///|
 pub struct ViewVolumetricFog {
   volumes : Array[ViewFogVolume]
 }

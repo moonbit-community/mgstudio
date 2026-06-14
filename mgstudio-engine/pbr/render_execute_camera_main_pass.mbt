@@ -886,7 +886,6 @@ fn render3d_execute_camera_main_pass(
       extracted_camera.entity.render_entity,
     ),
   )
-  @render.host_gpu_end_pass()
   let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
     world, source_world, camera, camera_pass_projection,
   )
@@ -900,6 +899,12 @@ fn render3d_execute_camera_main_pass(
     msaa_sample_count,
     camera.atmosphere is Some(_),
   )
+  render3d_draw_volumetric_fog(
+    volumetric_fog_prepare,
+    camera_entity,
+    camera.atmosphere is Some(_),
+  )
+  @render.host_gpu_end_pass()
   render3d_write_volumetric_fog_view_components(
     world,
     extracted_camera.entity.render_entity,

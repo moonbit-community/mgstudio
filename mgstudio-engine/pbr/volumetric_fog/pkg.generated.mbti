@@ -83,6 +83,8 @@ pub struct ViewFogVolume {
   exterior : Bool
 }
 pub fn ViewFogVolume::ViewFogVolume() -> Self
+pub fn ViewFogVolume::density_texture_id(Self) -> Int
+pub fn ViewFogVolume::exterior(Self) -> Bool
 pub fn ViewFogVolume::has_density_texture(Self) -> Bool
 pub fn ViewFogVolume::uniform_buffer_offset(Self) -> UInt
 
