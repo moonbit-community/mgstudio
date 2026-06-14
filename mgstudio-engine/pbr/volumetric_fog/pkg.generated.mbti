@@ -32,6 +32,8 @@ pub fn volumetric_fog_camera_is_inside(@math.Affine3) -> Bool
 
 pub fn volumetric_fog_clip_from_local(Bool, VolumetricFogMat4, @math.Affine3) -> VolumetricFogMat4
 
+pub fn volumetric_fog_create_fog_assets(@ecs.World) -> FogAssets
+
 pub fn volumetric_fog_default_settings() -> @light.VolumetricFog
 
 pub fn volumetric_fog_far_planes(@math.Affine3) -> Array[@math.Vec4]
@@ -44,7 +46,7 @@ pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlu
 
 pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
 
-pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int) -> VolumetricFogPluginState
+pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int, Int) -> VolumetricFogPluginState
 
 pub fn volumetric_fog_select_pipeline(ViewVolumetricFogPipelines, VolumetricFogPipelineKey) -> Int
 
@@ -56,10 +58,12 @@ pub fn volumetric_fog_with_step_count(@light.VolumetricFog, Int) -> @light.Volum
 
 // Types and methods
 pub struct FogAssets {
-  plane_mesh : @asset.Handle[@mesh.Mesh]?
-  cube_mesh : @asset.Handle[@mesh.Mesh]?
+  plane_mesh : @asset.Handle[@mesh.Mesh]
+  cube_mesh : @asset.Handle[@mesh.Mesh]
 }
-pub fn FogAssets::FogAssets() -> Self
+pub fn FogAssets::cube_mesh(Self) -> @asset.Handle[@mesh.Mesh]
+pub fn FogAssets::new(@asset.Handle[@mesh.Mesh], @asset.Handle[@mesh.Mesh]) -> Self
+pub fn FogAssets::plane_mesh(Self) -> @asset.Handle[@mesh.Mesh]
 
 pub struct PreparedVolumetricFogView {
   view_fog : ViewVolumetricFog
@@ -131,11 +135,13 @@ pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> Self
 pub impl @app.Plugin for VolumetricFogPlugin
 
 pub struct VolumetricFogPluginState {
-  fog_assets : FogAssets
+  fog_assets : FogAssets?
   extracted_view_count : Int
   extracted_volume_count : Int
+  extracted_light_count : Int
 }
 pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> Self
+pub fn VolumetricFogPluginState::fog_assets(Self) -> FogAssets?
 pub impl @app.Resource for VolumetricFogPluginState
 
 pub struct VolumetricFogUniform {

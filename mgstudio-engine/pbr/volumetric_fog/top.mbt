@@ -45,28 +45,43 @@ pub impl @app.Plugin for VolumetricFogPlugin with fn build(self, app) {
 
 ///|
 pub struct FogAssets {
-  plane_mesh : @asset.Handle[@mesh.Mesh]?
-  cube_mesh : @asset.Handle[@mesh.Mesh]?
+  plane_mesh : @asset.Handle[@mesh.Mesh]
+  cube_mesh : @asset.Handle[@mesh.Mesh]
 }
 
 ///|
-pub fn FogAssets::FogAssets() -> FogAssets {
-  FogAssets::{ plane_mesh: None, cube_mesh: None }
+pub fn FogAssets::new(
+  plane_mesh : @asset.Handle[@mesh.Mesh],
+  cube_mesh : @asset.Handle[@mesh.Mesh],
+) -> FogAssets {
+  FogAssets::{ plane_mesh, cube_mesh }
+}
+
+///|
+pub fn FogAssets::plane_mesh(self : FogAssets) -> @asset.Handle[@mesh.Mesh] {
+  self.plane_mesh
+}
+
+///|
+pub fn FogAssets::cube_mesh(self : FogAssets) -> @asset.Handle[@mesh.Mesh] {
+  self.cube_mesh
 }
 
 ///|
 pub struct VolumetricFogPluginState {
-  fog_assets : FogAssets
+  fog_assets : FogAssets?
   extracted_view_count : Int
   extracted_volume_count : Int
+  extracted_light_count : Int
 }
 
 ///|
 pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> VolumetricFogPluginState {
   VolumetricFogPluginState::{
-    fog_assets: FogAssets::FogAssets(),
+    fog_assets: None,
     extracted_view_count: 0,
     extracted_volume_count: 0,
+    extracted_light_count: 0,
   }
 }
 
@@ -85,7 +100,14 @@ pub fn volumetric_fog_plugin_state_with_assets(
   state : VolumetricFogPluginState,
   fog_assets : FogAssets,
 ) -> VolumetricFogPluginState {
-  VolumetricFogPluginState::{ ..state, fog_assets, }
+  VolumetricFogPluginState::{ ..state, fog_assets: Some(fog_assets) }
+}
+
+///|
+pub fn VolumetricFogPluginState::fog_assets(
+  self : VolumetricFogPluginState,
+) -> FogAssets? {
+  self.fog_assets
 }
 
 ///|
@@ -93,19 +115,27 @@ pub fn volumetric_fog_plugin_state_with_extracted_counts(
   state : VolumetricFogPluginState,
   extracted_view_count : Int,
   extracted_volume_count : Int,
+  extracted_light_count : Int,
 ) -> VolumetricFogPluginState {
+  if extracted_light_count <= 0 {
+    return VolumetricFogPluginState::{
+      ..state,
+      extracted_view_count: 0,
+      extracted_volume_count: 0,
+      extracted_light_count: 0,
+    }
+  }
   VolumetricFogPluginState::{
     ..state,
-    extracted_view_count: if extracted_view_count < 0 {
-      0
-    } else {
-      extracted_view_count
-    },
-    extracted_volume_count: if extracted_volume_count < 0 {
-      0
-    } else {
-      extracted_volume_count
-    },
+    extracted_view_count: volumetric_fog_non_negative_count(
+      extracted_view_count,
+    ),
+    extracted_volume_count: volumetric_fog_non_negative_count(
+      extracted_volume_count,
+    ),
+    extracted_light_count: volumetric_fog_non_negative_count(
+      extracted_light_count,
+    ),
   }
 }
 
@@ -138,9 +168,53 @@ pub fn volumetric_fog_plugin_install_with(
   if app.contains_resource(ecs_key_volumetric_fog_plugin_state) {
     app
   } else {
+    let fog_assets = volumetric_fog_create_fog_assets(app.world())
     app.insert_world_resource(
       ecs_key_volumetric_fog_plugin_state,
-      VolumetricFogPluginState::VolumetricFogPluginState(),
+      VolumetricFogPluginState::VolumetricFogPluginState()
+      |> volumetric_fog_plugin_state_with_assets(fog_assets),
     )
   }
+}
+
+///|
+fn volumetric_fog_non_negative_count(value : Int) -> Int {
+  if value < 0 {
+    0
+  } else {
+    value
+  }
+}
+
+///|
+fn volumetric_fog_mesh_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  match world.get_resource_mut(key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "VolumetricFogPlugin requires Assets<Mesh>; add MeshPlugin before VolumetricFogPlugin",
+      )
+  }
+}
+
+///|
+pub fn volumetric_fog_create_fog_assets(world : @ecs.World) -> FogAssets {
+  let meshes = volumetric_fog_mesh_assets_mut_or_abort(world)
+  meshes.modify(fn(mesh_assets) {
+    let plane_mesh = mesh_assets.add(
+      @mesh_primitives_dim3.Meshable::mesh(
+        @math.Plane3d::new(
+          @math.Vec3::new(0.0F, 0.0F, 1.0F),
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
+      ).to_mesh(),
+    )
+    let cube_mesh = mesh_assets.add(
+      @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)).to_mesh(),
+    )
+    FogAssets::new(plane_mesh, cube_mesh)
+  })
 }

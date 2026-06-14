@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
   "Milky2018/mgstudio/shader/source" @shader_source,
 }
 

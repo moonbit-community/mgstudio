@@ -1,0 +1,71 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  let before_count = match app.world().get_resource(mesh_assets_key) {
+    Some(meshes) => meshes.len()
+    None => -1
+  }
+  let app = app.add_plugins(
+    @volumetric_fog.VolumetricFogPlugin::VolumetricFogPlugin(),
+  )
+  let after_count = match app.world().get_resource(mesh_assets_key) {
+    Some(meshes) => meshes.len()
+    None => -1
+  }
+  inspect(after_count - before_count, content="2")
+  match
+    app
+    .world()
+    .get_resource(@volumetric_fog.VolumetricFogPluginState::resource()) {
+    Some(state) =>
+      match state.fog_assets() {
+        Some(fog_assets) => {
+          let meshes = app.world().get_resource(mesh_assets_key).unwrap()
+          inspect(
+            meshes.get(fog_assets.plane_mesh()).unwrap().vertex_count() > 0,
+            content="true",
+          )
+          inspect(
+            meshes.get(fog_assets.cube_mesh()).unwrap().vertex_count() > 0,
+            content="true",
+          )
+        }
+        None => inspect("missing fog assets", content="present fog assets")
+      }
+    None => inspect("missing state", content="present state")
+  }
+}
+
+///|
+test "pbr volumetric fog: extract count state clears when no volumetric lights exist" {
+  let initial = @volumetric_fog.VolumetricFogPluginState::VolumetricFogPluginState()
+  let with_lights = @volumetric_fog.volumetric_fog_plugin_state_with_extracted_counts(
+    initial, 2, 3, 1,
+  )
+  inspect(with_lights.extracted_view_count, content="2")
+  inspect(with_lights.extracted_volume_count, content="3")
+  inspect(with_lights.extracted_light_count, content="1")
+  let without_lights = @volumetric_fog.volumetric_fog_plugin_state_with_extracted_counts(
+    with_lights, 2, 3, 0,
+  )
+  inspect(without_lights.extracted_view_count, content="0")
+  inspect(without_lights.extracted_volume_count, content="0")
+  inspect(without_lights.extracted_light_count, content="0")
+}
