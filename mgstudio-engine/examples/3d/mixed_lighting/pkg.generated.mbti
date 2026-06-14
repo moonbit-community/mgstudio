@@ -11,7 +11,7 @@ pub(all) enum LightingMode {
   MixedDirect
   MixedIndirect
   RealTime
-}
+} derive(Eq)
 
 // Type aliases
 

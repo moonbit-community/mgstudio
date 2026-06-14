@@ -13,21 +13,22 @@
 // limitations under the License.
 
 ///|
-///
-/// Baseline parity: Bevy's per-mesh `Lightmap` component pipeline and UI widget
-/// radio buttons are not exposed in current mgstudio runtime surfaces.
-/// This port keeps the same four lighting modes, scene source asset,
-/// sphere-move interaction, and mode semantics with keyboard-driven mode
-/// selection and lighting proxies.
-
-///|
 const LIGHTMAP_EXPOSURE : Float = 600.0F
 
 ///|
 const SPHERE_OFFSET : Float = 0.2F
 
 ///|
-const PI : Float = 3.141592653589793F
+const MIXED_LIGHTING_SCENE : String = "models/MixedLightingExample/MixedLightingExample.gltf"
+
+///|
+const LIGHTMAP_BAKED : String = "lightmaps/MixedLightingExample-Baked.zstd.ktx2"
+
+///|
+const LIGHTMAP_MIXED_DIRECT : String = "lightmaps/MixedLightingExample-MixedDirect.zstd.ktx2"
+
+///|
+const LIGHTMAP_MIXED_INDIRECT : String = "lightmaps/MixedLightingExample-MixedIndirect.zstd.ktx2"
 
 ///|
 pub(all) enum LightingMode {
@@ -35,27 +36,82 @@ pub(all) enum LightingMode {
   MixedDirect
   MixedIndirect
   RealTime
+} derive(Eq)
+
+///|
+impl @widgets_lib.WidgetValue for LightingMode with fn widget_debug_name() {
+  "examples.3d.mixed_lighting.LightingMode"
+}
+
+///|
+let lighting_mode_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[LightingMode],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.3d.mixed_lighting.LightingMode>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for LightingMode with fn widget_click_event_key() {
+  lighting_mode_widget_click_event_key
+}
+
+///|
+let lighting_mode_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[LightingMode],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.3d.mixed_lighting.LightingMode>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for LightingMode with fn widget_click_sender_key() {
+  lighting_mode_widget_click_sender_key
 }
 
 ///|
 priv struct AppStatus {
   mut lighting_mode : LightingMode
-  mut camera : @core.Entity?
-  mut sphere : @core.Entity?
-  mut sphere_material : @asset.Handle[@pbr.StandardMaterial]?
-  mut directional_light : @core.Entity?
-  mut help_text : @text.TextHandle?
 }
 
 ///|
-let app_status : Ref[AppStatus] = Ref({
-  lighting_mode: LightingMode::MixedIndirect,
-  camera: None,
-  sphere: None,
-  sphere_material: None,
-  directional_light: None,
-  help_text: None,
-})
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.3d.mixed_lighting.AppStatus",
+)
+
+///|
+impl @app.Resource for AppStatus with fn resource() {
+  app_status_resource_key
+}
+
+///|
+fn AppStatus::AppStatus() -> AppStatus {
+  AppStatus::{ lighting_mode: MixedIndirect }
+}
+
+///|
+priv struct LightingModeChanged {}
+
+///|
+let lighting_mode_changed_message_key : @ecs.MessageKey[LightingModeChanged] = @ecs.register_message(
+  debug_name="examples.3d.mixed_lighting.LightingModeChanged",
+)
+
+///|
+impl @ecs.Message for LightingModeChanged with fn message() {
+  lighting_mode_changed_message_key
+}
+
+///|
+priv struct HelpText {}
+
+///|
+let help_text_component_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
+  debug_name="examples.3d.mixed_lighting.HelpText",
+)
+
+///|
+impl @ecs.Component for HelpText with fn component() {
+  help_text_component_key
+}
 
 ///|
 fn initial_sphere_position() -> @math.Vec3 {
@@ -63,435 +119,499 @@ fn initial_sphere_position() -> @math.Vec3 {
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+fn uv_rect_opengl(gl_min : @math.Vec2, size : @math.Vec2) -> @math.Rect {
+  let min = @math.Vec2::new(gl_min.x, 1.0F - gl_min.y - size.y)
+  @math.Rect::new(min, @math.Vec2::new(min.x + size.x, min.y + size.y))
 }
 
 ///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
+fn sphere_uv_rect() -> @math.Rect {
+  uv_rect_opengl(@math.Vec2::new(0.788F, 0.484F), @math.Vec2::splat(0.062F))
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
-  )
-}
-
-///|
-fn lighting_mode_name(mode : LightingMode) -> String {
-  match mode {
-    LightingMode::Baked => "Baked"
-    LightingMode::MixedDirect => "Mixed (Direct)"
-    LightingMode::MixedIndirect => "Mixed (Indirect)"
-    LightingMode::RealTime => "Real-Time"
-  }
-}
-
-///|
-fn lighting_mode_eq(lhs : LightingMode, rhs : LightingMode) -> Bool {
-  match lhs {
-    LightingMode::Baked =>
-      match rhs {
-        LightingMode::Baked => true
-        _ => false
-      }
-    LightingMode::MixedDirect =>
-      match rhs {
-        LightingMode::MixedDirect => true
-        _ => false
-      }
-    LightingMode::MixedIndirect =>
-      match rhs {
-        LightingMode::MixedIndirect => true
-        _ => false
-      }
-    LightingMode::RealTime =>
-      match rhs {
-        LightingMode::RealTime => true
-        _ => false
-      }
-  }
-}
-
-///|
-fn create_help_text(mode : LightingMode) -> String {
-  let details = match mode {
-    LightingMode::Baked =>
-      "Scenery: Static, baked direct light, baked indirect light\nSphere: Static, baked direct light, baked indirect light"
-    LightingMode::MixedDirect =>
-      "Scenery: Static, baked direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
-    LightingMode::MixedIndirect =>
-      "Scenery: Static, real-time direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
-    LightingMode::RealTime =>
-      "Scenery: Dynamic, real-time direct light, no indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere"
-  }
-
-  "\{details}\n\nControls:\n1: Baked, 2: Mixed (Direct), 3: Mixed (Indirect), 4: Real-Time\nHold left mouse button and point to move sphere\n\nTarget exposure: \{LIGHTMAP_EXPOSURE.to_string()}"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if app_status.val.help_text is Some(help_text) {
-    @text.text_set_content(
-      help_text,
-      "\{create_help_text(app_status.val.lighting_mode)}\n\nCurrent mode: \{lighting_mode_name(app_status.val.lighting_mode)}",
+fn lightmap_uv_rect_for_name(name : String) -> @math.Rect? {
+  if name == "Plane" {
+    return Some(
+      uv_rect_opengl(@math.Vec2::splat(0.026F), @math.Vec2::splat(0.710F)),
     )
   }
-}
-
-///|
-fn mode_directional_illuminance(mode : LightingMode) -> Float {
-  match mode {
-    LightingMode::Baked => 0.0F
-    LightingMode::MixedDirect => 12_000.0F
-    LightingMode::MixedIndirect => 12_000.0F
-    LightingMode::RealTime => 12_000.0F
-  }
-}
-
-///|
-fn mode_ambient_brightness(mode : LightingMode) -> Float {
-  match mode {
-    LightingMode::Baked => 10_000.0F
-    LightingMode::MixedDirect => 6_500.0F
-    LightingMode::MixedIndirect => 4_500.0F
-    LightingMode::RealTime => 0.0F
-  }
-}
-
-///|
-fn mode_sphere_color(mode : LightingMode) -> @color.Color {
-  match mode {
-    LightingMode::Baked => @color.Color::new(0.95F, 0.84F, 0.84F, 1.0F)
-    _ => @color.Color::new(0.92F, 0.92F, 0.92F, 1.0F)
-  }
-}
-
-///|
-fn apply_lighting_mode(world : @ecs.World) -> Unit {
-  let mode = app_status.val.lighting_mode
-
-  let scenery_is_lit_in_real_time = lighting_mode_eq(
-      mode,
-      LightingMode::MixedIndirect,
-    ) ||
-    lighting_mode_eq(mode, LightingMode::RealTime)
-
-  if app_status.val.directional_light is Some(light_entity) {
-    try! (world.replace(
-      light_entity,
-      @pbr.ecs_key_directional_light,
-      @pbr.DirectionalLight::new(
-        @color.Color::white(),
-        mode_directional_illuminance(mode),
-        scenery_is_lit_in_real_time,
+  if name == "SheenChair_fabric" {
+    return Some(
+      uv_rect_opengl(
+        @math.Vec2::new(0.7864F, 0.02377F),
+        @math.Vec2::new(0.1910F, 0.1912F),
       ),
     )
-    |> ignore)
   }
-
-  let ambient_light = @pbr.GlobalAmbientLight::new(
-    @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    mode_ambient_brightness(mode),
-  )
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient_light)
-
-  if app_status.val.sphere_material is Some(handle) {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      @pbr.standard_material_set(
-        handle,
-        material.with_base_color(mode_sphere_color(mode)),
-      )
-      |> ignore
-    }
-  }
-}
-
-///|
-fn reset_sphere_position(world : @ecs.World) -> Unit {
-  if app_status.val.sphere is Some(sphere_entity) {
-    if (try! world.get_by_key(sphere_entity, @transform.ecs_key_transform))
-      is Some(transform) {
-      try! (world.replace(
-        sphere_entity,
-        @transform.ecs_key_transform,
-        transform.with_translation(initial_sphere_position()),
-      )
-      |> ignore)
-    }
-  }
-}
-
-///|
-fn ray_plane_intersection_ground(
-  origin : @math.Vec3,
-  direction : @math.Vec3,
-) -> @math.Vec3? {
-  if absf(direction.y) <= 1.0e-6F {
-    return None
-  }
-  let t = -origin.y / direction.y
-  if t < 0.0F {
-    return None
-  }
-  Some(origin.add(direction.mul_scalar(t)))
-}
-
-///|
-fn move_sphere(world : @ecs.World) -> Unit {
-  if lighting_mode_eq(app_status.val.lighting_mode, LightingMode::Baked) {
-    return
-  }
-  if !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    return
-  }
-
-  guard app_status.val.camera is Some(camera_entity) else { return }
-  guard app_status.val.sphere is Some(sphere_entity) else { return }
-  guard @input.mouse_position() is Some(screen_pos) else { return }
-
-  guard (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
-    is Some(camera) else {
-    return
-  }
-  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
-    is Some(projection) else {
-    return
-  }
-  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
-    is Some(camera_transform) else {
-    return
-  }
-
-  let target_size = @math.IVec2::new(
-    @window.window_width(),
-    @window.window_height(),
-  )
-  let scale_factor = @window.window_scale_factor()
-
-  guard @camera.camera_viewport_to_world_ray(
-      screen_pos, camera, projection, camera_transform, target_size, scale_factor,
+  if name == "SheenChair_label" {
+    return Some(
+      uv_rect_opengl(
+        @math.Vec2::new(0.275F, -0.016F),
+        @math.Vec2::new(0.858F, 0.486F),
+      ),
     )
-    is Some((origin, direction)) else {
+  }
+  if name == "SheenChair_metal" {
+    return Some(
+      uv_rect_opengl(
+        @math.Vec2::new(0.998F, 0.506F),
+        @math.Vec2::new(-0.029F, -0.067F),
+      ),
+    )
+  }
+  if name == "SheenChair_wood" {
+    return Some(
+      uv_rect_opengl(
+        @math.Vec2::new(0.787F, 0.257F),
+        @math.Vec2::new(0.179F, 0.177F),
+      ),
+    )
+  }
+  None
+}
+
+///|
+fn lightmap_handle_for_mode(
+  asset_server : @asset.AssetServer,
+  mode : LightingMode,
+) -> @asset.Handle[@asset.Image]? {
+  match mode {
+    Baked => Some(asset_server.load(LIGHTMAP_BAKED))
+    MixedDirect => Some(asset_server.load(LIGHTMAP_MIXED_DIRECT))
+    MixedIndirect => Some(asset_server.load(LIGHTMAP_MIXED_INDIRECT))
+    RealTime => None
+  }
+}
+
+///|
+fn set_material_lightmap_exposure(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  mesh_material : @pbr.MeshMaterial3d,
+) -> Unit {
+  if !mesh_material.is_standard_material() {
     return
   }
-
-  guard ray_plane_intersection_ground(origin, direction) is Some(point) else {
-    return
-  }
-
-  guard (try! world.get_by_key(sphere_entity, @transform.ecs_key_transform))
-    is Some(current_transform) else {
-    return
-  }
-
-  let target = point.add(@math.Vec3::new(0.0F, SPHERE_OFFSET, 0.0F))
-  try! (world.replace(
-    sphere_entity,
-    @transform.ecs_key_transform,
-    current_transform.with_translation(target),
+  let material_handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
+    mesh_material.material_asset_id(),
   )
-  |> ignore)
+  materials.modify(fn(material_assets) {
+    guard material_assets.get(material_handle) is Some(material) else { return }
+    ignore(
+      material_assets.set(
+        material_handle,
+        material.with_lightmap_exposure(LIGHTMAP_EXPOSURE),
+      ),
+    )
+  })
 }
 
 ///|
-fn set_lighting_mode(mode : LightingMode) -> Bool {
-  if lighting_mode_eq(app_status.val.lighting_mode, mode) {
-    false
-  } else {
-    app_status.val.lighting_mode = mode
-    true
-  }
+fn lightmap_component(
+  image : @asset.Handle[@asset.Image],
+  uv_rect : @math.Rect,
+) -> @pbr.Lightmap {
+  @pbr.Lightmap::new(image).with_uv_rect(uv_rect).with_bicubic_sampling(false)
 }
 
 ///|
-fn update_mode_from_input(world : @ecs.World) -> Unit {
-  let mut changed = false
-
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    changed = set_lighting_mode(LightingMode::Baked)
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    changed = set_lighting_mode(LightingMode::MixedDirect) || changed
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    changed = set_lighting_mode(LightingMode::MixedIndirect) || changed
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    changed = set_lighting_mode(LightingMode::RealTime) || changed
-  }
-
-  if changed {
-    if lighting_mode_eq(app_status.val.lighting_mode, LightingMode::Baked) {
-      reset_sphere_position(world)
-    }
-    apply_lighting_mode(world)
-    update_help_text()
-  }
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  commands.queue(fn(world) {
+    ignore(
+      @camera.Camera3dBundle::new(
+        @camera_camera.Camera::Camera(),
+        @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.3F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ).spawn(world),
+    )
+  })
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  app_status.val.lighting_mode = LightingMode::MixedIndirect
-  app_status.val.camera = None
-  app_status.val.sphere = None
-  app_status.val.sphere_material = None
-  app_status.val.directional_light = None
-  app_status.val.help_text = None
+fn send_lighting_mode_changed_when_scene_ready(
+  _event : @ecs.On[@scene.SceneInstanceReady],
+  writer : @ecs.MessageWriter[LightingModeChanged],
+) -> Unit {
+  ignore(writer.write(LightingModeChanged::{  }))
+}
 
-  let asset_server = @asset.AssetServer::new()
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  app_status.val.camera = Some(camera)
-
-  let scene_root = world.spawn_empty()
-  try! world.set_by_key(
-    scene_root,
-    @scene.ecs_key_scene_root,
+///|
+fn spawn_scene(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let root = commands.spawn_component(
     @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/MixedLightingExample/MixedLightingExample.gltf",
-        ),
-      ),
+      asset_server
+      .get()
+      .load(@gltf.GltfAssetLabel::Scene(0).from_asset(MIXED_LIGHTING_SCENE)),
     ),
   )
-
-  let sphere_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
-    )
-    .with_perceptual_roughness(0.45F)
-    .with_metallic(0.0F),
+  ignore(
+    commands.entity(root).observe2(send_lighting_mode_changed_when_scene_ready),
   )
-  let sphere = @pbr.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(0.2F, 22, 42),
-    @pbr.MeshMaterial3d::new(sphere_material),
-    @transform.Transform::from_xyz(
-      initial_sphere_position().x,
-      initial_sphere_position().y,
-      initial_sphere_position().z,
-    ),
-  ).spawn(world)
-  app_status.val.sphere = Some(sphere)
-  app_status.val.sphere_material = Some(sphere_material)
-
-  let directional_light = world.spawn_empty()
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 12_000.0F, true),
-  )
-  try! world.set_by_key(
-    directional_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
-      @math.Vec3::new(0.0F, 0.2F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-  app_status.val.directional_light = Some(directional_light)
-
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  app_status.val.help_text = Some(help_text)
-
-  apply_lighting_mode(world)
-  update_help_text()
 }
 
 ///|
-fn update(world : @ecs.World) -> Unit {
-  update_mode_from_input(world)
-  move_sphere(world)
+fn spawn_buttons(commands : @app.Commands, root : @core.Entity) -> Unit {
+  let panel = commands.spawn(
+    (@hierarchy.Parent::new(root), @widgets_lib.main_ui_node()),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Lighting", [
+      (Baked, "Baked"),
+      (MixedDirect, "Mixed (Direct)"),
+      (MixedIndirect, "Mixed (Indirect)"),
+      (RealTime, "Real-Time"),
+    ]),
+  )
+}
+
+///|
+fn create_help_text(app_status : AppStatus) -> @text.Text {
+  match app_status.lighting_mode {
+    Baked =>
+      @text.Text::new(
+        "Scenery: Static, baked direct light, baked indirect light\nSphere: Static, baked direct light, baked indirect light",
+      )
+    MixedDirect =>
+      @text.Text::new(
+        "Scenery: Static, baked direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere",
+      )
+    MixedIndirect =>
+      @text.Text::new(
+        "Scenery: Static, real-time direct light, baked indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere",
+      )
+    RealTime =>
+      @text.Text::new(
+        "Scenery: Dynamic, real-time direct light, no indirect light\nSphere: Dynamic, real-time direct light, no indirect light\nClick in the scene to move the sphere",
+      )
+  }
+}
+
+///|
+fn spawn_help_text(
+  commands : @app.Commands,
+  root : @core.Entity,
+  app_status : AppStatus,
+) -> Unit {
+  let help_text = commands.spawn(
+    (
+      @hierarchy.Parent::new(root),
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.Val::Px(12.0F))
+      .with_left(@ui.Val::Px(12.0F)),
+      create_help_text(app_status),
+      @text.TextFont::TextFont(),
+      @text.TextColor::TextColor(),
+      @text.TextLayout::TextLayout(),
+      @text.LineHeight::default(),
+      @text.FontHinting::default(),
+    ),
+  )
+  commands.entity(help_text).insert_component(HelpText::{  })
+}
+
+///|
+fn spawn_ui(commands : @app.Commands, app_status : AppStatus) -> Unit {
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+  spawn_buttons(commands, root)
+  spawn_help_text(commands, root, app_status)
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  spawn_camera(commands)
+  spawn_scene(commands, asset_server)
+  spawn_ui(commands, app_status.get())
+}
+
+///|
+type LightmapMeshQuery = @ecs.Query[
+  (@ecs.Read[@gltf.GltfMeshName], @ecs.Read[@pbr.MeshMaterial3d]),
+  @ecs.With[@mesh.Mesh3d],
+]
+
+///|
+fn update_lightmaps(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : LightmapMeshQuery,
+  _reader : @ecs.MessageReader[LightingModeChanged],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let mode = app_status.get().lighting_mode
+  let lightmap = lightmap_handle_for_mode(asset_server.get(), mode)
+  try! meshes.view(fn(entity, data) {
+    let (mesh_name, mesh_material) = data
+    let name = mesh_name.value().as_str()
+    guard lightmap_uv_rect_for_name(name) is Some(uv_rect) else {
+      if name == "Sphere" {
+        set_material_lightmap_exposure(materials, mesh_material.value())
+        match (lightmap, mode) {
+          (Some(image), Baked) =>
+            commands
+            .entity(entity)
+            .insert_component(lightmap_component(image, sphere_uv_rect()))
+          _ => commands.entity(entity).remove_component(@pbr.ecs_key_lightmap)
+        }
+      }
+      return
+    }
+    set_material_lightmap_exposure(materials, mesh_material.value())
+    match lightmap {
+      Some(image) =>
+        commands
+        .entity(entity)
+        .insert_component(lightmap_component(image, uv_rect))
+      None => commands.entity(entity).remove_component(@pbr.ecs_key_lightmap)
+    }
+  })
+}
+
+///|
+fn update_directional_light(
+  lights : @ecs.Query[@ecs.Write[@pbr.DirectionalLight], @ecs.All],
+  _reader : @ecs.MessageReader[LightingModeChanged],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let mode = app_status.get().lighting_mode
+  let scenery_is_lit_in_real_time = mode == MixedIndirect || mode == RealTime
+  try! lights.view(fn(_entity, light) {
+    light.set(
+      light
+      .value()
+      .with_affects_lightmapped_mesh_diffuse(scenery_is_lit_in_real_time)
+      .with_shadow_maps_enabled(scenery_is_lit_in_real_time),
+    )
+  })
+}
+
+///|
+fn make_sphere_nonpickable(
+  commands : @app.Commands,
+  spheres : @ecs.Query[
+    @ecs.Read[@gltf.GltfMeshName],
+    (@ecs.With[@mesh.Mesh3d], @ecs.Without[@picking.Pickable]),
+  ],
+) -> Unit {
+  try! spheres.view(fn(entity, mesh_name) {
+    if mesh_name.value().as_str() == "Sphere" {
+      commands.entity(entity).insert_component(@picking.pickable_ignore)
+    }
+  })
+}
+
+///|
+fn handle_widget_interactions(
+  interactions : @ecs.Query[
+    (
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[LightingMode]],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+  widget_click_events : @ecs.MessageWriter[
+    @widgets_lib.WidgetClickEvent[LightingMode],
+  ],
+) -> Unit {
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
+}
+
+///|
+fn update_radio_buttons(
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[LightingMode]],
+      @ecs.Write[@ui.BackgroundColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[LightingMode]],
+      @ecs.Write[@text.TextColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButtonText],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let mode = app_status.get().lighting_mode
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
+    @widgets_lib.update_ui_radio_button(
+      background_color,
+      sender.value().get() == mode,
+    )
+  })
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
+    @widgets_lib.update_ui_radio_button_text(
+      text_color,
+      sender.value().get() == mode,
+    )
+  })
+}
+
+///|
+fn handle_lighting_mode_change(
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[LightingMode]],
+  writer : @ecs.MessageWriter[LightingModeChanged],
+  app_status : @app.ResMut[AppStatus],
+) -> Unit {
+  let mut changed = false
+  app_status.modify(fn(status) {
+    for event in events.read() {
+      status.lighting_mode = event.get()
+      changed = true
+    }
+  })
+  if changed {
+    ignore(writer.write(LightingModeChanged::{  }))
+  }
+}
+
+///|
+fn reset_sphere_position(
+  objects : @ecs.Query[
+    (@ecs.Read[@gltf.GltfMeshName], @ecs.Write[@transform.Transform]),
+    @ecs.All,
+  ],
+  _reader : @ecs.MessageReader[LightingModeChanged],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if app_status.get().lighting_mode != Baked {
+    return
+  }
+  try! objects.view(fn(_entity, data) {
+    let (name, transform) = data
+    if name.value().as_str() == "Sphere" {
+      transform.modify(fn(value) {
+        value.translation = initial_sphere_position()
+      })
+    }
+  })
+}
+
+///|
+fn move_sphere(
+  pointers : @ecs.Query[@ecs.Read[@picking.PointerInteraction], @ecs.All],
+  meshes : @ecs.Query[
+    (@ecs.Read[@gltf.GltfMeshName], @ecs.Read[@hierarchy.Parent]),
+    @ecs.With[@mesh.Mesh3d],
+  ],
+  transforms : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.All],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if app_status.get().lighting_mode == Baked ||
+    !@input.mouse_button_pressed(@window.MouseButton::Left) {
+    return
+  }
+  let sphere_parent : Ref[@core.Entity?] = Ref(None)
+  try! meshes.view(fn(_entity, data) {
+    let (name, parent) = data
+    if sphere_parent.val is None && name.value().as_str() == "Sphere" {
+      sphere_parent.val = Some(parent.value().entity())
+    }
+  })
+  guard sphere_parent.val is Some(parent) else { return }
+  guard (transforms.get(parent) catch { _ => None }) is Some(transform) else {
+    return
+  }
+  try! pointers.view(fn(_entity, interaction) {
+    guard interaction.value().get_nearest_hit() is Some((_hit_entity, hit)) else {
+      return
+    }
+    guard hit.position is Some(position) else { return }
+    transform.modify(fn(value) {
+      value.translation = position.add(
+        @math.Vec3::new(0.0F, SPHERE_OFFSET, 0.0F),
+      )
+    })
+  })
+}
+
+///|
+fn adjust_help_text(
+  help_texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[HelpText]],
+  app_status : @app.Res[AppStatus],
+  _reader : @ecs.MessageReader[LightingModeChanged],
+) -> Unit {
+  let text = create_help_text(app_status.get())
+  try! help_texts.view(fn(_entity, help_text) { help_text.set(text) })
 }
 
 ///|
 fn main {
+  let widget_click_message_key : @ecs.MessageKey[
+    @widgets_lib.WidgetClickEvent[LightingMode],
+  ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update)
+  .insert_resource(
+    @pbr.GlobalAmbientLight::new(
+      @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      10000.0F,
+    ).with_affects_lightmapped_meshes(true),
+  )
+  .init_resource(fn() { AppStatus::AppStatus() })
+  .add_message(widget_click_message_key)
+  .add_message(lighting_mode_changed_message_key)
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param6(update_lightmaps).run_if_on_message(
+      lighting_mode_changed_message_key,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(update_directional_light).run_if_on_message(
+      lighting_mode_changed_message_key,
+    ),
+  )
+  .add_systems_param2(@app.Update, make_sphere_nonpickable)
+  .add_systems_param3(@app.Update, update_radio_buttons)
+  .add_systems_param3(@app.Update, handle_lighting_mode_change)
+  .add_systems_param2(@app.Update, handle_widget_interactions)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(reset_sphere_position).run_if_on_message(
+      lighting_mode_changed_message_key,
+    ),
+  )
+  .add_systems_param4(@app.Update, move_sphere)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(adjust_help_text).run_if_on_message(
+      lighting_mode_changed_message_key,
+    ),
+  )
   .run()
 }
