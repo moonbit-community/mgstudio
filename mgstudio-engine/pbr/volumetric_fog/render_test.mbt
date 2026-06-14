@@ -13,16 +13,12 @@
 // limitations under the License.
 
 ///|
-test "pbr volumetric fog: matrices pack in WGSL column order" {
-  let matrix = @volumetric_fog.VolumetricFogMat4::from_cols(
-    @math.Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
-    @math.Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
-    @math.Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
-    @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
-  )
-  debug_inspect(
-    matrix.to_cols_array(),
-    content="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]",
+fn volumetric_fog_test_identity_mat4() -> @volumetric_fog.VolumetricFogMat4 {
+  @volumetric_fog.VolumetricFogMat4::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
   )
 }
 
@@ -41,7 +37,7 @@ test "pbr volumetric fog: prepares view volume metadata and uniforms" {
     buffer,
     fog,
     @math.Affine3::identity(),
-    @volumetric_fog.VolumetricFogMat4::identity(),
+    volumetric_fog_test_identity_mat4(),
     [(volume, @math.Affine3::identity())],
   )
   inspect(prepared.uniform_count, content="1")

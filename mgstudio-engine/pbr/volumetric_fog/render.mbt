@@ -86,20 +86,10 @@ fn volumetric_fog_push_mat4_cols(
 
 ///|
 pub struct VolumetricFogMat4 {
-  x_axis : @math.Vec4
-  y_axis : @math.Vec4
-  z_axis : @math.Vec4
-  w_axis : @math.Vec4
-}
-
-///|
-pub fn VolumetricFogMat4::identity() -> VolumetricFogMat4 {
-  VolumetricFogMat4::{
-    x_axis: @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-    y_axis: @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
-    z_axis: @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
-    w_axis: @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
-  }
+  priv x_axis : @math.Vec4
+  priv y_axis : @math.Vec4
+  priv z_axis : @math.Vec4
+  priv w_axis : @math.Vec4
 }
 
 ///|
@@ -113,7 +103,7 @@ pub fn VolumetricFogMat4::from_cols(
 }
 
 ///|
-pub fn VolumetricFogMat4::from_affine3(
+fn VolumetricFogMat4::from_affine3(
   transform : @math.Affine3,
 ) -> VolumetricFogMat4 {
   VolumetricFogMat4::{
@@ -170,7 +160,7 @@ fn volumetric_fog_mat4_mul_vec4(
 }
 
 ///|
-pub fn VolumetricFogMat4::mul(
+fn VolumetricFogMat4::mul(
   self : VolumetricFogMat4,
   other : VolumetricFogMat4,
 ) -> VolumetricFogMat4 {
@@ -183,7 +173,7 @@ pub fn VolumetricFogMat4::mul(
 }
 
 ///|
-pub fn VolumetricFogMat4::mul_affine3(
+fn VolumetricFogMat4::mul_affine3(
   self : VolumetricFogMat4,
   transform : @math.Affine3,
 ) -> VolumetricFogMat4 {
@@ -191,9 +181,7 @@ pub fn VolumetricFogMat4::mul_affine3(
 }
 
 ///|
-pub fn VolumetricFogMat4::to_cols_array(
-  self : VolumetricFogMat4,
-) -> Array[Float] {
+fn VolumetricFogMat4::to_cols_array(self : VolumetricFogMat4) -> Array[Float] {
   [
     self.x_axis.x,
     self.x_axis.y,

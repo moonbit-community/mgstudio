@@ -13,6 +13,27 @@
 // limitations under the License.
 
 ///|
+fn render3d_volumetric_fog_wbtest_identity_mat4() -> @pbr_volumetric_fog.VolumetricFogMat4 {
+  @pbr_volumetric_fog.VolumetricFogMat4::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+  )
+}
+
+///|
+fn render3d_volumetric_fog_wbtest_u32_at(
+  bytes : Bytes,
+  byte_offset : Int,
+) -> UInt {
+  (bytes[byte_offset].to_uint() & 0xFFU) |
+  ((bytes[byte_offset + 1].to_uint() & 0xFFU) << 8) |
+  ((bytes[byte_offset + 2].to_uint() & 0xFFU) << 16) |
+  ((bytes[byte_offset + 3].to_uint() & 0xFFU) << 24)
+}
+
+///|
 test "pbr volumetric fog execute: extracts lights and precomputes local-from-world fog volume transforms" {
   let world = @ecs.World::new()
   let light_entity = world.spawn()
@@ -61,11 +82,20 @@ test "pbr volumetric fog execute: converts clip projection columns without trans
     @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
   )
   let converted = render3d_projection_matrix_to_volumetric_mat4(projection)
-  let cols = converted.to_cols_array()
-  inspect(cols[0], content="1")
-  inspect(cols[1], content="2")
-  inspect(cols[4], content="5")
-  inspect(cols[15], content="16")
+  let buffer = @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
+  ignore(
+    @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+      buffer,
+      @light.VolumetricFog::VolumetricFog(),
+      @math.Affine3::identity(),
+      converted,
+      [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
+    ),
+  )
+  inspect(
+    render3d_volumetric_fog_wbtest_u32_at(buffer.bytes(), 0),
+    content="\{15.0F.reinterpret_as_uint()}",
+  )
 }
 
 ///|
@@ -78,7 +108,7 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
         uniform_buffer,
         @light.VolumetricFog::VolumetricFog(),
         @math.Affine3::identity(),
-        @pbr_volumetric_fog.VolumetricFogMat4::identity(),
+        render3d_volumetric_fog_wbtest_identity_mat4(),
         [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
       )
       |> ignore
@@ -108,7 +138,7 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
       uniform_buffer,
       @light.VolumetricFog::VolumetricFog(),
       @math.Affine3::identity(),
-      @pbr_volumetric_fog.VolumetricFogMat4::identity(),
+      render3d_volumetric_fog_wbtest_identity_mat4(),
       [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
     )
   })

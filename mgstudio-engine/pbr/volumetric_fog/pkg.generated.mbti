@@ -58,17 +58,9 @@ pub(all) struct ViewVolumetricFogPipelines {
 pub impl @ecs.Component for ViewVolumetricFogPipelines
 
 pub struct VolumetricFogMat4 {
-  x_axis : @math.Vec4
-  y_axis : @math.Vec4
-  z_axis : @math.Vec4
-  w_axis : @math.Vec4
+  // private fields
 }
-pub fn VolumetricFogMat4::from_affine3(@math.Affine3) -> Self
 pub fn VolumetricFogMat4::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
-pub fn VolumetricFogMat4::identity() -> Self
-pub fn VolumetricFogMat4::mul(Self, Self) -> Self
-pub fn VolumetricFogMat4::mul_affine3(Self, @math.Affine3) -> Self
-pub fn VolumetricFogMat4::to_cols_array(Self) -> Array[Float]
 
 pub struct VolumetricFogPlugin {
 }
