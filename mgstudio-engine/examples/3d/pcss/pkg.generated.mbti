@@ -1,25 +1,11 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/pcss"
 
-import {
-  "moonbitlang/core/debug",
-}
-
 // Values
 
 // Errors
 
 // Types and methods
-pub(all) enum LightType {
-  Directional
-  Point
-  Spot
-} derive(Eq, @debug.Debug)
-
-pub(all) enum ShadowFilter {
-  NonTemporal
-  Temporal
-} derive(Eq, @debug.Debug)
 
 // Type aliases
 
