@@ -21,19 +21,15 @@ pub fn volumetric_fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.Worl
 
 pub fn volumetric_fog_plugin_install_with(@app.App[@ecs.World], VolumetricFogPlugin) -> @app.App[@ecs.World]
 
-pub fn volumetric_fog_plugin_state_with_assets(VolumetricFogPluginState, FogAssets) -> VolumetricFogPluginState
-
 pub fn volumetric_fog_plugin_state_with_extracted_counts(VolumetricFogPluginState, Int, Int, Int) -> VolumetricFogPluginState
 
 // Errors
 
 // Types and methods
 pub struct FogAssets {
-  plane_mesh : @asset.Handle[@mesh.Mesh]
-  cube_mesh : @asset.Handle[@mesh.Mesh]
+  // private fields
 }
 pub fn FogAssets::cube_mesh(Self) -> @asset.Handle[@mesh.Mesh]
-pub fn FogAssets::new(@asset.Handle[@mesh.Mesh], @asset.Handle[@mesh.Mesh]) -> Self
 pub fn FogAssets::plane_mesh(Self) -> @asset.Handle[@mesh.Mesh]
 
 pub struct PreparedVolumetricFogView {

@@ -45,12 +45,12 @@ pub impl @app.Plugin for VolumetricFogPlugin with fn build(self, app) {
 
 ///|
 pub struct FogAssets {
-  plane_mesh : @asset.Handle[@mesh.Mesh]
-  cube_mesh : @asset.Handle[@mesh.Mesh]
+  priv plane_mesh : @asset.Handle[@mesh.Mesh]
+  priv cube_mesh : @asset.Handle[@mesh.Mesh]
 }
 
 ///|
-pub fn FogAssets::new(
+fn FogAssets::new(
   plane_mesh : @asset.Handle[@mesh.Mesh],
   cube_mesh : @asset.Handle[@mesh.Mesh],
 ) -> FogAssets {
@@ -96,7 +96,7 @@ pub impl @app.Resource for VolumetricFogPluginState with fn resource() {
 }
 
 ///|
-pub fn volumetric_fog_plugin_state_with_assets(
+fn volumetric_fog_plugin_state_with_assets(
   state : VolumetricFogPluginState,
   fog_assets : FogAssets,
 ) -> VolumetricFogPluginState {
