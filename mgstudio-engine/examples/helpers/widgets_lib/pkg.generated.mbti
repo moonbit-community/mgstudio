@@ -34,11 +34,11 @@ pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[WidgetCli
 // Errors
 
 // Types and methods
-pub struct RadioButton {
+pub(all) struct RadioButton {
 }
 pub impl @ecs.Component for RadioButton
 
-pub struct RadioButtonText {
+pub(all) struct RadioButtonText {
 }
 pub impl @ecs.Component for RadioButtonText
 

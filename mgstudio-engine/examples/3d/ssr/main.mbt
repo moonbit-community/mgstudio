@@ -940,6 +940,80 @@ fn range_value(settings : AppSettings, marker : RangeValueText) -> Float {
 }
 
 ///|
+fn ssr_button_border() -> @ui.UiRect {
+  @ui.UiRect::all(@ui.Val::Px(1.0F))
+}
+
+///|
+fn ssr_button_border_radius_size() -> @ui.Val {
+  @ui.Val::Px(6.0F)
+}
+
+///|
+fn ssr_button_padding() -> @ui.UiRect {
+  @ui.UiRect::axes(@ui.Val::Px(12.0F), @ui.Val::Px(6.0F))
+}
+
+///|
+fn spawn_adjustment_button(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  setting : ExampleSetting,
+  label : String,
+  is_left : Bool,
+) -> @core.Entity {
+  let (text, text_font, text_color) = @widgets_lib.ui_text(
+    label,
+    @color.Color::white(),
+  )
+  let button = commands.spawn(
+    (
+      @hierarchy.Parent::new(parent),
+      @ui.Button::Button(),
+      @ui.Node::Node()
+      .with_height(@ui.Val::Px(33.0F))
+      .with_border(
+        if is_left {
+          ssr_button_border().with_right(@ui.Val::Px(0.0F))
+        } else {
+          ssr_button_border().with_left(@ui.Val::Px(0.0F))
+        },
+      )
+      .with_justify_content(@ui.JustifyContent::Center)
+      .with_align_items(@ui.AlignItems::Center)
+      .with_padding(ssr_button_padding())
+      .with_border_radius(
+        if is_left {
+          @ui.BorderRadius::BorderRadius().with_left(
+            ssr_button_border_radius_size(),
+          )
+        } else {
+          @ui.BorderRadius::BorderRadius().with_right(
+            ssr_button_border_radius_size(),
+          )
+        },
+      ),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::black()),
+      @widgets_lib.RadioButton::{  },
+      @widgets_lib.WidgetClickSender::new(setting),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(button),
+        text,
+        text_font,
+        text_color,
+        @widgets_lib.RadioButtonText::{  },
+      ),
+    ),
+  )
+  button
+}
+
+///|
 fn spawn_range_controls(
   commands : @app.Commands,
   parent : @core.Entity,
@@ -954,7 +1028,7 @@ fn spawn_range_controls(
       @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
     ),
   )
-  ignore(@widgets_lib.spawn_action_button(commands, row, decrease_setting, "<"))
+  ignore(spawn_adjustment_button(commands, row, decrease_setting, "<", true))
   let (text, text_font, text_color) = @widgets_lib.ui_text(
     format_range_value(value),
     @color.Color::black(),
@@ -966,12 +1040,9 @@ fn spawn_range_controls(
       .with_width(@ui.Val::Px(50.0F))
       .with_height(@ui.Val::Px(33.0F))
       .with_border(
-        @ui.UiRect::new(
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(1.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(1.0F),
-        ),
+        ssr_button_border()
+        .with_left(@ui.Val::Px(0.0F))
+        .with_right(@ui.Val::Px(0.0F)),
       )
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center),
@@ -985,7 +1056,7 @@ fn spawn_range_controls(
       (@hierarchy.Parent::new(value_box), text, text_font, text_color),
     ),
   )
-  ignore(@widgets_lib.spawn_action_button(commands, row, increase_setting, ">"))
+  ignore(spawn_adjustment_button(commands, row, increase_setting, ">", false))
 }
 
 ///|

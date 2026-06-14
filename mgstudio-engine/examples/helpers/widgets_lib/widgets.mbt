@@ -68,10 +68,10 @@ pub fn[T] WidgetClickSender::get(self : WidgetClickSender[T]) -> T {
 }
 
 ///|
-pub struct RadioButton {}
+pub(all) struct RadioButton {}
 
 ///|
-pub struct RadioButtonText {}
+pub(all) struct RadioButtonText {}
 
 ///|
 let radio_button_key : @ecs.ComponentKey[RadioButton] = @ecs.register_component(
