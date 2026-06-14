@@ -14,10 +14,12 @@
 
 ///|
 ///
-/// Baseline parity: upstream reads indirect draw parameters back from GPU to
-/// display exact culled counts. Current mgstudio runtime exposes an adapted
-/// approximation based on scene-space heuristics while preserving Space toggle,
-/// camera-side `DepthPrepass`/`OcclusionCulling` API surfaces, and scene motion.
+/// Baseline parity blocker: upstream reads indirect draw parameters back from
+/// GPU to display exact culled counts. mgstudio does not currently expose the
+/// Bevy-shaped `IndirectParametersBuffers`/staging-buffer readback surface to
+/// examples, so this example keeps the scene and camera components source-shaped
+/// but reports the missing GPU readback path instead of showing heuristic
+/// culled counts.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -51,8 +53,6 @@ priv struct OcclusionState {
   mut occlusion_enabled : Bool
   mut sphere_angle : Float
   mut large_cube : @core.Entity?
-  mut rendered_count : Int
-  mut culled_count : Int
   small_cubes : Array[SmallCube]
   mut help_text : @text.TextHandle?
 }
@@ -63,8 +63,6 @@ fn default_state() -> OcclusionState {
     occlusion_enabled: true,
     sphere_angle: 0.0F,
     large_cube: None,
-    rendered_count: 0,
-    culled_count: 0,
     small_cubes: [],
     help_text: None,
   }
@@ -79,15 +77,6 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
-}
-
-///|
 fn rotate_y(v : @math.Vec3, angle : Float) -> @math.Vec3 {
   let c = @math.cos(angle)
   let s = @math.sin(angle)
@@ -95,47 +84,15 @@ fn rotate_y(v : @math.Vec3, angle : Float) -> @math.Vec3 {
 }
 
 ///|
-fn approximate_occluded(world_pos : @math.Vec3) -> Bool {
-  if world_pos.z >= 0.0F {
-    return false
-  }
-  let half = LARGE_CUBE_SIZE * 0.65F
-  absf(world_pos.x) < half && absf(world_pos.y) < half
-}
-
-///|
 fn help_text_content() -> String {
   let status = if occlusion_state.val.occlusion_enabled { "ON" } else { "OFF" }
-  let total = occlusion_state.val.small_cubes.length() + 1
-  "Occlusion culling \{status} (Press Space to toggle)\n\{occlusion_state.val.rendered_count}/\{total} meshes rendered\nApprox culled meshes: \{occlusion_state.val.culled_count}\n\nAdapted note: GPU readback + occlusion compute path is temporarily disabled."
+  "Occlusion culling \{status} (Press Space to toggle)\nGPU indirect-parameter readback is not exposed in mgstudio yet."
 }
 
 ///|
 fn update_help_text() -> Unit {
   if occlusion_state.val.help_text is Some(handle) {
     @text.text_set_content(handle, help_text_content())
-  }
-}
-
-///|
-fn recompute_counts() -> Unit {
-  let mut culled = 0
-  for i in 0..<occlusion_state.val.small_cubes.length() {
-    let cube = occlusion_state.val.small_cubes[i]
-    let world_pos = rotate_y(
-      cube.local_position,
-      occlusion_state.val.sphere_angle,
-    )
-    if occlusion_state.val.occlusion_enabled && approximate_occluded(world_pos) {
-      culled = culled + 1
-    }
-  }
-  occlusion_state.val.culled_count = culled
-  let total = occlusion_state.val.small_cubes.length() + 1
-  occlusion_state.val.rendered_count = if occlusion_state.val.occlusion_enabled {
-    total - culled
-  } else {
-    total
   }
 }
 
@@ -242,6 +199,11 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ecs_key_depth_prepass,
     @pbr.DepthPrepass::DepthPrepass(),
   )
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_occlusion_culling,
+    @pbr.OcclusionCulling::OcclusionCulling(),
+  )
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -263,7 +225,6 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   occlusion_state.val.help_text = Some(help_text)
 
-  recompute_counts()
   update_help_text()
 }
 
@@ -312,16 +273,30 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  world |> ignore
   occlusion_state.val.occlusion_enabled = !occlusion_state.val.occlusion_enabled
-  recompute_counts()
+  world.for_each_component(@camera.ecs_key_camera3d, fn(camera, _camera3d) {
+    if occlusion_state.val.occlusion_enabled {
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_depth_prepass,
+        @pbr.DepthPrepass::DepthPrepass(),
+      )
+      try! world.set_by_key(
+        camera,
+        @pbr.ecs_key_occlusion_culling,
+        @pbr.OcclusionCulling::OcclusionCulling(),
+      )
+    } else {
+      try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
+      try! (world.take(camera, @pbr.ecs_key_occlusion_culling) |> ignore)
+    }
+  })
   update_help_text()
 }
 
 ///|
 fn update_status_text(world : @ecs.World) -> Unit {
   world |> ignore
-  recompute_counts()
   update_help_text()
 }
 
