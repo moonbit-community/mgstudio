@@ -105,6 +105,15 @@ pub fn host_gpu_create_mesh3d_morph_target_buffer(
 }
 
 ///|
+pub fn host_gpu_mesh3d_binding_arrays_are_usable(
+  required_storage_textures_per_shader_stage~ : UInt,
+) -> Bool {
+  @renderer.mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_cluster_buffers(
   clustered_lights_bytes~ : Bytes,
   clusterable_object_index_lists_bytes~ : Bytes,
@@ -313,6 +322,19 @@ pub fn host_gpu_prepare_mesh3d_clustered_decals(
   texture_ids~ : Array[Int],
 ) -> Unit {
   @renderer.prepare_mesh3d_clustered_decals(decal_words~, texture_ids~)
+}
+
+///|
+pub fn host_gpu_prepare_mesh3d_light_probes(
+  light_probes_uniform_bytes~ : Bytes,
+  diffuse_texture_ids~ : Array[Int],
+  specular_texture_ids~ : Array[Int],
+) -> Unit {
+  @renderer.prepare_mesh3d_light_probes(
+    light_probes_uniform_bytes~,
+    diffuse_texture_ids~,
+    specular_texture_ids~,
+  )
 }
 
 ///|

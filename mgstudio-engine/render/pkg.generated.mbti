@@ -260,6 +260,8 @@ pub fn host_gpu_get_queue(Int) -> Int
 
 pub fn host_gpu_mesh2d_vertex_layout(mesh_id~ : Int) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
 
+pub fn host_gpu_mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt) -> Bool
+
 pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool
 
 pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool
@@ -275,6 +277,8 @@ pub fn host_gpu_prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, gr
 pub fn host_gpu_prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_clustered_decals(decal_words~ : Array[UInt], texture_ids~ : Array[Int]) -> Unit
+
+pub fn host_gpu_prepare_mesh3d_light_probes(light_probes_uniform_bytes~ : Bytes, diffuse_texture_ids~ : Array[Int], specular_texture_ids~ : Array[Int]) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[@renderer.HostMesh3dMainPassDrawEntry]) -> Unit
 

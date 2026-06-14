@@ -19,6 +19,64 @@
 
 #if defined(MGSTUDIO_ENABLE_LIBCURL)
 #include <curl/curl.h>
+#include <dlfcn.h>
+
+typedef struct {
+  int loaded;
+  void *handle;
+  CURLcode (*global_init)(long flags);
+  CURL *(*easy_init)(void);
+  CURLcode (*easy_setopt)(CURL *curl, CURLoption option, ...);
+  CURLcode (*easy_perform)(CURL *curl);
+  CURLcode (*easy_getinfo)(CURL *curl, CURLINFO info, ...);
+  void (*easy_cleanup)(CURL *curl);
+} mgstudio_curl_api_t;
+
+static mgstudio_curl_api_t *mgstudio_asset_curl_api(void) {
+  static mgstudio_curl_api_t api = {0};
+  if (api.loaded) {
+    return api.handle == NULL ? NULL : &api;
+  }
+  api.loaded = 1;
+
+  const char *candidates[] = {
+#if defined(__APPLE__)
+      "/usr/lib/libcurl.4.dylib",
+      "libcurl.4.dylib",
+      "libcurl.dylib",
+#else
+      "libcurl.so.4",
+      "libcurl.so",
+#endif
+  };
+  for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+    api.handle = dlopen(candidates[i], RTLD_LAZY | RTLD_LOCAL);
+    if (api.handle != NULL) {
+      break;
+    }
+  }
+  if (api.handle == NULL) {
+    return NULL;
+  }
+
+  api.global_init = (CURLcode(*)(long))dlsym(api.handle, "curl_global_init");
+  api.easy_init = (CURL * (*)(void))dlsym(api.handle, "curl_easy_init");
+  api.easy_setopt =
+      (CURLcode(*)(CURL *, CURLoption, ...))dlsym(api.handle, "curl_easy_setopt");
+  api.easy_perform =
+      (CURLcode(*)(CURL *))dlsym(api.handle, "curl_easy_perform");
+  api.easy_getinfo =
+      (CURLcode(*)(CURL *, CURLINFO, ...))dlsym(api.handle, "curl_easy_getinfo");
+  api.easy_cleanup = (void (*)(CURL *))dlsym(api.handle, "curl_easy_cleanup");
+  if (api.global_init == NULL || api.easy_init == NULL ||
+      api.easy_setopt == NULL || api.easy_perform == NULL ||
+      api.easy_getinfo == NULL || api.easy_cleanup == NULL) {
+    dlclose(api.handle);
+    api.handle = NULL;
+    return NULL;
+  }
+  return &api;
+}
 
 typedef struct {
   uint8_t *data;
@@ -64,15 +122,20 @@ static size_t mgstudio_asset_http_write_cb(
 
 MOONBIT_FFI_EXPORT moonbit_bytes_t
 mgstudio_asset_http_fetch(moonbit_bytes_t url) {
+  mgstudio_curl_api_t *api = mgstudio_asset_curl_api();
+  if (api == NULL) {
+    return moonbit_make_bytes(0, 0);
+  }
+
   static int curl_initialized = 0;
   if (!curl_initialized) {
-    if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
+    if (api->global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
       return moonbit_make_bytes(0, 0);
     }
     curl_initialized = 1;
   }
 
-  CURL *curl = curl_easy_init();
+  CURL *curl = api->easy_init();
   if (curl == NULL) {
     return moonbit_make_bytes(0, 0);
   }
@@ -80,24 +143,24 @@ mgstudio_asset_http_fetch(moonbit_bytes_t url) {
   mgstudio_http_buffer_t buffer = {0};
   char *url_cstr = mgstudio_asset_ascii_cstring(url);
   if (url_cstr == NULL) {
-    curl_easy_cleanup(curl);
+    api->easy_cleanup(curl);
     return moonbit_make_bytes(0, 0);
   }
 
-  curl_easy_setopt(curl, CURLOPT_URL, url_cstr);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-  curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, "mgstudio-web-asset/1.0");
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, mgstudio_asset_http_write_cb);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+  api->easy_setopt(curl, CURLOPT_URL, url_cstr);
+  api->easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  api->easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+  api->easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+  api->easy_setopt(curl, CURLOPT_USERAGENT, "mgstudio-web-asset/1.0");
+  api->easy_setopt(curl, CURLOPT_WRITEFUNCTION, mgstudio_asset_http_write_cb);
+  api->easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
-  CURLcode result = curl_easy_perform(curl);
+  CURLcode result = api->easy_perform(curl);
   long response_code = 0;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  api->easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
   free(url_cstr);
-  curl_easy_cleanup(curl);
+  api->easy_cleanup(curl);
 
   if (result != CURLE_OK || response_code < 200 || response_code >= 300) {
     free(buffer.data);
@@ -112,7 +175,9 @@ mgstudio_asset_http_fetch(moonbit_bytes_t url) {
   return output;
 }
 
-MOONBIT_FFI_EXPORT int32_t mgstudio_asset_http_supported(void) { return 1; }
+MOONBIT_FFI_EXPORT int32_t mgstudio_asset_http_supported(void) {
+  return mgstudio_asset_curl_api() == NULL ? 0 : 1;
+}
 
 #else
 

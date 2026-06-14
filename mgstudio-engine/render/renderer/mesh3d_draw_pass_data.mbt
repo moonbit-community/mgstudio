@@ -391,6 +391,9 @@ fn mesh3d_light_probes_uniform_bytes(
   backend : GpuBackend,
   pass_state : GpuPassState,
 ) -> Bytes {
+  if pass_state.mesh3d_light_probes_uniform_bytes is Some(bytes) {
+    return bytes
+  }
   let environment_map_enabled = pass_state.environment_map_intensity > 0.0F &&
     pass_state.environment_diffuse_texture_id >= 0 &&
     pass_state.environment_specular_texture_id >= 0

@@ -585,6 +585,27 @@ test "renderer: backend requests indirect-first-instance when adapter supports i
 }
 
 ///|
+test "renderer: backend requests texture binding arrays when adapter supports it" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let adapter_supports = backend.adapter.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY,
+  )
+  let device_supports = backend.device.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY,
+  )
+  debug_inspect(!adapter_supports || device_supports, content="true")
+}
+
+///|
+test "renderer: backend requests sampled texture non-uniform indexing when adapter supports it" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let feature = @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING
+  let adapter_supports = backend.adapter.has_feature_native_u32(feature)
+  let device_supports = backend.device.has_feature_native_u32(feature)
+  debug_inspect(!adapter_supports || device_supports, content="true")
+}
+
+///|
 test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect parameter buffers" {
   let backend = GpuBackend::new(assets_base="assets")
   backend.upload_mesh3d_preprocess_camera_payload(
@@ -698,6 +719,9 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     environment_map_rotation_y: 0.0F,
     environment_map_rotation_z: 0.0F,
     environment_map_rotation_w: 1.0F,
+    environment_diffuse_texture_ids: [],
+    environment_specular_texture_ids: [],
+    mesh3d_light_probes_uniform_bytes: None,
     point_shadow_near: 0.0F,
     directional_shadow_texture_id: -1,
     directional_shadow_enabled: 0.0F,

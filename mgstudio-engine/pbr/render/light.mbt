@@ -684,7 +684,9 @@ fn render3d_lights_push_clustered_light(
 ///|
 fn render3d_gpu_cluster_buffers(
   world : @ecs.World,
+  camera_entity : @core.Entity?,
   clusterable_lights : Array[ExtractedClusterablePointLight3d],
+  reflection_probe_entities : Array[@core.Entity],
 ) -> (Bytes, Bytes, Bytes) {
   let clustered_words : Array[UInt] = []
   for i in 0..<MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
@@ -699,8 +701,18 @@ fn render3d_gpu_cluster_buffers(
   let offset_words : Array[UInt] = []
   let clusters = match render3d_cluster_camera_entity(world) {
     Some(entity) =>
-      try! world.get_by_key(entity, @light_cluster.Clusters::component())
-    None => None
+      match camera_entity {
+        Some(preferred) =>
+          try! world.get_by_key(preferred, @light_cluster.Clusters::component())
+        None =>
+          try! world.get_by_key(entity, @light_cluster.Clusters::component())
+      }
+    None =>
+      match camera_entity {
+        Some(preferred) =>
+          try! world.get_by_key(preferred, @light_cluster.Clusters::component())
+        None => None
+      }
   }
   let cluster_objects = match clusters {
     Some(value) => value.clusterable_objects()
@@ -727,7 +739,16 @@ fn render3d_gpu_cluster_buffers(
         } else if (try! world.contains_by_key(
             entity, @light.ecs_key_environment_map_light,
           )) {
-          reflection_probe_indices.push(0xFFFF_FFFFU)
+          let reflection_probe_index = render3d_clustered_reflection_probe_index(
+            reflection_probe_entities, entity,
+          )
+          if reflection_probe_index >= 0 {
+            reflection_probe_indices.push(
+              reflection_probe_index.reinterpret_as_uint(),
+            )
+          } else {
+            reflection_probe_indices.push(0xFFFF_FFFFU)
+          }
         } else if (try! world.contains_by_key(
             entity, @light.ecs_key_irradiance_volume,
           )) {
@@ -791,6 +812,78 @@ fn render3d_gpu_cluster_buffers(
     render3d_lights_u32le_pack(index_words),
     render3d_lights_u32le_pack(offset_words),
   )
+}
+
+///|
+pub fn render3d_gpu_cluster_buffers_for_reflection_probe_entities(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  reflection_probe_entities : Array[@core.Entity],
+) -> (Bytes, Bytes, Bytes) {
+  render3d_gpu_cluster_buffers(
+    world,
+    Some(camera_entity),
+    render3d_collect_extracted_clusterable_point_lights(world),
+    reflection_probe_entities,
+  )
+}
+
+///|
+priv struct Render3dClusteredReflectionProbeIndexEntry {
+  entity : @core.Entity
+  distance_squared : Float
+}
+
+///|
+fn render3d_clustered_reflection_probe_indices(
+  world : @ecs.World,
+) -> Array[@core.Entity] {
+  let camera_transform = match render3d_cluster_camera_entity(world) {
+    Some(entity) => render3d_extract_light_transform(world, entity)
+    None => @transform.Transform::identity()
+  }
+  let entries : Array[Render3dClusteredReflectionProbeIndexEntry] = []
+  world.for_each_component(@light.ecs_key_environment_map_light, fn(
+    entity,
+    _environment_map_light,
+  ) {
+    if !(try! world.contains_by_key(entity, @light.ecs_key_light_probe)) {
+      return
+    }
+    let transform = render3d_extract_light_transform(world, entity)
+    entries.push(Render3dClusteredReflectionProbeIndexEntry::{
+      entity,
+      distance_squared: transform.translation
+      .sub(camera_transform.translation)
+      .length_squared(),
+    })
+  })
+  entries.sort_by(fn(left, right) {
+    let distance_cmp = cmp_float(left.distance_squared, right.distance_squared)
+    if distance_cmp != 0 {
+      return distance_cmp
+    }
+    let id_cmp = cmp_int(left.entity.id, right.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(left.entity.generation, right.entity.generation)
+  })
+  entries.map(fn(entry) { entry.entity })
+}
+
+///|
+fn render3d_clustered_reflection_probe_index(
+  reflection_probe_entities : Array[@core.Entity],
+  entity : @core.Entity,
+) -> Int {
+  for index in 0..<reflection_probe_entities.length() {
+    let candidate = reflection_probe_entities[index]
+    if candidate.id == entity.id && candidate.generation == entity.generation {
+      return index
+    }
+  }
+  -1
 }
 
 ///|
@@ -1867,7 +1960,9 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     gpu_cluster_offsets_and_counts_bytes,
   ) = render3d_gpu_cluster_buffers(
     world,
+    None,
     render3d_collect_extracted_clusterable_point_lights(world),
+    render3d_clustered_reflection_probe_indices(world),
   )
   Render3dLightingState::{
     ..lighting,

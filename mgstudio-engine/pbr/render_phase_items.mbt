@@ -99,6 +99,7 @@ priv struct Camera3dViewPayload {
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   atmosphere_environment_map_light : AtmosphereEnvironmentMapLight?
+  has_environment_light_probes : Bool
   irradiance_volume : IrradianceVolume?
   screen_space_ambient_occlusion : ScreenSpaceAmbientOcclusion?
   screen_space_reflections : ScreenSpaceReflections?

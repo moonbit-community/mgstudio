@@ -160,6 +160,11 @@ fn cluster_assign_entity_transform(
 }
 
 ///|
+fn cluster_assign_light_probe_radius(transform : @transform.Transform) -> Float {
+  transform.scale.length()
+}
+
+///|
 fn cluster_assign_collect_objects(
   world : @ecs.World,
 ) -> Array[ClusterableObjectAssignmentData] {
@@ -198,34 +203,44 @@ fn cluster_assign_collect_objects(
       ),
     })
   })
-  world.for_each_component(@light.ecs_key_environment_map_light, fn(
-    entity,
-    _probe,
-  ) {
-    if !cluster_assign_is_view_visible(world, entity) {
-      return
-    }
-    objects.push(ClusterableObjectAssignmentData::{
+  if global_cluster_settings.supports_storage_buffers {
+    world.for_each_component(@light.ecs_key_environment_map_light, fn(
       entity,
-      transform: cluster_assign_entity_transform(world, entity),
-      range: 1.0F,
-      object_type: ClusterableObjectType::ReflectionProbe,
+      _probe,
+    ) {
+      if !(try! world.contains_by_key(entity, @light.ecs_key_light_probe)) {
+        return
+      }
+      if !cluster_assign_is_view_visible(world, entity) {
+        return
+      }
+      let transform = cluster_assign_entity_transform(world, entity)
+      objects.push(ClusterableObjectAssignmentData::{
+        entity,
+        transform,
+        range: cluster_assign_light_probe_radius(transform),
+        object_type: ClusterableObjectType::ReflectionProbe,
+      })
     })
-  })
-  world.for_each_component(@light.ecs_key_irradiance_volume, fn(
-    entity,
-    _probe,
-  ) {
-    if !cluster_assign_is_view_visible(world, entity) {
-      return
-    }
-    objects.push(ClusterableObjectAssignmentData::{
+    world.for_each_component(@light.ecs_key_irradiance_volume, fn(
       entity,
-      transform: cluster_assign_entity_transform(world, entity),
-      range: 1.0F,
-      object_type: ClusterableObjectType::IrradianceVolume,
+      _probe,
+    ) {
+      if !(try! world.contains_by_key(entity, @light.ecs_key_light_probe)) {
+        return
+      }
+      if !cluster_assign_is_view_visible(world, entity) {
+        return
+      }
+      let transform = cluster_assign_entity_transform(world, entity)
+      objects.push(ClusterableObjectAssignmentData::{
+        entity,
+        transform,
+        range: cluster_assign_light_probe_radius(transform),
+        object_type: ClusterableObjectType::IrradianceVolume,
+      })
     })
-  })
+  }
   if global_cluster_settings.clustered_decals_are_usable {
     world.for_each_component(@light.ecs_key_clustered_decal, fn(
       entity,

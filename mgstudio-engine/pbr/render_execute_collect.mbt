@@ -43,6 +43,28 @@ fn render3d_msaa_variant_name(msaa : Msaa) -> String {
 }
 
 ///|
+priv struct Render3dEnvironmentLightProbeFound {
+  mut value : Bool
+}
+
+///|
+fn render3d_world_has_environment_light_probes(world : @ecs.World) -> Bool {
+  let found = Render3dEnvironmentLightProbeFound::{ value: false }
+  world.for_each_component(@light.ecs_key_environment_map_light, fn(
+    entity,
+    _environment_map_light,
+  ) {
+    if found.value {
+      return
+    }
+    if (try! world.contains_by_key(entity, @light.ecs_key_light_probe)) {
+      found.value = true
+    }
+  })
+  found.value
+}
+
+///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
   world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
@@ -60,6 +82,9 @@ fn render3d_execute_collect_cameras(
     (hi << 32) | lo
   }
   let projection_changed_entities = @hashset.HashSet([])
+  let has_environment_light_probes = render3d_world_has_environment_light_probes(
+    source_world,
+  )
   let tick = source_world.get_tick_context().ticks()
   for entity in source_world.changed_components(ecs_key_projection, tick).read() {
     projection_changed_entities.add(entity_key(entity))
@@ -310,6 +335,7 @@ fn render3d_execute_collect_cameras(
             environment_map_light,
             generated_environment_map_light,
             atmosphere_environment_map_light,
+            has_environment_light_probes,
             irradiance_volume,
             screen_space_ambient_occlusion,
             screen_space_reflections,

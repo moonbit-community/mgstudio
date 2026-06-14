@@ -294,6 +294,31 @@ fn render3d_execute_camera_main_pass(
     decal_words=decals_buffer.gpu_words(),
     texture_ids=render_decals.texture_ids(),
   )
+  let source_world = @render.render_source_world(world)
+  let light_probe_state = render3d_camera_light_probe_state(
+    source_world, extracted_camera, environment_map_state,
+  )
+  fn prepare_light_probe_bindings() -> Unit {
+    let (
+      gpu_clustered_lights_bytes,
+      gpu_clusterable_object_index_lists_bytes,
+      gpu_cluster_offsets_and_counts_bytes,
+    ) = @pbr_render.render3d_gpu_cluster_buffers_for_reflection_probe_entities(
+      source_world,
+      camera_entity,
+      light_probe_state.reflection_probe_entities,
+    )
+    @render.host_gpu_prepare_mesh3d_cluster_buffers(
+      clustered_lights_bytes=gpu_clustered_lights_bytes,
+      clusterable_object_index_lists_bytes=gpu_clusterable_object_index_lists_bytes,
+      cluster_offsets_and_counts_bytes=gpu_cluster_offsets_and_counts_bytes,
+    )
+    @render.host_gpu_prepare_mesh3d_light_probes(
+      light_probes_uniform_bytes=light_probe_state.uniform_bytes,
+      diffuse_texture_ids=light_probe_state.diffuse_texture_ids,
+      specular_texture_ids=light_probe_state.specular_texture_ids,
+    )
+  }
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
     @render.host_gpu_prepare_mesh3d_view_bind_group(
       transmission_source_texture_id~,
@@ -394,6 +419,8 @@ fn render3d_execute_camera_main_pass(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
   )
+  prepare_light_probe_bindings()
+  prepare_view_bind_group(-1)
   let main_phase_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "render_3d_main_pass_construction",
@@ -869,9 +896,6 @@ fn render3d_execute_camera_main_pass(
     } else {
       -1
     }
-    if transmission_source_texture_id >= 0 {
-      prepare_view_bind_group(transmission_source_texture_id)
-    }
     let transmission_ranges = if transmission_steps > 0 {
       render3d_split_phase_ranges(
         transmissive_draws.length(),
@@ -943,6 +967,8 @@ fn render3d_execute_camera_main_pass(
         pass_kind=scene_pass_kind,
         clear_enabled=0,
       )
+      prepare_light_probe_bindings()
+      prepare_view_bind_group(transmission_source_texture_id)
       for i in transmission_range.0..<transmission_range.1 {
         let transmissive_draw = transmissive_draws[i]
         transmissive_draw.entity |> ignore
@@ -1014,6 +1040,8 @@ fn render3d_execute_camera_main_pass(
       pass_kind=scene_pass_kind,
       clear_enabled=0,
     )
+    prepare_light_probe_bindings()
+    prepare_view_bind_group(-1)
     for draw_payload in transparent_draws {
       @pbr_render.render3d_draw_mesh_gpu_payload(draw_payload)
     }

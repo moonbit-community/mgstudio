@@ -157,6 +157,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   directional_shadow_texture_id : Int
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
+  environment_texture_ids_signature : String
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
@@ -189,6 +190,7 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   directional_shadow_texture_id : Int
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
+  environment_texture_ids_signature : String
   prepass_depth_texture_id : Int
   prepass_normal_texture_id : Int
   prepass_motion_vector_texture_id : Int

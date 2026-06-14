@@ -259,6 +259,8 @@ pub fn host_meshlet_material_shade_draw_entry(material_id~ : Int, material_pipel
 
 pub fn mesh2d_vertex_layout(Int) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
 
+pub fn mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt) -> Bool
+
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
 pub fn mesh3d_indexed_indirect_offset(Int) -> UInt64
@@ -328,6 +330,8 @@ pub fn prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albe
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
 pub fn prepare_mesh3d_clustered_decals(decal_words~ : Array[UInt], texture_ids~ : Array[Int]) -> Unit
+
+pub fn prepare_mesh3d_light_probes(light_probes_uniform_bytes~ : Bytes, diffuse_texture_ids~ : Array[Int], specular_texture_ids~ : Array[Int]) -> Unit
 
 pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
 
@@ -1058,6 +1062,7 @@ pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
 pub fn GpuBackend::prepare_mesh3d_clustered_decals(Self, Array[UInt], Array[Int]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_light_probes(Self, Bytes, Array[Int], Array[Int]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_morph_bindings(Self, Array[Float]) -> Unit
@@ -1228,6 +1233,9 @@ pub struct GpuPassState {
   environment_map_rotation_y : Float
   environment_map_rotation_z : Float
   environment_map_rotation_w : Float
+  environment_diffuse_texture_ids : Array[Int]
+  environment_specular_texture_ids : Array[Int]
+  mesh3d_light_probes_uniform_bytes : Bytes?
   point_shadow_near : Float
   directional_shadow_texture_id : Int
   directional_shadow_enabled : Float
@@ -1653,6 +1661,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   directional_shadow_texture_id : Int
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
+  environment_texture_ids_signature : String
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int

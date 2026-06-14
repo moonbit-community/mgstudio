@@ -363,6 +363,30 @@ priv struct Render3dEnvironmentMapState {
   specular_texture_id : Int
   intensity : Float
   rotation : @math.Quat
+  affects_lightmapped_mesh_diffuse : Bool
+}
+
+///|
+priv struct Render3dLightProbeEntry {
+  entity : @core.Entity
+  distance_squared : Float
+  light_from_world : @math.Affine3
+  falloff : @math.Vec3
+  bounding_sphere_radius : Float
+  parallax_correction_bounds : @math.Vec3
+  intensity : Float
+  world_position : @math.Vec3
+  flags : Int
+  diffuse_texture_id : Int
+  specular_texture_id : Int
+}
+
+///|
+priv struct Render3dLightProbeState {
+  uniform_bytes : Bytes
+  diffuse_texture_ids : Array[Int]
+  specular_texture_ids : Array[Int]
+  reflection_probe_entities : Array[@core.Entity]
 }
 
 ///|
@@ -391,6 +415,7 @@ fn render3d_camera_environment_map_state(
     specular_texture_id: -1,
     intensity: 0.0F,
     rotation: @math.Quat::identity(),
+    affects_lightmapped_mesh_diffuse: true,
   }
   if camera.payload.environment_map_light is Some(environment_map_light) {
     if render3d_loaded_image_texture_id(environment_map_light.diffuse_map)
@@ -402,6 +427,7 @@ fn render3d_camera_environment_map_state(
         specular_texture_id,
         intensity: environment_map_light.intensity,
         rotation: environment_map_light.rotation,
+        affects_lightmapped_mesh_diffuse: environment_map_light.affects_lightmapped_mesh_diffuse,
       }
     }
   }
@@ -418,6 +444,7 @@ fn render3d_camera_environment_map_state(
         specular_texture_id: generated_texture_id,
         intensity: generated_environment_map_light.intensity,
         rotation: generated_environment_map_light.rotation,
+        affects_lightmapped_mesh_diffuse: generated_environment_map_light.affects_lightmapped_mesh_diffuse,
       }
     }
   }
@@ -435,6 +462,7 @@ fn render3d_camera_environment_map_state(
       specular_texture_id: -1,
       intensity: 0.0F,
       rotation: @math.Quat::identity(),
+      affects_lightmapped_mesh_diffuse: true,
     }
   } else {
     Render3dEnvironmentMapState::{
@@ -442,6 +470,333 @@ fn render3d_camera_environment_map_state(
       diffuse_texture_id,
       specular_texture_id,
     }
+  }
+}
+
+///|
+fn render3d_light_probe_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, index => {
+    let word = words[index / 4]
+    ((word >> (index % 4 * 8)) & 0xFF).to_byte()
+  })
+}
+
+///|
+fn render3d_light_probe_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render3d_light_probe_push_i32(words : Array[UInt], value : Int) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render3d_light_probe_entity_cmp(
+  left : @core.Entity,
+  right : @core.Entity,
+) -> Int {
+  let id_cmp = @pbr_render.cmp_int(left.id, right.id)
+  if id_cmp != 0 {
+    return id_cmp
+  }
+  @pbr_render.cmp_int(left.generation, right.generation)
+}
+
+///|
+fn render3d_light_probe_sort(
+  probes : Array[Render3dLightProbeEntry],
+) -> Array[Render3dLightProbeEntry] {
+  probes.sort_by(fn(left, right) {
+    let distance_cmp = @pbr_render.cmp_float(
+      left.distance_squared,
+      right.distance_squared,
+    )
+    if distance_cmp != 0 {
+      return distance_cmp
+    }
+    render3d_light_probe_entity_cmp(left.entity, right.entity)
+  })
+  probes
+}
+
+///|
+fn render3d_light_probe_texture_binding_index(
+  diffuse_texture_ids : Array[Int],
+  specular_texture_ids : Array[Int],
+  diffuse_texture_id : Int,
+  specular_texture_id : Int,
+) -> Int {
+  for index in 0..<diffuse_texture_ids.length() {
+    if diffuse_texture_ids[index] == diffuse_texture_id &&
+      specular_texture_ids[index] == specular_texture_id {
+      return index
+    }
+  }
+  if diffuse_texture_ids.length() >= @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+    return @pbr_light_probe.MAX_VIEW_LIGHT_PROBES - 1
+  }
+  let index = diffuse_texture_ids.length()
+  diffuse_texture_ids.push(diffuse_texture_id)
+  specular_texture_ids.push(specular_texture_id)
+  index
+}
+
+///|
+fn render3d_light_probe_entity_affine(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @math.Affine3 {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => return global_transform.affine()
+    None => ()
+  }
+  match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+    Some(transform) =>
+      @math.Affine3::from_scale_rotation_translation(
+        transform.scale,
+        transform.rotation,
+        transform.translation,
+      )
+    None => @math.Affine3::identity()
+  }
+}
+
+///|
+fn render3d_light_probe_parallax_bounds(
+  parallax_correction : @light.ParallaxCorrection?,
+) -> @math.Vec3 {
+  match parallax_correction {
+    Some(@light.ParallaxCorrection::Auto) => @math.Vec3::splat(0.5F)
+    Some(@light.ParallaxCorrection::Custom(bounds)) => bounds
+    Some(@light.ParallaxCorrection::None) => @math.Vec3::zero()
+    None => @math.Vec3::zero()
+  }
+}
+
+///|
+fn render3d_light_probe_flags(
+  environment_map_light : @light.EnvironmentMapLight,
+  parallax_correction : @light.ParallaxCorrection?,
+) -> Int {
+  let mut flags = 0
+  if environment_map_light.affects_lightmapped_mesh_diffuse {
+    flags = @pbr_light_probe.render_light_probe_flags_insert(
+      flags,
+      @pbr_light_probe.RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE,
+    )
+  }
+  match parallax_correction {
+    Some(@light.ParallaxCorrection::Auto)
+    | Some(@light.ParallaxCorrection::Custom(_)) =>
+      flags = @pbr_light_probe.render_light_probe_flags_insert(
+        flags,
+        @pbr_light_probe.RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION,
+      )
+    Some(@light.ParallaxCorrection::None) | None => ()
+  }
+  flags
+}
+
+///|
+fn render3d_light_probe_entry(
+  world : @ecs.World,
+  camera_transform : @transform.Transform,
+  entity : @core.Entity,
+  light_probe : @light.LightProbe,
+  environment_map_light : @light.EnvironmentMapLight,
+) -> Render3dLightProbeEntry? {
+  guard render3d_loaded_image_texture_id(environment_map_light.diffuse_map)
+    is Some(diffuse_texture_id) else {
+    return None
+  }
+  guard render3d_loaded_image_texture_id(environment_map_light.specular_map)
+    is Some(specular_texture_id) else {
+    return None
+  }
+  let world_from_light = render3d_light_probe_entity_affine(world, entity).mul_rotation_translation(
+    environment_map_light.rotation,
+    @math.Vec3::zero(),
+  )
+  let light_from_world = world_from_light.inverse()
+  let parallax_correction = try! world.get_by_key(
+    entity, @light.ecs_key_parallax_correction,
+  )
+  Some(Render3dLightProbeEntry::{
+    entity,
+    distance_squared: world_from_light.translation
+    .sub(camera_transform.translation)
+    .length_squared(),
+    light_from_world,
+    falloff: light_probe.falloff,
+    bounding_sphere_radius: world_from_light.matrix3
+    .mul_vec3(@math.Vec3::splat(1.0F))
+    .length(),
+    parallax_correction_bounds: render3d_light_probe_parallax_bounds(
+      parallax_correction,
+    ),
+    intensity: environment_map_light.intensity,
+    world_position: world_from_light.translation,
+    flags: render3d_light_probe_flags(
+      environment_map_light, parallax_correction,
+    ),
+    diffuse_texture_id,
+    specular_texture_id,
+  })
+}
+
+///|
+fn render3d_light_probe_push_entry(
+  words : Array[UInt],
+  entry : Render3dLightProbeEntry?,
+  cubemap_index : Int,
+) -> Unit {
+  guard entry is Some(entry0) else {
+    for _ in 0..<28 {
+      words.push(0U)
+    }
+    return
+  }
+  let matrix = entry0.light_from_world.matrix3
+  let translation = entry0.light_from_world.translation
+  render3d_light_probe_push_f32(words, matrix.x_axis.x)
+  render3d_light_probe_push_f32(words, matrix.y_axis.x)
+  render3d_light_probe_push_f32(words, matrix.z_axis.x)
+  render3d_light_probe_push_f32(words, translation.x)
+  render3d_light_probe_push_f32(words, matrix.x_axis.y)
+  render3d_light_probe_push_f32(words, matrix.y_axis.y)
+  render3d_light_probe_push_f32(words, matrix.z_axis.y)
+  render3d_light_probe_push_f32(words, translation.y)
+  render3d_light_probe_push_f32(words, matrix.x_axis.z)
+  render3d_light_probe_push_f32(words, matrix.y_axis.z)
+  render3d_light_probe_push_f32(words, matrix.z_axis.z)
+  render3d_light_probe_push_f32(words, translation.z)
+  render3d_light_probe_push_f32(words, entry0.falloff.x)
+  render3d_light_probe_push_f32(words, entry0.falloff.y)
+  render3d_light_probe_push_f32(words, entry0.falloff.z)
+  render3d_light_probe_push_f32(words, entry0.bounding_sphere_radius)
+  render3d_light_probe_push_f32(words, entry0.parallax_correction_bounds.x)
+  render3d_light_probe_push_f32(words, entry0.parallax_correction_bounds.y)
+  render3d_light_probe_push_f32(words, entry0.parallax_correction_bounds.z)
+  render3d_light_probe_push_f32(words, entry0.intensity)
+  render3d_light_probe_push_f32(words, entry0.world_position.x)
+  render3d_light_probe_push_f32(words, entry0.world_position.y)
+  render3d_light_probe_push_f32(words, entry0.world_position.z)
+  render3d_light_probe_push_i32(words, cubemap_index)
+  words.push(entry0.flags.reinterpret_as_uint())
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+}
+
+///|
+fn render3d_camera_light_probe_state(
+  world : @ecs.World,
+  camera : ExtractedCamera3d,
+  environment_map_state : Render3dEnvironmentMapState,
+) -> Render3dLightProbeState {
+  let diffuse_texture_ids : Array[Int] = []
+  let specular_texture_ids : Array[Int] = []
+  let view_cubemap_index = if environment_map_state.diffuse_texture_id >= 0 &&
+    environment_map_state.specular_texture_id >= 0 &&
+    environment_map_state.intensity > 0.0F {
+    render3d_light_probe_texture_binding_index(
+      diffuse_texture_ids,
+      specular_texture_ids,
+      environment_map_state.diffuse_texture_id,
+      environment_map_state.specular_texture_id,
+    )
+  } else {
+    -1
+  }
+  let probes : Array[Render3dLightProbeEntry] = []
+  world.for_each_component(@light.ecs_key_environment_map_light, fn(
+    entity,
+    environment_map_light,
+  ) {
+    guard (try! world.get_by_key(entity, @light.ecs_key_light_probe))
+      is Some(light_probe) else {
+      return
+    }
+    match
+      render3d_light_probe_entry(
+        world,
+        camera.payload.transform,
+        entity,
+        light_probe,
+        environment_map_light,
+      ) {
+      Some(entry) => probes.push(entry)
+      None => ()
+    }
+  })
+  let sorted_probes = render3d_light_probe_sort(probes)
+  let words : Array[UInt] = []
+  let probe_cubemap_indices : Array[Int] = []
+  let reflection_probe_entities : Array[@core.Entity] = []
+  for probe in sorted_probes {
+    if probe_cubemap_indices.length() >= @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+      break
+    }
+    reflection_probe_entities.push(probe.entity)
+    probe_cubemap_indices.push(
+      render3d_light_probe_texture_binding_index(
+        diffuse_texture_ids,
+        specular_texture_ids,
+        probe.diffuse_texture_id,
+        probe.specular_texture_id,
+      ),
+    )
+  }
+  for index in 0..<@pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+    if index < sorted_probes.length() && index < probe_cubemap_indices.length() {
+      render3d_light_probe_push_entry(
+        words,
+        Some(sorted_probes[index]),
+        probe_cubemap_indices[index],
+      )
+    } else {
+      render3d_light_probe_push_entry(words, None, -1)
+    }
+  }
+  for _ in 0..<@pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+    render3d_light_probe_push_entry(words, None, -1)
+  }
+  words.push(probe_cubemap_indices.length().reinterpret_as_uint())
+  words.push(0U)
+  render3d_light_probe_push_i32(words, view_cubemap_index)
+  words.push(0U)
+  let view_rotation = if view_cubemap_index >= 0 {
+    environment_map_state.rotation
+  } else {
+    @math.Quat::identity()
+  }
+  render3d_light_probe_push_f32(words, -view_rotation.x)
+  render3d_light_probe_push_f32(words, -view_rotation.y)
+  render3d_light_probe_push_f32(words, -view_rotation.z)
+  render3d_light_probe_push_f32(words, view_rotation.w)
+  render3d_light_probe_push_f32(
+    words,
+    if view_cubemap_index >= 0 {
+      environment_map_state.intensity
+    } else {
+      1.0F
+    },
+  )
+  let view_affects_lightmapped_mesh_diffuse = if view_cubemap_index >= 0 {
+    environment_map_state.affects_lightmapped_mesh_diffuse
+  } else {
+    true
+  }
+  words.push(if view_affects_lightmapped_mesh_diffuse { 1U } else { 0U })
+  while words.length() < 512 {
+    words.push(0U)
+  }
+  Render3dLightProbeState::{
+    uniform_bytes: render3d_light_probe_u32le_pack(words),
+    diffuse_texture_ids,
+    specular_texture_ids,
+    reflection_probe_entities,
   }
 }
 

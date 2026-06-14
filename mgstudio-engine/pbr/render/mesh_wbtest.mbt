@@ -13,8 +13,8 @@
 // limitations under the License.
 
 ///|
-test "pbr/render mesh: runtime state disables unsupported bindless material path" {
+test "pbr/render mesh: runtime state enables binding array material path" {
   let state = Render3dMeshRuntimeState::new()
   inspect(state.binding_arrays_are_usable, content="false")
-  inspect(state.clustered_decals_are_usable, content="false")
+  inspect(state.clustered_decals_are_usable, content="true")
 }

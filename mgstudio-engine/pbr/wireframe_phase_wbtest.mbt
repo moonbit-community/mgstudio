@@ -88,6 +88,7 @@ fn wireframe_phase_test_camera(
       environment_map_light: None,
       generated_environment_map_light: None,
       atmosphere_environment_map_light: None,
+      has_environment_light_probes: false,
       irradiance_volume: None,
       screen_space_ambient_occlusion: None,
       screen_space_reflections: None,

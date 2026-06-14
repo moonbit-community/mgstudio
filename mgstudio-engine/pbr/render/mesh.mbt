@@ -34,10 +34,18 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
     mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
-    clustered_decals_are_usable: false,
+    clustered_decals_are_usable: true,
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
     specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
   }
+}
+
+///|
+pub fn Render3dMeshRuntimeState::with_binding_arrays_are_usable(
+  self : Render3dMeshRuntimeState,
+  binding_arrays_are_usable : Bool,
+) -> Render3dMeshRuntimeState {
+  Render3dMeshRuntimeState::{ ..self, binding_arrays_are_usable, }
 }
 
 ///|

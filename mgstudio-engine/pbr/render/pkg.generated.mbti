@@ -308,6 +308,8 @@ pub fn render3d_fog_pow_e(Float) -> Float
 
 pub fn render3d_frustum_from_view_frustum(ViewFrustum) -> @primitives.Frustum
 
+pub fn render3d_gpu_cluster_buffers_for_reflection_probe_entities(@ecs.World, @core.Entity, Array[@core.Entity]) -> (Bytes, Bytes, Bytes)
+
 pub fn render3d_gpu_culling_supported() -> Bool
 
 pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog
@@ -1117,6 +1119,7 @@ pub struct Render3dMeshRuntimeState {
   specialized_prepass_material_pipelines : @material.SpecializedMeshPipelines
 }
 pub fn Render3dMeshRuntimeState::new() -> Self
+pub fn Render3dMeshRuntimeState::with_binding_arrays_are_usable(Self, Bool) -> Self
 pub impl @app.Resource for Render3dMeshRuntimeState
 
 pub struct Render3dMeshUploadCacheState {

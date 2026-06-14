@@ -27,6 +27,6 @@ import {
 supported_targets = "native"
 
 options(
-  link: { "native": { "cc-link-flags": "-lcurl" } },
+  link: { "native": { "stub-cc-flags": "-DMGSTUDIO_ENABLE_LIBCURL" } },
   "native-stub": [ "web_asset_stub.c" ],
 )

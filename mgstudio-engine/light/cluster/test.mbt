@@ -273,12 +273,24 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
     @light.EnvironmentMapLight::EnvironmentMapLight(),
   )
   |> ignore)
+  try! (world.set_by_key(
+    probe_visible,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
+  )
+  |> ignore)
 
   let probe_hidden = world.spawn()
   try! (world.set_by_key(
     probe_hidden,
     @light.ecs_key_environment_map_light,
     @light.EnvironmentMapLight::EnvironmentMapLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    probe_hidden,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -295,12 +307,24 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
     @light.IrradianceVolume::IrradianceVolume(),
   )
   |> ignore)
+  try! (world.set_by_key(
+    irradiance_visible,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
+  )
+  |> ignore)
 
   let irradiance_hidden = world.spawn()
   try! (world.set_by_key(
     irradiance_hidden,
     @light.ecs_key_irradiance_volume,
     @light.IrradianceVolume::IrradianceVolume(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    irradiance_hidden,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -320,6 +344,63 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   inspect(visible.point_and_spot_light_count(), content="1")
   inspect(visible.reflection_probe_count(), content="1")
   inspect(visible.irradiance_volume_count(), content="1")
+}
+
+///|
+test "light cluster: light probes require LightProbe and use transform radius" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+
+  let bare_environment_map = world.spawn()
+  try! (world.set_by_key(
+    bare_environment_map,
+    @light.ecs_key_environment_map_light,
+    @light.EnvironmentMapLight::EnvironmentMapLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    bare_environment_map,
+    @transform.Transform::component(),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
+  )
+  |> ignore)
+
+  let reflection_probe = world.spawn()
+  try! (world.set_by_key(
+    reflection_probe,
+    @light.ecs_key_environment_map_light,
+    @light.EnvironmentMapLight::EnvironmentMapLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    reflection_probe,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    reflection_probe,
+    @transform.Transform::component(),
+    @transform.Transform::identity().with_scale(
+      @math.Vec3::new(3.0F, 4.0F, 12.0F),
+    ),
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  inspect(clusters.far, content="13")
+  inspect(visible.reflection_probe_count(), content="1")
 }
 
 ///|

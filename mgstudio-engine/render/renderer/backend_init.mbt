@@ -53,6 +53,16 @@ pub fn GpuBackend::new(
       @wgpu.NATIVE_FEATURE_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
     )
   }
+  if adapter.has_feature_native_u32(@wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY) {
+    required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY)
+  }
+  if adapter.has_feature_native_u32(
+      @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
+    ) {
+    required_features.push(
+      @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
+    )
+  }
   if adapter.supported_features_contains_u32(
       @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
     ) {

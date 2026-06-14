@@ -328,7 +328,8 @@ fn render3d_camera_msaa_samples(camera : Camera3dViewPayload) -> Int {
 fn render3d_camera_has_environment_map(camera : Camera3dViewPayload) -> Bool {
   camera.environment_map_light is Some(_) ||
   camera.generated_environment_map_light is Some(_) ||
-  camera.atmosphere_environment_map_light is Some(_)
+  camera.atmosphere_environment_map_light is Some(_) ||
+  camera.has_environment_light_probes
 }
 
 ///|
@@ -614,6 +615,19 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
     world,
   )
+  let binding_arrays_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+  )
+  let mesh_runtime_state_value = mesh_runtime_state.peek()
+  if mesh_runtime_state_value.binding_arrays_are_usable !=
+    binding_arrays_are_usable {
+    mesh_runtime_state.set(
+      mesh_runtime_state_value.with_binding_arrays_are_usable(
+        binding_arrays_are_usable,
+      ),
+    )
+  }
   let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
   let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
   if sorted_cameras_ref.peek().entities.length() == 0 {

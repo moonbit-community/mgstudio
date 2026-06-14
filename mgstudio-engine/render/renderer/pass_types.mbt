@@ -95,6 +95,9 @@ pub struct GpuPassState {
   environment_map_rotation_y : Float
   environment_map_rotation_z : Float
   environment_map_rotation_w : Float
+  environment_diffuse_texture_ids : Array[Int]
+  environment_specular_texture_ids : Array[Int]
+  mesh3d_light_probes_uniform_bytes : Bytes?
   point_shadow_near : Float
   directional_shadow_texture_id : Int
   directional_shadow_enabled : Float

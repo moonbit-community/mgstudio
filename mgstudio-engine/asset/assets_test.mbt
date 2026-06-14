@@ -1362,6 +1362,34 @@ test "web asset reader fetches remote PNG bytes" {
 }
 
 ///|
+test "web asset reader fetches remote Blob bytes through AssetServer::load_bytes" {
+  if !@asset.web_asset_http_runtime_supported() {
+    debug_inspect(true, content="true")
+    return
+  }
+  let app = asset_plugin(
+    web_asset_plugin(@app.App::new(@ecs.World::new()), plugin=WebAssetPlugin::{
+      silence_startup_warning: true,
+    }),
+  )
+  let url = "https://github.com/bevyengine/bevy_asset_files/raw/main/pccm_example/outer_cube.glb"
+  let asset_server = match app.world().get_resource(asset_server_resource_key) {
+    Some(server) => server
+    None => abort("missing asset server resource")
+  }
+  let handle = asset_server.load_bytes(url)
+  let bytes = match asset_blob_read_bytes(handle) {
+    Some(bytes) => bytes
+    None => Bytes::new(0)
+  }
+  debug_inspect(bytes.length() > 12, content="true")
+  debug_inspect(bytes[0].to_uint(), content="103")
+  debug_inspect(bytes[1].to_uint(), content="108")
+  debug_inspect(bytes[2].to_uint(), content="84")
+  debug_inspect(bytes[3].to_uint(), content="70")
+}
+
+///|
 test "Assets<Image>::get_mut exposes in-place mutation and emits a modified event" {
   let world = @ecs.World::new()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()

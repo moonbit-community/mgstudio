@@ -51,6 +51,24 @@ pub fn reserve_mesh3d_draw_storage(count~ : Int) -> Int {
 }
 
 ///|
+pub fn mesh3d_binding_arrays_are_usable(
+  required_storage_textures_per_shader_stage~ : UInt,
+) -> Bool {
+  if ensure_backend() is Some(backend) {
+    backend.device.has_feature_native_u32(
+      @wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY,
+    ) &&
+    backend.device.has_feature_native_u32(
+      @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
+    ) &&
+    backend.device.limits_max_storage_textures_per_shader_stage_u32() >=
+    required_storage_textures_per_shader_stage
+  } else {
+    false
+  }
+}
+
+///|
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_skin_bindings(skinning_rows)
@@ -957,6 +975,19 @@ pub fn prepare_mesh3d_clustered_decals(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_clustered_decals(decal_words, texture_ids)
+  }
+}
+
+///|
+pub fn prepare_mesh3d_light_probes(
+  light_probes_uniform_bytes~ : Bytes,
+  diffuse_texture_ids~ : Array[Int],
+  specular_texture_ids~ : Array[Int],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_light_probes(
+      light_probes_uniform_bytes, diffuse_texture_ids, specular_texture_ids,
+    )
   }
 }
 

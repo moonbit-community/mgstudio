@@ -232,6 +232,127 @@ fn mesh3d_finish_bind_group_checked(
 }
 
 ///|
+fn mesh3d_environment_texture_ids_signature(
+  diffuse_texture_ids : Array[Int],
+  specular_texture_ids : Array[Int],
+) -> String {
+  let parts : Array[String] = []
+  for id in diffuse_texture_ids {
+    parts.push(id.to_string())
+  }
+  parts.push("|")
+  for id in specular_texture_ids {
+    parts.push(id.to_string())
+  }
+  parts.join(",")
+}
+
+///|
+fn mesh3d_pass_environment_texture_ids(
+  backend : GpuBackend,
+  environment_diffuse_texture : GpuTextureInfo,
+  environment_specular_texture : GpuTextureInfo,
+  fallback_environment_texture : GpuTextureInfo,
+) -> (Array[Int], Array[Int], String) {
+  let diffuse_source : Array[Int] = []
+  let specular_source : Array[Int] = []
+  if backend.pass_state is Some(pass_state) &&
+    (
+      pass_state.environment_diffuse_texture_ids.length() > 0 ||
+      pass_state.environment_specular_texture_ids.length() > 0
+    ) {
+    for id in pass_state.environment_diffuse_texture_ids {
+      diffuse_source.push(id)
+    }
+    for id in pass_state.environment_specular_texture_ids {
+      specular_source.push(id)
+    }
+  }
+  if diffuse_source.length() == 0 && specular_source.length() == 0 {
+    diffuse_source.push(environment_diffuse_texture.id)
+    specular_source.push(environment_specular_texture.id)
+  }
+  let diffuse_ids : Array[Int] = []
+  let specular_ids : Array[Int] = []
+  let target_len = if diffuse_source.length() > 1 ||
+    specular_source.length() > 1 {
+    8
+  } else {
+    1
+  }
+  for i in 0..<target_len {
+    let diffuse_id = if i < diffuse_source.length() {
+      diffuse_source[i]
+    } else {
+      fallback_environment_texture.id
+    }
+    let specular_id = if i < specular_source.length() {
+      specular_source[i]
+    } else {
+      fallback_environment_texture.id
+    }
+    diffuse_ids.push(diffuse_id)
+    specular_ids.push(specular_id)
+  }
+  (
+    diffuse_ids,
+    specular_ids,
+    mesh3d_environment_texture_ids_signature(diffuse_ids, specular_ids),
+  )
+}
+
+///|
+fn mesh3d_environment_texture_views(
+  backend : GpuBackend,
+  texture_ids : Array[Int],
+  fallback_environment_texture : GpuTextureInfo,
+) -> Array[@wgpu.TextureView] raise GpuBackendError {
+  let fallback_view = match fallback_environment_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_texture.view
+  }
+  let views : Array[@wgpu.TextureView] = []
+  for texture_id in texture_ids {
+    let texture = match resolve_mesh3d_texture(backend, texture_id) {
+      Some(value) => value
+      None => fallback_environment_texture
+    }
+    views.push(
+      match texture.sample_view {
+        Some(view) => view
+        None => fallback_view
+      },
+    )
+  }
+  if views.length() == 0 {
+    views.push(fallback_view)
+  }
+  views
+}
+
+///|
+fn mesh3d_add_texture_views_for_layout_entry(
+  builder : @wgpu.BindGroupBuilder,
+  binding : UInt,
+  views : Array[@wgpu.TextureView],
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Bool {
+  if entry.count() > 1 {
+    let texture_views : Array[@wgpu.TextureView] = []
+    for i in 0..<entry.count() {
+      if i < views.length() {
+        texture_views.push(views[i])
+      } else {
+        texture_views.push(views[views.length() - 1])
+      }
+    }
+    builder.add_texture_view_array(binding, texture_views)
+  } else {
+    builder.add_texture_view(binding, views[0])
+  }
+}
+
+///|
 fn mesh3d_add_view_bind_group_layout_entry(
   builder : @wgpu.BindGroupBuilder,
   entry : @render_resource.BindGroupLayoutEntry,
@@ -474,8 +595,8 @@ fn mesh3d_build_view_bind_group_from_descriptor(
 fn mesh3d_add_binding_array_layout_entry(
   builder : @wgpu.BindGroupBuilder,
   entry : @render_resource.BindGroupLayoutEntry,
-  environment_diffuse_sample_view : @wgpu.TextureView,
-  environment_specular_sample_view : @wgpu.TextureView,
+  environment_diffuse_sample_views : Array[@wgpu.TextureView],
+  environment_specular_sample_views : Array[@wgpu.TextureView],
   environment_sampler : @wgpu.Sampler,
   clustered_decals_buf : @wgpu.Buffer,
   clustered_decal_texture_views : Array[@wgpu.TextureView],
@@ -487,12 +608,12 @@ fn mesh3d_add_binding_array_layout_entry(
   let binding = entry.binding().reinterpret_as_uint()
   match entry.binding() {
     0 =>
-      mesh3d_add_texture_view_for_layout_entry(
-        builder, binding, environment_diffuse_sample_view, entry,
+      mesh3d_add_texture_views_for_layout_entry(
+        builder, binding, environment_diffuse_sample_views, entry,
       )
     1 =>
-      mesh3d_add_texture_view_for_layout_entry(
-        builder, binding, environment_specular_sample_view, entry,
+      mesh3d_add_texture_views_for_layout_entry(
+        builder, binding, environment_specular_sample_views, entry,
       )
     2 =>
       mesh3d_add_sampler_for_layout_entry(
@@ -520,8 +641,8 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   backend : GpuBackend,
   layout : @wgpu.BindGroupLayout,
   descriptor : @render_resource.BindGroupLayoutDescriptor,
-  environment_diffuse_sample_view : @wgpu.TextureView,
-  environment_specular_sample_view : @wgpu.TextureView,
+  environment_diffuse_sample_views : Array[@wgpu.TextureView],
+  environment_specular_sample_views : Array[@wgpu.TextureView],
   environment_sampler : @wgpu.Sampler,
   clustered_decals_buf : @wgpu.Buffer,
   clustered_decal_texture_views : Array[@wgpu.TextureView],
@@ -534,7 +655,7 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   )
   for entry in entries {
     if !mesh3d_add_binding_array_layout_entry(
-        builder, entry, environment_diffuse_sample_view, environment_specular_sample_view,
+        builder, entry, environment_diffuse_sample_views, environment_specular_sample_views,
         environment_sampler, clustered_decals_buf, clustered_decal_texture_views,
         clustered_decal_sampler,
       ) {
@@ -710,6 +831,16 @@ fn mesh3d_view_bg_cache_get_or_create(
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   let ssao_revision = mesh3d_ssao_resource_revision(backend)
   let clustered_decals_revision = backend.mesh3d_clustered_decals_revision
+  let fallback_environment_texture = ensure_environment_map_fallback_texture(
+    backend,
+  )
+  let (
+    environment_diffuse_texture_ids,
+    environment_specular_texture_ids,
+    environment_texture_ids_signature,
+  ) = mesh3d_pass_environment_texture_ids(
+    backend, environment_diffuse_texture, environment_specular_texture, fallback_environment_texture,
+  )
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -718,6 +849,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.environment_texture_ids_signature ==
+      environment_texture_ids_signature &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
@@ -822,26 +955,14 @@ fn mesh3d_view_bg_cache_get_or_create(
     }
     None => None
   }
-  let fallback_environment_texture = ensure_environment_map_fallback_texture(
-    backend,
-  )
   let fallback_decal_texture = ensure_normal_map_fallback_texture(backend)
   let clustered_decals_buf = ensure_mesh3d_clustered_decals_buffer(backend)
-  let fallback_environment_sample_view = match
-    fallback_environment_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_texture.view
-  }
-  let environment_diffuse_sample_view = match
-    environment_diffuse_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_sample_view
-  }
-  let environment_specular_sample_view = match
-    environment_specular_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_sample_view
-  }
+  let environment_diffuse_sample_views = mesh3d_environment_texture_views(
+    backend, environment_diffuse_texture_ids, fallback_environment_texture,
+  )
+  let environment_specular_sample_views = mesh3d_environment_texture_views(
+    backend, environment_specular_texture_ids, fallback_environment_texture,
+  )
   let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
     backend, fallback_decal_texture, 8,
   )
@@ -880,8 +1001,8 @@ fn mesh3d_view_bg_cache_get_or_create(
     backend,
     binding_arrays_layout,
     binding_arrays_layout_descriptor,
-    environment_diffuse_sample_view,
-    environment_specular_sample_view,
+    environment_diffuse_sample_views,
+    environment_specular_sample_views,
     environment_diffuse_texture.sampler,
     clustered_decals_buf,
     clustered_decal_texture_views,
@@ -896,6 +1017,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
+    environment_texture_ids_signature,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
@@ -933,6 +1055,16 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let atmosphere_revision = mesh3d_atmosphere_resource_revision(backend)
   let ssao_revision = mesh3d_ssao_resource_revision(backend)
   let clustered_decals_revision = backend.mesh3d_clustered_decals_revision
+  let fallback_environment_texture = ensure_environment_map_fallback_texture(
+    backend,
+  )
+  let (
+    environment_diffuse_texture_ids,
+    environment_specular_texture_ids,
+    environment_texture_ids_signature,
+  ) = mesh3d_pass_environment_texture_ids(
+    backend, environment_diffuse_texture, environment_specular_texture, fallback_environment_texture,
+  )
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -945,6 +1077,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.environment_texture_ids_signature ==
+      environment_texture_ids_signature &&
       entry.prepass_depth_texture_id == prepass_depth_texture_id &&
       entry.prepass_normal_texture_id == prepass_normal_texture_id &&
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
@@ -1053,26 +1187,14 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     }
     None => None
   }
-  let fallback_environment_texture = ensure_environment_map_fallback_texture(
-    backend,
-  )
   let fallback_decal_texture = ensure_normal_map_fallback_texture(backend)
   let clustered_decals_buf = ensure_mesh3d_clustered_decals_buffer(backend)
-  let fallback_environment_sample_view = match
-    fallback_environment_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_texture.view
-  }
-  let environment_diffuse_sample_view = match
-    environment_diffuse_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_sample_view
-  }
-  let environment_specular_sample_view = match
-    environment_specular_texture.sample_view {
-    Some(view) => view
-    None => fallback_environment_sample_view
-  }
+  let environment_diffuse_sample_views = mesh3d_environment_texture_views(
+    backend, environment_diffuse_texture_ids, fallback_environment_texture,
+  )
+  let environment_specular_sample_views = mesh3d_environment_texture_views(
+    backend, environment_specular_texture_ids, fallback_environment_texture,
+  )
   let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
     backend, fallback_decal_texture, 8,
   )
@@ -1120,8 +1242,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     backend,
     binding_arrays_layout,
     binding_arrays_layout_descriptor,
-    environment_diffuse_sample_view,
-    environment_specular_sample_view,
+    environment_diffuse_sample_views,
+    environment_specular_sample_views,
     environment_diffuse_texture.sampler,
     clustered_decals_buf,
     clustered_decal_texture_views,
@@ -1142,6 +1264,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
+    environment_texture_ids_signature,
     prepass_depth_texture_id,
     prepass_normal_texture_id,
     prepass_motion_vector_texture_id,
@@ -1592,6 +1715,25 @@ pub fn GpuBackend::prepare_mesh3d_clustered_decals(
   }
   self.mesh3d_clustered_decals_revision = self.mesh3d_clustered_decals_revision +
     1
+}
+
+///|
+pub fn GpuBackend::prepare_mesh3d_light_probes(
+  self : GpuBackend,
+  light_probes_uniform_bytes : Bytes,
+  diffuse_texture_ids : Array[Int],
+  specular_texture_ids : Array[Int],
+) -> Unit {
+  guard self.pass_state is Some(pass_state) else { return }
+  self.pass_state = Some(GpuPassState::{
+    ..pass_state,
+    environment_diffuse_texture_ids: diffuse_texture_ids,
+    environment_specular_texture_ids: specular_texture_ids,
+    mesh3d_light_probes_uniform_bytes: Some(light_probes_uniform_bytes),
+  })
+  if self.mesh3d_light_probes_buf is Some(light_probes_buf) {
+    self.queue.write_buffer(light_probes_buf, 0UL, light_probes_uniform_bytes)
+  }
 }
 
 ///|
