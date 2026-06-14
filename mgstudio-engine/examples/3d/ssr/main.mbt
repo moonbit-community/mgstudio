@@ -959,21 +959,30 @@ fn spawn_range_controls(
     format_range_value(value),
     @color.Color::black(),
   )
+  let value_box = commands.spawn(
+    (
+      @hierarchy.Parent::new(row),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Px(50.0F))
+      .with_height(@ui.Val::Px(33.0F))
+      .with_border(
+        @ui.UiRect::new(
+          @ui.Val::Px(0.0F),
+          @ui.Val::Px(1.0F),
+          @ui.Val::Px(0.0F),
+          @ui.Val::Px(1.0F),
+        ),
+      )
+      .with_justify_content(@ui.JustifyContent::Center)
+      .with_align_items(@ui.AlignItems::Center),
+      @ui.BackgroundColor::new(@color.Color::white()),
+      @ui.BorderColor::new(@color.Color::white()),
+      marker,
+    ),
+  )
   ignore(
     commands.spawn(
-      (
-        @hierarchy.Parent::new(row),
-        @ui.Node::Node()
-        .with_width(@ui.Val::Px(50.0F))
-        .with_height(@ui.Val::Px(33.0F))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center),
-        @ui.BackgroundColor::new(@color.Color::white()),
-        marker,
-        text,
-        text_font,
-        text_color,
-      ),
+      (@hierarchy.Parent::new(value_box), text, text_font, text_color),
     ),
   )
   ignore(@widgets_lib.spawn_action_button(commands, row, increase_setting, ">"))
@@ -1210,17 +1219,25 @@ fn update_radio_buttons(
 ///|
 fn update_range_value_text(
   range_values : @ecs.Query[
-    (@ecs.Read[RangeValueText], @ecs.Write[@text.Text]),
+    (@ecs.Read[RangeValueText], @ecs.Read[@hierarchy.Children]),
     @ecs.All,
   ],
+  texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.All],
+  text_colors : @ecs.Query[@ecs.Write[@text.TextColor], @ecs.All],
   app_settings : @app.Res[AppSettings],
 ) -> Unit {
   let settings = app_settings.get()
   try! range_values.view(fn(_entity, data) {
-    let (marker, text) = data
-    text.set(
-      @text.Text::new(format_range_value(range_value(settings, marker.value()))),
-    )
+    let (marker, children) = data
+    let content = format_range_value(range_value(settings, marker.value()))
+    for child in children.value().entities() {
+      if (texts.get(child) catch { _ => None }) is Some(text) {
+        text.set(@text.Text::new(content))
+      }
+      if (text_colors.get(child) catch { _ => None }) is Some(text_color) {
+        text_color.set(@text.TextColor::new(@color.Color::black()))
+      }
+    }
   })
 }
 
@@ -1423,7 +1440,7 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system_config_param2(update_range_value_text)
+    @app.system_config_param4(update_range_value_text)
     .in_set(ssr_set_apply_settings)
     .run_if_on_message(widget_click_message_key),
   )
