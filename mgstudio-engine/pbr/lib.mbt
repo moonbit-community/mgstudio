@@ -59,6 +59,32 @@ fn pbr_default_runtime_config() -> PbrPluginRuntimeConfig {
 }
 
 ///|
+fn pbr_plugin_ensure_mesh_asset_resources(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @mesh.ensure_mesh_required_components(app.world())
+  let mesh_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  let mut next = if app.contains_resource(mesh_key) {
+    app
+  } else {
+    @asset.init_asset(app, fn() {
+      @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::new([], [], None))
+    })
+  }
+  let inverse_bindposes_key : @ecs.ResourceKey[
+    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  ] = @asset.assets_resource_key()
+  if next.contains_resource(inverse_bindposes_key) {
+    next
+  } else {
+    next = @asset.init_asset(next, fn() {
+      @mesh.SkinnedMeshInverseBindposes::new([])
+    })
+    next
+  }
+}
+
+///|
 pub fn pbr_plugin_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
   match world.get_resource(ecs_key_pbr_plugin_runtime_config) {
     Some(config) => config
@@ -255,6 +281,7 @@ fn pbr_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   let runtime_config = PbrPluginRuntimeConfig::from_plugin(plugin)
   let mut next = @shader.shader_plugin(app)
+  next = pbr_plugin_ensure_mesh_asset_resources(next)
   if !next.contains_resource(ecs_key_pbr_plugin_marker) {
     let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
       DistanceFog,

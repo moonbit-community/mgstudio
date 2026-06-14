@@ -1004,6 +1004,13 @@ pub fn render3d_pass_projection_clip_from_world(
 }
 
 ///|
+pub fn render3d_pass_projection_clip_from_view(
+  pass_projection : Render3dPassProjection,
+) -> ProjectionMatrix3d {
+  pass_projection.clip_from_view
+}
+
+///|
 pub fn render3d_pass_projection_unjittered_clip_from_world(
   pass_projection : Render3dPassProjection,
   camera_transform : @transform.Transform,

@@ -887,6 +887,26 @@ fn render3d_execute_camera_main_pass(
     ),
   )
   @render.host_gpu_end_pass()
+  let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
+    source_world, camera, camera_pass_projection,
+  )
+  render3d_update_volumetric_fog_plugin_state(world, volumetric_fog_prepare)
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_views",
+    volumetric_fog_prepare.view_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_volumes",
+    volumetric_fog_prepare.volume_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_lights",
+    volumetric_fog_prepare.light_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_uniforms",
+    volumetric_fog_prepare.uniform_buffer.count(),
+  )
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,
   )
