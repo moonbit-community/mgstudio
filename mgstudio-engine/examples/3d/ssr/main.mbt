@@ -1149,51 +1149,24 @@ fn spawn_buttons(commands : @app.Commands, app_settings : AppSettings) -> Unit {
     (@hierarchy.Parent::new(root), @widgets_lib.main_ui_node()),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      panel,
-      "SSR",
-      [(Ssr(true), "On"), (Ssr(false), "Off")],
-      if app_settings.ssr_on {
-        0
-      } else {
-        1
-      },
-    ),
+    @widgets_lib.spawn_option_buttons(commands, panel, "SSR", [
+      (Ssr(true), "On"),
+      (Ssr(false), "Off"),
+    ]),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      panel,
-      "Model",
-      [
-        (Model(Cube), "Cube"),
-        (Model(FlightHelmet), "Flight Helmet"),
-        (Model(Capsules), "Capsules"),
-      ],
-      match app_settings.displayed_model {
-        Cube => 0
-        FlightHelmet => 1
-        Capsules => 2
-      },
-    ),
+    @widgets_lib.spawn_option_buttons(commands, panel, "Model", [
+      (Model(Cube), "Cube"),
+      (Model(FlightHelmet), "Flight Helmet"),
+      (Model(Capsules), "Capsules"),
+    ]),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      panel,
-      "Base",
-      [
-        (Base(Water), "Water"),
-        (Base(Metallic), "Metallic"),
-        (Base(RedPlane), "Red Plane"),
-      ],
-      match app_settings.displayed_base {
-        Water => 0
-        Metallic => 1
-        RedPlane => 2
-      },
-    ),
+    @widgets_lib.spawn_option_buttons(commands, panel, "Base", [
+      (Base(Water), "Water"),
+      (Base(Metallic), "Metallic"),
+      (Base(RedPlane), "Red Plane"),
+    ]),
   )
   spawn_range_row(
     commands,

@@ -19,7 +19,7 @@ pub fn[T : WidgetValue] spawn_action_button(@app.Commands, @core.Entity, T, Stri
 
 pub fn[T : WidgetValue] spawn_option_button(@app.Commands, @core.Entity, T, String, Bool, Bool, Bool) -> @core.Entity
 
-pub fn[T : WidgetValue] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, String)], Int) -> @core.Entity
+pub fn[T : WidgetValue] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, String)]) -> @core.Entity
 
 pub fn ui_text(String, @color.Color) -> (@text.Text, @text.TextFont, @text.TextColor)
 

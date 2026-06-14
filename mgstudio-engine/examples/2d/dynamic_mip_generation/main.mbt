@@ -370,46 +370,28 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
     ),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      root,
-      "Mip Generation",
-      [
-        (AppSetting::EnableMipGeneration(On), "On"),
-        (AppSetting::EnableMipGeneration(Off), "Off"),
-      ],
-      0,
-    ),
+    @widgets_lib.spawn_option_buttons(commands, root, "Mip Generation", [
+      (AppSetting::EnableMipGeneration(On), "On"),
+      (AppSetting::EnableMipGeneration(Off), "Off"),
+    ]),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      root,
-      "Image Width",
-      [
-        (AppSetting::ImageWidth(Size240), "240"),
-        (AppSetting::ImageWidth(Size480), "480"),
-        (AppSetting::ImageWidth(Size640), "640"),
-        (AppSetting::ImageWidth(Size1080), "1080"),
-        (AppSetting::ImageWidth(Size1920), "1920"),
-      ],
-      2,
-    ),
+    @widgets_lib.spawn_option_buttons(commands, root, "Image Width", [
+      (AppSetting::ImageWidth(Size240), "240"),
+      (AppSetting::ImageWidth(Size480), "480"),
+      (AppSetting::ImageWidth(Size640), "640"),
+      (AppSetting::ImageWidth(Size1080), "1080"),
+      (AppSetting::ImageWidth(Size1920), "1920"),
+    ]),
   )
   ignore(
-    @widgets_lib.spawn_option_buttons(
-      commands,
-      root,
-      "Image Height",
-      [
-        (AppSetting::ImageHeight(Size240), "240"),
-        (AppSetting::ImageHeight(Size480), "480"),
-        (AppSetting::ImageHeight(Size640), "640"),
-        (AppSetting::ImageHeight(Size1080), "1080"),
-        (AppSetting::ImageHeight(Size1920), "1920"),
-      ],
-      1,
-    ),
+    @widgets_lib.spawn_option_buttons(commands, root, "Image Height", [
+      (AppSetting::ImageHeight(Size240), "240"),
+      (AppSetting::ImageHeight(Size480), "480"),
+      (AppSetting::ImageHeight(Size640), "640"),
+      (AppSetting::ImageHeight(Size1080), "1080"),
+      (AppSetting::ImageHeight(Size1920), "1920"),
+    ]),
   )
 }
 

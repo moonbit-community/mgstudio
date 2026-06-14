@@ -302,7 +302,6 @@ pub fn[T : WidgetValue] spawn_option_buttons(
   parent : @core.Entity,
   title : String,
   options : Array[(T, String)],
-  selected_index : Int,
 ) -> @core.Entity {
   let (text, text_font, text_color) = ui_text(title, white())
   let row = commands.spawn(
@@ -331,7 +330,7 @@ pub fn[T : WidgetValue] spawn_option_buttons(
         row,
         option_value,
         option_name,
-        index == selected_index,
+        index == 0,
         index == 0,
         index == options.length() - 1,
       ),
