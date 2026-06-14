@@ -1372,14 +1372,14 @@ fn mesh3d_build_volumetric_fog_pipeline(
   atmosphere : Bool,
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
   vertex_stride_bytes : UInt64,
-) -> Mesh3dVolumetricFogPreparedPipeline? raise GpuBackendError {
+) -> Int? raise GpuBackendError {
   let view_layout_key_bits = mesh_pipeline_view_key.bits()
-  if mesh3d_volumetric_fog_pipeline_get(
+  if mesh3d_volumetric_fog_pipeline_available_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
       view_layout_key_bits, vertex_stride_bytes,
     )
-    is Some(prepared_pipeline) {
-    return Some(prepared_pipeline)
+    is Some(pipeline_id) {
+    return Some(pipeline_id)
   }
   if mesh3d_volumetric_fog_pipeline_failed(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
@@ -1511,7 +1511,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
     vertex_stride_bytes, pipeline_layout, pipeline,
   )
   shader.release()
-  Some(Mesh3dVolumetricFogPreparedPipeline::{ pipeline_id, pipeline })
+  Some(pipeline_id)
 }
 
 ///|
@@ -1553,7 +1553,7 @@ pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
       mesh_pipeline_view_key,
       hull_mesh.vertex_stride_bytes,
     ) {
-    Some(prepared_pipeline) => Some(prepared_pipeline.pipeline_id)
+    Some(pipeline_id) => Some(pipeline_id)
     None =>
       mesh3d_volumetric_fog_pipeline_id_get(
         self,

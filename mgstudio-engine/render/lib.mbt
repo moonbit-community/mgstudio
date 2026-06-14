@@ -1512,6 +1512,8 @@ pub fn host_gpu_draw_mesh3d_volumetric_fog(
   camera_key_lo~ : Int,
   plane_mesh_id~ : Int,
   cube_mesh_id~ : Int,
+  textureless_pipeline_id~ : Int,
+  textured_pipeline_id~ : Int,
   atmosphere~ : Bool,
   volumes~ : Array[@renderer.HostMesh3dVolumetricFogVolume],
 ) -> Unit {
@@ -1520,6 +1522,8 @@ pub fn host_gpu_draw_mesh3d_volumetric_fog(
     camera_key_lo~,
     plane_mesh_id~,
     cube_mesh_id~,
+    textureless_pipeline_id~,
+    textured_pipeline_id~,
     atmosphere~,
     volumes~,
   )

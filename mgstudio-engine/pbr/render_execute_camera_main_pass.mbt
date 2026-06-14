@@ -1077,6 +1077,8 @@ fn render3d_execute_camera_main_pass(
     volumetric_fog_pipelines,
   )
   render3d_draw_volumetric_fog(
+    world,
+    extracted_camera.entity.render_entity,
     volumetric_fog_prepare,
     camera_entity,
     camera.atmosphere is Some(_),

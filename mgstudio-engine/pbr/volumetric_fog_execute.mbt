@@ -195,6 +195,8 @@ fn render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
 
 ///|
 fn render3d_draw_volumetric_fog(
+  world : @ecs.World,
+  view_entity : @core.Entity,
   prepared : Render3dVolumetricFogPrepareOutput,
   camera_entity : @core.Entity,
   atmosphere : Bool,
@@ -206,8 +208,22 @@ fn render3d_draw_volumetric_fog(
     prepared.cube_mesh_id >= 0 else {
     return
   }
+  guard (try! world.get_by_key(
+      view_entity,
+      @pbr_volumetric_fog.ViewVolumetricFog::component(),
+    ))
+    is Some(view_fog) else {
+    return
+  }
+  guard (try! world.get_by_key(
+      view_entity,
+      @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+    ))
+    is Some(pipelines) else {
+    return
+  }
   let volumes : Array[@render.HostMesh3dVolumetricFogVolume] = []
-  for volume in prepared.view_fog.volumes {
+  for volume in view_fog.volumes {
     volumes.push(
       @render.host_mesh3d_volumetric_fog_volume(
         density_texture_id=volume.density_texture_id(),
@@ -221,6 +237,8 @@ fn render3d_draw_volumetric_fog(
     camera_key_lo=camera_entity.generation,
     plane_mesh_id=prepared.plane_mesh_id,
     cube_mesh_id=prepared.cube_mesh_id,
+    textureless_pipeline_id=pipelines.textureless,
+    textured_pipeline_id=pipelines.textured,
     atmosphere~,
     volumes~,
   )

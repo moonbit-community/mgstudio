@@ -267,12 +267,6 @@ struct Mesh3dVolumetricFogPipelineCacheEntry {
 }
 
 ///|
-priv struct Mesh3dVolumetricFogPreparedPipeline {
-  pipeline_id : Int
-  pipeline : @wgpu.RenderPipeline
-}
-
-///|
 fn Mesh3dVolumetricFogPipelineCacheEntry::matches(
   self : Mesh3dVolumetricFogPipelineCacheEntry,
   color_format : UInt,
@@ -291,7 +285,7 @@ fn Mesh3dVolumetricFogPipelineCacheEntry::matches(
 }
 
 ///|
-fn mesh3d_volumetric_fog_pipeline_get(
+fn mesh3d_volumetric_fog_pipeline_available_id_get(
   backend : GpuBackend,
   color_format : UInt,
   msaa_sample_count : Int,
@@ -299,21 +293,18 @@ fn mesh3d_volumetric_fog_pipeline_get(
   atmosphere : Bool,
   view_layout_key_bits : UInt,
   vertex_stride_bytes : UInt64,
-) -> Mesh3dVolumetricFogPreparedPipeline? {
+) -> Int? {
   for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
     if entry.matches(
         color_format, msaa_sample_count, has_density_texture, atmosphere, view_layout_key_bits,
         vertex_stride_bytes,
       ) {
       match entry.state {
-        RenderPipelineOk(pipeline) => {
+        RenderPipelineOk(_) => {
           @app.timeline_trace_emit_counter_int(
             "render_3d_volumetric_fog_pipeline_cache_hits", 1,
           )
-          return Some(Mesh3dVolumetricFogPreparedPipeline::{
-            pipeline_id: entry.pipeline_id,
-            pipeline,
-          })
+          return Some(entry.pipeline_id)
         }
         RenderPipelineErr(message) => {
           ignore(message)
@@ -347,6 +338,25 @@ fn mesh3d_volumetric_fog_pipeline_id_get(
         vertex_stride_bytes,
       ) {
       return Some(entry.pipeline_id)
+    }
+  }
+  None
+}
+
+///|
+fn mesh3d_volumetric_fog_pipeline_get_by_id(
+  backend : GpuBackend,
+  pipeline_id : Int,
+) -> @wgpu.RenderPipeline? {
+  for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
+    if entry.pipeline_id == pipeline_id {
+      match entry.state {
+        RenderPipelineOk(pipeline) => return Some(pipeline)
+        RenderPipelineErr(message) => {
+          ignore(message)
+          return None
+        }
+      }
     }
   }
   None
@@ -420,12 +430,12 @@ fn mesh3d_volumetric_fog_pipeline_set_failed(
   vertex_stride_bytes : UInt64,
   message : String,
 ) -> Int {
-  if mesh3d_volumetric_fog_pipeline_get(
+  if mesh3d_volumetric_fog_pipeline_available_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
       view_layout_key_bits, vertex_stride_bytes,
     )
-    is Some(entry) {
-    return entry.pipeline_id
+    is Some(pipeline_id) {
+    return pipeline_id
   }
   if mesh3d_volumetric_fog_pipeline_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,

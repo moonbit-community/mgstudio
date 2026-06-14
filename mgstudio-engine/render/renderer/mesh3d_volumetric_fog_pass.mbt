@@ -151,6 +151,8 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   camera_key_lo : Int,
   plane_mesh_id : Int,
   cube_mesh_id : Int,
+  textureless_pipeline_id : Int,
+  textured_pipeline_id : Int,
   atmosphere : Bool,
   volumes : Array[HostMesh3dVolumetricFogVolume],
 ) -> Unit raise GpuBackendError {
@@ -225,10 +227,6 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     is Some(pass_uniforms) else {
     return
   }
-  let mesh_pipeline_view_key = mesh3d_pass_mesh_view_layout_key(
-    pass_state,
-    atmosphere~,
-  )
   let (view_bg, _) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
     0UL,
@@ -248,15 +246,11 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     pass_state.tonemapping_agx_lut_texture_id,
     pass_state.tonemapping_tony_lut_texture_id,
     pass_state.tonemapping_blender_lut_texture_id,
-    default_view_layout_key=mesh_pipeline_view_key,
+    default_view_layout_key=mesh3d_pass_mesh_view_layout_key(
+      pass_state,
+      atmosphere~,
+    ),
   )
-  guard mesh3d_volumetric_fog_color_format_for_target(
-      self,
-      pass_state.target_id,
-    )
-    is Some(color_format) else {
-    return
-  }
   mesh3d_end_active_pass_preserving_state(self)
   for volume in volumes {
     let mesh_id = if volume.exterior { cube_mesh_id } else { plane_mesh_id }
@@ -265,16 +259,13 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
       self,
       volume.density_texture_id,
     )
-    guard mesh3d_build_volumetric_fog_pipeline(
-        self,
-        color_format,
-        pass_state.msaa_sample_count,
-        density_texture is Some(_),
-        atmosphere,
-        mesh_pipeline_view_key,
-        mesh.vertex_stride_bytes,
-      )
-      is Some(prepared_pipeline) else {
+    let pipeline_id = if density_texture is Some(_) {
+      textured_pipeline_id
+    } else {
+      textureless_pipeline_id
+    }
+    guard mesh3d_volumetric_fog_pipeline_get_by_id(self, pipeline_id)
+      is Some(pipeline) else {
       continue
     }
     guard mesh3d_volumetric_fog_bind_group(
@@ -304,7 +295,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
       pass_state.viewport_h,
     )
     render_pass.set_scissor_rect(sx, sy, sw, sh)
-    render_pass.set_pipeline(prepared_pipeline.pipeline)
+    render_pass.set_pipeline(pipeline)
     render_pass.set_bind_group(
       0U,
       view_bg,
@@ -329,12 +320,15 @@ pub fn draw_mesh3d_volumetric_fog(
   camera_key_lo~ : Int,
   plane_mesh_id~ : Int,
   cube_mesh_id~ : Int,
+  textureless_pipeline_id~ : Int,
+  textured_pipeline_id~ : Int,
   atmosphere~ : Bool,
   volumes~ : Array[HostMesh3dVolumetricFogVolume],
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.draw_mesh3d_volumetric_fog(
-      camera_key_hi, camera_key_lo, plane_mesh_id, cube_mesh_id, atmosphere, volumes,
+      camera_key_hi, camera_key_lo, plane_mesh_id, cube_mesh_id, textureless_pipeline_id,
+      textured_pipeline_id, atmosphere, volumes,
     ) catch {
       err => debug_runtime_error("draw_mesh3d_volumetric_fog", err)
     }
