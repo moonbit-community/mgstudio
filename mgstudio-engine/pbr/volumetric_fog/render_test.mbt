@@ -27,6 +27,19 @@ fn volumetric_fog_test_approx_eq(lhs : Float, rhs : Float) -> Bool {
 }
 
 ///|
+fn volumetric_fog_test_u32_at(bytes : Bytes, byte_offset : Int) -> UInt {
+  (bytes[byte_offset].to_uint() & 0xFFU) |
+  ((bytes[byte_offset + 1].to_uint() & 0xFFU) << 8) |
+  ((bytes[byte_offset + 2].to_uint() & 0xFFU) << 16) |
+  ((bytes[byte_offset + 3].to_uint() & 0xFFU) << 24)
+}
+
+///|
+fn volumetric_fog_test_f32_bits_at(bytes : Bytes, byte_offset : Int) -> UInt {
+  volumetric_fog_test_u32_at(bytes, byte_offset)
+}
+
+///|
 test "pbr volumetric fog: pipeline selection by density texture flag" {
   let pipelines = view_volumetric_fog_pipelines(11, 29)
   let key_without_texture = VolumetricFogPipelineKey::new(
@@ -76,10 +89,34 @@ test "pbr volumetric fog: uniform buffer push and clear" {
     ),
   )
   inspect(offset0, content="0")
-  inspect(offset1, content="1")
+  inspect(offset1, content="512")
   inspect(buffer.count(), content="2")
+  inspect(buffer.bytes().length(), content="1024")
   buffer.clear()
   inspect(buffer.count(), content="0")
+}
+
+///|
+test "pbr volumetric fog: uniform bytes match WGSL host layout" {
+  let uniform = @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform()
+    .with_step_count(96)
+    .with_density(0.75F)
+    .with_jitter_strength(0.25F)
+  let bytes = uniform.bytes()
+  inspect(bytes.length(), content="288")
+  inspect(
+    volumetric_fog_test_f32_bits_at(bytes, 0),
+    content="\{1.0F.reinterpret_as_uint()}",
+  )
+  inspect(volumetric_fog_test_u32_at(bytes, 224), content="\{96U}")
+  inspect(
+    volumetric_fog_test_f32_bits_at(bytes, 240),
+    content="\{0.75F.reinterpret_as_uint()}",
+  )
+  inspect(
+    volumetric_fog_test_f32_bits_at(bytes, 276),
+    content="\{0.25F.reinterpret_as_uint()}",
+  )
 }
 
 ///|

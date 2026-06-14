@@ -34,6 +34,12 @@ fn volumetric_fog_sanitize_int(value : Int, min_ : Int) -> Int {
 }
 
 ///|
+pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
+
+///|
+pub const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
+
+///|
 fn volumetric_fog_identity_matrix_row_major() -> Array[Float] {
   [
     1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
@@ -61,6 +67,46 @@ fn volumetric_fog_abs(value : Float) -> Float {
     0.0F - value
   } else {
     value
+  }
+}
+
+///|
+fn volumetric_fog_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn volumetric_fog_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn volumetric_fog_push_vec3(words : Array[UInt], value : @math.Vec3) -> Unit {
+  volumetric_fog_push_f32(words, value.x)
+  volumetric_fog_push_f32(words, value.y)
+  volumetric_fog_push_f32(words, value.z)
+}
+
+///|
+fn volumetric_fog_push_vec4(words : Array[UInt], value : @math.Vec4) -> Unit {
+  volumetric_fog_push_f32(words, value.x)
+  volumetric_fog_push_f32(words, value.y)
+  volumetric_fog_push_f32(words, value.z)
+  volumetric_fog_push_f32(words, value.w)
+}
+
+///|
+fn volumetric_fog_push_mat4_row_major(
+  words : Array[UInt],
+  values : Array[Float],
+) -> Unit {
+  for index in 0..<16 {
+    let value = if index < values.length() { values[index] } else { 0.0F }
+    volumetric_fog_push_f32(words, value)
   }
 }
 
@@ -501,9 +547,48 @@ pub fn VolumetricFogUniform::with_jitter_strength(
 }
 
 ///|
+pub fn VolumetricFogUniform::bytes(self : VolumetricFogUniform) -> Bytes {
+  let words : Array[UInt] = []
+  volumetric_fog_push_mat4_row_major(words, self.clip_from_local_row_major)
+  volumetric_fog_push_mat4_row_major(words, self.uvw_from_world_row_major)
+  for index in 0..<3 {
+    let plane = if index < self.far_planes.length() {
+      self.far_planes[index]
+    } else {
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F)
+    }
+    volumetric_fog_push_vec4(words, plane)
+  }
+  volumetric_fog_push_vec3(words, self.fog_color)
+  words.push(0U)
+  volumetric_fog_push_vec3(words, self.light_tint)
+  words.push(0U)
+  volumetric_fog_push_vec3(words, self.ambient_color)
+  volumetric_fog_push_f32(words, self.ambient_intensity)
+  words.push(
+    volumetric_fog_sanitize_int(self.step_count, 1).reinterpret_as_uint(),
+  )
+  volumetric_fog_push_f32(words, self.bounding_radius)
+  volumetric_fog_push_f32(words, self.absorption)
+  volumetric_fog_push_f32(words, self.scattering)
+  volumetric_fog_push_f32(words, self.density)
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  volumetric_fog_push_vec3(words, self.density_texture_offset)
+  volumetric_fog_push_f32(words, self.scattering_asymmetry)
+  volumetric_fog_push_f32(words, self.light_intensity)
+  volumetric_fog_push_f32(words, self.jitter_strength)
+  while words.length() * 4 < VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES {
+    words.push(0U)
+  }
+  volumetric_fog_u32le_pack(words)
+}
+
+///|
 pub struct ViewFogVolume {
   density_texture : @asset.Handle[@asset.Image]?
-  uniform_buffer_offset : Int
+  uniform_buffer_offset : UInt
   exterior : Bool
 }
 
@@ -511,7 +596,7 @@ pub struct ViewFogVolume {
 pub fn ViewFogVolume::ViewFogVolume() -> ViewFogVolume {
   ViewFogVolume::{
     density_texture: None,
-    uniform_buffer_offset: 0,
+    uniform_buffer_offset: 0U,
     exterior: true,
   }
 }
@@ -519,6 +604,11 @@ pub fn ViewFogVolume::ViewFogVolume() -> ViewFogVolume {
 ///|
 pub fn ViewFogVolume::has_density_texture(self : ViewFogVolume) -> Bool {
   self.density_texture is Some(_)
+}
+
+///|
+pub fn ViewFogVolume::uniform_buffer_offset(self : ViewFogVolume) -> UInt {
+  self.uniform_buffer_offset
 }
 
 ///|
@@ -587,10 +677,11 @@ pub fn VolumetricFogUniformBuffer::clear(
 pub fn VolumetricFogUniformBuffer::push(
   self : VolumetricFogUniformBuffer,
   uniform : VolumetricFogUniform,
-) -> Int {
-  let offset = self.uniforms.length()
+) -> UInt {
+  let offset = self.uniforms.length() *
+    VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES
   self.uniforms.push(uniform)
-  offset
+  offset.reinterpret_as_uint()
 }
 
 ///|
@@ -610,6 +701,26 @@ pub fn VolumetricFogUniformBuffer::uniform_at(
   } else {
     Some(self.uniforms[index])
   }
+}
+
+///|
+pub fn VolumetricFogUniformBuffer::bytes(
+  self : VolumetricFogUniformBuffer,
+) -> Bytes {
+  let bytes : Array[Byte] = []
+  for uniform in self.uniforms {
+    let uniform_bytes = uniform.bytes()
+    for index in 0..<uniform_bytes.length() {
+      match uniform_bytes.get(index) {
+        Some(byte) => bytes.push(byte)
+        None => ()
+      }
+    }
+    while bytes.length() % VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES != 0 {
+      bytes.push((0).to_byte())
+    }
+  }
+  Bytes::from_array(bytes)
 }
 
 ///|

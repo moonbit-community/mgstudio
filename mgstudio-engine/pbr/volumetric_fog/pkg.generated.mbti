@@ -14,6 +14,10 @@ import {
 }
 
 // Values
+pub const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
+
+pub const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
+
 pub fn fog_volume_default_settings() -> @light.FogVolume
 
 pub fn fog_volume_with_density(@light.FogVolume, Float) -> @light.FogVolume
@@ -75,11 +79,12 @@ pub fn PreparedVolumetricFogView::PreparedVolumetricFogView() -> Self
 
 pub struct ViewFogVolume {
   density_texture : @asset.Handle[@image.Image]?
-  uniform_buffer_offset : Int
+  uniform_buffer_offset : UInt
   exterior : Bool
 }
 pub fn ViewFogVolume::ViewFogVolume() -> Self
 pub fn ViewFogVolume::has_density_texture(Self) -> Bool
+pub fn ViewFogVolume::uniform_buffer_offset(Self) -> UInt
 
 pub struct ViewVolumetricFog {
   volumes : Array[ViewFogVolume]
@@ -179,6 +184,7 @@ pub struct VolumetricFogUniform {
   jitter_strength : Float
 }
 pub fn VolumetricFogUniform::VolumetricFogUniform() -> Self
+pub fn VolumetricFogUniform::bytes(Self) -> Bytes
 pub fn VolumetricFogUniform::with_density(Self, Float) -> Self
 pub fn VolumetricFogUniform::with_jitter_strength(Self, Float) -> Self
 pub fn VolumetricFogUniform::with_step_count(Self, Int) -> Self
@@ -187,9 +193,10 @@ pub struct VolumetricFogUniformBuffer {
   mut uniforms : Array[VolumetricFogUniform]
 }
 pub fn VolumetricFogUniformBuffer::VolumetricFogUniformBuffer() -> Self
+pub fn VolumetricFogUniformBuffer::bytes(Self) -> Bytes
 pub fn VolumetricFogUniformBuffer::clear(Self) -> Unit
 pub fn VolumetricFogUniformBuffer::count(Self) -> Int
-pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> Int
+pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> UInt
 pub fn VolumetricFogUniformBuffer::uniform_at(Self, Int) -> VolumetricFogUniform?
 pub impl @app.Resource for VolumetricFogUniformBuffer
 
