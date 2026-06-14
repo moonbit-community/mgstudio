@@ -40,10 +40,36 @@ fn volumetric_fog_test_f32_bits_at(bytes : Bytes, byte_offset : Int) -> UInt {
 }
 
 ///|
+fn volumetric_fog_test_vertex_layout_ref(
+  stride? : Int = 32,
+  position_offset? : Int = 4,
+  position_shader_location? : Int = 7,
+) -> @mesh.MeshVertexBufferLayoutRef {
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=stride,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=position_offset,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=position_shader_location,
+          ),
+        ],
+      ),
+    ),
+  )
+}
+
+///|
 test "pbr volumetric fog: pipeline selection by density texture flag" {
   let pipelines = view_volumetric_fog_pipelines(11, 29)
   let key_without_texture = VolumetricFogPipelineKey::new(
     @mesh_view_layout.mesh_view_layout_key_from_msaa(1),
+    volumetric_fog_test_vertex_layout_ref(),
     @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     false,
   )
@@ -51,6 +77,7 @@ test "pbr volumetric fog: pipeline selection by density texture flag" {
     @mesh_view_layout.mesh_view_layout_key(
       true, false, false, false, false, false, true, false,
     ),
+    volumetric_fog_test_vertex_layout_ref(),
     @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
     true,
   )
@@ -74,6 +101,12 @@ test "pbr volumetric fog: pipeline selection by density texture flag" {
     descriptor.target_format().to_u32(),
     content="\{@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT}",
   )
+  let vertex_layout = descriptor.vertex_buffer_layout()
+  inspect(vertex_layout.array_stride(), content="32")
+  let vertex_attributes = vertex_layout.attributes()
+  inspect(vertex_attributes.length(), content="1")
+  inspect(vertex_attributes[0].offset(), content="4")
+  inspect(vertex_attributes[0].shader_location(), content="0")
   inspect(descriptor.uses_bevy_blend_state(), content="true")
 }
 

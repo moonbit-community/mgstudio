@@ -349,6 +349,7 @@ pub fn volumetric_fog_bind_group_layout_index(
 ///|
 pub struct VolumetricFogPipelineKey {
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
+  vertex_buffer_layout : @mesh.MeshVertexBufferLayoutRef
   target_format : @wgpu.TextureFormat
   has_density_texture : Bool
 }
@@ -357,6 +358,7 @@ pub struct VolumetricFogPipelineKey {
 pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> VolumetricFogPipelineKey {
   VolumetricFogPipelineKey::{
     mesh_pipeline_view_key: @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    vertex_buffer_layout: volumetric_fog_default_vertex_buffer_layout_ref(),
     target_format: @wgpu.TextureFormat::from_u32(
       @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     ),
@@ -367,14 +369,37 @@ pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> VolumetricFogPipe
 ///|
 pub fn VolumetricFogPipelineKey::new(
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
+  vertex_buffer_layout : @mesh.MeshVertexBufferLayoutRef,
   target_format : @wgpu.TextureFormat,
   has_density_texture : Bool,
 ) -> VolumetricFogPipelineKey {
   VolumetricFogPipelineKey::{
     mesh_pipeline_view_key,
+    vertex_buffer_layout,
     target_format,
     has_density_texture,
   }
+}
+
+///|
+fn volumetric_fog_default_vertex_buffer_layout_ref() -> @mesh.MeshVertexBufferLayoutRef {
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=12,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=0,
+          ),
+        ],
+      ),
+    ),
+  )
 }
 
 ///|
@@ -429,6 +454,7 @@ pub fn view_volumetric_fog_pipelines(
 pub struct VolumetricFogPipelineDescriptor {
   label : String
   shader_defs : Array[String]
+  vertex_buffer_layout : @mesh.VertexBufferLayout
   bind_group_layout_index : Int
   target_format : @wgpu.TextureFormat
   cull_mode_back : Bool
@@ -450,6 +476,13 @@ pub fn VolumetricFogPipelineDescriptor::bind_group_layout_index(
   self : VolumetricFogPipelineDescriptor,
 ) -> Int {
   self.bind_group_layout_index
+}
+
+///|
+pub fn VolumetricFogPipelineDescriptor::vertex_buffer_layout(
+  self : VolumetricFogPipelineDescriptor,
+) -> @mesh.VertexBufferLayout {
+  self.vertex_buffer_layout
 }
 
 ///|
@@ -823,6 +856,15 @@ pub fn volumetric_fog_select_pipeline(
 pub fn volumetric_fog_specialize_pipeline(
   key : VolumetricFogPipelineKey,
 ) -> VolumetricFogPipelineDescriptor {
+  let vertex_buffer_layout = try! key.vertex_buffer_layout
+    .layout()
+    .get_layout([
+      @mesh.VertexAttributeDescriptor::new(
+        shader_location=0,
+        id=@mesh.MeshVertexAttribute::position().id(),
+        name=@mesh.MeshVertexAttribute::position().name(),
+      ),
+    ])
   let shader_defs = ["SHADOW_FILTER_METHOD_HARDWARE_2X2"]
   let bind_group_layout_key = VolumetricFogBindGroupLayoutKey::{
     multisampled: key.mesh_pipeline_view_key.multisampled(),
@@ -840,6 +882,7 @@ pub fn volumetric_fog_specialize_pipeline(
   VolumetricFogPipelineDescriptor::{
     label: "volumetric lighting pipeline",
     shader_defs,
+    vertex_buffer_layout,
     bind_group_layout_index: volumetric_fog_bind_group_layout_index(
       bind_group_layout_key,
     ),
