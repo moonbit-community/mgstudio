@@ -132,6 +132,9 @@ const KTX2_SUPERCOMPRESSION_NONE : Int = 0
 const KTX2_SUPERCOMPRESSION_ZSTD : Int = 2
 
 ///|
+const KTX2_VK_FORMAT_R32_SFLOAT : Int = 100
+
+///|
 const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
 
 ///|
@@ -2285,6 +2288,14 @@ fn ktx2_is_3d_texture(bytes : Bytes) -> Bool {
 
 ///|
 fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
+  if vulkan_format == KTX2_VK_FORMAT_R32_SFLOAT {
+    return Some(Ktx2FormatInfo::{
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
   if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
     return Some(Ktx2FormatInfo::{
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),

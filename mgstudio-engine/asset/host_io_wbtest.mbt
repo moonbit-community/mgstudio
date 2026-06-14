@@ -738,3 +738,21 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
   )
   debug_inspect(cornell_payload.levels[0].length(), content="4194304")
 }
+
+///|
+test "asset host io: bevy scrolling fog ktx2 density texture decodes as 3d r32f" {
+  let path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("volumes/fog_noise.ktx2")
+  })
+  let bytes = @fs.read_file_to_bytes(path)
+  debug_inspect(ktx2_is_3d_texture(bytes), content="true")
+  let payload = ktx2_decode_3d_payload(bytes).unwrap()
+  debug_inspect(payload.width, content="64")
+  debug_inspect(payload.height, content="64")
+  debug_inspect(payload.depth, content="64")
+  debug_inspect(
+    payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_R32_FLOAT,
+    content="true",
+  )
+  debug_inspect(payload.pixels.length(), content="1048576")
+}
