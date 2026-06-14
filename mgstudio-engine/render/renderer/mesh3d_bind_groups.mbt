@@ -232,19 +232,22 @@ fn mesh3d_finish_bind_group_checked(
 }
 
 ///|
+fn mesh3d_texture_ids_signature(texture_ids : Array[Int]) -> String {
+  let parts : Array[String] = []
+  for id in texture_ids {
+    parts.push(id.to_string())
+  }
+  parts.join(":")
+}
+
+///|
 fn mesh3d_environment_texture_ids_signature(
   diffuse_texture_ids : Array[Int],
   specular_texture_ids : Array[Int],
 ) -> String {
-  let parts : Array[String] = []
-  for id in diffuse_texture_ids {
-    parts.push(id.to_string())
-  }
-  parts.push("|")
-  for id in specular_texture_ids {
-    parts.push(id.to_string())
-  }
-  parts.join(",")
+  mesh3d_texture_ids_signature(diffuse_texture_ids) +
+  "|" +
+  mesh3d_texture_ids_signature(specular_texture_ids)
 }
 
 ///|
@@ -326,6 +329,55 @@ fn mesh3d_environment_texture_views(
   }
   if views.length() == 0 {
     views.push(fallback_view)
+  }
+  views
+}
+
+///|
+fn mesh3d_pass_irradiance_volume_texture_ids(
+  backend : GpuBackend,
+  fallback_irradiance_volume_texture : GpuTextureInfo,
+) -> (Array[Int], String) {
+  let source : Array[Int] = []
+  if backend.pass_state is Some(pass_state) &&
+    pass_state.irradiance_volume_texture_ids.length() > 0 {
+    for id in pass_state.irradiance_volume_texture_ids {
+      source.push(id)
+    }
+  }
+  if source.length() == 0 {
+    source.push(fallback_irradiance_volume_texture.id)
+  }
+  let texture_ids : Array[Int] = []
+  let target_len = if source.length() > 1 { 8 } else { 1 }
+  for i in 0..<target_len {
+    texture_ids.push(
+      if i < source.length() {
+        source[i]
+      } else {
+        fallback_irradiance_volume_texture.id
+      },
+    )
+  }
+  (texture_ids, mesh3d_texture_ids_signature(texture_ids))
+}
+
+///|
+fn mesh3d_irradiance_volume_texture_views(
+  backend : GpuBackend,
+  texture_ids : Array[Int],
+  fallback_irradiance_volume_texture : GpuTextureInfo,
+) -> Array[@wgpu.TextureView] raise GpuBackendError {
+  let views : Array[@wgpu.TextureView] = []
+  for texture_id in texture_ids {
+    let texture = match resolve_mesh3d_texture(backend, texture_id) {
+      Some(value) => value
+      None => fallback_irradiance_volume_texture
+    }
+    views.push(texture.view)
+  }
+  if views.length() == 0 {
+    views.push(fallback_irradiance_volume_texture.view)
   }
   views
 }
@@ -598,6 +650,8 @@ fn mesh3d_add_binding_array_layout_entry(
   environment_diffuse_sample_views : Array[@wgpu.TextureView],
   environment_specular_sample_views : Array[@wgpu.TextureView],
   environment_sampler : @wgpu.Sampler,
+  irradiance_volume_texture_views : Array[@wgpu.TextureView],
+  irradiance_volume_sampler : @wgpu.Sampler,
   clustered_decals_buf : @wgpu.Buffer,
   clustered_decal_texture_views : Array[@wgpu.TextureView],
   clustered_decal_sampler : @wgpu.Sampler,
@@ -618,6 +672,14 @@ fn mesh3d_add_binding_array_layout_entry(
     2 =>
       mesh3d_add_sampler_for_layout_entry(
         builder, binding, environment_sampler, entry,
+      )
+    3 =>
+      mesh3d_add_texture_views_for_layout_entry(
+        builder, binding, irradiance_volume_texture_views, entry,
+      )
+    4 =>
+      mesh3d_add_sampler_for_layout_entry(
+        builder, binding, irradiance_volume_sampler, entry,
       )
     5 => builder.add_buffer(binding, clustered_decals_buf)
     6 =>
@@ -644,6 +706,8 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   environment_diffuse_sample_views : Array[@wgpu.TextureView],
   environment_specular_sample_views : Array[@wgpu.TextureView],
   environment_sampler : @wgpu.Sampler,
+  irradiance_volume_texture_views : Array[@wgpu.TextureView],
+  irradiance_volume_sampler : @wgpu.Sampler,
   clustered_decals_buf : @wgpu.Buffer,
   clustered_decal_texture_views : Array[@wgpu.TextureView],
   clustered_decal_sampler : @wgpu.Sampler,
@@ -656,8 +720,8 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
   for entry in entries {
     if !mesh3d_add_binding_array_layout_entry(
         builder, entry, environment_diffuse_sample_views, environment_specular_sample_views,
-        environment_sampler, clustered_decals_buf, clustered_decal_texture_views,
-        clustered_decal_sampler,
+        environment_sampler, irradiance_volume_texture_views, irradiance_volume_sampler,
+        clustered_decals_buf, clustered_decal_texture_views, clustered_decal_sampler,
       ) {
       builder.free()
       fatal(
@@ -834,12 +898,18 @@ fn mesh3d_view_bg_cache_get_or_create(
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
+  let fallback_irradiance_volume_texture = ensure_irradiance_volume_fallback_texture(
+    backend,
+  )
   let (
     environment_diffuse_texture_ids,
     environment_specular_texture_ids,
     environment_texture_ids_signature,
   ) = mesh3d_pass_environment_texture_ids(
     backend, environment_diffuse_texture, environment_specular_texture, fallback_environment_texture,
+  )
+  let (irradiance_volume_texture_ids, irradiance_volume_texture_ids_signature) = mesh3d_pass_irradiance_volume_texture_ids(
+    backend, fallback_irradiance_volume_texture,
   )
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
@@ -851,6 +921,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.environment_specular_texture_id == environment_specular_texture.id &&
       entry.environment_texture_ids_signature ==
       environment_texture_ids_signature &&
+      entry.irradiance_volume_texture_ids_signature ==
+      irradiance_volume_texture_ids_signature &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
@@ -963,6 +1035,9 @@ fn mesh3d_view_bg_cache_get_or_create(
   let environment_specular_sample_views = mesh3d_environment_texture_views(
     backend, environment_specular_texture_ids, fallback_environment_texture,
   )
+  let irradiance_volume_texture_views = mesh3d_irradiance_volume_texture_views(
+    backend, irradiance_volume_texture_ids, fallback_irradiance_volume_texture,
+  )
   let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
     backend, fallback_decal_texture, 8,
   )
@@ -1004,6 +1079,8 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_diffuse_sample_views,
     environment_specular_sample_views,
     environment_diffuse_texture.sampler,
+    irradiance_volume_texture_views,
+    fallback_irradiance_volume_texture.sampler,
     clustered_decals_buf,
     clustered_decal_texture_views,
     fallback_decal_texture.sampler,
@@ -1018,6 +1095,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
     environment_texture_ids_signature,
+    irradiance_volume_texture_ids_signature,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
@@ -1058,12 +1136,18 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let fallback_environment_texture = ensure_environment_map_fallback_texture(
     backend,
   )
+  let fallback_irradiance_volume_texture = ensure_irradiance_volume_fallback_texture(
+    backend,
+  )
   let (
     environment_diffuse_texture_ids,
     environment_specular_texture_ids,
     environment_texture_ids_signature,
   ) = mesh3d_pass_environment_texture_ids(
     backend, environment_diffuse_texture, environment_specular_texture, fallback_environment_texture,
+  )
+  let (irradiance_volume_texture_ids, irradiance_volume_texture_ids_signature) = mesh3d_pass_irradiance_volume_texture_ids(
+    backend, fallback_irradiance_volume_texture,
   )
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
@@ -1079,6 +1163,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.environment_specular_texture_id == environment_specular_texture.id &&
       entry.environment_texture_ids_signature ==
       environment_texture_ids_signature &&
+      entry.irradiance_volume_texture_ids_signature ==
+      irradiance_volume_texture_ids_signature &&
       entry.prepass_depth_texture_id == prepass_depth_texture_id &&
       entry.prepass_normal_texture_id == prepass_normal_texture_id &&
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
@@ -1195,6 +1281,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let environment_specular_sample_views = mesh3d_environment_texture_views(
     backend, environment_specular_texture_ids, fallback_environment_texture,
   )
+  let irradiance_volume_texture_views = mesh3d_irradiance_volume_texture_views(
+    backend, irradiance_volume_texture_ids, fallback_irradiance_volume_texture,
+  )
   let clustered_decal_texture_views = mesh3d_clustered_decal_texture_views(
     backend, fallback_decal_texture, 8,
   )
@@ -1245,6 +1334,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     environment_diffuse_sample_views,
     environment_specular_sample_views,
     environment_diffuse_texture.sampler,
+    irradiance_volume_texture_views,
+    fallback_irradiance_volume_texture.sampler,
     clustered_decals_buf,
     clustered_decal_texture_views,
     fallback_decal_texture.sampler,
@@ -1265,6 +1356,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
     environment_texture_ids_signature,
+    irradiance_volume_texture_ids_signature,
     prepass_depth_texture_id,
     prepass_normal_texture_id,
     prepass_motion_vector_texture_id,
@@ -1723,12 +1815,14 @@ pub fn GpuBackend::prepare_mesh3d_light_probes(
   light_probes_uniform_bytes : Bytes,
   diffuse_texture_ids : Array[Int],
   specular_texture_ids : Array[Int],
+  irradiance_volume_texture_ids : Array[Int],
 ) -> Unit {
   guard self.pass_state is Some(pass_state) else { return }
   self.pass_state = Some(GpuPassState::{
     ..pass_state,
     environment_diffuse_texture_ids: diffuse_texture_ids,
     environment_specular_texture_ids: specular_texture_ids,
+    irradiance_volume_texture_ids,
     mesh3d_light_probes_uniform_bytes: Some(light_probes_uniform_bytes),
   })
   if self.mesh3d_light_probes_buf is Some(light_probes_buf) {

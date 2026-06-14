@@ -386,7 +386,9 @@ priv struct Render3dLightProbeState {
   uniform_bytes : Bytes
   diffuse_texture_ids : Array[Int]
   specular_texture_ids : Array[Int]
+  irradiance_volume_texture_ids : Array[Int]
   reflection_probe_entities : Array[@core.Entity]
+  irradiance_volume_entities : Array[@core.Entity]
 }
 
 ///|
@@ -543,6 +545,24 @@ fn render3d_light_probe_texture_binding_index(
 }
 
 ///|
+fn render3d_light_probe_3d_texture_binding_index(
+  texture_ids : Array[Int],
+  texture_id : Int,
+) -> Int {
+  for index in 0..<texture_ids.length() {
+    if texture_ids[index] == texture_id {
+      return index
+    }
+  }
+  if texture_ids.length() >= @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+    return @pbr_light_probe.MAX_VIEW_LIGHT_PROBES - 1
+  }
+  let index = texture_ids.length()
+  texture_ids.push(texture_id)
+  index
+}
+
+///|
 fn render3d_light_probe_entity_affine(
   world : @ecs.World,
   entity : @core.Entity,
@@ -614,6 +634,21 @@ fn render3d_camera_visible_reflection_probe_entities(
 }
 
 ///|
+fn render3d_camera_visible_irradiance_volume_entities(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> Array[@core.Entity] {
+  match
+    (try! world.get_by_key(
+      camera_entity,
+      @light_cluster.VisibleClusterableObjects::component(),
+    )) {
+    Some(visible) => visible.irradiance_volume_entities()
+    None => []
+  }
+}
+
+///|
 fn render3d_light_probe_entry(
   world : @ecs.World,
   camera_transform : @transform.Transform,
@@ -657,6 +692,53 @@ fn render3d_light_probe_entry(
     ),
     diffuse_texture_id,
     specular_texture_id,
+  })
+}
+
+///|
+fn render3d_irradiance_volume_flags(
+  irradiance_volume : @light.IrradianceVolume,
+) -> Int {
+  if irradiance_volume.affects_lightmapped_meshes {
+    @pbr_light_probe.render_light_probe_flags_insert(
+      0,
+      @pbr_light_probe.RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE,
+    )
+  } else {
+    0
+  }
+}
+
+///|
+fn render3d_irradiance_volume_entry(
+  world : @ecs.World,
+  camera_transform : @transform.Transform,
+  entity : @core.Entity,
+  light_probe : @light.LightProbe,
+  irradiance_volume : @light.IrradianceVolume,
+) -> Render3dLightProbeEntry? {
+  guard render3d_loaded_image_texture_id(irradiance_volume.voxels)
+    is Some(texture_id) else {
+    return None
+  }
+  let world_from_light = render3d_light_probe_entity_affine(world, entity)
+  let light_from_world = world_from_light.inverse()
+  Some(Render3dLightProbeEntry::{
+    entity,
+    distance_squared: world_from_light.translation
+    .sub(camera_transform.translation)
+    .length_squared(),
+    light_from_world,
+    falloff: light_probe.falloff,
+    bounding_sphere_radius: world_from_light.matrix3
+    .mul_vec3(@math.Vec3::splat(1.0F))
+    .length(),
+    parallax_correction_bounds: @math.Vec3::zero(),
+    intensity: irradiance_volume.intensity,
+    world_position: world_from_light.translation,
+    flags: render3d_irradiance_volume_flags(irradiance_volume),
+    diffuse_texture_id: texture_id,
+    specular_texture_id: texture_id,
   })
 }
 
@@ -712,6 +794,7 @@ fn render3d_camera_light_probe_state(
 ) -> Render3dLightProbeState {
   let diffuse_texture_ids : Array[Int] = []
   let specular_texture_ids : Array[Int] = []
+  let irradiance_volume_texture_ids : Array[Int] = []
   let view_cubemap_index = if environment_map_state.diffuse_texture_id >= 0 &&
     environment_map_state.specular_texture_id >= 0 &&
     environment_map_state.intensity > 0.0F {
@@ -751,6 +834,33 @@ fn render3d_camera_light_probe_state(
     }
   }
   let sorted_probes = render3d_light_probe_sort(probes)
+  let irradiance_volumes : Array[Render3dLightProbeEntry] = []
+  for
+    entity in render3d_camera_visible_irradiance_volume_entities(
+      world,
+      camera.entity.main_entity,
+    ) {
+    guard (try! world.get_by_key(entity, @light.ecs_key_irradiance_volume))
+      is Some(irradiance_volume) else {
+      continue
+    }
+    guard (try! world.get_by_key(entity, @light.ecs_key_light_probe))
+      is Some(light_probe) else {
+      continue
+    }
+    match
+      render3d_irradiance_volume_entry(
+        world,
+        camera.payload.transform,
+        entity,
+        light_probe,
+        irradiance_volume,
+      ) {
+      Some(entry) => irradiance_volumes.push(entry)
+      None => ()
+    }
+  }
+  let sorted_irradiance_volumes = render3d_light_probe_sort(irradiance_volumes)
   let words : Array[UInt] = []
   let probe_cubemap_indices : Array[Int] = []
   let reflection_probe_entities : Array[@core.Entity] = []
@@ -768,6 +878,21 @@ fn render3d_camera_light_probe_state(
       ),
     )
   }
+  let irradiance_volume_indices : Array[Int] = []
+  let irradiance_volume_entities : Array[@core.Entity] = []
+  for volume in sorted_irradiance_volumes {
+    if irradiance_volume_indices.length() >=
+      @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+      break
+    }
+    irradiance_volume_entities.push(volume.entity)
+    irradiance_volume_indices.push(
+      render3d_light_probe_3d_texture_binding_index(
+        irradiance_volume_texture_ids,
+        volume.diffuse_texture_id,
+      ),
+    )
+  }
   for index in 0..<@pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
     if index < sorted_probes.length() && index < probe_cubemap_indices.length() {
       render3d_light_probe_push_entry(
@@ -779,11 +904,20 @@ fn render3d_camera_light_probe_state(
       render3d_light_probe_push_entry(words, None, -1)
     }
   }
-  for _ in 0..<@pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
-    render3d_light_probe_push_entry(words, None, -1)
+  for index in 0..<@pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
+    if index < sorted_irradiance_volumes.length() &&
+      index < irradiance_volume_indices.length() {
+      render3d_light_probe_push_entry(
+        words,
+        Some(sorted_irradiance_volumes[index]),
+        irradiance_volume_indices[index],
+      )
+    } else {
+      render3d_light_probe_push_entry(words, None, -1)
+    }
   }
   words.push(probe_cubemap_indices.length().reinterpret_as_uint())
-  words.push(0U)
+  words.push(irradiance_volume_indices.length().reinterpret_as_uint())
   render3d_light_probe_push_i32(words, view_cubemap_index)
   words.push(0U)
   let view_rotation = if view_cubemap_index >= 0 {
@@ -816,7 +950,9 @@ fn render3d_camera_light_probe_state(
     uniform_bytes: render3d_light_probe_u32le_pack(words),
     diffuse_texture_ids,
     specular_texture_ids,
+    irradiance_volume_texture_ids,
     reflection_probe_entities,
+    irradiance_volume_entities,
   }
 }
 

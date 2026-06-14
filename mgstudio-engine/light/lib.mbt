@@ -1558,11 +1558,16 @@ pub fn ParallaxCorrection::default() -> ParallaxCorrection {
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@asset.Image]?
   intensity : Float
+  affects_lightmapped_meshes : Bool
 } derive(ToJson, FromJson)
 
 ///|
 pub fn IrradianceVolume::IrradianceVolume() -> IrradianceVolume {
-  IrradianceVolume::{ voxels: None, intensity: 1.0F }
+  IrradianceVolume::{
+    voxels: None,
+    intensity: 1.0F,
+    affects_lightmapped_meshes: true,
+  }
 }
 
 ///|
@@ -1573,6 +1578,7 @@ pub fn IrradianceVolume::new(
   IrradianceVolume::{
     voxels,
     intensity: light_sanitize_non_negative(intensity),
+    affects_lightmapped_meshes: true,
   }
 }
 
@@ -1589,7 +1595,18 @@ pub fn IrradianceVolume::with_intensity(
   self : IrradianceVolume,
   intensity : Float,
 ) -> IrradianceVolume {
-  IrradianceVolume::new(self.voxels, intensity)
+  IrradianceVolume::{
+    ..self,
+    intensity: light_sanitize_non_negative(intensity),
+  }
+}
+
+///|
+pub fn IrradianceVolume::with_affects_lightmapped_meshes(
+  self : IrradianceVolume,
+  affects_lightmapped_meshes : Bool,
+) -> IrradianceVolume {
+  IrradianceVolume::{ ..self, affects_lightmapped_meshes, }
 }
 
 ///|

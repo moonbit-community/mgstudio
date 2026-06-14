@@ -331,7 +331,7 @@ pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterab
 
 pub fn prepare_mesh3d_clustered_decals(decal_words~ : Array[UInt], texture_ids~ : Array[Int]) -> Unit
 
-pub fn prepare_mesh3d_light_probes(light_probes_uniform_bytes~ : Bytes, diffuse_texture_ids~ : Array[Int], specular_texture_ids~ : Array[Int]) -> Unit
+pub fn prepare_mesh3d_light_probes(light_probes_uniform_bytes~ : Bytes, diffuse_texture_ids~ : Array[Int], specular_texture_ids~ : Array[Int], irradiance_volume_texture_ids~ : Array[Int]) -> Unit
 
 pub fn prepare_mesh3d_main_pass_draw_batch(preprocess_camera_key_hi~ : Int, preprocess_camera_key_lo~ : Int, pass_kind~ : Int, entries~ : Array[HostMesh3dMainPassDrawEntry]) -> Unit
 
@@ -969,6 +969,7 @@ pub struct GpuBackend {
   mut point_shadow_fallback_texture_id : Int
   mut directional_shadow_fallback_texture_id : Int
   mut environment_map_fallback_texture_id : Int
+  mut irradiance_volume_fallback_texture_id : Int
   surfaces : Array[GpuSurfaceState]
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
@@ -1062,7 +1063,7 @@ pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
 pub fn GpuBackend::prepare_mesh3d_clustered_decals(Self, Array[UInt], Array[Int]) -> Unit
-pub fn GpuBackend::prepare_mesh3d_light_probes(Self, Bytes, Array[Int], Array[Int]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_light_probes(Self, Bytes, Array[Int], Array[Int], Array[Int]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_morph_bindings(Self, Array[Float]) -> Unit
@@ -1235,6 +1236,7 @@ pub struct GpuPassState {
   environment_map_rotation_w : Float
   environment_diffuse_texture_ids : Array[Int]
   environment_specular_texture_ids : Array[Int]
+  irradiance_volume_texture_ids : Array[Int]
   mesh3d_light_probes_uniform_bytes : Bytes?
   point_shadow_near : Float
   directional_shadow_texture_id : Int
@@ -1662,6 +1664,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
   environment_texture_ids_signature : String
+  irradiance_volume_texture_ids_signature : String
   tonemapping_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int

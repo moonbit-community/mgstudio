@@ -350,9 +350,11 @@ pub impl @app.Resource for GlobalAmbientLight
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@image.Image]?
   intensity : Float
+  affects_lightmapped_meshes : Bool
 } derive(ToJson, @json.FromJson)
 pub fn IrradianceVolume::IrradianceVolume() -> Self
 pub fn IrradianceVolume::new(@asset.Handle[@image.Image]?, Float) -> Self
+pub fn IrradianceVolume::with_affects_lightmapped_meshes(Self, Bool) -> Self
 pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
 pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for IrradianceVolume

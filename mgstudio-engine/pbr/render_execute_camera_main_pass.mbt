@@ -307,6 +307,7 @@ fn render3d_execute_camera_main_pass(
       source_world,
       camera_entity,
       light_probe_state.reflection_probe_entities,
+      light_probe_state.irradiance_volume_entities,
     )
     @render.host_gpu_prepare_mesh3d_cluster_buffers(
       clustered_lights_bytes=gpu_clustered_lights_bytes,
@@ -317,6 +318,7 @@ fn render3d_execute_camera_main_pass(
       light_probes_uniform_bytes=light_probe_state.uniform_bytes,
       diffuse_texture_ids=light_probe_state.diffuse_texture_ids,
       specular_texture_ids=light_probe_state.specular_texture_ids,
+      irradiance_volume_texture_ids=light_probe_state.irradiance_volume_texture_ids,
     )
   }
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {

@@ -327,6 +327,37 @@ fn ensure_environment_map_fallback_texture(
 }
 
 ///|
+fn ensure_irradiance_volume_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.irradiance_volume_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.irradiance_volume_fallback_texture_id)
+      is Some(texture) {
+      return texture
+    }
+  }
+  let id = backend.create_texture_3d_with_format(
+    1,
+    1,
+    1,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    [
+      Bytes::from_array([
+        (255).to_byte(),
+        (255).to_byte(),
+        (255).to_byte(),
+        (255).to_byte(),
+      ]),
+    ],
+  )
+  guard find_texture(backend, id) is Some(texture) else {
+    fatal("wgpu: failed to create irradiance volume fallback texture")
+  }
+  backend.irradiance_volume_fallback_texture_id = id
+  texture
+}
+
+///|
 fn resolve_draw_texture(
   backend : GpuBackend,
   id : Int,

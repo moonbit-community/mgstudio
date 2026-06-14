@@ -278,7 +278,7 @@ fn pbr_mesh_pipeline_view_layout(
     pbr_mesh_pipeline_view_layout_key(mesh_key_bits),
     multiple_light_probes_in_array=binding_arrays_are_usable,
     clustered_decals_usable=clustered_decals_are_usable,
-    irradiance_volumes_usable=false,
+    irradiance_volumes_usable=@pbr_light_probe.IRRADIANCE_VOLUMES_ARE_USABLE,
     oit_supported=false,
   )
 }
@@ -645,7 +645,8 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL {
     shader_defs.push(pbr_shader_def("ENVIRONMENT_MAP"))
   }
-  if (mesh_key_bits & MESH_PIPELINE_KEY_IRRADIANCE_VOLUME) != 0UL {
+  if (mesh_key_bits & MESH_PIPELINE_KEY_IRRADIANCE_VOLUME) != 0UL &&
+    @pbr_light_probe.IRRADIANCE_VOLUMES_ARE_USABLE {
     shader_defs.push(pbr_shader_def("IRRADIANCE_VOLUME"))
   }
   if (mesh_key_bits & MESH_PIPELINE_KEY_LIGHTMAPPED) != 0UL {
@@ -666,6 +667,9 @@ fn pbr_mesh_pipeline_descriptor(
   if binding_arrays_are_usable {
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHT_PROBES_IN_ARRAY"))
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
+  }
+  if @pbr_light_probe.IRRADIANCE_VOLUMES_ARE_USABLE {
+    shader_defs.push(pbr_shader_def("IRRADIANCE_VOLUMES_ARE_USABLE"))
   }
   if clustered_decals_are_usable {
     shader_defs.push(pbr_shader_def("CLUSTERED_DECALS_ARE_USABLE"))

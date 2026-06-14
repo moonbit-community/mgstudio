@@ -18,10 +18,14 @@ test "render3d: light probe gather uses camera visible cluster list" {
   let camera = world.spawn()
   let visible_probe = world.spawn()
   let hidden_probe = world.spawn()
+  let visible_volume = world.spawn()
+  let hidden_volume = world.spawn()
   try! (world.set_by_key(
     camera,
     @light_cluster.VisibleClusterableObjects::component(),
-    @light_cluster.VisibleClusterableObjects::from_lists([], [visible_probe], []),
+    @light_cluster.VisibleClusterableObjects::from_lists([], [visible_probe], [
+      visible_volume,
+    ]),
   )
   |> ignore)
 
@@ -29,4 +33,10 @@ test "render3d: light probe gather uses camera visible cluster list" {
   inspect(visible.length(), content="1")
   inspect(visible[0] == visible_probe, content="true")
   inspect(visible[0] == hidden_probe, content="false")
+  let visible_irradiance_volumes = render3d_camera_visible_irradiance_volume_entities(
+    world, camera,
+  )
+  inspect(visible_irradiance_volumes.length(), content="1")
+  inspect(visible_irradiance_volumes[0] == visible_volume, content="true")
+  inspect(visible_irradiance_volumes[0] == hidden_volume, content="false")
 }

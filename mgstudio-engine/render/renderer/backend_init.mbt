@@ -591,6 +591,7 @@ pub fn GpuBackend::new(
     point_shadow_fallback_texture_id: -1,
     directional_shadow_fallback_texture_id: -1,
     environment_map_fallback_texture_id: -1,
+    irradiance_volume_fallback_texture_id: -1,
     surfaces: [],
     active_surface_target_id: -1,
     textures: [],
