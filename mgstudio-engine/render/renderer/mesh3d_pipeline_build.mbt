@@ -35,14 +35,21 @@ fn mesh3d_fragment_shader_path_or_default(shader_path : String?) -> String {
 
 ///|
 fn mesh3d_custom_pipeline_cache_key(
+  material_pipeline_id : UInt64,
   vertex_shader_path : String,
   fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
+  msaa_sample_count : Int,
   topology : UInt,
   transparent : Bool,
   blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
 ) -> String {
   let surface_bits = match surface_format {
     Some(format) => format.raw.to_string()
@@ -50,24 +57,35 @@ fn mesh3d_custom_pipeline_cache_key(
   }
   let transparent_bits = if transparent { "1" } else { "0" }
   let forward_decal_bits = if forward_decal { "1" } else { "0" }
-  "\{surface_bits}|\{topology}|\{transparent_bits}|\{blend_kind}|\{forward_decal_bits}|\{mesh3d_cull_mode_sanitize(cull_mode)}|\{vertex_shader_path}|\{fragment_shader_path}"
+  let skinned_bits = if skinned { "1" } else { "0" }
+  let tonemap_bits = if tonemap_in_shader { "1" } else { "0" }
+  let deband_bits = if deband_dither_enabled { "1" } else { "0" }
+  "\{material_pipeline_id.to_string()}|\{surface_bits}|\{msaa_sample_count}|\{topology}|\{transparent_bits}|\{blend_kind}|\{forward_decal_bits}|\{mesh3d_cull_mode_sanitize(cull_mode)}|\{skinned_bits}|\{tonemap_bits}|\{tonemapping_mode}|\{deband_bits}|\{shadow_filter_method}|\{vertex_shader_path}|\{fragment_shader_path}"
 }
 
 ///|
 fn mesh3d_custom_pipeline_cache_get(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
   vertex_shader_path : String,
   fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
+  msaa_sample_count : Int,
   topology : UInt,
   transparent : Bool,
   blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
 ) -> @wgpu.RenderPipeline? {
   let cache_key = mesh3d_custom_pipeline_cache_key(
-    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
-    blend_kind, forward_decal, cull_mode,
+    material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
+    msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
   )
   match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
     Some(state) =>
@@ -85,18 +103,26 @@ fn mesh3d_custom_pipeline_cache_get(
 ///|
 fn mesh3d_custom_pipeline_cache_failed(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
   vertex_shader_path : String,
   fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
+  msaa_sample_count : Int,
   topology : UInt,
   transparent : Bool,
   blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
 ) -> Bool {
   let cache_key = mesh3d_custom_pipeline_cache_key(
-    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
-    blend_kind, forward_decal, cull_mode,
+    material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
+    msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
   )
   match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
     Some(state) =>
@@ -114,32 +140,42 @@ fn mesh3d_custom_pipeline_cache_failed(
 ///|
 fn mesh3d_custom_pipeline_cache_set_failed(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
   vertex_shader_path : String,
   fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
+  msaa_sample_count : Int,
   topology : UInt,
   transparent : Bool,
   blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
   message : String,
 ) -> Unit {
   if mesh3d_custom_pipeline_cache_get(
-      backend, vertex_shader_path, fragment_shader_path, surface_format, topology,
-      transparent, blend_kind, forward_decal, cull_mode,
+      backend, material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
+      msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
+      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
     )
     is Some(_) {
     return
   }
   if mesh3d_custom_pipeline_cache_failed(
-      backend, vertex_shader_path, fragment_shader_path, surface_format, topology,
-      transparent, blend_kind, forward_decal, cull_mode,
+      backend, material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
+      msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
+      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
     ) {
     return
   }
   let cache_key = mesh3d_custom_pipeline_cache_key(
-    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
-    blend_kind, forward_decal, cull_mode,
+    material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
+    msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
   )
   backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineErr(message)
 }
@@ -147,9 +183,18 @@ fn mesh3d_custom_pipeline_cache_set_failed(
 ///|
 fn load_wgsl_required_mesh3d_custom_pipeline(
   assets_base : String,
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
   shader_path : String,
 ) -> String raise GpuBackendError {
-  load_wgsl_from_assets_base_required(assets_base, shader_path)
+  load_wgsl_required_mesh3d_forward_pipeline(
+    assets_base, descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    shadow_filter_method, shader_path,
+  )
 }
 
 ///|
@@ -774,14 +819,22 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
 ///|
 fn mesh3d_custom_pipeline_get_or_create(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   vertex_shader_path : String,
   fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
+  msaa_sample_count : Int,
   topology : UInt,
   transparent : Bool,
   blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
+  skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
     Some(vertex_shader_path),
@@ -795,30 +848,49 @@ fn mesh3d_custom_pipeline_get_or_create(
     return None
   }
   if mesh3d_custom_pipeline_cache_get(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-      topology, transparent, blend_kind, forward_decal, cull_mode,
+      backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+      cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   if mesh3d_custom_pipeline_cache_failed(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-      topology, transparent, blend_kind, forward_decal, cull_mode,
+      backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+      cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
     ) {
     return None
   }
-  ensure_mesh3d_pipeline_layout_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
-  guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    backend,
+    material_pipeline_id,
+    material_descriptor,
+    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
+      tonemap_in_shader~,
+    ),
+  )
+  let pl = layout_entry.pipeline_layout
   let vertex_shader_source = load_wgsl_required_mesh3d_custom_pipeline(
     backend.assets_base,
+    material_descriptor,
+    skinned,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
     resolved_vertex_shader_path,
   ) catch {
     Fatal(message) => {
       mesh3d_custom_pipeline_cache_set_failed(
-        backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-        topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+        backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+        surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+        safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+        shadow_filter_method, message,
       )
       debug("[renderer] mesh3d custom pipeline failed: \{message}")
       return None
@@ -826,12 +898,20 @@ fn mesh3d_custom_pipeline_get_or_create(
   }
   let fragment_shader_source = load_wgsl_required_mesh3d_custom_pipeline(
     backend.assets_base,
+    material_descriptor,
+    skinned,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
     resolved_fragment_shader_path,
   ) catch {
     Fatal(message) => {
       mesh3d_custom_pipeline_cache_set_failed(
-        backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-        topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+        backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+        surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+        safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+        shadow_filter_method, message,
       )
       debug("[renderer] mesh3d custom pipeline failed: \{message}")
       return None
@@ -850,8 +930,10 @@ fn mesh3d_custom_pipeline_get_or_create(
     )
     vertex_shader_module.release()
     mesh3d_custom_pipeline_cache_set_failed(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+      backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+      safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method, message,
     )
     debug("[renderer] mesh3d custom pipeline failed: \{message}")
     return None
@@ -870,8 +952,10 @@ fn mesh3d_custom_pipeline_get_or_create(
     vertex_shader_module.release()
     fragment_shader_module.release()
     mesh3d_custom_pipeline_cache_set_failed(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+      backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+      safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method, message,
     )
     debug("[renderer] mesh3d custom pipeline failed: \{message}")
     return None
@@ -895,8 +979,32 @@ fn mesh3d_custom_pipeline_get_or_create(
     depth_compare_u32=if forward_decal {
       @wgpu.COMPARE_FUNCTION_ALWAYS
     } else {
-      @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+      mesh3d_descriptor_depth_compare(material_descriptor)
     },
+    vertex_entry=match material_descriptor {
+      Some(desc) =>
+        match desc.vertex.entry_point {
+          Some(entry) => entry
+          None => "vertex"
+        }
+      None => "vertex"
+    },
+    fragment_entry=match material_descriptor {
+      Some(desc) =>
+        match desc.fragment {
+          Some(fragment) =>
+            match fragment.entry_point {
+              Some(entry) => entry
+              None => "fragment"
+            }
+          None => "fragment"
+        }
+      None => "fragment"
+    },
+    vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
+      material_descriptor,
+    ),
+    sample_count=msaa_sample_count,
   )
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(descriptor)
@@ -912,8 +1020,10 @@ fn mesh3d_custom_pipeline_get_or_create(
     vertex_shader_module.release()
     fragment_shader_module.release()
     mesh3d_custom_pipeline_cache_set_failed(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
-      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+      backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+      surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+      safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method, message,
     )
     debug("[renderer] mesh3d custom pipeline failed: \{message}")
     return None
@@ -940,8 +1050,10 @@ fn mesh3d_custom_pipeline_get_or_create(
     resolved_fragment_shader_path,
   )
   let cache_key = mesh3d_custom_pipeline_cache_key(
-    resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format, topology,
-    transparent, blend_kind, forward_decal, safe_cull_mode,
+    material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
+    surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
+    safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    shadow_filter_method,
   )
   backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineOk(pipeline)
   vertex_shader_module.release()
@@ -2048,8 +2160,10 @@ fn mesh3d_pipeline_for_current_pass(
       _ => None
     }
     return mesh3d_custom_pipeline_get_or_create(
-      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, custom_surface_format,
-      topology, transparent, blend_kind, forward_decal, cull_mode,
+      backend, material_pipeline_id, material_descriptor, resolved_vertex_shader_path,
+      resolved_fragment_shader_path, custom_surface_format, msaa_sample_count, topology,
+      transparent, blend_kind, forward_decal, cull_mode, skinned, tonemap_in_shader,
+      tonemapping_mode, deband_dither_enabled, shadow_filter_method,
     )
   }
   match current_pass_color_format(backend) {

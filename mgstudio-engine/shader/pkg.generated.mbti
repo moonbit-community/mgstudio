@@ -22,6 +22,8 @@ pub fn shader_path_is_wesl(String) -> Bool
 
 pub fn shader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn shader_record_asset_path(@ecs.World, String, @asset.Handle[Shader]) -> Unit
+
 pub fn shader_runtime_compile_source(@ecs.World, String, Array[ShaderDefVal]) -> String? raise ShaderCacheError
 
 pub fn shader_runtime_compile_wesl_source(@ecs.World, String, Array[ShaderDefVal]) -> String? raise ShaderCacheError
@@ -145,6 +147,7 @@ pub struct ShaderLoader {
 pub fn ShaderLoader::ShaderLoader() -> Self
 pub fn ShaderLoader::extensions(Self) -> Array[String]
 pub fn ShaderLoader::load(Self, @asset.AssetServer, String, ShaderSettings) -> Shader raise ShaderLoaderError
+pub fn ShaderLoader::load_from_bytes(Self, @asset.AssetServer, String, Bytes, ShaderSettings) -> Shader raise ShaderLoaderError
 
 pub struct ShaderPlugin {
 }

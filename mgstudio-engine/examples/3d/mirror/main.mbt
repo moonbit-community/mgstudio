@@ -13,16 +13,10 @@
 // limitations under the License.
 
 ///|
-///
-/// Parity note:
-/// - Mirror camera transform/projection updates, mirror render target resizing,
-///   drag-to-orbit camera, and drag-to-move-fox controls are mapped.
-/// - Upstream-only features like `ExtendedMaterial` and `Camera::invert_culling`
-///   are represented by the closest runtime behavior currently available in
-///   mgstudio.
+const FRAC_PI_2 : Float = 1.5707963267948966F
 
 ///|
-const FRAC_PI_2 : Float = 1.5707963267948966F
+const SCREEN_SPACE_TEXTURE_SHADER : String = "shaders/screen_space_texture_material.wgsl"
 
 ///|
 const CAMERA_ORBIT_DISTANCE : Float = 500.0F
@@ -64,6 +58,140 @@ priv struct MirrorState {
   mut orbit_pitch : Float
   mut last_mouse_position : @math.Vec2?
   mut help_text : @text.TextHandle?
+}
+
+///|
+pub(all) struct ScreenSpaceTextureExtension {
+  dummy : Float
+}
+
+///|
+fn ScreenSpaceTextureExtension::ScreenSpaceTextureExtension() -> ScreenSpaceTextureExtension {
+  ScreenSpaceTextureExtension::{ dummy: 0.0F }
+}
+
+///|
+fn screen_space_texture_extension_uniform_bytes(
+  extension : ScreenSpaceTextureExtension,
+) -> Bytes {
+  let word = extension.dummy.reinterpret_as_uint()
+  Bytes::makei(4, i => {
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn extension_tag(
+  _self,
+) {
+  84
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn fragment_shader(
+  _self,
+) {
+  Some(SCREEN_SPACE_TEXTURE_SHADER)
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn prepass_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn prepass_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn deferred_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn deferred_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn alpha_mode(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn opaque_render_method(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn enable_prepass(
+  _self,
+) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn enable_shadows(
+  _self,
+) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn specialize(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn bind_group_layout_entries(
+  _self,
+) {
+  [
+    @render_resource.BindGroupLayoutEntry::new(
+      100,
+      @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        4UL,
+      ),
+    ),
+  ]
+}
+
+///|
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn bind_group_bindings(
+  self,
+) {
+  [
+    @material.MaterialExtensionBinding3d::uniform(
+      100,
+      screen_space_texture_extension_uniform_bytes(self),
+    ),
+  ]
 }
 
 ///|
@@ -124,18 +252,15 @@ fn quat_conjugate(q : @math.Quat) -> @math.Quat {
 }
 
 ///|
-fn reflect_vector(value : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 {
-  value.sub(normal.mul_scalar(2.0F * value.dot(normal)))
-}
-
-///|
-fn reflect_point(
-  point : @math.Vec3,
-  plane_point : @math.Vec3,
-  plane_normal : @math.Vec3,
-) -> @math.Vec3 {
-  let offset = point.sub(plane_point)
-  point.sub(plane_normal.mul_scalar(2.0F * offset.dot(plane_normal)))
+fn mirror_reflection_affine_neg_z() -> @math.Affine3 {
+  @math.Affine3::from_mat3_translation(
+    @math.Mat3::from_cols(
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    ),
+    @math.Vec3::zero(),
+  )
 }
 
 ///|
@@ -145,41 +270,20 @@ fn calculate_mirror_camera_transform_and_projection(
   mirror_transform : @transform.Transform,
 ) -> (@transform.Transform, @camera.PerspectiveProjection3d) {
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
-  let forward_axis = @math.Vec3::new(0.0F, 0.0F, -1.0F)
   let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
+
+  let reflected_affine = mirror_reflection_affine_neg_z().mul(
+    @transform.GlobalTransform::from_transform(main_camera_transform).affine(),
+  )
+  let (reflected_scale, reflected_rotation, reflected_translation) = reflected_affine.to_scale_rotation_translation()
+  let mirror_camera_transform = @transform.Transform::new(
+    reflected_translation, reflected_rotation, reflected_scale,
+  )
 
   let mirror_normal = normalize_or(
     quat_rotate_vec3(mirror_transform.rotation, world_up),
     world_up,
   )
-  let reflected_translation = reflect_point(
-    main_camera_transform.translation,
-    mirror_transform.translation,
-    mirror_normal,
-  )
-  let main_forward = normalize_or(
-    quat_rotate_vec3(main_camera_transform.rotation, forward_axis),
-    forward_axis,
-  )
-  let main_up = normalize_or(
-    quat_rotate_vec3(main_camera_transform.rotation, world_up),
-    world_up,
-  )
-  let reflected_forward = normalize_or(
-    reflect_vector(main_forward, mirror_normal),
-    forward_axis,
-  )
-  let reflected_up = normalize_or(
-    reflect_vector(main_up, mirror_normal),
-    world_up,
-  )
-  let reflected_target = reflected_translation.add(reflected_forward)
-  let mirror_camera_transform = @transform.Transform::from_xyz(
-    reflected_translation.x,
-    reflected_translation.y,
-    reflected_translation.z,
-  ).looking_at(reflected_target, reflected_up)
-
   let distance_from_camera_to_mirror = mirror_transform.translation
     .sub(main_camera_transform.translation)
     .dot(mirror_normal)
@@ -191,7 +295,7 @@ fn calculate_mirror_camera_transform_and_projection(
       view_from_world_rotation,
       quat_rotate_vec3(mirror_transform.rotation, negative_world_up),
     ),
-    forward_axis,
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
   )
   let mirror_camera_projection = @camera.PerspectiveProjection3d::{
     ..main_camera_projection,
@@ -364,9 +468,9 @@ fn setup(world : @ecs.World) -> Unit {
   mirror_state.val.fox = fox
 
   // Mirror plane.
-  let mirror_transform = @transform.Transform::from_xyz(-25.0F, 75.0F, 0.0F).with_rotation(
-    @math.Quat::from_rotation_x(-FRAC_PI_2),
-  )
+  let mirror_transform = @transform.Transform::from_xyz(-25.0F, 75.0F, 0.0F)
+    .with_rotation(@math.Quat::from_rotation_x(-FRAC_PI_2))
+    .with_scale(@math.Vec3::new(300.0F, 1.0F, 150.0F))
   let mirror_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@color.Color::black())
     .with_emissive(@color.Color::white())
@@ -381,12 +485,23 @@ fn setup(world : @ecs.World) -> Unit {
         assets
         |> @pbr.add_mesh(
           @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(300.0F, 150.0F),
+            @math.Vec2::splat(1.0F),
           ).build(),
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(mirror_material),
+    @pbr.MeshMaterial3d::new(mirror_material).with_extended_material(
+      Some(
+        @pbr.ExtendedMaterial::new(
+          @pbr.StandardMaterial::from_color(@color.Color::black())
+          .with_emissive(@color.Color::white())
+          .with_emissive_texture(Some(mirror_target))
+          .with_perceptual_roughness(0.0F)
+          .with_metallic(1.0F),
+          ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
+        ).metadata(),
+      ),
+    ),
     mirror_transform,
   ).spawn(world)
   try! world.set_by_key(
@@ -447,7 +562,9 @@ fn setup(world : @ecs.World) -> Unit {
     main_camera_transform, main_camera_projection, mirror_transform,
   )
   let mirror_camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::new(@color.Color::black()).with_order(-1),
+    @camera_camera.Camera::new(@color.Color::black())
+    .with_order(-1)
+    .with_invert_culling(true),
     @camera.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)

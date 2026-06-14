@@ -371,6 +371,9 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
   if camera.contact_shadows is Some(_) {
     bits = bits | MESH_PIPELINE_KEY_CONTACT_SHADOWS
   }
+  if camera.invert_culling {
+    bits = bits | MESH_PIPELINE_KEY_INVERT_CULLING
+  }
   bits = bits | mesh_pipeline_key_projection_bits(camera.projection)
   bits = bits |
     mesh_pipeline_key_shadow_filter_method_bits(
@@ -494,7 +497,6 @@ fn render3d_prewarm_mesh_pipelines(
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
-  let prewarmed_keys : Map[String, Bool] = {}
   let specialization_tick = world.read_change_tick()
   let mut motion_vector_prewarm_needed = false
   for camera in cameras {
@@ -546,29 +548,6 @@ fn render3d_prewarm_mesh_pipelines(
         ),
       )
     }
-    let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
-      meshes[mesh_index],
-    )
-    let vertex_shader_key = match vertex_shader_path {
-      Some(path) => path
-      None => ""
-    }
-    let fragment_shader_key = match fragment_shader_path {
-      Some(path) => path
-      None => ""
-    }
-    let cull_mode = @pbr_render.render3d_cull_mode_value(mesh.material, 0)
-    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{vertex_shader_key}|\{fragment_shader_key}"
-    if prewarmed_keys.contains(prewarm_key) {
-      continue
-    }
-    prewarmed_keys.set(prewarm_key, true)
-    @render.host_gpu_prewarm_mesh3d_pipeline_variants(
-      mesh_topology_kind=mesh.mesh_topology_kind,
-      cull_mode~,
-      vertex_shader_path~,
-      fragment_shader_path~,
-    )
   }
 }
 

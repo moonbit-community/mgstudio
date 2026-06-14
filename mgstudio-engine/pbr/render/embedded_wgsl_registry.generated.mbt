@@ -174,6 +174,13 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     @asset.asset_text_to_bytes(shadow_sampling_wgsl_source),
   )
   @shader_source.load_embedded_shader_source(
+    "shaders/screen_space_texture_material.wgsl", screen_space_texture_material_wgsl_source,
+  )
+  @asset.register_embedded_asset_virtual_bytes(
+    "shaders/screen_space_texture_material.wgsl",
+    @asset.asset_text_to_bytes(screen_space_texture_material_wgsl_source),
+  )
+  @shader_source.load_embedded_shader_source(
     "pbr/render/shadows.wgsl", shadows_wgsl_source,
   )
   @shader_source.load_embedded_shader_source(

@@ -337,6 +337,7 @@ fn render3d_execute_collect_cameras(
             scale_factor: target_info.scale_factor,
             layers,
             has_no_cpu_culling,
+            invert_culling: camera.invert_culling,
           },
         })
       }

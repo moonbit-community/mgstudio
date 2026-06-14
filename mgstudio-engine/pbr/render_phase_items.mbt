@@ -123,6 +123,7 @@ priv struct Camera3dViewPayload {
   scale_factor : Float
   layers : @camera_render_layers.RenderLayers
   has_no_cpu_culling : Bool
+  invert_culling : Bool
 }
 
 ///|

@@ -24,6 +24,31 @@ test "shader plugin initializes Assets<Shader> resource" {
 }
 
 ///|
+test "shader plugin can be installed more than once without resetting shader assets" {
+  let mut app = shader_plugin(
+    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+  )
+  let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
+  let handle = match app.world().get_resource_mut(shader_assets_key) {
+    Some(assets) =>
+      assets.modify(fn(value) {
+        value.add(
+          Shader::from_wgsl("fn main() {}", "shaders/already_loaded.wgsl"),
+        )
+      })
+    None => abort("expected Assets<Shader> resource")
+  }
+
+  app = shader_plugin(app)
+  let still_loaded = match app.world().get_resource(shader_assets_key) {
+    Some(assets) => assets.get(handle) is Some(_)
+    None => false
+  }
+
+  debug_inspect(still_loaded, content="true")
+}
+
+///|
 test "shader loader exposes wesl extension through the shared shader loader" {
   debug_inspect(
     @shader.ShaderLoader::ShaderLoader().extensions().contains("wesl"),
@@ -67,29 +92,46 @@ test "shader loader stores typed shader assets and direct file dependencies" {
   app = app.add_systems(
     @app.Startup,
     @app.system(fn(world : @ecs.World) {
-      let asset_server = @asset.AssetServer::new()
-      let root_handle : @asset.Handle[Shader] = asset_server.load(
-        "shader/tests/shader_loader/root.wgsl",
-      )
-      let dep_handle : @asset.Handle[Shader] = asset_server.load(
-        "shader/tests/shader_loader/dep.wgsl",
-      )
+      let asset_server = match
+        world.get_resource(@asset.AssetServer::resource()) {
+        Some(asset_server) => asset_server
+        None => abort("expected AssetServer resource")
+      }
+      let root_handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+        asset_server.load("shader/tests/shader_loader/root.wgsl")
+      })
+      let dep_handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+        asset_server.load("shader/tests/shader_loader/dep.wgsl")
+      })
       loaded_handle_ids.push(root_handle.id())
       loaded_handle_ids.push(dep_handle.id())
-
+    }),
+  )
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if root_paths.length() > 0 {
+        return
+      }
       let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
       let shader_assets = match world.get_resource(shader_assets_key) {
         Some(assets) => assets
         None => abort("expected Assets<Shader> resource")
       }
+      let root_handle : @asset.Handle[Shader] = @asset.Handle::new(
+        loaded_handle_ids[0],
+      )
+      let dep_handle : @asset.Handle[Shader] = @asset.Handle::new(
+        loaded_handle_ids[1],
+      )
 
       let root_shader = match shader_assets.get(root_handle) {
         Some(shader) => shader
-        None => abort("expected root shader asset")
+        None => return
       }
       let dep_shader = match shader_assets.get(dep_handle) {
         Some(shader) => shader
-        None => abort("expected dependency shader asset")
+        None => return
       }
 
       root_paths.push(root_shader.path)
@@ -100,6 +142,7 @@ test "shader loader stores typed shader assets and direct file dependencies" {
     }),
   )
 
+  app = app.update()
   app = app.update()
 
   debug_inspect(loaded_handle_ids.length(), content="3")

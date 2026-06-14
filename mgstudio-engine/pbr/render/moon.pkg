@@ -172,6 +172,11 @@ options(
       "output": "shadow_sampling_wgsl.mbt",
     },
     {
+      "command": ":embed --input $input --output $output --name screen_space_texture_material_wgsl_source",
+      "input": "../../assets/shaders/screen_space_texture_material.wgsl",
+      "output": "screen_space_texture_material_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name shadows_wgsl_source",
       "input": "shadows.wgsl",
       "output": "shadows_wgsl.mbt",

@@ -42,6 +42,7 @@ pub struct Camera {
   is_active : Bool
   computed : @computed_camera_values.ComputedCameraValues
   clear_color : @clear_color.ClearColorConfig
+  invert_culling : Bool
 }
 pub fn Camera::Camera() -> Self
 pub fn Camera::clear_viewport(Self) -> Self
@@ -57,6 +58,7 @@ pub fn Camera::with_clear_color(Self, @color.Color) -> Self
 pub fn Camera::with_clear_color_config(Self, @clear_color.ClearColorConfig) -> Self
 pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_computed(Self, @computed_camera_values.ComputedCameraValues) -> Self
+pub fn Camera::with_invert_culling(Self, Bool) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self

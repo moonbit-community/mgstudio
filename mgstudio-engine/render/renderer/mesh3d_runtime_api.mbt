@@ -826,14 +826,22 @@ pub fn prewarm_mesh3d_pipeline_variants(
           ignore(
             mesh3d_custom_pipeline_get_or_create(
               backend,
+              MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+              None,
               resolved_vertex_shader_path,
               resolved_fragment_shader_path,
               Some(format),
+              1,
               topology,
               false,
               opaque_blend_kind,
               false,
               cull_mode,
+              false,
+              false,
+              0,
+              false,
+              1,
             ),
           ) catch {
             Fatal(message) =>
@@ -844,14 +852,22 @@ pub fn prewarm_mesh3d_pipeline_variants(
           ignore(
             mesh3d_custom_pipeline_get_or_create(
               backend,
+              MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+              None,
               resolved_vertex_shader_path,
               resolved_fragment_shader_path,
               Some(format),
+              1,
               topology,
               true,
               transparent_blend_kind,
               false,
               cull_mode,
+              false,
+              false,
+              0,
+              false,
+              1,
             ),
           ) catch {
             Fatal(message) =>

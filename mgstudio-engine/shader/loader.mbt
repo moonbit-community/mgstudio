@@ -73,23 +73,6 @@ fn ShaderAssetPaths::insert(
 }
 
 ///|
-fn ShaderAssetPaths::remove(
-  self : ShaderAssetPaths,
-  canonical_path : String,
-) -> Unit {
-  let retained : Array[(String, @asset.Handle[Shader])] = []
-  for entry in self.entries {
-    if entry.0 != canonical_path {
-      retained.push(entry)
-    }
-  }
-  self.entries.clear()
-  for entry in retained {
-    self.entries.push(entry)
-  }
-}
-
-///|
 let shader_asset_paths_resource_key : @ecs.ResourceKey[ShaderAssetPaths] = @ecs.register_resource(
   debug_name="mgstudio_shader::ShaderAssetPaths",
 )
@@ -100,13 +83,24 @@ pub impl @app.Resource for ShaderAssetPaths with fn resource() {
 }
 
 ///|
-fn shader_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[Shader]] {
-  @asset.asset_assets_ref_mut_or_abort()
-}
+priv struct ShaderPluginMarker {}
 
 ///|
-fn shader_asset_paths_mut_or_abort() -> @ecs.ResourceMut[ShaderAssetPaths] {
-  @asset.asset_resource_ref_mut_or_abort()
+let shader_plugin_marker_key : @ecs.ResourceKey[ShaderPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio_shader::ShaderPluginMarker",
+)
+
+///|
+fn shader_asset_paths_mut_or_abort_in_world(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[ShaderAssetPaths] {
+  match world.get_resource_mut(ShaderAssetPaths::resource()) {
+    Some(paths) => paths
+    None =>
+      abort(
+        "ShaderAssetPaths resource is missing; ShaderPlugin must initialize shader path tracking before recording shader assets",
+      )
+  }
 }
 
 ///|
@@ -124,17 +118,26 @@ fn shader_path_extension(path : String) -> String {
 }
 
 ///|
-fn shader_blob_read_text_or_error(
-  blob : @asset.Handle[@asset.Blob],
+fn shader_bytes_read_text_or_error(
+  bytes : Bytes,
   canonical_path : String,
 ) -> String raise ShaderLoaderError {
-  match @asset.asset_blob_read_text(blob) {
-    Some(source) => source
-    None =>
-      raise ShaderLoaderError::Parse(
-        "failed to decode shader text: \{canonical_path}",
-      )
+  bytes |> ignore
+  let chars : Array[Char] = []
+  for byte in bytes {
+    let code = byte.to_int() & 0xFF
+    if code.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
   }
+  if chars.length() == 0 {
+    raise ShaderLoaderError::Parse(
+      "failed to decode shader text: \{canonical_path}",
+    )
+  }
+  String::from_array(chars)
 }
 
 ///|
@@ -166,43 +169,57 @@ pub fn ShaderLoader::load(
 ) -> Shader raise ShaderLoaderError {
   self |> ignore
   let canonical_path = @asset.asset_canonical_path(path)
-  let extension = shader_path_extension(canonical_path)
   let blob = asset_server.load_bytes(canonical_path)
+  self.load_from_bytes(
+    asset_server,
+    canonical_path,
+    shader_blob_read_bytes_or_error(blob, canonical_path),
+    settings,
+  )
+}
+
+///|
+pub fn ShaderLoader::load_from_bytes(
+  self : ShaderLoader,
+  asset_server : @asset.AssetServer,
+  path : String,
+  bytes : Bytes,
+  settings : ShaderSettings,
+) -> Shader raise ShaderLoaderError {
+  self |> ignore
+  let canonical_path = @asset.asset_canonical_path(path)
+  let extension = shader_path_extension(canonical_path)
   if extension != "wgsl" && !settings.shader_defs.is_empty() {
     settings |> ignore
   }
   let shader = match extension {
-    "spv" =>
-      Shader::from_spirv(
-        shader_blob_read_bytes_or_error(blob, canonical_path),
-        canonical_path,
-      )
+    "spv" => Shader::from_spirv(bytes, canonical_path)
     "wgsl" =>
       Shader::from_wgsl_with_defs(
-        shader_blob_read_text_or_error(blob, canonical_path),
+        shader_bytes_read_text_or_error(bytes, canonical_path),
         canonical_path,
         settings.shader_defs,
       )
     "wesl" =>
       Shader::from_wesl(
-        shader_blob_read_text_or_error(blob, canonical_path),
+        shader_bytes_read_text_or_error(bytes, canonical_path),
         canonical_path,
       )
     "vert" =>
       Shader::from_glsl(
-        shader_blob_read_text_or_error(blob, canonical_path),
+        shader_bytes_read_text_or_error(bytes, canonical_path),
         ShaderStage::Vertex,
         canonical_path,
       )
     "frag" =>
       Shader::from_glsl(
-        shader_blob_read_text_or_error(blob, canonical_path),
+        shader_bytes_read_text_or_error(bytes, canonical_path),
         ShaderStage::Fragment,
         canonical_path,
       )
     "comp" =>
       Shader::from_glsl(
-        shader_blob_read_text_or_error(blob, canonical_path),
+        shader_bytes_read_text_or_error(bytes, canonical_path),
         ShaderStage::Compute,
         canonical_path,
       )
@@ -220,42 +237,50 @@ pub fn ShaderLoader::load(
 }
 
 ///|
-fn shader_load_registered(
+fn shader_load_typed(
   asset_server : @asset.AssetServer,
+  path : @asset.AssetPath,
+  bytes : Bytes,
+) -> Shader {
+  let canonical_path = @asset.asset_canonical_path(
+    @asset.asset_format_path(path),
+  )
+  ShaderLoader::ShaderLoader().load_from_bytes(
+    asset_server,
+    canonical_path,
+    bytes,
+    ShaderSettings::ShaderSettings(),
+  ) catch {
+    error => abort(error.message())
+  }
+}
+
+///|
+pub fn shader_record_asset_path(
+  world : @ecs.World,
   path : String,
-) -> @asset.Handle[Shader] {
+  handle : @asset.Handle[Shader],
+) -> Unit {
   let canonical_path = @asset.asset_canonical_path(path)
-  let registry = shader_asset_paths_mut_or_abort()
-  match registry.peek().find(canonical_path) {
-    Some(handle) => handle
-    None => {
-      let assets = shader_assets_mut_or_abort()
-      let handle = assets.modify(fn(value) { value.reserve_handle() })
-      registry.modify(fn(value) { value.insert(canonical_path, handle) })
-      let shader = ShaderLoader::ShaderLoader().load(
-        asset_server,
-        canonical_path,
-        ShaderSettings::ShaderSettings(),
-      ) catch {
-        error => {
-          registry.modify(fn(value) { value.remove(canonical_path) })
-          abort(error.message())
-        }
-      }
-      ignore(assets.modify(fn(value) { value.set(handle, shader) }))
-      handle
-    }
+  let registry = shader_asset_paths_mut_or_abort_in_world(world)
+  if registry.peek().find(canonical_path) is None {
+    registry.modify(fn(value) { value.insert(canonical_path, handle) })
   }
 }
 
 ///|
 pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @asset.asset_with_world(app.world(), fn() {
-    @asset.asset_register_loader(fn(asset_server, path) {
-      shader_load_registered(asset_server, path)
-    })
-  })
-  @asset.init_asset(app, fn() { Shader::new("") })
+  if app.contains_resource(shader_plugin_marker_key) {
+    return app
+  }
+  @asset.init_asset_loader(
+    @asset.init_asset(app, fn() { Shader::new("") }),
+    @asset.AssetLoader::new(
+      ShaderLoader::ShaderLoader().extensions(),
+      shader_load_typed,
+    ),
+  )
+  .insert_world_resource(shader_plugin_marker_key, ShaderPluginMarker::{  })
   .init_resource(fn() { ShaderAssetPaths::ShaderAssetPaths() })
   .init_resource(fn() { ShaderRuntimeCache::ShaderRuntimeCache() })
 }

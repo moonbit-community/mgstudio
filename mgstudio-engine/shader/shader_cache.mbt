@@ -257,7 +257,13 @@ fn[ShaderModule, RenderDevice] shader_cache_compiled_source(
             @wesl.EscapeMangler::default(),
             compiler_options,
           ) catch {
-            err => raise ShaderCacheError::ProcessShaderError(err.message())
+            err => {
+              let message = err.message()
+              if message.contains("shader import not yet available") {
+                raise ShaderCacheError::ShaderImportNotYetAvailable
+              }
+              raise ShaderCacheError::ProcessShaderError(message)
+            }
           }
           ShaderCacheSource::Wgsl(compiled.to_string())
         }

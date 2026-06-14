@@ -102,8 +102,28 @@ fn shader_asset_paths_or_abort(world : @ecs.World) -> ShaderAssetPaths {
 ///|
 fn shader_runtime_cache_sync_loaded_assets(world : @ecs.World) -> Unit {
   let shader_assets = shader_assets_or_abort(world)
+  let loaded_shaders = shader_assets.iter()
+  for entry in loaded_shaders {
+    let handle = entry.0
+    let shader = entry.1
+    if shader.path != "" {
+      shader_record_asset_path(world, shader.path, handle)
+    }
+  }
   let shader_paths = shader_asset_paths_or_abort(world)
   let cache = shader_runtime_cache_mut_or_abort(world)
+  for entry in loaded_shaders {
+    let handle = entry.0
+    let shader = entry.1
+    if cache.peek().cache.contains_shader(handle.asset_id()) {
+      continue
+    }
+    ignore(
+      cache.modify(fn(value) {
+        value.cache.set_shader(handle.asset_id(), shader)
+      }),
+    )
+  }
   for entry in shader_paths.entries {
     let handle = entry.1
     if cache.peek().cache.contains_shader(handle.asset_id()) {
@@ -145,12 +165,49 @@ pub fn shader_runtime_loaded_wgsl_sources(
 
 ///|
 fn shader_load_runtime_asset(world : @ecs.World, path : String) -> Shader? {
-  let asset_server = shader_asset_server_or_abort(world)
-  let handle : @asset.Handle[Shader] = asset_server.load(path)
+  let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+    let asset_server = shader_asset_server_or_abort(world)
+    asset_server.load(path)
+  })
   let key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
   match world.get_resource(key) {
-    Some(shader_assets) => shader_assets.get(handle)
+    Some(shader_assets) =>
+      match shader_assets.get(handle) {
+        Some(shader) => {
+          shader_record_asset_and_dependencies(
+            world, path, handle, shader, shader_assets,
+          )
+          Some(shader)
+        }
+        None => None
+      }
     None => None
+  }
+}
+
+///|
+fn shader_record_asset_and_dependencies(
+  world : @ecs.World,
+  path : String,
+  handle : @asset.Handle[Shader],
+  shader : Shader,
+  shader_assets : @asset.Assets[Shader],
+) -> Unit {
+  shader_record_asset_path(world, path, handle)
+  let mut dependency_index = 0
+  for import_path in shader.imports {
+    match import_path {
+      AssetPath(asset_path) => {
+        if dependency_index < shader.file_dependencies.length() {
+          let dependency_handle = shader.file_dependencies[dependency_index]
+          if shader_assets.get(dependency_handle) is Some(_) {
+            shader_record_asset_path(world, asset_path, dependency_handle)
+          }
+        }
+        dependency_index = dependency_index + 1
+      }
+      Custom(_) => ()
+    }
   }
 }
 
@@ -197,8 +254,18 @@ pub fn shader_runtime_compile_wesl_source(
   if !shader_path_is_wesl(path) {
     return None
   }
-  let asset_server = shader_asset_server_or_abort(world)
-  let handle : @asset.Handle[Shader] = asset_server.load(path)
+  let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+    let asset_server = shader_asset_server_or_abort(world)
+    asset_server.load(path)
+  })
+  let assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
+  if world.get_resource(assets_key) is Some(shader_assets) {
+    if shader_assets.get(handle) is Some(shader) {
+      shader_record_asset_and_dependencies(
+        world, path, handle, shader, shader_assets,
+      )
+    }
+  }
   shader_runtime_cache_sync_loaded_assets(world)
   let cache = shader_runtime_cache_mut_or_abort(world)
   if !cache.peek().cache.contains_shader(handle.asset_id()) {
@@ -207,7 +274,10 @@ pub fn shader_runtime_compile_wesl_source(
     )
     return None
   }
-  Some(cache.peek().cache.get(0, handle.asset_id(), shader_defs))
+  Some(cache.peek().cache.get(0, handle.asset_id(), shader_defs)) catch {
+    ShaderImportNotYetAvailable => None
+    err => raise err
+  }
 }
 
 ///|

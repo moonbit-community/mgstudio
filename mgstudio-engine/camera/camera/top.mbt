@@ -34,6 +34,7 @@ pub struct Camera {
   is_active : Bool
   computed : ComputedCameraValues
   clear_color : ClearColorConfig
+  invert_culling : Bool
 }
 
 ///|
@@ -44,6 +45,7 @@ pub fn Camera::new(clear_color : @color.Color) -> Camera {
     is_active: true,
     computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: ClearColorConfig::Custom(clear_color),
+    invert_culling: false,
   }
 }
 
@@ -55,6 +57,7 @@ pub fn Camera::Camera() -> Camera {
     is_active: true,
     computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: ClearColorConfig::default(),
+    invert_culling: false,
   }
 }
 
@@ -97,6 +100,14 @@ pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
 ///|
 pub fn Camera::with_is_active(self : Camera, is_active : Bool) -> Camera {
   Camera::{ ..self, is_active, }
+}
+
+///|
+pub fn Camera::with_invert_culling(
+  self : Camera,
+  invert_culling : Bool,
+) -> Camera {
+  Camera::{ ..self, invert_culling, }
 }
 
 ///|
@@ -525,6 +536,7 @@ fn encode_camera(camera : Camera) -> Json {
     camera.is_active,
     @camera_computed.encode_computed_camera_values(camera.computed),
     @camera_clear_color.encode_clear_color_config(camera.clear_color),
+    camera.invert_culling,
   ).to_json()
 }
 
@@ -544,13 +556,14 @@ fn encode_render_target(target : RenderTarget) -> Json {
 
 ///|
 fn decode_camera(json : Json) -> Camera {
-  let (viewport_json, order, is_active, computed_json, clear_color_json) : (
-    Json?,
-    Int,
-    Bool,
-    Json,
-    Json,
-  ) = try! @json.from_json(json)
+  let (
+    viewport_json,
+    order,
+    is_active,
+    computed_json,
+    clear_color_json,
+    invert_culling,
+  ) : (Json?, Int, Bool, Json, Json, Bool) = try! @json.from_json(json)
   Camera::{
     viewport: viewport_json.map(fn(value) {
       @camera_viewport.decode_viewport(value)
@@ -559,6 +572,7 @@ fn decode_camera(json : Json) -> Camera {
     is_active,
     computed: @camera_computed.decode_computed_camera_values(computed_json),
     clear_color: @camera_clear_color.decode_clear_color_config(clear_color_json),
+    invert_culling,
   }
 }
 

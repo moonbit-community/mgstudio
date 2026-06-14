@@ -2,6 +2,10 @@
 package "Milky2018/mgstudio/examples/3d/mirror"
 
 import {
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/render/render_resource",
   "moonbitlang/core/debug",
 }
 
@@ -14,6 +18,11 @@ pub(all) enum DragAction {
   MoveCamera
   MoveFox
 } derive(Eq, @debug.Debug)
+
+pub(all) struct ScreenSpaceTextureExtension {
+  dummy : Float
+}
+pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension
 
 // Type aliases
 

@@ -58,6 +58,7 @@ fn wireframe_phase_test_frame_config() -> Render3dExecuteFrameConfig {
 fn wireframe_phase_test_camera(
   view_entity : @core.Entity,
   motion_vector_prepass_enabled? : Bool = false,
+  invert_culling? : Bool = false,
 ) -> ExtractedCamera3d {
   ExtractedCamera3d::{
     entity: phase_entity_ref3d_for_main(view_entity),
@@ -111,8 +112,19 @@ fn wireframe_phase_test_camera(
       scale_factor: 1.0F,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
       has_no_cpu_culling: false,
+      invert_culling,
     },
   }
+}
+
+///|
+test "pbr: camera view key carries Bevy Camera::invert_culling" {
+  let camera = wireframe_phase_test_camera(
+    @core.Entity::new(31, 0),
+    invert_culling=true,
+  )
+  let bits = render3d_camera_mesh_pipeline_view_key_bits(camera.payload)
+  inspect(bits & MESH_PIPELINE_KEY_INVERT_CULLING, content="4194304")
 }
 
 ///|

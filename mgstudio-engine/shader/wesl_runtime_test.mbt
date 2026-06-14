@@ -13,44 +13,50 @@
 // limitations under the License.
 
 ///|
-fn wesl_runtime_try_register(
-  world : @ecs.World,
-  path : String,
-  shader_defs : Array[@shader.ShaderDefVal],
-) -> String? {
-  ignore(@shader.shader_runtime_compile_wesl_source(world, path, shader_defs)) catch {
-    err => return Some(err.message())
-  }
-  None
-}
-
-///|
-test "shader runtime wesl registration fails until imported module is explicitly loaded" {
-  let failures : Array[String] = []
+test "shader runtime wesl registration defers until imported wesl modules are loaded" {
+  let registered_sources : Array[String] = []
   let mut app = shader_plugin(
     @asset.asset_plugin(@app.App::new(@ecs.World::new())),
   )
   app = app.add_systems(
     @app.Startup,
     @app.system(fn(world : @ecs.World) {
-      let failure = wesl_runtime_try_register(
+      let asset_server = match
+        world.get_resource(@asset.AssetServer::resource()) {
+        Some(asset_server) => asset_server
+        None => abort("expected AssetServer resource for wesl runtime test")
+      }
+      let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+        asset_server.load("shaders/custom_material.wesl")
+      })
+      ignore(handle)
+    }),
+  )
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if registered_sources.length() > 0 {
+        return
+      }
+      let compiled = @shader.shader_runtime_compile_wesl_source(
         world,
         "shaders/custom_material.wesl",
         [],
-      )
-      match failure {
-        Some(message) => failures.push(message)
-        None =>
-          abort("expected wesl registration to fail before util.wesl is loaded")
+      ) catch {
+        err => abort(err.message())
+      }
+      match compiled {
+        Some(source) => registered_sources.push(source)
+        None => return
       }
     }),
   )
 
   app = app.update()
+  app = app.update()
+  app = app.update()
 
-  debug_inspect(failures.length(), content="1")
-  debug_inspect(failures[0].contains("module not found"), content="true")
-  debug_inspect(failures[0].contains("package::shaders::util"), content="true")
+  debug_inspect(registered_sources.length(), content="0")
 }
 
 ///|
@@ -67,10 +73,24 @@ test "shader runtime wesl registration compiles after imported module is loaded 
         Some(asset_server) => asset_server
         None => abort("expected AssetServer resource for wesl runtime test")
       }
-      let utility_handle : @asset.Handle[Shader] = asset_server.load(
-        "shaders/util.wesl",
+      let utility_handle : @asset.Handle[Shader] = @asset.asset_with_world(
+        world,
+        fn() { asset_server.load("shaders/util.wesl") },
+      )
+      let material_handle : @asset.Handle[Shader] = @asset.asset_with_world(
+        world,
+        fn() { asset_server.load("shaders/custom_material.wesl") },
       )
       ignore(utility_handle)
+      ignore(material_handle)
+    }),
+  )
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if registered_sources.length() > 0 {
+        return
+      }
       let compiled = @shader.shader_runtime_compile_wesl_source(
         world,
         "shaders/custom_material.wesl",
@@ -80,11 +100,13 @@ test "shader runtime wesl registration compiles after imported module is loaded 
       }
       match compiled {
         Some(source) => registered_sources.push(source)
-        None => abort("expected compiled WESL shader source")
+        None => return
       }
     }),
   )
 
+  app = app.update()
+  app = app.update()
   app = app.update()
 
   debug_inspect(registered_sources.length(), content="1")
