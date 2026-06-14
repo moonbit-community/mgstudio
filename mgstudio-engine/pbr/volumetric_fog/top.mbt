@@ -68,30 +68,13 @@ pub fn FogAssets::cube_mesh(self : FogAssets) -> @asset.Handle[@mesh.Mesh] {
 }
 
 ///|
-pub struct VolumetricFogPluginState {
-  priv fog_assets : FogAssets?
-}
+let ecs_key_fog_assets : @ecs.ResourceKey[FogAssets] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::FogAssets",
+)
 
 ///|
-pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> VolumetricFogPluginState {
-  VolumetricFogPluginState::{ fog_assets: None }
-}
-
-///|
-let ecs_key_volumetric_fog_plugin_state : @ecs.ResourceKey[
-  VolumetricFogPluginState,
-] = @ecs.register_resource(debug_name="mgstudio_pbr::VolumetricFogPluginState")
-
-///|
-pub impl @app.Resource for VolumetricFogPluginState with fn resource() {
-  ecs_key_volumetric_fog_plugin_state
-}
-
-///|
-pub fn VolumetricFogPluginState::fog_assets(
-  self : VolumetricFogPluginState,
-) -> FogAssets? {
-  self.fog_assets
+pub impl @app.Resource for FogAssets with fn resource() {
+  ecs_key_fog_assets
 }
 
 ///|
@@ -110,13 +93,11 @@ pub fn volumetric_fog_plugin_install_with(
   plugin : VolumetricFogPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  if app.contains_resource(ecs_key_volumetric_fog_plugin_state) {
+  if app.contains_resource(ecs_key_fog_assets) {
     app
   } else {
     let fog_assets = volumetric_fog_create_fog_assets(app.world())
-    app.insert_world_resource(ecs_key_volumetric_fog_plugin_state, VolumetricFogPluginState::{
-      fog_assets: Some(fog_assets),
-    })
+    app.insert_world_resource(ecs_key_fog_assets, fog_assets)
   }
 }
 

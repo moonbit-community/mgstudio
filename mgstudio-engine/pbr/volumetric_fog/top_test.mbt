@@ -30,25 +30,18 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     None => -1
   }
   inspect(after_count - before_count, content="2")
-  match
-    app
-    .world()
-    .get_resource(@volumetric_fog.VolumetricFogPluginState::resource()) {
-    Some(state) =>
-      match state.fog_assets() {
-        Some(fog_assets) => {
-          let meshes = app.world().get_resource(mesh_assets_key).unwrap()
-          inspect(
-            meshes.get(fog_assets.plane_mesh()).unwrap().vertex_count() > 0,
-            content="true",
-          )
-          inspect(
-            meshes.get(fog_assets.cube_mesh()).unwrap().vertex_count() > 0,
-            content="true",
-          )
-        }
-        None => inspect("missing fog assets", content="present fog assets")
-      }
-    None => inspect("missing state", content="present state")
+  match app.world().get_resource(@volumetric_fog.FogAssets::resource()) {
+    Some(fog_assets) => {
+      let meshes = app.world().get_resource(mesh_assets_key).unwrap()
+      inspect(
+        meshes.get(fog_assets.plane_mesh()).unwrap().vertex_count() > 0,
+        content="true",
+      )
+      inspect(
+        meshes.get(fog_assets.cube_mesh()).unwrap().vertex_count() > 0,
+        content="true",
+      )
+    }
+    None => inspect("missing fog assets", content="present fog assets")
   }
 }

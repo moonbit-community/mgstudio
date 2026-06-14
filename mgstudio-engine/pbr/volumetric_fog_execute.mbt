@@ -150,13 +150,10 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
   guard render3d_volumetric_fog_should_prepare_hull_meshes(prepared) else {
     return prepared
   }
-  guard source_world.get_resource(
-      @pbr_volumetric_fog.VolumetricFogPluginState::resource(),
-    )
-    is Some(plugin_state) else {
+  guard source_world.get_resource(@pbr_volumetric_fog.FogAssets::resource())
+    is Some(fog_assets) else {
     return prepared
   }
-  guard plugin_state.fog_assets() is Some(fog_assets) else { return prepared }
   let (plane_mesh_id, cube_mesh_id) = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
     render_world,
   ).modify(fn(mesh_runtime_state) {

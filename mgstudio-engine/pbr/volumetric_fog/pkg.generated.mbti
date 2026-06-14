@@ -29,6 +29,7 @@ pub struct FogAssets {
 }
 pub fn FogAssets::cube_mesh(Self) -> @asset.Handle[@mesh.Mesh]
 pub fn FogAssets::plane_mesh(Self) -> @asset.Handle[@mesh.Mesh]
+pub impl @app.Resource for FogAssets
 
 pub struct PreparedVolumetricFogView {
   view_fog : ViewVolumetricFog
@@ -73,13 +74,6 @@ pub struct VolumetricFogPlugin {
 }
 pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> Self
 pub impl @app.Plugin for VolumetricFogPlugin
-
-pub struct VolumetricFogPluginState {
-  // private fields
-}
-pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> Self
-pub fn VolumetricFogPluginState::fog_assets(Self) -> FogAssets?
-pub impl @app.Resource for VolumetricFogPluginState
 
 type VolumetricFogUniform
 
