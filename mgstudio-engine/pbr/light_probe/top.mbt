@@ -96,7 +96,9 @@ pub fn light_probe_plugin_state_with_extracted_probe_count(
 pub struct RenderLightProbe {
   light_from_world_transposed : Array[@math.Vec4]
   falloff : @math.Vec3
+  bounding_sphere_radius : Float
   parallax_correction_bounds : @math.Vec3
+  world_position : @math.Vec3
   texture_index : Int
   intensity : Float
   flags : Int
@@ -111,7 +113,9 @@ pub fn RenderLightProbe::RenderLightProbe() -> RenderLightProbe {
       @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
     ],
     falloff: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    parallax_correction_bounds: @math.Vec3::new(1.0F, 1.0F, 1.0F),
+    bounding_sphere_radius: 0.0F,
+    parallax_correction_bounds: @math.Vec3::zero(),
+    world_position: @math.Vec3::zero(),
     texture_index: -1,
     intensity: 1.0F,
     flags: 0,
@@ -200,18 +204,55 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[
 
 ///|
 pub struct LightProbesUniform {
+  reflection_probes : Array[RenderLightProbe]
+  irradiance_volumes : Array[RenderLightProbe]
   reflection_probe_count : Int
   irradiance_volume_count : Int
   view_cubemap_index : Int
+  smallest_specular_mip_level_for_view : Int
+  view_rotation : @math.Quat
+  intensity_for_view : Float
+  view_environment_map_affects_lightmapped_mesh_diffuse : Bool
 }
 
 ///|
 pub fn LightProbesUniform::LightProbesUniform() -> LightProbesUniform {
   LightProbesUniform::{
+    reflection_probes: Array::make(
+      MAX_VIEW_LIGHT_PROBES,
+      RenderLightProbe::RenderLightProbe(),
+    ),
+    irradiance_volumes: Array::make(
+      MAX_VIEW_LIGHT_PROBES,
+      RenderLightProbe::RenderLightProbe(),
+    ),
     reflection_probe_count: 0,
     irradiance_volume_count: 0,
     view_cubemap_index: -1,
+    smallest_specular_mip_level_for_view: 0,
+    view_rotation: @math.Quat::identity(),
+    intensity_for_view: 1.0F,
+    view_environment_map_affects_lightmapped_mesh_diffuse: true,
   }
+}
+
+///|
+pub fn LightProbesUniform::reflection_probe_capacity(
+  self : LightProbesUniform,
+) -> Int {
+  self.reflection_probes.length()
+}
+
+///|
+pub fn LightProbesUniform::irradiance_volume_capacity(
+  self : LightProbesUniform,
+) -> Int {
+  self.irradiance_volumes.length()
+}
+
+///|
+pub fn LightProbesUniform::view_cubemap_index(self : LightProbesUniform) -> Int {
+  self.view_cubemap_index
 }
 
 ///|

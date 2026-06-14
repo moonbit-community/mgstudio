@@ -38,6 +38,7 @@ pub struct EnvironmentMapViewLightProbeInfo {
   smallest_specular_mip_level : Int
   intensity : Float
   affects_lightmapped_mesh_diffuse : Bool
+  rotation : @math.Quat
 }
 
 ///|
@@ -47,6 +48,7 @@ pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> E
     smallest_specular_mip_level: 0,
     intensity: 1.0F,
     affects_lightmapped_mesh_diffuse: true,
+    rotation: @math.Quat::identity(),
   }
 }
 

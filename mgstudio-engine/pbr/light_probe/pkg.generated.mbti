@@ -96,6 +96,7 @@ pub struct EnvironmentMapViewLightProbeInfo {
   smallest_specular_mip_level : Int
   intensity : Float
   affects_lightmapped_mesh_diffuse : Bool
+  rotation : @math.Quat
 }
 pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> Self
 
@@ -135,17 +136,28 @@ pub fn LightProbePluginState::LightProbePluginState() -> Self
 pub impl @app.Resource for LightProbePluginState
 
 pub struct LightProbesUniform {
+  reflection_probes : Array[RenderLightProbe]
+  irradiance_volumes : Array[RenderLightProbe]
   reflection_probe_count : Int
   irradiance_volume_count : Int
   view_cubemap_index : Int
+  smallest_specular_mip_level_for_view : Int
+  view_rotation : @math.Quat
+  intensity_for_view : Float
+  view_environment_map_affects_lightmapped_mesh_diffuse : Bool
 }
 pub fn LightProbesUniform::LightProbesUniform() -> Self
+pub fn LightProbesUniform::irradiance_volume_capacity(Self) -> Int
+pub fn LightProbesUniform::reflection_probe_capacity(Self) -> Int
+pub fn LightProbesUniform::view_cubemap_index(Self) -> Int
 pub impl @app.Resource for LightProbesUniform
 
 pub struct RenderLightProbe {
   light_from_world_transposed : Array[@math.Vec4]
   falloff : @math.Vec3
+  bounding_sphere_radius : Float
   parallax_correction_bounds : @math.Vec3
+  world_position : @math.Vec3
   texture_index : Int
   intensity : Float
   flags : Int

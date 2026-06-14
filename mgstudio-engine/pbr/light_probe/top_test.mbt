@@ -25,6 +25,14 @@ test "pbr light probe: view probe container enforces max probe count" {
 }
 
 ///|
+test "pbr light probe: uniform mirrors Bevy light probe capacities" {
+  let uniform = LightProbesUniform::LightProbesUniform()
+  inspect(uniform.reflection_probe_capacity(), content="8")
+  inspect(uniform.irradiance_volume_capacity(), content="8")
+  inspect(uniform.view_cubemap_index(), content="-1")
+}
+
+///|
 test "pbr light probe: plugin initializes plugin state and uniform resources" {
   let app = light_probe_plugin(@app.App::new(@ecs.World::new()))
   inspect(

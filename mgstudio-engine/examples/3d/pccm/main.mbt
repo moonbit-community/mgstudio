@@ -25,6 +25,19 @@ const ENV_DIFFUSE_URL : String = "https://github.com/bevyengine/bevy_asset_files
 const ENV_SPECULAR_URL : String = "https://github.com/bevyengine/bevy_asset_files/raw/main/pccm_example/env_specular.ktx2"
 
 ///|
+priv struct InnerCube {}
+
+///|
+let inner_cube_component_key : @ecs.ComponentKey[InnerCube] = @ecs.register_component(
+  debug_name="examples.3d.pccm.InnerCube",
+)
+
+///|
+impl @ecs.Component for InnerCube with fn component() {
+  inner_cube_component_key
+}
+
+///|
 priv struct AppStatus {
   mut pccm_enabled : PccmEnableStatus
 }
@@ -80,6 +93,13 @@ impl @widgets_lib.WidgetValue for PccmEnableStatus with fn widget_click_sender_k
 }
 
 ///|
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Parallax-Corrected Cubemaps Example"
+  window
+}
+
+///|
 fn spawn_camera(commands : @app.Commands) -> Unit {
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
@@ -128,6 +148,7 @@ fn spawn_inner_cube(
         @mesh.Mesh3d::new(cube_mesh),
         @pbr.MeshMaterial3d::new(cube_material),
         @transform.Transform::from_xyz(0.0F, -4.0F, -2.5F),
+        InnerCube::{  },
       ),
     ),
   )
@@ -291,7 +312,14 @@ fn main {
     @widgets_lib.WidgetClickEvent[PccmEnableStatus],
   ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
   .add_plugins(@camera_controller.FreeCameraPlugin::FreeCameraPlugin())
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
