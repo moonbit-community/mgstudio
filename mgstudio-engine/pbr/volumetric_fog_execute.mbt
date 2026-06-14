@@ -86,20 +86,10 @@ fn render3d_prepare_volumetric_fog_pipelines(
   msaa_sample_count : Int,
   atmosphere : Bool,
 ) -> Unit {
-  guard prepared.light_count > 0 &&
-    prepared.view_count > 0 &&
-    prepared.plane_mesh_id >= 0 else {
-    return
-  }
-  let mut needs_textureless = false
-  let mut needs_textured = false
-  for volume in prepared.view_fog.volumes {
-    if volume.has_density_texture() {
-      needs_textured = true
-    } else {
-      needs_textureless = true
-    }
-  }
+  let (needs_textureless, needs_textured) = render3d_volumetric_fog_pipeline_variants(
+    prepared,
+  )
+  guard needs_textureless || needs_textured else { return }
   if needs_textureless {
     @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
       target_id~,
@@ -118,6 +108,18 @@ fn render3d_prepare_volumetric_fog_pipelines(
       hull_mesh_id=prepared.plane_mesh_id,
     )
   }
+}
+
+///|
+fn render3d_volumetric_fog_pipeline_variants(
+  prepared : Render3dVolumetricFogPrepareOutput,
+) -> (Bool, Bool) {
+  guard prepared.light_count > 0 &&
+    prepared.view_count > 0 &&
+    prepared.plane_mesh_id >= 0 else {
+    return (false, false)
+  }
+  (true, true)
 }
 
 ///|

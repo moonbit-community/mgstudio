@@ -121,3 +121,27 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
     content="0",
   )
 }
+
+///|
+test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog view" {
+  let inactive = Render3dVolumetricFogPrepareOutput::{
+    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    view_count: 1,
+    light_count: 1,
+    plane_mesh_id: -1,
+  }
+  debug_inspect(
+    render3d_volumetric_fog_pipeline_variants(inactive),
+    content="(false, false)",
+  )
+  let active = Render3dVolumetricFogPrepareOutput::{
+    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    view_count: 1,
+    light_count: 1,
+    plane_mesh_id: 7,
+  }
+  debug_inspect(
+    render3d_volumetric_fog_pipeline_variants(active),
+    content="(true, true)",
+  )
+}
