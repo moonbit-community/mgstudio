@@ -265,15 +265,17 @@ fn render3d_collect_volumetric_light_count(world : @ecs.World) -> Int {
 fn render3d_collect_fog_volumes(
   world : @ecs.World,
 ) -> Array[(@light.FogVolume, @math.Affine3)] {
-  let volumes : Array[(@light.FogVolume, @math.Affine3)] = []
+  let volumes_with_local_from_world : Array[(@light.FogVolume, @math.Affine3)] = []
   world.for_each_component(@light.ecs_key_fog_volume, fn(entity, fog_volume) {
     match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
       Some(global_transform) =>
-        volumes.push((fog_volume, global_transform.affine()))
+        volumes_with_local_from_world.push(
+          (fog_volume, global_transform.affine().inverse()),
+        )
       None => ()
     }
   })
-  volumes
+  volumes_with_local_from_world
 }
 
 ///|

@@ -539,12 +539,12 @@ pub fn prepare_volumetric_fog_view_uniforms(
   volumetric_fog : VolumetricFog,
   world_from_view : @math.Affine3,
   clip_from_view : VolumetricFogMat4,
-  fog_volumes : Array[(FogVolume, @math.Affine3)],
+  fog_volumes_with_local_from_world : Array[(FogVolume, @math.Affine3)],
 ) -> PreparedVolumetricFogView {
   let view_fog = ViewVolumetricFog::ViewVolumetricFog()
-  for entry in fog_volumes {
+  for entry in fog_volumes_with_local_from_world {
     let fog_volume = entry.0
-    let local_from_world = entry.1.inverse()
+    let local_from_world = entry.1
     let local_from_view = local_from_world.mul(world_from_view)
     let view_from_local = local_from_view.inverse()
     let interior = volumetric_fog_camera_is_inside(local_from_view)
@@ -582,5 +582,8 @@ pub fn prepare_volumetric_fog_view_uniforms(
       exterior: !interior,
     })
   }
-  PreparedVolumetricFogView::{ view_fog, uniform_count: fog_volumes.length() }
+  PreparedVolumetricFogView::{
+    view_fog,
+    uniform_count: fog_volumes_with_local_from_world.length(),
+  }
 }

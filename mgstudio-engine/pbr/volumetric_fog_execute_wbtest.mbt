@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "pbr volumetric fog execute: extracts lights and globally transformed fog volumes" {
+test "pbr volumetric fog execute: extracts lights and precomputes local-from-world fog volume transforms" {
   let world = @ecs.World::new()
   let light_entity = world.spawn()
   try! (world.set_by_key(
@@ -49,7 +49,7 @@ test "pbr volumetric fog execute: extracts lights and globally transformed fog v
   inspect(render3d_collect_volumetric_light_count(world), content="1")
   inspect(volumes.length(), content="1")
   inspect(volumes[0].0.density_factor, content="3")
-  inspect(volumes[0].1.translation.x, content="4")
+  inspect(volumes[0].1.translation.x, content="-4")
 }
 
 ///|

@@ -54,7 +54,7 @@ test "pbr volumetric fog: uniform buffer prepare and clear" {
         (volume, @math.Affine3::identity()),
         (
           volume,
-          @math.Affine3::from_translation(@math.Vec3::new(10.0F, 0.0F, 0.0F)),
+          @math.Affine3::from_translation(@math.Vec3::new(-10.0F, 0.0F, 0.0F)),
         ),
       ],
     ),
@@ -81,7 +81,7 @@ test "pbr volumetric fog: uniform bytes match WGSL host layout" {
       [
         (
           volume,
-          @math.Affine3::from_translation(@math.Vec3::new(10.0F, 0.0F, 0.0F)),
+          @math.Affine3::from_translation(@math.Vec3::new(-10.0F, 0.0F, 0.0F)),
         ),
       ],
     ),
