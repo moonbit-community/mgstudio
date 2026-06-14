@@ -78,6 +78,11 @@ pub let ecs_key_ui_layout : @ecs.ComponentKey[UiLayout] = @ecs.register_componen
 )
 
 ///|
+pub let ecs_key_ui_transform : @ecs.ComponentKey[UiTransform] = @ecs.register_component(
+  debug_name="ui.ui_transform",
+)
+
+///|
 pub let ecs_key_box_shadow : @ecs.ComponentKey[BoxShadow] = @ecs.register_component(
   debug_name="ui.box_shadow",
 )
@@ -210,6 +215,11 @@ pub impl @ecs.Component for ComputedUiTargetCamera with fn component() {
 ///|
 pub impl @ecs.Component for ComputedUiRenderTargetInfo with fn component() {
   ecs_key_computed_ui_render_target_info
+}
+
+///|
+pub impl @ecs.Component for UiTransform with fn component() {
+  ecs_key_ui_transform
 }
 
 ///|

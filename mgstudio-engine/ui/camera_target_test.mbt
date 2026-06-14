@@ -37,20 +37,14 @@ fn camera_with_target_info(
   physical_size : @math.IVec2,
   scale_factor : Float,
 ) -> @camera_camera.Camera {
-  let target_info_json : Json = (
-    (physical_size.x, physical_size.y).to_json(),
-    scale_factor,
-  ).to_json()
-  let maybe_target_info : Json? = Some(target_info_json)
-  let no_viewport_json : Json? = None
-  let no_old_viewport_json : Json? = None
-  let computed_json : Json = (maybe_target_info, no_old_viewport_json).to_json()
-  let clear_color_json : Json = (0, Json::null()).to_json()
-  let camera_json : Json = (
-    no_viewport_json, order, true, computed_json, clear_color_json,
-  ).to_json()
-  let camera : @camera_camera.Camera = try! @json.from_json(camera_json)
-  camera
+  @camera_camera.Camera::Camera()
+  .with_order(order)
+  .with_computed(
+    @camera_camera.ComputedCameraValues::new(
+      Some(@camera_camera.RenderTargetInfo::new(physical_size, scale_factor)),
+      None,
+    ),
+  )
 }
 
 ///|

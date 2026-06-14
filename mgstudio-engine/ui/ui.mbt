@@ -1479,20 +1479,34 @@ fn ui_entity_resolved_camera_state(
 fn ui_propagate_target_camera_subtree(
   world : @ecs.World,
   entity : @core.Entity,
-  computed_camera : ComputedUiTargetCamera,
-  render_target_info : ComputedUiRenderTargetInfo,
+  camera_id : Int,
+  camera_generation : Int,
+  scale_factor : Float,
+  physical_width : Int,
+  physical_height : Int,
 ) -> Unit {
+  let computed_camera = if camera_id < 0 {
+    ComputedUiTargetCamera::ComputedUiTargetCamera()
+  } else {
+    ComputedUiTargetCamera::new(@core.Entity::new(camera_id, camera_generation))
+  }
   try! world.set_by_key(
     entity, ecs_key_computed_ui_target_camera, computed_camera,
   )
   try! world.set_by_key(
-    entity, ecs_key_computed_ui_render_target_info, render_target_info,
+    entity,
+    ecs_key_computed_ui_render_target_info,
+    ComputedUiRenderTargetInfo::new(
+      scale_factor,
+      @math.IVec2::new(physical_width, physical_height),
+    ),
   )
   if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
     is Some(children) {
     for child in children.entities {
       ui_propagate_target_camera_subtree(
-        world, child, computed_camera, render_target_info,
+        world, child, camera_id, camera_generation, scale_factor, physical_width,
+        physical_height,
       )
     }
   }
@@ -2459,7 +2473,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
       // Update render2d / transform for UI nodes (Node component required).
       if (try! world.contains_by_key(entity, ecs_key_node)) {
-        let transform = ui_world_transform(root_ctx, rect, 0.0F)
+        let transform = apply_ui_transform(
+          world,
+          entity,
+          root_ctx,
+          rect,
+          ui_world_transform(root_ctx, rect, 0.0F),
+        )
         if (try! world.contains_by_key(entity, @transform.ecs_key_transform)) {
           try! (world.replace(entity, @transform.ecs_key_transform, transform)
           |> ignore)
@@ -2505,7 +2525,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
               content_min.y + content_size.y,
             ),
           )
-          let text_transform = ui_world_transform(root_ctx, content_rect, 0.0F)
+          let text_transform = apply_ui_transform(
+            world,
+            entity,
+            root_ctx,
+            content_rect,
+            ui_world_transform(root_ctx, content_rect, 0.0F),
+          )
           @text.text_set_y_axis(
             text_handle,
             @text.YAxisOrientation::TopToBottom,

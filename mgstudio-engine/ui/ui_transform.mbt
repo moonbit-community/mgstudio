@@ -112,6 +112,89 @@ pub fn ComputedUiRenderTargetInfo::logical_size(
 }
 
 ///|
+pub(all) struct Val2 {
+  x : Val
+  y : Val
+} derive(ToJson, FromJson)
+
+///|
+pub fn Val2::Val2() -> Val2 {
+  Val2::{ x: Val::zero(), y: Val::zero() }
+}
+
+///|
+pub fn Val2::new(x : Val, y : Val) -> Val2 {
+  Val2::{ x, y }
+}
+
+///|
+pub fn Val2::all(value : Val) -> Val2 {
+  Val2::new(value, value)
+}
+
+///|
+pub fn Val2::px(x : Float, y : Float) -> Val2 {
+  Val2::new(Val::Px(x), Val::Px(y))
+}
+
+///|
+pub fn Val2::percent(x : Float, y : Float) -> Val2 {
+  Val2::new(Val::Percent(x), Val::Percent(y))
+}
+
+///|
+pub fn Val2::resolve(
+  self : Val2,
+  scale_factor : Float,
+  base_size : @math.Vec2,
+  viewport_size : @math.Vec2,
+) -> @math.Vec2 {
+  let x = self.x.resolve(scale_factor, base_size.x, viewport_size) catch {
+    _ => 0.0F
+  }
+  let y = self.y.resolve(scale_factor, base_size.y, viewport_size) catch {
+    _ => 0.0F
+  }
+  @math.Vec2::new(x, y)
+}
+
+///|
+pub(all) struct UiTransform {
+  translation : Val2
+  scale : @math.Vec2
+  rotation : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn UiTransform::UiTransform() -> UiTransform {
+  UiTransform::{
+    translation: Val2::Val2(),
+    scale: @math.Vec2::new(1.0F, 1.0F),
+    rotation: 0.0F,
+  }
+}
+
+///|
+pub fn UiTransform::from_rotation(rotation : Float) -> UiTransform {
+  UiTransform::{ ..UiTransform::UiTransform(), rotation, }
+}
+
+///|
+pub fn UiTransform::from_translation(translation : Val2) -> UiTransform {
+  UiTransform::{ ..UiTransform::UiTransform(), translation, }
+}
+
+///|
+pub fn UiTransform::from_scale(scale : @math.Vec2) -> UiTransform {
+  UiTransform::{ ..UiTransform::UiTransform(), scale, }
+}
+
+///|
+pub fn UiTransform::from_xy(x : Val, y : Val) -> UiTransform {
+  UiTransform::from_translation(Val2::new(x, y))
+}
+
+///|
 pub struct UiLayout {
   stack_index : Int
   rect : @math.Rect
@@ -317,16 +400,23 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
       Some(target_camera) => Some(target_camera.entity())
       None => default_camera_entity
     }
-    let computed_camera = match camera_entity {
-      Some(entity) => ComputedUiTargetCamera::new(entity)
-      None => ComputedUiTargetCamera::ComputedUiTargetCamera()
-    }
     let render_target_info = match camera_entity {
       Some(entity) => ui_compute_render_target_info(world, entity)
       None => ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo()
     }
+    let (camera_id, camera_generation) = match camera_entity {
+      Some(entity) => (entity.id, entity.generation)
+      None => (-1, 0)
+    }
+    let physical_size = render_target_info.physical_size()
     ui_propagate_target_camera_subtree(
-      world, root, computed_camera, render_target_info,
+      world,
+      root,
+      camera_id,
+      camera_generation,
+      render_target_info.scale_factor(),
+      physical_size.x,
+      physical_size.y,
     )
   }
 }

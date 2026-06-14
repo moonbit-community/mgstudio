@@ -16,20 +16,17 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-priv struct PbrState {
-  mut loading_label : @text.TextHandle?
-  mut diffuse_env_map : @asset.Handle[@asset.Image]?
-  mut specular_env_map : @asset.Handle[@asset.Image]?
-  mut env_loaded : Bool
-}
+struct EnvironmentMapLabel {}
 
 ///|
-let pbr_state : Ref[PbrState] = Ref({
-  loading_label: None,
-  diffuse_env_map: None,
-  specular_env_map: None,
-  env_loaded: false,
-})
+let environment_map_label_component_key : @ecs.ComponentKey[EnvironmentMapLabel] = @ecs.register_component(
+  debug_name="mgstudio_examples_pbr::EnvironmentMapLabel",
+)
+
+///|
+pub impl @ecs.Component for EnvironmentMapLabel with fn component() {
+  environment_map_label_component_key
+}
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -96,25 +93,63 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 
 ///|
 fn spawn_mesh(
-  world : @ecs.World,
+  commands : @app.Commands,
   mesh : @mesh.Mesh3d,
   material : @asset.Handle[@engine_pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> Unit {
-  @engine_pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @engine_pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-  |> ignore
+  ignore(
+    commands.spawn(
+      @engine_pbr.MeshMaterial3dBundle::new(
+        mesh,
+        @engine_pbr.MeshMaterial3d::new(material),
+        transform,
+      ),
+    ),
+  )
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  pbr_state.val.loading_label = None
-  pbr_state.val.diffuse_env_map = None
-  pbr_state.val.specular_env_map = None
-  pbr_state.val.env_loaded = false
+fn spawn_label(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  text : String,
+  font : @text.TextFont,
+  node : @ui.Node,
+) -> @core.Entity {
+  commands.spawn(
+    (
+      @hierarchy.Parent::new(parent),
+      @text.Text::new(text),
+      font,
+      node,
+      @text.TextColor::white(),
+    ),
+  )
+}
+
+///|
+fn spawn_rotated_label(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  text : String,
+  font : @text.TextFont,
+  node : @ui.Node,
+  rotation : Float,
+) -> @core.Entity {
+  let entity = spawn_label(commands, parent, text, font, node)
+  commands
+  .entity(entity)
+  .insert_component(@ui.UiTransform::from_rotation(rotation))
+  entity
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let asset_server = asset_server.get()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
   let sphere_color = @color.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 
@@ -126,7 +161,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_metallic(y01)
         .with_perceptual_roughness(x01)
       spawn_mesh(
-        world,
+        commands,
         sphere_mesh,
         @engine_pbr.standard_material_add(material),
         @transform.Transform::from_xyz(
@@ -142,29 +177,86 @@ fn setup(world : @ecs.World) -> Unit {
     @engine_pbr.StandardMaterial::from_color(sphere_color).with_unlit(true),
   )
   spawn_mesh(
-    world,
+    commands,
     sphere_mesh,
     unlit_material,
     @transform.Transform::from_xyz(-5.0F, -2.5F, 0.0F),
   )
 
-  let directional = world.spawn_empty()
-  try! world.set_by_key(
-    directional,
-    @engine_pbr.ecs_key_directional_light,
-    @engine_pbr.DirectionalLight::new(@color.Color::white(), 1_500.0F, false),
-  )
-  try! world.set_by_key(
-    directional,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @engine_pbr.DirectionalLight::new(
+          @color.Color::white(),
+          1_500.0F,
+          false,
+        ),
+        @transform.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
   )
 
-  let asset_server = @asset.AssetServer::new()
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+
+  let label_font = @text.TextFont::TextFont().with_font_size(30.0F)
+  ignore(
+    spawn_label(
+      commands,
+      root,
+      "Perceptual Roughness",
+      label_font,
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.Val::Px(20.0F))
+      .with_left(@ui.Val::Px(100.0F)),
+    ),
+  )
+  ignore(
+    spawn_rotated_label(
+      commands,
+      root,
+      "Metallic",
+      label_font,
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.Val::Px(130.0F))
+      .with_right(@ui.Val::zero()),
+      @math.pi_half(),
+    ),
+  )
+  let env_loading_label = spawn_label(
+    commands,
+    root,
+    "Loading Environment Map...",
+    label_font,
+    @ui.Node::Node()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_bottom(@ui.Val::Px(20.0F))
+    .with_right(@ui.Val::Px(20.0F)),
+  )
+  commands.entity(env_loading_label).insert_component(EnvironmentMapLabel::{  })
+
   let diffuse_env_map = asset_server.load(
     "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2",
   )
@@ -172,96 +264,54 @@ fn setup(world : @ecs.World) -> Unit {
     "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
   )
 
-  @text.Text2dBundle::new(
-    @text.Text2d::new("Perceptual Roughness"),
-    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(30.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-300.0F, 330.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
-    ),
-  )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_color(
-    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  .spawn()
-  |> ignore
-
-  @text.Text2dBundle::new(
-    @text.Text2d::new("Metallic"),
-    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(30.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(360.0F, 80.0F),
-      @math.pi_half(),
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
-    ),
-  )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_color(
-    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  .spawn()
-  |> ignore
-
-  let env_loading_label = @text.Text2dBundle::new(
-      @text.Text2d::new("Loading Environment Map..."),
-      @text.TextFont::TextFont().with_font(overlay_font).with_font_size(24.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(375.0F, -330.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::bottom_right())
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .spawn()
-  pbr_state.val.loading_label = Some(env_loading_label)
-
   let orthographic = @camera.OrthographicProjection3d::{
     ..@camera.OrthographicProjection3d::default_3d(),
     scale: 0.01F,
   }
-  let camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::Camera(),
-    @camera.Projection::Orthographic(orthographic),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new_with_projection(
+      @camera_camera.Camera::Camera(),
+      @camera.Projection::Orthographic(orthographic),
+      @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
+        @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  try! world.set_by_key(
-    camera,
-    @engine_pbr.ecs_key_environment_map_light,
+  )
+  commands
+  .entity(camera)
+  .insert_component(
     @engine_pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),
       900.0F,
     ),
   )
-  pbr_state.val.diffuse_env_map = Some(diffuse_env_map)
-  pbr_state.val.specular_env_map = Some(specular_env_map)
 }
 
 ///|
-fn environment_map_load_finish() -> Unit {
-  if pbr_state.val.env_loaded {
+fn environment_map_load_finish(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  environment_map : @ecs.Query[
+    @ecs.Read[@engine_pbr.EnvironmentMapLight],
+    @ecs.All,
+  ],
+  label_entity : @ecs.Query[@core.Entity, @ecs.With[EnvironmentMapLabel]],
+) -> Unit {
+  let label = label_entity.single() catch { _ => None }
+  if label is None {
     return
   }
-  guard pbr_state.val.diffuse_env_map is Some(diffuse_map) else { return }
-  guard pbr_state.val.specular_env_map is Some(specular_map) else { return }
-  if @asset.asset_is_texture_loaded(diffuse_map) &&
-    @asset.asset_is_texture_loaded(specular_map) {
-    if pbr_state.val.loading_label is Some(label) {
-      @text.text_despawn(label) |> ignore
-      pbr_state.val.loading_label = None
-    }
-    pbr_state.val.env_loaded = true
+  guard (environment_map.single() catch { _ => None }) is Some(environment_map) else {
+    return
+  }
+  let environment_map = environment_map.value()
+  guard environment_map.diffuse_map is Some(diffuse_map) else { return }
+  guard environment_map.specular_map is Some(specular_map) else { return }
+  if asset_server.get().load_state(diffuse_map) is @asset.LoadState::Loaded &&
+    asset_server.get().load_state(specular_map) is @asset.LoadState::Loaded {
+    commands.entity(label.unwrap()).despawn()
   }
 }
 
@@ -269,7 +319,7 @@ fn environment_map_load_finish() -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_fn(@app.Update, environment_map_load_finish)
+  .add_startup_system_param2(setup)
+  .add_system_param4(environment_map_load_finish)
   .run()
 }

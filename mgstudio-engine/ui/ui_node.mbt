@@ -92,3 +92,42 @@ fn ui_world_transform(
     z~,
   )
 }
+
+///|
+fn apply_ui_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+  ctx : UiResolvedCameraState,
+  rect : @math.Rect,
+  base : @transform.Transform,
+) -> @transform.Transform {
+  guard (try! world.get_by_key(entity, ecs_key_ui_transform))
+    is Some(ui_transform) else {
+    return base
+  }
+  let translation = ui_transform.translation.resolve(
+    ctx.scale_factor,
+    rect.size(),
+    ctx.viewport_size,
+  )
+  let cam_scale = safe_camera_scale(ctx.camera_scale)
+  let cam_rot = ctx.camera_transform.rotation_z()
+  let offset = rotate_vec2(
+    @math.Vec2::new(translation.x * cam_scale, -translation.y * cam_scale),
+    cam_rot,
+  )
+  let pos = @math.Vec2::new(
+    base.translation.x + offset.x,
+    base.translation.y + offset.y,
+  )
+  let scale = @math.Vec2::new(
+    base.scale.x * ui_transform.scale.x,
+    base.scale.y * ui_transform.scale.y,
+  )
+  @transform.Transform::from_xy_rotation_scale(
+    pos,
+    base.rotation_z() - ui_transform.rotation,
+    scale,
+    z=base.translation.z,
+  )
+}

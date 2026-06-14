@@ -411,6 +411,7 @@ pub struct AssetServer {
   pending_loaded_folder_loads : Array[PendingLoadedFolderLoad]
   pending_acquired_loads : Array[PendingAcquiredLoad]
   image_paths : Array[(String, Handle[@image.Image])]
+  pending_image_loads : @hashmap.HashMap[Int, Bool]
   pending_image_assets : @hashmap.HashMap[Int, @image.Image]
   mut image_array_layouts : Array[(Int, @image.ImageArrayLayout)]
   mut image_render_asset_usages : Array[(Int, RenderAssetUsages)]

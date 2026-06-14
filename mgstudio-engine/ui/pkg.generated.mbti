@@ -87,6 +87,8 @@ pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack]
 
 pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera]
 
+pub let ecs_key_ui_transform : @ecs.ComponentKey[UiTransform]
+
 pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
 
 pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
@@ -856,6 +858,18 @@ pub fn UiTargetCamera::entity(Self) -> @core.Entity
 pub fn UiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for UiTargetCamera
 
+pub(all) struct UiTransform {
+  translation : Val2
+  scale : @math.Vec2
+  rotation : Float
+} derive(ToJson, @json.FromJson)
+pub fn UiTransform::UiTransform() -> Self
+pub fn UiTransform::from_rotation(Float) -> Self
+pub fn UiTransform::from_scale(@math.Vec2) -> Self
+pub fn UiTransform::from_translation(Val2) -> Self
+pub fn UiTransform::from_xy(Val, Val) -> Self
+pub impl @ecs.Component for UiTransform
+
 pub(all) enum Val {
   Auto
   Px(Float)
@@ -880,6 +894,17 @@ pub fn Val::top(Self) -> UiRect
 pub fn Val::vertical(Self) -> UiRect
 pub fn Val::zero() -> Self
 pub impl Eq for Val
+
+pub(all) struct Val2 {
+  x : Val
+  y : Val
+} derive(ToJson, @json.FromJson)
+pub fn Val2::Val2() -> Self
+pub fn Val2::all(Val) -> Self
+pub fn Val2::new(Val, Val) -> Self
+pub fn Val2::percent(Float, Float) -> Self
+pub fn Val2::px(Float, Float) -> Self
+pub fn Val2::resolve(Self, Float, @math.Vec2, @math.Vec2) -> @math.Vec2
 
 pub struct ZIndex {
   value : Int

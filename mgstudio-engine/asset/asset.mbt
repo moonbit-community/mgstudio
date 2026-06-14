@@ -139,6 +139,7 @@ pub struct AssetServer {
   pending_loaded_folder_loads : Array[PendingLoadedFolderLoad]
   pending_acquired_loads : Array[PendingAcquiredLoad]
   image_paths : Array[(String, Handle[Image])]
+  pending_image_loads : @hashmap.HashMap[Int, Bool]
   pending_image_assets : @hashmap.HashMap[Int, Image]
   mut image_array_layouts : Array[(Int, ImageArrayLayout)]
   mut image_render_asset_usages : Array[(Int, RenderAssetUsages)]
@@ -192,6 +193,7 @@ fn asset_server_standalone() -> AssetServer {
     pending_loaded_folder_loads: [],
     pending_acquired_loads: [],
     image_paths: [],
+    pending_image_loads: @hashmap.HashMap([]),
     pending_image_assets: @hashmap.HashMap([]),
     image_array_layouts: [],
     image_render_asset_usages: [],
@@ -1229,6 +1231,7 @@ fn AssetServer::load_image_with_settings(
     self.record_path(canonical_path)
     let handle = Handle::new(id)
     self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
+    self.pending_image_loads.set(handle.id(), true)
     self.register_image_path(canonical_path, handle)
     self.track_image_handle(handle)
     if settings.sampler is Descriptor(_) {
@@ -1634,6 +1637,7 @@ pub fn AssetServer::load_texture_bytes(
   }
   let handle = Handle::new(id)
   self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
+  self.pending_image_loads.set(handle.id(), true)
   self.track_image_handle(handle)
   self.set_image_usage_bits(
     handle,
@@ -1917,28 +1921,31 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
 
   let synced : Array[Int] = []
   asset_with_world(world, fn() {
-    for entry in asset_server.pending_image_assets.iter() {
-      let (image_id, image) = entry
+    for entry in asset_server.pending_image_loads.iter() {
+      let image_id = entry.0
       if host_asset_is_texture_loaded(image_id) {
         let handle : Handle[Image] = Handle::new(image_id)
         asset_server.set_typed_loaded_states(
           asset_image_assets_type_name(),
           handle.id(),
         )
-        image_asset_sync_metadata(handle, image)
-        ignore(
-          images_ref.modify(fn(store) {
-            let existed = store.get(handle) is Some(_)
-            store.push_event(AssetEvent::LoadedWithDependencies(handle))
-            assets_store_insert(store, handle, image, existed)
-          }),
-        )
+        if asset_server.pending_image_assets.get(image_id) is Some(image) {
+          image_asset_sync_metadata(handle, image)
+          ignore(
+            images_ref.modify(fn(store) {
+              let existed = store.get(handle) is Some(_)
+              store.push_event(AssetEvent::LoadedWithDependencies(handle))
+              assets_store_insert(store, handle, image, existed)
+            }),
+          )
+        }
         synced.push(image_id)
       }
     }
   })
 
   for image_id in synced {
+    asset_server.pending_image_loads.remove(image_id) |> ignore
     asset_server.pending_image_assets.remove(image_id) |> ignore
   }
 }
