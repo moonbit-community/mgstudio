@@ -87,12 +87,14 @@ pub struct ViewVolumetricFog {
 pub fn ViewVolumetricFog::ViewVolumetricFog() -> Self
 pub fn ViewVolumetricFog::count(Self) -> Int
 pub fn ViewVolumetricFog::push(Self, ViewFogVolume) -> Unit
+pub impl @ecs.Component for ViewVolumetricFog
 
 pub struct ViewVolumetricFogPipelines {
   textureless : Int
   textured : Int
 }
 pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> Self
+pub impl @ecs.Component for ViewVolumetricFogPipelines
 
 pub struct VolumetricFogBindGroupLayoutKey {
   multisampled : Bool
@@ -189,6 +191,7 @@ pub fn VolumetricFogUniformBuffer::clear(Self) -> Unit
 pub fn VolumetricFogUniformBuffer::count(Self) -> Int
 pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> Int
 pub fn VolumetricFogUniformBuffer::uniform_at(Self, Int) -> VolumetricFogUniform?
+pub impl @app.Resource for VolumetricFogUniformBuffer
 
 // Type aliases
 pub using @light {type FogVolume}

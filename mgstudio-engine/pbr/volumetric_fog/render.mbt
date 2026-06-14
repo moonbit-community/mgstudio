@@ -352,6 +352,18 @@ pub struct ViewVolumetricFogPipelines {
 }
 
 ///|
+let ecs_key_view_volumetric_fog_pipelines : @ecs.ComponentKey[
+  ViewVolumetricFogPipelines,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewVolumetricFogPipelines",
+)
+
+///|
+pub impl @ecs.Component for ViewVolumetricFogPipelines with fn component() {
+  ecs_key_view_volumetric_fog_pipelines
+}
+
+///|
 pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> ViewVolumetricFogPipelines {
   ViewVolumetricFogPipelines::{ textureless: -1, textured: -1 }
 }
@@ -515,6 +527,16 @@ pub struct ViewVolumetricFog {
 }
 
 ///|
+let ecs_key_view_volumetric_fog : @ecs.ComponentKey[ViewVolumetricFog] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewVolumetricFog",
+)
+
+///|
+pub impl @ecs.Component for ViewVolumetricFog with fn component() {
+  ecs_key_view_volumetric_fog
+}
+
+///|
 pub fn ViewVolumetricFog::ViewVolumetricFog() -> ViewVolumetricFog {
   ViewVolumetricFog::{ volumes: [] }
 }
@@ -535,6 +557,18 @@ pub fn ViewVolumetricFog::count(self : ViewVolumetricFog) -> Int {
 ///|
 pub struct VolumetricFogUniformBuffer {
   mut uniforms : Array[VolumetricFogUniform]
+}
+
+///|
+let ecs_key_volumetric_fog_uniform_buffer : @ecs.ResourceKey[
+  VolumetricFogUniformBuffer,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::VolumetricFogUniformBuffer",
+)
+
+///|
+pub impl @app.Resource for VolumetricFogUniformBuffer with fn resource() {
+  ecs_key_volumetric_fog_uniform_buffer
 }
 
 ///|

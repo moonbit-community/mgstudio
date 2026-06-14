@@ -67,3 +67,55 @@ test "pbr volumetric fog execute: converts clip projection columns without trans
   inspect(row_major[4], content="2")
   inspect(row_major[15], content="16")
 }
+
+///|
+test "pbr volumetric fog execute: stores view component and clears shared uniform buffer" {
+  let world = @ecs.World::new()
+  let buffer = render3d_volumetric_fog_uniform_buffer_mut(world)
+  ignore(
+    buffer.modify(fn(uniform_buffer) {
+      uniform_buffer.push(
+        @pbr_volumetric_fog.VolumetricFogUniform::VolumetricFogUniform(),
+      )
+    }),
+  )
+  inspect(
+    world
+    .get_resource(@pbr_volumetric_fog.VolumetricFogUniformBuffer::resource())
+    .unwrap()
+    .count(),
+    content="1",
+  )
+  render3d_reset_volumetric_fog_uniform_buffer(world)
+  inspect(
+    world
+    .get_resource(@pbr_volumetric_fog.VolumetricFogUniformBuffer::resource())
+    .unwrap()
+    .count(),
+    content="0",
+  )
+
+  let view_entity = world.spawn()
+  let view_fog = @pbr_volumetric_fog.ViewVolumetricFog::ViewVolumetricFog()
+  view_fog.push(@pbr_volumetric_fog.ViewFogVolume::ViewFogVolume())
+  render3d_write_volumetric_fog_view_components(world, view_entity, Render3dVolumetricFogPrepareOutput::{
+    view_fog,
+    view_count: 1,
+    volume_count: 1,
+    light_count: 1,
+    uniform_count: 1,
+  })
+  inspect(
+    render3d_volumetric_fog_view_volume_count(world, view_entity),
+    content="1",
+  )
+  render3d_write_volumetric_fog_view_components(
+    world,
+    view_entity,
+    Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+  )
+  inspect(
+    render3d_volumetric_fog_view_volume_count(world, view_entity),
+    content="0",
+  )
+}

@@ -14,20 +14,51 @@
 
 ///|
 priv struct Render3dVolumetricFogPrepareOutput {
-  uniform_buffer : @pbr_volumetric_fog.VolumetricFogUniformBuffer
+  view_fog : @pbr_volumetric_fog.ViewVolumetricFog
   view_count : Int
   volume_count : Int
   light_count : Int
+  uniform_count : Int
 }
 
 ///|
 fn Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput() -> Render3dVolumetricFogPrepareOutput {
   Render3dVolumetricFogPrepareOutput::{
-    uniform_buffer: @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer(),
+    view_fog: @pbr_volumetric_fog.ViewVolumetricFog::ViewVolumetricFog(),
     view_count: 0,
     volume_count: 0,
     light_count: 0,
+    uniform_count: 0,
   }
+}
+
+///|
+fn render3d_volumetric_fog_uniform_buffer_mut(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@pbr_volumetric_fog.VolumetricFogUniformBuffer] {
+  if world.get_resource(
+      @pbr_volumetric_fog.VolumetricFogUniformBuffer::resource(),
+    )
+    is None {
+    world.insert_resource(
+      @pbr_volumetric_fog.VolumetricFogUniformBuffer::resource(),
+      @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer(),
+    )
+  }
+  match
+    world.get_resource_mut(
+      @pbr_volumetric_fog.VolumetricFogUniformBuffer::resource(),
+    ) {
+    Some(buffer) => buffer
+    None => abort("missing VolumetricFogUniformBuffer render resource")
+  }
+}
+
+///|
+fn render3d_reset_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
+  render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(buffer) {
+    buffer.clear()
+  })
 }
 
 ///|
@@ -75,6 +106,7 @@ fn render3d_projection_matrix_to_volumetric_mat4(
 
 ///|
 fn render3d_prepare_camera_volumetric_fog(
+  render_world : @ecs.World,
   source_world : @ecs.World,
   camera : Camera3dViewPayload,
   camera_pass_projection : @pbr_render.Render3dPassProjection,
@@ -93,27 +125,83 @@ fn render3d_prepare_camera_volumetric_fog(
     }
   }
   let fog_volumes = render3d_collect_fog_volumes(source_world)
-  let uniform_buffer = @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
-  let prepared = @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
-    uniform_buffer,
-    volumetric_fog,
-    @math.Affine3::from_scale_rotation_translation(
-      camera.transform.scale,
-      camera.transform.rotation,
-      camera.transform.translation,
-    ),
-    render3d_projection_matrix_to_volumetric_mat4(
-      @pbr_render.render3d_pass_projection_clip_from_view(
-        camera_pass_projection,
-      ),
-    ),
-    fog_volumes,
+  let prepared = render3d_volumetric_fog_uniform_buffer_mut(render_world).modify(fn(
+      uniform_buffer,
+    ) {
+      @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+        uniform_buffer,
+        volumetric_fog,
+        @math.Affine3::from_scale_rotation_translation(
+          camera.transform.scale,
+          camera.transform.rotation,
+          camera.transform.translation,
+        ),
+        render3d_projection_matrix_to_volumetric_mat4(
+          @pbr_render.render3d_pass_projection_clip_from_view(
+            camera_pass_projection,
+          ),
+        ),
+        fog_volumes,
+      )
+    },
   )
+  let uniform_count = render3d_volumetric_fog_uniform_buffer_mut(render_world)
+    .peek()
+    .count()
   Render3dVolumetricFogPrepareOutput::{
-    uniform_buffer,
+    view_fog: prepared.view_fog,
     view_count: 1,
     volume_count: prepared.view_fog.count(),
     light_count,
+    uniform_count,
+  }
+}
+
+///|
+fn render3d_write_volumetric_fog_view_components(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+  prepared : Render3dVolumetricFogPrepareOutput,
+) -> Unit {
+  if prepared.light_count <= 0 || prepared.view_count <= 0 {
+    ignore(
+      world.remove_by_key(
+        view_entity,
+        @pbr_volumetric_fog.ViewVolumetricFog::component(),
+      ) catch {
+        _ => false
+      },
+    )
+    ignore(
+      world.remove_by_key(
+        view_entity,
+        @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+      ) catch {
+        _ => false
+      },
+    )
+    return
+  }
+  try! (world.set_by_key(
+    view_entity,
+    @pbr_volumetric_fog.ViewVolumetricFog::component(),
+    prepared.view_fog,
+  )
+  |> ignore)
+}
+
+///|
+fn render3d_volumetric_fog_view_volume_count(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+) -> Int {
+  match
+    (try! world.get_by_key(
+      view_entity,
+      @pbr_volumetric_fog.ViewVolumetricFog::component(),
+    )) {
+    Some(view_fog) => view_fog.count()
+    None => 0
   }
 }
 

@@ -62,6 +62,7 @@ fn render3d_execute_render_cameras(
     "render_3d_camera_phase_items",
     camera_phase_items.length(),
   )
+  render3d_reset_volumetric_fog_uniform_buffer(world)
   let cleared_targets_this_frame : Array[Int] = []
   for camera_phase_item in camera_phase_items {
     let extracted_camera = cameras[camera_phase_item.extracted_index]
