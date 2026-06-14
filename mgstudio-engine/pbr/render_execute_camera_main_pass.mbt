@@ -890,6 +890,9 @@ fn render3d_execute_camera_main_pass(
   let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
     world, source_world, camera, camera_pass_projection,
   )
+  let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
+    world, volumetric_fog_prepare,
+  )
   render3d_upload_volumetric_fog_uniform_buffer(world)
   render3d_prepare_volumetric_fog_pipelines(
     volumetric_fog_prepare,
@@ -921,6 +924,14 @@ fn render3d_execute_camera_main_pass(
   @app.timeline_trace_emit_counter_int(
     "render_3d_volumetric_fog_uniforms",
     volumetric_fog_prepare.uniform_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_plane_mesh_id",
+    volumetric_fog_prepare.plane_mesh_id,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_cube_mesh_id",
+    volumetric_fog_prepare.cube_mesh_id,
   )
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,

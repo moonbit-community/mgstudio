@@ -104,6 +104,8 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
     volume_count: 1,
     light_count: 1,
     uniform_count: 1,
+    plane_mesh_id: -1,
+    cube_mesh_id: -1,
   })
   inspect(
     render3d_volumetric_fog_view_volume_count(world, view_entity),
