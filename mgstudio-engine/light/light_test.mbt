@@ -55,6 +55,26 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
 }
 
 ///|
+test "volumetric fog setters preserve Bevy plain field semantics" {
+  let fog = @light.VolumetricFog::VolumetricFog()
+    .with_ambient_intensity(-2.5F)
+    .with_jitter(-0.75F)
+  inspect(approx_eq(fog.ambient_intensity, -2.5F, 0.0001F), content="true")
+  inspect(approx_eq(fog.jitter, -0.75F, 0.0001F), content="true")
+  let volume = @light.FogVolume::FogVolume()
+    .with_density_factor(-0.1F)
+    .with_absorption(-0.2F)
+    .with_scattering(-0.3F)
+    .with_scattering_asymmetry(1.5F)
+    .with_light_intensity(-0.4F)
+  inspect(approx_eq(volume.density_factor, -0.1F, 0.0001F), content="true")
+  inspect(approx_eq(volume.absorption, -0.2F, 0.0001F), content="true")
+  inspect(approx_eq(volume.scattering, -0.3F, 0.0001F), content="true")
+  inspect(approx_eq(volume.scattering_asymmetry, 1.5F, 0.0001F), content="true")
+  inspect(approx_eq(volume.light_intensity, -0.4F, 0.0001F), content="true")
+}
+
+///|
 test "light gizmo config group defaults align with light kinds" {
   let config = @light.LightGizmoConfigGroup::LightGizmoConfigGroup()
   debug_inspect(config.draw_all, content="false")

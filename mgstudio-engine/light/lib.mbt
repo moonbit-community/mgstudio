@@ -28,17 +28,6 @@ fn light_sanitize_non_negative(value : Float) -> Float {
 }
 
 ///|
-fn light_clamp01(value : Float) -> Float {
-  if value <= 0.0F {
-    0.0F
-  } else if value >= 1.0F {
-    1.0F
-  } else {
-    value
-  }
-}
-
-///|
 fn light_clustered_decal_tag_safe(tag : Int) -> Int {
   if tag < 0 {
     0
@@ -88,10 +77,7 @@ pub fn VolumetricFog::with_ambient_intensity(
   self : VolumetricFog,
   ambient_intensity : Float,
 ) -> VolumetricFog {
-  VolumetricFog::{
-    ..self,
-    ambient_intensity: light_sanitize_non_negative(ambient_intensity),
-  }
+  VolumetricFog::{ ..self, ambient_intensity, }
 }
 
 ///|
@@ -99,7 +85,7 @@ pub fn VolumetricFog::with_jitter(
   self : VolumetricFog,
   jitter : Float,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, jitter: light_sanitize_non_negative(jitter) }
+  VolumetricFog::{ ..self, jitter, }
 }
 
 ///|
@@ -159,10 +145,7 @@ pub fn FogVolume::with_density_factor(
   self : FogVolume,
   density_factor : Float,
 ) -> FogVolume {
-  FogVolume::{
-    ..self,
-    density_factor: light_sanitize_non_negative(density_factor),
-  }
+  FogVolume::{ ..self, density_factor, }
 }
 
 ///|
@@ -186,7 +169,7 @@ pub fn FogVolume::with_absorption(
   self : FogVolume,
   absorption : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, absorption: light_sanitize_non_negative(absorption) }
+  FogVolume::{ ..self, absorption, }
 }
 
 ///|
@@ -194,7 +177,7 @@ pub fn FogVolume::with_scattering(
   self : FogVolume,
   scattering : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, scattering: light_sanitize_non_negative(scattering) }
+  FogVolume::{ ..self, scattering, }
 }
 
 ///|
@@ -202,12 +185,7 @@ pub fn FogVolume::with_scattering_asymmetry(
   self : FogVolume,
   scattering_asymmetry : Float,
 ) -> FogVolume {
-  FogVolume::{
-    ..self,
-    scattering_asymmetry: light_clamp01((scattering_asymmetry + 1.0F) * 0.5F) *
-    2.0F -
-    1.0F,
-  }
+  FogVolume::{ ..self, scattering_asymmetry, }
 }
 
 ///|
@@ -223,10 +201,7 @@ pub fn FogVolume::with_light_intensity(
   self : FogVolume,
   light_intensity : Float,
 ) -> FogVolume {
-  FogVolume::{
-    ..self,
-    light_intensity: light_sanitize_non_negative(light_intensity),
-  }
+  FogVolume::{ ..self, light_intensity, }
 }
 
 ///|
