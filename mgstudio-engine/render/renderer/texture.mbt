@@ -1346,6 +1346,7 @@ pub fn GpuBackend::create_depth_prepass_target(
   width : Int,
   height : Int,
   sample_count? : Int = 1,
+  usage_bits : Int,
 ) -> Int {
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
@@ -1356,9 +1357,7 @@ pub fn GpuBackend::create_depth_prepass_target(
     sample_count.reinterpret_as_uint()
   }
   let usage = @wgpu.TextureUsage::from_u64(
-    @wgpu.TEXTURE_USAGE_COPY_DST |
-    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
-    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    texture_usage_bits_to_wgpu(usage_bits),
   )
   let format = tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT)
   let tex = self.device.create_texture_u32(
@@ -2207,9 +2206,15 @@ pub fn create_depth_prepass_target(
   width~ : Int,
   height~ : Int,
   sample_count? : Int = 1,
+  usage_bits~ : Int,
 ) -> Int {
   if ensure_backend() is Some(backend) {
-    return backend.create_depth_prepass_target(width, height, sample_count~)
+    return backend.create_depth_prepass_target(
+      width,
+      height,
+      sample_count~,
+      usage_bits,
+    )
   }
   -1
 }

@@ -18,6 +18,7 @@ priv struct MotionBlurTargetsEntry {
   width : Int
   height : Int
   sample_count : Int
+  depth_usage_bits : Int
   scene_target_id : Int
   velocity_target_id : Int
   depth_target_id : Int
@@ -30,6 +31,7 @@ priv struct PrepassTargetsEntry {
   width : Int
   height : Int
   sample_count : Int
+  depth_usage_bits : Int
   depth_target_id : Int
   normal_target_id : Int
 }
@@ -89,17 +91,20 @@ fn render3d_prepass_targets_get_or_create(
   width : Int,
   height : Int,
   sample_count : Int,
+  depth_texture_usages : Camera3dDepthTextureUsage,
   normal_prepass_enabled : Bool,
 ) -> Render3dPrepassTargetIds {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let prepass_targets = scene_targets_state.peek().prepass_targets
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
+  let depth_usage_bits = depth_texture_usages.to_image_usage_bits()
   for item in prepass_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.width == width &&
       item.height == height &&
-      item.sample_count == safe_sample_count {
+      item.sample_count == safe_sample_count &&
+      item.depth_usage_bits == depth_usage_bits {
       if !normal_prepass_enabled || item.normal_target_id >= 0 {
         return Render3dPrepassTargetIds::{
           depth_texture_id: item.depth_target_id,
@@ -116,6 +121,7 @@ fn render3d_prepass_targets_get_or_create(
     width~,
     height~,
     sample_count=safe_sample_count,
+    usage_bits=depth_usage_bits,
   )
   let normal_target_id = if normal_prepass_enabled {
     @render.host_gpu_create_normal_prepass_target_rgb10a2unorm(
@@ -137,6 +143,7 @@ fn render3d_prepass_targets_get_or_create(
           width,
           height,
           sample_count: safe_sample_count,
+          depth_usage_bits,
           depth_target_id,
           normal_target_id,
         })
@@ -152,6 +159,7 @@ fn render3d_prepass_targets_get_or_create(
       width,
       height,
       sample_count: safe_sample_count,
+      depth_usage_bits,
       depth_target_id,
       normal_target_id,
     })
@@ -170,17 +178,20 @@ fn render3d_motion_blur_targets_get_or_create(
   width : Int,
   height : Int,
   sample_count : Int,
+  depth_texture_usages : Camera3dDepthTextureUsage,
   normal_prepass_enabled? : Bool = false,
 ) -> (Int, Int, Int, Int) {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let motion_blur_targets = scene_targets_state.peek().motion_blur_targets
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
+  let depth_usage_bits = depth_texture_usages.to_image_usage_bits()
   for item in motion_blur_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
       item.width == width &&
       item.height == height &&
-      item.sample_count == safe_sample_count {
+      item.sample_count == safe_sample_count &&
+      item.depth_usage_bits == depth_usage_bits {
       if !normal_prepass_enabled || item.normal_target_id >= 0 {
         return (
           item.scene_target_id,
@@ -211,6 +222,7 @@ fn render3d_motion_blur_targets_get_or_create(
     width~,
     height~,
     sample_count=safe_sample_count,
+    usage_bits=depth_usage_bits,
   )
   let normal_target_id = if normal_prepass_enabled {
     @render.host_gpu_create_normal_prepass_target_rgb10a2unorm(
@@ -232,6 +244,7 @@ fn render3d_motion_blur_targets_get_or_create(
           width,
           height,
           sample_count: safe_sample_count,
+          depth_usage_bits,
           scene_target_id,
           velocity_target_id,
           depth_target_id,
@@ -249,6 +262,7 @@ fn render3d_motion_blur_targets_get_or_create(
       width,
       height,
       sample_count: safe_sample_count,
+      depth_usage_bits,
       scene_target_id,
       velocity_target_id,
       depth_target_id,

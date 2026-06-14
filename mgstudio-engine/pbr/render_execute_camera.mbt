@@ -170,7 +170,12 @@ fn render3d_execute_camera(
       auto_exposure_enabled
     ) {
     let (scene_id, _velocity_id, _depth_id, _normal_id) = render3d_motion_blur_targets_get_or_create(
-      world, camera_entity, view_width, view_height, msaa_sample_count,
+      world,
+      camera_entity,
+      view_width,
+      view_height,
+      msaa_sample_count,
+      camera.depth_texture_usages.with_copy_src(),
     )
     scene_target_id = scene_id
   }

@@ -145,3 +145,32 @@ test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog v
     content="(true, true)",
   )
 }
+
+///|
+test "pbr volumetric fog execute: prepares depth texture usage from extracted fog views" {
+  let world = @ecs.World::new()
+  let camera3d = Camera3d::Camera3d()
+  assert_false(camera3d.depth_texture_usages().has_texture_binding())
+  assert_false(render3d_world_has_volumetric_fog_views(world))
+  assert_false(
+    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+      camera3d,
+      render3d_world_has_volumetric_fog_views(world),
+    ).has_texture_binding(),
+  )
+
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    ecs_key_volumetric_fog,
+    VolumetricFog::VolumetricFog(),
+  )
+  |> ignore)
+  assert_true(render3d_world_has_volumetric_fog_views(world))
+  assert_true(
+    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+      camera3d,
+      render3d_world_has_volumetric_fog_views(world),
+    ).has_texture_binding(),
+  )
+}

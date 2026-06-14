@@ -151,6 +151,7 @@ fn render3d_execute_camera_prepass(
       view_width,
       view_height,
       msaa_sample_count,
+      camera.depth_texture_usages.with_copy_src(),
       normal_prepass_enabled~,
     )
     if motion_blur_active {
@@ -168,7 +169,13 @@ fn render3d_execute_camera_prepass(
     )
   } else {
     let targets = render3d_prepass_targets_get_or_create(
-      world, camera_entity, view_width, view_height, msaa_sample_count, normal_prepass_enabled,
+      world,
+      camera_entity,
+      view_width,
+      view_height,
+      msaa_sample_count,
+      camera.depth_texture_usages.with_copy_src(),
+      normal_prepass_enabled,
     )
     normal_target_id = targets.normal_texture_id
     let color_target_id = if normal_target_id >= 0 {

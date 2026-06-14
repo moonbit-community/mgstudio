@@ -103,7 +103,7 @@ pub fn clear_stale_meshlet_view_visibility_buffers(Array[UInt64]) -> Unit
 
 pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 
-pub fn create_depth_prepass_target(width~ : Int, height~ : Int, sample_count? : Int) -> Int
+pub fn create_depth_prepass_target(width~ : Int, height~ : Int, sample_count? : Int, usage_bits~ : Int) -> Int
 
 pub fn create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
 
@@ -1002,7 +1002,7 @@ pub fn GpuBackend::clear_stale_meshlet_view_visibility_buffers(Self, Array[UInt6
 pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
-pub fn GpuBackend::create_depth_prepass_target(Self, Int, Int, sample_count? : Int) -> Int
+pub fn GpuBackend::create_depth_prepass_target(Self, Int, Int, sample_count? : Int, Int) -> Int
 pub fn GpuBackend::create_directional_light_shadow_target(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_mesh2d_vertex_buffer(Self, Bytes, Int, Array[Int], Int, @Milky2018/mgstudio/mesh.MeshVertexBufferLayout) -> Int
 pub fn GpuBackend::create_mesh3d_morph_target_buffer(Self, Int, Int, Int, Array[Float]) -> Int

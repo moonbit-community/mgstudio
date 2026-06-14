@@ -162,6 +162,27 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
 }
 
 ///|
+fn render3d_world_has_volumetric_fog_views(world : @ecs.World) -> Bool {
+  let mut has_volumetric_fog = false
+  world.for_each_component(ecs_key_volumetric_fog, fn(_entity, _fog) {
+    has_volumetric_fog = true
+  })
+  has_volumetric_fog
+}
+
+///|
+fn render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+  camera3d : Camera3d,
+  has_volumetric_fog_views : Bool,
+) -> Camera3dDepthTextureUsage {
+  if has_volumetric_fog_views {
+    camera3d.depth_texture_usages().with_texture_binding()
+  } else {
+    camera3d.depth_texture_usages()
+  }
+}
+
+///|
 fn render3d_draw_volumetric_fog(
   prepared : Render3dVolumetricFogPrepareOutput,
   camera_entity : @core.Entity,

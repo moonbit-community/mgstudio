@@ -82,8 +82,14 @@ pub fn host_gpu_create_depth_prepass_target(
   width~ : Int,
   height~ : Int,
   sample_count? : Int = 1,
+  usage_bits~ : Int,
 ) -> Int {
-  @renderer.create_depth_prepass_target(width~, height~, sample_count~)
+  @renderer.create_depth_prepass_target(
+    width~,
+    height~,
+    sample_count~,
+    usage_bits~,
+  )
 }
 
 ///|

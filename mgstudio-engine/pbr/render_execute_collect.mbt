@@ -85,6 +85,9 @@ fn render3d_execute_collect_cameras(
   let has_environment_light_probes = render3d_world_has_environment_light_probes(
     source_world,
   )
+  let has_volumetric_fog_views = render3d_world_has_volumetric_fog_views(
+    source_world,
+  )
   let tick = source_world.get_tick_context().ticks()
   for entity in source_world.changed_components(ecs_key_projection, tick).read() {
     projection_changed_entities.add(entity_key(entity))
@@ -124,7 +127,7 @@ fn render3d_execute_collect_cameras(
   try! camera_query.view(fn(_query_entity, data) {
     let (
       entity,
-      (_camera3d, camera_opt, projection_opt, sub_camera_view_opt),
+      (camera3d, camera_opt, projection_opt, sub_camera_view_opt),
       (
         distance_fog_opt,
         decal_config_opt,
@@ -145,6 +148,10 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => Projection::default()
     }
+    let depth_texture_usages = render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+      camera3d.value(),
+      has_volumetric_fog_views,
+    )
     let projection_changed = projection_changed_entities.contains(
       entity_key(entity),
     )
@@ -318,6 +325,7 @@ fn render3d_execute_collect_cameras(
             atmosphere,
             atmosphere_settings,
             camera: camera_clamped,
+            depth_texture_usages,
             projection,
             sub_camera_view,
             oit_settings,

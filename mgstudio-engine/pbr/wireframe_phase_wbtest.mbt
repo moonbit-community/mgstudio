@@ -71,6 +71,7 @@ fn wireframe_phase_test_camera(
       atmosphere: None,
       atmosphere_settings: None,
       camera: @camera_camera.Camera::Camera(),
+      depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
       projection: Projection::default(),
       sub_camera_view: None,
       oit_settings: None,
