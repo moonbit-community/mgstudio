@@ -11,7 +11,7 @@ import {
 }
 
 // Values
-pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.VolumetricFog, @math.Affine3, VolumetricFogMat4, Array[(@light.FogVolume, @math.Affine3)]) -> PreparedVolumetricFogView
+pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.VolumetricFog, @math.Affine3, VolumetricFogMat4, Array[(@light.FogVolume, @math.Affine3)]) -> ViewVolumetricFog
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -28,11 +28,6 @@ pub struct FogAssets {
 pub fn FogAssets::cube_mesh(Self) -> @asset.Handle[@mesh.Mesh]
 pub fn FogAssets::plane_mesh(Self) -> @asset.Handle[@mesh.Mesh]
 pub impl @app.Resource for FogAssets
-
-pub struct PreparedVolumetricFogView {
-  view_fog : ViewVolumetricFog
-  uniform_count : Int
-}
 
 pub struct ViewFogVolume {
   // private fields

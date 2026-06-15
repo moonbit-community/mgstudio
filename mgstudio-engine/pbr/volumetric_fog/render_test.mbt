@@ -33,17 +33,17 @@ test "pbr volumetric fog: prepares view volume metadata and uniforms" {
     .with_density_factor(0.75F)
     .with_density_texture(Some(density_texture))
     .with_density_texture_offset(@math.Vec3::new(0.0F, 0.0F, 1.25F))
-  let prepared = @volumetric_fog.prepare_volumetric_fog_view_uniforms(
+  let view_fog = @volumetric_fog.prepare_volumetric_fog_view_uniforms(
     buffer,
     fog,
     @math.Affine3::identity(),
     volumetric_fog_test_identity_mat4(),
     [(volume, @math.Affine3::identity())],
   )
-  inspect(prepared.uniform_count, content="1")
-  inspect(prepared.view_fog.count(), content="1")
-  inspect(prepared.view_fog.volumes()[0].exterior(), content="false")
-  inspect(prepared.view_fog.volumes()[0].has_density_texture(), content="true")
+  inspect(buffer.count(), content="1")
+  inspect(view_fog.count(), content="1")
+  inspect(view_fog.volumes()[0].exterior(), content="false")
+  inspect(view_fog.volumes()[0].has_density_texture(), content="true")
   inspect(buffer.count(), content="1")
   inspect(buffer.bytes().length(), content="512")
 }

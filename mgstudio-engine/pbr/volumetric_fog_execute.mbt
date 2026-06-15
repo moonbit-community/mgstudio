@@ -313,7 +313,7 @@ fn render3d_prepare_camera_volumetric_fog(
     }
   }
   let fog_volumes = render3d_collect_fog_volumes(source_world)
-  let prepared = render3d_volumetric_fog_uniform_buffer_mut(render_world).modify(fn(
+  let view_fog = render3d_volumetric_fog_uniform_buffer_mut(render_world).modify(fn(
       uniform_buffer,
     ) {
       @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
@@ -337,9 +337,9 @@ fn render3d_prepare_camera_volumetric_fog(
     .peek()
     .count()
   Render3dVolumetricFogPrepareOutput::{
-    view_fog: Some(prepared.view_fog),
+    view_fog: Some(view_fog),
     view_count: 1,
-    volume_count: prepared.view_fog.count(),
+    volume_count: view_fog.count(),
     light_count,
     uniform_count,
     plane_mesh_id: -1,

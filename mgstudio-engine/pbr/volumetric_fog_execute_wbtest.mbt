@@ -131,7 +131,7 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
   )
 
   let view_entity = world.spawn()
-  let prepared_view = render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(
+  let view_fog = render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(
     uniform_buffer,
   ) {
     @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
@@ -143,7 +143,7 @@ test "pbr volumetric fog execute: stores view component and clears shared unifor
     )
   })
   render3d_write_volumetric_fog_view_components(world, view_entity, Render3dVolumetricFogPrepareOutput::{
-    view_fog: Some(prepared_view.view_fog),
+    view_fog: Some(view_fog),
     view_count: 1,
     volume_count: 1,
     light_count: 1,

@@ -493,19 +493,13 @@ pub fn VolumetricFogUniformBuffer::bytes(
 }
 
 ///|
-pub struct PreparedVolumetricFogView {
-  view_fog : ViewVolumetricFog
-  uniform_count : Int
-}
-
-///|
 pub fn prepare_volumetric_fog_view_uniforms(
   uniform_buffer : VolumetricFogUniformBuffer,
   volumetric_fog : VolumetricFog,
   world_from_view : @math.Affine3,
   clip_from_view : VolumetricFogMat4,
   fog_volumes_with_local_from_world : Array[(FogVolume, @math.Affine3)],
-) -> PreparedVolumetricFogView {
+) -> ViewVolumetricFog {
   let view_fog = ViewVolumetricFog::ViewVolumetricFog()
   for entry in fog_volumes_with_local_from_world {
     let fog_volume = entry.0
@@ -547,8 +541,5 @@ pub fn prepare_volumetric_fog_view_uniforms(
       exterior: !interior,
     })
   }
-  PreparedVolumetricFogView::{
-    view_fog,
-    uniform_count: fog_volumes_with_local_from_world.length(),
-  }
+  view_fog
 }

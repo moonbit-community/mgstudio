@@ -136,14 +136,16 @@ test "pbr volumetric fog: prepares uniform data from Bevy source inputs" {
   let volume = @light.FogVolume::FogVolume()
     .with_density_factor(0.75F)
     .with_density_texture_offset(@math.Vec3::new(0.0F, 0.0F, 1.25F))
-  let prepared = prepare_volumetric_fog_view_uniforms(
-    buffer,
-    fog,
-    @math.Affine3::identity(),
-    volumetric_fog_wbtest_identity_mat4(),
-    [(volume, @math.Affine3::identity())],
+  ignore(
+    prepare_volumetric_fog_view_uniforms(
+      buffer,
+      fog,
+      @math.Affine3::identity(),
+      volumetric_fog_wbtest_identity_mat4(),
+      [(volume, @math.Affine3::identity())],
+    ),
   )
-  inspect(prepared.uniform_count, content="1")
+  inspect(buffer.count(), content="1")
   let bytes = buffer.bytes()
   inspect(volumetric_fog_wbtest_u32_at(bytes, 224), content="\{96U}")
   inspect(
