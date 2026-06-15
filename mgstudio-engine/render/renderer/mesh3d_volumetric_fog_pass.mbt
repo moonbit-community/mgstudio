@@ -263,7 +263,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   mesh3d_end_active_pass_preserving_state(self)
   for volume in volumes {
     let mesh_id = if volume.exterior { cube_mesh_id } else { plane_mesh_id }
-    guard find_mesh(self, mesh_id) is Some(mesh) else { return }
+    guard find_mesh(self, mesh_id) is Some(mesh) else { continue }
     let density_texture = mesh3d_volumetric_fog_resolved_texture(
       self,
       volume.density_texture_id,
