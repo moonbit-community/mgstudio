@@ -248,6 +248,20 @@ test "pbr volumetric fog execute: prepares depth texture usage from extracted fo
     VolumetricFog::VolumetricFog(),
   )
   |> ignore)
+  assert_false(render3d_world_has_volumetric_fog_views(world))
+  assert_false(
+    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+      camera3d,
+      render3d_world_has_volumetric_fog_views(world),
+    ).has_texture_binding(),
+  )
+  let light_entity = world.spawn()
+  try! (world.set_by_key(
+    light_entity,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::VolumetricLight(),
+  )
+  |> ignore)
   assert_true(render3d_world_has_volumetric_fog_views(world))
   assert_true(
     render3d_prepare_view_depth_texture_usage_for_volumetric_fog(

@@ -177,6 +177,7 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
 
 ///|
 fn render3d_world_has_volumetric_fog_views(world : @ecs.World) -> Bool {
+  guard render3d_collect_volumetric_light_count(world) > 0 else { return false }
   let mut has_volumetric_fog = false
   world.for_each_component(ecs_key_volumetric_fog, fn(_entity, _fog) {
     has_volumetric_fog = true
