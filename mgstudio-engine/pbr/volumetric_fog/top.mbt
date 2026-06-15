@@ -78,17 +78,7 @@ pub impl @app.Resource for FogAssets with fn resource() {
 }
 
 ///|
-pub fn volumetric_fog_plugin_install(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  volumetric_fog_plugin_install_with(
-    app,
-    VolumetricFogPlugin::VolumetricFogPlugin(),
-  )
-}
-
-///|
-pub fn volumetric_fog_plugin_install_with(
+fn volumetric_fog_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : VolumetricFogPlugin,
 ) -> @app.App[@ecs.World] {
