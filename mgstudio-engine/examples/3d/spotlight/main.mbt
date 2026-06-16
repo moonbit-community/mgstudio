@@ -19,24 +19,20 @@ const PI : Float = 3.141592653589793F
 const MOVE_SPEED : Float = 2.0F
 
 ///|
-const LCG_MOD : Int = 2147483647
-
-///|
 const INSTRUCTIONS : String = "Controls\n--------\nHorizontal Movement: WASD\nVertical Movement: Space and Shift\nRotate Camera: Left and Right Arrows"
 
 ///|
-priv struct SpotlightState {
-  movables : Array[@core.Entity]
-  spotlights : Array[@core.Entity]
-  mut camera : @core.Entity?
-}
+struct Movable {}
 
 ///|
-let spotlight_state : Ref[SpotlightState] = Ref({
-  movables: [],
-  spotlights: [],
-  camera: None,
-})
+let movable_component_key : @ecs.ComponentKey[Movable] = @ecs.register_component(
+  debug_name="examples.3d.spotlight.Movable",
+)
+
+///|
+pub impl @ecs.Component for Movable with fn component() {
+  movable_component_key
+}
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -44,21 +40,21 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn lcg_next(seed : Int) -> Int {
-  let mut next = (seed * 1103515245 + 12345) % LCG_MOD
-  if next < 0 {
-    next = next + LCG_MOD
-  }
-  next
+fn rng_float_range(
+  rng : @chacha_rng.ChaCha8Rng,
+  low : Float,
+  high : Float,
+) -> Float {
+  low + rng.random_float() * (high - low)
 }
 
 ///|
-fn lcg_unit(seed : Int) -> Float {
-  float_from_int(seed) / float_from_int(LCG_MOD)
-}
-
-///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
+fn uv_sphere_mesh(
+  meshes : @asset.Assets[@mesh.Mesh],
+  radius : Float,
+  stacks : Int,
+  sectors : Int,
+) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -105,320 +101,265 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   }
 
   @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
+    meshes.add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
 ///|
-fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
-}
-
-///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @color.Color,
-  brightness : Float,
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
-}
+  let ground_material = materials.modify(fn(assets) {
+    assets.add(@pbr.StandardMaterial::from_color(@color.Color::white()))
+  })
+  let cube_material = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+      ),
+    )
+  })
+  let red_emissive = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      ).with_emissive(@color.Color::new(1.0F, 0.0F, 0.0F, 0.0F)),
+    )
+  })
+  let maroon_emissive = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
+      ).with_emissive(@color.Color::new(0.369F, 0.0F, 0.0F, 0.0F)),
+    )
+  })
 
-///|
-fn setup(world : @ecs.World) -> Unit {
-  spotlight_state.val.movables.clear()
-  spotlight_state.val.spotlights.clear()
-  spotlight_state.val.camera = None
-
-  set_global_ambient_light(world, @color.Color::white(), 20.0F)
-
-  let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white()),
-  )
-  let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          meshes.modify(fn(assets) {
+            assets
+            |> @pbr.add_mesh(
+              @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+                @math.Vec2::new(100.0F, 100.0F),
+              ).build(),
+            )
+          }),
+        ),
+        @pbr.MeshMaterial3d::new(ground_material),
+        Movable::{  },
+      ),
     ),
   )
-  let red_emissive = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)).with_emissive(
-      @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    ),
-  )
-  let maroon_emissive = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
-    ).with_emissive(@color.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
-  )
 
-  let ground = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(100.0F, 100.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(ground_material),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  spotlight_state.val.movables.push(ground)
-
+  let rng = @chacha_rng.ChaCha8Rng::seed_from_u64(19878367467713UL)
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    meshes.modify(fn(assets) {
       assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
     }),
   )
-  let mut seed = 1987836746 % LCG_MOD
   for _ in 0..<40 {
-    seed = lcg_next(seed)
-    let x = -5.0F + lcg_unit(seed) * 10.0F
-    seed = lcg_next(seed)
-    let y = lcg_unit(seed) * 3.0F
-    seed = lcg_next(seed)
-    let z = -5.0F + lcg_unit(seed) * 10.0F
-
-    let cube = @pbr.MeshMaterial3dBundle::new(
-      cube_mesh,
-      @pbr.MeshMaterial3d::new(cube_material),
-      @transform.Transform::from_xyz(x, y, z),
-    ).spawn(world)
-    spotlight_state.val.movables.push(cube)
+    let x = rng_float_range(rng, -5.0F, 5.0F)
+    let y = rng_float_range(rng, 0.0F, 3.0F)
+    let z = rng_float_range(rng, -5.0F, 5.0F)
+    ignore(
+      commands.spawn(
+        (
+          cube_mesh,
+          @pbr.MeshMaterial3d::new(cube_material),
+          @transform.Transform::from_xyz(x, y, z),
+          Movable::{  },
+        ),
+      ),
+    )
   }
 
-  let marker_mesh = uv_sphere_mesh(0.05F, 18, 32)
-  let direction_marker_mesh = uv_sphere_mesh(0.1F, 18, 32)
+  let sphere_mesh = meshes.modify(fn(assets) {
+    uv_sphere_mesh(assets, 0.05F, 18, 32)
+  })
+  let sphere_mesh_direction = meshes.modify(fn(assets) {
+    uv_sphere_mesh(assets, 0.1F, 18, 32)
+  })
   for x in 0..<4 {
     for z in 0..<4 {
-      let fx = float_from_int(x) - 2.0F
-      let fz = float_from_int(z) - 2.0F
-      let spotlight = world.spawn_empty()
-      try! world.set_by_key(
-        spotlight,
-        @pbr.ecs_key_spot_light,
-        @pbr.SpotLight::new(
-          @color.Color::white(),
-          40_000.0F,
-          20.0F,
-          PI / 4.0F * 0.85F,
-          PI / 4.0F,
-          true,
+      let x = float_from_int(x) - 2.0F
+      let z = float_from_int(z) - 2.0F
+      let spotlight = commands.spawn(
+        (
+          @pbr.SpotLight::new(
+            @color.Color::white(),
+            40_000.0F,
+            20.0F,
+            PI / 4.0F * 0.85F,
+            PI / 4.0F,
+            true,
+          ),
+          @transform.Transform::from_xyz(1.0F + x, 2.0F, z).looking_at(
+            @math.Vec3::new(1.0F + x, 0.0F, z),
+            @math.Vec3::new(1.0F, 0.0F, 0.0F),
+          ),
         ),
       )
-      try! world.set_by_key(
-        spotlight,
-        @transform.ecs_key_transform,
-        @transform.Transform::from_xyz(1.0F + fx, 2.0F, fz).looking_at(
-          @math.Vec3::new(1.0F + fx, 0.0F, fz),
-          @math.Vec3::new(1.0F, 0.0F, 0.0F),
+
+      ignore(
+        commands.spawn(
+          (
+            @hierarchy.Parent::new(spotlight),
+            sphere_mesh,
+            @pbr.MeshMaterial3d::new(red_emissive),
+          ),
         ),
       )
-      spotlight_state.val.spotlights.push(spotlight)
-
-      let marker = @pbr.MeshMaterial3dBundle::new(
-        marker_mesh,
-        @pbr.MeshMaterial3d::new(red_emissive),
-        @transform.Transform::identity(),
-      ).spawn(world)
-      try! world.set_by_key(
-        marker,
-        @hierarchy.ecs_key_parent,
-        @hierarchy.Parent::new(spotlight),
-      )
-
-      let direction_marker = @pbr.MeshMaterial3dBundle::new(
-        direction_marker_mesh,
-        @pbr.MeshMaterial3d::new(maroon_emissive),
-        @transform.Transform::from_xyz(0.0F, 0.0F, -0.1F),
-      ).spawn(world)
-      try! world.set_by_key(
-        direction_marker,
-        @hierarchy.ecs_key_parent,
-        @hierarchy.Parent::new(spotlight),
-      )
-      try! world.set_by_key(
-        direction_marker,
-        @hierarchy.ecs_key_parent,
-        @hierarchy.Parent::new(spotlight),
-      )
-      try! world.set_by_key(
-        direction_marker,
-        @pbr.ecs_key_not_shadow_caster,
-        @pbr.NotShadowCaster::NotShadowCaster(),
+      ignore(
+        commands.spawn(
+          (
+            @hierarchy.Parent::new(spotlight),
+            sphere_mesh_direction,
+            @pbr.MeshMaterial3d::new(maroon_emissive),
+            @transform.Transform::from_translation(
+              @math.Vec3::new(0.0F, 0.0F, -0.1F),
+            ),
+            @pbr.NotShadowCaster::NotShadowCaster(),
+          ),
+        ),
       )
     }
   }
 
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  spotlight_state.val.camera = Some(camera)
-
-  let asset_server = @asset.AssetServer::new()
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  @text.Text2dBundle::new(
-    @text.Text2d::new(INSTRUCTIONS),
-    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(20.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-390.0F, 320.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @pbr.Hdr::Hdr(),
+        @transform.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
   )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .with_color(
-    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(INSTRUCTIONS),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
+      ),
+    ),
   )
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-  .spawn()
-  |> ignore
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in spotlight example")
-  }
-}
-
-///|
-fn light_sway(world : @ecs.World) -> Unit {
-  let elapsed = world_time(world).elapsed_seconds()
-
-  let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
-  let rotation_y = @math.sin(elapsed * 3.0F) * 0.5F
-  let rotation = @math.Quat::from_rotation_x(rotation_x)
-    .mul(@math.Quat::from_rotation_y(rotation_y))
-    .normalize()
-
-  let angle = (@math.sin(elapsed * 1.2F) + 1.0F) *
-    (@math.pi_half() / 2.0F - 0.1F)
-  let inner = angle * 0.8F
-
-  for entity in spotlight_state.val.spotlights {
-    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
-      is Some(transform) {
-      try! (world.replace(
-        entity,
-        @transform.ecs_key_transform,
-        transform.with_rotation(rotation),
+fn light_sway(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Write[@pbr.SpotLight]),
+    @ecs.All,
+  ],
+) -> Unit {
+  let elapsed = time.get().elapsed_seconds()
+  try! query.for_each(fn(_entity, components) {
+    let (transform, angles) = components
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::XYZ,
+        -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F,
+        @math.sin(elapsed * 3.0F) * 0.5F,
+        0.0F,
       )
-      |> ignore)
-    }
-    if (try! world.get_by_key(entity, @pbr.ecs_key_spot_light)) is Some(light) {
-      try! (world.replace(
-        entity,
-        @pbr.ecs_key_spot_light,
-        @pbr.SpotLight::new(
-          light.color,
-          light.intensity,
-          light.range,
-          inner,
-          angle,
-          light.shadow_maps_enabled,
-        ),
-      )
-      |> ignore)
-    }
-  }
+    })
+    let angle = (@math.sin(elapsed * 1.2F) + 1.0F) *
+      (@math.pi_half() / 2.0F - 0.1F)
+    let light = angles.value()
+    angles.set(light.with_outer_angle(angle).with_inner_angle(angle * 0.8F))
+  })
 }
 
 ///|
-fn movement(world : @ecs.World) -> Unit {
+fn movement(
+  input : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Movable]],
+) -> Unit {
   let mut translation = @math.Vec3::zero()
-  if @input.key_pressed(@window.KeyCode::KeyW) {
+  if input.pressed(@window.KeyCode::KeyW) {
     translation = translation.add(@math.Vec3::new(0.0F, 0.0F, 1.0F))
-  } else if @input.key_pressed(@window.KeyCode::KeyS) {
+  } else if input.pressed(@window.KeyCode::KeyS) {
     translation = translation.add(@math.Vec3::new(0.0F, 0.0F, -1.0F))
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyA) {
+  if input.pressed(@window.KeyCode::KeyA) {
     translation = translation.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
-  } else if @input.key_pressed(@window.KeyCode::KeyD) {
+  } else if input.pressed(@window.KeyCode::KeyD) {
     translation = translation.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
   }
 
-  if @input.key_pressed(@window.KeyCode::ShiftLeft) {
+  if input.pressed(@window.KeyCode::ShiftLeft) {
     translation = translation.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
-  } else if @input.key_pressed(@window.KeyCode::Space) {
+  } else if input.pressed(@window.KeyCode::Space) {
     translation = translation.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
   }
 
-  if translation.length_squared() <= 0.0F {
-    return
-  }
-
-  let delta = translation.mul_scalar(
-    MOVE_SPEED * world_time(world).delta_seconds(),
+  let translation = translation.mul_scalar(
+    MOVE_SPEED * time.get().delta_seconds(),
   )
-  for entity in spotlight_state.val.movables {
-    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
-      is Some(transform) {
-      let next = transform.with_translation(transform.translation.add(delta))
-      try! (world.replace(entity, @transform.ecs_key_transform, next) |> ignore)
-    }
-  }
+  try! query.for_each(fn(_entity, transform) {
+    transform.modify(fn(value) {
+      value.translation = value.translation.add(translation)
+    })
+  })
 }
 
 ///|
-fn rotation(world : @ecs.World) -> Unit {
-  guard spotlight_state.val.camera is Some(camera_entity) else { return }
+fn rotation(
+  transform : @app.Single[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@camera_camera.Camera],
+  ],
+  input : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let delta = time.get().delta_seconds()
 
-  let delta = world_time(world).delta_seconds()
-  let angle = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    -delta
-  } else {
-    0.0F
-  }
-  if angle == 0.0F {
-    return
-  }
-
-  if (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
-    is Some(transform) {
-    let rotated_position = quat_rotate_vec3(
-      @math.Quat::from_rotation_y(angle),
-      transform.translation,
-    )
-    let next = @transform.Transform::from_xyz(
-      rotated_position.x,
-      rotated_position.y,
-      rotated_position.z,
-    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    try! (world.replace(camera_entity, @transform.ecs_key_transform, next)
-    |> ignore)
+  if input.pressed(@window.KeyCode::ArrowLeft) {
+    transform
+    .get()
+    .modify(fn(value) {
+      value.rotate_around(
+        @math.Vec3::zero(),
+        @math.Quat::from_rotation_y(delta),
+      )
+    })
+  } else if input.pressed(@window.KeyCode::ArrowRight) {
+    transform
+    .get()
+    .modify(fn(value) {
+      value.rotate_around(
+        @math.Vec3::zero(),
+        @math.Quat::from_rotation_y(-delta),
+      )
+    })
   }
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
+  .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 20.0F))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, light_sway)
-  .add_systems_world(@app.Update, movement)
-  .add_systems_world(@app.Update, rotation)
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, light_sway)
+  .add_systems_param3(@app.Update, movement)
+  .add_systems_param3(@app.Update, rotation)
   .run()
 }
