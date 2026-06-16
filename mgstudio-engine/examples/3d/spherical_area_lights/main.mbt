@@ -13,13 +13,6 @@
 // limitations under the License.
 
 ///|
-///
-/// Parity target: preserve Bevy's `PointLight.radius` sweep and scene topology.
-/// Current runtime keeps the real `radius` knob and also applies
-/// intensity/range fallback mapping for visible differentiation until full
-/// spherical-light shading parity lands in the renderer.
-
-///|
 const TWO_PI : Float = 6.283185307179586F
 
 ///|
@@ -43,29 +36,6 @@ const RADIUS_MAX : Float = 0.4F
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn clamp01(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else if value > 1.0F {
-    1.0F
-  } else {
-    value
-  }
-}
-
-///|
-fn mapped_point_light_range(radius : Float) -> Float {
-  let ratio = clamp01(radius / RADIUS_MAX)
-  4.0F + ratio * 12.0F
-}
-
-///|
-fn mapped_point_light_intensity(radius : Float) -> Float {
-  let ratio = clamp01(radius / RADIUS_MAX)
-  50_000.0F + ratio * 150_000.0F
 }
 
 ///|
@@ -127,19 +97,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 }
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @color.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
-}
-
-///|
 fn setup(world : @ecs.World) -> Unit {
-  set_global_ambient_light(world, @color.Color::white(), 60.0F)
-
   let camera = @camera.Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
@@ -173,7 +131,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let position_len = POSITION_MAX - POSITION_MIN
   let radius_len = RADIUS_MAX - RADIUS_MIN
-  let sphere_mesh = uv_sphere_mesh(1.0F, 40, 72)
+  let sphere_mesh = uv_sphere_mesh(1.0F, 64, 120)
 
   for i in 0..<LIGHT_COUNT {
     let percent = float_from_int(i) / float_from_int(LIGHT_COUNT)
@@ -201,25 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
       @pbr.ecs_key_point_light,
       @pbr.PointLight::PointLight()
       .with_color(@color.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
-      .with_radius(radius)
-      .with_range(mapped_point_light_range(radius))
-      .with_intensity(mapped_point_light_intensity(radius))
-      .with_shadow_maps_enabled(false),
-    )
-    try! world.set_by_key(
-      point_light,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(sphere),
-    )
-    try! world.set_by_key(
-      point_light,
-      @pbr.ecs_key_point_light,
-      @pbr.PointLight::PointLight()
-      .with_color(@color.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
-      .with_radius(radius)
-      .with_range(mapped_point_light_range(radius))
-      .with_intensity(mapped_point_light_intensity(radius))
-      .with_shadow_maps_enabled(false),
+      .with_radius(radius),
     )
     try! world.set_by_key(
       point_light,
@@ -237,6 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
+  .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 60.0F))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
   .run()
