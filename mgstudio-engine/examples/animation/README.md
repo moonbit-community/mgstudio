@@ -15,7 +15,7 @@ This folder tracks parity status for Bevy animation examples.
 | `animation_graph.rs` | `examples/animation/animation_graph` | Done | Blend graph runtime and interaction flow are implemented on the current graph/player model. |
 | `animation_masks.rs` | `examples/animation/animation_masks` | Done | Mask-group UI flow and graph mask toggling now run on the shared Fox scene/skinning path. |
 | `color_animation.rs` | `examples/animation/color_animation` | Done | Bevy-style split between curve-based and mix-based color animation is now implemented with dedicated ECS components and typed query systems. |
-| `custom_skinned_mesh.rs` | `examples/animation/custom_skinned_mesh` | Done | Manual meshes can now provide joint indices/weights and run through the same CPU skinning runtime as imported glTF scenes. |
+| `custom_skinned_mesh.rs` | `examples/animation/custom_skinned_mesh` | Partial | Manual meshes can provide joint indices/weights and run through the shared CPU skinning runtime, but the Bevy ten-instance scene, seeded materials, exact strip topology, per-index joint animation, and gizmo axes are not yet ported. |
 | `eased_motion.rs` | `examples/animation/eased_motion` | Done | Curve-to-target authoring is available through `AnimationClip::add_curve_to_target(...)`, and the example now uses that path directly. |
 | `easing_functions.rs` | `examples/animation/easing_functions` | Done | Grid/curve/progress behavior is implemented and compile-checked. |
 | `morph_targets.rs` | `examples/animation/morph_targets` | Done | Morph target import, naming, animation playback, and mesh asset event observation are implemented on the current glTF runtime. |
