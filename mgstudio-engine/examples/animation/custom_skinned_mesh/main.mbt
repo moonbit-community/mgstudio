@@ -13,7 +13,9 @@
 // limitations under the License.
 
 ///|
-struct AnimatedJoint {}
+struct AnimatedJoint {
+  index : Int
+}
 
 ///|
 let animated_joint_key : @ecs.ComponentKey[AnimatedJoint] = @ecs.register_component(
@@ -26,159 +28,225 @@ pub impl @ecs.Component for AnimatedJoint with fn component() {
 }
 
 ///|
-fn build_skinned_strip() -> @mesh.Mesh3dGeometry {
-  let positions = [
-    @math.Vec3::new(-0.2F, 0.0F, 0.0F),
-    @math.Vec3::new(0.2F, 0.0F, 0.0F),
-    @math.Vec3::new(-0.2F, 2.0F, 0.0F),
-    @math.Vec3::new(0.2F, 2.0F, 0.0F),
-  ]
-  let uvs = [
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(0.0F, 1.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-  ]
-  let indices = [0, 1, 2, 1, 3, 2]
-  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)).with_joint_data(
-    Some([
-      @mesh.MeshJointIndices::new(0, 0, 0, 0),
-      @mesh.MeshJointIndices::new(0, 0, 0, 0),
-      @mesh.MeshJointIndices::new(1, 0, 0, 0),
-      @mesh.MeshJointIndices::new(1, 0, 0, 0),
-    ]),
-    Some([
-      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-    ]),
-  )
+fn AnimatedJoint::AnimatedJoint(index : Int) -> AnimatedJoint {
+  AnimatedJoint::{ index, }
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@color.Color::white(), 1200.0F),
+fn build_skinned_strip() -> @mesh.Mesh {
+  let positions = [
+    @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(0.0F, 0.5F, 0.0F),
+    @math.Vec3::new(1.0F, 0.5F, 0.0F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec3::new(1.0F, 1.0F, 0.0F),
+    @math.Vec3::new(0.0F, 1.5F, 0.0F),
+    @math.Vec3::new(1.0F, 1.5F, 0.0F),
+    @math.Vec3::new(0.0F, 2.0F, 0.0F),
+    @math.Vec3::new(1.0F, 2.0F, 0.0F),
+  ]
+  let uvs = [
+    @math.Vec2::new(0.0F, 0.00F),
+    @math.Vec2::new(0.5F, 0.00F),
+    @math.Vec2::new(0.0F, 0.25F),
+    @math.Vec2::new(0.5F, 0.25F),
+    @math.Vec2::new(0.0F, 0.50F),
+    @math.Vec2::new(0.5F, 0.50F),
+    @math.Vec2::new(0.0F, 0.75F),
+    @math.Vec2::new(0.5F, 0.75F),
+    @math.Vec2::new(0.0F, 1.00F),
+    @math.Vec2::new(0.5F, 1.00F),
+  ]
+  let indices = [
+    0, 1, 3, 0, 3, 2, 2, 3, 5, 2, 5, 4, 4, 5, 7, 4, 7, 6, 6, 7, 9, 6, 9, 8,
+  ]
+  let normals = [
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+  ]
+  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+    .with_normals(Some(normals))
+    .with_joint_data(
+      Some([
+        @mesh.MeshJointIndices::new(0, 0, 0, 0),
+        @mesh.MeshJointIndices::new(0, 0, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+        @mesh.MeshJointIndices::new(0, 1, 0, 0),
+      ]),
+      Some([
+        @math.Vec4::new(1.00F, 0.00F, 0.0F, 0.0F),
+        @math.Vec4::new(1.00F, 0.00F, 0.0F, 0.0F),
+        @math.Vec4::new(0.75F, 0.25F, 0.0F, 0.0F),
+        @math.Vec4::new(0.75F, 0.25F, 0.0F, 0.0F),
+        @math.Vec4::new(0.50F, 0.50F, 0.0F, 0.0F),
+        @math.Vec4::new(0.50F, 0.50F, 0.0F, 0.0F),
+        @math.Vec4::new(0.25F, 0.75F, 0.0F, 0.0F),
+        @math.Vec4::new(0.25F, 0.75F, 0.0F, 0.0F),
+        @math.Vec4::new(0.00F, 1.00F, 0.0F, 0.0F),
+        @math.Vec4::new(0.00F, 1.00F, 0.0F, 0.0F),
+      ]),
+    )
+  @mesh.Mesh::from_3d_geometry(geometry).with_generated_skinned_mesh_bounds() catch {
+    _ => abort("custom_skinned_mesh mesh bounds generation failed")
+  }
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  skinned_mesh_inverse_bindposes_assets : @app.ResMut[
+    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
+  ],
+) -> Unit {
+  commands.insert_resource(
+    @pbr.GlobalAmbientLight::new(@color.Color::white(), 3000.0F),
   )
   ignore(
-    @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      @transform.Transform::from_xyz(0.0F, 1.4F, 6.0F).looking_at(
-        @math.Vec3::new(0.0F, 0.8F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    ).spawn(world),
-  )
-  let light = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(light)
-    .insert(
-      (
-        @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.8F, -0.7F),
+    commands.spawn(
+      @camera.Camera3dBundle::new(
+        @camera_camera.Camera::Camera(),
+        @transform.Transform::from_xyz(2.5F, 2.5F, 9.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
-        @pbr.DirectionalLight::new(@color.Color::white(), 9000.0F, true),
       ),
     ),
   )
 
-  let source_mesh = @mesh.Mesh::from_3d_geometry(build_skinned_strip())
-  ignore(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(source_mesh)
-    }),
-  )
-  let instance_handle = @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-    assets.add(@mesh.Mesh::from_3d_geometry(build_skinned_strip()))
-  })
-  let inverse_bindposes_assets_key : @ecs.ResourceKey[
-    @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-  ] = @asset.assets_resource_key()
-  let inverse_bindposes_assets = match
-    world.get_resource_mut(inverse_bindposes_assets_key) {
-    Some(assets) => assets
-    None =>
-      abort(
-        "missing Assets<SkinnedMeshInverseBindposes> resource; MeshPlugin must initialize it",
-      )
-  }
-  let inverse_bindposes_handle = inverse_bindposes_assets.modify(fn(assets) {
+  let inverse_bindposes = skinned_mesh_inverse_bindposes_assets.modify(fn(
+    assets,
+  ) {
     assets.add(
       @mesh.SkinnedMeshInverseBindposes::new([
-        @mesh.SkinningMat4::identity(),
-        @mesh.SkinningMat4::inverse_transform(
-          @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
+        @mesh.SkinningMat4::from_transform(
+          @transform.Transform::from_xyz(-0.5F, -1.0F, 0.0F),
+        ),
+        @mesh.SkinningMat4::from_transform(
+          @transform.Transform::from_xyz(-0.5F, -1.0F, 0.0F),
         ),
       ]),
     )
   })
-  let material_handle = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.8F, 1.0F)),
-  )
 
-  let root = world.spawn_empty()
-  let first_joint = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(first_joint)
-    .insert((@transform.Transform::identity(), @hierarchy.Parent::new(root))),
-  )
-  let second_joint = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(second_joint)
-    .insert(
-      (
-        AnimatedJoint::{  },
-        @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
-        @hierarchy.Parent::new(first_joint),
+  let mesh = meshes.modify(fn(assets) { assets.add(build_skinned_strip()) })
+  let rng = @chacha_rng.ChaCha8Rng::seed_from_u64(42UL)
+  let checker_texture = asset_server
+    .get()
+    .load_image("textures/uv_checker_bw.png")
+
+  for i in -5..<5 {
+    let joint_0 = commands.spawn_component(
+      @transform.Transform::from_xyz(
+        Float::from_int(i) * 1.5F,
+        0.0F,
+        -@math.abs(Float::from_int(i) * 0.01F),
       ),
-    ),
-  )
-
-  let mesh_entity = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(mesh_entity)
-    .insert(
+    )
+    let joint_1 = commands.spawn(
       (
-        @mesh.Mesh3d::new(instance_handle),
-        @pbr.MeshMaterial3d::new(material_handle),
+        AnimatedJoint::AnimatedJoint(i),
         @transform.Transform::identity(),
-        @hierarchy.Parent::new(root),
+        @hierarchy.Parent::new(joint_0),
       ),
-    ),
-  )
-  ignore(
-    try! world
-    .entity_mut(mesh_entity)
+    )
+    let material = materials.modify(fn(assets) {
+      assets.add(
+        @pbr.StandardMaterial::StandardMaterial()
+        .with_base_color(
+          @color.Color::srgb(
+            rng.random_float(),
+            rng.random_float(),
+            rng.random_float(),
+          ),
+        )
+        .with_base_color_texture(Some(checker_texture)),
+      )
+    })
+    let mesh_entity = commands.spawn(
+      @pbr.MeshMaterial3dBundle::new(
+        @mesh.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::identity(),
+      ),
+    )
+    commands
+    .entity(mesh_entity)
     .insert(
       (
-        @mesh.SkinnedMesh::new(inverse_bindposes_handle, [
-          first_joint, second_joint,
-        ]),
+        @mesh.SkinnedMesh::new(inverse_bindposes, [joint_0, joint_1]),
         @mesh.DynamicSkinnedMeshBounds::new(),
       ),
-    ),
-  )
+    )
+  }
 }
 
 ///|
-fn animate_joint(
+fn joint_animation(
   time : @app.Res[@time.Time[Unit]],
-  joints : @ecs.Query[
-    @ecs.Write[@transform.Transform],
-    @ecs.With[AnimatedJoint],
+  query : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[AnimatedJoint]),
+    @ecs.All,
   ],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
-  let angle = 0.8F * @math.sin(time.get().elapsed_secs())
-  try! joints.view(fn(_entity, transform) {
+  let elapsed_secs = time.get().elapsed_secs()
+  try! query.view(fn(_entity, data) {
+    let (transform, animated_joint) = data
+    let joint_index = animated_joint.value().index
     transform.modify(fn(value) {
-      value.rotation = @math.Quat::from_rotation_z(angle)
+      match joint_index {
+        -5 =>
+          value.rotation = @math.Quat::from_rotation_x(
+            @math.pi_half() * @math.sin(elapsed_secs),
+          )
+        -4 =>
+          value.rotation = @math.Quat::from_rotation_y(
+            @math.pi_half() * @math.sin(elapsed_secs),
+          )
+        -3 =>
+          value.rotation = @math.Quat::from_rotation_z(
+            @math.pi_half() * @math.sin(elapsed_secs),
+          )
+        -2 => value.scale.x = @math.sin(elapsed_secs) + 1.0F
+        -1 => value.scale.y = @math.sin(elapsed_secs) + 1.0F
+        0 => {
+          value.translation.x = 0.5F * @math.sin(elapsed_secs)
+          value.translation.y = @math.cos(elapsed_secs)
+        }
+        1 => {
+          value.translation.y = @math.sin(elapsed_secs)
+          value.translation.z = @math.cos(elapsed_secs)
+        }
+        2 => value.translation.x = @math.sin(elapsed_secs)
+        3 => {
+          value.translation.y = @math.sin(elapsed_secs)
+          value.scale.x = @math.sin(elapsed_secs) + 1.0F
+        }
+        _ => ()
+      }
     })
+    let axis = transform.value()
+    axis.translation.x = axis.translation.x +
+      Float::from_int(joint_index) * 1.5F
+    gizmos.axes_3d(axis, 1.0F)
   })
 }
 
@@ -186,7 +254,7 @@ fn animate_joint(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_joint)
+  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param3(@app.Update, joint_animation)
   .run()
 }
