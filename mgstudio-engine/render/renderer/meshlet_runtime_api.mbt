@@ -2785,7 +2785,7 @@ fn meshlet_bind_material_shade_draw(
   }
   let resolved_transmission_source_texture_id = if pass_state.transmission_source_texture_id <
     0 {
-    -1
+    ensure_transmission_source_fallback_texture(backend).id
   } else {
     pass_state.transmission_source_texture_id
   }

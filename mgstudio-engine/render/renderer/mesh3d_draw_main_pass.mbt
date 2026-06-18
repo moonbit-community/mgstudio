@@ -275,7 +275,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   }
   let resolved_transmission_source_texture_id = if ps.transmission_source_texture_id <
     0 {
-    -1
+    ensure_transmission_source_fallback_texture(self).id
   } else {
     ps.transmission_source_texture_id
   }

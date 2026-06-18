@@ -909,8 +909,8 @@ fn render3d_execute_camera_main_pass(
     }
     for transmission_range in transmission_ranges {
       if transmission_steps > 0 {
-        render3d_blit_texture_to_target(
-          scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
+        render3d_copy_texture_to_texture(
+          scene_target_id, transmission_source_target_id,
         )
       }
       let (

@@ -47,6 +47,14 @@ pub fn host_gpu_create_render_target_rg16f(
 }
 
 ///|
+pub fn host_gpu_create_transmission_source_texture_rgba16f(
+  width~ : Int,
+  height~ : Int,
+) -> Int {
+  @renderer.create_transmission_source_texture_rgba16f(width~, height~)
+}
+
+///|
 pub fn host_gpu_create_motion_vector_prepass_target_rg16f(
   width~ : Int,
   height~ : Int,
@@ -86,6 +94,21 @@ pub fn host_gpu_create_depth_prepass_target(
     height~,
     sample_count~,
     usage_bits~,
+  )
+}
+
+///|
+pub fn host_gpu_copy_texture_to_texture(
+  dst_texture_id~ : Int,
+  dst_x~ : Int,
+  dst_y~ : Int,
+  src_texture_id~ : Int,
+) -> Unit {
+  @renderer.frame_copy_texture_to_texture(
+    dst_texture_id~,
+    dst_x~,
+    dst_y~,
+    src_texture_id~,
   )
 }
 

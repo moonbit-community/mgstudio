@@ -383,7 +383,7 @@ pub fn GpuBackend::create_texture_rgba8(
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits),
+    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
   )
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
@@ -449,7 +449,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   let h_per_slice = if height_per_slice <= 0 { 1 } else { height_per_slice }
   let slices = if slice_count <= 0 { 1 } else { slice_count }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits),
+    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
   )
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
@@ -999,6 +999,45 @@ pub fn GpuBackend::copy_texture_to_texture(
 }
 
 ///|
+pub fn GpuBackend::frame_copy_texture_to_texture(
+  self : GpuBackend,
+  dst_texture_id : Int,
+  dst_x : Int,
+  dst_y : Int,
+  src_texture_id : Int,
+) -> Unit {
+  guard self.frame is Some(frame) else { return }
+  guard find_texture(self, src_texture_id) is Some(src) else { return }
+  guard find_texture(self, dst_texture_id) is Some(dst) else { return }
+  let origin_x = if dst_x < 0 { 0 } else { dst_x }
+  let origin_y = if dst_y < 0 { 0 } else { dst_y }
+  let max_width = dst.width - origin_x
+  let max_height = dst.height - origin_y
+  if max_width <= 0 || max_height <= 0 {
+    return
+  }
+  let copy_width = if src.width < max_width { src.width } else { max_width }
+  let copy_height = if src.height < max_height {
+    src.height
+  } else {
+    max_height
+  }
+  if copy_width <= 0 || copy_height <= 0 {
+    return
+  }
+  frame.encoder.copy_texture_to_texture_rgba8_mip_layer(
+    src.texture,
+    src.base_mip_level.reinterpret_as_uint(),
+    0U,
+    dst.texture,
+    dst.base_mip_level.reinterpret_as_uint(),
+    0U,
+    copy_width.reinterpret_as_uint(),
+    copy_height.reinterpret_as_uint(),
+  )
+}
+
+///|
 pub fn GpuBackend::create_texture_mip_view(
   self : GpuBackend,
   texture_id : Int,
@@ -1204,6 +1243,62 @@ pub fn GpuBackend::create_render_target_rg16f(
 }
 
 ///|
+pub fn GpuBackend::create_transmission_source_texture_rgba16f(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_COPY_DST,
+  )
+  let tex = self.device.create_texture_u32(
+    w,
+    h,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=1U,
+  )
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let sampler = self.device.create_sampler_linear_clamp()
+  let bind_group = create_cached_texture_bind_group(self, sampler, view)
+  let info = GpuTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format,
+    texture: tex,
+    view,
+    sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
+    layer_views: [],
+    sampler,
+    bind_group: Some(bind_group),
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
 pub fn GpuBackend::create_motion_vector_prepass_target_rg16f(
   self : GpuBackend,
   width : Int,
@@ -1357,7 +1452,7 @@ pub fn GpuBackend::create_depth_prepass_target(
     sample_count.reinterpret_as_uint()
   }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits),
+    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
   )
   let format = tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT)
   let tex = self.device.create_texture_u32(
@@ -2160,6 +2255,21 @@ pub fn create_render_target_rg16f(
 }
 
 ///|
+pub fn create_transmission_source_texture_rgba16f(
+  width~ : Int,
+  height~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_transmission_source_texture_rgba16f(width, height)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
 pub fn create_motion_vector_prepass_target_rg16f(
   width~ : Int,
   height~ : Int,
@@ -2527,6 +2637,20 @@ pub fn asset_copy_texture_to_texture(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.copy_texture_to_texture(
+      dst_texture_id, dst_x, dst_y, src_texture_id,
+    )
+  }
+}
+
+///|
+pub fn frame_copy_texture_to_texture(
+  dst_texture_id~ : Int,
+  dst_x~ : Int,
+  dst_y~ : Int,
+  src_texture_id~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.frame_copy_texture_to_texture(
       dst_texture_id, dst_x, dst_y, src_texture_id,
     )
   }

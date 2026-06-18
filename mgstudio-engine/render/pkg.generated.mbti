@@ -166,6 +166,8 @@ pub fn host_gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Flo
 
 pub fn host_gpu_configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode? : HostGpuPresentMode, composite_alpha_mode? : HostGpuCompositeAlphaMode, desired_maximum_frame_latency? : Int) -> Unit
 
+pub fn host_gpu_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
+
 pub fn host_gpu_create_depth_prepass_target(width~ : Int, height~ : Int, sample_count? : Int, usage_bits~ : Int) -> Int
 
 pub fn host_gpu_create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
@@ -203,6 +205,8 @@ pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~
 pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
 pub fn host_gpu_create_surface(Int) -> Int
+
+pub fn host_gpu_create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 
 pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool
 

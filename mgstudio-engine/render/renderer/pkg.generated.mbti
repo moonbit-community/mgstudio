@@ -141,6 +141,8 @@ pub fn create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ :
 
 pub fn create_surface(Int) -> Int
 
+pub fn create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
+
 pub fn debug_string(value~ : String) -> Unit
 
 pub fn delete_mesh(Int) -> Bool
@@ -224,6 +226,8 @@ pub fn execute_meshlet_second_meshlet_cull(view_entity_bits~ : UInt64, rightmost
 pub fn execute_meshlet_visibility_buffer_hardware_raster(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
 
 pub fn execute_meshlet_visibility_buffer_software_raster(view_entity_bits~ : UInt64) -> Bool
+
+pub fn frame_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn get_queue(Int) -> Int
 
@@ -978,6 +982,7 @@ pub struct GpuBackend {
   mut normal_map_fallback_texture_id : Int
   mut point_shadow_fallback_texture_id : Int
   mut directional_shadow_fallback_texture_id : Int
+  mut transmission_source_fallback_texture_id : Int
   mut environment_map_fallback_texture_id : Int
   mut irradiance_volume_fallback_texture_id : Int
   surfaces : Array[GpuSurfaceState]
@@ -1027,6 +1032,7 @@ pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, @wgpu_mbt.Tex
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool, usage_bits? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool, usage_bits? : Int) -> Int raise GpuBackendError
+pub fn GpuBackend::create_transmission_source_texture_rgba16f(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(Self, Array[UInt64]) -> Unit
 pub fn GpuBackend::downsample_mesh3d_depth_pyramid(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_blit(Self, Int) -> Unit raise GpuBackendError
@@ -1069,6 +1075,7 @@ pub fn GpuBackend::execute_meshlet_second_instance_cull(Self, view_entity_bits~ 
 pub fn GpuBackend::execute_meshlet_second_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::frame_copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError

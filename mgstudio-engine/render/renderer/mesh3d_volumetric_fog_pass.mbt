@@ -168,7 +168,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   }
   let resolved_transmission_source_texture_id = if pass_state.transmission_source_texture_id <
     0 {
-    -1
+    ensure_transmission_source_fallback_texture(self).id
   } else {
     pass_state.transmission_source_texture_id
   }

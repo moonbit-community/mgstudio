@@ -1647,6 +1647,58 @@ fn ensure_directional_shadow_fallback_texture(
 }
 
 ///|
+fn ensure_transmission_source_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.transmission_source_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.transmission_source_fallback_texture_id)
+      is Some(texture) {
+      return texture
+    }
+  }
+  ensure_sprite_resources(backend)
+  let w = 1U
+  let h = 1U
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST |
+    @wgpu.TEXTURE_USAGE_COPY_SRC,
+  )
+  let tex = backend.device.create_texture_rgba8_2d_with_usage(w, h, usage)
+  let view = tex.create_view()
+  let sampler = backend.device.create_sampler_linear_clamp()
+  let bind_group = create_cached_texture_bind_group(backend, sampler, view)
+  backend.queue.write_texture_rgba8_2d(
+    tex,
+    w,
+    h,
+    Bytes::makei(4, _ => (0).to_byte()),
+  )
+  let id = alloc_id(backend)
+  let info = GpuTextureInfo::{
+    id,
+    width: 1,
+    height: 1,
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    texture: tex,
+    view,
+    sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: 1,
+    layer_views: [],
+    sampler,
+    bind_group: Some(bind_group),
+  }
+  backend.textures.push(info)
+  backend.transmission_source_fallback_texture_id = id
+  mesh3d_material_cache_clear(backend)
+  info
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   self : GpuBackend,
   texture_id : Int,
@@ -1992,7 +2044,7 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   ensure_mesh3d_pipeline_layout_resources(self)
   let resolved_transmission_source_texture_id = if transmission_source_texture_id <
     0 {
-    -1
+    ensure_transmission_source_fallback_texture(self).id
   } else {
     transmission_source_texture_id
   }

@@ -290,10 +290,9 @@ fn render3d_transmission_source_target_get_or_create(
       return item.source_target_id
     }
   }
-  let source_target_id = @render.host_gpu_create_render_target_rgba16f(
+  let source_target_id = @render.host_gpu_create_transmission_source_texture_rgba16f(
     width~,
     height~,
-    nearest=false,
   )
   let next : Array[TransmissionSourceTargetsEntry] = []
   let mut replaced = false
@@ -318,57 +317,19 @@ fn render3d_transmission_source_target_get_or_create(
 }
 
 ///|
-fn render3d_blit_texture_to_target(
+fn render3d_copy_texture_to_texture(
   source_texture_id : Int,
-  target_id : Int,
-  width_logical : Int,
-  height_logical : Int,
+  target_texture_id : Int,
 ) -> Unit {
-  if source_texture_id < 0 ||
-    target_id < 0 ||
-    width_logical <= 0 ||
-    height_logical <= 0 {
+  if source_texture_id < 0 || target_texture_id < 0 {
     return
   }
-  let sx = Float::from_double(width_logical.to_double()) / 128.0F
-  let sy = Float::from_double(height_logical.to_double()) / 128.0F
-  @render.host_gpu_begin_pass(
-    target_id~,
-    width=width_logical,
-    height=height_logical,
-    clear_r=0.0F,
-    clear_g=0.0F,
-    clear_b=0.0F,
-    clear_a=0.0F,
-    camera_x=0.0F,
-    camera_y=0.0F,
-    camera_rotation=0.0F,
-    camera_scale=1.0F,
-    viewport_x=0,
-    viewport_y=0,
-    viewport_width=width_logical,
-    viewport_height=height_logical,
-    viewport_depth_min=0.0F,
-    viewport_depth_max=1.0F,
-    clear_enabled=1,
+  @render.host_gpu_copy_texture_to_texture(
+    dst_texture_id=target_texture_id,
+    dst_x=0,
+    dst_y=0,
+    src_texture_id=source_texture_id,
   )
-  @render.host_gpu_draw_sprite_uv(
-    texture_id=source_texture_id,
-    x=0.0F,
-    y=0.0F,
-    rotation=0.0F,
-    scale_x=sx,
-    scale_y=sy,
-    color_r=1.0F,
-    color_g=1.0F,
-    color_b=1.0F,
-    color_a=1.0F,
-    uv_min_x=0.0F,
-    uv_min_y=0.0F,
-    uv_max_x=1.0F,
-    uv_max_y=1.0F,
-  )
-  @render.host_gpu_end_pass()
 }
 
 ///|

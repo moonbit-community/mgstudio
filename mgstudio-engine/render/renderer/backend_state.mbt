@@ -514,6 +514,7 @@ pub struct GpuBackend {
   mut normal_map_fallback_texture_id : Int
   mut point_shadow_fallback_texture_id : Int
   mut directional_shadow_fallback_texture_id : Int
+  mut transmission_source_fallback_texture_id : Int
   mut environment_map_fallback_texture_id : Int
   mut irradiance_volume_fallback_texture_id : Int
   surfaces : Array[GpuSurfaceState]

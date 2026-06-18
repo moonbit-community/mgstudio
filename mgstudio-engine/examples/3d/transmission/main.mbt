@@ -22,9 +22,6 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-const LCG_MOD : Int = 2147483647
-
-///|
 const E : Float = 2.718281828459045F
 
 ///|
@@ -40,6 +37,45 @@ const CAMERA_INITIAL_Y : Float = 1.8F
 const CAMERA_INITIAL_Z : Float = 7.0F
 
 ///|
+struct Flicker {}
+
+///|
+let flicker_key : @ecs.ComponentKey[Flicker] = @ecs.register_component(
+  debug_name="examples.3d.transmission.Flicker",
+)
+
+///|
+pub impl @ecs.Component for Flicker with fn component() {
+  flicker_key
+}
+
+///|
+struct ExampleControls {
+  diffuse_transmission : Bool
+  specular_transmission : Bool
+  color : Bool
+}
+
+///|
+let example_controls_key : @ecs.ComponentKey[ExampleControls] = @ecs.register_component(
+  debug_name="examples.3d.transmission.ExampleControls",
+)
+
+///|
+pub impl @ecs.Component for ExampleControls with fn component() {
+  example_controls_key
+}
+
+///|
+fn ExampleControls::ExampleControls(
+  diffuse_transmission~ : Bool,
+  specular_transmission~ : Bool,
+  color~ : Bool,
+) -> ExampleControls {
+  ExampleControls::{ diffuse_transmission, specular_transmission, color }
+}
+
+///|
 priv struct TransmissionState {
   mut diffuse_transmission : Float
   mut specular_transmission : Float
@@ -53,10 +89,7 @@ priv struct TransmissionState {
   mut flame_mesh : @core.Entity?
   mut flame_light : @core.Entity?
   mut display_text : @text.TextHandle?
-  specular_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
-  diffuse_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
-  color_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
-  mut random_seed : Int
+  color_rng : @chacha_rng.ChaCha8Rng
 }
 
 ///|
@@ -77,10 +110,7 @@ let transmission_state : Ref[TransmissionState] = Ref({
   flame_mesh: None,
   flame_light: None,
   display_text: None,
-  specular_materials: [],
-  diffuse_materials: [],
-  color_materials: [],
-  random_seed: 1367130551,
+  color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
 })
 
 ///|
@@ -117,20 +147,8 @@ fn expf(value : Float) -> Float {
 }
 
 ///|
-fn lcg_next(seed : Int) -> Int {
-  let mut next = (seed * 1103515245 + 12345) % LCG_MOD
-  if next < 0 {
-    next = next + LCG_MOD
-  }
-  next
-}
-
-///|
 fn next_random_unit() -> Float {
-  transmission_state.val.random_seed = lcg_next(
-    transmission_state.val.random_seed,
-  )
-  float_from_int(transmission_state.val.random_seed) / float_from_int(LCG_MOD)
+  transmission_state.val.color_rng.random_float()
 }
 
 ///|
@@ -286,24 +304,6 @@ fn transmission_hud_text(world : @ecs.World) -> String {
 }
 
 ///|
-fn register_material(
-  material : @asset.Handle[@pbr.StandardMaterial],
-  color : Bool,
-  specular : Bool,
-  diffuse : Bool,
-) -> Unit {
-  if color {
-    transmission_state.val.color_materials.push(material)
-  }
-  if specular {
-    transmission_state.val.specular_materials.push(material)
-  }
-  if diffuse {
-    transmission_state.val.diffuse_materials.push(material)
-  }
-}
-
-///|
 fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
@@ -443,13 +443,24 @@ fn spawn_mesh(
   mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
-) -> Unit {
+) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
     @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  |> ignore
+}
+
+///|
+fn spawn_controlled_mesh(
+  world : @ecs.World,
+  mesh : @mesh.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
+  transform : @transform.Transform,
+  controls : ExampleControls,
+) -> Unit {
+  let entity = spawn_mesh(world, mesh, material, transform)
+  try! world.set_by_key(entity, example_controls_key, controls)
 }
 
 ///|
@@ -484,8 +495,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let cube_1_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::StandardMaterial(),
   )
-  register_material(cube_1_material, true, false, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     cube_mesh,
     cube_1_material,
@@ -495,13 +505,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_z(21.3F))
       .normalize(),
     ),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=false,
+      diffuse_transmission=false,
+    ),
   )
 
   let cube_2_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::StandardMaterial(),
   )
-  register_material(cube_2_material, true, false, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     cube_mesh,
     cube_2_material,
@@ -511,6 +525,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_z(4.7F))
       .normalize(),
     ),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=false,
+      diffuse_transmission=false,
+    ),
   )
 
   let candle_material = @pbr.standard_material_add(
@@ -519,12 +538,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_perceptual_roughness(0.32F)
     .with_thickness(0.2F),
   )
-  register_material(candle_material, true, false, true)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     candle_mesh,
     candle_material,
     @transform.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=false,
+      diffuse_transmission=true,
+    ),
   )
 
   let flame_material = @pbr.standard_material_add(
@@ -544,6 +567,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.ecs_key_not_shadow_caster,
     @pbr.NotShadowCaster::NotShadowCaster(),
   )
+  try! world.set_by_key(flame_mesh_entity, flicker_key, Flicker::{  })
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
   let white_glass = @pbr.standard_material_add(
@@ -554,12 +578,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_ior(1.5F)
     .with_perceptual_roughness(0.12F),
   )
-  register_material(white_glass, true, true, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     sphere_mesh,
     white_glass,
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=true,
+      diffuse_transmission=false,
+    ),
   )
 
   let red_glass = @pbr.standard_material_add(
@@ -570,13 +598,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_ior(1.5F)
     .with_perceptual_roughness(0.12F),
   )
-  register_material(red_glass, true, true, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     sphere_mesh,
     red_glass,
     @transform.Transform::from_xyz(1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
+    ),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=true,
+      diffuse_transmission=false,
     ),
   )
 
@@ -588,13 +620,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_ior(1.5F)
     .with_perceptual_roughness(0.12F),
   )
-  register_material(green_glass, true, true, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     sphere_mesh,
     green_glass,
     @transform.Transform::from_xyz(0.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
+    ),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=true,
+      diffuse_transmission=false,
     ),
   )
 
@@ -606,13 +642,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_ior(1.5F)
     .with_perceptual_roughness(0.12F),
   )
-  register_material(blue_glass, true, true, false)
-  spawn_mesh(
+  spawn_controlled_mesh(
     world,
     sphere_mesh,
     blue_glass,
     @transform.Transform::from_xyz(-1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
+    ),
+    ExampleControls::ExampleControls(
+      color=true,
+      specular_transmission=true,
+      diffuse_transmission=false,
     ),
   )
 
@@ -626,13 +666,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
-  register_material(black_tile, true, false, false)
-  register_material(white_tile, true, false, false)
-
   for x in -3..<4 {
     for z in -3..<4 {
       let use_black = (x + z) % 2 == 0
-      spawn_mesh(
+      spawn_controlled_mesh(
         world,
         plane_mesh,
         if use_black {
@@ -645,7 +682,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
           -1.0F,
           float_from_int(z) * 2.0F,
         ),
+        ExampleControls::ExampleControls(
+          color=true,
+          specular_transmission=false,
+          diffuse_transmission=false,
+        ),
       )
+      |> ignore
     }
   }
 
@@ -658,7 +701,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_double_sided(true)
     .with_cull_mode(None)
   let paper_material = @pbr.standard_material_add(paper_material_base)
-  register_material(paper_material, false, false, true)
   let paper_entity = @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
     @pbr.MeshMaterial3d::new(paper_material),
@@ -670,6 +712,15 @@ fn setup_scene(world : @ecs.World) -> Unit {
     paper_entity,
     @pbr.ecs_key_transmitted_shadow_receiver,
     @pbr.TransmittedShadowReceiver::TransmittedShadowReceiver(),
+  )
+  try! world.set_by_key(
+    paper_entity,
+    example_controls_key,
+    ExampleControls::ExampleControls(
+      color=false,
+      specular_transmission=false,
+      diffuse_transmission=true,
+    ),
   )
 
   let flame_light = world.spawn_empty()
@@ -689,6 +740,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ).with_radius(0.2F),
   )
   transmission_state.val.flame_light = Some(flame_light)
+  try! world.set_by_key(flame_light, flicker_key, Flicker::{  })
 }
 
 ///|
@@ -796,50 +848,54 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn apply_material_controls(randomize_colors : Bool) -> Unit {
-  if randomize_colors {
-    for handle in transmission_state.val.color_materials {
-      if @pbr.standard_material_get(handle) is Some(material) {
-        let alpha = material.base_color.a
-        let random_color = @color.Color::new(
-          next_random_unit(),
-          next_random_unit(),
-          next_random_unit(),
-          alpha,
-        )
-        @pbr.standard_material_set(
-          handle,
-          material.with_base_color(random_color),
-        )
-        |> ignore
+fn apply_material_controls(world : @ecs.World, randomize_colors : Bool) -> Unit {
+  let materials_key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
+  let materials = match world.get_resource_mut(materials_key) {
+    Some(assets) => assets
+    None => abort("Missing Assets<StandardMaterial> resource")
+  }
+  let controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ] = @ecs.query_filtered(world, @ecs.All::new())
+  materials.modify(fn(assets) {
+    try! controllable.view(fn(_entity, data) {
+      let (mesh_material, controls) = data
+      guard assets.get(mesh_material.value().material) is Some(material) else {
+        return
       }
-    }
-  }
-
-  for handle in transmission_state.val.specular_materials {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      let updated = material
-        .with_specular_transmission(
-          transmission_state.val.specular_transmission,
+      let controls = controls.value()
+      let mut updated = material
+      if controls.specular_transmission {
+        updated = updated
+          .with_specular_transmission(
+            transmission_state.val.specular_transmission,
+          )
+          .with_thickness(transmission_state.val.thickness)
+          .with_ior(transmission_state.val.ior)
+          .with_perceptual_roughness(
+            transmission_state.val.perceptual_roughness,
+          )
+          .with_reflectance(transmission_state.val.reflectance)
+      }
+      if controls.diffuse_transmission {
+        updated = updated.with_diffuse_transmission(
+          transmission_state.val.diffuse_transmission,
         )
-        .with_thickness(transmission_state.val.thickness)
-        .with_ior(transmission_state.val.ior)
-        .with_perceptual_roughness(transmission_state.val.perceptual_roughness)
-        .with_reflectance(transmission_state.val.reflectance)
-
-      @pbr.standard_material_set(handle, updated) |> ignore
-    }
-  }
-
-  for handle in transmission_state.val.diffuse_materials {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      let updated = material.with_diffuse_transmission(
-        transmission_state.val.diffuse_transmission,
-      )
-
-      @pbr.standard_material_set(handle, updated) |> ignore
-    }
-  }
+      }
+      if controls.color && randomize_colors {
+        updated = updated.with_base_color(
+          @color.Color::new(
+            next_random_unit(),
+            next_random_unit(),
+            next_random_unit(),
+            updated.base_color.a,
+          ),
+        )
+      }
+      ignore(assets.insert(mesh_material.value().material, updated))
+    })
+  })
 }
 
 ///|
@@ -1046,7 +1102,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   }
 
   if materials_changed {
-    apply_material_controls(randomize_colors)
+    apply_material_controls(world, randomize_colors)
   }
 
   if transmission_settings_changed {
@@ -1125,17 +1181,14 @@ fn setup(world : @ecs.World) -> Unit {
     flame_mesh: None,
     flame_light: None,
     display_text: None,
-    specular_materials: [],
-    diffuse_materials: [],
-    color_materials: [],
-    random_seed: 1367130551,
+    color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
   }
 
   setup_scene(world)
   setup_camera(world)
   setup_text(world)
   apply_camera_transform(world)
-  apply_material_controls(false)
+  apply_material_controls(world, false)
   set_hud_text(world)
 }
 
