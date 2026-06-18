@@ -148,9 +148,10 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => Projection::default()
     }
-    let depth_texture_usages = render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+    let mut depth_texture_usages = render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d.value(),
       has_volumetric_fog_views,
+      false,
     )
     let projection_changed = projection_changed_entities.contains(
       entity_key(entity),
@@ -256,6 +257,9 @@ fn render3d_execute_collect_cameras(
       ),
       msaa,
     )
+    if screen_space_ambient_occlusion is Some(_) {
+      depth_texture_usages = depth_texture_usages.with_texture_binding()
+    }
     let target = match target_opt.value() {
       Some(v) => v
       None => @camera_camera.RenderTarget::Screen

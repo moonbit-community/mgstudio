@@ -13,281 +13,385 @@
 // limitations under the License.
 
 ///|
-const PI : Float = 3.141592653589793F
+///
+/// Demonstrates contact shadows, also known as screen-space shadows.
 
 ///|
 const LIGHT_ROTATION_SPEED : Float = 0.002F
 
 ///|
-const POINT_LIGHT_INTENSITY : Float = 400_000.0F
+const VERY_LARGE_CINEMA_LIGHT : Float = 1_000_000.0F
 
 ///|
-const SPOT_LIGHT_INTENSITY : Float = 400_000.0F
-
-///|
-const DIRECTIONAL_ILLUMINANCE : Float = 10_000.0F
-
-///|
-const MODEL_DRAG_ROTATION_SPEED : Float = 0.01F
-
-///|
-pub(all) enum ContactShadowState {
+enum ContactShadowState {
   Enabled
   Disabled
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum ShadowMapsState {
+enum ShadowMaps {
   Enabled
   Disabled
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum LightRotationState {
-  Rotating
+enum LightRotation {
   Stationary
+  Rotating
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum LightType {
+enum LightType {
   Directional
   Point
   Spot
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum ReceiveShadowsState {
+enum ReceiveShadows {
   Enabled
   Disabled
 } derive(Eq, Debug)
 
 ///|
-priv struct ContactShadowsExampleState {
-  mut camera : @core.Entity?
-  mut directional_light : @core.Entity?
-  mut point_light : @core.Entity?
-  mut spot_light : @core.Entity?
-  mut model : @core.Entity?
-  mut ground : @core.Entity?
-  mut help_text : @text.TextHandle?
-  mut light_angle : Float
-  mut model_angle : Float
+enum ExampleSetting {
+  ContactShadows(ContactShadowState)
+  ShadowMaps(ShadowMaps)
+  LightRotation(LightRotation)
+  LightType(LightType)
+  ReceiveShadows(ReceiveShadows)
+} derive(Eq, Debug)
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_debug_name() {
+  "examples.3d.contact_shadows.ExampleSetting"
+}
+
+///|
+let example_setting_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[ExampleSetting],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.3d.contact_shadows.ExampleSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_click_event_key() {
+  example_setting_widget_click_event_key
+}
+
+///|
+let example_setting_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[ExampleSetting],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.3d.contact_shadows.ExampleSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for ExampleSetting with fn widget_click_sender_key() {
+  example_setting_widget_click_sender_key
+}
+
+///|
+struct AppStatus {
   mut contact_shadows : ContactShadowState
-  mut shadow_maps : ShadowMapsState
-  mut light_rotation : LightRotationState
+  mut shadow_maps : ShadowMaps
+  mut light_rotation : LightRotation
   mut light_type : LightType
-  mut receive_shadows : ReceiveShadowsState
+  mut receive_shadows : ReceiveShadows
 }
 
 ///|
-let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref({
-  camera: None,
-  directional_light: None,
-  point_light: None,
-  spot_light: None,
-  model: None,
-  ground: None,
-  help_text: None,
-  light_angle: 0.0F,
-  model_angle: PI,
-  contact_shadows: ContactShadowState::Enabled,
-  shadow_maps: ShadowMapsState::Enabled,
-  light_rotation: LightRotationState::Rotating,
-  light_type: LightType::Point,
-  receive_shadows: ReceiveShadowsState::Enabled,
-})
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.3d.contact_shadows.AppStatus",
+)
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @color.Color,
-  brightness : Float,
+impl @app.Resource for AppStatus with fn resource() {
+  app_status_resource_key
+}
+
+///|
+fn AppStatus::AppStatus() -> AppStatus {
+  AppStatus::{
+    contact_shadows: Enabled,
+    shadow_maps: Enabled,
+    light_rotation: Rotating,
+    light_type: Point,
+    receive_shadows: Enabled,
+  }
+}
+
+///|
+struct LightContainer {}
+
+///|
+let light_container_component_key : @ecs.ComponentKey[LightContainer] = @ecs.register_component(
+  debug_name="examples.3d.contact_shadows.LightContainer",
+)
+
+///|
+impl @ecs.Component for LightContainer with fn component() {
+  light_container_component_key
+}
+
+///|
+struct GroundPlane {}
+
+///|
+let ground_plane_component_key : @ecs.ComponentKey[GroundPlane] = @ecs.register_component(
+  debug_name="examples.3d.contact_shadows.GroundPlane",
+)
+
+///|
+impl @ecs.Component for GroundPlane with fn component() {
+  ground_plane_component_key
+}
+
+///|
+let contact_shadows_ui_interaction_set : @app.SystemSet = @app.system_set(
+  "examples.3d.contact_shadows.handle_ui_interactions",
+)
+
+///|
+let contact_shadows_setting_change_set : @app.SystemSet = @app.system_set(
+  "examples.3d.contact_shadows.handle_setting_change",
+)
+
+///|
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Contact Shadows Example"
+  window
+}
+
+///|
+fn selected(setting : ExampleSetting, app_status : AppStatus) -> Bool {
+  match setting {
+    ContactShadows(value) => value == app_status.contact_shadows
+    ShadowMaps(value) => value == app_status.shadow_maps
+    LightRotation(value) => value == app_status.light_rotation
+    LightType(value) => value == app_status.light_type
+    ReceiveShadows(value) => value == app_status.receive_shadows
+  }
+}
+
+///|
+fn set_primary_window_cursor(
+  commands : @app.Commands,
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
+  icon : @window.SystemCursorIcon,
 ) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
+  let primary_window : Ref[@core.Entity?] = Ref(None)
+  try! windows.view(fn(_query_entity, entity) {
+    if primary_window.val is None {
+      primary_window.val = Some(entity)
+    }
+  })
+  guard primary_window.val is Some(entity) else { return }
+  commands.entity(entity).insert_component(@window.CursorIcon::from(icon))
 }
 
 ///|
-fn on_off_text(enabled : Bool) -> String {
-  if enabled {
-    "On"
-  } else {
-    "Off"
-  }
+fn on_flight_helmet_pointer_over(
+  _pointer : @app.OnPointer[@app.PointerEnter],
+  commands : @app.Commands,
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
+) -> Unit {
+  set_primary_window_cursor(commands, windows, @window.SystemCursorIcon::Grab)
 }
 
 ///|
-fn light_type_text(light_type : LightType) -> String {
-  match light_type {
-    LightType::Directional => "Directional"
-    LightType::Point => "Point"
-    LightType::Spot => "Spot"
-  }
-}
-
-///|
-fn help_text_content() -> String {
-  let state = contact_shadows_state.val
-  "Contact Shadows (Bevy-aligned controls)\n1/2: Contact Shadows \{on_off_text(state.contact_shadows == ContactShadowState::Enabled)}\n3/4: Shadow Maps \{on_off_text(state.shadow_maps == ShadowMapsState::Enabled)}\n5/6: Light Rotation \{on_off_text(state.light_rotation == LightRotationState::Rotating)}\nQ/W/E: Light Type \{light_type_text(state.light_type)}\nA/S: Receive Shadows \{on_off_text(state.receive_shadows == ReceiveShadowsState::Enabled)}\nArrow Left/Right: Rotate model\nPrimary pointer drag: Rotate model\n"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if contact_shadows_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, help_text_content())
-  }
-}
-
-///|
-fn light_transform(angle : Float) -> @transform.Transform {
-  let base_x = -0.8F
-  let base_y = 1.5F
-  let base_z = 1.2F
-  let x = base_x * @math.cos(angle) - base_z * @math.sin(angle)
-  let z = base_x * @math.sin(angle) + base_z * @math.cos(angle)
-  @transform.Transform::from_xyz(x, base_y, z).looking_at(
-    @math.Vec3::zero(),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+fn on_flight_helmet_pointer_out(
+  _pointer : @app.OnPointer[@app.PointerLeave],
+  commands : @app.Commands,
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
+) -> Unit {
+  set_primary_window_cursor(
+    commands,
+    windows,
+    @window.SystemCursorIcon::Default,
   )
 }
 
 ///|
-fn apply_model_rotation(world : @ecs.World) -> Unit {
-  guard contact_shadows_state.val.model is Some(model_entity) else { return }
-  try! (world.replace(
-    model_entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_y(contact_shadows_state.val.model_angle),
+fn spawn_lights(commands : @app.Commands) -> Unit {
+  let directional_light = commands.spawn(
+    (
+      @pbr.DirectionalLight::DirectionalLight()
+      .with_shadow_maps_enabled(true)
+      .with_contact_shadows_enabled(true),
+      @visibility.Visibility::Hidden,
     ),
   )
-  |> ignore)
+
+  let point_light = commands.spawn(
+    (
+      @pbr.PointLight::PointLight()
+      .with_intensity(VERY_LARGE_CINEMA_LIGHT * 0.4F)
+      .with_shadow_maps_enabled(true)
+      .with_contact_shadows_enabled(true),
+      @visibility.Visibility::Visible,
+    ),
+  )
+
+  let spot_light = commands.spawn(
+    (
+      @pbr.SpotLight::SpotLight()
+      .with_intensity(VERY_LARGE_CINEMA_LIGHT * 0.4F)
+      .with_shadow_maps_enabled(true)
+      .with_contact_shadows_enabled(true),
+      @visibility.Visibility::Hidden,
+    ),
+  )
+
+  let light_container = commands.spawn(
+    (
+      @transform.Transform::from_xyz(-0.8F, 1.5F, 1.2F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+      @visibility.Visibility::Inherited,
+      LightContainer::{  },
+    ),
+  )
+  commands
+  .entity(directional_light)
+  .insert_component(@hierarchy.Parent::new(light_container))
+  commands
+  .entity(point_light)
+  .insert_component(@hierarchy.Parent::new(light_container))
+  commands
+  .entity(spot_light)
+  .insert_component(@hierarchy.Parent::new(light_container))
 }
 
 ///|
-fn apply_camera_components(world : @ecs.World) -> Unit {
-  guard contact_shadows_state.val.camera is Some(camera) else { return }
-  if contact_shadows_state.val.contact_shadows == ContactShadowState::Enabled {
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_contact_shadows,
-      @pbr.ContactShadows::ContactShadows(),
-    )
-  } else {
-    try! (world.take(camera, @pbr.ecs_key_contact_shadows) |> ignore)
-  }
+fn spawn_flight_helmet(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let model = commands.spawn(
+    (
+      @scene.SceneRoot::new(
+        @scene.scene_load_gltf_scene(
+          asset_server,
+          @gltf.GltfAssetLabel::Scene(0).from_asset(
+            "models/FlightHelmet/FlightHelmet.gltf",
+          ),
+        ),
+      ),
+      @transform.Transform::from_rotation(
+        @math.Quat::from_rotation_y(@math.pi()),
+      ),
+    ),
+  )
+  ignore(
+    commands
+    .entity(model)
+    .observe_pointer3(on_flight_helmet_pointer_over)
+    .observe_pointer3(on_flight_helmet_pointer_out),
+  )
 }
 
 ///|
-fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
-  guard contact_shadows_state.val.ground is Some(ground_entity) else { return }
-  let receiving = contact_shadows_state.val.receive_shadows ==
-    ReceiveShadowsState::Enabled
-  if receiving {
-    try! (world.take(ground_entity, @pbr.ecs_key_not_shadow_receiver) |> ignore)
-  } else {
-    try! world.set_by_key(
-      ground_entity,
-      @pbr.ecs_key_not_shadow_receiver,
-      @pbr.NotShadowReceiver::NotShadowReceiver(),
+fn spawn_ground_plane(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh = meshes.modify(fn(mesh_assets) {
+    mesh_assets
+    |> @pbr.add_mesh(
+      @mesh_primitives.CircleMeshBuilder::from_circle(@math.Circle::Circle()).build(),
     )
-  }
+  })
+  let material = materials.modify(fn(material_assets) {
+    material_assets.add(
+      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.06F, 0.06F, 0.06F)),
+    )
+  })
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::from_rotation(
+          @math.Quat::from_axis_angle(
+            @math.Vec3::new(1.0F, 0.0F, 0.0F),
+            -@math.pi_half(),
+          ),
+        ),
+        GroundPlane::{  },
+      ),
+    ),
+  )
 }
 
 ///|
-fn apply_light_state(world : @ecs.World) -> Unit {
-  let state = contact_shadows_state.val
-  let transform = light_transform(state.light_angle)
-  let shadow_maps_enabled = state.shadow_maps == ShadowMapsState::Enabled
-  let contact_shadows_enabled = state.contact_shadows ==
-    ContactShadowState::Enabled
-
-  if state.directional_light is Some(entity) {
-    try! (world.replace(entity, @transform.ecs_key_transform, transform)
-    |> ignore)
-    try! (world.replace(
-      entity,
-      @pbr.ecs_key_directional_light,
-      @pbr.DirectionalLight::new(
-        @color.Color::white(),
-        if state.light_type == LightType::Directional {
-          DIRECTIONAL_ILLUMINANCE
-        } else {
-          0.0F
-        },
-        shadow_maps_enabled,
-      ).with_contact_shadows_enabled(contact_shadows_enabled),
-    )
-    |> ignore)
-  }
-
-  if state.point_light is Some(entity) {
-    try! (world.replace(entity, @transform.ecs_key_transform, transform)
-    |> ignore)
-    try! (world.replace(
-      entity,
-      @pbr.ecs_key_point_light,
-      @pbr.PointLight::new(
-        @color.Color::white(),
-        if state.light_type == LightType::Point {
-          POINT_LIGHT_INTENSITY
-        } else {
-          0.0F
-        },
-        25.0F,
-        shadow_maps_enabled,
-      )
-      .with_radius(0.35F)
-      .with_contact_shadows_enabled(contact_shadows_enabled),
-    )
-    |> ignore)
-  }
-
-  if state.spot_light is Some(entity) {
-    try! (world.replace(entity, @transform.ecs_key_transform, transform)
-    |> ignore)
-    try! (world.replace(
-      entity,
-      @pbr.ecs_key_spot_light,
-      @pbr.SpotLight::new(
-        @color.Color::white(),
-        if state.light_type == LightType::Spot {
-          SPOT_LIGHT_INTENSITY
-        } else {
-          0.0F
-        },
-        25.0F,
-        0.6F,
-        0.8F,
-        shadow_maps_enabled,
-      )
-      .with_radius(0.35F)
-      .with_contact_shadows_enabled(contact_shadows_enabled),
-    )
-    |> ignore)
-  }
+fn spawn_buttons(commands : @app.Commands) -> Unit {
+  let panel = commands.spawn_component(@widgets_lib.main_ui_node())
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Contact Shadows", [
+      (ExampleSetting::ContactShadows(Enabled), "On"),
+      (ExampleSetting::ContactShadows(Disabled), "Off"),
+    ]),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Shadow Maps", [
+      (ExampleSetting::ShadowMaps(Enabled), "On"),
+      (ExampleSetting::ShadowMaps(Disabled), "Off"),
+    ]),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Light Rotation", [
+      (ExampleSetting::LightRotation(Rotating), "On"),
+      (ExampleSetting::LightRotation(Stationary), "Off"),
+    ]),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Light Type", [
+      (ExampleSetting::LightType(Directional), "Directional"),
+      (ExampleSetting::LightType(Point), "Point"),
+      (ExampleSetting::LightType(Spot), "Spot"),
+    ]),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Receive Shadows", [
+      (ExampleSetting::ReceiveShadows(Enabled), "On"),
+      (ExampleSetting::ReceiveShadows(Disabled), "Off"),
+    ]),
+  )
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  contact_shadows_state.val = {
-    camera: None,
-    directional_light: None,
-    point_light: None,
-    spot_light: None,
-    model: None,
-    ground: None,
-    help_text: None,
-    light_angle: 0.0F,
-    model_angle: PI,
-    contact_shadows: ContactShadowState::Enabled,
-    shadow_maps: ShadowMapsState::Enabled,
-    light_rotation: LightRotationState::Rotating,
-    light_type: LightType::Point,
-    receive_shadows: ReceiveShadowsState::Enabled,
-  }
+fn spawn_drag_help_text(commands : @app.Commands) -> Unit {
+  let root = commands.spawn_component(
+    @ui.Node::Node()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.px(12.0F))
+    .with_left(@ui.px(0.0F))
+    .with_right(@ui.px(0.0F))
+    .with_justify_content(@ui.JustifyContent::Center),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @text.Text::new("Drag model to spin"),
+        @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(18.0F)),
+      ),
+    ),
+  )
+}
 
-  let asset_server = @asset.AssetServer::new()
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let asset_server = asset_server.get()
   let pisa_diffuse = asset_server.load(
     "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2",
   )
@@ -295,266 +399,302 @@ fn setup(world : @ecs.World) -> Unit {
     "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
   )
 
-  let camera = @camera.Camera3dBundle::new(
+  let camera = commands.spawn(
+    @pbr.Camera3dBundle::new(
       @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-    )
-    .with_motion_blur(
+    ).with_motion_blur(
       Some(@post_process.MotionBlur::MotionBlur().with_shutter_angle(2.0F)),
-    )
-    .spawn(world)
-
-  contact_shadows_state.val.camera = Some(camera)
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_contact_shadows,
-    @pbr.ContactShadows::ContactShadows(),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::DepthPrepass(),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::Bloom(),
-  )
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::AcesFitted,
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(pisa_diffuse, 1000.0F),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::new(
-      Some(pisa_diffuse),
-      Some(pisa_specular),
-      1000.0F,
     ),
   )
-
-  let directional_light = world.spawn_empty()
-  let point_light = world.spawn_empty()
-  let spot_light = world.spawn_empty()
-  contact_shadows_state.val.directional_light = Some(directional_light)
-  contact_shadows_state.val.point_light = Some(point_light)
-  contact_shadows_state.val.spot_light = Some(spot_light)
-
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+  commands
+  .entity(camera)
+  .insert(
+    (
+      @pbr.ContactShadows::ContactShadows(),
+      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+      @post_process.Bloom::Bloom(),
+      @pbr.Hdr::Hdr(),
+      @pbr.Skybox::new(pisa_diffuse, 1000.0F),
+    ),
   )
-  try! world.set_by_key(
-    point_light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
-  try! world.set_by_key(
-    spot_light,
-    @pbr.ecs_key_spot_light,
-    @pbr.SpotLight::SpotLight(),
-  )
-
-  let model = world.spawn_empty()
-  contact_shadows_state.val.model = Some(model)
-  try! world.set_by_key(
-    model,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/FlightHelmet/FlightHelmet.gltf",
-        ),
+  commands
+  .entity(camera)
+  .insert(
+    (
+      @pbr.EnvironmentMapLight::new(
+        Some(pisa_diffuse),
+        Some(pisa_specular),
+        1000.0F,
       ),
-    ),
-  )
-  try! world.set_by_key(
-    model,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_y(PI),
+      @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+      @pbr.Msaa::Off,
+      @post_process.Tonemapping::AcesFitted,
     ),
   )
 
-  let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.06F, 0.06F, 0.06F, 1.0F),
-    )
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F),
-  )
-  let ground = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(4.0F, 4.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(ground_material),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  contact_shadows_state.val.ground = Some(ground)
-
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  contact_shadows_state.val.help_text = Some(help_text)
-
-  set_global_ambient_light(world, @color.Color::white(), 0.0F)
-  apply_camera_components(world)
-  apply_light_state(world)
-  apply_ground_receive_shadows(world)
-  apply_model_rotation(world)
-  update_help_text()
+  spawn_lights(commands)
+  spawn_flight_helmet(commands, asset_server)
+  spawn_ground_plane(commands, meshes, materials)
+  spawn_buttons(commands)
+  spawn_drag_help_text(commands)
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in contact_shadows example")
-  }
-}
-
-///|
-fn rotate_light(world : @ecs.World) -> Unit {
-  if contact_shadows_state.val.light_rotation != LightRotationState::Rotating {
+fn rotate_light(
+  lights : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[LightContainer],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if app_status.get().light_rotation != Rotating {
     return
   }
-  contact_shadows_state.val.light_angle = contact_shadows_state.val.light_angle +
-    LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
-  apply_light_state(world)
+  try! lights.view(fn(_entity, transform) {
+    transform.modify(fn(value) {
+      value.rotate_around(
+        @math.Vec3::zero(),
+        @math.Quat::from_rotation_y(LIGHT_ROTATION_SPEED),
+      )
+    })
+  })
 }
 
 ///|
-fn controls(world : @ecs.World) -> Unit {
-  let mut changed = false
+fn handle_ui_interactions(
+  interactions : @ecs.Query[
+    (
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+  widget_click_events : @ecs.MessageWriter[
+    @widgets_lib.WidgetClickEvent[ExampleSetting],
+  ],
+) -> Unit {
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
+}
 
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    contact_shadows_state.val.contact_shadows = ContactShadowState::Enabled
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    contact_shadows_state.val.contact_shadows = ContactShadowState::Disabled
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    contact_shadows_state.val.shadow_maps = ShadowMapsState::Enabled
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    contact_shadows_state.val.shadow_maps = ShadowMapsState::Disabled
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    contact_shadows_state.val.light_rotation = LightRotationState::Rotating
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    contact_shadows_state.val.light_rotation = LightRotationState::Stationary
-    changed = true
-  }
+///|
+fn update_radio_buttons(
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+      @ecs.Write[@ui.BackgroundColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[ExampleSetting]],
+      @ecs.Write[@text.TextColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButtonText],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
+    @widgets_lib.update_ui_radio_button(
+      background_color,
+      selected(sender.value().get(), status),
+    )
+  })
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
+    @widgets_lib.update_ui_radio_button_text(
+      text_color,
+      selected(sender.value().get(), status),
+    )
+  })
+}
 
-  if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    contact_shadows_state.val.light_type = LightType::Directional
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyW) {
-    contact_shadows_state.val.light_type = LightType::Point
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyE) {
-    contact_shadows_state.val.light_type = LightType::Spot
-    changed = true
-  }
+///|
+fn apply_directional_light_settings(
+  directional_lights : @ecs.Query[
+    (@ecs.Write[@pbr.DirectionalLight], @ecs.Write[@visibility.Visibility]),
+    @ecs.All,
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  try! directional_lights.view(fn(_entity, data) {
+    let (light, visibility) = data
+    light.set(
+      light
+      .value()
+      .with_contact_shadows_enabled(status.contact_shadows == Enabled)
+      .with_shadow_maps_enabled(status.shadow_maps == Enabled),
+    )
+    visibility.set(
+      if status.light_type == Directional {
+        @visibility.Visibility::Visible
+      } else {
+        @visibility.Visibility::Hidden
+      },
+    )
+  })
+}
 
-  if @input.key_just_pressed(@window.KeyCode::KeyA) {
-    contact_shadows_state.val.receive_shadows = ReceiveShadowsState::Enabled
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyS) {
-    contact_shadows_state.val.receive_shadows = ReceiveShadowsState::Disabled
-    changed = true
-  }
+///|
+fn apply_point_light_settings(
+  point_lights : @ecs.Query[
+    (@ecs.Write[@pbr.PointLight], @ecs.Write[@visibility.Visibility]),
+    @ecs.All,
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  try! point_lights.view(fn(_entity, data) {
+    let (light, visibility) = data
+    light.set(
+      light
+      .value()
+      .with_contact_shadows_enabled(status.contact_shadows == Enabled)
+      .with_shadow_maps_enabled(status.shadow_maps == Enabled),
+    )
+    visibility.set(
+      if status.light_type == Point {
+        @visibility.Visibility::Visible
+      } else {
+        @visibility.Visibility::Hidden
+      },
+    )
+  })
+}
 
-  let dt = world_time(world).delta_seconds()
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle +
-      dt
-    apply_model_rotation(world)
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle -
-      dt
-    apply_model_rotation(world)
-  }
-  if @input.primary_pointer_pressed() {
-    let pointer_delta = @input.primary_pointer_delta()
-    if pointer_delta.x != 0.0F {
-      contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle +
-        pointer_delta.x * MODEL_DRAG_ROTATION_SPEED
-      apply_model_rotation(world)
+///|
+fn apply_spot_light_settings(
+  spot_lights : @ecs.Query[
+    (@ecs.Write[@pbr.SpotLight], @ecs.Write[@visibility.Visibility]),
+    @ecs.All,
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  try! spot_lights.view(fn(_entity, data) {
+    let (light, visibility) = data
+    light.set(
+      light
+      .value()
+      .with_contact_shadows_enabled(status.contact_shadows == Enabled)
+      .with_shadow_maps_enabled(status.shadow_maps == Enabled),
+    )
+    visibility.set(
+      if status.light_type == Spot {
+        @visibility.Visibility::Visible
+      } else {
+        @visibility.Visibility::Hidden
+      },
+    )
+  })
+}
+
+///|
+fn update_receive_shadows(
+  commands : @app.Commands,
+  ground_planes : @ecs.Query[@core.Entity, @ecs.With[GroundPlane]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let receive_shadows = app_status.get().receive_shadows
+  try! ground_planes.view(fn(_query_entity, entity) {
+    match receive_shadows {
+      Enabled =>
+        commands
+        .entity(entity)
+        .remove_component(@pbr.ecs_key_not_shadow_receiver)
+      Disabled =>
+        commands
+        .entity(entity)
+        .insert_component(@pbr.NotShadowReceiver::NotShadowReceiver())
     }
-  }
+  })
+}
 
-  if changed {
-    apply_camera_components(world)
-    apply_light_state(world)
-    apply_ground_receive_shadows(world)
-    update_help_text()
-  }
+///|
+fn handle_setting_change(
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[ExampleSetting]],
+  app_status : @app.ResMut[AppStatus],
+) -> Unit {
+  app_status.modify(fn(status) {
+    for event in events.read() {
+      match event.get() {
+        ContactShadows(value) => status.contact_shadows = value
+        ShadowMaps(value) => status.shadow_maps = value
+        LightRotation(value) => status.light_rotation = value
+        LightType(value) => status.light_type = value
+        ReceiveShadows(value) => status.receive_shadows = value
+      }
+    }
+  })
 }
 
 ///|
 fn main {
+  let widget_click_message_key : @ecs.MessageKey[
+    @widgets_lib.WidgetClickEvent[ExampleSetting],
+  ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, controls)
-  .add_systems_world(@app.Update, rotate_light)
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
+  .init_resource(fn() { AppStatus::AppStatus() })
+  .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
+  .add_message(widget_click_message_key)
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param2(@app.Update, rotate_light)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_ui_interactions).in_set(
+      contact_shadows_ui_interaction_set,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_setting_change)
+    .after(contact_shadows_ui_interaction_set)
+    .in_set(contact_shadows_setting_change_set),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(update_radio_buttons).after(
+      contact_shadows_setting_change_set,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(apply_directional_light_settings).after(
+      contact_shadows_setting_change_set,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(apply_point_light_settings).after(
+      contact_shadows_setting_change_set,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(apply_spot_light_settings).after(
+      contact_shadows_setting_change_set,
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(update_receive_shadows).after(
+      contact_shadows_setting_change_set,
+    ),
+  )
   .run()
 }

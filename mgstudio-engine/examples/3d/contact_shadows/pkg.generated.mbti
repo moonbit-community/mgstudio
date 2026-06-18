@@ -10,31 +10,23 @@ import {
 // Errors
 
 // Types and methods
-pub(all) enum ContactShadowState {
-  Enabled
-  Disabled
-} derive(Eq, @debug.Debug)
+type AppStatus
 
-pub(all) enum LightRotationState {
-  Rotating
-  Stationary
-} derive(Eq, @debug.Debug)
+type ContactShadowState derive(Eq, @debug.Debug)
 
-pub(all) enum LightType {
-  Directional
-  Point
-  Spot
-} derive(Eq, @debug.Debug)
+type ExampleSetting derive(Eq, @debug.Debug)
 
-pub(all) enum ReceiveShadowsState {
-  Enabled
-  Disabled
-} derive(Eq, @debug.Debug)
+type GroundPlane
 
-pub(all) enum ShadowMapsState {
-  Enabled
-  Disabled
-} derive(Eq, @debug.Debug)
+type LightContainer
+
+type LightRotation derive(Eq, @debug.Debug)
+
+type LightType derive(Eq, @debug.Debug)
+
+type ReceiveShadows derive(Eq, @debug.Debug)
+
+type ShadowMaps derive(Eq, @debug.Debug)
 
 // Type aliases
 

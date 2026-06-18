@@ -229,15 +229,23 @@ test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog v
 }
 
 ///|
-test "pbr volumetric fog execute: prepares depth texture usage from extracted fog views" {
+test "pbr volumetric fog execute: prepares depth texture usage from sampled depth users" {
   let world = @ecs.World::new()
   let camera3d = Camera3d::Camera3d()
   assert_false(camera3d.depth_texture_usages().has_texture_binding())
   assert_false(render3d_world_has_volumetric_fog_views(world))
   assert_false(
-    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+    render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
+      false,
+    ).has_texture_binding(),
+  )
+  assert_true(
+    render3d_prepare_view_depth_texture_usage_for_sampled_depth(
+      camera3d,
+      render3d_world_has_volumetric_fog_views(world),
+      true,
     ).has_texture_binding(),
   )
 
@@ -250,9 +258,10 @@ test "pbr volumetric fog execute: prepares depth texture usage from extracted fo
   |> ignore)
   assert_false(render3d_world_has_volumetric_fog_views(world))
   assert_false(
-    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+    render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
+      false,
     ).has_texture_binding(),
   )
   let light_entity = world.spawn()
@@ -264,9 +273,10 @@ test "pbr volumetric fog execute: prepares depth texture usage from extracted fo
   |> ignore)
   assert_true(render3d_world_has_volumetric_fog_views(world))
   assert_true(
-    render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+    render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
+      false,
     ).has_texture_binding(),
   )
 }

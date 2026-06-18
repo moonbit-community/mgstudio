@@ -186,11 +186,12 @@ fn render3d_world_has_volumetric_fog_views(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn render3d_prepare_view_depth_texture_usage_for_volumetric_fog(
+fn render3d_prepare_view_depth_texture_usage_for_sampled_depth(
   camera3d : Camera3d,
   has_volumetric_fog_views : Bool,
+  has_screen_space_ambient_occlusion : Bool,
 ) -> Camera3dDepthTextureUsage {
-  if has_volumetric_fog_views {
+  if has_volumetric_fog_views || has_screen_space_ambient_occlusion {
     camera3d.depth_texture_usages().with_texture_binding()
   } else {
     camera3d.depth_texture_usages()
