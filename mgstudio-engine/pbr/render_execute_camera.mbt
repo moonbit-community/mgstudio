@@ -250,4 +250,20 @@ fn render3d_execute_camera(
     "execute_3d_camera_postprocess",
     trace_camera_postprocess_start_us,
   )
+  @ui_render.draw_extracted_ui_overlay_for_camera(
+    world,
+    camera_entity,
+    camera.layers,
+    camera.target_id,
+    view_width_logical,
+    view_height_logical,
+    clear_color,
+    viewport_x,
+    viewport_y,
+    viewport_width,
+    viewport_height,
+    viewport_depth_min,
+    viewport_depth_max,
+    camera.scale_factor,
+  )
 }

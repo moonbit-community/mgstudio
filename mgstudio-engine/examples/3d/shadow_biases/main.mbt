@@ -183,29 +183,9 @@ fn setup(
     ),
   )
 
-  let ui_camera = commands.spawn(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
-    ),
-  )
-  commands
-  .entity(ui_camera)
-  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-      @ui.UiTargetCamera::new(ui_camera),
-    ),
-  )
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let panel = commands.spawn(
     (
-      @hierarchy.Parent::new(root),
       @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_padding(@ui.UiRect::all(@ui.px(5.0F))),
