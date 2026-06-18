@@ -480,6 +480,38 @@ fn material_test_specialized_mesh_pipeline(
 }
 
 ///|
+fn material_test_specialized_mesh_instancing_pipeline(
+  key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  let mesh_descriptor = material_test_specialized_mesh_pipeline(key, layout) catch {
+    error => raise error
+  }
+  let mesh_vertex_layout = mesh_descriptor.vertex.buffers[0]
+  let instance_vertex_layout = @mesh.VertexBufferLayout::new(
+    array_stride=32,
+    step_mode=@mesh.MeshVertexStepMode::Instance,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x4,
+        shader_location=3,
+      ),
+      @mesh.VertexAttribute::new(
+        offset=16,
+        format=@mesh.MeshVertexFormat::Float32x4,
+        shader_location=4,
+      ),
+    ],
+  )
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_vertex(
+    @material.VertexState::new(None, [], None, [
+      mesh_vertex_layout, instance_vertex_layout,
+    ]),
+  )
+}
+
+///|
 test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(13UL, "MeshKey")
   let material_key = @material.ErasedMaterialKey::new(5UL, "MaterialKey")
@@ -509,6 +541,41 @@ test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
   pipeline_cache.process_queue()
   let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   inspect(descriptor.vertex.buffers.length(), content="1")
+}
+
+///|
+test "specialized mesh pipelines allow instance vertex buffer layouts" {
+  let mesh_key = @material.ErasedMeshPipelineKey::new(13UL, "MeshKey")
+  let material_key = @material.ErasedMaterialKey::new(5UL, "MaterialKey")
+  let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+    mesh_key, material_key, "PipelineKey",
+  )
+  let pipelines = @material.SpecializedMeshPipelines::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
+  let first_layout = material_test_mesh_vertex_layout()
+  let second_layout = material_test_mesh_vertex_layout(
+    include_unused_attribute=true,
+  )
+  let first_id = try! pipelines.specialize(
+    pipeline_cache, material_test_specialized_mesh_instancing_pipeline, pipeline_key,
+    first_layout,
+  )
+  let compatible_vertex_layout_id = try! pipelines.specialize(
+    pipeline_cache, material_test_specialized_mesh_instancing_pipeline, pipeline_key,
+    second_layout,
+  )
+  inspect(first_id.id(), content="0")
+  inspect(compatible_vertex_layout_id.id(), content="0")
+  inspect(pipelines.mesh_layout_cache_len(), content="2")
+  inspect(pipelines.vertex_layout_cache_len(), content="1")
+  pipeline_cache.process_queue()
+  let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
+  inspect(descriptor.vertex.buffers.length(), content="2")
+  debug_inspect(
+    descriptor.vertex.buffers[1].step_mode()
+    is @mesh.MeshVertexStepMode::Instance,
+    content="true",
+  )
 }
 
 ///|

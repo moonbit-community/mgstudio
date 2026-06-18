@@ -114,7 +114,7 @@ struct SpecializedMeshPipelineMeshLayoutCacheEntry {
 
 ///|
 struct SpecializedMeshPipelineVertexLayoutCacheEntry {
-  vertex_layout : VertexBufferLayout
+  vertex_layouts : Array[VertexBufferLayout]
   key : ErasedMaterialPipelineKey
   pipeline_id : CachedRenderPipelineId
 }
@@ -171,15 +171,32 @@ fn specialized_mesh_pipeline_find_mesh_layout_cache(
 ///|
 fn specialized_mesh_pipeline_find_vertex_layout_cache(
   cache : Array[SpecializedMeshPipelineVertexLayoutCacheEntry],
-  vertex_layout : VertexBufferLayout,
+  vertex_layouts : Array[VertexBufferLayout],
   key : ErasedMaterialPipelineKey,
 ) -> CachedRenderPipelineId? {
   for entry in cache {
-    if entry.vertex_layout.equal(vertex_layout) && entry.key == key {
+    if vertex_buffer_layouts_equal(entry.vertex_layouts, vertex_layouts) &&
+      entry.key == key {
       return Some(entry.pipeline_id)
     }
   }
   None
+}
+
+///|
+fn vertex_buffer_layouts_equal(
+  left : Array[VertexBufferLayout],
+  right : Array[VertexBufferLayout],
+) -> Bool {
+  if left.length() != right.length() {
+    return false
+  }
+  for index in 0..<left.length() {
+    if !left[index].equal(right[index]) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -200,23 +217,17 @@ pub fn SpecializedMeshPipelines::specialize(
     None => ()
   }
   let descriptor = specialize_pipeline(key, layout)
-  if descriptor.vertex.buffers.length() != 1 {
-    abort(
-      "SpecializedMeshPipeline::specialize must return exactly one vertex buffer layout",
-    )
-  }
-  let vertex_layout = descriptor.vertex.buffers[0]
   let pipeline_id = match
     specialized_mesh_pipeline_find_vertex_layout_cache(
       self.vertex_layout_cache,
-      vertex_layout,
+      descriptor.vertex.buffers,
       key,
     ) {
     Some(pipeline_id) => pipeline_id
     None => {
       let id = pipeline_cache.queue_render_pipeline(descriptor)
       self.vertex_layout_cache.push(SpecializedMeshPipelineVertexLayoutCacheEntry::{
-        vertex_layout,
+        vertex_layouts: descriptor.vertex.buffers,
         key,
         pipeline_id: id,
       })
