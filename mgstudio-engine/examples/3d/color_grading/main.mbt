@@ -73,9 +73,6 @@ struct ColorGradingOptionWidget {
 struct HelpText {}
 
 ///|
-struct ColorGradingCamera {}
-
-///|
 let selected_color_grading_option_resource_key : @ecs.ResourceKey[
   SelectedColorGradingOption,
 ] = @ecs.register_resource(
@@ -92,11 +89,6 @@ let color_grading_option_widget_component_key : @ecs.ComponentKey[
 ///|
 let help_text_component_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
   debug_name="examples.3d.color_grading.HelpText",
-)
-
-///|
-let color_grading_camera_component_key : @ecs.ComponentKey[ColorGradingCamera] = @ecs.register_component(
-  debug_name="examples.3d.color_grading.ColorGradingCamera",
 )
 
 ///|
@@ -122,11 +114,6 @@ impl @ecs.Component for ColorGradingOptionWidget with fn component() {
 ///|
 impl @ecs.Component for HelpText with fn component() {
   help_text_component_key
-}
-
-///|
-impl @ecs.Component for ColorGradingCamera with fn component() {
-  color_grading_camera_component_key
 }
 
 ///|
@@ -308,416 +295,165 @@ fn create_help_text(option : SelectedColorGradingOption) -> String {
 }
 
 ///|
-fn[T] first_marked_entity(
-  world : @ecs.World,
-  component_key : @ecs.ComponentKey[T],
-) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref(None)
-  try! world
-  .query_entities_filtered(@ecs.With::new(component_key))
-  .view(fn(_query_entity, entity) {
-    if result.val is None {
-      result.val = Some(entity)
-    }
-  })
-  result.val
+fn text(
+  label : String,
+  font : @asset.Handle[@asset.Font],
+  color : @color.Color,
+) -> (@text.Text, @text.TextFont, @text.TextColor) {
+  (
+    @text.Text::new(label),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
+    @text.TextColor::new(color),
+  )
 }
 
 ///|
-fn color_grading_camera_entity(world : @ecs.World) -> @core.Entity? {
-  first_marked_entity(world, ColorGradingCamera::component())
+fn attach_to_parent(
+  commands : @app.Commands,
+  entity : @core.Entity,
+  parent : @core.Entity,
+) -> Unit {
+  commands.entity(entity).insert_component(@hierarchy.Parent::new(parent))
 }
 
 ///|
-fn color_grading_camera_value(
-  world : @ecs.World,
-) -> (@core.Entity, @post_process.ColorGrading)? {
-  guard color_grading_camera_entity(world) is Some(entity) else { return None }
-  guard (try! world.get_by_key(entity, @post_process.ecs_key_color_grading))
-    is Some(color_grading) else {
-    return None
-  }
-  Some((entity, color_grading))
+fn button_node() -> @ui.Node {
+  @ui.Node::Node()
+  .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
+  .with_width(@ui.Val::Px(BUTTON_WIDTH))
+  .with_justify_content(@ui.JustifyContent::Center)
+  .with_align_items(@ui.AlignItems::Center)
+  .with_padding(
+    @ui.UiRect::new(
+      @ui.Val::Px(12.0F),
+      @ui.Val::Px(6.0F),
+      @ui.Val::Px(12.0F),
+      @ui.Val::Px(6.0F),
+    ),
+  )
+  .with_margin(
+    @ui.UiRect::new(
+      @ui.Val::Px(0.0F),
+      @ui.Val::Px(0.0F),
+      @ui.Val::Px(12.0F),
+      @ui.Val::Px(0.0F),
+    ),
+  )
+  .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
 }
 
 ///|
 fn spawn_row(
-  world : @ecs.World,
+  commands : @app.Commands,
   parent : @core.Entity,
   node : @ui.Node,
 ) -> @core.Entity {
-  let row = world.spawn_empty()
-  try! world.set_by_key(
-    row,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(parent),
-  )
-  try! world.set_by_key(row, @ui.ecs_key_node, node)
+  let row = commands.spawn_component(node)
+  attach_to_parent(commands, row, parent)
   row
 }
 
 ///|
 fn spawn_row_label(
-  world : @ecs.World,
+  commands : @app.Commands,
   row : @core.Entity,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> Unit {
-  let label_entity = world.spawn_empty()
-  try! world.set_by_key(
-    label_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(row),
+  let (text_value, text_font, text_color) = text(
+    label,
+    font,
+    @color.Color::white(),
   )
-  try! world.set_by_key(
-    label_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(row),
+  let label_entity = commands.spawn(
+    (
+      text_value,
+      text_font,
+      text_color,
+      @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
+    ),
   )
-  try! world.set_by_key(
-    label_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(row),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text,
-    @text.Text::new(label),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(row),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text,
-    @text.Text::new(label),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
+  attach_to_parent(commands, label_entity, row)
 }
 
 ///|
-fn spawn_option_button(
-  world : @ecs.World,
-  row : @core.Entity,
-  font : @asset.Handle[@asset.Font],
+fn button_for_value(
+  commands : @app.Commands,
+  parent : @core.Entity,
   option : SelectedColorGradingOption,
   color_grading : @post_process.ColorGrading,
+  font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let button = world.spawn_empty()
-  try! world.set_by_key(
-    button,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(row),
+  let button = commands.spawn(
+    (
+      @ui.Button::Button(),
+      button_node(),
+      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@color.Color::black()),
+      ColorGradingOptionWidget::{
+        widget_type: ColorGradingOptionWidgetType::Button,
+        option,
+      },
+    ),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_width(@ui.Val::Px(BUTTON_WIDTH))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-      ),
-    )
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    )
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_width(@ui.Val::Px(BUTTON_WIDTH))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-      ),
-    )
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    )
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_width(@ui.Val::Px(BUTTON_WIDTH))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-      ),
-    )
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    )
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(normal_button_color()),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_width(@ui.Val::Px(BUTTON_WIDTH))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(6.0F),
-      ),
-    )
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(12.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    )
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_background_color,
-    @ui.BackgroundColor::new(normal_button_color()),
-  )
-  try! world.set_by_key(button, ColorGradingOptionWidget::component(), {
-    widget_type: ColorGradingOptionWidgetType::Button,
-    option,
-  })
+  attach_to_parent(commands, button, parent)
 
-  let label_entity = world.spawn_empty()
-  try! world.set_by_key(
-    label_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
+  let (label_text, label_font, label_color) = text(
+    selected_option_button_label(option),
+    font,
+    @color.Color::white(),
   )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text,
-    @text.Text::new(selected_option_button_label(option)),
+  let label_entity = commands.spawn(
+    (
+      label_text,
+      label_font,
+      label_color,
+      ColorGradingOptionWidget::{
+        widget_type: ColorGradingOptionWidgetType::Label,
+        option,
+      },
+    ),
   )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text,
-    @text.Text::new(selected_option_button_label(option)),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text,
-    @text.Text::new(selected_option_button_label(option)),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-  )
-  try! world.set_by_key(
-    label_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(label_entity, ColorGradingOptionWidget::component(), {
-    widget_type: ColorGradingOptionWidgetType::Label,
-    option,
-  })
+  attach_to_parent(commands, label_entity, button)
 
-  let spacer = world.spawn_empty()
-  try! world.set_by_key(
-    spacer,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
-  )
-  try! world.set_by_key(
-    spacer,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
-  )
-  try! world.set_by_key(
-    spacer,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_flex_grow(1.0F),
-  )
+  let spacer = commands.spawn_component(@ui.Node::Node().with_flex_grow(1.0F))
+  attach_to_parent(commands, spacer, button)
 
-  let value_entity = world.spawn_empty()
-  try! world.set_by_key(
-    value_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
+  let (value_text, value_font, value_color) = text(
+    option_value_text(option, color_grading),
+    font,
+    @color.Color::white(),
   )
-  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text,
-    @text.Text::new(option_value_text(option, color_grading)),
+  let value_entity = commands.spawn(
+    (
+      value_text,
+      value_font,
+      value_color,
+      ColorGradingOptionWidget::{
+        widget_type: ColorGradingOptionWidgetType::Value,
+        option,
+      },
+    ),
   )
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-  )
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text,
-    @text.Text::new(option_value_text(option, color_grading)),
-  )
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-  )
-  try! world.set_by_key(
-    value_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(value_entity, ColorGradingOptionWidget::component(), {
-    widget_type: ColorGradingOptionWidgetType::Value,
-    option,
-  })
+  attach_to_parent(commands, value_entity, button)
 }
 
 ///|
-fn add_buttons(
-  world : @ecs.World,
-  font : @asset.Handle[@asset.Font],
+fn buttons_for_global_controls(
+  commands : @app.Commands,
+  parent : @core.Entity,
   color_grading : @post_process.ColorGrading,
-) -> Unit {
-  let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
-  try! world.set_by_key(
-    root,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+  font : @asset.Handle[@asset.Font],
+) -> @core.Entity {
+  let row = spawn_row(commands, parent, @ui.Node::Node())
+  ignore(
+    commands.spawn(
+      (
+        @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
+        @hierarchy.Parent::new(row),
+      ),
+    ),
   )
-
-  let panel = world.spawn_empty()
-  try! world.set_by_key(
-    panel,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    panel,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_row_gap(@ui.Val::Px(6.0F)),
-  )
-
-  let global_row = spawn_row(world, panel, @ui.Node::Node())
-  spawn_row_label(world, global_row, font, "")
   for
     option in [
       SelectedGlobalColorGradingOption::Exposure,
@@ -725,372 +461,325 @@ fn add_buttons(
       SelectedGlobalColorGradingOption::Tint,
       SelectedGlobalColorGradingOption::Hue,
     ] {
-    spawn_option_button(
-      world,
-      global_row,
-      font,
+    button_for_value(
+      commands,
+      row,
       SelectedColorGradingOption::Global(option),
       color_grading,
+      font,
     )
   }
-
-  for
-    section in [
-      SelectedColorGradingSection::Highlights,
-      SelectedColorGradingSection::Midtones,
-      SelectedColorGradingSection::Shadows,
-    ] {
-    let row = spawn_row(
-      world,
-      panel,
-      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
-    )
-    spawn_row_label(world, row, font, section_name(section))
-    for
-      option in [
-        SelectedSectionColorGradingOption::Saturation,
-        SelectedSectionColorGradingOption::Contrast,
-        SelectedSectionColorGradingOption::Gamma,
-        SelectedSectionColorGradingOption::Gain,
-        SelectedSectionColorGradingOption::Lift,
-      ] {
-      spawn_option_button(
-        world,
-        row,
-        font,
-        SelectedColorGradingOption::Section(section, option),
-        color_grading,
-      )
-    }
-  }
-
-  let help_entity = world.spawn_empty()
-  try! world.set_by_key(
-    help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text,
-    @text.Text::new(create_help_text(SelectedColorGradingOption::default())),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text,
-    @text.Text::new(create_help_text(SelectedColorGradingOption::default())),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-  )
-  try! world.set_by_key(help_entity, HelpText::component(), HelpText::{  })
+  row
 }
 
 ///|
-fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
-        @math.Vec3::new(0.0F, 0.3F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
+fn buttons_for_section(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  section : SelectedColorGradingSection,
+  color_grading : @post_process.ColorGrading,
+  font : @asset.Handle[@asset.Font],
+) -> @core.Entity {
+  let row = spawn_row(
+    commands,
+    parent,
+    @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
+  )
+  spawn_row_label(commands, row, font, section_name(section))
+  for
+    option in [
+      SelectedSectionColorGradingOption::Saturation,
+      SelectedSectionColorGradingOption::Contrast,
+      SelectedSectionColorGradingOption::Gamma,
+      SelectedSectionColorGradingOption::Gain,
+      SelectedSectionColorGradingOption::Lift,
+    ] {
+    button_for_value(
+      commands,
+      row,
+      SelectedColorGradingOption::Section(section, option),
+      color_grading,
+      font,
     )
-    .with_color_grading(Some(@post_process.ColorGrading::ColorGrading()))
-    .with_distance_fog(
-      Some(
+  }
+  row
+}
+
+///|
+fn add_buttons(
+  commands : @app.Commands,
+  font : @asset.Handle[@asset.Font],
+  color_grading : @post_process.ColorGrading,
+) -> Unit {
+  let root = commands.spawn_component(
+    @ui.Node::Node()
+    .with_flex_direction(@ui.FlexDirection::Column)
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_row_gap(@ui.Val::Px(6.0F))
+    .with_left(@ui.Val::Px(12.0F))
+    .with_bottom(@ui.Val::Px(12.0F)),
+  )
+  ignore(buttons_for_global_controls(commands, root, color_grading, font))
+  ignore(
+    buttons_for_section(
+      commands,
+      root,
+      SelectedColorGradingSection::Highlights,
+      color_grading,
+      font,
+    ),
+  )
+  ignore(
+    buttons_for_section(
+      commands,
+      root,
+      SelectedColorGradingSection::Midtones,
+      color_grading,
+      font,
+    ),
+  )
+  ignore(
+    buttons_for_section(
+      commands,
+      root,
+      SelectedColorGradingSection::Shadows,
+      color_grading,
+      font,
+    ),
+  )
+}
+
+///|
+fn add_help_text(
+  commands : @app.Commands,
+  font : @asset.Handle[@asset.Font],
+  currently_selected_option : SelectedColorGradingOption,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(create_help_text(currently_selected_option)),
+        @text.TextFont::TextFont().with_font(font),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_left(@ui.Val::Px(12.0F))
+        .with_top(@ui.Val::Px(12.0F)),
+        HelpText::{  },
+      ),
+    ),
+  )
+}
+
+///|
+fn add_camera(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+  color_grading : @post_process.ColorGrading,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @pbr.Hdr::Hdr(),
+        @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.3F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        color_grading,
         @pbr.DistanceFog::new(
           @color.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
           @pbr.FogFalloff3d::linear(1.0F, 8.0F),
         ),
+        @pbr.EnvironmentMapLight::new(
+          Some(
+            asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+          ),
+          Some(
+            asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+          ),
+          2000.0F,
+        ),
       ),
-    )
-    .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
-      2000.0F,
     ),
   )
-  try! world.set_by_key(camera, ColorGradingCamera::component(), ColorGradingCamera::{
-
-  })
 }
 
 ///|
 fn add_basic_scene(
-  world : @ecs.World,
+  commands : @app.Commands,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let main_scene = world.spawn_empty()
-  try! world.set_by_key(
-    main_scene,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/TonemappingTest/TonemappingTest.gltf",
+  ignore(
+    commands.spawn_component(
+      @scene.SceneRoot::new(
+        @scene.scene_load_gltf_scene(
+          asset_server,
+          @gltf.GltfAssetLabel::Scene(0).from_asset(
+            "models/TonemappingTest/TonemappingTest.gltf",
+          ),
         ),
       ),
     ),
   )
-
-  let helmet_scene = world.spawn_empty()
-  try! world.set_by_key(
-    helmet_scene,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/FlightHelmet/FlightHelmet.gltf",
+  ignore(
+    commands.spawn(
+      (
+        @scene.SceneRoot::new(
+          @scene.scene_load_gltf_scene(
+            asset_server,
+            @gltf.GltfAssetLabel::Scene(0).from_asset(
+              "models/FlightHelmet/FlightHelmet.gltf",
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
+          @math.Quat::from_rotation_y(-0.15F * PI),
         ),
       ),
     ),
   )
-  try! world.set_by_key(
-    helmet_scene,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
-      @math.Quat::from_rotation_y(-0.15F * PI),
-    ),
-  )
-
-  let directional_light = world.spawn_empty()
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-      .with_maximum_distance(3.0F)
-      .with_first_cascade_far_bound(0.9F),
-    ),
-  )
-  try! world.set_by_key(
-    directional_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_rotation(
-      @math.Quat::from_euler(
-        @math.EulerRot::ZYX,
-        0.0F,
-        PI * -0.15F,
-        PI * -0.15F,
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+          .with_maximum_distance(3.0F)
+          .with_first_cascade_far_bound(0.9F),
+        ),
+        @transform.Transform::from_rotation(
+          @math.Quat::from_euler(
+            @math.EulerRot::ZYX,
+            0.0F,
+            PI * -0.15F,
+            PI * -0.15F,
+          ),
+        ),
       ),
     ),
   )
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
+fn setup(
+  commands : @app.Commands,
+  currently_selected_option : @app.Res[SelectedColorGradingOption],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let server = asset_server.get()
+  let font = server.load_font("fonts/FiraMono-Medium.ttf")
+  let color_grading = @post_process.ColorGrading::ColorGrading()
 
-  add_basic_scene(world, asset_server)
-  add_buttons(world, font, @post_process.ColorGrading::ColorGrading())
-  add_camera(world, asset_server)
-
-  let overlay_camera = try! world.spawn_bundle(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
-    ),
-  )
-  try! world.set_by_key(
-    overlay_camera,
-    @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
-  )
+  add_basic_scene(commands, server)
+  add_buttons(commands, font, color_grading)
+  add_help_text(commands, font, currently_selected_option.get())
+  add_camera(commands, server, color_grading)
 }
 
 ///|
-fn handle_button_presses(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
-  ignore(tick)
-  guard world.get_resource_mut(SelectedColorGradingOption::resource())
-    is Some(selected_option) else {
-    return
-  }
-  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
-    if interaction != @ui.Interaction::Pressed {
-      return
-    }
-    guard (try! world.get_by_key(entity, ColorGradingOptionWidget::component()))
-      is Some(widget) else {
-      return
-    }
-    if widget.widget_type != ColorGradingOptionWidgetType::Button {
-      return
-    }
-    if selected_option.peek() != widget.option {
-      selected_option.set(widget.option)
+fn handle_button_presses(
+  interactions : @ecs.Query[
+    (@ecs.Read[@ui.Interaction], @ecs.Read[ColorGradingOptionWidget]),
+    @ecs.Changed[@ui.Interaction],
+  ],
+  currently_selected_option : @app.ResMut[SelectedColorGradingOption],
+) -> Unit {
+  try! interactions.view(fn(_entity, data) {
+    let (interaction, widget) = data
+    let widget_value = widget.value()
+    if widget_value.widget_type == ColorGradingOptionWidgetType::Button &&
+      interaction.value() == @ui.Interaction::Pressed {
+      currently_selected_option.set(widget_value.option)
     }
   })
 }
 
 ///|
-fn adjust_color_grading_option(world : @ecs.World) -> Unit {
+fn adjust_color_grading_option(
+  color_grading : @app.Single[@ecs.Write[@post_process.ColorGrading], @ecs.All],
+  input : @input.ButtonInput[@window.KeyCode],
+  currently_selected_option : @app.Res[SelectedColorGradingOption],
+) -> Unit {
   let mut delta = 0.0F
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if input.pressed(ArrowLeft) {
     delta = delta - OPTION_ADJUSTMENT_SPEED
   }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  if input.pressed(ArrowRight) {
     delta = delta + OPTION_ADJUSTMENT_SPEED
   }
   if delta == 0.0F {
     return
   }
 
-  guard world.get_resource(SelectedColorGradingOption::resource())
-    is Some(selected_option) else {
-    return
-  }
-  guard color_grading_camera_value(world)
-    is Some((camera_entity, color_grading)) else {
-    return
-  }
-
-  let next_color_grading = selected_option.set(
-    color_grading,
-    selected_option.get(color_grading) + delta,
-  )
-  let tick = world.increment_change_tick()
-  ignore(tick)
-  try! (world.replace(
-    camera_entity, @post_process.ecs_key_color_grading, next_color_grading,
-  )
-  |> ignore)
+  let selected = currently_selected_option.get()
+  let color_grading = color_grading.get()
+  let next_value = selected.get(color_grading.value()) + delta
+  color_grading.modify(fn(value) { ignore(selected.set(value, next_value)) })
 }
 
 ///|
-fn update_ui_state(world : @ecs.World) -> Unit {
-  guard world.get_resource(SelectedColorGradingOption::resource())
-    is Some(selected_option) else {
-    return
-  }
-  guard color_grading_camera_value(world)
-    is Some((_camera_entity, color_grading)) else {
+fn update_ui_state(
+  buttons : @ecs.Query[
+    (
+      @ecs.Write[@ui.BackgroundColor],
+      @ecs.Write[@ui.BorderColor],
+      @ecs.Read[ColorGradingOptionWidget],
+    ),
+    @ecs.All,
+  ],
+  button_text : @ecs.Query[
+    (@core.Entity, @ecs.Read[ColorGradingOptionWidget]),
+    (@ecs.With[@text.Text], @ecs.Without[HelpText]),
+  ],
+  help_text : @app.Single[@core.Entity, @ecs.With[HelpText]],
+  writer : @ui.TextUiWriter,
+  cameras : @app.Single[@ecs.Read[@post_process.ColorGrading], @ecs.All],
+  currently_selected_option : @app.Res[SelectedColorGradingOption],
+) -> Unit {
+  let color_grading = cameras.get()
+  if !currently_selected_option.is_changed() && !color_grading.is_changed() {
     return
   }
 
-  let tick = world.increment_change_tick()
-  ignore(tick)
-  world.for_each_component(ColorGradingOptionWidget::component(), fn(
-    entity,
-    widget,
-  ) {
-    match widget.widget_type {
-      Button => {
-        let is_selected = widget.option == selected_option
-        let background = @ui.BackgroundColor::new(
-          if is_selected {
-            selected_button_color()
-          } else {
-            normal_button_color()
-          },
-        )
-        let border = @ui.BorderColor::new(
-          if is_selected {
-            @color.Color::black()
-          } else {
-            @color.Color::white()
-          },
-        )
-        if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
-          try! (world.replace(entity, @ui.ecs_key_background_color, background)
-          |> ignore)
+  let selected = currently_selected_option.get()
+  try! buttons.view(fn(_entity, data) {
+    let (background, border_color, widget) = data
+    let is_selected = selected == widget.value().option
+    background.set(
+      @ui.BackgroundColor::new(
+        if is_selected {
+          selected_button_color()
         } else {
-          try! world.set_by_key(
-            entity, @ui.ecs_key_background_color, background,
-          )
-        }
-        if (try! world.contains_by_key(entity, @ui.ecs_key_border_color)) {
-          try! (world.replace(entity, @ui.ecs_key_border_color, border)
-          |> ignore)
+          normal_button_color()
+        },
+      ),
+    )
+    border_color.set(
+      @ui.BorderColor::new(
+        if is_selected {
+          @color.Color::black()
         } else {
-          try! world.set_by_key(entity, @ui.ecs_key_border_color, border)
-        }
-      }
-      Label => {
-        guard (try! world.get_by_key(entity, @text.ecs_key_text))
-          is Some(text_value) else {
-          return
-        }
-        text_value.content = selected_option_button_label(widget.option)
-        ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
-      }
-      Value => {
-        guard (try! world.get_by_key(entity, @text.ecs_key_text))
-          is Some(text_value) else {
-          return
-        }
-        text_value.content = option_value_text(widget.option, color_grading)
-        ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
-      }
-    }
+          @color.Color::white()
+        },
+      ),
+    )
   })
 
-  guard first_marked_entity(world, HelpText::component()) is Some(help_entity) else {
-    return
-  }
-  guard (try! world.get_by_key(help_entity, @text.ecs_key_text))
-    is Some(help_text) else {
-    return
-  }
-  help_text.content = create_help_text(selected_option)
-  ignore(try! world.replace(help_entity, @text.ecs_key_text, help_text))
+  let value_label = option_value_text(selected, color_grading.value())
+  try! button_text.view(fn(_entity, data) {
+    let (entity, widget) = data
+    let widget_value = widget.value()
+    let color = if selected == widget_value.option {
+      @color.Color::black()
+    } else {
+      @color.Color::white()
+    }
+    ignore(writer.set_color(entity, 0, @text.TextColor::new(color)))
+    if widget_value.widget_type == ColorGradingOptionWidgetType::Value &&
+      selected == widget_value.option {
+      ignore(writer.set_text(entity, 0, value_label))
+    }
+  })
+  ignore(writer.set_text(help_text.get(), 0, create_help_text(selected)))
 }
 
 ///|
@@ -1098,22 +787,22 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(SelectedColorGradingOption::default())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_param3(@app.Startup, setup)
   .add_systems(
     @app.Update,
-    @app.system_config_world(handle_button_presses)
+    @app.system_config_param2(handle_button_presses)
     .after(@ui.ui_set_focus)
     .in_set(color_grading_button_press_set),
   )
   .add_systems(
     @app.Update,
-    @app.system_config_world(adjust_color_grading_option)
+    @app.system_config_param3(adjust_color_grading_option)
     .in_set(color_grading_adjust_set)
     .after(color_grading_button_press_set),
   )
   .add_systems(
     @app.Update,
-    @app.system_config_world(update_ui_state).after(color_grading_adjust_set),
+    @app.system_config_param6(update_ui_state).after(color_grading_adjust_set),
   )
   .run()
 }
