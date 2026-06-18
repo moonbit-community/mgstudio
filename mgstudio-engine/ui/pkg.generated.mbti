@@ -718,6 +718,7 @@ pub fn TextUiReader::get_text(Self, @core.Entity, Int) -> String?
 pub fn TextUiReader::line_height(Self, @core.Entity, Int) -> @text.LineHeight
 pub fn TextUiReader::new(@ecs.World) -> Self
 pub fn TextUiReader::text(Self, @core.Entity, Int) -> String
+pub impl @app.SystemParam for TextUiReader
 
 pub struct TextUiWriter {
   inner : @text.TextWriter
@@ -727,6 +728,7 @@ pub fn TextUiWriter::set_color(Self, @core.Entity, Int, @text.TextColor) -> Bool
 pub fn TextUiWriter::set_font(Self, @core.Entity, Int, @text.TextFont) -> Bool
 pub fn TextUiWriter::set_line_height(Self, @core.Entity, Int, @text.LineHeight) -> Bool
 pub fn TextUiWriter::set_text(Self, @core.Entity, Int, String) -> Bool
+pub impl @app.SystemParam for TextUiWriter
 
 pub struct TextureSlicer {
   border : BorderRect

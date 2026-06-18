@@ -13,64 +13,52 @@
 // limitations under the License.
 
 ///|
-///
-/// Parity note: controls and component wiring follow Bevy. Visual output still
-/// depends on current backend shadow quality.
+const SPAWN_PLANE_DEPTH : Float = 300.0F
 
 ///|
-const SHADOW_BIASES_POINT_INTENSITY : Float = 1_000_000.0F
+const SPAWN_HEIGHT : Float = 2.0F
 
 ///|
-const SHADOW_BIASES_POINT_RANGE : Float = 300.0F
+const SPHERE_RADIUS : Float = 0.25F
 
 ///|
-const SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE : Float = 10_000.0F
+const POINT_LIGHT_INTENSITY : Float = 1_000_000.0F
 
 ///|
-const SHADOW_BIASES_POINT_DEPTH_STEP : Float = 0.01F
+const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 10_000.0F
 
 ///|
-const SHADOW_BIASES_POINT_NORMAL_STEP : Float = 0.1F
+struct Lights {}
 
 ///|
-const SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP : Float = 0.01F
+let lights_component_key : @ecs.ComponentKey[Lights] = @ecs.register_component(
+  debug_name="examples.3d.shadow_biases.Lights",
+)
 
 ///|
-const SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP : Float = 0.1F
-
-///|
-priv struct ShadowBiasesState {
-  mut camera : @core.Entity?
-  mut point_light : @core.Entity?
-  mut directional_light : @core.Entity?
-  mut light_position : @math.Vec3
-  mut using_point_light : Bool
-  mut filter_method : @pbr.ShadowFilteringMethod
-  mut point_depth_bias : Float
-  mut point_normal_bias : Float
-  mut directional_depth_bias : Float
-  mut directional_normal_bias : Float
-  mut help_text : @text.TextHandle?
+pub impl @ecs.Component for Lights with fn component() {
+  lights_component_key
 }
-
-///|
-let shadow_biases_state : Ref[ShadowBiasesState] = Ref({
-  camera: None,
-  point_light: None,
-  directional_light: None,
-  light_position: @math.Vec3::new(5.0F, 5.0F, 0.0F),
-  using_point_light: false,
-  filter_method: @pbr.ShadowFilteringMethod::Hardware2x2,
-  point_depth_bias: @pbr.PointLight::PointLight().shadow_depth_bias,
-  point_normal_bias: @pbr.PointLight::PointLight().shadow_normal_bias,
-  directional_depth_bias: @pbr.DirectionalLight::DirectionalLight().shadow_depth_bias,
-  directional_normal_bias: @pbr.DirectionalLight::DirectionalLight().shadow_normal_bias,
-  help_text: None,
-})
 
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
+}
+
+///|
+fn format_fixed(value : Float, decimals : Int) -> String {
+  let factor = if decimals == 2 { 100 } else { 10 }
+  let scaled = (value * Float::from_double(factor.to_double())).round().to_int()
+  let sign = if scaled < 0 { "-" } else { "" }
+  let abs_scaled = if scaled < 0 { -scaled } else { scaled }
+  let whole = abs_scaled / factor
+  let frac = abs_scaled % factor
+  let frac_text = if decimals == 2 && frac < 10 {
+    "0\{frac.to_string()}"
+  } else {
+    frac.to_string()
+  }
+  "\{sign}\{whole.to_string()}.\{frac_text}"
 }
 
 ///|
@@ -83,360 +71,431 @@ fn filter_method_name(filter_method : @pbr.ShadowFilteringMethod) -> String {
 }
 
 ///|
-fn active_light_name() -> String {
-  if shadow_biases_state.val.using_point_light {
-    "PointLight"
-  } else {
-    "DirectionalLight"
-  }
+fn spawn_text_span(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  content : String,
+) -> @core.Entity {
+  commands.spawn((@hierarchy.Parent::new(parent), @text.TextSpan::new(content)))
 }
 
 ///|
-fn ui_text() -> String {
-  let state = shadow_biases_state.val
-  let p = state.light_position
-
-  "Controls:\nR / Z - reset biases to default / zero\nL     - switch between directional and point lights [\{active_light_name()}]\nF     - switch directional light filter methods [\{filter_method_name(state.filter_method)}]\n1/2   - change point light depth bias [\{state.point_depth_bias.to_string()}]\n3/4   - change point light normal bias [\{state.point_normal_bias.to_string()}]\n5/6   - change directional light depth bias [\{state.directional_depth_bias.to_string()}]\n7/8   - change directional light normal bias [\{state.directional_normal_bias.to_string()}]\nleft/right/up/down/pgup/pgdown - adjust light position [\{p.x.to_string()}, \{p.y.to_string()}, \{p.z.to_string()}]\n"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if shadow_biases_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, ui_text())
-  }
-}
-
-///|
-fn light_transform() -> @transform.Transform {
-  let p = shadow_biases_state.val.light_position
-  @transform.Transform::from_xyz(p.x, p.y, p.z).looking_at(
-    @math.Vec3::zero(),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  )
-}
-
-///|
-fn apply_light_state(world : @ecs.World) -> Unit {
-  let transform = light_transform()
-  let state = shadow_biases_state.val
-
-  if state.point_light is Some(point_entity) {
-    try! (world.replace(point_entity, @transform.ecs_key_transform, transform)
-    |> ignore)
-    try! (world.replace(
-      point_entity,
-      @pbr.ecs_key_point_light,
-      @pbr.PointLight::new(
-        @color.Color::white(),
-        if state.using_point_light {
-          SHADOW_BIASES_POINT_INTENSITY
-        } else {
-          0.0F
-        },
-        SHADOW_BIASES_POINT_RANGE,
-        true,
-      )
-      .with_shadow_depth_bias(state.point_depth_bias)
-      .with_shadow_normal_bias(state.point_normal_bias),
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let white_handle = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::StandardMaterial()
+      .with_base_color(@color.Color::white())
+      .with_perceptual_roughness(1.0F),
     )
-    |> ignore)
-  }
-
-  if state.directional_light is Some(directional_entity) {
-    try! (world.replace(
-      directional_entity, @transform.ecs_key_transform, transform,
-    )
-    |> ignore)
-    try! (world.replace(
-      directional_entity,
-      @pbr.ecs_key_directional_light,
-      @pbr.DirectionalLight::new(
-        @color.Color::white(),
-        if state.using_point_light {
-          0.0F
-        } else {
-          SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE
-        },
-        true,
-      )
-      .with_shadow_depth_bias(state.directional_depth_bias)
-      .with_shadow_normal_bias(state.directional_normal_bias),
-    )
-    |> ignore)
-  }
-}
-
-///|
-fn apply_shadow_filtering_method(world : @ecs.World) -> Unit {
-  guard shadow_biases_state.val.camera is Some(camera) else { return }
-  if (try! world.contains_by_key(camera, @pbr.ecs_key_shadow_filtering_method)) {
-    try! (world.replace(
-      camera,
-      @pbr.ecs_key_shadow_filtering_method,
-      shadow_biases_state.val.filter_method,
-    )
-    |> ignore)
-  } else {
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_shadow_filtering_method,
-      shadow_biases_state.val.filter_method,
-    )
-  }
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  shadow_biases_state.val.camera = None
-  shadow_biases_state.val.point_light = None
-  shadow_biases_state.val.directional_light = None
-  shadow_biases_state.val.light_position = @math.Vec3::new(5.0F, 5.0F, 0.0F)
-  shadow_biases_state.val.using_point_light = false
-  shadow_biases_state.val.filter_method = @pbr.ShadowFilteringMethod::Hardware2x2
-  shadow_biases_state.val.point_depth_bias = @pbr.PointLight::PointLight().shadow_depth_bias
-  shadow_biases_state.val.point_normal_bias = @pbr.PointLight::PointLight().shadow_normal_bias
-  shadow_biases_state.val.directional_depth_bias = @pbr.DirectionalLight::DirectionalLight().shadow_depth_bias
-  shadow_biases_state.val.directional_normal_bias = @pbr.DirectionalLight::DirectionalLight().shadow_normal_bias
-  shadow_biases_state.val.help_text = None
-
-  let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F),
-  )
-
-  let sphere_proxy_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+  })
+  let sphere_handle = @mesh.Mesh3d::new(
+    meshes.modify(fn(assets) {
+      assets |> @pbr.add_mesh(@math.Sphere::new(SPHERE_RADIUS))
     }),
   )
 
-  // Dense row of proxy meshes along the view direction.
-  for i in 0..<151 {
-    let z_int = -300 + i * 2
-    let y = if z_int % 4 == 0 { 2.0F } else { 0.25F }
-    @pbr.MeshMaterial3dBundle::new(
-      sphere_proxy_mesh,
-      @pbr.MeshMaterial3d::new(white_material),
-      @transform.Transform::from_xyz(0.0F, y, float_from_int(z_int)),
-    ).spawn(world)
-    |> ignore
+  let light_transform = @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F).looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  let lights = commands.spawn(
+    (light_transform, @visibility.Visibility::Inherited, Lights::{  }),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(lights),
+        @pbr.PointLight::new(
+          @color.Color::white(),
+          0.0F,
+          SPAWN_PLANE_DEPTH,
+          true,
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(lights),
+        @pbr.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @transform.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
+          @math.Vec3::new(-1.0F, 1.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.FreeCamera::FreeCamera(),
+        @pbr.ShadowFilteringMethod::Hardware2x2,
+      ),
+    ),
+  )
+
+  for z_i32 in -300..<=0 {
+    if z_i32 % 2 == 0 {
+      ignore(
+        commands.spawn(
+          (
+            sphere_handle,
+            @pbr.MeshMaterial3d::new(white_handle),
+            @transform.Transform::from_xyz(
+              0.0F,
+              if z_i32 % 4 == 0 {
+                SPAWN_HEIGHT
+              } else {
+                SPHERE_RADIUS
+              },
+              float_from_int(z_i32),
+            ),
+          ),
+        ),
+      )
+    }
   }
 
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(600.0F, 600.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(white_material),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
-      @math.Vec3::new(-1.0F, 1.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  shadow_biases_state.val.camera = Some(camera)
-
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::FreeCamera(),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_shadow_filtering_method,
-    shadow_biases_state.val.filter_method,
-  )
-
-  let point = world.spawn_empty()
-  try! world.set_by_key(
-    point,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(
-      @color.Color::white(),
-      0.0F,
-      SHADOW_BIASES_POINT_RANGE,
-      true,
-    )
-    .with_shadow_depth_bias(shadow_biases_state.val.point_depth_bias)
-    .with_shadow_normal_bias(shadow_biases_state.val.point_normal_bias),
-  )
-  try! world.set_by_key(point, @transform.ecs_key_transform, light_transform())
-  shadow_biases_state.val.point_light = Some(point)
-
-  let directional = world.spawn_empty()
-  try! world.set_by_key(
-    directional,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(
-      @color.Color::white(),
-      SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE,
-      true,
-    )
-    .with_shadow_depth_bias(shadow_biases_state.val.directional_depth_bias)
-    .with_shadow_normal_bias(shadow_biases_state.val.directional_normal_bias),
-  )
-  try! world.set_by_key(
-    directional,
-    @transform.ecs_key_transform,
-    light_transform(),
-  )
-  shadow_biases_state.val.directional_light = Some(directional)
-
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let text = @text.Text2dBundle::new(
-      @text.Text2d::new(ui_text()),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  let plane_size = 2.0F * SPAWN_PLANE_DEPTH
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          meshes.modify(fn(assets) {
+            assets
+            |> @pbr.add_mesh(
+              @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+                @math.Vec2::new(plane_size, plane_size),
+              ).build(),
+            )
+          }),
+        ),
+        @pbr.MeshMaterial3d::new(white_handle),
       ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  shadow_biases_state.val.help_text = Some(text)
+    ),
+  )
 
-  apply_light_state(world)
-  apply_shadow_filtering_method(world)
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+  let panel = commands.spawn(
+    (
+      @hierarchy.Parent::new(root),
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_padding(@ui.UiRect::all(@ui.px(5.0F))),
+      @ui.BackgroundColor::new(@color.Color::black().with_alpha(0.75F)),
+      @ui.GlobalZIndex::new(2_147_483_647),
+    ),
+  )
+  let text = commands.spawn(
+    (
+      @hierarchy.Parent::new(panel),
+      @ui.Node::Node(),
+      @text.Text::Text(),
+      @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
+      @text.TextColor::new(@color.Color::white()),
+      @text.TextLayout::new_with_justify(@text.Justify::Left),
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "Controls:\n"))
+  ignore(
+    spawn_text_span(commands, text, "R / Z - reset biases to default / zero\n"),
+  )
+  ignore(
+    spawn_text_span(
+      commands, text, "L     - switch between directional and point lights [",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "DirectionalLight"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(
+      commands, text, "F     - switch directional light filter methods [",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "Hardware2x2"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(commands, text, "1/2   - change point light depth bias ["),
+  )
+  ignore(spawn_text_span(commands, text, "0.00"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(commands, text, "3/4   - change point light normal bias ["),
+  )
+  ignore(spawn_text_span(commands, text, "0.0"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(
+      commands, text, "5/6   - change direction light depth bias [",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "0.00"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(
+      commands, text, "7/8   - change direction light normal bias [",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "0.0"))
+  ignore(spawn_text_span(commands, text, "]\n"))
+  ignore(
+    spawn_text_span(
+      commands, text, "left/right/up/down/pgup/pgdown - adjust light position (looking at 0,0,0) [",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "\{format_fixed(light_transform.translation.x, 1)},",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      " \{format_fixed(light_transform.translation.y, 1)},",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      " \{format_fixed(light_transform.translation.z, 1)}",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "]\n"))
 }
 
 ///|
-fn update(world : @ecs.World) -> Unit {
-  let mut light_changed = false
-  let mut filter_changed = false
+fn toggle_light(
+  input : @input.ButtonInput[@window.KeyCode],
+  point_lights : @ecs.Query[@ecs.Write[@pbr.PointLight], @ecs.All],
+  directional_lights : @ecs.Query[@ecs.Write[@pbr.DirectionalLight], @ecs.All],
+  example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  if input.just_pressed(@window.KeyCode::KeyL) {
+    let text = example_text.get()
+    try! point_lights.for_each(fn(_entity, light) {
+      let current = light.value()
+      let intensity = if current.intensity == 0.0F {
+        ignore(writer.set_text(text, 4, "PointLight"))
+        POINT_LIGHT_INTENSITY
+      } else {
+        0.0F
+      }
+      light.set(current.with_intensity(intensity))
+    })
+    try! directional_lights.for_each(fn(_entity, light) {
+      let current = light.value()
+      let illuminance = if current.illuminance == 0.0F {
+        ignore(writer.set_text(text, 4, "DirectionalLight"))
+        DIRECTIONAL_LIGHT_ILLUMINANCE
+      } else {
+        0.0F
+      }
+      light.set(current.with_illuminance(illuminance))
+    })
+  }
+}
 
-  if @input.key_just_pressed(@window.KeyCode::KeyL) {
-    shadow_biases_state.val.using_point_light = !shadow_biases_state.val.using_point_light
-    light_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyF) {
-    shadow_biases_state.val.filter_method = match
-      shadow_biases_state.val.filter_method {
-      @pbr.ShadowFilteringMethod::Hardware2x2 =>
-        @pbr.ShadowFilteringMethod::Gaussian
-      @pbr.ShadowFilteringMethod::Gaussian =>
-        @pbr.ShadowFilteringMethod::Temporal
-      @pbr.ShadowFilteringMethod::Temporal =>
-        @pbr.ShadowFilteringMethod::Hardware2x2
-    }
-    filter_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    shadow_biases_state.val.point_depth_bias = shadow_biases_state.val.point_depth_bias -
-      SHADOW_BIASES_POINT_DEPTH_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    shadow_biases_state.val.point_depth_bias = shadow_biases_state.val.point_depth_bias +
-      SHADOW_BIASES_POINT_DEPTH_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    shadow_biases_state.val.point_normal_bias = shadow_biases_state.val.point_normal_bias -
-      SHADOW_BIASES_POINT_NORMAL_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    shadow_biases_state.val.point_normal_bias = shadow_biases_state.val.point_normal_bias +
-      SHADOW_BIASES_POINT_NORMAL_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    shadow_biases_state.val.directional_depth_bias = shadow_biases_state.val.directional_depth_bias -
-      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    shadow_biases_state.val.directional_depth_bias = shadow_biases_state.val.directional_depth_bias +
-      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit7) {
-    shadow_biases_state.val.directional_normal_bias = shadow_biases_state.val.directional_normal_bias -
-      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP
-    light_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit8) {
-    shadow_biases_state.val.directional_normal_bias = shadow_biases_state.val.directional_normal_bias +
-      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP
-    light_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    let point_default = @pbr.PointLight::PointLight()
-    let directional_default = @pbr.DirectionalLight::DirectionalLight()
-    shadow_biases_state.val.point_depth_bias = point_default.shadow_depth_bias
-    shadow_biases_state.val.point_normal_bias = point_default.shadow_normal_bias
-    shadow_biases_state.val.directional_depth_bias = directional_default.shadow_depth_bias
-    shadow_biases_state.val.directional_normal_bias = directional_default.shadow_normal_bias
-    light_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyZ) {
-    shadow_biases_state.val.point_depth_bias = 0.0F
-    shadow_biases_state.val.point_normal_bias = 0.0F
-    shadow_biases_state.val.directional_depth_bias = 0.0F
-    shadow_biases_state.val.directional_normal_bias = 0.0F
-    light_changed = true
-  }
-
+///|
+fn adjust_light_position(
+  input : @input.ButtonInput[@window.KeyCode],
+  lights : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Lights]],
+  example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
   let mut offset = @math.Vec3::zero()
-  if @input.key_just_pressed(@window.KeyCode::ArrowLeft) {
+  if input.just_pressed(@window.KeyCode::ArrowLeft) {
     offset = offset.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
   }
-  if @input.key_just_pressed(@window.KeyCode::ArrowRight) {
+  if input.just_pressed(@window.KeyCode::ArrowRight) {
     offset = offset.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
   }
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
+  if input.just_pressed(@window.KeyCode::ArrowUp) {
     offset = offset.add(@math.Vec3::new(0.0F, 0.0F, -1.0F))
   }
-  if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
+  if input.just_pressed(@window.KeyCode::ArrowDown) {
     offset = offset.add(@math.Vec3::new(0.0F, 0.0F, 1.0F))
   }
-  if @input.key_just_pressed(@window.KeyCode::PageDown) {
+  if input.just_pressed(@window.KeyCode::PageDown) {
     offset = offset.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
   }
-  if @input.key_just_pressed(@window.KeyCode::PageUp) {
+  if input.just_pressed(@window.KeyCode::PageUp) {
     offset = offset.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
   }
   if offset.length_squared() > 0.0F {
-    shadow_biases_state.val.light_position = shadow_biases_state.val.light_position.add(
-      offset,
-    )
-    light_changed = true
+    let text = example_text.get()
+    try! lights.for_each(fn(_entity, light) {
+      light.modify(fn(value) {
+        value.translation = value.translation.add(offset)
+        let next = value.looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        )
+        value.rotation = next.rotation
+      })
+      let current = light.value()
+      ignore(
+        writer.set_text(text, 22, "\{format_fixed(current.translation.x, 1)},"),
+      )
+      ignore(
+        writer.set_text(text, 23, " \{format_fixed(current.translation.y, 1)},"),
+      )
+      ignore(
+        writer.set_text(text, 24, " \{format_fixed(current.translation.z, 1)}"),
+      )
+    })
   }
+}
 
-  if light_changed {
-    apply_light_state(world)
+///|
+fn cycle_filter_methods(
+  input : @input.ButtonInput[@window.KeyCode],
+  filter_methods : @ecs.Query[@ecs.Write[@pbr.ShadowFilteringMethod], @ecs.All],
+  example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  if input.just_pressed(@window.KeyCode::KeyF) {
+    let text = example_text.get()
+    try! filter_methods.for_each(fn(_entity, filter_method) {
+      let next = match filter_method.value() {
+        @pbr.ShadowFilteringMethod::Hardware2x2 =>
+          @pbr.ShadowFilteringMethod::Gaussian
+        @pbr.ShadowFilteringMethod::Gaussian =>
+          @pbr.ShadowFilteringMethod::Temporal
+        @pbr.ShadowFilteringMethod::Temporal =>
+          @pbr.ShadowFilteringMethod::Hardware2x2
+      }
+      filter_method.set(next)
+      ignore(writer.set_text(text, 7, filter_method_name(next)))
+    })
   }
-  if filter_changed {
-    apply_shadow_filtering_method(world)
-  }
-  if light_changed || filter_changed {
-    update_help_text()
-  }
+}
+
+///|
+fn adjust_point_light_biases(
+  input : @input.ButtonInput[@window.KeyCode],
+  query : @ecs.Query[@ecs.Write[@pbr.PointLight], @ecs.All],
+  example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  let depth_bias_step_size = 0.01F
+  let normal_bias_step_size = 0.1F
+  let text = example_text.get()
+  try! query.for_each(fn(_entity, light) {
+    let mut next = light.value()
+    if input.just_pressed(@window.KeyCode::Digit1) {
+      next = next.with_shadow_depth_bias(
+        next.shadow_depth_bias - depth_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit2) {
+      next = next.with_shadow_depth_bias(
+        next.shadow_depth_bias + depth_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit3) {
+      next = next.with_shadow_normal_bias(
+        next.shadow_normal_bias - normal_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit4) {
+      next = next.with_shadow_normal_bias(
+        next.shadow_normal_bias + normal_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::KeyR) {
+      let defaults = @pbr.PointLight::PointLight()
+      next = next
+        .with_shadow_depth_bias(defaults.shadow_depth_bias)
+        .with_shadow_normal_bias(defaults.shadow_normal_bias)
+    }
+    if input.just_pressed(@window.KeyCode::KeyZ) {
+      next = next.with_shadow_depth_bias(0.0F).with_shadow_normal_bias(0.0F)
+    }
+
+    light.set(next)
+    ignore(writer.set_text(text, 10, format_fixed(next.shadow_depth_bias, 2)))
+    ignore(writer.set_text(text, 13, format_fixed(next.shadow_normal_bias, 1)))
+  })
+}
+
+///|
+fn adjust_directional_light_biases(
+  input : @input.ButtonInput[@window.KeyCode],
+  query : @ecs.Query[@ecs.Write[@pbr.DirectionalLight], @ecs.All],
+  example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  let depth_bias_step_size = 0.01F
+  let normal_bias_step_size = 0.1F
+  let text = example_text.get()
+  try! query.for_each(fn(_entity, light) {
+    let mut next = light.value()
+    if input.just_pressed(@window.KeyCode::Digit5) {
+      next = next.with_shadow_depth_bias(
+        next.shadow_depth_bias - depth_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit6) {
+      next = next.with_shadow_depth_bias(
+        next.shadow_depth_bias + depth_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit7) {
+      next = next.with_shadow_normal_bias(
+        next.shadow_normal_bias - normal_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::Digit8) {
+      next = next.with_shadow_normal_bias(
+        next.shadow_normal_bias + normal_bias_step_size,
+      )
+    }
+    if input.just_pressed(@window.KeyCode::KeyR) {
+      let defaults = @pbr.DirectionalLight::DirectionalLight()
+      next = next
+        .with_shadow_depth_bias(defaults.shadow_depth_bias)
+        .with_shadow_normal_bias(defaults.shadow_normal_bias)
+    }
+    if input.just_pressed(@window.KeyCode::KeyZ) {
+      next = next.with_shadow_depth_bias(0.0F).with_shadow_normal_bias(0.0F)
+    }
+
+    light.set(next)
+    ignore(writer.set_text(text, 16, format_fixed(next.shadow_depth_bias, 2)))
+    ignore(writer.set_text(text, 19, format_fixed(next.shadow_normal_bias, 1)))
+  })
 }
 
 ///|
@@ -444,7 +503,11 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update)
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(@app.Update, cycle_filter_methods)
+  .add_systems_param4(@app.Update, adjust_light_position)
+  .add_systems_param4(@app.Update, adjust_point_light_biases)
+  .add_systems_param5(@app.Update, toggle_light)
+  .add_systems_param4(@app.Update, adjust_directional_light_biases)
   .run()
 }

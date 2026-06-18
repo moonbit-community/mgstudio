@@ -173,3 +173,41 @@ pub fn text_ui_reader(world : @ecs.World) -> TextUiReader {
 pub fn text_ui_writer(world : @ecs.World) -> TextUiWriter {
   TextUiWriter::new(world)
 }
+
+///|
+pub impl @app.SystemParam for TextUiReader with fn init_state(world) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+pub impl @app.SystemParam for TextUiReader with fn get(_state) {
+  match @app.current_world() {
+    Some(world) => TextUiReader::new(world)
+    None =>
+      abort("TextUiReader requires an active world during system execution")
+  }
+}
+
+///|
+pub impl @app.SystemParam for TextUiReader with fn store(self, state) {
+  @app.system_param_store_no_state(self, state)
+}
+
+///|
+pub impl @app.SystemParam for TextUiWriter with fn init_state(world) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+pub impl @app.SystemParam for TextUiWriter with fn get(_state) {
+  match @app.current_world() {
+    Some(world) => TextUiWriter::new(world)
+    None =>
+      abort("TextUiWriter requires an active world during system execution")
+  }
+}
+
+///|
+pub impl @app.SystemParam for TextUiWriter with fn store(self, state) {
+  @app.system_param_store_no_state(self, state)
+}
