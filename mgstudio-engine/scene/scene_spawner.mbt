@@ -27,13 +27,28 @@ type SceneRootChangedQuery = @ecs.Query[
 ]
 
 ///|
+type WorldAssetRootChangedQuery = @ecs.Query[
+  @ecs.Read[WorldAssetRoot],
+  @ecs.Changed[WorldAssetRoot],
+]
+
+///|
 type SceneRootPendingQuery = @ecs.Query[
   (@ecs.Read[SceneRoot], @ecs.Read[SceneInstance]),
   @ecs.All,
 ]
 
 ///|
+type WorldAssetRootPendingQuery = @ecs.Query[
+  (@ecs.Read[WorldAssetRoot], @ecs.Read[SceneInstance]),
+  @ecs.All,
+]
+
+///|
 type SceneRootQuery = @ecs.Query[@ecs.Read[SceneRoot], @ecs.All]
+
+///|
+type WorldAssetRootQuery = @ecs.Query[@ecs.Read[WorldAssetRoot], @ecs.All]
 
 ///|
 priv struct SceneInstanceState {
@@ -884,6 +899,10 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
     try! scene_root_query.view(fn(entity, root) {
       roots.push((entity, root.value()))
     })
+    let world_asset_root_query : WorldAssetRootQuery = @ecs.query(world)
+    try! world_asset_root_query.view(fn(entity, root) {
+      roots.push((entity, root.value().to_scene_root()))
+    })
 
     for entry in roots {
       let root_entity = entry.0
@@ -935,6 +954,22 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
     )
   })
 
+  let world_asset_changed_query : WorldAssetRootChangedQuery = @ecs.query_filtered(
+    world,
+    @ecs.Changed::new(ecs_key_world_asset_root),
+  )
+  try! world_asset_changed_query.view(fn(entity, root_ref) {
+    ignore(
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value().to_scene_root(),
+      ),
+    )
+  })
+
   let respawn_query : SceneRootRespawnQuery = @ecs.query_filtered(
     world,
     @ecs.With::new(ecs_key_scene_root_respawn_requested),
@@ -947,6 +982,27 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
         roots_to_process,
         entity,
         root_ref.value(),
+      ) {
+      Some(key) => force_respawn_map.set(key, true)
+      None => ()
+    }
+  })
+
+  let world_asset_respawn_query : @ecs.Query[
+    @ecs.Read[WorldAssetRoot],
+    @ecs.With[SceneRootRespawnRequested],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.With::new(ecs_key_scene_root_respawn_requested),
+  )
+  try! world_asset_respawn_query.view(fn(entity, root_ref) {
+    match
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value().to_scene_root(),
       ) {
       Some(key) => force_respawn_map.set(key, true)
       None => ()
@@ -966,6 +1022,23 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
         roots_to_process,
         entity,
         root_ref.value(),
+      ),
+    )
+  })
+
+  let world_asset_pending_query : WorldAssetRootPendingQuery = @ecs.query(world)
+  try! world_asset_pending_query.view(fn(entity, data) {
+    let (root_ref, scene_instance_ref) = data
+    if scene_instance_is_ready(world, scene_instance_ref.value().instance_id) {
+      return
+    }
+    ignore(
+      push_root_if_needed(
+        world,
+        seen,
+        roots_to_process,
+        entity,
+        root_ref.value().to_scene_root(),
       ),
     )
   })

@@ -982,6 +982,39 @@ test "scene: SceneRoot inserts default transform and visibility" {
 }
 
 ///|
+test "scene: WorldAssetRoot inserts default transform and visibility" {
+  let has_transform = Ref(false)
+  let has_visibility = Ref(false)
+  let inherited_visibility = Ref(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#world-asset-root-default-components",
+      @scene.Scene::new([]),
+    )
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_world_asset_root,
+      @scene.WorldAssetRoot::new(scene_handle),
+    )
+    has_transform.val = try! world.contains_by_key(
+      root, @transform.ecs_key_transform,
+    )
+    has_visibility.val = try! world.contains_by_key(
+      root, @visibility.ecs_key_visibility,
+    )
+    inherited_visibility.val = match
+      (try! world.get_by_key(root, @visibility.ecs_key_visibility)) {
+      Some(@visibility.Visibility::Inherited) => true
+      _ => false
+    }
+  })
+  debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_visibility.val, content="true")
+  debug_inspect(inherited_visibility.val, content="true")
+}
+
+///|
 test "scene: spawned gltf nodes include default visibility" {
   let empty_node_has_visibility = Ref(false)
   let mesh_node_has_visibility = Ref(false)
@@ -1037,6 +1070,55 @@ test "scene: spawned gltf nodes include default visibility" {
   })
   debug_inspect(empty_node_has_visibility.val, content="true")
   debug_inspect(mesh_node_has_visibility.val, content="true")
+}
+
+///|
+test "scene: WorldAssetRoot spawns children and marks instance ready" {
+  let has_instance = Ref(false)
+  let spawned_child_count = Ref(0)
+  let ready = Ref(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#world-asset-root-spawn",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new_empty(
+          @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+          None,
+          None,
+          gltf_node_index=Some(@gltf.GltfNodeIndex::new(11)),
+        ),
+      ]),
+    )
+    let root = world.spawn_empty()
+    ignore(
+      world.add_observer(fn(event : @ecs.On[@scene.SceneInstanceReady]) {
+        guard event.entity() is Some(entity) else { return }
+        if entity.id == root.id {
+          ready.val = true
+        }
+      }),
+    )
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_world_asset_root,
+      @scene.WorldAssetRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+    has_instance.val = try! world.contains_by_key(
+      root, @scene.ecs_key_scene_instance,
+    )
+    match (try! world.get_by_key(root, @scene.ecs_key_scene_instance)) {
+      Some(instance) =>
+        spawned_child_count.val = @scene.scene_iter_instance_entities(
+          world,
+          instance.instance_id,
+        ).length()
+      None => ()
+    }
+  })
+  debug_inspect(has_instance.val, content="true")
+  debug_inspect(spawned_child_count.val, content="1")
+  debug_inspect(ready.val, content="true")
 }
 
 ///|

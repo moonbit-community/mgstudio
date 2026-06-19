@@ -27,6 +27,17 @@ pub impl @json.FromJson for SceneRoot with fn from_json(json, path) {
 }
 
 ///|
+pub impl ToJson for WorldAssetRoot with fn to_json(self) {
+  self.scene().id().to_json()
+}
+
+///|
+pub impl @json.FromJson for WorldAssetRoot with fn from_json(json, path) {
+  let scene_id : Int = @json.from_json(json, path~)
+  WorldAssetRoot::new(@asset.Handle::new(scene_id))
+}
+
+///|
 pub impl ToJson for SceneInstance with fn to_json(self) {
   self.instance_id.to_json()
 }

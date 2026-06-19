@@ -26,6 +26,27 @@ pub fn SceneRoot::new(scene : @asset.Handle[Scene]) -> SceneRoot {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_world_serialization/src/components.rs`.
+pub struct WorldAssetRoot {
+  scene : @asset.Handle[Scene]
+}
+
+///|
+pub fn WorldAssetRoot::new(scene : @asset.Handle[Scene]) -> WorldAssetRoot {
+  WorldAssetRoot::{ scene, }
+}
+
+///|
+pub fn WorldAssetRoot::scene(self : WorldAssetRoot) -> @asset.Handle[Scene] {
+  self.scene
+}
+
+///|
+fn WorldAssetRoot::to_scene_root(self : WorldAssetRoot) -> SceneRoot {
+  SceneRoot::new(self.scene)
+}
+
+///|
 pub struct SceneInstance {
   instance_id : Int
 }
@@ -54,7 +75,8 @@ pub fn scene_components_has_scene_root(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, ecs_key_scene_root)
+  (try! world.contains_by_key(entity, ecs_key_scene_root)) ||
+  (try! world.contains_by_key(entity, ecs_key_world_asset_root))
 }
 
 ///|

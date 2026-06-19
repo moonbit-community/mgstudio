@@ -26,6 +26,8 @@ pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
+pub let ecs_key_world_asset_root : @ecs.ComponentKey[WorldAssetRoot]
+
 pub let event_key_scene_instance_ready : @ecs.EventKey[SceneInstanceReady]
 
 pub fn scene_collect_root_spawn_requests_system(@ecs.World) -> Unit
@@ -201,6 +203,15 @@ pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
 pub impl @ecs.Component for SceneRoot
 pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
+
+pub struct WorldAssetRoot {
+  scene : @asset.Handle[Scene]
+}
+pub fn WorldAssetRoot::new(@asset.Handle[Scene]) -> Self
+pub fn WorldAssetRoot::scene(Self) -> @asset.Handle[Scene]
+pub impl @ecs.Component for WorldAssetRoot
+pub impl ToJson for WorldAssetRoot
+pub impl @json.FromJson for WorldAssetRoot
 
 // Type aliases
 

@@ -18,6 +18,11 @@ pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot] = @ecs.register_compon
 )
 
 ///|
+pub let ecs_key_world_asset_root : @ecs.ComponentKey[WorldAssetRoot] = @ecs.register_component(
+  debug_name="scene.world_asset_root",
+)
+
+///|
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance] = @ecs.register_component(
   debug_name="scene.scene_instance",
 )
@@ -30,6 +35,11 @@ pub let event_key_scene_instance_ready : @ecs.EventKey[SceneInstanceReady] = @ec
 ///|
 pub impl @ecs.Component for SceneRoot with fn component() {
   ecs_key_scene_root
+}
+
+///|
+pub impl @ecs.Component for WorldAssetRoot with fn component() {
+  ecs_key_world_asset_root
 }
 
 ///|
@@ -82,6 +92,18 @@ pub fn scene_install_component_metadata() -> Unit {
   }
   ignore(
     @ecs.component_metadata_builder(ecs_key_scene_root)
+    .on_insert(scene_root_on_insert)
+    .on_replace(scene_root_on_replace)
+    .on_remove(scene_root_on_remove)
+    .require_with(@transform.ecs_key_transform, fn() {
+      @transform.Transform::identity()
+    })
+    .require_with(@visibility.ecs_key_visibility, fn() {
+      @visibility.Visibility::Inherited
+    }),
+  )
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_world_asset_root)
     .on_insert(scene_root_on_insert)
     .on_replace(scene_root_on_replace)
     .on_remove(scene_root_on_remove)

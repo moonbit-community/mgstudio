@@ -558,7 +558,7 @@ fn setup(
 
   ignore(
     commands.spawn_component(
-      @scene.SceneRoot::new(
+      @scene.WorldAssetRoot::new(
         @scene.scene_load_gltf_scene(
           asset_server,
           @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -628,35 +628,10 @@ fn setup(
     ),
   )
 
-  let ui_camera = commands.spawn(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
-    ),
-  )
-  commands
-  .entity(ui_camera)
-  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
-
-  let ui_root = commands.spawn(
-    (
-      @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-      @ui.UiTargetCamera::new(ui_camera),
-    ),
-  )
-
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(ui_root),
         @text.Text::Text(),
-        @text.TextFont::TextFont(),
-        @text.TextColor::TextColor(),
-        @text.TextLayout::TextLayout(),
         @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.px(12.0F))

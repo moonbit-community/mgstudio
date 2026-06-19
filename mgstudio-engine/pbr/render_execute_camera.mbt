@@ -264,13 +264,22 @@ fn render3d_execute_camera(
     "execute_3d_camera_postprocess",
     trace_camera_postprocess_start_us,
   )
+  let overlay_scale_factor = if camera.scale_factor <= 0.0F {
+    1.0F
+  } else {
+    camera.scale_factor
+  }
+  let overlay_viewport_width = Float::from_double(viewport_width.to_double())
+  let overlay_viewport_height = Float::from_double(viewport_height.to_double())
+  let overlay_width_logical = (overlay_viewport_width / overlay_scale_factor).to_int()
+  let overlay_height_logical = (overlay_viewport_height / overlay_scale_factor).to_int()
   @ui_render.draw_extracted_ui_overlay_for_camera(
     world,
     camera_entity,
     camera.layers,
     camera.target_id,
-    view_width_logical,
-    view_height_logical,
+    overlay_width_logical,
+    overlay_height_logical,
     clear_color,
     viewport_x,
     viewport_y,
