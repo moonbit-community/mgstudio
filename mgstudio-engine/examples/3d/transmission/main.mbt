@@ -77,6 +77,18 @@ fn ExampleControls::ExampleControls(
 
 ///|
 priv struct TransmissionState {
+  mut display_text : @text.TextHandle?
+  color_rng : @chacha_rng.ChaCha8Rng
+}
+
+///|
+let transmission_state : Ref[TransmissionState] = Ref({
+  display_text: None,
+  color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
+})
+
+///|
+priv struct ExampleState {
   mut diffuse_transmission : Float
   mut specular_transmission : Float
   mut thickness : Float
@@ -84,28 +96,25 @@ priv struct TransmissionState {
   mut perceptual_roughness : Float
   mut reflectance : Float
   mut auto_camera : Bool
-  mut camera_translation : @math.Vec3
-  mut display_text : @text.TextHandle?
-  color_rng : @chacha_rng.ChaCha8Rng
 }
 
 ///|
-let transmission_state : Ref[TransmissionState] = Ref({
-  diffuse_transmission: 0.5F,
-  specular_transmission: 0.9F,
-  thickness: 1.8F,
-  ior: 1.5F,
-  perceptual_roughness: 0.12F,
-  reflectance: 0.5F,
-  auto_camera: true,
-  camera_translation: @math.Vec3::new(
-    CAMERA_INITIAL_X,
-    CAMERA_INITIAL_Y,
-    CAMERA_INITIAL_Z,
-  ),
-  display_text: None,
-  color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
-})
+fn ExampleState::ExampleState() -> ExampleState {
+  ExampleState::{
+    diffuse_transmission: 0.5F,
+    specular_transmission: 0.9F,
+    thickness: 1.8F,
+    ior: 1.5F,
+    perceptual_roughness: 0.12F,
+    reflectance: 0.5F,
+    auto_camera: true,
+  }
+}
+
+///|
+impl @app.FromWorld for ExampleState with fn from_world(_world) {
+  ExampleState::ExampleState()
+}
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -126,13 +135,6 @@ fn clamp01(value : Float) -> Float {
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
 }
 
 ///|
@@ -217,6 +219,7 @@ fn transmission_hud_text(world : @ecs.World) -> String {
   let transmission = camera_screen_space_transmission(world)
   transmission_hud_text_with_camera(
     transmission,
+    ExampleState::ExampleState(),
     camera_hdr_enabled(world),
     camera_depth_prepass_enabled(world),
     camera_taa_enabled(world),
@@ -226,6 +229,7 @@ fn transmission_hud_text(world : @ecs.World) -> String {
 ///|
 fn transmission_hud_text_with_camera(
   transmission : @pbr.ScreenSpaceTransmission,
+  state : ExampleState,
   hdr_enabled : Bool,
   depth_prepass_enabled : Bool,
   taa_enabled : Bool,
@@ -242,7 +246,7 @@ fn transmission_hud_text_with_camera(
     "OFF"
   }
 
-  " J / K / L / ;  Screen Space Specular Transmissive Quality: \{quality_label(transmission.quality)}\n         O / P  Screen Space Specular Transmissive Steps: \{transmission.steps}\n         1 / 2  Diffuse Transmission: \{transmission_state.val.diffuse_transmission}\n         Q / W  Specular Transmission: \{transmission_state.val.specular_transmission}\n         A / S  Thickness: \{transmission_state.val.thickness}\n         Z / X  IOR: \{transmission_state.val.ior}\n         E / R  Perceptual Roughness: \{transmission_state.val.perceptual_roughness}\n         U / I  Reflectance: \{transmission_state.val.reflectance}\n    Arrow Keys  Control Camera\n             C  Randomize Colors\n             H  HDR + Bloom: \{hdr_text}\n             D  Depth Prepass: \{depth_text}\n             T  TAA: \{taa_text}\n"
+  " J / K / L / ;  Screen Space Specular Transmissive Quality: \{quality_label(transmission.quality)}\n         O / P  Screen Space Specular Transmissive Steps: \{transmission.steps}\n         1 / 2  Diffuse Transmission: \{state.diffuse_transmission}\n         Q / W  Specular Transmission: \{state.specular_transmission}\n         A / S  Thickness: \{state.thickness}\n         Z / X  IOR: \{state.ior}\n         E / R  Perceptual Roughness: \{state.perceptual_roughness}\n         U / I  Reflectance: \{state.reflectance}\n    Arrow Keys  Control Camera\n             C  Randomize Colors\n             H  HDR + Bloom: \{hdr_text}\n             D  Depth Prepass: \{depth_text}\n             T  TAA: \{taa_text}\n"
 }
 
 ///|
@@ -664,28 +668,13 @@ fn set_hud_text_content(content : String) -> Unit {
 }
 
 ///|
-fn apply_camera_transform(world : @ecs.World) -> Unit {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    let camera_pos = transmission_state.val.camera_translation
-    try! (world.replace(
-      camera_entity,
-      @transform.ecs_key_transform,
-      @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
-        @math.Vec3::zero(),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    )
-    |> ignore)
-  }
-}
-
-///|
 fn apply_material_controls_to_assets(
   assets : @asset.Assets[@pbr.StandardMaterial],
   controllable : @ecs.Query[
     (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
     @ecs.All,
   ],
+  state : ExampleState,
   randomize_colors : Bool,
 ) -> Unit {
   try! controllable.view(fn(_entity, data) {
@@ -697,18 +686,14 @@ fn apply_material_controls_to_assets(
     let mut updated = material
     if controls.specular_transmission {
       updated = updated
-        .with_specular_transmission(
-          transmission_state.val.specular_transmission,
-        )
-        .with_thickness(transmission_state.val.thickness)
-        .with_ior(transmission_state.val.ior)
-        .with_perceptual_roughness(transmission_state.val.perceptual_roughness)
-        .with_reflectance(transmission_state.val.reflectance)
+        .with_specular_transmission(state.specular_transmission)
+        .with_thickness(state.thickness)
+        .with_ior(state.ior)
+        .with_perceptual_roughness(state.perceptual_roughness)
+        .with_reflectance(state.reflectance)
     }
     if controls.diffuse_transmission {
-      updated = updated.with_diffuse_transmission(
-        transmission_state.val.diffuse_transmission,
-      )
+      updated = updated.with_diffuse_transmission(state.diffuse_transmission)
     }
     if controls.color && randomize_colors {
       updated = updated.with_base_color(
@@ -731,10 +716,13 @@ fn apply_material_controls(
     (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
     @ecs.All,
   ],
+  state : ExampleState,
   randomize_colors : Bool,
 ) -> Unit {
   materials.modify(fn(assets) {
-    apply_material_controls_to_assets(assets, controllable, randomize_colors)
+    apply_material_controls_to_assets(
+      assets, controllable, state, randomize_colors,
+    )
   })
 }
 
@@ -757,9 +745,11 @@ fn example_control_system(
     ),
     @ecs.With[@pbr.Camera3d],
   ],
+  state_param : @app.Local[ExampleState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
+  let state = state_param.get()
   let mut materials_changed = false
   let mut randomize_colors = false
   guard (camera.single() catch { _ => None }) is Some(camera_data) else {
@@ -783,82 +773,50 @@ fn example_control_system(
   let toggle_taa = @input.key_just_pressed(@window.KeyCode::KeyT)
 
   if @input.key_pressed(@window.KeyCode::Digit2) {
-    transmission_state.val.diffuse_transmission = clamp01(
-      transmission_state.val.diffuse_transmission + delta,
-    )
+    state.diffuse_transmission = clamp01(state.diffuse_transmission + delta)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::Digit1) {
-    transmission_state.val.diffuse_transmission = clamp01(
-      transmission_state.val.diffuse_transmission - delta,
-    )
+    state.diffuse_transmission = clamp01(state.diffuse_transmission - delta)
     materials_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyW) {
-    transmission_state.val.specular_transmission = clamp01(
-      transmission_state.val.specular_transmission + delta,
-    )
+    state.specular_transmission = clamp01(state.specular_transmission + delta)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyQ) {
-    transmission_state.val.specular_transmission = clamp01(
-      transmission_state.val.specular_transmission - delta,
-    )
+    state.specular_transmission = clamp01(state.specular_transmission - delta)
     materials_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyS) {
-    transmission_state.val.thickness = clampf(
-      transmission_state.val.thickness + delta,
-      0.0F,
-      5.0F,
-    )
+    state.thickness = clampf(state.thickness + delta, 0.0F, 5.0F)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyA) {
-    transmission_state.val.thickness = clampf(
-      transmission_state.val.thickness - delta,
-      0.0F,
-      5.0F,
-    )
+    state.thickness = clampf(state.thickness - delta, 0.0F, 5.0F)
     materials_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyX) {
-    transmission_state.val.ior = clampf(
-      transmission_state.val.ior + delta,
-      1.0F,
-      3.0F,
-    )
+    state.ior = clampf(state.ior + delta, 1.0F, 3.0F)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyZ) {
-    transmission_state.val.ior = clampf(
-      transmission_state.val.ior - delta,
-      1.0F,
-      3.0F,
-    )
+    state.ior = clampf(state.ior - delta, 1.0F, 3.0F)
     materials_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyI) {
-    transmission_state.val.reflectance = clamp01(
-      transmission_state.val.reflectance + delta,
-    )
+    state.reflectance = clamp01(state.reflectance + delta)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyU) {
-    transmission_state.val.reflectance = clamp01(
-      transmission_state.val.reflectance - delta,
-    )
+    state.reflectance = clamp01(state.reflectance - delta)
     materials_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyR) {
-    transmission_state.val.perceptual_roughness = clamp01(
-      transmission_state.val.perceptual_roughness + delta,
-    )
+    state.perceptual_roughness = clamp01(state.perceptual_roughness + delta)
     materials_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyE) {
-    transmission_state.val.perceptual_roughness = clamp01(
-      transmission_state.val.perceptual_roughness - delta,
-    )
+    state.perceptual_roughness = clamp01(state.perceptual_roughness - delta)
     materials_changed = true
   }
 
@@ -950,18 +908,18 @@ fn example_control_system(
   }
 
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    transmission_state.val.auto_camera = false
+    state.auto_camera = false
     delta
   } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    transmission_state.val.auto_camera = false
+    state.auto_camera = false
     -delta
-  } else if transmission_state.val.auto_camera {
+  } else if state.auto_camera {
     delta * AUTO_CAMERA_SPEED
   } else {
     0.0F
   }
 
-  let camera_distance = transmission_state.val.camera_translation.length()
+  let camera_distance = camera_transform.value().translation.length()
   let distance_change = if @input.key_pressed(@window.KeyCode::ArrowDown) &&
     camera_distance < 25.0F {
     delta
@@ -973,33 +931,22 @@ fn example_control_system(
   }
 
   let mut camera_changed = false
-  if distance_change != 0.0F {
-    transmission_state.val.camera_translation = transmission_state.val.camera_translation.mul_scalar(
-      expf(distance_change),
-    )
-    camera_changed = true
-  }
-
-  if rotation != 0.0F {
-    transmission_state.val.camera_translation = quat_rotate_vec3(
-      @math.Quat::from_rotation_y(rotation),
-      transmission_state.val.camera_translation,
-    )
+  if distance_change != 0.0F || rotation != 0.0F {
     camera_changed = true
   }
 
   if camera_changed {
-    let camera_pos = transmission_state.val.camera_translation
-    camera_transform.set(
-      @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
+    camera_transform.modify(fn(value) {
+      value.translation = value.translation.mul_scalar(expf(distance_change))
+      value.rotate_around(
         @math.Vec3::zero(),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    )
+        @math.Quat::from_rotation_y(rotation),
+      )
+    })
   }
 
   if materials_changed {
-    apply_material_controls(materials, controllable, randomize_colors)
+    apply_material_controls(materials, controllable, state, randomize_colors)
   }
 
   if transmission_settings_changed {
@@ -1009,6 +956,7 @@ fn example_control_system(
   set_hud_text_content(
     transmission_hud_text_with_camera(
       transmission_settings,
+      state,
       if toggle_hdr {
         !hdr_enabled
       } else {
@@ -1026,6 +974,7 @@ fn example_control_system(
       },
     ),
   )
+  state_param.set(state)
 }
 
 ///|
@@ -1075,18 +1024,6 @@ fn flicker_system(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   transmission_state.val = {
-    diffuse_transmission: 0.5F,
-    specular_transmission: 0.9F,
-    thickness: 1.8F,
-    ior: 1.5F,
-    perceptual_roughness: 0.12F,
-    reflectance: 0.5F,
-    auto_camera: true,
-    camera_translation: @math.Vec3::new(
-      CAMERA_INITIAL_X,
-      CAMERA_INITIAL_Y,
-      CAMERA_INITIAL_Z,
-    ),
     display_text: None,
     color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
   }
@@ -1094,7 +1031,6 @@ fn setup(world : @ecs.World) -> Unit {
   setup_scene(world)
   setup_camera(world)
   setup_text(world)
-  apply_camera_transform(world)
   let materials_key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
   let materials = match world.get_resource_mut(materials_key) {
     Some(assets) => assets
@@ -1105,7 +1041,12 @@ fn setup(world : @ecs.World) -> Unit {
     @ecs.All,
   ] = @ecs.query_filtered(world, @ecs.All::new())
   materials.modify(fn(assets) {
-    apply_material_controls_to_assets(assets, controllable, false)
+    apply_material_controls_to_assets(
+      assets,
+      controllable,
+      ExampleState::ExampleState(),
+      false,
+    )
   })
   set_hud_text(world)
 }
@@ -1115,7 +1056,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
-  .add_systems_param5(@app.Update, example_control_system)
+  .add_systems_param6(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
   .run()
 }
