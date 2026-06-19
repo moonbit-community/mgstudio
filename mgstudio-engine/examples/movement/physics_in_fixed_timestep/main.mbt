@@ -62,7 +62,7 @@ struct PhysicalTranslation {
 
 ///|
 struct PreviousPhysicalTranslation {
-  value : @math.Vec3
+  mut value : @math.Vec3
 }
 
 ///|
@@ -321,8 +321,8 @@ fn set_fixed_time_step_flag(
 ///|
 fn rotate_camera(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
-  cameras : @ecs.Query[
-    (@ecs.Read[CameraSensitivity], @ecs.Write[@transform.Transform]),
+  camera : @app.Single[
+    (@ecs.Write[@transform.Transform], @ecs.Read[CameraSensitivity]),
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
@@ -331,72 +331,63 @@ fn rotate_camera(
     return
   }
 
-  try! cameras.view(fn(_entity, data) {
-    let (sensitivity, transform) = data
-    let delta_yaw = -delta.x * sensitivity.value().x
-    let delta_pitch = -delta.y * sensitivity.value().y
-    transform.modify(fn(value) {
-      let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
-      let next_pitch = clamp_float(
-        pitch + delta_pitch,
-        -CAMERA_PITCH_LIMIT,
-        CAMERA_PITCH_LIMIT,
-      )
-      value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::YXZ,
-        yaw + delta_yaw,
-        next_pitch,
-        roll,
-      )
-    })
+  let (transform, sensitivity) = camera.get()
+  let delta_yaw = -delta.x * sensitivity.value().x
+  let delta_pitch = -delta.y * sensitivity.value().y
+  transform.modify(fn(value) {
+    let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+    let next_pitch = clamp_float(
+      pitch + delta_pitch,
+      -CAMERA_PITCH_LIMIT,
+      CAMERA_PITCH_LIMIT,
+    )
+    value.rotation = @math.Quat::from_euler(
+      @math.EulerRot::YXZ,
+      yaw + delta_yaw,
+      next_pitch,
+      roll,
+    )
   })
 }
 
 ///|
 fn accumulate_input(
-  commands : @app.Commands,
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  players : @ecs.Query[
-    (@ecs.Read[AccumulatedInput], @ecs.Write[Velocity]),
+  player : @app.Single[
+    (@ecs.Write[AccumulatedInput], @ecs.Write[Velocity]),
     @ecs.All,
   ],
-  cameras : @ecs.Query[
+  camera : @app.Single[
     @ecs.Read[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (cameras.single() catch { _ => None }) is Some(camera_transform_comp) else {
-    return
-  }
-  let camera_transform = camera_transform_comp.value()
-
-  try! players.view(fn(entity, data) {
-    let (input, velocity) = data
-    let next_input = input.value()
-    next_input.movement = @math.Vec2::zero()
+  let camera_transform = camera.get().value()
+  let (input, velocity) = player.get()
+  input.modify(fn(value) {
+    value.movement = @math.Vec2::zero()
     if keyboard_input.pressed(@window.KeyCode::KeyW) {
-      next_input.movement.y = next_input.movement.y + 1.0F
+      value.movement.y = value.movement.y + 1.0F
     }
     if keyboard_input.pressed(@window.KeyCode::KeyS) {
-      next_input.movement.y = next_input.movement.y - 1.0F
+      value.movement.y = value.movement.y - 1.0F
     }
     if keyboard_input.pressed(@window.KeyCode::KeyA) {
-      next_input.movement.x = next_input.movement.x - 1.0F
+      value.movement.x = value.movement.x - 1.0F
     }
     if keyboard_input.pressed(@window.KeyCode::KeyD) {
-      next_input.movement.x = next_input.movement.x + 1.0F
+      value.movement.x = value.movement.x + 1.0F
     }
-
-    let velocity_from_input = camera_transform
-      .right()
-      .mul_scalar(next_input.movement.x)
-      .add(camera_transform.forward().mul_scalar(next_input.movement.y))
-    velocity.modify(fn(value) {
-      value.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
-        PLAYER_SPEED,
-      )
-    })
-    commands.entity(entity).insert_component(next_input)
+  })
+  let movement = input.value().movement
+  let velocity_from_input = camera_transform
+    .right()
+    .mul_scalar(movement.x)
+    .add(camera_transform.forward().mul_scalar(movement.y))
+  velocity.modify(fn(value) {
+    value.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
+      PLAYER_SPEED,
+    )
   })
 }
 
@@ -419,24 +410,20 @@ fn clear_input(
 
 ///|
 fn advance_physics(
-  commands : @app.Commands,
   players : @ecs.Query[
     (
-      @ecs.Read[PreviousPhysicalTranslation],
-      @ecs.Read[Velocity],
       @ecs.Write[PhysicalTranslation],
+      @ecs.Write[PreviousPhysicalTranslation],
+      @ecs.Read[Velocity],
     ),
     @ecs.All,
   ],
 ) -> Unit {
   let delta_seconds = @time.time_fixed_delta_seconds()
-  try! players.view(fn(entity, data) {
-    let (_previous_translation, velocity, current_translation) = data
+  try! players.view(fn(_entity, data) {
+    let (current_translation, previous_translation, velocity) = data
     let previous_value = current_translation.value().value
-    commands
-    .entity(entity)
-    .insert_component(PreviousPhysicalTranslation::{ value: previous_value })
-
+    previous_translation.modify(fn(value) { value.value = previous_value })
     current_translation.modify(fn(value) {
       value.value = value.value.add(
         velocity.value().value.mul_scalar(delta_seconds),
@@ -470,24 +457,19 @@ fn interpolate_rendered_transform(
 
 ///|
 fn translate_camera(
-  players : @ecs.Query[
+  player : @app.Single[
     @ecs.Read[@transform.Transform],
-    @ecs.With[AccumulatedInput],
+    (@ecs.With[AccumulatedInput], @ecs.Without[@camera.Camera3d]),
   ],
-  cameras : @ecs.Query[
+  camera : @app.Single[
     @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (players.single() catch { _ => None }) is Some(player_transform_comp) else {
-    return
-  }
-  let player_transform = player_transform_comp.value()
-
-  try! cameras.view(fn(_entity, transform) {
-    transform.modify(fn(value) {
-      value.translation = player_transform.translation
-    })
+  let player_transform = player.get().value()
+  let camera_transform = camera.get()
+  camera_transform.modify(fn(value) {
+    value.translation = player_transform.translation
   })
 }
 
@@ -537,7 +519,7 @@ fn main {
   .add_systems(@app.Startup, spawn_environment_system)
   .add_systems_param(@app.PreUpdate, clear_fixed_timestep_flag)
   .add_systems_param(@app.FixedPreUpdate, set_fixed_time_step_flag)
-  .add_systems_param2(@app.FixedUpdate, advance_physics)
+  .add_systems_param(@app.FixedUpdate, advance_physics)
   .add_run_fixed_main_loop_system_config(
     @app.system_config_param2(rotate_camera)
     .in_set(SET_ROTATE_CAMERA)
@@ -545,7 +527,7 @@ fn main {
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system_config_param4(accumulate_input)
+    @app.system_config_param3(accumulate_input)
     .in_set(SET_ACCUMULATE_INPUT)
     .before(fixed_main_loop_set),
   )
