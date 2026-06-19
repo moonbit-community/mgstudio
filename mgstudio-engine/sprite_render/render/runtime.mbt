@@ -4737,6 +4737,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "execute_2d",
   )
+  let source_world = @renderer.render_source_world(world)
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
     world,
@@ -4767,7 +4768,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       return
     }
     rs.draw_enabled = false
-    gizmos_prepare(world)
+    gizmos_prepare(source_world)
     let cameras = rs.cameras
     if cameras.length() == 0 {
       gizmos_clear()

@@ -19,9 +19,6 @@ const OFFSET_X : Float = 125.0F
 const OFFSET_Y : Float = 75.0F
 
 ///|
-const SYSTEM_SET_UPDATE_VOLUMES : String = "examples.math.bounding_2d.update_volumes"
-
-///|
 const SYSTEM_SET_RENDER_SHAPES : String = "examples.math.bounding_2d.render_shapes"
 
 ///|
@@ -129,6 +126,11 @@ impl @ecs.Component for DesiredVolume with fn component() {
 }
 
 ///|
+impl @ecs.Component for CurrentVolume with fn component() {
+  current_volume_key
+}
+
+///|
 impl @ecs.QueryData for VolumeIntersectionData with fn matches(world, entity) {
   @ecs.query_data_component_matches(world, entity, current_volume_key) &&
   @ecs.query_data_component_matches(world, entity, intersects_key)
@@ -183,16 +185,11 @@ fn main {
   .add_systems_world(@app.Startup, setup)
   .add_systems_world(@app.Update, update_text)
   .add_systems_world(@app.Update, spin)
+  .add_systems_param2(@app.Update, update_volumes)
   .add_systems_world(@app.Update, update_test_state)
   .add_systems(
     @app.PostUpdate,
-    @app.system_config_world(update_volumes).in_set(SYSTEM_SET_UPDATE_VOLUMES),
-  )
-  .add_systems(
-    @app.PostUpdate,
-    @app.system_config_param(render_shapes)
-    .after(SYSTEM_SET_UPDATE_VOLUMES)
-    .in_set(SYSTEM_SET_RENDER_SHAPES),
+    @app.system_config_param(render_shapes).in_set(SYSTEM_SET_RENDER_SHAPES),
   )
   .add_systems(
     @app.PostUpdate,
@@ -476,17 +473,26 @@ fn spin(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_volumes(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[
+fn update_volumes(
+  commands : @app.Commands,
+  query : @ecs.Query[
     (
+      @core.Entity,
       @ecs.Read[DesiredVolume],
       @ecs.Read[Shape],
       @ecs.Read[@transform.Transform],
     ),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! query.view(fn(entity, data) {
-    let (desired_volume, shape, transform) = data
+    @ecs.Or[
+      (
+        @ecs.Changed[DesiredVolume],
+        @ecs.Changed[Shape],
+        @ecs.Changed[@transform.Transform],
+      ),
+    ],
+  ],
+) -> Unit {
+  try! query.view(fn(_query_entity, data) {
+    let (entity, desired_volume, shape, transform) = data
     let isometry = transform_math_isometry(transform.value())
     let volume = match desired_volume.value() {
       DesiredVolume::Aabb =>
@@ -494,7 +500,7 @@ fn update_volumes(world : @ecs.World) -> Unit {
       DesiredVolume::Circle =>
         CurrentVolume::Circle(shape_bounding_circle(shape.value(), isometry))
     }
-    try! world.set_by_key(entity, current_volume_key, volume)
+    commands.entity(entity).insert_component(volume)
   })
 }
 
