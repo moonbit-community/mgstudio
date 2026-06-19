@@ -55,6 +55,9 @@ pub struct ContrastAdaptiveSharpening {
   denoise : Bool
 } derive(Eq, @debug.Debug)
 pub fn ContrastAdaptiveSharpening::ContrastAdaptiveSharpening() -> Self
+pub fn ContrastAdaptiveSharpening::with_denoise(Self, Bool) -> Self
+pub fn ContrastAdaptiveSharpening::with_enabled(Self, Bool) -> Self
+pub fn ContrastAdaptiveSharpening::with_sharpening_strength(Self, Float) -> Self
 pub impl @ecs.Component for ContrastAdaptiveSharpening
 
 pub struct DenoiseCas {

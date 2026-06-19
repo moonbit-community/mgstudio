@@ -46,6 +46,42 @@ pub fn ContrastAdaptiveSharpening::ContrastAdaptiveSharpening() -> ContrastAdapt
 }
 
 ///|
+pub fn ContrastAdaptiveSharpening::with_enabled(
+  self : ContrastAdaptiveSharpening,
+  enabled : Bool,
+) -> ContrastAdaptiveSharpening {
+  if self.enabled == enabled {
+    self
+  } else {
+    ContrastAdaptiveSharpening::{ ..self, enabled, }
+  }
+}
+
+///|
+pub fn ContrastAdaptiveSharpening::with_sharpening_strength(
+  self : ContrastAdaptiveSharpening,
+  sharpening_strength : Float,
+) -> ContrastAdaptiveSharpening {
+  if self.sharpening_strength == sharpening_strength {
+    self
+  } else {
+    ContrastAdaptiveSharpening::{ ..self, sharpening_strength, }
+  }
+}
+
+///|
+pub fn ContrastAdaptiveSharpening::with_denoise(
+  self : ContrastAdaptiveSharpening,
+  denoise : Bool,
+) -> ContrastAdaptiveSharpening {
+  if self.denoise == denoise {
+    self
+  } else {
+    ContrastAdaptiveSharpening::{ ..self, denoise, }
+  }
+}
+
+///|
 pub struct DenoiseCas {
   enabled : Bool
 } derive(Eq, Debug)

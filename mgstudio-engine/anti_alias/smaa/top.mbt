@@ -63,6 +63,15 @@ pub fn Smaa::Smaa() -> Smaa {
 }
 
 ///|
+pub fn Smaa::with_preset(self : Smaa, preset : SmaaPreset) -> Smaa {
+  if self.preset == preset {
+    self
+  } else {
+    Smaa::{ preset, }
+  }
+}
+
+///|
 const SMAA_AREA_LUT_PATH : String = "anti_alias/smaa/SMAAAreaLUT.ktx2"
 
 ///|

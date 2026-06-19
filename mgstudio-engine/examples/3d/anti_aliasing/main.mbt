@@ -13,98 +13,13 @@
 // limitations under the License.
 
 ///|
-///
-/// Parity target: keep upstream AA control surface and component semantics on the
-/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers).
+// Bevy source: `bevy/examples/3d/anti_aliasing.rs`.
+
+///|
+const PI : Float = 3.141592653589793F
 
 ///|
 const TEXTURE_SIZE : Int = 8
-
-///|
-const HAS_SMAA : Bool = false
-
-///|
-const HAS_DLSS : Bool = false
-
-///|
-const HAS_CAS : Bool = false
-
-///|
-pub(all) enum AAMethod {
-  NoAA
-  MSAA
-  FXAA
-  SMAA
-  TAA
-  DLSS
-}
-
-///|
-pub(all) enum MSAASamples {
-  Sample2
-  Sample4
-  Sample8
-}
-
-///|
-pub(all) enum FXAASensitivity {
-  Low
-  Medium
-  High
-  Ultra
-  Extreme
-}
-
-///|
-pub(all) enum SMAAQuality {
-  Low
-  Medium
-  High
-  Ultra
-}
-
-///|
-pub(all) enum DLSSQuality {
-  Auto
-  UltraPerformance
-  Performance
-  Balanced
-  Quality
-  Dlaa
-}
-
-///|
-priv struct CASState {
-  enabled : Bool
-  strength : Float
-  denoise : Bool
-}
-
-///|
-priv struct AntiAliasingState {
-  mut aa_method : AAMethod
-  mut msaa_samples : MSAASamples
-  mut fxaa_sensitivity : FXAASensitivity
-  mut smaa_quality : SMAAQuality
-  mut dlss_quality : DLSSQuality
-  mut cas : CASState
-  mut use_orthographic : Bool
-  mut camera : @core.Entity?
-  mut help_text : @text.TextHandle?
-}
-
-///|
-let anti_aliasing_state : Ref[AntiAliasingState] = Ref({
-  aa_method: AAMethod::NoAA,
-  msaa_samples: MSAASamples::Sample4,
-  fxaa_sensitivity: FXAASensitivity::Medium,
-  smaa_quality: SMAAQuality::High,
-  dlss_quality: DLSSQuality::Auto,
-  cas: { enabled: false, strength: 0.0F, denoise: false },
-  use_orthographic: false,
-  camera: None,
-  help_text: None,
-})
 
 ///|
 fn byte_from_int(value : Int) -> Byte {
@@ -112,75 +27,13 @@ fn byte_from_int(value : Int) -> Byte {
 }
 
 ///|
-fn aa_method_eq(lhs : AAMethod, rhs : AAMethod) -> Bool {
-  if lhs is NoAA {
-    rhs is NoAA
-  } else if lhs is MSAA {
-    rhs is MSAA
-  } else if lhs is FXAA {
-    rhs is FXAA
-  } else if lhs is SMAA {
-    rhs is SMAA
-  } else if lhs is TAA {
-    rhs is TAA
+fn clamp01(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
   } else {
-    rhs is DLSS
-  }
-}
-
-///|
-fn msaa_samples_eq(lhs : MSAASamples, rhs : MSAASamples) -> Bool {
-  if lhs is Sample2 {
-    rhs is Sample2
-  } else if lhs is Sample4 {
-    rhs is Sample4
-  } else {
-    rhs is Sample8
-  }
-}
-
-///|
-fn fxaa_sensitivity_eq(lhs : FXAASensitivity, rhs : FXAASensitivity) -> Bool {
-  if lhs is Low {
-    rhs is Low
-  } else if lhs is Medium {
-    rhs is Medium
-  } else if lhs is High {
-    rhs is High
-  } else if lhs is Ultra {
-    rhs is Ultra
-  } else {
-    rhs is Extreme
-  }
-}
-
-///|
-fn smaa_quality_eq(lhs : SMAAQuality, rhs : SMAAQuality) -> Bool {
-  if lhs is Low {
-    rhs is Low
-  } else if lhs is Medium {
-    rhs is Medium
-  } else if lhs is High {
-    rhs is High
-  } else {
-    rhs is Ultra
-  }
-}
-
-///|
-fn dlss_quality_eq(lhs : DLSSQuality, rhs : DLSSQuality) -> Bool {
-  if lhs is Auto {
-    rhs is Auto
-  } else if lhs is UltraPerformance {
-    rhs is UltraPerformance
-  } else if lhs is Performance {
-    rhs is Performance
-  } else if lhs is Balanced {
-    rhs is Balanced
-  } else if lhs is Quality {
-    rhs is Quality
-  } else {
-    rhs is Dlaa
+    value
   }
 }
 
@@ -192,355 +45,384 @@ fn draw_selectable_menu_item(
   enabled : Bool,
 ) -> Unit {
   let star = if enabled { "*" } else { "" }
-  ui.write_string("(")
-  ui.write_string(shortcut)
-  ui.write_string(") ")
-  ui.write_string(star)
-  ui.write_string(label)
-  ui.write_string(star)
-  ui.write_string("\n")
+  ui.write_string("(\{shortcut}) \{star}\{label}\{star}\n")
 }
 
 ///|
-fn set_camera_projection(world : @ecs.World) -> Unit {
-  guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let projection = if anti_aliasing_state.val.use_orthographic {
-    @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
-      ..@camera.OrthographicProjection3d::default_3d(),
-      scale: 0.002F,
-    })
-  } else {
-    @camera.Projection::Perspective(
-      @camera.PerspectiveProjection3d::PerspectiveProjection3d(),
-    )
-  }
-  try! (world.replace(camera_entity, @pbr.ecs_key_projection, projection)
-  |> ignore)
+fn remove_taa_components(camera : @app.EntityCommands) -> Unit {
+  camera.remove(@anti_alias.ecs_key_temporal_anti_aliasing)
+  camera.remove(@anti_alias.ecs_key_temporal_jitter)
+  camera.remove(@anti_alias.ecs_key_mip_bias)
+  camera.remove(@pbr.ecs_key_depth_prepass)
+  camera.remove(@pbr.ecs_key_motion_vector_prepass)
 }
 
 ///|
-fn msaa_component_from_selection(samples : MSAASamples) -> @pbr.Msaa {
-  if msaa_samples_eq(samples, MSAASamples::Sample2) {
-    @pbr.Msaa::Sample2
-  } else if msaa_samples_eq(samples, MSAASamples::Sample4) {
-    @pbr.Msaa::Sample4
-  } else {
-    @pbr.Msaa::Sample8
-  }
+fn remove_dlss_components(_camera : @app.EntityCommands) -> Unit {
+  // This example follows Bevy's non-DLSS cfg branch. mgstudio's DLSS package
+  // exists, but the example does not enable a DLSS feature/project id branch.
 }
 
 ///|
-fn fxaa_sensitivity_component(
-  sensitivity : FXAASensitivity,
-) -> @post_process.FxaaSensitivity {
-  if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Low) {
-    @post_process.FxaaSensitivity::Low
-  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Medium) {
-    @post_process.FxaaSensitivity::Medium
-  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::High) {
-    @post_process.FxaaSensitivity::High
-  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Ultra) {
-    @post_process.FxaaSensitivity::Ultra
-  } else {
-    @post_process.FxaaSensitivity::Extreme
-  }
+fn insert_taa_components(camera : @app.EntityCommands) -> Unit {
+  camera.insert_component(
+    @anti_alias.TemporalAntiAliasing::TemporalAntiAliasing(),
+  )
+  camera.insert_component(@anti_alias.TemporalJitter::TemporalJitter())
+  camera.insert_component(@anti_alias.MipBias::MipBias())
+  camera.insert_component(@pbr.DepthPrepass::DepthPrepass())
+  camera.insert_component(@pbr.MotionVectorPrepass::MotionVectorPrepass())
 }
 
 ///|
-fn clear_temporal_aa_components(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
+fn modify_aa(
+  keys : @input.ButtonInput[@window.KeyCode],
+  camera : @app.Single[
+    (
+      @core.Entity,
+      @ecs.Optional[@anti_alias.Fxaa],
+      @ecs.Optional[@anti_alias.Smaa],
+      @ecs.Optional[@anti_alias.TemporalAntiAliasing],
+      @ecs.Write[@anti_alias.Msaa],
+    ),
+    @ecs.With[@camera.Camera3d],
+  ],
+  commands : @app.Commands,
 ) -> Unit {
-  try! (world.take(camera_entity, @post_process.ecs_key_temporal_anti_aliasing)
-  |> ignore)
-  try! (world.take(camera_entity, @post_process.ecs_key_temporal_jitter)
-  |> ignore)
-  try! (world.take(camera_entity, @pbr.ecs_key_depth_prepass) |> ignore)
-  try! (world.take(camera_entity, @pbr.ecs_key_motion_vector_prepass) |> ignore)
+  let (camera_entity, fxaa, smaa, taa, msaa) = camera.get()
+  let camera_commands = commands.entity(camera_entity)
+
+  if keys.just_pressed(@window.KeyCode::Digit1) {
+    msaa.set(@anti_alias.Msaa::Off)
+    camera_commands.remove(@anti_alias.ecs_key_fxaa)
+    camera_commands.remove(@anti_alias.ecs_key_smaa)
+    remove_taa_components(camera_commands)
+    remove_dlss_components(camera_commands)
+  }
+
+  if keys.just_pressed(@window.KeyCode::Digit2) &&
+    msaa.value() == @anti_alias.Msaa::Off {
+    camera_commands.remove(@anti_alias.ecs_key_fxaa)
+    camera_commands.remove(@anti_alias.ecs_key_smaa)
+    remove_taa_components(camera_commands)
+    remove_dlss_components(camera_commands)
+    msaa.set(@anti_alias.Msaa::Sample4)
+  }
+
+  if msaa.value() != @anti_alias.Msaa::Off {
+    if keys.just_pressed(@window.KeyCode::KeyQ) {
+      msaa.set(@anti_alias.Msaa::Sample2)
+    }
+    if keys.just_pressed(@window.KeyCode::KeyW) {
+      msaa.set(@anti_alias.Msaa::Sample4)
+    }
+    if keys.just_pressed(@window.KeyCode::KeyE) {
+      msaa.set(@anti_alias.Msaa::Sample8)
+    }
+  }
+
+  if keys.just_pressed(@window.KeyCode::Digit3) && fxaa.value() is None {
+    msaa.set(@anti_alias.Msaa::Off)
+    camera_commands.remove(@anti_alias.ecs_key_smaa)
+    remove_taa_components(camera_commands)
+    remove_dlss_components(camera_commands)
+    camera_commands.insert_component(@anti_alias.Fxaa::Fxaa())
+  }
+
+  match fxaa.value() {
+    Some(fxaa_value) => {
+      if keys.just_pressed(@window.KeyCode::KeyQ) {
+        camera_commands.insert_component(
+          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Low),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyW) {
+        camera_commands.insert_component(
+          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Medium),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyE) {
+        camera_commands.insert_component(
+          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::High),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyR) {
+        camera_commands.insert_component(
+          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Ultra),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyT) {
+        camera_commands.insert_component(
+          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Extreme),
+        )
+      }
+    }
+    None => ()
+  }
+
+  if keys.just_pressed(@window.KeyCode::Digit4) && smaa.value() is None {
+    msaa.set(@anti_alias.Msaa::Off)
+    camera_commands.remove(@anti_alias.ecs_key_fxaa)
+    remove_taa_components(camera_commands)
+    remove_dlss_components(camera_commands)
+    camera_commands.insert_component(@anti_alias.Smaa::Smaa())
+  }
+
+  match smaa.value() {
+    Some(smaa_value) => {
+      if keys.just_pressed(@window.KeyCode::KeyQ) {
+        camera_commands.insert_component(
+          smaa_value.with_preset(@anti_alias.SmaaPreset::Low),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyW) {
+        camera_commands.insert_component(
+          smaa_value.with_preset(@anti_alias.SmaaPreset::Medium),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyE) {
+        camera_commands.insert_component(
+          smaa_value.with_preset(@anti_alias.SmaaPreset::High),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyR) {
+        camera_commands.insert_component(
+          smaa_value.with_preset(@anti_alias.SmaaPreset::Ultra),
+        )
+      }
+    }
+    None => ()
+  }
+
+  if keys.just_pressed(@window.KeyCode::Digit5) && taa.value() is None {
+    msaa.set(@anti_alias.Msaa::Off)
+    camera_commands.remove(@anti_alias.ecs_key_fxaa)
+    camera_commands.remove(@anti_alias.ecs_key_smaa)
+    remove_dlss_components(camera_commands)
+    insert_taa_components(camera_commands)
+  }
 }
 
 ///|
-fn apply_aa_components(world : @ecs.World) -> Unit {
-  guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let aa_method = anti_aliasing_state.val.aa_method
-  if aa_method_eq(aa_method, AAMethod::NoAA) {
-    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-    clear_temporal_aa_components(world, camera_entity)
-    return
-  }
-  if aa_method_eq(aa_method, AAMethod::MSAA) {
-    try! world.set_by_key(
-      camera_entity,
-      @pbr.ecs_key_msaa,
-      msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
-    )
-    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-    clear_temporal_aa_components(world, camera_entity)
-    return
-  }
-  if aa_method_eq(aa_method, AAMethod::FXAA) {
-    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-    clear_temporal_aa_components(world, camera_entity)
-    try! world.set_by_key(
-      camera_entity,
-      @post_process.ecs_key_fxaa,
-      @post_process.Fxaa::Fxaa().with_sensitivity(
-        fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
-      ),
-    )
-    return
-  }
-  if aa_method_eq(aa_method, AAMethod::TAA) {
-    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-    try! world.set_by_key(
-      camera_entity,
-      @post_process.ecs_key_temporal_anti_aliasing,
-      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-    )
-    try! world.set_by_key(
-      camera_entity,
-      @post_process.ecs_key_temporal_jitter,
-      @post_process.TemporalJitter::TemporalJitter(),
-    )
-    try! world.set_by_key(
-      camera_entity,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::DepthPrepass(),
-    )
-    try! world.set_by_key(
-      camera_entity,
-      @pbr.ecs_key_motion_vector_prepass,
-      @pbr.MotionVectorPrepass::MotionVectorPrepass(),
-    )
-    return
-  }
-  if aa_method_eq(aa_method, AAMethod::SMAA) && !HAS_SMAA {
-    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-    clear_temporal_aa_components(world, camera_entity)
-    return
-  }
-  if aa_method_eq(aa_method, AAMethod::DLSS) && !HAS_DLSS {
-    try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-    try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-    clear_temporal_aa_components(world, camera_entity)
-    return
-  }
-  try! world.set_by_key(camera_entity, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! (world.take(camera_entity, @post_process.ecs_key_fxaa) |> ignore)
-  clear_temporal_aa_components(world, camera_entity)
+fn modify_sharpening(
+  keys : @input.ButtonInput[@window.KeyCode],
+  query : @ecs.Query[
+    @ecs.Write[@anti_alias.ContrastAdaptiveSharpening],
+    @ecs.All,
+  ],
+) -> Unit {
+  try! query.for_each(fn(_entity, cas) {
+    if keys.just_pressed(@window.KeyCode::Digit0) {
+      cas.set(cas.value().with_enabled(!cas.value().enabled))
+    }
+    if cas.value().enabled {
+      if keys.just_pressed(@window.KeyCode::Minus) {
+        cas.set(
+          cas
+          .value()
+          .with_sharpening_strength(
+            clamp01(cas.value().sharpening_strength - 0.1F),
+          ),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::Equal) {
+        cas.set(
+          cas
+          .value()
+          .with_sharpening_strength(
+            clamp01(cas.value().sharpening_strength + 0.1F),
+          ),
+        )
+      }
+      if keys.just_pressed(@window.KeyCode::KeyD) {
+        cas.set(cas.value().with_denoise(!cas.value().denoise))
+      }
+    }
+  })
 }
 
 ///|
-fn update_ui() -> Unit {
-  guard anti_aliasing_state.val.help_text is Some(handle) else { return }
-  let state = anti_aliasing_state.val
+fn modify_projection(
+  keys : @input.ButtonInput[@window.KeyCode],
+  query : @ecs.Query[@ecs.Write[@pbr.Projection], @ecs.All],
+) -> Unit {
+  if !keys.just_pressed(@window.KeyCode::KeyO) {
+    return
+  }
+  try! query.for_each(fn(_entity, projection) {
+    match projection.value() {
+      Perspective(_) =>
+        projection.set(
+          Orthographic(@pbr.OrthographicProjection3d::{
+            ..@pbr.OrthographicProjection3d::default_3d(),
+            scale: 0.002F,
+          }),
+        )
+      _ =>
+        projection.set(
+          Perspective(@pbr.PerspectiveProjection3d::PerspectiveProjection3d()),
+        )
+    }
+  })
+}
+
+///|
+fn update_ui(
+  camera : @app.Single[
+    (
+      @ecs.Read[@pbr.Projection],
+      @ecs.Optional[@anti_alias.Fxaa],
+      @ecs.Optional[@anti_alias.Smaa],
+      @ecs.Optional[@anti_alias.TemporalAntiAliasing],
+      @ecs.Read[@anti_alias.ContrastAdaptiveSharpening],
+      @ecs.Read[@anti_alias.Msaa],
+    ),
+    @ecs.With[@camera.Camera3d],
+  ],
+  ui_text : @app.Single[@ecs.Write[@text.Text], @ecs.All],
+) -> Unit {
+  let (projection, fxaa, smaa, taa, cas, msaa) = camera.get()
+  let fxaa_value = fxaa.value()
+  let smaa_value = smaa.value()
+  let taa_value = taa.value()
+  let cas_value = cas.value()
+  let msaa_value = msaa.value()
+  let dlss_none = true
   let ui = StringBuilder::new()
   ui.write_string("Antialias Method\n")
+  draw_selectable_menu_item(
+    ui,
+    "No AA",
+    "1",
+    msaa_value == @anti_alias.Msaa::Off &&
+    fxaa_value is None &&
+    taa_value is None &&
+    smaa_value is None &&
+    dlss_none,
+  )
+  draw_selectable_menu_item(
+    ui,
+    "MSAA",
+    "2",
+    msaa_value != @anti_alias.Msaa::Off,
+  )
+  draw_selectable_menu_item(ui, "FXAA", "3", fxaa_value is Some(_))
+  draw_selectable_menu_item(ui, "SMAA", "4", smaa_value is Some(_))
+  draw_selectable_menu_item(ui, "TAA", "5", taa_value is Some(_))
 
-  draw_selectable_menu_item(
-    ui,
-    "No AA".to_string(),
-    "1".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::NoAA),
-  )
-  draw_selectable_menu_item(
-    ui,
-    "MSAA".to_string(),
-    "2".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::MSAA),
-  )
-  draw_selectable_menu_item(
-    ui,
-    "FXAA".to_string(),
-    "3".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::FXAA),
-  )
-  draw_selectable_menu_item(
-    ui,
-    if HAS_SMAA {
-      "SMAA".to_string()
-    } else {
-      "SMAA (Unavailable)".to_string()
-    },
-    "4".to_string(),
-    HAS_SMAA && aa_method_eq(state.aa_method, AAMethod::SMAA),
-  )
-  draw_selectable_menu_item(
-    ui,
-    "TAA".to_string(),
-    "5".to_string(),
-    aa_method_eq(state.aa_method, AAMethod::TAA),
-  )
-  draw_selectable_menu_item(
-    ui,
-    if HAS_DLSS {
-      "DLSS".to_string()
-    } else {
-      "DLSS (Unavailable)".to_string()
-    },
-    "6".to_string(),
-    HAS_DLSS && aa_method_eq(state.aa_method, AAMethod::DLSS),
-  )
-
-  if aa_method_eq(state.aa_method, AAMethod::MSAA) {
+  if msaa_value != @anti_alias.Msaa::Off {
     ui.write_string("\n----------\n\nSample Count\n")
     draw_selectable_menu_item(
       ui,
-      "2".to_string(),
-      "Q".to_string(),
-      msaa_samples_eq(state.msaa_samples, MSAASamples::Sample2),
+      "2",
+      "Q",
+      msaa_value == @anti_alias.Msaa::Sample2,
     )
     draw_selectable_menu_item(
       ui,
-      "4".to_string(),
-      "W".to_string(),
-      msaa_samples_eq(state.msaa_samples, MSAASamples::Sample4),
+      "4",
+      "W",
+      msaa_value == @anti_alias.Msaa::Sample4,
     )
     draw_selectable_menu_item(
       ui,
-      "8".to_string(),
-      "E".to_string(),
-      msaa_samples_eq(state.msaa_samples, MSAASamples::Sample8),
+      "8",
+      "E",
+      msaa_value == @anti_alias.Msaa::Sample8,
     )
   }
 
-  if aa_method_eq(state.aa_method, AAMethod::FXAA) {
-    ui.write_string("\n----------\n\nSensitivity\n")
-    draw_selectable_menu_item(
-      ui,
-      "Low".to_string(),
-      "Q".to_string(),
-      fxaa_sensitivity_eq(state.fxaa_sensitivity, FXAASensitivity::Low),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Medium".to_string(),
-      "W".to_string(),
-      fxaa_sensitivity_eq(state.fxaa_sensitivity, FXAASensitivity::Medium),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "High".to_string(),
-      "E".to_string(),
-      fxaa_sensitivity_eq(state.fxaa_sensitivity, FXAASensitivity::High),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Ultra".to_string(),
-      "R".to_string(),
-      fxaa_sensitivity_eq(state.fxaa_sensitivity, FXAASensitivity::Ultra),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Extreme".to_string(),
-      "T".to_string(),
-      fxaa_sensitivity_eq(state.fxaa_sensitivity, FXAASensitivity::Extreme),
-    )
+  match fxaa_value {
+    Some(fxaa) => {
+      ui.write_string("\n----------\n\nSensitivity\n")
+      draw_selectable_menu_item(
+        ui,
+        "Low",
+        "Q",
+        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Low,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "Medium",
+        "W",
+        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Medium,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "High",
+        "E",
+        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::High,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "Ultra",
+        "R",
+        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Ultra,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "Extreme",
+        "T",
+        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Extreme,
+      )
+    }
+    None => ()
   }
 
-  if HAS_SMAA && aa_method_eq(state.aa_method, AAMethod::SMAA) {
-    ui.write_string("\n----------\n\nQuality\n")
-    draw_selectable_menu_item(
-      ui,
-      "Low".to_string(),
-      "Q".to_string(),
-      smaa_quality_eq(state.smaa_quality, SMAAQuality::Low),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Medium".to_string(),
-      "W".to_string(),
-      smaa_quality_eq(state.smaa_quality, SMAAQuality::Medium),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "High".to_string(),
-      "E".to_string(),
-      smaa_quality_eq(state.smaa_quality, SMAAQuality::High),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Ultra".to_string(),
-      "R".to_string(),
-      smaa_quality_eq(state.smaa_quality, SMAAQuality::Ultra),
-    )
+  match smaa_value {
+    Some(smaa) => {
+      ui.write_string("\n----------\n\nQuality\n")
+      draw_selectable_menu_item(
+        ui,
+        "Low",
+        "Q",
+        smaa.preset == @anti_alias.SmaaPreset::Low,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "Medium",
+        "W",
+        smaa.preset == @anti_alias.SmaaPreset::Medium,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "High",
+        "E",
+        smaa.preset == @anti_alias.SmaaPreset::High,
+      )
+      draw_selectable_menu_item(
+        ui,
+        "Ultra",
+        "R",
+        smaa.preset == @anti_alias.SmaaPreset::Ultra,
+      )
+    }
+    None => ()
   }
 
-  if HAS_DLSS && aa_method_eq(state.aa_method, AAMethod::DLSS) {
-    ui.write_string("\n----------\n\nQuality\n")
-    draw_selectable_menu_item(
-      ui,
-      "Auto".to_string(),
-      "Z".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::Auto),
+  ui.write_string("\n----------\n\n")
+  draw_selectable_menu_item(ui, "Sharpening", "0", cas_value.enabled)
+  if cas_value.enabled {
+    ui.write_string(
+      "(-/+) Strength: \{cas_value.sharpening_strength.to_string()}\n",
     )
-    draw_selectable_menu_item(
-      ui,
-      "UltraPerformance".to_string(),
-      "X".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::UltraPerformance),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Performance".to_string(),
-      "C".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::Performance),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Balanced".to_string(),
-      "V".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::Balanced),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "Quality".to_string(),
-      "B".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::Quality),
-    )
-    draw_selectable_menu_item(
-      ui,
-      "DLAA".to_string(),
-      "N".to_string(),
-      dlss_quality_eq(state.dlss_quality, DLSSQuality::Dlaa),
-    )
+    draw_selectable_menu_item(ui, "Denoising", "D", cas_value.denoise)
   }
 
   ui.write_string("\n----------\n\n")
   draw_selectable_menu_item(
     ui,
-    if HAS_CAS {
-      "Sharpening".to_string()
-    } else {
-      "Sharpening (Unavailable)".to_string()
-    },
-    "0".to_string(),
-    HAS_CAS && state.cas.enabled,
+    "Orthographic",
+    "O",
+    projection.value() is Orthographic(_),
   )
-  if HAS_CAS && state.cas.enabled {
-    ui.write_string("(-/=) Strength: \{state.cas.strength.to_string()}\n")
-    draw_selectable_menu_item(
-      ui,
-      "Denoising".to_string(),
-      "D".to_string(),
-      state.cas.denoise,
-    )
-  }
-  ui.write_string("\n----------\n\n")
-  draw_selectable_menu_item(
-    ui,
-    "Orthographic".to_string(),
-    "O".to_string(),
-    state.use_orthographic,
-  )
-  @text.text_set_content(handle, ui.to_string())
+  ui_text.get().set(@text.Text::new(ui.to_string()))
 }
 
 ///|
-fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
+fn uv_debug_texture(
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+) -> @asset.Handle[@asset.Image] {
   let mut palette : Array[Byte] = [
     byte_from_int(255),
     byte_from_int(102),
@@ -589,114 +471,150 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
     palette = rotated
   }
 
-  let size = @math.UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE)
-  let texture = @asset.asset_create_dynamic_texture(size, true)
-  @asset.asset_update_texture_region_rgba8(
-    texture,
-    @math.URect::new(@math.UVec2::new(0, 0), size),
+  let image = @asset.Image::new(
+    TEXTURE_SIZE,
+    TEXTURE_SIZE,
     Bytes::from_array(texture_data),
+  ).with_format(Rgba8UnormSrgb)
+  let handle = images.modify(fn(assets) { assets.add(image) })
+  @asset.asset_set_texture_sampler(
+    handle,
+    @asset.ImageSampler::Descriptor(
+      @asset.ImageSamplerDescriptor::ImageSamplerDescriptor(),
+    ),
   )
-  texture
+  handle
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  anti_aliasing_state.val.aa_method = AAMethod::NoAA
-  anti_aliasing_state.val.msaa_samples = MSAASamples::Sample4
-  anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Medium
-  anti_aliasing_state.val.smaa_quality = SMAAQuality::High
-  anti_aliasing_state.val.dlss_quality = DLSSQuality::Auto
-  anti_aliasing_state.val.cas = {
-    enabled: false,
-    strength: 0.0F,
-    denoise: false,
-  }
-  anti_aliasing_state.val.use_orthographic = false
-  anti_aliasing_state.val.camera = None
-  anti_aliasing_state.val.help_text = None
+fn add_mesh_from_geometry(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  geometry : @mesh.Mesh3dGeometry,
+) -> @asset.Handle[@mesh.Mesh] {
+  meshes.modify(fn(assets) { assets |> @pbr.add_mesh(geometry) })
+}
 
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(20.0F, 20.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @color.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let asset_server = asset_server.get()
+
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          add_mesh_from_geometry(
+            meshes,
+            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+              @math.Vec2::new(20.0F, 20.0F),
+            ).build(),
+          ),
         ),
-      ),
-    ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_base_color_texture(Some(uv_debug_texture()))
-    .with_perceptual_roughness(0.85F)
-    .with_metallic(0.0F),
-  )
-
-  for i in 0..<5 {
-    let i_f = Float::from_double(i.to_double())
-    @pbr.MeshMaterial3dBundle::new(
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-          assets |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
-        }),
-      ),
-      @pbr.MeshMaterial3d::new(cube_material),
-      @transform.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),
-    ).spawn(world)
-    |> ignore
-  }
-
-  let asset_server = @asset.AssetServer::new()
-  let helmet = world.spawn_empty()
-  try! world.set_by_key(
-    helmet,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(
-          "models/FlightHelmet/FlightHelmet.gltf",
+        @pbr.MeshMaterial3d::new(
+          materials.modify(fn(assets) {
+            assets.add(
+              @pbr.StandardMaterial::from_color(
+                @color.Color::srgb(0.1F, 0.2F, 0.1F),
+              ),
+            )
+          }),
         ),
       ),
     ),
   )
 
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
-  )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-
-  let camera_entity = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
-        @math.Vec3::new(0.0F, 0.3F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  let cube_material = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
+        Some(uv_debug_texture(images)),
       ),
     )
-    .with_distance_fog(
-      Some(
+  })
+  for i in 0..<5 {
+    let i_f = Float::from_int(i)
+    ignore(
+      commands.spawn(
+        (
+          @mesh.Mesh3d::new(
+            meshes.modify(fn(assets) {
+              assets |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
+            }),
+          ),
+          @pbr.MeshMaterial3d::new(cube_material),
+          @transform.Transform::from_xyz(
+            i_f * 0.25F - 1.0F,
+            0.125F,
+            -i_f * 0.5F,
+          ),
+        ),
+      ),
+    )
+  }
+
+  ignore(
+    commands.spawn_component(
+      @scene.SceneRoot::new(
+        @scene.scene_load_gltf_scene(
+          asset_server,
+          @gltf.GltfAssetLabel::Scene(0).from_asset(
+            "models/FlightHelmet/FlightHelmet.gltf",
+          ),
+        ),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::DirectionalLight()
+        .with_illuminance(110_000.0F)
+        .with_shadow_maps_enabled(true)
+        .with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+          .with_maximum_distance(3.0F)
+          .with_first_cascade_far_bound(0.9F),
+        ),
+        @transform.Transform::identity().with_rotation(
+          @math.Quat::from_euler(
+            @math.EulerRot::ZYX,
+            0.0F,
+            PI * -0.15F,
+            PI * -0.15F,
+          ),
+        ),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @camera_camera.Camera::Camera(),
+        @anti_alias.Msaa::Off,
+        @pbr.Hdr::Hdr(),
+        @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.3F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @anti_alias.ContrastAdaptiveSharpening::ContrastAdaptiveSharpening().with_enabled(
+          false,
+        ),
+        @pbr.EnvironmentMapLight::new(
+          Some(
+            asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+          ),
+          Some(
+            asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+          ),
+          150.0F,
+        ),
         @pbr.DistanceFog::new(
           @color.Color::new(
             43.0F / 255.0F,
@@ -707,256 +625,55 @@ fn setup(world : @ecs.World) -> Unit {
           @pbr.FogFalloff3d::linear(1.0F, 4.0F),
         ),
       ),
-    )
-    .spawn(world)
-  anti_aliasing_state.val.camera = Some(camera_entity)
-  try! world.set_by_key(
-    camera_entity,
-    @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
-      150.0F,
     ),
   )
 
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  anti_aliasing_state.val.help_text = Some(help_text)
-
-  set_camera_projection(world)
-  apply_aa_components(world)
-  update_ui()
-}
-
-///|
-fn read_cas_character_shortcuts(
-  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
-) -> (Bool, Bool, Bool) {
-  let mut toggle = false
-  let mut decrement = false
-  let mut increment = false
-  for event in keyboard_inputs.read() {
-    if event.state is Released || event.repeat {
-      continue
-    }
-    if event.logical_key is @input.Key::Character(character) {
-      if character == "0" || character == ")" {
-        toggle = true
-      } else if character == "-" || character == "_" {
-        decrement = true
-      } else if character == "=" || character == "+" {
-        increment = true
-      }
-    }
-  }
-  (toggle, decrement, increment)
-}
-
-///|
-fn modify_aa(
-  world : @ecs.World,
-  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
-) -> Bool {
-  let (cas_toggle_char, cas_decrease_char, cas_increase_char) = read_cas_character_shortcuts(
-    keyboard_inputs,
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
   )
-  let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    anti_aliasing_state.val.aa_method = AAMethod::NoAA
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    anti_aliasing_state.val.aa_method = AAMethod::MSAA
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    anti_aliasing_state.val.aa_method = AAMethod::FXAA
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    if HAS_SMAA {
-      anti_aliasing_state.val.aa_method = AAMethod::SMAA
-      changed = true
-    }
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    anti_aliasing_state.val.aa_method = AAMethod::TAA
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    if HAS_DLSS {
-      anti_aliasing_state.val.aa_method = AAMethod::DLSS
-      changed = true
-    }
-  }
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
 
-  if aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::MSAA) {
-    if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-      anti_aliasing_state.val.msaa_samples = MSAASamples::Sample2
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyW) {
-      anti_aliasing_state.val.msaa_samples = MSAASamples::Sample4
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyE) {
-      anti_aliasing_state.val.msaa_samples = MSAASamples::Sample8
-      changed = true
-    }
-  }
+  let ui_root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
 
-  if aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::FXAA) {
-    if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-      anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Low
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyW) {
-      anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Medium
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyE) {
-      anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::High
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyR) {
-      anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Ultra
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyT) {
-      anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Extreme
-      changed = true
-    }
-  }
-
-  if HAS_SMAA && aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::SMAA) {
-    if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-      anti_aliasing_state.val.smaa_quality = SMAAQuality::Low
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyW) {
-      anti_aliasing_state.val.smaa_quality = SMAAQuality::Medium
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyE) {
-      anti_aliasing_state.val.smaa_quality = SMAAQuality::High
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyR) {
-      anti_aliasing_state.val.smaa_quality = SMAAQuality::Ultra
-      changed = true
-    }
-  }
-
-  if HAS_DLSS && aa_method_eq(anti_aliasing_state.val.aa_method, AAMethod::DLSS) {
-    if @input.key_just_pressed(@window.KeyCode::KeyZ) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::Auto
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyX) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::UltraPerformance
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyC) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::Performance
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyV) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::Balanced
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyB) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::Quality
-      changed = true
-    }
-    if @input.key_just_pressed(@window.KeyCode::KeyN) {
-      anti_aliasing_state.val.dlss_quality = DLSSQuality::Dlaa
-      changed = true
-    }
-  }
-
-  if HAS_CAS {
-    if @input.key_just_pressed(@window.KeyCode::KeyP) || cas_toggle_char {
-      anti_aliasing_state.val.cas = {
-        ..anti_aliasing_state.val.cas,
-        enabled: !anti_aliasing_state.val.cas.enabled,
-      }
-      changed = true
-    }
-    if anti_aliasing_state.val.cas.enabled {
-      if @input.key_just_pressed(@window.KeyCode::Comma) || cas_decrease_char {
-        anti_aliasing_state.val.cas = {
-          ..anti_aliasing_state.val.cas,
-          strength: if anti_aliasing_state.val.cas.strength - 0.1F < 0.0F {
-            0.0F
-          } else {
-            anti_aliasing_state.val.cas.strength - 0.1F
-          },
-        }
-        changed = true
-      }
-      if @input.key_just_pressed(@window.KeyCode::Period) || cas_increase_char {
-        anti_aliasing_state.val.cas = {
-          ..anti_aliasing_state.val.cas,
-          strength: if anti_aliasing_state.val.cas.strength + 0.1F > 1.0F {
-            1.0F
-          } else {
-            anti_aliasing_state.val.cas.strength + 0.1F
-          },
-        }
-        changed = true
-      }
-      if @input.key_just_pressed(@window.KeyCode::KeyD) {
-        anti_aliasing_state.val.cas = {
-          ..anti_aliasing_state.val.cas,
-          denoise: !anti_aliasing_state.val.cas.denoise,
-        }
-        changed = true
-      }
-    }
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    anti_aliasing_state.val.use_orthographic = !anti_aliasing_state.val.use_orthographic
-    set_camera_projection(world)
-    changed = true
-  }
-
-  changed
-}
-
-///|
-fn update(keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput]) -> Unit {
-  let world = @app.current_world().unwrap()
-  if modify_aa(world, keyboard_inputs) {
-    apply_aa_components(world)
-    update_ui()
-  }
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(ui_root),
+        @text.Text::Text(),
+        @text.TextFont::TextFont(),
+        @text.TextColor::TextColor(),
+        @text.TextLayout::TextLayout(),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
+      ),
+    ),
+  )
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param(@app.Update, update)
+  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param3(@app.Update, modify_aa)
+  .add_systems_param2(@app.Update, modify_sharpening)
+  .add_systems_param2(@app.Update, modify_projection)
+  .add_systems_param2(@app.Update, update_ui)
   .run()
 }
