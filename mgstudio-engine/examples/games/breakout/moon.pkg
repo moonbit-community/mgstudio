@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
+  "Milky2018/mgstudio/examples/showcase/stepping" @showcase_stepping,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/camera/clear_color" @camera_clear_color,

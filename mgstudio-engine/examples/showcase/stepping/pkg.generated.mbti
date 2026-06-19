@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/showcase/stepping"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/ui",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct SteppingPlugin {
+  schedule_labels : Array[@app.ScheduleStage]
+  top : @ui.Val
+  left : @ui.Val
+}
+pub fn SteppingPlugin::SteppingPlugin() -> Self
+pub fn SteppingPlugin::add_schedule(Self, @app.ScheduleStage) -> Self
+pub fn SteppingPlugin::at(Self, @ui.Val, @ui.Val) -> Self
+pub impl @app.Plugin for SteppingPlugin
+
+// Type aliases
+
+// Traits
+

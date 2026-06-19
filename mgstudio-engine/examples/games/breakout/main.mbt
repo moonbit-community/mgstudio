@@ -660,6 +660,11 @@ fn main {
   .insert_resource(Score::{ value: 0 })
   .insert_resource(@camera_clear_color.ClearColor::new(background_color))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @showcase_stepping.SteppingPlugin::SteppingPlugin()
+    .add_schedule(@app.Update)
+    .at(@ui.percent(35.0F), @ui.percent(50.0F)),
+  )
   .add_systems_param4(@app.Startup, setup)
   .add_systems(
     @app.Update,

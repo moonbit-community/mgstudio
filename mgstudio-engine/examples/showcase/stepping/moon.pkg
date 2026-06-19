@@ -1,0 +1,8 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/ui",
+}
+
+supported_targets = "native"
