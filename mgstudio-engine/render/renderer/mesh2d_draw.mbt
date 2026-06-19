@@ -1064,8 +1064,37 @@ fn host_material2d_bind_group_cache_key(
 }
 
 ///|
+fn host_material2d_cached_uniform_bytes(
+  bindings : Array[HostMaterial2dBinding],
+  binding_index : UInt,
+) -> Bytes? {
+  for binding in bindings {
+    if binding.binding != binding_index {
+      continue
+    }
+    match binding.value {
+      Uniform(bytes) => return Some(bytes)
+      _ => return None
+    }
+  }
+  None
+}
+
+///|
 fn host_material2d_default_layout_signature() -> Array[(UInt, Int)] {
   [(0U, 1), (1U, 2), (2U, 3)]
+}
+
+///|
+fn host_material2d_layout_signature_with_immediates(
+  bind_group : HostMaterial2dBindGroup,
+  immediate_size : UInt,
+) -> Array[(UInt, Int)] {
+  let signature = host_material2d_layout_signature(bind_group)
+  if immediate_size > 0U {
+    signature.push((0xffffffffU, immediate_size.reinterpret_as_int()))
+  }
+  signature
 }
 
 ///|
@@ -1330,8 +1359,11 @@ fn mesh2d_material_layout_cache_insert_index(
 fn mesh2d_material_layout_for_bind_group(
   backend : GpuBackend,
   bind_group : HostMaterial2dBindGroup,
+  immediate_size? : UInt = 0U,
 ) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout)? {
-  let layout_signature = host_material2d_layout_signature(bind_group)
+  let layout_signature = host_material2d_layout_signature_with_immediates(
+    bind_group, immediate_size,
+  )
   let layout_key_string = host_material2d_layout_signature_key(layout_signature)
   if mesh2d_material_layout_from_cache(backend, layout_signature)
     is Some(layout_info) {
@@ -1385,12 +1417,14 @@ fn mesh2d_material_layout_for_bind_group(
       label="mgstudio_mesh2d_material_bind_group_layout_\{layout_key_string}",
     )
   }
-  let pipeline_layout = create_pipeline_layout_3(
-    backend.device,
-    view_bgl,
-    mesh_bgl,
-    material_bgl,
-  )
+  let pipeline_layout = if immediate_size > 0U {
+    backend.device.create_pipeline_layout_with_immediates(
+      [view_bgl, mesh_bgl, material_bgl],
+      [(fragment_stage, 0U, immediate_size)],
+    )
+  } else {
+    create_pipeline_layout_3(backend.device, view_bgl, mesh_bgl, material_bgl)
+  }
   pipeline_layout.set_label(
     "mgstudio_mesh2d_pipeline_layout_\{layout_key_string}",
   )
@@ -2198,7 +2232,12 @@ fn mesh_pipeline_for_draw(
   let material_layout_key = host_material2d_bind_group_layout_key(
     material_bind_group,
   )
-  guard mesh2d_material_layout_for_bind_group(backend, material_bind_group)
+  let immediate_size = if wireframe { 16U } else { 0U }
+  guard mesh2d_material_layout_for_bind_group(
+      backend,
+      material_bind_group,
+      immediate_size~,
+    )
     is Some((_, material_pipeline_layout)) else {
     return None
   }
@@ -2318,6 +2357,15 @@ fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
   pass.set_bind_group(0U, view_bg, [0U])
   pass.set_bind_group(1U, instance_uniform_bg, [uniform_dynamic_offset])
   pass.set_bind_group(2U, material_bg, [])
+  if backend.mesh2d_batch_wireframe {
+    if host_material2d_cached_uniform_bytes(
+        backend.mesh2d_batch_material_key,
+        0U,
+      )
+      is Some(immediate_bytes) {
+      pass.set_immediates(ss(@wgpu.SHADER_STAGE_FRAGMENT), 0U, immediate_bytes)
+    }
+  }
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   render_diagnostics_record_mesh2d_executed_draw()
   if mesh.index_count > 0U {

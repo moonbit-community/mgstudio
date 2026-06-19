@@ -84,3 +84,49 @@ test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin applies @sprit
   debug_inspect(wireframe.handle().id() >= 0, content="true")
   debug_inspect(materials.get(wireframe.handle()) is Some(_), content="true")
 }
+
+///|
+test "sprite: explicit @sprite_render_mesh2d_wireframe2d.Wireframe2d inserts material after query iteration" {
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
+  let app = @app.App::new(@ecs.World::new())
+    .insert_resource(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
+        false,
+        @color.Color::white(),
+      ),
+    )
+    .add_plugins(
+      @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin::Wireframe2dPlugin(),
+    )
+    .add_system(fn(world : @ecs.World) {
+      if entity_ref.val is Some(_) {
+        return
+      }
+      let entity = world.spawn()
+      entity_ref.val = Some(entity)
+      try! (world.set_by_key(
+        entity,
+        @mesh.ecs_key_mesh2d,
+        @mesh.Mesh2d::new(@asset.Handle::new(11)),
+      )
+      |> ignore)
+      try! (world.set_by_key(
+        entity,
+        @sprite_render_mesh2d_wireframe2d.Wireframe2d::component(),
+        @sprite_render_mesh2d_wireframe2d.Wireframe2d::Wireframe2d(),
+      )
+      |> ignore)
+    })
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  let entity = entity_ref.val.unwrap()
+  let wireframe = (try! app
+  .world()
+  .get_by_key(
+    entity,
+    @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe::component(),
+  )).unwrap()
+  debug_inspect(wireframe.handle().id() >= 0, content="true")
+}

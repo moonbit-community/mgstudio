@@ -471,13 +471,20 @@ fn apply_wireframe_material(world : @ecs.World) -> Unit {
   for entity in no_wireframe_entities {
     remove_mesh2d_wireframe_component(world, entity)
   }
+  let material_to_spawn : Array[
+    (@core.Entity, @asset.Handle[Wireframe2dMaterial]),
+  ] = []
   try! query.view(fn(entity, _wireframe) {
     let maybe_color = try! world.get_by_key(entity, ecs_key_wireframe2d_color)
     let handle = materials_ref.modify(fn(materials) {
       get_wireframe_material(maybe_color, materials, global_material)
     })
-    set_mesh2d_wireframe_component(world, entity, handle)
+    material_to_spawn.push((entity, handle))
   })
+  for item in material_to_spawn {
+    let (entity, handle) = item
+    set_mesh2d_wireframe_component(world, entity, handle)
+  }
   world.for_each_component(material_key, fn(entity, _value) {
     if !wireframe2d_has_component(world, entity, ecs_key_wireframe2d) &&
       !wireframe2d_has_component(world, entity, @mesh.ecs_key_mesh2d) {
