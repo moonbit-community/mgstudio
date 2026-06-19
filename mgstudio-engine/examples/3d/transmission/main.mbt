@@ -86,8 +86,6 @@ priv struct TransmissionState {
   mut auto_camera : Bool
   mut camera_translation : @math.Vec3
   mut camera : @core.Entity?
-  mut flame_mesh : @core.Entity?
-  mut flame_light : @core.Entity?
   mut display_text : @text.TextHandle?
   color_rng : @chacha_rng.ChaCha8Rng
 }
@@ -107,8 +105,6 @@ let transmission_state : Ref[TransmissionState] = Ref({
     CAMERA_INITIAL_Z,
   ),
   camera: None,
-  flame_mesh: None,
-  flame_light: None,
   display_text: None,
   color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
 })
@@ -453,7 +449,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.NotShadowCaster::NotShadowCaster(),
   )
   try! world.set_by_key(flame_mesh_entity, flicker_key, Flicker::{  })
-  transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
   let white_glass = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
@@ -624,7 +619,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
       true,
     ).with_radius(0.2F),
   )
-  transmission_state.val.flame_light = Some(flame_light)
   try! world.set_by_key(flame_light, flicker_key, Flicker::{  })
 }
 
@@ -998,53 +992,47 @@ fn example_control_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn flicker_system(world : @ecs.World) -> Unit {
-  let s = world_time(world).elapsed_seconds()
+fn flicker_system(
+  flame : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    (@ecs.With[Flicker], @ecs.With[@mesh.Mesh3d]),
+  ],
+  light : @ecs.Query[
+    (@ecs.Write[@pbr.PointLight], @ecs.Write[@transform.Transform]),
+    (@ecs.With[Flicker], @ecs.Without[@mesh.Mesh3d]),
+  ],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let s = time.get().elapsed_seconds()
   let a = @math.cos(s * 6.0F) * 0.0125F + @math.cos(s * 4.0F) * 0.025F
   let b = @math.cos(s * 5.0F) * 0.0125F + @math.cos(s * 3.0F) * 0.025F
   let c = @math.cos(s * 7.0F) * 0.0125F + @math.cos(s * 2.0F) * 0.025F
 
-  if transmission_state.val.flame_light is Some(light_entity) {
-    if (try! world.get_by_key(light_entity, @pbr.ecs_key_point_light))
-      is Some(point_light) {
-      try! (world.replace(
-        light_entity,
-        @pbr.ecs_key_point_light,
-        point_light.with_intensity(4_000.0F + 3_000.0F * (a + b + c)),
-      )
-      |> ignore)
-    }
+  guard (light.single() catch { _ => None }) is Some(light_data) else { return }
+  let (point_light, light_transform) = light_data
+  point_light.set(
+    point_light.value().with_intensity(4_000.0F + 3_000.0F * (a + b + c)),
+  )
+  light_transform.modify(fn(value) {
+    value.translation = @math.Vec3::new(-1.0F - c, 1.7F, -a)
+  })
 
-    if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
-      is Some(light_transform) {
-      try! (world.replace(
-        light_entity,
-        @transform.ecs_key_transform,
-        light_transform.with_translation(@math.Vec3::new(-1.0F - c, 1.7F, -a)),
-      )
-      |> ignore)
-    }
+  guard (flame.single() catch { _ => None }) is Some(flame_transform) else {
+    return
   }
-
-  if transmission_state.val.flame_mesh is Some(flame_entity) {
-    if (try! world.contains_by_key(flame_entity, @transform.ecs_key_transform)) {
-      let base_transform = @transform.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
-        @math.Vec3::new(-1.0F - c, 1.7F - b, -a),
-        @math.Vec3::new(1.0F, 0.0F, 0.0F),
-      )
-      let rotated_flame = base_transform.with_rotation(
-        base_transform.rotation
-        .mul(@math.Quat::from_rotation_z(PI / 2.0F))
-        .normalize(),
-      )
-      try! (world.replace(
-        flame_entity,
-        @transform.ecs_key_transform,
-        rotated_flame.with_scale(@math.Vec3::new(0.1F, 0.2F, 0.1F)),
-      )
-      |> ignore)
-    }
-  }
+  let base_transform = @transform.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
+    @math.Vec3::new(-1.0F - c, 1.7F - b, -a),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  flame_transform.set(
+    base_transform
+    .with_rotation(
+      base_transform.rotation
+      .mul(@math.Quat::from_rotation_z(PI / 2.0F))
+      .normalize(),
+    )
+    .with_scale(@math.Vec3::new(0.1F, 0.2F, 0.1F)),
+  )
 }
 
 ///|
@@ -1063,8 +1051,6 @@ fn setup(world : @ecs.World) -> Unit {
       CAMERA_INITIAL_Z,
     ),
     camera: None,
-    flame_mesh: None,
-    flame_light: None,
     display_text: None,
     color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
   }
@@ -1083,6 +1069,6 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
   .add_systems_world(@app.Update, example_control_system)
-  .add_systems_world(@app.Update, flicker_system)
+  .add_systems_param3(@app.Update, flicker_system)
   .run()
 }
