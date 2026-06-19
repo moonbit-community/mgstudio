@@ -13,16 +13,13 @@
 // limitations under the License.
 
 ///|
-///
-/// The Bevy resource/component/system structure is preserved here.
-/// The scene-2 custom material path remains unavailable because
-/// mgstudio still lacks Bevy-equivalent custom 3D material APIs.
-
-///|
 const PI : Float = 3.141592653589793F
 
 ///|
 const PARAMETER_COUNT : Int = 4
+
+///|
+const SHADER_ASSET_PATH : String = "shaders/tonemapping_test_patterns.wgsl"
 
 ///|
 struct CameraTransform {
@@ -61,6 +58,14 @@ struct TonemappingUiRoot {}
 
 ///|
 struct TonemappingUiText {}
+
+///|
+struct ColorGradientMaterial {}
+
+///|
+fn ColorGradientMaterial::ColorGradientMaterial() -> ColorGradientMaterial {
+  ColorGradientMaterial::{  }
+}
 
 ///|
 let camera_transform_resource_key : @ecs.ResourceKey[CameraTransform] = @ecs.register_resource(
@@ -103,6 +108,18 @@ let tonemapping_ui_text_component_key : @ecs.ComponentKey[TonemappingUiText] = @
 )
 
 ///|
+let color_gradient_material_asset_keys : @asset.AssetResourceKeys[
+  ColorGradientMaterial,
+] = @asset.register_asset_resource_keys(
+  ColorGradientMaterial::asset_debug_name(),
+)
+
+///|
+let color_gradient_material_keys : @pbr.MaterialKeys[ColorGradientMaterial] = @pbr.register_material_keys(
+  ColorGradientMaterial::asset_debug_name(),
+)
+
+///|
 impl @app.Resource for CameraTransform with fn resource() {
   camera_transform_resource_key
 }
@@ -140,6 +157,127 @@ impl @ecs.Component for TonemappingUiRoot with fn component() {
 ///|
 impl @ecs.Component for TonemappingUiText with fn component() {
   tonemapping_ui_text_component_key
+}
+
+///|
+impl @asset.Asset for ColorGradientMaterial with fn asset_debug_name() {
+  "mgstudio_examples::ColorGradientMaterial"
+}
+
+///|
+impl @asset.Asset for ColorGradientMaterial with fn asset_as_image(_self) {
+  None
+}
+
+///|
+impl @asset.Asset for ColorGradientMaterial with fn asset_resource_keys() {
+  color_gradient_material_asset_keys
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn material_debug_name() {
+  ColorGradientMaterial::asset_debug_name()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn material_keys() {
+  color_gradient_material_keys
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn vertex_shader() {
+  @pbr.material_default_vertex_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn fragment_shader() {
+  Some(SHADER_ASSET_PATH)
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn prepass_vertex_shader() {
+  @pbr.material_default_vertex_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn prepass_fragment_shader() {
+  @pbr.material_default_fragment_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn deferred_vertex_shader() {
+  @pbr.material_default_vertex_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn deferred_fragment_shader() {
+  @pbr.material_default_fragment_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn meshlet_fragment_shader() {
+  @pbr.material_default_fragment_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn meshlet_prepass_fragment_shader() {
+  @pbr.material_default_fragment_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn meshlet_deferred_fragment_shader() {
+  @pbr.material_default_fragment_shader()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn alpha_mode(self) {
+  ignore(self)
+  @pbr.material_default_alpha_mode()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn opaque_render_method(self) {
+  ignore(self)
+  @pbr.material_default_opaque_render_method()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn depth_bias(self) {
+  ignore(self)
+  @pbr.material_default_depth_bias()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn reads_view_transmission_texture(
+  self,
+) {
+  ignore(self)
+  @pbr.material_default_reads_view_transmission_texture()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn enable_prepass() {
+  @pbr.material_default_enable_prepass()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn enable_shadows() {
+  @pbr.material_default_enable_shadows()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn bind_group(self) {
+  ignore(self)
+  @pbr.material_default_bind_group()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  @pbr.material_default_specialize(descriptor, layout, key)
 }
 
 ///|
@@ -477,8 +615,35 @@ fn setup_basic_scene(
 }
 
 ///|
-fn setup_color_gradient_scene() -> Unit {
-  ()
+fn setup_color_gradient_scene(
+  commands : @app.Commands,
+  mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  material_assets : @app.ResMut[@asset.Assets[ColorGradientMaterial]],
+  camera_transform : @app.Res[CameraTransform],
+) -> Unit {
+  let mesh_handle = mesh_assets
+    .peek()
+    .add(
+      @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(0.7F, 0.7F)),
+    )
+  let material_handle = material_assets
+    .peek()
+    .add(ColorGradientMaterial::ColorGradientMaterial())
+
+  let transform = camera_transform.get().transform
+  transform.translation = transform.translation.add(transform.forward())
+
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
+        transform,
+        @visibility.Visibility::Hidden,
+        SceneNumber::{ value: 2 },
+      ),
+    ),
+  )
 }
 
 ///|
@@ -859,15 +1024,21 @@ fn update_ui(
 
 ///|
 fn main {
+  let color_gradient_material_plugin : @pbr.MaterialPlugin[
+    ColorGradientMaterial,
+  ] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+    ColorGradientMaterial::ColorGradientMaterial()
+  })
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(color_gradient_material_plugin)
   .insert_resource(CameraTransform::CameraTransform())
   .insert_resource(PerMethodSettings::PerMethodSettings())
   .insert_resource(CurrentScene::CurrentScene())
   .insert_resource(SelectedParameter::SelectedParameter())
   .add_systems_param3(@app.Startup, setup)
   .add_systems_param2(@app.Startup, setup_basic_scene)
-  .add_systems_fn(@app.Startup, setup_color_gradient_scene)
+  .add_systems_param4(@app.Startup, setup_color_gradient_scene)
   .add_systems_param6(@app.Startup, setup_image_viewer_scene)
   .add_systems_param6(@app.Update, drag_drop_image)
   .add_systems_param4(@app.Update, resize_image)
