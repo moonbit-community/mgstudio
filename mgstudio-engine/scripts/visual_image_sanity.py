@@ -77,6 +77,13 @@ def parse_args() -> argparse.Namespace:
         default=0.005,
         help="Minimum non-black pixel ratio in center crop.",
     )
+    parser.add_argument(
+        "--review-manifest",
+        required=False,
+        type=Path,
+        default=Path(__file__).with_name("visual_image_sanity_reviews.json"),
+        help="Optional JSON manifest for reviewed intentional dark scenes.",
+    )
     return parser.parse_args()
 
 
@@ -88,6 +95,37 @@ def mean_luma(rgb_pixels: list[tuple[int, int, int]]) -> float:
     for r, g, b in rgb_pixels:
         luma_sum += 0.2126 * r + 0.7152 * g + 0.0722 * b
     return luma_sum / float(len(rgb_pixels))
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def normalized_path(path: Path) -> Path:
+    return path.resolve()
+
+
+def reviewed_dark_scene(
+    image_path: Path, manifest_path: Path
+) -> dict[str, str] | None:
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"[sanity] invalid review manifest {manifest_path}: {exc}", file=sys.stderr)
+        sys.exit(3)
+
+    image_abs = normalized_path(image_path)
+    root = repo_root()
+    for entry in manifest.get("intentional_dark_scenes", []):
+        entry_image = entry.get("image")
+        if not isinstance(entry_image, str):
+            continue
+        entry_abs = normalized_path(root / entry_image)
+        if entry_abs == image_abs:
+            return entry
+    return None
 
 
 def main() -> int:
@@ -132,7 +170,13 @@ def main() -> int:
     pass_center_non_black = center_non_black_ratio >= args.min_center_non_black_ratio
     # Dark-background text scenes are valid when center activity is visible.
     pass_dark_scene_override = pass_center_luma and pass_center_non_black
-    passed = pass_non_black and (pass_full_luma or pass_dark_scene_override)
+    dark_scene_review = reviewed_dark_scene(args.image, args.review_manifest)
+    pass_reviewed_dark_scene = (
+        dark_scene_review is not None and pass_non_black and pass_center_non_black
+    )
+    passed = pass_non_black and (
+        pass_full_luma or pass_dark_scene_override or pass_reviewed_dark_scene
+    )
 
     report = {
         "image": str(args.image),
@@ -160,6 +204,12 @@ def main() -> int:
             "pass_center_mean_luma": pass_center_luma,
             "pass_center_non_black_ratio": pass_center_non_black,
             "pass_dark_scene_override": pass_dark_scene_override,
+            "pass_reviewed_dark_scene": pass_reviewed_dark_scene,
+        },
+        "review": {
+            "manifest": str(args.review_manifest),
+            "intentional_dark_scene": dark_scene_review is not None,
+            "entry": dark_scene_review,
         },
         "passed": passed,
     }

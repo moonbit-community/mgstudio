@@ -1,0 +1,14 @@
+{
+  "intentional_dark_scenes": [
+    {
+      "image": "mgstudio-engine/examples/animation/animation_events/reference.png",
+      "reason": "Source-intended black Camera2d clear color with fading event text; the center text signal is the visual reference, not a bright scene.",
+      "expected_signal": "Visible HELLO/BYE Text2d glyphs in the center region."
+    },
+    {
+      "image": "mgstudio-engine/examples/ui/styling/transparency_ui/reference.png",
+      "reason": "Source-intended black ClearColor with transparent UI controls and low-alpha text.",
+      "expected_signal": "Visible green and purple UI buttons with transparent white text."
+    }
+  ]
+}
