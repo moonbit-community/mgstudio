@@ -474,9 +474,7 @@ fn render3d_execute_shadow_phase_view(
         render3d_mesh_flags(extracted_shadow_mesh),
         0,
         material_pipeline_id~,
-        material_extension_bind_group_data=@pbr_render.render3d_resolve_material_extension_bind_group_data(
-          shadow_mesh.material_extension,
-        ),
+        material_extension_bind_group_data=shadow_mesh.material_bind_group_data,
         skinning_key_hi=shadow_mesh.skinning_key_hi,
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
         morph_weights_index=shadow_mesh.morph_weights_index,

@@ -113,6 +113,17 @@ pub fn RenderMaterialInstances::extract_mesh_material(
 }
 
 ///|
+pub fn RenderMaterialInstances::remove_mesh_material(
+  self : RenderMaterialInstances,
+  entity : @core.Entity,
+) -> Bool {
+  let key = entity.to_bits()
+  let existed = self.instances.contains(key)
+  self.instances.remove(key)
+  existed
+}
+
+///|
 pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(
   self : RenderMaterialInstances,
   entity : @core.Entity,

@@ -151,6 +151,7 @@ priv struct Mesh3dExtractedPayload {
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
+  material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_vertex_shader_path : String?
   material_fragment_shader_path : String?
   material_pipeline_id : @material.CachedRenderPipelineId?

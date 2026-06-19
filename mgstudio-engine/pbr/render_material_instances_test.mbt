@@ -41,6 +41,18 @@ test "render3d: render material instances remove invisible materials immediately
 }
 
 ///|
+test "render3d: render material instances remove missing legacy material immediately" {
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
+  let entity = @core.Entity::new(4, 1)
+  let material = MeshMaterial3d::new(@asset.Handle::new(10))
+
+  instances.extract_mesh_material(entity, true, material)
+  debug_inspect(instances.remove_mesh_material(entity), content="true")
+  debug_inspect(instances.len(), content="0")
+  debug_inspect(instances.mesh_material(entity), content="-1")
+}
+
+///|
 test "render3d: early sweep preserves same-frame material replacement" {
   let instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(11, 0)

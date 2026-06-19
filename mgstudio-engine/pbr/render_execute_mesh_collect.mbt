@@ -59,6 +59,7 @@ priv struct Render3dResolvedMeshMaterial {
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
+  material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_vertex_shader_path : String?
   material_fragment_shader_path : String?
   forward_decal_material_ext : ForwardDecalMaterialExt?
@@ -130,6 +131,9 @@ fn render3d_resolve_mesh_material(
     material,
     material_extension,
     material_properties,
+    material_bind_group_data: @pbr_render.render3d_resolve_material_extension_bind_group_data(
+      material_extension,
+    ),
     material_vertex_shader_path,
     material_fragment_shader_path,
     forward_decal_material_ext,
@@ -144,7 +148,7 @@ fn render3d_resolve_mesh_material(
 ///|
 priv struct Render3dExtractMeshRequiredComponents {
   mesh3d : @mesh.Mesh3d
-  material_handle : MeshMaterial3d
+  material_handle : MeshMaterial3d?
   view_visibility : @visibility.ViewVisibility
   global_transform : @transform.GlobalTransform
   previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
@@ -184,6 +188,7 @@ fn render3d_extract_wireframe_material(
 
 ///|
 fn render3d_extract_mesh_for_entity(
+  render_world : @ecs.World,
   source_world : @ecs.World,
   entity : @core.Entity,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -255,11 +260,9 @@ fn render3d_extract_mesh_for_entity(
         Some(v) => v
         None => return (None, false)
       }
-      let material_handle = match
-        (try! source_world.get_by_key(entity, ecs_key_mesh_material3d)) {
-        Some(v) => v
-        None => return (None, false)
-      }
+      let material_handle = try! source_world.get_by_key(
+        entity, ecs_key_mesh_material3d,
+      )
       let view_visibility = match
         (try! source_world.get_by_key(
           entity, @visibility.ecs_key_view_visibility,
@@ -364,17 +367,52 @@ fn render3d_extract_mesh_for_entity(
   if !view_visibility.is_visible() {
     return (None, false)
   }
-  let resolved_material = match
-    render3d_resolve_mesh_material(
-      material_handle, standard_material_frame_cache, resolved_material_frame_cache,
-      default_opaque_renderer_method, material_prepass_enabled,
-    ) {
-    Some(v) => v
-    None => return (None, true)
+  let material_runtime_registry = material_runtime_registry_or_empty(
+    render_world,
+  )
+  let resolved_material = match material_handle {
+    Some(value) =>
+      match
+        render3d_resolve_mesh_material(
+          value, standard_material_frame_cache, resolved_material_frame_cache, default_opaque_renderer_method,
+          material_prepass_enabled,
+        ) {
+        Some(v) => v
+        None => return (None, true)
+      }
+    None =>
+      match
+        material_runtime_registry_resolve_material(
+          render_world, source_world, material_runtime_registry, entity,
+        ) {
+        Some(value) =>
+          Render3dResolvedMeshMaterial::{
+            material: value.material(),
+            material_extension: None,
+            material_properties: value.material_properties(),
+            material_bind_group_data: value.material_bind_group_data(),
+            material_vertex_shader_path: value
+            .material_properties()
+            .get_shader(@material.MATERIAL_VERTEX_SHADER_LABEL),
+            material_fragment_shader_path: value
+            .material_properties()
+            .get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
+            forward_decal_material_ext: None,
+          }
+        None =>
+          if material_runtime_registry_contains_entity(
+              source_world, material_runtime_registry, entity,
+            ) {
+            return (None, true)
+          } else {
+            return (None, false)
+          }
+      }
   }
   let material = resolved_material.material
   let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
+  let material_bind_group_data = resolved_material.material_bind_group_data
   let material_vertex_shader_path = resolved_material.material_vertex_shader_path
   let material_fragment_shader_path = resolved_material.material_fragment_shader_path
   let layers = match prefetched_layers {
@@ -504,6 +542,7 @@ fn render3d_extract_mesh_for_entity(
         material,
         material_extension: resolved_material_extension,
         material_properties,
+        material_bind_group_data,
         material_vertex_shader_path,
         material_fragment_shader_path,
         material_pipeline_id: None,
@@ -569,7 +608,7 @@ fn render3d_execute_collect_meshes(
       @core.Entity,
       (
         @ecs.Read[@mesh.Mesh3d],
-        @ecs.Read[MeshMaterial3d],
+        @ecs.Optional[MeshMaterial3d],
         @ecs.Read[@visibility.ViewVisibility],
         @ecs.Read[@transform.GlobalTransform],
       ),
@@ -640,13 +679,18 @@ fn render3d_execute_collect_meshes(
       ),
     ) = data
     render_material_instances.modify(fn(instances) {
-      instances.extract_mesh_material(
-        entity,
-        view_visibility.value().is_visible(),
-        material.value(),
-      )
+      match material.value() {
+        Some(value) =>
+          instances.extract_mesh_material(
+            entity,
+            view_visibility.value().is_visible(),
+            value,
+          )
+        None => ignore(instances.remove_mesh_material(entity))
+      }
     })
     let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
+      world,
       source_world,
       entity,
       mesh_runtime_state_value,

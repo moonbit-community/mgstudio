@@ -27,6 +27,7 @@ import {
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
   "moonbitlang/core/json",
 }
@@ -416,9 +417,41 @@ pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wirefram
 
 pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
 
+pub fn material_default_alpha_mode() -> @material.AlphaMode3d
+
+pub fn material_default_bind_group() -> MaterialBindGroup
+
+pub fn material_default_depth_bias() -> Float
+
+pub fn material_default_enable_prepass() -> Bool
+
+pub fn material_default_enable_shadows() -> Bool
+
+pub fn material_default_fragment_shader() -> String?
+
+pub fn material_default_opaque_render_method() -> @material.OpaqueRendererMethod
+
+pub fn material_default_reads_view_transmission_texture() -> Bool
+
+pub fn[M] material_default_specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[M]) -> @render_resource.RenderPipelineDescriptor
+
+pub fn material_default_vertex_shader() -> String?
+
 pub fn material_entity_needs_specialization(Int64?, Int64, Int64, Int64) -> Bool
 
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
+
+pub fn[M : Material] material_pipeline_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[MaterialPipeline[M]]
+
+pub fn[M] material_plugin(MaterialPlugin[M]) -> MaterialPlugin[M]
+
+pub fn material_runtime_registry_contains_entity(@ecs.World, MaterialRuntimeRegistry, @core.Entity) -> Bool
+
+pub fn material_runtime_registry_or_empty(@ecs.World) -> MaterialRuntimeRegistry
+
+pub fn material_runtime_registry_resolve_material(@ecs.World, @ecs.World, MaterialRuntimeRegistry, @core.Entity) -> Render3dResolvedMaterial?
+
+pub fn[M : Material] material_runtime_type_name(@asset.Handle[M]) -> String
 
 pub fn material_specialization_tick_is_newer_than(Int64, Int64, Int64) -> Bool
 
@@ -558,7 +591,15 @@ pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacke
 
 pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
 
+pub fn[M : Material] prepared_material_assets_or_empty(@ecs.World, @asset.Handle[M]) -> @Milky2018/mgstudio/render.RenderAssets[PreparedMaterial[M]]
+
+pub fn[M] prepared_material_get(@Milky2018/mgstudio/render.RenderAssets[PreparedMaterial[M]], @asset.Handle[PreparedMaterial[M]]) -> PreparedMaterial[M]?
+
+pub fn[M] prepared_material_handle_for_entity(@core.Entity, RenderMaterial3dInstances[M]) -> @asset.Handle[PreparedMaterial[M]]?
+
 pub fn queue_wireframe_phase_items(Wireframe3dViewPhase, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, @Milky2018/mgstudio/render/mesh.MeshAllocator, Wireframe3dDrawFunctions, @batching.GpuPreprocessingSupport) -> Unit
+
+pub fn[M] register_material_keys(String) -> MaterialKeys[M]
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
@@ -669,6 +710,8 @@ pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
 pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 
 pub fn render3d_view_fog_data(DistanceFog) -> @Milky2018/mgstudio/pbr/render.Render3dViewFogData
+
+pub fn[M : Material] render_material3d_instances_or_empty(@ecs.World, @asset.Handle[M]) -> RenderMaterial3dInstances[M]
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -1196,6 +1239,17 @@ pub struct MaterialAllocatorDiagnosticsSnapshot {
 }
 pub fn MaterialAllocatorDiagnosticsSnapshot::MaterialAllocatorDiagnosticsSnapshot() -> Self
 
+pub struct MaterialBindGroup {
+  bindings : Array[MaterialBinding]
+}
+pub fn MaterialBindGroup::MaterialBindGroup() -> Self
+pub fn MaterialBindGroup::bind_group_data(Self) -> String
+pub fn MaterialBindGroup::binding(Self, Int) -> MaterialBinding?
+pub fn MaterialBindGroup::layout_descriptor(Self, String) -> @render_resource.BindGroupLayoutDescriptor
+pub fn MaterialBindGroup::layout_key(Self) -> String
+pub fn MaterialBindGroup::new(Array[MaterialBinding]) -> Self
+pub fn MaterialBindGroup::resolved_data(Self) -> @render_resource.MaterialBindGroupResolvedData
+
 pub(all) enum MaterialBindGroupAllocator {
   Bindless(MaterialBindGroupBindlessAllocator)
   NonBindless(MaterialBindGroupNonBindlessAllocator)
@@ -1281,6 +1335,15 @@ pub fn MaterialBindGroups::MaterialBindGroups() -> Self
 pub fn MaterialBindGroups::entry_count(Self) -> Int
 pub fn MaterialBindGroups::push(Self, MaterialBindGroupEntry) -> Unit
 
+pub struct MaterialBinding {
+  binding : Int
+  value : MaterialBindingValue
+}
+pub fn MaterialBinding::sampler(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn MaterialBinding::texture(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn MaterialBinding::texture_with_layout(Int, @asset.Handle[@image.Image]?, MaterialTextureSampleType, MaterialTextureViewDimension) -> Self
+pub fn MaterialBinding::uniform(Int, Bytes) -> Self
+
 pub struct MaterialBindingId {
   group : MaterialBindGroupIndex
   slot : MaterialBindGroupSlot
@@ -1289,6 +1352,12 @@ pub fn MaterialBindingId::MaterialBindingId() -> Self
 pub fn MaterialBindingId::group(Self) -> MaterialBindGroupIndex
 pub fn MaterialBindingId::new(MaterialBindGroupIndex, MaterialBindGroupSlot) -> Self
 pub fn MaterialBindingId::slot(Self) -> MaterialBindGroupSlot
+
+pub(all) enum MaterialBindingValue {
+  Uniform(Bytes)
+  Texture(@asset.Handle[@image.Image]?, MaterialTextureSampleType, MaterialTextureViewDimension)
+  Sampler(@asset.Handle[@image.Image]?)
+}
 
 #alias(MaterialExtensionKey3d)
 pub struct MaterialExtensionKey[E] {
@@ -1308,11 +1377,78 @@ pub fn MaterialExtensionPipeline::MaterialExtensionPipeline() -> Self
 pub fn MaterialExtensionPipeline::with_prepass(Self, Bool) -> Self
 pub fn MaterialExtensionPipeline::with_shadows(Self, Bool) -> Self
 
+pub struct MaterialKeys[M] {
+  mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
+  render_material_instances : @ecs.ResourceKey[RenderMaterial3dInstances[M]]
+  material_pipeline : @ecs.ResourceKey[MaterialPipeline[M]]
+  prepared_render_asset : @Milky2018/mgstudio/render.RenderAssetResourceKeys[PreparedMaterial[M]]
+}
+
 pub struct MaterialNonBindlessAllocatedBindGroup {
   bind_group_id : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn MaterialNonBindlessAllocatedBindGroup::bind_group_id(Self) -> Int
 pub fn MaterialNonBindlessAllocatedBindGroup::new(Int) -> Self
+
+pub struct MaterialPipeline[M] {
+  vertex_shader : String?
+  fragment_shader : String?
+  prepass_vertex_shader : String?
+  prepass_fragment_shader : String?
+  deferred_vertex_shader : String?
+  deferred_fragment_shader : String?
+  meshlet_fragment_shader : String?
+  meshlet_prepass_fragment_shader : String?
+  meshlet_deferred_fragment_shader : String?
+  marker : M?
+}
+pub fn[M] MaterialPipeline::MaterialPipeline() -> Self[M]
+pub fn[M] MaterialPipeline::new(String?, String?, String?, String?, String?, String?, String?, String?, String?) -> Self[M]
+pub impl[M : Material] @app.Resource for MaterialPipeline[M]
+
+pub struct MaterialPipelineKey[_] {
+  mesh_key : @material.ErasedMeshPipelineKey
+  bind_group_layout_key : String
+  bind_group_data : String
+}
+pub fn[M] MaterialPipelineKey::bind_group_data(Self[M]) -> String
+pub fn[M] MaterialPipelineKey::bind_group_layout_key(Self[M]) -> String
+pub fn[M] MaterialPipelineKey::mesh_key(Self[M]) -> @material.ErasedMeshPipelineKey
+pub fn[M] MaterialPipelineKey::new(@material.ErasedMeshPipelineKey, String, String) -> Self[M]
+
+pub struct MaterialPlugin[M] {
+  asset_init : (() -> M)?
+}
+pub fn[M] MaterialPlugin::MaterialPlugin() -> Self[M]
+pub fn[M] MaterialPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
+pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M]
+
+pub struct MaterialRuntimeEntry {
+  type_name : String
+  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
+  resolve_material_fn : (@ecs.World, @ecs.World, @core.Entity) -> Render3dResolvedMaterial?
+}
+
+pub struct MaterialRuntimeRegistry {
+  entries : Array[MaterialRuntimeEntry]
+}
+pub fn MaterialRuntimeRegistry::contains_type_name(Self, String) -> Bool
+pub fn MaterialRuntimeRegistry::entry_count(Self) -> Int
+pub fn MaterialRuntimeRegistry::new() -> Self
+pub impl @app.Resource for MaterialRuntimeRegistry
+
+pub(all) enum MaterialTextureSampleType {
+  Float
+  UInt
+} derive(Eq, @debug.Debug)
+
+pub(all) enum MaterialTextureViewDimension {
+  D2
+  D2Array
+  Cube
+  CubeArray
+  D3
+} derive(Eq, @debug.Debug)
 
 pub struct MaterialsPlugin {
 }
@@ -1344,6 +1480,15 @@ pub fn MeshMaterial3dBundle::new(@Milky2018/mgstudio/mesh.Mesh3d, @material.Mesh
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @ecs.Bundle for MeshMaterial3dBundle
+
+pub struct MeshMaterial3dTyped[M] {
+  handle : @asset.Handle[M]
+}
+pub fn[M] MeshMaterial3dTyped::handle(Self[M]) -> @asset.Handle[M]
+pub fn[M] MeshMaterial3dTyped::new(@asset.Handle[M]) -> Self[M]
+pub impl[M : Material] @ecs.Component for MeshMaterial3dTyped[M]
+pub impl[M] ToJson for MeshMaterial3dTyped[M]
+pub impl[M] @json.FromJson for MeshMaterial3dTyped[M]
 
 pub struct MeshRayCastHit {
   point : @math.Vec3
@@ -1499,6 +1644,20 @@ pub fn PendingWireframeQueues::view_len(Self) -> Int
 pub fn PendingWireframeQueues::view_or_insert(Self, @core.Entity) -> ViewPendingWireframeQueues
 pub impl @app.Resource for PendingWireframeQueues
 
+pub struct PreparedMaterial[M] {
+  source : @asset.Handle[M]
+  bind_group : MaterialBindGroup
+  bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  key : MaterialPipelineKey[M]
+  properties : @material.MaterialProperties
+}
+pub fn[M] PreparedMaterial::bind_group_data(Self[M]) -> @render_resource.MaterialBindGroupResolvedData
+pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M]) -> Self[M]
+pub fn[M] PreparedMaterial::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
+pub fn[M] PreparedMaterial::properties(Self[M]) -> @material.MaterialProperties
+pub fn[M] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
+pub impl[M : Material] @Milky2018/mgstudio/render.RenderAssetResource for PreparedMaterial[M]
+
 pub(all) enum Projection {
   Perspective(@Milky2018/mgstudio/pbr/render.PerspectiveProjection3d)
   Orthographic(@Milky2018/mgstudio/pbr/render.OrthographicProjection3d)
@@ -1524,6 +1683,25 @@ pub struct Render3dDiagnosticsSnapshot {
 }
 pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Self
 
+pub struct Render3dResolvedMaterial {
+  material : @material.StandardMaterial
+  material_properties : @material.MaterialProperties
+  material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
+}
+pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
+pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
+pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
+pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData) -> Self
+
+pub struct RenderMaterial3dInstances[M] {
+  instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
+}
+pub fn[M] RenderMaterial3dInstances::clear(Self[M]) -> Unit
+pub fn[M] RenderMaterial3dInstances::get(Self[M], @core.Entity) -> @asset.Handle[M]?
+pub fn[M] RenderMaterial3dInstances::new() -> Self[M]
+pub fn[M] RenderMaterial3dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
+pub impl[M : Material] @app.Resource for RenderMaterial3dInstances[M]
+
 pub struct RenderMaterialInstance {
   asset_id : Int
   last_change_tick : Int64
@@ -1545,6 +1723,7 @@ pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) ->
 pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
+pub fn RenderMaterialInstances::remove_mesh_material(Self, @core.Entity) -> Bool
 
 pub struct RenderMeshInstanceFlags {
   bits : UInt
@@ -2386,6 +2565,28 @@ pub impl IntoPbrMeshAsset for @math.Tetrahedron
 pub impl IntoPbrMeshAsset for @math.Torus
 pub impl IntoPbrMeshAsset for @math.Triangle3d
 pub impl IntoPbrMeshAsset for @Milky2018/mgstudio/mesh.Mesh3dGeometry
+
+pub(open) trait Material {
+  fn material_debug_name() -> String
+  fn material_keys() -> MaterialKeys[Self]
+  fn vertex_shader() -> String?
+  fn fragment_shader() -> String?
+  fn prepass_vertex_shader() -> String?
+  fn prepass_fragment_shader() -> String?
+  fn deferred_vertex_shader() -> String?
+  fn deferred_fragment_shader() -> String?
+  fn meshlet_fragment_shader() -> String?
+  fn meshlet_prepass_fragment_shader() -> String?
+  fn meshlet_deferred_fragment_shader() -> String?
+  fn alpha_mode(Self) -> @material.AlphaMode3d
+  fn opaque_render_method(Self) -> @material.OpaqueRendererMethod
+  fn depth_bias(Self) -> Float
+  fn reads_view_transmission_texture(Self) -> Bool
+  fn enable_prepass() -> Bool
+  fn enable_shadows() -> Bool
+  fn bind_group(Self) -> MaterialBindGroup
+  fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor
+}
 
 pub(open) trait MaterialExtension {
   fn extension_tag(Self) -> Int
