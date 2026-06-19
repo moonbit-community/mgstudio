@@ -1,8 +1,13 @@
 import {
+  "Milky2018/mgstudio/camera/components2d" @camera_components2d,
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "native"

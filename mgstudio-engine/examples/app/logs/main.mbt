@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-fn setup() -> Unit {
-  println("Press P to panic")
-}
-
-///|
 fn panic_on_p() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
     abort("P pressed, panicking")
@@ -73,11 +68,10 @@ fn expensive_sum_message() -> String {
 
 ///|
 fn main {
+  let log_plugin = @app.LogPlugin::LogPlugin()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@app.LogPlugin::LogPlugin())
-  .add_systems_fn(@app.Startup, setup)
-  .add_systems_world(@app.Startup, setup_visual)
+  .add_plugins(@mgstudio.DefaultPlugins::set(log_plugin))
+  .add_systems_world(@app.Startup, setup)
   .add_systems_fn(@app.Update, log_system)
   .add_systems_fn(@app.Update, log_once_system)
   .add_systems_fn(@app.Update, panic_on_p)
@@ -85,14 +79,23 @@ fn main {
 }
 
 ///|
-fn setup_visual(world : @ecs.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   try! (world.spawn_bundle(
     (
       @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_clear_color(
-        @color.Color::srgb(0.16F, 0.12F, 0.18F),
-      ),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
+    ),
+  )
+  |> ignore)
+
+  try! (world.spawn_bundle(
+    (
+      @text.Text::new("Press P to panic"),
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.Val::Px(12.0F))
+      .with_left(@ui.Val::Px(12.0F)),
     ),
   )
   |> ignore)

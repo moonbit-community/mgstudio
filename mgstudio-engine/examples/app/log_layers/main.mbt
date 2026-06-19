@@ -35,7 +35,7 @@ fn log_system() -> Unit {
     "something bad happened that isn't a failure, but thats worth calling out",
   )
   @app.log_info("helpful information that is worth printing by default")
-  let secret_message = "Bevy"
+  let secret_message = "mgstudio"
   @app.log_info("Here's a log that uses the debug sigil: \{secret_message}")
   @app.log_debug("helpful for debugging")
   @app.log_trace("very noisy")
@@ -47,8 +47,7 @@ fn main {
     .with_custom_layer(custom_layer)
     .with_fmt_layer(fmt_layer)
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(log_plugin)
+  .add_plugins(@mgstudio.DefaultPlugins::set(log_plugin))
   .add_systems_fn(@app.Update, log_system)
   .run()
 }

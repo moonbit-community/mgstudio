@@ -1,0 +1,12 @@
+package	policy	reason	validation
+examples/app/custom_loop	screenshot-excluded	Custom runner example reads stdin and exits through app control flow; it has no Bevy visual frame.	moon -C mgstudio-engine run --target native --release examples/app/custom_loop
+examples/app/empty	screenshot-excluded	Empty App example has no plugins, window, camera, or renderer output.	moon -C mgstudio-engine run --target native --release examples/app/empty
+examples/app/headless	screenshot-excluded	ScheduleRunner headless counter example is console-only and intentionally has no window.	moon -C mgstudio-engine run --target native --release examples/app/headless
+examples/app/headless_renderer	offscreen-output	Headless renderer writes render-target PNG files instead of presenting a window screenshot.	moon -C mgstudio-engine run --target native --release examples/app/headless_renderer
+examples/app/log_layers	screenshot-excluded	Logging layer composition example demonstrates console log formatting and has no camera or UI in Bevy.	moon -C mgstudio-engine run --target native --release examples/app/log_layers
+examples/app/log_layers_ecs	visual-reference	Bevy renders a Camera2d log viewer UI populated from captured log events.	mgstudio-engine/examples/app/log_layers_ecs/reference.png
+examples/app/logs	visual-reference	Bevy renders Camera2d UI text instructing the user to press P.	mgstudio-engine/examples/app/logs/reference.png
+examples/app/no_renderer	screenshot-excluded	Bevy intentionally disables the renderer; the example only demonstrates app startup without rendering.	moon -C mgstudio-engine run --target native --release examples/app/no_renderer
+examples/app/without_winit	screenshot-excluded	No WinitPlugin event loop is installed, so there is no interactive window screenshot target.	moon -C mgstudio-engine run --target native --release examples/app/without_winit
+examples/hello_world	screenshot-excluded	Standalone hello-world println example has no app, window, camera, or renderer.	moon -C mgstudio-engine run --target native --release examples/hello_world
+examples/hello_world/hello_world	screenshot-excluded	Update-system hello-world example prints to stdout and has no visual frame.	moon -C mgstudio-engine run --target native --release examples/hello_world/hello_world

@@ -13,6 +13,9 @@ import {
 type LogMessage
 pub impl @ecs.Message for LogMessage
 
+type LogViewerRoot
+pub impl @ecs.Component for LogViewerRoot
+
 // Type aliases
 
 // Traits
