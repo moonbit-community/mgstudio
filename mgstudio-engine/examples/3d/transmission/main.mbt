@@ -89,16 +89,6 @@ fn ExampleControls::ExampleControls(
 }
 
 ///|
-priv struct TransmissionState {
-  color_rng : @chacha_rng.ChaCha8Rng
-}
-
-///|
-let transmission_state : Ref[TransmissionState] = Ref({
-  color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
-})
-
-///|
 priv struct ExampleState {
   mut diffuse_transmission : Float
   mut specular_transmission : Float
@@ -128,6 +118,26 @@ impl @app.FromWorld for ExampleState with fn from_world(_world) {
 }
 
 ///|
+priv struct ExampleRandom {
+  rng : @random.Rand
+}
+
+///|
+fn ExampleRandom::ExampleRandom() -> ExampleRandom {
+  ExampleRandom::{ rng: @random.Rand::new() }
+}
+
+///|
+impl @app.FromWorld for ExampleRandom with fn from_world(_world) {
+  ExampleRandom::ExampleRandom()
+}
+
+///|
+fn ExampleRandom::random_unit(self : ExampleRandom) -> Float {
+  self.rng.float()
+}
+
+///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   if value < min_value {
     min_value
@@ -151,11 +161,6 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn expf(value : Float) -> Float {
   @math.pow(E, value)
-}
-
-///|
-fn next_random_unit() -> Float {
-  transmission_state.val.color_rng.random_float()
 }
 
 ///|
@@ -592,6 +597,7 @@ fn apply_material_controls_to_assets(
     @ecs.All,
   ],
   state : ExampleState,
+  color_random : ExampleRandom,
   randomize_colors : Bool,
 ) -> Unit {
   try! controllable.view(fn(_entity, data) {
@@ -615,9 +621,9 @@ fn apply_material_controls_to_assets(
     if controls.color && randomize_colors {
       updated = updated.with_base_color(
         @color.Color::new(
-          next_random_unit(),
-          next_random_unit(),
-          next_random_unit(),
+          color_random.random_unit(),
+          color_random.random_unit(),
+          color_random.random_unit(),
           updated.base_color.a,
         ),
       )
@@ -634,11 +640,12 @@ fn apply_material_controls(
     @ecs.All,
   ],
   state : ExampleState,
+  color_random : ExampleRandom,
   randomize_colors : Bool,
 ) -> Unit {
   materials.modify(fn(assets) {
     apply_material_controls_to_assets(
-      assets, controllable, state, randomize_colors,
+      assets, controllable, state, color_random, randomize_colors,
     )
   })
 }
@@ -664,10 +671,12 @@ fn example_control_system(
   ],
   display : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[ExampleDisplay]],
   state_param : @app.Local[ExampleState],
+  color_random_param : @app.Local[ExampleRandom],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   let state = state_param.get()
+  let color_random = color_random_param.get()
   let mut materials_changed = false
   let mut randomize_colors = false
   guard (camera.single() catch { _ => None }) is Some(camera_data) else {
@@ -864,7 +873,9 @@ fn example_control_system(
   }
 
   if materials_changed {
-    apply_material_controls(materials, controllable, state, randomize_colors)
+    apply_material_controls(
+      materials, controllable, state, color_random, randomize_colors,
+    )
   }
 
   if transmission_settings_changed {
@@ -873,6 +884,7 @@ fn example_control_system(
 
   guard (display.single() catch { _ => None }) is Some(display_text) else {
     state_param.set(state)
+    color_random_param.set(color_random)
     return
   }
   display_text.set(
@@ -899,6 +911,7 @@ fn example_control_system(
     ),
   )
   state_param.set(state)
+  color_random_param.set(color_random)
 }
 
 ///|
@@ -947,10 +960,6 @@ fn flicker_system(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  transmission_state.val = {
-    color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
-  }
-
   setup_scene(world)
   setup_camera(world)
   setup_text(world)
@@ -968,6 +977,7 @@ fn setup(world : @ecs.World) -> Unit {
       assets,
       controllable,
       ExampleState::ExampleState(),
+      ExampleRandom::ExampleRandom(),
       false,
     )
   })
@@ -978,7 +988,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
-  .add_systems_param7(@app.Update, example_control_system)
+  .add_systems_param8(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
   .run()
 }
