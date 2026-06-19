@@ -224,15 +224,6 @@ fn spawn_controlled_mesh(
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_point_light_shadow_map,
-    @pbr.PointLightShadowMap::new(2048),
-  )
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
-  )
-
   let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
       assets |> @pbr.add_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F))
@@ -525,7 +516,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let color_grading = @post_process.ColorGrading::ColorGrading()
   color_grading.global.post_saturation = 1.2F
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
+      @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
@@ -987,6 +978,9 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(@camera.ClearColor::new(@color.Color::black()))
+  .insert_resource(@pbr.PointLightShadowMap::new(2048))
+  .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
   .add_systems_world(@app.Startup, setup)
   .add_systems_param8(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
