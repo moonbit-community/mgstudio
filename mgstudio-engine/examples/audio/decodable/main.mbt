@@ -40,10 +40,6 @@ fn setup(
     blob: asset_server.get().load_bytes(AUDIO_PATH),
     played: false,
   })
-  commands.spawn(
-    (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
-  )
-  |> ignore
 }
 
 ///|

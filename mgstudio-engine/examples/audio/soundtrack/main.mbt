@@ -130,15 +130,6 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(SoundtrackPlayer::resource(), SoundtrackPlayer::{
     track_list: [track_1, track_2],
   })
-
-  try! (world.spawn_bundle(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera(),
-      @transform.Transform::identity(),
-    ),
-  )
-  |> ignore)
 }
 
 ///|

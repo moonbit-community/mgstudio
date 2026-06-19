@@ -120,57 +120,6 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   )
   try! world.set_by_key(
     text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text,
-    @text.Text::new(content),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text,
-    @text.Text::new(content),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
@@ -279,12 +228,6 @@ fn setup(world : @ecs.World) -> Unit {
     @audio.ecs_key_audio_source_player,
     @audio.AudioPlayer::new(track),
   )
-
-  try! world.set_by_key(
-    emitter,
-    @audio.ecs_key_audio_source_player,
-    @audio.AudioPlayer::new(track),
-  )
   try! world.set_by_key(
     emitter,
     @audio.ecs_key_playback_settings,
@@ -292,11 +235,6 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let listener = world.spawn_empty()
-  try! world.set_by_key(
-    listener,
-    @transform.ecs_key_transform,
-    @transform.Transform::identity(),
-  )
   try! world.set_by_key(
     listener,
     @transform.ecs_key_transform,
