@@ -13,42 +13,16 @@
 // limitations under the License.
 
 ///|
-struct SecondsValue {}
+struct TextChanges {}
 
 ///|
-struct FpsValue {}
-
-///|
-struct FrameTimeValue {}
-
-///|
-let seconds_value_key : @ecs.ComponentKey[SecondsValue] = @ecs.register_component(
-  debug_name="examples.ui.text.text_debug.seconds_value",
+let text_changes_key : @ecs.ComponentKey[TextChanges] = @ecs.register_component(
+  debug_name="examples.ui.text.text_debug.text_changes",
 )
 
 ///|
-let fps_value_key : @ecs.ComponentKey[FpsValue] = @ecs.register_component(
-  debug_name="examples.ui.text.text_debug.fps_value",
-)
-
-///|
-let frame_time_value_key : @ecs.ComponentKey[FrameTimeValue] = @ecs.register_component(
-  debug_name="examples.ui.text.text_debug.frame_time_value",
-)
-
-///|
-pub impl @ecs.Component for SecondsValue with fn component() {
-  seconds_value_key
-}
-
-///|
-pub impl @ecs.Component for FpsValue with fn component() {
-  fps_value_key
-}
-
-///|
-pub impl @ecs.Component for FrameTimeValue with fn component() {
-  frame_time_value_key
+pub impl @ecs.Component for TextChanges with fn component() {
+  text_changes_key
 }
 
 ///|
@@ -79,6 +53,16 @@ fn orange_red() -> @color.Color {
 ///|
 fn lime() -> @color.Color {
   @color.Color::srgb(0.0F, 1.0F, 0.0F)
+}
+
+///|
+fn blue() -> @color.Color {
+  @color.Color::srgb(0.0F, 0.0F, 1.0F)
+}
+
+///|
+fn red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
@@ -138,11 +122,74 @@ fn spawn_text_span(
 }
 
 ///|
-fn format_metric(value : Float?) -> String {
-  match value {
-    Some(number) => number.to_string()
-    None => "--"
+fn format_fixed(value : Float, precision : Int) -> String {
+  if precision <= 0 {
+    value.round().to_int().to_string()
+  } else {
+    let mut scale = 1
+    for _ in 0..<precision {
+      scale = scale * 10
+    }
+    let scaled = (value * Float::from_int(scale)).round().to_int()
+    let sign = if scaled < 0 { "-" } else { "" }
+    let magnitude = if scaled < 0 { -scaled } else { scaled }
+    let whole = magnitude / scale
+    let fraction = magnitude % scale
+    let mut fraction_text = fraction.to_string()
+    while fraction_text.length() < precision {
+      fraction_text = "0\{fraction_text}"
+    }
+    "\{sign}\{whole.to_string()}.\{fraction_text}"
   }
+}
+
+///|
+fn push_recent(
+  values : Array[Float],
+  value : Float,
+  limit : Int,
+) -> Array[Float] {
+  values.push(value)
+  while values.length() > limit {
+    ignore(values.remove(0))
+  }
+  values
+}
+
+///|
+fn mean(data : Array[Float]) -> Float? {
+  let count = data.length()
+  if count == 0 {
+    None
+  } else {
+    let mut sum = 0.0F
+    for value in data {
+      sum = sum + value
+    }
+    Some(sum / Float::from_int(count))
+  }
+}
+
+///|
+fn std_deviation(data : Array[Float]) -> Float? {
+  match mean(data) {
+    Some(data_mean) if data.length() > 0 => {
+      let mut variance_sum = 0.0F
+      for value in data {
+        let diff = data_mean - value
+        variance_sum = variance_sum + diff * diff
+      }
+      Some(Float::sqrt(variance_sum / Float::from_int(data.length())))
+    }
+    _ => None
+  }
+}
+
+///|
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.present_mode = @window.PresentMode::AutoNoVsync
+  window
 }
 
 ///|
@@ -290,44 +337,60 @@ fn setup(
   let changing_text = commands.spawn(
     (
       @hierarchy.Parent::new(right_column),
-      @text.Text::new("This text changes in the bottom right - "),
+      @text.Text::new(""),
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(21.0F)),
+      @text.TextColor::new(@color.Color::white()),
+      @ui.Node::Node(),
+      TextChanges::{  },
       background(maroon()),
     ),
   )
-  let seconds_value = spawn_text_span(
-    commands,
-    changing_text,
-    "--",
-    @text.TextFont::TextFont()
-    .with_font(font)
-    .with_font_size(@text.FontSize::Px(21.0F)),
-    orange_red(),
-  )
-  ignore(commands.entity(seconds_value).insert_component(SecondsValue::{  }))
   ignore(
     spawn_text_span(
       commands,
       changing_text,
-      " s, ",
+      "\nThis text changes in the bottom right",
       @text.TextFont::TextFont()
       .with_font(font)
-      .with_font_size(@text.FontSize::Px(10.0F)),
-      yellow(),
+      .with_font_size(@text.FontSize::Px(21.0F)),
+      @color.Color::white(),
     ),
   )
-  let fps_value = spawn_text_span(
-    commands,
-    changing_text,
-    "--",
-    @text.TextFont::TextFont()
-    .with_font(font)
-    .with_font_size(@text.FontSize::Px(21.0F)),
-    lime(),
+  ignore(
+    spawn_text_span(
+      commands,
+      changing_text,
+      " this text has zero font size",
+      @text.TextFont::TextFont()
+      .with_font(font)
+      .with_font_size(@text.FontSize::Px(0.0F)),
+      blue(),
+    ),
   )
-  ignore(commands.entity(fps_value).insert_component(FpsValue::{  }))
+  ignore(
+    spawn_text_span(
+      commands,
+      changing_text,
+      "\nThis text changes in the bottom right - ",
+      @text.TextFont::TextFont()
+      .with_font(font)
+      .with_font_size(@text.FontSize::Px(21.0F)),
+      red(),
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      changing_text,
+      "",
+      @text.TextFont::TextFont()
+      .with_font(font)
+      .with_font_size(@text.FontSize::Px(21.0F)),
+      orange_red(),
+    ),
+  )
   ignore(
     spawn_text_span(
       commands,
@@ -339,17 +402,16 @@ fn setup(
       yellow(),
     ),
   )
-  let frame_time_value = spawn_text_span(
-    commands,
-    changing_text,
-    "--",
-    @text.TextFont::TextFont()
-    .with_font(font)
-    .with_font_size(@text.FontSize::Px(42.0F)),
-    @color.Color::srgb(0.2F, 0.5F, 1.0F),
-  )
   ignore(
-    commands.entity(frame_time_value).insert_component(FrameTimeValue::{  }),
+    spawn_text_span(
+      commands,
+      changing_text,
+      "",
+      @text.TextFont::TextFont()
+      .with_font(font)
+      .with_font_size(@text.FontSize::Px(21.0F)),
+      lime(),
+    ),
   )
   ignore(
     spawn_text_span(
@@ -359,62 +421,98 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(42.0F)),
-      @color.Color::srgb(0.2F, 0.5F, 1.0F),
+      blue(),
     ),
   )
   ignore(
     spawn_text_span(
       commands,
       changing_text,
-      " this text has zero font size",
+      " this text has negative font size",
       @text.TextFont::TextFont()
       .with_font(font)
-      .with_font_size(@text.FontSize::Px(0.0F)),
-      @color.Color::srgb(0.2F, 0.5F, 1.0F),
+      .with_font_size(@text.FontSize::Px(-42.0F)),
+      blue(),
     ),
   )
 }
 
 ///|
 fn change_text_system(
-  diagnostics : @app.Res[@diagnostic.DiagnosticsStore],
+  fps_history : @app.Local[Array[Float]],
+  time_history : @app.Local[Array[Float]],
   time : @app.Res[@time.Time[@time.Real]],
-  seconds_value : @app.Single[
-    @ecs.Write[@text.TextSpan],
-    @ecs.With[SecondsValue],
-  ],
-  fps_value : @app.Single[@ecs.Write[@text.TextSpan], @ecs.With[FpsValue]],
-  frame_time_value : @app.Single[
-    @ecs.Write[@text.TextSpan],
-    @ecs.With[FrameTimeValue],
-  ],
+  diagnostics : @app.Res[@diagnostic.DiagnosticsStore],
+  query : @ecs.Query[@core.Entity, @ecs.With[TextChanges]],
+  writer : @ui.TextUiWriter,
 ) -> Unit {
-  let elapsed_text = format_metric(Some(time.get().elapsed_seconds()))
-  seconds_value.get().set(@text.TextSpan::new(elapsed_text))
+  let time_value = time.get()
+  let mut times = time_history.get()
+  times = push_recent(times, time_value.elapsed_seconds(), 120)
+  time_history.set(times)
+
+  let time_count = times.length()
+  let time_span = if time_count >= 2 {
+    times[time_count - 1] - times[0]
+  } else {
+    0.0001F
+  }
+  let fps_denominator = if time_span > 0.0001F { time_span } else { 0.0001F }
+  let avg_fps = Float::from_int(time_count) / fps_denominator
+  let mut fps_values = fps_history.get()
+  fps_values = push_recent(fps_values, avg_fps, 120)
+  let fps_variance = std_deviation(fps_values).unwrap_or(0.0F)
+  fps_history.set(fps_values)
 
   let fps = diagnostics
     .get()
     .get(@diagnostic.frame_time_diagnostic_fps)
     .map(fn(diagnostic) { diagnostic.smoothed() })
     .unwrap_or(None)
-  fps_value.get().set(@text.TextSpan::new(format_metric(fps)))
+    .unwrap_or(0.0F)
 
   let frame_time = diagnostics
     .get()
     .get(@diagnostic.frame_time_diagnostic_frame_time)
     .map(fn(diagnostic) { diagnostic.smoothed() })
     .unwrap_or(None)
-  frame_time_value.get().set(@text.TextSpan::new(format_metric(frame_time)))
+    .unwrap_or(time_value.delta_seconds())
+
+  try! query.view(fn(entity, _value) {
+    ignore(
+      writer.set_text(
+        entity,
+        0,
+        "\{format_fixed(avg_fps, 1)} avg fps, \{format_fixed(fps_variance, 1)} frametime variance",
+      ),
+    )
+    ignore(
+      writer.set_text(
+        entity,
+        1,
+        "\nThis text changes in the bottom right - \{format_fixed(fps, 1)} fps, \{format_fixed(frame_time, 3)} ms/frame",
+      ),
+    )
+    ignore(writer.set_text(entity, 4, format_fixed(fps, 1)))
+    ignore(writer.set_text(entity, 6, format_fixed(frame_time, 3)))
+  })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
   .add_plugins(
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_systems_param2(@app.Startup, setup)
-  .add_systems_param5(@app.Update, change_text_system)
+  .add_systems_param6(@app.Update, change_text_system)
   .run()
 }

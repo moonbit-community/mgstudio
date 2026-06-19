@@ -51,6 +51,8 @@ pub let ecs_key_scrollbar : @ecs.ComponentKey[Scrollbar]
 
 pub let ecs_key_slider : @ecs.ComponentKey[Slider]
 
+pub let ecs_key_slider_drag_state : @ecs.ComponentKey[SliderDragState]
+
 pub let ecs_key_slider_precision : @ecs.ComponentKey[SliderPrecision]
 
 pub let ecs_key_slider_range : @ecs.ComponentKey[SliderRange]
@@ -251,7 +253,16 @@ pub struct Slider {
   track_click : TrackClick
 } derive(ToJson, @json.FromJson)
 pub fn Slider::Slider() -> Self
+pub fn Slider::with_track_click(Self, TrackClick) -> Self
 pub impl @ecs.Component for Slider
+
+pub struct SliderDragState {
+  dragging : Bool
+  offset : Float
+} derive(ToJson, @json.FromJson)
+pub fn SliderDragState::SliderDragState() -> Self
+pub fn SliderDragState::dragging(Self) -> Bool
+pub impl @ecs.Component for SliderDragState
 
 pub struct SliderPrecision {
   digits : Int
@@ -285,6 +296,7 @@ pub impl @ecs.Component for SliderStep
 
 pub struct SliderThumb {
 } derive(ToJson, @json.FromJson)
+pub fn SliderThumb::SliderThumb() -> Self
 pub impl @ecs.Component for SliderThumb
 
 pub struct SliderValue {
@@ -340,4 +352,7 @@ pub(open) trait ValueChangeValue {
   fn value_change_value_debug_name() -> String
   fn value_change_event_key() -> @ecs.EventKey[ValueChange[Self]]
 }
+pub impl ValueChangeValue for Bool
+pub impl ValueChangeValue for Float
+pub impl ValueChangeValue for @core.Entity
 

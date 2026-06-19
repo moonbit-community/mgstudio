@@ -5268,7 +5268,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             UiSpriteSliceBatchExtra(i) => {
               let batch = extra_ui_sprite_slice_batches[i].payload
               apply_scissor(batch.scissor)
-              @renderer.host_gpu_draw_sprite_uv_slices(
+              @renderer.host_gpu_draw_ui_rect_uv_slices(
                 texture_id=batch.texture.id(),
                 rotation=batch.rotation,
                 scale_x=batch.draw_scale.x,
@@ -5613,7 +5613,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               UiSpriteSliceBatchExtra(i) => {
                 let first_batch = extra_ui_sprite_slice_batches[i].payload
                 apply_scissor(first_batch.scissor)
-                @renderer.host_gpu_draw_sprite_uv_slices(
+                @renderer.host_gpu_draw_ui_rect_uv_slices(
                   texture_id=first_batch.texture.id(),
                   rotation=first_batch.rotation,
                   scale_x=first_batch.draw_scale.x,
@@ -5653,10 +5653,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_g=clear.g,
           clear_b=clear.b,
           clear_a=clear.a,
-          camera_x=camera.transform.translation.x,
-          camera_y=camera.transform.translation.y,
-          camera_rotation~,
-          camera_scale=camera_uniform_scale,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
           viewport_x~,
           viewport_y~,
           viewport_width~,

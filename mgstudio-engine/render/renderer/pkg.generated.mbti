@@ -199,6 +199,8 @@ pub fn draw_ui_box_shadow(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ :
 
 pub fn draw_ui_rect(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, uv_min_x~ : Float, uv_min_y~ : Float, uv_max_x~ : Float, uv_max_y~ : Float, flags~ : Int, radius_tl~ : Float, radius_tr~ : Float, radius_br~ : Float, radius_bl~ : Float, border_left~ : Float, border_top~ : Float, border_right~ : Float, border_bottom~ : Float) -> Unit
 
+pub fn draw_ui_rect_uv_slices(texture_id~ : Int, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, slices_xy_uv~ : Array[Float]) -> Unit
+
 pub fn draw_ui_texture_slice(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_slice_l~ : Float, texture_slice_t~ : Float, texture_slice_r~ : Float, texture_slice_b~ : Float, target_slice_l~ : Float, target_slice_t~ : Float, target_slice_r~ : Float, target_slice_b~ : Float, repeat_side_x~ : Float, repeat_side_y~ : Float, repeat_center_x~ : Float, repeat_center_y~ : Float, atlas_l~ : Float, atlas_t~ : Float, atlas_r~ : Float, atlas_b~ : Float) -> Unit
 
 pub fn end_pass() -> Unit
@@ -1066,6 +1068,7 @@ pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int,
 pub fn GpuBackend::draw_tonemapping3d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_rect_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?

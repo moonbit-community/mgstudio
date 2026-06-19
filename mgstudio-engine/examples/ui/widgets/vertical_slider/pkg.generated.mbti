@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/ui/widgets/vertical_slider"
 
 import {
-  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
 }
 
@@ -11,14 +10,17 @@ import {
 // Errors
 
 // Types and methods
-type HorizontalFill
-pub impl @ecs.Component for HorizontalFill
+type DemoSlider
+pub impl @ecs.Component for DemoSlider
 
-type SliderValues
-pub impl @app.Resource for SliderValues
+type DemoSliderThumb
+pub impl @ecs.Component for DemoSliderThumb
 
-type VerticalFill
-pub impl @ecs.Component for VerticalFill
+type ValueLabel
+pub impl @ecs.Component for ValueLabel
+
+type VerticalSlider
+pub impl @ecs.Component for VerticalSlider
 
 // Type aliases
 

@@ -22,6 +22,9 @@ const UI_VERTEX_STRIDE_BYTES : UInt64 = 88UL
 const UI_DRAW_FLAG_ANTIALIAS : Int = 4
 
 ///|
+const UI_DRAW_FLAG_TEXTURED : Int = 1
+
+///|
 const UI_GLOBALS_BUFFER_SIZE : UInt64 = 16UL
 
 ///|
@@ -1619,6 +1622,70 @@ pub fn GpuBackend::draw_ui_rect(
 }
 
 ///|
+pub fn GpuBackend::draw_ui_rect_uv_slices(
+  self : GpuBackend,
+  texture_id : Int,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  slices_xy_uv : Array[Float],
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(_) else { return }
+  guard self.pass_state is Some(_) else { return }
+  if slices_xy_uv.length() < 6 {
+    return
+  }
+  flush_mesh2d_batches(self)
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_sprite_batches(self)
+  ensure_ui_resources(self)
+  guard resolve_draw_texture(self, texture_id) is Some(tex) else { return }
+  let mut i = 0
+  while i + 5 < slices_xy_uv.length() {
+    let x = slices_xy_uv[i]
+    let y = slices_xy_uv[i + 1]
+    let uv_min_x = slices_xy_uv[i + 2]
+    let uv_min_y = slices_xy_uv[i + 3]
+    let uv_max_x = slices_xy_uv[i + 4]
+    let uv_max_y = slices_xy_uv[i + 5]
+    let (_, region_w) = sprite_uv_axis_metrics(uv_min_x, uv_max_x, tex.width)
+    let (_, region_h) = sprite_uv_axis_metrics(uv_min_y, uv_max_y, tex.height)
+    ui_enqueue_rect(
+      self,
+      texture_id,
+      x,
+      y,
+      rotation,
+      scale_x * region_w,
+      scale_y * region_h,
+      color_r,
+      color_g,
+      color_b,
+      color_a,
+      uv_min_x,
+      uv_min_y,
+      uv_max_x,
+      uv_max_y,
+      UI_DRAW_FLAG_TEXTURED,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+    )
+    i = i + 6
+  }
+}
+
+///|
 pub fn GpuBackend::draw_ui_texture_slice(
   self : GpuBackend,
   texture_id : Int,
@@ -1732,6 +1799,28 @@ pub fn draw_ui_rect(
       radius_bl, border_left, border_top, border_right, border_bottom,
     ) catch {
       err => debug_runtime_error("draw_ui_rect", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_rect_uv_slices(
+  texture_id~ : Int,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  slices_xy_uv~ : Array[Float],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_rect_uv_slices(
+      texture_id, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      slices_xy_uv,
+    ) catch {
+      err => debug_runtime_error("draw_ui_rect_uv_slices", err)
     }
   }
 }

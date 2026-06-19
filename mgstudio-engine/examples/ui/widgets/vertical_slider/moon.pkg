@@ -5,12 +5,13 @@ import {
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
-  "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/input_focus",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/ui",
-  "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/ui_widgets",
 }
 
 supported_targets = "native"

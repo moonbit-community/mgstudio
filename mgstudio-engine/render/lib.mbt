@@ -1252,6 +1252,31 @@ pub fn host_gpu_draw_ui_rect(
 }
 
 ///|
+pub fn host_gpu_draw_ui_rect_uv_slices(
+  texture_id~ : Int,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  slices_xy_uv~ : Array[Float],
+) -> Unit {
+  @renderer.draw_ui_rect_uv_slices(
+    texture_id~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+    slices_xy_uv~,
+  )
+}
+
+///|
 /// Draw a UI box shadow using the dedicated box-shadow pipeline.
 ///
 /// Parameters:

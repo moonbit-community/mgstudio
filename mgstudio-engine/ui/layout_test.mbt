@@ -344,6 +344,198 @@ test "ui: ghost node children layout as direct descendants" {
 }
 
 ///|
+test "ui: flex row cross-axis stretch fills child height" {
+  let world = @ecs.World::new()
+  let tick = world.increment_change_tick()
+  ignore(tick)
+  get_ui_context_resource(world).insert(
+    UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      None,
+      false,
+    ),
+  )
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  let container = world.spawn_empty()
+  try! world.set_by_key(
+    container,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    container,
+    ecs_key_node,
+    Node::Node()
+    .with_width(Val::Px(12.0F))
+    .with_height(Val::Px(200.0F))
+    .with_flex_direction(FlexDirection::Row)
+    .with_align_items(AlignItems::Stretch),
+  )
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(6.0F)),
+  )
+  ui_layout_system(world)
+  let child_size = try! world
+    .get_by_key(child, ecs_key_ui_layout)
+    .unwrap()
+    .size()
+  debug_inspect(child_size.x == 6.0F, content="true")
+  debug_inspect(child_size.y == 200.0F, content="true")
+}
+
+///|
+test "ui: vertical slider shaped nested flex keeps track visible" {
+  let world = @ecs.World::new()
+  let tick = world.increment_change_tick()
+  ignore(tick)
+  get_ui_context_resource(world).insert(
+    UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      None,
+      false,
+    ),
+  )
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(
+    root,
+    ecs_key_node,
+    Node::Node()
+    .with_width(Val::Percent(100.0F))
+    .with_height(Val::Percent(100.0F))
+    .with_flex_direction(FlexDirection::Row)
+    .with_align_items(AlignItems::Center)
+    .with_justify_content(JustifyContent::Center),
+  )
+  let column = world.spawn_empty()
+  try! world.set_by_key(
+    column,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    column,
+    ecs_key_node,
+    Node::Node()
+    .with_flex_direction(FlexDirection::Column)
+    .with_align_items(AlignItems::Center)
+    .with_row_gap(Val::Px(10.0F)),
+  )
+  let title = world.spawn_empty()
+  try! world.set_by_key(
+    title,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(column),
+  )
+  try! world.set_by_key(
+    title,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(20.0F)),
+  )
+  let label = world.spawn_empty()
+  try! world.set_by_key(
+    label,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(column),
+  )
+  try! world.set_by_key(
+    label,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(30.0F)).with_height(Val::Px(24.0F)),
+  )
+  let slider = world.spawn_empty()
+  try! world.set_by_key(
+    slider,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(column),
+  )
+  try! world.set_by_key(
+    slider,
+    ecs_key_node,
+    Node::Node()
+    .with_flex_direction(FlexDirection::Row)
+    .with_justify_content(JustifyContent::Center)
+    .with_align_items(AlignItems::Stretch)
+    .with_width(Val::Px(12.0F))
+    .with_height(Val::Px(200.0F)),
+  )
+  let track = world.spawn_empty()
+  try! world.set_by_key(
+    track,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(slider),
+  )
+  try! world.set_by_key(
+    track,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(6.0F)),
+  )
+  let thumb_container = world.spawn_empty()
+  try! world.set_by_key(
+    thumb_container,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(slider),
+  )
+  try! world.set_by_key(
+    thumb_container,
+    ecs_key_node,
+    Node::Node()
+    .with_position_type(PositionType::Absolute)
+    .with_top(Val::Px(12.0F))
+    .with_bottom(Val::Px(0.0F))
+    .with_left(Val::Px(0.0F))
+    .with_right(Val::Px(0.0F)),
+  )
+  let thumb = world.spawn_empty()
+  try! world.set_by_key(
+    thumb,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(thumb_container),
+  )
+  try! world.set_by_key(
+    thumb,
+    ecs_key_node,
+    Node::Node()
+    .with_width(Val::Px(12.0F))
+    .with_height(Val::Px(12.0F))
+    .with_position_type(PositionType::Absolute)
+    .with_bottom(Val::Percent(50.0F)),
+  )
+  ui_layout_system(world)
+  let track_size = try! world
+    .get_by_key(track, ecs_key_ui_layout)
+    .unwrap()
+    .size()
+  let thumb_size = try! world
+    .get_by_key(thumb, ecs_key_ui_layout)
+    .unwrap()
+    .size()
+  debug_inspect(track_size.x == 6.0F, content="true")
+  debug_inspect(track_size.y == 200.0F, content="true")
+  debug_inspect(thumb_size.x == 12.0F, content="true")
+  debug_inspect(thumb_size.y == 12.0F, content="true")
+}
+
+///|
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()

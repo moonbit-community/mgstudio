@@ -36,7 +36,21 @@ pub fn Slider::Slider() -> Slider {
 }
 
 ///|
+pub fn Slider::with_track_click(
+  self : Slider,
+  track_click : TrackClick,
+) -> Slider {
+  ignore(self)
+  Slider::{ track_click, }
+}
+
+///|
 pub struct SliderThumb {} derive(ToJson, FromJson)
+
+///|
+pub fn SliderThumb::SliderThumb() -> SliderThumb {
+  SliderThumb::{  }
+}
 
 ///|
 pub struct SliderValue {
@@ -134,6 +148,12 @@ pub struct SliderPrecision {
 } derive(ToJson, FromJson)
 
 ///|
+pub struct SliderDragState {
+  dragging : Bool
+  offset : Float
+} derive(ToJson, FromJson)
+
+///|
 pub fn SliderPrecision::SliderPrecision() -> SliderPrecision {
   SliderPrecision::{ digits: 0 }
 }
@@ -147,6 +167,16 @@ pub fn SliderPrecision::new(digits : Int) -> SliderPrecision {
 pub fn SliderPrecision::round(self : SliderPrecision, value : Float) -> Float {
   let factor = @math.pow(10.0F, Float::from_int(self.digits))
   (value * factor).round() / factor
+}
+
+///|
+pub fn SliderDragState::SliderDragState() -> SliderDragState {
+  SliderDragState::{ dragging: false, offset: 0.0F }
+}
+
+///|
+pub fn SliderDragState::dragging(self : SliderDragState) -> Bool {
+  self.dragging
 }
 
 ///|
@@ -180,6 +210,11 @@ pub let ecs_key_slider_precision : @ecs.ComponentKey[SliderPrecision] = @ecs.reg
 )
 
 ///|
+pub let ecs_key_slider_drag_state : @ecs.ComponentKey[SliderDragState] = @ecs.register_component(
+  debug_name="mgstudio_ui_widgets::SliderDragState",
+)
+
+///|
 pub impl @ecs.Component for Slider with fn component() {
   ecs_key_slider
 }
@@ -207,6 +242,11 @@ pub impl @ecs.Component for SliderStep with fn component() {
 ///|
 pub impl @ecs.Component for SliderPrecision with fn component() {
   ecs_key_slider_precision
+}
+
+///|
+pub impl @ecs.Component for SliderDragState with fn component() {
+  ecs_key_slider_drag_state
 }
 
 ///|
@@ -358,6 +398,174 @@ fn slider_on_pointer_click(
 }
 
 ///|
+fn slider_on_pointer_up(
+  pointer : @app.OnPointer[@app.PointerUp],
+  slider_query : @ecs.Query[
+    (@core.Entity, @ecs.Has[Slider], @ecs.Has[Pressed]),
+    @ecs.All,
+  ],
+  commands : @app.Commands,
+) -> Unit {
+  guard pointer.target() is Some(entity) else { return }
+  guard (slider_query.get(entity) catch { _ => None })
+    is Some((slider_entity, is_slider, is_pressed)) else {
+    return
+  }
+  if is_slider.present() && is_pressed.present() {
+    commands.entity(slider_entity).remove_component(ecs_key_pressed)
+  }
+}
+
+///|
+fn slider_on_drag_start(
+  pointer : @app.OnPointer[@app.PointerDragStart],
+  slider_query : @ecs.Query[
+    (
+      @ecs.Read[SliderValue],
+      @ecs.Write[SliderDragState],
+      @ecs.Has[InteractionDisabled],
+    ),
+    @ecs.With[Slider],
+  ],
+) -> Unit {
+  guard pointer.target() is Some(entity) else { return }
+  guard (slider_query.get(entity) catch { _ => None })
+    is Some((value_comp, drag_state, disabled)) else {
+    return
+  }
+  if disabled.present() {
+    return
+  }
+  drag_state.set(SliderDragState::{
+    dragging: true,
+    offset: value_comp.value().value(),
+  })
+}
+
+///|
+fn emit_slider_drag_value_change(
+  entity : @core.Entity,
+  slider : Slider,
+  layout : @ui.UiLayout,
+  range : SliderRange,
+  precision : SliderPrecision?,
+  drag_state : SliderDragState,
+  distance : @math.Vec2,
+  commands : @app.Commands,
+) -> Unit {
+  let size = layout.size()
+  let is_vertical = size.y > size.x
+  let axis_size = if is_vertical { size.y } else { size.x }
+  let drag_distance = if is_vertical { -distance.y } else { distance.x }
+  let next_value = if axis_size > 0.0F && range.span() > 0.0F {
+    drag_state.offset + drag_distance * range.span() / axis_size
+  } else {
+    range.center()
+  }
+  let rounded = match precision {
+    Some(precision_comp) => precision_comp.round(next_value)
+    None => next_value
+  }
+  ignore(slider)
+  commands.trigger(ValueChange::{ source: entity, value: range.clamp(rounded) })
+}
+
+///|
+fn slider_on_drag(
+  pointer : @app.OnPointer[@app.PointerDrag],
+  slider_query : @ecs.Query[
+    (
+      @ecs.Read[Slider],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[SliderRange],
+      @ecs.Read[SliderPrecision]?,
+      @ecs.Read[SliderDragState],
+      @ecs.Has[InteractionDisabled],
+    ),
+    @ecs.With[Slider],
+  ],
+  commands : @app.Commands,
+) -> Unit {
+  guard pointer.target() is Some(entity) else { return }
+  guard (slider_query.get(entity) catch { _ => None })
+    is Some(
+      (
+        slider_comp,
+        layout_comp,
+        range_comp,
+        precision_comp,
+        drag_state_comp,
+        disabled,
+      )
+    ) else {
+    return
+  }
+  let drag_state = drag_state_comp.value()
+  if disabled.present() || !drag_state.dragging {
+    return
+  }
+  emit_slider_drag_value_change(
+    entity,
+    slider_comp.value(),
+    layout_comp.value(),
+    range_comp.value(),
+    precision_comp.map(fn(value) { value.value() }),
+    drag_state,
+    pointer.distance(),
+    commands,
+  )
+}
+
+///|
+fn slider_on_drag_end(
+  pointer : @app.OnPointer[@app.PointerDragEnd],
+  slider_query : @ecs.Query[
+    (
+      @ecs.Read[Slider],
+      @ecs.Read[@ui.UiLayout],
+      @ecs.Read[SliderRange],
+      @ecs.Read[SliderPrecision]?,
+      @ecs.Write[SliderDragState],
+      @ecs.Has[InteractionDisabled],
+    ),
+    @ecs.With[Slider],
+  ],
+  commands : @app.Commands,
+) -> Unit {
+  guard pointer.target() is Some(entity) else { return }
+  guard (slider_query.get(entity) catch { _ => None })
+    is Some(
+      (
+        slider_comp,
+        layout_comp,
+        range_comp,
+        precision_comp,
+        drag_state_mut,
+        disabled,
+      )
+    ) else {
+    return
+  }
+  let drag_state = drag_state_mut.peek()
+  if drag_state.dragging && !disabled.present() {
+    emit_slider_drag_value_change(
+      entity,
+      slider_comp.value(),
+      layout_comp.value(),
+      range_comp.value(),
+      precision_comp.map(fn(value) { value.value() }),
+      drag_state,
+      pointer.distance(),
+      commands,
+    )
+  }
+  if drag_state.dragging {
+    drag_state_mut.set(SliderDragState::{ ..drag_state, dragging: false })
+  }
+  commands.entity(entity).remove_component(ecs_key_pressed)
+}
+
+///|
 fn slider_on_key_input(
   keyboard : @input.ButtonInput[@window.KeyCode],
   focus : @app.Res[@input_focus.InputFocus],
@@ -455,9 +663,35 @@ pub fn slider_self_update(
 
 ///|
 pub fn slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! app
+  .world()
+  .register_required_components_with(
+    ecs_key_slider,
+    ecs_key_slider_drag_state,
+    fn() { SliderDragState::SliderDragState() },
+  )
+  try! app
+  .world()
+  .register_required_components_with(ecs_key_slider, ecs_key_slider_value, fn() {
+    SliderValue::SliderValue()
+  })
+  try! app
+  .world()
+  .register_required_components_with(ecs_key_slider, ecs_key_slider_range, fn() {
+    SliderRange::SliderRange()
+  })
+  try! app
+  .world()
+  .register_required_components_with(ecs_key_slider, ecs_key_slider_step, fn() {
+    SliderStep::SliderStep()
+  })
   app
   .add_systems(@app.Update, @app.system_config_param4(slider_on_key_input))
   .add_pointer_observer3(slider_on_pointer_down)
   .add_pointer_observer3(slider_on_pointer_click)
+  .add_pointer_observer3(slider_on_pointer_up)
+  .add_pointer_observer2(slider_on_drag_start)
+  .add_pointer_observer3(slider_on_drag)
+  .add_pointer_observer3(slider_on_drag_end)
   .add_observer3(slider_on_set_value)
 }

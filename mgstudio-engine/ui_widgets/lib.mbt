@@ -71,12 +71,12 @@ let bool_value_change_event_key : @ecs.EventKey[ValueChange[Bool]] = @ecs.regist
 )
 
 ///|
-impl ValueChangeValue for Bool with fn value_change_value_debug_name() {
+pub impl ValueChangeValue for Bool with fn value_change_value_debug_name() {
   "Bool"
 }
 
 ///|
-impl ValueChangeValue for Bool with fn value_change_event_key() {
+pub impl ValueChangeValue for Bool with fn value_change_event_key() {
   bool_value_change_event_key
 }
 
@@ -86,12 +86,12 @@ let float_value_change_event_key : @ecs.EventKey[ValueChange[Float]] = @ecs.regi
 )
 
 ///|
-impl ValueChangeValue for Float with fn value_change_value_debug_name() {
+pub impl ValueChangeValue for Float with fn value_change_value_debug_name() {
   "Float"
 }
 
 ///|
-impl ValueChangeValue for Float with fn value_change_event_key() {
+pub impl ValueChangeValue for Float with fn value_change_event_key() {
   float_value_change_event_key
 }
 
@@ -101,12 +101,12 @@ let entity_value_change_event_key : @ecs.EventKey[ValueChange[@core.Entity]] = @
 )
 
 ///|
-impl ValueChangeValue for @core.Entity with fn value_change_value_debug_name() {
+pub impl ValueChangeValue for @core.Entity with fn value_change_value_debug_name() {
   "mgstudio_core::Entity"
 }
 
 ///|
-impl ValueChangeValue for @core.Entity with fn value_change_event_key() {
+pub impl ValueChangeValue for @core.Entity with fn value_change_event_key() {
   entity_value_change_event_key
 }
 
