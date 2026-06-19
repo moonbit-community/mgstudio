@@ -22,14 +22,16 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
+  let extents = 64.0F
+  let field_center = extents / 2.0F
   @rapier_examples.rapier3d_camera(
     world,
-    @math.Vec3::new(-100.0F, 100.0F, -100.0F),
-    @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    @math.Vec3::new(field_center, 52.0F, field_center + 72.0F),
+    @math.Vec3::new(field_center, 5.0F, field_center),
   )
   @rapier_examples.rapier3d_basic_lighting(world)
 
-  let voxel_size = @math.Vec3::new(1.0F, 1.0F, 1.0F)
+  let heightfield_scale = @math.Vec3::new(extents, 1.0F, extents)
   let n = 64
   let heights : Array[Float] = []
   for i in 0..<n {
@@ -58,11 +60,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     ground,
     @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(
-      voxel_size.x / 2.0F,
-      0.0F,
-      voxel_size.z / 2.0F,
-    ),
+    @transform.Transform::from_xyz(field_center, 0.0F, field_center),
   )
   try! world.set_by_key(
     ground,
@@ -73,11 +71,10 @@ fn setup(world : @ecs.World) -> Unit {
     ground,
     @physics3d.ecs_key_collider3d,
     @physics3d.Collider3d::new(
-      @physics3d.ColliderShape3d::heightfield(heights, n, n, voxel_size),
+      @physics3d.ColliderShape3d::heightfield(heights, n, n, heightfield_scale),
     ),
   )
 
-  let extents = 64.0F
   for i in 0..<12 {
     for j in 0..<4 {
       for k in 0..<12 {
