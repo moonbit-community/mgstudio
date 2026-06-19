@@ -184,6 +184,15 @@ fn runner_all_windows_invisible(world : @ecs.World) -> Bool {
 }
 
 ///|
+fn runner_has_logical_windows(world : @ecs.World) -> Bool {
+  let found = Ref(false)
+  try! world
+  .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
+  .view(fn(_query_entity, _entity) { found.val = true })
+  found.val
+}
+
+///|
 fn runner_wait_elapsed_from_start_cause(
   cause : @window_core.StartCause,
 ) -> Bool {
@@ -795,8 +804,11 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn about_to_w
   winit_runner_trace_span("mgstudio_winit::about_to_wait.redraw_requested", fn() {
     self.redraw_requested(event_loop)
   })
-  if !@windowing.any_window_open() {
+  if !@windowing.any_window_open() &&
+    !runner_has_logical_windows(self.app_ref.val.world()) {
     event_loop.exit()
+  } else if !@windowing.any_window_open() {
+    event_loop.set_control_flow(@window_core.ControlFlow::Poll)
   }
 }
 
