@@ -193,7 +193,7 @@ fn set_primary_window_cursor(
 
 ///|
 fn on_flight_helmet_pointer_over(
-  _pointer : @app.OnPointer[@app.PointerEnter],
+  _pointer : @app.OnPointer[@app.PointerOver],
   commands : @app.Commands,
   windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
 ) -> Unit {
@@ -202,7 +202,40 @@ fn on_flight_helmet_pointer_over(
 
 ///|
 fn on_flight_helmet_pointer_out(
-  _pointer : @app.OnPointer[@app.PointerLeave],
+  _pointer : @app.OnPointer[@app.PointerOut],
+  commands : @app.Commands,
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
+) -> Unit {
+  set_primary_window_cursor(
+    commands,
+    windows,
+    @window.SystemCursorIcon::Default,
+  )
+}
+
+///|
+fn on_flight_helmet_pointer_drag(
+  pointer : @app.OnPointer[@app.PointerDrag],
+  scene_roots : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@scene.SceneRoot],
+  ],
+  commands : @app.Commands,
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
+) -> Unit {
+  try! scene_roots.view(fn(_entity, transform) {
+    transform.modify(fn(value) { value.rotate_y(pointer.delta().x * 0.01F) })
+  })
+  set_primary_window_cursor(
+    commands,
+    windows,
+    @window.SystemCursorIcon::Grabbing,
+  )
+}
+
+///|
+fn on_flight_helmet_pointer_drag_end(
+  _pointer : @app.OnPointer[@app.PointerDragEnd],
   commands : @app.Commands,
   windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
 ) -> Unit {
@@ -288,8 +321,10 @@ fn spawn_flight_helmet(
   ignore(
     commands
     .entity(model)
+    .observe_pointer4(on_flight_helmet_pointer_drag)
     .observe_pointer3(on_flight_helmet_pointer_over)
-    .observe_pointer3(on_flight_helmet_pointer_out),
+    .observe_pointer3(on_flight_helmet_pointer_out)
+    .observe_pointer3(on_flight_helmet_pointer_drag_end),
   )
 }
 
@@ -649,6 +684,7 @@ fn main {
       close_when_requested: true,
     }),
   )
+  .add_plugins(@mesh_picking.MeshPickingPlugin::MeshPickingPlugin())
   .init_resource(fn() { AppStatus::AppStatus() })
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
   .add_message(widget_click_message_key)

@@ -197,15 +197,27 @@ pub impl @app.Resource for PickingSettings
 pub struct PickingState {
   hovered : Array[@core.Entity?]
   pressed : Array[@core.Entity?]
+  pressed_position : Array[@math.Vec2?]
+  dragging : Array[@core.Entity?]
+  drag_start_position : Array[@math.Vec2?]
+  drag_latest_position : Array[@math.Vec2?]
   last_position : Array[@math.Vec2?]
 } derive(ToJson, @json.FromJson)
 pub fn PickingState::PickingState() -> Self
+pub fn PickingState::drag_latest_position(Self, Int) -> @math.Vec2?
+pub fn PickingState::drag_start_position(Self, Int) -> @math.Vec2?
+pub fn PickingState::dragging(Self, Int) -> @core.Entity?
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
 pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
 pub fn PickingState::pressed(Self, Int) -> @core.Entity?
+pub fn PickingState::pressed_position(Self, Int) -> @math.Vec2?
+pub fn PickingState::set_drag_latest_position(Self, Int, @math.Vec2?) -> Unit
+pub fn PickingState::set_drag_start_position(Self, Int, @math.Vec2?) -> Unit
+pub fn PickingState::set_dragging(Self, Int, @core.Entity?) -> Unit
 pub fn PickingState::set_hovered(Self, Int, @core.Entity?) -> Unit
 pub fn PickingState::set_last_position(Self, Int, @math.Vec2?) -> Unit
 pub fn PickingState::set_pressed(Self, Int, @core.Entity?) -> Unit
+pub fn PickingState::set_pressed_position(Self, Int, @math.Vec2?) -> Unit
 pub impl @app.Resource for PickingState
 
 pub(all) enum PointerButton {

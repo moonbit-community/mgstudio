@@ -63,7 +63,13 @@ pub struct PointerMove {}
 pub struct PointerEnter {}
 
 ///|
+pub struct PointerOver {}
+
+///|
 pub struct PointerLeave {}
+
+///|
+pub struct PointerOut {}
 
 ///|
 pub struct PointerDown {}
@@ -73,6 +79,15 @@ pub struct PointerUp {}
 
 ///|
 pub struct PointerClick {}
+
+///|
+pub struct PointerDragStart {}
+
+///|
+pub struct PointerDrag {}
+
+///|
+pub struct PointerDragEnd {}
 
 ///|
 pub(open) trait PointerObserverKind {
@@ -103,6 +118,17 @@ pub impl PointerObserverKind for PointerEnter with fn source_label() {
 }
 
 ///|
+pub impl PointerObserverKind for PointerOver with fn event_kind() {
+  ignore(PointerOver::{  })
+  @pointer_events.PointerEventKind::Enter
+}
+
+///|
+pub impl PointerObserverKind for PointerOver with fn source_label() {
+  "Pointer<Over>"
+}
+
+///|
 pub impl PointerObserverKind for PointerLeave with fn event_kind() {
   ignore(PointerLeave::{  })
   @pointer_events.PointerEventKind::Leave
@@ -111,6 +137,17 @@ pub impl PointerObserverKind for PointerLeave with fn event_kind() {
 ///|
 pub impl PointerObserverKind for PointerLeave with fn source_label() {
   "Pointer<Leave>"
+}
+
+///|
+pub impl PointerObserverKind for PointerOut with fn event_kind() {
+  ignore(PointerOut::{  })
+  @pointer_events.PointerEventKind::Leave
+}
+
+///|
+pub impl PointerObserverKind for PointerOut with fn source_label() {
+  "Pointer<Out>"
 }
 
 ///|
@@ -147,6 +184,39 @@ pub impl PointerObserverKind for PointerClick with fn source_label() {
 }
 
 ///|
+pub impl PointerObserverKind for PointerDragStart with fn event_kind() {
+  ignore(PointerDragStart::{  })
+  @pointer_events.PointerEventKind::DragStart
+}
+
+///|
+pub impl PointerObserverKind for PointerDragStart with fn source_label() {
+  "Pointer<DragStart>"
+}
+
+///|
+pub impl PointerObserverKind for PointerDrag with fn event_kind() {
+  ignore(PointerDrag::{  })
+  @pointer_events.PointerEventKind::Drag
+}
+
+///|
+pub impl PointerObserverKind for PointerDrag with fn source_label() {
+  "Pointer<Drag>"
+}
+
+///|
+pub impl PointerObserverKind for PointerDragEnd with fn event_kind() {
+  ignore(PointerDragEnd::{  })
+  @pointer_events.PointerEventKind::DragEnd
+}
+
+///|
+pub impl PointerObserverKind for PointerDragEnd with fn source_label() {
+  "Pointer<DragEnd>"
+}
+
+///|
 pub struct OnPointer[_] {
   event : @pointer_events.PointerEvent
 }
@@ -169,6 +239,16 @@ pub fn[K] OnPointer::position(self : OnPointer[K]) -> @math.Vec2 {
 ///|
 pub fn[K] OnPointer::target(self : OnPointer[K]) -> @core.Entity? {
   self.event.target
+}
+
+///|
+pub fn[K] OnPointer::delta(self : OnPointer[K]) -> @math.Vec2 {
+  self.event.delta
+}
+
+///|
+pub fn[K] OnPointer::distance(self : OnPointer[K]) -> @math.Vec2 {
+  self.event.distance
 }
 
 ///|

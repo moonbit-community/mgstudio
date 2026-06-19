@@ -23,6 +23,9 @@ pub(all) enum PointerEventKind {
   Down
   Up
   Click
+  DragStart
+  Drag
+  DragEnd
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
@@ -31,6 +34,8 @@ pub struct PointerEvent {
   kind : PointerEventKind
   position : @math.Vec2
   target : @core.Entity?
+  delta : @math.Vec2
+  distance : @math.Vec2
 } derive(ToJson, FromJson)
 
 ///|
@@ -39,6 +44,8 @@ pub fn PointerEvent::new(
   kind : PointerEventKind,
   position : @math.Vec2,
   target? : @core.Entity? = None,
+  delta? : @math.Vec2 = @math.Vec2::zero(),
+  distance? : @math.Vec2 = @math.Vec2::zero(),
 ) -> PointerEvent {
-  PointerEvent::{ pointer, kind, position, target }
+  PointerEvent::{ pointer, kind, position, target, delta, distance }
 }

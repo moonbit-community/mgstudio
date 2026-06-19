@@ -298,12 +298,24 @@ pub fn picking_hover_pipeline_system(world : @ecs.World) -> Unit {
 pub struct PickingState {
   hovered : Array[@core.Entity?]
   pressed : Array[@core.Entity?]
+  pressed_position : Array[@math.Vec2?]
+  dragging : Array[@core.Entity?]
+  drag_start_position : Array[@math.Vec2?]
+  drag_latest_position : Array[@math.Vec2?]
   last_position : Array[@math.Vec2?]
 } derive(ToJson, FromJson)
 
 ///|
 pub fn PickingState::PickingState() -> PickingState {
-  PickingState::{ hovered: [], pressed: [], last_position: [] }
+  PickingState::{
+    hovered: [],
+    pressed: [],
+    pressed_position: [],
+    dragging: [],
+    drag_start_position: [],
+    drag_latest_position: [],
+    last_position: [],
+  }
 }
 
 ///|
@@ -327,6 +339,54 @@ pub fn PickingState::pressed(
     None
   } else {
     self.pressed[pointer]
+  }
+}
+
+///|
+pub fn PickingState::pressed_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+) -> @math.Vec2? {
+  if pointer < 0 || pointer >= self.pressed_position.length() {
+    None
+  } else {
+    self.pressed_position[pointer]
+  }
+}
+
+///|
+pub fn PickingState::dragging(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+) -> @core.Entity? {
+  if pointer < 0 || pointer >= self.dragging.length() {
+    None
+  } else {
+    self.dragging[pointer]
+  }
+}
+
+///|
+pub fn PickingState::drag_start_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+) -> @math.Vec2? {
+  if pointer < 0 || pointer >= self.drag_start_position.length() {
+    None
+  } else {
+    self.drag_start_position[pointer]
+  }
+}
+
+///|
+pub fn PickingState::drag_latest_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+) -> @math.Vec2? {
+  if pointer < 0 || pointer >= self.drag_latest_position.length() {
+    None
+  } else {
+    self.drag_latest_position[pointer]
   }
 }
 
@@ -357,6 +417,18 @@ fn PickingState::ensure_capacity(
   while self.pressed.length() < need {
     self.pressed.push(None)
   }
+  while self.pressed_position.length() < need {
+    self.pressed_position.push(None)
+  }
+  while self.dragging.length() < need {
+    self.dragging.push(None)
+  }
+  while self.drag_start_position.length() < need {
+    self.drag_start_position.push(None)
+  }
+  while self.drag_latest_position.length() < need {
+    self.drag_latest_position.push(None)
+  }
   while self.last_position.length() < need {
     self.last_position.push(None)
   }
@@ -370,6 +442,46 @@ pub fn PickingState::set_pressed(
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
   self.pressed[pointer] = pressed
+}
+
+///|
+pub fn PickingState::set_pressed_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+  pos : @math.Vec2?,
+) -> Unit {
+  PickingState::ensure_capacity(self, pointer)
+  self.pressed_position[pointer] = pos
+}
+
+///|
+pub fn PickingState::set_dragging(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+  dragging : @core.Entity?,
+) -> Unit {
+  PickingState::ensure_capacity(self, pointer)
+  self.dragging[pointer] = dragging
+}
+
+///|
+pub fn PickingState::set_drag_start_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+  pos : @math.Vec2?,
+) -> Unit {
+  PickingState::ensure_capacity(self, pointer)
+  self.drag_start_position[pointer] = pos
+}
+
+///|
+pub fn PickingState::set_drag_latest_position(
+  self : PickingState,
+  pointer : @pointer_events.PointerId,
+  pos : @math.Vec2?,
+) -> Unit {
+  PickingState::ensure_capacity(self, pointer)
+  self.drag_latest_position[pointer] = pos
 }
 
 ///|

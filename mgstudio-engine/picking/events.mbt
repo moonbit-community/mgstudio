@@ -322,7 +322,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-/// Generate pointer enter/leave/down/up/click events from hit-test results.
+/// Generate pointer enter/leave/down/up/click/drag events from hit-test results.
 pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   let inputs = read_pending_pointer_event_inputs(world)
   if inputs.length() == 0 {
@@ -342,11 +342,15 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
     }
 
     // Move.
+    let mut move_delta = @math.Vec2::zero()
+    let mut moved = false
     match pos_opt {
       Some(pos) => {
         match PickingState::last_position(picking_state, pointer_id) {
           Some(prev) =>
             if prev.x != pos.x || prev.y != pos.y {
+              move_delta = pos.sub(prev)
+              moved = true
               @app.PickingEvents::push(
                 events,
                 @pointer_events.PointerEvent::new(
@@ -354,6 +358,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
                   @pointer_events.PointerEventKind::Move,
                   pos,
                   target=hit_top,
+                  delta=move_delta,
                 ),
               )
             }
@@ -419,6 +424,80 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
           ),
         )
         PickingState::set_pressed(picking_state, pointer_id, Some(target))
+        PickingState::set_pressed_position(picking_state, pointer_id, Some(pos))
+        PickingState::set_dragging(picking_state, pointer_id, None)
+        PickingState::set_drag_start_position(picking_state, pointer_id, None)
+        PickingState::set_drag_latest_position(picking_state, pointer_id, None)
+      }
+    }
+    if input.down && moved && pos_opt is Some(pos) {
+      match PickingState::pressed(picking_state, pointer_id) {
+        Some(pressed_entity) => {
+          let start_pos = match
+            PickingState::drag_start_position(picking_state, pointer_id) {
+            Some(start) => start
+            None =>
+              match PickingState::pressed_position(picking_state, pointer_id) {
+                Some(value) => value
+                None => pos
+              }
+          }
+          match PickingState::dragging(picking_state, pointer_id) {
+            Some(_) => ()
+            None => {
+              PickingState::set_dragging(
+                picking_state,
+                pointer_id,
+                Some(pressed_entity),
+              )
+              PickingState::set_drag_start_position(
+                picking_state,
+                pointer_id,
+                Some(start_pos),
+              )
+              PickingState::set_drag_latest_position(
+                picking_state,
+                pointer_id,
+                Some(start_pos),
+              )
+              @app.PickingEvents::push(
+                events,
+                @pointer_events.PointerEvent::new(
+                  pointer_id,
+                  @pointer_events.PointerEventKind::DragStart,
+                  pos,
+                  target=Some(pressed_entity),
+                ),
+              )
+            }
+          }
+          let latest_pos = match
+            PickingState::drag_latest_position(picking_state, pointer_id) {
+            Some(latest) => latest
+            None => start_pos
+          }
+          let drag_delta = pos.sub(latest_pos)
+          if drag_delta.x != 0.0F || drag_delta.y != 0.0F {
+            let distance = pos.sub(start_pos)
+            @app.PickingEvents::push(
+              events,
+              @pointer_events.PointerEvent::new(
+                pointer_id,
+                @pointer_events.PointerEventKind::Drag,
+                pos,
+                target=Some(pressed_entity),
+                delta=drag_delta,
+                distance~,
+              ),
+            )
+            PickingState::set_drag_latest_position(
+              picking_state,
+              pointer_id,
+              Some(pos),
+            )
+          }
+        }
+        None => ()
       }
     }
     if input.just_released {
@@ -446,10 +525,34 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
               ),
             )
           }
+          match PickingState::dragging(picking_state, pointer_id) {
+            Some(dragged_entity) => {
+              let start_pos = match
+                PickingState::drag_start_position(picking_state, pointer_id) {
+                Some(start) => start
+                None => pos
+              }
+              @app.PickingEvents::push(
+                events,
+                @pointer_events.PointerEvent::new(
+                  pointer_id,
+                  @pointer_events.PointerEventKind::DragEnd,
+                  pos,
+                  target=Some(dragged_entity),
+                  distance=pos.sub(start_pos),
+                ),
+              )
+            }
+            None => ()
+          }
         }
         None => ()
       }
       PickingState::set_pressed(picking_state, pointer_id, None)
+      PickingState::set_pressed_position(picking_state, pointer_id, None)
+      PickingState::set_dragging(picking_state, pointer_id, None)
+      PickingState::set_drag_start_position(picking_state, pointer_id, None)
+      PickingState::set_drag_latest_position(picking_state, pointer_id, None)
     }
   }
   events_res.insert(events)

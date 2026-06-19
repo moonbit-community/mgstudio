@@ -907,6 +907,8 @@ pub fn[S] OnExit::state(Self[S]) -> S
 pub struct OnPointer[_] {
   event : @pointer_events.PointerEvent
 }
+pub fn[K] OnPointer::delta(Self[K]) -> @math.Vec2
+pub fn[K] OnPointer::distance(Self[K]) -> @math.Vec2
 pub fn[K] OnPointer::event(Self[K]) -> @pointer_events.PointerEvent
 pub fn[K] OnPointer::pointer(Self[K]) -> Int
 pub fn[K] OnPointer::position(Self[K]) -> @math.Vec2
@@ -1017,6 +1019,18 @@ pub struct PointerDown {
 }
 pub impl PointerObserverKind for PointerDown
 
+pub struct PointerDrag {
+}
+pub impl PointerObserverKind for PointerDrag
+
+pub struct PointerDragEnd {
+}
+pub impl PointerObserverKind for PointerDragEnd
+
+pub struct PointerDragStart {
+}
+pub impl PointerObserverKind for PointerDragStart
+
 pub struct PointerEnter {
 }
 pub impl PointerObserverKind for PointerEnter
@@ -1028,6 +1042,14 @@ pub impl PointerObserverKind for PointerLeave
 pub struct PointerMove {
 }
 pub impl PointerObserverKind for PointerMove
+
+pub struct PointerOut {
+}
+pub impl PointerObserverKind for PointerOut
+
+pub struct PointerOver {
+}
+pub impl PointerObserverKind for PointerOver
 
 pub struct PointerUp {
 }

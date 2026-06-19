@@ -46,6 +46,37 @@ pub using @picking {type PointerMap}
 pub using @picking {type PointerPress}
 
 ///|
+pub struct MeshPickingCamera {} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub let ecs_key_mesh_picking_camera : @ecs.ComponentKey[MeshPickingCamera] = @ecs.register_component(
+  debug_name="mgstudio_picking::mesh_picking::MeshPickingCamera",
+)
+
+///|
+pub impl @ecs.Component for MeshPickingCamera with fn component() {
+  ecs_key_mesh_picking_camera
+}
+
+///|
+pub struct MeshPickingPlugin {}
+
+///|
+pub fn MeshPickingPlugin::MeshPickingPlugin() -> MeshPickingPlugin {
+  MeshPickingPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for MeshPickingPlugin with fn name(_self) {
+  "mgstudio.picking.mesh_picking.MeshPickingPlugin"
+}
+
+///|
+pub impl @app.Plugin for MeshPickingPlugin with fn build(_self, app) {
+  app
+}
+
+///|
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[@picking.PickingState] = @picking.ecs_res_key_picking_state
 
 ///|

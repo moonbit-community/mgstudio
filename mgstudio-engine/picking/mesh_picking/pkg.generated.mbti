@@ -5,9 +5,13 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/picking",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
+pub let ecs_key_mesh_picking_camera : @ecs.ComponentKey[MeshPickingCamera]
+
 pub let ecs_key_pointer_id : @ecs.ComponentKey[@picking.PointerId]
 
 pub let ecs_key_pointer_interaction : @ecs.ComponentKey[@picking.PointerInteraction]
@@ -67,6 +71,14 @@ pub fn pointer_input_message_key() -> @ecs.MessageKey[@picking.PointerInput]
 // Errors
 
 // Types and methods
+pub struct MeshPickingCamera {
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub impl @ecs.Component for MeshPickingCamera
+
+pub struct MeshPickingPlugin {
+}
+pub fn MeshPickingPlugin::MeshPickingPlugin() -> Self
+pub impl @app.Plugin for MeshPickingPlugin
 
 // Type aliases
 pub using @picking {type HitData}

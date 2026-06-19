@@ -257,6 +257,68 @@ test "picking: generates enter/leave and click events (single pointer)" {
 }
 
 ///|
+test "picking: generates drag start drag and drag end events" {
+  let world = @ecs.World::new()
+  let tick = world.increment_change_tick()
+  ignore(tick)
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
+  ensure_test_messages(world)
+  let entity = @core.Entity::new(10, 0)
+  let start = @math.Vec2::new(10.0F, 20.0F)
+  let next = @math.Vec2::new(15.0F, 18.0F)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(start), true, true, false),
+    ]),
+    PickingHits::from_arrays([Some(entity)], [None]),
+  )
+  ignore(drain_events(world))
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(next), true, false, false),
+    ]),
+    PickingHits::from_arrays([Some(entity)], [None]),
+  )
+  let drag_events = drain_events(world)
+  debug_inspect(drag_events.length(), content="3")
+  debug_inspect(
+    drag_events[1].kind == @pointer_events.PointerEventKind::DragStart,
+    content="true",
+  )
+  debug_inspect(
+    drag_events[2].kind == @pointer_events.PointerEventKind::Drag,
+    content="true",
+  )
+  debug_inspect(drag_events[2].delta.x, content="5")
+  debug_inspect(drag_events[2].delta.y, content="-2")
+  debug_inspect(drag_events[2].distance.x, content="5")
+  debug_inspect(drag_events[2].distance.y, content="-2")
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(next), false, false, true),
+    ]),
+    PickingHits::from_arrays([Some(entity)], [None]),
+  )
+  let end_events = drain_events(world)
+  debug_inspect(end_events.length(), content="3")
+  debug_inspect(
+    end_events[2].kind == @pointer_events.PointerEventKind::DragEnd,
+    content="true",
+  )
+  debug_inspect(end_events[2].distance.x, content="5")
+  debug_inspect(end_events[2].distance.y, content="-2")
+}
+
+///|
 test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -952,4 +1014,63 @@ test "picking: pointer observers dispatch generated move enter and leave events"
     seen,
     content="[\"move:1\", \"enter:1\", \"leave:1\", \"enter:2\"]",
   )
+}
+
+///|
+test "picking: entity pointer observers dispatch drag events with delta" {
+  let seen : Array[String] = []
+  let target_ref : Ref[@core.Entity?] = Ref(None)
+  let mut app = @app.App::new(@ecs.World::new()).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    let entity = commands.spawn_empty()
+    target_ref.val = Some(entity)
+    ignore(
+      commands
+      .entity(entity)
+      .observe_pointer(fn(pointer : @app.OnPointer[@app.PointerDrag]) {
+        seen.push(
+          "drag:\{pointer.delta().x.to_string()}:\{pointer.delta().y.to_string()}",
+        )
+      }),
+    )
+  })
+  app = app.run_once()
+  guard target_ref.val is Some(entity) else {
+    abort("expected pointer observer target")
+  }
+  let world = app.world()
+  let tick = world.increment_change_tick()
+  ignore(tick)
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
+  ensure_test_messages(world)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(@math.Vec2::new(1.0F, 1.0F)), true, true, false),
+    ]),
+    PickingHits::from_arrays([Some(entity)], [None]),
+  )
+  @app.dispatch_pointer_observers_system(world)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(
+        0,
+        Some(@math.Vec2::new(4.0F, 6.0F)),
+        true,
+        false,
+        false,
+      ),
+    ]),
+    PickingHits::from_arrays([Some(entity)], [None]),
+  )
+  @app.dispatch_pointer_observers_system(world)
+
+  debug_inspect(seen, content="[\"drag:3:5\"]")
 }
