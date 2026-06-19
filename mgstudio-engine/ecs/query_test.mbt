@@ -1396,6 +1396,24 @@ test "ecs query access validation: detects query data and filter conflicts" {
     content="true",
   )
 
+  let lhs_data_required_by_query_item = QueryDataAccess::new()
+  lhs_data_required_by_query_item.add_read_component(position_key.id())
+  lhs_data_required_by_query_item.add_required_component(velocity_key.id())
+  let lhs_without_accel_filter = QueryFilterAccess::new()
+  lhs_without_accel_filter.add_without_component(acceleration_key.id())
+
+  let rhs_data_required_accel = QueryDataAccess::new()
+  rhs_data_required_accel.add_write_component(position_key.id())
+  rhs_data_required_accel.add_required_component(acceleration_key.id())
+  let rhs_empty_filter = QueryFilterAccess::new()
+  debug_inspect(
+    query_validate_data_data_compatibility(
+      lhs_data_required_by_query_item, lhs_without_accel_filter, rhs_data_required_accel,
+      rhs_empty_filter,
+    ),
+    content="true",
+  )
+
   let overlap_filter = QueryFilterAccess::new()
   debug_inspect(
     query_validate_data_data_compatibility(

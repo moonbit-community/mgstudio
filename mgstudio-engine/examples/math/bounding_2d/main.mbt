@@ -179,7 +179,6 @@ let overlay_text_entity : Ref[@core.Entity?] = Ref(None)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(Test::RayCast)
   .add_systems_world(@app.Startup, setup)
   .add_systems_world(@app.Update, update_text)

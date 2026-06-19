@@ -35,7 +35,7 @@ pub let ecs_key_name : ComponentKey[Name]
 
 pub fn[D] query(World) -> Query[D, All]
 
-pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)
+pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit, collect_required_data_components? : (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)
 
 pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T
 
@@ -591,10 +591,12 @@ pub struct QueryDataAccess {
 }
 pub fn QueryDataAccess::accesses_component(Self, Int) -> Bool
 pub fn QueryDataAccess::add_read_component(Self, Int) -> Unit
+pub fn QueryDataAccess::add_required_component(Self, Int) -> Unit
 pub fn QueryDataAccess::add_write_component(Self, Int) -> Unit
 pub fn QueryDataAccess::has_conflict(Self) -> Bool
 pub fn QueryDataAccess::new() -> Self
 pub fn QueryDataAccess::read_components(Self) -> Array[Int]
+pub fn QueryDataAccess::required_components(Self) -> Array[Int]
 pub fn QueryDataAccess::write_components(Self) -> Array[Int]
 
 pub(all) struct QueryDataFetchPlan {
@@ -980,6 +982,7 @@ pub(open) trait QueryData {
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _
+  fn collect_required_components(QueryDataAccess) -> Unit = _
   fn requires_entity_check() -> Bool
   fn is_dense(World) -> Bool = _
   fn iteration_anchor_component() -> Int?

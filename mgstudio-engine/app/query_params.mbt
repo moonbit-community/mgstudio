@@ -243,11 +243,13 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
 ] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
-    data_access : @ecs.QueryDataAccess,
-  ) {
-    D::collect_access(data_access)
-  })
+  let (data_access, filter_access) = @ecs.query_access_descriptor(
+    filter,
+    fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },
+    collect_required_data_components=fn(data_access) {
+      D::collect_required_components(data_access)
+    },
+  )
   access.add_query_access(data_access, filter_access)
   access
 }
@@ -315,11 +317,13 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 ] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
-    data_access : @ecs.QueryDataAccess,
-  ) {
-    D::collect_access(data_access)
-  })
+  let (data_access, filter_access) = @ecs.query_access_descriptor(
+    filter,
+    fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },
+    collect_required_data_components=fn(data_access) {
+      D::collect_required_components(data_access)
+    },
+  )
   access.add_query_access(data_access, filter_access)
   access
 }
@@ -368,11 +372,13 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 ] with fn access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
-    data_access : @ecs.QueryDataAccess,
-  ) {
-    D::collect_access(data_access)
-  })
+  let (data_access, filter_access) = @ecs.query_access_descriptor(
+    filter,
+    fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },
+    collect_required_data_components=fn(data_access) {
+      D::collect_required_components(data_access)
+    },
+  )
   access.add_query_access(data_access, filter_access)
   access
 }

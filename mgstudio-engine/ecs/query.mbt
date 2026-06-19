@@ -1907,10 +1907,12 @@ fn query_component_is_dense(world : World, component_id : Int) -> Bool {
 fn[F : QueryFilter] query_data_filter_access(
   filter : F,
   collect_data_access : (QueryDataAccess) -> Unit,
+  collect_required_data_components : (QueryDataAccess) -> Unit,
 ) -> (QueryDataAccess, QueryFilterAccess) {
   let data_access = QueryDataAccess::new()
   let filter_access = QueryFilterAccess::new()
   collect_data_access(data_access)
+  collect_required_data_components(data_access)
   QueryFilter::collect_access(filter, filter_access)
   (data_access, filter_access)
 }
@@ -1919,8 +1921,13 @@ fn[F : QueryFilter] query_data_filter_access(
 pub fn[F : QueryFilter] query_access_descriptor(
   filter : F,
   collect_data_access : (QueryDataAccess) -> Unit,
+  collect_required_data_components? : (QueryDataAccess) -> Unit = fn(_access) {
+    ()
+  },
 ) -> (QueryDataAccess, QueryFilterAccess) {
-  query_data_filter_access(filter, collect_data_access)
+  query_data_filter_access(
+    filter, collect_data_access, collect_required_data_components,
+  )
 }
 
 ///|
@@ -1929,7 +1936,9 @@ fn[F : QueryFilter] query_access_validation(
   collect_data_access : (QueryDataAccess) -> Unit,
 ) -> SystemParamValidationError? {
   let (data_access, filter_access) = query_data_filter_access(
-    filter, collect_data_access,
+    filter,
+    collect_data_access,
+    fn(_access) { () },
   )
   query_validate_data_filter_access(data_access, filter_access)
 }
@@ -1971,7 +1980,9 @@ fn[F : QueryFilter] query_dependency_component_ids_from_access(
 ) -> Array[Int] {
   let component_ids : Array[Int] = []
   let (data_access, filter_access) = query_data_filter_access(
-    filter, collect_data_access,
+    filter,
+    collect_data_access,
+    fn(_access) { () },
   )
   for component_id in data_access.read_components() {
     query_push_unique_component_id(component_ids, component_id)

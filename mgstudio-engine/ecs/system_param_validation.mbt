@@ -61,17 +61,38 @@ fn query_access_components_overlap(lhs : Array[Int], rhs : Array[Int]) -> Bool {
 }
 
 ///|
-fn query_filter_accesses_rule_out_each_other(
+fn query_required_or_with_components(
+  data_access : QueryDataAccess,
+  filter_access : QueryFilterAccess,
+) -> Array[Int] {
+  let components : Array[Int] = []
+  for component_id in data_access.required_components() {
+    if !components.contains(component_id) {
+      components.push(component_id)
+    }
+  }
+  for component_id in filter_access.with_components() {
+    if !components.contains(component_id) {
+      components.push(component_id)
+    }
+  }
+  components
+}
+
+///|
+fn query_accesses_rule_out_each_other(
+  lhs_data_access : QueryDataAccess,
   lhs_filter_access : QueryFilterAccess,
+  rhs_data_access : QueryDataAccess,
   rhs_filter_access : QueryFilterAccess,
 ) -> Bool {
   query_access_components_overlap(
-    lhs_filter_access.with_components(),
+    query_required_or_with_components(lhs_data_access, lhs_filter_access),
     rhs_filter_access.without_components(),
   ) ||
   query_access_components_overlap(
     lhs_filter_access.without_components(),
-    rhs_filter_access.with_components(),
+    query_required_or_with_components(rhs_data_access, rhs_filter_access),
   )
 }
 
@@ -113,7 +134,7 @@ pub fn query_validate_data_data_compatibility(
   if !has_component_conflict {
     return true
   }
-  query_filter_accesses_rule_out_each_other(
-    lhs_filter_access, rhs_filter_access,
+  query_accesses_rule_out_each_other(
+    lhs_data_access, lhs_filter_access, rhs_data_access, rhs_filter_access,
   )
 }

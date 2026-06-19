@@ -224,6 +224,7 @@ pub(open) trait QueryData {
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _
+  fn collect_required_components(QueryDataAccess) -> Unit = _
   fn requires_entity_check() -> Bool
   fn is_dense(World) -> Bool = _
   fn iteration_anchor_component() -> Int?
@@ -233,6 +234,11 @@ pub(open) trait QueryData {
 
 ///|
 impl QueryData with fn collect_access(_access) {
+  ()
+}
+
+///|
+impl QueryData with fn collect_required_components(_access) {
   ()
 }
 
@@ -306,8 +312,10 @@ priv struct QueryComponentTickSnapshot {
 pub struct QueryDataAccess {
   priv read_components : Array[Int]
   priv write_components : Array[Int]
+  priv required_components : Array[Int]
   priv read_component_set : @utils.IntBitSet
   priv write_component_set : @utils.IntBitSet
+  priv required_component_set : @utils.IntBitSet
   priv mut has_read_write_conflict : Bool
   priv mut has_duplicate_write : Bool
 }
@@ -317,8 +325,10 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
   {
     read_components: [],
     write_components: [],
+    required_components: [],
     read_component_set: @utils.IntBitSet::new(),
     write_component_set: @utils.IntBitSet::new(),
+    required_component_set: @utils.IntBitSet::new(),
     has_read_write_conflict: false,
     has_duplicate_write: false,
   }
@@ -397,6 +407,17 @@ pub fn QueryDataAccess::add_write_component(
 }
 
 ///|
+pub fn QueryDataAccess::add_required_component(
+  self : QueryDataAccess,
+  component_id : Int,
+) -> Unit {
+  if !self.required_component_set.contains(component_id) {
+    self.required_component_set.insert(component_id)
+    self.required_components.push(component_id)
+  }
+}
+
+///|
 pub fn QueryDataAccess::read_components(self : QueryDataAccess) -> Array[Int] {
   self.read_components
 }
@@ -404,6 +425,13 @@ pub fn QueryDataAccess::read_components(self : QueryDataAccess) -> Array[Int] {
 ///|
 pub fn QueryDataAccess::write_components(self : QueryDataAccess) -> Array[Int] {
   self.write_components
+}
+
+///|
+pub fn QueryDataAccess::required_components(
+  self : QueryDataAccess,
+) -> Array[Int] {
+  self.required_components
 }
 
 ///|
@@ -948,6 +976,13 @@ pub impl[T : Component] QueryData for Read[T] with fn collect_access(access) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Read[T] with fn collect_required_components(
+  access,
+) {
+  access.add_required_component(T::component().id())
+}
+
+///|
 pub impl[T : Component] QueryData for Read[T] with fn requires_entity_check() {
   false
 }
@@ -1055,6 +1090,13 @@ pub impl[T : Component] QueryData for Write[T] with fn matches_component_set(
 ///|
 pub impl[T : Component] QueryData for Write[T] with fn collect_access(access) {
   access.add_write_component(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Write[T] with fn collect_required_components(
+  access,
+) {
+  access.add_required_component(T::component().id())
 }
 
 ///|
@@ -1657,6 +1699,14 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn collect_acce
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn collect_required_components(
+  access,
+) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+}
+
+///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn requires_entity_check() {
   A::requires_entity_check() || B::requires_entity_check()
 }
@@ -1790,6 +1840,15 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   A::collect_access(access)
   B::collect_access(access)
   C::collect_access(access)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn collect_required_components(
+  access,
+) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
 }
 
 ///|
@@ -1985,6 +2044,19 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B::collect_access(access)
   C::collect_access(access)
   D::collect_access(access)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fn collect_required_components(access) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
+  D::collect_required_components(access)
 }
 
 ///|
@@ -2240,6 +2312,21 @@ pub impl[
   C::collect_access(access)
   D::collect_access(access)
   E::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+] QueryData for (A, B, C, D, E) with fn collect_required_components(access) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
+  D::collect_required_components(access)
+  E::collect_required_components(access)
 }
 
 ///|
@@ -2537,6 +2624,23 @@ pub impl[
   D::collect_access(access)
   E::collect_access(access)
   F::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+] QueryData for (A, B, C, D, E, F) with fn collect_required_components(access) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
+  D::collect_required_components(access)
+  E::collect_required_components(access)
+  F::collect_required_components(access)
 }
 
 ///|
@@ -2872,6 +2976,27 @@ pub impl[
   E::collect_access(access)
   F::collect_access(access)
   G::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+] QueryData for (A, B, C, D, E, F, G) with fn collect_required_components(
+  access,
+) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
+  D::collect_required_components(access)
+  E::collect_required_components(access)
+  F::collect_required_components(access)
+  G::collect_required_components(access)
 }
 
 ///|
@@ -3247,6 +3372,29 @@ pub impl[
   F::collect_access(access)
   G::collect_access(access)
   H::collect_access(access)
+}
+
+///|
+pub impl[
+  A : QueryData,
+  B : QueryData,
+  C : QueryData,
+  D : QueryData,
+  E : QueryData,
+  F : QueryData,
+  G : QueryData,
+  H : QueryData,
+] QueryData for (A, B, C, D, E, F, G, H) with fn collect_required_components(
+  access,
+) {
+  A::collect_required_components(access)
+  B::collect_required_components(access)
+  C::collect_required_components(access)
+  D::collect_required_components(access)
+  E::collect_required_components(access)
+  F::collect_required_components(access)
+  G::collect_required_components(access)
+  H::collect_required_components(access)
 }
 
 ///|
