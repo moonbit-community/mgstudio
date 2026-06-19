@@ -25,7 +25,7 @@ pub(all) enum ScreenSpaceTransmissionQuality {
 
 ///|
 pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
-  ScreenSpaceTransmissionQuality::High
+  ScreenSpaceTransmissionQuality::Medium
 }
 
 ///|
@@ -38,7 +38,7 @@ pub struct ScreenSpaceTransmission {
 pub fn ScreenSpaceTransmission::ScreenSpaceTransmission() -> ScreenSpaceTransmission {
   ScreenSpaceTransmission::{
     quality: ScreenSpaceTransmissionQuality::default(),
-    steps: 2,
+    steps: 1,
   }
 }
 

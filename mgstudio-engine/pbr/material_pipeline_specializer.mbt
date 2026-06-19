@@ -125,6 +125,11 @@ fn pbr_shader_def_uint(name : String, value : UInt) -> @material.ShaderDefVal {
 }
 
 ///|
+fn pbr_shader_def_int(name : String, value : Int) -> @material.ShaderDefVal {
+  @material.ShaderDefVal::Int(name, value)
+}
+
+///|
 fn pbr_shader_defs_clone(
   shader_defs : Array[@material.ShaderDefVal],
 ) -> Array[@material.ShaderDefVal] {
@@ -478,6 +483,26 @@ fn pbr_prepass_is_depth_only_opaque(mesh_key_bits : UInt64) -> Bool {
 }
 
 ///|
+fn pbr_screen_space_specular_transmission_blur_taps(
+  mesh_key_bits : UInt64,
+) -> Int {
+  let quality_bits = mesh_key_bits &
+    (
+      MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_MASK_BITS <<
+      MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_SHIFT_BITS
+    )
+  match quality_bits {
+    bits if bits == MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_MEDIUM =>
+      8
+    bits if bits == MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_HIGH =>
+      16
+    bits if bits == MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_ULTRA =>
+      32
+    _ => 4
+  }
+}
+
+///|
 fn pbr_prepass_targets_all_none(
   targets : Array[@material.ColorTargetState?],
 ) -> Bool {
@@ -674,6 +699,12 @@ fn pbr_mesh_pipeline_descriptor(
   if clustered_decals_are_usable {
     shader_defs.push(pbr_shader_def("CLUSTERED_DECALS_ARE_USABLE"))
   }
+  shader_defs.push(
+    pbr_shader_def_int(
+      "SCREEN_SPACE_SPECULAR_TRANSMISSION_BLUR_TAPS",
+      pbr_screen_space_specular_transmission_blur_taps(mesh_key_bits),
+    ),
+  )
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 6, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )

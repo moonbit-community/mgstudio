@@ -399,6 +399,10 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
   if camera.distance_fog is Some(_) {
     bits = bits | MESH_PIPELINE_KEY_DISTANCE_FOG
   }
+  if camera.screen_space_transmission is Some(transmission) {
+    bits = bits |
+      mesh_pipeline_key_screen_space_transmission_bits(transmission.quality)
+  }
   bits
 }
 

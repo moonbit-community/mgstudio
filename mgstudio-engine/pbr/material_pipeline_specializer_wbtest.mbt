@@ -160,6 +160,22 @@ fn pbr_material_specializer_shader_defs_contain_uint(
 }
 
 ///|
+fn pbr_material_specializer_shader_defs_contain_int(
+  shader_defs : Array[@material.ShaderDefVal],
+  name : String,
+  value : Int,
+) -> Bool {
+  for shader_def in shader_defs {
+    match shader_def {
+      @material.ShaderDefVal::Int(flag, flag_value) if flag == name &&
+        flag_value == value => return true
+      _ => ()
+    }
+  }
+  false
+}
+
+///|
 fn pbr_material_specializer_layout_has_binding(
   layout : @render_resource.BindGroupLayoutDescriptor,
   binding : Int,
@@ -354,7 +370,8 @@ test "pbr material pipeline specializer inserts material bind group and override
   let specializer = PbrMaterialPipelineSpecializer::new(properties)
   let descriptor = try! specializer.specialize(
     pbr_material_specializer_test_key(
-      mesh_bits=MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE,
+      mesh_bits=MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE |
+        MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_MEDIUM,
     ),
     pbr_material_specializer_test_layout(),
   )
@@ -413,6 +430,14 @@ test "pbr material pipeline specializer inserts material bind group and override
     pbr_material_specializer_shader_defs_contain_flag(
       fragment.shader_defs,
       "BINDLESS",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_int(
+      fragment.shader_defs,
+      "SCREEN_SPACE_SPECULAR_TRANSMISSION_BLUR_TAPS",
+      8,
     ),
     content="true",
   )

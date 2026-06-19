@@ -304,140 +304,6 @@ fn transmission_hud_text(world : @ecs.World) -> String {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
-  )
-}
-
-///|
-fn cylinder_mesh(
-  radius : Float,
-  height : Float,
-  resolution : Int,
-) -> @mesh.Mesh3d {
-  let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
-  let safe_height = if height <= 0.0F { 1.0F } else { height }
-  let safe_resolution = if resolution < 3 { 3 } else { resolution }
-  let half_height = safe_height / 2.0F
-  let inv_diameter = 0.5F / safe_radius
-  let resolution_f = float_from_int(safe_resolution)
-
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  for i in 0..<safe_resolution {
-    let i0 = float_from_int(i)
-    let i1 = float_from_int(i + 1)
-    let theta0 = i0 * 2.0F * PI / resolution_f
-    let theta1 = i1 * 2.0F * PI / resolution_f
-    let x0 = safe_radius * @math.cos(theta0)
-    let z0 = safe_radius * @math.sin(theta0)
-    let x1 = safe_radius * @math.cos(theta1)
-    let z1 = safe_radius * @math.sin(theta1)
-    let u0 = i0 / resolution_f
-    let u1 = i1 / resolution_f
-
-    positions.push(@math.Vec3::new(x0, half_height, z0))
-    uvs.push(@math.Vec2::new(u0, 0.0F))
-    positions.push(@math.Vec3::new(x0, -half_height, z0))
-    uvs.push(@math.Vec2::new(u0, 1.0F))
-    positions.push(@math.Vec3::new(x1, half_height, z1))
-    uvs.push(@math.Vec2::new(u1, 0.0F))
-
-    positions.push(@math.Vec3::new(x1, half_height, z1))
-    uvs.push(@math.Vec2::new(u1, 0.0F))
-    positions.push(@math.Vec3::new(x0, -half_height, z0))
-    uvs.push(@math.Vec2::new(u0, 1.0F))
-    positions.push(@math.Vec3::new(x1, -half_height, z1))
-    uvs.push(@math.Vec2::new(u1, 1.0F))
-
-    positions.push(@math.Vec3::new(0.0F, half_height, 0.0F))
-    uvs.push(@math.Vec2::new(0.5F, 0.5F))
-    positions.push(@math.Vec3::new(x1, half_height, z1))
-    uvs.push(
-      @math.Vec2::new(0.5F + x1 * inv_diameter, 0.5F + z1 * inv_diameter),
-    )
-    positions.push(@math.Vec3::new(x0, half_height, z0))
-    uvs.push(
-      @math.Vec2::new(0.5F + x0 * inv_diameter, 0.5F + z0 * inv_diameter),
-    )
-
-    positions.push(@math.Vec3::new(0.0F, -half_height, 0.0F))
-    uvs.push(@math.Vec2::new(0.5F, 0.5F))
-    positions.push(@math.Vec3::new(x0, -half_height, z0))
-    uvs.push(
-      @math.Vec2::new(0.5F + x0 * inv_diameter, 0.5F + z0 * inv_diameter),
-    )
-    positions.push(@math.Vec3::new(x1, -half_height, z1))
-    uvs.push(
-      @math.Vec2::new(0.5F + x1 * inv_diameter, 0.5F + z1 * inv_diameter),
-    )
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, None),
-        ),
-      )
-    }),
-  )
-}
-
-///|
 fn spawn_mesh(
   world : @ecs.World,
   mesh : @mesh.Mesh3d,
@@ -479,7 +345,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
       assets |> @pbr.add_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F))
     }),
   )
-  let sphere_mesh = uv_sphere_mesh(0.9F, 24, 40)
+  let sphere_geometry = @mesh_primitives_dim3.SphereMeshBuilder::new(
+    0.9F,
+    @mesh_primitives_dim3.SphereKind::ico(7),
+  ).ico(7) catch {
+    _ => abort("transmission icosphere subdivisions should be valid")
+  }
+  let sphere_mesh = @mesh.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(@mesh.Mesh::from_3d_geometry(sphere_geometry))
+    }),
+  )
   let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
       assets
@@ -490,7 +366,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
       )
     }),
   )
-  let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)
+  let candle_geometry = @mesh_primitives_dim3.CylinderMeshBuilder::from_cylinder(
+      @math.Cylinder::new(0.5F, 2.0F),
+    )
+    .resolution(50)
+    .build()
+  let candle_mesh = @mesh.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+      assets.add(@mesh.Mesh::from_3d_geometry(candle_geometry))
+    }),
+  )
 
   let cube_1_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::StandardMaterial(),
