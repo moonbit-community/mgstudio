@@ -13,6 +13,8 @@ pub fn clear_embedded_shader_sources() -> Unit
 
 pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[String, String]
 
+pub fn embedded_shader_composer_source_files(String?) -> Array[@common.WgslSourceFile]
+
 pub fn embedded_shader_source(String) -> String?
 
 pub fn embedded_shader_source_files() -> Array[@common.WgslSourceFile]

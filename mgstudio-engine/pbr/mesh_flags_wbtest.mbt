@@ -249,6 +249,7 @@ fn render3d_test_extracted_mesh_for_flags(
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
+      instance_vertex_buffer_id: -1,
       motion_vector_enabled: false,
     },
   }
@@ -316,6 +317,7 @@ fn render3d_test_transparent_mesh_for_queue(
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
+      instance_vertex_buffer_id: -1,
       motion_vector_enabled: false,
     },
   }
@@ -446,6 +448,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
+      instance_vertex_buffer_id: -1,
       motion_vector_enabled: false,
     },
   }

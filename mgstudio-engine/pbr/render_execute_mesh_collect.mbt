@@ -523,6 +523,21 @@ fn render3d_extract_mesh_for_entity(
   let wireframe_color = prefetched_wireframe_color
   let wireframe_line_width = prefetched_wireframe_line_width
   let wireframe_topology = prefetched_wireframe_topology
+  let instance_vertex_buffer_id = match
+    (try! source_world.get_by_key(
+      entity,
+      @render.Mesh3dInstanceVertexBufferData::component(),
+    )) {
+    Some(instance_buffer_data) => {
+      @render.host_gpu_prepare_mesh3d_instance_vertex_buffer(
+        buffer_id=instance_buffer_data.buffer_id(),
+        bytes=instance_buffer_data.bytes(),
+        length=instance_buffer_data.length(),
+      )
+      instance_buffer_data.buffer_id()
+    }
+    None => -1
+  }
   (
     Some(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
@@ -570,6 +585,7 @@ fn render3d_extract_mesh_for_entity(
         morph_weights_index,
         previous_morph_weights_index,
         morph_targets_texture_id,
+        instance_vertex_buffer_id,
         motion_vector_enabled,
       },
     }),

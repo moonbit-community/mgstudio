@@ -728,6 +728,7 @@ fn render3d_execute_camera_main_pass(
       lightmap_uv_max_y~,
       world_from_local=Some(mesh.world_from_local),
       previous_world_from_local=Some(mesh.previous_world_from_local),
+      instance_vertex_buffer_id=mesh.instance_vertex_buffer_id,
     )
     if draw_render_phase_type is @material.RenderPhaseType::Transparent {
       transparent_draws.push(draw_payload)

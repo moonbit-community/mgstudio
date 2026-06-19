@@ -194,6 +194,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   indirect_kind : Int
   indirect_parameters_index : Int
   indirect_draw_count : Int
+  instance_vertex_buffer_id : Int
   world_from_local : @math.Affine3
   previous_world_from_local : @math.Affine3
   transform : @transform.Transform
@@ -394,6 +395,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   lightmap_uv_max_y? : Float = 0.0F,
   world_from_local? : @math.Affine3? = None,
   previous_world_from_local? : @math.Affine3? = None,
+  instance_vertex_buffer_id? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material,
@@ -423,6 +425,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     indirect_kind,
     indirect_parameters_index,
     indirect_draw_count: 1,
+    instance_vertex_buffer_id,
     world_from_local: resolved_world_from_local,
     previous_world_from_local: resolved_previous_world_from_local,
     transform,
@@ -599,6 +602,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     indirect_kind=payload.indirect_kind,
     indirect_parameters_index=payload.indirect_parameters_index,
     indirect_draw_count=payload.indirect_draw_count,
+    instance_vertex_buffer_id=payload.instance_vertex_buffer_id,
     x=payload.transform.translation.x,
     y=payload.transform.translation.y,
     z=payload.transform.translation.z,

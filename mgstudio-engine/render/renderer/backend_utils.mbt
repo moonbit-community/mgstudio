@@ -55,6 +55,7 @@ fn quat_to_z_rotation(x : Float, y : Float, z : Float, w : Float) -> Float {
 ///|
 pub(all) suberror GpuBackendError {
   Fatal(String)
+  ShaderNotReady(String)
 } derive(Debug)
 
 ///|

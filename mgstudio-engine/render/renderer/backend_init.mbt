@@ -304,6 +304,7 @@ pub fn GpuBackend::new(
     mesh3d_morph_descriptor_buf: None,
     mesh3d_morph_descriptor_capacity: 0UL,
     mesh3d_morph_target_buffers: [],
+    mesh3d_instance_vertex_buffers: [],
     mesh3d_gpu_instance_builder_enabled: false,
     mesh3d_instance_draw_buf: None,
     mesh3d_instance_draw_bg: None,

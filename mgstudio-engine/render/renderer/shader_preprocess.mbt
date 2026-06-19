@@ -98,7 +98,13 @@ fn ensure_renderer_shader_sources_registered() -> Unit {
 fn[T] raise_shader_compile_error(
   err : @shader_compile.ShaderCompileError,
 ) -> T raise GpuBackendError {
-  fatal("wgpu: \{err.message()}")
+  match err {
+    MissingRegisteredSource(_)
+    | MissingPreparedSourceDefs(_)
+    | MissingStartupRegisteredSource(_) =>
+      raise GpuBackendError::ShaderNotReady("wgpu: \{err.message()}")
+    _ => fatal("wgpu: \{err.message()}")
+  }
 }
 
 ///|

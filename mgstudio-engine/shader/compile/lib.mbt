@@ -128,10 +128,15 @@ pub fn ensure_startup_shader_sources_once(register : () -> Unit) -> Unit {
 }
 
 ///|
-fn runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
+fn runtime_composer(
+  assets_base : String,
+  root_rel_path : String?,
+) -> @wgsl_compose.Composer {
   ignore(assets_base)
   let composer = @wgsl_compose.Composer::default()
-  composer.register_source_files(@shader_source.embedded_shader_source_files())
+  composer.register_source_files(
+    @shader_source.embedded_shader_composer_source_files(root_rel_path),
+  )
   composer
 }
 
@@ -289,7 +294,7 @@ pub fn preprocess_shader_source(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composed = runtime_composer(assets_base).compose_wgsl_source(
+  let composed = runtime_composer(assets_base, None).compose_wgsl_source(
     source, options,
   ) catch {
     err => raise shader_compile_error_from_composer(err)
@@ -315,7 +320,9 @@ pub fn load_preprocessed_wgsl(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composed = runtime_composer(assets_base).compose_wgsl(rel, options) catch {
+  let composed = runtime_composer(assets_base, Some(rel)).compose_wgsl(
+    rel, options,
+  ) catch {
     err => raise shader_compile_error_from_composer(err)
   }
   shader_compile_cache_insert(key, composed)

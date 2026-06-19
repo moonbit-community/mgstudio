@@ -592,6 +592,96 @@ pub fn mesh3d_indirect_first_instance_supported() -> Bool {
 }
 
 ///|
+fn mesh3d_instance_vertex_buffer_size_for_bytes(bytes : Bytes) -> UInt64 {
+  let byte_len = bytes.length()
+  if byte_len <= 0 {
+    4UL
+  } else {
+    byte_len.to_uint64()
+  }
+}
+
+///|
+fn GpuBackend::mesh3d_instance_vertex_buffer_index(
+  self : GpuBackend,
+  buffer_id : Int,
+) -> Int? {
+  for index in 0..<self.mesh3d_instance_vertex_buffers.length() {
+    if self.mesh3d_instance_vertex_buffers[index].id == buffer_id {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+fn GpuBackend::prepare_mesh3d_instance_vertex_buffer(
+  self : GpuBackend,
+  buffer_id : Int,
+  bytes : Bytes,
+  length : Int,
+) -> Unit {
+  if buffer_id < 0 || length <= 0 || bytes.length() == 0 {
+    return
+  }
+  let byte_size = mesh3d_instance_vertex_buffer_size_for_bytes(bytes)
+  let usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
+  match self.mesh3d_instance_vertex_buffer_index(buffer_id) {
+    Some(index) => {
+      let current = self.mesh3d_instance_vertex_buffers[index]
+      let buffer = if current.byte_size < byte_size {
+        current.buffer.release()
+        self.device.create_buffer(size=byte_size, usage~)
+      } else {
+        current.buffer
+      }
+      self.queue.write_buffer(buffer, 0UL, bytes)
+      self.mesh3d_instance_vertex_buffers[index] = GpuMesh3dInstanceVertexBufferInfo::{
+        id: buffer_id,
+        buffer,
+        byte_size: if current.byte_size < byte_size {
+          byte_size
+        } else {
+          current.byte_size
+        },
+        length,
+      }
+    }
+    None => {
+      let buffer = self.device.create_buffer_init(usage~, bytes)
+      self.mesh3d_instance_vertex_buffers.push(GpuMesh3dInstanceVertexBufferInfo::{
+        id: buffer_id,
+        buffer,
+        byte_size,
+        length,
+      })
+    }
+  }
+}
+
+///|
+pub fn prepare_mesh3d_instance_vertex_buffer(
+  buffer_id~ : Int,
+  bytes~ : Bytes,
+  length~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_instance_vertex_buffer(buffer_id, bytes, length)
+  }
+}
+
+///|
+fn GpuBackend::mesh3d_instance_vertex_buffer(
+  self : GpuBackend,
+  buffer_id : Int,
+) -> GpuMesh3dInstanceVertexBufferInfo? {
+  match self.mesh3d_instance_vertex_buffer_index(buffer_id) {
+    Some(index) => Some(self.mesh3d_instance_vertex_buffers[index])
+    None => None
+  }
+}
+
+///|
 pub fn mesh3d_gpu_culling_supported() -> Bool {
   if ensure_backend() is Some(backend) {
     let backend_type = backend.device.info_backend_type_u32()
@@ -739,6 +829,10 @@ pub fn build_mesh3d_indirect_parameters(
     backend.build_mesh3d_indirect_parameters(
       camera_key_hi, camera_key_lo, phase_kind,
     ) catch {
+      ShaderNotReady(message) =>
+        debug(
+          "[renderer] build_mesh3d_indirect_parameters: ShaderNotReady(\{message})",
+        )
       Fatal(message) =>
         debug("[renderer] build_mesh3d_indirect_parameters: Fatal(\{message})")
     }
@@ -753,6 +847,8 @@ pub fn preprocess_mesh3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.preprocess_mesh3d(camera_key_hi, camera_key_lo, phase_kind) catch {
+      ShaderNotReady(message) =>
+        debug("[renderer] preprocess_mesh3d: ShaderNotReady(\{message})")
       Fatal(message) => debug("[renderer] preprocess_mesh3d: Fatal(\{message})")
     }
   }
@@ -765,6 +861,10 @@ pub fn downsample_mesh3d_depth_pyramid(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.downsample_mesh3d_depth_pyramid(camera_key_hi, camera_key_lo) catch {
+      ShaderNotReady(message) =>
+        debug(
+          "[renderer] downsample_mesh3d_depth_pyramid: ShaderNotReady(\{message})",
+        )
       Fatal(message) =>
         debug("[renderer] downsample_mesh3d_depth_pyramid: Fatal(\{message})")
     }
@@ -803,6 +903,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
         1,
       ),
     ) catch {
+      ShaderNotReady(message) =>
+        debug(
+          "[renderer] prewarm_mesh3d_pipeline_variants(opaque): ShaderNotReady(\{message})",
+        )
       Fatal(message) =>
         debug(
           "[renderer] prewarm_mesh3d_pipeline_variants(opaque): Fatal(\{message})",
@@ -826,6 +930,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
         1,
       ),
     ) catch {
+      ShaderNotReady(message) =>
+        debug(
+          "[renderer] prewarm_mesh3d_pipeline_variants(transparent): ShaderNotReady(\{message})",
+        )
       Fatal(message) =>
         debug(
           "[renderer] prewarm_mesh3d_pipeline_variants(transparent): Fatal(\{message})",
@@ -862,6 +970,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
               1,
             ),
           ) catch {
+            ShaderNotReady(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): ShaderNotReady(\{message})",
+              )
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
@@ -888,6 +1000,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
               1,
             ),
           ) catch {
+            ShaderNotReady(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): ShaderNotReady(\{message})",
+              )
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
@@ -910,6 +1026,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             1,
           ) catch {
+            ShaderNotReady(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): ShaderNotReady(\{message})",
+              )
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
@@ -931,6 +1051,10 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             1,
           ) catch {
+            ShaderNotReady(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): ShaderNotReady(\{message})",
+              )
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
@@ -1089,6 +1213,7 @@ pub fn draw_mesh3d(
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
   indirect_draw_count? : Int = 1,
+  instance_vertex_buffer_id? : Int = -1,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -1204,6 +1329,7 @@ pub fn draw_mesh3d(
       indirect_kind,
       indirect_parameters_index,
       indirect_draw_count,
+      instance_vertex_buffer_id,
       x,
       y,
       z,

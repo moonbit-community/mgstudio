@@ -25,6 +25,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   indirect_kind : Int,
   indirect_parameters_index : Int,
   indirect_draw_count : Int,
+  instance_vertex_buffer_id : Int,
   x : Float,
   y : Float,
   z : Float,
@@ -144,10 +145,20 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     self, material_pipeline_id, material_descriptor,
   )
+  let instance_vertex_buffer = if instance_vertex_buffer_id >= 0 {
+    guard self.mesh3d_instance_vertex_buffer(instance_vertex_buffer_id)
+      is Some(buffer) else {
+      return
+    }
+    Some(buffer)
+  } else {
+    None
+  }
   let indirect_first_instance_supported = self.device.supported_features_contains_u32(
     @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
   )
   let use_indirect = indirect_first_instance_supported &&
+    instance_vertex_buffer is None &&
     indirect_parameters_index >= 0 &&
     indirect_kind != MESH3D_DRAW_INDIRECT_KIND_NONE
   let mut draw_buffer : @wgpu.Buffer? = None
@@ -578,6 +589,13 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     pass.set_bind_group(3U, bind_group, [])
   }
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
+  let direct_instance_count = match instance_vertex_buffer {
+    Some(buffer) => {
+      pass.set_vertex_buffer(1U, buffer.buffer, 0UL, buffer.byte_size)
+      buffer.length.reinterpret_as_uint()
+    }
+    None => indirect_draw_count.reinterpret_as_uint()
+  }
   render_diagnostics_record_mesh3d_executed_draw()
   if use_indirect &&
     mesh3d_preprocess_camera_upload_state(
@@ -623,7 +641,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   if mesh.index_count == 0U {
     pass.draw(
       mesh.vertex_count,
-      indirect_draw_count.reinterpret_as_uint(),
+      direct_instance_count,
       mesh.vertex_start,
       draw_index,
     )
@@ -631,7 +649,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     gpu_mesh_bind_index_buffer(pass, mesh)
     pass.draw_indexed(
       mesh.index_count,
-      indirect_draw_count.reinterpret_as_uint(),
+      direct_instance_count,
       mesh.index_start,
       mesh.vertex_start.reinterpret_as_int(),
       draw_index,

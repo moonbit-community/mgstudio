@@ -5,11 +5,14 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
-  "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
 }
 
 supported_targets = "native"

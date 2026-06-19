@@ -149,12 +149,10 @@ fn mip_generation_compile_pipeline_source(
 ) -> String? {
   let source = downsample_specialized_wgsl_source(identifier)
   let defines = @hashmap.HashMap([])
-  defines.set(shader_def, true)
+  let value_defines = @shader_compile.default_shader_value_defines()
+  value_defines.set(shader_def, @wgsl_common.ShaderDefValue::Int(1))
   let compiled = @shader_compile.preprocess_shader_source(
-    "",
-    source,
-    defines,
-    @shader_compile.default_shader_value_defines(),
+    "", source, defines, value_defines,
   ) catch {
     _ => return None
   }

@@ -51,6 +51,14 @@ struct GpuMesh3dMorphTargetBufferInfo {
 }
 
 ///|
+struct GpuMesh3dInstanceVertexBufferInfo {
+  id : Int
+  buffer : @wgpu.Buffer
+  byte_size : UInt64
+  length : Int
+}
+
+///|
 pub struct GpuMeshInfo {
   id : Int
   index_count : UInt

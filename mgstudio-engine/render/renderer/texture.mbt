@@ -2813,6 +2813,7 @@ pub fn asset_set_texture_sampler(
       err => {
         let error_message = match err {
           Fatal(message) => message
+          ShaderNotReady(message) => message
         }
         abort(
           "wgpu: failed to set texture sampler for texture \{texture_id.to_string()}: \{error_message}",

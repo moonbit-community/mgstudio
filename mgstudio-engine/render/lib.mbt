@@ -1545,6 +1545,15 @@ pub fn host_gpu_reserve_mesh3d_draw_storage(count~ : Int) -> Int {
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_instance_vertex_buffer(
+  buffer_id~ : Int,
+  bytes~ : Bytes,
+  length~ : Int,
+) -> Unit {
+  @renderer.prepare_mesh3d_instance_vertex_buffer(buffer_id~, bytes~, length~)
+}
+
+///|
 pub fn host_gpu_draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,
@@ -1553,6 +1562,7 @@ pub fn host_gpu_draw_mesh3d(
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
   indirect_draw_count? : Int = 1,
+  instance_vertex_buffer_id? : Int = -1,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -1666,6 +1676,7 @@ pub fn host_gpu_draw_mesh3d(
     indirect_kind~,
     indirect_parameters_index~,
     indirect_draw_count~,
+    instance_vertex_buffer_id~,
     x~,
     y~,
     z~,

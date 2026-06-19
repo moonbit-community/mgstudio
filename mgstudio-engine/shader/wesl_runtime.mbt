@@ -164,24 +164,29 @@ pub fn shader_runtime_loaded_wgsl_sources(
 }
 
 ///|
-fn shader_load_runtime_asset(world : @ecs.World, path : String) -> Shader? {
-  let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
-    let asset_server = shader_asset_server_or_abort(world)
-    asset_server.load(path)
-  })
-  let key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
-  match world.get_resource(key) {
-    Some(shader_assets) =>
-      match shader_assets.get(handle) {
-        Some(shader) => {
-          shader_record_asset_and_dependencies(
-            world, path, handle, shader, shader_assets,
-          )
-          Some(shader)
-        }
-        None => None
-      }
-    None => None
+fn shader_runtime_push_wgsl_source_closure(
+  shader_assets : @asset.Assets[Shader],
+  handle : @asset.Handle[Shader],
+  fallback_path : String,
+  visited : @hashset.HashSet[Int],
+  sources : Array[(String, String)],
+) -> Unit {
+  let handle_id = handle.id()
+  if visited.contains(handle_id) {
+    return
+  }
+  visited.add(handle_id)
+  guard shader_assets.get(handle) is Some(shader) else { return }
+  let source_path = if shader.path == "" { fallback_path } else { shader.path }
+  match shader.source {
+    Source::Wgsl(source) =>
+      sources.push((@asset.asset_canonical_path(source_path), source))
+    _ => ()
+  }
+  for dependency in shader.file_dependencies {
+    shader_runtime_push_wgsl_source_closure(
+      shader_assets, dependency, "", visited, sources,
+    )
   }
 }
 
@@ -221,8 +226,18 @@ pub fn shader_runtime_load_wgsl_sources(
       "shader_runtime_load_wgsl_sources only supports .wgsl assets: \{path}",
     )
   }
-  let shader = match shader_load_runtime_asset(world, path) {
-    Some(shader) => shader
+  let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+    let asset_server = shader_asset_server_or_abort(world)
+    asset_server.load(path)
+  })
+  let shader_assets = shader_assets_or_abort(world)
+  let shader = match shader_assets.get(handle) {
+    Some(shader) => {
+      shader_record_asset_and_dependencies(
+        world, path, handle, shader, shader_assets,
+      )
+      shader
+    }
     None => {
       @app.log_warn(
         "shader runtime registration deferred because asset is unavailable: \{path}",
@@ -231,7 +246,18 @@ pub fn shader_runtime_load_wgsl_sources(
     }
   }
   match shader.source {
-    Source::Wgsl(_) => shader_runtime_loaded_wgsl_sources(world)
+    Source::Wgsl(_) => {
+      shader_runtime_cache_sync_loaded_assets(world)
+      let sources : Array[(String, String)] = []
+      shader_runtime_push_wgsl_source_closure(
+        shader_assets,
+        handle,
+        path,
+        @hashset.HashSet([]),
+        sources,
+      )
+      sources
+    }
     Source::Wesl(_) =>
       abort("shader_runtime_load_wgsl_sources received a WESL asset: \{path}")
     Source::Glsl(_, _) =>

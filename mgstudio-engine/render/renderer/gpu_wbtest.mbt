@@ -1736,6 +1736,7 @@ test "renderer: unsupported border color validation raises exact blocker" {
     err =>
       match err {
         Fatal(message) => message
+        ShaderNotReady(message) => message
       }
   }
   debug_inspect(

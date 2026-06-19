@@ -50,3 +50,30 @@ test "compile package keeps unresolved imports structured" {
   }
   debug_inspect(message, content="\"test::missing\"")
 }
+
+///|
+test "compile package does not auto-register entry shaders as import modules" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/util.wgsl", "#define_import_path test::util\nfn value() -> u32 { return 1u; }\n",
+  )
+  register_shader_source(
+    "shader/compile/entry_only.wgsl", "fn root() -> u32 { return 2u; }\n",
+  )
+  let import_paths = copy_registered_shader_import_module_paths()
+  debug_inspect(
+    import_paths.get("test::util"),
+    content="Some(\"shader/compile/util.wgsl\")",
+  )
+  debug_inspect(import_paths.get("shader::compile::entry_only"), content="None")
+
+  let source = load_preprocessed_wgsl(
+    "",
+    "shader/compile/entry_only.wgsl",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(source.contains("return 2u"), content="true")
+}
