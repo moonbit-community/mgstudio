@@ -93,12 +93,23 @@ fn main {
       trigger_system_config, evaluate_callbacks_config,
     )
     |> @app.chain()
+  let setup_ui_config : @app.SystemConfig[@ecs.World] = @app.system_config_param2(
+    setup_ui,
+  )
+  let setup_with_commands_config : @app.SystemConfig[@ecs.World] = @app.system_config_param(
+    setup_with_commands,
+  )
+  let setup_with_world_config : @app.SystemConfig[@ecs.World] = @app.system_config_world(
+    setup_with_world,
+  )
+  let startup_chain : @app.SystemConfig[@ecs.World] = (
+      setup_ui_config, setup_with_commands_config, setup_with_world_config,
+    )
+    |> @app.chain()
 
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems_param2(@app.Startup, setup_ui)
-    .add_systems_param(@app.Startup, setup_with_commands)
-    .add_systems_world(@app.Startup, setup_with_world)
+    .add_systems(@app.Startup, startup_chain)
     .add_systems(@app.Update, update_chain)
   app.run()
 }

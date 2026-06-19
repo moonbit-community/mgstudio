@@ -81,7 +81,6 @@ fn main {
   // install step to enable identity transitions.
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
   .add_systems_param(@app.Startup, setup)
   .add_on_enter_system_param(AppState::Menu, setup_menu)
