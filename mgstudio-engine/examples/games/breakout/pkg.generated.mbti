@@ -2,7 +2,9 @@
 package "Milky2018/mgstudio/examples/games/breakout"
 
 import {
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -13,11 +15,34 @@ import {
 type Ball
 pub impl @ecs.Component for Ball
 
+type BallCollided
+pub impl @ecs.TriggerEvent for BallCollided
+
 type Brick
 pub impl @ecs.Component for Brick
 
+type Collider
+pub impl @ecs.Component for Collider
+
+type Collision derive(Eq, @debug.Debug)
+
+type CollisionSound
+
 type Paddle
 pub impl @ecs.Component for Paddle
+
+type Score
+
+type ScoreboardUi
+pub impl @ecs.Component for ScoreboardUi
+
+type Velocity
+pub impl @ecs.Component for Velocity
+
+type Wall
+pub impl @ecs.Component for Wall
+
+type WallLocation
 
 // Type aliases
 

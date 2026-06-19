@@ -14,7 +14,7 @@ import {
 }
 
 // Values
-pub fn audio_playback_system(@ecs.World) -> Unit
+pub fn audio_playback_system(@app.Commands) -> Unit
 
 pub fn audio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

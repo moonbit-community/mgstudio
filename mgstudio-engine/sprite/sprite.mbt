@@ -229,7 +229,7 @@ pub fn Sprite::sized(size : @math.Vec2) -> Sprite {
 
 ///|
 pub fn Sprite::from_color(color : @color.Color, size : @math.Vec2) -> Sprite {
-  Sprite::{ ..Sprite(), color, custom_size: Some(size) }
+  Sprite::{ ..Sprite::sized(size), color, }
 }
 
 ///|

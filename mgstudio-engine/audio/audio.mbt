@@ -298,5 +298,5 @@ pub fn audio_plugin_with(
   .insert_resource(DefaultSpatialScale::new(plugin.default_spatial_scale))
   .init_resource(fn() { AudioOutput::AudioOutput() })
   .init_resource(fn() { AudioSourceAssetPaths::new() })
-  .add_post_update_system(audio_playback_system)
+  .add_post_update_system_param(audio_playback_system)
 }
