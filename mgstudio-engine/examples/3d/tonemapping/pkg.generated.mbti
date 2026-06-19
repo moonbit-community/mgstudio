@@ -20,10 +20,6 @@ type SceneNumber
 
 type SelectedParameter
 
-type TonemappingUiRoot
-
-type TonemappingUiText
-
 // Type aliases
 
 // Traits

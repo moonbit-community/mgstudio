@@ -396,6 +396,41 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
 }
 
 ///|
+test "ui text ecs bridge syncs ViewVisibility into runtime visibility gating" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.entity_mut(entity).insert_component(Text::new("Hidden UI"))
+  |> ignore)
+  try! (world.entity_mut(entity).insert_component(TextFont::TextFont())
+  |> ignore)
+  ignore(next_system_ticks(world))
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+
+  ui_text_sync_ecs_system(world)
+  debug_inspect(ui_text_ecs_entries.length(), content="1")
+  debug_inspect(ui_text_ecs_entries[0].view_visible, content="false")
+  text_render_system(world)
+  debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
+
+  ignore(next_system_ticks(world))
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(entity, ecs_key_text, Text::new("Visible UI"))
+  ui_text_sync_ecs_system(world)
+  debug_inspect(ui_text_ecs_entries[0].view_visible, content="true")
+  text_render_system(world)
+  debug_inspect(text_diagnostic_render_visible_text_count(), content="1")
+}
+
+///|
 test "ecs text bridge collects TextSpan children in hierarchy order" {
   let world = @ecs.World::new()
   let root = world.spawn()
@@ -498,7 +533,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
   }
-  ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
+  ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [], true)
   let entry = ui_text_ecs_entries[0]
   let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
   let runtime_layers = @camera_render_layers.RenderLayers::layer(11)
@@ -507,7 +542,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   text_set_anchor(entry.handle, @sprite.Anchor::center())
   text_set_y_axis(entry.handle, YAxisOrientation::BottomToTop)
 
-  let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [])
+  let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [], true)
   let instance = text_state.texts[0]
 
   debug_inspect(

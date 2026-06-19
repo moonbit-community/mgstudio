@@ -234,6 +234,7 @@ priv struct UiEcsTextEntry {
   entity : @core.Entity
   handle : TextHandle
   bundle : Text2dBundle
+  view_visible : Bool
   span_bundles : Array[TextSpanBundle]
 }
 
@@ -736,7 +737,10 @@ fn[T] text_ecs_union_changed_entities_into(
       let is_text_entity = world.contains_by_key(entity, ecs_key_text2d) catch {
         _ => false
       }
-      if is_text_entity {
+      let is_ui_text_entity = world.contains_by_key(entity, ecs_key_text) catch {
+        _ => false
+      }
+      if is_text_entity || is_ui_text_entity {
         has_text_dirty_entities.val = true
       }
     }
@@ -1585,6 +1589,7 @@ fn ui_text_ecs_spawn_entry(
   entity : @core.Entity,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> Unit {
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
@@ -1594,11 +1599,13 @@ fn ui_text_ecs_spawn_entry(
     }
     handle
   })
+  text_set_view_visible(handle, view_visible)
   ui_text_ecs_entries.push(UiEcsTextEntry::{
     world_id,
     entity,
     handle,
     bundle,
+    view_visible,
     span_bundles,
   })
   ui_text_ecs_build_entry_index_by_entity_id(world_id).set(
@@ -1657,6 +1664,7 @@ fn ui_text_ecs_respawn_entry(
   entry : UiEcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> UiEcsTextEntry {
   ignore(text_despawn(entry.handle))
   sync_text_runtime_rem_size(world)
@@ -1667,7 +1675,8 @@ fn ui_text_ecs_respawn_entry(
     }
     handle
   })
-  UiEcsTextEntry::{ ..entry, handle, bundle, span_bundles }
+  text_set_view_visible(handle, view_visible)
+  UiEcsTextEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1676,14 +1685,22 @@ fn ui_text_ecs_sync_existing_entry(
   entry : UiEcsTextEntry,
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
+  view_visible : Bool,
 ) -> UiEcsTextEntry {
   sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
-    return ui_text_ecs_respawn_entry(world, entry, bundle, span_bundles)
+    return ui_text_ecs_respawn_entry(
+      world, entry, bundle, span_bundles, view_visible,
+    )
   }
   if !text_span_bundle_array_eq(entry.span_bundles, span_bundles) {
-    return ui_text_ecs_respawn_entry(world, entry, bundle, span_bundles)
+    return ui_text_ecs_respawn_entry(
+      world, entry, bundle, span_bundles, view_visible,
+    )
+  }
+  if entry.view_visible != view_visible {
+    text_set_view_visible(handle, view_visible)
   }
   let needs_layout = !text_bundle_rerender_eq(entry.bundle, bundle)
   if !text2d_eq(entry.bundle.text, bundle.text) {
@@ -1726,7 +1743,7 @@ fn ui_text_ecs_sync_existing_entry(
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
   ignore(needs_layout)
-  UiEcsTextEntry::{ ..entry, bundle, span_bundles }
+  UiEcsTextEntry::{ ..entry, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1811,6 +1828,11 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       world, ecs_key_text_shadow, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, @visibility.ecs_key_view_visibility, tick, dirty_entities, has_text_dirty_entities,
+    ),
+  )
   if has_any_spans {
     ignore(
       text_ecs_union_changed_entities_into(
@@ -1844,6 +1866,10 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       return
     }
     let bundle = ui_text_ecs_bundle_from_entity(world, entity, text.value())
+    let view_visible = match text_ecs_world_entity_ref(world, entity) {
+      Some(entity_ref) => text_ecs_entity_ref_view_visible(entity_ref)
+      None => true
+    }
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
       world, entity, bundle, span_edges,
     )
@@ -1851,11 +1877,13 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       Some(index) => {
         let entry = ui_text_ecs_entries[index]
         ui_text_ecs_entries[index] = ui_text_ecs_sync_existing_entry(
-          world, entry, bundle, span_bundles,
+          world, entry, bundle, span_bundles, view_visible,
         )
       }
       None => {
-        ui_text_ecs_spawn_entry(world, world_id, entity, bundle, span_bundles)
+        ui_text_ecs_spawn_entry(
+          world, world_id, entity, bundle, span_bundles, view_visible,
+        )
         index_by_entity_id.set(entity.id, ui_text_ecs_entries.length() - 1)
       }
     }

@@ -54,12 +54,6 @@ struct SceneNumber {
 struct HDRViewer {}
 
 ///|
-struct TonemappingUiRoot {}
-
-///|
-struct TonemappingUiText {}
-
-///|
 struct ColorGradientMaterial {}
 
 ///|
@@ -95,16 +89,6 @@ let scene_number_component_key : @ecs.ComponentKey[SceneNumber] = @ecs.register_
 ///|
 let hdr_viewer_component_key : @ecs.ComponentKey[HDRViewer] = @ecs.register_component(
   debug_name="examples.3d.tonemapping.HDRViewer",
-)
-
-///|
-let tonemapping_ui_root_component_key : @ecs.ComponentKey[TonemappingUiRoot] = @ecs.register_component(
-  debug_name="examples.3d.tonemapping.TonemappingUiRoot",
-)
-
-///|
-let tonemapping_ui_text_component_key : @ecs.ComponentKey[TonemappingUiText] = @ecs.register_component(
-  debug_name="examples.3d.tonemapping.TonemappingUiText",
 )
 
 ///|
@@ -147,16 +131,6 @@ impl @ecs.Component for SceneNumber with fn component() {
 ///|
 impl @ecs.Component for HDRViewer with fn component() {
   hdr_viewer_component_key
-}
-
-///|
-impl @ecs.Component for TonemappingUiRoot with fn component() {
-  tonemapping_ui_root_component_key
-}
-
-///|
-impl @ecs.Component for TonemappingUiText with fn component() {
-  tonemapping_ui_text_component_key
 }
 
 ///|
@@ -393,47 +367,6 @@ fn PerMethodSettings::PerMethodSettings() -> PerMethodSettings {
 }
 
 ///|
-fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
-  query : @ecs.Query[D, F],
-) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref(None)
-  try! query.view(fn(entity, _component) {
-    if result.val is None {
-      result.val = Some(entity)
-    }
-  })
-  result.val
-}
-
-///|
-fn[A : @ecs.Component, B : @ecs.Component] first2(
-  query : @ecs.Query[(@ecs.Read[A], @ecs.Read[B]), @ecs.All],
-) -> (@core.Entity, A, B)? {
-  let result : Ref[(@core.Entity, A, B)?] = Ref(None)
-  try! query.view(fn(entity, data) {
-    let (first, second) = data
-    if result.val is None {
-      result.val = Some((entity, first.value(), second.value()))
-    }
-  })
-  result.val
-}
-
-///|
-fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
-  query : @ecs.Query[(@ecs.Read[A], @ecs.Read[B], @ecs.Read[C]), @ecs.All],
-) -> (@core.Entity, A, B, C)? {
-  let result : Ref[(@core.Entity, A, B, C)?] = Ref(None)
-  try! query.view(fn(entity, data) {
-    let (first, second, third) = data
-    if result.val is None {
-      result.val = Some((entity, first.value(), second.value(), third.value()))
-    }
-  })
-  result.val
-}
-
-///|
 fn selected_marker(selected : Bool) -> String {
   if selected {
     "> "
@@ -459,11 +392,6 @@ fn ui_text_content(
   }
 
   "\{content}\nActive Method: \{method_name(tonemapping)}"
-}
-
-///|
-fn set_ui_text(text_value : @text.Text, content : String) -> Unit {
-  text_value.content = content
 }
 
 ///|
@@ -508,42 +436,14 @@ fn setup(
     ),
   )
 
-  let overlay_camera = commands.spawn(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
-    ),
-  )
-  commands
-  .entity(overlay_camera)
-  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
-
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-      TonemappingUiRoot::{  },
-    ),
-  )
-
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
+        @text.Text::Text(),
         @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
-        @text.Text::new(""),
-        @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
-        @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
-        TonemappingUiText::{  },
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
       ),
     ),
   )
@@ -557,7 +457,7 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @scene.SceneRoot::new(
+        @scene.WorldAssetRoot::new(
           @scene.scene_load_gltf_scene(
             asset_server.get(),
             @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -574,7 +474,7 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @scene.SceneRoot::new(
+        @scene.WorldAssetRoot::new(
           @scene.scene_load_gltf_scene(
             asset_server.get(),
             @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -649,11 +549,9 @@ fn setup_color_gradient_scene(
 ///|
 fn setup_image_viewer_scene(
   commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   camera_transform : @app.Res[CameraTransform],
-  ui_root_query : @ecs.Query[@ecs.Read[TonemappingUiRoot], @ecs.All],
 ) -> Unit {
   let mesh_handle = mesh_assets
     .peek()
@@ -682,20 +580,16 @@ fn setup_image_viewer_scene(
     ),
   )
 
-  guard first_entity(ui_root_query) is Some(root) else { return }
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
         @ui.Node::{
           ..@ui.Node(),
           align_self: @ui.AlignSelf::Center,
           margin: @ui.UiRect::all(@ui.Val::Auto),
         },
         @text.Text::new("Drag and drop an HDR or EXR file"),
-        @text.TextFont::TextFont()
-        .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
-        .with_font_size(36.0F),
+        @text.TextFont::TextFont().with_font_size(36.0F),
         @text.TextColor::new(@color.Color::black()),
         @text.TextLayout::new_with_justify(@text.Justify::Center),
         SceneNumber::{ value: 3 },
@@ -739,14 +633,8 @@ fn toggle_scene(
 ///|
 fn toggle_tonemapping_method(
   keys : @input.ButtonInput[@window.KeyCode],
-  tonemapping_query : @ecs.Query[
-    @ecs.Write[@post_process.Tonemapping],
-    @ecs.All,
-  ],
-  color_grading_query : @ecs.Query[
-    @ecs.Write[@post_process.ColorGrading],
-    @ecs.All,
-  ],
+  tonemapping : @app.Single[@ecs.Write[@post_process.Tonemapping], @ecs.All],
+  color_grading : @app.Single[@ecs.Write[@post_process.ColorGrading], @ecs.All],
   per_method_settings : @app.Res[PerMethodSettings],
 ) -> Unit {
   let next_method = if keys.just_pressed(Digit1) {
@@ -770,27 +658,18 @@ fn toggle_tonemapping_method(
   } else {
     None
   }
-  guard first_entity(tonemapping_query) is Some(camera) else { return }
-  guard (tonemapping_query.get(camera) catch { _ => None })
-    is Some(initial_tonemapping) else {
-    return
-  }
-
-  let mut current_tonemapping = initial_tonemapping.value()
+  let tonemapping = tonemapping.get()
+  let mut current_tonemapping = tonemapping.value()
   if next_method is Some(tonemapper) {
-    if (tonemapping_query.get(camera) catch { _ => None }) is Some(component) {
-      component.set(tonemapper)
-      current_tonemapping = tonemapper
-    }
+    tonemapping.set(tonemapper)
+    current_tonemapping = tonemapper
   }
 
   guard per_method_settings.get().settings.get(current_tonemapping)
-    is Some(color_grading) else {
+    is Some(setting_color_grading) else {
     return
   }
-  if (color_grading_query.get(camera) catch { _ => None }) is Some(component) {
-    component.set(color_grading)
-  }
+  color_grading.get().set(setting_color_grading)
 }
 
 ///|
@@ -798,19 +677,11 @@ fn update_color_grading_settings(
   keys : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
   per_method_settings : @app.ResMut[PerMethodSettings],
-  tonemapping_query : @ecs.Query[
-    @ecs.Write[@post_process.Tonemapping],
-    @ecs.All,
-  ],
+  tonemapping : @app.Single[@ecs.Read[@post_process.Tonemapping], @ecs.All],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
-  guard first_entity(tonemapping_query) is Some(camera) else { return }
-  guard (tonemapping_query.get(camera) catch { _ => None })
-    is Some(current_method) else {
-    return
-  }
-  let current_method = current_method.value()
+  let current_method = tonemapping.get().value()
 
   if keys.just_pressed(ArrowDown) {
     selected_parameter.modify(fn(value) { value.next() })
@@ -874,12 +745,12 @@ fn update_color_grading_settings(
 ///|
 fn drag_drop_image(
   image_material_query : @ecs.Query[
-    (@ecs.Read[HDRViewer], @ecs.Read[@pbr.MeshMaterial3d]),
-    @ecs.All,
+    @ecs.Read[@pbr.MeshMaterial3d],
+    @ecs.With[HDRViewer],
   ],
   image_viewer_text_query : @ecs.Query[
-    (@ecs.Read[@text.Text], @ecs.Read[SceneNumber]),
-    @ecs.All,
+    @core.Entity,
+    (@ecs.With[@text.Text], @ecs.With[SceneNumber]),
   ],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   drag_and_drop_reader : @ecs.MessageReader[@window.FileDragAndDrop],
@@ -895,24 +766,22 @@ fn drag_drop_image(
     }
   }
   guard new_image is Some(image) else { return }
-  guard first2(image_material_query)
-    is Some((_viewer_entity, _viewer, viewer_material)) else {
-    return
-  }
-  guard material_assets.peek().get(viewer_material.material) is Some(material) else {
-    return
-  }
-  ignore(
-    material_assets
-    .peek()
-    .set(
-      viewer_material.material,
-      material.with_base_color_texture(Some(image)),
-    ),
-  )
+  try! image_material_query.view(fn(_entity, viewer_material) {
+    guard material_assets.peek().get(viewer_material.value().material)
+      is Some(material) else {
+      return
+    }
+    ignore(
+      material_assets
+      .peek()
+      .set(
+        viewer_material.value().material,
+        material.with_base_color_texture(Some(image)),
+      ),
+    )
+  })
 
-  if first2(image_viewer_text_query)
-    is Some((text_entity, _text, _scene_number)) {
+  if (image_viewer_text_query.single() catch { _ => None }) is Some(text_entity) {
     commands.entity(text_entity).despawn()
   }
 }
@@ -920,64 +789,50 @@ fn drag_drop_image(
 ///|
 fn resize_image(
   image_mesh_query : @ecs.Query[
-    (
-      @ecs.Read[HDRViewer],
-      @ecs.Read[@pbr.MeshMaterial3d],
-      @ecs.Read[@mesh.Mesh3d],
-    ),
-    @ecs.All,
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[@mesh.Mesh3d]),
+    @ecs.With[HDRViewer],
   ],
   image_event_reader : @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
   material_assets : @app.Res[@asset.Assets[@pbr.StandardMaterial]],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  images : @app.Res[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  let updated_images : Array[@asset.Handle[@asset.Image]] = []
   for event in image_event_reader.read() {
-    match event {
-      Added(handle) => updated_images.push(handle)
-      Modified(handle) => updated_images.push(handle)
-      _ => ()
+    let changed_image = match event {
+      Added(handle) => Some(handle)
+      Modified(handle) => Some(handle)
+      _ => None
     }
+    guard changed_image is Some(changed_image) else { continue }
+    try! image_mesh_query.view(fn(_entity, data) {
+      let (viewer_material, viewer_mesh) = data
+      guard material_assets.get().get(viewer_material.value().material)
+        is Some(material) else {
+        return
+      }
+      guard material.base_color_texture is Some(texture) else { return }
+      if changed_image.id() != texture.id() {
+        return
+      }
+      guard images.get().get(changed_image) is Some(image) else { return }
+      let size = @math.Vec2::new(
+          Float::from_int(image.width()),
+          Float::from_int(image.height()),
+        )
+        .normalize_or_zero()
+        .mul_scalar(1.4F)
+      ignore(
+        mesh_assets
+        .peek()
+        .insert(
+          viewer_mesh.value().mesh,
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives.rectangle_mesh(size.x, size.y),
+          ),
+        ),
+      )
+    })
   }
-  if updated_images.length() == 0 {
-    return
-  }
-  guard first3(image_mesh_query)
-    is Some((_viewer_entity, _viewer, viewer_material, viewer_mesh)) else {
-    return
-  }
-  guard material_assets.get().get(viewer_material.material) is Some(material) else {
-    return
-  }
-  guard material.base_color_texture is Some(texture) else { return }
-
-  let mut image_changed = false
-  for handle in updated_images {
-    if handle.id() == texture.id() {
-      image_changed = true
-    }
-  }
-  if !image_changed {
-    return
-  }
-
-  let size = @math.Vec2::new(
-      Float::from_int(@asset.asset_texture_width(texture)),
-      Float::from_int(@asset.asset_texture_height(texture)),
-    )
-    .normalize_or_zero()
-    .mul_scalar(1.4F)
-
-  ignore(
-    mesh_assets
-    .peek()
-    .insert(
-      viewer_mesh.mesh,
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives.rectangle_mesh(size.x, size.y),
-      ),
-    ),
-  )
 }
 
 ///|
@@ -985,41 +840,36 @@ fn update_ui(
   keys : @input.ButtonInput[@window.KeyCode],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.Res[SelectedParameter],
-  settings_query : @ecs.Query[
+  settings : @app.Single[
     (
       @ecs.Read[@post_process.Tonemapping],
       @ecs.Read[@post_process.ColorGrading],
     ),
     @ecs.All,
   ],
-  ui_text_query : @ecs.Query[
-    (@ecs.Read[@text.Text], @ecs.Read[TonemappingUiText]),
-    @ecs.All,
-  ],
+  text_query : @app.Single[@ecs.Write[@text.Text], @ecs.Without[SceneNumber]],
   hide_ui : @app.Local[Bool],
 ) -> Unit {
   if keys.just_pressed(KeyH) {
     hide_ui.set(!hide_ui.get())
   }
-  guard first2(ui_text_query) is Some((_entity, ui_text, _marker)) else {
-    return
-  }
+  let text = text_query.get()
   if hide_ui.get() {
-    set_ui_text(ui_text, "")
+    if text.value().content != "" {
+      text.set(@text.Text::Text())
+    }
     return
   }
-  guard first2(settings_query) is Some((_camera, tonemapping, color_grading)) else {
-    return
-  }
-  set_ui_text(
-    ui_text,
-    ui_text_content(
-      current_scene.get().value,
-      tonemapping,
-      color_grading,
-      selected_parameter.get().value,
-    ),
+  let (tonemapping, color_grading) = settings.get()
+  let content = ui_text_content(
+    current_scene.get().value,
+    tonemapping.value(),
+    color_grading.value(),
+    selected_parameter.get().value,
   )
+  if text.value().content != content {
+    text.set(@text.Text::new(content))
+  }
 }
 
 ///|
@@ -1045,9 +895,9 @@ fn main {
   .add_systems_param3(@app.Startup, setup)
   .add_systems_param2(@app.Startup, setup_basic_scene)
   .add_systems_param4(@app.Startup, setup_color_gradient_scene)
-  .add_systems_param6(@app.Startup, setup_image_viewer_scene)
+  .add_systems_param4(@app.Startup, setup_image_viewer_scene)
   .add_systems_param6(@app.Update, drag_drop_image)
-  .add_systems_param4(@app.Update, resize_image)
+  .add_systems_param5(@app.Update, resize_image)
   .add_systems_param4(@app.Update, toggle_scene)
   .add_systems_param4(@app.Update, toggle_tonemapping_method)
   .add_systems_param6(@app.Update, update_color_grading_settings)
