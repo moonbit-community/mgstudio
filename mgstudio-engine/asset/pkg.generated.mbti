@@ -356,6 +356,7 @@ pub struct AssetPath {
   label : String?
 } derive(Eq, Hash, @debug.Debug)
 pub fn AssetPath::from_path(String) -> Self
+pub fn AssetPath::is_unapproved(Self) -> Bool
 pub fn AssetPath::with_label(Self, String?) -> Self
 pub fn AssetPath::with_source(Self, AssetSourceId) -> Self
 pub impl IntoAssetPath for AssetPath
@@ -365,6 +366,7 @@ pub(all) struct AssetPlugin {
   mode : AssetMode
   file_path : String?
   processed_file_path : String?
+  unapproved_path_mode : UnapprovedPathMode
 }
 pub fn AssetPlugin::AssetPlugin() -> Self
 pub fn AssetPlugin::nearest() -> Self
@@ -372,6 +374,7 @@ pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
 pub fn AssetPlugin::with_file_path(Self, String) -> Self
 pub fn AssetPlugin::with_mode(Self, AssetMode) -> Self
 pub fn AssetPlugin::with_processed_file_path(Self, String) -> Self
+pub fn AssetPlugin::with_unapproved_path_mode(Self, UnapprovedPathMode) -> Self
 pub impl @app.Plugin for AssetPlugin
 
 pub struct AssetReader {
@@ -421,6 +424,7 @@ pub struct AssetServer {
   mut default_sampler_nearest : Bool
   mut mode : AssetMode
   mut processed_file_path : String?
+  mut unapproved_path_mode : UnapprovedPathMode
   mut owner_world : @ecs.World?
 }
 pub fn[T : Asset] AssetServer::add(Self, T) -> Handle[T]
@@ -450,6 +454,7 @@ pub fn AssetServer::set_typed_load_state(Self, String, Int, LoadState) -> Unit
 pub fn AssetServer::set_typed_loaded_states(Self, String, Int) -> Unit
 pub fn AssetServer::set_typed_loading_states(Self, String, Int) -> Unit
 pub fn AssetServer::set_typed_recursive_dependency_load_state(Self, String, Int, RecursiveDependencyLoadState) -> Unit
+pub fn AssetServer::unapproved_path_mode(Self) -> UnapprovedPathMode
 pub impl @app.Resource for AssetServer
 
 pub struct AssetSourceBuilder {
@@ -701,6 +706,12 @@ pub struct TextureAtlasSources {
 }
 pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[@image.Image]) -> TextureAtlas?
 pub fn TextureAtlasSources::texture_index(Self, Handle[@image.Image]) -> Int?
+
+pub(all) enum UnapprovedPathMode {
+  Allow
+  Deny
+  Forbid
+} derive(Eq, @debug.Debug)
 
 pub struct UntypedAssetLoadFailedEvent {
   type_name : String

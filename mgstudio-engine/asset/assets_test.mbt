@@ -359,9 +359,14 @@ fn named_processor_scope_run_two(
 ///|
 test "legacy loader, ready_checker and reload_hook are world-scoped per app world" {
   RegistryScopedLegacyAsset::{  } |> ignore
-  let app_a = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
-    RegistryScopedLegacyAsset::{  }
-  })
+  let app_a = init_asset(
+    @app.App::new(@ecs.World::new()).add_plugins(
+      AssetPlugin::AssetPlugin().with_unapproved_path_mode(
+        UnapprovedPathMode::Allow,
+      ),
+    ),
+    fn() { RegistryScopedLegacyAsset::{  } },
+  )
   let world_a = app_a.world()
   let server_a = match world_a.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -403,9 +408,14 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   asset_with_world(world_a, fn() { asset_system(world_a) })
   debug_inspect(reload_calls_a.val.length(), content="1")
 
-  let app_b = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
-    RegistryScopedLegacyAsset::{  }
-  })
+  let app_b = init_asset(
+    @app.App::new(@ecs.World::new()).add_plugins(
+      AssetPlugin::AssetPlugin().with_unapproved_path_mode(
+        UnapprovedPathMode::Allow,
+      ),
+    ),
+    fn() { RegistryScopedLegacyAsset::{  } },
+  )
   let world_b = app_b.world()
   let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -462,7 +472,9 @@ test "asset processor registry is world-scoped per app world" {
       init_asset_loader(
         init_asset(
           @app.App::new(@ecs.World::new()).add_plugins(
-            @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
+            @asset.AssetPlugin::AssetPlugin()
+            .with_mode(AssetMode::Processed)
+            .with_unapproved_path_mode(UnapprovedPathMode::Allow),
           ),
           fn() { ProcessorScopeAsset::{ from_processor: false } },
         ),
@@ -502,7 +514,9 @@ test "asset processor registry is world-scoped per app world" {
   let app_b = init_asset_loader(
     init_asset(
       @app.App::new(@ecs.World::new()).add_plugins(
-        @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
+        @asset.AssetPlugin::AssetPlugin()
+        .with_mode(AssetMode::Processed)
+        .with_unapproved_path_mode(UnapprovedPathMode::Allow),
       ),
       fn() { ProcessorScopeAsset::{ from_processor: false } },
     ),
@@ -551,7 +565,9 @@ test "asset processor default can be selected by processor name" {
         init_asset_loader(
           init_asset(
             @app.App::new(@ecs.World::new()).add_plugins(
-              @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
+              @asset.AssetPlugin::AssetPlugin()
+              .with_mode(AssetMode::Processed)
+              .with_unapproved_path_mode(UnapprovedPathMode::Allow),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
@@ -610,7 +626,9 @@ test "asset processor default by name keeps previous selection when name is ambi
         init_asset_loader(
           init_asset(
             @app.App::new(@ecs.World::new()).add_plugins(
-              @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
+              @asset.AssetPlugin::AssetPlugin()
+              .with_mode(AssetMode::Processed)
+              .with_unapproved_path_mode(UnapprovedPathMode::Allow),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
@@ -813,6 +831,86 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
     "does_not_exist/missing_loader.asset",
     content="true",
   )
+}
+
+///|
+test "asset path approval matches Bevy unapproved path shape" {
+  debug_inspect(
+    AssetPath::from_path("thingy.png").is_unapproved(),
+    content="false",
+  )
+  debug_inspect(
+    AssetPath::from_path("gui/thingy.png").is_unapproved(),
+    content="false",
+  )
+  debug_inspect(
+    asset_parse_path("embedded://thingy.png").is_unapproved(),
+    content="false",
+  )
+  debug_inspect(
+    AssetPath::from_path("../thingy.png").is_unapproved(),
+    content="true",
+  )
+  debug_inspect(
+    AssetPath::from_path("folder/../../thingy.png").is_unapproved(),
+    content="true",
+  )
+  debug_inspect(
+    AssetPath::from_path("/home/thingy.png").is_unapproved(),
+    content="true",
+  )
+}
+
+///|
+test "asset plugin forbids unapproved paths by default and explicit Allow loads them" {
+  let forbidden_app = @app.App::new(@ecs.World::new()).add_plugins(
+    AssetPlugin::AssetPlugin().with_file_path("assets/pixel"),
+  )
+  let forbidden_world = forbidden_app.world()
+  let forbidden_server = match
+    forbidden_world.get_resource(asset_server_resource_key) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  debug_inspect(
+    forbidden_server.unapproved_path_mode() == UnapprovedPathMode::Forbid,
+    content="true",
+  )
+  let forbidden_handle : Handle[Image] = asset_with_world(forbidden_world, fn() {
+    forbidden_server.load("../pixel/bevy_pixel_dark.png")
+  })
+  debug_inspect(
+    forbidden_server.load_state(forbidden_handle) is LoadState::Failed(_),
+    content="true",
+  )
+
+  let allowed_app = @app.App::new(@ecs.World::new()).add_plugins(
+    AssetPlugin::AssetPlugin()
+    .with_file_path("assets/pixel")
+    .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+  )
+  let allowed_world = allowed_app.world()
+  let allowed_server = match
+    allowed_world.get_resource(asset_server_resource_key) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  debug_inspect(
+    allowed_server.unapproved_path_mode() == UnapprovedPathMode::Allow,
+    content="true",
+  )
+  let allowed_handle : Handle[Image] = asset_with_world(allowed_world, fn() {
+    allowed_server.load_image("../pixel/bevy_pixel_dark.png")
+  })
+  for _ in 0..<120 {
+    asset_system(allowed_world)
+    if asset_is_texture_loaded(allowed_handle) {
+      break
+    }
+  }
+  debug_inspect(asset_is_texture_loaded(allowed_handle), content="true")
+  debug_inspect(asset_texture_width(allowed_handle), content="16")
+  debug_inspect(asset_texture_height(allowed_handle), content="12")
 }
 
 ///|

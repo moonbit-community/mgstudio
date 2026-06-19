@@ -122,6 +122,9 @@ pub fn AssetServer::load_folder(
     let parsed_path = asset_parse_path(path)
     let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
     let type_name = assets_type_name((None : LoadedFolder?))
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(parsed_path, type_name)
+    }
     let cache_key = typed_asset_loader_path_key(type_name, parsed_path)
     if self.typed_asset_paths.get(cache_key) is Some(handle_id) {
       return Handle::new(handle_id)

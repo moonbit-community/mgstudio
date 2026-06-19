@@ -37,6 +37,7 @@ pub(all) struct AssetPlugin {
   mode : AssetMode
   file_path : String?
   processed_file_path : String?
+  unapproved_path_mode : UnapprovedPathMode
 }
 
 ///|
@@ -46,6 +47,7 @@ pub fn AssetPlugin::AssetPlugin() -> AssetPlugin {
     mode: AssetMode::Unprocessed,
     file_path: None,
     processed_file_path: None,
+    unapproved_path_mode: UnapprovedPathMode::Forbid,
   }
 }
 
@@ -56,6 +58,7 @@ pub fn AssetPlugin::nearest() -> AssetPlugin {
     mode: AssetMode::Unprocessed,
     file_path: None,
     processed_file_path: None,
+    unapproved_path_mode: UnapprovedPathMode::Forbid,
   }
 }
 
@@ -69,6 +72,7 @@ pub fn AssetPlugin::with_default_sampler_nearest(
     mode: self.mode,
     file_path: self.file_path,
     processed_file_path: self.processed_file_path,
+    unapproved_path_mode: self.unapproved_path_mode,
   }
 }
 
@@ -90,6 +94,7 @@ pub fn AssetPlugin::with_file_path(
     mode: self.mode,
     file_path: Some(file_path),
     processed_file_path: self.processed_file_path,
+    unapproved_path_mode: self.unapproved_path_mode,
   }
 }
 
@@ -102,12 +107,21 @@ pub fn AssetPlugin::with_processed_file_path(
 }
 
 ///|
+pub fn AssetPlugin::with_unapproved_path_mode(
+  self : AssetPlugin,
+  unapproved_path_mode : UnapprovedPathMode,
+) -> AssetPlugin {
+  AssetPlugin::{ ..self, unapproved_path_mode, }
+}
+
+///|
 fn asset_plugin_with_server(
   app : @app.App[@ecs.World],
   asset_server : AssetServer,
   file_path : String?,
   mode : AssetMode,
   processed_file_path : String?,
+  unapproved_path_mode : UnapprovedPathMode,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   asset_with_world(world, fn() {
@@ -127,6 +141,7 @@ fn asset_plugin_with_server(
     asset_server.processed_file_path = resolve_assets_dir_override(
       processed_file_path,
     )
+    asset_server.unapproved_path_mode = unapproved_path_mode
   })
   init_asset(
     init_asset(
@@ -156,6 +171,7 @@ pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     None,
     AssetMode::Unprocessed,
     None,
+    UnapprovedPathMode::Forbid,
   )
 }
 
@@ -169,6 +185,7 @@ pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     None,
     AssetMode::Unprocessed,
     None,
+    UnapprovedPathMode::Forbid,
   )
 }
 
@@ -187,5 +204,6 @@ pub impl @app.Plugin for AssetPlugin with fn build(self, app) {
     self.file_path,
     self.mode,
     self.processed_file_path,
+    self.unapproved_path_mode,
   )
 }

@@ -1030,7 +1030,13 @@ fn main {
     ColorGradientMaterial::ColorGradientMaterial()
   })
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(
+      @asset.AssetPlugin::AssetPlugin().with_unapproved_path_mode(
+        @asset.UnapprovedPathMode::Allow,
+      ),
+    ),
+  )
   .add_plugins(color_gradient_material_plugin)
   .insert_resource(CameraTransform::CameraTransform())
   .insert_resource(PerMethodSettings::PerMethodSettings())

@@ -35,6 +35,13 @@ pub struct AssetPath {
 } derive(Eq, Hash, Debug)
 
 ///|
+pub(all) enum UnapprovedPathMode {
+  Allow
+  Deny
+  Forbid
+} derive(Eq, Debug)
+
+///|
 pub type ParsedAssetPath = AssetPath
 
 ///|
@@ -197,6 +204,58 @@ pub fn AssetPath::with_source(
 ///|
 pub fn AssetPath::with_label(self : AssetPath, label : String?) -> AssetPath {
   AssetPath::{ source: self.source, path: self.path, label }
+}
+
+///|
+fn asset_path_component_is_separator(path : String, index : Int) -> Bool {
+  let code = path.code_unit_at(index).to_int()
+  code == 47 || code == 92
+}
+
+///|
+fn asset_path_has_windows_prefix(path : String) -> Bool {
+  if path.length() < 2 {
+    return false
+  }
+  let first = path.code_unit_at(0).to_int()
+  let second = path.code_unit_at(1).to_int()
+  ((first >= 65 && first <= 90) || (first >= 97 && first <= 122)) &&
+  second == 58
+}
+
+///|
+pub fn AssetPath::is_unapproved(self : AssetPath) -> Bool {
+  let path = self.path
+  if path.length() == 0 {
+    return false
+  }
+  if asset_path_component_is_separator(path, 0) ||
+    asset_path_has_windows_prefix(path) {
+    return true
+  }
+  let simplified : Array[String] = []
+  let mut start = 0
+  for index in 0..<=path.length() {
+    if index == path.length() || asset_path_component_is_separator(path, index) {
+      let component = if index > start {
+        path[start:index].to_owned()
+      } else {
+        ""
+      }
+      if component == "" || component == "." {
+        ()
+      } else if component == ".." {
+        if simplified.length() == 0 {
+          return true
+        }
+        ignore(simplified.pop())
+      } else {
+        simplified.push(component)
+      }
+      start = index + 1
+    }
+  }
+  false
 }
 
 ///|

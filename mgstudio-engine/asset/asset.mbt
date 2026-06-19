@@ -149,6 +149,7 @@ pub struct AssetServer {
   mut default_sampler_nearest : Bool
   mut mode : AssetMode
   mut processed_file_path : String?
+  mut unapproved_path_mode : UnapprovedPathMode
   mut owner_world : @ecs.World?
 }
 
@@ -203,6 +204,7 @@ fn asset_server_standalone() -> AssetServer {
     default_sampler_nearest: false,
     mode: AssetMode::Unprocessed,
     processed_file_path: None,
+    unapproved_path_mode: UnapprovedPathMode::Forbid,
     owner_world: None,
   }
 }
@@ -241,6 +243,42 @@ fn AssetServer::reserve_typed_asset_handle_id(
   }
   self.typed_asset_next_ids.set(asset_type_name, next + 1)
   next
+}
+
+///|
+pub fn AssetServer::unapproved_path_mode(
+  self : AssetServer,
+) -> UnapprovedPathMode {
+  self.unapproved_path_mode
+}
+
+///|
+fn AssetServer::unapproved_asset_load_allowed(
+  self : AssetServer,
+  path : AssetPath,
+  override_unapproved : Bool,
+) -> Bool {
+  if !path.is_unapproved() {
+    return true
+  }
+  match self.unapproved_path_mode {
+    UnapprovedPathMode::Allow => true
+    UnapprovedPathMode::Deny => override_unapproved
+    UnapprovedPathMode::Forbid => false
+  }
+}
+
+///|
+fn[T] AssetServer::reserve_unapproved_path_handle(
+  self : AssetServer,
+  parsed_path : AssetPath,
+  asset_type_name : String,
+) -> Handle[T] {
+  self.reserve_missing_loader_handle(
+    parsed_path,
+    asset_type_name,
+    "Asset path \{asset_format_path(parsed_path)} is unapproved. See UnapprovedPathMode for details.",
+  )
 }
 
 ///|
@@ -1146,7 +1184,14 @@ pub fn[P : IntoAssetPath] AssetServer::load_image(
   path : P,
 ) -> Handle[Image] {
   asset_with_server_world(self, fn() {
-    let canonical_path = asset_canonical_path(asset_path_string(path))
+    let parsed_path = path.into_asset_path()
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(
+        parsed_path,
+        asset_image_assets_type_name(),
+      )
+    }
+    let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
     let settings = self.image_loader_settings_for_path(canonical_path)
     self.load_image_with_settings(canonical_path, settings)
   })
@@ -1158,7 +1203,14 @@ pub fn[P : IntoAssetPath] AssetServer::load_nearest(
   path : P,
 ) -> Handle[Image] {
   asset_with_server_world(self, fn() {
-    let canonical_path = asset_canonical_path(asset_path_string(path))
+    let parsed_path = path.into_asset_path()
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(
+        parsed_path,
+        asset_image_assets_type_name(),
+      )
+    }
+    let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
     let settings = self.image_loader_settings_for_path(canonical_path)
     settings.sampler = ImageSampler::nearest()
     self.load_image_with_settings(canonical_path, settings)
@@ -1518,6 +1570,9 @@ pub fn[T : Asset, P : IntoAssetPath] AssetServer::load(
     asset_register_builtin_loaders()
     let parsed_path = path.into_asset_path()
     let asset_type_name = assets_type_name((None : T?))
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(parsed_path, asset_type_name)
+    }
     if typed_asset_loader_is_registered(asset_type_name) {
       return self.load_registered_asset(parsed_path)
     }
@@ -1590,7 +1645,14 @@ pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_with_settings(
   configure : (ImageLoaderSettings) -> Unit,
 ) -> Handle[T] {
   asset_with_server_world(self, fn() {
-    let formatted_path = asset_path_string(path)
+    let parsed_path = path.into_asset_path()
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(
+        parsed_path,
+        assets_type_name((None : T?)),
+      )
+    }
+    let formatted_path = asset_format_path(parsed_path)
     let probe : Handle[T] = Handle::new(0)
     let type_name = asset_loader_type_name(probe)
     if type_name == asset_image_handle_type_name() {
@@ -1686,7 +1748,14 @@ pub fn AssetServer::load_bytes(
   path : String,
 ) -> Handle[Blob] {
   asset_with_server_world(self, fn() {
-    let canonical_path = asset_canonical_path(path)
+    let parsed_path = asset_parse_path(path)
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      return self.reserve_unapproved_path_handle(
+        parsed_path,
+        asset_blob_assets_type_name(),
+      )
+    }
+    let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
     let id = host_asset_load_bytes(path=canonical_path)
     self.record_path(canonical_path)
     Blob::{  } |> ignore
@@ -1703,7 +1772,15 @@ pub fn AssetServer::load_with_registered_loader(
   nearest : Bool,
 ) -> Int {
   asset_with_server_world(self, fn() {
-    let canonical_path = asset_canonical_path(path)
+    let parsed_path = asset_parse_path(path)
+    if !self.unapproved_asset_load_allowed(parsed_path, false) {
+      let handle : Handle[Image] = self.reserve_unapproved_path_handle(
+        parsed_path,
+        asset_image_assets_type_name(),
+      )
+      return handle.id()
+    }
+    let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
     let id = host_asset_load_with_registered_loader(
       path=canonical_path,
       nearest~,
