@@ -1,6 +1,5 @@
 import {
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
@@ -8,6 +7,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/examples/support/chacha_rng",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",

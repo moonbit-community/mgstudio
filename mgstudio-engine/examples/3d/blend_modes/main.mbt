@@ -13,656 +13,565 @@
 // limitations under the License.
 
 ///|
-const PI : Float = 3.141592653589793F
+// Bevy source: `bevy/examples/3d/blend_modes.rs`.
 
 ///|
-const TAU : Float = 6.283185307179586F
+const CONTROL_TEXT : String = "Up / Down — Increase / Decrease Alpha\nLeft / Right — Rotate Camera\nH - Toggle HDR\nSpacebar — Toggle Unlit\nC — Randomize Colors"
 
 ///|
-const LCG_MOD : Int = 2147483647
+priv struct ExampleControls {
+  unlit : Bool
+  color : Bool
+}
 
 ///|
-const CAMERA_RADIUS : Float = 10.0F
+let example_controls_key : @ecs.ComponentKey[ExampleControls] = @ecs.register_component(
+  debug_name="examples.3d.blend_modes.ExampleControls",
+)
 
 ///|
-const LABEL_HEIGHT_OFFSET : Float = 1.0F
+impl @ecs.Component for ExampleControls with fn component() {
+  example_controls_key
+}
 
 ///|
-const CONTROL_TEXT : String = "Up / Down - Increase / Decrease Alpha\nLeft / Right - Rotate Camera\nH - Toggle HDR\nSpacebar - Toggle Unlit\nC - Randomize Colors"
-
-///|
-priv struct ControlledMaterial {
-  handle : @asset.Handle[@pbr.StandardMaterial]
-  allow_unlit : Bool
-  allow_color : Bool
+fn ExampleControls::ExampleControls(
+  unlit~ : Bool,
+  color~ : Bool,
+) -> ExampleControls {
+  ExampleControls::{ unlit, color }
 }
 
 ///|
 priv struct ExampleLabel {
-  node : @core.Entity
-  target : @core.Entity
+  entity : @core.Entity
 }
 
 ///|
-priv struct BlendModesState {
+let example_label_key : @ecs.ComponentKey[ExampleLabel] = @ecs.register_component(
+  debug_name="examples.3d.blend_modes.ExampleLabel",
+)
+
+///|
+impl @ecs.Component for ExampleLabel with fn component() {
+  example_label_key
+}
+
+///|
+fn ExampleLabel::ExampleLabel(entity : @core.Entity) -> ExampleLabel {
+  ExampleLabel::{ entity, }
+}
+
+///|
+priv struct ExampleDisplay {}
+
+///|
+let example_display_key : @ecs.ComponentKey[ExampleDisplay] = @ecs.register_component(
+  debug_name="examples.3d.blend_modes.ExampleDisplay",
+)
+
+///|
+impl @ecs.Component for ExampleDisplay with fn component() {
+  example_display_key
+}
+
+///|
+priv struct ExampleState {
   mut alpha : Float
-  mut camera : @core.Entity?
-  mut camera_angle : Float
-  mut random_seed : Int
-  materials : Array[ControlledMaterial]
-  labels : Array[ExampleLabel]
-  mut display_text : @core.Entity?
   mut unlit : Bool
+  rng : @chacha_rng.ChaCha8Rng
 }
 
 ///|
-let blend_modes_state : Ref[BlendModesState] = Ref({
-  alpha: 0.9F,
-  camera: None,
-  camera_angle: 0.0F,
-  random_seed: 1367130551,
-  materials: [],
-  labels: [],
-  display_text: None,
-  unlit: false,
-})
-
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+fn ExampleState::ExampleState() -> ExampleState {
+  ExampleState::{
+    alpha: 0.9F,
+    unlit: false,
+    rng: @chacha_rng.ChaCha8Rng::seed_from_u64(19878367467712UL),
+  }
 }
 
 ///|
-fn clamp01(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else if value > 1.0F {
-    1.0F
+impl @app.FromWorld for ExampleState with fn from_world(_world) {
+  ExampleState::ExampleState()
+}
+
+///|
+fn min_float(a : Float, b : Float) -> Float {
+  if a < b {
+    a
   } else {
-    value
+    b
   }
 }
 
 ///|
-fn lcg_next(seed : Int) -> Int {
-  let mut next = (seed * 1103515245 + 12345) % LCG_MOD
-  if next < 0 {
-    next = next + LCG_MOD
+fn max_float(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
   }
-  next
 }
 
 ///|
-fn next_random_unit() -> Float {
-  blend_modes_state.val.random_seed = lcg_next(
-    blend_modes_state.val.random_seed,
-  )
-  float_from_int(blend_modes_state.val.random_seed) / float_from_int(LCG_MOD)
+fn format_fixed(value : Float, decimals : Int) -> String {
+  let clamped_decimals = if decimals < 0 { 0 } else { decimals }
+  let mut scale = 1.0F
+  for _ in 0..<clamped_decimals {
+    scale = scale * 10.0F
+  }
+  let rounded = (value * scale).round().to_int()
+  let sign = if rounded < 0 { "-" } else { "" }
+  let abs_value = if rounded < 0 { -rounded } else { rounded }
+  let whole = abs_value / scale.to_int()
+  if clamped_decimals == 0 {
+    "\{sign}\{whole}"
+  } else {
+    let frac_value = abs_value % scale.to_int()
+    let mut frac = frac_value.to_string()
+    while frac.length() < clamped_decimals {
+      frac = "0" + frac
+    }
+    "\{sign}\{whole}.\{frac}"
+  }
 }
 
 ///|
-fn random_color(alpha : Float) -> @color.Color {
-  @color.Color::new(
-    next_random_unit(),
-    next_random_unit(),
-    next_random_unit(),
+fn random_color(rng : @chacha_rng.ChaCha8Rng, alpha : Float) -> @color.Color {
+  @color.Color::srgba(
+    rng.random_float(),
+    rng.random_float(),
+    rng.random_float(),
     alpha,
   )
 }
 
 ///|
-fn blend_modes_display_text(
-  camera_entity : @core.Entity,
-  world : @ecs.World,
-) -> String {
-  let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
-  let hdr_on = try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
-  let hdr_text = if hdr_on { "ON " } else { "OFF" }
-  "  HDR: \{hdr_text}\nAlpha: \{alpha_text}"
+fn material_with_alpha(
+  material : @pbr.StandardMaterial,
+  alpha : Float,
+) -> @pbr.StandardMaterial {
+  material.with_base_color(material.base_color.with_alpha(alpha))
 }
 
 ///|
-fn setup_ui_overlay(
-  world : @ecs.World,
-  font : @asset.Handle[@asset.Font],
-  opaque_entity : @core.Entity,
-  blend_entity : @core.Entity,
-  premultiplied_entity : @core.Entity,
-  add_entity : @core.Entity,
-  multiply_entity : @core.Entity,
-) -> Unit {
-  try! (world.spawn_bundle(
+fn add_standard_material(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  material : @pbr.StandardMaterial,
+) -> @asset.Handle[@pbr.StandardMaterial] {
+  materials.modify(fn(assets) { assets.add(material) })
+}
+
+///|
+fn add_mesh(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  mesh : @mesh.Mesh,
+) -> @asset.Handle[@mesh.Mesh] {
+  meshes.modify(fn(assets) { assets.add(mesh) })
+}
+
+///|
+fn spawn_sphere(
+  commands : @app.Commands,
+  mesh : @asset.Handle[@mesh.Mesh],
+  material : @asset.Handle[@pbr.StandardMaterial],
+  translation : @math.Vec3,
+) -> @core.Entity {
+  commands.spawn(
     (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
+      @mesh.Mesh3d::new(mesh),
+      @pbr.MeshMaterial3d::new(material),
+      @transform.Transform::from_translation(translation),
+      ExampleControls::ExampleControls(unlit=true, color=true),
     ),
   )
-  |> ignore)
-
-  let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
-  try! world.set_by_key(
-    root,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-  )
-
-  let controls_entity = world.spawn_empty()
-  try! world.set_by_key(
-    controls_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @text.ecs_key_text,
-    @text.Text::new(CONTROL_TEXT),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(14.0F),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  try! world.set_by_key(
-    controls_entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-  )
-
-  guard blend_modes_state.val.camera is Some(camera_entity) else { return }
-  let display_entity = world.spawn_empty()
-  try! world.set_by_key(
-    display_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    display_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_right(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(
-    display_entity,
-    @text.ecs_key_text,
-    @text.Text::new(blend_modes_display_text(camera_entity, world)),
-  )
-  try! world.set_by_key(
-    display_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(14.0F),
-  )
-  try! world.set_by_key(
-    display_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  try! world.set_by_key(
-    display_entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-  )
-  blend_modes_state.val.display_text = Some(display_entity)
-
-  let label_color = @color.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
-  let labels : Array[(@core.Entity, String)] = [
-    (opaque_entity, "┌─ Opaque\n│\n│\n│\n│"),
-    (blend_entity, "┌─ Blend\n│\n│\n│"),
-    (premultiplied_entity, "┌─ Premultiplied\n│\n│"),
-    (add_entity, "┌─ Add\n│"),
-    (multiply_entity, "┌─ Multiply"),
-  ]
-
-  for pair in labels {
-    let target = pair.0
-    let text = pair.1
-    let label_node = world.spawn_empty()
-    try! world.set_by_key(
-      label_node,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(root),
-    )
-    try! world.set_by_key(
-      label_node,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(root),
-    )
-    try! world.set_by_key(
-      label_node,
-      @ui.ecs_key_node,
-      @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_top(@ui.Val::Px(0.0F)),
-    )
-    try! world.set_by_key(label_node, @text.ecs_key_text, @text.Text::new(text))
-    try! world.set_by_key(
-      label_node,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(root),
-    )
-    try! world.set_by_key(
-      label_node,
-      @ui.ecs_key_node,
-      @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_top(@ui.Val::Px(0.0F)),
-    )
-    try! world.set_by_key(label_node, @text.ecs_key_text, @text.Text::new(text))
-    try! world.set_by_key(
-      label_node,
-      @text.ecs_key_text_font,
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-    )
-    try! world.set_by_key(
-      label_node,
-      @text.ecs_key_text_color,
-      @text.TextColor::new(label_color),
-    )
-    blend_modes_state.val.labels.push({ node: label_node, target })
-  }
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = TAU / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
+fn spawn_chessboard_square(
+  commands : @app.Commands,
+  mesh : @asset.Handle[@mesh.Mesh],
+  material : @asset.Handle[@pbr.StandardMaterial],
+  x : Int,
+  z : Int,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::from_xyz(
+          Float::from_int(x) * 2.0F,
+          -1.0F,
+          Float::from_int(z) * 2.0F,
         ),
+        ExampleControls::ExampleControls(unlit=false, color=true),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_label(
+  commands : @app.Commands,
+  font : @asset.Handle[@asset.Font],
+  entity : @core.Entity,
+  label : String,
+) -> Unit {
+  let label_node = commands.spawn(
+    (
+      @ui.Node::Node().with_position_type(@ui.PositionType::Absolute),
+      ExampleLabel::ExampleLabel(entity),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(label_node),
+        @text.Text::new(label),
+        @text.TextFont::TextFont().with_font(font),
+        @text.TextColor::new(@color.Color::srgb(1.0F, 0.65F, 0.0F)),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_bottom(@ui.Val::Px(0.0F)),
+        @text.TextLayout::new_with_no_wrap(),
+      ),
+    ),
+  )
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let base_color = @color.Color::srgb(0.9F, 0.2F, 0.3F)
+  let icosphere_mesh = add_mesh(
+    meshes,
+    @mesh.Mesh::from_3d_geometry(
+      @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+        @math.Sphere::new(0.9F),
+      ).ico(7) catch {
+        _ => abort("blend_modes icosphere mesh generation failed")
+      },
+    ),
+  )
+
+  let opaque_entity = spawn_sphere(
+    commands,
+    icosphere_mesh,
+    add_standard_material(
+      materials,
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+        @pbr.AlphaMode3d::Opaque,
+      ),
+    ),
+    @math.Vec3::new(-4.0F, 0.0F, 0.0F),
+  )
+
+  let blend = spawn_sphere(
+    commands,
+    icosphere_mesh,
+    add_standard_material(
+      materials,
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+        @pbr.AlphaMode3d::Blend,
+      ),
+    ),
+    @math.Vec3::new(-2.0F, 0.0F, 0.0F),
+  )
+
+  let premultiplied = spawn_sphere(
+    commands,
+    icosphere_mesh,
+    add_standard_material(
+      materials,
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+        @pbr.AlphaMode3d::Premultiplied,
+      ),
+    ),
+    @math.Vec3::zero(),
+  )
+
+  let add = spawn_sphere(
+    commands,
+    icosphere_mesh,
+    add_standard_material(
+      materials,
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+        @pbr.AlphaMode3d::Add,
+      ),
+    ),
+    @math.Vec3::new(2.0F, 0.0F, 0.0F),
+  )
+
+  let multiply = spawn_sphere(
+    commands,
+    icosphere_mesh,
+    add_standard_material(
+      materials,
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+        @pbr.AlphaMode3d::Multiply,
+      ),
+    ),
+    @math.Vec3::new(4.0F, 0.0F, 0.0F),
+  )
+
+  let black_material = add_standard_material(
+    materials,
+    @pbr.StandardMaterial::from_color(@color.Color::black()),
+  )
+  let white_material = add_standard_material(
+    materials,
+    @pbr.StandardMaterial::from_color(@color.Color::white()),
+  )
+  let plane_mesh = add_mesh(
+    meshes,
+    @mesh.Mesh::from_3d_geometry(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(2.0F, 2.0F),
+      ).build(),
+    ),
+  )
+
+  for x in -3..<4 {
+    for z in -3..<4 {
+      spawn_chessboard_square(
+        commands,
+        plane_mesh,
+        if (x + z) % 2 == 0 {
+          black_material
+        } else {
+          white_material
+        },
+        x,
+        z,
       )
     }
   }
 
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
-    }),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::PointLight(),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
+    ),
   )
+
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new(
+      @camera_camera.Camera::Camera(),
+      @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    ),
+  )
+  commands.entity(camera).insert_component(@pbr.Hdr::Hdr())
+
+  let font = asset_server.get().load_font("fonts/FiraMono-Medium.ttf")
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(CONTROL_TEXT),
+        @text.TextFont::TextFont().with_font(font),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::Text(),
+        @text.TextFont::TextFont().with_font(font),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_right(@ui.Val::Px(12.0F)),
+        ExampleDisplay::{  },
+      ),
+    ),
+  )
+
+  spawn_label(
+    commands, font, opaque_entity, "┌─ Opaque\n│\n│\n│\n│",
+  )
+  spawn_label(commands, font, blend, "┌─ Blend\n│\n│\n│")
+  spawn_label(commands, font, premultiplied, "┌─ Premultiplied\n│\n│")
+  spawn_label(commands, font, add, "┌─ Add\n│")
+  spawn_label(commands, font, multiply, "┌─ Multiply")
 }
 
 ///|
-fn register_material(
-  handle : @asset.Handle[@pbr.StandardMaterial],
-  allow_unlit : Bool,
-  allow_color : Bool,
+fn update_materials(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ],
+  state : ExampleState,
+  randomize_colors : Bool,
 ) -> Unit {
-  blend_modes_state.val.materials.push({ handle, allow_unlit, allow_color })
+  materials.modify(fn(assets) {
+    try! controllable.view(fn(_entity, item) {
+      let (mesh_material, controls) = item
+      let handle = mesh_material.value().material
+      guard assets.get(handle) is Some(material) else { return }
+      let mut updated = if controls.value().color && randomize_colors {
+        material.with_base_color(random_color(state.rng, state.alpha))
+      } else {
+        material_with_alpha(material, state.alpha)
+      }
+      if controls.value().unlit {
+        updated = updated.with_unlit(state.unlit)
+      }
+      ignore(assets.insert(handle, updated))
+    })
+  })
 }
 
 ///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> @core.Entity {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-}
-
-///|
-fn update_ui_overlay(world : @ecs.World) -> Unit {
-  let state = blend_modes_state.val
-  guard state.camera is Some(camera_entity) else { return }
-  guard state.display_text is Some(display_entity) else { return }
-  guard (try! world.get_by_key(display_entity, @text.ecs_key_text))
-    is Some(display_text) else {
-    return
-  }
-  display_text.content = blend_modes_display_text(camera_entity, world)
-  ignore(try! world.replace(display_entity, @text.ecs_key_text, display_text))
-
-  guard (try! world.get_by_key(camera_entity, @camera_camera.ecs_key_camera))
-    is Some(camera) else {
-    return
-  }
-  guard (try! world.get_by_key(camera_entity, @pbr.ecs_key_projection))
-    is Some(projection) else {
-    return
-  }
-  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
-    is Some(camera_transform) else {
-    return
-  }
-
+fn update_labels(
+  labels : @ecs.Query[(@ecs.Write[@ui.Node], @ecs.Read[ExampleLabel]), @ecs.All],
+  labeled : @ecs.Query[@ecs.Read[@transform.GlobalTransform], @ecs.All],
+  camera : @camera_camera.Camera,
+  projection : @pbr.Projection,
+  camera_transform : @transform.Transform,
+) -> Unit {
   let target_size = @math.IVec2::new(
     @window.window_width(),
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-
-  for label in state.labels {
-    guard (try! world.get_by_key(label.target, @transform.ecs_key_transform))
+  try! labels.view(fn(_entity, item) {
+    let (node, label) = item
+    guard (labeled.get(label.value().entity) catch { _ => None })
       is Some(target_transform) else {
-      continue
+      return
     }
-    let world_position = target_transform.translation.add(
-      @math.Vec3::new(0.0F, LABEL_HEIGHT_OFFSET, 0.0F),
-    )
+    let world_position = target_transform
+      .value()
+      .translation()
+      .add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
     guard @camera.camera_world_to_viewport(
         world_position, camera, projection, camera_transform, target_size, scale_factor,
       )
-      is Some(screen_position) else {
-      continue
+      is Some(viewport_position) else {
+      return
     }
-    if (try! world.get_by_key(label.node, @ui.ecs_key_node)) is Some(node) {
-      try! (world.replace(
-        label.node,
-        @ui.ecs_key_node,
-        node
-        .with_left(@ui.Val::Px(screen_position.x))
-        .with_top(@ui.Val::Px(screen_position.y)),
-      )
-      |> ignore)
-    }
-  }
+    node.set(
+      node
+      .value()
+      .with_top(@ui.Val::Px(viewport_position.y))
+      .with_left(@ui.Val::Px(viewport_position.x)),
+    )
+  })
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  blend_modes_state.val.alpha = 0.9F
-  blend_modes_state.val.unlit = false
-  blend_modes_state.val.camera = None
-  blend_modes_state.val.camera_angle = 0.0F
-  blend_modes_state.val.random_seed = 1367130551
-  blend_modes_state.val.materials.clear()
-  blend_modes_state.val.labels.clear()
-  blend_modes_state.val.display_text = None
-
-  let base_color = @color.Color::new(
-    0.9F,
-    0.2F,
-    0.3F,
-    blend_modes_state.val.alpha,
-  )
-  let sphere_mesh = uv_sphere_mesh(0.9F, 16, 24)
-
-  let opaque_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @pbr.AlphaMode3d::Opaque,
+fn example_control_system(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ],
+  camera : @app.Single[
+    (
+      @core.Entity,
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Write[@transform.Transform],
+      @ecs.Read[@transform.GlobalTransform],
+      @ecs.Read[@pbr.Projection],
+      @ecs.Has[@pbr.Hdr],
     ),
-  )
-  register_material(opaque_material, true, true)
-  let opaque_entity = spawn_mesh(
-    world,
-    sphere_mesh,
-    opaque_material,
-    @transform.Transform::from_xyz(-4.0F, 0.0F, 0.0F),
-  )
-
-  let blend_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @pbr.AlphaMode3d::Blend,
-    ),
-  )
-  register_material(blend_material, true, true)
-  let blend_entity = spawn_mesh(
-    world,
-    sphere_mesh,
-    blend_material,
-    @transform.Transform::from_xyz(-2.0F, 0.0F, 0.0F),
-  )
-
-  let premultiplied_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @pbr.AlphaMode3d::Premultiplied,
-    ),
-  )
-  register_material(premultiplied_material, true, true)
-  let premultiplied_entity = spawn_mesh(
-    world,
-    sphere_mesh,
-    premultiplied_material,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
-  )
-
-  let add_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @pbr.AlphaMode3d::Add,
-    ),
-  )
-  register_material(add_material, true, true)
-  let add_entity = spawn_mesh(
-    world,
-    sphere_mesh,
-    add_material,
-    @transform.Transform::from_xyz(2.0F, 0.0F, 0.0F),
-  )
-
-  let multiply_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @pbr.AlphaMode3d::Multiply,
-    ),
-  )
-  register_material(multiply_material, true, true)
-  let multiply_entity = spawn_mesh(
-    world,
-    sphere_mesh,
-    multiply_material,
-    @transform.Transform::from_xyz(4.0F, 0.0F, 0.0F),
-  )
-
-  let black_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)),
-  )
-  let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F)),
-  )
-  register_material(black_material, false, true)
-  register_material(white_material, false, true)
-
-  let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(2.0F, 2.0F),
-        ).build(),
-      )
-    }),
-  )
-  for x in -3..<4 {
-    for z in -3..<4 {
-      let use_black = (x + z) % 2 == 0
-      let material = if use_black { black_material } else { white_material }
-      spawn_mesh(
-        world,
-        plane_mesh,
-        material,
-        @transform.Transform::from_xyz(
-          float_from_int(x) * 2.0F,
-          -1.0F,
-          float_from_int(z) * 2.0F,
-        ),
-      )
-      |> ignore
-    }
+    @ecs.With[@camera.Camera3d],
+  ],
+  labels : @ecs.Query[(@ecs.Write[@ui.Node], @ecs.Read[ExampleLabel]), @ecs.All],
+  display : @app.Single[@ecs.Write[@text.Text], @ecs.With[ExampleDisplay]],
+  labeled : @ecs.Query[@ecs.Read[@transform.GlobalTransform], @ecs.All],
+  state_param : @app.Local[ExampleState],
+  time : @app.Res[@time.Time[Unit]],
+  input : @input.ButtonInput[@window.KeyCode],
+  commands : @app.Commands,
+) -> Unit {
+  let delta = time.get().delta_seconds()
+  let state = state_param.get()
+  if input.pressed(@window.KeyCode::ArrowUp) {
+    state.alpha = min_float(state.alpha + delta, 1.0F)
+  } else if input.pressed(@window.KeyCode::ArrowDown) {
+    state.alpha = max_float(state.alpha - delta, 0.0F)
   }
 
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-  )
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  blend_modes_state.val.camera = Some(camera)
-
-  let asset_server = @asset.AssetServer::new()
-  let label_font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
-  setup_ui_overlay(
-    world, label_font, opaque_entity, blend_entity, premultiplied_entity, add_entity,
-    multiply_entity,
-  )
-  update_ui_overlay(world)
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in blend_modes example")
-  }
-}
-
-///|
-fn example_control_system(world : @ecs.World) -> Unit {
-  let delta = world_time(world).delta_seconds()
-  let state = blend_modes_state.val
-
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    state.alpha = clamp01(state.alpha + delta)
-  } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    state.alpha = clamp01(state.alpha - delta)
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::Space) {
+  if input.just_pressed(@window.KeyCode::Space) {
     state.unlit = !state.unlit
   }
 
-  let randomize_colors = @input.key_just_pressed(@window.KeyCode::KeyC)
+  let randomize_colors = input.just_pressed(@window.KeyCode::KeyC)
+  update_materials(materials, controllable, state, randomize_colors)
 
-  let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  let camera_data = camera.get()
+  let (
+    camera_entity,
+    camera_component,
+    camera_transform,
+    _camera_global_transform,
+    projection,
+    hdr,
+  ) = camera_data
+  let hdr_enabled = hdr.present()
+  if input.just_pressed(@window.KeyCode::KeyH) {
+    if hdr_enabled {
+      commands.entity(camera_entity).remove(@pbr.ecs_key_hdr)
+    } else {
+      commands.entity(camera_entity).insert_component(@pbr.Hdr::Hdr())
+    }
+  }
+
+  let rotation = if input.pressed(@window.KeyCode::ArrowLeft) {
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  } else if input.pressed(@window.KeyCode::ArrowRight) {
     -delta
   } else {
     0.0F
   }
-  state.camera_angle = state.camera_angle + rotation
 
-  guard state.camera is Some(camera_entity) else { return }
-  if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
-      try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
-    } else {
-      try! world.set_by_key(camera_entity, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-    }
-  }
-  let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
-  let camera_z = @math.cos(state.camera_angle) * CAMERA_RADIUS
-  try! (world.replace(
-    camera_entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(camera_x, 2.5F, camera_z).looking_at(
+  camera_transform.modify(fn(value) {
+    value.rotate_around(
       @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Quat::from_rotation_y(rotation),
+    )
+  })
+
+  update_labels(
+    labels,
+    labeled,
+    camera_component.value(),
+    projection.value(),
+    camera_transform.value(),
+  )
+
+  display
+  .get()
+  .set(
+    @text.Text::new(
+      "  HDR: \{if hdr_enabled { "ON " } else { "OFF" }}\nAlpha: \{format_fixed(state.alpha, 2)}",
     ),
   )
-  |> ignore)
-
-  for controlled in state.materials {
-    if @pbr.standard_material_get(controlled.handle) is Some(material) {
-      let mut next_material = material.with_base_color(
-        @color.Color::new(
-          material.base_color.r,
-          material.base_color.g,
-          material.base_color.b,
-          state.alpha,
-        ),
-      )
-      if controlled.allow_color && randomize_colors {
-        next_material = next_material.with_base_color(random_color(state.alpha))
-      }
-      if controlled.allow_unlit {
-        next_material = next_material.with_unlit(state.unlit)
-      }
-      @pbr.standard_material_set(controlled.handle, next_material) |> ignore
-    }
-  }
-
-  update_ui_overlay(world)
+  state_param.set(state)
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, example_control_system)
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param10(@app.Update, example_control_system)
   .run()
 }

@@ -1084,6 +1084,16 @@ struct Param8 {
 }
 
 ///|
+struct Param9 {
+  value : Int
+}
+
+///|
+struct Param10 {
+  value : Int
+}
+
+///|
 impl SystemParam for Param1 with fn init_state(_world) {
   system_param_empty_state(_world)
 }
@@ -1200,6 +1210,36 @@ impl SystemParam for Param8 with fn get(_state) {
 
 ///|
 impl SystemParam for Param8 with fn store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param9 with fn init_state(_world) {
+  system_param_empty_state(_world)
+}
+
+///|
+impl SystemParam for Param9 with fn get(_state) {
+  { value: 9 }
+}
+
+///|
+impl SystemParam for Param9 with fn store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param10 with fn init_state(_world) {
+  system_param_empty_state(_world)
+}
+
+///|
+impl SystemParam for Param10 with fn get(_state) {
+  { value: 10 }
+}
+
+///|
+impl SystemParam for Param10 with fn store(self, _state) {
   ignore(self)
 }
 
@@ -1366,6 +1406,51 @@ test "app: system_config_param8 injects parameters in order" {
 }
 
 ///|
+test "app: system_config_param10 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system_config_param10(fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+      p9 : Param9,
+      p10 : Param10,
+    ) {
+      log.push(p1.value)
+      log.push(p2.value)
+      log.push(p3.value)
+      log.push(p4.value)
+      log.push(p5.value)
+      log.push(p6.value)
+      log.push(p7.value)
+      log.push(p8.value)
+      log.push(p9.value)
+      log.push(p10.value)
+    }),
+  )
+  app.run_once() |> ignore
+  debug_inspect(
+    log.length() == 10 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6 &&
+    log[6] == 7 &&
+    log[7] == 8 &&
+    log[8] == 9 &&
+    log[9] == 10,
+    content="true",
+  )
+}
+
+///|
 test "app: add_system_param8 injects parameters in order" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_param8(fn(
@@ -1398,6 +1483,49 @@ test "app: add_system_param8 injects parameters in order" {
     log[5] == 6 &&
     log[6] == 7 &&
     log[7] == 8,
+    content="true",
+  )
+}
+
+///|
+test "app: add_system_param10 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_param10(fn(
+    p1 : Param1,
+    p2 : Param2,
+    p3 : Param3,
+    p4 : Param4,
+    p5 : Param5,
+    p6 : Param6,
+    p7 : Param7,
+    p8 : Param8,
+    p9 : Param9,
+    p10 : Param10,
+  ) {
+    log.push(p1.value)
+    log.push(p2.value)
+    log.push(p3.value)
+    log.push(p4.value)
+    log.push(p5.value)
+    log.push(p6.value)
+    log.push(p7.value)
+    log.push(p8.value)
+    log.push(p9.value)
+    log.push(p10.value)
+  })
+  app.run_once() |> ignore
+  debug_inspect(
+    log.length() == 10 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6 &&
+    log[6] == 7 &&
+    log[7] == 8 &&
+    log[8] == 9 &&
+    log[9] == 10,
     content="true",
   )
 }
@@ -1455,6 +1583,52 @@ test "app: add_systems_param8 injects parameters for explicit stages" {
   debug_inspect(
     log.join(";"),
     content="\"startup:1,2,3,4,5,6,7,8;post_update:1,2,3,4,5,6,7,8;last:1,2,3,4,5,6,7,8\"",
+  )
+}
+
+///|
+test "app: add_systems_param10 injects parameters for explicit stages" {
+  let log : Array[String] = []
+  let mut app = App::new(@ecs.World::new())
+    .add_systems_param10(Startup, fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+      p9 : Param9,
+      p10 : Param10,
+    ) {
+      log.push(
+        "startup:\{p1.value},\{p2.value},\{p3.value},\{p4.value},\{p5.value},\{p6.value},\{p7.value},\{p8.value},\{p9.value},\{p10.value}",
+      )
+    })
+    .add_systems_param10(Update, fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+      p7 : Param7,
+      p8 : Param8,
+      p9 : Param9,
+      p10 : Param10,
+    ) {
+      log.push(
+        "update:\{p1.value},\{p2.value},\{p3.value},\{p4.value},\{p5.value},\{p6.value},\{p7.value},\{p8.value},\{p9.value},\{p10.value}",
+      )
+    })
+
+  app = app.run_startup()
+  app.run_once() |> ignore
+
+  debug_inspect(
+    log.join(";"),
+    content="\"startup:1,2,3,4,5,6,7,8,9,10;update:1,2,3,4,5,6,7,8,9,10\"",
   )
 }
 
