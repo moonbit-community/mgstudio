@@ -85,7 +85,6 @@ priv struct TransmissionState {
   mut reflectance : Float
   mut auto_camera : Bool
   mut camera_translation : @math.Vec3
-  mut camera : @core.Entity?
   mut display_text : @text.TextHandle?
   color_rng : @chacha_rng.ChaCha8Rng
 }
@@ -104,7 +103,6 @@ let transmission_state : Ref[TransmissionState] = Ref({
     CAMERA_INITIAL_Y,
     CAMERA_INITIAL_Z,
   ),
-  camera: None,
   display_text: None,
   color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
 })
@@ -158,10 +156,21 @@ fn quality_label(quality : @pbr.ScreenSpaceTransmissionQuality) -> String {
 }
 
 ///|
+fn transmission_camera_entity(world : @ecs.World) -> @core.Entity? {
+  let cameras : @ecs.Query[@core.Entity, @ecs.With[@pbr.Camera3d]] = @ecs.query_filtered(
+    world,
+    @ecs.With::new(@pbr.ecs_key_camera3d),
+  )
+  cameras.single() catch {
+    _ => None
+  }
+}
+
+///|
 fn camera_screen_space_transmission(
   world : @ecs.World,
 ) -> @pbr.ScreenSpaceTransmission {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     match
       (try! world.get_by_key(
         camera_entity, @pbr.ecs_key_screen_space_transmission,
@@ -179,7 +188,7 @@ fn camera_set_screen_space_transmission(
   world : @ecs.World,
   value : @pbr.ScreenSpaceTransmission,
 ) -> Unit {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     if (try! world.contains_by_key(
         camera_entity, @pbr.ecs_key_screen_space_transmission,
       )) {
@@ -197,7 +206,7 @@ fn camera_set_screen_space_transmission(
 
 ///|
 fn camera_hdr_enabled(world : @ecs.World) -> Bool {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
   } else {
     false
@@ -206,7 +215,7 @@ fn camera_hdr_enabled(world : @ecs.World) -> Bool {
 
 ///|
 fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)
   } else {
     false
@@ -215,7 +224,7 @@ fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
 
 ///|
 fn camera_taa_enabled(world : @ecs.World) -> Bool {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     try! world.contains_by_key(
       camera_entity, @post_process.ecs_key_temporal_jitter,
     )
@@ -226,7 +235,7 @@ fn camera_taa_enabled(world : @ecs.World) -> Bool {
 
 ///|
 fn camera_toggle_hdr(world : @ecs.World) -> Unit {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
       try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
     } else {
@@ -237,7 +246,7 @@ fn camera_toggle_hdr(world : @ecs.World) -> Unit {
 
 ///|
 fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)) {
       try! (world.take(camera_entity, @pbr.ecs_key_depth_prepass) |> ignore)
     } else {
@@ -252,7 +261,7 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
 
 ///|
 fn camera_toggle_taa(world : @ecs.World) -> Unit {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     if (try! world.contains_by_key(
         camera_entity, @post_process.ecs_key_temporal_jitter,
       )) {
@@ -674,7 +683,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
       25.0F,
     ),
   )
-  transmission_state.val.camera = Some(camera)
+  ignore(camera)
 }
 
 ///|
@@ -712,7 +721,7 @@ fn set_hud_text(world : @ecs.World) -> Unit {
 
 ///|
 fn apply_camera_transform(world : @ecs.World) -> Unit {
-  if transmission_state.val.camera is Some(camera_entity) {
+  if transmission_camera_entity(world) is Some(camera_entity) {
     let camera_pos = transmission_state.val.camera_translation
     try! (world.replace(
       camera_entity,
@@ -1050,7 +1059,6 @@ fn setup(world : @ecs.World) -> Unit {
       CAMERA_INITIAL_Y,
       CAMERA_INITIAL_Z,
     ),
-    camera: None,
     display_text: None,
     color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
   }
