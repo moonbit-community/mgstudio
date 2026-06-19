@@ -184,27 +184,6 @@ fn camera_screen_space_transmission(
 }
 
 ///|
-fn camera_set_screen_space_transmission(
-  world : @ecs.World,
-  value : @pbr.ScreenSpaceTransmission,
-) -> Unit {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    if (try! world.contains_by_key(
-        camera_entity, @pbr.ecs_key_screen_space_transmission,
-      )) {
-      try! (world.replace(
-        camera_entity, @pbr.ecs_key_screen_space_transmission, value,
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        camera_entity, @pbr.ecs_key_screen_space_transmission, value,
-      )
-    }
-  }
-}
-
-///|
 fn camera_hdr_enabled(world : @ecs.World) -> Bool {
   if transmission_camera_entity(world) is Some(camera_entity) {
     try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
@@ -234,69 +213,27 @@ fn camera_taa_enabled(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn camera_toggle_hdr(world : @ecs.World) -> Unit {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
-      try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
-    } else {
-      try! world.set_by_key(camera_entity, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-    }
-  }
-}
-
-///|
-fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)) {
-      try! (world.take(camera_entity, @pbr.ecs_key_depth_prepass) |> ignore)
-    } else {
-      try! world.set_by_key(
-        camera_entity,
-        @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::DepthPrepass(),
-      )
-    }
-  }
-}
-
-///|
-fn camera_toggle_taa(world : @ecs.World) -> Unit {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    if (try! world.contains_by_key(
-        camera_entity, @post_process.ecs_key_temporal_jitter,
-      )) {
-      try! (world.take(camera_entity, @post_process.ecs_key_temporal_jitter)
-      |> ignore)
-      try! (world.take(
-        camera_entity, @post_process.ecs_key_temporal_anti_aliasing,
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        camera_entity,
-        @post_process.ecs_key_temporal_jitter,
-        @post_process.TemporalJitter::TemporalJitter(),
-      )
-      try! world.set_by_key(
-        camera_entity,
-        @post_process.ecs_key_temporal_anti_aliasing,
-        @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-      )
-    }
-  }
-}
-
-///|
 fn transmission_hud_text(world : @ecs.World) -> String {
   let transmission = camera_screen_space_transmission(world)
-  let hdr_text = if camera_hdr_enabled(world) { "ON " } else { "OFF" }
-  let depth_text = if camera_depth_prepass_enabled(world) {
-    "ON "
-  } else {
-    "OFF"
-  }
-  let taa_text = if camera_taa_enabled(world) {
-    if camera_depth_prepass_enabled(world) {
+  transmission_hud_text_with_camera(
+    transmission,
+    camera_hdr_enabled(world),
+    camera_depth_prepass_enabled(world),
+    camera_taa_enabled(world),
+  )
+}
+
+///|
+fn transmission_hud_text_with_camera(
+  transmission : @pbr.ScreenSpaceTransmission,
+  hdr_enabled : Bool,
+  depth_prepass_enabled : Bool,
+  taa_enabled : Bool,
+) -> String {
+  let hdr_text = if hdr_enabled { "ON " } else { "OFF" }
+  let depth_text = if depth_prepass_enabled { "ON " } else { "OFF" }
+  let taa_text = if taa_enabled {
+    if depth_prepass_enabled {
       "ON "
     } else {
       "N/A (Needs Depth Prepass)"
@@ -720,6 +657,13 @@ fn set_hud_text(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn set_hud_text_content(content : String) -> Unit {
+  if transmission_state.val.display_text is Some(handle) {
+    @text.text_set_content(handle, content)
+  }
+}
+
+///|
 fn apply_camera_transform(world : @ecs.World) -> Unit {
   if transmission_camera_entity(world) is Some(camera_entity) {
     let camera_pos = transmission_state.val.camera_translation
@@ -736,70 +680,103 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn apply_material_controls(world : @ecs.World, randomize_colors : Bool) -> Unit {
-  let materials_key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
-  let materials = match world.get_resource_mut(materials_key) {
-    Some(assets) => assets
-    None => abort("Missing Assets<StandardMaterial> resource")
-  }
-  let controllable : @ecs.Query[
+fn apply_material_controls_to_assets(
+  assets : @asset.Assets[@pbr.StandardMaterial],
+  controllable : @ecs.Query[
     (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
     @ecs.All,
-  ] = @ecs.query_filtered(world, @ecs.All::new())
-  materials.modify(fn(assets) {
-    try! controllable.view(fn(_entity, data) {
-      let (mesh_material, controls) = data
-      guard assets.get(mesh_material.value().material) is Some(material) else {
-        return
-      }
-      let controls = controls.value()
-      let mut updated = material
-      if controls.specular_transmission {
-        updated = updated
-          .with_specular_transmission(
-            transmission_state.val.specular_transmission,
-          )
-          .with_thickness(transmission_state.val.thickness)
-          .with_ior(transmission_state.val.ior)
-          .with_perceptual_roughness(
-            transmission_state.val.perceptual_roughness,
-          )
-          .with_reflectance(transmission_state.val.reflectance)
-      }
-      if controls.diffuse_transmission {
-        updated = updated.with_diffuse_transmission(
-          transmission_state.val.diffuse_transmission,
+  ],
+  randomize_colors : Bool,
+) -> Unit {
+  try! controllable.view(fn(_entity, data) {
+    let (mesh_material, controls) = data
+    guard assets.get(mesh_material.value().material) is Some(material) else {
+      return
+    }
+    let controls = controls.value()
+    let mut updated = material
+    if controls.specular_transmission {
+      updated = updated
+        .with_specular_transmission(
+          transmission_state.val.specular_transmission,
         )
-      }
-      if controls.color && randomize_colors {
-        updated = updated.with_base_color(
-          @color.Color::new(
-            next_random_unit(),
-            next_random_unit(),
-            next_random_unit(),
-            updated.base_color.a,
-          ),
-        )
-      }
-      ignore(assets.insert(mesh_material.value().material, updated))
-    })
+        .with_thickness(transmission_state.val.thickness)
+        .with_ior(transmission_state.val.ior)
+        .with_perceptual_roughness(transmission_state.val.perceptual_roughness)
+        .with_reflectance(transmission_state.val.reflectance)
+    }
+    if controls.diffuse_transmission {
+      updated = updated.with_diffuse_transmission(
+        transmission_state.val.diffuse_transmission,
+      )
+    }
+    if controls.color && randomize_colors {
+      updated = updated.with_base_color(
+        @color.Color::new(
+          next_random_unit(),
+          next_random_unit(),
+          next_random_unit(),
+          updated.base_color.a,
+        ),
+      )
+    }
+    ignore(assets.insert(mesh_material.value().material, updated))
   })
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in transmission example")
-  }
+fn apply_material_controls(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ],
+  randomize_colors : Bool,
+) -> Unit {
+  materials.modify(fn(assets) {
+    apply_material_controls_to_assets(assets, controllable, randomize_colors)
+  })
 }
 
 ///|
-fn example_control_system(world : @ecs.World) -> Unit {
-  let delta = world_time(world).delta_seconds()
+fn example_control_system(
+  commands : @app.Commands,
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ],
+  camera : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Write[@pbr.ScreenSpaceTransmission],
+      @ecs.Write[@transform.Transform],
+      @ecs.Optional[@pbr.DepthPrepass],
+      @ecs.Optional[@post_process.TemporalJitter],
+      @ecs.Has[@pbr.Hdr],
+    ),
+    @ecs.With[@pbr.Camera3d],
+  ],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let delta = time.get().delta_seconds()
   let mut materials_changed = false
   let mut randomize_colors = false
-  let mut transmission_settings = camera_screen_space_transmission(world)
+  guard (camera.single() catch { _ => None }) is Some(camera_data) else {
+    return
+  }
+  let (
+    camera_entity,
+    transmission,
+    camera_transform,
+    depth_prepass,
+    temporal_jitter,
+    hdr,
+  ) = camera_data
+  let hdr_enabled = hdr.present()
+  let depth_prepass_enabled = depth_prepass.value() is Some(_)
+  let taa_enabled = temporal_jitter.value() is Some(_)
+  let mut transmission_settings = transmission.value()
   let mut transmission_settings_changed = false
   let toggle_hdr = @input.key_just_pressed(@window.KeyCode::KeyH)
   let toggle_depth_prepass = @input.key_just_pressed(@window.KeyCode::KeyD)
@@ -935,15 +912,41 @@ fn example_control_system(world : @ecs.World) -> Unit {
   }
 
   if toggle_hdr {
-    camera_toggle_hdr(world)
+    if hdr_enabled {
+      commands.entity(camera_entity).remove(@pbr.ecs_key_hdr)
+    } else {
+      commands.entity(camera_entity).insert_component(@pbr.Hdr::Hdr())
+    }
   }
 
   if toggle_depth_prepass {
-    camera_toggle_depth_prepass(world)
+    if depth_prepass_enabled {
+      commands.entity(camera_entity).remove(@pbr.ecs_key_depth_prepass)
+    } else {
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.DepthPrepass::DepthPrepass())
+    }
   }
 
   if toggle_taa {
-    camera_toggle_taa(world)
+    if taa_enabled {
+      commands
+      .entity(camera_entity)
+      .remove(@post_process.ecs_key_temporal_jitter)
+      commands
+      .entity(camera_entity)
+      .remove(@post_process.ecs_key_temporal_anti_aliasing)
+    } else {
+      commands
+      .entity(camera_entity)
+      .insert_component(@post_process.TemporalJitter::TemporalJitter())
+      commands
+      .entity(camera_entity)
+      .insert_component(
+        @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+      )
+    }
   }
 
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowRight) {
@@ -986,18 +989,43 @@ fn example_control_system(world : @ecs.World) -> Unit {
   }
 
   if camera_changed {
-    apply_camera_transform(world)
+    let camera_pos = transmission_state.val.camera_translation
+    camera_transform.set(
+      @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
   }
 
   if materials_changed {
-    apply_material_controls(world, randomize_colors)
+    apply_material_controls(materials, controllable, randomize_colors)
   }
 
   if transmission_settings_changed {
-    camera_set_screen_space_transmission(world, transmission_settings)
+    transmission.set(transmission_settings)
   }
 
-  set_hud_text(world)
+  set_hud_text_content(
+    transmission_hud_text_with_camera(
+      transmission_settings,
+      if toggle_hdr {
+        !hdr_enabled
+      } else {
+        hdr_enabled
+      },
+      if toggle_depth_prepass {
+        !depth_prepass_enabled
+      } else {
+        depth_prepass_enabled
+      },
+      if toggle_taa {
+        !taa_enabled
+      } else {
+        taa_enabled
+      },
+    ),
+  )
 }
 
 ///|
@@ -1067,7 +1095,18 @@ fn setup(world : @ecs.World) -> Unit {
   setup_camera(world)
   setup_text(world)
   apply_camera_transform(world)
-  apply_material_controls(world, false)
+  let materials_key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
+  let materials = match world.get_resource_mut(materials_key) {
+    Some(assets) => assets
+    None => abort("Missing Assets<StandardMaterial> resource")
+  }
+  let controllable : @ecs.Query[
+    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
+    @ecs.All,
+  ] = @ecs.query_filtered(world, @ecs.All::new())
+  materials.modify(fn(assets) {
+    apply_material_controls_to_assets(assets, controllable, false)
+  })
   set_hud_text(world)
 }
 
@@ -1076,7 +1115,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, example_control_system)
+  .add_systems_param5(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
   .run()
 }
