@@ -62,6 +62,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
 
   let label = world.spawn_empty()
   try! world.set_by_key(label, @text.ecs_key_text, @text.Text::new("OK"))
+  try! world.set_by_key(label, ecs_key_node, Node::Node())
   try! world.set_by_key(
     label,
     @text.ecs_key_text_font,

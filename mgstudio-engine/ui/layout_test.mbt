@@ -344,6 +344,119 @@ test "ui: ghost node children layout as direct descendants" {
 }
 
 ///|
+test "ui: effective children flatten ghost nodes and skip non-ui children" {
+  let world = @ecs.World::new()
+  let ctx = UiContext::new(
+    @asset.Handle::new(1),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(800.0F, 600.0F),
+    Some(@core.Entity::new(0, 0)),
+    @transform.Transform::identity(),
+    1.0F,
+    None,
+    false,
+  )
+  get_ui_context_resource(world).insert(ctx)
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  let container = world.spawn_empty()
+  let direct_node = world.spawn_empty()
+  let ghost = world.spawn_empty()
+  let ghost_node = world.spawn_empty()
+  let non_ui = world.spawn_empty()
+  let stray_node = world.spawn_empty()
+  try! world.set_by_key(
+    container,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    container,
+    ecs_key_node,
+    Node::Node()
+    .with_width(Val::Px(300.0F))
+    .with_height(Val::Px(80.0F))
+    .with_flex_direction(FlexDirection::Row),
+  )
+  try! world.set_by_key(
+    direct_node,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+  )
+  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::GhostNode())
+  try! world.set_by_key(
+    ghost_node,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+  )
+  try! world.set_by_key(
+    stray_node,
+    ecs_key_node,
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+  )
+  try! world.set_by_key(
+    root,
+    @hierarchy.ecs_key_children,
+    @hierarchy.Children::new([container]),
+  )
+  try! world.set_by_key(
+    container,
+    @hierarchy.ecs_key_children,
+    @hierarchy.Children::new([direct_node, ghost, non_ui]),
+  )
+  try! world.set_by_key(
+    direct_node,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(
+    ghost,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(
+    non_ui,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(
+    ghost,
+    @hierarchy.ecs_key_children,
+    @hierarchy.Children::new([ghost_node]),
+  )
+  try! world.set_by_key(
+    ghost_node,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(ghost),
+  )
+  try! world.set_by_key(
+    non_ui,
+    @hierarchy.ecs_key_children,
+    @hierarchy.Children::new([stray_node]),
+  )
+  try! world.set_by_key(
+    stray_node,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(non_ui),
+  )
+
+  ui_layout_system(world)
+  let direct_rect = try! world
+    .get_by_key(direct_node, ecs_key_ui_layout)
+    .unwrap().rect
+  let ghost_rect = try! world.get_by_key(ghost_node, ecs_key_ui_layout).unwrap().rect
+  debug_inspect(ghost_rect.min.x == direct_rect.max.x, content="true")
+  debug_inspect(
+    try! (world.get_by_key(non_ui, ecs_key_ui_layout) is None),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(stray_node, ecs_key_ui_layout) is None),
+    content="true",
+  )
+}
+
+///|
 test "ui: flex row cross-axis stretch fills child height" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()

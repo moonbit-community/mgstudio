@@ -84,6 +84,7 @@ test "ui: unparented ghost node acts as implicit root for layout" {
   let ghost_root = world.spawn_empty()
   try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::GhostNode())
   let child = world.spawn_empty()
+  try! world.set_by_key(child, ecs_key_node, Node::Node())
   try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
@@ -166,7 +167,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
 }
 
 ///|
-test "ui: unparented ghost node acts as implicit root for target camera propagation" {
+test "ui: unparented ghost node exposes descendant root for target camera propagation" {
   let world = @ecs.World::new()
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
@@ -181,13 +182,14 @@ test "ui: unparented ghost node acts as implicit root for target camera propagat
 
   let ghost_root = world.spawn_empty()
   try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::GhostNode())
+
+  let child = world.spawn_empty()
+  try! world.set_by_key(child, ecs_key_node, Node::Node())
   try! world.set_by_key(
-    ghost_root,
+    child,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
-
-  let child = world.spawn_empty()
   try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
@@ -197,11 +199,8 @@ test "ui: unparented ghost node acts as implicit root for target camera propagat
   ui_propagate_target_cameras_system(world)
 
   debug_inspect(
-    try! (world
-    .get_by_key(ghost_root, ecs_key_computed_ui_target_camera)
-    .unwrap()
-    .get() ==
-    Some(target_camera)),
+    try! (world.get_by_key(ghost_root, ecs_key_computed_ui_target_camera)
+    is None),
     content="true",
   )
   debug_inspect(

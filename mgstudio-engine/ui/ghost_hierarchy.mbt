@@ -40,6 +40,12 @@ fn ui_is_ghost_node(world : @ecs.World, entity : @core.Entity) -> Bool {
 }
 
 ///|
+fn ui_is_ui_node(world : @ecs.World, entity : @core.Entity) -> Bool {
+  (try! world.contains_by_key(entity, ecs_key_node)) ||
+  (try! world.contains_by_key(entity, ecs_key_ghost_node))
+}
+
+///|
 fn ui_effective_parent(
   world : @ecs.World,
   entity : @core.Entity,
@@ -77,7 +83,9 @@ fn ui_collect_effective_child_entities(
     }
     return
   }
-  out.push(entity)
+  if ui_is_ui_node(world, entity) {
+    out.push(entity)
+  }
 }
 
 ///|
@@ -122,12 +130,14 @@ fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
     if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
       return
     }
-    let key = ui_entity_key(entity)
-    if visited.contains(key) {
-      return
+    for child in ui_collect_effective_children(world, entity) {
+      let key = ui_entity_key(child)
+      if visited.contains(key) {
+        continue
+      }
+      visited.set(key, true)
+      roots.push(child)
     }
-    visited.set(key, true)
-    roots.push(entity)
   })
   roots
 }
