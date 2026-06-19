@@ -704,6 +704,36 @@ pub fn Quat::lerp(self : Quat, other : Quat, s : Float) -> Quat {
 }
 
 ///|
+pub fn Quat::slerp(self : Quat, other : Quat, s : Float) -> Quat {
+  let factor = if s < 0.0F { 0.0F } else if s > 1.0F { 1.0F } else { s }
+  let dot = self.x * other.x +
+    self.y * other.y +
+    self.z * other.z +
+    self.w * other.w
+  let (cos_theta, other_adjusted) = if dot < 0.0F {
+    (-dot, Quat::{ x: -other.x, y: -other.y, z: -other.z, w: -other.w })
+  } else {
+    (dot, other)
+  }
+  if cos_theta > 0.9995F {
+    return self.lerp(other_adjusted, factor)
+  }
+  let theta = acos(cos_theta)
+  let sin_theta = sin(theta)
+  if sin_theta <= 1.0e-6F {
+    return self.lerp(other_adjusted, factor)
+  }
+  let self_weight = sin((1.0F - factor) * theta) / sin_theta
+  let other_weight = sin(factor * theta) / sin_theta
+  Quat::{
+    x: self.x * self_weight + other_adjusted.x * other_weight,
+    y: self.y * self_weight + other_adjusted.y * other_weight,
+    z: self.z * self_weight + other_adjusted.z * other_weight,
+    w: self.w * self_weight + other_adjusted.w * other_weight,
+  }.normalize()
+}
+
+///|
 pub fn Quat::to_euler(self : Quat, order : EulerRot) -> (Float, Float, Float) {
   match order {
     EulerRot::XYZ

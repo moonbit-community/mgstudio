@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/examples/3d/parallax_mapping.rs`.
+
+///|
 const DEPTH_CHANGE_RATE : Float = 0.1F
 
 ///|
@@ -25,81 +28,135 @@ const MAX_DEPTH : Float = 0.3F
 const CAMERA_LERP_FACTOR : Float = 0.2F
 
 ///|
-priv struct SpinTarget {
-  entity : @core.Entity
+priv struct Spin {
   speed : Float
 }
 
 ///|
-priv struct ParallaxState {
-  mut camera : @core.Entity?
-  mut help_text : @text.TextHandle?
-  spin_targets : Array[SpinTarget]
-  parallax_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
-  mut current_view : Int
-  mut target_depth : Float
-  mut displayed_depth : Float
-  mut depth_update : Bool
-  mut target_layers : Float
-  mut current_method : @pbr.ParallaxMappingMethod
+let spin_component_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
+  debug_name="examples.3d.parallax_mapping.Spin",
+)
+
+///|
+impl @ecs.Component for Spin with fn component() {
+  spin_component_key
 }
 
 ///|
-let parallax_state : Ref[ParallaxState] = Ref({
-  camera: None,
-  help_text: None,
-  spin_targets: [],
-  parallax_materials: [],
-  current_view: 0,
-  target_depth: 0.09F,
-  displayed_depth: 0.09F,
-  depth_update: false,
-  target_layers: 5.0F,
-  current_method: @pbr.ParallaxMappingMethod::Relief(4),
-})
+priv struct FreeCameraController {}
 
 ///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
+let free_camera_controller_component_key : @ecs.ComponentKey[
+  FreeCameraController,
+] = @ecs.register_component(
+  debug_name="examples.3d.parallax_mapping.FreeCameraController",
+)
+
+///|
+impl @ecs.Component for FreeCameraController with fn component() {
+  free_camera_controller_component_key
+}
+
+///|
+priv struct TargetDepth {
+  mut value : Float
+}
+
+///|
+fn TargetDepth::TargetDepth() -> TargetDepth {
+  TargetDepth::{ value: 0.09F }
+}
+
+///|
+impl @app.FromWorld for TargetDepth with fn from_world(_world) {
+  TargetDepth::TargetDepth()
+}
+
+///|
+priv struct TargetLayers {
+  mut value : Float
+}
+
+///|
+fn TargetLayers::TargetLayers() -> TargetLayers {
+  TargetLayers::{ value: 5.0F }
+}
+
+///|
+impl @app.FromWorld for TargetLayers with fn from_world(_world) {
+  TargetLayers::TargetLayers()
+}
+
+///|
+priv struct CurrentMethod {
+  value : @pbr.ParallaxMappingMethod
+}
+
+///|
+fn CurrentMethod::CurrentMethod() -> CurrentMethod {
+  CurrentMethod::{ value: @pbr.ParallaxMappingMethod::Relief(4) }
+}
+
+///|
+impl @app.FromWorld for CurrentMethod with fn from_world(_world) {
+  CurrentMethod::CurrentMethod()
+}
+
+///|
+fn CurrentMethod::display(self : CurrentMethod) -> String {
+  match self.value {
+    Occlusion => "Parallax Occlusion Mapping"
+    Relief(max_steps) => "Relief Mapping with \{max_steps} steps"
   }
 }
 
 ///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
+fn CurrentMethod::next_method(self : CurrentMethod) -> CurrentMethod {
+  let next = match self.value {
+    Occlusion => @pbr.ParallaxMappingMethod::Relief(2)
+    Relief(max_steps) =>
+      if max_steps < 3 {
+        @pbr.ParallaxMappingMethod::Relief(4)
+      } else if max_steps < 5 {
+        @pbr.ParallaxMappingMethod::Relief(8)
+      } else {
+        @pbr.ParallaxMappingMethod::Occlusion
+      }
   }
+  CurrentMethod::{ value: next }
 }
 
 ///|
-fn lerpf(start : Float, end_ : Float, t : Float) -> Float {
-  start + (end_ - start) * t
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
 }
 
 ///|
-fn vec3_lerp(start : @math.Vec3, end_ : @math.Vec3, t : Float) -> @math.Vec3 {
-  @math.Vec3::new(
-    lerpf(start.x, end_.x, t),
-    lerpf(start.y, end_.y, t),
-    lerpf(start.z, end_.z, t),
-  )
-}
-
-///|
-fn quat_nlerp(start : @math.Quat, end_ : @math.Quat, t : Float) -> @math.Quat {
-  @math.Quat::new(
-    lerpf(start.x, end_.x, t),
-    lerpf(start.y, end_.y, t),
-    lerpf(start.z, end_.z, t),
-    lerpf(start.w, end_.w, t),
-  ).normalize()
+fn format_fixed(value : Float, decimals : Int) -> String {
+  let scale = match decimals {
+    0 => 1
+    1 => 10
+    2 => 100
+    3 => 1000
+    4 => 10000
+    _ => 100000
+  }
+  let scaled = (value * float_from_int(scale)).round().to_int()
+  let sign = if scaled < 0 { "-" } else { "" }
+  let abs_scaled = if scaled < 0 { -scaled } else { scaled }
+  let whole = abs_scaled / scale
+  let fraction = abs_scaled % scale
+  let mut fraction_text = fraction.to_string()
+  let mut pad = decimals - fraction_text.length()
+  while pad > 0 {
+    fraction_text = "0\{fraction_text}"
+    pad = pad - 1
+  }
+  if decimals <= 0 {
+    "\{sign}\{whole}"
+  } else {
+    "\{sign}\{whole}.\{fraction_text}"
+  }
 }
 
 ///|
@@ -108,452 +165,454 @@ fn layer_count(level : Float) -> Float {
 }
 
 ///|
-fn float_text(value : Float) -> String {
-  let rounded = (value * 100000.0F).round() / 100000.0F
-  "\{rounded}"
+fn vec3_lerp(
+  start : @math.Vec3,
+  end_ : @math.Vec3,
+  factor : Float,
+) -> @math.Vec3 {
+  start.add(end_.sub(start).mul_scalar(factor))
 }
 
 ///|
-fn parallax_method_text(mapping_method : @pbr.ParallaxMappingMethod) -> String {
-  match mapping_method {
-    Occlusion => "Parallax Occlusion Mapping"
-    Relief(max_steps) => "Relief Mapping with \{max_steps} steps"
-  }
-}
-
-///|
-fn next_parallax_method(
-  mapping_method : @pbr.ParallaxMappingMethod,
-) -> @pbr.ParallaxMappingMethod {
-  match mapping_method {
-    Occlusion => Relief(2)
-    Relief(max_steps) =>
-      if max_steps < 3 {
-        Relief(4)
-      } else if max_steps < 5 {
-        Relief(8)
-      } else {
-        Occlusion
-      }
-  }
-}
-
-///|
-fn view_count() -> Int {
-  4
-}
+let camera_positions : Array[@transform.Transform] = [
+  @transform.Transform::from_xyz(1.5F, 1.5F, 1.5F).with_rotation(
+    @math.Quat::new(-0.279F, 0.364F, 0.115F, 0.880F),
+  ),
+  @transform.Transform::from_xyz(2.4F, 0.0F, 0.2F).with_rotation(
+    @math.Quat::new(0.094F, 0.676F, 0.116F, 0.721F),
+  ),
+  @transform.Transform::from_xyz(2.4F, 2.6F, -4.3F).with_rotation(
+    @math.Quat::new(0.170F, 0.908F, 0.308F, 0.225F),
+  ),
+  @transform.Transform::from_xyz(-1.0F, 0.8F, -1.2F).with_rotation(
+    @math.Quat::new(-0.004F, 0.909F, 0.247F, -0.335F),
+  ),
+]
 
 ///|
 fn camera_view_transform(index : Int) -> @transform.Transform {
-  if index == 0 {
-    return @transform.Transform::from_xyz(1.5F, 1.5F, 1.5F).with_rotation(
-      @math.Quat::new(-0.279F, 0.364F, 0.115F, 0.880F).normalize(),
-    )
+  camera_positions[index]
+}
+
+///|
+fn camera_positions_len() -> Int {
+  camera_positions.length()
+}
+
+///|
+fn mesh_with_generated_tangents(geometry : @mesh.Mesh3dGeometry) -> @mesh.Mesh {
+  let mesh = @mesh.Mesh::from_3d_geometry(geometry)
+  match mesh.generate_tangents() {
+    Some(_) => abort("parallax_mapping tangent generation should succeed")
+    None => ()
   }
-  if index == 1 {
-    return @transform.Transform::from_xyz(2.4F, 0.0F, 0.2F).with_rotation(
-      @math.Quat::new(0.094F, 0.676F, 0.116F, 0.721F).normalize(),
-    )
-  }
-  if index == 2 {
-    return @transform.Transform::from_xyz(2.4F, 2.6F, -4.3F).with_rotation(
-      @math.Quat::new(0.170F, 0.908F, 0.308F, 0.225F).normalize(),
-    )
-  }
-  @transform.Transform::from_xyz(-1.0F, 0.8F, -1.2F).with_rotation(
-    @math.Quat::new(-0.004F, 0.909F, 0.247F, -0.335F).normalize(),
+  mesh
+}
+
+///|
+fn cube_mesh() -> @mesh.Mesh {
+  mesh_with_generated_tangents(
+    @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::Cuboid()),
   )
 }
 
 ///|
-fn help_text_content() -> String {
-  let current_layers = layer_count(parallax_state.val.target_layers)
-  "Parallax depth scale: \{float_text(parallax_state.val.displayed_depth)}\nLayers: \{current_layers.round()}\nMethod: \{parallax_method_text(parallax_state.val.current_method)}\n\nControls:\nLeft click - Change view angle\n1/2 - Decrease/Increase parallax depth scale\n3/4 - Decrease/Increase layer count\nSpace - Switch parallaxing algorithm\n"
-}
-
-///|
-fn update_help_text() -> Unit {
-  guard parallax_state.val.help_text is Some(help_text) else { return }
-  @text.text_set_content(help_text, help_text_content())
-}
-
-///|
-fn apply_layers_to_materials() -> Unit {
-  let target_layers = layer_count(parallax_state.val.target_layers)
-  for handle in parallax_state.val.parallax_materials {
-    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
-    @pbr.standard_material_set(
-      handle,
-      material.with_max_parallax_layer_count(target_layers),
-    )
-    |> ignore
-  }
-}
-
-///|
-fn apply_method_to_materials() -> Unit {
-  let mapping_method = parallax_state.val.current_method
-  for handle in parallax_state.val.parallax_materials {
-    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
-    @pbr.standard_material_set(
-      handle,
-      material.with_parallax_mapping_method(mapping_method),
-    )
-    |> ignore
-  }
-}
-
-///|
-fn update_depth_scale_materials() -> Bool {
-  if !parallax_state.val.depth_update {
-    return false
-  }
-  let target_depth = parallax_state.val.target_depth
-  let mut still_changing = false
-  let mut display_depth = parallax_state.val.displayed_depth
-
-  for i in 0..<parallax_state.val.parallax_materials.length() {
-    let handle = parallax_state.val.parallax_materials[i]
-    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
-    let current_depth = material.parallax_depth_scale
-    let new_depth = lerpf(current_depth, target_depth, DEPTH_CHANGE_RATE)
-    if i == 0 {
-      display_depth = new_depth
-    }
-    if absf(new_depth - current_depth) > 1.0e-9F {
-      still_changing = true
-    }
-    @pbr.standard_material_set(
-      handle,
-      material.with_parallax_depth_scale(new_depth),
-    )
-    |> ignore
-  }
-
-  if !still_changing {
-    parallax_state.val.depth_update = false
-    display_depth = target_depth
-  }
-  parallax_state.val.displayed_depth = display_depth
-  true
-}
-
-///|
-fn push_spin_target(entity : @core.Entity, speed : Float) -> Unit {
-  parallax_state.val.spin_targets.push({ entity, speed })
-}
-
-///|
-fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  parallax_state.val.help_text = Some(handle)
-}
-
-///|
-fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@color.Color::white(), 1_800_000.0F, 40.0F, true),
+fn background_cube_mesh() -> @mesh.Mesh {
+  mesh_with_generated_tangents(
+    @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F)),
   )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
-  )
+}
 
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.08F, 0.08F, 0.08F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@color.Color::white()),
+///|
+fn light_sphere_mesh() -> @mesh.Mesh {
+  let geometry = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+    @math.Sphere::new(0.05F),
+  ).ico(3) catch {
+    _ => abort("parallax_mapping light sphere subdivisions should be valid")
+  }
+  @mesh.Mesh::from_3d_geometry(geometry)
+}
+
+///|
+fn spawn_text_span(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  content : String,
+) -> @core.Entity {
+  commands.spawn((@hierarchy.Parent::new(parent), @text.TextSpan::new(content)))
+}
+
+///|
+fn spawn_background_cube(
+  commands : @app.Commands,
+  mesh : @asset.Handle[@mesh.Mesh],
+  material : @asset.Handle[@pbr.StandardMaterial],
+  translation : @math.Vec3,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::from_translation(translation),
+        Spin::{ speed: -0.1F },
       ),
     ),
-    @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
-  ).spawn(world)
-  |> ignore
+  )
+}
 
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(10.0F, 10.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @color.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
-        )
-        .with_perceptual_roughness(0.45F)
-        .with_reflectance(0.18F),
+///|
+fn setup(
+  commands : @app.Commands,
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let normal_handle : @asset.Handle[@asset.Image] = asset_server
+    .get()
+    .load_with_settings("textures/parallax_example/cube_normal.png", fn(
+      settings,
+    ) {
+      settings.is_srgb = false
+    })
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @transform.Transform::from_xyz(1.5F, 1.5F, 1.5F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        FreeCameraController::{  },
       ),
     ),
-    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let normal_texture = asset_server.load_with_settings(
-    "textures/parallax_example/cube_normal.png",
-    fn(settings) { settings.is_srgb = false },
   )
-  let parallax_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::StandardMaterial()
-    .with_perceptual_roughness(0.4F)
-    .with_base_color_texture(
-      Some(asset_server.load("textures/parallax_example/cube_color.png")),
-    )
-    .with_normal_map_texture(Some(normal_texture))
-    .with_depth_map(
-      Some(asset_server.load("textures/parallax_example/cube_depth.png")),
-    )
-    .with_parallax_depth_scale(parallax_state.val.target_depth)
-    .with_max_parallax_layer_count(
-      layer_count(parallax_state.val.target_layers),
-    )
-    .with_parallax_mapping_method(parallax_state.val.current_method),
+
+  let light_mesh = meshes.modify(fn(assets) { assets.add(light_sphere_mesh()) })
+  let light_material = materials.modify(fn(assets) {
+    assets.add(@pbr.StandardMaterial::from_color(@color.Color::white()))
+  })
+  let light = commands.spawn(
+    (
+      @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
+      @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
+    ),
   )
-  parallax_state.val.parallax_materials.push(parallax_material)
-
-  let main_cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-      }),
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(light),
+        @mesh.Mesh3d::new(light_mesh),
+        @pbr.MeshMaterial3d::new(light_material),
+      ),
     ),
-    @pbr.MeshMaterial3d::new(parallax_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  push_spin_target(main_cube, 0.3F)
+  )
 
-  let x_pos_cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(parallax_material),
-    @transform.Transform::from_xyz(45.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  push_spin_target(x_pos_cube, -0.1F)
-
-  let x_neg_cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(parallax_material),
-    @transform.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  push_spin_target(x_neg_cube, -0.1F)
-
-  let z_pos_cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(parallax_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 45.0F),
-  ).spawn(world)
-  push_spin_target(z_pos_cube, -0.1F)
-
-  let z_neg_cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(40.0F, 40.0F, 40.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(parallax_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, -45.0F),
-  ).spawn(world)
-  push_spin_target(z_neg_cube, -0.1F)
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  parallax_state.val.camera = None
-  parallax_state.val.help_text = None
-  parallax_state.val.spin_targets.clear()
-  parallax_state.val.parallax_materials.clear()
-  parallax_state.val.current_view = 0
-  parallax_state.val.target_depth = 0.09F
-  parallax_state.val.displayed_depth = 0.09F
-  parallax_state.val.depth_update = false
-  parallax_state.val.target_layers = 5.0F
-  parallax_state.val.current_method = @pbr.ParallaxMappingMethod::Relief(4)
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    camera_view_transform(0),
-  ).spawn(world)
-  parallax_state.val.camera = Some(camera)
-
-  let asset_server = @asset.AssetServer::new()
-  spawn_scene(world, asset_server)
-  spawn_help_text(asset_server)
-  update_help_text()
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in parallax_mapping example")
-  }
-}
-
-///|
-fn spin(world : @ecs.World) -> Unit {
-  if parallax_state.val.spin_targets.length() == 0 {
-    return
-  }
-  let delta = world_time(world).delta_seconds()
-  if delta <= 0.0F {
-    return
-  }
-  for spin_target in parallax_state.val.spin_targets {
-    guard (try! world.get_by_key(
-        spin_target.entity,
-        @transform.ecs_key_transform,
-      ))
-      is Some(transform) else {
-      continue
-    }
-    let speed = spin_target.speed * delta
-    let next_rotation = transform.rotation
-      .mul(@math.Quat::from_rotation_y(speed))
-      .mul(@math.Quat::from_rotation_x(speed))
-      .mul(@math.Quat::from_rotation_z(-speed))
-      .normalize()
-    try! (world.replace(
-      spin_target.entity,
-      @transform.ecs_key_transform,
-      transform.with_rotation(next_rotation),
-    )
-    |> ignore)
-  }
-}
-
-///|
-fn move_camera(world : @ecs.World) -> Unit {
-  if @input.mouse_button_just_pressed(@window.MouseButton::Left) {
-    parallax_state.val.current_view = (parallax_state.val.current_view + 1) %
-      view_count()
-  }
-  guard parallax_state.val.camera is Some(camera_entity) else { return }
-  guard (try! world.get_by_key(camera_entity, @transform.ecs_key_transform))
-    is Some(current_transform) else {
-    return
-  }
-  let target_transform = camera_view_transform(parallax_state.val.current_view)
-  let next_transform = current_transform
-    .with_translation(
-      vec3_lerp(
-        current_transform.translation,
-        target_transform.translation,
-        CAMERA_LERP_FACTOR,
+  let plane_mesh = meshes.modify(fn(assets) {
+    assets.add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(10.0F, 10.0F),
+        ).build(),
       ),
     )
-    .with_rotation(
-      quat_nlerp(
-        current_transform.rotation,
-        target_transform.rotation,
-        CAMERA_LERP_FACTOR,
-      ),
+  })
+  let plane_material = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::srgb(0.0F, 80.0F / 255.0F, 0.0F),
+      )
+      .with_perceptual_roughness(0.45F)
+      .with_reflectance(0.18F),
     )
-  try! (world.replace(
-    camera_entity, @transform.ecs_key_transform, next_transform,
+  })
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(plane_mesh),
+        @pbr.MeshMaterial3d::new(plane_material),
+        @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+      ),
+    ),
   )
-  |> ignore)
+
+  let parallax_depth_scale = TargetDepth::TargetDepth().value
+  let max_parallax_layer_count = layer_count(TargetLayers::TargetLayers().value)
+  let parallax_mapping_method = CurrentMethod::CurrentMethod()
+  let parallax_material = materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::StandardMaterial()
+      .with_perceptual_roughness(0.4F)
+      .with_base_color_texture(
+        Some(
+          asset_server.get().load("textures/parallax_example/cube_color.png"),
+        ),
+      )
+      .with_normal_map_texture(Some(normal_handle))
+      .with_depth_map(
+        Some(
+          asset_server.get().load("textures/parallax_example/cube_depth.png"),
+        ),
+      )
+      .with_parallax_depth_scale(parallax_depth_scale)
+      .with_parallax_mapping_method(parallax_mapping_method.value)
+      .with_max_parallax_layer_count(max_parallax_layer_count),
+    )
+  })
+
+  let main_cube = meshes.modify(fn(assets) { assets.add(cube_mesh()) })
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(main_cube),
+        @pbr.MeshMaterial3d::new(parallax_material),
+        Spin::{ speed: 0.3F },
+      ),
+    ),
+  )
+
+  let background_cube = meshes.modify(fn(assets) {
+    assets.add(background_cube_mesh())
+  })
+  spawn_background_cube(
+    commands,
+    background_cube,
+    parallax_material,
+    @math.Vec3::new(45.0F, 0.0F, 0.0F),
+  )
+  spawn_background_cube(
+    commands,
+    background_cube,
+    parallax_material,
+    @math.Vec3::new(-45.0F, 0.0F, 0.0F),
+  )
+  spawn_background_cube(
+    commands,
+    background_cube,
+    parallax_material,
+    @math.Vec3::new(0.0F, 0.0F, 45.0F),
+  )
+  spawn_background_cube(
+    commands,
+    background_cube,
+    parallax_material,
+    @math.Vec3::new(0.0F, 0.0F, -45.0F),
+  )
+
+  let text = commands.spawn(
+    (
+      @text.Text::Text(),
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.px(12.0F))
+      .with_left(@ui.px(12.0F)),
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "Parallax depth scale: \{format_fixed(parallax_depth_scale, 5)}\n",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "Layers: \{format_fixed(max_parallax_layer_count, 0)}\n",
+    ),
+  )
+  ignore(
+    spawn_text_span(commands, text, "\{parallax_mapping_method.display()}\n"),
+  )
+  ignore(spawn_text_span(commands, text, "\n\n"))
+  ignore(spawn_text_span(commands, text, "Controls:\n"))
+  ignore(spawn_text_span(commands, text, "Left click - Change view angle\n"))
+  ignore(
+    spawn_text_span(
+      commands, text, "1/2 - Decrease/Increase parallax depth scale\n",
+    ),
+  )
+  ignore(
+    spawn_text_span(commands, text, "3/4 - Decrease/Increase layer count\n"),
+  )
+  ignore(
+    spawn_text_span(commands, text, "Space - Switch parallaxing algorithm\n"),
+  )
 }
 
 ///|
-fn update_parallax_controls() -> Unit {
-  let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    parallax_state.val.target_depth = clampf(
-      parallax_state.val.target_depth - DEPTH_UPDATE_STEP,
-      0.0F,
-      MAX_DEPTH,
-    )
-    parallax_state.val.depth_update = true
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    parallax_state.val.target_depth = clampf(
-      parallax_state.val.target_depth + DEPTH_UPDATE_STEP,
-      0.0F,
-      MAX_DEPTH,
-    )
-    parallax_state.val.depth_update = true
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    parallax_state.val.target_layers = if parallax_state.val.target_layers -
-      1.0F <
-      0.0F {
+fn update_parallax_depth_scale(
+  input : @input.ButtonInput[@window.KeyCode],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  target_depth : @app.Local[TargetDepth],
+  depth_update : @app.Local[Bool],
+  writer : @ui.TextUiWriter,
+  text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+) -> Unit {
+  let target = target_depth.get()
+  let mut update = depth_update.get()
+  if input.just_pressed(@window.KeyCode::Digit1) {
+    target.value = if target.value - DEPTH_UPDATE_STEP < 0.0F {
       0.0F
     } else {
-      parallax_state.val.target_layers - 1.0F
+      target.value - DEPTH_UPDATE_STEP
     }
-    apply_layers_to_materials()
-    changed = true
+    update = true
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    parallax_state.val.target_layers = parallax_state.val.target_layers + 1.0F
-    apply_layers_to_materials()
-    changed = true
+  if input.just_pressed(@window.KeyCode::Digit2) {
+    target.value = if target.value + DEPTH_UPDATE_STEP > MAX_DEPTH {
+      MAX_DEPTH
+    } else {
+      target.value + DEPTH_UPDATE_STEP
+    }
+    update = true
   }
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    parallax_state.val.current_method = next_parallax_method(
-      parallax_state.val.current_method,
+  if update {
+    materials.modify(fn(assets) {
+      let entries = assets.iter()
+      for entry in entries {
+        let (handle, material) = entry
+        let current_depth = material.parallax_depth_scale
+        let new_depth = current_depth +
+          (target.value - current_depth) * DEPTH_CHANGE_RATE
+        ignore(
+          assets.set(handle, material.with_parallax_depth_scale(new_depth)),
+        )
+        ignore(
+          writer.set_text(
+            text.get(),
+            1,
+            "Parallax depth scale: \{format_fixed(new_depth, 5)}\n",
+          ),
+        )
+        if @math.abs(new_depth - current_depth) <= 0.000000001F {
+          update = false
+        }
+      }
+    })
+  }
+  target_depth.set(target)
+  depth_update.set(update)
+}
+
+///|
+fn switch_method(
+  input : @input.ButtonInput[@window.KeyCode],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+  current : @app.Local[CurrentMethod],
+) -> Unit {
+  if !input.just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  let next = current.get().next_method()
+  current.set(next)
+  ignore(writer.set_text(text.get(), 3, "\{next.display()}\n"))
+  materials.modify(fn(assets) {
+    let entries = assets.iter()
+    for entry in entries {
+      let (handle, material) = entry
+      ignore(
+        assets.set(handle, material.with_parallax_mapping_method(next.value)),
+      )
+    }
+  })
+}
+
+///|
+fn update_parallax_layers(
+  input : @input.ButtonInput[@window.KeyCode],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  target_layers : @app.Local[TargetLayers],
+  text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  let target = target_layers.get()
+  if input.just_pressed(@window.KeyCode::Digit3) {
+    target.value = if target.value - 1.0F < 0.0F {
+      0.0F
+    } else {
+      target.value - 1.0F
+    }
+  } else if input.just_pressed(@window.KeyCode::Digit4) {
+    target.value = target.value + 1.0F
+  } else {
+    return
+  }
+  target_layers.set(target)
+  let count = layer_count(target.value)
+  ignore(writer.set_text(text.get(), 2, "Layers: \{format_fixed(count, 0)}\n"))
+  materials.modify(fn(assets) {
+    let entries = assets.iter()
+    for entry in entries {
+      let (handle, material) = entry
+      ignore(assets.set(handle, material.with_max_parallax_layer_count(count)))
+    }
+  })
+}
+
+///|
+fn spin(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[Spin]),
+    @ecs.All,
+  ],
+) -> Unit {
+  let delta = time.get().delta_seconds()
+  try! query.view(fn(_entity, data) {
+    let (transform, spin) = data
+    transform.modify(fn(value) {
+      let speed = spin.value().speed * delta
+      value.rotate(@math.Quat::from_rotation_y(speed))
+      value.rotate(@math.Quat::from_rotation_x(speed))
+      value.rotate(@math.Quat::from_rotation_z(-speed))
+    })
+  })
+}
+
+///|
+fn move_camera(
+  camera : @app.Single[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[FreeCameraController],
+  ],
+  current_view : @app.Local[Int],
+  button : @input.ButtonInput[@window.MouseButton],
+) -> Unit {
+  let mut view = current_view.get()
+  if button.just_pressed(@window.MouseButton::Left) {
+    view = (view + 1) % camera_positions_len()
+    current_view.set(view)
+  }
+  let target = camera_view_transform(view)
+  camera
+  .get()
+  .modify(fn(transform) {
+    transform.translation = vec3_lerp(
+      transform.translation,
+      target.translation,
+      CAMERA_LERP_FACTOR,
     )
-    apply_method_to_materials()
-    changed = true
-  }
-  let depth_changed = update_depth_scale_materials()
-  if changed || depth_changed {
-    update_help_text()
-  }
+    transform.rotation = transform.rotation.slerp(
+      target.rotation,
+      CAMERA_LERP_FACTOR,
+    )
+  })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, spin)
-  .add_systems_world(@app.Update, move_camera)
-  .add_systems_fn(@app.Update, update_parallax_controls)
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param2(@app.Update, spin)
+  .add_systems_param3(@app.Update, move_camera)
+  .add_systems_param6(@app.Update, update_parallax_depth_scale)
+  .add_systems_param5(@app.Update, update_parallax_layers)
+  .add_systems_param5(@app.Update, switch_method)
   .run()
 }

@@ -883,6 +883,7 @@ pub fn Quat::mul(Self, Self) -> Self
 pub fn Quat::mul_vec3(Self, Vec3) -> Vec3
 pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::normalize(Self) -> Self
+pub fn Quat::slerp(Self, Self, Float) -> Self
 pub fn Quat::to_axis_angle(Self) -> (Vec3, Float)
 pub fn Quat::to_euler(Self, EulerRot) -> (Float, Float, Float)
 pub fn Quat::to_rotation_z_angle(Self) -> Float
