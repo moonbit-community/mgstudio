@@ -19,49 +19,41 @@ const PI : Float = 3.141592653589793F
 const MOVE_SPEED : Float = 2.0F
 
 ///|
-priv struct LightingParameters {
-  aperture_f_stops : Float
-  shutter_speed_s : Float
-  sensitivity_iso : Float
+const OVERCAST_DAY : Float = 10_000.0F
+
+///|
+priv struct Parameters {
+  mut physical_camera_parameters : @camera_camera.PhysicalCameraParameters
 }
 
 ///|
-priv struct LightingState {
-  mut parameters : LightingParameters
-  mut ambient_enabled : Bool
-  movables : Array[@core.Entity]
-  mut directional_light : @core.Entity?
-  mut ui_text : @text.TextHandle?
+let parameters_resource_key : @ecs.ResourceKey[Parameters] = @ecs.register_resource(
+  debug_name="examples.3d.lighting.Parameters",
+)
+
+///|
+impl @app.Resource for Parameters with fn resource() {
+  parameters_resource_key
 }
 
 ///|
-let lighting_state : Ref[LightingState] = Ref({
-  parameters: {
-    aperture_f_stops: 1.0F,
-    shutter_speed_s: 1.0F / 125.0F,
-    sensitivity_iso: 100.0F,
-  },
-  ambient_enabled: true,
-  movables: [],
-  directional_light: None,
-  ui_text: None,
-})
-
-///|
-fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_fn(@app.Update, update_exposure)
-  .add_systems_world(@app.Update, toggle_ambient_light)
-  .add_systems_world(@app.Update, movement)
-  .add_systems_world(@app.Update, animate_light_direction)
-  .run()
+fn Parameters::Parameters() -> Parameters {
+  Parameters::{
+    physical_camera_parameters: @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
+  }
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+priv struct Movable {}
+
+///|
+let movable_component_key : @ecs.ComponentKey[Movable] = @ecs.register_component(
+  debug_name="examples.3d.lighting.Movable",
+)
+
+///|
+impl @ecs.Component for Movable with fn component() {
+  movable_component_key
 }
 
 ///|
@@ -74,509 +66,563 @@ fn round_to_int(value : Float) -> Int {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
-  )
-}
-
-///|
-fn rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh3d {
-  let hw = width / 2.0F
-  let hh = height / 2.0F
-  let positions = [
-    @math.Vec3::new(-hw, -hh, 0.0F),
-    @math.Vec3::new(hw, -hh, 0.0F),
-    @math.Vec3::new(hw, hh, 0.0F),
-    @math.Vec3::new(-hw, hh, 0.0F),
-  ]
-  let uvs = [
-    @math.Vec2::new(0.0F, 1.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(0.0F, 0.0F),
-  ]
-  let indices = [0, 1, 2, 0, 2, 3]
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-        ),
-      )
-    }),
-  )
-}
-
-///|
-fn lighting_overlay_text() -> String {
-  let params = lighting_state.val.parameters
-  let ambient_state = if lighting_state.val.ambient_enabled {
-    "on"
-  } else {
-    "off"
-  }
-  let shutter_denominator = if params.shutter_speed_s <= 0.0F {
+fn shutter_denominator(
+  parameters : @camera_camera.PhysicalCameraParameters,
+) -> Int {
+  if parameters.shutter_speed_s <= 0.0F {
     0
   } else {
-    round_to_int(1.0F / params.shutter_speed_s)
-  }
-  "Ambient light is \{ambient_state}\nAperture: f/\{round_to_int(params.aperture_f_stops)}\nShutter speed: 1/\{shutter_denominator}s\nSensitivity: ISO \{round_to_int(params.sensitivity_iso)}\n\nControls\n---------------\nArrow keys - Move objects\nSpace - Toggle ambient light\n1/2 - Decrease/Increase aperture\n3/4 - Decrease/Increase shutter speed\n5/6 - Decrease/Increase sensitivity\nR - Reset exposure"
-}
-
-///|
-fn lighting_update_overlay_text() -> Unit {
-  if lighting_state.val.ui_text is Some(handle) {
-    @text.text_set_content(handle, lighting_overlay_text())
+    round_to_int(1.0F / parameters.shutter_speed_s)
   }
 }
 
 ///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> @core.Entity {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let logo_texture = asset_server.load("branding/bevy_logo_light.png")
-
-  // Ground plane.
-  let ground_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white()).with_perceptual_roughness(
-      1.0F,
-    ),
+fn add_mesh(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3d {
+  @mesh.Mesh3d::new(
+    meshes.modify(fn(assets) { assets |> @pbr.add_mesh(geometry) }),
   )
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
+}
+
+///|
+fn add_material(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  material : @pbr.StandardMaterial,
+) -> @pbr.MeshMaterial3d {
+  @pbr.MeshMaterial3d::new(
+    materials.modify(fn(assets) { assets.add(material) }),
+  )
+}
+
+///|
+fn spawn_text_span(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  content : String,
+) -> @core.Entity {
+  commands.spawn((@hierarchy.Parent::new(parent), @text.TextSpan::new(content)))
+}
+
+///|
+fn setup(
+  parameters : @app.Res[Parameters],
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let physical_camera_parameters = parameters.get().physical_camera_parameters
+
+  // ground plane
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
           @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
             @math.Vec2::new(10.0F, 10.0F),
           ).build(),
-        )
-      }),
-    ),
-    ground_material,
-    @transform.Transform::identity(),
-  )
-  |> ignore
-
-  // Left and back walls.
-  let wall_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
-    ).with_perceptual_roughness(1.0F),
-  )
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F))
-      }),
-    ),
-    wall_material,
-    @transform.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_z(PI / 2.0F),
-    ),
-  )
-  |> ignore
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(5.0F, 0.15F, 5.0F))
-      }),
-    ),
-    wall_material,
-    @transform.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
-      @math.Quat::from_rotation_x(PI / 2.0F),
-    ),
-  )
-  |> ignore
-
-  // Logo alpha-mask quad.
-  let logo_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_base_color_texture(Some(logo_texture))
-    .with_perceptual_roughness(1.0F)
-    .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
-    .with_cull_mode(None),
-  )
-  let logo = spawn_mesh(
-    world,
-    rectangle_mesh(2.0F, 0.5F),
-    logo_material,
-    @transform.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
-      @math.Quat::from_rotation_y(PI / 8.0F),
-    ),
-  )
-  lighting_state.val.movables.push(logo)
-
-  let cube = spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-      }),
-    ),
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @color.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::white())
+          .with_perceptual_roughness(1.0F),
+        ),
       ),
     ),
-    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   )
-  lighting_state.val.movables.push(cube)
 
-  let sphere_mesh = uv_sphere_mesh(0.5F, 18, 32)
-  let sphere = spawn_mesh(
-    world,
-    sphere_mesh,
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @color.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
+  // left wall
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.CuboidMeshBuilder::new(5.0F, 0.15F, 5.0F).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::new(0.294F, 0.0F, 0.51F, 1.0F))
+          .with_perceptual_roughness(1.0F),
+        ),
+        @transform.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
+          @math.Quat::from_rotation_z(PI / 2.0F),
+        ),
       ),
     ),
-    @transform.Transform::from_xyz(1.5F, 1.0F, 1.5F),
   )
-  lighting_state.val.movables.push(sphere)
 
-  // Ambient light.
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
+  // back (right) wall
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.CuboidMeshBuilder::new(5.0F, 0.15F, 5.0F).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::new(0.294F, 0.0F, 0.51F, 1.0F))
+          .with_perceptual_roughness(1.0F),
+        ),
+        @transform.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
+          @math.Quat::from_rotation_x(PI / 2.0F),
+        ),
+      ),
+    ),
+  )
+
+  // logo alpha-mask quad
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
+          @mesh_primitives.RectangleMeshBuilder::new(2.0F, 0.5F).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color_texture(
+            Some(asset_server.get().load("branding/bevy_logo_light.png")),
+          )
+          .with_perceptual_roughness(1.0F)
+          .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
+          .with_cull_mode(None),
+        ),
+        @transform.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
+          @math.Quat::from_rotation_y(PI / 8.0F),
+        ),
+        Movable::{  },
+      ),
+    ),
+  )
+
+  // cube
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.CuboidMeshBuilder::CuboidMeshBuilder().build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial().with_base_color(
+            @color.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+        Movable::{  },
+      ),
+    ),
+  )
+
+  // sphere
+  ignore(
+    commands.spawn(
+      (
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.SphereMeshBuilder::new(
+            0.5F,
+            @mesh_primitives_dim3.SphereKind::uv(32, 18),
+          ).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial().with_base_color(
+            @color.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
+          ),
+        ),
+        @transform.Transform::from_xyz(1.5F, 1.0F, 1.5F),
+        Movable::{  },
+      ),
+    ),
+  )
+
+  // ambient light
+  commands.insert_resource(
     @pbr.GlobalAmbientLight::new(
       @color.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
       200.0F,
     ),
   )
-  lighting_state.val.ambient_enabled = true
 
-  // Red point light + emissive marker.
-  let red_light = world.spawn_empty()
-  try! world.set_by_key(
-    red_light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(
-      @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-      100_000.0F,
-      20.0F,
-      true,
+  // red point light
+  let red_light = commands.spawn(
+    (
+      @pbr.PointLight::PointLight()
+      .with_intensity(100_000.0F)
+      .with_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F))
+      .with_shadow_maps_enabled(true),
+      @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F),
     ),
   )
-  try! world.set_by_key(
-    red_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F),
-  )
-  spawn_mesh(
-    world,
-    uv_sphere_mesh(0.1F, 12, 20),
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-      ).with_emissive(@color.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(red_light),
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.SphereMeshBuilder::new(
+            0.1F,
+            @mesh_primitives_dim3.SphereKind::uv(32, 18),
+          ).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F))
+          .with_emissive(@color.Color::new(4.0F, 0.0F, 0.0F, 0.0F)),
+        ),
+      ),
     ),
-    @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F),
   )
-  |> ignore
 
-  // Green spot light + emissive marker.
-  let green_light = world.spawn_empty()
-  try! world.set_by_key(
-    green_light,
-    @pbr.ecs_key_spot_light,
-    @pbr.SpotLight::new(
-      @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-      100_000.0F,
-      20.0F,
-      0.6F,
-      0.8F,
-      true,
-    ),
-  )
-  try! world.set_by_key(
-    green_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
-      @math.Vec3::new(-1.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 0.0F, 1.0F),
-    ),
-  )
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.125F, 0.1F))
-      }),
-    ),
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
+  // green spot light
+  let green_light = commands.spawn(
+    (
+      @pbr.SpotLight::new(
         @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-      ).with_emissive(@color.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
-    ),
-    @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(PI / 2.0F),
+        100_000.0F,
+        20.0F,
+        0.6F,
+        0.8F,
+        true,
+      ),
+      @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
+        @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      ),
     ),
   )
-  |> ignore
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(green_light),
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.Capsule3dMeshBuilder::from_capsule(
+            @math.Capsule3d::new(0.1F, 0.125F),
+          ).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F))
+          .with_emissive(@color.Color::new(0.0F, 4.0F, 0.0F, 0.0F)),
+        ),
+        @transform.Transform::from_rotation(
+          @math.Quat::from_rotation_x(PI / 2.0F),
+        ),
+      ),
+    ),
+  )
 
-  // Blue point light + emissive marker.
-  let blue_light = world.spawn_empty()
-  try! world.set_by_key(
-    blue_light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(
-      @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-      100_000.0F,
-      20.0F,
-      true,
+  // blue point light
+  let blue_light = commands.spawn(
+    (
+      @pbr.PointLight::PointLight()
+      .with_intensity(100_000.0F)
+      .with_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F))
+      .with_shadow_maps_enabled(true),
+      @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F),
     ),
   )
-  try! world.set_by_key(
-    blue_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F),
-  )
-  spawn_mesh(
-    world,
-    uv_sphere_mesh(0.1F, 12, 20),
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-      ).with_emissive(@color.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(blue_light),
+        add_mesh(
+          meshes,
+          @mesh_primitives_dim3.SphereMeshBuilder::new(
+            0.1F,
+            @mesh_primitives_dim3.SphereKind::uv(32, 18),
+          ).build(),
+        ),
+        add_material(
+          materials,
+          @pbr.StandardMaterial::StandardMaterial()
+          .with_base_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F))
+          .with_emissive(@color.Color::new(0.0F, 0.0F, 713.0F, 0.0F)),
+        ),
+      ),
     ),
-    @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F),
   )
-  |> ignore
 
-  // Directional light.
-  let directional = world.spawn_empty()
-  try! world.set_by_key(
-    directional,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 10_000.0F, true),
-  )
-  try! world.set_by_key(
-    directional,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(-PI / 4.0F),
+  // directional sun light
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::DirectionalLight()
+        .with_illuminance(OVERCAST_DAY)
+        .with_shadow_maps_enabled(true)
+        .with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+          .with_first_cascade_far_bound(4.0F)
+          .with_maximum_distance(10.0F),
+        ),
+        @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
+          @math.Quat::from_rotation_x(-PI / 4.0F),
+        ),
+      ),
     ),
   )
-  lighting_state.val.directional_light = Some(directional)
 
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let overlay = @text.Text2dBundle::new(
-      @text.Text2d::new(lighting_overlay_text()),
-      @text.TextFont::TextFont().with_font(overlay_font).with_font_size(18.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 300.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  let text = commands.spawn(
+    (
+      @text.Text::Text(),
+      @text.TextFont::TextFont(),
+      @text.TextColor::TextColor(),
+      @text.TextLayout::TextLayout(),
+      @ui.Node::Node()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_top(@ui.px(12.0F))
+      .with_left(@ui.px(12.0F)),
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "Ambient light is on\n"))
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "Aperture: f/\{round_to_int(physical_camera_parameters.aperture_f_stops)}\n",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "Shutter speed: 1/\{shutter_denominator(physical_camera_parameters)}s\n",
+    ),
+  )
+  ignore(
+    spawn_text_span(
+      commands,
+      text,
+      "Sensitivity: ISO \{round_to_int(physical_camera_parameters.sensitivity_iso)}\n",
+    ),
+  )
+  ignore(spawn_text_span(commands, text, "\n\n"))
+  ignore(spawn_text_span(commands, text, "Controls\n"))
+  ignore(spawn_text_span(commands, text, "---------------\n"))
+  ignore(spawn_text_span(commands, text, "Arrow keys - Move objects\n"))
+  ignore(spawn_text_span(commands, text, "Space - Toggle ambient light\n"))
+  ignore(spawn_text_span(commands, text, "1/2 - Decrease/Increase aperture\n"))
+  ignore(
+    spawn_text_span(commands, text, "3/4 - Decrease/Increase shutter speed\n"),
+  )
+  ignore(
+    spawn_text_span(commands, text, "5/6 - Decrease/Increase sensitivity\n"),
+  )
+  ignore(spawn_text_span(commands, text, "R - Reset exposure"))
+
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let ui_root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+  commands.entity(text).insert_component(@hierarchy.Parent::new(ui_root))
+
+  // camera
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @camera_camera.Camera::Camera(),
+        @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @camera_camera.Exposure::from_physical_camera(
+          physical_camera_parameters,
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn update_exposure(
+  key_input : @input.ButtonInput[@window.KeyCode],
+  parameters : @app.ResMut[Parameters],
+  exposure : @app.Single[@ecs.Write[@camera_camera.Exposure], @ecs.All],
+  text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  let next = parameters.get()
+  let mut physical_camera_parameters = next.physical_camera_parameters
+  let mut changed = false
+  if key_input.just_pressed(@window.KeyCode::Digit2) {
+    physical_camera_parameters.aperture_f_stops = physical_camera_parameters.aperture_f_stops *
+      2.0F
+    changed = true
+  } else if key_input.just_pressed(@window.KeyCode::Digit1) {
+    physical_camera_parameters.aperture_f_stops = physical_camera_parameters.aperture_f_stops *
+      0.5F
+    changed = true
+  }
+  if key_input.just_pressed(@window.KeyCode::Digit4) {
+    physical_camera_parameters.shutter_speed_s = physical_camera_parameters.shutter_speed_s *
+      2.0F
+    changed = true
+  } else if key_input.just_pressed(@window.KeyCode::Digit3) {
+    physical_camera_parameters.shutter_speed_s = physical_camera_parameters.shutter_speed_s *
+      0.5F
+    changed = true
+  }
+  if key_input.just_pressed(@window.KeyCode::Digit6) {
+    physical_camera_parameters.sensitivity_iso = physical_camera_parameters.sensitivity_iso +
+      100.0F
+    changed = true
+  } else if key_input.just_pressed(@window.KeyCode::Digit5) {
+    physical_camera_parameters.sensitivity_iso = physical_camera_parameters.sensitivity_iso -
+      100.0F
+    changed = true
+  }
+  if key_input.just_pressed(@window.KeyCode::KeyR) {
+    physical_camera_parameters = @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters()
+    changed = true
+  }
+
+  if changed {
+    next.physical_camera_parameters = physical_camera_parameters
+    parameters.set(next)
+  }
+
+  let entity = text.get()
+  ignore(
+    writer.set_text(
+      entity,
+      2,
+      "Aperture: f/\{round_to_int(physical_camera_parameters.aperture_f_stops)}\n",
+    ),
+  )
+  ignore(
+    writer.set_text(
+      entity,
+      3,
+      "Shutter speed: 1/\{shutter_denominator(physical_camera_parameters)}s\n",
+    ),
+  )
+  ignore(
+    writer.set_text(
+      entity,
+      4,
+      "Sensitivity: ISO \{round_to_int(physical_camera_parameters.sensitivity_iso)}\n",
+    ),
+  )
+  exposure
+  .get()
+  .set(
+    @camera_camera.Exposure::from_physical_camera(physical_camera_parameters),
+  )
+}
+
+///|
+fn toggle_ambient_light(
+  key_input : @input.ButtonInput[@window.KeyCode],
+  ambient_light : @app.ResMut[@pbr.GlobalAmbientLight],
+  text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
+  writer : @ui.TextUiWriter,
+) -> Unit {
+  if key_input.just_pressed(@window.KeyCode::Space) {
+    let current = ambient_light.get()
+    let next_brightness = if current.brightness > 1.0F { 0.0F } else { 200.0F }
+    let next = @pbr.GlobalAmbientLight::new(current.color, next_brightness)
+    ambient_light.set(next)
+
+    let ambient_light_state_text = if next_brightness == 0.0F {
+      "off"
+    } else {
+      "on"
+    }
+    ignore(
+      writer.set_text(
+        text.get(),
+        1,
+        "Ambient light is \{ambient_light_state_text}\n",
       ),
     )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  lighting_state.val.ui_text = Some(overlay)
-
-  // Camera.
-  @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  }
 }
 
 ///|
-fn update_exposure() -> Unit {
-  let mut changed = false
-  let mut next = lighting_state.val.parameters
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    next = { ..next, aperture_f_stops: next.aperture_f_stops * 2.0F }
-    changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    next = { ..next, aperture_f_stops: next.aperture_f_stops * 0.5F }
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    next = { ..next, shutter_speed_s: next.shutter_speed_s * 2.0F }
-    changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    next = { ..next, shutter_speed_s: next.shutter_speed_s * 0.5F }
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    next = { ..next, sensitivity_iso: next.sensitivity_iso + 100.0F }
-    changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    next = { ..next, sensitivity_iso: next.sensitivity_iso - 100.0F }
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    next = {
-      aperture_f_stops: 1.0F,
-      shutter_speed_s: 1.0F / 125.0F,
-      sensitivity_iso: 100.0F,
+fn animate_light_direction(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@pbr.DirectionalLight],
+  ],
+) -> Unit {
+  let delta = time.get().delta_seconds() * 0.5F
+  try! query.for_each(fn(_entity, transform) {
+    transform.modify(fn(value) {
+      value.rotation = value.rotation
+        .mul(@math.Quat::from_rotation_y(delta))
+        .normalize()
+    })
+  })
+}
+
+///|
+fn movement(
+  input : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Movable]],
+) -> Unit {
+  try! query.for_each(fn(_entity, transform) {
+    let mut direction = @math.Vec3::zero()
+    if input.pressed(@window.KeyCode::ArrowUp) {
+      direction = direction.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
     }
-    changed = true
-  }
-  if changed {
-    lighting_state.val.parameters = next
-    lighting_update_overlay_text()
-  }
-}
-
-///|
-fn toggle_ambient_light(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
-    return
-  }
-  if world.get_resource(@pbr.ecs_key_global_ambient_light) is Some(ambient) {
-    if ambient.brightness > 1.0F {
-      world.insert_resource(
-        @pbr.ecs_key_global_ambient_light,
-        @pbr.GlobalAmbientLight::new(ambient.color, 0.0F),
-      )
-      lighting_state.val.ambient_enabled = false
-    } else {
-      world.insert_resource(
-        @pbr.ecs_key_global_ambient_light,
-        @pbr.GlobalAmbientLight::new(ambient.color, 200.0F),
-      )
-      lighting_state.val.ambient_enabled = true
+    if input.pressed(@window.KeyCode::ArrowDown) {
+      direction = direction.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
     }
-    lighting_update_overlay_text()
-  }
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in lighting example")
-  }
-}
-
-///|
-fn animate_light_direction(world : @ecs.World) -> Unit {
-  guard lighting_state.val.directional_light is Some(light_entity) else {
-    return
-  }
-  if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
-    is Some(transform) {
-    let delta = world_time(world).delta_seconds() * 0.5F
-    let spin = @math.Quat::from_rotation_y(delta)
-    let next = transform.with_rotation(transform.rotation.mul(spin).normalize())
-    try! (world.replace(light_entity, @transform.ecs_key_transform, next)
-    |> ignore)
-  }
-}
-
-///|
-fn movement(world : @ecs.World) -> Unit {
-  let mut dx = 0.0F
-  let mut dy = 0.0F
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    dy = dy + 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    dy = dy - 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    dx = dx - 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    dx = dx + 1.0F
-  }
-  if dx == 0.0F && dy == 0.0F {
-    return
-  }
-
-  let delta = world_time(world).delta_seconds() * MOVE_SPEED
-  for entity in lighting_state.val.movables {
-    if (try! world.get_by_key(entity, @transform.ecs_key_transform))
-      is Some(transform) {
-      let next = transform.with_translation(
-        @math.Vec3::new(
-          transform.translation.x + delta * dx,
-          transform.translation.y + delta * dy,
-          transform.translation.z,
-        ),
-      )
-      try! (world.replace(entity, @transform.ecs_key_transform, next) |> ignore)
+    if input.pressed(@window.KeyCode::ArrowLeft) {
+      direction = direction.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
     }
-  }
+    if input.pressed(@window.KeyCode::ArrowRight) {
+      direction = direction.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
+    }
+
+    transform.modify(fn(value) {
+      value.translation = value.translation.add(
+        direction.mul_scalar(time.get().delta_seconds() * MOVE_SPEED),
+      )
+    })
+  })
+}
+
+///|
+fn main {
+  @app.App::new(@ecs.World::new())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(Parameters::Parameters())
+  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param5(@app.Update, update_exposure)
+  .add_systems_param4(@app.Update, toggle_ambient_light)
+  .add_systems_param2(@app.Update, animate_light_direction)
+  .add_systems_param3(@app.Update, movement)
+  .run()
 }
