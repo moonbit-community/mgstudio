@@ -895,12 +895,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     shadow_filter_method,
     resolved_vertex_shader_path,
   ) catch {
-    ShaderNotReady(message) => {
-      debug(
-        "[renderer] mesh3d custom pipeline pending while loading vertex shader \{resolved_vertex_shader_path} / fragment shader \{resolved_fragment_shader_path}: \{message}",
-      )
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       mesh3d_custom_pipeline_cache_set_failed(
         backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
@@ -924,12 +919,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     shadow_filter_method,
     resolved_fragment_shader_path,
   ) catch {
-    ShaderNotReady(message) => {
-      debug(
-        "[renderer] mesh3d custom pipeline pending while loading fragment shader \{resolved_fragment_shader_path} / vertex shader \{resolved_vertex_shader_path}: \{message}",
-      )
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       mesh3d_custom_pipeline_cache_set_failed(
         backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
@@ -1389,10 +1379,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
     ),
     default_wgsl_value_defines(),
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] volumetric fog pipeline pending: \{message}")
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
@@ -1407,10 +1394,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
   let shader = mesh3d_create_forward_shader_module(
     backend, shader_source, "wgpu: failed to create volumetric fog shader module",
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] volumetric fog pipeline pending: \{message}")
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
@@ -2184,10 +2168,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     shadow_filter_method, "mesh3d rgba8",
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] mesh3d pipeline pending: \{message}")
-      return
-    }
+    ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
@@ -2318,10 +2299,7 @@ fn ensure_mesh3d_pipeline_surface(
     backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     shadow_filter_method, "mesh3d surface",
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] mesh3d pipeline pending: \{message}")
-      return
-    }
+    ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,

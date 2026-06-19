@@ -847,10 +847,7 @@ fn tonemapping_pipeline_for_format(
     backend,
     tonemapping_pipeline_define_keys(tonemapping_mode, deband_dither),
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] tonemapping pipeline pending: \{message}")
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
         key,
@@ -870,10 +867,7 @@ fn tonemapping_pipeline_for_format(
     POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_tonemapping_\{key}",
   ) catch {
-    ShaderNotReady(message) => {
-      debug("[renderer] tonemapping pipeline pending: \{message}")
-      return None
-    }
+    ShaderNotReady(_) => return None
     Fatal(message) => {
       backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
         key,

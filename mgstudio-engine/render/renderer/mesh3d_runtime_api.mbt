@@ -829,10 +829,7 @@ pub fn build_mesh3d_indirect_parameters(
     backend.build_mesh3d_indirect_parameters(
       camera_key_hi, camera_key_lo, phase_kind,
     ) catch {
-      ShaderNotReady(message) =>
-        debug(
-          "[renderer] build_mesh3d_indirect_parameters: ShaderNotReady(\{message})",
-        )
+      ShaderNotReady(_) => ()
       Fatal(message) =>
         debug("[renderer] build_mesh3d_indirect_parameters: Fatal(\{message})")
     }
@@ -847,8 +844,7 @@ pub fn preprocess_mesh3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.preprocess_mesh3d(camera_key_hi, camera_key_lo, phase_kind) catch {
-      ShaderNotReady(message) =>
-        debug("[renderer] preprocess_mesh3d: ShaderNotReady(\{message})")
+      ShaderNotReady(_) => ()
       Fatal(message) => debug("[renderer] preprocess_mesh3d: Fatal(\{message})")
     }
   }
@@ -861,10 +857,7 @@ pub fn downsample_mesh3d_depth_pyramid(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.downsample_mesh3d_depth_pyramid(camera_key_hi, camera_key_lo) catch {
-      ShaderNotReady(message) =>
-        debug(
-          "[renderer] downsample_mesh3d_depth_pyramid: ShaderNotReady(\{message})",
-        )
+      ShaderNotReady(_) => ()
       Fatal(message) =>
         debug("[renderer] downsample_mesh3d_depth_pyramid: Fatal(\{message})")
     }
@@ -903,10 +896,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
         1,
       ),
     ) catch {
-      ShaderNotReady(message) =>
-        debug(
-          "[renderer] prewarm_mesh3d_pipeline_variants(opaque): ShaderNotReady(\{message})",
-        )
+      ShaderNotReady(_) => ()
       Fatal(message) =>
         debug(
           "[renderer] prewarm_mesh3d_pipeline_variants(opaque): Fatal(\{message})",
@@ -930,10 +920,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
         1,
       ),
     ) catch {
-      ShaderNotReady(message) =>
-        debug(
-          "[renderer] prewarm_mesh3d_pipeline_variants(transparent): ShaderNotReady(\{message})",
-        )
+      ShaderNotReady(_) => ()
       Fatal(message) =>
         debug(
           "[renderer] prewarm_mesh3d_pipeline_variants(transparent): Fatal(\{message})",
@@ -970,10 +957,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
               1,
             ),
           ) catch {
-            ShaderNotReady(message) =>
-              debug(
-                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): ShaderNotReady(\{message})",
-              )
+            ShaderNotReady(_) => ()
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
@@ -1000,10 +984,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
               1,
             ),
           ) catch {
-            ShaderNotReady(message) =>
-              debug(
-                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): ShaderNotReady(\{message})",
-              )
+            ShaderNotReady(_) => ()
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
@@ -1026,10 +1007,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             1,
           ) catch {
-            ShaderNotReady(message) =>
-              debug(
-                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): ShaderNotReady(\{message})",
-              )
+            ShaderNotReady(_) => ()
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
@@ -1051,10 +1029,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             1,
           ) catch {
-            ShaderNotReady(message) =>
-              debug(
-                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): ShaderNotReady(\{message})",
-              )
+            ShaderNotReady(_) => ()
             Fatal(message) =>
               debug(
                 "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
