@@ -197,35 +197,28 @@ fn transmission_hud_text_with_camera(
 }
 
 ///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> @core.Entity {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-}
-
-///|
 fn spawn_controlled_mesh(
-  world : @ecs.World,
+  commands : @app.Commands,
   mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
   controls : ExampleControls,
 ) -> Unit {
-  let entity = spawn_mesh(world, mesh, material, transform)
-  try! world.set_by_key(entity, example_controls_key, controls)
+  ignore(
+    commands.spawn(
+      (mesh, @pbr.MeshMaterial3d::new(material), transform, controls),
+    ),
+  )
 }
 
 ///|
-fn setup_scene(world : @ecs.World) -> Unit {
+fn setup_scene(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    meshes.modify(fn(assets) {
       assets |> @pbr.add_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F))
     }),
   )
@@ -236,12 +229,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
     _ => abort("transmission icosphere subdivisions should be valid")
   }
   let sphere_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    meshes.modify(fn(assets) {
       assets.add(@mesh.Mesh::from_3d_geometry(sphere_geometry))
     }),
   )
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    meshes.modify(fn(assets) {
       assets
       |> @pbr.add_mesh(
         @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
@@ -256,16 +249,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .resolution(50)
     .build()
   let candle_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+    meshes.modify(fn(assets) {
       assets.add(@mesh.Mesh::from_3d_geometry(candle_geometry))
     }),
   )
 
-  let cube_1_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::StandardMaterial(),
-  )
+  let cube_1_material = materials.modify(fn(assets) {
+    assets |> @pbr.add_material(@pbr.StandardMaterial::StandardMaterial())
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     cube_mesh,
     cube_1_material,
     @transform.Transform::from_xyz(0.25F, 0.5F, -2.0F).with_rotation(
@@ -281,11 +274,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let cube_2_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::StandardMaterial(),
-  )
+  let cube_2_material = materials.modify(fn(assets) {
+    assets |> @pbr.add_material(@pbr.StandardMaterial::StandardMaterial())
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     cube_mesh,
     cube_2_material,
     @transform.Transform::from_xyz(-0.75F, 0.7F, -2.0F).with_rotation(
@@ -301,14 +294,19 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let candle_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.9F, 0.2F, 0.3F, 1.0F))
-    .with_diffuse_transmission(0.7F)
-    .with_perceptual_roughness(0.32F)
-    .with_thickness(0.2F),
-  )
+  let candle_material = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
+      )
+      .with_diffuse_transmission(0.7F)
+      .with_perceptual_roughness(0.32F)
+      .with_thickness(0.2F),
+    )
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     candle_mesh,
     candle_material,
     @transform.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
@@ -319,35 +317,45 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let flame_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
-    .with_emissive(@color.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
-    .with_diffuse_transmission(1.0F),
-  )
-  let flame_mesh_entity = @pbr.MeshMaterial3dBundle::new(
-    sphere_mesh,
-    @pbr.MeshMaterial3d::new(flame_material),
-    @transform.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
-      @math.Vec3::new(0.1F, 0.2F, 0.1F),
+  let flame_material = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      )
+      .with_emissive(@color.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
+      .with_diffuse_transmission(1.0F),
+    )
+  })
+  ignore(
+    commands.spawn(
+      (
+        sphere_mesh,
+        @pbr.MeshMaterial3d::new(flame_material),
+        @transform.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
+          @math.Vec3::new(0.1F, 0.2F, 0.1F),
+        ),
+        Flicker::{  },
+        @pbr.NotShadowCaster::NotShadowCaster(),
+      ),
     ),
-  ).spawn(world)
-  try! world.set_by_key(
-    flame_mesh_entity,
-    @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
   )
-  try! world.set_by_key(flame_mesh_entity, flicker_key, Flicker::{  })
 
-  let white_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
-    .with_specular_transmission(0.9F)
-    .with_diffuse_transmission(1.0F)
-    .with_thickness(1.8F)
-    .with_ior(1.5F)
-    .with_perceptual_roughness(0.12F),
-  )
+  let white_glass = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      )
+      .with_specular_transmission(0.9F)
+      .with_diffuse_transmission(1.0F)
+      .with_thickness(1.8F)
+      .with_ior(1.5F)
+      .with_perceptual_roughness(0.12F),
+    )
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     sphere_mesh,
     white_glass,
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
@@ -358,16 +366,21 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let red_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(1.0F, 0.0F, 0.0F, 1.0F))
-    .with_specular_transmission(0.9F)
-    .with_diffuse_transmission(1.0F)
-    .with_thickness(1.8F)
-    .with_ior(1.5F)
-    .with_perceptual_roughness(0.12F),
-  )
+  let red_glass = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      )
+      .with_specular_transmission(0.9F)
+      .with_diffuse_transmission(1.0F)
+      .with_thickness(1.8F)
+      .with_ior(1.5F)
+      .with_perceptual_roughness(0.12F),
+    )
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     sphere_mesh,
     red_glass,
     @transform.Transform::from_xyz(1.0F, -0.5F, 2.0F).with_scale(
@@ -380,16 +393,21 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let green_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 1.0F, 0.0F, 1.0F))
-    .with_specular_transmission(0.9F)
-    .with_diffuse_transmission(1.0F)
-    .with_thickness(1.8F)
-    .with_ior(1.5F)
-    .with_perceptual_roughness(0.12F),
-  )
+  let green_glass = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      )
+      .with_specular_transmission(0.9F)
+      .with_diffuse_transmission(1.0F)
+      .with_thickness(1.8F)
+      .with_ior(1.5F)
+      .with_perceptual_roughness(0.12F),
+    )
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     sphere_mesh,
     green_glass,
     @transform.Transform::from_xyz(0.0F, -0.5F, 2.0F).with_scale(
@@ -402,16 +420,21 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let blue_glass = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 1.0F, 1.0F))
-    .with_specular_transmission(0.9F)
-    .with_diffuse_transmission(1.0F)
-    .with_thickness(1.8F)
-    .with_ior(1.5F)
-    .with_perceptual_roughness(0.12F),
-  )
+  let blue_glass = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      )
+      .with_specular_transmission(0.9F)
+      .with_diffuse_transmission(1.0F)
+      .with_thickness(1.8F)
+      .with_ior(1.5F)
+      .with_perceptual_roughness(0.12F),
+    )
+  })
   spawn_controlled_mesh(
-    world,
+    commands,
     sphere_mesh,
     blue_glass,
     @transform.Transform::from_xyz(-1.0F, -0.5F, 2.0F).with_scale(
@@ -424,21 +447,27 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let black_tile = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::black())
-    .with_reflectance(0.3F)
-    .with_perceptual_roughness(0.8F),
-  )
-  let white_tile = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_reflectance(0.3F)
-    .with_perceptual_roughness(0.8F),
-  )
+  let black_tile = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(@color.Color::black())
+      .with_reflectance(0.3F)
+      .with_perceptual_roughness(0.8F),
+    )
+  })
+  let white_tile = materials.modify(fn(assets) {
+    assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(@color.Color::white())
+      .with_reflectance(0.3F)
+      .with_perceptual_roughness(0.8F),
+    )
+  })
   for x in -3..<4 {
     for z in -3..<4 {
       let use_black = (x + z) % 2 == 0
       spawn_controlled_mesh(
-        world,
+        commands,
         plane_mesh,
         if use_black {
           black_tile
@@ -456,7 +485,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
           diffuse_transmission=false,
         ),
       )
-      |> ignore
     }
   }
 
@@ -468,116 +496,101 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_reflectance(1.0F)
     .with_double_sided(true)
     .with_cull_mode(None)
-  let paper_material = @pbr.standard_material_add(paper_material_base)
-  let paper_entity = @pbr.MeshMaterial3dBundle::new(
-    plane_mesh,
-    @pbr.MeshMaterial3d::new(paper_material),
-    @transform.Transform::from_xyz(0.0F, 0.5F, -3.0F)
-    .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
-    .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
-  ).spawn(world)
-  try! world.set_by_key(
-    paper_entity,
-    @pbr.ecs_key_transmitted_shadow_receiver,
-    @pbr.TransmittedShadowReceiver::TransmittedShadowReceiver(),
-  )
-  try! world.set_by_key(
-    paper_entity,
-    example_controls_key,
-    ExampleControls::ExampleControls(
-      color=false,
-      specular_transmission=false,
-      diffuse_transmission=true,
+  let paper_material = materials.modify(fn(assets) {
+    assets |> @pbr.add_material(paper_material_base)
+  })
+  ignore(
+    commands.spawn(
+      (
+        plane_mesh,
+        @pbr.MeshMaterial3d::new(paper_material),
+        @transform.Transform::from_xyz(0.0F, 0.5F, -3.0F)
+        .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
+        .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
+        @pbr.TransmittedShadowReceiver::TransmittedShadowReceiver(),
+        ExampleControls::ExampleControls(
+          color=false,
+          specular_transmission=false,
+          diffuse_transmission=true,
+        ),
+      ),
     ),
   )
 
-  let flame_light = world.spawn_empty()
-  try! world.set_by_key(
-    flame_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-1.0F, 1.7F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @transform.Transform::from_xyz(-1.0F, 1.7F, 0.0F),
+        @pbr.PointLight::new(
+          @color.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
+          4_000.0F,
+          5.0F,
+          true,
+        ).with_radius(0.2F),
+        Flicker::{  },
+      ),
+    ),
   )
-  try! world.set_by_key(
-    flame_light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(
-      @color.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
-      4_000.0F,
-      5.0F,
-      true,
-    ).with_radius(0.2F),
-  )
-  try! world.set_by_key(flame_light, flicker_key, Flicker::{  })
 }
 
 ///|
-fn setup_camera(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
+fn setup_camera(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   let color_grading = @post_process.ColorGrading::ColorGrading()
   color_grading.global.post_saturation = 1.2F
-  let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+  let camera = commands.spawn(
+    (
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
         CAMERA_INITIAL_Z,
       ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    )
-    .with_screen_space_transmission(
-      Some(@pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()),
-    )
-    .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::Bloom(),
+      color_grading,
+      @post_process.Tonemapping::TonyMcMapface,
+      @pbr.Exposure::new(6.0F),
+      @pbr.Msaa::Off,
+      @post_process.TemporalJitter::TemporalJitter(),
+      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+    ),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::TemporalJitter(),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-  try! world.set_by_key(camera, @pbr.ecs_key_exposure, @pbr.Exposure::new(6.0F))
-  try! world.set_by_key(
-    camera, @post_process.ecs_key_color_grading, color_grading,
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::TonyMcMapface,
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_environment_map_light,
+  commands.entity(camera).insert_component(@pbr.Hdr::Hdr())
+  commands.entity(camera).insert_component(@post_process.Bloom::Bloom())
+  commands
+  .entity(camera)
+  .insert_component(
     @pbr.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      Some(
+        asset_server
+        .get()
+        .load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+      ),
+      Some(
+        asset_server
+        .get()
+        .load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      ),
       25.0F,
     ),
   )
-  ignore(camera)
 }
 
 ///|
-fn setup_text(world : @ecs.World) -> Unit {
-  let text_entity = world.spawn_empty()
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::Text())
-  try! world.set_by_key(
-    text_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.px(12.0F))
-    .with_left(@ui.px(12.0F)),
+fn setup_text(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::Text(),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
+        ExampleDisplay::{  },
+      ),
+    ),
   )
-  try! world.set_by_key(text_entity, example_display_key, ExampleDisplay::{  })
 }
 
 ///|
@@ -950,28 +963,15 @@ fn flicker_system(
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  setup_scene(world)
-  setup_camera(world)
-  setup_text(world)
-  let materials_key : @ecs.ResourceKey[@asset.Assets[@pbr.StandardMaterial]] = @asset.assets_resource_key()
-  let materials = match world.get_resource_mut(materials_key) {
-    Some(assets) => assets
-    None => abort("Missing Assets<StandardMaterial> resource")
-  }
-  let controllable : @ecs.Query[
-    (@ecs.Read[@pbr.MeshMaterial3d], @ecs.Read[ExampleControls]),
-    @ecs.All,
-  ] = @ecs.query_filtered(world, @ecs.All::new())
-  materials.modify(fn(assets) {
-    apply_material_controls_to_assets(
-      assets,
-      controllable,
-      ExampleState::ExampleState(),
-      ExampleRandom::ExampleRandom(),
-      false,
-    )
-  })
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  setup_scene(commands, meshes, materials)
+  setup_camera(commands, asset_server)
+  setup_text(commands)
 }
 
 ///|
@@ -981,7 +981,7 @@ fn main {
   .insert_resource(@camera.ClearColor::new(@color.Color::black()))
   .insert_resource(@pbr.PointLightShadowMap::new(2048))
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_param4(@app.Startup, setup)
   .add_systems_param8(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
   .run()

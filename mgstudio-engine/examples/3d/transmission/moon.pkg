@@ -1,6 +1,5 @@
 import {
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/random",
   "Milky2018/mgstudio/app",
