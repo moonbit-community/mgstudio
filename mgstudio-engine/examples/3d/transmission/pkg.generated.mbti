@@ -13,6 +13,9 @@ import {
 type ExampleControls
 pub impl @ecs.Component for ExampleControls
 
+type ExampleDisplay
+pub impl @ecs.Component for ExampleDisplay
+
 type Flicker
 pub impl @ecs.Component for Flicker
 

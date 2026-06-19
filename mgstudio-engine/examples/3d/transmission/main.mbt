@@ -67,6 +67,19 @@ pub impl @ecs.Component for ExampleControls with fn component() {
 }
 
 ///|
+struct ExampleDisplay {}
+
+///|
+let example_display_key : @ecs.ComponentKey[ExampleDisplay] = @ecs.register_component(
+  debug_name="examples.3d.transmission.ExampleDisplay",
+)
+
+///|
+pub impl @ecs.Component for ExampleDisplay with fn component() {
+  example_display_key
+}
+
+///|
 fn ExampleControls::ExampleControls(
   diffuse_transmission~ : Bool,
   specular_transmission~ : Bool,
@@ -77,13 +90,11 @@ fn ExampleControls::ExampleControls(
 
 ///|
 priv struct TransmissionState {
-  mut display_text : @text.TextHandle?
   color_rng : @chacha_rng.ChaCha8Rng
 }
 
 ///|
 let transmission_state : Ref[TransmissionState] = Ref({
-  display_text: None,
   color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
 })
 
@@ -155,75 +166,6 @@ fn quality_label(quality : @pbr.ScreenSpaceTransmissionQuality) -> String {
     High => "High"
     Ultra => "Ultra"
   }
-}
-
-///|
-fn transmission_camera_entity(world : @ecs.World) -> @core.Entity? {
-  let cameras : @ecs.Query[@core.Entity, @ecs.With[@pbr.Camera3d]] = @ecs.query_filtered(
-    world,
-    @ecs.With::new(@pbr.ecs_key_camera3d),
-  )
-  cameras.single() catch {
-    _ => None
-  }
-}
-
-///|
-fn camera_screen_space_transmission(
-  world : @ecs.World,
-) -> @pbr.ScreenSpaceTransmission {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    match
-      (try! world.get_by_key(
-        camera_entity, @pbr.ecs_key_screen_space_transmission,
-      )) {
-      Some(value) => value
-      None => @pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()
-    }
-  } else {
-    @pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()
-  }
-}
-
-///|
-fn camera_hdr_enabled(world : @ecs.World) -> Bool {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)
-  } else {
-    false
-  }
-}
-
-///|
-fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    try! world.contains_by_key(camera_entity, @pbr.ecs_key_depth_prepass)
-  } else {
-    false
-  }
-}
-
-///|
-fn camera_taa_enabled(world : @ecs.World) -> Bool {
-  if transmission_camera_entity(world) is Some(camera_entity) {
-    try! world.contains_by_key(
-      camera_entity, @post_process.ecs_key_temporal_jitter,
-    )
-  } else {
-    false
-  }
-}
-
-///|
-fn transmission_hud_text(world : @ecs.World) -> String {
-  let transmission = camera_screen_space_transmission(world)
-  transmission_hud_text_with_camera(
-    transmission,
-    ExampleState::ExampleState(),
-    camera_hdr_enabled(world),
-    camera_depth_prepass_enabled(world),
-    camera_taa_enabled(world),
-  )
 }
 
 ///|
@@ -629,42 +571,17 @@ fn setup_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_text(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(transmission_hud_text(world)),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .spawn()
-
-  transmission_state.val.display_text = Some(handle)
-}
-
-///|
-fn set_hud_text(world : @ecs.World) -> Unit {
-  if transmission_state.val.display_text is Some(handle) {
-    @text.text_set_content(handle, transmission_hud_text(world))
-  }
-}
-
-///|
-fn set_hud_text_content(content : String) -> Unit {
-  if transmission_state.val.display_text is Some(handle) {
-    @text.text_set_content(handle, content)
-  }
+  let text_entity = world.spawn_empty()
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::Text())
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::Node()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.px(12.0F))
+    .with_left(@ui.px(12.0F)),
+  )
+  try! world.set_by_key(text_entity, example_display_key, ExampleDisplay::{  })
 }
 
 ///|
@@ -745,6 +662,7 @@ fn example_control_system(
     ),
     @ecs.With[@pbr.Camera3d],
   ],
+  display : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[ExampleDisplay]],
   state_param : @app.Local[ExampleState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
@@ -953,25 +871,31 @@ fn example_control_system(
     transmission.set(transmission_settings)
   }
 
-  set_hud_text_content(
-    transmission_hud_text_with_camera(
-      transmission_settings,
-      state,
-      if toggle_hdr {
-        !hdr_enabled
-      } else {
-        hdr_enabled
-      },
-      if toggle_depth_prepass {
-        !depth_prepass_enabled
-      } else {
-        depth_prepass_enabled
-      },
-      if toggle_taa {
-        !taa_enabled
-      } else {
-        taa_enabled
-      },
+  guard (display.single() catch { _ => None }) is Some(display_text) else {
+    state_param.set(state)
+    return
+  }
+  display_text.set(
+    @text.Text::new(
+      transmission_hud_text_with_camera(
+        transmission_settings,
+        state,
+        if toggle_hdr {
+          !hdr_enabled
+        } else {
+          hdr_enabled
+        },
+        if toggle_depth_prepass {
+          !depth_prepass_enabled
+        } else {
+          depth_prepass_enabled
+        },
+        if toggle_taa {
+          !taa_enabled
+        } else {
+          taa_enabled
+        },
+      ),
     ),
   )
   state_param.set(state)
@@ -1024,7 +948,6 @@ fn flicker_system(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   transmission_state.val = {
-    display_text: None,
     color_rng: @chacha_rng.ChaCha8Rng::seed_from_u64(1367130551UL),
   }
 
@@ -1048,7 +971,6 @@ fn setup(world : @ecs.World) -> Unit {
       false,
     )
   })
-  set_hud_text(world)
 }
 
 ///|
@@ -1056,7 +978,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems_world(@app.Startup, setup)
-  .add_systems_param6(@app.Update, example_control_system)
+  .add_systems_param7(@app.Update, example_control_system)
   .add_systems_param3(@app.Update, flicker_system)
   .run()
 }
