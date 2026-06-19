@@ -83,6 +83,32 @@ pub fn host_gpu_create_normal_prepass_target_rgb10a2unorm(
 }
 
 ///|
+pub fn host_gpu_create_deferred_prepass_target_rgba32uint(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  @renderer.create_deferred_prepass_target_rgba32uint(
+    width~,
+    height~,
+    sample_count~,
+  )
+}
+
+///|
+pub fn host_gpu_create_deferred_lighting_pass_id_target_r8uint(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  @renderer.create_deferred_lighting_pass_id_target_r8uint(
+    width~,
+    height~,
+    sample_count~,
+  )
+}
+
+///|
 pub fn host_gpu_create_depth_prepass_target(
   width~ : Int,
   height~ : Int,

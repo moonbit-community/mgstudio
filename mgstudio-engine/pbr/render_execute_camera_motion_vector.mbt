@@ -18,6 +18,7 @@ fn render3d_prewarm_prepass_material_pipeline(
   prepass_mesh : Mesh3dExtractedPayload,
   normal_prepass_enabled : Bool,
   motion_vector_prepass_enabled : Bool,
+  deferred_prepass_enabled : Bool,
 ) -> @material.CachedRenderPipelineId? {
   guard prepass_mesh.material_properties.prepass_specialize
     is Some(prepass_specialize) else {
@@ -49,6 +50,11 @@ fn render3d_prewarm_prepass_material_pipeline(
   }
   if motion_vector_prepass_enabled {
     prepass_bits = prepass_bits | MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
+  }
+  if deferred_prepass_enabled &&
+    prepass_mesh.material_properties.render_method
+    is OpaqueRendererMethod::Deferred {
+    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_DEFERRED_PREPASS
   }
   if motion_vector_prepass_enabled && prepass_mesh.has_previous_skin {
     prepass_bits = prepass_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
@@ -83,7 +89,9 @@ fn render3d_prewarm_motion_vector_material_pipeline(
   world : @ecs.World,
   motion_mesh : Mesh3dExtractedPayload,
 ) -> @material.CachedRenderPipelineId? {
-  render3d_prewarm_prepass_material_pipeline(world, motion_mesh, false, true)
+  render3d_prewarm_prepass_material_pipeline(
+    world, motion_mesh, false, true, false,
+  )
 }
 
 ///|
@@ -92,6 +100,8 @@ priv struct Render3dCameraPrepassResult {
   velocity_target_id : Int
   depth_texture_id : Int
   normal_texture_id : Int
+  deferred_texture_id : Int
+  deferred_lighting_pass_id_texture_id : Int
 }
 
 ///|
@@ -107,6 +117,7 @@ fn render3d_execute_camera_prepass(
   depth_prepass_enabled : Bool,
   normal_prepass_enabled : Bool,
   motion_vector_prepass_enabled : Bool,
+  deferred_prepass_enabled : Bool,
   motion_blur_active : Bool,
   scene_target_id : Int,
   velocity_target_id : Int,
@@ -128,24 +139,36 @@ fn render3d_execute_camera_prepass(
 ) -> Render3dCameraPrepassResult {
   if !depth_prepass_enabled &&
     !normal_prepass_enabled &&
-    !motion_vector_prepass_enabled {
+    !motion_vector_prepass_enabled &&
+    !deferred_prepass_enabled {
     return Render3dCameraPrepassResult::{
       scene_target_id,
       velocity_target_id,
       depth_texture_id: -1,
       normal_texture_id: -1,
+      deferred_texture_id: -1,
+      deferred_lighting_pass_id_texture_id: -1,
     }
   }
   let mut next_scene_target_id = scene_target_id
   let mut next_velocity_target_id = velocity_target_id
   let mut normal_target_id = -1
+  let mut deferred_target_id = -1
+  let mut deferred_lighting_pass_id_target_id = -1
   let (
     prepass_target_id,
     prepass_secondary_target_id,
     shared_depth_id,
     active_prepass_kind,
   ) = if motion_vector_prepass_enabled {
-    let (shared_scene_id, shared_velocity_id, shared_depth_id, shared_normal_id) = render3d_motion_blur_targets_get_or_create(
+    let (
+      shared_scene_id,
+      shared_velocity_id,
+      shared_depth_id,
+      shared_normal_id,
+      shared_deferred_id,
+      shared_deferred_lighting_pass_id,
+    ) = render3d_motion_blur_targets_get_or_create(
       world,
       camera_entity,
       view_width,
@@ -153,12 +176,15 @@ fn render3d_execute_camera_prepass(
       msaa_sample_count,
       camera.depth_texture_usages.with_copy_src(),
       normal_prepass_enabled~,
+      deferred_prepass_enabled~,
     )
     if motion_blur_active {
       next_scene_target_id = shared_scene_id
     }
     next_velocity_target_id = shared_velocity_id
     normal_target_id = shared_normal_id
+    deferred_target_id = shared_deferred_id
+    deferred_lighting_pass_id_target_id = shared_deferred_lighting_pass_id
     let color_target_id = if normal_target_id >= 0 {
       normal_target_id
     } else {
@@ -176,10 +202,15 @@ fn render3d_execute_camera_prepass(
       msaa_sample_count,
       camera.depth_texture_usages.with_copy_src(),
       normal_prepass_enabled,
+      deferred_prepass_enabled,
     )
     normal_target_id = targets.normal_texture_id
+    deferred_target_id = targets.deferred_texture_id
+    deferred_lighting_pass_id_target_id = targets.deferred_lighting_pass_id_texture_id
     let color_target_id = if normal_target_id >= 0 {
       normal_target_id
+    } else if deferred_target_id >= 0 {
+      deferred_target_id
     } else {
       targets.depth_texture_id
     }
@@ -218,6 +249,9 @@ fn render3d_execute_camera_prepass(
     previous_clip_from_world=camera.previous_clip_from_world,
     prepass_depth_texture_id=shared_depth_id,
     prepass_normal_texture_id=normal_target_id,
+    prepass_motion_vector_texture_id=prepass_secondary_target_id,
+    prepass_deferred_texture_id=deferred_target_id,
+    prepass_deferred_lighting_pass_id_texture_id=deferred_lighting_pass_id_target_id,
     point_shadow_near~,
     pass_kind=active_prepass_kind,
     msaa_sample_count~,
@@ -232,8 +266,13 @@ fn render3d_execute_camera_prepass(
     }
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
+    let mesh_deferred_prepass = deferred_prepass_enabled &&
+      mesh.material_properties.render_method is OpaqueRendererMethod::Deferred
+    if deferred_prepass_enabled && !mesh_deferred_prepass {
+      continue
+    }
     let material_pipeline_id = render3d_prewarm_prepass_material_pipeline(
-      world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled,
+      world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, deferred_prepass_enabled,
     )
     let motion_vector_indexed = mesh.mesh_is_indexed
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {
@@ -322,5 +361,7 @@ fn render3d_execute_camera_prepass(
     velocity_target_id: next_velocity_target_id,
     depth_texture_id: shared_depth_id,
     normal_texture_id: normal_target_id,
+    deferred_texture_id: deferred_target_id,
+    deferred_lighting_pass_id_texture_id: deferred_lighting_pass_id_target_id,
   }
 }

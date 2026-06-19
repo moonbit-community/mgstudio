@@ -87,22 +87,16 @@ fn mesh3d_motion_vector_descriptor_view_bind_groups_get_or_create(
     layout_entry.binding_arrays_bind_group_layout,
     "mgstudio_motion_vector_descriptor_empty_bg",
   )
-  let empty_material_bg = mesh3d_create_empty_bind_group(
-    backend,
-    layout_entry.material_bind_group_layout,
-    "mgstudio_motion_vector_descriptor_empty_material_bg",
-  )
   frame.transient_bind_groups.push(view_bg)
   frame.transient_bind_groups.push(empty_bg)
-  frame.transient_bind_groups.push(empty_material_bg)
   backend.mesh3d_motion_vector_view_bg_cache.push(Mesh3dMotionVectorViewBindGroupCacheEntry::{
     material_pipeline_id,
     frame_count: backend.frame_count,
     view_bind_group: view_bg,
     empty_bind_group: empty_bg,
-    empty_material_bind_group: empty_material_bg,
+    empty_material_bind_group: empty_bg,
   })
-  Some((view_bg, empty_bg, empty_material_bg))
+  Some((view_bg, empty_bg, empty_bg))
 }
 
 ///|

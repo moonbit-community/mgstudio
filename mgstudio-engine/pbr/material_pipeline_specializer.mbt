@@ -521,7 +521,7 @@ fn pbr_prepass_target_descriptors(
   deferred_prepass : Bool,
 ) -> Array[@material.ColorTargetState?] {
   let targets : Array[@material.ColorTargetState?] = []
-  if normal_prepass || deferred_prepass {
+  if normal_prepass {
     targets.push(
       Some(
         @material.ColorTargetState::new(
@@ -530,7 +530,7 @@ fn pbr_prepass_target_descriptors(
         ),
       ),
     )
-  } else if motion_vector_prepass {
+  } else if motion_vector_prepass || deferred_prepass {
     targets.push(None)
   }
   if motion_vector_prepass {
@@ -542,12 +542,22 @@ fn pbr_prepass_target_descriptors(
         ),
       ),
     )
+  } else if deferred_prepass {
+    targets.push(None)
   }
   if deferred_prepass {
     targets.push(
       Some(
         @material.ColorTargetState::new(
           @wgpu.TEXTURE_FORMAT_RGBA32_UINT,
+          @wgpu.COLOR_WRITE_MASK_ALL,
+        ),
+      ),
+    )
+    targets.push(
+      Some(
+        @material.ColorTargetState::new(
+          @wgpu.TEXTURE_FORMAT_R8_UINT,
           @wgpu.COLOR_WRITE_MASK_ALL,
         ),
       ),
@@ -623,10 +633,6 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
-  shader_defs.push(
-    pbr_shader_def("PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED"),
-  )
-  shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
   }

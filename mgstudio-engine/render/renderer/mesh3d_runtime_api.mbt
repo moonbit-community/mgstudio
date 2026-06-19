@@ -1033,11 +1033,16 @@ pub fn prepare_mesh3d_view_bind_group(
   directional_shadow_texture_id? : Int = -1,
   environment_diffuse_texture_id~ : Int,
   environment_specular_texture_id~ : Int,
+  prepass_depth_texture_id? : Int = -1,
+  prepass_normal_texture_id? : Int = -1,
+  prepass_motion_vector_texture_id? : Int = -1,
+  prepass_deferred_texture_id? : Int = -1,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_view_bind_group(
       transmission_source_texture_id, point_shadow_texture_id, directional_shadow_texture_id,
-      environment_diffuse_texture_id, environment_specular_texture_id,
+      environment_diffuse_texture_id, environment_specular_texture_id, prepass_depth_texture_id,
+      prepass_normal_texture_id, prepass_motion_vector_texture_id, prepass_deferred_texture_id,
     ) catch {
       err => debug_runtime_error("prepare_mesh3d_view_bind_group", err)
     }

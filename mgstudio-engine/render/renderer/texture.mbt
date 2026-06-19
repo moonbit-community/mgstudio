@@ -1254,7 +1254,9 @@ pub fn GpuBackend::create_transmission_source_texture_rgba16f(
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   let format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
   let usage = @wgpu.TextureUsage::from_u64(
-    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_COPY_DST,
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
   )
   let tex = self.device.create_texture_u32(
     w,
@@ -1433,6 +1435,98 @@ pub fn GpuBackend::create_normal_prepass_target_rgb10a2unorm(
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
   id
+}
+
+///|
+fn GpuBackend::create_prepass_color_target(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  format : @wgpu.TextureFormat,
+  sample_count? : Int = 1,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let safe_sample_count = if sample_count <= 1 {
+    1U
+  } else {
+    sample_count.reinterpret_as_uint()
+  }
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+  )
+  let tex = self.device.create_texture_u32(
+    w,
+    h,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    format,
+    sample_count=safe_sample_count,
+  )
+  let view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let sampler = self.device.create_sampler_nearest_clamp()
+  let bind_group = None
+  let info = GpuTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format,
+    texture: tex,
+    view,
+    sample_view: None,
+    msaa_texture: None,
+    msaa_view: None,
+    sample_count: safe_sample_count.reinterpret_as_int(),
+    layer_views: [],
+    sampler,
+    bind_group,
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
+pub fn GpuBackend::create_deferred_prepass_target_rgba32uint(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  sample_count? : Int = 1,
+) -> Int raise GpuBackendError {
+  self.create_prepass_color_target(
+    width,
+    height,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA32_UINT),
+    sample_count~,
+  )
+}
+
+///|
+pub fn GpuBackend::create_deferred_lighting_pass_id_target_r8uint(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  sample_count? : Int = 1,
+) -> Int raise GpuBackendError {
+  self.create_prepass_color_target(
+    width,
+    height,
+    tf(@wgpu.TEXTURE_FORMAT_R8_UINT),
+    sample_count~,
+  )
 }
 
 ///|
@@ -2300,6 +2394,46 @@ pub fn create_normal_prepass_target_rgb10a2unorm(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_normal_prepass_target_rgb10a2unorm(
+        width,
+        height,
+        sample_count~,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_deferred_prepass_target_rgba32uint(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_deferred_prepass_target_rgba32uint(
+        width,
+        height,
+        sample_count~,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_deferred_lighting_pass_id_target_r8uint(
+  width~ : Int,
+  height~ : Int,
+  sample_count? : Int = 1,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_deferred_lighting_pass_id_target_r8uint(
         width,
         height,
         sample_count~,

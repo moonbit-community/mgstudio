@@ -276,6 +276,8 @@ fn render3d_execute_camera_main_pass(
   prepass_depth_texture_id~ : Int,
   prepass_normal_texture_id~ : Int,
   prepass_motion_vector_texture_id~ : Int,
+  prepass_deferred_texture_id~ : Int,
+  prepass_deferred_lighting_pass_id_texture_id~ : Int,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
   let point_shadow_binding = shadow_bindings.point
@@ -329,6 +331,10 @@ fn render3d_execute_camera_main_pass(
       directional_shadow_texture_id=directional_shadow_binding.texture_id,
       environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
       environment_specular_texture_id=environment_map_state.specular_texture_id,
+      prepass_depth_texture_id~,
+      prepass_normal_texture_id~,
+      prepass_motion_vector_texture_id~,
+      prepass_deferred_texture_id~,
     )
   }
   render3d_prepare_camera_atmosphere_resources(camera)
@@ -415,6 +421,8 @@ fn render3d_execute_camera_main_pass(
     prepass_depth_texture_id~,
     prepass_normal_texture_id~,
     prepass_motion_vector_texture_id~,
+    prepass_deferred_texture_id~,
+    prepass_deferred_lighting_pass_id_texture_id~,
     msaa_sample_count~,
     point_shadow_near~,
     pass_kind=scene_pass_kind,
@@ -965,6 +973,8 @@ fn render3d_execute_camera_main_pass(
         prepass_depth_texture_id~,
         prepass_normal_texture_id~,
         prepass_motion_vector_texture_id~,
+        prepass_deferred_texture_id~,
+        prepass_deferred_lighting_pass_id_texture_id~,
         msaa_sample_count~,
         point_shadow_near~,
         pass_kind=scene_pass_kind,
@@ -1038,6 +1048,8 @@ fn render3d_execute_camera_main_pass(
       prepass_depth_texture_id~,
       prepass_normal_texture_id~,
       prepass_motion_vector_texture_id~,
+      prepass_deferred_texture_id~,
+      prepass_deferred_lighting_pass_id_texture_id~,
       msaa_sample_count~,
       point_shadow_near~,
       pass_kind=scene_pass_kind,

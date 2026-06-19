@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/material"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
@@ -129,6 +130,7 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+pub impl @app.Resource for DefaultOpaqueRendererMethod
 pub impl Default for DefaultOpaqueRendererMethod
 
 pub struct DrawFunctionId {

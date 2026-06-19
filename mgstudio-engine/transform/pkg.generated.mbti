@@ -144,6 +144,10 @@ pub fn Transform::new(@math.Vec3, @math.Quat, @math.Vec3) -> Self
 pub fn Transform::right(Self) -> @math.Vec3
 pub fn Transform::rotate(Self, @math.Quat) -> Unit
 pub fn Transform::rotate_around(Self, @math.Vec3, @math.Quat) -> Unit
+pub fn Transform::rotate_local(Self, @math.Quat) -> Unit
+pub fn Transform::rotate_local_x(Self, Float) -> Unit
+pub fn Transform::rotate_local_y(Self, Float) -> Unit
+pub fn Transform::rotate_local_z(Self, Float) -> Unit
 pub fn Transform::rotate_y(Self, Float) -> Unit
 pub fn Transform::rotate_z(Self, Float) -> Unit
 pub fn Transform::rotation_z(Self) -> Float

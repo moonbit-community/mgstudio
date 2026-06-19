@@ -23,6 +23,8 @@ priv struct MotionBlurTargetsEntry {
   velocity_target_id : Int
   depth_target_id : Int
   normal_target_id : Int
+  deferred_target_id : Int
+  deferred_lighting_pass_id_target_id : Int
 }
 
 ///|
@@ -34,12 +36,16 @@ priv struct PrepassTargetsEntry {
   depth_usage_bits : Int
   depth_target_id : Int
   normal_target_id : Int
+  deferred_target_id : Int
+  deferred_lighting_pass_id_target_id : Int
 }
 
 ///|
 priv struct Render3dPrepassTargetIds {
   depth_texture_id : Int
   normal_texture_id : Int
+  deferred_texture_id : Int
+  deferred_lighting_pass_id_texture_id : Int
 }
 
 ///|
@@ -93,6 +99,7 @@ fn render3d_prepass_targets_get_or_create(
   sample_count : Int,
   depth_texture_usages : Camera3dDepthTextureUsage,
   normal_prepass_enabled : Bool,
+  deferred_prepass_enabled : Bool,
 ) -> Render3dPrepassTargetIds {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let prepass_targets = scene_targets_state.peek().prepass_targets
@@ -105,11 +112,28 @@ fn render3d_prepass_targets_get_or_create(
       item.height == height &&
       item.sample_count == safe_sample_count &&
       item.depth_usage_bits == depth_usage_bits {
-      if !normal_prepass_enabled || item.normal_target_id >= 0 {
+      if (!normal_prepass_enabled || item.normal_target_id >= 0) &&
+        (
+          !deferred_prepass_enabled ||
+          (
+            item.deferred_target_id >= 0 &&
+            item.deferred_lighting_pass_id_target_id >= 0
+          )
+        ) {
         return Render3dPrepassTargetIds::{
           depth_texture_id: item.depth_target_id,
           normal_texture_id: if normal_prepass_enabled {
             item.normal_target_id
+          } else {
+            -1
+          },
+          deferred_texture_id: if deferred_prepass_enabled {
+            item.deferred_target_id
+          } else {
+            -1
+          },
+          deferred_lighting_pass_id_texture_id: if deferred_prepass_enabled {
+            item.deferred_lighting_pass_id_target_id
           } else {
             -1
           },
@@ -132,6 +156,24 @@ fn render3d_prepass_targets_get_or_create(
   } else {
     -1
   }
+  let deferred_target_id = if deferred_prepass_enabled {
+    @render.host_gpu_create_deferred_prepass_target_rgba32uint(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
+  let deferred_lighting_pass_id_target_id = if deferred_prepass_enabled {
+    @render.host_gpu_create_deferred_lighting_pass_id_target_r8uint(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
   let next : Array[PrepassTargetsEntry] = []
   let mut replaced = false
   for item in prepass_targets {
@@ -146,6 +188,8 @@ fn render3d_prepass_targets_get_or_create(
           depth_usage_bits,
           depth_target_id,
           normal_target_id,
+          deferred_target_id,
+          deferred_lighting_pass_id_target_id,
         })
         replaced = true
       }
@@ -162,12 +206,16 @@ fn render3d_prepass_targets_get_or_create(
       depth_usage_bits,
       depth_target_id,
       normal_target_id,
+      deferred_target_id,
+      deferred_lighting_pass_id_target_id,
     })
   }
   scene_targets_state.modify(fn(state) { state.prepass_targets = next })
   Render3dPrepassTargetIds::{
     depth_texture_id: depth_target_id,
     normal_texture_id: normal_target_id,
+    deferred_texture_id: deferred_target_id,
+    deferred_lighting_pass_id_texture_id: deferred_lighting_pass_id_target_id,
   }
 }
 
@@ -180,7 +228,8 @@ fn render3d_motion_blur_targets_get_or_create(
   sample_count : Int,
   depth_texture_usages : Camera3dDepthTextureUsage,
   normal_prepass_enabled? : Bool = false,
-) -> (Int, Int, Int, Int) {
+  deferred_prepass_enabled? : Bool = false,
+) -> (Int, Int, Int, Int, Int, Int) {
   let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
   let motion_blur_targets = scene_targets_state.peek().motion_blur_targets
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
@@ -192,13 +241,30 @@ fn render3d_motion_blur_targets_get_or_create(
       item.height == height &&
       item.sample_count == safe_sample_count &&
       item.depth_usage_bits == depth_usage_bits {
-      if !normal_prepass_enabled || item.normal_target_id >= 0 {
+      if (!normal_prepass_enabled || item.normal_target_id >= 0) &&
+        (
+          !deferred_prepass_enabled ||
+          (
+            item.deferred_target_id >= 0 &&
+            item.deferred_lighting_pass_id_target_id >= 0
+          )
+        ) {
         return (
           item.scene_target_id,
           item.velocity_target_id,
           item.depth_target_id,
           if normal_prepass_enabled {
             item.normal_target_id
+          } else {
+            -1
+          },
+          if deferred_prepass_enabled {
+            item.deferred_target_id
+          } else {
+            -1
+          },
+          if deferred_prepass_enabled {
+            item.deferred_lighting_pass_id_target_id
           } else {
             -1
           },
@@ -233,6 +299,24 @@ fn render3d_motion_blur_targets_get_or_create(
   } else {
     -1
   }
+  let deferred_target_id = if deferred_prepass_enabled {
+    @render.host_gpu_create_deferred_prepass_target_rgba32uint(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
+  let deferred_lighting_pass_id_target_id = if deferred_prepass_enabled {
+    @render.host_gpu_create_deferred_lighting_pass_id_target_r8uint(
+      width~,
+      height~,
+      sample_count=safe_sample_count,
+    )
+  } else {
+    -1
+  }
   let next : Array[MotionBlurTargetsEntry] = []
   let mut replaced = false
   for item in motion_blur_targets {
@@ -249,6 +333,8 @@ fn render3d_motion_blur_targets_get_or_create(
           velocity_target_id,
           depth_target_id,
           normal_target_id,
+          deferred_target_id,
+          deferred_lighting_pass_id_target_id,
         })
         replaced = true
       }
@@ -267,10 +353,15 @@ fn render3d_motion_blur_targets_get_or_create(
       velocity_target_id,
       depth_target_id,
       normal_target_id,
+      deferred_target_id,
+      deferred_lighting_pass_id_target_id,
     })
   }
   scene_targets_state.modify(fn(state) { state.motion_blur_targets = next })
-  (scene_target_id, velocity_target_id, depth_target_id, normal_target_id)
+  (
+    scene_target_id, velocity_target_id, depth_target_id, normal_target_id, deferred_target_id,
+    deferred_lighting_pass_id_target_id,
+  )
 }
 
 ///|

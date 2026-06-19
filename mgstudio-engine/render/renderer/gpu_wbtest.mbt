@@ -645,6 +645,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     prepass_normal_texture_id: -1,
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
+    prepass_deferred_lighting_pass_id_texture_id: -1,
     msaa_sample_count: 1,
     width_logical: 128.0F,
     height_logical: 128.0F,

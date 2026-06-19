@@ -1696,6 +1696,11 @@ pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="render3d.default_opaque_renderer_method")
 
 ///|
+pub impl @app.Resource for DefaultOpaqueRendererMethod with fn resource() {
+  ecs_key_default_opaque_renderer_method
+}
+
+///|
 pub impl @ecs.Component for MeshMaterial3d with fn component() {
   ecs_key_mesh_material3d
 }

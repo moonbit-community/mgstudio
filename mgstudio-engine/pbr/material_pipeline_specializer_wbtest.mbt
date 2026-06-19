@@ -235,13 +235,13 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
     pbr_material_specializer_shader_defs_contain_flag(
       vertex_defs, "PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED",
     ),
-    content="true",
+    content="false",
   )
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       vertex_defs, "PBR_ANISOTROPY_TEXTURE_SUPPORTED",
     ),
-    content="true",
+    content="false",
   )
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[0].shader_location, content="0")

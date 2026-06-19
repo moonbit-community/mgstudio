@@ -21,6 +21,7 @@ pub struct GpuPassState {
   prepass_normal_texture_id : Int
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
+  prepass_deferred_lighting_pass_id_texture_id : Int
   msaa_sample_count : Int
   width_logical : Float
   height_logical : Float

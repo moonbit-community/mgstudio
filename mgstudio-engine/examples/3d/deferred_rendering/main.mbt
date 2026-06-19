@@ -13,9 +13,53 @@
 // limitations under the License.
 
 ///|
-///
-/// Compare Deferred / Forward / Forward+Prepass render modes.
-const LIGHT_ROTATION_SPEED : Float = 0.6283185307179586F
+// Bevy source: `bevy/examples/3d/deferred_rendering.rs`.
+
+///|
+const PI : Float = 3.141592653589793F
+
+///|
+const FRAC_PI_4 : Float = 0.7853981633974483F
+
+///|
+struct Pause {
+  mut value : Bool
+}
+
+///|
+let pause_resource_key : @ecs.ResourceKey[Pause] = @ecs.register_resource(
+  debug_name="examples.3d.deferred_rendering.Pause",
+)
+
+///|
+impl @app.Resource for Pause with fn resource() {
+  pause_resource_key
+}
+
+///|
+fn Pause::Pause(value : Bool) -> Pause {
+  Pause::{ value, }
+}
+
+///|
+struct Spin {
+  speed : Float
+}
+
+///|
+let spin_component_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
+  debug_name="examples.3d.deferred_rendering.Spin",
+)
+
+///|
+impl @ecs.Component for Spin with fn component() {
+  spin_component_key
+}
+
+///|
+fn Spin::Spin(speed : Float) -> Spin {
+  Spin::{ speed, }
+}
 
 ///|
 priv enum DefaultRenderMode {
@@ -25,229 +69,114 @@ priv enum DefaultRenderMode {
 }
 
 ///|
-priv struct SpinTarget {
-  entity : @core.Entity
-  speed : Float
+fn default_render_mode() -> DefaultRenderMode {
+  DefaultRenderMode::Deferred
 }
 
 ///|
-priv struct DeferredState {
-  mut pause : Bool
-  mut hide_ui : Bool
-  mut mode : DefaultRenderMode
-  mut camera : @core.Entity?
-  mut directional_light : @core.Entity?
-  spin_targets : Array[SpinTarget]
-  mut help_text : @text.TextHandle?
+impl @app.FromWorld for DefaultRenderMode with fn from_world(_world) {
+  default_render_mode()
 }
-
-///|
-fn default_state() -> DeferredState {
-  {
-    pause: true,
-    hide_ui: false,
-    mode: DefaultRenderMode::Deferred,
-    camera: None,
-    directional_light: None,
-    spin_targets: [],
-    help_text: None,
-  }
-}
-
-///|
-let deferred_state : Ref[DeferredState] = Ref(default_state())
 
 ///|
 fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+  Float::from_int(value)
 }
 
 ///|
-fn mode_eq(lhs : DefaultRenderMode, rhs : DefaultRenderMode) -> Bool {
-  if lhs is Deferred {
-    rhs is Deferred
-  } else if lhs is Forward {
-    rhs is Forward
-  } else {
-    rhs is ForwardPrepass
-  }
+fn mesh_handle(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  mesh : @mesh.Mesh,
+) -> @asset.Handle[@mesh.Mesh] {
+  meshes.modify(fn(assets) { assets.add(mesh) })
 }
 
 ///|
-fn mode_marker(target : DefaultRenderMode) -> String {
-  if mode_eq(deferred_state.val.mode, target) {
-    ">"
-  } else {
-    ""
-  }
+fn material_handle(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  material : @pbr.StandardMaterial,
+) -> @asset.Handle[@pbr.StandardMaterial] {
+  materials.modify(fn(assets) { assets.add(material) })
 }
 
 ///|
-fn help_text_content() -> String {
-  if deferred_state.val.hide_ui {
-    ""
-  } else {
-    let pause_label = if deferred_state.val.pause {
-      "Paused"
-    } else {
-      "Playing"
-    }
-    "(H) Hide UI\n(Space) Play/Pause (\{pause_label})\n\nRendering Method:\n(1) \{mode_marker(DefaultRenderMode::Deferred)} Deferred\n(2) \{mode_marker(DefaultRenderMode::Forward)} Forward\n(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
-  }
-}
-
-///|
-fn update_help_text() -> Unit {
-  if deferred_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, help_text_content())
-  }
-}
-
-///|
-fn set_default_opaque_method(
-  world : @ecs.World,
-  renderer_method : @pbr.OpaqueRendererMethod,
+fn material_assets_iter_mut(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_default_opaque_renderer_method,
-    @pbr.DefaultOpaqueRendererMethod::new(renderer_method),
+  materials.modify(fn(assets) { ignore(assets.iter_mut()) })
+}
+
+///|
+fn add_mesh_from_geometry(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  geometry : @mesh.Mesh3dGeometry,
+) -> @asset.Handle[@mesh.Mesh] {
+  mesh_handle(meshes, @mesh.Mesh::from_3d_geometry(geometry))
+}
+
+///|
+fn cuboid_mesh(x : Float, y : Float, z : Float) -> @mesh.Mesh {
+  @mesh.Mesh::from_3d_geometry(
+    @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::new(x, y, z)),
   )
 }
 
 ///|
-fn apply_render_mode(world : @ecs.World) -> Unit {
-  guard deferred_state.val.camera is Some(camera) else { return }
-  match deferred_state.val.mode {
-    Deferred => {
-      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Deferred)
-      try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::DepthPrepass(),
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_motion_vector_prepass,
-        @pbr.MotionVectorPrepass::MotionVectorPrepass(),
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_deferred_prepass,
-        @pbr.DeferredPrepass::DeferredPrepass(),
-      )
-    }
-    Forward => {
-      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
-      try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
-      try! (world.take(camera, @pbr.ecs_key_motion_vector_prepass) |> ignore)
-      try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
-    }
-    ForwardPrepass => {
-      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_normal_prepass,
-        @pbr.NormalPrepass::NormalPrepass(),
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::DepthPrepass(),
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_motion_vector_prepass,
-        @pbr.MotionVectorPrepass::MotionVectorPrepass(),
-      )
-      try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
-    }
-  }
-}
-
-///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> @core.Entity {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-}
-
-///|
-fn track_spin(entity : @core.Entity, speed : Float) -> Unit {
-  deferred_state.val.spin_targets.push({ entity, speed })
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  deferred_state.val = default_state()
-  let asset_server = @asset.AssetServer::new()
-  world.insert_resource(
-    @pbr.ecs_key_directional_light_shadow_map,
-    @pbr.DirectionalLightShadowMap::new(4096),
-  )
-
-  let camera = @camera.Camera3dBundle::new(
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+) -> Unit {
+  let asset_server = asset_server.get()
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new(
       @camera_camera.Camera::Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-    )
-    .with_distance_fog(
-      Some(
-        @pbr.DistanceFog::new(
-          @color.Color::new(
-            43.0F / 255.0F,
-            44.0F / 255.0F,
-            47.0F / 255.0F,
-            1.0F,
-          ),
-          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
-        ),
-      ),
-    )
-    .spawn(world)
-  deferred_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_fxaa,
-    @post_process.Fxaa::Fxaa(),
+    ),
   )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_environment_map_light,
+  commands.entity(camera).insert_component(@pbr.Msaa::Off)
+  commands
+  .entity(camera)
+  .insert_component(
+    @pbr.DistanceFog::new(
+      @color.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @pbr.FogFalloff3d::linear(1.0F, 8.0F),
+    ),
+  )
+  commands
+  .entity(camera)
+  .insert_component(
     @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
     ),
   )
+  commands.entity(camera).insert_component(@pbr.DepthPrepass::DepthPrepass())
+  commands
+  .entity(camera)
+  .insert_component(@pbr.MotionVectorPrepass::MotionVectorPrepass())
+  commands
+  .entity(camera)
+  .insert_component(@pbr.DeferredPrepass::DeferredPrepass())
+  commands.entity(camera).insert_component(@post_process.Fxaa::Fxaa())
 
-  let directional_light = world.spawn_empty()
-  deferred_state.val.directional_light = Some(directional_light)
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-      .with_num_cascades(3)
-      .with_maximum_distance(10.0F),
-    ),
-  )
-  try! world.set_by_key(
-    directional_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::identity().with_rotation(
-      @math.Quat::from_rotation_x(-0.7853981634F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+          .with_num_cascades(3)
+          .with_maximum_distance(10.0F),
+        ),
+        @transform.Transform::identity().with_rotation(
+          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.0F, -FRAC_PI_4),
+        ),
+      ),
     ),
   )
 
@@ -257,313 +186,389 @@ fn setup(world : @ecs.World) -> Unit {
       "models/FlightHelmet/FlightHelmet.gltf",
     ),
   )
-  let helmet_a = world.spawn_empty()
-  try! world.set_by_key(
-    helmet_a,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(helmet_scene),
+  ignore(commands.spawn_component(@scene.SceneRoot::new(helmet_scene)))
+  ignore(
+    commands.spawn(
+      (
+        @scene.SceneRoot::new(helmet_scene),
+        @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F),
+      ),
+    ),
   )
 
-  let helmet_b = world.spawn_empty()
-  try! world.set_by_key(
-    helmet_b,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(helmet_scene),
-  )
-  try! world.set_by_key(
-    helmet_b,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F),
-  )
-
-  let forward_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.1F, 0.2F, 0.1F, 1.0F)).with_opaque_render_method(
+  let forward_material = material_handle(
+    materials,
+    @pbr.StandardMaterial::from_color(@color.Color::srgb(0.1F, 0.2F, 0.1F)).with_opaque_render_method(
       @pbr.OpaqueRendererMethod::Forward,
     ),
   )
-  let plane = spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(50.0F, 50.0F),
-          ).build(),
-        )
-      }),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          add_mesh_from_geometry(
+            meshes,
+            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+              @math.Vec2::new(50.0F, 50.0F),
+            ).build(),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(forward_material),
+      ),
     ),
-    forward_material,
-    @transform.Transform::identity(),
   )
-  plane |> ignore
 
-  let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.1F))
-    }),
+  let cube_h = mesh_handle(meshes, cuboid_mesh(0.1F, 0.1F, 0.1F))
+  let sphere_h = add_mesh_from_geometry(
+    meshes,
+    @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+      @math.Sphere::new(0.125F),
+    ).uv(32, 18),
   )
-  spawn_mesh(
-    world,
-    cube_mesh,
-    forward_material,
-    @transform.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
-  )
-  |> ignore
-  spawn_mesh(
-    world,
-    cube_mesh,
-    forward_material,
-    @transform.Transform::from_xyz(0.2F, 0.5F, 0.2F),
-  )
-  |> ignore
 
-  let emissive_color = @color.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
-  let emissive_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(emissive_color).with_unlit(true),
-  )
-  let emissive_cube = spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.125F, 0.125F, 0.125F))
-      }),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(cube_h),
+        @pbr.MeshMaterial3d::new(forward_material),
+        @transform.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
+      ),
     ),
-    emissive_material,
-    @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
-  try! world.set_by_key(
-    emissive_cube,
-    @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(cube_h),
+        @pbr.MeshMaterial3d::new(forward_material),
+        @transform.Transform::from_xyz(0.2F, 0.5F, 0.2F),
+      ),
+    ),
   )
 
-  let point_light = world.spawn_empty()
-  try! world.set_by_key(
-    point_light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(0.125F),
+  let sphere_color = @color.Color::srgb(10.0F, 4.0F, 1.0F)
+  let sphere_pos = @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F)
+  let unlit_mat = @pbr.StandardMaterial::from_color(sphere_color).with_unlit(
+    true,
   )
-  try! world.set_by_key(
-    point_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_h),
+        @pbr.MeshMaterial3d::new(material_handle(materials, unlit_mat)),
+        sphere_pos,
+        @pbr.NotShadowCaster::NotShadowCaster(),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::PointLight()
+        .with_intensity(800.0F)
+        .with_radius(0.125F)
+        .with_shadow_maps_enabled(true)
+        .with_color(sphere_color),
+        sphere_pos,
+      ),
+    ),
   )
 
   for i in 0..<6 {
     let j = i % 3
     let s_val = if i < 3 { 0.0F } else { 0.2F }
-    let color = if j == 0 {
-      @color.Color::new(s_val, s_val, 1.0F, 1.0F)
+    let material = if j == 0 {
+      material_handle(
+        materials,
+        @pbr.StandardMaterial::from_color(
+          @color.Color::srgb(s_val, s_val, 1.0F),
+        )
+        .with_perceptual_roughness(0.089F)
+        .with_metallic(0.0F),
+      )
     } else if j == 1 {
-      @color.Color::new(s_val, 1.0F, s_val, 1.0F)
+      material_handle(
+        materials,
+        @pbr.StandardMaterial::from_color(
+          @color.Color::srgb(s_val, 1.0F, s_val),
+        )
+        .with_perceptual_roughness(0.089F)
+        .with_metallic(0.0F),
+      )
     } else {
-      @color.Color::new(1.0F, s_val, s_val, 1.0F)
+      material_handle(
+        materials,
+        @pbr.StandardMaterial::from_color(
+          @color.Color::srgb(1.0F, s_val, s_val),
+        )
+        .with_perceptual_roughness(0.089F)
+        .with_metallic(0.0F),
+      )
     }
-    let material = @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(color)
-      .with_perceptual_roughness(0.089F)
-      .with_metallic(0.0F),
-    )
     let jf = float_from_int(j)
-    let x = jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) - 0.4F
-    let z = -jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) + 0.4F
-    let entity = spawn_mesh(
-      world,
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-          assets |> @pbr.add_mesh(@math.Cuboid::new(0.125F, 0.125F, 0.125F))
-        }),
+    ignore(
+      commands.spawn(
+        (
+          @mesh.Mesh3d::new(sphere_h),
+          @pbr.MeshMaterial3d::new(material),
+          @transform.Transform::from_xyz(
+            jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) - 0.4F,
+            0.125F,
+            -jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) + 0.4F,
+          ),
+        ),
       ),
-      material,
-      @transform.Transform::from_xyz(x, 0.125F, z),
     )
-    entity |> ignore
   }
 
-  let sky_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(136.0F / 255.0F, 136.0F / 255.0F, 136.0F / 255.0F, 1.0F),
-    )
-    .with_unlit(true)
-    .with_cull_mode(None),
-  )
-  let sky = spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F))
-      }),
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh_handle(meshes, cuboid_mesh(2.0F, 1.0F, 1.0F))),
+        @pbr.MeshMaterial3d::new(
+          material_handle(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::new(
+                136.0F / 255.0F,
+                136.0F / 255.0F,
+                136.0F / 255.0F,
+                1.0F,
+              ),
+            )
+            .with_unlit(true)
+            .with_cull_mode(None),
+          ),
+        ),
+        @transform.Transform::Transform().with_scale(
+          @math.Vec3::splat(1_000_000.0F),
+        ),
+        @pbr.NotShadowCaster::NotShadowCaster(),
+        @pbr.NotShadowReceiver::NotShadowReceiver(),
+      ),
     ),
-    sky_material,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
-      @math.Vec3::splat(1_000_000.0F),
-    ),
-  )
-  try! world.set_by_key(
-    sky,
-    @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
-  )
-  try! world.set_by_key(
-    sky,
-    @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::NotShadowReceiver(),
   )
 
-  let parallax_material = @pbr.standard_material_add(
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::Text(),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+      ),
+    ),
+  )
+}
+
+///|
+fn animate_light_direction(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@pbr.DirectionalLight],
+  ],
+  pause : @app.Res[Pause],
+) -> Unit {
+  if pause.get().value {
+    return
+  }
+  let delta = time.get().delta_seconds() * PI / 5.0F
+  try! query.view(fn(_entity, transform) {
+    transform.modify(fn(value) { value.rotate_y(delta) })
+  })
+}
+
+///|
+fn setup_parallax(
+  commands : @app.Commands,
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let asset_server = asset_server.get()
+  let normal_handle = asset_server.load_with_settings(
+    "textures/parallax_example/cube_normal.png",
+    fn(settings) { settings.is_srgb = false },
+  )
+
+  let cube = @mesh.Mesh::from_3d_geometry(
+    @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::new(0.15F, 0.15F, 0.15F)),
+  )
+  match cube.generate_tangents() {
+    Some(_) =>
+      abort("deferred_rendering parallax cube tangent generation failed")
+    None => ()
+  }
+
+  let parallax_material = material_handle(
+    materials,
     @pbr.StandardMaterial::StandardMaterial()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
     )
-    .with_normal_map_texture(
-      Some(
-        asset_server.load_with_settings(
-          "textures/parallax_example/cube_normal.png",
-          fn(settings) { settings.is_srgb = false },
-        ),
-      ),
-    )
+    .with_normal_map_texture(Some(normal_handle))
     .with_depth_map(
       Some(asset_server.load("textures/parallax_example/cube_depth.png")),
     )
     .with_parallax_depth_scale(0.09F)
     .with_parallax_mapping_method(@pbr.ParallaxMappingMethod::Relief(4))
-    .with_max_parallax_layer_count(32.0F),
+    .with_max_parallax_layer_count(@math.pow(2.0F, 5.0F)),
   )
-  let parallax_cube = spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.15F, 0.15F, 0.15F))
-      }),
-    ),
-    parallax_material,
-    @transform.Transform::from_xyz(0.4F, 0.2F, -0.8F),
-  )
-  track_spin(parallax_cube, 0.3F)
-
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-380.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh_handle(meshes, cube)),
+        @pbr.MeshMaterial3d::new(parallax_material),
+        @transform.Transform::from_xyz(0.4F, 0.2F, -0.8F),
+        Spin::Spin(0.3F),
       ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(760.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  deferred_state.val.help_text = Some(help_text)
-
-  apply_render_mode(world)
-  update_help_text()
-}
-
-///|
-fn switch_mode(world : @ecs.World) -> Unit {
-  let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    deferred_state.val.pause = !deferred_state.val.pause
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    deferred_state.val.mode = DefaultRenderMode::Deferred
-    apply_render_mode(world)
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    deferred_state.val.mode = DefaultRenderMode::Forward
-    apply_render_mode(world)
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    deferred_state.val.mode = DefaultRenderMode::ForwardPrepass
-    apply_render_mode(world)
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    deferred_state.val.hide_ui = !deferred_state.val.hide_ui
-    changed = true
-  }
-  if changed {
-    update_help_text()
-  }
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in deferred_rendering example")
-  }
-}
-
-///|
-fn animate_light_direction(world : @ecs.World) -> Unit {
-  if deferred_state.val.pause {
-    return
-  }
-  guard deferred_state.val.directional_light is Some(light) else { return }
-  guard (try! world.get_by_key(light, @transform.ecs_key_transform))
-    is Some(transform) else {
-    return
-  }
-  let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
-  try! (world.replace(
-    light,
-    @transform.ecs_key_transform,
-    transform.with_rotation(
-      transform.rotation
-      .mul(@math.Quat::from_rotation_y(delta_angle))
-      .normalize(),
     ),
   )
-  |> ignore)
 }
 
 ///|
-fn spin(world : @ecs.World) -> Unit {
-  if deferred_state.val.pause {
+fn spin(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[Spin]),
+    @ecs.All,
+  ],
+  pause : @app.Res[Pause],
+) -> Unit {
+  if pause.get().value {
     return
   }
-  let delta = world_time(world).delta_seconds()
-  for i in 0..<deferred_state.val.spin_targets.length() {
-    let target = deferred_state.val.spin_targets[i]
-    guard (try! world.get_by_key(target.entity, @transform.ecs_key_transform))
-      is Some(transform) else {
-      continue
-    }
-    let speed = target.speed * delta
-    let rotation = transform.rotation
-      .mul(@math.Quat::from_rotation_y(speed))
-      .mul(@math.Quat::from_rotation_x(speed))
-      .mul(@math.Quat::from_rotation_z(-speed))
-      .normalize()
-    try! (world.replace(
-      target.entity,
-      @transform.ecs_key_transform,
-      transform.with_rotation(rotation),
-    )
-    |> ignore)
+  let delta = time.get().delta_seconds()
+  try! query.view(fn(_entity, item) {
+    let (transform, spin) = item
+    transform.modify(fn(value) {
+      value.rotate_local_y(spin.value().speed * delta)
+      value.rotate_local_x(spin.value().speed * delta)
+      value.rotate_local_z(-spin.value().speed * delta)
+    })
+  })
+}
+
+///|
+fn mode_marker(
+  current : DefaultRenderMode,
+  target : DefaultRenderMode,
+) -> String {
+  match (current, target) {
+    (Deferred, Deferred) => ">"
+    (Forward, Forward) => ">"
+    (ForwardPrepass, ForwardPrepass) => ">"
+    _ => ""
   }
+}
+
+///|
+fn help_text(mode : DefaultRenderMode, hide_ui : Bool) -> String {
+  if hide_ui {
+    ""
+  } else {
+    "(H) Hide UI\n(Space) Play/Pause\n\nRendering Method:\n(1) \{mode_marker(mode, DefaultRenderMode::Deferred)} Deferred\n(2) \{mode_marker(mode, DefaultRenderMode::Forward)} Forward\n(3) \{mode_marker(mode, DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
+  }
+}
+
+///|
+fn switch_mode(
+  text : @app.Single[@ecs.Write[@text.Text], @ecs.All],
+  commands : @app.Commands,
+  keys : @input.ButtonInput[@window.KeyCode],
+  default_opaque_renderer_method : @app.ResMut[@pbr.DefaultOpaqueRendererMethod],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  cameras : @ecs.Query[@core.Entity, @ecs.With[@camera_camera.Camera]],
+  pause : @app.ResMut[Pause],
+  hide_ui : @app.Local[Bool],
+  mode : @app.Local[DefaultRenderMode],
+) -> Unit {
+  let mut next_mode = mode.get()
+  let mut next_hide_ui = hide_ui.get()
+  let next_pause = pause.get()
+
+  if keys.just_pressed(@window.KeyCode::Space) {
+    next_pause.value = !next_pause.value
+    pause.set(next_pause)
+  }
+
+  if keys.just_pressed(@window.KeyCode::Digit1) {
+    next_mode = DefaultRenderMode::Deferred
+    default_opaque_renderer_method.set(
+      default_opaque_renderer_method.get().set_to_deferred(),
+    )
+    println("DefaultOpaqueRendererMethod: Deferred")
+    material_assets_iter_mut(materials)
+    try! cameras.view(fn(camera_entity, _) {
+      commands.entity(camera_entity).remove(@pbr.ecs_key_normal_prepass)
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.DepthPrepass::DepthPrepass())
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.MotionVectorPrepass::MotionVectorPrepass())
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.DeferredPrepass::DeferredPrepass())
+    })
+  }
+  if keys.just_pressed(@window.KeyCode::Digit2) {
+    next_mode = DefaultRenderMode::Forward
+    default_opaque_renderer_method.set(
+      default_opaque_renderer_method.get().set_to_forward(),
+    )
+    println("DefaultOpaqueRendererMethod: Forward")
+    material_assets_iter_mut(materials)
+    try! cameras.view(fn(camera_entity, _) {
+      commands.entity(camera_entity).remove(@pbr.ecs_key_normal_prepass)
+      commands.entity(camera_entity).remove(@pbr.ecs_key_depth_prepass)
+      commands.entity(camera_entity).remove(@pbr.ecs_key_motion_vector_prepass)
+      commands.entity(camera_entity).remove(@pbr.ecs_key_deferred_prepass)
+    })
+  }
+  if keys.just_pressed(@window.KeyCode::Digit3) {
+    next_mode = DefaultRenderMode::ForwardPrepass
+    default_opaque_renderer_method.set(
+      default_opaque_renderer_method.get().set_to_forward(),
+    )
+    println("DefaultOpaqueRendererMethod: Forward + Prepass")
+    material_assets_iter_mut(materials)
+    try! cameras.view(fn(camera_entity, _) {
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.NormalPrepass::NormalPrepass())
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.DepthPrepass::DepthPrepass())
+      commands
+      .entity(camera_entity)
+      .insert_component(@pbr.MotionVectorPrepass::MotionVectorPrepass())
+      commands.entity(camera_entity).remove(@pbr.ecs_key_deferred_prepass)
+    })
+  }
+
+  if keys.just_pressed(@window.KeyCode::KeyH) {
+    next_hide_ui = !next_hide_ui
+  }
+
+  text.get().set(@text.Text::new(help_text(next_mode, next_hide_ui)))
+  hide_ui.set(next_hide_ui)
+  mode.set(next_mode)
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
+  .insert_resource(@pbr.DefaultOpaqueRendererMethod::deferred())
+  .insert_resource(@pbr.DirectionalLightShadowMap::new(4096))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, switch_mode)
-  .add_systems_world(@app.Update, animate_light_direction)
-  .add_systems_world(@app.Update, spin)
+  .insert_resource(Pause::Pause(true))
+  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(@app.Startup, setup_parallax)
+  .add_systems_param3(@app.Update, animate_light_direction)
+  .add_systems_param9(@app.Update, switch_mode)
+  .add_systems_param3(@app.Update, spin)
   .run()
 }

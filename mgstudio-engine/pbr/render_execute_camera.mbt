@@ -96,6 +96,8 @@ fn render3d_execute_camera(
   let mut velocity_target_id = -1
   let mut prepass_depth_target_id = -1
   let mut prepass_normal_target_id = -1
+  let mut prepass_deferred_target_id = -1
+  let mut prepass_deferred_lighting_pass_id_target_id = -1
   let mut shadow_bindings = render3d_view_shadow_bindings_none()
   let point_shadow_near = pass_config.point_shadow_near
   let draw_queue_entry = prepared_queue.draw_queue_entry
@@ -114,6 +116,7 @@ fn render3d_execute_camera(
     camera.depth_prepass_enabled,
     camera.normal_prepass_enabled,
     motion_vector_prepass_enabled,
+    camera_deferred_enabled,
     motion_blur_active,
     scene_target_id,
     velocity_target_id,
@@ -137,6 +140,8 @@ fn render3d_execute_camera(
   velocity_target_id = prepass_result.velocity_target_id
   prepass_depth_target_id = prepass_result.depth_texture_id
   prepass_normal_target_id = prepass_result.normal_texture_id
+  prepass_deferred_target_id = prepass_result.deferred_texture_id
+  prepass_deferred_lighting_pass_id_target_id = prepass_result.deferred_lighting_pass_id_texture_id
   ignore(
     @render.host_gpu_reserve_mesh3d_draw_storage(
       count=draw_queue_entry.draw_items.length(),
@@ -169,7 +174,14 @@ fn render3d_execute_camera(
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
     ) {
-    let (scene_id, _velocity_id, _depth_id, _normal_id) = render3d_motion_blur_targets_get_or_create(
+    let (
+      scene_id,
+      _velocity_id,
+      _depth_id,
+      _normal_id,
+      _deferred_id,
+      _deferred_lighting_pass_id,
+    ) = render3d_motion_blur_targets_get_or_create(
       world,
       camera_entity,
       view_width,
@@ -227,6 +239,8 @@ fn render3d_execute_camera(
     prepass_depth_texture_id=prepass_depth_target_id,
     prepass_normal_texture_id=prepass_normal_target_id,
     prepass_motion_vector_texture_id=velocity_target_id,
+    prepass_deferred_texture_id=prepass_deferred_target_id,
+    prepass_deferred_lighting_pass_id_texture_id=prepass_deferred_lighting_pass_id_target_id,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,

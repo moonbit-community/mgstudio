@@ -99,6 +99,7 @@ pub fn GpuBackend::begin_pass(
     prepass_normal_texture_id: -1,
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
+    prepass_deferred_lighting_pass_id_texture_id: -1,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -345,6 +346,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     prepass_normal_texture_id: -1,
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
+    prepass_deferred_lighting_pass_id_texture_id: -1,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -614,6 +616,7 @@ pub fn GpuBackend::begin_pass_3d(
   prepass_normal_texture_id : Int,
   prepass_motion_vector_texture_id : Int,
   prepass_deferred_texture_id : Int,
+  prepass_deferred_lighting_pass_id_texture_id : Int,
   msaa_sample_count : Int,
   pass_kind : Int,
   clear_enabled : Int,
@@ -640,21 +643,31 @@ pub fn GpuBackend::begin_pass_3d(
   let is_shadow_depth_pass = base_kind == PASS_KIND_BASE_POINT_SHADOW ||
     base_kind == PASS_KIND_BASE_DIRECTIONAL_SHADOW
   let is_prepass_depth_pass = base_kind == PASS_KIND_BASE_PREPASS
-  let (color_view, color_resolve_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
+  let (
+    color_view,
+    color_resolve_view,
+    secondary_color_view,
+    secondary_color_resolve_view,
+    deferred_color_view,
+    deferred_color_resolve_view,
+    deferred_lighting_pass_id_color_view,
+    deferred_lighting_pass_id_color_resolve_view,
+    depth_view,
+  ) = if is_shadow_depth_pass {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
-    (None, None, None, shadow_depth_view)
+    (None, None, None, None, None, None, None, None, shadow_depth_view)
   } else if is_prepass_depth_pass {
     guard find_prepass_depth_texture(self, prepass_depth_texture_id)
       is Some(prepass_depth_texture) else {
       return
     }
-    if prepass_normal_texture_id >= 0 {
+    let (normal_view, normal_resolve_view) = if prepass_normal_texture_id >= 0 {
       guard target_color_attachment(
           self, prepass_normal_texture_id, target_layer, safe_msaa_sample_count,
         )
-        is Some((normal_view, normal_resolve_view)) else {
+        is Some((view, resolve_view)) else {
         return
       }
       guard target_size_for_pass(self, prepass_normal_texture_id)
@@ -666,20 +679,95 @@ pub fn GpuBackend::begin_pass_3d(
         prepass_depth_texture.sample_count != safe_msaa_sample_count {
         return
       }
-      (Some(normal_view), normal_resolve_view, None, prepass_depth_texture.view)
+      (Some(view), resolve_view)
     } else {
-      (None, None, None, prepass_depth_texture.view)
+      (None, None)
     }
+    let (deferred_view, deferred_resolve_view) = if prepass_deferred_texture_id >=
+      0 {
+      guard target_color_attachment(
+          self, prepass_deferred_texture_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((view, resolve_view)) else {
+        return
+      }
+      guard target_size_for_pass(self, prepass_deferred_texture_id)
+        is Some((deferred_w, deferred_h)) else {
+        return
+      }
+      if prepass_depth_texture.width != deferred_w ||
+        prepass_depth_texture.height != deferred_h ||
+        prepass_depth_texture.sample_count != safe_msaa_sample_count {
+        return
+      }
+      (Some(view), resolve_view)
+    } else {
+      (None, None)
+    }
+    let (deferred_lighting_view, deferred_lighting_resolve_view) = if prepass_deferred_lighting_pass_id_texture_id >=
+      0 {
+      guard target_color_attachment(
+          self, prepass_deferred_lighting_pass_id_texture_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((view, resolve_view)) else {
+        return
+      }
+      guard target_size_for_pass(
+          self, prepass_deferred_lighting_pass_id_texture_id,
+        )
+        is Some((lighting_w, lighting_h)) else {
+        return
+      }
+      if prepass_depth_texture.width != lighting_w ||
+        prepass_depth_texture.height != lighting_h ||
+        prepass_depth_texture.sample_count != safe_msaa_sample_count {
+        return
+      }
+      (Some(view), resolve_view)
+    } else {
+      (None, None)
+    }
+    (
+      normal_view,
+      normal_resolve_view,
+      None,
+      None,
+      deferred_view,
+      deferred_resolve_view,
+      deferred_lighting_view,
+      deferred_lighting_resolve_view,
+      prepass_depth_texture.view,
+    )
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
-    guard target_view(self, target_id, target_layer) is Some(primary_view) else {
+    guard find_prepass_depth_texture(self, prepass_depth_texture_id)
+      is Some(prepass_depth_texture) else {
       return
     }
-    guard target_view(self, secondary_target_id, target_layer)
-      is Some(velocity_view) else {
+    let (primary_view, primary_resolve_view) = if prepass_normal_texture_id >= 0 {
+      guard target_color_attachment(
+          self, target_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((view, resolve_view)) else {
+        return
+      }
+      (Some(view), resolve_view)
+    } else {
+      (None, None)
+    }
+    guard target_color_attachment(
+        self, secondary_target_id, target_layer, safe_msaa_sample_count,
+      )
+      is Some((velocity_view, velocity_resolve_view)) else {
       return
     }
-    guard target_size_for_pass(self, target_id) is Some((primary_w, primary_h)) else {
+    let size_target_id = if prepass_normal_texture_id >= 0 {
+      target_id
+    } else {
+      secondary_target_id
+    }
+    guard target_size_for_pass(self, size_target_id)
+      is Some((primary_w, primary_h)) else {
       return
     }
     guard target_size_for_pass(self, secondary_target_id)
@@ -689,16 +777,46 @@ pub fn GpuBackend::begin_pass_3d(
     if primary_w != secondary_w || primary_h != secondary_h {
       return
     }
-    guard find_prepass_depth_texture(self, prepass_depth_texture_id)
-      is Some(prepass_depth_texture) else {
-      return
-    }
     if prepass_depth_texture.width != primary_w ||
       prepass_depth_texture.height != primary_h ||
       prepass_depth_texture.sample_count != safe_msaa_sample_count {
       return
     }
-    (Some(primary_view), None, Some(velocity_view), prepass_depth_texture.view)
+    let (deferred_view, deferred_resolve_view) = if prepass_deferred_texture_id >=
+      0 {
+      guard target_color_attachment(
+          self, prepass_deferred_texture_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((view, resolve_view)) else {
+        return
+      }
+      (Some(view), resolve_view)
+    } else {
+      (None, None)
+    }
+    let (deferred_lighting_view, deferred_lighting_resolve_view) = if prepass_deferred_lighting_pass_id_texture_id >=
+      0 {
+      guard target_color_attachment(
+          self, prepass_deferred_lighting_pass_id_texture_id, target_layer, safe_msaa_sample_count,
+        )
+        is Some((view, resolve_view)) else {
+        return
+      }
+      (Some(view), resolve_view)
+    } else {
+      (None, None)
+    }
+    (
+      primary_view,
+      primary_resolve_view,
+      Some(velocity_view),
+      velocity_resolve_view,
+      deferred_view,
+      deferred_resolve_view,
+      deferred_lighting_view,
+      deferred_lighting_resolve_view,
+      prepass_depth_texture.view,
+    )
   } else {
     guard target_color_attachment(
         self, target_id, target_layer, safe_msaa_sample_count,
@@ -710,7 +828,17 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(scene_depth_view) else {
       return
     }
-    (Some(view), resolve_view, None, scene_depth_view)
+    (
+      Some(view),
+      resolve_view,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      scene_depth_view,
+    )
   }
   let effective_clear_enabled = if target_id < 0 &&
     clear_enabled != 0 &&
@@ -786,6 +914,7 @@ pub fn GpuBackend::begin_pass_3d(
     prepass_normal_texture_id,
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
+    prepass_deferred_lighting_pass_id_texture_id,
     msaa_sample_count: safe_msaa_sample_count,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -909,55 +1038,221 @@ pub fn GpuBackend::begin_pass_3d(
     )
   }
   mesh3d_dispatch_pending_ssao_for_pass(self, pass_state)
-  let pass = match color_view {
-    None =>
-      command_encoder_begin_render_pass_depth_u32(
-        frame.encoder,
-        depth_view,
-        depth_load_op_u32~,
-        depth_store_op_u32=@wgpu.STORE_OP_STORE,
-        depth_clear_value_f32=0.0F,
-        depth_read_only=false,
-        stencil_load_op_u32~,
-        stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-        stencil_clear_value_u32=0U,
-        stencil_read_only=true,
-      )
-    Some(color0_view) =>
-      match secondary_color_view {
-        Some(color1_view) =>
-          if base_kind == PASS_KIND_BASE_MOTION_VECTOR {
-            if prepass_normal_texture_id >= 0 {
+  let has_deferred_prepass_color_attachments = deferred_color_view is Some(_) ||
+    deferred_lighting_pass_id_color_view is Some(_)
+  let pass = if has_deferred_prepass_color_attachments {
+    let builder = @wgpu.RenderPassDescBuilder::new(4U) catch {
+      _ =>
+        fatal("wgpu: failed to create deferred prepass render pass descriptor")
+    }
+    match color_view {
+      Some(view) => {
+        builder.set_color_attachment(
+          0U,
+          view,
+          load_op_u32=color_load_op_u32,
+          store_op_u32=@wgpu.STORE_OP_STORE,
+          clear_r_f32=0.0F,
+          clear_g_f32=0.0F,
+          clear_b_f32=0.0F,
+          clear_a_f32=0.0F,
+        ) catch {
+          _ => fatal("wgpu: failed to set deferred prepass normal attachment")
+        }
+        match color_resolve_view {
+          Some(resolve_view) =>
+            builder.set_color_attachment_resolve_target(0U, resolve_view) catch {
+              _ =>
+                fatal(
+                  "wgpu: failed to set deferred prepass normal resolve attachment",
+                )
+            }
+          None => ()
+        }
+      }
+      None => ()
+    }
+    match secondary_color_view {
+      Some(view) => {
+        builder.set_color_attachment(
+          1U,
+          view,
+          load_op_u32=color_load_op_u32,
+          store_op_u32=@wgpu.STORE_OP_STORE,
+          clear_r_f32=0.0F,
+          clear_g_f32=0.0F,
+          clear_b_f32=0.0F,
+          clear_a_f32=0.0F,
+        ) catch {
+          _ =>
+            fatal(
+              "wgpu: failed to set deferred prepass motion-vector attachment",
+            )
+        }
+        match secondary_color_resolve_view {
+          Some(resolve_view) =>
+            builder.set_color_attachment_resolve_target(1U, resolve_view) catch {
+              _ =>
+                fatal(
+                  "wgpu: failed to set deferred prepass motion-vector resolve attachment",
+                )
+            }
+          None => ()
+        }
+      }
+      None => ()
+    }
+    match deferred_color_view {
+      Some(view) => {
+        builder.set_color_attachment(
+          2U,
+          view,
+          load_op_u32=color_load_op_u32,
+          store_op_u32=@wgpu.STORE_OP_STORE,
+          clear_r_f32=0.0F,
+          clear_g_f32=0.0F,
+          clear_b_f32=0.0F,
+          clear_a_f32=0.0F,
+        ) catch {
+          _ => fatal("wgpu: failed to set deferred prepass g-buffer attachment")
+        }
+        match deferred_color_resolve_view {
+          Some(resolve_view) =>
+            builder.set_color_attachment_resolve_target(2U, resolve_view) catch {
+              _ =>
+                fatal(
+                  "wgpu: failed to set deferred prepass g-buffer resolve attachment",
+                )
+            }
+          None => ()
+        }
+      }
+      None => ()
+    }
+    match deferred_lighting_pass_id_color_view {
+      Some(view) => {
+        builder.set_color_attachment(
+          3U,
+          view,
+          load_op_u32=color_load_op_u32,
+          store_op_u32=@wgpu.STORE_OP_STORE,
+          clear_r_f32=0.0F,
+          clear_g_f32=0.0F,
+          clear_b_f32=0.0F,
+          clear_a_f32=0.0F,
+        ) catch {
+          _ =>
+            fatal(
+              "wgpu: failed to set deferred prepass lighting-pass-id attachment",
+            )
+        }
+        match deferred_lighting_pass_id_color_resolve_view {
+          Some(resolve_view) =>
+            builder.set_color_attachment_resolve_target(3U, resolve_view) catch {
+              _ =>
+                fatal(
+                  "wgpu: failed to set deferred prepass lighting-pass-id resolve attachment",
+                )
+            }
+          None => ()
+        }
+      }
+      None => ()
+    }
+    builder.set_depth_stencil_attachment(
+      depth_view,
+      depth_load_op_u32~,
+      depth_store_op_u32=@wgpu.STORE_OP_STORE,
+      depth_clear_value_f32=0.0F,
+      depth_read_only=false,
+      stencil_load_op_u32~,
+      stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+      stencil_clear_value_u32=0U,
+      stencil_read_only=true,
+    ) catch {
+      _ => fatal("wgpu: failed to set deferred prepass depth attachment")
+    }
+    builder.begin(frame.encoder) catch {
+      _ => fatal("wgpu: failed to begin deferred prepass render pass")
+    }
+  } else {
+    match color_view {
+      None =>
+        command_encoder_begin_render_pass_depth_u32(
+          frame.encoder,
+          depth_view,
+          depth_load_op_u32~,
+          depth_store_op_u32=@wgpu.STORE_OP_STORE,
+          depth_clear_value_f32=0.0F,
+          depth_read_only=false,
+          stencil_load_op_u32~,
+          stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+          stencil_clear_value_u32=0U,
+          stencil_read_only=true,
+        )
+      Some(color0_view) =>
+        match secondary_color_view {
+          Some(color1_view) =>
+            if base_kind == PASS_KIND_BASE_MOTION_VECTOR {
+              if prepass_normal_texture_id >= 0 {
+                frame.encoder.begin_render_pass_color2_depth_u32(
+                  color0_view,
+                  color1_view,
+                  depth_view,
+                  color0_load_op_u32=color_load_op_u32,
+                  color0_store_op_u32=@wgpu.STORE_OP_STORE,
+                  color0_clear_r_f32=0.0F,
+                  color0_clear_g_f32=0.0F,
+                  color0_clear_b_f32=0.0F,
+                  color0_clear_a_f32=0.0F,
+                  color1_load_op_u32=color_load_op_u32,
+                  color1_store_op_u32=@wgpu.STORE_OP_STORE,
+                  color1_clear_r_f32=0.0F,
+                  color1_clear_g_f32=0.0F,
+                  color1_clear_b_f32=0.0F,
+                  color1_clear_a_f32=0.0F,
+                  depth_load_op_u32~,
+                  depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                  depth_clear_value_f32=0.0F,
+                  depth_read_only=false,
+                  // Bevy-aligned reverse-Z: clear depth to far plane.
+                  stencil_load_op_u32~,
+                  stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                  stencil_clear_value_u32=0U,
+                  stencil_read_only=true,
+                )
+              } else {
+                frame.encoder.begin_render_pass_color1_depth_u32(
+                  color1_view,
+                  depth_view,
+                  color1_load_op_u32=color_load_op_u32,
+                  color1_store_op_u32=@wgpu.STORE_OP_STORE,
+                  color1_clear_r_f32=0.0F,
+                  color1_clear_g_f32=0.0F,
+                  color1_clear_b_f32=0.0F,
+                  color1_clear_a_f32=0.0F,
+                  depth_load_op_u32~,
+                  depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                  depth_clear_value_f32=0.0F,
+                  depth_read_only=false,
+                  // Bevy-aligned reverse-Z: clear depth to far plane.
+                  stencil_load_op_u32~,
+                  stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                  stencil_clear_value_u32=0U,
+                  stencil_read_only=true,
+                )
+              }
+            } else {
               frame.encoder.begin_render_pass_color2_depth_u32(
                 color0_view,
                 color1_view,
                 depth_view,
                 color0_load_op_u32=color_load_op_u32,
                 color0_store_op_u32=@wgpu.STORE_OP_STORE,
-                color0_clear_r_f32=0.0F,
-                color0_clear_g_f32=0.0F,
-                color0_clear_b_f32=0.0F,
-                color0_clear_a_f32=0.0F,
-                color1_load_op_u32=color_load_op_u32,
-                color1_store_op_u32=@wgpu.STORE_OP_STORE,
-                color1_clear_r_f32=0.0F,
-                color1_clear_g_f32=0.0F,
-                color1_clear_b_f32=0.0F,
-                color1_clear_a_f32=0.0F,
-                depth_load_op_u32~,
-                depth_store_op_u32=@wgpu.STORE_OP_STORE,
-                depth_clear_value_f32=0.0F,
-                depth_read_only=false,
-                // Bevy-aligned reverse-Z: clear depth to far plane.
-                stencil_load_op_u32~,
-                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-                stencil_clear_value_u32=0U,
-                stencil_read_only=true,
-              )
-            } else {
-              frame.encoder.begin_render_pass_color1_depth_u32(
-                color1_view,
-                depth_view,
+                color0_clear_r_f32=clear_r,
+                color0_clear_g_f32=clear_g,
+                color0_clear_b_f32=clear_b,
+                color0_clear_a_f32=clear_a,
                 color1_load_op_u32=color_load_op_u32,
                 color1_store_op_u32=@wgpu.STORE_OP_STORE,
                 color1_clear_r_f32=0.0F,
@@ -975,84 +1270,57 @@ pub fn GpuBackend::begin_pass_3d(
                 stencil_read_only=true,
               )
             }
-          } else {
-            frame.encoder.begin_render_pass_color2_depth_u32(
-              color0_view,
-              color1_view,
-              depth_view,
-              color0_load_op_u32=color_load_op_u32,
-              color0_store_op_u32=@wgpu.STORE_OP_STORE,
-              color0_clear_r_f32=clear_r,
-              color0_clear_g_f32=clear_g,
-              color0_clear_b_f32=clear_b,
-              color0_clear_a_f32=clear_a,
-              color1_load_op_u32=color_load_op_u32,
-              color1_store_op_u32=@wgpu.STORE_OP_STORE,
-              color1_clear_r_f32=0.0F,
-              color1_clear_g_f32=0.0F,
-              color1_clear_b_f32=0.0F,
-              color1_clear_a_f32=0.0F,
-              depth_load_op_u32~,
-              depth_store_op_u32=@wgpu.STORE_OP_STORE,
-              depth_clear_value_f32=0.0F,
-              depth_read_only=false,
-              // Bevy-aligned reverse-Z: clear depth to far plane.
-              stencil_load_op_u32~,
-              stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-              stencil_clear_value_u32=0U,
-              stencil_read_only=true,
-            )
-          }
-        None =>
-          match color_resolve_view {
-            Some(resolve_view) =>
-              command_encoder_begin_render_pass_color_depth_resolve_u32(
-                frame.encoder,
-                color0_view,
-                resolve_view,
-                color_load_op_u32~,
-                color_store_op_u32=@wgpu.STORE_OP_STORE,
-                color_clear_r_f32=clear_r,
-                color_clear_g_f32=clear_g,
-                color_clear_b_f32=clear_b,
-                color_clear_a_f32=clear_a,
-                depth_view,
-                depth_load_op_u32~,
-                depth_store_op_u32=@wgpu.STORE_OP_STORE,
-                depth_clear_value_f32=0.0F,
-                depth_read_only=false,
-                stencil_load_op_u32~,
-                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-                stencil_clear_value_u32=0U,
-                stencil_read_only=true,
-              ) catch {
-                _ =>
-                  fatal(
-                    "wgpu: failed to begin color/depth render pass with resolve target",
-                  )
-              }
-            None =>
-              frame.encoder.begin_render_pass_color_depth_u32(
-                color0_view,
-                depth_view,
-                color_load_op_u32~,
-                color_store_op_u32=@wgpu.STORE_OP_STORE,
-                color_clear_r_f32=clear_r,
-                color_clear_g_f32=clear_g,
-                color_clear_b_f32=clear_b,
-                color_clear_a_f32=clear_a,
-                depth_load_op_u32~,
-                depth_store_op_u32=@wgpu.STORE_OP_STORE,
-                depth_clear_value_f32=0.0F,
-                depth_read_only=false,
-                // Bevy-aligned reverse-Z: clear depth to far plane.
-                stencil_load_op_u32~,
-                stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-                stencil_clear_value_u32=0U,
-                stencil_read_only=true,
-              )
-          }
-      }
+          None =>
+            match color_resolve_view {
+              Some(resolve_view) =>
+                command_encoder_begin_render_pass_color_depth_resolve_u32(
+                  frame.encoder,
+                  color0_view,
+                  resolve_view,
+                  color_load_op_u32~,
+                  color_store_op_u32=@wgpu.STORE_OP_STORE,
+                  color_clear_r_f32=clear_r,
+                  color_clear_g_f32=clear_g,
+                  color_clear_b_f32=clear_b,
+                  color_clear_a_f32=clear_a,
+                  depth_view,
+                  depth_load_op_u32~,
+                  depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                  depth_clear_value_f32=0.0F,
+                  depth_read_only=false,
+                  stencil_load_op_u32~,
+                  stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                  stencil_clear_value_u32=0U,
+                  stencil_read_only=true,
+                ) catch {
+                  _ =>
+                    fatal(
+                      "wgpu: failed to begin color/depth render pass with resolve target",
+                    )
+                }
+              None =>
+                frame.encoder.begin_render_pass_color_depth_u32(
+                  color0_view,
+                  depth_view,
+                  color_load_op_u32~,
+                  color_store_op_u32=@wgpu.STORE_OP_STORE,
+                  color_clear_r_f32=clear_r,
+                  color_clear_g_f32=clear_g,
+                  color_clear_b_f32=clear_b,
+                  color_clear_a_f32=clear_a,
+                  depth_load_op_u32~,
+                  depth_store_op_u32=@wgpu.STORE_OP_STORE,
+                  depth_clear_value_f32=0.0F,
+                  depth_read_only=false,
+                  // Bevy-aligned reverse-Z: clear depth to far plane.
+                  stencil_load_op_u32~,
+                  stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+                  stencil_clear_value_u32=0U,
+                  stencil_read_only=true,
+                )
+            }
+        }
+    }
   }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
@@ -1308,6 +1576,7 @@ pub fn begin_pass_3d(
   prepass_normal_texture_id? : Int = -1,
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
+  prepass_deferred_lighting_pass_id_texture_id? : Int = -1,
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
@@ -1349,7 +1618,8 @@ pub fn begin_pass_3d(
       mesh3d_lights_uniform_bytes, tonemap_in_shader, tonemapping_mode, tonemapping_agx_lut_texture_id,
       tonemapping_tony_lut_texture_id, tonemapping_blender_lut_texture_id, deband_dither_enabled,
       prepass_depth_texture_id, prepass_normal_texture_id, prepass_motion_vector_texture_id,
-      prepass_deferred_texture_id, msaa_sample_count, pass_kind, clear_enabled,
+      prepass_deferred_texture_id, prepass_deferred_lighting_pass_id_texture_id,
+      msaa_sample_count, pass_kind, clear_enabled,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)
     }

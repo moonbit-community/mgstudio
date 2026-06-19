@@ -250,6 +250,26 @@ pub fn Transform::rotate(self : Transform, rotation : @math.Quat) -> Unit {
 }
 
 ///|
+pub fn Transform::rotate_local(self : Transform, rotation : @math.Quat) -> Unit {
+  self.rotation = self.rotation.mul(rotation).normalize()
+}
+
+///|
+pub fn Transform::rotate_local_x(self : Transform, angle : Float) -> Unit {
+  self.rotate_local(@math.Quat::from_rotation_x(angle))
+}
+
+///|
+pub fn Transform::rotate_local_y(self : Transform, angle : Float) -> Unit {
+  self.rotate_local(@math.Quat::from_rotation_y(angle))
+}
+
+///|
+pub fn Transform::rotate_local_z(self : Transform, angle : Float) -> Unit {
+  self.rotate_local(@math.Quat::from_rotation_z(angle))
+}
+
+///|
 pub fn Transform::translate_around(
   self : Transform,
   point : @math.Vec3,
