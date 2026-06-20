@@ -36,6 +36,10 @@ pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @app.App[@ecs.World]
 
+pub fn queue_line_gizmos_2d(@ecs.World) -> Int
+
+pub fn queue_line_gizmos_3d(@ecs.World) -> Int
+
 // Errors
 
 // Types and methods

@@ -807,6 +807,19 @@ fn gizmos_linestrip_gradient_with_config(
 }
 
 ///|
+pub fn gizmos_push_retained_line_2d(
+  config : GizmoConfig,
+  start : @math.Vec2,
+  end : @math.Vec2,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  gizmos_add_line_with_config(
+    gizmo_state, config, start, end, start_color, end_color,
+  )
+}
+
+///|
 fn gizmos_add_line_3d_with_config(
   state : Ref[GizmoState],
   config : GizmoConfig,

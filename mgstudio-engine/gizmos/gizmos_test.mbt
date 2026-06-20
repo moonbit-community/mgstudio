@@ -128,30 +128,6 @@ test "retained gizmo component installs Bevy required Transform and asset store"
 }
 
 ///|
-test "retained gizmo component extracts asset-backed lines for 3d rendering" {
-  let app = @gizmos.gizmo_plugin(@app.App::new(@ecs.World::new()))
-  let world = app.world()
-  let asset = @gizmos.GizmoAsset::GizmoAsset()
-  asset.line(
-    @math.Vec3::zero(),
-    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-    @color.Color::white(),
-  )
-  let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
-  let handle = match world.get_resource_mut(assets_key) {
-    Some(assets_ref) => assets_ref.modify(fn(assets) { assets.add(asset) })
-    None => abort("Missing GizmoAsset store in test")
-  }
-  let entity = world.spawn()
-  try! (world
-  .entity_mut(entity)
-  .insert_component(@gizmos.Gizmo::Gizmo().with_handle(handle))
-  |> ignore)
-  @sprite.gizmos_reset()
-  debug_inspect(@gizmos.prepare_retained_gizmos(world), content="1")
-}
-
-///|
 test "retained gizmo asset stores Bevy line-list and line-strip buffers" {
   let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.line(

@@ -70,10 +70,23 @@ pub fn gizmo_render_plugin_with(
 
   })
   @render.try_with_render_app(next, fn(sub_app) {
-    sub_app.add_systems(
+    sub_app
+    .add_systems(
       @render.render_schedule_stage(),
       @app.system(extract_line_gizmos).in_set(
         @render.render_system_set_extract_commands,
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(fn(world) { ignore(queue_line_gizmos_2d(world)) }).in_set(
+        gizmo_render_system_set(QueueLineGizmos2d),
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(fn(world) { ignore(queue_line_gizmos_3d(world)) }).in_set(
+        gizmo_render_system_set(QueueLineGizmos3d),
       ),
     )
   })

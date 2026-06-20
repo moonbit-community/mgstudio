@@ -113,6 +113,204 @@ fn retained_line_style_parts(style : @sprite.GizmoLineStyle) -> (Float, Float) {
 }
 
 ///|
+fn line_gizmo_render_config(
+  uniform : LineGizmoUniform,
+  mesh_config : @gizmos.GizmoMeshConfig,
+) -> @sprite.GizmoConfig {
+  {
+    enabled: true,
+    line: {
+      width: uniform.line_width,
+      perspective: mesh_config.line_perspective(),
+      style: mesh_config.line_style(),
+      joints: mesh_config.line_joints(),
+    },
+    depth_bias: uniform.depth_bias,
+    render_layers: mesh_config.render_layers(),
+  }
+}
+
+///|
+fn queue_line_gizmo_list_3d(
+  world_from_local : @math.Affine3,
+  config : @sprite.GizmoConfig,
+  positions : Array[@math.Vec3],
+  colors : Array[@color.LinearRgba],
+) -> Int {
+  let mut queued = 0
+  let pair_count = positions.length() / 2
+  for pair in 0..<pair_count {
+    let start_index = pair * 2
+    let end_index = start_index + 1
+    @sprite.gizmos_push_retained_line_3d(
+      config,
+      world_from_local.transform_point3(positions[start_index]),
+      world_from_local.transform_point3(positions[end_index]),
+      colors[start_index],
+      colors[end_index],
+    )
+    queued = queued + 1
+  }
+  queued
+}
+
+///|
+fn queue_line_gizmo_strip_3d(
+  world_from_local : @math.Affine3,
+  config : @sprite.GizmoConfig,
+  positions : Array[@math.Vec3],
+  colors : Array[@color.LinearRgba],
+) -> Int {
+  if positions.length() < 2 {
+    return 0
+  }
+  let mut queued = 0
+  for index in 0..<(positions.length() - 1) {
+    @sprite.gizmos_push_retained_line_3d(
+      config,
+      world_from_local.transform_point3(positions[index]),
+      world_from_local.transform_point3(positions[index + 1]),
+      colors[index],
+      colors[index + 1],
+    )
+    queued = queued + 1
+  }
+  queued
+}
+
+///|
+fn line_gizmo_vec2(point : @math.Vec3) -> @math.Vec2 {
+  @math.Vec2::new(point.x, point.y)
+}
+
+///|
+fn queue_line_gizmo_list_2d(
+  world_from_local : @math.Affine3,
+  config : @sprite.GizmoConfig,
+  positions : Array[@math.Vec3],
+  colors : Array[@color.LinearRgba],
+) -> Int {
+  let mut queued = 0
+  let pair_count = positions.length() / 2
+  for pair in 0..<pair_count {
+    let start_index = pair * 2
+    let end_index = start_index + 1
+    @sprite.gizmos_push_retained_line_2d(
+      config,
+      line_gizmo_vec2(world_from_local.transform_point3(positions[start_index])),
+      line_gizmo_vec2(world_from_local.transform_point3(positions[end_index])),
+      colors[start_index],
+      colors[end_index],
+    )
+    queued = queued + 1
+  }
+  queued
+}
+
+///|
+fn queue_line_gizmo_strip_2d(
+  world_from_local : @math.Affine3,
+  config : @sprite.GizmoConfig,
+  positions : Array[@math.Vec3],
+  colors : Array[@color.LinearRgba],
+) -> Int {
+  if positions.length() < 2 {
+    return 0
+  }
+  let mut queued = 0
+  for index in 0..<(positions.length() - 1) {
+    @sprite.gizmos_push_retained_line_2d(
+      config,
+      line_gizmo_vec2(world_from_local.transform_point3(positions[index])),
+      line_gizmo_vec2(world_from_local.transform_point3(positions[index + 1])),
+      colors[index],
+      colors[index + 1],
+    )
+    queued = queued + 1
+  }
+  queued
+}
+
+///|
+fn line_gizmo_assets(
+  render_world : @ecs.World,
+) -> @asset.Assets[@gizmos.GizmoAsset]? {
+  let source_world = @render.render_source_world(render_world)
+  let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
+  source_world.get_resource(assets_key)
+}
+
+///|
+pub fn queue_line_gizmos_3d(render_world : @ecs.World) -> Int {
+  guard line_gizmo_assets(render_world) is Some(gizmo_assets) else { return 0 }
+  let query : @ecs.Query[
+    (@ecs.Read[LineGizmoUniform], @ecs.Read[@gizmos.GizmoMeshConfig]),
+    @ecs.All,
+  ] = @ecs.query(render_world)
+  let mut queued = 0
+  try! query.view(fn(_entity, data) {
+    let (uniform_comp, mesh_config_comp) = data
+    let uniform = uniform_comp.value()
+    let mesh_config = mesh_config_comp.value()
+    guard gizmo_assets.get(mesh_config.handle()) is Some(gizmo_asset) else {
+      return
+    }
+    let config = line_gizmo_render_config(uniform, mesh_config)
+    let buffer = gizmo_asset.buffer()
+    queued = queued +
+      queue_line_gizmo_list_3d(
+        uniform.world_from_local(),
+        config,
+        buffer.list_positions(),
+        buffer.list_colors(),
+      )
+    queued = queued +
+      queue_line_gizmo_strip_3d(
+        uniform.world_from_local(),
+        config,
+        buffer.strip_positions(),
+        buffer.strip_colors(),
+      )
+  })
+  queued
+}
+
+///|
+pub fn queue_line_gizmos_2d(render_world : @ecs.World) -> Int {
+  guard line_gizmo_assets(render_world) is Some(gizmo_assets) else { return 0 }
+  let query : @ecs.Query[
+    (@ecs.Read[LineGizmoUniform], @ecs.Read[@gizmos.GizmoMeshConfig]),
+    @ecs.All,
+  ] = @ecs.query(render_world)
+  let mut queued = 0
+  try! query.view(fn(_entity, data) {
+    let (uniform_comp, mesh_config_comp) = data
+    let uniform = uniform_comp.value()
+    let mesh_config = mesh_config_comp.value()
+    guard gizmo_assets.get(mesh_config.handle()) is Some(gizmo_asset) else {
+      return
+    }
+    let config = line_gizmo_render_config(uniform, mesh_config)
+    let buffer = gizmo_asset.buffer()
+    queued = queued +
+      queue_line_gizmo_list_2d(
+        uniform.world_from_local(),
+        config,
+        buffer.list_positions(),
+        buffer.list_colors(),
+      )
+    queued = queued +
+      queue_line_gizmo_strip_2d(
+        uniform.world_from_local(),
+        config,
+        buffer.strip_positions(),
+        buffer.strip_colors(),
+      )
+  })
+  queued
+}
+
+///|
 pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(render_world)
   let query : @ecs.Query[
