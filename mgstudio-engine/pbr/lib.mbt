@@ -327,32 +327,31 @@ fn pbr_plugin_sync_materials_state(
 }
 
 ///|
-fn pbr_plugin_sync_light_probe_state(
-  app : @app.App[@ecs.World],
-  _runtime_config : PbrPluginRuntimeConfig,
-) -> @app.App[@ecs.World] {
-  app.add_plugins(@pbr_light_probe.LightProbePlugin::LightProbePlugin())
-}
-
-///|
 fn pbr_plugin_sync_feature_plugins(
   app : @app.App[@ecs.World],
-  _runtime_config : PbrPluginRuntimeConfig,
+  runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
   app
-  .add_plugins(@pbr_atmosphere.AtmospherePlugin::AtmospherePlugin())
-  .add_plugins(@lightmap.lightmap_plugin())
   .add_plugins(
     @pbr_ssao.ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin(),
   )
+  .add_plugins(@pbr_render.FogPlugin::FogPlugin())
+  .add_plugins(@lightmap.lightmap_plugin())
+  .add_plugins(@pbr_light_probe.LightProbePlugin::LightProbePlugin())
+  .add_plugins(
+    @pbr_render.GpuMeshPreprocessPlugin::new(
+      runtime_config.use_gpu_instance_buffer_builder,
+    ),
+  )
+  .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::VolumetricFogPlugin())
   .add_plugins(
     @pbr_ssr.ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin(),
   )
-  .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::VolumetricFogPlugin())
-  .add_plugins(@pbr_render.GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin())
   .add_plugins(@pbr_decal.ClusteredDecalPlugin::ClusteredDecalPlugin())
   .add_plugins(ContactShadowsPlugin::ContactShadowsPlugin())
   .add_plugins(@pbr_decal.ForwardDecalPlugin::ForwardDecalPlugin())
+  .add_plugins(ScatteringMediumPlugin::ScatteringMediumPlugin())
+  .add_plugins(@pbr_atmosphere.AtmospherePlugin::AtmospherePlugin())
 }
 
 ///|
@@ -381,14 +380,6 @@ fn pbr_plugin_sync_standard_material_state(
     prepass_enabled: runtime_config.prepass_enabled,
     debug_flags: runtime_config.debug_flags,
   })
-}
-
-///|
-fn pbr_plugin_sync_fog_state(
-  app : @app.App[@ecs.World],
-  _runtime_config : PbrPluginRuntimeConfig,
-) -> @app.App[@ecs.World] {
-  app.add_plugins(@pbr_render.FogPlugin::FogPlugin())
 }
 
 ///|
@@ -533,9 +524,7 @@ fn pbr_plugin_install_with(
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)
-  next = pbr_plugin_sync_light_probe_state(next, runtime_config)
   next = pbr_plugin_sync_feature_plugins(next, runtime_config)
-  next = pbr_plugin_sync_fog_state(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   next

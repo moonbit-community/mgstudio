@@ -65,6 +65,16 @@ fn read_any_prepass_plugin_loaded(
 }
 
 ///|
+fn read_gpu_preprocess_state(
+  world : @ecs.World,
+) -> @pbr_render.Render3dGpuPreprocessState {
+  match world.get_resource(@pbr_render.Render3dGpuPreprocessState::resource()) {
+    Some(state) => state
+    None => abort("missing Render3dGpuPreprocessState resource")
+  }
+}
+
+///|
 fn read_default_standard_material(
   world : @ecs.World,
 ) -> @material.StandardMaterial {
@@ -344,6 +354,10 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
   debug_inspect(render_world_with_material_resources(app), content="true")
   debug_inspect(render_world_with_fog_meta(app), content="true")
   debug_inspect(
+    app.contains_resource(ecs_key_scattering_medium_plugin_state),
+    content="true",
+  )
+  debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,
     content="true",
   )
@@ -376,6 +390,19 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     ),
     content="true",
   )
+}
+
+///|
+test "render3d: pbr plugin forwards gpu preprocess builder setting" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::{
+      ..PbrPlugin::PbrPlugin(),
+      use_gpu_instance_buffer_builder: false,
+    })
+  let state = read_gpu_preprocess_state(app.world())
+  debug_inspect(state.indirect_enabled(), content="false")
 }
 
 ///|

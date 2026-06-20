@@ -518,9 +518,8 @@ pub fn scattering_medium_plugin_with(
   if app.contains_resource(ecs_key_scattering_medium_plugin_state) {
     app
   } else {
-    app.add_startup_system(fn(world : @ecs.World) {
-      init_scattering_medium_resources(world, plugin)
-    })
+    init_scattering_medium_resources(app.world(), plugin)
+    app
   }
 }
 
