@@ -70,6 +70,16 @@ priv struct CapturedScreenshots {
 }
 
 ///|
+priv struct RenderScreenshotTargets {
+  targets : Map[@core.Entity, String]
+}
+
+///|
+priv struct RenderScreenshotsPrepared {
+  prepared : Map[@core.Entity, Int]
+}
+
+///|
 let pending_screenshot_entity_captures_resource_key : @ecs.ResourceKey[
   PendingScreenshotEntityCaptures,
 ] = @ecs.register_resource(
@@ -82,6 +92,20 @@ let captured_screenshots_resource_key : @ecs.ResourceKey[CapturedScreenshots] = 
 )
 
 ///|
+let render_screenshot_targets_resource_key : @ecs.ResourceKey[
+  RenderScreenshotTargets,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::view::window::RenderScreenshotTargets",
+)
+
+///|
+let render_screenshots_prepared_resource_key : @ecs.ResourceKey[
+  RenderScreenshotsPrepared,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::view::window::RenderScreenshotsPrepared",
+)
+
+///|
 fn PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures() -> PendingScreenshotEntityCaptures {
   PendingScreenshotEntityCaptures::{ captures: [] }
 }
@@ -89,6 +113,24 @@ fn PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures() -> Pending
 ///|
 fn CapturedScreenshots::CapturedScreenshots() -> CapturedScreenshots {
   CapturedScreenshots::{ captures: [] }
+}
+
+///|
+fn RenderScreenshotTargets::RenderScreenshotTargets() -> RenderScreenshotTargets {
+  let targets = RenderScreenshotTargets::{ targets: Map([]) }
+  if targets.targets.length() != 0 {
+    abort("RenderScreenshotTargets must initialize empty")
+  }
+  targets
+}
+
+///|
+fn RenderScreenshotsPrepared::RenderScreenshotsPrepared() -> RenderScreenshotsPrepared {
+  let prepared = RenderScreenshotsPrepared::{ prepared: Map([]) }
+  if prepared.prepared.length() != 0 {
+    abort("RenderScreenshotsPrepared must initialize empty")
+  }
+  prepared
 }
 
 ///|
@@ -266,12 +308,39 @@ fn init_captured_screenshots_resource(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn init_render_screenshot_targets_resource(world : @ecs.World) -> Unit {
+  if world.resource(render_screenshot_targets_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    render_screenshot_targets_resource_key,
+    RenderScreenshotTargets::RenderScreenshotTargets(),
+  )
+}
+
+///|
+fn init_render_screenshots_prepared_resource(world : @ecs.World) -> Unit {
+  if world.resource(render_screenshots_prepared_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    render_screenshots_prepared_resource_key,
+    RenderScreenshotsPrepared::RenderScreenshotsPrepared(),
+  )
+}
+
+///|
 fn screenshot_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let mut next = app
   init_pending_screenshot_entity_captures_resource(next.world())
   init_captured_screenshots_resource(next.world())
+  next = try_with_render_app(next, fn(render_sub_app) {
+    init_render_screenshot_targets_resource(render_sub_app.world())
+    init_render_screenshots_prepared_resource(render_sub_app.world())
+    render_sub_app
+  })
   next = next
     .add_systems(
       @app.First,

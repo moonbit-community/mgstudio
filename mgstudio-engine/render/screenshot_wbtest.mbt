@@ -28,6 +28,45 @@ test "screenshot: RenderPlugin initializes pending capture state resource" {
     app.world().resource(captured_screenshots_resource_key).is_present(),
     content="true",
   )
+  let render_app = app.get_sub_app(@app.RenderApp).unwrap()
+  debug_inspect(
+    render_app
+    .world()
+    .resource(render_screenshot_targets_resource_key)
+    .is_present(),
+    content="true",
+  )
+  let targets = render_app
+    .world()
+    .resource(render_screenshot_targets_resource_key)
+    .get()
+    .unwrap()
+  debug_inspect(targets.targets.length(), content="0")
+  debug_inspect(
+    render_app
+    .world()
+    .resource(render_screenshots_prepared_resource_key)
+    .is_present(),
+    content="true",
+  )
+  let prepared = render_app
+    .world()
+    .resource(render_screenshots_prepared_resource_key)
+    .get()
+    .unwrap()
+  debug_inspect(prepared.prepared.length(), content="0")
+}
+
+///|
+test "screenshot: ScreenshotPlugin tolerates missing RenderApp" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    ScreenshotPlugin::ScreenshotPlugin(),
+  )
+  debug_inspect(
+    app.world().resource(captured_screenshots_resource_key).is_present(),
+    content="true",
+  )
+  debug_inspect(app.get_sub_app(@app.RenderApp) is None, content="true")
 }
 
 ///|
