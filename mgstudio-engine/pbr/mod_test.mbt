@@ -587,6 +587,71 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
 }
 
 ///|
+test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let world = app.world()
+  let camera = world.spawn_empty()
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Screen,
+  )
+  try! world.set_by_key(
+    camera,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(3.0F, 4.0F, 5.0F),
+    ),
+  )
+
+  app = app.update()
+  let first_origin = app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_resource(@render_view.RenderShadowLodOrigin::resource())
+    .unwrap()
+    .origin()
+  debug_inspect(first_origin.x, content="3")
+  debug_inspect(first_origin.y, content="4")
+  debug_inspect(first_origin.z, content="5")
+
+  let explicit_origin = world.spawn_empty()
+  try! world.set_by_key(
+    explicit_origin,
+    @camera_visibility.ecs_key_shadow_lod_origin,
+    @camera_visibility.ShadowLodOrigin::ShadowLodOrigin(),
+  )
+  try! world.set_by_key(
+    explicit_origin,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(8.0F, 9.0F, 10.0F),
+    ),
+  )
+
+  app = app.update()
+  let second_origin = app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_resource(@render_view.RenderShadowLodOrigin::resource())
+    .unwrap()
+    .origin()
+  debug_inspect(second_origin.x, content="8")
+  debug_inspect(second_origin.y, content="9")
+  debug_inspect(second_origin.z, content="10")
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

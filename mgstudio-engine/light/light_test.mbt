@@ -143,6 +143,92 @@ test "sun disk defaults and off profile align with bevy intent" {
 }
 
 ///|
+fn spawn_light_test_camera(
+  world : @ecs.World,
+  x : Float,
+  y : Float,
+  z : Float,
+  target : @camera_camera.RenderTarget,
+) -> @core.Entity {
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_render_target, target)
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(x, y, z),
+    ),
+  )
+  entity
+}
+
+///|
+test "shadow LOD origin selection follows Bevy priority order" {
+  let world = @ecs.World::new()
+  let image_camera = spawn_light_test_camera(
+    world,
+    1.0F,
+    0.0F,
+    0.0F,
+    @camera_camera.RenderTarget::Image(@asset.Handle::new(1)),
+  )
+  let screen_camera = spawn_light_test_camera(
+    world,
+    2.0F,
+    0.0F,
+    0.0F,
+    @camera_camera.RenderTarget::Screen,
+  )
+  let explicit_origin = world.spawn_empty()
+  try! world.set_by_key(
+    explicit_origin,
+    @camera_visibility.ecs_key_shadow_lod_origin,
+    @camera_visibility.ShadowLodOrigin::ShadowLodOrigin(),
+  )
+
+  let selected = get_shadow_lod_origin(world).unwrap()
+  debug_inspect(selected.to_bits() == explicit_origin.to_bits(), content="true")
+
+  ignore(
+    try! world.remove_by_key(
+      explicit_origin, @camera_visibility.ecs_key_shadow_lod_origin,
+    ),
+  )
+  let window_selected = get_shadow_lod_origin(world).unwrap()
+  debug_inspect(
+    window_selected.to_bits() == screen_camera.to_bits(),
+    content="true",
+  )
+
+  ignore(
+    try! world.remove_by_key(
+      screen_camera, @camera_camera.ecs_key_render_target,
+    ),
+  )
+  try! world.set_by_key(
+    screen_camera,
+    @camera_camera.ecs_key_render_target,
+    @camera_camera.RenderTarget::Image(@asset.Handle::new(2)),
+  )
+  let fallback_selected = get_shadow_lod_origin(world).unwrap()
+  debug_inspect(
+    fallback_selected.to_bits() == image_camera.to_bits(),
+    content="true",
+  )
+}
+
+///|
+test "shadow LOD origin selection returns none without cameras or explicit origin" {
+  let world = @ecs.World::new()
+  debug_inspect(get_shadow_lod_origin(world) is None, content="true")
+}
+
+///|
 test "directional shadow map validation produces next power-of-two size" {
   debug_inspect(
     @light.directional_light_validated_shadow_map_size(1500),

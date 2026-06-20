@@ -37,6 +37,89 @@ fn light_clustered_decal_tag_safe(tag : Int) -> Int {
 }
 
 ///|
+fn light_min_entity(
+  current : @core.Entity?,
+  candidate : @core.Entity,
+) -> @core.Entity? {
+  match current {
+    Some(entity) =>
+      if candidate.to_bits() < entity.to_bits() {
+        Some(candidate)
+      } else {
+        current
+      }
+    None => Some(candidate)
+  }
+}
+
+///|
+fn light_render_target_is_window(target : @camera_camera.RenderTarget) -> Bool {
+  match target {
+    @camera_camera.RenderTarget::Screen => true
+    @camera_camera.RenderTarget::Window(_) => true
+    @camera_camera.RenderTarget::Image(_) => false
+  }
+}
+
+///|
+fn light_has_point_or_spot_light(world : @ecs.World) -> Bool {
+  let mut present = false
+  world.for_each_component(ecs_key_point_light, fn(_entity, _light) {
+    present = true
+  })
+  if present {
+    return true
+  }
+  world.for_each_component(ecs_key_spot_light, fn(_entity, _light) {
+    present = true
+  })
+  present
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/lib.rs::get_shadow_lod_origin`.
+pub fn get_shadow_lod_origin(world : @ecs.World) -> @core.Entity? {
+  let mut lod_origin : @core.Entity? = None
+  world.for_each_component(@camera_visibility.ecs_key_shadow_lod_origin, fn(
+    entity,
+    _origin,
+  ) {
+    lod_origin = light_min_entity(lod_origin, entity)
+  })
+  if lod_origin is Some(_) {
+    return lod_origin
+  }
+
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
+    let target = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
+      Some(value) => value
+      None => @camera_camera.RenderTarget::Screen
+    }
+    if light_render_target_is_window(target) {
+      lod_origin = light_min_entity(lod_origin, entity)
+    }
+  })
+  if lod_origin is Some(_) {
+    return lod_origin
+  }
+
+  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
+    lod_origin = light_min_entity(lod_origin, entity)
+  })
+  if lod_origin is Some(_) {
+    if light_has_point_or_spot_light(world) {
+      @log.warn_once(
+        "mgstudio.light.get_shadow_lod_origin.no_window_camera", "Point lights and/or spot lights are present, but no entity has `ShadowLodOrigin`, and no camera that renders to the window has been found. Consider using the `ShadowLodOrigin` component to set a LOD origin.",
+      )
+    }
+    return lod_origin
+  }
+
+  None
+}
+
+///|
 /// Bevy-aligned marker component for directional volumetric lighting.
 pub struct VolumetricLight {}
 

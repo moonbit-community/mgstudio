@@ -54,6 +54,7 @@ import {
 }
 
 import {
+  "Milky2018/mgstudio/camera/visibility" @camera_visibility,
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/render/renderer",
 } for "test"

@@ -123,6 +123,8 @@ pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[Glob
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
+pub fn get_shadow_lod_origin(@ecs.World) -> @core.Entity?
+
 pub fn light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]

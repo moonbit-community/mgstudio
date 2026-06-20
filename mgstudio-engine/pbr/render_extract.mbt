@@ -117,3 +117,32 @@ fn extract_ambient_light(render_world : @ecs.World) -> Unit {
     )
   }
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::extract_shadow_lod_origin`.
+fn extract_shadow_lod_origin(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  let next_origin = match @light.get_shadow_lod_origin(source_world) {
+    Some(entity) =>
+      match
+        (try! source_world.get_by_key(
+          entity, @transform.ecs_key_global_transform,
+        )) {
+        Some(global_transform) => global_transform.translation()
+        None => @math.Vec3::zero()
+      }
+    None => @math.Vec3::zero()
+  }
+  match
+    render_world.get_resource_mut(
+      @render_view.RenderShadowLodOrigin::resource(),
+    ) {
+    Some(origin) =>
+      origin.set(@render_view.RenderShadowLodOrigin::new(next_origin))
+    None =>
+      render_world.insert_resource(
+        @render_view.RenderShadowLodOrigin::resource(),
+        @render_view.RenderShadowLodOrigin::new(next_origin),
+      )
+  }
+}
