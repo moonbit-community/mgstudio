@@ -337,8 +337,8 @@ fn gizmos_prepare(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn gizmos_clear() -> Unit {
-  @sprite.gizmos_clear()
+fn gizmos_clear_2d() -> Unit {
+  @sprite.gizmos_clear_2d()
 }
 
 ///|
@@ -4771,7 +4771,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     gizmos_prepare(source_world)
     let cameras = rs.cameras
     if cameras.length() == 0 {
-      gizmos_clear()
+      gizmos_clear_2d()
       rs.prepared_camera_indices.clear()
       rs.queued_draw_item_counts.clear()
       rs.queued_camera_draw_items.clear()
@@ -5980,7 +5980,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         true,
       )
     }
-    gizmos_clear()
+    gizmos_clear_2d()
     rs.prepared_camera_indices.clear()
     rs.queued_draw_item_counts.clear()
     rs.queued_camera_draw_items.clear()

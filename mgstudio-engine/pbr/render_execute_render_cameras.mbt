@@ -87,6 +87,7 @@ fn render3d_execute_render_cameras(
       trace_camera_start_us,
     )
   }
+  @sprite.gizmos_clear_3d()
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_render_cameras",

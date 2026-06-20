@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/examples/gizmos/axes"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
 }
 
@@ -10,6 +11,9 @@ import {
 // Errors
 
 // Types and methods
+type SeededRng
+pub impl @app.Resource for SeededRng
+
 type ShowAxes
 pub impl @ecs.Component for ShowAxes
 

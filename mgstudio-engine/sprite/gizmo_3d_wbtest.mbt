@@ -72,6 +72,27 @@ test "sprite 3d gizmo shapes emit expected line segments" {
 }
 
 ///|
+test "sprite 2d clear keeps 3d axes lines for the 3d pass" {
+  gizmos_reset()
+  let gizmos : Gizmos[DefaultGizmoConfigGroup] = {
+    config: GizmoConfig::GizmoConfig(),
+    config_group: DefaultGizmoConfigGroup::{  },
+    state: gizmo_state,
+    world: None,
+  }
+
+  gizmos.axes_3d(@transform.Transform::identity(), 1.0F)
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="15")
+
+  gizmos_clear_2d()
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="15")
+
+  gizmos_clear_3d()
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="0")
+  gizmos_reset()
+}
+
+///|
 test "gizmos system param queues into world storage before render drain" {
   gizmos_reset()
   let app = init_gizmo_group(

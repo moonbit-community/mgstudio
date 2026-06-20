@@ -514,7 +514,7 @@ pub(all) struct GizmoState {
   pending_rounded_rects : Array[PendingRoundedRect]
   pending_arrows : Array[PendingArrow]
   pending_grids : Array[PendingGrid]
-  mut mesh_handle_3d : @asset.Handle[@mesh.Mesh]?
+  mut mesh_id_3d : Int
 }
 
 ///|
@@ -527,7 +527,7 @@ fn GizmoState::new() -> GizmoState {
     pending_rounded_rects: [],
     pending_arrows: [],
     pending_grids: [],
-    mesh_handle_3d: None,
+    mesh_id_3d: 0,
   }
 }
 
@@ -1181,8 +1181,13 @@ pub fn gizmos_prepare(world : @ecs.World) -> Unit {
 
 ///|
 pub fn gizmos_clear() -> Unit {
+  gizmos_clear_2d()
+  gizmos_clear_3d()
+}
+
+///|
+pub fn gizmos_clear_2d() -> Unit {
   gizmo_state.val.lines.clear()
-  gizmo_state.val.lines_3d.clear()
   gizmo_state.val.pending_ellipses.clear()
   gizmo_state.val.pending_arcs.clear()
   gizmo_state.val.pending_rounded_rects.clear()
@@ -1198,7 +1203,6 @@ pub fn gizmos_clear_3d() -> Unit {
 ///|
 pub fn gizmos_reset() -> Unit {
   gizmos_clear()
-  gizmos_clear_3d()
   global_gizmo_state.val.clear()
 }
 
@@ -1257,19 +1261,35 @@ pub fn gizmos_mesh_id_3d(layers : RenderLayers) -> Int? {
     None,
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )
-  let mesh = @mesh.Mesh::from_3d_geometry(geometry)
-  let handle = match gizmo_state.val.mesh_handle_3d {
-    Some(handle) => {
-      ignore(render_mesh_asset_set(handle, mesh))
-      handle
-    }
-    None => {
-      let handle = render_mesh_asset_add(mesh)
-      gizmo_state.val.mesh_handle_3d = Some(handle)
-      handle
-    }
+  guard geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices()
+    is Some(vertices_double) else {
+    return None
   }
-  Some(render2d_upload_mesh_handle(handle))
+  let vertices = vertices_double.map(fn(value) { Float::from_double(value) })
+  let topology = @mesh.Mesh3dPrimitiveTopology::LineList.to_int()
+  let mesh_id = if gizmo_state.val.mesh_id_3d > 0 &&
+    @render.host_gpu_mesh_info(gizmo_state.val.mesh_id_3d) is Some(_) &&
+    @render.host_gpu_update_mesh3d_xyznuvrgba(
+      mesh_id=gizmo_state.val.mesh_id_3d,
+      vertices_xyznuvrgba=vertices,
+      primitive_topology=topology,
+    ) {
+    gizmo_state.val.mesh_id_3d
+  } else {
+    let created = @render.host_gpu_create_mesh3d_xyznuvrgba(
+      vertices_xyznuvrgba=vertices,
+      primitive_topology=topology,
+    )
+    if created > 0 {
+      gizmo_state.val.mesh_id_3d = created
+    }
+    created
+  }
+  if mesh_id > 0 {
+    Some(mesh_id)
+  } else {
+    None
+  }
 }
 
 ///|

@@ -50,6 +50,8 @@ pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup]
 
 pub fn gizmos_clear() -> Unit
 
+pub fn gizmos_clear_2d() -> Unit
+
 pub fn gizmos_clear_3d() -> Unit
 
 pub fn gizmos_draw_lines(@render_layers.RenderLayers) -> Unit
@@ -230,7 +232,7 @@ pub(all) struct GizmoState {
   pending_rounded_rects : Array[PendingRoundedRect]
   pending_arrows : Array[PendingArrow]
   pending_grids : Array[PendingGrid]
-  mut mesh_handle_3d : @asset.Handle[@mesh.Mesh]?
+  mut mesh_id_3d : Int
 }
 
 pub struct GizmoStorage[Config] {
