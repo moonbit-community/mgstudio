@@ -129,8 +129,45 @@ pub struct ViewClusteringReadbackData {
 } derive(Eq, Debug)
 
 ///|
+pub struct ClusterableObjectZSlice {
+  object_index : UInt
+  object_type : UInt
+  z_slice : UInt
+} derive(Eq, Debug)
+
+///|
+pub struct ClusterRasterIndirectDrawParams {
+  index_count : UInt
+  instance_count : UInt
+  first_index : UInt
+  base_vertex : UInt
+  first_instance : UInt
+} derive(Eq, Debug)
+
+///|
+pub struct ClusterMetadata {
+  indirect_draw_params : ClusterRasterIndirectDrawParams
+  clustered_light_count : UInt
+  reflection_probe_count : UInt
+  irradiance_volume_count : UInt
+  decal_count : UInt
+  index_list_capacity : UInt
+  z_slice_list_capacity : UInt
+  farthest_z : UInt
+} derive(Eq, Debug)
+
+///|
 pub struct RenderViewClusteringReadbackData {
   views : Map[UInt64, ViewClusteringReadbackData]
+}
+
+///|
+pub struct ViewGpuClusteringBuffers {
+  z_slices_buffer : @render_resource.StorageBuffer[ClusterableObjectZSlice]
+  scratchpad_offsets_and_counts_buffer : @render_resource.StorageBuffer[
+    GpuClusterOffsetAndCounts,
+  ]
+  cluster_metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata]
 }
 
 ///|
@@ -291,8 +328,18 @@ pub let ecs_key_view_clustering_dummy_texture : @ecs.ComponentKey[
 )
 
 ///|
+pub let ecs_key_view_gpu_clustering_buffers : @ecs.ComponentKey[
+  ViewGpuClusteringBuffers,
+] = @ecs.register_component(debug_name="mgstudio_pbr::ViewGpuClusteringBuffers")
+
+///|
 pub impl @ecs.Component for ViewClusteringDummyTexture with fn component() {
   ecs_key_view_clustering_dummy_texture
+}
+
+///|
+pub impl @ecs.Component for ViewGpuClusteringBuffers with fn component() {
+  ecs_key_view_gpu_clustering_buffers
 }
 
 ///|
@@ -772,6 +819,106 @@ pub fn SpecializedClusteringAllocationPipelines::queue(
 }
 
 ///|
+pub fn ClusterableObjectZSlice::ClusterableObjectZSlice() -> ClusterableObjectZSlice {
+  ClusterableObjectZSlice::{ object_index: 0U, object_type: 0U, z_slice: 0U }
+}
+
+///|
+pub fn ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams() -> ClusterRasterIndirectDrawParams {
+  ClusterRasterIndirectDrawParams::{
+    index_count: 0U,
+    instance_count: 0U,
+    first_index: 0U,
+    base_vertex: 0U,
+    first_instance: 0U,
+  }
+}
+
+///|
+pub fn ClusterRasterIndirectDrawParams::new(
+  index_count : UInt,
+  instance_count : UInt,
+  first_index : UInt,
+  base_vertex : UInt,
+  first_instance : UInt,
+) -> ClusterRasterIndirectDrawParams {
+  ClusterRasterIndirectDrawParams::{
+    index_count,
+    instance_count,
+    first_index,
+    base_vertex,
+    first_instance,
+  }
+}
+
+///|
+pub fn ClusterMetadata::ClusterMetadata() -> ClusterMetadata {
+  ClusterMetadata::{
+    indirect_draw_params: ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams(),
+    clustered_light_count: 0U,
+    reflection_probe_count: 0U,
+    irradiance_volume_count: 0U,
+    decal_count: 0U,
+    index_list_capacity: 0U,
+    z_slice_list_capacity: 0U,
+    farthest_z: 0U,
+  }
+}
+
+///|
+pub fn ClusterMetadata::new(
+  clustered_light_count : UInt,
+  reflection_probe_count : UInt,
+  irradiance_volume_count : UInt,
+  decal_count : UInt,
+  index_list_capacity : UInt,
+  z_slice_list_capacity : UInt,
+) -> ClusterMetadata {
+  ClusterMetadata::{
+    indirect_draw_params: ClusterRasterIndirectDrawParams::new(
+      6U, 0U, 0U, 0U, 0U,
+    ),
+    clustered_light_count,
+    reflection_probe_count,
+    irradiance_volume_count,
+    decal_count,
+    index_list_capacity,
+    z_slice_list_capacity,
+    farthest_z: 0U,
+  }
+}
+
+///|
+pub fn ClusterMetadata::clustered_light_count(self : ClusterMetadata) -> UInt {
+  self.clustered_light_count
+}
+
+///|
+pub fn ClusterMetadata::reflection_probe_count(self : ClusterMetadata) -> UInt {
+  self.reflection_probe_count
+}
+
+///|
+pub fn ClusterMetadata::irradiance_volume_count(self : ClusterMetadata) -> UInt {
+  self.irradiance_volume_count
+}
+
+///|
+pub fn ClusterMetadata::decal_count(self : ClusterMetadata) -> UInt {
+  self.decal_count
+}
+
+///|
+pub fn ClusterMetadata::index_list_capacity(self : ClusterMetadata) -> UInt {
+  self.index_list_capacity
+}
+
+///|
+pub fn ClusterMetadata::z_slice_list_capacity(self : ClusterMetadata) -> UInt {
+  self.z_slice_list_capacity
+}
+
+///|
 pub fn ViewClusteringReadbackData::new(
   settings : @light_cluster.GlobalClusterGpuSettings,
 ) -> ViewClusteringReadbackData {
@@ -838,6 +985,95 @@ pub fn RenderViewClusteringReadbackData::len(
 }
 
 ///|
+pub fn RenderViewClusteringReadbackData::contains_main_entity(
+  self : RenderViewClusteringReadbackData,
+  main_entity : @render.MainEntity,
+) -> Bool {
+  self.views.get(main_entity.id().to_bits()) is Some(_)
+}
+
+///|
+pub fn RenderViewClusteringReadbackData::view_data(
+  self : RenderViewClusteringReadbackData,
+  main_entity : @render.MainEntity,
+) -> ViewClusteringReadbackData? {
+  self.views.get(main_entity.id().to_bits())
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::ViewGpuClusteringBuffers() -> ViewGpuClusteringBuffers {
+  let metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata] = @render_resource.StorageBuffer::with_label(
+    "clustering Z slicing metadata buffer",
+  )
+  metadata_buffer.push(ClusterMetadata::ClusterMetadata())
+  ViewGpuClusteringBuffers::{
+    z_slices_buffer: @render_resource.StorageBuffer::new(),
+    scratchpad_offsets_and_counts_buffer: @render_resource.StorageBuffer::new(),
+    cluster_metadata_buffer: metadata_buffer,
+  }
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::z_slices_len(
+  self : ViewGpuClusteringBuffers,
+) -> Int {
+  self.z_slices_buffer.len()
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_len(
+  self : ViewGpuClusteringBuffers,
+) -> Int {
+  self.scratchpad_offsets_and_counts_buffer.len()
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::metadata(
+  self : ViewGpuClusteringBuffers,
+) -> ClusterMetadata {
+  match self.cluster_metadata_buffer.values() {
+    [metadata, ..] => metadata
+    [] => ClusterMetadata::ClusterMetadata()
+  }
+}
+
+///|
+fn ViewGpuClusteringBuffers::set_metadata(
+  self : ViewGpuClusteringBuffers,
+  metadata : ClusterMetadata,
+) -> Unit {
+  self.cluster_metadata_buffer.clear()
+  self.cluster_metadata_buffer.push(metadata)
+}
+
+///|
+fn ViewGpuClusteringBuffers::ensure_z_slices_capacity(
+  self : ViewGpuClusteringBuffers,
+  capacity : Int,
+) -> Unit {
+  let missing = capacity - self.z_slices_buffer.len()
+  if missing > 0 {
+    for _ in 0..<missing {
+      self.z_slices_buffer.push(
+        ClusterableObjectZSlice::ClusterableObjectZSlice(),
+      )
+    }
+  }
+}
+
+///|
+fn ViewGpuClusteringBuffers::reserve_scratchpad_offsets_and_counts(
+  self : ViewGpuClusteringBuffers,
+  cluster_count : Int,
+) -> Unit {
+  for _ in 0..<cluster_count {
+    self.scratchpad_offsets_and_counts_buffer.push(
+      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
+    )
+  }
+}
+
+///|
 pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers() -> GpuClusteringMeshBuffers {
   GpuClusteringMeshBuffers::{
     vertices: [
@@ -887,6 +1123,14 @@ fn gpu_clustering_next_multiple_of(value : Int, quantum : Int) -> Int {
     abort("GPU clustering texture dimension must be non-negative")
   }
   (value + quantum - 1) / quantum * quantum
+}
+
+///|
+fn gpu_clustering_int_to_uint(value : Int, label : String) -> UInt {
+  if value < 0 {
+    abort("\{label} must be non-negative")
+  }
+  value.reinterpret_as_uint()
 }
 
 ///|
@@ -959,6 +1203,217 @@ pub fn gpu_clustering_is_enabled(world : @ecs.World) -> Bool {
     Some(settings) => settings.gpu_clustering() is Some(_)
     None => false
   }
+}
+
+///|
+fn gpu_clustering_view_environment_map_light_probe_count(
+  world : @ecs.World,
+  view : @core.Entity,
+) -> Int {
+  match
+    (world.get_by_key(
+      view,
+      @pbr_light_probe.RenderViewEnvironmentMapLightProbes::component(),
+    ) catch {
+      _ =>
+        abort(
+          "prepare_clusters_for_gpu_clustering: failed to read light probes",
+        )
+    }) {
+    Some(probes) => probes.probe_count()
+    None => 0
+  }
+}
+
+///|
+fn gpu_clustering_view_irradiance_volume_light_probe_count(
+  world : @ecs.World,
+  view : @core.Entity,
+) -> Int {
+  match
+    (world.get_by_key(
+      view,
+      @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::component(),
+    ) catch {
+      _ =>
+        abort(
+          "prepare_clusters_for_gpu_clustering: failed to read light probes",
+        )
+    }) {
+    Some(probes) => probes.probe_count()
+    None => 0
+  }
+}
+
+///|
+fn gpu_clustering_render_clustered_decal_count(world : @ecs.World) -> Int {
+  match world.get_resource(@pbr_decal.RenderClusteredDecals::resource()) {
+    Some(decals) => decals.len()
+    None => 0
+  }
+}
+
+///|
+fn gpu_clustering_readback_data_for_view(
+  readback : RenderViewClusteringReadbackData,
+  main_entity : @render.MainEntity,
+  settings : @light_cluster.GlobalClusterGpuSettings,
+) -> ViewClusteringReadbackData {
+  let key = main_entity.id().to_bits()
+  match readback.views.get(key) {
+    Some(data) => data
+    None => {
+      let data = ViewClusteringReadbackData::new(settings)
+      readback.views.set(key, data)
+      data
+    }
+  }
+}
+
+///|
+fn gpu_clustering_retain_live_readback_views(
+  readback : RenderViewClusteringReadbackData,
+  live_view_main_entities : Map[UInt64, Bool],
+) -> Unit {
+  let stale_keys : Array[UInt64] = []
+  for key, _ in readback.views {
+    if live_view_main_entities.get(key) is None {
+      stale_keys.push(key)
+    }
+  }
+  for key in stale_keys {
+    ignore(readback.views.remove(key))
+  }
+}
+
+///|
+pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
+  let _render_device = gpu_clustering_resource_or_abort(
+    world, @render.render_device_resource_key, "RenderDevice",
+  )
+  let _render_queue = gpu_clustering_resource_or_abort(
+    world, @render.render_queue_resource_key, "RenderQueue",
+  )
+  let global_cluster_settings = gpu_clustering_resource_or_abort(
+    world,
+    @light_cluster.GlobalClusterSettings::resource(),
+    "GlobalClusterSettings",
+  )
+  let global_cluster_settings_gpu = match
+    global_cluster_settings.gpu_clustering() {
+    Some(settings) => settings
+    None => {
+      @app.log_error(
+        "`prepare_clusters_for_gpu_clustering()` called when GPU clustering is disabled",
+      )
+      return
+    }
+  }
+  let global_clusterable_object_meta = gpu_clustering_resource_or_abort(
+    world,
+    GlobalClusterableObjectMeta::resource(),
+    "GlobalClusterableObjectMeta",
+  )
+  let render_view_clustering_index_list_sizes = gpu_clustering_resource_or_abort(
+    world,
+    RenderViewClusteringReadbackData::resource(),
+    "RenderViewClusteringReadbackData",
+  )
+  let decal_count = gpu_clustering_render_clustered_decal_count(world)
+  let live_view_main_entities : Map[UInt64, Bool] = {}
+  world.for_each_component(ExtractedClusterConfig::component(), fn(
+    view_entity,
+    extracted_cluster_config,
+  ) {
+    guard (world.get_by_key(
+        view_entity,
+        @render_view.ExtractedView::component(),
+      ) catch {
+        _ =>
+          abort(
+            "prepare_clusters_for_gpu_clustering: failed to read extracted view",
+          )
+      })
+      is Some(_) else {
+      return
+    }
+    guard (world.get_by_key(view_entity, @render.ecs_key_main_entity) catch {
+        _ =>
+          abort(
+            "prepare_clusters_for_gpu_clustering: failed to read MainEntity",
+          )
+      })
+      is Some(view_main_entity) else {
+      return
+    }
+    let dimensions = extracted_cluster_config.dimensions()
+    let cluster_count = dimensions.0 * dimensions.1 * dimensions.2
+    let view_clusters_bindings = ViewClusterBindings::ViewClusterBindings()
+    view_clusters_bindings.clear()
+    view_clusters_bindings.reserve_clusters(cluster_count)
+    live_view_main_entities.set(view_main_entity.id().to_bits(), true)
+    let view_clustering_buffer_size_data = gpu_clustering_readback_data_for_view(
+      render_view_clustering_index_list_sizes, view_main_entity, global_cluster_settings_gpu,
+    )
+    let view_gpu_clustering_buffers = ViewGpuClusteringBuffers::ViewGpuClusteringBuffers()
+    let reflection_probe_count = gpu_clustering_view_environment_map_light_probe_count(
+      world, view_entity,
+    )
+    let irradiance_volume_count = gpu_clustering_view_irradiance_volume_light_probe_count(
+      world, view_entity,
+    )
+    view_gpu_clustering_buffers.set_metadata(
+      ClusterMetadata::new(
+        gpu_clustering_int_to_uint(
+          global_clusterable_object_meta.gpu_clustered_light_count(),
+          "clustered_light_count",
+        ),
+        gpu_clustering_int_to_uint(
+          reflection_probe_count, "reflection_probe_count",
+        ),
+        gpu_clustering_int_to_uint(
+          irradiance_volume_count, "irradiance_volume_count",
+        ),
+        gpu_clustering_int_to_uint(decal_count, "decal_count"),
+        gpu_clustering_int_to_uint(
+          view_clustering_buffer_size_data.max_index_list_capacity(),
+          "index_list_capacity",
+        ),
+        gpu_clustering_int_to_uint(
+          view_clustering_buffer_size_data.z_slice_list_capacity(),
+          "z_slice_list_capacity",
+        ),
+      ),
+    )
+    view_gpu_clustering_buffers.ensure_z_slices_capacity(
+      view_clustering_buffer_size_data.z_slice_list_capacity(),
+    )
+    view_clusters_bindings.reserve_indices(
+      view_clustering_buffer_size_data.max_index_list_capacity(),
+    )
+    view_gpu_clustering_buffers.reserve_scratchpad_offsets_and_counts(
+      cluster_count,
+    )
+    world.set_by_key(
+      view_entity,
+      ViewClusterBindings::component(),
+      view_clusters_bindings,
+    ) catch {
+      _ =>
+        abort("prepare_clusters_for_gpu_clustering: failed to insert bindings")
+    }
+    world.set_by_key(
+      view_entity,
+      ViewGpuClusteringBuffers::component(),
+      view_gpu_clustering_buffers,
+    ) catch {
+      _ =>
+        abort("prepare_clusters_for_gpu_clustering: failed to insert buffers")
+    }
+  })
+  gpu_clustering_retain_live_readback_views(
+    render_view_clustering_index_list_sizes, live_view_main_entities,
+  )
 }
 
 ///|
@@ -1208,6 +1663,12 @@ fn gpu_clustering_configure_render_app_finish(
     fn() { ClusteringAllocationPipeline::ClusteringAllocationPipeline() },
   )
   sub_app
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_clusters_for_gpu_clustering)
+    .in_set(@render.render_system_set_prepare)
+    .run_if(gpu_clustering_is_enabled),
+  )
   .add_systems(
     @render.render_schedule_stage(),
     @app.system(prepare_cluster_dummy_textures)

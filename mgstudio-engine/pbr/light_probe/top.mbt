@@ -149,6 +149,16 @@ pub struct RenderViewLightProbes {
 }
 
 ///|
+pub struct RenderViewEnvironmentMapLightProbes {
+  probes : RenderViewLightProbes
+}
+
+///|
+pub struct RenderViewIrradianceVolumeLightProbes {
+  probes : RenderViewLightProbes
+}
+
+///|
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
   RenderViewLightProbes::{
     binding_index_to_textures: [],
@@ -194,6 +204,34 @@ pub fn RenderViewLightProbes::probe_count(self : RenderViewLightProbes) -> Int {
 }
 
 ///|
+pub fn RenderViewEnvironmentMapLightProbes::new(
+  probes : RenderViewLightProbes,
+) -> RenderViewEnvironmentMapLightProbes {
+  RenderViewEnvironmentMapLightProbes::{ probes, }
+}
+
+///|
+pub fn RenderViewEnvironmentMapLightProbes::probe_count(
+  self : RenderViewEnvironmentMapLightProbes,
+) -> Int {
+  self.probes.probe_count()
+}
+
+///|
+pub fn RenderViewIrradianceVolumeLightProbes::new(
+  probes : RenderViewLightProbes,
+) -> RenderViewIrradianceVolumeLightProbes {
+  RenderViewIrradianceVolumeLightProbes::{ probes, }
+}
+
+///|
+pub fn RenderViewIrradianceVolumeLightProbes::probe_count(
+  self : RenderViewIrradianceVolumeLightProbes,
+) -> Int {
+  self.probes.probe_count()
+}
+
+///|
 pub let ecs_key_light_probe_plugin_state : @ecs.ResourceKey[
   LightProbePluginState,
 ] = @ecs.register_resource(debug_name="mgstudio.pbr.light_probe.plugin_state")
@@ -203,6 +241,20 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[
   RenderViewLightProbes,
 ] = @ecs.register_component(
   debug_name="mgstudio.pbr.light_probe.render_view_light_probes",
+)
+
+///|
+pub let ecs_key_render_view_environment_map_light_probes : @ecs.ComponentKey[
+  RenderViewEnvironmentMapLightProbes,
+] = @ecs.register_component(
+  debug_name="mgstudio.pbr.light_probe.render_view_environment_map_light_probes",
+)
+
+///|
+pub let ecs_key_render_view_irradiance_volume_light_probes : @ecs.ComponentKey[
+  RenderViewIrradianceVolumeLightProbes,
+] = @ecs.register_component(
+  debug_name="mgstudio.pbr.light_probe.render_view_irradiance_volume_light_probes",
 )
 
 ///|
@@ -344,6 +396,16 @@ pub impl @app.Resource for LightProbePluginState with fn resource() {
 ///|
 pub impl @ecs.Component for RenderViewLightProbes with fn component() {
   ecs_key_render_view_light_probes
+}
+
+///|
+pub impl @ecs.Component for RenderViewEnvironmentMapLightProbes with fn component() {
+  ecs_key_render_view_environment_map_light_probes
+}
+
+///|
+pub impl @ecs.Component for RenderViewIrradianceVolumeLightProbes with fn component() {
+  ecs_key_render_view_irradiance_volume_light_probes
 }
 
 ///|

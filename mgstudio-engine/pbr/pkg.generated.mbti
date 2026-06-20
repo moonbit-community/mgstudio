@@ -384,9 +384,13 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
+pub let ecs_key_view_cluster_bindings : @ecs.ComponentKey[ViewClusterBindings]
+
 pub let ecs_key_view_clustering_dummy_texture : @ecs.ComponentKey[ViewClusteringDummyTexture]
 
 pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
+
+pub let ecs_key_view_gpu_clustering_buffers : @ecs.ComponentKey[ViewGpuClusteringBuffers]
 
 pub let ecs_key_view_gpu_clustering_pipeline_ids : @ecs.ComponentKey[ViewGpuClusteringPipelineIds]
 
@@ -647,6 +651,8 @@ pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacke
 pub fn prepare_cluster_dummy_textures(@ecs.World) -> Unit
 
 pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
+
+pub fn prepare_clusters_for_gpu_clustering(@ecs.World) -> Unit
 
 pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
 
@@ -1018,6 +1024,25 @@ pub fn ClusterConfig3d::dimensions(Self) -> (Int, Int, Int)
 pub fn ClusterConfig3d::with_dimensions(Self, Int, Int, Int) -> Self
 pub fn ClusterConfig3d::with_dynamic_resizing(Self, Bool) -> Self
 
+pub struct ClusterMetadata {
+  indirect_draw_params : ClusterRasterIndirectDrawParams
+  clustered_light_count : UInt
+  reflection_probe_count : UInt
+  irradiance_volume_count : UInt
+  decal_count : UInt
+  index_list_capacity : UInt
+  z_slice_list_capacity : UInt
+  farthest_z : UInt
+} derive(Eq, @debug.Debug)
+pub fn ClusterMetadata::ClusterMetadata() -> Self
+pub fn ClusterMetadata::clustered_light_count(Self) -> UInt
+pub fn ClusterMetadata::decal_count(Self) -> UInt
+pub fn ClusterMetadata::index_list_capacity(Self) -> UInt
+pub fn ClusterMetadata::irradiance_volume_count(Self) -> UInt
+pub fn ClusterMetadata::new(UInt, UInt, UInt, UInt, UInt, UInt) -> Self
+pub fn ClusterMetadata::reflection_probe_count(Self) -> UInt
+pub fn ClusterMetadata::z_slice_list_capacity(Self) -> UInt
+
 pub struct ClusterOffsetAndCountsPacked3d {
   offset : UInt
   point_lights : UInt
@@ -1026,6 +1051,16 @@ pub struct ClusterOffsetAndCountsPacked3d {
 pub fn ClusterOffsetAndCountsPacked3d::offset(Self) -> UInt
 pub fn ClusterOffsetAndCountsPacked3d::point_lights(Self) -> UInt
 pub fn ClusterOffsetAndCountsPacked3d::spot_lights(Self) -> UInt
+
+pub struct ClusterRasterIndirectDrawParams {
+  index_count : UInt
+  instance_count : UInt
+  first_index : UInt
+  base_vertex : UInt
+  first_instance : UInt
+} derive(Eq, @debug.Debug)
+pub fn ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams() -> Self
+pub fn ClusterRasterIndirectDrawParams::new(UInt, UInt, UInt, UInt, UInt) -> Self
 
 pub struct ClusterableObjectCounts3d {
   point_lights : UInt
@@ -1039,6 +1074,13 @@ pub fn ClusterableObjectCounts3d::new(UInt, UInt, UInt, UInt, UInt) -> Self
 pub fn ClusterableObjectCounts3d::point_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::spot_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::total(Self) -> UInt
+
+pub struct ClusterableObjectZSlice {
+  object_index : UInt
+  object_type : UInt
+  z_slice : UInt
+} derive(Eq, @debug.Debug)
+pub fn ClusterableObjectZSlice::ClusterableObjectZSlice() -> Self
 
 pub struct ClusteringAllocationPipeline {
   bind_group_layout : @render_resource.BindGroupLayoutDescriptor
@@ -1354,7 +1396,9 @@ pub(all) struct GlobalClusterableObjectMeta {
   gpu_clustered_lights : GpuClusteredLights
   entity_to_index : Map[UInt64, Int]
 }
+pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(Self, GpuClusteredLight) -> Unit
 pub fn GlobalClusterableObjectMeta::entity_to_index_len(Self) -> Int
+pub fn GlobalClusterableObjectMeta::gpu_clustered_light_count(Self) -> Int
 pub fn GlobalClusterableObjectMeta::gpu_clustered_lights(Self) -> GpuClusteredLights
 pub fn GlobalClusterableObjectMeta::new(UInt) -> Self
 pub impl @app.Resource for GlobalClusterableObjectMeta
@@ -1367,12 +1411,42 @@ pub fn GltfExtensionHandlerPbrState::GltfExtensionHandlerPbrState() -> Self
 pub fn GltfExtensionHandlerPbrState::default_material_label(Self) -> String
 pub fn GltfExtensionHandlerPbrState::standard_material_label(Self, String) -> String
 
-pub(all) enum GpuClusteredLights {
-  StorageBuffer
-  UniformBuffer
-} derive(Eq, @debug.Debug)
+pub struct GpuClusterOffsetAndCounts {
+  offset : UInt
+  point_lights : UInt
+  spot_lights : UInt
+  reflection_probes : UInt
+  irradiance_volumes : UInt
+  decals : UInt
+}
+pub fn GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts() -> Self
+pub fn GpuClusterOffsetAndCounts::new(UInt, ClusterableObjectCounts3d) -> Self
+
+pub struct GpuClusteredLight {
+  light_custom_data : @math.Vec4
+  color_inverse_square_range : @math.Vec4
+  position_radius : @math.Vec4
+  flags : UInt
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  spot_light_tan_angle : Float
+  soft_shadow_size : Float
+  shadow_map_near_z : Float
+  decal_index : UInt
+  range : Float
+}
+pub fn GpuClusteredLight::GpuClusteredLight() -> Self
+
+pub(all) struct GpuClusteredLights {
+  data : Array[GpuClusteredLight]
+  is_storage_buffer : Bool
+}
+pub fn GpuClusteredLights::add(Self, GpuClusteredLight) -> Unit
 pub fn GpuClusteredLights::binding_type(Self) -> UInt
+pub fn GpuClusteredLights::clear(Self) -> Unit
 pub fn GpuClusteredLights::from_binding_type(UInt) -> Self
+pub fn GpuClusteredLights::is_storage_buffer(Self) -> Bool
+pub fn GpuClusteredLights::len(Self) -> Int
 
 pub struct GpuClusteringMeshBuffers {
   vertices : Array[@math.Vec2]
@@ -1976,7 +2050,9 @@ pub struct RenderViewClusteringReadbackData {
   views : Map[UInt64, ViewClusteringReadbackData]
 }
 pub fn RenderViewClusteringReadbackData::RenderViewClusteringReadbackData() -> Self
+pub fn RenderViewClusteringReadbackData::contains_main_entity(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn RenderViewClusteringReadbackData::len(Self) -> Int
+pub fn RenderViewClusteringReadbackData::view_data(Self, @Milky2018/mgstudio/render.MainEntity) -> ViewClusteringReadbackData?
 pub impl @app.Resource for RenderViewClusteringReadbackData
 
 pub struct RenderWireframeAssets {
@@ -2215,6 +2291,22 @@ pub struct TransmittedShadowReceiver {
 pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
 
+pub struct ViewClusterBindings {
+  mut n_indices : Int
+  mut n_offsets : Int
+  clusterable_object_index_lists : @render_resource.StorageBuffer[UInt]
+  cluster_offsets_and_counts : @render_resource.StorageBuffer[GpuClusterOffsetAndCounts]
+}
+pub fn ViewClusterBindings::ViewClusterBindings() -> Self
+pub fn ViewClusterBindings::clear(Self) -> Unit
+pub fn ViewClusterBindings::cluster_offsets_len(Self) -> Int
+pub fn ViewClusterBindings::clusterable_object_index_lists_len(Self) -> Int
+pub fn ViewClusterBindings::n_indices(Self) -> Int
+pub fn ViewClusterBindings::n_offsets(Self) -> Int
+pub fn ViewClusterBindings::reserve_clusters(Self, Int) -> Unit
+pub fn ViewClusterBindings::reserve_indices(Self, Int) -> Unit
+pub impl @ecs.Component for ViewClusterBindings
+
 pub struct ViewClusterBindings3d {
   indices : Array[UInt]
   offsets_and_counts : Array[(UInt, ClusterableObjectCounts3d)]
@@ -2263,6 +2355,17 @@ pub struct ViewContactShadowsUniformOffset {
 pub fn ViewContactShadowsUniformOffset::new(UInt) -> Self
 pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewContactShadowsUniformOffset
+
+pub struct ViewGpuClusteringBuffers {
+  z_slices_buffer : @render_resource.StorageBuffer[ClusterableObjectZSlice]
+  scratchpad_offsets_and_counts_buffer : @render_resource.StorageBuffer[GpuClusterOffsetAndCounts]
+  cluster_metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata]
+}
+pub fn ViewGpuClusteringBuffers::ViewGpuClusteringBuffers() -> Self
+pub fn ViewGpuClusteringBuffers::metadata(Self) -> ClusterMetadata
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_len(Self) -> Int
+pub fn ViewGpuClusteringBuffers::z_slices_len(Self) -> Int
+pub impl @ecs.Component for ViewGpuClusteringBuffers
 
 pub struct ViewGpuClusteringPipelineIds {
   clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId

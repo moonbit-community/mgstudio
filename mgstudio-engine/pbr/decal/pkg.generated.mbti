@@ -161,6 +161,7 @@ pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int
 pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, @light.ClusteredDecal, @math.Affine3, world_position? : @math.Vec3, bounding_sphere_radius? : Float) -> Int
+pub fn RenderClusteredDecals::len(Self) -> Int
 pub fn RenderClusteredDecals::texture_ids(Self) -> Array[Int]
 pub impl @app.Resource for RenderClusteredDecals
 

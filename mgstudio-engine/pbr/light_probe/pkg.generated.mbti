@@ -27,6 +27,10 @@ pub let ecs_key_light_probe_plugin_state : @ecs.ResourceKey[LightProbePluginStat
 
 pub let ecs_key_light_probes_buffer : @ecs.ResourceKey[LightProbesBuffer]
 
+pub let ecs_key_render_view_environment_map_light_probes : @ecs.ComponentKey[RenderViewEnvironmentMapLightProbes]
+
+pub let ecs_key_render_view_irradiance_volume_light_probes : @ecs.ComponentKey[RenderViewIrradianceVolumeLightProbes]
+
 pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProbes]
 
 pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
@@ -202,6 +206,13 @@ pub struct RenderViewEnvironmentMapBindGroupEntriesSingle {
   specular_texture : @asset.Handle[@image.Image]?
 }
 
+pub struct RenderViewEnvironmentMapLightProbes {
+  probes : RenderViewLightProbes
+}
+pub fn RenderViewEnvironmentMapLightProbes::new(RenderViewLightProbes) -> Self
+pub fn RenderViewEnvironmentMapLightProbes::probe_count(Self) -> Int
+pub impl @ecs.Component for RenderViewEnvironmentMapLightProbes
+
 pub(all) enum RenderViewEnvironmentMapTextureIdEntries {
   Single(RenderViewEnvironmentMapTextureIdEntriesSingle)
   Multiple(RenderViewEnvironmentMapTextureIdEntriesMultiple)
@@ -229,6 +240,13 @@ pub struct RenderViewIrradianceVolumeInfo {
 pub fn RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo() -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_intensity(Self, Float) -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_texture(Self, @asset.Handle[@image.Image]?) -> Self
+
+pub struct RenderViewIrradianceVolumeLightProbes {
+  probes : RenderViewLightProbes
+}
+pub fn RenderViewIrradianceVolumeLightProbes::new(RenderViewLightProbes) -> Self
+pub fn RenderViewIrradianceVolumeLightProbes::probe_count(Self) -> Int
+pub impl @ecs.Component for RenderViewIrradianceVolumeLightProbes
 
 pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
   Single(Int)

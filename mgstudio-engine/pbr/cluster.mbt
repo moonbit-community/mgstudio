@@ -37,28 +37,87 @@ pub const VIEW_CLUSTER_BINDINGS_MAX_INDICES : Int = 16384
 const CLUSTER_COUNT_SIZE : Int = 9
 
 ///|
-pub(all) enum GpuClusteredLights {
-  StorageBuffer
-  UniformBuffer
-} derive(Eq, Debug)
+pub struct GpuClusteredLight {
+  light_custom_data : @math.Vec4
+  color_inverse_square_range : @math.Vec4
+  position_radius : @math.Vec4
+  flags : UInt
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  spot_light_tan_angle : Float
+  soft_shadow_size : Float
+  shadow_map_near_z : Float
+  decal_index : UInt
+  range : Float
+}
+
+///|
+pub(all) struct GpuClusteredLights {
+  data : Array[GpuClusteredLight]
+  is_storage_buffer : Bool
+}
+
+///|
+pub fn GpuClusteredLight::GpuClusteredLight() -> GpuClusteredLight {
+  GpuClusteredLight::{
+    light_custom_data: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color_inverse_square_range: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    position_radius: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    flags: 0U,
+    shadow_depth_bias: 0.0F,
+    shadow_normal_bias: 0.0F,
+    spot_light_tan_angle: 0.0F,
+    soft_shadow_size: 0.0F,
+    shadow_map_near_z: 0.0F,
+    decal_index: 0U,
+    range: 0.0F,
+  }
+}
 
 ///|
 pub fn GpuClusteredLights::from_binding_type(
   binding_type : UInt,
 ) -> GpuClusteredLights {
   if binding_type == @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE {
-    StorageBuffer
+    GpuClusteredLights::{ data: [], is_storage_buffer: true }
   } else {
-    UniformBuffer
+    GpuClusteredLights::{ data: [], is_storage_buffer: false }
   }
 }
 
 ///|
 pub fn GpuClusteredLights::binding_type(self : GpuClusteredLights) -> UInt {
-  match self {
-    StorageBuffer => @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE
-    UniformBuffer => @wgpu.BUFFER_BINDING_TYPE_UNIFORM
+  if self.is_storage_buffer {
+    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE
+  } else {
+    @wgpu.BUFFER_BINDING_TYPE_UNIFORM
   }
+}
+
+///|
+pub fn GpuClusteredLights::clear(self : GpuClusteredLights) -> Unit {
+  self.data.clear()
+}
+
+///|
+pub fn GpuClusteredLights::len(self : GpuClusteredLights) -> Int {
+  self.data.length()
+}
+
+///|
+pub fn GpuClusteredLights::add(
+  self : GpuClusteredLights,
+  light : GpuClusteredLight,
+) -> Unit {
+  if self.is_storage_buffer ||
+    self.data.length() < MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
+    self.data.push(light)
+  }
+}
+
+///|
+pub fn GpuClusteredLights::is_storage_buffer(self : GpuClusteredLights) -> Bool {
+  self.is_storage_buffer
 }
 
 ///|
@@ -101,6 +160,21 @@ pub fn GlobalClusterableObjectMeta::entity_to_index_len(
   self : GlobalClusterableObjectMeta,
 ) -> Int {
   self.entity_to_index.length()
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::gpu_clustered_light_count(
+  self : GlobalClusterableObjectMeta,
+) -> Int {
+  self.gpu_clustered_lights.len()
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(
+  self : GlobalClusterableObjectMeta,
+  light : GpuClusteredLight,
+) -> Unit {
+  self.gpu_clustered_lights.add(light)
 }
 
 ///|
@@ -421,6 +495,135 @@ pub struct ViewClusterBindings3d {
   offsets_and_counts : Array[(UInt, ClusterableObjectCounts3d)]
   max_indices : Int
   max_offsets : Int
+}
+
+///|
+pub struct GpuClusterOffsetAndCounts {
+  offset : UInt
+  point_lights : UInt
+  spot_lights : UInt
+  reflection_probes : UInt
+  irradiance_volumes : UInt
+  decals : UInt
+}
+
+///|
+pub struct ViewClusterBindings {
+  mut n_indices : Int
+  mut n_offsets : Int
+  clusterable_object_index_lists : @render_resource.StorageBuffer[UInt]
+  cluster_offsets_and_counts : @render_resource.StorageBuffer[
+    GpuClusterOffsetAndCounts,
+  ]
+}
+
+///|
+pub let ecs_key_view_cluster_bindings : @ecs.ComponentKey[ViewClusterBindings] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewClusterBindings",
+)
+
+///|
+pub impl @ecs.Component for ViewClusterBindings with fn component() {
+  ecs_key_view_cluster_bindings
+}
+
+///|
+pub fn GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts() -> GpuClusterOffsetAndCounts {
+  GpuClusterOffsetAndCounts::{
+    offset: 0U,
+    point_lights: 0U,
+    spot_lights: 0U,
+    reflection_probes: 0U,
+    irradiance_volumes: 0U,
+    decals: 0U,
+  }
+}
+
+///|
+pub fn GpuClusterOffsetAndCounts::new(
+  offset : UInt,
+  counts : ClusterableObjectCounts3d,
+) -> GpuClusterOffsetAndCounts {
+  GpuClusterOffsetAndCounts::{
+    offset,
+    point_lights: counts.point_lights,
+    spot_lights: counts.spot_lights,
+    reflection_probes: counts.reflection_probes,
+    irradiance_volumes: counts.irradiance_volumes,
+    decals: counts.decals,
+  }
+}
+
+///|
+pub fn ViewClusterBindings::ViewClusterBindings() -> ViewClusterBindings {
+  ViewClusterBindings::{
+    n_indices: 0,
+    n_offsets: 0,
+    clusterable_object_index_lists: @render_resource.StorageBuffer::new(),
+    cluster_offsets_and_counts: @render_resource.StorageBuffer::new(),
+  }
+}
+
+///|
+pub fn ViewClusterBindings::clear(self : ViewClusterBindings) -> Unit {
+  self.clusterable_object_index_lists.clear()
+  self.cluster_offsets_and_counts.clear()
+  self.n_indices = 0
+  self.n_offsets = 0
+}
+
+///|
+pub fn ViewClusterBindings::n_indices(self : ViewClusterBindings) -> Int {
+  self.n_indices
+}
+
+///|
+pub fn ViewClusterBindings::n_offsets(self : ViewClusterBindings) -> Int {
+  self.n_offsets
+}
+
+///|
+pub fn ViewClusterBindings::reserve_clusters(
+  self : ViewClusterBindings,
+  clusters : Int,
+) -> Unit {
+  if clusters < 0 {
+    abort("ViewClusterBindings::reserve_clusters requires non-negative count")
+  }
+  for _ in 0..<clusters {
+    self.cluster_offsets_and_counts.push(
+      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
+    )
+  }
+  self.n_offsets += clusters
+}
+
+///|
+pub fn ViewClusterBindings::reserve_indices(
+  self : ViewClusterBindings,
+  elements : Int,
+) -> Unit {
+  if elements < 0 {
+    abort("ViewClusterBindings::reserve_indices requires non-negative count")
+  }
+  for _ in 0..<elements {
+    self.clusterable_object_index_lists.push(0U)
+  }
+  self.n_indices += elements
+}
+
+///|
+pub fn ViewClusterBindings::cluster_offsets_len(
+  self : ViewClusterBindings,
+) -> Int {
+  self.cluster_offsets_and_counts.len()
+}
+
+///|
+pub fn ViewClusterBindings::clusterable_object_index_lists_len(
+  self : ViewClusterBindings,
+) -> Int {
+  self.clusterable_object_index_lists.len()
 }
 
 ///|

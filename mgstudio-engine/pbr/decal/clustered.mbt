@@ -178,6 +178,11 @@ pub fn RenderClusteredDecals::get_decal_index(
 }
 
 ///|
+pub fn RenderClusteredDecals::len(self : RenderClusteredDecals) -> Int {
+  self.decals.length()
+}
+
+///|
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @light.ecs_key_clustered_decal
 
 ///|

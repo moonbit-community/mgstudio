@@ -549,6 +549,127 @@ test "render3d: gpu clustering prepare creates dummy textures per extracted view
 }
 
 ///|
+test "render3d: gpu clustering prepare creates per-view buffers" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(@render.render_queue_resource_key, render_queue)
+  world.insert_resource(
+    @light_cluster.GlobalClusterSettings::resource(),
+    @light_cluster.GlobalClusterSettings::new(
+      true,
+      true,
+      Some(@light_cluster.GlobalClusterGpuSettings::new(8, 16)),
+      204,
+      16384,
+    ),
+  )
+  let meta = GlobalClusterableObjectMeta::new(
+    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+  )
+  meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
+  meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
+  world.insert_resource(GlobalClusterableObjectMeta::resource(), meta)
+  let readback = RenderViewClusteringReadbackData::RenderViewClusteringReadbackData()
+  readback.views.set(
+    @core.Entity::new(999, 1).to_bits(),
+    ViewClusteringReadbackData::new(
+      @light_cluster.GlobalClusterGpuSettings::new(4, 4),
+    ),
+  )
+  world.insert_resource(RenderViewClusteringReadbackData::resource(), readback)
+  let render_decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
+  ignore(
+    render_decals.insert_decal(
+      @core.Entity::new(200, 1),
+      @light.ClusteredDecal::ClusteredDecal(),
+    ),
+  )
+  world.insert_resource(
+    @pbr_decal.RenderClusteredDecals::resource(),
+    render_decals,
+  )
+  let view = world.spawn()
+  let main_view = @core.Entity::new(10, 1)
+  try! world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
+  )
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(main_view),
+  )
+  try! world.set_by_key(
+    view,
+    ExtractedClusterConfig::component(),
+    ExtractedClusterConfig::new(0.1F, 1000.0F, 2, 3, 4),
+  )
+  let probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
+  probes.push_probe(@pbr_light_probe.RenderLightProbe::RenderLightProbe())
+  probes.push_probe(@pbr_light_probe.RenderLightProbe::RenderLightProbe())
+  let irradiance_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
+  irradiance_probes.push_probe(
+    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
+  )
+  try! world.set_by_key(
+    view,
+    @pbr_light_probe.RenderViewEnvironmentMapLightProbes::component(),
+    @pbr_light_probe.RenderViewEnvironmentMapLightProbes::new(probes),
+  )
+  try! world.set_by_key(
+    view,
+    @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::component(),
+    @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::new(
+      irradiance_probes,
+    ),
+  )
+
+  prepare_clusters_for_gpu_clustering(world)
+
+  let bindings = match
+    (try! world.get_by_key(view, ViewClusterBindings::component())) {
+    Some(value) => value
+    None => abort("missing ViewClusterBindings")
+  }
+  let buffers = match
+    (try! world.get_by_key(view, ViewGpuClusteringBuffers::component())) {
+    Some(value) => value
+    None => abort("missing ViewGpuClusteringBuffers")
+  }
+  let metadata = buffers.metadata()
+  debug_inspect(bindings.n_offsets(), content="24")
+  debug_inspect(bindings.cluster_offsets_len(), content="24")
+  debug_inspect(bindings.n_indices(), content="16")
+  debug_inspect(bindings.clusterable_object_index_lists_len(), content="16")
+  debug_inspect(buffers.z_slices_len(), content="8")
+  debug_inspect(buffers.scratchpad_offsets_and_counts_len(), content="24")
+  debug_inspect(metadata.clustered_light_count(), content="2")
+  debug_inspect(metadata.reflection_probe_count(), content="2")
+  debug_inspect(metadata.irradiance_volume_count(), content="1")
+  debug_inspect(metadata.decal_count(), content="1")
+  debug_inspect(metadata.index_list_capacity(), content="16")
+  debug_inspect(metadata.z_slice_list_capacity(), content="8")
+  let readback_after = world
+    .get_resource(RenderViewClusteringReadbackData::resource())
+    .unwrap()
+  debug_inspect(readback_after.len(), content="1")
+  debug_inspect(
+    readback_after.contains_main_entity(@render.MainEntity::new(main_view)),
+    content="true",
+  )
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()
