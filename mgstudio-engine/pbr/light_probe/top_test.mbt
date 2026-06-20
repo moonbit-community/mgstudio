@@ -79,3 +79,28 @@ test "pbr light probe: buffer returns byte offsets for view uniforms" {
   inspect(buffer.uniform_count(), content="2")
   inspect(buffer.uniform_bytes_at(1) is Some(_), content="true")
 }
+
+///|
+test "pbr light probe: buffer uploads uniform bytes to gpu binding" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let queue = device.queue()
+  let buffer = LightProbesBuffer::LightProbesBuffer()
+  buffer.write_buffer(device, queue)
+  inspect(buffer.binding() is None, content="true")
+  ignore(
+    buffer.push_uniform_bytes(
+      Bytes::make(LIGHT_PROBES_UNIFORM_SIZE_BYTES, b'\x01'),
+    ),
+  )
+  buffer.write_buffer(device, queue)
+  inspect(buffer.binding() is Some(_), content="true")
+  inspect(
+    buffer.gpu_capacity() >= LIGHT_PROBES_UNIFORM_SIZE_BYTES.to_uint64(),
+    content="true",
+  )
+  device.release()
+  adapter.release()
+  instance.release()
+}

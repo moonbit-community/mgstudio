@@ -698,21 +698,128 @@ pub struct GpuLights3d {
 }
 
 ///|
+pub fn GpuLights3d::GpuLights3d() -> GpuLights3d {
+  GpuLights3d::{
+    directional_lights: [],
+    ambient_color: @color.Color::black(),
+    cluster_dimensions: (0, 0, 0, 0),
+    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    n_directional_lights: 0,
+    spot_light_shadowmap_offset: 0,
+    ambient_light_affects_lightmapped_meshes: 0,
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::LightMeta`.
 
 ///|
 pub struct LightMeta {
   view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
+  mut view_gpu_lights_buffer : @wgpu.Buffer?
+  mut view_gpu_lights_capacity : UInt64
 }
 
 ///|
 pub fn LightMeta::LightMeta() -> LightMeta {
-  LightMeta::{ view_gpu_lights: @render_resource.DynamicUniformBuffer::new() }
+  LightMeta::{
+    view_gpu_lights: @render_resource.DynamicUniformBuffer::new(),
+    view_gpu_lights_buffer: None,
+    view_gpu_lights_capacity: 0UL,
+  }
 }
 
 ///|
 pub fn LightMeta::view_gpu_lights_len(self : LightMeta) -> Int {
   self.view_gpu_lights.len()
+}
+
+///|
+pub fn LightMeta::push_view_gpu_lights(
+  self : LightMeta,
+  lights : GpuLights3d,
+) -> UInt {
+  let offset = self.view_gpu_lights.len() *
+    render3d_gpu_lights_uniform_bytes(lights).length()
+  self.view_gpu_lights.push(lights)
+  offset.reinterpret_as_uint()
+}
+
+///|
+pub fn LightMeta::clear_view_gpu_lights(self : LightMeta) -> Unit {
+  self.view_gpu_lights.clear()
+}
+
+///|
+fn light_meta_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+fn LightMeta::view_gpu_lights_bytes(self : LightMeta) -> Bytes {
+  let out : Array[Byte] = []
+  for lights in self.view_gpu_lights.values() {
+    let bytes = render3d_gpu_lights_uniform_bytes(lights)
+    for byte in bytes {
+      out.push(byte)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+///|
+pub fn LightMeta::write_view_gpu_lights_buffer(
+  self : LightMeta,
+  device : @wgpu.Device,
+  queue : @wgpu.Queue,
+) -> Unit {
+  let bytes = self.view_gpu_lights_bytes()
+  if bytes.length() == 0 {
+    return
+  }
+  let required_size = light_meta_non_zero_u64(bytes.length().to_uint64())
+  let buffer = match self.view_gpu_lights_buffer {
+    Some(existing) if self.view_gpu_lights_capacity >= required_size => existing
+    Some(existing) => {
+      existing.release()
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("view gpu lights buffer")
+      self.view_gpu_lights_capacity = required_size
+      next
+    }
+    None => {
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("view gpu lights buffer")
+      self.view_gpu_lights_capacity = required_size
+      next
+    }
+  }
+  queue.write_buffer(buffer, 0UL, bytes)
+  self.view_gpu_lights_buffer = Some(buffer)
+}
+
+///|
+pub fn LightMeta::view_gpu_lights_binding(self : LightMeta) -> @wgpu.Buffer? {
+  self.view_gpu_lights_buffer
+}
+
+///|
+pub fn LightMeta::view_gpu_lights_capacity(self : LightMeta) -> UInt64 {
+  self.view_gpu_lights_capacity
 }
 
 ///|

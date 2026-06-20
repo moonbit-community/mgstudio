@@ -695,6 +695,7 @@ pub struct GpuLights3d {
   spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
 }
+pub fn GpuLights3d::GpuLights3d() -> Self
 
 pub struct GpuMeshPreprocessPlugin {
   use_gpu_instance_buffer_builder : Bool
@@ -760,9 +761,16 @@ pub(all) enum GpuPreprocessWorkItemBuffers3d {
 
 pub struct LightMeta {
   view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
+  mut view_gpu_lights_buffer : @wgpu_mbt.Buffer?
+  mut view_gpu_lights_capacity : UInt64
 }
 pub fn LightMeta::LightMeta() -> Self
+pub fn LightMeta::clear_view_gpu_lights(Self) -> Unit
+pub fn LightMeta::push_view_gpu_lights(Self, GpuLights3d) -> UInt
+pub fn LightMeta::view_gpu_lights_binding(Self) -> @wgpu_mbt.Buffer?
+pub fn LightMeta::view_gpu_lights_capacity(Self) -> UInt64
 pub fn LightMeta::view_gpu_lights_len(Self) -> Int
+pub fn LightMeta::write_view_gpu_lights_buffer(Self, @wgpu_mbt.Device, @wgpu_mbt.Queue) -> Unit
 pub impl @app.Resource for LightMeta
 
 pub struct MeshBindGroupPair3d {

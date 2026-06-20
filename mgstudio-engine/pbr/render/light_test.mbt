@@ -1681,3 +1681,24 @@ test "pbr render light: directional sun disk defaults and component override pro
     content="true",
   )
 }
+
+///|
+test "pbr render light: LightMeta uploads view gpu lights to gpu binding" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let queue = device.queue()
+  let light_meta = LightMeta::LightMeta()
+  light_meta.write_view_gpu_lights_buffer(device, queue)
+  inspect(light_meta.view_gpu_lights_binding() is None, content="true")
+  let offset = light_meta.push_view_gpu_lights(GpuLights3d::GpuLights3d())
+  inspect(offset, content="0")
+
+  light_meta.write_view_gpu_lights_buffer(device, queue)
+
+  inspect(light_meta.view_gpu_lights_binding() is Some(_), content="true")
+  inspect(light_meta.view_gpu_lights_capacity() > 0UL, content="true")
+  device.release()
+  adapter.release()
+  instance.release()
+}

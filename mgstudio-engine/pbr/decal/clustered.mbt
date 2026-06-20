@@ -248,11 +248,13 @@ pub fn clustered_decal_bind_group_layout_entries(
 ///|
 pub struct DecalsBuffer {
   decals : Array[RenderClusteredDecal]
+  mut gpu_buffer : @wgpu.Buffer?
+  mut gpu_capacity : UInt64
 }
 
 ///|
 pub fn DecalsBuffer::DecalsBuffer() -> DecalsBuffer {
-  DecalsBuffer::{ decals: [] }
+  DecalsBuffer::{ decals: [], gpu_buffer: None, gpu_capacity: 0UL }
 }
 
 ///|
@@ -345,6 +347,72 @@ pub fn DecalsBuffer::gpu_words(self : DecalsBuffer) -> Array[UInt] {
     render_clustered_decal_push_gpu_words(words, decal)
   }
   words
+}
+
+///|
+fn decals_buffer_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+fn decals_buffer_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+pub fn DecalsBuffer::write_buffer(
+  self : DecalsBuffer,
+  device : @wgpu.Device,
+  queue : @wgpu.Queue,
+) -> Unit {
+  let bytes = decals_buffer_u32le_pack(self.gpu_words())
+  let required_size = decals_buffer_non_zero_u64(bytes.length().to_uint64())
+  let buffer = match self.gpu_buffer {
+    Some(existing) if self.gpu_capacity >= required_size => existing
+    Some(existing) => {
+      existing.release()
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("clustered decals buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+    None => {
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("clustered decals buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+  }
+  queue.write_buffer(buffer, 0UL, bytes)
+  self.gpu_buffer = Some(buffer)
+}
+
+///|
+pub fn DecalsBuffer::buffer(self : DecalsBuffer) -> @wgpu.Buffer? {
+  self.gpu_buffer
+}
+
+///|
+pub fn DecalsBuffer::gpu_capacity(self : DecalsBuffer) -> UInt64 {
+  self.gpu_capacity
 }
 
 ///|

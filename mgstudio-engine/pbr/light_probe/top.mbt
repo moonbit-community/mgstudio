@@ -313,11 +313,13 @@ pub fn LightProbesUniform::view_cubemap_index(self : LightProbesUniform) -> Int 
 ///|
 pub struct LightProbesBuffer {
   uniform_bytes : Array[Bytes]
+  mut gpu_buffer : @wgpu.Buffer?
+  mut gpu_capacity : UInt64
 }
 
 ///|
 pub fn LightProbesBuffer::LightProbesBuffer() -> LightProbesBuffer {
-  LightProbesBuffer::{ uniform_bytes: [] }
+  LightProbesBuffer::{ uniform_bytes: [], gpu_buffer: None, gpu_capacity: 0UL }
 }
 
 ///|
@@ -350,6 +352,81 @@ pub fn LightProbesBuffer::uniform_bytes_at(
   } else {
     Some(self.uniform_bytes[index])
   }
+}
+
+///|
+fn light_probes_buffer_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+fn LightProbesBuffer::light_probes_buffer_bytes(
+  self : LightProbesBuffer,
+) -> Bytes {
+  let out : Array[Byte] = []
+  for uniform in self.uniform_bytes {
+    for byte in uniform {
+      out.push(byte)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+///|
+pub fn LightProbesBuffer::write_buffer(
+  self : LightProbesBuffer,
+  device : @wgpu.Device,
+  queue : @wgpu.Queue,
+) -> Unit {
+  let bytes = self.light_probes_buffer_bytes()
+  if bytes.length() == 0 {
+    return
+  }
+  let required_size = light_probes_buffer_non_zero_u64(
+    bytes.length().to_uint64(),
+  )
+  let buffer = match self.gpu_buffer {
+    Some(existing) if self.gpu_capacity >= required_size => existing
+    Some(existing) => {
+      existing.release()
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("light probes buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+    None => {
+      let next = device.create_buffer(
+        size=required_size,
+        usage=@wgpu.BufferUsage::from_u64(
+          @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+        ),
+      )
+      next.set_label("light probes buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+  }
+  queue.write_buffer(buffer, 0UL, bytes)
+  self.gpu_buffer = Some(buffer)
+}
+
+///|
+pub fn LightProbesBuffer::binding(self : LightProbesBuffer) -> @wgpu.Buffer? {
+  self.gpu_buffer
+}
+
+///|
+pub fn LightProbesBuffer::gpu_capacity(self : LightProbesBuffer) -> UInt64 {
+  self.gpu_capacity
 }
 
 ///|

@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/json",
 }
 
@@ -94,12 +95,17 @@ pub fn DecalPluginState::forward_enabled(Self) -> Bool
 
 pub struct DecalsBuffer {
   decals : Array[RenderClusteredDecal]
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
 }
 pub fn DecalsBuffer::DecalsBuffer() -> Self
+pub fn DecalsBuffer::buffer(Self) -> @wgpu_mbt.Buffer?
 pub fn DecalsBuffer::clear(Self) -> Unit
+pub fn DecalsBuffer::gpu_capacity(Self) -> UInt64
 pub fn DecalsBuffer::gpu_words(Self) -> Array[UInt]
 pub fn DecalsBuffer::is_empty(Self) -> Bool
 pub fn DecalsBuffer::push(Self, RenderClusteredDecal) -> Unit
+pub fn DecalsBuffer::write_buffer(Self, @wgpu_mbt.Device, @wgpu_mbt.Queue) -> Unit
 pub impl @app.Resource for DecalsBuffer
 
 pub struct ForwardDecal {

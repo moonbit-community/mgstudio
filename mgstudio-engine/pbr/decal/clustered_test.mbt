@@ -62,6 +62,25 @@ test "pbr/decal: upload_decals keeps gpu buffer non-empty" {
 }
 
 ///|
+test "pbr/decal: decals buffer uploads storage data to gpu buffer" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let queue = device.queue()
+  let render_decals = RenderClusteredDecals::RenderClusteredDecals()
+  let decals_buffer = DecalsBuffer::DecalsBuffer()
+  render3d_upload_decals(render_decals, decals_buffer)
+
+  decals_buffer.write_buffer(device, queue)
+
+  debug_inspect(decals_buffer.buffer() is Some(_), content="true")
+  debug_inspect(decals_buffer.gpu_capacity() > 0UL, content="true")
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "pbr/decal: bind-group entries pad textures when partial binding is unavailable" {
   let render_decals = RenderClusteredDecals::RenderClusteredDecals()
   let decals_buffer = DecalsBuffer::DecalsBuffer()

@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

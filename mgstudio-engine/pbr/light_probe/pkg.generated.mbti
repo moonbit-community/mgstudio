@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/wgpu_mbt",
 }
 
 // Values
@@ -155,12 +156,17 @@ pub impl @app.Resource for LightProbePluginState
 
 pub struct LightProbesBuffer {
   uniform_bytes : Array[Bytes]
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
 }
 pub fn LightProbesBuffer::LightProbesBuffer() -> Self
+pub fn LightProbesBuffer::binding(Self) -> @wgpu_mbt.Buffer?
 pub fn LightProbesBuffer::clear(Self) -> Unit
+pub fn LightProbesBuffer::gpu_capacity(Self) -> UInt64
 pub fn LightProbesBuffer::push_uniform_bytes(Self, Bytes) -> UInt
 pub fn LightProbesBuffer::uniform_bytes_at(Self, Int) -> Bytes?
 pub fn LightProbesBuffer::uniform_count(Self) -> Int
+pub fn LightProbesBuffer::write_buffer(Self, @wgpu_mbt.Device, @wgpu_mbt.Queue) -> Unit
 pub impl @app.Resource for LightProbesBuffer
 
 pub struct LightProbesUniform {
