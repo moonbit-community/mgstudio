@@ -7,15 +7,23 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/visibility",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const COLOR_GRADING_UNIFORM_SIZE_BYTES : Int = 160
+
+pub const VIEW_UNIFORM_SIZE_BYTES : Int = 784
+
 pub let ecs_key_extracted_view : @ecs.ComponentKey[ExtractedView]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
+
+pub let ecs_key_view_uniform_offset : @ecs.ComponentKey[ViewUniformOffset]
 
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
 
@@ -27,6 +35,8 @@ pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEnti
 
 pub fn retained_view_entity_equals(RetainedViewEntity, RetainedViewEntity) -> Bool
 
+pub let view_uniforms_resource_key : @ecs.ResourceKey[ViewUniforms]
+
 pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange
 
 pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange
@@ -34,6 +44,20 @@ pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange
 // Errors
 
 // Types and methods
+pub(all) struct ColorGradingUniform {
+  balance : ViewUniformMat3
+  saturation : @math.Vec3
+  contrast : @math.Vec3
+  gamma : @math.Vec3
+  gain : @math.Vec3
+  lift : @math.Vec3
+  midtone_range : @math.Vec2
+  exposure : Float
+  hue : Float
+  post_saturation : Float
+}
+pub fn ColorGradingUniform::ColorGradingUniform() -> Self
+
 pub struct ExtractedView {
   retained_view_entity : RetainedViewEntity
   target_format_raw : UInt
@@ -82,6 +106,63 @@ pub fn RetainedViewEntity::auxiliary_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::main_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::new(@core.Entity, auxiliary_entity? : @core.Entity?, subview_index? : Int) -> Self
 pub fn RetainedViewEntity::subview_index(Self) -> Int
+
+pub(all) struct ViewUniform {
+  clip_from_world : ViewUniformMat4
+  unjittered_clip_from_world : ViewUniformMat4
+  world_from_clip : ViewUniformMat4
+  world_from_view : ViewUniformMat4
+  view_from_world : ViewUniformMat4
+  clip_from_view : ViewUniformMat4
+  view_from_clip : ViewUniformMat4
+  world_position : @math.Vec3
+  exposure : Float
+  viewport : @math.Vec4
+  main_pass_viewport : @math.Vec4
+  frustum : Array[@math.Vec4]
+  lod_view_world_position : @math.Vec3
+  color_grading : ColorGradingUniform
+  mip_bias : Float
+  frame_count : UInt
+}
+pub fn ViewUniform::ViewUniform() -> Self
+pub fn ViewUniform::bytes(Self) -> Bytes
+
+pub(all) struct ViewUniformMat3 {
+  x_axis : @math.Vec3
+  y_axis : @math.Vec3
+  z_axis : @math.Vec3
+}
+pub fn ViewUniformMat3::identity() -> Self
+
+pub(all) struct ViewUniformMat4 {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn ViewUniformMat4::identity() -> Self
+
+pub(all) struct ViewUniformOffset {
+  offset : UInt
+}
+pub fn ViewUniformOffset::new(UInt) -> Self
+pub fn ViewUniformOffset::offset(Self) -> UInt
+pub impl @ecs.Component for ViewUniformOffset
+
+pub(all) struct ViewUniforms {
+  uniforms : @render_resource.DynamicUniformBuffer[ViewUniform]
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
+}
+pub fn ViewUniforms::ViewUniforms() -> Self
+pub fn ViewUniforms::binding(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewUniforms::clear(Self) -> Unit
+pub fn ViewUniforms::gpu_capacity(Self) -> UInt64
+pub fn ViewUniforms::len(Self) -> Int
+pub fn ViewUniforms::push(Self, ViewUniform) -> UInt
+pub fn ViewUniforms::write_buffer(Self, @wgpu_mbt.Device, @wgpu_mbt.Queue) -> Unit
+pub impl @app.Resource for ViewUniforms
 
 // Type aliases
 
