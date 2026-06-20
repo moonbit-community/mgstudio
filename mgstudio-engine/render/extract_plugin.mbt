@@ -162,27 +162,9 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
-        @app.system(render_graph_driver_system).in_set(
-          render_system_set_render_graph_driver,
-        ),
-      )
-      .add_systems(
-        RenderGraph::schedule(),
-        @app.system(prepare_active_frame_submissions)
-        .named("mgstudio_render::prepare_active_frame_submissions")
-        .in_set(render_graph_system_set_prepare_frame_submissions),
-      )
-      .add_systems(
-        RenderGraph::schedule(),
-        @app.system(flush_pending_command_buffers)
-        .named("mgstudio_render::flush_pending_command_buffers")
-        .in_set(render_graph_system_set_flush_command_buffers),
-      )
-      .add_systems(
-        RenderGraph::schedule(),
-        @app.system(present_active_frames)
-        .named("mgstudio_render::present_active_frames")
-        .in_set(render_graph_system_set_present_frames),
+        @app.system(render_system)
+        .named("mgstudio_render::render_system")
+        .in_set(render_system_set_render_graph_driver),
       )
     }),
   )

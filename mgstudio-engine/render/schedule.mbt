@@ -302,8 +302,12 @@ pub fn render_graph_schedule_stage() -> @app.ScheduleStage {
 }
 
 ///|
-fn render_graph_driver_system(world : @ecs.World) -> Unit {
+// Bevy source: `bevy/crates/bevy_render/src/renderer/mod.rs` (`render_system`).
+fn render_system(world : @ecs.World) -> Unit {
   @app.run_current_schedule_stage(world, RenderGraph::schedule())
+  prepare_active_frame_submissions(world)
+  flush_pending_command_buffers(world)
+  present_active_frames(world)
 }
 
 ///|

@@ -83,7 +83,7 @@ test "render schedule: recovery drives render and render graph phases once" {
     )
     .add_systems(
       render_schedule_stage(),
-      @app.system(render_graph_driver_system).in_set(render_system_set_render),
+      @app.system(render_system).in_set(render_system_set_render),
     )
     .add_systems(
       RenderGraph::schedule(),
@@ -244,21 +244,26 @@ test "render schedule: pipeline queue is chained inside render set" {
     )
     .add_systems(
       render_schedule_stage(),
-      @app.system(fn(_world : @ecs.World) { log.push("register") }).in_set(
-        render_system_set_register_pipeline_descriptors,
-      ),
-    )
-    .add_systems(
-      render_schedule_stage(),
       @app.system(fn(world : @ecs.World) {
+        log.push("register")
         let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
         log.push(
           "driver:\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{to_repr(cache.waiting_pipelines()).to_string()}",
         )
+      }).in_set(render_system_set_register_pipeline_descriptors),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        render_system(world)
+        log.push("render_system")
       }).in_set(render_system_set_render_graph_driver),
     )
   ignore(render_sub_app.update())
-  debug_inspect(log.join(","), content="\"process,register,driver:1:0:[0]\"")
+  debug_inspect(
+    log.join(","),
+    content="\"process,register,driver:1:0:[0],render_system\"",
+  )
 }
 
 ///|
