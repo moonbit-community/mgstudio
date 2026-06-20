@@ -365,6 +365,127 @@ test "render3d: gpu clustering pipelines specialize Bevy-shaped descriptors" {
 }
 
 ///|
+test "render3d: gpu clustering prepare queues per-view pipeline ids" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
+  world.insert_resource(
+    SpecializedClusteringRasterPipelines::resource(),
+    SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines(),
+  )
+  world.insert_resource(
+    SpecializedClusteringZSlicingPipelines::resource(),
+    SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines(),
+  )
+  world.insert_resource(
+    SpecializedClusteringAllocationPipelines::resource(),
+    SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines(),
+  )
+  world.insert_resource(
+    ClusteringRasterPipeline::resource(),
+    ClusteringRasterPipeline::ClusteringRasterPipeline(),
+  )
+  world.insert_resource(
+    ClusteringZSlicingPipeline::resource(),
+    ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+  )
+  world.insert_resource(
+    ClusteringAllocationPipeline::resource(),
+    ClusteringAllocationPipeline::ClusteringAllocationPipeline(),
+  )
+  let view_a = world.spawn()
+  let view_b = world.spawn()
+  try! world.set_by_key(
+    view_a,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(view_a),
+    ),
+  )
+  try! world.set_by_key(
+    view_b,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(view_b),
+    ),
+  )
+
+  prepare_clustering_pipelines(world)
+
+  let ids_a = match
+    (try! world.get_by_key(view_a, ViewGpuClusteringPipelineIds::component())) {
+    Some(value) => value
+    None => abort("missing view A GPU clustering pipeline ids")
+  }
+  let ids_b = match
+    (try! world.get_by_key(view_b, ViewGpuClusteringPipelineIds::component())) {
+    Some(value) => value
+    None => abort("missing view B GPU clustering pipeline ids")
+  }
+  debug_inspect(
+    ids_a.clustering_z_slicing_pipeline_id().id(),
+    content=ids_b.clustering_z_slicing_pipeline_id().id().to_string(),
+  )
+  debug_inspect(
+    ids_a.clustering_count_pipeline_id().id(),
+    content=ids_b.clustering_count_pipeline_id().id().to_string(),
+  )
+  debug_inspect(
+    ids_a.clustering_allocation_local_pipeline_id().id(),
+    content=ids_b.clustering_allocation_local_pipeline_id().id().to_string(),
+  )
+  debug_inspect(
+    ids_a.clustering_allocation_global_pipeline_id().id(),
+    content=ids_b.clustering_allocation_global_pipeline_id().id().to_string(),
+  )
+  debug_inspect(
+    ids_a.clustering_populate_pipeline_id().id(),
+    content=ids_b.clustering_populate_pipeline_id().id().to_string(),
+  )
+  debug_inspect(
+    world
+    .get_resource(@render.pipeline_cache_resource_key)
+    .unwrap()
+    .queued_pipeline_count(),
+    content="5",
+  )
+  debug_inspect(
+    world
+    .get_resource(SpecializedClusteringRasterPipelines::resource())
+    .unwrap()
+    .len(),
+    content="2",
+  )
+  debug_inspect(
+    world
+    .get_resource(SpecializedClusteringZSlicingPipelines::resource())
+    .unwrap()
+    .len(),
+    content="1",
+  )
+  debug_inspect(
+    world
+    .get_resource(SpecializedClusteringAllocationPipelines::resource())
+    .unwrap()
+    .len(),
+    content="2",
+  )
+}
+
+///|
+test "render3d: gpu clustering run condition follows global cluster settings" {
+  let world = @ecs.World::new()
+  debug_inspect(gpu_clustering_is_enabled(world), content="false")
+  world.insert_resource(
+    @light_cluster.GlobalClusterSettings::resource(),
+    @light_cluster.GlobalClusterSettings::GlobalClusterSettings(),
+  )
+  debug_inspect(gpu_clustering_is_enabled(world), content="true")
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

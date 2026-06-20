@@ -13,6 +13,8 @@ import {
 }
 
 // Values
+pub let ecs_key_extracted_view : @ecs.ComponentKey[ExtractedView]
+
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
@@ -32,6 +34,25 @@ pub fn view_visibility_range_invisible() -> @visibility.VisibilityRange
 // Errors
 
 // Types and methods
+pub struct ExtractedView {
+  retained_view_entity : RetainedViewEntity
+  target_format_raw : UInt
+  viewport_x : Int
+  viewport_y : Int
+  viewport_z : Int
+  viewport_w : Int
+  invert_culling : Bool
+}
+pub fn ExtractedView::invert_culling(Self) -> Bool
+pub fn ExtractedView::new(RetainedViewEntity, target_format_raw? : UInt, viewport_x? : Int, viewport_y? : Int, viewport_z? : Int, viewport_w? : Int, invert_culling? : Bool) -> Self
+pub fn ExtractedView::retained_view_entity(Self) -> RetainedViewEntity
+pub fn ExtractedView::target_format_raw(Self) -> UInt
+pub fn ExtractedView::viewport_w(Self) -> Int
+pub fn ExtractedView::viewport_x(Self) -> Int
+pub fn ExtractedView::viewport_y(Self) -> Int
+pub fn ExtractedView::viewport_z(Self) -> Int
+pub impl @ecs.Component for ExtractedView
+
 pub(all) enum Msaa {
   Off
   Sample2

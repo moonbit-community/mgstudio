@@ -140,6 +140,15 @@ pub struct GpuClusteringMeshBuffers {
 }
 
 ///|
+pub struct ViewGpuClusteringPipelineIds {
+  clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId
+  clustering_allocation_local_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_allocation_global_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_populate_pipeline_id : @render_resource.CachedRenderPipelineId
+}
+
+///|
 pub struct GpuClusteringPlugin {}
 
 ///|
@@ -267,6 +276,18 @@ let ecs_key_gpu_clustering_mesh_buffers : @ecs.ResourceKey[
 ///|
 pub impl @app.Resource for GpuClusteringMeshBuffers with fn resource() {
   ecs_key_gpu_clustering_mesh_buffers
+}
+
+///|
+pub let ecs_key_view_gpu_clustering_pipeline_ids : @ecs.ComponentKey[
+  ViewGpuClusteringPipelineIds,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewGpuClusteringPipelineIds",
+)
+
+///|
+pub impl @ecs.Component for ViewGpuClusteringPipelineIds with fn component() {
+  ecs_key_view_gpu_clustering_pipeline_ids
 }
 
 ///|
@@ -827,6 +848,153 @@ pub fn GpuClusteringMeshBuffers::indices(
 }
 
 ///|
+pub fn ViewGpuClusteringPipelineIds::new(
+  clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId,
+  clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId,
+  clustering_allocation_local_pipeline_id : @render_resource.CachedComputePipelineId,
+  clustering_allocation_global_pipeline_id : @render_resource.CachedComputePipelineId,
+  clustering_populate_pipeline_id : @render_resource.CachedRenderPipelineId,
+) -> ViewGpuClusteringPipelineIds {
+  ViewGpuClusteringPipelineIds::{
+    clustering_z_slicing_pipeline_id,
+    clustering_count_pipeline_id,
+    clustering_allocation_local_pipeline_id,
+    clustering_allocation_global_pipeline_id,
+    clustering_populate_pipeline_id,
+  }
+}
+
+///|
+pub fn ViewGpuClusteringPipelineIds::clustering_z_slicing_pipeline_id(
+  self : ViewGpuClusteringPipelineIds,
+) -> @render_resource.CachedComputePipelineId {
+  self.clustering_z_slicing_pipeline_id
+}
+
+///|
+pub fn ViewGpuClusteringPipelineIds::clustering_count_pipeline_id(
+  self : ViewGpuClusteringPipelineIds,
+) -> @render_resource.CachedRenderPipelineId {
+  self.clustering_count_pipeline_id
+}
+
+///|
+pub fn ViewGpuClusteringPipelineIds::clustering_allocation_local_pipeline_id(
+  self : ViewGpuClusteringPipelineIds,
+) -> @render_resource.CachedComputePipelineId {
+  self.clustering_allocation_local_pipeline_id
+}
+
+///|
+pub fn ViewGpuClusteringPipelineIds::clustering_allocation_global_pipeline_id(
+  self : ViewGpuClusteringPipelineIds,
+) -> @render_resource.CachedComputePipelineId {
+  self.clustering_allocation_global_pipeline_id
+}
+
+///|
+pub fn ViewGpuClusteringPipelineIds::clustering_populate_pipeline_id(
+  self : ViewGpuClusteringPipelineIds,
+) -> @render_resource.CachedRenderPipelineId {
+  self.clustering_populate_pipeline_id
+}
+
+///|
+fn[T] gpu_clustering_resource_or_abort(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+  label : String,
+) -> T {
+  match world.get_resource(key) {
+    Some(value) => value
+    None => abort("missing GPU clustering render resource: \{label}")
+  }
+}
+
+///|
+pub fn gpu_clustering_is_enabled(world : @ecs.World) -> Bool {
+  match world.get_resource(@light_cluster.GlobalClusterSettings::resource()) {
+    Some(settings) => settings.gpu_clustering() is Some(_)
+    None => false
+  }
+}
+
+///|
+pub fn prepare_clustering_pipelines(world : @ecs.World) -> Unit {
+  let pipeline_cache = gpu_clustering_resource_or_abort(
+    world, @render.pipeline_cache_resource_key, "PipelineCache",
+  )
+  let clustering_z_slicing_pipelines = gpu_clustering_resource_or_abort(
+    world,
+    SpecializedClusteringZSlicingPipelines::resource(),
+    "SpecializedComputePipelines<ClusteringZSlicingPipeline>",
+  )
+  let clustering_raster_pipelines = gpu_clustering_resource_or_abort(
+    world,
+    SpecializedClusteringRasterPipelines::resource(),
+    "SpecializedRenderPipelines<ClusteringRasterPipeline>",
+  )
+  let clustering_allocation_pipelines = gpu_clustering_resource_or_abort(
+    world,
+    SpecializedClusteringAllocationPipelines::resource(),
+    "SpecializedComputePipelines<ClusteringAllocationPipeline>",
+  )
+  let clustering_z_slicing_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringZSlicingPipeline::resource(),
+    "ClusteringZSlicingPipeline",
+  )
+  let clustering_raster_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringRasterPipeline::resource(),
+    "ClusteringRasterPipeline",
+  )
+  let clustering_allocation_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringAllocationPipeline::resource(),
+    "ClusteringAllocationPipeline",
+  )
+  world.for_each_component(@render_view.ExtractedView::component(), fn(
+    view_entity,
+    _view,
+  ) {
+    let clustering_z_slicing_pipeline_id = clustering_z_slicing_pipelines.queue(
+      pipeline_cache, clustering_z_slicing_pipeline,
+    )
+    let clustering_count_pipeline_id = clustering_raster_pipelines.queue(
+      pipeline_cache,
+      clustering_raster_pipeline,
+      ClusteringRasterPipelineKey::count_pass(),
+    )
+    let clustering_local_allocation_pipeline_id = clustering_allocation_pipelines.queue(
+      pipeline_cache,
+      clustering_allocation_pipeline,
+      ClusteringAllocationPipelineKey::local_pass(),
+    )
+    let clustering_global_allocation_pipeline_id = clustering_allocation_pipelines.queue(
+      pipeline_cache,
+      clustering_allocation_pipeline,
+      ClusteringAllocationPipelineKey::new_global_pass(),
+    )
+    let clustering_populate_pipeline_id = clustering_raster_pipelines.queue(
+      pipeline_cache,
+      clustering_raster_pipeline,
+      ClusteringRasterPipelineKey::new_populate_pass(),
+    )
+    world.set_by_key(
+      view_entity,
+      ViewGpuClusteringPipelineIds::component(),
+      ViewGpuClusteringPipelineIds::new(
+        clustering_z_slicing_pipeline_id, clustering_count_pipeline_id, clustering_local_allocation_pipeline_id,
+        clustering_global_allocation_pipeline_id, clustering_populate_pipeline_id,
+      ),
+    ) catch {
+      _ => abort("prepare_clustering_pipelines: failed to insert pipeline ids")
+    }
+  })
+}
+
+///|
 fn gpu_clustering_register_embedded_assets() -> Unit {
   @shader_source.load_embedded_shader_source(
     "pbr/cluster/cluster.wgsl", pbr_cluster_wgsl_source,
@@ -945,7 +1113,12 @@ fn gpu_clustering_configure_render_app_finish(
     ClusteringAllocationPipeline::resource(),
     fn() { ClusteringAllocationPipeline::ClusteringAllocationPipeline() },
   )
-  sub_app
+  sub_app.add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_clustering_pipelines)
+    .in_set(@render.render_system_set_prepare)
+    .run_if(gpu_clustering_is_enabled),
+  )
 }
 
 ///|

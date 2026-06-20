@@ -383,6 +383,8 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShado
 
 pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
 
+pub let ecs_key_view_gpu_clustering_pipeline_ids : @ecs.ComponentKey[ViewGpuClusteringPipelineIds]
+
 pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
 pub let ecs_key_volumetric_fog : @ecs.ComponentKey[@light.VolumetricFog]
@@ -446,6 +448,8 @@ pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wirefram
 pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
 
 pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
+
+pub fn gpu_clustering_is_enabled(@ecs.World) -> Bool
 
 pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
 
@@ -634,6 +638,8 @@ pub fn pbr_standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @
 pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
+
+pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
 
 pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
 
@@ -2229,6 +2235,21 @@ pub struct ViewContactShadowsUniformOffset {
 pub fn ViewContactShadowsUniformOffset::new(UInt) -> Self
 pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewContactShadowsUniformOffset
+
+pub struct ViewGpuClusteringPipelineIds {
+  clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId
+  clustering_allocation_local_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_allocation_global_pipeline_id : @render_resource.CachedComputePipelineId
+  clustering_populate_pipeline_id : @render_resource.CachedRenderPipelineId
+}
+pub fn ViewGpuClusteringPipelineIds::clustering_allocation_global_pipeline_id(Self) -> @render_resource.CachedComputePipelineId
+pub fn ViewGpuClusteringPipelineIds::clustering_allocation_local_pipeline_id(Self) -> @render_resource.CachedComputePipelineId
+pub fn ViewGpuClusteringPipelineIds::clustering_count_pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
+pub fn ViewGpuClusteringPipelineIds::clustering_populate_pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
+pub fn ViewGpuClusteringPipelineIds::clustering_z_slicing_pipeline_id(Self) -> @render_resource.CachedComputePipelineId
+pub fn ViewGpuClusteringPipelineIds::new(@render_resource.CachedComputePipelineId, @render_resource.CachedRenderPipelineId, @render_resource.CachedComputePipelineId, @render_resource.CachedComputePipelineId, @render_resource.CachedRenderPipelineId) -> Self
+pub impl @ecs.Component for ViewGpuClusteringPipelineIds
 
 pub struct ViewPendingWireframeQueues {
   mut current_frame : @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]

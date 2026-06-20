@@ -98,6 +98,85 @@ pub impl @ecs.Component for Msaa with fn component() {
 }
 
 ///|
+pub struct ExtractedView {
+  retained_view_entity : RetainedViewEntity
+  target_format_raw : UInt
+  viewport_x : Int
+  viewport_y : Int
+  viewport_z : Int
+  viewport_w : Int
+  invert_culling : Bool
+}
+
+///|
+pub fn ExtractedView::new(
+  retained_view_entity : RetainedViewEntity,
+  target_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+  viewport_x? : Int = 0,
+  viewport_y? : Int = 0,
+  viewport_z? : Int = 0,
+  viewport_w? : Int = 0,
+  invert_culling? : Bool = false,
+) -> ExtractedView {
+  ExtractedView::{
+    retained_view_entity,
+    target_format_raw,
+    viewport_x,
+    viewport_y,
+    viewport_z,
+    viewport_w,
+    invert_culling,
+  }
+}
+
+///|
+pub fn ExtractedView::retained_view_entity(
+  self : ExtractedView,
+) -> RetainedViewEntity {
+  self.retained_view_entity
+}
+
+///|
+pub fn ExtractedView::target_format_raw(self : ExtractedView) -> UInt {
+  self.target_format_raw
+}
+
+///|
+pub fn ExtractedView::viewport_x(self : ExtractedView) -> Int {
+  self.viewport_x
+}
+
+///|
+pub fn ExtractedView::viewport_y(self : ExtractedView) -> Int {
+  self.viewport_y
+}
+
+///|
+pub fn ExtractedView::viewport_z(self : ExtractedView) -> Int {
+  self.viewport_z
+}
+
+///|
+pub fn ExtractedView::viewport_w(self : ExtractedView) -> Int {
+  self.viewport_w
+}
+
+///|
+pub fn ExtractedView::invert_culling(self : ExtractedView) -> Bool {
+  self.invert_culling
+}
+
+///|
+pub let ecs_key_extracted_view : @ecs.ComponentKey[ExtractedView] = @ecs.register_component(
+  debug_name="render.view.extracted_view",
+)
+
+///|
+pub impl @ecs.Component for ExtractedView with fn component() {
+  ecs_key_extracted_view
+}
+
+///|
 pub struct RetainedViewEntity {
   main_entity : @core.Entity
   auxiliary_entity : @core.Entity
