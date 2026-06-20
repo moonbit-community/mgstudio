@@ -201,6 +201,37 @@ test "render3d: pbr plugin registers bevy pbr shader library list" {
 }
 
 ///|
+test "render3d: screen space transmission plugin registers shader and camera requirements" {
+  @shader_source.clear_embedded_shader_sources()
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin())
+  let shader_source = match
+    @shader_source.embedded_shader_source("pbr/transmission/transmission.wgsl") {
+    Some(source) => source
+    None => abort("missing screen-space transmission shader")
+  }
+  debug_inspect(
+    shader_source.contains("#define_import_path bevy_pbr::transmission"),
+    content="true",
+  )
+  let entity = app.world().spawn_empty()
+  try! (app.world().set_by_key(entity, ecs_key_camera3d, Camera3d::Camera3d())
+  |> ignore)
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_screen_space_transmission))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! app.world().get_by_key(entity, @render.ecs_key_sync_to_render_world))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {

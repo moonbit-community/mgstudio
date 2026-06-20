@@ -241,8 +241,7 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
     content="true",
   )
   debug_inspect(
-    (try! world.get_by_key(entity, ecs_key_screen_space_transmission))
-    is Some(_),
+    (try! world.get_by_key(entity, ecs_key_screen_space_transmission)) is None,
     content="true",
   )
   debug_inspect(
@@ -313,7 +312,7 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
   )
   debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_screen_space_transmission))
-    is Some(_),
+    is None,
     content="true",
   )
   debug_inspect(

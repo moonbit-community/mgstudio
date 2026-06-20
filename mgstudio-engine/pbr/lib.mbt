@@ -347,6 +347,7 @@ fn pbr_plugin_sync_feature_plugins(
   .add_plugins(
     @pbr_ssr.ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin(),
   )
+  .add_plugins(ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin())
   .add_plugins(@pbr_decal.ClusteredDecalPlugin::ClusteredDecalPlugin())
   .add_plugins(ContactShadowsPlugin::ContactShadowsPlugin())
   .add_plugins(@pbr_decal.ForwardDecalPlugin::ForwardDecalPlugin())
@@ -438,7 +439,6 @@ pub impl @app.Plugin for PbrPlugin with fn build(self, app) {
   @pbr_render.register_embedded_wgsl_sources()
   pbr_plugin_register_dummy_meshlet_visibility_buffer_resolve_shader()
   @pbr_deferred.register_embedded_wgsl_sources()
-  @transmission.register_embedded_wgsl_sources()
   @cas.cas_register_camera_component_key(@camera_camera.ecs_key_camera)
   pbr_plugin_install_with(app, self)
 }

@@ -753,6 +753,8 @@ pub fn scattering_medium_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scattering_medium_plugin_with(@app.App[@ecs.World], ScatteringMediumPlugin) -> @app.App[@ecs.World]
 
+pub fn screen_space_transmission_plugin_with(@app.App[@ecs.World], ScreenSpaceTransmissionPlugin) -> @app.App[@ecs.World]
+
 pub fn set_wireframe_3d_thin_immediates(Wireframe3d, RenderWireframeInstances, RenderWireframeAssets) -> Wireframe3dThinImmediates raise WireframeRenderCommandError
 
 pub fn set_wireframe_3d_wide_bind_group_dynamic_offset(Wireframe3d, RenderMeshInstances, WireframeWideBindGroups) -> Int?
@@ -1934,6 +1936,11 @@ pub fn ScatteringMediumSampler::is_linear_clamp(Self) -> Bool
 pub fn ScatteringMediumSampler::linear_clamp() -> Self
 pub fn ScatteringMediumSampler::with_address_mode(Self, @image.ImageAddressMode) -> Self
 pub fn ScatteringMediumSampler::with_filter(Self, @image.ImageFilterMode) -> Self
+
+pub struct ScreenSpaceTransmissionPlugin {
+}
+pub fn ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin() -> Self
+pub impl @app.Plugin for ScreenSpaceTransmissionPlugin
 
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
