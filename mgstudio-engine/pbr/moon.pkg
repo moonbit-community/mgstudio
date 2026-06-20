@@ -41,6 +41,7 @@ import {
   "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/render/view/visibility" @render_visibility,
   "Milky2018/mgstudio/shader",
+  "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/mgstudio/pbr/render" @pbr_render,
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/sprite",
@@ -60,3 +61,13 @@ import {
 } for "test"
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name pbr_dummy_meshlet_visibility_buffer_resolve_wgsl_source",
+      "input": "meshlet/dummy_visibility_buffer_resolve.wgsl",
+      "output": "dummy_meshlet_visibility_buffer_resolve_wgsl.mbt",
+    },
+  ],
+)

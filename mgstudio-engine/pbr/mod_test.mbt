@@ -79,6 +79,31 @@ fn read_default_standard_material(
 }
 
 ///|
+test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
+  @shader_source.clear_embedded_shader_sources()
+  ignore(
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin()),
+  )
+  let dummy_source = match
+    @shader_source.embedded_shader_source(
+      "pbr/meshlet/dummy_visibility_buffer_resolve.wgsl",
+    ) {
+    Some(source) => source
+    None => abort("missing dummy meshlet visibility resolve shader")
+  }
+  debug_inspect(
+    dummy_source.contains(
+      "#define_import_path bevy_pbr::meshlet_visibility_buffer_resolve",
+    ),
+    content="true",
+  )
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {

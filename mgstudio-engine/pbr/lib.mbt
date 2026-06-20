@@ -445,6 +445,7 @@ pub impl @app.Plugin for PbrPlugin with fn name(_self) {
 ///|
 pub impl @app.Plugin for PbrPlugin with fn build(self, app) {
   @pbr_render.register_embedded_wgsl_sources()
+  pbr_plugin_register_dummy_meshlet_visibility_buffer_resolve_shader()
   @transmission.register_embedded_wgsl_sources()
   @cas.cas_register_camera_component_key(@camera_camera.ecs_key_camera)
   pbr_plugin_install_with(app, self)
