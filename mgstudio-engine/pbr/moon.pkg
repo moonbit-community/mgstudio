@@ -38,6 +38,7 @@ import {
   "Milky2018/mgstudio/render/mesh" @render_mesh,
   "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/render/view/visibility" @render_visibility,
   "Milky2018/mgstudio/shader",
@@ -57,7 +58,6 @@ import {
 import {
   "Milky2018/mgstudio/camera/visibility" @camera_visibility,
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
-  "Milky2018/mgstudio/render/renderer",
 } for "test"
 
 supported_targets = "native"

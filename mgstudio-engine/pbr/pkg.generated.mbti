@@ -1027,6 +1027,52 @@ pub fn ClusterableObjectCounts3d::point_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::spot_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::total(Self) -> UInt
 
+pub struct ClusteringAllocationPipeline {
+  bind_group_layout : @render_resource.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn ClusteringAllocationPipeline::ClusteringAllocationPipeline() -> Self
+pub fn ClusteringAllocationPipeline::layout(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn ClusteringAllocationPipeline::shader(Self) -> String
+pub fn ClusteringAllocationPipeline::specialize(Self, ClusteringAllocationPipelineKey) -> @render_resource.ComputePipelineDescriptor
+pub impl @app.Resource for ClusteringAllocationPipeline
+
+pub struct ClusteringAllocationPipelineKey {
+  global_pass : Bool
+} derive(Eq, @debug.Debug)
+pub fn ClusteringAllocationPipelineKey::global_pass(Self) -> Bool
+pub fn ClusteringAllocationPipelineKey::local_pass() -> Self
+pub fn ClusteringAllocationPipelineKey::new_global_pass() -> Self
+
+pub struct ClusteringRasterPipeline {
+  bind_group_layout_count_pass : @render_resource.BindGroupLayoutDescriptor
+  bind_group_layout_populate_pass : @render_resource.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn ClusteringRasterPipeline::ClusteringRasterPipeline() -> Self
+pub fn ClusteringRasterPipeline::count_pass_layout(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn ClusteringRasterPipeline::populate_pass_layout(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn ClusteringRasterPipeline::shader(Self) -> String
+pub fn ClusteringRasterPipeline::specialize(Self, ClusteringRasterPipelineKey) -> @render_resource.RenderPipelineDescriptor
+pub impl @app.Resource for ClusteringRasterPipeline
+
+pub struct ClusteringRasterPipelineKey {
+  populate_pass : Bool
+} derive(Eq, @debug.Debug)
+pub fn ClusteringRasterPipelineKey::count_pass() -> Self
+pub fn ClusteringRasterPipelineKey::new_populate_pass() -> Self
+pub fn ClusteringRasterPipelineKey::populate_pass(Self) -> Bool
+
+pub struct ClusteringZSlicingPipeline {
+  bind_group_layout : @render_resource.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn ClusteringZSlicingPipeline::ClusteringZSlicingPipeline() -> Self
+pub fn ClusteringZSlicingPipeline::layout(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn ClusteringZSlicingPipeline::shader(Self) -> String
+pub fn ClusteringZSlicingPipeline::specialize(Self) -> @render_resource.ComputePipelineDescriptor
+pub impl @app.Resource for ClusteringZSlicingPipeline
+
 pub struct ContactShadows {
   linear_steps : Int
   thickness : Float
@@ -1300,6 +1346,15 @@ pub(all) enum GpuClusteredLights {
 } derive(Eq, @debug.Debug)
 pub fn GpuClusteredLights::binding_type(Self) -> UInt
 pub fn GpuClusteredLights::from_binding_type(UInt) -> Self
+
+pub struct GpuClusteringMeshBuffers {
+  vertices : Array[@math.Vec2]
+  indices : Array[UInt]
+}
+pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers() -> Self
+pub fn GpuClusteringMeshBuffers::indices(Self) -> Array[UInt]
+pub fn GpuClusteringMeshBuffers::vertices(Self) -> Array[@math.Vec2]
+pub impl @app.Resource for GpuClusteringMeshBuffers
 
 pub struct GpuClusteringPlugin {
 }
@@ -1890,6 +1945,13 @@ pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
 pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags) -> Self
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 
+pub struct RenderViewClusteringReadbackData {
+  views : Map[UInt64, ViewClusteringReadbackData]
+}
+pub fn RenderViewClusteringReadbackData::RenderViewClusteringReadbackData() -> Self
+pub fn RenderViewClusteringReadbackData::len(Self) -> Int
+pub impl @app.Resource for RenderViewClusteringReadbackData
+
 pub struct RenderWireframeAssets {
   assets : Map[Int, RenderWireframeMaterial]
 }
@@ -1982,6 +2044,30 @@ pub(all) enum ShadowFilteringMethod {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
+
+pub struct SpecializedClusteringAllocationPipelines {
+  entries : Array[(ClusteringAllocationPipelineKey, @render_resource.CachedComputePipelineId)]
+}
+pub fn SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines() -> Self
+pub fn SpecializedClusteringAllocationPipelines::len(Self) -> Int
+pub fn SpecializedClusteringAllocationPipelines::queue(Self, @render_resource.PipelineCache, ClusteringAllocationPipeline, ClusteringAllocationPipelineKey) -> @render_resource.CachedComputePipelineId
+pub impl @app.Resource for SpecializedClusteringAllocationPipelines
+
+pub struct SpecializedClusteringRasterPipelines {
+  entries : Array[(ClusteringRasterPipelineKey, @render_resource.CachedRenderPipelineId)]
+}
+pub fn SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines() -> Self
+pub fn SpecializedClusteringRasterPipelines::len(Self) -> Int
+pub fn SpecializedClusteringRasterPipelines::queue(Self, @render_resource.PipelineCache, ClusteringRasterPipeline, ClusteringRasterPipelineKey) -> @render_resource.CachedRenderPipelineId
+pub impl @app.Resource for SpecializedClusteringRasterPipelines
+
+pub struct SpecializedClusteringZSlicingPipelines {
+  entries : Array[@render_resource.CachedComputePipelineId]
+}
+pub fn SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines() -> Self
+pub fn SpecializedClusteringZSlicingPipelines::len(Self) -> Int
+pub fn SpecializedClusteringZSlicingPipelines::queue(Self, @render_resource.PipelineCache, ClusteringZSlicingPipeline) -> @render_resource.CachedComputePipelineId
+pub impl @app.Resource for SpecializedClusteringZSlicingPipelines
 
 pub struct SpecializedMaterialPipelineCache {
   views : Map[UInt64, SpecializedMaterialViewPipelineCache]
@@ -2118,6 +2204,24 @@ pub fn ViewClusterBindings3d::push_index(Self, UInt) -> Bool
 pub fn ViewClusterBindings3d::push_offset_and_counts(Self, UInt, ClusterableObjectCounts3d) -> Bool
 pub fn ViewClusterBindings3d::uniform_packed_offsets_and_counts(Self) -> Array[UInt]
 pub fn ViewClusterBindings3d::with_limits(Int, Int) -> Self
+
+pub struct ViewClusteringLastFrameStatistics {
+  index_list_size : UInt
+  farthest_z : Float
+} derive(Eq, @debug.Debug)
+pub fn ViewClusteringLastFrameStatistics::farthest_z(Self) -> Float
+pub fn ViewClusteringLastFrameStatistics::index_list_size(Self) -> UInt
+pub fn ViewClusteringLastFrameStatistics::new(UInt, Float) -> Self
+
+pub struct ViewClusteringReadbackData {
+  z_slice_list_capacity : Int
+  max_index_list_capacity : Int
+  last_frame_statistics : ViewClusteringLastFrameStatistics?
+} derive(Eq, @debug.Debug)
+pub fn ViewClusteringReadbackData::last_frame_statistics(Self) -> ViewClusteringLastFrameStatistics?
+pub fn ViewClusteringReadbackData::max_index_list_capacity(Self) -> Int
+pub fn ViewClusteringReadbackData::new(@cluster.GlobalClusterGpuSettings) -> Self
+pub fn ViewClusteringReadbackData::z_slice_list_capacity(Self) -> Int
 
 pub struct ViewContactShadowsUniformOffset {
   offset : UInt

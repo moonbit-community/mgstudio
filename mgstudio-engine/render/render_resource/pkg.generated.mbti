@@ -266,7 +266,9 @@ pub struct ColorTargetState {
   format : UInt
   write_mask : UInt64
 }
+pub fn ColorTargetState::format(Self) -> UInt
 pub fn ColorTargetState::new(UInt, UInt64) -> Self
+pub fn ColorTargetState::write_mask(Self) -> UInt64
 
 pub struct ComputePipeline {
   id : UInt64
@@ -289,6 +291,17 @@ pub struct ComputePipelineDescriptor {
   zero_initialize_workgroup_memory : Bool
 }
 pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> Self
+pub fn ComputePipelineDescriptor::entry_point(Self) -> String?
+pub fn ComputePipelineDescriptor::label(Self) -> String?
+pub fn ComputePipelineDescriptor::layout(Self) -> Array[BindGroupLayoutDescriptor]
+pub fn ComputePipelineDescriptor::shader(Self) -> String?
+pub fn ComputePipelineDescriptor::with_entry_point(Self, String?) -> Self
+pub fn ComputePipelineDescriptor::with_immediate_size(Self, UInt) -> Self
+pub fn ComputePipelineDescriptor::with_label(Self, String?) -> Self
+pub fn ComputePipelineDescriptor::with_layout(Self, Array[BindGroupLayoutDescriptor]) -> Self
+pub fn ComputePipelineDescriptor::with_shader(Self, String?) -> Self
+pub fn ComputePipelineDescriptor::with_shader_defs(Self, Array[ShaderDefVal]) -> Self
+pub fn ComputePipelineDescriptor::with_zero_initialize_workgroup_memory(Self, Bool) -> Self
 pub impl Default for ComputePipelineDescriptor
 
 pub struct DefaultImageSampler {
@@ -324,8 +337,12 @@ pub struct FragmentState {
   targets : Array[ColorTargetState?]
 }
 pub fn FragmentState::FragmentState() -> Self
+pub fn FragmentState::entry_point(Self) -> String?
 pub fn FragmentState::new(String?, Array[ShaderDefVal], String?, Array[ColorTargetState?]) -> Self
 pub fn FragmentState::set_target(Self, Int, ColorTargetState) -> Self
+pub fn FragmentState::shader(Self) -> String?
+pub fn FragmentState::shader_defs(Self) -> Array[ShaderDefVal]
+pub fn FragmentState::targets(Self) -> Array[ColorTargetState?]
 pub fn FragmentState::with_entry_point(Self, String?) -> Self
 pub fn FragmentState::with_shader(Self, String?) -> Self
 pub fn FragmentState::with_shader_defs(Self, Array[ShaderDefVal]) -> Self
@@ -464,8 +481,12 @@ pub struct RenderPipelineDescriptor {
   zero_initialize_workgroup_memory : Bool
 }
 pub fn RenderPipelineDescriptor::RenderPipelineDescriptor() -> Self
+pub fn RenderPipelineDescriptor::fragment(Self) -> FragmentState?
 pub fn RenderPipelineDescriptor::fragment_or_error(Self) -> FragmentState raise NoFragmentStateError
+pub fn RenderPipelineDescriptor::label(Self) -> String?
+pub fn RenderPipelineDescriptor::layout(Self) -> Array[BindGroupLayoutDescriptor]
 pub fn RenderPipelineDescriptor::set_layout(Self, Int, BindGroupLayoutDescriptor) -> Self
+pub fn RenderPipelineDescriptor::vertex(Self) -> VertexState
 pub fn RenderPipelineDescriptor::with_depth_stencil(Self, DepthStencilState?) -> Self
 pub fn RenderPipelineDescriptor::with_fragment(Self, FragmentState?) -> Self
 pub fn RenderPipelineDescriptor::with_immediate_size(Self, UInt) -> Self

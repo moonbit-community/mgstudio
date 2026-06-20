@@ -70,6 +70,16 @@ pub fn ColorTargetState::new(
 }
 
 ///|
+pub fn ColorTargetState::format(self : ColorTargetState) -> UInt {
+  self.format
+}
+
+///|
+pub fn ColorTargetState::write_mask(self : ColorTargetState) -> UInt64 {
+  self.write_mask
+}
+
+///|
 pub struct FragmentState {
   shader : String?
   shader_defs : Array[ShaderDefVal]
@@ -100,6 +110,26 @@ pub fn FragmentState::new(
 ///|
 pub impl Default for FragmentState with fn default() {
   FragmentState::FragmentState()
+}
+
+///|
+pub fn FragmentState::shader(self : FragmentState) -> String? {
+  self.shader
+}
+
+///|
+pub fn FragmentState::shader_defs(self : FragmentState) -> Array[ShaderDefVal] {
+  self.shader_defs.copy()
+}
+
+///|
+pub fn FragmentState::entry_point(self : FragmentState) -> String? {
+  self.entry_point
+}
+
+///|
+pub fn FragmentState::targets(self : FragmentState) -> Array[ColorTargetState?] {
+  self.targets.copy()
 }
 
 ///|
@@ -291,6 +321,34 @@ pub impl Default for RenderPipelineDescriptor with fn default() {
 }
 
 ///|
+pub fn RenderPipelineDescriptor::label(
+  self : RenderPipelineDescriptor,
+) -> String? {
+  self.label
+}
+
+///|
+pub fn RenderPipelineDescriptor::layout(
+  self : RenderPipelineDescriptor,
+) -> Array[BindGroupLayoutDescriptor] {
+  self.layout.copy()
+}
+
+///|
+pub fn RenderPipelineDescriptor::vertex(
+  self : RenderPipelineDescriptor,
+) -> VertexState {
+  self.vertex
+}
+
+///|
+pub fn RenderPipelineDescriptor::fragment(
+  self : RenderPipelineDescriptor,
+) -> FragmentState? {
+  self.fragment
+}
+
+///|
 pub fn RenderPipelineDescriptor::with_label(
   self : RenderPipelineDescriptor,
   label : String?,
@@ -388,6 +446,90 @@ pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> ComputePipeline
 ///|
 pub impl Default for ComputePipelineDescriptor with fn default() {
   ComputePipelineDescriptor::ComputePipelineDescriptor()
+}
+
+///|
+pub fn ComputePipelineDescriptor::label(
+  self : ComputePipelineDescriptor,
+) -> String? {
+  self.label
+}
+
+///|
+pub fn ComputePipelineDescriptor::layout(
+  self : ComputePipelineDescriptor,
+) -> Array[BindGroupLayoutDescriptor] {
+  self.layout.copy()
+}
+
+///|
+pub fn ComputePipelineDescriptor::shader(
+  self : ComputePipelineDescriptor,
+) -> String? {
+  self.shader
+}
+
+///|
+pub fn ComputePipelineDescriptor::entry_point(
+  self : ComputePipelineDescriptor,
+) -> String? {
+  self.entry_point
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_label(
+  self : ComputePipelineDescriptor,
+  label : String?,
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, label, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_layout(
+  self : ComputePipelineDescriptor,
+  layout : Array[BindGroupLayoutDescriptor],
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, layout, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_shader(
+  self : ComputePipelineDescriptor,
+  shader : String?,
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, shader, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_shader_defs(
+  self : ComputePipelineDescriptor,
+  shader_defs : Array[ShaderDefVal],
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, shader_defs, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_entry_point(
+  self : ComputePipelineDescriptor,
+  entry_point : String?,
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, entry_point, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_immediate_size(
+  self : ComputePipelineDescriptor,
+  immediate_size : UInt,
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, immediate_size, }
+}
+
+///|
+pub fn ComputePipelineDescriptor::with_zero_initialize_workgroup_memory(
+  self : ComputePipelineDescriptor,
+  zero_initialize_workgroup_memory : Bool,
+) -> ComputePipelineDescriptor {
+  ComputePipelineDescriptor::{ ..self, zero_initialize_workgroup_memory, }
 }
 
 ///|

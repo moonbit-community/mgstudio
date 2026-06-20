@@ -252,6 +252,187 @@ test "render3d: gpu clustering plugin registers build shader library" {
 }
 
 ///|
+test "render3d: gpu clustering pipelines specialize Bevy-shaped descriptors" {
+  let raster = ClusteringRasterPipeline::ClusteringRasterPipeline()
+  let count_descriptor = raster.specialize(
+    ClusteringRasterPipelineKey::count_pass(),
+  )
+  debug_inspect(
+    count_descriptor.label(),
+    content="Some(\"clustering count pipeline\")",
+  )
+  debug_inspect(
+    count_descriptor.layout()[0].label(),
+    content="\"clustering count pass bind group layout\"",
+  )
+  let count_fragment = count_descriptor.fragment().unwrap()
+  debug_inspect(
+    count_fragment.shader(),
+    content="Some(\"pbr/cluster/cluster_raster.wgsl\")",
+  )
+  debug_inspect(count_fragment.entry_point(), content="Some(\"fragment_main\")")
+  match count_fragment.targets()[0] {
+    Some(target) => {
+      if target.format() != @wgpu.TEXTURE_FORMAT_R8_UNORM {
+        abort("clustering raster target must use R8Unorm")
+      }
+      debug_inspect(target.write_mask(), content="0")
+    }
+    None => abort("missing clustering raster color target")
+  }
+  let populate_descriptor = raster.specialize(
+    ClusteringRasterPipelineKey::new_populate_pass(),
+  )
+  debug_inspect(
+    populate_descriptor.layout()[0].label(),
+    content="\"clustering populate pass bind group layout\"",
+  )
+  let z_descriptor = ClusteringZSlicingPipeline::ClusteringZSlicingPipeline().specialize()
+  debug_inspect(
+    z_descriptor.label(),
+    content="Some(\"clustering Z slicing pipeline\")",
+  )
+  debug_inspect(
+    z_descriptor.shader(),
+    content="Some(\"pbr/cluster/cluster_z_slice.wgsl\")",
+  )
+  debug_inspect(z_descriptor.entry_point(), content="Some(\"z_slice_main\")")
+  let allocation = ClusteringAllocationPipeline::ClusteringAllocationPipeline()
+  debug_inspect(
+    allocation
+    .specialize(ClusteringAllocationPipelineKey::local_pass())
+    .entry_point(),
+    content="Some(\"allocate_local_main\")",
+  )
+  debug_inspect(
+    allocation
+    .specialize(ClusteringAllocationPipelineKey::new_global_pass())
+    .entry_point(),
+    content="Some(\"allocate_global_main\")",
+  )
+  let cache = @render_resource.PipelineCache::new()
+  let raster_cache = SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines()
+  let count_id = raster_cache.queue(
+    cache,
+    raster,
+    ClusteringRasterPipelineKey::count_pass(),
+  )
+  let count_id_again = raster_cache.queue(
+    cache,
+    raster,
+    ClusteringRasterPipelineKey::count_pass(),
+  )
+  debug_inspect(count_id.id() == count_id_again.id(), content="true")
+  debug_inspect(raster_cache.len(), content="1")
+  ignore(
+    raster_cache.queue(
+      cache,
+      raster,
+      ClusteringRasterPipelineKey::new_populate_pass(),
+    ),
+  )
+  debug_inspect(raster_cache.len(), content="2")
+  let z_cache = SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines()
+  ignore(
+    z_cache.queue(
+      cache,
+      ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+    ),
+  )
+  ignore(
+    z_cache.queue(
+      cache,
+      ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+    ),
+  )
+  debug_inspect(z_cache.len(), content="1")
+  let allocation_cache = SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines()
+  ignore(
+    allocation_cache.queue(
+      cache,
+      allocation,
+      ClusteringAllocationPipelineKey::local_pass(),
+    ),
+  )
+  ignore(
+    allocation_cache.queue(
+      cache,
+      allocation,
+      ClusteringAllocationPipelineKey::new_global_pass(),
+    ),
+  )
+  debug_inspect(allocation_cache.len(), content="2")
+}
+
+///|
+test "render3d: gpu clustering plugin finish initializes render resources" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let storage_buffers = device.limits_max_storage_buffers_per_shader_stage_u32()
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin())
+  ignore(
+    app0.modify_sub_app(@app.RenderApp, fn(render_app) {
+      let render_world = render_app.world()
+      render_world.insert_resource(
+        @render.render_device_resource_key,
+        @renderer.RenderDevice::from_wgpu(device),
+      )
+      render_world.insert_resource(
+        @render.pipeline_cache_resource_key,
+        @render_resource.PipelineCache::new(),
+      )
+      render_app
+    }),
+  )
+  let app = app0.finish()
+  let render_app = app.get_sub_app(@app.RenderApp).unwrap()
+  let render_world = render_app.world()
+  let expected = storage_buffers > 0U
+  debug_inspect(
+    render_world
+    .resource(SpecializedClusteringRasterPipelines::resource())
+    .is_present(),
+    content=expected.to_string(),
+  )
+  debug_inspect(
+    render_world
+    .resource(SpecializedClusteringZSlicingPipelines::resource())
+    .is_present(),
+    content=expected.to_string(),
+  )
+  debug_inspect(
+    render_world
+    .resource(SpecializedClusteringAllocationPipelines::resource())
+    .is_present(),
+    content=expected.to_string(),
+  )
+  debug_inspect(
+    render_world
+    .resource(RenderViewClusteringReadbackData::resource())
+    .is_present(),
+    content=expected.to_string(),
+  )
+  debug_inspect(
+    render_world.resource(GpuClusteringMeshBuffers::resource()).is_present(),
+    content=expected.to_string(),
+  )
+  if expected {
+    let mesh_buffers = render_world
+      .get_resource(GpuClusteringMeshBuffers::resource())
+      .unwrap()
+    debug_inspect(mesh_buffers.vertices().length(), content="4")
+    debug_inspect(mesh_buffers.indices(), content="[0, 1, 2, 1, 3, 2]")
+  }
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {
