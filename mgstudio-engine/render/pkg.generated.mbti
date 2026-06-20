@@ -105,8 +105,6 @@ pub let ecs_key_render_entity : @ecs.ComponentKey[RenderEntity]
 
 pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
 
-pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
-
 pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld]
 
 pub let ecs_key_temporary_render_entity : @ecs.ComponentKey[TemporaryRenderEntity]
@@ -527,7 +525,7 @@ pub fn reset_render_asset_bytes_per_frame(@ecs.World) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
-pub fn save_to_disk(String) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit
+pub fn save_to_disk(String) -> (@ecs.On[ScreenshotCaptured]) -> Unit
 
 pub fn screenshot_capture_surface_request() -> Int
 
@@ -969,11 +967,11 @@ pub fn Screenshot::texture_view(Int) -> Self
 pub fn Screenshot::window(@core.Entity) -> Self
 pub impl @ecs.Component for Screenshot
 
-pub struct ScreenshotCaptured {
+pub(all) struct ScreenshotCaptured {
   entity : @core.Entity
   image : @image.Image
 }
-pub impl @ecs.Component for ScreenshotCaptured
+pub impl @ecs.TriggerEvent for ScreenshotCaptured
 
 pub(all) enum ScreenshotTarget {
   Window(@window.WindowRef)

@@ -37,10 +37,15 @@ pub struct Capturing {}
 pub struct Captured {}
 
 ///|
-pub struct ScreenshotCaptured {
+pub(all) struct ScreenshotCaptured {
   entity : @core.Entity
   image : @asset.Image
 }
+
+///|
+let screenshot_captured_event_key : @ecs.EventKey[ScreenshotCaptured] = @ecs.register_event(
+  debug_name="mgstudio_render::view::window::ScreenshotCaptured",
+)
 
 ///|
 priv struct PendingScreenshotEntityCapture {
@@ -96,11 +101,6 @@ pub let ecs_key_captured : @ecs.ComponentKey[Captured] = @ecs.register_component
 )
 
 ///|
-pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured] = @ecs.register_component(
-  debug_name="mgstudio_render::view::window::ScreenshotCaptured",
-)
-
-///|
 pub impl @ecs.Component for Screenshot with fn component() {
   ecs_key_screenshot
 }
@@ -116,8 +116,31 @@ pub impl @ecs.Component for Captured with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for ScreenshotCaptured with fn component() {
-  ecs_key_screenshot_captured
+pub impl @ecs.TriggerEvent for ScreenshotCaptured with fn observer_event() {
+  screenshot_captured_event_key
+}
+
+///|
+pub impl @ecs.TriggerEvent for ScreenshotCaptured with fn observer_entity(self) {
+  Some(self.entity)
+}
+
+///|
+pub impl @ecs.TriggerEvent for ScreenshotCaptured with fn set_observer_entity(
+  self,
+  entity,
+) {
+  ScreenshotCaptured::{ ..self, entity, }
+}
+
+///|
+pub impl @ecs.TriggerEvent for ScreenshotCaptured with fn auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for ScreenshotCaptured with fn debug_name() {
+  "ScreenshotCaptured"
 }
 
 ///|
@@ -125,18 +148,6 @@ fn screenshot_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Screenshot? {
-  try world.entity(entity).get() catch {
-    _ => None
-  } noraise {
-    value => value
-  }
-}
-
-///|
-fn screenshot_captured_component(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> ScreenshotCaptured? {
   try world.entity(entity).get() catch {
     _ => None
   } noraise {
@@ -257,15 +268,16 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
       remaining.push(pending_capture)
       continue
     }
-    ignore(
-      try! world
-      .entity_mut(entity)
-      .insert_component(ScreenshotCaptured::{
+    try! (world.entity_mut(entity).insert_component(Captured::{  }) |> ignore)
+    world.trigger(
+      ScreenshotCaptured::{
         entity,
         image: @asset.Image::new(capture.width, capture.height, capture.pixels),
-      }),
+      },
+      caller=Some(
+        "mgstudio_render::view::window::screenshot_finalize_capture_requests",
+      ),
     )
-    try! (world.entity_mut(entity).insert_component(Captured::{  }) |> ignore)
   }
   pending_screenshot_entity_captures.val = remaining
 }
@@ -298,14 +310,9 @@ fn screenshot_write_capture_to_disk(
 }
 
 ///|
-pub fn save_to_disk(
-  path : String,
-) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit {
-  fn(event : @ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) {
-    let world = event.world()
-    guard screenshot_captured_component(world, event.entity()) is Some(capture) else {
-      return
-    }
+pub fn save_to_disk(path : String) -> (@ecs.On[ScreenshotCaptured]) -> Unit {
+  fn(event : @ecs.On[ScreenshotCaptured]) {
+    let capture = event.event()
     screenshot_write_capture_to_disk(capture, path)
   }
 }

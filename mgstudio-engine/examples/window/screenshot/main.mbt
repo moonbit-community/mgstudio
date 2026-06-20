@@ -203,10 +203,7 @@ fn screenshot_on_spacebar(
   let path = screenshot_path(counter.get())
   let screenshot_entity = world.spawn()
   ignore(
-    world.add_entity_component_observer(
-      screenshot_entity,
-      @render.save_to_disk(path),
-    ),
+    world.add_entity_observer(screenshot_entity, @render.save_to_disk(path)),
   )
   try! world.set_by_key(
     screenshot_entity,

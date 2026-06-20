@@ -120,3 +120,25 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
     content="true",
   )
 }
+
+///|
+test "screenshot: ScreenshotCaptured is an entity trigger event" {
+  let world = @ecs.World::new()
+  let screenshot_entity = world.spawn()
+  let observed : Array[String] = []
+  ignore(
+    world.add_entity_observer(screenshot_entity, fn(
+      event : @ecs.On[ScreenshotCaptured],
+    ) {
+      let capture = event.event()
+      observed.push(
+        "\{capture.entity.id.to_string()}:\{capture.image.width.to_string()}x\{capture.image.height.to_string()}",
+      )
+    }),
+  )
+  world.trigger(ScreenshotCaptured::{
+    entity: screenshot_entity,
+    image: @asset.Image::new(2, 3, Bytes::from_array([])),
+  })
+  debug_inspect(observed, content="[\"0:2x3\"]")
+}

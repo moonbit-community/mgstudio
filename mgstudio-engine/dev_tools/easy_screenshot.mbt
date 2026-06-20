@@ -121,10 +121,7 @@ fn easy_screenshot_flush_capture_system(
   let path = easy_screenshot_default_path(state_value.next_capture_index)
   let screenshot_entity = world.spawn()
   ignore(
-    world.add_entity_component_observer(
-      screenshot_entity,
-      @render.save_to_disk(path),
-    ),
+    world.add_entity_observer(screenshot_entity, @render.save_to_disk(path)),
   )
   try! world.set_by_key(
     screenshot_entity,
