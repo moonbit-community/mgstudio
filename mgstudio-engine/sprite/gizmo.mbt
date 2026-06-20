@@ -832,6 +832,19 @@ fn gizmos_add_line_3d_with_config(
 }
 
 ///|
+pub fn gizmos_push_retained_line_3d(
+  config : GizmoConfig,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  gizmos_add_line_3d_with_config(
+    gizmo_state, config, start, end, start_color, end_color,
+  )
+}
+
+///|
 fn gizmos_linestrip_3d_with_config(
   state : Ref[GizmoState],
   config : GizmoConfig,

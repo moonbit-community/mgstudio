@@ -115,6 +115,9 @@ pub fn gizmo_plugin_with(
 
   })
   next = global_gizmos_plugin(next)
+  next = next.add_systems_world(@app.Last, fn(world) {
+    ignore(prepare_retained_gizmos(world))
+  })
   next = aabb_gizmo_plugin(next)
   next = frustum_gizmo_plugin(next)
   next = skinned_mesh_bounds_gizmo_plugin(next)

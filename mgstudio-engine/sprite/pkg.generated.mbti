@@ -60,6 +60,8 @@ pub fn gizmos_mesh_id_3d(@render_layers.RenderLayers) -> Int?
 
 pub fn gizmos_prepare(@ecs.World) -> Unit
 
+pub fn gizmos_push_retained_line_3d(GizmoConfig, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
+
 pub fn gizmos_reset() -> Unit
 
 pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]

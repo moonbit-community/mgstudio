@@ -127,6 +127,8 @@ pub fn[G : @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -
 
 pub fn install_retained_gizmo_required_components(@ecs.World) -> Unit
 
+pub fn prepare_retained_gizmos(@ecs.World) -> Int
+
 pub fn simplex_stroke_font_cap_height() -> Float
 
 pub fn simplex_stroke_font_height() -> Float

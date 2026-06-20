@@ -187,8 +187,36 @@ fn gradient_curve_points(seconds : Float) -> Array[(@math.Vec3, @color.Color)] {
 ///|
 fn setup(
   commands : @app.Commands,
+  gizmo_assets : @app.ResMut[@asset.Assets[@gizmos.GizmoAsset]],
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
+  let static_gizmo = @gizmos.GizmoAsset::new()
+  ignore(
+    static_gizmo
+    .sphere(
+      @math.Isometry3d::identity(),
+      0.5F,
+      @color.Color::srgb(0.863F, 0.078F, 0.235F),
+    )
+    .resolution(30000 / 3),
+  )
+  let static_gizmo_handle = gizmo_assets.modify(fn(assets) {
+    assets.add(static_gizmo)
+  })
+  ignore(
+    commands.spawn(
+      (
+        @gizmos.Gizmo::Gizmo()
+        .with_handle(static_gizmo_handle)
+        .with_line_config({
+          ..@gizmos.GizmoLineConfig::GizmoLineConfig(),
+          width: 5.0F,
+        }),
+        @transform.Transform::from_xyz(4.0F, 1.0F, 0.0F),
+      ),
+    ),
+  )
+
   ignore(
     commands.spawn(
       (
@@ -449,7 +477,7 @@ fn main {
     ),
     MyRoundGizmos::MyRoundGizmos(),
   )
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param3(@app.Startup, setup)
   .add_systems_param3(@app.Update, draw_example_collection)
   .add_systems_param4(@app.Update, update_config)
   .run()
