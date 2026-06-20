@@ -31,6 +31,14 @@ struct InstanceMaterialData {
 }
 
 ///|
+struct CustomMaterialPlugin {}
+
+///|
+fn CustomMaterialPlugin::CustomMaterialPlugin() -> CustomMaterialPlugin {
+  CustomMaterialPlugin::{  }
+}
+
+///|
 let instance_material_data_key : @ecs.ComponentKey[InstanceMaterialData] = @ecs.register_component(
   debug_name="examples.shader_advanced.custom_shader_instancing.InstanceMaterialData",
 )
@@ -167,6 +175,53 @@ fn custom_material_metadata() -> @material.ExtendedMaterialMetadata3d {
 }
 
 ///|
+fn prepare_instance_buffers(
+  commands : @app.Commands,
+  query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[InstanceMaterialData],
+      @ecs.Optional[@render.Mesh3dInstanceVertexBufferData],
+    ),
+    @ecs.All,
+  ],
+) -> Unit {
+  try! query.view(fn(_query_entity, data) {
+    let (entity, instance_material, current_buffer) = data
+    if !instance_material.is_changed() && current_buffer.value() is Some(_) {
+      return
+    }
+    let value = instance_material.value()
+    commands
+    .entity(entity)
+    .insert_component(
+      @render.Mesh3dInstanceVertexBufferData::new(
+        buffer_id=INSTANCE_VERTEX_BUFFER_ID,
+        bytes=instance_data_bytes(value),
+        length=value.instances.length(),
+      ),
+    )
+  })
+}
+
+///|
+pub impl @app.Plugin for CustomMaterialPlugin with fn name(_self) {
+  "mgstudio.examples.shader_advanced.CustomMaterialPlugin"
+}
+
+///|
+pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
+  let extract_plugin : @render.ExtractComponentPlugin[
+    InstanceMaterialData,
+    Unit,
+  ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
+  @render.extract_component_plugin_with(app, extract_plugin).add_systems_param2(
+    @app.PostUpdate,
+    prepare_instance_buffers,
+  )
+}
+
+///|
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
@@ -186,11 +241,6 @@ fn setup(
       ),
       @transform.Transform::identity(),
       instance_material,
-      @render.Mesh3dInstanceVertexBufferData::new(
-        buffer_id=INSTANCE_VERTEX_BUFFER_ID,
-        bytes=instance_data_bytes(instance_material),
-        length=instance_material.instances.length(),
-      ),
       @visibility.NoFrustumCulling::NoFrustumCulling(),
     ),
   )
@@ -213,6 +263,7 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
   .add_systems_param3(@app.Startup, setup)
   .run()
 }

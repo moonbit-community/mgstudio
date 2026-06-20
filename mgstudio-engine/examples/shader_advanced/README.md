@@ -12,7 +12,7 @@ This folder tracks parity status for Bevy shader_advanced examples.
 | `compute_mesh.rs` | N/A | Blocked | Requires compute-driven mesh pipeline integration not exposed on current public runtime path. |
 | `custom_phase_item.rs` | N/A | Blocked | Requires custom render phase item/public phase APIs. |
 | `custom_render_phase.rs` | N/A | Blocked | Requires custom render phase/public pipeline slot APIs. |
-| `custom_shader_instancing.rs` | N/A | Blocked | Requires Bevy-like material specialization and instancing pipeline control. |
+| `custom_shader_instancing.rs` | `examples/shader_advanced/custom_shader_instancing` | Partial | One Bevy-shaped mesh entity and `InstanceMaterialData` render visibly; remaining gap is the real `Transparent3d` queue/draw-command owner tracked by ISS-134. |
 | `fullscreen_material.rs` | `examples/shader_advanced/fullscreen_material` | Done | Implemented on `CustomPostProcess3d` with Bevy-like fullscreen shader parameters via `@group(0) @binding(2)` uniform `vec4`. |
 | `render_depth_to_texture.rs` | N/A | Blocked | Requires render-to-texture depth pipeline and public extraction hooks. |
 | `specialized_mesh_pipeline.rs` | N/A | Blocked | Requires public specialized mesh pipeline/material specialization surface. |
@@ -23,4 +23,5 @@ This folder tracks parity status for Bevy shader_advanced examples.
 - `moon check --target native --package-path examples/shader_advanced/manual_material`
 - `moon check --target native --package-path examples/shader_advanced/custom_vertex_attribute`
 - `moon check --target native --package-path examples/shader_advanced/custom_post_processing`
+- `moon check --target native --package-path examples/shader_advanced/custom_shader_instancing`
 - `moon check --target native --package-path examples/shader_advanced/fullscreen_material`

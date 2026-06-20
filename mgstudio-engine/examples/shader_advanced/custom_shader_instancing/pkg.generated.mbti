@@ -1,11 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/shader_advanced/custom_shader_instancing"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type CustomMaterialPlugin
+pub impl @app.Plugin for CustomMaterialPlugin
+
 type InstanceData
 
 type InstanceMaterialData
