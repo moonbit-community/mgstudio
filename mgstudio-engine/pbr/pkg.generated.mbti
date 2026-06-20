@@ -459,6 +459,8 @@ pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
 
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn materials_plugin_with(@app.App[@ecs.World], MaterialsPlugin) -> @app.App[@ecs.World]
+
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@Milky2018/mgstudio/mesh.Mesh]]
 
 pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
@@ -1417,10 +1419,13 @@ pub fn[M] MaterialPipelineKey::mesh_key(Self[M]) -> @material.ErasedMeshPipeline
 pub fn[M] MaterialPipelineKey::new(@material.ErasedMeshPipelineKey, String, String) -> Self[M]
 
 pub struct MaterialPlugin[M] {
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   asset_init : (() -> M)?
 }
 pub fn[M] MaterialPlugin::MaterialPlugin() -> Self[M]
+pub fn[M] MaterialPlugin::debug_flags(Self[M]) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn[M] MaterialPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
+pub fn[M] MaterialPlugin::with_debug_flags(Self[M], @Milky2018/mgstudio/render.RenderDebugFlags) -> Self[M]
 pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M]
 
 pub struct MaterialRuntimeEntry {
@@ -1451,13 +1456,19 @@ pub(all) enum MaterialTextureViewDimension {
 } derive(Eq, @debug.Debug)
 
 pub struct MaterialsPlugin {
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn MaterialsPlugin::MaterialsPlugin() -> Self
+pub fn MaterialsPlugin::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
+pub fn MaterialsPlugin::with_debug_flags(Self, @Milky2018/mgstudio/render.RenderDebugFlags) -> Self
 pub impl @app.Plugin for MaterialsPlugin
 
 pub struct MaterialsPluginState {
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn MaterialsPluginState::MaterialsPluginState() -> Self
+pub fn MaterialsPluginState::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
+pub fn MaterialsPluginState::from_plugin(MaterialsPlugin) -> Self
 pub fn MaterialsPluginState::new() -> Self
 
 pub struct Mesh3dWireframe {
@@ -1936,19 +1947,24 @@ pub fn StandardMaterialKey::without_flag(Self, UInt64) -> Self
 
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> Self
+pub fn StandardMaterialPlugin::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
+pub fn StandardMaterialPlugin::with_debug_flags(Self, @Milky2018/mgstudio/render.RenderDebugFlags) -> Self
 pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
 pub impl @app.Plugin for StandardMaterialPlugin
 
 pub struct StandardMaterialPluginPlan {
   prepass_enabled : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   shadows_enabled : Bool
   main_world_steps : Array[String]
   post_update_steps : Array[String]
   render_startup_steps : Array[String]
   extract_schedule_steps : Array[String]
 }
+pub fn StandardMaterialPluginPlan::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPluginPlan::extract_schedule_steps(Self) -> Array[String]
 pub fn StandardMaterialPluginPlan::main_world_steps(Self) -> Array[String]
 pub fn StandardMaterialPluginPlan::post_update_steps(Self) -> Array[String]
@@ -1958,8 +1974,10 @@ pub fn StandardMaterialPluginPlan::shadows_enabled(Self) -> Bool
 
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   plan : StandardMaterialPluginPlan
 }
+pub fn StandardMaterialPluginState::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
 

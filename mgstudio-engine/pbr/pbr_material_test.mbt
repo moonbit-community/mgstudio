@@ -126,6 +126,10 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
     StandardMaterialPlugin::StandardMaterialPlugin(),
   )
   inspect(plan.prepass_enabled(), content="true")
+  inspect(
+    plan.debug_flags().allow_copies_from_indirect_parameters(),
+    content="false",
+  )
   inspect(plan.shadows_enabled(), content="true")
   inspect(plan.main_world_steps().length(), content="4")
   inspect(plan.post_update_steps().length(), content="3")
@@ -152,12 +156,24 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
 
 ///|
 test "pbr material: standard material plugin state retains build plan" {
-  let plugin = StandardMaterialPlugin::StandardMaterialPlugin().with_prepass_enabled(
-    false,
-  )
+  let plugin = StandardMaterialPlugin::StandardMaterialPlugin()
+    .with_prepass_enabled(false)
+    .with_debug_flags(
+      @render.RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+        true,
+      ),
+    )
   let state = StandardMaterialPluginState::from_plugin(plugin)
   let plan = state.plan()
+  inspect(
+    state.debug_flags().allow_copies_from_indirect_parameters(),
+    content="true",
+  )
   inspect(plan.prepass_enabled(), content="false")
+  inspect(
+    plan.debug_flags().allow_copies_from_indirect_parameters(),
+    content="true",
+  )
   inspect(
     plan.extract_schedule_steps()[0],
     content="extract_mesh_materials<StandardMaterial>",

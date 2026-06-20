@@ -19,13 +19,47 @@
 const PREPASS_PIPELINE_PLUGIN_NAME : String = "mgstudio.pbr.prepass.PrepassPipelinePlugin"
 
 ///|
+const PREPASS_PLUGIN_NAME : String = "mgstudio.pbr.prepass.PrepassPlugin"
+
+///|
 pub const EARLY_PREPASS_LABEL : String = @core_prepass.EARLY_PREPASS_LABEL
 
 ///|
 pub const LATE_PREPASS_LABEL : String = @core_prepass.LATE_PREPASS_LABEL
 
 ///|
-pub type PrepassPlugin = @core_prepass.PrepassPlugin
+pub struct PrepassPlugin {
+  debug_flags : @render.RenderDebugFlags
+}
+
+///|
+pub fn PrepassPlugin::PrepassPlugin() -> PrepassPlugin {
+  PrepassPlugin::{ debug_flags: @render.RenderDebugFlags::RenderDebugFlags() }
+}
+
+///|
+pub fn PrepassPlugin::new(
+  debug_flags : @render.RenderDebugFlags,
+) -> PrepassPlugin {
+  PrepassPlugin::{ debug_flags, }
+}
+
+///|
+pub fn PrepassPlugin::debug_flags(
+  self : PrepassPlugin,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
+}
+
+///|
+pub impl @app.Plugin for PrepassPlugin with fn name(_self) {
+  PREPASS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for PrepassPlugin with fn build(self, app) {
+  prepass_plugin_with(app, self)
+}
 
 ///|
 pub struct PrepassPipelinePlugin {}
@@ -62,7 +96,23 @@ pub type PrepassColorAttachmentPlan = @core_prepass.PrepassColorAttachmentPlan
 pub type PrepassRunPlan = @core_prepass.PrepassRunPlan
 
 ///|
-pub struct AnyPrepassPluginLoaded {} derive(Default, Eq, Debug)
+pub struct AnyPrepassPluginLoaded {
+  debug_flags : @render.RenderDebugFlags
+}
+
+///|
+pub fn AnyPrepassPluginLoaded::AnyPrepassPluginLoaded() -> AnyPrepassPluginLoaded {
+  AnyPrepassPluginLoaded::{
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+  }
+}
+
+///|
+pub fn AnyPrepassPluginLoaded::debug_flags(
+  self : AnyPrepassPluginLoaded,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
+}
 
 ///|
 pub struct PrepassPipelineState {
@@ -246,7 +296,7 @@ fn prepass_pipeline_plugin_install_with(
 
 ///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  prepass_plugin_with(app, PrepassPlugin())
+  prepass_plugin_with(app, PrepassPlugin::PrepassPlugin())
 }
 
 ///|
@@ -259,10 +309,13 @@ pub fn prepass_plugin_with(
     app
   } else {
     app.insert_world_resource(ecs_key_any_prepass_plugin_loaded, AnyPrepassPluginLoaded::{
-
+      debug_flags: plugin.debug_flags,
     })
   }
-  @core_prepass.prepass_plugin_with(app, plugin)
+  @core_prepass.prepass_plugin_with(
+    app,
+    @core_prepass.PrepassPlugin::PrepassPlugin(),
+  )
 }
 
 ///|

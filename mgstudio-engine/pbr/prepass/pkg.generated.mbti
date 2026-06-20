@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
 }
@@ -53,7 +52,7 @@ pub fn prepass_pipeline_plugin_with(@app.App[@ecs.World], PrepassPipelinePlugin)
 
 pub fn prepass_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn prepass_plugin_with(@app.App[@ecs.World], @Milky2018/mgstudio/core_pipeline/prepass.PrepassPlugin) -> @app.App[@ecs.World]
+pub fn prepass_plugin_with(@app.App[@ecs.World], PrepassPlugin) -> @app.App[@ecs.World]
 
 pub fn prepass_run_kind_label(@Milky2018/mgstudio/core_pipeline/prepass.PrepassRunKind) -> String
 
@@ -79,7 +78,10 @@ pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> Prepass
 
 // Types and methods
 pub struct AnyPrepassPluginLoaded {
-} derive(Default, Eq, @debug.Debug)
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+}
+pub fn AnyPrepassPluginLoaded::AnyPrepassPluginLoaded() -> Self
+pub fn AnyPrepassPluginLoaded::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub impl @app.Resource for AnyPrepassPluginLoaded
 
 pub struct PrepassBindings3d {
@@ -107,6 +109,14 @@ pub struct PrepassPipelineState {
 pub fn PrepassPipelineState::PrepassPipelineState() -> Self
 pub impl @app.Resource for PrepassPipelineState
 
+pub struct PrepassPlugin {
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+}
+pub fn PrepassPlugin::PrepassPlugin() -> Self
+pub fn PrepassPlugin::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
+pub fn PrepassPlugin::new(@Milky2018/mgstudio/render.RenderDebugFlags) -> Self
+pub impl @app.Plugin for PrepassPlugin
+
 pub struct PrepassPluginState {
   enabled : Bool
   view_count : Int
@@ -125,10 +135,10 @@ pub impl @ecs.Component for PreviousGlobalTransform
 
 pub struct PreviousViewData {
   transform : @transform.Transform
-  clip_from_world : @render.ProjectionMatrix3d
+  clip_from_world : @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
 }
-pub fn PreviousViewData::clip_from_world(Self) -> @render.ProjectionMatrix3d
-pub fn PreviousViewData::new(@transform.Transform, @render.ProjectionMatrix3d) -> Self
+pub fn PreviousViewData::clip_from_world(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
+pub fn PreviousViewData::new(@transform.Transform, @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d) -> Self
 pub fn PreviousViewData::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousViewData
 
@@ -144,8 +154,6 @@ pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassColorAttachmentPlan}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassNode}
-
-pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassPlugin}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassRunKind}
 

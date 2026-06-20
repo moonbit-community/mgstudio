@@ -52,24 +52,60 @@ pub const SHADOWS_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "ShadowsDr
 pub const SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "ShadowsDepthOnlyDrawFunction"
 
 ///|
-pub struct MaterialsPlugin {}
-
-///|
-pub fn MaterialsPlugin::MaterialsPlugin() -> MaterialsPlugin {
-  MaterialsPlugin::{  }
+pub struct MaterialsPlugin {
+  debug_flags : @render.RenderDebugFlags
 }
 
 ///|
-pub struct MaterialsPluginState {}
+pub fn MaterialsPlugin::MaterialsPlugin() -> MaterialsPlugin {
+  MaterialsPlugin::{ debug_flags: @render.RenderDebugFlags::RenderDebugFlags() }
+}
+
+///|
+pub fn MaterialsPlugin::with_debug_flags(
+  self : MaterialsPlugin,
+  debug_flags : @render.RenderDebugFlags,
+) -> MaterialsPlugin {
+  self |> ignore
+  MaterialsPlugin::{ debug_flags, }
+}
+
+///|
+pub fn MaterialsPlugin::debug_flags(
+  self : MaterialsPlugin,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
+}
+
+///|
+pub struct MaterialsPluginState {
+  debug_flags : @render.RenderDebugFlags
+}
 
 ///|
 pub fn MaterialsPluginState::MaterialsPluginState() -> MaterialsPluginState {
-  MaterialsPluginState::{  }
+  MaterialsPluginState::{
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+  }
 }
 
 ///|
 pub fn MaterialsPluginState::new() -> MaterialsPluginState {
   MaterialsPluginState::MaterialsPluginState()
+}
+
+///|
+pub fn MaterialsPluginState::from_plugin(
+  plugin : MaterialsPlugin,
+) -> MaterialsPluginState {
+  MaterialsPluginState::{ debug_flags: plugin.debug_flags }
+}
+
+///|
+pub fn MaterialsPluginState::debug_flags(
+  self : MaterialsPluginState,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
 }
 
 ///|
@@ -119,13 +155,21 @@ pub impl @app.Plugin for MaterialsPlugin with fn name(_self) {
 }
 
 ///|
-pub impl @app.Plugin for MaterialsPlugin with fn build(_self, app) {
-  materials_plugin_install(app)
+pub impl @app.Plugin for MaterialsPlugin with fn build(self, app) {
+  materials_plugin_install(app, self)
 }
 
 ///|
 pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_plugins(MaterialsPlugin::MaterialsPlugin())
+}
+
+///|
+pub fn materials_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : MaterialsPlugin,
+) -> @app.App[@ecs.World] {
+  app.add_plugins(plugin)
 }
 
 ///|
@@ -137,18 +181,25 @@ fn configure_materials_render_sub_app(
 }
 
 ///|
-fn materials_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+fn materials_plugin_install(
+  app : @app.App[@ecs.World],
+  plugin : MaterialsPlugin,
+) -> @app.App[@ecs.World] {
   let app = if app.contains_resource(ecs_key_materials_plugin_state) {
     app
   } else {
     app
-    .insert_world_resource(ecs_key_materials_plugin_state, MaterialsPluginState::{
-
-    })
+    .insert_world_resource(
+      ecs_key_materials_plugin_state,
+      MaterialsPluginState::from_plugin(plugin),
+    )
     .add_startup_system(init_materials_resources)
   }
   let app = @render.try_with_render_app(app, configure_materials_render_sub_app)
-  @pbr_prepass.prepass_plugin(app)
+  @pbr_prepass.prepass_plugin_with(
+    app,
+    @pbr_prepass.PrepassPlugin::new(plugin.debug_flags),
+  )
 }
 
 ///|

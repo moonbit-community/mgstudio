@@ -143,9 +143,14 @@ fn pbr_plugin_sync_mesh_render_state(
 ///|
 fn pbr_plugin_sync_materials_state(
   app : @app.App[@ecs.World],
-  _runtime_config : PbrPluginRuntimeConfig,
+  runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  materials_plugin(app)
+  materials_plugin_with(
+    app,
+    MaterialsPlugin::MaterialsPlugin().with_debug_flags(
+      runtime_config.debug_flags,
+    ),
+  )
 }
 
 ///|
@@ -201,6 +206,7 @@ fn pbr_plugin_sync_standard_material_state(
 ) -> @app.App[@ecs.World] {
   standard_material_plugin_with(app, StandardMaterialPlugin::{
     prepass_enabled: runtime_config.prepass_enabled,
+    debug_flags: runtime_config.debug_flags,
   })
 }
 

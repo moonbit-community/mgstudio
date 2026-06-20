@@ -254,11 +254,15 @@ pub fn standard_material_render_phase_type(
 ///|
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
+  debug_flags : @render.RenderDebugFlags
 }
 
 ///|
 pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> StandardMaterialPlugin {
-  StandardMaterialPlugin::{ prepass_enabled: true }
+  StandardMaterialPlugin::{
+    prepass_enabled: true,
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+  }
 }
 
 ///|
@@ -266,13 +270,28 @@ pub fn StandardMaterialPlugin::with_prepass_enabled(
   self : StandardMaterialPlugin,
   prepass_enabled : Bool,
 ) -> StandardMaterialPlugin {
-  self |> ignore
-  StandardMaterialPlugin::{ prepass_enabled, }
+  StandardMaterialPlugin::{ ..self, prepass_enabled, }
+}
+
+///|
+pub fn StandardMaterialPlugin::with_debug_flags(
+  self : StandardMaterialPlugin,
+  debug_flags : @render.RenderDebugFlags,
+) -> StandardMaterialPlugin {
+  StandardMaterialPlugin::{ ..self, debug_flags, }
+}
+
+///|
+pub fn StandardMaterialPlugin::debug_flags(
+  self : StandardMaterialPlugin,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
 }
 
 ///|
 pub struct StandardMaterialPluginPlan {
   prepass_enabled : Bool
+  debug_flags : @render.RenderDebugFlags
   shadows_enabled : Bool
   main_world_steps : Array[String]
   post_update_steps : Array[String]
@@ -285,6 +304,13 @@ pub fn StandardMaterialPluginPlan::prepass_enabled(
   self : StandardMaterialPluginPlan,
 ) -> Bool {
   self.prepass_enabled
+}
+
+///|
+pub fn StandardMaterialPluginPlan::debug_flags(
+  self : StandardMaterialPluginPlan,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
 }
 
 ///|
@@ -328,6 +354,7 @@ pub fn standard_material_plugin_plan(
 ) -> StandardMaterialPluginPlan {
   StandardMaterialPluginPlan::{
     prepass_enabled: plugin.prepass_enabled,
+    debug_flags: plugin.debug_flags,
     shadows_enabled: true,
     main_world_steps: [
       "init_asset<StandardMaterial>", "register_type<MeshMaterial3d<StandardMaterial>>",
@@ -350,6 +377,7 @@ pub fn standard_material_plugin_plan(
 ///|
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
+  debug_flags : @render.RenderDebugFlags
   plan : StandardMaterialPluginPlan
 }
 
@@ -359,8 +387,16 @@ pub fn StandardMaterialPluginState::from_plugin(
 ) -> StandardMaterialPluginState {
   StandardMaterialPluginState::{
     prepass_enabled: plugin.prepass_enabled,
+    debug_flags: plugin.debug_flags,
     plan: standard_material_plugin_plan(plugin),
   }
+}
+
+///|
+pub fn StandardMaterialPluginState::debug_flags(
+  self : StandardMaterialPluginState,
+) -> @render.RenderDebugFlags {
+  self.debug_flags
 }
 
 ///|

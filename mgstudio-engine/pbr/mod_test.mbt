@@ -47,6 +47,24 @@ fn read_mesh_render_plugin_state(world : @ecs.World) -> MeshRenderPluginState {
 }
 
 ///|
+fn read_materials_plugin_state(world : @ecs.World) -> MaterialsPluginState {
+  match world.get_resource(ecs_key_materials_plugin_state) {
+    Some(state) => state
+    None => abort("missing MaterialsPluginState resource")
+  }
+}
+
+///|
+fn read_any_prepass_plugin_loaded(
+  world : @ecs.World,
+) -> @pbr_prepass.AnyPrepassPluginLoaded {
+  match world.get_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded) {
+    Some(state) => state
+    None => abort("missing AnyPrepassPluginLoaded resource")
+  }
+}
+
+///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
@@ -178,6 +196,12 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     content="false",
   )
   debug_inspect(
+    read_materials_plugin_state(app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="false",
+  )
+  debug_inspect(
     app.contains_resource(ecs_key_materials_plugin_state),
     content="true",
   )
@@ -192,8 +216,20 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     content="true",
   )
   debug_inspect(
+    read_standard_material_plugin_state(app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="false",
+  )
+  debug_inspect(
     app.contains_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded),
     content="true",
+  )
+  debug_inspect(
+    read_any_prepass_plugin_loaded(app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="false",
   )
 }
 
@@ -238,6 +274,12 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     content="true",
   )
   debug_inspect(
+    read_materials_plugin_state(_app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+  debug_inspect(
     read_deferred_lighting_state(_app.world()).enabled,
     content="false",
   )
@@ -246,7 +288,19 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     content="false",
   )
   debug_inspect(
+    read_standard_material_plugin_state(_app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+  debug_inspect(
     _app.contains_resource(@pbr_prepass.ecs_key_any_prepass_plugin_loaded),
+    content="true",
+  )
+  debug_inspect(
+    read_any_prepass_plugin_loaded(_app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
     content="true",
   )
 
@@ -337,12 +391,24 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
     content="true",
   )
   debug_inspect(
+    read_materials_plugin_state(app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+  debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,
     content="false",
   )
   debug_inspect(
     read_standard_material_plugin_state(app.world()).prepass_enabled,
     content="false",
+  )
+  debug_inspect(
+    read_standard_material_plugin_state(app.world())
+    .debug_flags()
+    .allow_copies_from_indirect_parameters(),
+    content="true",
   )
 }
 

@@ -257,3 +257,21 @@ test "pbr material plugin: plugin registers assets typed component and render re
     content="mgstudio_pbr::MeshMaterial3d<mgstudio_pbr_test::ParityCustomMaterial>",
   )
 }
+
+///|
+test "pbr material plugin: debug flags mirror Bevy plugin configuration" {
+  let default_plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin()
+  inspect(
+    default_plugin.debug_flags().allow_copies_from_indirect_parameters(),
+    content="false",
+  )
+  let plugin = default_plugin.with_debug_flags(
+    @render.RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+      true,
+    ),
+  )
+  inspect(
+    plugin.debug_flags().allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+}

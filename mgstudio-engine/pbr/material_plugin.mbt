@@ -891,12 +891,16 @@ fn material_hash_bind_group_data(data : String) -> UInt64 {
 
 ///|
 pub struct MaterialPlugin[M] {
+  debug_flags : @render.RenderDebugFlags
   asset_init : (() -> M)?
 }
 
 ///|
 pub fn[M] MaterialPlugin::MaterialPlugin() -> MaterialPlugin[M] {
-  MaterialPlugin::{ asset_init: None }
+  MaterialPlugin::{
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+    asset_init: None,
+  }
 }
 
 ///|
@@ -904,8 +908,22 @@ pub fn[M] MaterialPlugin::with_asset_init(
   self : MaterialPlugin[M],
   init : () -> M,
 ) -> MaterialPlugin[M] {
-  self |> ignore
-  MaterialPlugin::{ asset_init: Some(init) }
+  MaterialPlugin::{ ..self, asset_init: Some(init) }
+}
+
+///|
+pub fn[M] MaterialPlugin::with_debug_flags(
+  self : MaterialPlugin[M],
+  debug_flags : @render.RenderDebugFlags,
+) -> MaterialPlugin[M] {
+  MaterialPlugin::{ ..self, debug_flags, }
+}
+
+///|
+pub fn[M] MaterialPlugin::debug_flags(
+  self : MaterialPlugin[M],
+) -> @render.RenderDebugFlags {
+  self.debug_flags
 }
 
 ///|
