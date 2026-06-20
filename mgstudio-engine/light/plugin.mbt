@@ -27,11 +27,70 @@ pub fn LightPlugin::LightPlugin() -> LightPlugin {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_light/src/probe.rs` (`#[require(...)]` for
-// `LightProbe`/`IrradianceVolume`).
+// Bevy source: `bevy/crates/bevy_light/src/{point_light,spot_light,directional_light,rect_light,probe}.rs`.
 fn register_light_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_point_light,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_point_light,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_point_light,
+    @visibility.ecs_key_view_visibility,
+    fn() { @visibility.ViewVisibility::new(true) },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light,
+    @visibility.ecs_key_view_visibility,
+    fn() { @visibility.ViewVisibility::new(true) },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    @visibility.ecs_key_view_visibility,
+    fn() { @visibility.ViewVisibility::new(true) },
+  )
+  world.register_required_components_with(
+    ecs_key_rect_light,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_rect_light,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_rect_light,
+    @visibility.ecs_key_view_visibility,
+    fn() { @visibility.ViewVisibility::new(true) },
+  )
   world.register_required_components_with(
     ecs_key_ambient_light,
     @camera_camera.ecs_key_camera,

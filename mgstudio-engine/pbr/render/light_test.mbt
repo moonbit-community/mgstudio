@@ -116,6 +116,45 @@ fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn light_test_sync_light_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  if (try! world.get_by_key(entity, @render_gpu.ecs_key_render_entity)) is None {
+    try! world.set_by_key(
+      entity,
+      @render_gpu.ecs_key_render_entity,
+      @render_gpu.RenderEntity::new(entity),
+    )
+  }
+  if (try! world.get_by_key(entity, @render_gpu.ecs_key_main_entity)) is None {
+    try! world.set_by_key(
+      entity,
+      @render_gpu.ecs_key_main_entity,
+      @render_gpu.MainEntity::new(entity),
+    )
+  }
+}
+
+///|
+fn light_test_extract_lights(world : @ecs.World) -> Unit {
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, _) {
+    light_test_sync_light_entity(world, entity)
+  })
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, _) {
+    light_test_sync_light_entity(world, entity)
+  })
+  world.for_each_component(@light.ecs_key_directional_light, fn(entity, _) {
+    light_test_sync_light_entity(world, entity)
+  })
+  world.for_each_component(@light.ecs_key_rect_light, fn(entity, _) {
+    light_test_sync_light_entity(world, entity)
+  })
+  ignore(world.increment_change_tick())
+  extract_lights(world)
+}
+
+///|
 test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(
@@ -132,6 +171,7 @@ test "pbr render light: point extraction follows bevy intensity and normal-bias 
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_point_lights(world)
   inspect(extracted.length(), content="1")
   let point = extracted[0]
@@ -162,6 +202,7 @@ test "pbr render light: spot extraction follows bevy intensity and normal-bias s
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_spot_lights(world)
   inspect(extracted.length(), content="1")
   let spot = extracted[0]
@@ -193,6 +234,7 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
   |> ignore)
 
   light_test_propagate_transforms(world)
+  light_test_extract_lights(world)
   let extracted_directional = render3d_collect_extracted_directional_lights(
     world,
   )
@@ -205,10 +247,12 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
     ),
     content="true",
   )
+  light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
   inspect(approx_eq(lighting.directional_dir.x, 0.0F, 1.0e-5F), content="true")
   inspect(approx_eq(lighting.directional_dir.y, 0.0F, 1.0e-5F), content="true")
   inspect(approx_eq(lighting.directional_dir.z, 1.0F, 1.0e-5F), content="true")
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(
@@ -250,6 +294,7 @@ test "pbr render light: directional light uses propagated required GlobalTransfo
   let local_dir = transform.rotation
     .mul_vec3(@math.Vec3::new(0.0F, 0.0F, 1.0F))
     .normalize_or_zero()
+  light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
   inspect(
     approx_eq(lighting.directional_dir.x, local_dir.x, 1.0e-5F),
@@ -305,6 +350,7 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   inspect(render3d_collect_extracted_point_lights(world).length(), content="0")
   inspect(
     render3d_collect_extracted_directional_lights(world).length(),
@@ -313,7 +359,7 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
 }
 
 ///|
-test "pbr render light: point extraction prefers visible clusterable entity list when present" {
+test "pbr render light: point extraction keeps all view-visible lights before cluster assignment" {
   let world = @ecs.World::new()
   world.insert_resource(
     @light.ecs_key_point_light_shadow_map,
@@ -342,13 +388,15 @@ test "pbr render light: point extraction prefers visible clusterable entity list
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_point_lights(world)
-  inspect(extracted.length(), content="1")
+  inspect(extracted.length(), content="2")
   inspect(extracted[0].entity == point_visible, content="true")
+  inspect(extracted[1].entity == point_hidden, content="true")
 }
 
 ///|
-test "pbr render light: spot extraction prefers visible clusterable entity list when present" {
+test "pbr render light: spot extraction keeps all view-visible lights before cluster assignment" {
   let world = @ecs.World::new()
   world.insert_resource(
     @light.ecs_key_directional_light_shadow_map,
@@ -377,9 +425,11 @@ test "pbr render light: spot extraction prefers visible clusterable entity list 
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_spot_lights(world)
-  inspect(extracted.length(), content="1")
+  inspect(extracted.length(), content="2")
   inspect(extracted[0].entity == spot_visible, content="true")
+  inspect(extracted[1].entity == spot_hidden, content="true")
 }
 
 ///|
@@ -393,10 +443,12 @@ test "pbr render light: spot/directional propagate affects_lightmapped_mesh_diff
     @light.SpotLight::SpotLight().with_affects_lightmapped_mesh_diffuse(false),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let spots = render3d_collect_extracted_spot_lights(world)
   inspect(spots.length(), content="1")
   inspect(spots[0].affects_lightmapped_mesh_diffuse, content="false")
 
+  ignore(world.increment_change_tick())
   let directional_entity = world.spawn()
   try! (world.set_by_key(
     directional_entity,
@@ -406,6 +458,7 @@ test "pbr render light: spot/directional propagate affects_lightmapped_mesh_diff
     ),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let directionals = render3d_collect_extracted_directional_lights(world)
   inspect(directionals.length(), content="1")
   inspect(directionals[0].affects_lightmapped_mesh_diffuse, content="false")
@@ -427,12 +480,14 @@ test "pbr render light: directional cascade overlap propagates to gpu lights" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="1")
   inspect(
     approx_eq(extracted[0].cascade_overlap_proportion, 0.37F, 1.0e-6F),
     content="true",
   )
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(
@@ -456,6 +511,7 @@ test "pbr render light: directional without shadows keeps zero cascades" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(gpu_lights.directional_lights[0].num_cascades, content="0")
@@ -476,9 +532,11 @@ test "pbr render light: directional with shadows uses default cascade config" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="1")
   inspect(extracted[0].cascade_count, content="4")
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.n_directional_lights, content="1")
   inspect(gpu_lights.directional_lights[0].num_cascades, content="4")
@@ -499,6 +557,7 @@ test "pbr render light: directional gpu lights resolve view cascade data" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let cascade_data = [
     1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F, 13.0F,
@@ -578,6 +637,7 @@ test "pbr render light: directional extraction order follows bevy key" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="3")
   inspect(extracted[0].entity.id, content="2")
@@ -615,6 +675,7 @@ test "pbr render light: directional depth texture base index accumulates cascade
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let gpu = render3d_collect_gpu_lights(world)
   inspect(gpu.n_directional_lights, content="2")
   inspect(gpu.directional_lights[0].num_cascades, content="2")
@@ -644,6 +705,7 @@ test "pbr render light: directional light reads decal index from clustered decal
   )
   world.insert_resource(@pbr_decal.ecs_key_render_clustered_decals, decals)
 
+  light_test_extract_lights(world)
   let gpu = render3d_collect_gpu_lights(world)
   inspect(gpu.n_directional_lights, content="1")
   inspect(
@@ -685,6 +747,7 @@ test "pbr render light: point extraction order keeps shadow and volumetric first
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_point_lights(world)
   inspect(extracted.length(), content="3")
   inspect(extracted[0].entity.id, content="2")
@@ -725,6 +788,7 @@ test "pbr render light: spot extraction order keeps shadow and volumetric first"
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_spot_lights(world)
   inspect(extracted.length(), content="3")
   inspect(extracted[0].entity.id, content="2")
@@ -760,6 +824,7 @@ test "pbr render light: clusterable point-light ordering keeps points before spo
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let ordered = render3d_collect_extracted_clusterable_point_lights(world)
   inspect(ordered.length(), content="3")
   inspect(ordered[0].is_point_light(), content="true")
@@ -795,6 +860,7 @@ test "pbr render light: gpu lights computes spot shadow map offset" {
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let gpu = render3d_collect_gpu_lights(world)
   inspect(gpu.n_directional_lights, content="1")
   inspect(gpu.directional_lights[0].num_cascades, content="2")
@@ -811,6 +877,7 @@ test "pbr render light: gpu directional array is padded to max while count stays
     @light.DirectionalLight::DirectionalLight(),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu = render3d_collect_gpu_lights(world)
   inspect(gpu.n_directional_lights, content="1")
   inspect(
@@ -832,6 +899,7 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
       2.0F,
     ).with_affects_lightmapped_meshes(false),
   )
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.ambient_light_affects_lightmapped_meshes, content="0")
   inspect(approx_eq(gpu_lights.ambient_color.r, 0.5F, 1.0e-6F), content="true")
@@ -842,6 +910,7 @@ test "pbr render light: gpu lights tracks ambient affects_lightmapped_meshes" {
 ///|
 test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
   let world = @ecs.World::new()
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 5.0F, 24.0F, false,
@@ -905,6 +974,7 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
 
   light_test_propagate_transforms(world)
   @light_cluster.cluster_assign_lights_system(world)
+  light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
   guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
     inspect("missing", content="clustered")
@@ -970,6 +1040,7 @@ test "pbr render light: storage cluster buffers include clustered decal ranges" 
   world.insert_resource(
     @pbr_decal.ecs_key_render_clustered_decals, render_decals,
   )
+  light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
   guard lighting.gpu_clusterable_object_index_lists_bytes is Some(indices) else {
     inspect("missing", content="indices")
@@ -1029,6 +1100,7 @@ test "pbr render light: point shadow clustered custom data matches Bevy projecti
   |> ignore)
   light_test_propagate_transforms(world)
   @light_cluster.cluster_assign_lights_system(world)
+  light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
   guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
     inspect("missing", content="clustered")
@@ -1070,6 +1142,7 @@ test "pbr render light: cluster factors zw follow orthographic projection runtim
     orthographic_first_slice_depth: 2.0F,
   })
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     2.0F, 2.0F, 24.0F, true,
@@ -1117,6 +1190,7 @@ test "pbr render light: cluster far fallback follows max visible clusterable ran
     @visibility.ViewVisibility::new(false),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 40.0F, 24.0F, false,
@@ -1167,6 +1241,7 @@ test "pbr render light: cluster far fallback prefers camera visible cluster list
     @light_cluster.VisibleClusterableObjects::from_lists([light_in_view], [], []),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 20.0F, 24.0F, false,
@@ -1227,6 +1302,7 @@ test "pbr render light: cluster far fallback includes camera view depth" {
   )
   |> ignore)
   light_test_propagate_transforms(world)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     5.0F, 35.0F, 24.0F, false,
@@ -1264,6 +1340,7 @@ test "pbr render light: single-z perspective cluster near pins to far" {
     @light.PointLight::PointLight().with_range(10.0F),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   let expected_factors_zw = @light_cluster.calculate_cluster_factors(
     10.0F, 10.0F, 1.0F, false,
@@ -1301,6 +1378,7 @@ test "pbr render light: gpu lights cluster dimensions follow cluster config comp
     ),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.cluster_dimensions.0, content="8")
   inspect(gpu_lights.cluster_dimensions.1, content="4")
@@ -1324,6 +1402,7 @@ test "pbr render light: cluster config is sourced from camera entities" {
     ),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.cluster_dimensions.0, content="16")
   inspect(gpu_lights.cluster_dimensions.1, content="9")
@@ -1346,6 +1425,7 @@ test "pbr render light: cluster config none yields zero cluster payload" {
     @light_cluster.ClusterConfig::None,
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.cluster_dimensions.0, content="0")
   inspect(gpu_lights.cluster_dimensions.1, content="0")
@@ -1382,6 +1462,7 @@ test "pbr render light: cluster payload prefers runtime clusters component" {
   )
   let expected_factor_x = 12.0F / 1280.0F
   let expected_factor_y = 6.0F / 720.0F
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(gpu_lights.cluster_dimensions.0, content="12")
   inspect(gpu_lights.cluster_dimensions.1, content="6")
@@ -1432,6 +1513,7 @@ test "pbr render light: cluster factors xy prefer camera viewport size when pres
     ),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
   inspect(
     approx_eq(gpu_lights.cluster_factors.x, 16.0F / 640.0F, 1.0e-6F),
@@ -1460,23 +1542,27 @@ test "pbr render light: volumetric flags require shadow maps for point and direc
     @light.VolumetricLight::VolumetricLight(),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let points_no_shadow = render3d_collect_extracted_point_lights(world)
   inspect(points_no_shadow.length(), content="1")
   let point_flags_no_shadow = render3d_point_light_flags(points_no_shadow[0])
   inspect((point_flags_no_shadow & (1U << 2)) == 0U, content="true")
 
+  ignore(world.increment_change_tick())
   try! (world.set_by_key(
     point_entity,
     @light.ecs_key_point_light,
     @light.PointLight::PointLight().with_shadow_maps_enabled(true),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let points_with_shadow = render3d_collect_extracted_point_lights(world)
   let point_flags_with_shadow = render3d_point_light_flags(
     points_with_shadow[0],
   )
   inspect((point_flags_with_shadow & (1U << 2)) != 0U, content="true")
 
+  ignore(world.increment_change_tick())
   let directional_entity = world.spawn()
   try! (world.set_by_key(
     directional_entity,
@@ -1490,6 +1576,7 @@ test "pbr render light: volumetric flags require shadow maps for point and direc
     @light.VolumetricLight::VolumetricLight(),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let directional_no_shadow = render3d_collect_extracted_directional_lights(
     world,
   )
@@ -1499,12 +1586,14 @@ test "pbr render light: volumetric flags require shadow maps for point and direc
   )
   inspect((directional_flags_no_shadow & (1U << 1)) == 0U, content="true")
 
+  ignore(world.increment_change_tick())
   try! (world.set_by_key(
     directional_entity,
     @light.ecs_key_directional_light,
     @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
   )
   |> ignore)
+  light_test_extract_lights(world)
   let directional_with_shadow = render3d_collect_extracted_directional_lights(
     world,
   )
@@ -1525,6 +1614,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let default_gpu = render3d_collect_gpu_lights(world)
   inspect(default_gpu.n_directional_lights, content="1")
   inspect(
@@ -1544,6 +1634,7 @@ test "pbr render light: directional sun disk defaults and component override pro
     content="true",
   )
 
+  ignore(world.increment_change_tick())
   let entity_override = world.spawn()
   try! (world.set_by_key(
     entity_override,
@@ -1558,6 +1649,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   )
   |> ignore)
 
+  light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="2")
   inspect(
@@ -1569,6 +1661,7 @@ test "pbr render light: directional sun disk defaults and component override pro
     content="true",
   )
 
+  light_test_extract_lights(world)
   let override_gpu = render3d_collect_gpu_lights(world)
   inspect(override_gpu.n_directional_lights, content="2")
   inspect(

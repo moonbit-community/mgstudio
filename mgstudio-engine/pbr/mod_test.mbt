@@ -752,6 +752,56 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
 }
 
 ///|
+test "render3d: pbr plugin extracts lights through render schedule" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let world = app.world()
+  let entity = world.spawn_empty()
+  try! (world
+  .entity_mut(entity)
+  .insert_component(PointLight::PointLight().with_intensity(4.0F * @math.pi()))
+  |> ignore)
+
+  app = app.update()
+  let render_entity = match
+    (try! app.world().get_by_key(entity, @render.ecs_key_render_entity)) {
+    Some(value) => value.id()
+    None => abort("missing RenderEntity for point light")
+  }
+  debug_inspect(
+    (try! app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_by_key(render_entity, @pbr_render.ecs_key_extracted_point_light3d))
+    is Some(_),
+    content="true",
+  )
+
+  app.world().increment_change_tick() |> ignore
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  app.world().increment_change_tick() |> ignore
+  app = app.update()
+  debug_inspect(
+    (try! app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_by_key(render_entity, @pbr_render.ecs_key_extracted_point_light3d))
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

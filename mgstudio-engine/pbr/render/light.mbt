@@ -334,6 +334,16 @@ pub struct ExtractedPointLight3d {
 }
 
 ///|
+pub let ecs_key_extracted_point_light3d : @ecs.ComponentKey[
+  ExtractedPointLight3d,
+] = @ecs.register_component(debug_name="mgstudio_pbr::ExtractedPointLight3d")
+
+///|
+pub impl @ecs.Component for ExtractedPointLight3d with fn component() {
+  ecs_key_extracted_point_light3d
+}
+
+///|
 pub struct ExtractedClusterablePointLight3d {
   clusterable_type_order : Int
   light : ExtractedPointLight3d
@@ -379,6 +389,78 @@ pub struct ExtractedDirectionalLight3d {
   cascade_minimum_distance : Float
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
+}
+
+///|
+pub let ecs_key_extracted_directional_light3d : @ecs.ComponentKey[
+  ExtractedDirectionalLight3d,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ExtractedDirectionalLight3d",
+)
+
+///|
+pub impl @ecs.Component for ExtractedDirectionalLight3d with fn component() {
+  ecs_key_extracted_directional_light3d
+}
+
+///|
+pub struct ExtractedRectLight3d {
+  entity : @core.Entity
+  color : @color.Color
+  intensity : Float
+  range : Float
+  width : Float
+  height : Float
+  transform : @transform.Transform
+}
+
+///|
+pub let ecs_key_extracted_rect_light3d : @ecs.ComponentKey[ExtractedRectLight3d] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ExtractedRectLight3d",
+)
+
+///|
+pub impl @ecs.Component for ExtractedRectLight3d with fn component() {
+  ecs_key_extracted_rect_light3d
+}
+
+///|
+priv struct LightExtractionState {
+  mut last_source_change_tick : @core.Tick
+}
+
+///|
+let ecs_key_light_extraction_state : @ecs.ResourceKey[LightExtractionState] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::LightExtractionState",
+)
+
+///|
+fn light_extraction_system_ticks(
+  render_world : @ecs.World,
+  source_world : @ecs.World,
+) -> @core.SystemTicks {
+  let this_run = source_world.read_change_tick()
+  let last_run = match
+    render_world.get_resource(ecs_key_light_extraction_state) {
+    Some(state) => state.last_source_change_tick
+    None => 0
+  }
+  @core.SystemTicks::new(last_run, this_run)
+}
+
+///|
+fn light_extraction_set_last_source_change_tick(
+  render_world : @ecs.World,
+  tick : @core.Tick,
+) -> Unit {
+  match render_world.get_resource_mut(ecs_key_light_extraction_state) {
+    Some(state) =>
+      state.modify(fn(value) { value.last_source_change_tick = tick })
+    None =>
+      render_world.insert_resource(ecs_key_light_extraction_state, LightExtractionState::{
+        last_source_change_tick: tick,
+      })
+  }
 }
 
 ///|
@@ -1294,46 +1376,377 @@ fn render3d_extract_directional_light(
 }
 
 ///|
+fn extract_point_light_changed(
+  world : @ecs.World,
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  world.is_changed_by_key(entity, @light.ecs_key_point_light, system_ticks) ||
+  world.is_changed_by_key(entity, @transform.ecs_key_transform, system_ticks) ||
+  world.is_changed_by_key(
+    entity, @transform.ecs_key_global_transform, system_ticks,
+  ) ||
+  world.is_changed_by_key(
+    entity, @visibility.ecs_key_view_visibility, system_ticks,
+  ) ||
+  world.is_changed_by_key(entity, @light.ecs_key_volumetric_light, system_ticks)
+}
+
+///|
+fn extract_spot_light_changed(
+  world : @ecs.World,
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  world.is_changed_by_key(entity, @light.ecs_key_spot_light, system_ticks) ||
+  world.is_changed_by_key(entity, @transform.ecs_key_transform, system_ticks) ||
+  world.is_changed_by_key(
+    entity, @transform.ecs_key_global_transform, system_ticks,
+  ) ||
+  world.is_changed_by_key(
+    entity, @visibility.ecs_key_view_visibility, system_ticks,
+  ) ||
+  world.is_changed_by_key(entity, ecs_key_frustum, system_ticks) ||
+  world.is_changed_by_key(entity, @light.ecs_key_volumetric_light, system_ticks)
+}
+
+///|
+fn extract_directional_light_changed(
+  world : @ecs.World,
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  world.is_changed_by_key(
+    entity, @light.ecs_key_directional_light, system_ticks,
+  ) ||
+  world.is_changed_by_key(entity, @transform.ecs_key_transform, system_ticks) ||
+  world.is_changed_by_key(
+    entity, @transform.ecs_key_global_transform, system_ticks,
+  ) ||
+  world.is_changed_by_key(
+    entity, @visibility.ecs_key_view_visibility, system_ticks,
+  ) ||
+  world.is_changed_by_key(entity, @light.ecs_key_volumetric_light, system_ticks) ||
+  world.is_changed_by_key(entity, @light.ecs_key_sun_disk, system_ticks)
+}
+
+///|
+fn extract_rect_light_changed(
+  world : @ecs.World,
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  world.is_changed_by_key(entity, @light.ecs_key_rect_light, system_ticks) ||
+  world.is_changed_by_key(entity, @transform.ecs_key_transform, system_ticks) ||
+  world.is_changed_by_key(
+    entity, @transform.ecs_key_global_transform, system_ticks,
+  ) ||
+  world.is_changed_by_key(
+    entity, @visibility.ecs_key_view_visibility, system_ticks,
+  )
+}
+
+///|
+fn light_extract_render_entity(
+  source_world : @ecs.World,
+  source_entity : @core.Entity,
+) -> @core.Entity? {
+  match
+    (try! source_world.get_by_key(
+      source_entity, @render_gpu.ecs_key_render_entity,
+    )) {
+    Some(render_entity) => Some(render_entity.id())
+    None => None
+  }
+}
+
+///|
+fn light_extract_set_point_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+  light : ExtractedPointLight3d,
+) -> Unit {
+  try! render_world.set_by_key(
+    render_entity, ecs_key_extracted_point_light3d, light,
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render_gpu.ecs_key_main_entity,
+    @render_gpu.MainEntity::new(light.entity),
+  )
+}
+
+///|
+fn light_extract_remove_point_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Unit {
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_extracted_point_light3d) catch {
+      _ => false
+    },
+  )
+}
+
+///|
+fn light_extract_set_directional_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+  light : ExtractedDirectionalLight3d,
+) -> Unit {
+  try! render_world.set_by_key(
+    render_entity, ecs_key_extracted_directional_light3d, light,
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render_gpu.ecs_key_main_entity,
+    @render_gpu.MainEntity::new(light.entity),
+  )
+}
+
+///|
+fn light_extract_remove_directional_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Unit {
+  ignore(
+    render_world.remove_by_key(
+      render_entity, ecs_key_extracted_directional_light3d,
+    ) catch {
+      _ => false
+    },
+  )
+}
+
+///|
+fn light_extract_rect_light(
+  world : @ecs.World,
+  entity : @core.Entity,
+  rect_light : @light.RectLight,
+) -> ExtractedRectLight3d {
+  let transform = render3d_extract_light_transform(world, entity)
+  let (scale, _, _) = match
+    (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) =>
+      global_transform.affine().to_scale_rotation_translation()
+    None => (transform.scale, transform.rotation, transform.translation)
+  }
+  let effective_width = rect_light.width() * scale.x.abs()
+  let effective_height = rect_light.height() * scale.y.abs()
+  ExtractedRectLight3d::{
+    entity,
+    color: rect_light.color(),
+    intensity: rect_light.intensity() /
+    (effective_width * effective_height * @math.pi()),
+    range: rect_light.range(),
+    width: effective_width,
+    height: effective_height,
+    transform,
+  }
+}
+
+///|
+fn light_extract_set_rect_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+  light : ExtractedRectLight3d,
+) -> Unit {
+  try! render_world.set_by_key(
+    render_entity, ecs_key_extracted_rect_light3d, light,
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render_gpu.ecs_key_main_entity,
+    @render_gpu.MainEntity::new(light.entity),
+  )
+}
+
+///|
+fn light_extract_remove_rect_light(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Unit {
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_extracted_rect_light3d) catch {
+      _ => false
+    },
+  )
+}
+
+///|
+fn extract_point_lights(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let point_light_texel_size = render3d_point_light_shadow_texel_size(
+    source_world,
+  )
+  source_world.for_each_component(@light.ecs_key_point_light, fn(
+    entity,
+    light,
+  ) {
+    guard extract_point_light_changed(source_world, entity, system_ticks) else {
+      return
+    }
+    guard light_extract_render_entity(source_world, entity)
+      is Some(render_entity) else {
+      return
+    }
+    if !render3d_light_is_view_visible(source_world, entity) {
+      light_extract_remove_point_light(render_world, render_entity)
+      return
+    }
+    let volumetric = (try! source_world.get_by_key(
+        entity, @light.ecs_key_volumetric_light,
+      ))
+      is Some(_)
+    light_extract_set_point_light(
+      render_world,
+      render_entity,
+      render3d_extract_point_light(
+        source_world, entity, light, volumetric, point_light_texel_size,
+      ),
+    )
+  })
+}
+
+///|
+fn extract_spot_lights(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let directional_light_shadow_map_size = render3d_directional_light_shadow_map_size(
+    source_world,
+  )
+  source_world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
+    guard extract_spot_light_changed(source_world, entity, system_ticks) else {
+      return
+    }
+    guard light_extract_render_entity(source_world, entity)
+      is Some(render_entity) else {
+      return
+    }
+    if !render3d_light_is_view_visible(source_world, entity) {
+      light_extract_remove_point_light(render_world, render_entity)
+      return
+    }
+    let volumetric = (try! source_world.get_by_key(
+        entity, @light.ecs_key_volumetric_light,
+      ))
+      is Some(_)
+    light_extract_set_point_light(
+      render_world,
+      render_entity,
+      render3d_extract_spot_light(
+        source_world, entity, light, volumetric, directional_light_shadow_map_size,
+      ),
+    )
+  })
+}
+
+///|
+fn extract_directional_lights(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  source_world.for_each_component(@light.ecs_key_directional_light, fn(
+    entity,
+    light,
+  ) {
+    guard extract_directional_light_changed(source_world, entity, system_ticks) else {
+      return
+    }
+    guard light_extract_render_entity(source_world, entity)
+      is Some(render_entity) else {
+      return
+    }
+    if !render3d_light_is_view_visible(source_world, entity) {
+      light_extract_remove_directional_light(render_world, render_entity)
+      return
+    }
+    let volumetric = (try! source_world.get_by_key(
+        entity, @light.ecs_key_volumetric_light,
+      ))
+      is Some(_)
+    light_extract_set_directional_light(
+      render_world,
+      render_entity,
+      render3d_extract_directional_light(
+        source_world, entity, light, volumetric,
+      ),
+    )
+  })
+}
+
+///|
+fn extract_rect_lights(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  source_world.for_each_component(@light.ecs_key_rect_light, fn(entity, light) {
+    guard extract_rect_light_changed(source_world, entity, system_ticks) else {
+      return
+    }
+    guard light_extract_render_entity(source_world, entity)
+      is Some(render_entity) else {
+      return
+    }
+    if !render3d_light_is_view_visible(source_world, entity) {
+      light_extract_remove_rect_light(render_world, render_entity)
+      return
+    }
+    light_extract_set_rect_light(
+      render_world,
+      render_entity,
+      light_extract_rect_light(source_world, entity, light),
+    )
+  })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::extract_lights`.
+pub fn extract_lights(render_world : @ecs.World) -> Unit {
+  ignore(
+    render_world
+    .components_registrator()
+    .register_component_by_key(ecs_key_extracted_point_light3d),
+  )
+  ignore(
+    render_world
+    .components_registrator()
+    .register_component_by_key(ecs_key_extracted_directional_light3d),
+  )
+  ignore(
+    render_world
+    .components_registrator()
+    .register_component_by_key(ecs_key_extracted_rect_light3d),
+  )
+  let source_world = @render_gpu.render_source_world(render_world)
+  let system_ticks = light_extraction_system_ticks(render_world, source_world)
+  extract_point_lights(source_world, render_world, system_ticks)
+  extract_spot_lights(source_world, render_world, system_ticks)
+  extract_directional_lights(source_world, render_world, system_ticks)
+  extract_rect_lights(source_world, render_world, system_ticks)
+  light_extraction_set_last_source_change_tick(
+    render_world,
+    source_world.read_change_tick(),
+  )
+}
+
+///|
 pub fn render3d_collect_extracted_point_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
-  let point_light_texel_size = render3d_point_light_shadow_texel_size(world)
   let extracted : Array[ExtractedPointLight3d] = []
-  if render3d_visible_clusterable_objects(world) is Some(visible_objects) {
-    for entity in visible_objects.point_and_spot_entities() {
-      guard (try! world.get_by_key(entity, @light.ecs_key_point_light))
-        is Some(light) else {
-        continue
-      }
-      if !render3d_light_is_view_visible(world, entity) {
-        continue
-      }
-      let volumetric = (try! world.get_by_key(
-          entity, @light.ecs_key_volumetric_light,
-        ))
-        is Some(_)
-      extracted.push(
-        render3d_extract_point_light(
-          world, entity, light, volumetric, point_light_texel_size,
-        ),
-      )
+  world.for_each_component(ecs_key_extracted_point_light3d, fn(_entity, light) {
+    if light.spot_light_angles is None {
+      extracted.push(light)
     }
-  } else {
-    world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
-      if !render3d_light_is_view_visible(world, entity) {
-        return
-      }
-      let volumetric = (try! world.get_by_key(
-          entity, @light.ecs_key_volumetric_light,
-        ))
-        is Some(_)
-      extracted.push(
-        render3d_extract_point_light(
-          world, entity, light, volumetric, point_light_texel_size,
-        ),
-      )
-    })
-  }
+  })
   extracted.sort_by(fn(left, right) {
     let shadow_cmp = cmp_int(
       render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
@@ -1362,45 +1775,12 @@ pub fn render3d_collect_extracted_point_lights(
 pub fn render3d_collect_extracted_spot_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
-  let directional_light_shadow_map_size = render3d_directional_light_shadow_map_size(
-    world,
-  )
   let extracted : Array[ExtractedPointLight3d] = []
-  if render3d_visible_clusterable_objects(world) is Some(visible_objects) {
-    for entity in visible_objects.point_and_spot_entities() {
-      guard (try! world.get_by_key(entity, @light.ecs_key_spot_light))
-        is Some(light) else {
-        continue
-      }
-      if !render3d_light_is_view_visible(world, entity) {
-        continue
-      }
-      let volumetric = (try! world.get_by_key(
-          entity, @light.ecs_key_volumetric_light,
-        ))
-        is Some(_)
-      extracted.push(
-        render3d_extract_spot_light(
-          world, entity, light, volumetric, directional_light_shadow_map_size,
-        ),
-      )
+  world.for_each_component(ecs_key_extracted_point_light3d, fn(_entity, light) {
+    if light.spot_light_angles is Some(_) {
+      extracted.push(light)
     }
-  } else {
-    world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
-      if !render3d_light_is_view_visible(world, entity) {
-        return
-      }
-      let volumetric = (try! world.get_by_key(
-          entity, @light.ecs_key_volumetric_light,
-        ))
-        is Some(_)
-      extracted.push(
-        render3d_extract_spot_light(
-          world, entity, light, volumetric, directional_light_shadow_map_size,
-        ),
-      )
-    })
-  }
+  })
   extracted.sort_by(fn(left, right) {
     let shadow_cmp = cmp_int(
       render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
@@ -1484,17 +1864,8 @@ pub fn render3d_collect_extracted_directional_lights(
   world : @ecs.World,
 ) -> Array[ExtractedDirectionalLight3d] {
   let extracted : Array[ExtractedDirectionalLight3d] = []
-  world.for_each_component(@light.ecs_key_directional_light, fn(entity, light) {
-    if !render3d_light_is_view_visible(world, entity) {
-      return
-    }
-    let volumetric = (try! world.get_by_key(
-        entity, @light.ecs_key_volumetric_light,
-      ))
-      is Some(_)
-    extracted.push(
-      render3d_extract_directional_light(world, entity, light, volumetric),
-    )
+  world.for_each_component(ecs_key_extracted_directional_light3d, fn(_, light) {
+    extracted.push(light)
   })
   extracted.sort_by(fn(left, right) {
     let volumetric_cmp = cmp_int(

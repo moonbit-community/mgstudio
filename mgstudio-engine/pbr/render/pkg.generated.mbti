@@ -157,6 +157,12 @@ pub fn cmp_int(Int, Int) -> Int
 
 pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (SubCameraView3d) -> ProjectionMatrix3d, (Float, Float) -> CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
 
+pub let ecs_key_extracted_directional_light3d : @ecs.ComponentKey[ExtractedDirectionalLight3d]
+
+pub let ecs_key_extracted_point_light3d : @ecs.ComponentKey[ExtractedPointLight3d]
+
+pub let ecs_key_extracted_rect_light3d : @ecs.ComponentKey[ExtractedRectLight3d]
+
 pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_light_meta : @ecs.ResourceKey[LightMeta]
@@ -176,6 +182,8 @@ pub fn ensure_render3d_mesh_runtime_state_resource(@ecs.World) -> Unit
 pub fn ensure_skin_uniforms_resource(@ecs.World) -> Unit
 
 pub fn extract_ambient_light_resource(@ecs.World) -> Unit
+
+pub fn extract_lights(@ecs.World) -> Unit
 
 pub fn fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -570,6 +578,7 @@ pub struct ExtractedDirectionalLight3d {
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
+pub impl @ecs.Component for ExtractedDirectionalLight3d
 
 pub struct ExtractedPointLight3d {
   entity : @core.Entity
@@ -588,6 +597,18 @@ pub struct ExtractedPointLight3d {
   soft_shadows_enabled : Bool
   affects_lightmapped_mesh_diffuse : Bool
 }
+pub impl @ecs.Component for ExtractedPointLight3d
+
+pub struct ExtractedRectLight3d {
+  entity : @core.Entity
+  color : @color.Color
+  intensity : Float
+  range : Float
+  width : Float
+  height : Float
+  transform : @transform.Transform
+}
+pub impl @ecs.Component for ExtractedRectLight3d
 
 pub struct FogMeta {
   gpu_fogs : Array[GpuFog]

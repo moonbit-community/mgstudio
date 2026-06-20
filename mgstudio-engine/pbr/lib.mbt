@@ -480,6 +480,20 @@ fn pbr_plugin_install_with(
     next = @render.extract_component_plugin_with(
       next, distance_fog_extract_plugin,
     )
+    let directional_light_sync : @render.SyncComponentPlugin[
+      DirectionalLight,
+      PbrPlugin,
+    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    next = @render.sync_component_plugin_with(next, directional_light_sync)
+    let point_light_sync : @render.SyncComponentPlugin[PointLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    next = @render.sync_component_plugin_with(next, point_light_sync)
+    let spot_light_sync : @render.SyncComponentPlugin[SpotLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    next = @render.sync_component_plugin_with(next, spot_light_sync)
+    let rect_light_sync : @render.SyncComponentPlugin[
+      @light.RectLight,
+      PbrPlugin,
+    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    next = @render.sync_component_plugin_with(next, rect_light_sync)
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
       .insert_world_resource(ecs_key_pbr_plugin_runtime_config, runtime_config)

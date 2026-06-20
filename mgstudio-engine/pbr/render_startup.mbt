@@ -127,6 +127,12 @@ fn configure_pbr_render_extract_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(@pbr_render.extract_lights)
+    .named("mgstudio_pbr::extract_lights")
+    .in_set(@render.render_system_set_extract_commands),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(extract_mesh_materials)
     .named("mgstudio_pbr::extract_mesh_materials")
     .in_set(material_extraction_systems),
