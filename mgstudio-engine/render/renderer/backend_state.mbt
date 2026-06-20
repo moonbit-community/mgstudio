@@ -146,6 +146,8 @@ pub struct GpuBackend {
   mesh2d_material_layout_cache_index : Map[UInt64, Array[Int]]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mesh2d_material_bg_cache_index : Map[UInt64, Array[Int]]
+  line_gizmo_pipeline_cache : Array[LineGizmoPipelineCacheEntry]
+  line_gizmo_queued_draws : Array[GpuQueuedLineGizmoDraw]
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_binding_arrays : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu.BindGroupLayout?

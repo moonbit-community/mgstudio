@@ -86,60 +86,12 @@ fn render3d_draw_gizmo_lines_3d(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
 ) -> Unit {
-  guard @sprite.gizmos_mesh_id_3d(camera.layers) is Some(mesh_id) else {
-    return
-  }
-  let material = StandardMaterial::from_color(@color.Color::white())
-    .with_unlit(true)
-    .with_cull_mode(None)
-  @pbr_render.render3d_draw_mesh_gpu_payload(
-    @pbr_render.render3d_build_mesh_gpu_draw_payload(
-      mesh_id,
-      camera_entity.id,
-      camera_entity.generation,
-      -1,
-      MESH3D_DRAW_INDIRECT_KIND_NONE,
-      -1,
-      material,
-      @transform.Transform::identity(),
-      @transform.Transform::identity(),
-      material.base_color.r,
-      material.base_color.g,
-      material.base_color.b,
-      material.base_color.a,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      0.5F,
-      0.5F,
-      0.0F,
-      0.0F,
-      0.0F,
-      1.5F,
-      -1,
-      0.0F,
-      0.0F,
-      -1,
-      0.0F,
-      0.0F,
-      -1,
-      -1,
-      0.0F,
-      @math.Quat::identity(),
-      @color.Color::white(),
-      0.0F,
-      0.0F,
-      RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
-      RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3,
-      0,
+  ignore(camera_entity)
+  ignore(camera)
+  ignore(
+    @render.host_gpu_execute_queued_line_gizmo_phase_draws(
+      phase_kind=@render.HOST_GPU_LINE_GIZMO_PHASE_3D,
+      view_layers_mask=camera.layers.mask(),
     ),
   )
 }

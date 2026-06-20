@@ -22,6 +22,16 @@ const GIZMO_PLUGIN_NAME : String = "mgstudio.gizmos.GizmoPlugin"
 priv struct GizmoPluginMarker {}
 
 ///|
+pub let gizmo_set_flush : @app.SystemSet = @app.system_set(
+  "mgstudio.gizmos.flush",
+)
+
+///|
+pub let gizmo_set_mesh : @app.SystemSet = @app.system_set(
+  "mgstudio.gizmos.mesh",
+)
+
+///|
 let ecs_res_key_gizmo_plugin_marker : @ecs.ResourceKey[GizmoPluginMarker] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoPluginMarker",
 )
@@ -111,6 +121,7 @@ pub fn gizmo_plugin_with(
   }
   install_retained_gizmo_required_components(next.world())
   next = @asset.init_asset(next, fn() { GizmoAsset::GizmoAsset() })
+  next = next.init_resource(fn() { GizmoHandles::GizmoHandles() })
   next = next.insert_world_resource(ecs_res_key_gizmo_plugin_marker, GizmoPluginMarker::{
 
   })
@@ -118,5 +129,9 @@ pub fn gizmo_plugin_with(
   next = aabb_gizmo_plugin(next)
   next = frustum_gizmo_plugin(next)
   next = skinned_mesh_bounds_gizmo_plugin(next)
+  next = next.add_last_system_config(
+    @app.system(update_gizmo_meshes).in_set(gizmo_set_mesh),
+  )
+  next = next.configure_set(@app.Last, gizmo_set_flush, before=[gizmo_set_mesh])
   next
 }

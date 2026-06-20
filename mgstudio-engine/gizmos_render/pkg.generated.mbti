@@ -96,6 +96,12 @@ pub fn line_joint_gizmo_vertex_entry_point(@sprite.GizmoLineJoint) -> String
 
 pub fn prepare_gpu_line_gizmo(@wgpu_mbt.Device, @gizmos.GizmoAsset) -> GpuLineGizmo
 
+pub fn prepare_line_gizmo_render_assets(@ecs.World) -> Unit
+
+pub fn queue_line_gizmo_phase_draws_2d(@ecs.World) -> Int
+
+pub fn queue_line_gizmo_phase_draws_3d(@ecs.World) -> Int
+
 pub fn queue_line_gizmo_phase_items_2d(@ecs.World) -> Int
 
 pub fn queue_line_gizmo_phase_items_3d(@ecs.World) -> Int
@@ -131,6 +137,7 @@ pub fn GpuLineGizmo::list_color_buffer(Self) -> @wgpu_mbt.Buffer
 pub fn GpuLineGizmo::list_position_buffer(Self) -> @wgpu_mbt.Buffer
 pub fn GpuLineGizmo::list_vertex_count(Self) -> Int
 pub fn GpuLineGizmo::release(Self) -> Unit
+pub fn GpuLineGizmo::retire_or_release(Self) -> Unit
 pub fn GpuLineGizmo::strip_color_buffer(Self) -> @wgpu_mbt.Buffer
 pub fn GpuLineGizmo::strip_position_buffer(Self) -> @wgpu_mbt.Buffer
 pub fn GpuLineGizmo::strip_vertex_count(Self) -> Int

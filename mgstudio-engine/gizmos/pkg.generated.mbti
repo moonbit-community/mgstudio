@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
 }
 
@@ -103,6 +104,10 @@ pub fn gizmo_plugin_with(@app.App[@ecs.World], GizmoPlugin) -> @app.App[@ecs.Wor
 
 pub fn[Config] gizmo_rounded_rect_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, @math.Vec2, @color.Color) -> @sprite.RoundedRectBuilder
 
+pub let gizmo_set_flush : String
+
+pub let gizmo_set_mesh : String
+
 pub fn[Config] gizmo_short_arc_2d_between(@sprite.Gizmos[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> @sprite.Arc2dBuilder
 
 pub fn[Config] gizmo_sphere_3d(@sprite.Gizmos[Config], @math.Isometry3d, Float, @color.Color) -> Unit
@@ -136,6 +141,8 @@ pub fn simplex_stroke_font_line_height() -> Float
 pub fn skinned_mesh_bounds_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn skinned_mesh_bounds_gizmo_plugin_with(@app.App[@ecs.World], SkinnedMeshBoundsGizmoPlugin) -> @app.App[@ecs.World]
+
+pub fn update_gizmo_meshes(@ecs.World) -> Unit
 
 // Errors
 
@@ -192,6 +199,8 @@ pub fn GizmoAsset::cross_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> Un
 pub fn GizmoAsset::cube(Self, @transform.Transform, @color.Color) -> Unit
 pub fn GizmoAsset::ellipse(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoAsset::ellipse_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
+pub fn GizmoAsset::from_drained_storage(@sprite.DrainedGizmoStorage) -> Self
+pub fn GizmoAsset::is_empty(Self) -> Bool
 pub fn GizmoAsset::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoAsset::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
@@ -279,6 +288,22 @@ pub struct GizmoBufferView {
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.Color]
 }
+
+pub struct GizmoHandleEntry {
+  handle : @asset.Handle[GizmoAsset]
+  config : @sprite.GizmoConfig
+}
+pub fn GizmoHandleEntry::config(Self) -> @sprite.GizmoConfig
+pub fn GizmoHandleEntry::handle(Self) -> @asset.Handle[GizmoAsset]
+
+pub struct GizmoHandles {
+  handles : @hashmap.HashMap[String, GizmoHandleEntry]
+}
+pub fn GizmoHandles::GizmoHandles() -> Self
+pub fn GizmoHandles::entries(Self) -> Array[(String, GizmoHandleEntry)]
+pub fn GizmoHandles::get(Self, String) -> GizmoHandleEntry?
+pub impl @app.Resource for GizmoHandles
+pub impl Default for GizmoHandles
 
 pub struct GizmoMeshConfig {
   line_perspective : Bool

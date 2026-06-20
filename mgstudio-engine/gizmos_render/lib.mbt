@@ -86,13 +86,19 @@ pub fn gizmo_render_plugin_with(
     )
     .add_systems(
       @render.render_schedule_stage(),
-      @app.system(fn(world) { ignore(queue_line_gizmos_2d(world)) }).in_set(
+      @app.system(prepare_line_gizmo_render_assets).in_set(
+        @render.render_system_set_prepare_resources,
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(fn(world) { ignore(queue_line_gizmo_phase_draws_2d(world)) }).in_set(
         gizmo_render_system_set(QueueLineGizmos2d),
       ),
     )
     .add_systems(
       @render.render_schedule_stage(),
-      @app.system(fn(world) { ignore(queue_line_gizmos_3d(world)) }).in_set(
+      @app.system(fn(world) { ignore(queue_line_gizmo_phase_draws_3d(world)) }).in_set(
         gizmo_render_system_set(QueueLineGizmos3d),
       ),
     )

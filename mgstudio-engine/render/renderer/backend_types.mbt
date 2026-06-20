@@ -323,6 +323,38 @@ pub struct Mesh2dPipelineCacheEntry {
 }
 
 ///|
+struct LineGizmoPipelineCacheEntry {
+  key : String
+  view_bind_group_layout : @wgpu.BindGroupLayout
+  uniform_bind_group_layout : @wgpu.BindGroupLayout
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
+struct GpuQueuedLineGizmoDraw {
+  phase_kind : Int
+  render_layers_mask : Int
+  shader_path : String
+  vertex_entry : String
+  fragment_entry : String
+  shader_defs : Array[@render_resource.ShaderDefVal]
+  vertex_buffer_layouts : Array[@mesh.VertexBufferLayout]
+  depth_write_enabled : Bool
+  depth_compare : UInt
+  line_uniform_bytes : Bytes
+  list_position_buffer : @wgpu.Buffer
+  list_color_buffer : @wgpu.Buffer
+  strip_position_buffer : @wgpu.Buffer
+  strip_color_buffer : @wgpu.Buffer
+  binding_buffer_kinds : Array[Int]
+  binding_slots : Array[UInt]
+  binding_offsets : Array[UInt64]
+  binding_sizes : Array[UInt64]
+  vertex_count : UInt
+  instance_count : UInt
+}
+
+///|
 pub struct Mesh2dRegisteredPipelineDescriptor {
   pipeline_id : UInt64
   shader_path : String

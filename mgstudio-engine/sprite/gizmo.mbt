@@ -634,10 +634,35 @@ pub impl[Config] Default for GizmoStorage[Config] with fn default() {
 }
 
 ///|
-let gizmo_storage_drain_registry : @hashmap.HashMap[
-  String,
-  (@ecs.World) -> Unit,
-] = @hashmap.HashMap([])
+pub struct DrainedGizmoStorage {
+  group_type_name : String
+  config : GizmoConfig
+  state : GizmoState
+}
+
+///|
+pub fn DrainedGizmoStorage::group_type_name(
+  self : DrainedGizmoStorage,
+) -> String {
+  self.group_type_name
+}
+
+///|
+pub fn DrainedGizmoStorage::config(self : DrainedGizmoStorage) -> GizmoConfig {
+  self.config
+}
+
+///|
+pub fn DrainedGizmoStorage::state(self : DrainedGizmoStorage) -> GizmoState {
+  self.state
+}
+
+///|
+type GizmoStorageDrain = (@ecs.World) -> DrainedGizmoStorage?
+
+///|
+let gizmo_storage_drain_registry : @hashmap.HashMap[String, GizmoStorageDrain] = @hashmap.HashMap([],
+)
 
 ///|
 fn[Config : GizmoConfigGroup] gizmo_storage_type_name_of(
@@ -661,25 +686,56 @@ pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config] with 
 
 ///|
 fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
-  _group : Config,
+  group : Config,
 ) -> Unit {
   let probe : GizmoStorage[Config] = GizmoStorage::new()
   let type_name = gizmo_storage_type_name_of(probe)
   if gizmo_storage_drain_registry.contains(type_name) {
     return
   }
-  let drain : (@ecs.World) -> Unit = fn(world) {
+  let drain : GizmoStorageDrain = fn(world) {
     let key : @ecs.ResourceKey[GizmoStorage[Config]] = registered_gizmo_storage_resource_key()
+    let config = match world.get_resource(GizmoConfigStore::resource()) {
+      Some(store) =>
+        match store.get_config(group) {
+          Some((config, _)) => config
+          None => GizmoConfig::GizmoConfig()
+        }
+      None => GizmoConfig::GizmoConfig()
+    }
     match world.get_resource_mut(key) {
       Some(storage_ref) =>
-        storage_ref.modify(fn(storage) {
-          gizmo_state.val.append_from(storage.state)
-          storage.state.clear()
-        })
-      None => ()
+        Some(
+          storage_ref.modify(fn(storage) {
+            let drained = GizmoState::new()
+            drained.append_from(storage.state)
+            storage.state.clear()
+            DrainedGizmoStorage::{
+              group_type_name: type_name,
+              config,
+              state: drained,
+            }
+          }),
+        )
+      None => None
     }
   }
   gizmo_storage_drain_registry.set(type_name, drain)
+}
+
+///|
+pub fn drain_registered_gizmo_storages(
+  world : @ecs.World,
+) -> Array[DrainedGizmoStorage] {
+  let drained : Array[DrainedGizmoStorage] = []
+  for entry in gizmo_storage_drain_registry.iter() {
+    let (_, drain) = entry
+    match drain(world) {
+      Some(storage) => drained.push(storage)
+      None => ()
+    }
+  }
+  drained
 }
 
 ///|
@@ -1036,9 +1092,8 @@ fn gizmos_draw_grid_with_config(
 
 ///|
 pub fn gizmos_prepare(world : @ecs.World) -> Unit {
-  for entry in gizmo_storage_drain_registry.iter() {
-    let (_, drain) = entry
-    drain(world)
+  for drained in drain_registered_gizmo_storages(world) {
+    gizmo_state.val.append_from(drained.state())
   }
   if gizmo_state.val.pending_ellipses.length() > 0 {
     let entries : Array[PendingEllipse] = []

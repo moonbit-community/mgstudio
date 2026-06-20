@@ -30,6 +30,8 @@ pub fn compute_slices_on_sprite_change_system(@app.Commands, @app.ParamSet2[@app
 
 pub fn compute_sprite_slices_from_rect(Sprite, @math.Vec2, @math.Rect) -> ComputedTextureSlices?
 
+pub fn drain_registered_gizmo_storages(@ecs.World) -> Array[DrainedGizmoStorage]
+
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
 pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices]
@@ -158,6 +160,15 @@ pub struct DefaultGizmoConfigGroup {
 pub fn DefaultGizmoConfigGroup::DefaultGizmoConfigGroup() -> Self
 pub impl GizmoConfigGroup for DefaultGizmoConfigGroup
 pub impl Default for DefaultGizmoConfigGroup
+
+pub struct DrainedGizmoStorage {
+  group_type_name : String
+  config : GizmoConfig
+  state : GizmoState
+}
+pub fn DrainedGizmoStorage::config(Self) -> GizmoConfig
+pub fn DrainedGizmoStorage::group_type_name(Self) -> String
+pub fn DrainedGizmoStorage::state(Self) -> GizmoState
 
 pub struct Ellipse2dBuilder {
   id : Int

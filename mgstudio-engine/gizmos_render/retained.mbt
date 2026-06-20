@@ -143,6 +143,14 @@ pub fn GpuLineGizmo::release(self : GpuLineGizmo) -> Unit {
 }
 
 ///|
+pub fn GpuLineGizmo::retire_or_release(self : GpuLineGizmo) -> Unit {
+  @render.host_gpu_retire_or_release_buffer(self.list_position_buffer)
+  @render.host_gpu_retire_or_release_buffer(self.list_color_buffer)
+  @render.host_gpu_retire_or_release_buffer(self.strip_position_buffer)
+  @render.host_gpu_retire_or_release_buffer(self.strip_color_buffer)
+}
+
+///|
 const LINE_GIZMO_VEC3_SIZE_BYTES : Int = 12
 
 ///|
@@ -1096,6 +1104,136 @@ pub fn queue_line_gizmo_phase_items_2d(render_world : @ecs.World) -> Int {
 }
 
 ///|
+fn line_gizmo_draw_buffer_kind_code(kind : LineGizmoDrawBufferKind) -> Int {
+  match kind {
+    ListPosition => 0
+    ListColor => 1
+    StripPosition => 2
+    StripColor => 3
+  }
+}
+
+///|
+fn line_gizmo_host_phase_kind(dimension : LineGizmoRenderDimension) -> Int {
+  match dimension {
+    Dim2 => @render.HOST_GPU_LINE_GIZMO_PHASE_2D
+    Dim3 => @render.HOST_GPU_LINE_GIZMO_PHASE_3D
+  }
+}
+
+///|
+fn queue_line_gizmo_render_command(
+  dimension : LineGizmoRenderDimension,
+  render_layers : @camera_render_layers.RenderLayers,
+  command : LineGizmoRenderCommandPlan,
+  gpu_line_gizmo : GpuLineGizmo,
+) -> Unit {
+  let pipeline = command.pipeline()
+  let bind_groups = command.bind_groups()
+  let draw = command.draw()
+  let binding_buffer_kinds : Array[Int] = []
+  let binding_slots : Array[UInt] = []
+  let binding_offsets : Array[UInt64] = []
+  let binding_sizes : Array[UInt64] = []
+  for binding in draw.bindings() {
+    binding_buffer_kinds.push(
+      line_gizmo_draw_buffer_kind_code(binding.buffer_kind()),
+    )
+    binding_slots.push(binding.slot())
+    binding_offsets.push(binding.offset_bytes())
+    binding_sizes.push(binding.size_bytes())
+  }
+  let vertex_entry = match pipeline.vertex_entry_point() {
+    Some(entry) => entry
+    None => "vertex"
+  }
+  @render.host_gpu_queue_line_gizmo_phase_draw(
+    phase_kind=line_gizmo_host_phase_kind(dimension),
+    render_layers_mask=render_layers.mask(),
+    shader_path=pipeline.shader_path(),
+    vertex_entry~,
+    fragment_entry=pipeline.fragment_entry_point(),
+    shader_defs=pipeline.shader_defs(),
+    vertex_buffer_layouts=pipeline.vertex_buffer_layouts(),
+    depth_write_enabled=pipeline.depth_write_enabled(),
+    depth_compare=pipeline.depth_compare(),
+    line_uniform_bytes=bind_groups.uniform_bytes(),
+    list_position_buffer=gpu_line_gizmo.list_position_buffer(),
+    list_color_buffer=gpu_line_gizmo.list_color_buffer(),
+    strip_position_buffer=gpu_line_gizmo.strip_position_buffer(),
+    strip_color_buffer=gpu_line_gizmo.strip_color_buffer(),
+    binding_buffer_kinds~,
+    binding_slots~,
+    binding_offsets~,
+    binding_sizes~,
+    vertex_count=draw.vertex_count(),
+    instance_count=draw.instance_count(),
+  )
+}
+
+///|
+fn queue_line_gizmo_phase_draws(
+  render_world : @ecs.World,
+  dimension : LineGizmoRenderDimension,
+) -> Int {
+  @render.host_gpu_clear_line_gizmo_phase_draws(
+    phase_kind=line_gizmo_host_phase_kind(dimension),
+  )
+  ignore(queue_line_gizmo_phase_items(render_world, dimension))
+  guard render_world.get_resource(ecs_res_key_line_gizmo_phase_items)
+    is Some(phase_items) else {
+    return 0
+  }
+  guard gpu_line_gizmo_assets(render_world) is Some(gpu_line_gizmos) else {
+    return 0
+  }
+  let mut queued = 0
+  for item in phase_items.items() {
+    let render_entity = item.render_entity()
+    let uniform = try! render_world.get_by_key(
+      render_entity, ecs_key_line_gizmo_uniform,
+    )
+    let mesh_config = try! render_world.get_by_key(
+      render_entity, @gizmos.ecs_key_gizmo_mesh_config,
+    )
+    guard uniform is Some(uniform) else { continue }
+    guard mesh_config is Some(mesh_config) else { continue }
+    guard gpu_line_gizmos.get(mesh_config.handle().id()) is Some(gpu_line_gizmo) else {
+      continue
+    }
+    guard line_gizmo_render_command_plan(
+        item,
+        uniform,
+        list_vertex_count=gpu_line_gizmo.list_vertex_count(),
+        strip_vertex_count=gpu_line_gizmo.strip_vertex_count(),
+        msaa_samples=1U,
+        target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      )
+      is Some(command) else {
+      continue
+    }
+    queue_line_gizmo_render_command(
+      dimension,
+      mesh_config.render_layers(),
+      command,
+      gpu_line_gizmo,
+    )
+    queued = queued + 1
+  }
+  queued
+}
+
+///|
+pub fn queue_line_gizmo_phase_draws_3d(render_world : @ecs.World) -> Int {
+  queue_line_gizmo_phase_draws(render_world, Dim3)
+}
+
+///|
+pub fn queue_line_gizmo_phase_draws_2d(render_world : @ecs.World) -> Int {
+  queue_line_gizmo_phase_draws(render_world, Dim2)
+}
+
+///|
 pub fn init_line_gizmo_render_resources(render_world : @ecs.World) -> Unit {
   ensure_line_gizmo_entities(render_world) |> ignore
   ensure_line_gizmo_draw_functions(render_world) |> ignore
@@ -1103,6 +1241,28 @@ pub fn init_line_gizmo_render_resources(render_world : @ecs.World) -> Unit {
   let render_assets_key : @ecs.ResourceKey[@render.RenderAssets[GpuLineGizmo]] = @render.RenderAssets::resource()
   if render_world.get_resource(render_assets_key) is None {
     render_world.insert_resource(render_assets_key, @render.RenderAssets::new())
+  }
+}
+
+///|
+pub fn prepare_line_gizmo_render_assets(render_world : @ecs.World) -> Unit {
+  guard @render.host_gpu_current_wgpu_device() is Some(device) else { return }
+  guard line_gizmo_assets(render_world) is Some(gizmo_assets) else { return }
+  let render_assets_key : @ecs.ResourceKey[@render.RenderAssets[GpuLineGizmo]] = @render.RenderAssets::resource()
+  if render_world.get_resource(render_assets_key) is None {
+    render_world.insert_resource(render_assets_key, @render.RenderAssets::new())
+  }
+  guard render_world.get_resource(render_assets_key) is Some(render_assets) else {
+    return
+  }
+  for entry in gizmo_assets.iter() {
+    let (handle, gizmo_asset) = entry
+    let id = handle.id()
+    match render_assets.remove(id) {
+      Some(previous) => previous.retire_or_release()
+      None => ()
+    }
+    render_assets.insert(id, prepare_gpu_line_gizmo(device, gizmo_asset))
   }
 }
 
@@ -1179,6 +1339,48 @@ pub fn queue_line_gizmos_2d(render_world : @ecs.World) -> Int {
 ///|
 pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(render_world)
+  match source_world.get_resource(@gizmos.GizmoHandles::resource()) {
+    Some(handles) =>
+      for entry in handles.entries() {
+        let (_, handle_entry) = entry
+        let config = handle_entry.config()
+        if !config.enabled {
+          continue
+        }
+        let line_config = config.line
+        let (gap_scale, line_scale) = retained_line_style_parts(
+          line_config.style,
+        )
+        let render_entity = render_world.spawn()
+        try! render_world.set(render_entity, LineGizmoUniform::{
+          world_from_local: @math.Affine3::identity(),
+          line_width: line_config.width,
+          depth_bias: config.depth_bias,
+          joints_resolution: retained_line_joints_resolution(line_config.joints),
+          gap_scale,
+          line_scale,
+        })
+        try! render_world.set(
+          render_entity,
+          @gizmos.GizmoMeshConfig::new(
+            line_perspective=line_config.perspective,
+            line_style=line_config.style,
+            line_joints=line_config.joints,
+            render_layers=config.render_layers,
+            handle=handle_entry.handle(),
+          ),
+        )
+        try! render_world.set(
+          render_entity,
+          @render.MainEntity::new(@core.Entity::placeholder()),
+        )
+        try! render_world.set(
+          render_entity,
+          @render.TemporaryRenderEntity::TemporaryRenderEntity(),
+        )
+      }
+    None => ()
+  }
   let query : @ecs.Query[
     (
       @ecs.Read[@gizmos.Gizmo],

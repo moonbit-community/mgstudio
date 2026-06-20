@@ -1390,6 +1390,38 @@ pub fn GizmoAsset::new() -> GizmoAsset {
 }
 
 ///|
+fn vec3_from_gizmo_line_2d(point : @math.Vec2) -> @math.Vec3 {
+  @math.Vec3::new(point.x, point.y, 0.0F)
+}
+
+///|
+pub fn GizmoAsset::from_drained_storage(
+  drained : @sprite.DrainedGizmoStorage,
+) -> GizmoAsset {
+  let buffer = GizmoBuffer::GizmoBuffer()
+  let state = drained.state()
+  for line in state.lines {
+    buffer.list_positions.push(vec3_from_gizmo_line_2d(line.start))
+    buffer.list_positions.push(vec3_from_gizmo_line_2d(line.end))
+    buffer.list_colors.push(line.start_color.as_linear_rgba())
+    buffer.list_colors.push(line.end_color.as_linear_rgba())
+  }
+  for line in state.lines_3d {
+    buffer.list_positions.push(line.start)
+    buffer.list_positions.push(line.end)
+    buffer.list_colors.push(line.start_color.as_linear_rgba())
+    buffer.list_colors.push(line.end_color.as_linear_rgba())
+  }
+  GizmoAsset::{ buffer, config_type_name: drained.group_type_name() }
+}
+
+///|
+pub fn GizmoAsset::is_empty(self : GizmoAsset) -> Bool {
+  self.buffer.list_positions().length() == 0 &&
+  self.buffer.strip_positions().length() == 0
+}
+
+///|
 pub fn GizmoAsset::buffer(self : GizmoAsset) -> GizmoBuffer {
   self.buffer
 }
@@ -1751,6 +1783,129 @@ pub fn GizmoAsset::GizmoAsset() -> GizmoAsset {
 ///|
 pub impl Default for GizmoAsset with fn default() {
   GizmoAsset::GizmoAsset()
+}
+
+///|
+pub struct GizmoHandleEntry {
+  handle : @asset.Handle[GizmoAsset]
+  config : @sprite.GizmoConfig
+}
+
+///|
+pub fn GizmoHandleEntry::handle(
+  self : GizmoHandleEntry,
+) -> @asset.Handle[GizmoAsset] {
+  self.handle
+}
+
+///|
+pub fn GizmoHandleEntry::config(self : GizmoHandleEntry) -> @sprite.GizmoConfig {
+  self.config
+}
+
+///|
+pub struct GizmoHandles {
+  handles : @hashmap.HashMap[String, GizmoHandleEntry]
+}
+
+///|
+pub fn GizmoHandles::GizmoHandles() -> GizmoHandles {
+  GizmoHandles::{ handles: @hashmap.HashMap([]) }
+}
+
+///|
+pub impl Default for GizmoHandles with fn default() {
+  GizmoHandles::GizmoHandles()
+}
+
+///|
+let ecs_res_key_gizmo_handles : @ecs.ResourceKey[GizmoHandles] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoHandles",
+)
+
+///|
+pub impl @app.Resource for GizmoHandles with fn resource() {
+  ecs_res_key_gizmo_handles
+}
+
+///|
+pub fn GizmoHandles::get(
+  self : GizmoHandles,
+  group_type_name : String,
+) -> GizmoHandleEntry? {
+  self.handles.get(group_type_name)
+}
+
+///|
+pub fn GizmoHandles::entries(
+  self : GizmoHandles,
+) -> Array[(String, GizmoHandleEntry)] {
+  let entries : Array[(String, GizmoHandleEntry)] = []
+  for entry in self.handles.iter() {
+    entries.push(entry)
+  }
+  entries
+}
+
+///|
+fn gizmo_assets_resource_or_insert(
+  world : @ecs.World,
+) -> @asset.Assets[GizmoAsset] {
+  let key : @ecs.ResourceKey[@asset.Assets[GizmoAsset]] = @asset.assets_resource_key()
+  match world.get_resource(key) {
+    Some(assets) => assets
+    None => {
+      let assets = @asset.Assets::new()
+      world.insert_resource(key, assets)
+      assets
+    }
+  }
+}
+
+///|
+fn gizmo_handles_resource_or_insert(world : @ecs.World) -> GizmoHandles {
+  match world.get_resource(ecs_res_key_gizmo_handles) {
+    Some(handles) => handles
+    None => {
+      let handles = GizmoHandles::GizmoHandles()
+      world.insert_resource(ecs_res_key_gizmo_handles, handles)
+      handles
+    }
+  }
+}
+
+///|
+pub fn update_gizmo_meshes(world : @ecs.World) -> Unit {
+  let drained_storages = @sprite.drain_registered_gizmo_storages(world)
+  if drained_storages.length() == 0 {
+    return
+  }
+  let assets = gizmo_assets_resource_or_insert(world)
+  let handles = gizmo_handles_resource_or_insert(world)
+  for drained in drained_storages {
+    let group_type_name = drained.group_type_name()
+    let asset = GizmoAsset::from_drained_storage(drained)
+    if asset.is_empty() {
+      handles.handles.remove(group_type_name) |> ignore
+      continue
+    }
+    match handles.handles.get(group_type_name) {
+      Some(entry) => {
+        ignore(assets.set(entry.handle(), asset))
+        handles.handles.set(group_type_name, GizmoHandleEntry::{
+          handle: entry.handle(),
+          config: drained.config(),
+        })
+      }
+      None => {
+        let handle = assets.add(asset)
+        handles.handles.set(group_type_name, GizmoHandleEntry::{
+          handle,
+          config: drained.config(),
+        })
+      }
+    }
+  }
 }
 
 ///|

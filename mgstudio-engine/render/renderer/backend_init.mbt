@@ -240,6 +240,8 @@ pub fn GpuBackend::new(
     mesh2d_material_layout_cache_index: {},
     mesh2d_material_bg_cache: [],
     mesh2d_material_bg_cache_index: {},
+    line_gizmo_pipeline_cache: [],
+    line_gizmo_queued_draws: [],
     mesh3d_bgl_view: None,
     mesh3d_bgl_binding_arrays: None,
     mesh3d_bgl_draw: None,

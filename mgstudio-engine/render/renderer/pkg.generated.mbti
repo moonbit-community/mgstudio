@@ -95,6 +95,8 @@ pub fn begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clea
 
 pub fn build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
+pub fn clear_line_gizmo_phase_draws(phase_kind~ : Int) -> Unit
+
 pub fn clear_registered_wgsl_source_registry() -> Unit
 
 pub fn clear_scissor() -> Unit
@@ -147,6 +149,12 @@ pub fn create_surface(Int) -> Int
 
 pub fn create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 
+pub fn current_pass_color_format_raw() -> UInt?
+
+pub fn current_pass_msaa_sample_count() -> UInt
+
+pub fn current_wgpu_device() -> @wgpu_mbt.Device?
+
 pub fn debug_string(value~ : String) -> Unit
 
 pub fn delete_mesh(Int) -> Bool
@@ -168,6 +176,8 @@ pub fn draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity
 pub fn draw_fxaa(scene_texture_id~ : Int, fxaa_enabled~ : Int, fxaa_edge_threshold_mode~ : Int, fxaa_edge_threshold_min_mode~ : Int, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : Float, start_g~ : Float, start_b~ : Float, start_a~ : Float, end_x~ : Float, end_y~ : Float, end_r~ : Float, end_g~ : Float, end_b~ : Float, end_a~ : Float, line_width~ : Float, style_kind~ : Int, gap_scale~ : Float, line_scale~ : Float) -> Unit
+
+pub fn draw_line_gizmo_phase(shader_path~ : String, vertex_entry~ : String, fragment_entry~ : String, shader_defs~ : Array[@render_resource.ShaderDefVal], vertex_buffer_layouts~ : Array[@Milky2018/mgstudio/mesh.VertexBufferLayout], depth_write_enabled~ : Bool, depth_compare~ : UInt, line_uniform_bytes~ : Bytes, list_position_buffer~ : @wgpu_mbt.Buffer, list_color_buffer~ : @wgpu_mbt.Buffer, strip_position_buffer~ : @wgpu_mbt.Buffer, strip_color_buffer~ : @wgpu_mbt.Buffer, binding_buffer_kinds~ : Array[Int], binding_slots~ : Array[UInt], binding_offsets~ : Array[UInt64], binding_sizes~ : Array[UInt64], vertex_count~ : UInt, instance_count~ : UInt) -> Bool
 
 pub fn draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, alpha_mode_kind~ : Int, alpha_cutoff~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
@@ -232,6 +242,8 @@ pub fn execute_meshlet_second_meshlet_cull(view_entity_bits~ : UInt64, rightmost
 pub fn execute_meshlet_visibility_buffer_hardware_raster(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
 
 pub fn execute_meshlet_visibility_buffer_software_raster(view_entity_bits~ : UInt64) -> Bool
+
+pub fn execute_queued_line_gizmo_phase_draws(phase_kind~ : Int, view_layers_mask~ : Int) -> Int
 
 pub fn frame_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
@@ -395,6 +407,8 @@ pub fn primary_render_instance() -> RenderInstance?
 
 pub fn primary_render_queue() -> RenderQueue?
 
+pub fn queue_line_gizmo_phase_draw(phase_kind~ : Int, render_layers_mask~ : Int, shader_path~ : String, vertex_entry~ : String, fragment_entry~ : String, shader_defs~ : Array[@render_resource.ShaderDefVal], vertex_buffer_layouts~ : Array[@Milky2018/mgstudio/mesh.VertexBufferLayout], depth_write_enabled~ : Bool, depth_compare~ : UInt, line_uniform_bytes~ : Bytes, list_position_buffer~ : @wgpu_mbt.Buffer, list_color_buffer~ : @wgpu_mbt.Buffer, strip_position_buffer~ : @wgpu_mbt.Buffer, strip_color_buffer~ : @wgpu_mbt.Buffer, binding_buffer_kinds~ : Array[Int], binding_slots~ : Array[UInt], binding_offsets~ : Array[UInt64], binding_sizes~ : Array[UInt64], vertex_count~ : UInt, instance_count~ : UInt) -> Unit
+
 pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
 
 pub fn read_only_binding_type_uniform(Int) -> Bool
@@ -454,6 +468,8 @@ pub fn renderer_mesh3d_vertex_stride_bytes() -> UInt64
 pub fn request_device() -> Int
 
 pub fn reserve_mesh3d_draw_storage(count~ : Int) -> Int
+
+pub fn retire_or_release_buffer(@wgpu_mbt.Buffer) -> Unit
 
 pub fn screenshot_capture_surface_request() -> Int
 
@@ -637,6 +653,8 @@ pub struct GpuBackend {
   mesh2d_material_layout_cache_index : Map[UInt64, Array[Int]]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mesh2d_material_bg_cache_index : Map[UInt64, Array[Int]]
+  line_gizmo_pipeline_cache : Array[LineGizmoPipelineCacheEntry]
+  line_gizmo_queued_draws : Array[GpuQueuedLineGizmoDraw]
   mut mesh3d_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_binding_arrays : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu_mbt.BindGroupLayout?
@@ -1301,6 +1319,8 @@ pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
 
 type GpuPrepassDepthTextureInfo
 
+type GpuQueuedLineGizmoDraw
+
 type GpuScatteringMediumResources
 
 type GpuSsaoPipelineCacheEntry
@@ -1631,6 +1651,8 @@ pub struct HostMeshletMaterialShadeDrawEntry {
   material_pipeline_id : UInt64
   draw_entry : HostMesh3dMainPassDrawEntry
 }
+
+type LineGizmoPipelineCacheEntry
 
 type Mesh2dMaterialBindGroupCacheEntry
 

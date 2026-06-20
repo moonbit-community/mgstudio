@@ -348,7 +348,12 @@ fn gizmos_reset() -> Unit {
 
 ///|
 fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
-  @sprite.gizmos_draw_lines(layers)
+  ignore(
+    @renderer.host_gpu_execute_queued_line_gizmo_phase_draws(
+      phase_kind=@renderer.HOST_GPU_LINE_GIZMO_PHASE_2D,
+      view_layers_mask=layers.mask(),
+    ),
+  )
 }
 
 ///|

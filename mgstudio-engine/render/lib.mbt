@@ -2226,6 +2226,138 @@ pub fn host_gpu_draw_gizmo_line(
 }
 
 ///|
+pub fn host_gpu_draw_line_gizmo_phase(
+  shader_path~ : String,
+  vertex_entry~ : String,
+  fragment_entry~ : String,
+  shader_defs~ : Array[ShaderDefVal],
+  vertex_buffer_layouts~ : Array[@mesh.VertexBufferLayout],
+  depth_write_enabled~ : Bool,
+  depth_compare~ : UInt,
+  line_uniform_bytes~ : Bytes,
+  list_position_buffer~ : @wgpu.Buffer,
+  list_color_buffer~ : @wgpu.Buffer,
+  strip_position_buffer~ : @wgpu.Buffer,
+  strip_color_buffer~ : @wgpu.Buffer,
+  binding_buffer_kinds~ : Array[Int],
+  binding_slots~ : Array[UInt],
+  binding_offsets~ : Array[UInt64],
+  binding_sizes~ : Array[UInt64],
+  vertex_count~ : UInt,
+  instance_count~ : UInt,
+) -> Bool {
+  @renderer.draw_line_gizmo_phase(
+    shader_path~,
+    vertex_entry~,
+    fragment_entry~,
+    shader_defs~,
+    vertex_buffer_layouts~,
+    depth_write_enabled~,
+    depth_compare~,
+    line_uniform_bytes~,
+    list_position_buffer~,
+    list_color_buffer~,
+    strip_position_buffer~,
+    strip_color_buffer~,
+    binding_buffer_kinds~,
+    binding_slots~,
+    binding_offsets~,
+    binding_sizes~,
+    vertex_count~,
+    instance_count~,
+  )
+}
+
+///|
+pub fn host_gpu_current_pass_color_format_raw() -> UInt? {
+  @renderer.current_pass_color_format_raw()
+}
+
+///|
+pub fn host_gpu_current_pass_msaa_sample_count() -> UInt {
+  @renderer.current_pass_msaa_sample_count()
+}
+
+///|
+pub fn host_gpu_current_wgpu_device() -> @wgpu.Device? {
+  @renderer.current_wgpu_device()
+}
+
+///|
+pub const HOST_GPU_LINE_GIZMO_PHASE_2D : Int = 0
+
+///|
+pub const HOST_GPU_LINE_GIZMO_PHASE_3D : Int = 1
+
+///|
+pub fn host_gpu_clear_line_gizmo_phase_draws(phase_kind~ : Int) -> Unit {
+  @renderer.clear_line_gizmo_phase_draws(phase_kind~)
+}
+
+///|
+pub fn host_gpu_retire_or_release_buffer(buffer : @wgpu.Buffer) -> Unit {
+  @renderer.retire_or_release_buffer(buffer)
+}
+
+///|
+pub fn host_gpu_queue_line_gizmo_phase_draw(
+  phase_kind~ : Int,
+  render_layers_mask~ : Int,
+  shader_path~ : String,
+  vertex_entry~ : String,
+  fragment_entry~ : String,
+  shader_defs~ : Array[ShaderDefVal],
+  vertex_buffer_layouts~ : Array[@mesh.VertexBufferLayout],
+  depth_write_enabled~ : Bool,
+  depth_compare~ : UInt,
+  line_uniform_bytes~ : Bytes,
+  list_position_buffer~ : @wgpu.Buffer,
+  list_color_buffer~ : @wgpu.Buffer,
+  strip_position_buffer~ : @wgpu.Buffer,
+  strip_color_buffer~ : @wgpu.Buffer,
+  binding_buffer_kinds~ : Array[Int],
+  binding_slots~ : Array[UInt],
+  binding_offsets~ : Array[UInt64],
+  binding_sizes~ : Array[UInt64],
+  vertex_count~ : UInt,
+  instance_count~ : UInt,
+) -> Unit {
+  @renderer.queue_line_gizmo_phase_draw(
+    phase_kind~,
+    render_layers_mask~,
+    shader_path~,
+    vertex_entry~,
+    fragment_entry~,
+    shader_defs~,
+    vertex_buffer_layouts~,
+    depth_write_enabled~,
+    depth_compare~,
+    line_uniform_bytes~,
+    list_position_buffer~,
+    list_color_buffer~,
+    strip_position_buffer~,
+    strip_color_buffer~,
+    binding_buffer_kinds~,
+    binding_slots~,
+    binding_offsets~,
+    binding_sizes~,
+    vertex_count~,
+    instance_count~,
+  )
+}
+
+///|
+pub fn host_gpu_execute_queued_line_gizmo_phase_draws(
+  phase_kind~ : Int,
+  view_layers_mask~ : Int,
+) -> Int {
+  @renderer.execute_queued_line_gizmo_phase_draws(
+    phase_kind~,
+    view_layers_mask~,
+  )
+}
+
+///|
 pub fn host_gpu_end_pass() -> Unit {
   @render_phase_api.host_gpu_end_pass()
 }

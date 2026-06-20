@@ -39,7 +39,9 @@ pub fn global_gizmos_plugin_with(
   ignore(plugin)
   init_gizmo_group(
     app.add_last_system_config(
-      @app.system_config_param(@sprite.flush_global_gizmos),
+      @app.system_config_param(@sprite.flush_global_gizmos).in_set(
+        gizmo_set_flush,
+      ),
     ),
     @sprite.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   )
