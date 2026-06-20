@@ -973,6 +973,11 @@ pub(all) struct ScreenshotCaptured {
 }
 pub impl @ecs.TriggerEvent for ScreenshotCaptured
 
+pub struct ScreenshotPlugin {
+}
+pub fn ScreenshotPlugin::ScreenshotPlugin() -> Self
+pub impl @app.Plugin for ScreenshotPlugin
+
 pub(all) enum ScreenshotTarget {
   Window(@window.WindowRef)
   Image(@asset.Handle[@image.Image])

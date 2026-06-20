@@ -97,6 +97,24 @@ pub let screenshot_trigger_system_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub struct ScreenshotPlugin {}
+
+///|
+pub fn ScreenshotPlugin::ScreenshotPlugin() -> ScreenshotPlugin {
+  ScreenshotPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ScreenshotPlugin with fn name(_self) {
+  "mgstudio.render.ScreenshotPlugin"
+}
+
+///|
+pub impl @app.Plugin for ScreenshotPlugin with fn build(_self, app) {
+  screenshot_plugin_install(app)
+}
+
+///|
 pub fn Screenshot::window(window : @core.Entity) -> Screenshot {
   { target: Window(@window.WindowRef::Entity(window)) }
 }
@@ -245,6 +263,38 @@ fn init_captured_screenshots_resource(world : @ecs.World) -> Unit {
     captured_screenshots_resource_key,
     CapturedScreenshots::CapturedScreenshots(),
   )
+}
+
+///|
+fn screenshot_plugin_install(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let mut next = app
+  init_pending_screenshot_entity_captures_resource(next.world())
+  init_captured_screenshots_resource(next.world())
+  next = next
+    .add_systems(
+      @app.First,
+      @app.system(screenshot_clear_system).named(
+        "mgstudio_render::screenshot_clear_system",
+      ),
+    )
+    .add_systems(
+      @app.Update,
+      (
+        @app.system(screenshot_queue_capture_requests)
+        .named("mgstudio_render::screenshot_queue_capture_requests")
+        .in_set(screenshot_trigger_system_set),
+        @app.system(screenshot_collect_capture_requests)
+        .named("mgstudio_render::screenshot_collect_capture_requests")
+        .in_set(screenshot_trigger_system_set),
+        @app.system(trigger_screenshots)
+        .named("mgstudio_render::trigger_screenshots")
+        .in_set(screenshot_trigger_system_set),
+      )
+      |> @app.chain(),
+    )
+  next
 }
 
 ///|

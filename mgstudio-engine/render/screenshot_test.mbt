@@ -126,6 +126,39 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
 }
 
 ///|
+test "screenshot: ScreenshotPlugin owns screenshot systems" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    ScreenshotPlugin::ScreenshotPlugin(),
+  )
+  let update_dot = app.schedule_graph_dot(@app.Update)
+  debug_inspect(
+    update_dot.contains(
+      "\"mgstudio_render::screenshot_queue_capture_requests\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains(
+      "\"mgstudio_render::screenshot_collect_capture_requests\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::trigger_screenshots\""),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
+    content="false",
+  )
+  let first_dot = app.schedule_graph_dot(@app.First)
+  debug_inspect(
+    first_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
+    content="true",
+  )
+}
+
+///|
 test "screenshot: ScreenshotCaptured is an entity trigger event" {
   let world = @ecs.World::new()
   let screenshot_entity = world.spawn()
