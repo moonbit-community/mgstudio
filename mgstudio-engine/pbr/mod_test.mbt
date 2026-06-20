@@ -79,6 +79,16 @@ fn read_default_standard_material(
 }
 
 ///|
+fn read_global_cluster_settings(
+  world : @ecs.World,
+) -> @light_cluster.GlobalClusterSettings {
+  match world.get_resource(@light_cluster.GlobalClusterSettings::resource()) {
+    Some(settings) => settings
+    None => abort("missing GlobalClusterSettings resource")
+  }
+}
+
+///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
@@ -254,6 +264,70 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     ),
     content="true",
   )
+}
+
+///|
+test "render3d: pbr plugin finish initializes global cluster settings" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let expected_supports_storage = device.supports_read_only_storage_buffer_binding(
+    CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
+  )
+  let expected_gpu_clustering = device.limits_max_storage_buffers_per_shader_stage_u32() >
+    0U
+  let expected_clustered_decals = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
+  )
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+  ignore(
+    app0.modify_sub_app(@app.RenderApp, fn(render_app) {
+      render_app
+      .world()
+      .insert_resource(
+        @render.render_device_resource_key,
+        @renderer.RenderDevice::from_wgpu(device),
+      )
+      render_app
+    }),
+  )
+  let app = app0.add_plugins(PbrPlugin::PbrPlugin()).finish()
+  let settings = read_global_cluster_settings(app.world())
+  if settings.supports_storage_buffers() != expected_supports_storage {
+    abort(
+      "GlobalClusterSettings storage-buffer support did not match RenderDevice limits",
+    )
+  }
+  if settings.clustered_decals_are_usable() != expected_clustered_decals {
+    abort(
+      "GlobalClusterSettings clustered decal support did not match render helper",
+    )
+  }
+  debug_inspect(
+    settings.max_uniform_buffer_clusterable_objects(),
+    content="204",
+  )
+  debug_inspect(settings.view_cluster_bindings_max_indices(), content="16384")
+  match settings.gpu_clustering() {
+    Some(gpu) => {
+      if !expected_gpu_clustering {
+        abort(
+          "GlobalClusterSettings enabled GPU clustering without storage-buffer support",
+        )
+      }
+      debug_inspect(gpu.initial_z_slice_list_capacity(), content="1024")
+      debug_inspect(gpu.initial_index_list_capacity(), content="65536")
+    }
+    None =>
+      if expected_gpu_clustering {
+        abort("GlobalClusterSettings missed GPU clustering support")
+      }
+  }
+  device.release()
+  adapter.release()
+  instance.release()
 }
 
 ///|

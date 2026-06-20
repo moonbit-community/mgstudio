@@ -22,6 +22,12 @@ pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3U
 
 ///|
+pub const GPU_CLUSTERING_INITIAL_Z_SLICE_LIST_CAPACITY : Int = 1024
+
+///|
+pub const GPU_CLUSTERING_INITIAL_INDEX_LIST_CAPACITY : Int = 65536
+
+///|
 pub const VIEW_CLUSTER_BINDINGS_MAX_OFFSETS : Int = 16384 / 4
 
 ///|
@@ -110,24 +116,52 @@ pub struct ClusterConfig3d {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub struct PbrGlobalClusterSettings {
-  supports_storage_buffers : Bool
-  clustered_decals_are_usable : Bool
-  max_uniform_buffer_clusterable_objects : Int
-  view_cluster_bindings_max_indices : Int
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
 pub fn pbr_make_global_cluster_settings(
   supports_storage_buffers : Bool,
   clustered_decals_are_usable : Bool,
-) -> PbrGlobalClusterSettings {
-  PbrGlobalClusterSettings::{
+  gpu_clustering_supported? : Bool = supports_storage_buffers,
+) -> @light_cluster.GlobalClusterSettings {
+  @light_cluster.GlobalClusterSettings::new(
     supports_storage_buffers,
     clustered_decals_are_usable,
-    max_uniform_buffer_clusterable_objects: MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS,
-    view_cluster_bindings_max_indices: VIEW_CLUSTER_BINDINGS_MAX_INDICES,
+    if gpu_clustering_supported {
+      Some(
+        @light_cluster.GlobalClusterGpuSettings::new(
+          GPU_CLUSTERING_INITIAL_Z_SLICE_LIST_CAPACITY,
+          GPU_CLUSTERING_INITIAL_INDEX_LIST_CAPACITY,
+        ),
+      )
+    } else {
+      None
+    },
+    MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS,
+    VIEW_CLUSTER_BINDINGS_MAX_INDICES,
+  )
+}
+
+///|
+pub fn pbr_make_global_cluster_settings_from_render_world(
+  render_world : @ecs.World,
+) -> @light_cluster.GlobalClusterSettings? {
+  guard render_world.get_resource(@render.render_device_resource_key)
+    is Some(render_device) else {
+    return None
   }
+  let supports_storage_buffers = render_device.supports_read_only_storage_buffer_binding(
+    CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
+  )
+  let clustered_decals_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
+  )
+  let gpu_clustering_supported = render_device.limits_max_storage_buffers_per_shader_stage_u32() >
+    0U
+  Some(
+    pbr_make_global_cluster_settings(
+      supports_storage_buffers,
+      clustered_decals_are_usable,
+      gpu_clustering_supported~,
+    ),
+  )
 }
 
 ///|

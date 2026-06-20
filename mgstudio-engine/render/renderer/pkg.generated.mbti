@@ -1857,14 +1857,17 @@ pub fn RenderDevice::create_command_encoder(Self) -> @wgpu_mbt.CommandEncoder
 pub fn RenderDevice::create_shader_module_wgsl(Self, String) -> @wgpu_mbt.ShaderModule
 pub fn RenderDevice::from_backend(GpuBackend) -> Self
 pub fn RenderDevice::from_wgpu(@wgpu_mbt.Device) -> Self
+pub fn RenderDevice::get_supported_read_only_binding_type_u32(Self, UInt) -> UInt
 pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_immediate_size_u32(Self) -> UInt
+pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(Self) -> UInt
 pub fn RenderDevice::new(WgpuWrapper[@wgpu_mbt.Device]) -> Self
 pub fn RenderDevice::poll(Self, wait? : Bool) -> Bool
 pub fn RenderDevice::queue(Self) -> RenderQueue
 pub fn RenderDevice::supported_feature_u32_at(Self, UInt64) -> UInt
 pub fn RenderDevice::supported_features_count_u64(Self) -> UInt64
 pub fn RenderDevice::supported_rust_features_u64(Self) -> UInt64
+pub fn RenderDevice::supports_read_only_storage_buffer_binding(Self, UInt) -> Bool
 pub fn RenderDevice::supports_rust_features_u64(Self, UInt64) -> Bool
 pub fn RenderDevice::wgpu_device(Self) -> @wgpu_mbt.Device
 

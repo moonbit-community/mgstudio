@@ -39,17 +39,102 @@ pub fn ClusterLightPlugin::ClusterLightPlugin() -> ClusterLightPlugin {
 pub struct GlobalClusterSettings {
   supports_storage_buffers : Bool
   clustered_decals_are_usable : Bool
+  gpu_clustering : GlobalClusterGpuSettings?
   max_uniform_buffer_clusterable_objects : Int
   view_cluster_bindings_max_indices : Int
 } derive(Eq, Debug)
+
+///|
+pub struct GlobalClusterGpuSettings {
+  initial_z_slice_list_capacity : Int
+  initial_index_list_capacity : Int
+} derive(Eq, Debug)
+
+///|
+pub fn GlobalClusterGpuSettings::new(
+  initial_z_slice_list_capacity : Int,
+  initial_index_list_capacity : Int,
+) -> GlobalClusterGpuSettings {
+  GlobalClusterGpuSettings::{
+    initial_z_slice_list_capacity,
+    initial_index_list_capacity,
+  }
+}
+
+///|
+pub fn GlobalClusterGpuSettings::initial_z_slice_list_capacity(
+  self : GlobalClusterGpuSettings,
+) -> Int {
+  self.initial_z_slice_list_capacity
+}
+
+///|
+pub fn GlobalClusterGpuSettings::initial_index_list_capacity(
+  self : GlobalClusterGpuSettings,
+) -> Int {
+  self.initial_index_list_capacity
+}
 
 ///|
 pub fn GlobalClusterSettings::GlobalClusterSettings() -> GlobalClusterSettings {
   GlobalClusterSettings::{
     supports_storage_buffers: true,
     clustered_decals_are_usable: true,
+    gpu_clustering: Some(GlobalClusterGpuSettings::new(1024, 65536)),
     max_uniform_buffer_clusterable_objects: 204,
     view_cluster_bindings_max_indices: 16384,
+  }
+}
+
+///|
+pub fn GlobalClusterSettings::supports_storage_buffers(
+  self : GlobalClusterSettings,
+) -> Bool {
+  self.supports_storage_buffers
+}
+
+///|
+pub fn GlobalClusterSettings::clustered_decals_are_usable(
+  self : GlobalClusterSettings,
+) -> Bool {
+  self.clustered_decals_are_usable
+}
+
+///|
+pub fn GlobalClusterSettings::gpu_clustering(
+  self : GlobalClusterSettings,
+) -> GlobalClusterGpuSettings? {
+  self.gpu_clustering
+}
+
+///|
+pub fn GlobalClusterSettings::max_uniform_buffer_clusterable_objects(
+  self : GlobalClusterSettings,
+) -> Int {
+  self.max_uniform_buffer_clusterable_objects
+}
+
+///|
+pub fn GlobalClusterSettings::view_cluster_bindings_max_indices(
+  self : GlobalClusterSettings,
+) -> Int {
+  self.view_cluster_bindings_max_indices
+}
+
+///|
+pub fn GlobalClusterSettings::new(
+  supports_storage_buffers : Bool,
+  clustered_decals_are_usable : Bool,
+  gpu_clustering : GlobalClusterGpuSettings?,
+  max_uniform_buffer_clusterable_objects : Int,
+  view_cluster_bindings_max_indices : Int,
+) -> GlobalClusterSettings {
+  GlobalClusterSettings::{
+    supports_storage_buffers,
+    clustered_decals_are_usable,
+    gpu_clustering,
+    max_uniform_buffer_clusterable_objects,
+    view_cluster_bindings_max_indices,
   }
 }
 

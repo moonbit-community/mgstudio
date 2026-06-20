@@ -121,13 +121,28 @@ pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
 pub impl @ecs.Component for Clusters
 
+pub struct GlobalClusterGpuSettings {
+  initial_z_slice_list_capacity : Int
+  initial_index_list_capacity : Int
+} derive(Eq, @debug.Debug)
+pub fn GlobalClusterGpuSettings::initial_index_list_capacity(Self) -> Int
+pub fn GlobalClusterGpuSettings::initial_z_slice_list_capacity(Self) -> Int
+pub fn GlobalClusterGpuSettings::new(Int, Int) -> Self
+
 pub struct GlobalClusterSettings {
   supports_storage_buffers : Bool
   clustered_decals_are_usable : Bool
+  gpu_clustering : GlobalClusterGpuSettings?
   max_uniform_buffer_clusterable_objects : Int
   view_cluster_bindings_max_indices : Int
 } derive(Eq, @debug.Debug)
 pub fn GlobalClusterSettings::GlobalClusterSettings() -> Self
+pub fn GlobalClusterSettings::clustered_decals_are_usable(Self) -> Bool
+pub fn GlobalClusterSettings::gpu_clustering(Self) -> GlobalClusterGpuSettings?
+pub fn GlobalClusterSettings::max_uniform_buffer_clusterable_objects(Self) -> Int
+pub fn GlobalClusterSettings::new(Bool, Bool, GlobalClusterGpuSettings?, Int, Int) -> Self
+pub fn GlobalClusterSettings::supports_storage_buffers(Self) -> Bool
+pub fn GlobalClusterSettings::view_cluster_bindings_max_indices(Self) -> Int
 pub impl @app.Resource for GlobalClusterSettings
 
 pub struct ObjectsInCluster {

@@ -451,6 +451,11 @@ pub impl @app.Plugin for PbrPlugin with fn build(self, app) {
 }
 
 ///|
+pub impl @app.Plugin for PbrPlugin with fn finish(self, app) {
+  pbr_plugin_finish_with(app, self)
+}
+
+///|
 pub fn pbr_plugin_with(
   app : @app.App[@ecs.World],
   plugin : PbrPlugin,
@@ -497,6 +502,23 @@ fn pbr_plugin_install_with(
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   next
+}
+
+///|
+fn pbr_plugin_finish_with(
+  app : @app.App[@ecs.World],
+  _plugin : PbrPlugin,
+) -> @app.App[@ecs.World] {
+  match app.get_sub_app(@app.RenderApp) {
+    Some(render_app) =>
+      match
+        pbr_make_global_cluster_settings_from_render_world(render_app.world()) {
+        Some(global_cluster_settings) =>
+          app.insert_resource(global_cluster_settings)
+        None => app
+      }
+    None => app
+  }
 }
 
 ///|

@@ -113,6 +113,37 @@ pub fn RenderDevice::limits_max_immediate_size_u32(self : RenderDevice) -> UInt 
 }
 
 ///|
+pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(
+  self : RenderDevice,
+) -> UInt {
+  self.wgpu_device().limits_max_storage_buffers_per_shader_stage_u32()
+}
+
+///|
+pub fn RenderDevice::supports_read_only_storage_buffer_binding(
+  self : RenderDevice,
+  required_storage_buffers_per_shader_stage : UInt,
+) -> Bool {
+  self
+  .wgpu_device()
+  .supports_read_only_storage_buffer_binding(
+    required_storage_buffers_per_shader_stage,
+  )
+}
+
+///|
+pub fn RenderDevice::get_supported_read_only_binding_type_u32(
+  self : RenderDevice,
+  required_storage_buffers_per_shader_stage : UInt,
+) -> UInt {
+  self
+  .wgpu_device()
+  .get_supported_read_only_binding_type_u32(
+    required_storage_buffers_per_shader_stage,
+  )
+}
+
+///|
 pub fn RenderDevice::queue(self : RenderDevice) -> RenderQueue {
   RenderQueue::from_wgpu(self.wgpu_device().queue())
 }
