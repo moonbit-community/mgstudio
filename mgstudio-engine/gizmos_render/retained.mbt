@@ -149,6 +149,64 @@ const LINE_GIZMO_VEC3_SIZE_BYTES : Int = 12
 const LINE_GIZMO_RGBA_SIZE_BYTES : Int = 16
 
 ///|
+pub const LINE_GIZMO_UNIFORM_SIZE_BYTES : Int = 80
+
+///|
+fn line_gizmo_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
+fn line_gizmo_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 24) & 0xFFU).reinterpret_as_int().to_byte())
+}
+
+///|
+fn line_gizmo_push_f32_le(out : Array[Byte], value : Float) -> Unit {
+  line_gizmo_push_u32_le(out, line_gizmo_f32_bits(value))
+}
+
+///|
+pub fn line_gizmo_uniform_bytes(uniform : LineGizmoUniform) -> Bytes {
+  let world_from_local = uniform.world_from_local
+  let translation = world_from_local.transform_point3(@math.Vec3::zero())
+  let x_axis = world_from_local
+    .transform_point3(@math.Vec3::new(1.0F, 0.0F, 0.0F))
+    .sub(translation)
+  let y_axis = world_from_local
+    .transform_point3(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+    .sub(translation)
+  let z_axis = world_from_local
+    .transform_point3(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+    .sub(translation)
+  let out : Array[Byte] = []
+  line_gizmo_push_f32_le(out, x_axis.x)
+  line_gizmo_push_f32_le(out, y_axis.x)
+  line_gizmo_push_f32_le(out, z_axis.x)
+  line_gizmo_push_f32_le(out, translation.x)
+  line_gizmo_push_f32_le(out, x_axis.y)
+  line_gizmo_push_f32_le(out, y_axis.y)
+  line_gizmo_push_f32_le(out, z_axis.y)
+  line_gizmo_push_f32_le(out, translation.y)
+  line_gizmo_push_f32_le(out, x_axis.z)
+  line_gizmo_push_f32_le(out, y_axis.z)
+  line_gizmo_push_f32_le(out, z_axis.z)
+  line_gizmo_push_f32_le(out, translation.z)
+  line_gizmo_push_f32_le(out, uniform.line_width)
+  line_gizmo_push_f32_le(out, uniform.depth_bias)
+  line_gizmo_push_u32_le(out, uniform.joints_resolution.reinterpret_as_uint())
+  line_gizmo_push_f32_le(out, uniform.gap_scale)
+  line_gizmo_push_f32_le(out, uniform.line_scale)
+  line_gizmo_push_u32_le(out, 0U)
+  line_gizmo_push_u32_le(out, 0U)
+  line_gizmo_push_u32_le(out, 0U)
+  Bytes::from_array(out)
+}
+
+///|
 pub fn line_gizmo_vertex_buffer_layouts(
   strip : Bool,
 ) -> Array[@mesh.VertexBufferLayout] {

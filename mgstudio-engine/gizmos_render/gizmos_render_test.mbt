@@ -13,6 +13,20 @@
 // limitations under the License.
 
 ///|
+fn gizmos_render_u32le_word(bytes : Bytes, word_offset : Int) -> UInt {
+  let byte_offset = word_offset * 4
+  bytes[byte_offset].to_uint() |
+  (bytes[byte_offset + 1].to_uint() << 8) |
+  (bytes[byte_offset + 2].to_uint() << 16) |
+  (bytes[byte_offset + 3].to_uint() << 24)
+}
+
+///|
+fn gizmos_render_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
 test "gizmos_render boundary exposes render systems and plugin entry" {
   let app = @app.App::new(@ecs.World::new())
   let _ = @gizmos_render.gizmo_render_plugin(app)
@@ -116,6 +130,67 @@ test "extract_line_gizmos preserves dashed scale values" {
   })
   debug_inspect(gap_scale.val, content="2")
   debug_inspect(line_scale.val, content="4")
+}
+
+///|
+test "line gizmo uniform bytes match Bevy ShaderType layout" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set(
+    entity,
+    @gizmos.Gizmo::Gizmo()
+    .with_depth_bias(-0.5F)
+    .with_line_config(@gizmos.GizmoLineConfig::{
+      width: 9.0F,
+      perspective: true,
+      style: @gizmos.GizmoLineStyle::Dashed(gap_scale=2.0F, line_scale=3.0F),
+      joints: @gizmos.GizmoLineJoint::Round(5),
+    }),
+  )
+  let transform = @transform.Transform::from_xyz(5.0F, 6.0F, 7.0F).with_scale(
+    @math.Vec3::new(2.0F, 3.0F, 4.0F),
+  )
+  try! world.set(entity, @transform.GlobalTransform::from_transform(transform))
+  @gizmos_render.extract_line_gizmos(world)
+  let query : @ecs.Query[@ecs.Read[@gizmos_render.LineGizmoUniform], @ecs.All] = @ecs.query(
+    world,
+  )
+  let packed = Ref(Bytes::make(0, (0).to_byte()))
+  try! query.view(fn(_render_entity, uniform) {
+    packed.val = @gizmos_render.line_gizmo_uniform_bytes(uniform.value())
+  })
+  debug_inspect(
+    packed.val.length(),
+    content="\{@gizmos_render.LINE_GIZMO_UNIFORM_SIZE_BYTES}",
+  )
+  debug_inspect(gizmos_render_u32le_word(packed.val, 0), content="1073741824")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 1), content="0")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 2), content="0")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 3), content="1084227584")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 5), content="1077936128")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 7), content="1086324736")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 10), content="1082130432")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 11), content="1088421888")
+  debug_inspect(
+    gizmos_render_u32le_word(packed.val, 12),
+    content="\{gizmos_render_f32_bits(9.0F)}",
+  )
+  debug_inspect(
+    gizmos_render_u32le_word(packed.val, 13),
+    content="\{gizmos_render_f32_bits(-0.5F)}",
+  )
+  debug_inspect(gizmos_render_u32le_word(packed.val, 14), content="5")
+  debug_inspect(
+    gizmos_render_u32le_word(packed.val, 15),
+    content="\{gizmos_render_f32_bits(2.0F)}",
+  )
+  debug_inspect(
+    gizmos_render_u32le_word(packed.val, 16),
+    content="\{gizmos_render_f32_bits(3.0F)}",
+  )
+  debug_inspect(gizmos_render_u32le_word(packed.val, 17), content="0")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 18), content="0")
+  debug_inspect(gizmos_render_u32le_word(packed.val, 19), content="0")
 }
 
 ///|

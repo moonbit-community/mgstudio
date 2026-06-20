@@ -18,6 +18,8 @@ import {
 }
 
 // Values
+pub const LINE_GIZMO_UNIFORM_SIZE_BYTES : Int = 80
+
 pub fn draw_line_gizmo_plan(strip~ : Bool, list_vertex_count~ : Int, strip_vertex_count~ : Int) -> LineGizmoDrawPlan?
 
 pub fn draw_line_joint_gizmo_plan(strip_vertex_count~ : Int, joints~ : @sprite.GizmoLineJoint) -> LineGizmoDrawPlan?
@@ -75,6 +77,8 @@ pub fn line_gizmo_fragment_entry_point(@sprite.GizmoLineStyle) -> String
 pub fn line_gizmo_phase_items_for_counts(@core.Entity, @render.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
 
 pub fn line_gizmo_position_bytes(Array[@math.Vec3]) -> Bytes
+
+pub fn line_gizmo_uniform_bytes(LineGizmoUniform) -> Bytes
 
 pub fn line_gizmo_vertex_buffer_layouts(Bool) -> Array[@mesh.VertexBufferLayout]
 
