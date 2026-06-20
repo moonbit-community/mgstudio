@@ -1152,7 +1152,10 @@ pub struct Schedule {
   mut executor_kind : ExecutorKind
   mut build_settings : ScheduleBuildSettings
   mut apply_final_deferred : Bool
+  set_configs : Array[ScheduleSetConfig]
 }
+pub fn Schedule::configure_set(Self, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], in_sets? : Array[String]) -> Self
+pub fn Schedule::configure_sets(Self, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], in_sets? : Array[String]) -> Self
 pub fn Schedule::get_apply_final_deferred(Self) -> Bool
 pub fn Schedule::get_build_settings(Self) -> ScheduleBuildSettings
 pub fn Schedule::get_executor_kind(Self) -> ExecutorKind
@@ -1206,6 +1209,15 @@ pub struct ScheduleRunnerPlugin {
 pub fn ScheduleRunnerPlugin::run_loop(Float) -> Self
 pub fn ScheduleRunnerPlugin::run_once() -> Self
 pub impl Plugin for ScheduleRunnerPlugin
+
+pub(all) struct ScheduleSetConfig {
+  set : String
+  before : Array[String]
+  after : Array[String]
+  before_ignore_deferred : Array[String]
+  after_ignore_deferred : Array[String]
+  in_sets : Array[String]
+}
 
 pub(all) enum ScheduleStage {
   Main

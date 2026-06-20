@@ -67,9 +67,7 @@ test "render schedule: recovery drives render and render graph phases once" {
     render_schedule_order_resource_key,
     RenderScheduleOrder::RenderScheduleOrder(),
   )
-  let render_sub_app = configure_base_render_sets(
-    configure_base_render_graph_sets(render_sub_app),
-  )
+  let render_sub_app = configure_base_render_sets(render_sub_app)
   let render_sub_app = render_sub_app
     .add_systems(
       render_recovery_schedule_stage(),

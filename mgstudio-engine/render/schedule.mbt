@@ -32,6 +32,15 @@ pub fn RenderGraph::schedule() -> @app.ScheduleStage {
 ///|
 pub fn RenderGraph::base_schedule() -> @app.Schedule {
   @app.Schedule::new(RenderGraph::schedule())
+  .configure_set(render_graph_system_set_begin, before=[
+    render_graph_system_set_render,
+  ])
+  .configure_set(render_graph_system_set_render, before=[
+    render_graph_system_set_submit,
+  ])
+  .configure_set(render_graph_system_set_submit, before=[
+    render_graph_system_set_finish,
+  ])
 }
 
 ///|
@@ -348,15 +357,6 @@ pub fn configure_base_render_graph_sets(
 ) -> @app.SubApp[@ecs.World] {
   let stage = RenderGraph::schedule()
   sub_app
-  .configure_set(stage, render_graph_system_set_begin, before=[
-    render_graph_system_set_render,
-  ])
-  .configure_set(stage, render_graph_system_set_render, before=[
-    render_graph_system_set_submit,
-  ])
-  .configure_set(stage, render_graph_system_set_submit, before=[
-    render_graph_system_set_finish,
-  ])
   .configure_set(
     stage,
     render_graph_system_set_prepare_frame_submissions,

@@ -118,6 +118,7 @@ pub struct Schedule {
   mut executor_kind : ExecutorKind
   mut build_settings : ScheduleBuildSettings
   mut apply_final_deferred : Bool
+  set_configs : Array[ScheduleSetConfig]
 }
 
 ///|
@@ -127,6 +128,7 @@ pub fn Schedule::new(label : ScheduleStage) -> Schedule {
     executor_kind: MultiThreaded,
     build_settings: ScheduleBuildSettings::new(),
     apply_final_deferred: true,
+    set_configs: [],
   }
 }
 
@@ -175,6 +177,57 @@ pub fn Schedule::set_apply_final_deferred(
 ) -> Schedule {
   self.apply_final_deferred = apply_final_deferred
   self
+}
+
+///|
+pub(all) struct ScheduleSetConfig {
+  set : SystemSet
+  before : Array[SystemSet]
+  after : Array[SystemSet]
+  before_ignore_deferred : Array[SystemSet]
+  after_ignore_deferred : Array[SystemSet]
+  in_sets : Array[SystemSet]
+}
+
+///|
+pub fn Schedule::configure_set(
+  self : Schedule,
+  set : SystemSet,
+  before? : Array[SystemSet] = [],
+  after? : Array[SystemSet] = [],
+  before_ignore_deferred? : Array[SystemSet] = [],
+  after_ignore_deferred? : Array[SystemSet] = [],
+  in_sets? : Array[SystemSet] = [],
+) -> Schedule {
+  self.set_configs.push(ScheduleSetConfig::{
+    set,
+    before,
+    after,
+    before_ignore_deferred,
+    after_ignore_deferred,
+    in_sets,
+  })
+  self
+}
+
+///|
+pub fn Schedule::configure_sets(
+  self : Schedule,
+  set : SystemSet,
+  before? : Array[SystemSet] = [],
+  after? : Array[SystemSet] = [],
+  before_ignore_deferred? : Array[SystemSet] = [],
+  after_ignore_deferred? : Array[SystemSet] = [],
+  in_sets? : Array[SystemSet] = [],
+) -> Schedule {
+  self.configure_set(
+    set,
+    before~,
+    after~,
+    before_ignore_deferred~,
+    after_ignore_deferred~,
+    in_sets~,
+  )
 }
 
 ///|
@@ -2411,6 +2464,23 @@ fn[W] schedule_replace_entry(
     schedule.get_build_settings(),
   )
   entry.apply_final_deferred = schedule.get_apply_final_deferred()
+  for config in schedule.set_configs {
+    for other in config.before {
+      entry.graph.set_edges.push((config.set, other))
+    }
+    for other in config.after {
+      entry.graph.set_edges.push((other, config.set))
+    }
+    for other in config.before_ignore_deferred {
+      entry.graph.set_edges_ignore_deferred.push((config.set, other))
+    }
+    for other in config.after_ignore_deferred {
+      entry.graph.set_edges_ignore_deferred.push((other, config.set))
+    }
+    for parent_set in config.in_sets {
+      entry.graph.set_hierarchy_edges.push((config.set, parent_set))
+    }
+  }
   schedule_registry.entries.set(key, entry)
 }
 
