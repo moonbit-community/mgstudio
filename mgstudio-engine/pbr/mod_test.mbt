@@ -577,6 +577,144 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
 }
 
 ///|
+test "render3d: pbr sync target cleanup removes directional light render target components" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  app = app.update()
+  let render_entity = match
+    (try! app.world().get_by_key(entity, @render.ecs_key_render_entity)) {
+    Some(value) => value.id()
+    None => abort("missing RenderEntity after directional light sync")
+  }
+  let render_world = app.sub_app(@app.RenderApp).world()
+  try! render_world.set_by_key(
+    render_entity,
+    @pbr_render.ecs_key_directional_light_view_entities,
+    @pbr_render.DirectionalLightViewEntities::DirectionalLightViewEntities(),
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    @render_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+  )
+
+  ignore(
+    app.world().remove_by_key(entity, @light.ecs_key_directional_light) catch {
+      _ => false
+    },
+  )
+  app = app.update()
+  let render_world_after = app.sub_app(@app.RenderApp).world()
+  debug_inspect(
+    (try! render_world_after.get_by_key(
+      render_entity, @pbr_render.ecs_key_directional_light_view_entities,
+    ))
+    is None,
+    content="true",
+  )
+  debug_inspect(
+    (try! render_world_after.get_by_key(
+      render_entity, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
+  debug_inspect(
+    (try! render_world_after.get_by_key(
+      render_entity, @render_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "render3d: pbr light sync target removers match point spot and rect target bundles" {
+  let world = @ecs.World::new()
+  let point_entity = world.spawn()
+  try! world.set_by_key(
+    point_entity,
+    @pbr_render.ecs_key_point_and_spot_light_view_entities,
+    @pbr_render.PointAndSpotLightViewEntities::new([world.spawn()]),
+  )
+  try! world.set_by_key(
+    point_entity,
+    @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+  )
+  try! world.set_by_key(
+    point_entity,
+    @render_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    @render_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+  )
+  ignore(@pbr_render.remove_point_light_sync_target(world, point_entity))
+  debug_inspect(
+    (try! world.get_by_key(
+      point_entity, @pbr_render.ecs_key_point_and_spot_light_view_entities,
+    ))
+    is None,
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(
+      point_entity, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
+
+  let spot_entity = world.spawn()
+  try! world.set_by_key(
+    spot_entity,
+    @pbr_render.ecs_key_point_and_spot_light_view_entities,
+    @pbr_render.PointAndSpotLightViewEntities::new([world.spawn()]),
+  )
+  ignore(@pbr_render.remove_spot_light_sync_target(world, spot_entity))
+  debug_inspect(
+    (try! world.get_by_key(
+      spot_entity, @pbr_render.ecs_key_point_and_spot_light_view_entities,
+    ))
+    is None,
+    content="true",
+  )
+
+  let rect_entity = world.spawn()
+  try! world.set_by_key(
+    rect_entity,
+    @light.ecs_key_rect_light,
+    @light.RectLight::RectLight(),
+  )
+  ignore(@pbr_render.remove_rect_light_sync_target(world, rect_entity))
+  debug_inspect(
+    (try! world.get_by_key(rect_entity, @light.ecs_key_rect_light)) is None,
+    content="true",
+  )
+}
+
+///|
 test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
   let app0 = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

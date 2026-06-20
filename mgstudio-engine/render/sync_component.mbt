@@ -63,6 +63,7 @@ fn[C] sync_component_register_required_component(
 fn[C] sync_component_register_remove_hook(
   world : @ecs.World,
   component_key : @ecs.ComponentKey[C],
+  remove_target : (@ecs.World, @core.Entity) -> @ecs.World,
 ) -> Unit {
   let hook_builder = world.register_component_hooks_for_key(component_key)
   ignore(
@@ -85,12 +86,7 @@ fn[C] sync_component_register_remove_hook(
               render_world : @ecs.World,
               render_entity : @core.Entity,
             ) -> @ecs.World {
-              ignore(
-                render_world.remove_by_key(render_entity, component_key) catch {
-                  _ => false
-                },
-              )
-              render_world
+              remove_target(render_world, render_entity)
             }),
           )
           pending
@@ -114,12 +110,31 @@ pub fn[C : @ecs.Component, F] sync_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : SyncComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
+  sync_component_plugin_with_target_removal(app, plugin, fn(
+    render_world,
+    render_entity,
+  ) {
+    ignore(
+      render_world.remove_by_key(render_entity, C::component()) catch {
+        _ => false
+      },
+    )
+    render_world
+  })
+}
+
+///|
+pub fn[C : @ecs.Component, F] sync_component_plugin_with_target_removal(
+  app : @app.App[@ecs.World],
+  plugin : SyncComponentPlugin[C, F],
+  remove_target : (@ecs.World, @core.Entity) -> @ecs.World,
+) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
   let world = next.world()
   let component_key = C::component()
   sync_component_register_required_component(world, component_key)
-  sync_component_register_remove_hook(world, component_key)
+  sync_component_register_remove_hook(world, component_key, remove_target)
   next
 }
 

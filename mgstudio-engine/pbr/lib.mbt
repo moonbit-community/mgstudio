@@ -491,16 +491,24 @@ fn pbr_plugin_install_with(
       DirectionalLight,
       PbrPlugin,
     ] = @render.SyncComponentPlugin::SyncComponentPlugin()
-    next = @render.sync_component_plugin_with(next, directional_light_sync)
+    next = @render.sync_component_plugin_with_target_removal(
+      next, directional_light_sync, @pbr_render.remove_directional_light_sync_target,
+    )
     let point_light_sync : @render.SyncComponentPlugin[PointLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
-    next = @render.sync_component_plugin_with(next, point_light_sync)
+    next = @render.sync_component_plugin_with_target_removal(
+      next, point_light_sync, @pbr_render.remove_point_light_sync_target,
+    )
     let spot_light_sync : @render.SyncComponentPlugin[SpotLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
-    next = @render.sync_component_plugin_with(next, spot_light_sync)
+    next = @render.sync_component_plugin_with_target_removal(
+      next, spot_light_sync, @pbr_render.remove_spot_light_sync_target,
+    )
     let rect_light_sync : @render.SyncComponentPlugin[
       @light.RectLight,
       PbrPlugin,
     ] = @render.SyncComponentPlugin::SyncComponentPlugin()
-    next = @render.sync_component_plugin_with(next, rect_light_sync)
+    next = @render.sync_component_plugin_with_target_removal(
+      next, rect_light_sync, @pbr_render.remove_rect_light_sync_target,
+    )
     let ambient_light_sync : @render.SyncComponentPlugin[
       AmbientLight,
       PbrPlugin,

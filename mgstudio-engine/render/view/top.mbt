@@ -102,7 +102,7 @@ pub struct RetainedViewEntity {
   main_entity : @core.Entity
   auxiliary_entity : @core.Entity
   subview_index : Int
-} derive(Eq, Debug)
+} derive(Eq, Debug, Hash)
 
 ///|
 pub fn RetainedViewEntity::new(

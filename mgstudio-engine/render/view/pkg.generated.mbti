@@ -56,7 +56,7 @@ pub struct RetainedViewEntity {
   main_entity : @core.Entity
   auxiliary_entity : @core.Entity
   subview_index : Int
-} derive(Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 pub fn RetainedViewEntity::auxiliary_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::main_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::new(@core.Entity, auxiliary_entity? : @core.Entity?, subview_index? : Int) -> Self

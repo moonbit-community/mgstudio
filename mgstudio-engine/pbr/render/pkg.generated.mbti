@@ -24,6 +24,7 @@ import {
   "Milky2018/wgpu_mbt",
   "Milky2018/wgsl/common",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
   "moonbitlang/core/json",
 }
@@ -157,6 +158,8 @@ pub fn cmp_int(Int, Int) -> Int
 
 pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (SubCameraView3d) -> ProjectionMatrix3d, (Float, Float) -> CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
 
+pub let ecs_key_directional_light_view_entities : @ecs.ComponentKey[DirectionalLightViewEntities]
+
 pub let ecs_key_extracted_directional_light3d : @ecs.ComponentKey[ExtractedDirectionalLight3d]
 
 pub let ecs_key_extracted_point_light3d : @ecs.ComponentKey[ExtractedPointLight3d]
@@ -166,6 +169,8 @@ pub let ecs_key_extracted_rect_light3d : @ecs.ComponentKey[ExtractedRectLight3d]
 pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_light_meta : @ecs.ResourceKey[LightMeta]
+
+pub let ecs_key_point_and_spot_light_view_entities : @ecs.ComponentKey[PointAndSpotLightViewEntities]
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
 
@@ -230,6 +235,14 @@ pub fn projection_from_custom(CustomProjection3d) -> Projection
 pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 
 pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn remove_directional_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
+
+pub fn remove_point_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
+
+pub fn remove_rect_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
+
+pub fn remove_spot_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
 
 pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?) -> @material.StandardMaterial
 
@@ -550,6 +563,14 @@ pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
+
+pub struct DirectionalLightViewEntities {
+  view_entities_by_view : @hashmap.HashMap[@core.Entity, Array[@core.Entity]]
+}
+pub fn DirectionalLightViewEntities::DirectionalLightViewEntities() -> Self
+pub fn DirectionalLightViewEntities::insert(Self, @core.Entity, Array[@core.Entity]) -> Unit
+pub fn DirectionalLightViewEntities::len(Self) -> Int
+pub impl @ecs.Component for DirectionalLightViewEntities
 
 pub struct ExtractedClusterablePointLight3d {
   clusterable_type_order : Int
@@ -1005,6 +1026,14 @@ pub(all) enum PhasePreprocessBindGroups {
   IndirectFrustumCulling(Int, Int)
   IndirectOcclusionCulling(Int, Int, Int?, Int?)
 }
+
+pub struct PointAndSpotLightViewEntities {
+  entities : Array[@core.Entity]
+}
+pub fn PointAndSpotLightViewEntities::PointAndSpotLightViewEntities() -> Self
+pub fn PointAndSpotLightViewEntities::len(Self) -> Int
+pub fn PointAndSpotLightViewEntities::new(Array[@core.Entity]) -> Self
+pub impl @ecs.Component for PointAndSpotLightViewEntities
 
 pub(all) struct PreparedSkinBinding3d {
   entity_generation : Int

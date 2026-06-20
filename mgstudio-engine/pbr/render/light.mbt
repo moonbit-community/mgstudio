@@ -425,6 +425,205 @@ pub impl @ecs.Component for ExtractedRectLight3d with fn component() {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::DirectionalLightViewEntities`.
+pub struct DirectionalLightViewEntities {
+  view_entities_by_view : @hashmap.HashMap[@core.Entity, Array[@core.Entity]]
+}
+
+///|
+pub fn DirectionalLightViewEntities::DirectionalLightViewEntities() -> DirectionalLightViewEntities {
+  DirectionalLightViewEntities::{ view_entities_by_view: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn DirectionalLightViewEntities::insert(
+  self : DirectionalLightViewEntities,
+  view : @core.Entity,
+  entities : Array[@core.Entity],
+) -> Unit {
+  self.view_entities_by_view.set(view, entities)
+}
+
+///|
+pub fn DirectionalLightViewEntities::len(
+  self : DirectionalLightViewEntities,
+) -> Int {
+  self.view_entities_by_view.length()
+}
+
+///|
+pub let ecs_key_directional_light_view_entities : @ecs.ComponentKey[
+  DirectionalLightViewEntities,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::DirectionalLightViewEntities",
+)
+
+///|
+pub impl @ecs.Component for DirectionalLightViewEntities with fn component() {
+  ecs_key_directional_light_view_entities
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::PointAndSpotLightViewEntities`.
+pub struct PointAndSpotLightViewEntities {
+  entities : Array[@core.Entity]
+}
+
+///|
+pub fn PointAndSpotLightViewEntities::PointAndSpotLightViewEntities() -> PointAndSpotLightViewEntities {
+  PointAndSpotLightViewEntities::{ entities: [] }
+}
+
+///|
+pub fn PointAndSpotLightViewEntities::new(
+  entities : Array[@core.Entity],
+) -> PointAndSpotLightViewEntities {
+  PointAndSpotLightViewEntities::{ entities, }
+}
+
+///|
+pub fn PointAndSpotLightViewEntities::len(
+  self : PointAndSpotLightViewEntities,
+) -> Int {
+  self.entities.length()
+}
+
+///|
+pub let ecs_key_point_and_spot_light_view_entities : @ecs.ComponentKey[
+  PointAndSpotLightViewEntities,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::PointAndSpotLightViewEntities",
+)
+
+///|
+pub impl @ecs.Component for PointAndSpotLightViewEntities with fn component() {
+  ecs_key_point_and_spot_light_view_entities
+}
+
+///|
+fn light_sync_target_remove_common_shadow_components(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Unit {
+  ignore(
+    render_world.remove_by_key(
+      render_entity, @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    ) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(
+      render_entity, @render_view_visibility.ecs_key_render_shadow_map_visible_entities,
+    ) catch {
+      _ => false
+    },
+  )
+}
+
+///|
+// Bevy source: `impl SyncComponent<PbrPlugin> for DirectionalLight`.
+pub fn remove_directional_light_sync_target(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @ecs.World {
+  ignore(
+    render_world.remove_by_key(render_entity, @light.ecs_key_directional_light) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(
+      render_entity, ecs_key_extracted_directional_light3d,
+    ) catch {
+      _ => false
+    },
+  )
+  light_sync_target_remove_common_shadow_components(render_world, render_entity)
+  ignore(
+    render_world.remove_by_key(
+      render_entity, ecs_key_directional_light_view_entities,
+    ) catch {
+      _ => false
+    },
+  )
+  render_world
+}
+
+///|
+// Bevy source: `impl SyncComponent<PbrPlugin> for PointLight`.
+pub fn remove_point_light_sync_target(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @ecs.World {
+  ignore(
+    render_world.remove_by_key(render_entity, @light.ecs_key_point_light) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_extracted_point_light3d) catch {
+      _ => false
+    },
+  )
+  light_sync_target_remove_common_shadow_components(render_world, render_entity)
+  ignore(
+    render_world.remove_by_key(
+      render_entity, ecs_key_point_and_spot_light_view_entities,
+    ) catch {
+      _ => false
+    },
+  )
+  render_world
+}
+
+///|
+// Bevy source: `impl SyncComponent<PbrPlugin> for SpotLight`.
+pub fn remove_spot_light_sync_target(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @ecs.World {
+  ignore(
+    render_world.remove_by_key(render_entity, @light.ecs_key_spot_light) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_extracted_point_light3d) catch {
+      _ => false
+    },
+  )
+  light_sync_target_remove_common_shadow_components(render_world, render_entity)
+  ignore(
+    render_world.remove_by_key(
+      render_entity, ecs_key_point_and_spot_light_view_entities,
+    ) catch {
+      _ => false
+    },
+  )
+  render_world
+}
+
+///|
+// Bevy source: `impl SyncComponent<PbrPlugin> for RectLight`.
+pub fn remove_rect_light_sync_target(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @ecs.World {
+  ignore(
+    render_world.remove_by_key(render_entity, @light.ecs_key_rect_light) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_extracted_rect_light3d) catch {
+      _ => false
+    },
+  )
+  render_world
+}
+
+///|
 priv struct LightExtractionState {
   mut last_source_change_tick : @core.Tick
 }

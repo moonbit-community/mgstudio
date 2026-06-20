@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/view",
   "moonbitlang/core/hashmap",
 }
 
@@ -14,6 +15,12 @@ import {
 pub const VISIBILITY_RANGES_STORAGE_BUFFER_COUNT : Int = 4
 
 pub const VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE : Int = 64
+
+pub let ecs_key_render_extracted_shadow_map_visible_entities : @ecs.ComponentKey[RenderExtractedShadowMapVisibleEntities]
+
+pub let ecs_key_render_extracted_visible_entities : @ecs.ComponentKey[RenderExtractedVisibleEntities]
+
+pub let ecs_key_render_shadow_map_visible_entities : @ecs.ComponentKey[RenderShadowMapVisibleEntities]
 
 pub let ecs_key_render_visibility_ranges : @ecs.ResourceKey[RenderVisibilityRanges]
 
@@ -38,6 +45,32 @@ pub fn visibility_ranges_should_use_uniform_buffer(Int, Bool) -> Bool
 // Errors
 
 // Types and methods
+pub struct RenderExtractedShadowMapVisibleEntities {
+  subviews : @hashmap.HashMap[@view.RetainedViewEntity, RenderExtractedVisibleEntities]
+}
+pub fn RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities() -> Self
+pub fn RenderExtractedShadowMapVisibleEntities::len(Self) -> Int
+pub impl @ecs.Component for RenderExtractedShadowMapVisibleEntities
+
+pub struct RenderExtractedVisibleEntities {
+  classes : @hashmap.HashMap[String, RenderExtractedVisibleEntitiesClass]
+}
+pub fn RenderExtractedVisibleEntities::RenderExtractedVisibleEntities() -> Self
+pub impl @ecs.Component for RenderExtractedVisibleEntities
+
+pub struct RenderExtractedVisibleEntitiesClass {
+  entities : Array[@render.MainEntity]
+}
+pub fn RenderExtractedVisibleEntitiesClass::RenderExtractedVisibleEntitiesClass() -> Self
+pub fn RenderExtractedVisibleEntitiesClass::len(Self) -> Int
+
+pub struct RenderShadowMapVisibleEntities {
+  subviews : @hashmap.HashMap[@view.RetainedViewEntity, RenderVisibleEntities]
+}
+pub fn RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities() -> Self
+pub fn RenderShadowMapVisibleEntities::len(Self) -> Int
+pub impl @ecs.Component for RenderShadowMapVisibleEntities
+
 pub(all) struct RenderVisibilityEntityInfo {
   buffer_index : Int
   is_abrupt : Bool

@@ -100,6 +100,95 @@ pub fn RenderVisibleEntities::is_empty(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs::RenderShadowMapVisibleEntities`.
+pub struct RenderShadowMapVisibleEntities {
+  subviews : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    RenderVisibleEntities,
+  ]
+}
+
+///|
+pub fn RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities() -> RenderShadowMapVisibleEntities {
+  RenderShadowMapVisibleEntities::{ subviews: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn RenderShadowMapVisibleEntities::len(
+  self : RenderShadowMapVisibleEntities,
+) -> Int {
+  self.subviews.length()
+}
+
+///|
+pub let ecs_key_render_shadow_map_visible_entities : @ecs.ComponentKey[
+  RenderShadowMapVisibleEntities,
+] = @ecs.register_component(
+  debug_name="render.view.visibility.render_shadow_map_visible_entities",
+)
+
+///|
+pub impl @ecs.Component for RenderShadowMapVisibleEntities with fn component() {
+  ecs_key_render_shadow_map_visible_entities
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs::RenderExtractedVisibleEntities`.
+pub struct RenderExtractedVisibleEntities {
+  classes : @hashmap.HashMap[String, RenderExtractedVisibleEntitiesClass]
+}
+
+///|
+pub fn RenderExtractedVisibleEntities::RenderExtractedVisibleEntities() -> RenderExtractedVisibleEntities {
+  RenderExtractedVisibleEntities::{ classes: @hashmap.HashMap([]) }
+}
+
+///|
+pub let ecs_key_render_extracted_visible_entities : @ecs.ComponentKey[
+  RenderExtractedVisibleEntities,
+] = @ecs.register_component(
+  debug_name="render.view.visibility.render_extracted_visible_entities",
+)
+
+///|
+pub impl @ecs.Component for RenderExtractedVisibleEntities with fn component() {
+  ecs_key_render_extracted_visible_entities
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs::RenderExtractedShadowMapVisibleEntities`.
+pub struct RenderExtractedShadowMapVisibleEntities {
+  subviews : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    RenderExtractedVisibleEntities,
+  ]
+}
+
+///|
+pub fn RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities() -> RenderExtractedShadowMapVisibleEntities {
+  RenderExtractedShadowMapVisibleEntities::{ subviews: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn RenderExtractedShadowMapVisibleEntities::len(
+  self : RenderExtractedShadowMapVisibleEntities,
+) -> Int {
+  self.subviews.length()
+}
+
+///|
+pub let ecs_key_render_extracted_shadow_map_visible_entities : @ecs.ComponentKey[
+  RenderExtractedShadowMapVisibleEntities,
+] = @ecs.register_component(
+  debug_name="render.view.visibility.render_extracted_shadow_map_visible_entities",
+)
+
+///|
+pub impl @ecs.Component for RenderExtractedShadowMapVisibleEntities with fn component() {
+  ecs_key_render_extracted_shadow_map_visible_entities
+}
+
+///|
 fn render_visible_main_entity_compare(
   left : @render.MainEntity,
   right : @render.MainEntity,
@@ -139,6 +228,24 @@ pub fn RenderVisibleEntitiesClass::RenderVisibleEntitiesClass() -> RenderVisible
     added_entities: [],
     removed_entities: [],
   }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs::RenderExtractedVisibleEntitiesClass`.
+pub struct RenderExtractedVisibleEntitiesClass {
+  entities : Array[@render.MainEntity]
+}
+
+///|
+pub fn RenderExtractedVisibleEntitiesClass::RenderExtractedVisibleEntitiesClass() -> RenderExtractedVisibleEntitiesClass {
+  RenderExtractedVisibleEntitiesClass::{ entities: [] }
+}
+
+///|
+pub fn RenderExtractedVisibleEntitiesClass::len(
+  self : RenderExtractedVisibleEntitiesClass,
+) -> Int {
+  self.entities.length()
 }
 
 ///|

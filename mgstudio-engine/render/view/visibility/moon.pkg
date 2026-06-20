@@ -4,6 +4,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/view" @render_view,
   "moonbitlang/core/hashmap",
   "Milky2018/mgstudio/visibility" @root_visibility,
 }
