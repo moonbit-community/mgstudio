@@ -65,6 +65,20 @@ fn read_any_prepass_plugin_loaded(
 }
 
 ///|
+fn read_default_standard_material(
+  world : @ecs.World,
+) -> @material.StandardMaterial {
+  let key : @ecs.ResourceKey[@asset.Assets[@material.StandardMaterial]] = @asset.assets_resource_key()
+  guard world.get_resource(key) is Some(assets) else {
+    abort("missing StandardMaterial assets resource")
+  }
+  guard assets.get(@asset.Handle::new(0)) is Some(material) else {
+    abort("missing default StandardMaterial handle")
+  }
+  material
+}
+
+///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
@@ -230,6 +244,15 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     .debug_flags()
     .allow_copies_from_indirect_parameters(),
     content="false",
+  )
+  let default_material = read_default_standard_material(app.world())
+  debug_inspect(
+    @color.color_approx_eq(
+      default_material.base_color,
+      @color.Color::srgb(1.0F, 0.0F, 0.5F),
+      0.000001F,
+    ),
+    content="true",
   )
 }
 

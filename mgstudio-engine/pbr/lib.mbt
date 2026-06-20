@@ -117,6 +117,32 @@ pub fn pbr_gltf_render_enabled(world : @ecs.World) -> Bool {
 }
 
 ///|
+fn pbr_default_material_handle() -> @asset.Handle[@material.StandardMaterial] {
+  @asset.Handle::new(0)
+}
+
+///|
+fn pbr_default_standard_material() -> @material.StandardMaterial {
+  @material.StandardMaterial::StandardMaterial().with_base_color(
+    @color.Color::srgb(1.0F, 0.0F, 0.5F),
+  )
+}
+
+///|
+fn pbr_plugin_initialize_default_standard_material(world : @ecs.World) -> Unit {
+  let key : @ecs.ResourceKey[@asset.Assets[@material.StandardMaterial]] = @asset.assets_resource_key()
+  guard world.get_resource_mut(key) is Some(assets) else { return }
+  assets.modify(fn(store) {
+    ignore(
+      store.insert(
+        pbr_default_material_handle(),
+        pbr_default_standard_material(),
+      ),
+    )
+  })
+}
+
+///|
 priv struct PbrPluginMarker {}
 
 ///|
@@ -307,6 +333,7 @@ fn pbr_plugin_install_with(
     next = @asset.init_asset(next, fn() {
       @material.StandardMaterial::StandardMaterial()
     })
+    pbr_plugin_initialize_default_standard_material(next.world())
   } else {
     next = next.insert_world_resource(
       ecs_key_pbr_plugin_runtime_config, runtime_config,
