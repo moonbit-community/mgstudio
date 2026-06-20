@@ -195,7 +195,9 @@ fn render_plugin_install_with(
       @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),
     )
     next = next.add_plugins(
-      @batching.GpuPreprocessingPlugin::GpuPreprocessingPlugin(),
+      @batching.GpuPreprocessingPlugin::GpuPreprocessingPlugin().with_allow_copies_from_indirect_parameter_buffers(
+        plugin.debug_flags().allow_copies_from_indirect_parameters(),
+      ),
     )
     next = next.add_plugins(
       @occlusion_culling.OcclusionCullingPlugin::OcclusionCullingPlugin(),

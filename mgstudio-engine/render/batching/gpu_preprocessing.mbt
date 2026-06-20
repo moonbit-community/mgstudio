@@ -31,8 +31,39 @@ pub struct GpuPreprocessingSupport {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs`
+// (`IndirectParametersBuffersSettings`).
+pub struct IndirectParametersBuffersSettings {
+  allow_copies_from_indirect_parameter_buffers : Bool
+}
+
+///|
 pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> GpuPreprocessingSupport {
   GpuPreprocessingSupport::{ max_supported_mode: GpuPreprocessingMode::None }
+}
+
+///|
+pub fn IndirectParametersBuffersSettings::IndirectParametersBuffersSettings() -> IndirectParametersBuffersSettings {
+  IndirectParametersBuffersSettings::{
+    allow_copies_from_indirect_parameter_buffers: false,
+  }
+}
+
+///|
+pub fn IndirectParametersBuffersSettings::with_allow_copies_from_indirect_parameter_buffers(
+  _self : IndirectParametersBuffersSettings,
+  allow : Bool,
+) -> IndirectParametersBuffersSettings {
+  IndirectParametersBuffersSettings::{
+    allow_copies_from_indirect_parameter_buffers: allow,
+  }
+}
+
+///|
+pub fn IndirectParametersBuffersSettings::allow_copies_from_indirect_parameter_buffers(
+  self : IndirectParametersBuffersSettings,
+) -> Bool {
+  self.allow_copies_from_indirect_parameter_buffers
 }
 
 ///|
@@ -529,18 +560,36 @@ pub fn PreprocessWorkItemBuffers::late_indirect_offsets(
 ///|
 pub struct GpuPreprocessingPlugin {
   mode : GpuPreprocessingMode
+  allow_copies_from_indirect_parameter_buffers : Bool
 }
 
 ///|
 pub fn GpuPreprocessingPlugin::GpuPreprocessingPlugin() -> GpuPreprocessingPlugin {
-  GpuPreprocessingPlugin::{ mode: GpuPreprocessingMode::Culling }
+  GpuPreprocessingPlugin::{
+    mode: GpuPreprocessingMode::Culling,
+    allow_copies_from_indirect_parameter_buffers: false,
+  }
 }
 
 ///|
 pub fn GpuPreprocessingPlugin::with_mode(
   mode : GpuPreprocessingMode,
 ) -> GpuPreprocessingPlugin {
-  GpuPreprocessingPlugin::{ mode, }
+  GpuPreprocessingPlugin::{
+    mode,
+    allow_copies_from_indirect_parameter_buffers: false,
+  }
+}
+
+///|
+pub fn GpuPreprocessingPlugin::with_allow_copies_from_indirect_parameter_buffers(
+  self : GpuPreprocessingPlugin,
+  allow : Bool,
+) -> GpuPreprocessingPlugin {
+  GpuPreprocessingPlugin::{
+    ..self,
+    allow_copies_from_indirect_parameter_buffers: allow,
+  }
 }
 
 ///|
@@ -561,8 +610,20 @@ let gpu_preprocessing_support_resource_key : @ecs.ResourceKey[
 )
 
 ///|
+let indirect_parameters_buffers_settings_resource_key : @ecs.ResourceKey[
+  IndirectParametersBuffersSettings,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::IndirectParametersBuffersSettings",
+)
+
+///|
 pub impl @app.Resource for GpuPreprocessingSupport with fn resource() {
   gpu_preprocessing_support_resource_key
+}
+
+///|
+pub impl @app.Resource for IndirectParametersBuffersSettings with fn resource() {
+  indirect_parameters_buffers_settings_resource_key
 }
 
 ///|
@@ -586,5 +647,18 @@ pub fn gpu_preprocessing_plugin_with(
       max_supported_mode: plugin.mode,
     })
   }
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      render_sub_app
+      .world()
+      .insert_resource(
+        indirect_parameters_buffers_settings_resource_key,
+        IndirectParametersBuffersSettings::IndirectParametersBuffersSettings().with_allow_copies_from_indirect_parameter_buffers(
+          plugin.allow_copies_from_indirect_parameter_buffers,
+        ),
+      )
+      render_sub_app
+    }),
+  )
   next
 }

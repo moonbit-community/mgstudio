@@ -84,8 +84,10 @@ pub(all) enum GpuPreprocessingMode {
 
 pub struct GpuPreprocessingPlugin {
   mode : GpuPreprocessingMode
+  allow_copies_from_indirect_parameter_buffers : Bool
 }
 pub fn GpuPreprocessingPlugin::GpuPreprocessingPlugin() -> Self
+pub fn GpuPreprocessingPlugin::with_allow_copies_from_indirect_parameter_buffers(Self, Bool) -> Self
 pub fn GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode) -> Self
 pub impl @app.Plugin for GpuPreprocessingPlugin
 
@@ -97,6 +99,14 @@ pub fn GpuPreprocessingSupport::is_available(Self) -> Bool
 pub fn GpuPreprocessingSupport::is_culling_supported(Self) -> Bool
 pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocessingMode
 pub impl @app.Resource for GpuPreprocessingSupport
+
+pub struct IndirectParametersBuffersSettings {
+  allow_copies_from_indirect_parameter_buffers : Bool
+}
+pub fn IndirectParametersBuffersSettings::IndirectParametersBuffersSettings() -> Self
+pub fn IndirectParametersBuffersSettings::allow_copies_from_indirect_parameter_buffers(Self) -> Bool
+pub fn IndirectParametersBuffersSettings::with_allow_copies_from_indirect_parameter_buffers(Self, Bool) -> Self
+pub impl @app.Resource for IndirectParametersBuffersSettings
 
 pub struct InstanceInputUniformBuffer[BDI] {
   buffer : Array[BDI]

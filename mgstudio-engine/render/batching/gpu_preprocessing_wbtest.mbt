@@ -87,3 +87,32 @@ test "gpu preprocessing: work-item table toggles occlusion buffers for retained 
   )
   debug_inspect(disabled.late_indirect_offsets() is None, content="true")
 }
+
+///|
+test "gpu preprocessing: indirect parameter settings default to no readback copies" {
+  let settings = IndirectParametersBuffersSettings::IndirectParametersBuffersSettings()
+  debug_inspect(
+    settings.allow_copies_from_indirect_parameter_buffers(),
+    content="false",
+  )
+}
+
+///|
+test "gpu preprocessing: plugin writes indirect parameter settings into render app" {
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let app = @app.App::new(@ecs.World::new())
+    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .add_plugins(
+      GpuPreprocessingPlugin::GpuPreprocessingPlugin().with_allow_copies_from_indirect_parameter_buffers(
+        true,
+      ),
+    )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let settings = render_world
+    .get_resource(indirect_parameters_buffers_settings_resource_key)
+    .unwrap()
+  debug_inspect(
+    settings.allow_copies_from_indirect_parameter_buffers(),
+    content="true",
+  )
+}

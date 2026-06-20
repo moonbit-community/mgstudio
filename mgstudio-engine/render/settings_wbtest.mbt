@@ -70,6 +70,24 @@ test "render plugin: bevy render configuration setters preserve fields" {
 }
 
 ///|
+test "render plugin: debug flags configure batching indirect parameter readback copies" {
+  let debug_flags = RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+    true,
+  )
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin().with_debug_flags(debug_flags),
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let settings = render_world
+    .get_resource(@batching.IndirectParametersBuffersSettings::resource())
+    .unwrap()
+  debug_inspect(
+    settings.allow_copies_from_indirect_parameter_buffers(),
+    content="true",
+  )
+}
+
+///|
 test "render settings: bevy renderer resources use distinct world keys" {
   let device_key = render_device_resource_key
   let queue_key = render_queue_resource_key
