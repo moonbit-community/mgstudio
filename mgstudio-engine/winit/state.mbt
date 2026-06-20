@@ -539,16 +539,10 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       "mgstudio_winit::runner.screenshot_capture_requests",
       screenshot_queue_trace_start_us,
     )
-    winit_runner_trace_span("mgstudio_winit::runner.screenshot_queue", fn() {
-      @render.screenshot_queue_capture_requests(self.app_ref.val.world())
-    })
     winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
       self.app_ref.val = self.app_ref.val.run_once()
     })
     self.debug_screenshot_render_frame = next_render_frame
-    winit_runner_trace_span("mgstudio_winit::runner.screenshot_finalize", fn() {
-      @render.screenshot_finalize_capture_requests(self.app_ref.val.world())
-    })
     if !self.debug_screenshot_saved && self.debug_screenshot_path is Some(path) {
       let capture0 = if self.debug_screenshot_texture_id > 0 &&
         next_render_frame >= self.debug_screenshot_frame {

@@ -91,3 +91,32 @@ test "screenshot: duplicate texture-view targets are despawned during queueing" 
   debug_inspect(world.is_alive(first_request), content="true")
   debug_inspect(world.is_alive(duplicate_request), content="false")
 }
+
+///|
+test "screenshot: RenderPlugin owns main-world screenshot systems" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  let update_dot = app.schedule_graph_dot(@app.Update)
+  debug_inspect(
+    update_dot.contains(
+      "\"mgstudio_render::screenshot_queue_capture_requests\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains(
+      "\"mgstudio_render::screenshot_finalize_capture_requests\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
+    content="false",
+  )
+  let first_dot = app.schedule_graph_dot(@app.First)
+  debug_inspect(
+    first_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
+    content="true",
+  )
+}

@@ -175,12 +175,23 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     }),
   )
   next = next
-    .add_systems(@app.First, @app.system(screenshot_clear_system))
+    .add_systems(
+      @app.First,
+      @app.system(screenshot_clear_system).named(
+        "mgstudio_render::screenshot_clear_system",
+      ),
+    )
     .add_systems(
       @app.Update,
-      @app.system(screenshot_queue_capture_requests).in_set(
-        screenshot_trigger_system_set,
-      ),
+      (
+        @app.system(screenshot_queue_capture_requests)
+        .named("mgstudio_render::screenshot_queue_capture_requests")
+        .in_set(screenshot_trigger_system_set),
+        @app.system(screenshot_finalize_capture_requests)
+        .named("mgstudio_render::screenshot_finalize_capture_requests")
+        .in_set(screenshot_trigger_system_set),
+      )
+      |> @app.chain(),
     )
   if !next.contains_resource(ecs_key_render_plugin_marker) {
     register_embedded_wgsl_sources()
