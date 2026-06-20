@@ -2052,7 +2052,10 @@ fn target_view(
       return None
     }
     match backend.frame {
-      Some(frame) => Some(frame.surface_view)
+      Some(frame) => {
+        mark_frame_needs_present_for_target(target_id)
+        Some(frame.surface_view)
+      }
       None => None
     }
   } else {

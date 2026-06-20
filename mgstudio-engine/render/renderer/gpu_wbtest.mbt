@@ -48,6 +48,16 @@ test "renderer: pending command buffers default to empty bevy resource state" {
 }
 
 ///|
+test "renderer: surface frame present follows Bevy view target intent" {
+  debug_inspect(
+    frame_binding_should_present_state(false, false),
+    content="false",
+  )
+  debug_inspect(frame_binding_should_present_state(true, false), content="true")
+  debug_inspect(frame_binding_should_present_state(false, true), content="true")
+}
+
+///|
 test "renderer: render context state starts empty and finish clears state" {
   let state = RenderContextState::RenderContextState()
   debug_inspect(state.is_empty(), content="true")

@@ -22,11 +22,14 @@ priv struct SurfaceBinding {
   surface_id : NativeGpuSurface
   window : Int
   target_id : Int
+  mut needs_initial_present : Bool
 }
 
 ///|
 priv struct FrameBinding {
   surface_id : NativeGpuSurface
+  target_id : Int
+  mut needs_present : Bool
 }
 
 ///|
@@ -77,6 +80,74 @@ fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
     }
   }
   None
+}
+
+///|
+fn find_surface_binding_by_target_id(target_id : Int) -> SurfaceBinding? {
+  let state = window_surface_runtime_state
+  for binding in state.surfaces {
+    if binding.target_id == target_id {
+      return Some(binding)
+    }
+  }
+  None
+}
+
+///|
+fn record_active_frame(surface_id : NativeGpuSurface, target_id : Int) -> Unit {
+  let state = window_surface_runtime_state
+  for binding in state.frames {
+    if binding.surface_id == surface_id {
+      return
+    }
+  }
+  state.frames.push(FrameBinding::{
+    surface_id,
+    target_id,
+    needs_present: false,
+  })
+}
+
+///|
+fn mark_frame_needs_present_for_target(target_id : Int) -> Unit {
+  let state = window_surface_runtime_state
+  for binding in state.frames {
+    if binding.target_id == target_id {
+      binding.needs_present = true
+    }
+  }
+}
+
+///|
+fn frame_binding_should_present(binding : FrameBinding) -> Bool {
+  let needs_initial_present = match
+    find_surface_binding_by_target_id(binding.target_id) {
+    Some(surface) => surface.needs_initial_present
+    None => false
+  }
+  frame_binding_should_present_state(
+    binding.needs_present,
+    needs_initial_present,
+  )
+}
+
+///|
+fn frame_binding_should_present_state(
+  needs_present : Bool,
+  needs_initial_present : Bool,
+) -> Bool {
+  if needs_present {
+    return true
+  }
+  needs_initial_present
+}
+
+///|
+fn mark_surface_initial_present_done(target_id : Int) -> Unit {
+  match find_surface_binding_by_target_id(target_id) {
+    Some(surface) => surface.needs_initial_present = false
+    None => ()
+  }
 }
 
 ///|
@@ -280,7 +351,10 @@ fn activate_surface_frame_for_target(
       return false
     }
     if backend.surfaces[index].frame is None {
-      ignore(backend.begin_frame_binding(backend.surfaces[index].surface_id))
+      let surface_id = backend.surfaces[index].surface_id
+      if backend.begin_frame_binding(surface_id) {
+        record_active_frame(surface_id, desired_target_id)
+      }
     }
     guard backend.surfaces[index].frame is Some(frame) else { return false }
     backend.surfaces[index].frame = None
@@ -820,6 +894,46 @@ fn GpuBackend::present_frame_binding(
 }
 
 ///|
+fn GpuBackend::release_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let target_id = self.surfaces[index].target_id
+  if self.active_surface_target_id == target_id {
+    store_active_surface_frame(self)
+  }
+  guard self.surfaces[index].frame is Some(frame) else { return }
+  for bind_group in frame.transient_bind_groups {
+    self.frame_retired_bind_groups.push(bind_group)
+  }
+  frame.transient_bind_groups.clear()
+  for buffer in frame.transient_buffers {
+    self.frame_retired_buffers.push(buffer)
+  }
+  frame.transient_buffers.clear()
+  frame.encoder.release()
+  if frame.present_view is Some(present_view) {
+    present_view.release()
+  }
+  frame.surface_view.release()
+  if frame.screenshot_capture_texture is Some(capture_texture) {
+    capture_texture.release()
+  }
+  frame.surface_texture.release()
+  frame.surface_tex.release()
+  self.surfaces[index].frame = None
+  self.surfaces[index].cleared_this_frame = false
+  if self.active_surface_target_id == target_id {
+    self.frame = None
+    self.pass_state = None
+    sync_active_surface_state(self)
+  }
+}
+
+///|
 pub fn GpuBackend::prepare_active_frame_submissions(
   self : GpuBackend,
   pending_command_buffers : PendingCommandBuffers,
@@ -839,7 +953,12 @@ pub fn GpuBackend::present_active_frames(self : GpuBackend) -> Unit {
   let frames = state.frames
   state.frames = []
   for binding in frames {
-    self.present_frame_binding(binding.surface_id)
+    if frame_binding_should_present(binding) {
+      self.present_frame_binding(binding.surface_id)
+      mark_surface_initial_present_done(binding.target_id)
+    } else {
+      self.release_frame_binding(binding.surface_id)
+    }
   }
 }
 
@@ -866,7 +985,12 @@ pub fn create_surface(window : Int) -> NativeGpuSurface {
   let surface_id = next_surface_id()
   let target_id = surface_target_id_from_surface_id(surface_id)
   let state = window_surface_runtime_state
-  state.surfaces.push(SurfaceBinding::{ surface_id, window, target_id })
+  state.surfaces.push(SurfaceBinding::{
+    surface_id,
+    window,
+    target_id,
+    needs_initial_present: true,
+  })
   if ensure_backend() is Some(backend) {
     backend.create_surface_binding(surface_id, target_id, window)
   }
@@ -925,8 +1049,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
   render_diagnostics_begin_frame()
   if ensure_backend() is Some(backend) {
     guard backend.begin_frame_binding(surface) else { return false }
-    let state = window_surface_runtime_state
-    state.frames.push(FrameBinding::{ surface_id: surface })
+    record_active_frame(surface, surface_target_id_from_surface_id(surface))
     return true
   }
   false
