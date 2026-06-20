@@ -353,6 +353,7 @@ fn pbr_plugin_sync_feature_plugins(
   .add_plugins(@pbr_decal.ForwardDecalPlugin::ForwardDecalPlugin())
   .add_plugins(ScatteringMediumPlugin::ScatteringMediumPlugin())
   .add_plugins(@pbr_atmosphere.AtmospherePlugin::AtmospherePlugin())
+  .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin())
 }
 
 ///|

@@ -65,6 +65,26 @@ supported_targets = "native"
 options(
   "pre-build": [
     {
+      "command": ":embed --input $input --output $output --name pbr_cluster_wgsl_source",
+      "input": "cluster/cluster.wgsl",
+      "output": "gpu_clustering_cluster_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name pbr_cluster_allocate_wgsl_source",
+      "input": "cluster/cluster_allocate.wgsl",
+      "output": "gpu_clustering_cluster_allocate_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name pbr_cluster_raster_wgsl_source",
+      "input": "cluster/cluster_raster.wgsl",
+      "output": "gpu_clustering_cluster_raster_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name pbr_cluster_z_slice_wgsl_source",
+      "input": "cluster/cluster_z_slice.wgsl",
+      "output": "gpu_clustering_cluster_z_slice_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name pbr_dummy_meshlet_visibility_buffer_resolve_wgsl_source",
       "input": "meshlet/dummy_visibility_buffer_resolve.wgsl",
       "output": "dummy_meshlet_visibility_buffer_resolve_wgsl.mbt",

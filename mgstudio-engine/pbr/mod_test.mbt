@@ -232,6 +232,26 @@ test "render3d: screen space transmission plugin registers shader and camera req
 }
 
 ///|
+test "render3d: gpu clustering plugin registers build shader library" {
+  @shader_source.clear_embedded_shader_sources()
+  ignore(
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin()),
+  )
+  let cluster_source = match
+    @shader_source.embedded_shader_source("pbr/cluster/cluster.wgsl") {
+    Some(source) => source
+    None => abort("missing GPU clustering cluster shader")
+  }
+  debug_inspect(
+    cluster_source.contains("#define_import_path bevy_pbr::cluster"),
+    content="true",
+  )
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {

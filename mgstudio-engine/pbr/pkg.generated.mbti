@@ -57,9 +57,13 @@ pub const DUMMY_MESH_MATERIAL_ID : Int = -1
 
 pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
 
+pub const GPU_CLUSTERING_ALLOCATION_WORKGROUP_SIZE : Int = 256
+
 pub const GPU_CLUSTERING_INITIAL_INDEX_LIST_CAPACITY : Int = 65536
 
 pub const GPU_CLUSTERING_INITIAL_Z_SLICE_LIST_CAPACITY : Int = 1024
+
+pub const GPU_CLUSTERING_Z_SLICING_WORKGROUP_SIZE : Int = 64
 
 pub const MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : String = "MainPassAlphaMaskDrawFunction"
 
@@ -440,6 +444,14 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
 pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+
+pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
+
+pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
+
+pub fn gpu_clustering_plugin_with(@app.App[@ecs.World], GpuClusteringPlugin) -> @app.App[@ecs.World]
+
+pub fn gpu_clustering_z_slice_dispatch_count(Int) -> Int
 
 pub fn init_fallback_bindless_resources(@ecs.World) -> Unit
 
@@ -1288,6 +1300,27 @@ pub(all) enum GpuClusteredLights {
 } derive(Eq, @debug.Debug)
 pub fn GpuClusteredLights::binding_type(Self) -> UInt
 pub fn GpuClusteredLights::from_binding_type(UInt) -> Self
+
+pub struct GpuClusteringPlugin {
+}
+pub fn GpuClusteringPlugin::GpuClusteringPlugin() -> Self
+pub impl @app.Plugin for GpuClusteringPlugin
+
+pub struct GpuClusteringPluginState {
+  enabled : Bool
+  max_storage_buffers_per_shader_stage : Int
+} derive(Eq, @debug.Debug)
+pub fn GpuClusteringPluginState::enabled(Self) -> Bool
+pub fn GpuClusteringPluginState::max_storage_buffers_per_shader_stage(Self) -> Int
+pub fn GpuClusteringPluginState::new(Int) -> Self
+
+pub(all) enum GpuClusteringStep {
+  ZSlicing
+  CountRasterization
+  LocalAllocation
+  GlobalAllocation
+  PopulateRasterization
+} derive(Eq, @debug.Debug)
 
 pub struct GpuScatteringMedium {
   runtime : ScatteringMediumRuntime
