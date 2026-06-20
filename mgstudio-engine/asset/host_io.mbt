@@ -3016,7 +3016,11 @@ fn texture_cached_or_empty(
 }
 
 ///|
-fn load_texture(path~ : String, nearest~ : Bool) -> Int {
+fn load_texture(
+  path~ : String,
+  nearest~ : Bool,
+  texture_descriptor_label? : String? = None,
+) -> Int {
   let bytes = load_asset_file_bytes(path)
   let container = if @image.image_extension_from_path(path) is Some(extension) {
     match @image.image_container_format_from_extension(extension) {
@@ -3026,7 +3030,12 @@ fn load_texture(path~ : String, nearest~ : Bool) -> Int {
   } else {
     None
   }
-  load_texture_bytes_with_container(bytes~, nearest~, container)
+  load_texture_bytes_with_container(
+    bytes~,
+    nearest~,
+    container,
+    texture_descriptor_label~,
+  )
 }
 
 ///|
@@ -3039,6 +3048,7 @@ fn load_texture_bytes_with_container(
   bytes~ : Bytes,
   nearest~ : Bool,
   container : @image.ImageContainerFormat?,
+  texture_descriptor_label? : String? = None,
 ) -> Int {
   let loaded = bytes.length() > 0
   let is_ktx2_3d = ktx2_is_3d_texture(bytes)
@@ -3049,6 +3059,7 @@ fn load_texture_bytes_with_container(
       depth=payload.depth,
       format=payload.format,
       pixels=payload.pixels,
+      label=texture_descriptor_label,
     )
     if texture_id > 0 {
       sync_texture_record(texture_id, payload.width, payload.height, loaded)
@@ -3066,6 +3077,7 @@ fn load_texture_bytes_with_container(
         format=payload.format,
         levels=payload.levels,
         nearest~,
+        label=texture_descriptor_label,
       )
     } else {
       asset_texture_backend_create_texture_stacked_2d_with_format(
@@ -3076,6 +3088,7 @@ fn load_texture_bytes_with_container(
         levels=payload.levels,
         nearest~,
         usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED,
+        label=texture_descriptor_label,
       )
     }
     if texture_id > 0 {

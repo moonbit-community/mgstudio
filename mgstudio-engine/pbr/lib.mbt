@@ -218,6 +218,7 @@ fn pbr_load_bluenoise(world : @ecs.World) -> @asset.Handle[@asset.Image] {
   ) {
     settings.is_srgb = false
     settings.sampler = @asset.ImageSampler::Default
+    settings.texture_descriptor_label = Some("bluenoise")
     settings.asset_usage = @asset.RenderAssetUsages::render_world()
   })
 }
@@ -229,6 +230,7 @@ fn pbr_load_area_light_luts(world : @ecs.World) -> @asset.Handle[@asset.Image] {
   ) {
     settings.is_srgb = false
     settings.sampler = @asset.ImageSampler::linear()
+    settings.texture_descriptor_label = Some("area_light_luts")
     settings.asset_usage = @asset.RenderAssetUsages::render_world()
   })
 }

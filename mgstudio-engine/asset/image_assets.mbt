@@ -165,6 +165,7 @@ fn image_asset_create_gpu_texture_with_array_layout(
       format=@image.texture_format(image.format),
       levels=image_asset_mip_levels(image, height_per_slice, slice_count),
       nearest~,
+      label=image.texture_descriptor_label,
     )
     if id > 0 {
       set_texture_pixels(id, image.pixels)
@@ -179,6 +180,7 @@ fn image_asset_create_gpu_texture_with_array_layout(
     levels=image_asset_mip_levels(image, height_per_slice, slice_count),
     nearest~,
     usage_bits=image_asset_usage_bits(image),
+    label=image.texture_descriptor_label,
   )
   if id > 0 {
     set_texture_pixels(id, image.pixels)

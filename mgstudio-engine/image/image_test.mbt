@@ -48,6 +48,32 @@ test "image sampler is stored on Image assets" {
 }
 
 ///|
+test "image texture descriptor label is runtime-only metadata" {
+  let image = @image.Image::new(
+    1,
+    1,
+    Bytes::from_array([
+      (255).to_byte(),
+      (255).to_byte(),
+      (255).to_byte(),
+      (255).to_byte(),
+    ]),
+  ).with_texture_descriptor_label(Some("runtime_label"))
+  debug_inspect(
+    image.texture_descriptor_label(),
+    content="Some(\"runtime_label\")",
+  )
+  let converted = @image.image_with_srgb_view(image)
+  debug_inspect(
+    converted.texture_descriptor_label(),
+    content="Some(\"runtime_label\")",
+  )
+  let serialized = @image.SerializedImage::from_image(converted)
+  let restored = serialized.into_image()
+  debug_inspect(restored.texture_descriptor_label(), content="None")
+}
+
+///|
 test "image texture formats follow current wgpu constants" {
   debug_inspect(
     @image.texture_format(@image.TextureFormat::Rgba8Unorm).to_u32() ==

@@ -432,6 +432,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   levels : Array[Bytes],
   nearest : Bool,
   usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
+  label? : String? = None,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   if levels.length() == 0 {
@@ -460,6 +461,9 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
+  if label is Some(value) {
+    tex.set_label(value)
+  }
   let view = tex.create_view_u32(
     format,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
@@ -592,6 +596,7 @@ pub fn GpuBackend::create_texture_3d_with_format(
   depth : Int,
   format : @wgpu.TextureFormat,
   levels : Array[Bytes],
+  label? : String? = None,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   if levels.length() == 0 {
@@ -621,6 +626,9 @@ pub fn GpuBackend::create_texture_3d_with_format(
     format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
+  if label is Some(value) {
+    tex.set_label(value)
+  }
   let view = tex.create_view_u32(
     format,
     @wgpu.TEXTURE_VIEW_DIMENSION_3D,
@@ -1730,6 +1738,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
+  label? : String? = None,
   replace_texture_id? : Int = -2147483648,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
@@ -1760,6 +1769,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
     format,
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
+  if label is Some(value) {
+    tex.set_label(value)
+  }
 
   for level_index in 0..<levels.length() {
     let mip_width = {
@@ -2575,6 +2587,7 @@ pub fn asset_create_texture_3d_with_format(
   depth~ : Int,
   format~ : @wgpu.TextureFormat,
   pixels~ : Bytes,
+  label? : String? = None,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
@@ -2583,7 +2596,12 @@ pub fn asset_create_texture_3d_with_format(
     try {
       let levels = [pixels]
       return backend.create_texture_3d_with_format(
-        safe_width, safe_height, safe_depth, format, levels,
+        safe_width,
+        safe_height,
+        safe_depth,
+        format,
+        levels,
+        label~,
       )
     } catch {
       _ => ()
@@ -2601,6 +2619,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   levels~ : Array[Bytes],
   nearest~ : Bool,
   usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
+  label? : String? = None,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height_per_slice = if height_per_slice <= 0 {
@@ -2619,6 +2638,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
         levels,
         nearest,
         usage_bits~,
+        label~,
       )
     } catch {
       _ => ()
@@ -2634,13 +2654,19 @@ pub fn asset_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  label? : String? = None,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_texture_cube_with_format(
-        safe_width, safe_height, format, levels, nearest,
+        safe_width,
+        safe_height,
+        format,
+        levels,
+        nearest,
+        label~,
       )
     } catch {
       _ => ()

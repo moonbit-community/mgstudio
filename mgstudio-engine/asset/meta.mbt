@@ -17,6 +17,7 @@
 pub(all) struct ImageLoaderSettings {
   mut format : ImageFormatSetting
   mut texture_format : TextureFormat?
+  mut texture_descriptor_label : String?
   mut sampler : ImageSampler
   mut override_sampler : Bool
   mut is_srgb : Bool
@@ -38,6 +39,7 @@ pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
   ImageLoaderSettings::{
     format: ImageFormatSetting::FromExtension,
     texture_format: None,
+    texture_descriptor_label: None,
     sampler: ImageSampler::Default,
     override_sampler: false,
     is_srgb: true,

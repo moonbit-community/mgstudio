@@ -720,6 +720,7 @@ fn image_loader_settings_clone(
   ImageLoaderSettings::{
     format: settings.format,
     texture_format: settings.texture_format,
+    texture_descriptor_label: settings.texture_descriptor_label,
     sampler: settings.sampler,
     override_sampler: settings.override_sampler,
     is_srgb: settings.is_srgb,
@@ -968,8 +969,12 @@ pub fn asset_white_texture() -> Handle[Image] {
 }
 
 ///|
-pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
-  load_texture(path~, nearest~)
+pub fn host_asset_load_texture(
+  path~ : String,
+  nearest~ : Bool,
+  texture_descriptor_label? : String? = None,
+) -> Int {
+  load_texture(path~, nearest~, texture_descriptor_label~)
 }
 
 ///|
@@ -1258,13 +1263,20 @@ fn AssetServer::load_image_with_settings(
     }
     let bytes = load_asset_file_bytes(canonical_path)
     let nearest = self.image_sampler_uses_nearest(settings.sampler)
-    let decoded_image = image_from_loaded_texture_bytes(
-      canonical_path,
-      bytes,
-      settings.is_srgb,
-      settings.format,
-      settings.texture_format,
-    )
+    let decoded_image = match
+      image_from_loaded_texture_bytes(
+        canonical_path,
+        bytes,
+        settings.is_srgb,
+        settings.format,
+        settings.texture_format,
+      ) {
+      Some(image) =>
+        Some(
+          image.with_texture_descriptor_label(settings.texture_descriptor_label),
+        )
+      None => None
+    }
     let id = match decoded_image {
       Some(image) => {
         let created = image_asset_create_gpu_texture_with_array_layout(
@@ -1275,10 +1287,19 @@ fn AssetServer::load_image_with_settings(
         if created > 0 {
           created
         } else {
-          host_asset_load_texture(path=canonical_path, nearest~)
+          host_asset_load_texture(
+            path=canonical_path,
+            nearest~,
+            texture_descriptor_label=settings.texture_descriptor_label,
+          )
         }
       }
-      None => host_asset_load_texture(path=canonical_path, nearest~)
+      None =>
+        host_asset_load_texture(
+          path=canonical_path,
+          nearest~,
+          texture_descriptor_label=settings.texture_descriptor_label,
+        )
     }
     if id <= 0 {
       return Handle::new(0)

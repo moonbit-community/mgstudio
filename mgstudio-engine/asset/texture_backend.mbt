@@ -53,7 +53,14 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat?,
   ) -> Int
   create_texture_empty_fn : (Int, Int, Int, Bool, Int) -> Int
-  create_texture_3d_with_format_fn : (Int, Int, Int, @wgpu.TextureFormat, Bytes) -> Int
+  create_texture_3d_with_format_fn : (
+    Int,
+    Int,
+    Int,
+    @wgpu.TextureFormat,
+    Bytes,
+    String?,
+  ) -> Int
   create_texture_stacked_2d_with_format_fn : (
     Int,
     Int,
@@ -62,6 +69,7 @@ pub(all) struct AssetTextureBackend {
     Array[Bytes],
     Bool,
     Int,
+    String?,
   ) -> Int
   create_texture_cube_with_format_fn : (
     Int,
@@ -69,6 +77,7 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    String?,
   ) -> Int
   replace_texture_cube_with_format_fn : (
     Int,
@@ -119,6 +128,7 @@ pub fn AssetTextureBackend::new(
     Int,
     @wgpu.TextureFormat,
     Bytes,
+    String?,
   ) -> Int,
   create_texture_stacked_2d_with_format_fn~ : (
     Int,
@@ -128,6 +138,7 @@ pub fn AssetTextureBackend::new(
     Array[Bytes],
     Bool,
     Int,
+    String?,
   ) -> Int,
   create_texture_cube_with_format_fn~ : (
     Int,
@@ -135,6 +146,7 @@ pub fn AssetTextureBackend::new(
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    String?,
   ) -> Int,
   replace_texture_cube_with_format_fn~ : (
     Int,
@@ -298,13 +310,14 @@ fn asset_texture_backend_create_texture_3d_with_format(
   depth~ : Int,
   format~ : @wgpu.TextureFormat,
   pixels~ : Bytes,
+  label? : String? = None,
 ) -> Int {
   depth |> ignore
   format |> ignore
   match asset_texture_backend() {
     Some(backend) =>
       (backend.create_texture_3d_with_format_fn)(
-        width, height, depth, format, pixels,
+        width, height, depth, format, pixels, label,
       )
     None => 0
   }
@@ -319,6 +332,7 @@ fn asset_texture_backend_create_texture_stacked_2d_with_format(
   levels~ : Array[Bytes],
   nearest~ : Bool,
   usage_bits~ : Int,
+  label? : String? = None,
 ) -> Int {
   slice_count |> ignore
   format |> ignore
@@ -328,6 +342,7 @@ fn asset_texture_backend_create_texture_stacked_2d_with_format(
     Some(backend) =>
       (backend.create_texture_stacked_2d_with_format_fn)(
         width, height_per_slice, slice_count, format, levels, nearest, usage_bits,
+        label,
       )
     None => 0
   }
@@ -340,13 +355,14 @@ fn asset_texture_backend_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  label? : String? = None,
 ) -> Int {
   format |> ignore
   nearest |> ignore
   match asset_texture_backend() {
     Some(backend) =>
       (backend.create_texture_cube_with_format_fn)(
-        width, height, format, levels, nearest,
+        width, height, format, levels, nearest, label,
       )
     None => 0
   }

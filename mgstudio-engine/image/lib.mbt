@@ -26,6 +26,7 @@ pub(all) struct Image {
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
+  mut texture_descriptor_label : String?
   mut array_layout : ImageArrayLayout?
   mut texture_view_dimension : ImageTextureViewDimension?
 }
@@ -86,6 +87,7 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
     kind: ImageKind::Data,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_SAMPLED,
+    texture_descriptor_label: None,
     array_layout: None,
     texture_view_dimension: None,
   }
@@ -103,6 +105,7 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
+    texture_descriptor_label: self.texture_descriptor_label,
     array_layout: self.array_layout,
     texture_view_dimension: self.texture_view_dimension,
   }
@@ -120,6 +123,7 @@ pub fn Image::with_sampler(self : Image, sampler : ImageSampler) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
+    texture_descriptor_label: self.texture_descriptor_label,
     array_layout: self.array_layout,
     texture_view_dimension: self.texture_view_dimension,
   }
@@ -140,6 +144,7 @@ pub fn Image::with_mip_level_count(
     kind: self.kind,
     mip_level_count: image_mip_count_sanitize(mip_level_count),
     usage_bits: self.usage_bits,
+    texture_descriptor_label: self.texture_descriptor_label,
     array_layout: self.array_layout,
     texture_view_dimension: self.texture_view_dimension,
   }
@@ -157,6 +162,7 @@ pub fn Image::with_texture_usage_bits(self : Image, usage_bits : Int) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: image_usage_sanitize(usage_bits),
+    texture_descriptor_label: self.texture_descriptor_label,
     array_layout: self.array_layout,
     texture_view_dimension: self.texture_view_dimension,
   }
@@ -187,6 +193,40 @@ pub fn Image::mip_level_count(self : Image) -> Int {
 ///|
 pub fn Image::texture_usage_bits(self : Image) -> Int {
   self.usage_bits
+}
+
+///|
+pub fn Image::texture_descriptor_label(self : Image) -> String? {
+  self.texture_descriptor_label
+}
+
+///|
+pub fn Image::set_texture_descriptor_label(
+  self : Image,
+  label : String?,
+) -> Unit {
+  self.texture_descriptor_label = label
+}
+
+///|
+pub fn Image::with_texture_descriptor_label(
+  self : Image,
+  label : String?,
+) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    sampler: self.sampler,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
+    texture_descriptor_label: label,
+    array_layout: self.array_layout,
+    texture_view_dimension: self.texture_view_dimension,
+  }
 }
 
 ///|
@@ -261,6 +301,7 @@ pub fn Image::new_target_texture(
     kind: ImageKind::TargetTexture,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_TARGET,
+    texture_descriptor_label: None,
     array_layout: None,
     texture_view_dimension: None,
   }

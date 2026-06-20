@@ -163,6 +163,7 @@ pub fn ImageFormatSetting::default() -> ImageFormatSetting {
 pub(all) struct ImageLoaderSettings {
   format : ImageFormatSetting
   texture_format : TextureFormat?
+  texture_descriptor_label : String?
   is_srgb : Bool
   sampler : ImageSampler
   array_layout : ImageArrayLayout?
@@ -173,6 +174,7 @@ pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
   ImageLoaderSettings::{
     format: ImageFormatSetting::default(),
     texture_format: None,
+    texture_descriptor_label: None,
     is_srgb: true,
     sampler: ImageSampler::default(),
     array_layout: None,

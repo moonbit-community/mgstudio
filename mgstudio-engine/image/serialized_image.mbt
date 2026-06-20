@@ -59,6 +59,7 @@ pub fn SerializedImage::into_image(self : SerializedImage) -> Image {
     kind: self.kind,
     mip_level_count: self.mip_level_count,
     usage_bits: self.usage_bits,
+    texture_descriptor_label: None,
     array_layout: self.array_layout,
     texture_view_dimension: self.texture_view_dimension,
   }

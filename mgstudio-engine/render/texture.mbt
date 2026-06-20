@@ -197,6 +197,7 @@ pub fn asset_create_texture_3d_with_format(
   depth~ : Int,
   format~ : @wgpu.TextureFormat,
   pixels~ : Bytes,
+  label? : String? = None,
 ) -> Int {
   @renderer.asset_create_texture_3d_with_format(
     width~,
@@ -204,6 +205,7 @@ pub fn asset_create_texture_3d_with_format(
     depth~,
     format~,
     pixels~,
+    label~,
   )
 }
 
@@ -216,6 +218,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
   levels~ : Array[Bytes],
   nearest~ : Bool,
   usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
+  label? : String? = None,
 ) -> Int {
   @renderer.asset_create_texture_stacked_2d_with_format(
     width~,
@@ -225,6 +228,7 @@ pub fn asset_create_texture_stacked_2d_with_format(
     levels~,
     nearest~,
     usage_bits~,
+    label~,
   )
 }
 
@@ -235,6 +239,7 @@ pub fn asset_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  label? : String? = None,
 ) -> Int {
   @renderer.asset_create_texture_cube_with_format(
     width~,
@@ -242,6 +247,7 @@ pub fn asset_create_texture_cube_with_format(
     format~,
     levels~,
     nearest~,
+    label~,
   )
 }
 

@@ -131,6 +131,7 @@ pub(all) struct Image {
   kind : ImageKind
   mip_level_count : Int
   usage_bits : Int
+  mut texture_descriptor_label : String?
   mut array_layout : ImageArrayLayout?
   mut texture_view_dimension : ImageTextureViewDimension?
 }
@@ -141,7 +142,9 @@ pub fn Image::mip_level_count(Self) -> Int
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
 pub fn Image::reinterpret_stacked_2d_as_array(Self, Int) -> Bool
+pub fn Image::set_texture_descriptor_label(Self, String?) -> Unit
 pub fn Image::set_texture_view_dimension(Self, ImageTextureViewDimension?) -> Unit
+pub fn Image::texture_descriptor_label(Self) -> String?
 pub fn Image::texture_usage_bits(Self) -> Int
 pub fn Image::texture_view_dimension(Self) -> ImageTextureViewDimension?
 pub fn Image::width(Self) -> Int
@@ -149,6 +152,7 @@ pub fn Image::with_added_texture_usage(Self, Int) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
 pub fn Image::with_mip_level_count(Self, Int) -> Self
 pub fn Image::with_sampler(Self, ImageSampler) -> Self
+pub fn Image::with_texture_descriptor_label(Self, String?) -> Self
 pub fn Image::with_texture_usage_bits(Self, Int) -> Self
 
 pub(all) enum ImageAddressMode {
@@ -225,6 +229,7 @@ pub fn ImageLoader::supported_formats(Self) -> Array[ImageContainerFormat]
 pub(all) struct ImageLoaderSettings {
   format : ImageFormatSetting
   texture_format : TextureFormat?
+  texture_descriptor_label : String?
   is_srgb : Bool
   sampler : ImageSampler
   array_layout : ImageArrayLayout?
