@@ -140,6 +140,11 @@ pub struct GpuClusteringMeshBuffers {
 }
 
 ///|
+pub struct ViewClusteringDummyTexture {
+  texture : @render_texture.CachedTexture
+}
+
+///|
 pub struct ViewGpuClusteringPipelineIds {
   clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId
   clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId
@@ -276,6 +281,18 @@ let ecs_key_gpu_clustering_mesh_buffers : @ecs.ResourceKey[
 ///|
 pub impl @app.Resource for GpuClusteringMeshBuffers with fn resource() {
   ecs_key_gpu_clustering_mesh_buffers
+}
+
+///|
+pub let ecs_key_view_clustering_dummy_texture : @ecs.ComponentKey[
+  ViewClusteringDummyTexture,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewClusteringDummyTexture",
+)
+
+///|
+pub impl @ecs.Component for ViewClusteringDummyTexture with fn component() {
+  ecs_key_view_clustering_dummy_texture
 }
 
 ///|
@@ -848,6 +865,31 @@ pub fn GpuClusteringMeshBuffers::indices(
 }
 
 ///|
+pub fn ViewClusteringDummyTexture::new(
+  texture : @render_texture.CachedTexture,
+) -> ViewClusteringDummyTexture {
+  ViewClusteringDummyTexture::{ texture, }
+}
+
+///|
+pub fn ViewClusteringDummyTexture::texture(
+  self : ViewClusteringDummyTexture,
+) -> @render_texture.CachedTexture {
+  self.texture
+}
+
+///|
+fn gpu_clustering_next_multiple_of(value : Int, quantum : Int) -> Int {
+  if quantum <= 0 {
+    abort("GPU clustering texture quantum must be positive")
+  }
+  if value < 0 {
+    abort("GPU clustering texture dimension must be non-negative")
+  }
+  (value + quantum - 1) / quantum * quantum
+}
+
+///|
 pub fn ViewGpuClusteringPipelineIds::new(
   clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId,
   clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId,
@@ -917,6 +959,58 @@ pub fn gpu_clustering_is_enabled(world : @ecs.World) -> Bool {
     Some(settings) => settings.gpu_clustering() is Some(_)
     None => false
   }
+}
+
+///|
+pub fn prepare_cluster_dummy_textures(world : @ecs.World) -> Unit {
+  let render_device = gpu_clustering_resource_or_abort(
+    world, @render.render_device_resource_key, "RenderDevice",
+  )
+  let texture_cache = gpu_clustering_resource_or_abort(
+    world,
+    @render_texture.TextureCache::resource(),
+    "TextureCache",
+  )
+  world.for_each_component(@render_view.ExtractedView::component(), fn(
+    view_entity,
+    _view,
+  ) {
+    match
+      (world.get_by_key(view_entity, ExtractedClusterConfig::component()) catch {
+        _ =>
+          abort("prepare_cluster_dummy_textures: failed to read cluster config")
+      }) {
+      Some(view_cluster_config) => {
+        let dimensions = view_cluster_config.dimensions()
+        let dummy_texture = texture_cache.get(
+          render_device,
+          @render_texture.TextureCacheDescriptor::new(
+            label=Some("clustering dummy texture"),
+            width=gpu_clustering_next_multiple_of(dimensions.0, 32),
+            height=gpu_clustering_next_multiple_of(dimensions.1, 32),
+            depth_or_array_layers=1,
+            mip_level_count=1,
+            sample_count=1,
+            dimension_raw=@wgpu.TEXTURE_DIMENSION_2D,
+            format_raw=@wgpu.TEXTURE_FORMAT_R8_UNORM,
+            usage_bits=@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+              @wgpu.TEXTURE_USAGE_COPY_DST,
+          ),
+        )
+        world.set_by_key(
+          view_entity,
+          ViewClusteringDummyTexture::component(),
+          ViewClusteringDummyTexture::new(dummy_texture),
+        ) catch {
+          _ =>
+            abort(
+              "prepare_cluster_dummy_textures: failed to insert dummy texture",
+            )
+        }
+      }
+      None => ()
+    }
+  })
 }
 
 ///|
@@ -1113,7 +1207,14 @@ fn gpu_clustering_configure_render_app_finish(
     ClusteringAllocationPipeline::resource(),
     fn() { ClusteringAllocationPipeline::ClusteringAllocationPipeline() },
   )
-  sub_app.add_systems(
+  sub_app
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_cluster_dummy_textures)
+    .in_set(@render.render_system_set_prepare)
+    .run_if(gpu_clustering_is_enabled),
+  )
+  .add_systems(
     @render.render_schedule_stage(),
     @app.system(prepare_clustering_pipelines)
     .in_set(@render.render_system_set_prepare)

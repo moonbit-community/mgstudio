@@ -611,8 +611,10 @@ pub struct TextureView {
   id : UInt64
   value : @wgpu_mbt.TextureView
 }
+pub fn TextureView::from_wgpu(@wgpu_mbt.TextureView) -> Self
 pub fn TextureView::id(Self) -> UInt64
 pub fn TextureView::into_inner(Self) -> @wgpu_mbt.TextureView
+pub fn TextureView::new(@wgpu_mbt.TextureView) -> Self
 pub fn TextureView::set_label(Self, String) -> Unit
 
 pub(all) enum TextureViewDimension {

@@ -247,6 +247,73 @@ pub fn pbr_make_global_cluster_settings_from_render_world(
 }
 
 ///|
+pub struct ExtractedClusterConfig {
+  near : Float
+  far : Float
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+} derive(Eq, Debug)
+
+///|
+pub fn ExtractedClusterConfig::from_clusters(
+  clusters : @light_cluster.Clusters,
+) -> ExtractedClusterConfig {
+  let dimensions = clusters.dimensions()
+  ExtractedClusterConfig::{
+    near: clusters.near(),
+    far: clusters.far(),
+    dimensions_x: dimensions.0,
+    dimensions_y: dimensions.1,
+    dimensions_z: dimensions.2,
+  }
+}
+
+///|
+pub fn ExtractedClusterConfig::new(
+  near : Float,
+  far : Float,
+  dimensions_x : Int,
+  dimensions_y : Int,
+  dimensions_z : Int,
+) -> ExtractedClusterConfig {
+  ExtractedClusterConfig::{
+    near,
+    far,
+    dimensions_x,
+    dimensions_y,
+    dimensions_z,
+  }
+}
+
+///|
+pub fn ExtractedClusterConfig::near(self : ExtractedClusterConfig) -> Float {
+  self.near
+}
+
+///|
+pub fn ExtractedClusterConfig::far(self : ExtractedClusterConfig) -> Float {
+  self.far
+}
+
+///|
+pub fn ExtractedClusterConfig::dimensions(
+  self : ExtractedClusterConfig,
+) -> (Int, Int, Int) {
+  (self.dimensions_x, self.dimensions_y, self.dimensions_z)
+}
+
+///|
+pub let ecs_key_extracted_cluster_config : @ecs.ComponentKey[
+  ExtractedClusterConfig,
+] = @ecs.register_component(debug_name="mgstudio_pbr::ExtractedClusterConfig")
+
+///|
+pub impl @ecs.Component for ExtractedClusterConfig with fn component() {
+  ecs_key_extracted_cluster_config
+}
+
+///|
 fn cluster_config_sanitize_dimension(value : Int) -> Int {
   if value <= 0 {
     1

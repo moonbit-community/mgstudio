@@ -25,6 +25,7 @@ import {
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/texture",
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
   "Milky2018/wgpu_mbt",
@@ -249,6 +250,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[@camera.Exposure]
 
+pub let ecs_key_extracted_cluster_config : @ecs.ComponentKey[ExtractedClusterConfig]
+
 pub let ecs_key_fallback_bindless_resources : @ecs.ResourceKey[FallbackBindlessResources]
 
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
@@ -380,6 +383,8 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub let ecs_key_view_clustering_dummy_texture : @ecs.ComponentKey[ViewClusteringDummyTexture]
 
 pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
 
@@ -638,6 +643,8 @@ pub fn pbr_standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @
 pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
+
+pub fn prepare_cluster_dummy_textures(@ecs.World) -> Unit
 
 pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
 
@@ -1253,6 +1260,20 @@ pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @mate
 pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
+
+pub struct ExtractedClusterConfig {
+  near : Float
+  far : Float
+  dimensions_x : Int
+  dimensions_y : Int
+  dimensions_z : Int
+} derive(Eq, @debug.Debug)
+pub fn ExtractedClusterConfig::dimensions(Self) -> (Int, Int, Int)
+pub fn ExtractedClusterConfig::far(Self) -> Float
+pub fn ExtractedClusterConfig::from_clusters(@cluster.Clusters) -> Self
+pub fn ExtractedClusterConfig::near(Self) -> Float
+pub fn ExtractedClusterConfig::new(Float, Float, Int, Int, Int) -> Self
+pub impl @ecs.Component for ExtractedClusterConfig
 
 pub(all) struct FallbackBindlessResources {
   filtering_sampler : @wgpu_mbt.Sampler
@@ -2210,6 +2231,13 @@ pub fn ViewClusterBindings3d::push_index(Self, UInt) -> Bool
 pub fn ViewClusterBindings3d::push_offset_and_counts(Self, UInt, ClusterableObjectCounts3d) -> Bool
 pub fn ViewClusterBindings3d::uniform_packed_offsets_and_counts(Self) -> Array[UInt]
 pub fn ViewClusterBindings3d::with_limits(Int, Int) -> Self
+
+pub struct ViewClusteringDummyTexture {
+  texture : @texture.CachedTexture
+}
+pub fn ViewClusteringDummyTexture::new(@texture.CachedTexture) -> Self
+pub fn ViewClusteringDummyTexture::texture(Self) -> @texture.CachedTexture
+pub impl @ecs.Component for ViewClusteringDummyTexture
 
 pub struct ViewClusteringLastFrameStatistics {
   index_list_size : UInt

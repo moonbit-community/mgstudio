@@ -486,6 +486,69 @@ test "render3d: gpu clustering run condition follows global cluster settings" {
 }
 
 ///|
+test "render3d: gpu clustering prepare creates dummy textures per extracted view" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(
+    @render_texture.TextureCache::resource(),
+    @render_texture.TextureCache::new(),
+  )
+  let view_a = world.spawn()
+  let view_b = world.spawn()
+  try! world.set_by_key(
+    view_a,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(view_a),
+    ),
+  )
+  try! world.set_by_key(
+    view_a,
+    ExtractedClusterConfig::component(),
+    ExtractedClusterConfig::new(0.1F, 1000.0F, 33, 65, 24),
+  )
+  try! world.set_by_key(
+    view_b,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(view_b),
+    ),
+  )
+  try! world.set_by_key(
+    view_b,
+    ExtractedClusterConfig::component(),
+    ExtractedClusterConfig::new(0.1F, 1000.0F, 33, 65, 24),
+  )
+
+  prepare_cluster_dummy_textures(world)
+
+  debug_inspect(
+    (try! world.get_by_key(view_a, ViewClusteringDummyTexture::component()))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(view_b, ViewClusteringDummyTexture::component()))
+    is Some(_),
+    content="true",
+  )
+  let texture_cache = world
+    .get_resource(@render_texture.TextureCache::resource())
+    .unwrap()
+  debug_inspect(texture_cache.descriptor_count(), content="1")
+  debug_inspect(texture_cache.len(), content="2")
+  debug_inspect(texture_cache.taken_count(), content="2")
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

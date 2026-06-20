@@ -79,6 +79,16 @@ pub fn TextureView::id(self : TextureView) -> TextureViewId {
 }
 
 ///|
+pub fn TextureView::new(value : @wgpu.TextureView) -> TextureView {
+  TextureView::{ id: next_texture_view_id(), value }
+}
+
+///|
+pub fn TextureView::from_wgpu(value : @wgpu.TextureView) -> TextureView {
+  TextureView::new(value)
+}
+
+///|
 pub fn TextureView::into_inner(self : TextureView) -> @wgpu.TextureView {
   self.value
 }

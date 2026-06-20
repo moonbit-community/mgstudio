@@ -123,6 +123,17 @@ fn render_plugin_install_with(
         render_asset_bytes_per_frame_limiter_resource_key,
         RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
       )
+      if !render_sub_app
+        .world()
+        .resource(@render_texture.TextureCache::resource())
+        .is_present() {
+        render_sub_app
+        .world()
+        .insert_resource(
+          @render_texture.TextureCache::resource(),
+          @render_texture.TextureCache::new(),
+        )
+      }
       render_sub_app
       .add_systems(
         render_startup_schedule_stage(),
@@ -151,6 +162,12 @@ fn render_plugin_install_with(
       .add_systems(
         render_schedule_stage(),
         @app.system(reset_render_asset_bytes_per_frame).in_set(
+          render_system_set_cleanup,
+        ),
+      )
+      .add_systems(
+        render_schedule_stage(),
+        @app.system(@render_texture.update_texture_cache_system).in_set(
           render_system_set_cleanup,
         ),
       )

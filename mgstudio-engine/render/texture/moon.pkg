@@ -1,11 +1,10 @@
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/wgpu_mbt" @wgpu,
 }
-
-import {
-  "Milky2018/mgstudio/ecs",
-} for "wbtest"
 
 supported_targets = "native"

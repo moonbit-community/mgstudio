@@ -2,6 +2,9 @@
 package "Milky2018/mgstudio/render/texture"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/wgpu_mbt",
 }
@@ -73,9 +76,29 @@ pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
 
 pub fn register_asset_texture_backend() -> Unit
 
+pub let texture_cache_resource_key : @ecs.ResourceKey[TextureCache]
+
+pub fn update_texture_cache_system(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub struct CachedTexture {
+  texture : @render_resource.Texture
+  default_view : @render_resource.TextureView
+}
+pub fn CachedTexture::default_view(Self) -> @render_resource.TextureView
+pub fn CachedTexture::default_view_id(Self) -> UInt64
+pub fn CachedTexture::texture(Self) -> @render_resource.Texture
+pub fn CachedTexture::texture_id(Self) -> UInt64
+
+pub(all) struct CachedTextureMeta {
+  texture : @render_resource.Texture
+  default_view : @render_resource.TextureView
+  mut taken : Bool
+  mut frames_since_last_use : Int
+}
+
 pub struct GpuImage {
   texture_id : Int
   width : Int
@@ -122,13 +145,43 @@ pub fn TextureAttachment::new(Int, Int, Int) -> Self
 pub fn TextureAttachment::texture_id(Self) -> Int
 
 pub struct TextureCache {
-  texture_ids : Array[Int]
+  textures : Array[TextureCacheEntry]
 }
-pub fn TextureCache::contains(Self, Int) -> Bool
-pub fn TextureCache::insert(Self, Int) -> Self
+pub fn TextureCache::descriptor_count(Self) -> Int
+pub fn TextureCache::get(Self, @renderer.RenderDevice, TextureCacheDescriptor) -> CachedTexture
 pub fn TextureCache::is_empty(Self) -> Bool
 pub fn TextureCache::len(Self) -> Int
 pub fn TextureCache::new() -> Self
+pub fn TextureCache::taken_count(Self) -> Int
+pub fn TextureCache::update(Self) -> Unit
+pub impl @app.Resource for TextureCache
+
+pub struct TextureCacheDescriptor {
+  label : String?
+  width : Int
+  height : Int
+  depth_or_array_layers : Int
+  mip_level_count : Int
+  sample_count : Int
+  dimension_raw : UInt
+  format_raw : UInt
+  usage_bits : UInt64
+}
+pub fn TextureCacheDescriptor::depth_or_array_layers(Self) -> Int
+pub fn TextureCacheDescriptor::dimension_raw(Self) -> UInt
+pub fn TextureCacheDescriptor::format_raw(Self) -> UInt
+pub fn TextureCacheDescriptor::height(Self) -> Int
+pub fn TextureCacheDescriptor::label(Self) -> String?
+pub fn TextureCacheDescriptor::mip_level_count(Self) -> Int
+pub fn TextureCacheDescriptor::new(label? : String?, width~ : Int, height~ : Int, depth_or_array_layers? : Int, mip_level_count? : Int, sample_count? : Int, dimension_raw? : UInt, format_raw~ : UInt, usage_bits~ : UInt64) -> Self
+pub fn TextureCacheDescriptor::sample_count(Self) -> Int
+pub fn TextureCacheDescriptor::usage_bits(Self) -> UInt64
+pub fn TextureCacheDescriptor::width(Self) -> Int
+
+pub(all) struct TextureCacheEntry {
+  descriptor : TextureCacheDescriptor
+  textures : Array[CachedTextureMeta]
+}
 
 // Type aliases
 pub type ManualTextureViewHandle = Int

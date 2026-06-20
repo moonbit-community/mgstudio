@@ -548,6 +548,16 @@ pub fn Clusters::dimensions(self : Clusters) -> (Int, Int, Int) {
 }
 
 ///|
+pub fn Clusters::near(self : Clusters) -> Float {
+  self.near
+}
+
+///|
+pub fn Clusters::far(self : Clusters) -> Float {
+  self.far
+}
+
+///|
 pub fn Clusters::clusterable_objects(
   self : Clusters,
 ) -> Array[ObjectsInCluster] {

@@ -117,6 +117,8 @@ pub fn Clusters::Clusters() -> Self
 pub fn Clusters::clear(Self) -> Unit
 pub fn Clusters::clusterable_objects(Self) -> Array[ObjectsInCluster]
 pub fn Clusters::dimensions(Self) -> (Int, Int, Int)
+pub fn Clusters::far(Self) -> Float
+pub fn Clusters::near(Self) -> Float
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
 pub impl @ecs.Component for Clusters
