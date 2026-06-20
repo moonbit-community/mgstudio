@@ -145,6 +145,52 @@ test "render3d: pbr plugin registers deferred shader libraries when deferred plu
 }
 
 ///|
+fn assert_embedded_shader_source_exists(path : String) -> Unit {
+  match @shader_source.embedded_shader_source(path) {
+    Some(_) => ()
+    None => abort("missing embedded shader source: \{path}")
+  }
+}
+
+///|
+test "render3d: pbr plugin registers bevy pbr shader library list" {
+  @shader_source.clear_embedded_shader_sources()
+  ignore(
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::{
+      ..PbrPlugin::PbrPlugin(),
+      add_default_deferred_lighting_plugin: false,
+    }),
+  )
+  assert_embedded_shader_source_exists("pbr/render/pbr_types.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_bindings.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/utils.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/clustered_forward.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_lighting.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/shadows.wgsl")
+  assert_embedded_shader_source_exists("pbr/deferred/pbr_deferred_types.wgsl")
+  assert_embedded_shader_source_exists(
+    "pbr/deferred/pbr_deferred_functions.wgsl",
+  )
+  assert_embedded_shader_source_exists("pbr/render/shadow_sampling.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_functions.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/rgb9e5.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_ambient.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_fragment.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_prepass_functions.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/pbr_prepass.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/parallax_mapping.wgsl")
+  assert_embedded_shader_source_exists("pbr/render/view_transformations.wgsl")
+  assert_embedded_shader_source_exists(
+    "pbr/meshlet/dummy_visibility_buffer_resolve.wgsl",
+  )
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {
