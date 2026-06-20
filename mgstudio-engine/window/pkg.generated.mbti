@@ -22,10 +22,6 @@ pub fn cursor_icon_from_system(SystemCursorIcon) -> CursorIcon
 
 pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle]
 
-pub let ecs_key_captured : @ecs.ComponentKey[Captured]
-
-pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
-
 pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
 
 pub let ecs_key_cursor_entered : @ecs.MessageKey[CursorEntered]
@@ -71,10 +67,6 @@ pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[RawHandleWrapperHo
 pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw]
 
 pub let ecs_key_rotation_gesture : @ecs.MessageKey[@events.RotationGesture]
-
-pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
-
-pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
 
 pub let ecs_key_touch_input : @ecs.MessageKey[@events.TouchInput]
 
@@ -206,12 +198,6 @@ pub fn host_window_theme_event_theme(index~ : Int) -> Int
 
 pub fn host_window_theme_event_window(index~ : Int) -> Int
 
-pub fn save_to_disk(String) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit
-
-pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
-
-pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
-
 pub fn window_backend_apply_changed_cursor_options_system(@ecs.World) -> Unit
 
 pub fn window_backend_apply_changed_windows_system(@ecs.World) -> Unit
@@ -290,8 +276,6 @@ pub fn window_scale_factor() -> Float
 
 pub fn window_scale_factor_for(@ecs.World, WindowRef) -> Float
 
-pub let window_screenshot_trigger_system_set : String
-
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
 
 pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit
@@ -338,14 +322,6 @@ pub(all) enum AppLifecycle {
 } derive(Eq, @debug.Debug)
 pub fn AppLifecycle::is_active(Self) -> Bool
 pub impl @ecs.Message for AppLifecycle
-
-pub struct Captured {
-}
-pub impl @ecs.Component for Captured
-
-pub struct Capturing {
-}
-pub impl @ecs.Component for Capturing
 
 pub(all) struct ClosingWindow {
 } derive(Eq, @debug.Debug)
@@ -530,27 +506,6 @@ pub(all) enum ScreenEdge {
   All
 } derive(Eq, @debug.Debug)
 pub fn ScreenEdge::default() -> Self
-
-pub struct Screenshot {
-  target : ScreenshotTarget
-}
-pub fn Screenshot::image(@asset.Handle[@image.Image]) -> Self
-pub fn Screenshot::primary_window() -> Self
-pub fn Screenshot::texture_view(Int) -> Self
-pub fn Screenshot::window(@Milky2018/mgstudio/core.Entity) -> Self
-pub impl @ecs.Component for Screenshot
-
-pub struct ScreenshotCaptured {
-  entity : @Milky2018/mgstudio/core.Entity
-  image : @image.Image
-}
-pub impl @ecs.Component for ScreenshotCaptured
-
-pub(all) enum ScreenshotTarget {
-  Window(WindowRef)
-  Image(@asset.Handle[@image.Image])
-  TextureView(Int)
-}
 
 pub(all) enum SystemCursorIcon {
   Default
@@ -861,8 +816,6 @@ pub using @events {type KeyCode}
 pub using @events {type KeyboardFocusLost}
 
 pub using @events {type KeyboardInput}
-
-pub type ManualTextureViewHandle = Int
 
 pub using @events {type MouseButton}
 

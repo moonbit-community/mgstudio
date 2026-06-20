@@ -59,7 +59,7 @@ test "ci testing: send_events runs before screenshot trigger set" {
       @app.Update,
       @app.system(ci_testing_send_events_system)
       .in_set(ci_testing_event_sender_system_set)
-      .before(@window.window_screenshot_trigger_system_set),
+      .before(@render.screenshot_trigger_system_set),
     )
     .add_systems(
       @app.Update,
@@ -69,7 +69,7 @@ test "ci testing: send_events runs before screenshot trigger set" {
         for event in reader.read() {
           observed.push(event.value())
         }
-      }).in_set(@window.window_screenshot_trigger_system_set),
+      }).in_set(@render.screenshot_trigger_system_set),
     )
   let _app = app.run_once()
   debug_inspect(observed, content="[\"same-frame\"]")

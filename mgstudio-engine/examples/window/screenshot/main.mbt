@@ -205,13 +205,13 @@ fn screenshot_on_spacebar(
   ignore(
     world.add_entity_component_observer(
       screenshot_entity,
-      @window.save_to_disk(path),
+      @render.save_to_disk(path),
     ),
   )
   try! world.set_by_key(
     screenshot_entity,
-    @window.ecs_key_screenshot,
-    @window.Screenshot::primary_window(),
+    @render.ecs_key_screenshot,
+    @render.Screenshot::primary_window(),
   )
   counter.set(counter.get() + 1)
 }
@@ -223,7 +223,7 @@ fn screenshot_saving(world : @ecs.World) -> Unit {
     return
   }
 
-  if world.component_count(@window.ecs_key_capturing) == 0 {
+  if world.component_count(@render.ecs_key_capturing) == 0 {
     try! (world.take(window, @window.ecs_key_cursor_icon) |> ignore)
     return
   }

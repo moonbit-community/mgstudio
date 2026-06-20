@@ -54,13 +54,6 @@ pub fn window_plugin_with(
     .add_message(ecs_key_app_lifecycle)
     .add_message(ecs_key_request_redraw)
     .add_message(ecs_key_ime)
-    .add_systems(@app.First, @app.system(screenshot_clear_system))
-    .add_systems(
-      @app.Update,
-      @app.system(screenshot_queue_capture_requests).in_set(
-        window_screenshot_trigger_system_set,
-      ),
-    )
   if plugin.primary_window is Some(primary_window) {
     window_spawn_primary_window_entity(
       next.world(),

@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
+  "Milky2018/mgstudio/window",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -92,11 +93,19 @@ pub fn despawn_temporary_render_entities(@ecs.World) -> Unit
 
 pub let ecs_key_camera_render_graph : @ecs.ComponentKey[CameraRenderGraph]
 
+pub let ecs_key_captured : @ecs.ComponentKey[Captured]
+
+pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
+
 pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
 
 pub let ecs_key_pending_sync_entity : @ecs.ResourceKey[PendingSyncEntity]
 
 pub let ecs_key_render_entity : @ecs.ComponentKey[RenderEntity]
+
+pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
+
+pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
 
 pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld]
 
@@ -518,6 +527,8 @@ pub fn reset_render_asset_bytes_per_frame(@ecs.World) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
+pub fn save_to_disk(String) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit
+
 pub fn screenshot_capture_surface_request() -> Int
 
 pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int
@@ -526,9 +537,17 @@ pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int
 
 pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.ScreenshotCaptureResult?
 
+pub fn screenshot_clear_system(@ecs.World) -> Unit
+
+pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
+
 pub fn screenshot_parity_capture_completed() -> Bool
 
+pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
+
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
+
+pub let screenshot_trigger_system_set : String
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
@@ -601,6 +620,14 @@ pub fn CameraRenderGraph::new(@app.ScheduleStage) -> Self
 pub fn CameraRenderGraph::schedule(Self) -> @app.ScheduleStage
 pub fn CameraRenderGraph::with_schedule(Self, @app.ScheduleStage) -> Self
 pub impl @ecs.Component for CameraRenderGraph
+
+pub struct Captured {
+}
+pub impl @ecs.Component for Captured
+
+pub struct Capturing {
+}
+pub impl @ecs.Component for Capturing
 
 pub struct ComponentUniforms[C] {
   uniforms : Array[C]
@@ -933,6 +960,27 @@ pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
 pub fn[K : Hash + Eq, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 
+pub struct Screenshot {
+  target : ScreenshotTarget
+}
+pub fn Screenshot::image(@asset.Handle[@image.Image]) -> Self
+pub fn Screenshot::primary_window() -> Self
+pub fn Screenshot::texture_view(Int) -> Self
+pub fn Screenshot::window(@core.Entity) -> Self
+pub impl @ecs.Component for Screenshot
+
+pub struct ScreenshotCaptured {
+  entity : @core.Entity
+  image : @image.Image
+}
+pub impl @ecs.Component for ScreenshotCaptured
+
+pub(all) enum ScreenshotTarget {
+  Window(@window.WindowRef)
+  Image(@asset.Handle[@image.Image])
+  TextureView(Int)
+}
+
 pub struct SlabAllocationPlan {
   slab_id : Int
   kind : SlabKind
@@ -1113,6 +1161,8 @@ pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
 pub using @renderer {type HostMesh3dPreprocessView}
 
 pub using @renderer {type HostMesh3dVolumetricFogVolume}
+
+pub type ManualTextureViewHandle = Int
 
 pub using @render_resource {type PrimitiveState}
 

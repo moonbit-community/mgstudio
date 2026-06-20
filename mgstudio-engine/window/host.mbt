@@ -810,5 +810,5 @@ pub fn window_position_y() -> Int {
 
 ///|
 pub fn host_debug_string(value~ : String) -> Unit {
-  @render.host_debug_string(value~)
+  println(value)
 }

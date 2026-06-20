@@ -13,14 +13,16 @@
 // limitations under the License.
 
 ///|
-test "window: duplicate screenshot targets are despawned during queueing" {
+test "screenshot: duplicate screenshot targets are despawned during queueing" {
   let world = @ecs.World::new()
   let primary_window = world.spawn()
   try! (world
   .entity_mut(primary_window)
   .insert_component(@window.Window::Window())
   |> ignore)
-  try! (world.entity_mut(primary_window).insert_component(PrimaryWindow::{  })
+  try! (world
+  .entity_mut(primary_window)
+  .insert_component(@window.PrimaryWindow::{  })
   |> ignore)
 
   let first_request = world.spawn()
@@ -42,7 +44,7 @@ test "window: duplicate screenshot targets are despawned during queueing" {
 }
 
 ///|
-test "window: non-primary window screenshot target still deduplicates" {
+test "screenshot: non-primary window screenshot target still deduplicates" {
   let world = @ecs.World::new()
   let secondary_window = world.spawn()
   try! (world
@@ -69,7 +71,7 @@ test "window: non-primary window screenshot target still deduplicates" {
 }
 
 ///|
-test "window: duplicate texture-view screenshot targets are despawned during queueing" {
+test "screenshot: duplicate texture-view targets are despawned during queueing" {
   let world = @ecs.World::new()
 
   let first_request = world.spawn()

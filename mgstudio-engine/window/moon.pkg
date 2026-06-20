@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input/events" @input_events,
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render",
   "Milky2018/window/core" @window_core,
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "moonbitlang/core/hashmap",

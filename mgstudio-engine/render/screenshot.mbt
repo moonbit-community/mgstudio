@@ -13,11 +13,14 @@
 // limitations under the License.
 
 ///|
-pub type ManualTextureViewHandle = Int
+// Bevy source: `bevy/crates/bevy_render/src/view/window/screenshot.rs`.
+
+///|
+pub type ManualTextureViewHandle = @render_view_window.ManualTextureViewHandle
 
 ///|
 pub(all) enum ScreenshotTarget {
-  Window(WindowRef)
+  Window(@window.WindowRef)
   Image(@asset.Handle[@asset.Image])
   TextureView(ManualTextureViewHandle)
 }
@@ -51,13 +54,18 @@ let pending_screenshot_entity_captures : Ref[
 ] = Ref([])
 
 ///|
+pub let screenshot_trigger_system_set : @app.SystemSet = @app.system_set(
+  "mgstudio.render.trigger_screenshots",
+)
+
+///|
 pub fn Screenshot::window(window : @core.Entity) -> Screenshot {
-  { target: Window(WindowRef::Entity(window)) }
+  { target: Window(@window.WindowRef::Entity(window)) }
 }
 
 ///|
 pub fn Screenshot::primary_window() -> Screenshot {
-  { target: Window(WindowRef::Primary) }
+  { target: Window(@window.WindowRef::Primary) }
 }
 
 ///|
@@ -158,7 +166,8 @@ fn screenshot_target_key(
 ) -> String? {
   match screenshot.target {
     Window(window_ref) => {
-      guard window_entity_for_ref(world, window_ref) is Some(window_entity) else {
+      guard @window.window_entity_for_ref(world, window_ref)
+        is Some(window_entity) else {
         return None
       }
       Some("window:\{window_entity.id.to_string()}")
@@ -176,22 +185,22 @@ fn screenshot_request_capture(
 ) -> Int {
   match screenshot.target {
     Window(window_ref) => {
-      guard window_host_window_for_ref(world, window_ref) is Some(host_window) else {
+      guard @window.window_host_window_for_ref(world, window_ref)
+        is Some(host_window) else {
         return 0
       }
-      let target_id = @render.host_gpu_surface_target_id_for_window(host_window)
+      let target_id = host_gpu_surface_target_id_for_window(host_window)
       if target_id <= 0 {
         match window_ref {
-          Primary => return @render.screenshot_capture_surface_request()
+          Primary => return screenshot_capture_surface_request()
           Entity(_) => return 0
         }
       }
-      @render.screenshot_capture_surface_target_request(target_id~)
+      screenshot_capture_surface_target_request(target_id~)
     }
-    Image(image) =>
-      @render.screenshot_capture_texture_request(texture_id=image.id())
+    Image(image) => screenshot_capture_texture_request(texture_id=image.id())
     TextureView(texture_view) =>
-      @render.screenshot_capture_texture_request(texture_id=texture_view)
+      screenshot_capture_texture_request(texture_id=texture_view)
   }
 }
 
@@ -244,7 +253,7 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
     let capture_id = pending_capture.capture_id
     let entity = pending_capture.entity
     guard world.is_alive(entity) else { continue }
-    guard @render.screenshot_take_capture_result(capture_id) is Some(capture) else {
+    guard screenshot_take_capture_result(capture_id) is Some(capture) else {
       remaining.push(pending_capture)
       continue
     }
@@ -302,7 +311,7 @@ pub fn save_to_disk(
 }
 
 ///|
-fn screenshot_clear_system(world : @ecs.World) -> Unit {
+pub fn screenshot_clear_system(world : @ecs.World) -> Unit {
   let entities : Array[@core.Entity] = []
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_captured))

@@ -174,6 +174,14 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
     }),
   )
+  next = next
+    .add_systems(@app.First, @app.system(screenshot_clear_system))
+    .add_systems(
+      @app.Update,
+      @app.system(screenshot_queue_capture_requests).in_set(
+        screenshot_trigger_system_set,
+      ),
+    )
   if !next.contains_resource(ecs_key_render_plugin_marker) {
     register_embedded_wgsl_sources()
     @renderer.register_embedded_wgsl_sources()

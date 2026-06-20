@@ -123,13 +123,13 @@ fn easy_screenshot_flush_capture_system(
   ignore(
     world.add_entity_component_observer(
       screenshot_entity,
-      @window.save_to_disk(path),
+      @render.save_to_disk(path),
     ),
   )
   try! world.set_by_key(
     screenshot_entity,
-    @window.ecs_key_screenshot,
-    @window.Screenshot::primary_window(),
+    @render.ecs_key_screenshot,
+    @render.Screenshot::primary_window(),
   )
   state.modify(fn(value) {
     value.next_capture_index = value.next_capture_index + 1

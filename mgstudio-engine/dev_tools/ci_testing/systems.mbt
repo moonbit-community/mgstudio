@@ -68,8 +68,8 @@ fn ci_testing_queue_screenshot(
 ) -> Unit {
   let screenshot_entity = world.spawn()
   let observer = if exit_after_capture {
-    fn(event : @ecs.ComponentOn[@ecs.Insert, @window.ScreenshotCaptured]) {
-      @window.save_to_disk(path)(event)
+    fn(event : @ecs.ComponentOn[@ecs.Insert, @render.ScreenshotCaptured]) {
+      @render.save_to_disk(path)(event)
       ignore(
         event
         .world()
@@ -77,13 +77,13 @@ fn ci_testing_queue_screenshot(
       )
     }
   } else {
-    @window.save_to_disk(path)
+    @render.save_to_disk(path)
   }
   ignore(world.add_entity_component_observer(screenshot_entity, observer))
   try! world.set_by_key(
     screenshot_entity,
-    @window.ecs_key_screenshot,
-    @window.Screenshot::primary_window(),
+    @render.ecs_key_screenshot,
+    @render.Screenshot::primary_window(),
   )
 }
 

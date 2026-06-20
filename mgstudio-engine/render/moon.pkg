@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/diagnostic" @render_diagnostic,
   "Milky2018/mgstudio/render/mesh" @render_mesh,
