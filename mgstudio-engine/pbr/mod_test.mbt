@@ -166,8 +166,16 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
   debug_inspect(config.use_gpu_instance_buffer_builder, content="true")
   debug_inspect(config.gltf_render_enabled, content="true")
   debug_inspect(
+    config.debug_flags.allow_copies_from_indirect_parameters(),
+    content="false",
+  )
+  debug_inspect(
     read_mesh_render_plugin_state(app.world()).use_gpu_instance_buffer_builder,
     content="true",
+  )
+  debug_inspect(
+    read_mesh_render_plugin_state(app.world()).debug_flags.allow_copies_from_indirect_parameters(),
+    content="false",
   )
   debug_inspect(
     app.contains_resource(ecs_key_materials_plugin_state),
@@ -199,6 +207,9 @@ test "render3d: pbr plugin config updates runtime feature switches" {
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
       use_gpu_instance_buffer_builder: false,
+      debug_flags: @render.RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+        true,
+      ),
       gltf_render_enabled: false,
     },
   )
@@ -211,12 +222,20 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
   debug_inspect(pbr_gltf_render_enabled(_app.world()), content="false")
   debug_inspect(
+    pbr_plugin_runtime_config(_app.world()).debug_flags.allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+  debug_inspect(
     @gltf_loader.gltf_pbr_material_handler_enabled(),
     content="false",
   )
   debug_inspect(
     read_mesh_render_plugin_state(_app.world()).use_gpu_instance_buffer_builder,
     content="false",
+  )
+  debug_inspect(
+    read_mesh_render_plugin_state(_app.world()).debug_flags.allow_copies_from_indirect_parameters(),
+    content="true",
   )
   debug_inspect(
     read_deferred_lighting_state(_app.world()).enabled,
@@ -293,6 +312,9 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
         prepass_enabled: false,
         add_default_deferred_lighting_plugin: false,
         use_gpu_instance_buffer_builder: false,
+        debug_flags: @render.RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+          true,
+        ),
         gltf_render_enabled: false,
       }),
     )
@@ -303,8 +325,16 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   debug_inspect(config.use_gpu_instance_buffer_builder, content="false")
   debug_inspect(config.gltf_render_enabled, content="false")
   debug_inspect(
+    config.debug_flags.allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+  debug_inspect(
     read_mesh_render_plugin_state(app.world()).use_gpu_instance_buffer_builder,
     content="false",
+  )
+  debug_inspect(
+    read_mesh_render_plugin_state(app.world()).debug_flags.allow_copies_from_indirect_parameters(),
+    content="true",
   )
   debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,

@@ -1512,12 +1512,14 @@ pub fn MeshRayCastSettings::with_ray_epsilon(Self, Float) -> Self
 
 pub(all) struct MeshRenderPlugin {
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn MeshRenderPlugin::MeshRenderPlugin() -> Self
 pub impl @app.Plugin for MeshRenderPlugin
 
 pub struct MeshRenderPluginState {
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
 
@@ -1591,6 +1593,7 @@ pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   gltf_render_enabled : Bool
 }
 pub fn PbrPlugin::PbrPlugin() -> Self
@@ -1600,6 +1603,7 @@ pub struct PbrPluginRuntimeConfig {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   gltf_render_enabled : Bool
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self

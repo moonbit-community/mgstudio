@@ -20,6 +20,7 @@ pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @render.RenderDebugFlags
   gltf_render_enabled : Bool
 }
 
@@ -29,6 +30,7 @@ pub fn PbrPlugin::PbrPlugin() -> PbrPlugin {
     prepass_enabled: true,
     add_default_deferred_lighting_plugin: true,
     use_gpu_instance_buffer_builder: true,
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
     gltf_render_enabled: true,
   }
 }
@@ -38,6 +40,7 @@ pub struct PbrPluginRuntimeConfig {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @render.RenderDebugFlags
   gltf_render_enabled : Bool
 }
 
@@ -49,6 +52,7 @@ pub fn PbrPluginRuntimeConfig::from_plugin(
     prepass_enabled: plugin.prepass_enabled,
     add_default_deferred_lighting_plugin: plugin.add_default_deferred_lighting_plugin,
     use_gpu_instance_buffer_builder: plugin.use_gpu_instance_buffer_builder,
+    debug_flags: plugin.debug_flags,
     gltf_render_enabled: plugin.gltf_render_enabled,
   }
 }
@@ -132,6 +136,7 @@ fn pbr_plugin_sync_mesh_render_state(
 ) -> @app.App[@ecs.World] {
   mesh_render_plugin_with(app, MeshRenderPlugin::{
     use_gpu_instance_buffer_builder: runtime_config.use_gpu_instance_buffer_builder,
+    debug_flags: runtime_config.debug_flags,
   })
 }
 

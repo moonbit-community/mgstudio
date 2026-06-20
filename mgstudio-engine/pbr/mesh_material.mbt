@@ -21,16 +21,21 @@ const MESH_RENDER_PLUGIN_NAME : String = "mgstudio.pbr.MeshRenderPlugin"
 ///|
 pub(all) struct MeshRenderPlugin {
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @render.RenderDebugFlags
 }
 
 ///|
 pub fn MeshRenderPlugin::MeshRenderPlugin() -> MeshRenderPlugin {
-  MeshRenderPlugin::{ use_gpu_instance_buffer_builder: true }
+  MeshRenderPlugin::{
+    use_gpu_instance_buffer_builder: true,
+    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+  }
 }
 
 ///|
 pub struct MeshRenderPluginState {
   use_gpu_instance_buffer_builder : Bool
+  debug_flags : @render.RenderDebugFlags
 }
 
 ///|
@@ -39,6 +44,7 @@ pub fn MeshRenderPluginState::from_plugin(
 ) -> MeshRenderPluginState {
   MeshRenderPluginState::{
     use_gpu_instance_buffer_builder: plugin.use_gpu_instance_buffer_builder,
+    debug_flags: plugin.debug_flags,
   }
 }
 
