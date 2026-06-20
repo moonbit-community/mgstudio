@@ -18,6 +18,12 @@ import {
 }
 
 // Values
+pub fn draw_line_gizmo_plan(strip~ : Bool, list_vertex_count~ : Int, strip_vertex_count~ : Int) -> LineGizmoDrawPlan?
+
+pub fn draw_line_joint_gizmo_plan(strip_vertex_count~ : Int, joints~ : @sprite.GizmoLineJoint) -> LineGizmoDrawPlan?
+
+pub fn draw_line_joint_gizmo_vertex_count(@sprite.GizmoLineJoint) -> UInt?
+
 pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform]
 
 pub let ecs_res_key_line_gizmo_draw_functions : @ecs.ResourceKey[LineGizmoDrawFunctions]
@@ -150,6 +156,13 @@ pub struct LineGizmo3dPlugin {
 pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo3dPlugin
 
+pub(all) enum LineGizmoDrawBufferKind {
+  ListPosition
+  ListColor
+  StripPosition
+  StripColor
+} derive(Eq, @debug.Debug)
+
 pub struct LineGizmoDrawFunctions {
   draw_functions : @material.DrawFunctions
   line_gizmo_2d : @material.DrawFunctionId
@@ -168,6 +181,15 @@ pub fn LineGizmoDrawFunctions::line_joint_gizmo_3d(Self) -> @material.DrawFuncti
 pub fn LineGizmoDrawFunctions::line_strip_gizmo_2d(Self) -> @material.DrawFunctionId
 pub fn LineGizmoDrawFunctions::line_strip_gizmo_3d(Self) -> @material.DrawFunctionId
 pub impl @app.Resource for LineGizmoDrawFunctions
+
+pub struct LineGizmoDrawPlan {
+  bindings : Array[LineGizmoVertexBufferBindingPlan]
+  vertex_count : UInt
+  instance_count : UInt
+}
+pub fn LineGizmoDrawPlan::bindings(Self) -> Array[LineGizmoVertexBufferBindingPlan]
+pub fn LineGizmoDrawPlan::instance_count(Self) -> UInt
+pub fn LineGizmoDrawPlan::vertex_count(Self) -> UInt
 
 pub struct LineGizmoEntities {
   line_gizmo_renderer : @render.MainEntity
@@ -277,6 +299,17 @@ pub fn LineGizmoUniform::line_scale(Self) -> Float
 pub fn LineGizmoUniform::line_width(Self) -> Float
 pub fn LineGizmoUniform::world_from_local(Self) -> @math.Affine3
 pub impl @ecs.Component for LineGizmoUniform
+
+pub struct LineGizmoVertexBufferBindingPlan {
+  slot : UInt
+  buffer_kind : LineGizmoDrawBufferKind
+  offset_bytes : UInt64
+  size_bytes : UInt64
+}
+pub fn LineGizmoVertexBufferBindingPlan::buffer_kind(Self) -> LineGizmoDrawBufferKind
+pub fn LineGizmoVertexBufferBindingPlan::offset_bytes(Self) -> UInt64
+pub fn LineGizmoVertexBufferBindingPlan::size_bytes(Self) -> UInt64
+pub fn LineGizmoVertexBufferBindingPlan::slot(Self) -> UInt
 
 pub struct LineJointGizmo2dPipelineKey {
   msaa_samples : UInt

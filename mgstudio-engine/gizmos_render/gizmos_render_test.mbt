@@ -250,6 +250,119 @@ test "line joint gizmo pipeline plans preserve Bevy joint entry points" {
 }
 
 ///|
+test "draw line gizmo plan mirrors Bevy list and strip buffer slices" {
+  guard @gizmos_render.draw_line_gizmo_plan(
+      strip=false,
+      list_vertex_count=4,
+      strip_vertex_count=0,
+    )
+    is Some(list_plan) else {
+    abort("expected list draw plan")
+  }
+  debug_inspect(list_plan.bindings().length(), content="2")
+  debug_inspect(list_plan.vertex_count(), content="6")
+  debug_inspect(list_plan.instance_count(), content="2")
+  debug_inspect(
+    list_plan.bindings()[0].buffer_kind() is ListPosition,
+    content="true",
+  )
+  debug_inspect(list_plan.bindings()[0].offset_bytes(), content="0")
+  debug_inspect(list_plan.bindings()[0].size_bytes(), content="48")
+  debug_inspect(
+    list_plan.bindings()[1].buffer_kind() is ListColor,
+    content="true",
+  )
+  debug_inspect(list_plan.bindings()[1].size_bytes(), content="64")
+  guard @gizmos_render.draw_line_gizmo_plan(
+      strip=true,
+      list_vertex_count=0,
+      strip_vertex_count=5,
+    )
+    is Some(strip_plan) else {
+    abort("expected strip draw plan")
+  }
+  debug_inspect(strip_plan.bindings().length(), content="4")
+  debug_inspect(strip_plan.vertex_count(), content="6")
+  debug_inspect(strip_plan.instance_count(), content="4")
+  debug_inspect(strip_plan.bindings()[1].slot(), content="1")
+  debug_inspect(
+    strip_plan.bindings()[1].buffer_kind() is StripPosition,
+    content="true",
+  )
+  debug_inspect(strip_plan.bindings()[1].offset_bytes(), content="12")
+  debug_inspect(strip_plan.bindings()[1].size_bytes(), content="48")
+  debug_inspect(
+    strip_plan.bindings()[3].buffer_kind() is StripColor,
+    content="true",
+  )
+  debug_inspect(strip_plan.bindings()[3].offset_bytes(), content="16")
+  debug_inspect(strip_plan.bindings()[3].size_bytes(), content="64")
+  debug_inspect(
+    @gizmos_render.draw_line_gizmo_plan(
+      strip=true,
+      list_vertex_count=0,
+      strip_vertex_count=1,
+    )
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "draw line joint gizmo plan mirrors Bevy joint draw conditions" {
+  guard @gizmos_render.draw_line_joint_gizmo_plan(
+      strip_vertex_count=6,
+      joints=@gizmos.GizmoLineJoint::Round(8),
+    )
+    is Some(round_plan) else {
+    abort("expected round joint draw plan")
+  }
+  debug_inspect(round_plan.bindings().length(), content="4")
+  debug_inspect(round_plan.vertex_count(), content="24")
+  debug_inspect(round_plan.instance_count(), content="4")
+  debug_inspect(round_plan.bindings()[0].offset_bytes(), content="0")
+  debug_inspect(round_plan.bindings()[0].size_bytes(), content="48")
+  debug_inspect(round_plan.bindings()[1].offset_bytes(), content="12")
+  debug_inspect(round_plan.bindings()[1].size_bytes(), content="48")
+  debug_inspect(round_plan.bindings()[2].offset_bytes(), content="24")
+  debug_inspect(round_plan.bindings()[2].size_bytes(), content="48")
+  debug_inspect(
+    round_plan.bindings()[3].buffer_kind() is StripColor,
+    content="true",
+  )
+  debug_inspect(round_plan.bindings()[3].offset_bytes(), content="16")
+  debug_inspect(round_plan.bindings()[3].size_bytes(), content="64")
+  debug_inspect(
+    @gizmos_render.draw_line_joint_gizmo_vertex_count(
+      @gizmos.GizmoLineJoint::Miter,
+    ),
+    content="Some(6)",
+  )
+  debug_inspect(
+    @gizmos_render.draw_line_joint_gizmo_vertex_count(
+      @gizmos.GizmoLineJoint::Bevel,
+    ),
+    content="Some(3)",
+  )
+  debug_inspect(
+    @gizmos_render.draw_line_joint_gizmo_plan(
+      strip_vertex_count=2,
+      joints=@gizmos.GizmoLineJoint::Miter,
+    )
+    is None,
+    content="true",
+  )
+  debug_inspect(
+    @gizmos_render.draw_line_joint_gizmo_plan(
+      strip_vertex_count=6,
+      joints=@gizmos.GizmoLineJoint::None,
+    )
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
   let world = @ecs.World::new()
   let entities = @gizmos_render.ensure_line_gizmo_entities(world)
