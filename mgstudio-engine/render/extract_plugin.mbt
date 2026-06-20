@@ -174,6 +174,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
     }),
   )
+  init_pending_screenshot_entity_captures_resource(next.world())
   next = next
     .add_systems(
       @app.First,

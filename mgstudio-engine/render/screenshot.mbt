@@ -54,9 +54,21 @@ priv struct PendingScreenshotEntityCapture {
 }
 
 ///|
-let pending_screenshot_entity_captures : Ref[
-  Array[PendingScreenshotEntityCapture],
-] = Ref([])
+priv struct PendingScreenshotEntityCaptures {
+  captures : Array[PendingScreenshotEntityCapture]
+}
+
+///|
+let pending_screenshot_entity_captures_resource_key : @ecs.ResourceKey[
+  PendingScreenshotEntityCaptures,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::view::window::PendingScreenshotEntityCaptures",
+)
+
+///|
+fn PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures() -> PendingScreenshotEntityCaptures {
+  PendingScreenshotEntityCaptures::{ captures: [] }
+}
 
 ///|
 pub let screenshot_trigger_system_set : @app.SystemSet = @app.system_set(
@@ -156,6 +168,38 @@ fn screenshot_component(
 }
 
 ///|
+fn ensure_pending_screenshot_entity_captures(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[PendingScreenshotEntityCaptures] {
+  match
+    world.get_resource_mut(pending_screenshot_entity_captures_resource_key) {
+    Some(resource) => resource
+    None => {
+      world.insert_resource(
+        pending_screenshot_entity_captures_resource_key,
+        PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures(),
+      )
+      world
+      .get_resource_mut(pending_screenshot_entity_captures_resource_key)
+      .unwrap()
+    }
+  }
+}
+
+///|
+fn init_pending_screenshot_entity_captures_resource(world : @ecs.World) -> Unit {
+  if world
+    .resource(pending_screenshot_entity_captures_resource_key)
+    .is_present() {
+    return
+  }
+  world.insert_resource(
+    pending_screenshot_entity_captures_resource_key,
+    PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures(),
+  )
+}
+
+///|
 fn screenshot_warn(message : String) -> Unit {
   host_debug_string(value="[screenshot] \{message}")
 }
@@ -250,9 +294,8 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
       continue
     }
     try! (world.entity_mut(entity).insert_component(Capturing::{  }) |> ignore)
-    pending_screenshot_entity_captures.val.push(PendingScreenshotEntityCapture::{
-      capture_id,
-      entity,
+    ensure_pending_screenshot_entity_captures(world).modify(fn(state) {
+      state.captures.push(PendingScreenshotEntityCapture::{ capture_id, entity })
     })
   }
 }
@@ -260,7 +303,8 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
 ///|
 pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
   let remaining : Array[PendingScreenshotEntityCapture] = []
-  for pending_capture in pending_screenshot_entity_captures.val {
+  let pending = ensure_pending_screenshot_entity_captures(world)
+  for pending_capture in pending.peek().captures {
     let capture_id = pending_capture.capture_id
     let entity = pending_capture.entity
     guard world.is_alive(entity) else { continue }
@@ -279,7 +323,7 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
       ),
     )
   }
-  pending_screenshot_entity_captures.val = remaining
+  pending.set(PendingScreenshotEntityCaptures::{ captures: remaining })
 }
 
 ///|
