@@ -203,7 +203,7 @@ pub fn line_gizmo_2d_pipeline_plan(
 ) -> LineGizmoPipelinePlan {
   LineGizmoPipelinePlan::{
     label: "LineGizmo Pipeline 2D",
-    shader_path: "mgstudio_gizmos_render::lines.wgsl",
+    shader_path: "gizmos_render/lines.wgsl",
     fragment_entry_point: line_gizmo_fragment_entry_point(key.line_style),
     vertex_entry_point: None,
     shader_defs: [],
@@ -223,7 +223,7 @@ pub fn line_joint_gizmo_2d_pipeline_plan(
 ) -> LineGizmoPipelinePlan {
   LineGizmoPipelinePlan::{
     label: "LineJointGizmo Pipeline 2D",
-    shader_path: "mgstudio_gizmos_render::line_joints.wgsl",
+    shader_path: "gizmos_render/line_joints.wgsl",
     fragment_entry_point: "fragment",
     vertex_entry_point: Some(line_joint_gizmo_vertex_entry_point(key.joints)),
     shader_defs: [],

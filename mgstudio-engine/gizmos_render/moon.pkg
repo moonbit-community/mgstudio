@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/transform",
@@ -18,3 +19,18 @@ import {
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name line_gizmo_lines_wgsl_source",
+      "input": "lines.wgsl",
+      "output": "lines_wgsl.mbt",
+    },
+    {
+      "command": ":embed --input $input --output $output --name line_gizmo_joints_wgsl_source",
+      "input": "line_joints.wgsl",
+      "output": "line_joints_wgsl.mbt",
+    },
+  ],
+)

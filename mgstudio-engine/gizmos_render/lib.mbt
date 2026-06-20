@@ -66,6 +66,7 @@ pub fn gizmo_render_plugin_with(
   if app.contains_resource(ecs_res_key_gizmo_render_plugin_marker) {
     return app
   }
+  register_embedded_wgsl_sources()
   let next = app.insert_world_resource(ecs_res_key_gizmo_render_plugin_marker, GizmoRenderPluginMarker::{
 
   })

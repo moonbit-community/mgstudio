@@ -27,6 +27,31 @@ fn gizmos_render_f32_bits(value : Float) -> UInt {
 }
 
 ///|
+test "gizmos_render embedded wgsl sources are registered" {
+  @gizmos_render.register_embedded_wgsl_sources()
+  let lines = match
+    @shader_source.embedded_shader_source("gizmos_render/lines.wgsl") {
+    Some(source) => source
+    None => ""
+  }
+  let joints = match
+    @shader_source.embedded_shader_source("gizmos_render/line_joints.wgsl") {
+    Some(source) => source
+    None => ""
+  }
+  debug_inspect(lines != "", content="true")
+  debug_inspect(joints != "", content="true")
+  debug_inspect(
+    lines.contains("@group(1) @binding(0) var<uniform> line_gizmo"),
+    content="true",
+  )
+  debug_inspect(
+    joints.contains("@group(1) @binding(0) var<uniform> joints_gizmo"),
+    content="true",
+  )
+}
+
+///|
 test "gizmos_render boundary exposes render systems and plugin entry" {
   let app = @app.App::new(@ecs.World::new())
   let _ = @gizmos_render.gizmo_render_plugin(app)
@@ -645,7 +670,7 @@ test "line gizmo render command plan combines Bevy command tuple inputs" {
   debug_inspect(strip_instance_count.val, content="4")
   debug_inspect(
     joint_shader_path.val,
-    content="\"mgstudio_gizmos_render::line_joints.wgsl\"",
+    content="\"gizmos_render/line_joints.wgsl\"",
   )
   debug_inspect(joint_vertex_entry.val, content="\"vertex_round\"")
   debug_inspect(joint_vertex_count.val, content="12")

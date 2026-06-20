@@ -104,6 +104,8 @@ pub fn queue_line_gizmos_2d(@ecs.World) -> Int
 
 pub fn queue_line_gizmos_3d(@ecs.World) -> Int
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods
