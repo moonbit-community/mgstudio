@@ -892,6 +892,13 @@ pub fn RenderCreation::default() -> Self
 pub fn RenderCreation::manual(@renderer.RenderDevice, @renderer.RenderQueue, @renderer.RenderAdapterInfo, @renderer.RenderAdapter, @renderer.RenderInstance) -> Self
 pub fn RenderCreation::manual_resources(RenderResources) -> Self
 
+pub struct RenderDebugFlags {
+  allow_copies_from_indirect_parameters : Bool
+}
+pub fn RenderDebugFlags::RenderDebugFlags() -> Self
+pub fn RenderDebugFlags::allow_copies_from_indirect_parameters(Self) -> Bool
+pub fn RenderDebugFlags::with_allow_copies_from_indirect_parameters(Self, Bool) -> Self
+
 pub struct RenderEntity {
   entity : @core.Entity
 }
@@ -906,8 +913,17 @@ pub fn RenderGraph::base_schedule() -> @app.Schedule
 pub fn RenderGraph::schedule() -> @app.ScheduleStage
 
 pub struct RenderPlugin {
+  render_creation : RenderCreation
+  synchronous_pipeline_compilation : Bool
+  debug_flags : RenderDebugFlags
 }
 pub fn RenderPlugin::RenderPlugin() -> Self
+pub fn RenderPlugin::debug_flags(Self) -> RenderDebugFlags
+pub fn RenderPlugin::render_creation(Self) -> RenderCreation
+pub fn RenderPlugin::synchronous_pipeline_compilation(Self) -> Bool
+pub fn RenderPlugin::with_debug_flags(Self, RenderDebugFlags) -> Self
+pub fn RenderPlugin::with_render_creation(Self, RenderCreation) -> Self
+pub fn RenderPlugin::with_synchronous_pipeline_compilation(Self, Bool) -> Self
 pub impl @app.Plugin for RenderPlugin
 
 pub struct RenderResources {

@@ -27,6 +27,49 @@ test "render settings: default render creation is automatic" {
 }
 
 ///|
+test "render plugin: default stores bevy render configuration" {
+  let plugin = RenderPlugin::RenderPlugin()
+  match plugin.render_creation() {
+    Automatic(settings) =>
+      debug_inspect(
+        settings.priority == WgpuSettingsPriority::default(),
+        content="true",
+      )
+    Manual(_) => abort("default RenderPlugin should use automatic creation")
+  }
+  debug_inspect(plugin.synchronous_pipeline_compilation(), content="false")
+  debug_inspect(
+    plugin.debug_flags().allow_copies_from_indirect_parameters(),
+    content="false",
+  )
+}
+
+///|
+test "render plugin: bevy render configuration setters preserve fields" {
+  let debug_flags = RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
+    true,
+  )
+  let plugin = RenderPlugin::RenderPlugin()
+    .with_render_creation(
+      RenderCreation::automatic(
+        WgpuSettings::WgpuSettings().with_force_fallback_adapter(true),
+      ),
+    )
+    .with_synchronous_pipeline_compilation(true)
+    .with_debug_flags(debug_flags)
+  match plugin.render_creation() {
+    Automatic(settings) =>
+      debug_inspect(settings.force_fallback_adapter, content="true")
+    Manual(_) => abort("configured RenderPlugin should use automatic creation")
+  }
+  debug_inspect(plugin.synchronous_pipeline_compilation(), content="true")
+  debug_inspect(
+    plugin.debug_flags().allow_copies_from_indirect_parameters(),
+    content="true",
+  )
+}
+
+///|
 test "render settings: bevy renderer resources use distinct world keys" {
   let device_key = render_device_resource_key
   let queue_key = render_queue_resource_key
