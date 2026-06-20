@@ -515,6 +515,10 @@ pub struct ViewClusterBindings {
   cluster_offsets_and_counts : @render_resource.StorageBuffer[
     GpuClusterOffsetAndCounts,
   ]
+  mut clusterable_object_index_lists_gpu_buffer : @wgpu.Buffer?
+  mut clusterable_object_index_lists_gpu_capacity : UInt64
+  mut cluster_offsets_and_counts_gpu_buffer : @wgpu.Buffer?
+  mut cluster_offsets_and_counts_gpu_capacity : UInt64
 }
 
 ///|
@@ -561,6 +565,10 @@ pub fn ViewClusterBindings::ViewClusterBindings() -> ViewClusterBindings {
     n_offsets: 0,
     clusterable_object_index_lists: @render_resource.StorageBuffer::new(),
     cluster_offsets_and_counts: @render_resource.StorageBuffer::new(),
+    clusterable_object_index_lists_gpu_buffer: None,
+    clusterable_object_index_lists_gpu_capacity: 0UL,
+    cluster_offsets_and_counts_gpu_buffer: None,
+    cluster_offsets_and_counts_gpu_capacity: 0UL,
   }
 }
 
@@ -624,6 +632,179 @@ pub fn ViewClusterBindings::clusterable_object_index_lists_len(
   self : ViewClusterBindings,
 ) -> Int {
   self.clusterable_object_index_lists.len()
+}
+
+///|
+pub fn ViewClusterBindings::clusterable_object_index_lists_gpu_buffer(
+  self : ViewClusterBindings,
+) -> @wgpu.Buffer? {
+  self.clusterable_object_index_lists_gpu_buffer
+}
+
+///|
+pub fn ViewClusterBindings::cluster_offsets_and_counts_gpu_buffer(
+  self : ViewClusterBindings,
+) -> @wgpu.Buffer? {
+  self.cluster_offsets_and_counts_gpu_buffer
+}
+
+///|
+pub fn ViewClusterBindings::clusterable_object_index_lists_gpu_capacity(
+  self : ViewClusterBindings,
+) -> UInt64 {
+  self.clusterable_object_index_lists_gpu_capacity
+}
+
+///|
+pub fn ViewClusterBindings::cluster_offsets_and_counts_gpu_capacity(
+  self : ViewClusterBindings,
+) -> UInt64 {
+  self.cluster_offsets_and_counts_gpu_capacity
+}
+
+///|
+fn pbr_gpu_clustering_buffer_usage(raw : UInt64) -> @wgpu.BufferUsage {
+  @wgpu.BufferUsage::from_u64(raw)
+}
+
+///|
+fn pbr_gpu_clustering_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+fn pbr_gpu_clustering_reuse_or_create_buffer(
+  render_device : @renderer.RenderDevice,
+  current_buffer : @wgpu.Buffer?,
+  current_capacity : UInt64,
+  required_size : UInt64,
+  usage_bits : UInt64,
+  label : String,
+) -> (@wgpu.Buffer, UInt64) {
+  let safe_size = pbr_gpu_clustering_non_zero_u64(required_size)
+  match current_buffer {
+    Some(existing) if current_capacity >= safe_size =>
+      (existing, current_capacity)
+    Some(existing) => {
+      existing.release()
+      let next = render_device
+        .wgpu_device()
+        .create_buffer(
+          size=safe_size,
+          usage=pbr_gpu_clustering_buffer_usage(usage_bits),
+        )
+      next.set_label(label)
+      (next, safe_size)
+    }
+    None => {
+      let next = render_device
+        .wgpu_device()
+        .create_buffer(
+          size=safe_size,
+          usage=pbr_gpu_clustering_buffer_usage(usage_bits),
+        )
+      next.set_label(label)
+      (next, safe_size)
+    }
+  }
+}
+
+///|
+fn pbr_gpu_clustering_write_buffer(
+  render_device : @renderer.RenderDevice,
+  render_queue : @renderer.RenderQueue,
+  current_buffer : @wgpu.Buffer?,
+  current_capacity : UInt64,
+  bytes : Bytes,
+  label : String,
+  usage_bits? : UInt64 = @wgpu.BUFFER_USAGE_STORAGE |
+    @wgpu.BUFFER_USAGE_COPY_DST,
+) -> (@wgpu.Buffer, UInt64) {
+  let (buffer, capacity) = pbr_gpu_clustering_reuse_or_create_buffer(
+    render_device,
+    current_buffer,
+    current_capacity,
+    bytes.length().to_uint64(),
+    usage_bits,
+    label,
+  )
+  if bytes.length() > 0 {
+    render_queue.wgpu_queue().write_buffer(buffer, 0UL, bytes)
+  }
+  (buffer, capacity)
+}
+
+///|
+fn pbr_gpu_clustering_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+  out.push(((value >> 16) & 0xFFU).to_byte())
+  out.push(((value >> 24) & 0xFFU).to_byte())
+}
+
+///|
+fn pbr_gpu_clustering_u32_storage_bytes(values : Array[UInt]) -> Bytes {
+  let out : Array[Byte] = []
+  for value in values {
+    pbr_gpu_clustering_push_u32_le(out, value)
+  }
+  Bytes::from_array(out)
+}
+
+///|
+fn pbr_gpu_clustering_offsets_and_counts_storage_bytes(
+  values : Array[GpuClusterOffsetAndCounts],
+) -> Bytes {
+  let out : Array[Byte] = []
+  for value in values {
+    pbr_gpu_clustering_push_u32_le(out, value.offset)
+    pbr_gpu_clustering_push_u32_le(out, value.point_lights)
+    pbr_gpu_clustering_push_u32_le(out, value.spot_lights)
+    pbr_gpu_clustering_push_u32_le(out, value.reflection_probes)
+    pbr_gpu_clustering_push_u32_le(out, value.irradiance_volumes)
+    pbr_gpu_clustering_push_u32_le(out, value.decals)
+    pbr_gpu_clustering_push_u32_le(out, 0U)
+    pbr_gpu_clustering_push_u32_le(out, 0U)
+  }
+  Bytes::from_array(out)
+}
+
+///|
+pub fn ViewClusterBindings::write_buffers(
+  self : ViewClusterBindings,
+  render_device : @renderer.RenderDevice,
+  render_queue : @renderer.RenderQueue,
+) -> Unit {
+  let index_bytes = pbr_gpu_clustering_u32_storage_bytes(
+    self.clusterable_object_index_lists.values(),
+  )
+  let (index_buffer, index_capacity) = pbr_gpu_clustering_write_buffer(
+    render_device,
+    render_queue,
+    self.clusterable_object_index_lists_gpu_buffer,
+    self.clusterable_object_index_lists_gpu_capacity,
+    index_bytes,
+    "clusterable object index lists",
+  )
+  self.clusterable_object_index_lists_gpu_buffer = Some(index_buffer)
+  self.clusterable_object_index_lists_gpu_capacity = index_capacity
+  let offsets_bytes = pbr_gpu_clustering_offsets_and_counts_storage_bytes(
+    self.cluster_offsets_and_counts.values(),
+  )
+  let (offsets_buffer, offsets_capacity) = pbr_gpu_clustering_write_buffer(
+    render_device,
+    render_queue,
+    self.cluster_offsets_and_counts_gpu_buffer,
+    self.cluster_offsets_and_counts_gpu_capacity,
+    offsets_bytes,
+    "cluster offsets and counts",
+  )
+  self.cluster_offsets_and_counts_gpu_buffer = Some(offsets_buffer)
+  self.cluster_offsets_and_counts_gpu_capacity = offsets_capacity
 }
 
 ///|

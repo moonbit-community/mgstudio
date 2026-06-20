@@ -647,6 +647,22 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   debug_inspect(bindings.cluster_offsets_len(), content="24")
   debug_inspect(bindings.n_indices(), content="16")
   debug_inspect(bindings.clusterable_object_index_lists_len(), content="16")
+  debug_inspect(
+    bindings.cluster_offsets_and_counts_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    bindings.clusterable_object_index_lists_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    bindings.cluster_offsets_and_counts_gpu_capacity() > 0UL,
+    content="true",
+  )
+  debug_inspect(
+    bindings.clusterable_object_index_lists_gpu_capacity() > 0UL,
+    content="true",
+  )
   debug_inspect(buffers.z_slices_len(), content="8")
   debug_inspect(buffers.scratchpad_offsets_and_counts_len(), content="24")
   debug_inspect(metadata.clustered_light_count(), content="2")
@@ -661,6 +677,35 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   debug_inspect(readback_after.len(), content="1")
   debug_inspect(
     readback_after.contains_main_entity(@render.MainEntity::new(main_view)),
+    content="true",
+  )
+
+  upload_view_gpu_clustering_buffers(world)
+
+  let uploaded_buffers = match
+    (try! world.get_by_key(view, ViewGpuClusteringBuffers::component())) {
+    Some(value) => value
+    None => abort("missing uploaded ViewGpuClusteringBuffers")
+  }
+  debug_inspect(
+    uploaded_buffers.z_slices_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    uploaded_buffers.cluster_metadata_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    uploaded_buffers.scratchpad_offsets_and_counts_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(uploaded_buffers.z_slices_gpu_capacity() > 0UL, content="true")
+  debug_inspect(
+    uploaded_buffers.cluster_metadata_gpu_capacity() > 0UL,
+    content="true",
+  )
+  debug_inspect(
+    uploaded_buffers.scratchpad_offsets_and_counts_gpu_capacity() > 0UL,
     content="true",
   )
 

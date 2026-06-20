@@ -25,6 +25,7 @@ import {
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
@@ -826,6 +827,8 @@ pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @materia
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
+pub fn upload_view_gpu_clustering_buffers(@ecs.World) -> Unit
+
 pub fn wireframe_3d_phase_render_command_plans(Wireframe3dViewPhase, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Array[Wireframe3dRenderCommandPlan] raise WireframeRenderCommandError
 
 pub fn wireframe_3d_render_command_decision(Wireframe3d, Wireframe3dDrawFunctions, RenderWireframeInstances, RenderWireframeAssets, RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Wireframe3dRenderCommandDecision raise WireframeRenderCommandError
@@ -1030,8 +1033,8 @@ pub struct ClusterMetadata {
   reflection_probe_count : UInt
   irradiance_volume_count : UInt
   decal_count : UInt
-  index_list_capacity : UInt
   z_slice_list_capacity : UInt
+  index_list_capacity : UInt
   farthest_z : UInt
 } derive(Eq, @debug.Debug)
 pub fn ClusterMetadata::ClusterMetadata() -> Self
@@ -2296,15 +2299,24 @@ pub struct ViewClusterBindings {
   mut n_offsets : Int
   clusterable_object_index_lists : @render_resource.StorageBuffer[UInt]
   cluster_offsets_and_counts : @render_resource.StorageBuffer[GpuClusterOffsetAndCounts]
+  mut clusterable_object_index_lists_gpu_buffer : @wgpu_mbt.Buffer?
+  mut clusterable_object_index_lists_gpu_capacity : UInt64
+  mut cluster_offsets_and_counts_gpu_buffer : @wgpu_mbt.Buffer?
+  mut cluster_offsets_and_counts_gpu_capacity : UInt64
 }
 pub fn ViewClusterBindings::ViewClusterBindings() -> Self
 pub fn ViewClusterBindings::clear(Self) -> Unit
+pub fn ViewClusterBindings::cluster_offsets_and_counts_gpu_buffer(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewClusterBindings::cluster_offsets_and_counts_gpu_capacity(Self) -> UInt64
 pub fn ViewClusterBindings::cluster_offsets_len(Self) -> Int
+pub fn ViewClusterBindings::clusterable_object_index_lists_gpu_buffer(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewClusterBindings::clusterable_object_index_lists_gpu_capacity(Self) -> UInt64
 pub fn ViewClusterBindings::clusterable_object_index_lists_len(Self) -> Int
 pub fn ViewClusterBindings::n_indices(Self) -> Int
 pub fn ViewClusterBindings::n_offsets(Self) -> Int
 pub fn ViewClusterBindings::reserve_clusters(Self, Int) -> Unit
 pub fn ViewClusterBindings::reserve_indices(Self, Int) -> Unit
+pub fn ViewClusterBindings::write_buffers(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
 pub impl @ecs.Component for ViewClusterBindings
 
 pub struct ViewClusterBindings3d {
@@ -2360,10 +2372,22 @@ pub struct ViewGpuClusteringBuffers {
   z_slices_buffer : @render_resource.StorageBuffer[ClusterableObjectZSlice]
   scratchpad_offsets_and_counts_buffer : @render_resource.StorageBuffer[GpuClusterOffsetAndCounts]
   cluster_metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata]
+  mut z_slices_gpu_buffer : @wgpu_mbt.Buffer?
+  mut z_slices_gpu_capacity : UInt64
+  mut scratchpad_offsets_and_counts_gpu_buffer : @wgpu_mbt.Buffer?
+  mut scratchpad_offsets_and_counts_gpu_capacity : UInt64
+  mut cluster_metadata_gpu_buffer : @wgpu_mbt.Buffer?
+  mut cluster_metadata_gpu_capacity : UInt64
 }
 pub fn ViewGpuClusteringBuffers::ViewGpuClusteringBuffers() -> Self
+pub fn ViewGpuClusteringBuffers::cluster_metadata_gpu_buffer(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewGpuClusteringBuffers::cluster_metadata_gpu_capacity(Self) -> UInt64
 pub fn ViewGpuClusteringBuffers::metadata(Self) -> ClusterMetadata
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_gpu_buffer(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_gpu_capacity(Self) -> UInt64
 pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_len(Self) -> Int
+pub fn ViewGpuClusteringBuffers::z_slices_gpu_buffer(Self) -> @wgpu_mbt.Buffer?
+pub fn ViewGpuClusteringBuffers::z_slices_gpu_capacity(Self) -> UInt64
 pub fn ViewGpuClusteringBuffers::z_slices_len(Self) -> Int
 pub impl @ecs.Component for ViewGpuClusteringBuffers
 

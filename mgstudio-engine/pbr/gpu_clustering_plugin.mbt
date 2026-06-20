@@ -151,8 +151,8 @@ pub struct ClusterMetadata {
   reflection_probe_count : UInt
   irradiance_volume_count : UInt
   decal_count : UInt
-  index_list_capacity : UInt
   z_slice_list_capacity : UInt
+  index_list_capacity : UInt
   farthest_z : UInt
 } derive(Eq, Debug)
 
@@ -168,6 +168,12 @@ pub struct ViewGpuClusteringBuffers {
     GpuClusterOffsetAndCounts,
   ]
   cluster_metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata]
+  mut z_slices_gpu_buffer : @wgpu.Buffer?
+  mut z_slices_gpu_capacity : UInt64
+  mut scratchpad_offsets_and_counts_gpu_buffer : @wgpu.Buffer?
+  mut scratchpad_offsets_and_counts_gpu_capacity : UInt64
+  mut cluster_metadata_gpu_buffer : @wgpu.Buffer?
+  mut cluster_metadata_gpu_capacity : UInt64
 }
 
 ///|
@@ -859,8 +865,8 @@ pub fn ClusterMetadata::ClusterMetadata() -> ClusterMetadata {
     reflection_probe_count: 0U,
     irradiance_volume_count: 0U,
     decal_count: 0U,
-    index_list_capacity: 0U,
     z_slice_list_capacity: 0U,
+    index_list_capacity: 0U,
     farthest_z: 0U,
   }
 }
@@ -882,8 +888,8 @@ pub fn ClusterMetadata::new(
     reflection_probe_count,
     irradiance_volume_count,
     decal_count,
-    index_list_capacity,
     z_slice_list_capacity,
+    index_list_capacity,
     farthest_z: 0U,
   }
 }
@@ -1010,6 +1016,12 @@ pub fn ViewGpuClusteringBuffers::ViewGpuClusteringBuffers() -> ViewGpuClustering
     z_slices_buffer: @render_resource.StorageBuffer::new(),
     scratchpad_offsets_and_counts_buffer: @render_resource.StorageBuffer::new(),
     cluster_metadata_buffer: metadata_buffer,
+    z_slices_gpu_buffer: None,
+    z_slices_gpu_capacity: 0UL,
+    scratchpad_offsets_and_counts_gpu_buffer: None,
+    scratchpad_offsets_and_counts_gpu_capacity: 0UL,
+    cluster_metadata_gpu_buffer: None,
+    cluster_metadata_gpu_capacity: 0UL,
   }
 }
 
@@ -1071,6 +1083,144 @@ fn ViewGpuClusteringBuffers::reserve_scratchpad_offsets_and_counts(
       GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
     )
   }
+}
+
+///|
+fn ViewGpuClusteringBuffers::ensure_nonempty_scratchpad_offsets_and_counts(
+  self : ViewGpuClusteringBuffers,
+) -> Unit {
+  if self.scratchpad_offsets_and_counts_buffer.len() == 0 {
+    self.scratchpad_offsets_and_counts_buffer.push(
+      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
+    )
+  }
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::z_slices_gpu_buffer(
+  self : ViewGpuClusteringBuffers,
+) -> @wgpu.Buffer? {
+  self.z_slices_gpu_buffer
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_gpu_buffer(
+  self : ViewGpuClusteringBuffers,
+) -> @wgpu.Buffer? {
+  self.scratchpad_offsets_and_counts_gpu_buffer
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::cluster_metadata_gpu_buffer(
+  self : ViewGpuClusteringBuffers,
+) -> @wgpu.Buffer? {
+  self.cluster_metadata_gpu_buffer
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::z_slices_gpu_capacity(
+  self : ViewGpuClusteringBuffers,
+) -> UInt64 {
+  self.z_slices_gpu_capacity
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::scratchpad_offsets_and_counts_gpu_capacity(
+  self : ViewGpuClusteringBuffers,
+) -> UInt64 {
+  self.scratchpad_offsets_and_counts_gpu_capacity
+}
+
+///|
+pub fn ViewGpuClusteringBuffers::cluster_metadata_gpu_capacity(
+  self : ViewGpuClusteringBuffers,
+) -> UInt64 {
+  self.cluster_metadata_gpu_capacity
+}
+
+///|
+fn gpu_clustering_cluster_metadata_buffer_bytes(
+  buffer : @render_resource.StorageBuffer[ClusterMetadata],
+) -> Bytes {
+  let out : Array[Byte] = []
+  for metadata in buffer.values() {
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      metadata.indirect_draw_params.index_count,
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      metadata.indirect_draw_params.instance_count,
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      metadata.indirect_draw_params.first_index,
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      metadata.indirect_draw_params.base_vertex,
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      metadata.indirect_draw_params.first_instance,
+    )
+    pbr_gpu_clustering_push_u32_le(out, metadata.clustered_light_count)
+    pbr_gpu_clustering_push_u32_le(out, metadata.reflection_probe_count)
+    pbr_gpu_clustering_push_u32_le(out, metadata.irradiance_volume_count)
+    pbr_gpu_clustering_push_u32_le(out, metadata.decal_count)
+    pbr_gpu_clustering_push_u32_le(out, metadata.z_slice_list_capacity)
+    pbr_gpu_clustering_push_u32_le(out, metadata.index_list_capacity)
+    pbr_gpu_clustering_push_u32_le(out, metadata.farthest_z)
+  }
+  Bytes::from_array(out)
+}
+
+///|
+fn ViewGpuClusteringBuffers::write_buffers(
+  self : ViewGpuClusteringBuffers,
+  render_device : @renderer.RenderDevice,
+  render_queue : @renderer.RenderQueue,
+) -> Unit {
+  let z_slices_required_size = (self.z_slices_buffer.len() * 12).to_uint64()
+  let (z_slices_buffer, z_slices_capacity) = pbr_gpu_clustering_reuse_or_create_buffer(
+    render_device,
+    self.z_slices_gpu_buffer,
+    self.z_slices_gpu_capacity,
+    z_slices_required_size,
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+    "clusterable object Z slices",
+  )
+  self.z_slices_gpu_buffer = Some(z_slices_buffer)
+  self.z_slices_gpu_capacity = z_slices_capacity
+  let metadata_bytes = gpu_clustering_cluster_metadata_buffer_bytes(
+    self.cluster_metadata_buffer,
+  )
+  let (metadata_buffer, metadata_capacity) = pbr_gpu_clustering_write_buffer(
+    render_device,
+    render_queue,
+    self.cluster_metadata_gpu_buffer,
+    self.cluster_metadata_gpu_capacity,
+    metadata_bytes,
+    "clustering Z slicing metadata buffer",
+    usage_bits=@wgpu.BUFFER_USAGE_STORAGE |
+      @wgpu.BUFFER_USAGE_COPY_DST |
+      @wgpu.BUFFER_USAGE_COPY_SRC |
+      @wgpu.BUFFER_USAGE_INDIRECT,
+  )
+  self.cluster_metadata_gpu_buffer = Some(metadata_buffer)
+  self.cluster_metadata_gpu_capacity = metadata_capacity
+  let scratchpad_required_size = (self.scratchpad_offsets_and_counts_buffer.len() *
+  32).to_uint64()
+  let (scratchpad_buffer, scratchpad_capacity) = pbr_gpu_clustering_reuse_or_create_buffer(
+    render_device,
+    self.scratchpad_offsets_and_counts_gpu_buffer,
+    self.scratchpad_offsets_and_counts_gpu_capacity,
+    scratchpad_required_size,
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+    "clustering scratchpad offsets and counts",
+  )
+  self.scratchpad_offsets_and_counts_gpu_buffer = Some(scratchpad_buffer)
+  self.scratchpad_offsets_and_counts_gpu_capacity = scratchpad_capacity
 }
 
 ///|
@@ -1288,10 +1438,10 @@ fn gpu_clustering_retain_live_readback_views(
 
 ///|
 pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
-  let _render_device = gpu_clustering_resource_or_abort(
+  let render_device = gpu_clustering_resource_or_abort(
     world, @render.render_device_resource_key, "RenderDevice",
   )
-  let _render_queue = gpu_clustering_resource_or_abort(
+  let render_queue = gpu_clustering_resource_or_abort(
     world, @render.render_queue_resource_key, "RenderQueue",
   )
   let global_cluster_settings = gpu_clustering_resource_or_abort(
@@ -1391,6 +1541,7 @@ pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
     view_clusters_bindings.reserve_indices(
       view_clustering_buffer_size_data.max_index_list_capacity(),
     )
+    view_clusters_bindings.write_buffers(render_device, render_queue)
     view_gpu_clustering_buffers.reserve_scratchpad_offsets_and_counts(
       cluster_count,
     )
@@ -1414,6 +1565,23 @@ pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
   gpu_clustering_retain_live_readback_views(
     render_view_clustering_index_list_sizes, live_view_main_entities,
   )
+}
+
+///|
+pub fn upload_view_gpu_clustering_buffers(world : @ecs.World) -> Unit {
+  let render_device = gpu_clustering_resource_or_abort(
+    world, @render.render_device_resource_key, "RenderDevice",
+  )
+  let render_queue = gpu_clustering_resource_or_abort(
+    world, @render.render_queue_resource_key, "RenderQueue",
+  )
+  world.for_each_component(ViewGpuClusteringBuffers::component(), fn(
+    _view_entity,
+    view_gpu_clustering_buffers,
+  ) {
+    view_gpu_clustering_buffers.ensure_nonempty_scratchpad_offsets_and_counts()
+    view_gpu_clustering_buffers.write_buffers(render_device, render_queue)
+  })
 }
 
 ///|
@@ -1666,6 +1834,12 @@ fn gpu_clustering_configure_render_app_finish(
   .add_systems(
     @render.render_schedule_stage(),
     @app.system(prepare_clusters_for_gpu_clustering)
+    .in_set(@render.render_system_set_prepare)
+    .run_if(gpu_clustering_is_enabled),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(upload_view_gpu_clustering_buffers)
     .in_set(@render.render_system_set_prepare)
     .run_if(gpu_clustering_is_enabled),
   )
