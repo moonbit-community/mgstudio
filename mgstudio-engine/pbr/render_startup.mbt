@@ -118,10 +118,17 @@ fn configure_pbr_render_extract_systems(
   sub_app
   .world()
   .insert_resource(ecs_key_pbr_render_extract_systems_installed, marker)
-  sub_app.add_systems(
+  sub_app
+  .add_systems(
     @render.render_schedule_stage(),
     @app.system(@pbr_render.extract_ambient_light_resource)
     .named("mgstudio_pbr::extract_ambient_light_resource")
+    .in_set(@render.render_system_set_extract_commands),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_shadow_filtering_method)
+    .named("mgstudio_pbr::extract_shadow_filtering_method")
     .in_set(@render.render_system_set_extract_commands),
   )
 }
