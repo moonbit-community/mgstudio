@@ -430,6 +430,9 @@ pub let ecs_key_wireframe_entities_needing_specialization : @ecs.ResourceKey[
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight] = @light.ecs_key_global_ambient_light
 
 ///|
+pub let ecs_key_ambient_light : @ecs.ComponentKey[AmbientLight] = @light.ecs_key_ambient_light
+
+///|
 pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap] = @light.ecs_key_point_light_shadow_map
 
 ///|

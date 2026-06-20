@@ -115,3 +115,18 @@ test "light plugin: light probe required components match bevy probe requirement
     content="true",
   )
 }
+
+///|
+test "light plugin: ambient light requires camera component" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let entity = world.spawn()
+  try! world.set(entity, @light.AmbientLight::AmbientLight())
+  debug_inspect(
+    try! (world.get_by_key(entity, @camera_camera.ecs_key_camera) is Some(_)),
+    content="true",
+  )
+}

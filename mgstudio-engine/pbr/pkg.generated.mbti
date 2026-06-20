@@ -181,6 +181,8 @@ pub fn draw_wireframe_mesh_pulled_direct_range(Wireframe3d, RenderMeshInstances,
 
 pub fn draw_wireframe_mesh_pulled_indirect_plan(Wireframe3d) -> DrawWireframeMeshPulledIndirectPlan?
 
+pub let ecs_key_ambient_light : @ecs.ComponentKey[@light.AmbientLight]
+
 pub let ecs_key_area_light_luts : @ecs.ResourceKey[AreaLightLuts]
 
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
@@ -2436,6 +2438,8 @@ pub fn WireframeWidePipelineCacheKey::new(@material.ErasedMeshPipelineKey, @Milk
 
 // Type aliases
 pub using @material {type AlphaMode3d}
+
+pub using @light {type AmbientLight}
 
 pub using @light {type Atmosphere}
 

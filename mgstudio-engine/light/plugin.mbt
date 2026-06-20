@@ -33,6 +33,11 @@ fn register_light_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
+    ecs_key_ambient_light,
+    @camera_camera.ecs_key_camera,
+    fn() { @camera_camera.Camera::Camera() },
+  )
+  world.register_required_components_with(
     ecs_key_light_probe,
     @transform.ecs_key_transform,
     fn() { @transform.Transform::identity() },

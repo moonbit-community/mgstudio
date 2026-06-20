@@ -198,6 +198,9 @@ pub type ParallaxCorrection = @light.ParallaxCorrection
 pub type IrradianceVolume = @light.IrradianceVolume
 
 ///|
+pub type AmbientLight = @light.AmbientLight
+
+///|
 pub type GlobalAmbientLight = @light.GlobalAmbientLight
 
 ///|

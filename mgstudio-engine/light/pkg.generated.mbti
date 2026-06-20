@@ -29,6 +29,8 @@ pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @e
 
 pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
 
+pub let ecs_key_ambient_light : @ecs.ComponentKey[AmbientLight]
+
 pub let ecs_key_ambient_light_resource : @ecs.ResourceKey[GlobalAmbientLight]
 
 pub let ecs_key_atmosphere : @ecs.ComponentKey[Atmosphere]
@@ -130,6 +132,16 @@ pub fn validate_directional_light_shadow_map_size(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
+pub struct AmbientLight {
+  color : @color.Color
+  brightness : Float
+  affects_lightmapped_meshes : Bool
+} derive(ToJson, @json.FromJson)
+pub fn AmbientLight::AmbientLight() -> Self
+pub fn AmbientLight::new(@color.Color, Float) -> Self
+pub fn AmbientLight::with_affects_lightmapped_meshes(Self, Bool) -> Self
+pub impl @ecs.Component for AmbientLight
+
 #alias(AtmosphereComponent)
 pub struct Atmosphere {
   bottom_radius : Float

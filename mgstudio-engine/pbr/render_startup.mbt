@@ -131,6 +131,12 @@ fn configure_pbr_render_extract_systems(
     .named("mgstudio_pbr::extract_shadow_filtering_method")
     .in_set(@render.render_system_set_extract_commands),
   )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_ambient_light)
+    .named("mgstudio_pbr::extract_ambient_light")
+    .in_set(@render.render_system_set_extract_commands),
+  )
 }
 
 ///|

@@ -118,6 +118,11 @@ test "directional and spot support explicit shadow map toggles" {
 
 ///|
 test "global ambient light supports affects_lightmapped_meshes toggle" {
+  let camera_ambient = @light.AmbientLight::AmbientLight().with_affects_lightmapped_meshes(
+    false,
+  )
+  debug_inspect(camera_ambient.brightness, content="80")
+  debug_inspect(camera_ambient.affects_lightmapped_meshes, content="false")
   let ambient = @light.GlobalAmbientLight::GlobalAmbientLight().with_affects_lightmapped_meshes(
     false,
   )

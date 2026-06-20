@@ -1673,6 +1673,38 @@ pub fn ClusteredDecal::emissive_texture_id(self : ClusteredDecal) -> Int? {
 }
 
 ///|
+pub struct AmbientLight {
+  color : @color.Color
+  brightness : Float
+  affects_lightmapped_meshes : Bool
+} derive(ToJson, FromJson)
+
+///|
+pub fn AmbientLight::AmbientLight() -> AmbientLight {
+  AmbientLight::{
+    color: @color.Color::white(),
+    brightness: 80.0F,
+    affects_lightmapped_meshes: true,
+  }
+}
+
+///|
+pub fn AmbientLight::new(
+  color : @color.Color,
+  brightness : Float,
+) -> AmbientLight {
+  AmbientLight::{ color, brightness, affects_lightmapped_meshes: true }
+}
+
+///|
+pub fn AmbientLight::with_affects_lightmapped_meshes(
+  self : AmbientLight,
+  affects_lightmapped_meshes : Bool,
+) -> AmbientLight {
+  AmbientLight::{ ..self, affects_lightmapped_meshes, }
+}
+
+///|
 pub struct GlobalAmbientLight {
   color : @color.Color
   brightness : Float
@@ -1732,6 +1764,11 @@ pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @ecs.r
 ///|
 pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk] = @ecs.register_component(
   debug_name="render3d.sun_disk",
+)
+
+///|
+pub let ecs_key_ambient_light : @ecs.ComponentKey[AmbientLight] = @ecs.register_component(
+  debug_name="render3d.ambient_light",
 )
 
 ///|
@@ -1831,6 +1868,11 @@ pub impl @ecs.Component for DirectionalLight with fn component() {
 ///|
 pub impl @ecs.Component for SunDisk with fn component() {
   ecs_key_sun_disk
+}
+
+///|
+pub impl @ecs.Component for AmbientLight with fn component() {
+  ecs_key_ambient_light
 }
 
 ///|

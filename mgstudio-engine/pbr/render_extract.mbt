@@ -66,3 +66,54 @@ fn extract_shadow_filtering_method(render_world : @ecs.World) -> Unit {
     )
   }
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::extract_ambient_light`.
+fn insert_extracted_ambient_light(
+  render_world : @ecs.World,
+  component_column : @ecs.ComponentColumn[AmbientLight]?,
+  render_entity : @core.Entity,
+  ambient_light : AmbientLight,
+) -> Unit {
+  match component_column {
+    Some(column) =>
+      if column.set_tick_only(render_entity, ambient_light) {
+        return
+      }
+    None => ()
+  }
+  render_world.set_by_key(render_entity, ecs_key_ambient_light, ambient_light) catch {
+    _ =>
+      abort(
+        "extract_ambient_light: failed to write extracted component to render world",
+      )
+  }
+}
+
+///|
+fn extract_ambient_light(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  ignore(
+    render_world
+    .components_registrator()
+    .register_component_by_key(ecs_key_ambient_light),
+  )
+  let values : Array[(@core.Entity, AmbientLight)] = []
+  let query : @ecs.Query[
+    (@ecs.Read[@render.RenderEntity], @ecs.Read[AmbientLight]),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! query.view(fn(_entity, data) {
+    let (render_entity, ambient_light) = data
+    values.push((render_entity.value().id(), ambient_light.value()))
+  })
+  let component_column = render_world.component_column(ecs_key_ambient_light)
+  for value in values {
+    insert_extracted_ambient_light(
+      render_world,
+      component_column,
+      value.0,
+      value.1,
+    )
+  }
+}

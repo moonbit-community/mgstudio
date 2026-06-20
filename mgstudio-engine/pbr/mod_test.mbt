@@ -528,6 +528,65 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
 }
 
 ///|
+test "render3d: pbr plugin extracts ambient light through render schedule" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @render.ecs_key_sync_to_render_world,
+    @render.SyncToRenderWorld::SyncToRenderWorld(),
+  )
+  try! world.set_by_key(
+    entity,
+    ecs_key_ambient_light,
+    AmbientLight::new(@color.Color::new(0.25F, 0.5F, 0.75F, 1.0F), 12.0F).with_affects_lightmapped_meshes(
+      false,
+    ),
+  )
+
+  app = app.update()
+  let render_entity = match
+    (try! app.world().get_by_key(entity, @render.ecs_key_render_entity)) {
+    Some(value) => value.id()
+    None => abort("missing RenderEntity after sync")
+  }
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let extracted = match
+    (try! render_world.get_by_key(render_entity, ecs_key_ambient_light)) {
+    Some(value) => value
+    None => abort("missing extracted AmbientLight")
+  }
+  debug_inspect(extracted.brightness, content="12")
+  debug_inspect(extracted.affects_lightmapped_meshes, content="false")
+
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    ecs_key_ambient_light,
+    AmbientLight::new(@color.Color::white(), 32.0F),
+  )
+  app = app.update()
+  let updated = match
+    (try! app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_by_key(render_entity, ecs_key_ambient_light)) {
+    Some(value) => value
+    None => abort("missing updated AmbientLight")
+  }
+  debug_inspect(updated.brightness, content="32")
+  debug_inspect(updated.affects_lightmapped_meshes, content="true")
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
