@@ -435,6 +435,9 @@ fn mesh3d_add_view_bind_group_layout_entry(
   atmosphere_transmittance_view : @wgpu.TextureView?,
   atmosphere_transmittance_sampler : @wgpu.Sampler?,
   atmosphere_buffer : @wgpu.Buffer?,
+  pbr_blue_noise_texture : GpuTextureInfo?,
+  pbr_area_light_luts_texture : GpuTextureInfo?,
+  pbr_dfg_lut_texture : GpuTextureInfo?,
 ) -> Bool raise GpuBackendError {
   if entry.binding() < 0 {
     return false
@@ -584,6 +587,63 @@ fn mesh3d_add_view_bind_group_layout_entry(
           )
         None => fatal("wgpu: missing atmosphere storage buffer")
       }
+    34 =>
+      match pbr_blue_noise_texture {
+        Some(texture) =>
+          match texture.sample_view {
+            Some(view) =>
+              mesh3d_add_texture_view_for_layout_entry(
+                builder, binding, view, entry,
+              )
+            None => fatal("wgpu: missing PBR blue noise texture array view")
+          }
+        None => fatal("wgpu: missing PBR blue noise texture")
+      }
+    35 =>
+      match pbr_area_light_luts_texture {
+        Some(texture) =>
+          match texture.sample_view {
+            Some(view) =>
+              mesh3d_add_texture_view_for_layout_entry(
+                builder, binding, view, entry,
+              )
+            None => fatal("wgpu: missing PBR area light LUT texture array view")
+          }
+        None => fatal("wgpu: missing PBR area light LUT texture")
+      }
+    36 =>
+      match pbr_area_light_luts_texture {
+        Some(texture) =>
+          mesh3d_add_sampler_for_layout_entry(
+            builder,
+            binding,
+            texture.sampler,
+            entry,
+          )
+        None => fatal("wgpu: missing PBR area light LUT sampler")
+      }
+    37 =>
+      match pbr_dfg_lut_texture {
+        Some(texture) =>
+          mesh3d_add_texture_view_for_layout_entry(
+            builder,
+            binding,
+            texture.view,
+            entry,
+          )
+        None => fatal("wgpu: missing PBR DFG LUT texture")
+      }
+    38 =>
+      match pbr_dfg_lut_texture {
+        Some(texture) =>
+          mesh3d_add_sampler_for_layout_entry(
+            builder,
+            binding,
+            texture.sampler,
+            entry,
+          )
+        None => fatal("wgpu: missing PBR DFG LUT sampler")
+      }
     _ => false
   }
 }
@@ -618,6 +678,9 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   atmosphere_transmittance_view : @wgpu.TextureView?,
   atmosphere_transmittance_sampler : @wgpu.Sampler?,
   atmosphere_buffer : @wgpu.Buffer?,
+  pbr_blue_noise_texture : GpuTextureInfo?,
+  pbr_area_light_luts_texture : GpuTextureInfo?,
+  pbr_dfg_lut_texture : GpuTextureInfo?,
   error_message : String,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let entries = descriptor.entries()
@@ -632,7 +695,8 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
         normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, ssao_view,
         transmission_source_texture, dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view,
-        atmosphere_transmittance_sampler, atmosphere_buffer,
+        atmosphere_transmittance_sampler, atmosphere_buffer, pbr_blue_noise_texture,
+        pbr_area_light_luts_texture, pbr_dfg_lut_texture,
       ) {
       builder.free()
       fatal(
@@ -748,6 +812,17 @@ fn mesh3d_prepass_texture_view_for_id(
     Some(texture) => Some(texture.view)
     None => None
   }
+}
+
+///|
+fn mesh3d_texture_for_optional_id(
+  backend : GpuBackend,
+  texture_id : Int,
+) -> GpuTextureInfo? {
+  if texture_id < 0 {
+    return None
+  }
+  find_texture(backend, texture_id)
 }
 
 ///|
@@ -890,6 +965,9 @@ fn mesh3d_view_bg_cache_get_or_create(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  pbr_blue_noise_texture_id? : Int = -1,
+  pbr_area_light_luts_texture_id? : Int = -1,
+  pbr_dfg_lut_texture_id? : Int = -1,
 ) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
   let dt_lut_texture = tonemapping_selected_lut_texture(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
@@ -913,6 +991,15 @@ fn mesh3d_view_bg_cache_get_or_create(
   let (irradiance_volume_texture_ids, irradiance_volume_texture_ids_signature) = mesh3d_pass_irradiance_volume_texture_ids(
     backend, fallback_irradiance_volume_texture,
   )
+  let pbr_blue_noise_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_blue_noise_texture_id,
+  )
+  let pbr_area_light_luts_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_area_light_luts_texture_id,
+  )
+  let pbr_dfg_lut_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_dfg_lut_texture_id,
+  )
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.tonemap_in_shader == tonemap_in_shader &&
@@ -926,6 +1013,9 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.irradiance_volume_texture_ids_signature ==
       irradiance_volume_texture_ids_signature &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
+      entry.pbr_blue_noise_texture_id == pbr_blue_noise_texture_id &&
+      entry.pbr_area_light_luts_texture_id == pbr_area_light_luts_texture_id &&
+      entry.pbr_dfg_lut_texture_id == pbr_dfg_lut_texture_id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
       entry.clustered_decals_revision == clustered_decals_revision {
@@ -1072,6 +1162,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     atmosphere_transmittance_view,
     atmosphere_transmittance_sampler,
     atmosphere_buffer,
+    pbr_blue_noise_texture,
+    pbr_area_light_luts_texture,
+    pbr_dfg_lut_texture,
     "wgpu: failed to build mesh3d view bind group",
   )
   let binding_arrays_bind_group = mesh3d_build_binding_arrays_bind_group_from_descriptor(
@@ -1099,6 +1192,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_texture_ids_signature,
     irradiance_volume_texture_ids_signature,
     tonemapping_lut_texture_id: dt_lut_texture.id,
+    pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
     clustered_decals_revision,
@@ -1128,6 +1224,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  pbr_blue_noise_texture_id? : Int = -1,
+  pbr_area_light_luts_texture_id? : Int = -1,
+  pbr_dfg_lut_texture_id? : Int = -1,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(),
 ) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
   let default_view_layout_key = if default_view_layout_key.bits() == 0U &&
@@ -1159,6 +1258,15 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let (irradiance_volume_texture_ids, irradiance_volume_texture_ids_signature) = mesh3d_pass_irradiance_volume_texture_ids(
     backend, fallback_irradiance_volume_texture,
   )
+  let pbr_blue_noise_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_blue_noise_texture_id,
+  )
+  let pbr_area_light_luts_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_area_light_luts_texture_id,
+  )
+  let pbr_dfg_lut_texture = mesh3d_texture_for_optional_id(
+    backend, pbr_dfg_lut_texture_id,
+  )
   for entry in backend.mesh3d_frame_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.view_layout_key_bits == view_layout_key_bits &&
@@ -1181,6 +1289,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
       entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
+      entry.pbr_blue_noise_texture_id == pbr_blue_noise_texture_id &&
+      entry.pbr_area_light_luts_texture_id == pbr_area_light_luts_texture_id &&
+      entry.pbr_dfg_lut_texture_id == pbr_dfg_lut_texture_id &&
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
       entry.clustered_decals_revision == clustered_decals_revision {
@@ -1334,6 +1445,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     atmosphere_transmittance_view,
     atmosphere_transmittance_sampler,
     atmosphere_buffer,
+    pbr_blue_noise_texture,
+    pbr_area_light_luts_texture,
+    pbr_dfg_lut_texture,
     "wgpu: failed to build mesh3d frame view bind group",
   )
   let binding_arrays_bind_group = mesh3d_build_binding_arrays_bind_group_from_descriptor(
@@ -1372,6 +1486,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
+    pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id,
     atmosphere_resource_revision: atmosphere_revision,
     ssao_resource_revision: ssao_revision,
     clustered_decals_revision,

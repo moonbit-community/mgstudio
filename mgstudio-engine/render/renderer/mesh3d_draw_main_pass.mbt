@@ -528,6 +528,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     ps.tonemapping_agx_lut_texture_id,
     ps.tonemapping_tony_lut_texture_id,
     ps.tonemapping_blender_lut_texture_id,
+    pbr_blue_noise_texture_id=ps.pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id=ps.pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id=ps.pbr_dfg_lut_texture_id,
   )
   let material_bg = if material_descriptor is Some(_) &&
     mesh3d_descriptor_material_layout(material_descriptor) is None {

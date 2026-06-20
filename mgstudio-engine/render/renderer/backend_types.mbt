@@ -168,6 +168,9 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_texture_ids_signature : String
   irradiance_volume_texture_ids_signature : String
   tonemapping_lut_texture_id : Int
+  pbr_blue_noise_texture_id : Int
+  pbr_area_light_luts_texture_id : Int
+  pbr_dfg_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
   clustered_decals_revision : Int
@@ -207,6 +210,9 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
+  pbr_blue_noise_texture_id : Int
+  pbr_area_light_luts_texture_id : Int
+  pbr_dfg_lut_texture_id : Int
   atmosphere_resource_revision : Int
   ssao_resource_revision : Int
   clustered_decals_revision : Int

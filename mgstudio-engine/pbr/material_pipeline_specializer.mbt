@@ -252,7 +252,7 @@ fn pbr_mesh_pipeline_view_layout_key(
     (mesh_key_bits & MESH_PIPELINE_KEY_DEFERRED_PREPASS) != 0UL,
     (mesh_key_bits & MESH_PIPELINE_KEY_OIT_ENABLED) != 0UL,
     (mesh_key_bits & MESH_PIPELINE_KEY_ATMOSPHERE) != 0UL,
-    false,
+    true,
     tonemap_in_shader=(mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) !=
       0UL,
     environment_map=(mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL,
@@ -268,6 +268,8 @@ fn pbr_mesh_pipeline_view_layout_key(
       0UL,
     contact_shadows=(mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL,
     distance_fog=(mesh_key_bits & MESH_PIPELINE_KEY_DISTANCE_FOG) != 0UL,
+    area_light_luts=true,
+    dfg_lut=true,
   )
 }
 
@@ -642,6 +644,9 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL {
     shader_defs.push(pbr_shader_def("CONTACT_SHADOWS"))
   }
+  shader_defs.push(pbr_shader_def("BLUE_NOISE_TEXTURE"))
+  shader_defs.push(pbr_shader_def("DFG_LUT"))
+  shader_defs.push(pbr_shader_def("AREA_LIGHT_LUTS"))
   if (mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) != 0UL {
     shader_defs.push(pbr_shader_def("TONEMAP_IN_SHADER"))
     shader_defs.push(

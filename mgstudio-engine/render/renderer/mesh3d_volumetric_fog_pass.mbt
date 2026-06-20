@@ -246,6 +246,9 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     pass_state.tonemapping_agx_lut_texture_id,
     pass_state.tonemapping_tony_lut_texture_id,
     pass_state.tonemapping_blender_lut_texture_id,
+    pbr_blue_noise_texture_id=pass_state.pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id=pass_state.pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id=pass_state.pbr_dfg_lut_texture_id,
     default_view_layout_key=mesh3d_pass_mesh_view_layout_key(
       pass_state,
       atmosphere~,

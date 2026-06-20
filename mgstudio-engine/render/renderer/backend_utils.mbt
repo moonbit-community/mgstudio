@@ -147,6 +147,13 @@ priv struct TextureBlockInfo {
 
 ///|
 fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
+  if format_raw == @wgpu.TEXTURE_FORMAT_R8_UNORM {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 1,
+    })
+  }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB {
     return Some(TextureBlockInfo::{
@@ -170,6 +177,13 @@ fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
     })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_R32_FLOAT {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RG16_FLOAT {
     return Some(TextureBlockInfo::{
       block_width: 1,
       block_height: 1,

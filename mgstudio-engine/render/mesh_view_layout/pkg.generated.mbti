@@ -8,11 +8,13 @@ import {
 }
 
 // Values
-pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 65536
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 131072
 
 pub const MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS : UInt = 32768
 
 pub const MESH_VIEW_LAYOUT_CONTACT_SHADOWS : UInt = 8192
+
+pub const MESH_VIEW_LAYOUT_DFG_LUT : UInt = 65536
 
 pub const MESH_VIEW_LAYOUT_DISTANCE_FOG : UInt = 16384
 
@@ -26,7 +28,7 @@ pub const MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS : UInt = 4096
 
 pub const MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER : UInt = 256
 
-pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, tonemap_in_shader? : Bool, environment_map? : Bool, screen_space_ambient_occlusion? : Bool, irradiance_volume? : Bool, screen_space_reflections? : Bool, contact_shadows? : Bool, distance_fog? : Bool, area_light_luts? : Bool) -> MeshPipelineViewLayoutKey
+pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, tonemap_in_shader? : Bool, environment_map? : Bool, screen_space_ambient_occlusion? : Bool, irradiance_volume? : Bool, screen_space_reflections? : Bool, contact_shadows? : Bool, distance_fog? : Bool, area_light_luts? : Bool, dfg_lut? : Bool) -> MeshPipelineViewLayoutKey
 
 pub fn mesh_view_layout_key_from_bits_truncate(UInt) -> MeshPipelineViewLayoutKey
 

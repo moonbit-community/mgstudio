@@ -1280,6 +1280,9 @@ fn AssetServer::load_image_with_settings(
       }
       None => host_asset_load_texture(path=canonical_path, nearest~)
     }
+    if id <= 0 {
+      return Handle::new(0)
+    }
     self.record_path(canonical_path)
     let handle = Handle::new(id)
     self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())

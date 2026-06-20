@@ -116,6 +116,9 @@ pub struct GpuPassState {
   tonemapping_agx_lut_texture_id : Int
   tonemapping_tony_lut_texture_id : Int
   tonemapping_blender_lut_texture_id : Int
+  pbr_blue_noise_texture_id : Int
+  pbr_area_light_luts_texture_id : Int
+  pbr_dfg_lut_texture_id : Int
   deband_dither_enabled : Bool
 }
 

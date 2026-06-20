@@ -152,13 +152,27 @@ test "pbr/render: mesh_view layout table builds all key variants" {
   )
 
   let flagged_key = @mesh_view_layout.mesh_view_layout_key(
-    true, false, false, false, false, false, true, false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    area_light_luts=true,
+    dfg_lut=true,
   )
   let flagged_layout = layouts.get_view_layout(flagged_key)
   debug_inspect(
     flagged_layout.main_layout_label,
-    content="\"mesh_view_layout:multisampled,atmosphere\"",
+    content="\"mesh_view_layout:multisampled,atmosphere,stbn,area_light_luts,dfg_lut\"",
   )
+  debug_inspect(has_binding(flagged_layout.main_entries, 34), content="true")
+  debug_inspect(has_binding(flagged_layout.main_entries, 35), content="true")
+  debug_inspect(has_binding(flagged_layout.main_entries, 36), content="true")
+  debug_inspect(has_binding(flagged_layout.main_entries, 37), content="true")
+  debug_inspect(has_binding(flagged_layout.main_entries, 38), content="true")
   debug_inspect(flagged_layout.texture_count > 0, content="true")
 }
 

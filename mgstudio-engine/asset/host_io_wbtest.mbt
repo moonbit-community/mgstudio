@@ -723,6 +723,39 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
     content="true",
   )
 
+  let stbn_payload = ktx2_decode_2d_payload(
+    @fs.read_file_to_bytes("pbr/bluenoise/stbn.ktx2"),
+  ).unwrap()
+  debug_inspect(stbn_payload.width, content="128")
+  debug_inspect(stbn_payload.height, content="128")
+  debug_inspect(stbn_payload.slice_count, content="32")
+  debug_inspect(
+    stbn_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_R8_UNORM,
+    content="true",
+  )
+
+  let ltc_payload = ktx2_decode_2d_payload(
+    @fs.read_file_to_bytes("pbr/ltc/ltc.ktx2"),
+  ).unwrap()
+  debug_inspect(ltc_payload.width, content="64")
+  debug_inspect(ltc_payload.height, content="64")
+  debug_inspect(ltc_payload.slice_count, content="2")
+  debug_inspect(
+    ltc_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    content="true",
+  )
+
+  let dfg_payload = ktx2_decode_2d_payload(
+    @fs.read_file_to_bytes("pbr/environment_map/dfg.ktx2"),
+  ).unwrap()
+  debug_inspect(dfg_payload.width, content="64")
+  debug_inspect(dfg_payload.height, content="64")
+  debug_inspect(dfg_payload.slice_count, content="1")
+  debug_inspect(
+    dfg_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+    content="true",
+  )
+
   let cornell_path = asset_with_world(@ecs.World::new(), fn() {
     resolve_asset_path("lightmaps/CornellBox-Large.zstd.ktx2")
   })

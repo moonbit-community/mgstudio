@@ -53,6 +53,30 @@ fn render3d_main_pass_tonemapping_lut_ids(
 }
 
 ///|
+fn render3d_main_pass_pbr_internal_lut_ids(
+  world : @ecs.World,
+) -> (Int, Int, Int) {
+  pbr_ensure_render_world_internal_luts(
+    world,
+    @render.render_source_world(world),
+  )
+  let blue_noise_texture_id = match world.get_resource(ecs_key_bluenoise) {
+    Some(resource) => resource.texture.id()
+    None => -1
+  }
+  let area_light_luts_texture_id = match
+    world.get_resource(ecs_key_area_light_luts) {
+    Some(resource) => resource.image.id()
+    None => -1
+  }
+  let dfg_lut_texture_id = match world.get_resource(ecs_key_dfg_lut) {
+    Some(resource) => resource.texture.id()
+    None => -1
+  }
+  (blue_noise_texture_id, area_light_luts_texture_id, dfg_lut_texture_id)
+}
+
+///|
 fn render3d_main_pass_deband_dither_enabled(
   camera : Camera3dViewPayload,
 ) -> Bool {
@@ -332,6 +356,9 @@ fn render3d_execute_camera_main_pass(
   let (agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id) = render3d_main_pass_tonemapping_lut_ids(
     world, camera,
   )
+  let (blue_noise_texture_id, area_light_luts_texture_id, dfg_lut_texture_id) = render3d_main_pass_pbr_internal_lut_ids(
+    world,
+  )
   @pbr_render.render3d_begin_pass_3d(
     target_id=scene_target_id,
     width=view_width_logical,
@@ -369,6 +396,9 @@ fn render3d_execute_camera_main_pass(
     tonemapping_agx_lut_texture_id=agx_lut_texture_id,
     tonemapping_tony_lut_texture_id=tony_lut_texture_id,
     tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+    pbr_blue_noise_texture_id=blue_noise_texture_id,
+    pbr_area_light_luts_texture_id=area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id=dfg_lut_texture_id,
     deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
     prepass_depth_texture_id~,
     prepass_normal_texture_id~,
@@ -920,6 +950,9 @@ fn render3d_execute_camera_main_pass(
         tonemapping_agx_lut_texture_id=agx_lut_texture_id,
         tonemapping_tony_lut_texture_id=tony_lut_texture_id,
         tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+        pbr_blue_noise_texture_id=blue_noise_texture_id,
+        pbr_area_light_luts_texture_id=area_light_luts_texture_id,
+        pbr_dfg_lut_texture_id=dfg_lut_texture_id,
         deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
         prepass_depth_texture_id~,
         prepass_normal_texture_id~,
@@ -995,6 +1028,9 @@ fn render3d_execute_camera_main_pass(
       tonemapping_agx_lut_texture_id=agx_lut_texture_id,
       tonemapping_tony_lut_texture_id=tony_lut_texture_id,
       tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+      pbr_blue_noise_texture_id=blue_noise_texture_id,
+      pbr_area_light_luts_texture_id=area_light_luts_texture_id,
+      pbr_dfg_lut_texture_id=dfg_lut_texture_id,
       deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
       prepass_depth_texture_id~,
       prepass_normal_texture_id~,

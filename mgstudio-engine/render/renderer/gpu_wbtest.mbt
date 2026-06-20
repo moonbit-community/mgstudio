@@ -750,6 +750,9 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     tonemapping_agx_lut_texture_id: -1,
     tonemapping_tony_lut_texture_id: -1,
     tonemapping_blender_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
     deband_dither_enabled: false,
   }
   let mesh_bytes = mesh3d_motion_vector_mesh_bytes(

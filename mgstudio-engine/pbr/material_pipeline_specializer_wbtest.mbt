@@ -243,6 +243,18 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
     ),
     content="false",
   )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  for shader_def in ["BLUE_NOISE_TEXTURE", "DFG_LUT", "AREA_LIGHT_LUTS"] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[0].shader_location, content="0")
   inspect(vertex_layout.attributes[1].shader_location, content="1")
@@ -376,13 +388,16 @@ test "pbr material pipeline specializer inserts material bind group and override
     pbr_material_specializer_test_layout(),
   )
   inspect(descriptor.layout.length(), content="4")
-  inspect(descriptor.layout[0].label(), content="mesh_view_layout:")
+  inspect(
+    descriptor.layout[0].label(),
+    content="mesh_view_layout:stbn,area_light_luts,dfg_lut",
+  )
   inspect(
     descriptor.layout[1].label(),
-    content="mesh_view_layout_binding_array:",
+    content="mesh_view_layout_binding_array:stbn,area_light_luts,dfg_lut",
   )
   inspect(descriptor.layout[2].label(), content="mesh_layout")
-  inspect(descriptor.layout[0].entries().length(), content="14")
+  inspect(descriptor.layout[0].entries().length(), content="19")
   inspect(descriptor.layout[1].entries().length(), content="0")
   inspect(descriptor.layout[2].entries().length(), content="1")
   debug_inspect(
@@ -530,10 +545,14 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
   )
   inspect(
     descriptor.layout[0].label(),
-    content="mesh_view_layout:multisampled,normal_prepass,tonemap_in_shader",
+    content="mesh_view_layout:multisampled,normal_prepass,stbn,tonemap_in_shader,area_light_luts,dfg_lut",
   )
   debug_inspect(
     pbr_material_specializer_layout_has_binding(descriptor.layout[0], 18),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_layout_has_binding(descriptor.layout[0], 37),
     content="true",
   )
   debug_inspect(

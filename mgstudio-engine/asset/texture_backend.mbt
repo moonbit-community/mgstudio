@@ -306,11 +306,7 @@ fn asset_texture_backend_create_texture_3d_with_format(
       (backend.create_texture_3d_with_format_fn)(
         width, height, depth, format, pixels,
       )
-    None => {
-      let id = asset_texture_cpu_allocate(width, height, true)
-      set_texture_pixels(id, pixels)
-      id
-    }
+    None => 0
   }
 }
 
@@ -333,14 +329,7 @@ fn asset_texture_backend_create_texture_stacked_2d_with_format(
       (backend.create_texture_stacked_2d_with_format_fn)(
         width, height_per_slice, slice_count, format, levels, nearest, usage_bits,
       )
-    None => {
-      let id = asset_texture_cpu_allocate(width, height_per_slice, true)
-      match levels {
-        [first, ..] => set_texture_pixels(id, first)
-        [] => ()
-      }
-      id
-    }
+    None => 0
   }
 }
 
@@ -359,14 +348,7 @@ fn asset_texture_backend_create_texture_cube_with_format(
       (backend.create_texture_cube_with_format_fn)(
         width, height, format, levels, nearest,
       )
-    None => {
-      let id = asset_texture_cpu_allocate(width, height, true)
-      match levels {
-        [first, ..] => set_texture_pixels(id, first)
-        [] => ()
-      }
-      id
-    }
+    None => 0
   }
 }
 

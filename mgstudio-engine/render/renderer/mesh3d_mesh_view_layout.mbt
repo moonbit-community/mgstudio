@@ -58,10 +58,12 @@ fn mesh3d_pass_mesh_view_layout_key(
     pass_state.prepass_deferred_texture_id >= 0,
     false,
     atmosphere,
-    false,
+    pass_state.pbr_blue_noise_texture_id >= 0,
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
     irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
+    area_light_luts=pass_state.pbr_area_light_luts_texture_id >= 0,
+    dfg_lut=pass_state.pbr_dfg_lut_texture_id >= 0,
   )
 }
 

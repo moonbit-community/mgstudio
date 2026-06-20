@@ -198,6 +198,9 @@ pub fn GpuBackend::begin_pass(
     tonemapping_agx_lut_texture_id: -1,
     tonemapping_tony_lut_texture_id: -1,
     tonemapping_blender_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
     deband_dither_enabled: false,
   })
   self.sprite_instance_data.clear()
@@ -445,6 +448,9 @@ pub fn GpuBackend::begin_pass_with_depth(
     tonemapping_agx_lut_texture_id: -1,
     tonemapping_tony_lut_texture_id: -1,
     tonemapping_blender_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
     deband_dither_enabled: false,
   })
   self.sprite_instance_data.clear()
@@ -611,6 +617,9 @@ pub fn GpuBackend::begin_pass_3d(
   tonemapping_agx_lut_texture_id : Int,
   tonemapping_tony_lut_texture_id : Int,
   tonemapping_blender_lut_texture_id : Int,
+  pbr_blue_noise_texture_id : Int,
+  pbr_area_light_luts_texture_id : Int,
+  pbr_dfg_lut_texture_id : Int,
   deband_dither_enabled : Bool,
   prepass_depth_texture_id : Int,
   prepass_normal_texture_id : Int,
@@ -1026,6 +1035,9 @@ pub fn GpuBackend::begin_pass_3d(
     tonemapping_agx_lut_texture_id,
     tonemapping_tony_lut_texture_id,
     tonemapping_blender_lut_texture_id,
+    pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id,
     deband_dither_enabled,
   }
   self.pass_state = Some(pass_state)
@@ -1571,6 +1583,9 @@ pub fn begin_pass_3d(
   tonemapping_agx_lut_texture_id? : Int = -1,
   tonemapping_tony_lut_texture_id? : Int = -1,
   tonemapping_blender_lut_texture_id? : Int = -1,
+  pbr_blue_noise_texture_id? : Int = -1,
+  pbr_area_light_luts_texture_id? : Int = -1,
+  pbr_dfg_lut_texture_id? : Int = -1,
   deband_dither_enabled? : Bool = false,
   prepass_depth_texture_id? : Int = -1,
   prepass_normal_texture_id? : Int = -1,
@@ -1616,7 +1631,8 @@ pub fn begin_pass_3d(
       directional_shadow_depth_bias, directional_shadow_normal_bias, directional_shadow_soft_size,
       directional_shadow_cascade_count, directional_shadow_cascade_overlap, directional_shadow_cascade_data,
       mesh3d_lights_uniform_bytes, tonemap_in_shader, tonemapping_mode, tonemapping_agx_lut_texture_id,
-      tonemapping_tony_lut_texture_id, tonemapping_blender_lut_texture_id, deband_dither_enabled,
+      tonemapping_tony_lut_texture_id, tonemapping_blender_lut_texture_id, pbr_blue_noise_texture_id,
+      pbr_area_light_luts_texture_id, pbr_dfg_lut_texture_id, deband_dither_enabled,
       prepass_depth_texture_id, prepass_normal_texture_id, prepass_motion_vector_texture_id,
       prepass_deferred_texture_id, prepass_deferred_lighting_pass_id_texture_id,
       msaa_sample_count, pass_kind, clear_enabled,

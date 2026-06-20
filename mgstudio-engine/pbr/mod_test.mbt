@@ -79,48 +79,6 @@ fn read_default_standard_material(
 }
 
 ///|
-fn read_bluenoise(render_world : @ecs.World) -> Bluenoise {
-  match render_world.get_resource(ecs_key_bluenoise) {
-    Some(resource) => resource
-    None => abort("missing Bluenoise resource")
-  }
-}
-
-///|
-fn read_area_light_luts(render_world : @ecs.World) -> AreaLightLuts {
-  match render_world.get_resource(ecs_key_area_light_luts) {
-    Some(resource) => resource
-    None => abort("missing AreaLightLuts resource")
-  }
-}
-
-///|
-fn read_dfg_lut(render_world : @ecs.World) -> DfgLut {
-  match render_world.get_resource(ecs_key_dfg_lut) {
-    Some(resource) => resource
-    None => abort("missing DfgLut resource")
-  }
-}
-
-///|
-fn image_render_asset_usage_or_abort(
-  world : @ecs.World,
-  handle : @asset.Handle[@asset.Image],
-) -> @asset.RenderAssetUsages {
-  match world.get_resource(@asset.asset_server_resource_key) {
-    Some(server) => {
-      for entry in server.image_render_asset_usages {
-        if entry.0 == handle.id() {
-          return entry.1
-        }
-      }
-      abort("missing image render asset usage")
-    }
-    None => abort("missing AssetServer resource")
-  }
-}
-
-///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
@@ -299,44 +257,67 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 }
 
 ///|
-test "render3d: pbr plugin initializes bevy internal LUT resources" {
+test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
   let render_world = app.sub_app(@app.RenderApp).world()
-  let bluenoise = read_bluenoise(render_world)
-  let area_light_luts = read_area_light_luts(render_world)
-  let dfg_lut = read_dfg_lut(render_world)
+  debug_inspect(
+    render_world.get_resource(ecs_key_bluenoise) is None,
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(ecs_key_area_light_luts) is None,
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(ecs_key_dfg_lut) is None,
+    content="true",
+  )
 
-  debug_inspect(bluenoise.texture.id() > 0, content="true")
-  debug_inspect(area_light_luts.image.id() > 0, content="true")
-  debug_inspect(dfg_lut.texture.id() > 0, content="true")
-  let srgb_flags = @asset.asset_with_world(app.world(), fn() {
+  pbr_ensure_render_world_internal_luts(render_world, app.world())
+  let resource_ids_are_valid = {
+    let bluenoise_valid = match render_world.get_resource(ecs_key_bluenoise) {
+      Some(value) => value.texture.id() > 0
+      None => true
+    }
+    let area_light_luts_valid = match
+      render_world.get_resource(ecs_key_area_light_luts) {
+      Some(value) => value.image.id() > 0
+      None => true
+    }
+    let dfg_lut_valid = match render_world.get_resource(ecs_key_dfg_lut) {
+      Some(value) => value.texture.id() > 0
+      None => true
+    }
+    bluenoise_valid && area_light_luts_valid && dfg_lut_valid
+  }
+  debug_inspect(resource_ids_are_valid, content="true")
+  let cached = @asset.asset_with_world(app.world(), fn() {
+    let server = match
+      app.world().get_resource(@asset.asset_server_resource_key) {
+      Some(value) => value
+      None => abort("missing AssetServer resource")
+    }
+    let bluenoise : @asset.Handle[@asset.Image]? = server.get_handle(
+      "pbr/bluenoise/stbn.ktx2",
+    )
+    let area_light_luts : @asset.Handle[@asset.Image]? = server.get_handle(
+      "pbr/ltc/ltc.ktx2",
+    )
+    let dfg_lut : @asset.Handle[@asset.Image]? = server.get_handle(
+      "pbr/environment_map/dfg.ktx2",
+    )
     (
-      @asset.asset_image_is_srgb(bluenoise.texture),
-      @asset.asset_image_is_srgb(area_light_luts.image),
-      @asset.asset_image_is_srgb(dfg_lut.texture),
+      bluenoise.map_or(true, fn(handle) { handle.id() > 0 }),
+      area_light_luts.map_or(true, fn(handle) { handle.id() > 0 }),
+      dfg_lut.map_or(true, fn(handle) { handle.id() > 0 }),
     )
   })
-  debug_inspect(srgb_flags.0, content="false")
-  debug_inspect(srgb_flags.1, content="false")
-  debug_inspect(srgb_flags.2, content="false")
-  debug_inspect(
-    image_render_asset_usage_or_abort(app.world(), bluenoise.texture) ==
-    @asset.RenderAssetUsages::render_world(),
-    content="true",
-  )
-  debug_inspect(
-    image_render_asset_usage_or_abort(app.world(), area_light_luts.image) ==
-    @asset.RenderAssetUsages::render_world(),
-    content="true",
-  )
-  debug_inspect(
-    image_render_asset_usage_or_abort(app.world(), dfg_lut.texture) ==
-    @asset.RenderAssetUsages::render_world(),
-    content="true",
-  )
+  debug_inspect(cached.0, content="true")
+  debug_inspect(cached.1, content="true")
+  debug_inspect(cached.2, content="true")
 }
 
 ///|

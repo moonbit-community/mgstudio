@@ -489,6 +489,8 @@ pub fn pbr_default_opaque_renderer_method_forward() -> @material.DefaultOpaqueRe
 
 pub fn pbr_deferred_lighting_enabled(@ecs.World) -> Bool
 
+pub fn pbr_ensure_render_world_internal_luts(@ecs.World, @ecs.World) -> Unit
+
 pub fn pbr_extended_material_metadata_default() -> @material.ExtendedMaterialMetadata3d
 
 pub fn pbr_extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d

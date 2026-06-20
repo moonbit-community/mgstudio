@@ -254,14 +254,11 @@ fn pbr_render_world_needs_internal_luts(
 }
 
 ///|
-fn pbr_plugin_initialize_internal_luts(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  let render_needs = match app.get_sub_app(@app.RenderApp) {
-    Some(render_app) => pbr_render_world_needs_internal_luts(render_app.world())
-    None => return app
-  }
-  let main_world = app.world()
+pub fn pbr_ensure_render_world_internal_luts(
+  render_world : @ecs.World,
+  main_world : @ecs.World,
+) -> Unit {
+  let render_needs = pbr_render_world_needs_internal_luts(render_world)
   let bluenoise = if render_needs.0 {
     Some(pbr_load_bluenoise(main_world))
   } else {
@@ -277,25 +274,17 @@ fn pbr_plugin_initialize_internal_luts(
   } else {
     None
   }
-  let next = app
-  ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_app) {
-      let render_world = render_app.world()
-      if bluenoise is Some(texture) {
-        render_world.insert_resource(ecs_key_bluenoise, Bluenoise::{ texture, })
-      }
-      if area_light_luts is Some(image) {
-        render_world.insert_resource(ecs_key_area_light_luts, AreaLightLuts::{
-          image,
-        })
-      }
-      if dfg_lut is Some(texture) {
-        render_world.insert_resource(ecs_key_dfg_lut, DfgLut::{ texture, })
-      }
-      render_app
-    }),
-  )
-  next
+  if bluenoise is Some(texture) && texture.id() > 0 {
+    render_world.insert_resource(ecs_key_bluenoise, Bluenoise::{ texture, })
+  }
+  if area_light_luts is Some(image) && image.id() > 0 {
+    render_world.insert_resource(ecs_key_area_light_luts, AreaLightLuts::{
+      image,
+    })
+  }
+  if dfg_lut is Some(texture) && texture.id() > 0 {
+    render_world.insert_resource(ecs_key_dfg_lut, DfgLut::{ texture, })
+  }
 }
 
 ///|
@@ -505,7 +494,6 @@ fn pbr_plugin_install_with(
   next = pbr_plugin_sync_fog_state(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
-  next = pbr_plugin_initialize_internal_luts(next)
   next
 }
 

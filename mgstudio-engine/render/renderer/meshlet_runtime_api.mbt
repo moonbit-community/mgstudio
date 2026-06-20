@@ -2908,6 +2908,9 @@ fn meshlet_bind_material_shade_draw(
     pass_state.tonemapping_agx_lut_texture_id,
     pass_state.tonemapping_tony_lut_texture_id,
     pass_state.tonemapping_blender_lut_texture_id,
+    pbr_blue_noise_texture_id=pass_state.pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id=pass_state.pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id=pass_state.pbr_dfg_lut_texture_id,
   )
   let material_bg = mesh3d_material_cache_get_or_create(
     backend,

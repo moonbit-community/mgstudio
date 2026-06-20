@@ -63,10 +63,13 @@ pub const MESH_VIEW_LAYOUT_DISTANCE_FOG : UInt = 1U << 14
 pub const MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS : UInt = 1U << 15
 
 ///|
-const MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK : UInt = 0xFFFFU
+pub const MESH_VIEW_LAYOUT_DFG_LUT : UInt = 1U << 16
 
 ///|
-pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 65536
+const MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK : UInt = 0x1FFFFU
+
+///|
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 131072
 
 ///|
 pub struct MeshPipelineViewLayoutKey {
@@ -119,6 +122,7 @@ pub fn mesh_view_layout_key(
   contact_shadows? : Bool = false,
   distance_fog? : Bool = false,
   area_light_luts? : Bool = false,
+  dfg_lut? : Bool = false,
 ) -> MeshPipelineViewLayoutKey {
   MeshPipelineViewLayoutKey::{
     bits: mesh_view_layout_flag(multisampled, MESH_VIEW_LAYOUT_MULTISAMPLED) |
@@ -145,7 +149,8 @@ pub fn mesh_view_layout_key(
     ) |
     mesh_view_layout_flag(contact_shadows, MESH_VIEW_LAYOUT_CONTACT_SHADOWS) |
     mesh_view_layout_flag(distance_fog, MESH_VIEW_LAYOUT_DISTANCE_FOG) |
-    mesh_view_layout_flag(area_light_luts, MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS),
+    mesh_view_layout_flag(area_light_luts, MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS) |
+    mesh_view_layout_flag(dfg_lut, MESH_VIEW_LAYOUT_DFG_LUT),
   }
 }
 
@@ -239,6 +244,9 @@ pub fn MeshPipelineViewLayoutKey::label(
   }
   if self.contains(MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS) {
     parts.push("area_light_luts")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_DFG_LUT) {
+    parts.push("dfg_lut")
   }
   let mut label = "mesh_view_layout:"
   for index in 0..<parts.length() {
@@ -840,6 +848,23 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_sampler_entry(
         36,
         "area_light_luts_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_DFG_LUT) {
+    main_entries.push(
+      mesh_view_texture_entry(
+        37,
+        "dfg_lut",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D2,
+      ),
+    )
+    main_entries.push(
+      mesh_view_sampler_entry(
+        38,
+        "dfg_lut_sampler",
         MeshViewSamplerBindingType::Filtering,
       ),
     )

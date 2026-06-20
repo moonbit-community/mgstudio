@@ -132,6 +132,12 @@ const KTX2_SUPERCOMPRESSION_NONE : Int = 0
 const KTX2_SUPERCOMPRESSION_ZSTD : Int = 2
 
 ///|
+const KTX2_VK_FORMAT_R8_UNORM : Int = 23
+
+///|
+const KTX2_VK_FORMAT_R16G16_SFLOAT : Int = 83
+
+///|
 const KTX2_VK_FORMAT_R32_SFLOAT : Int = 100
 
 ///|
@@ -2288,9 +2294,25 @@ fn ktx2_is_3d_texture(bytes : Bytes) -> Bool {
 
 ///|
 fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
+  if vulkan_format == KTX2_VK_FORMAT_R8_UNORM {
+    return Some(Ktx2FormatInfo::{
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R8_UNORM),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 1,
+    })
+  }
   if vulkan_format == KTX2_VK_FORMAT_R32_SFLOAT {
     return Some(Ktx2FormatInfo::{
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_R16G16_SFLOAT {
+    return Some(Ktx2FormatInfo::{
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT),
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
@@ -3060,6 +3082,7 @@ fn load_texture_bytes_with_container(
       sync_texture_record(texture_id, payload.width, payload.height, loaded)
       return texture_id
     }
+    return 0
   }
   let (width, height, upload_pixels) = if decode_texture_image_with_container(
       bytes, container,
