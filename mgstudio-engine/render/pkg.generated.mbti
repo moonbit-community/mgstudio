@@ -537,8 +537,6 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 
 pub fn screenshot_clear_system(@ecs.World) -> Unit
 
-pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
-
 pub fn screenshot_parity_capture_completed() -> Bool
 
 pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
@@ -588,6 +586,8 @@ pub fn sync_mesh_allocator_resource_from_backend_system(@ecs.World) -> Unit
 pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 
 pub fn sync_world_plugin_with(@app.App[@ecs.World], SyncWorldPlugin) -> @app.App[@ecs.World]
+
+pub fn trigger_screenshots(@ecs.World) -> Unit
 
 pub fn try_with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 

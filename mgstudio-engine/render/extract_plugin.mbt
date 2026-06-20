@@ -175,6 +175,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     }),
   )
   init_pending_screenshot_entity_captures_resource(next.world())
+  init_captured_screenshots_resource(next.world())
   next = next
     .add_systems(
       @app.First,
@@ -188,8 +189,11 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
         @app.system(screenshot_queue_capture_requests)
         .named("mgstudio_render::screenshot_queue_capture_requests")
         .in_set(screenshot_trigger_system_set),
-        @app.system(screenshot_finalize_capture_requests)
-        .named("mgstudio_render::screenshot_finalize_capture_requests")
+        @app.system(screenshot_collect_capture_requests)
+        .named("mgstudio_render::screenshot_collect_capture_requests")
+        .in_set(screenshot_trigger_system_set),
+        @app.system(trigger_screenshots)
+        .named("mgstudio_render::trigger_screenshots")
         .in_set(screenshot_trigger_system_set),
       )
       |> @app.chain(),

@@ -106,8 +106,12 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
   )
   debug_inspect(
     update_dot.contains(
-      "\"mgstudio_render::screenshot_finalize_capture_requests\"",
+      "\"mgstudio_render::screenshot_collect_capture_requests\"",
     ),
+    content="true",
+  )
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::trigger_screenshots\""),
     content="true",
   )
   debug_inspect(

@@ -59,6 +59,17 @@ priv struct PendingScreenshotEntityCaptures {
 }
 
 ///|
+priv struct CapturedScreenshot {
+  entity : @core.Entity
+  image : @asset.Image
+}
+
+///|
+priv struct CapturedScreenshots {
+  captures : Array[CapturedScreenshot]
+}
+
+///|
 let pending_screenshot_entity_captures_resource_key : @ecs.ResourceKey[
   PendingScreenshotEntityCaptures,
 ] = @ecs.register_resource(
@@ -66,8 +77,18 @@ let pending_screenshot_entity_captures_resource_key : @ecs.ResourceKey[
 )
 
 ///|
+let captured_screenshots_resource_key : @ecs.ResourceKey[CapturedScreenshots] = @ecs.register_resource(
+  debug_name="mgstudio_render::view::window::CapturedScreenshots",
+)
+
+///|
 fn PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures() -> PendingScreenshotEntityCaptures {
   PendingScreenshotEntityCaptures::{ captures: [] }
+}
+
+///|
+fn CapturedScreenshots::CapturedScreenshots() -> CapturedScreenshots {
+  CapturedScreenshots::{ captures: [] }
 }
 
 ///|
@@ -187,6 +208,22 @@ fn ensure_pending_screenshot_entity_captures(
 }
 
 ///|
+fn ensure_captured_screenshots(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[CapturedScreenshots] {
+  match world.get_resource_mut(captured_screenshots_resource_key) {
+    Some(resource) => resource
+    None => {
+      world.insert_resource(
+        captured_screenshots_resource_key,
+        CapturedScreenshots::CapturedScreenshots(),
+      )
+      world.get_resource_mut(captured_screenshots_resource_key).unwrap()
+    }
+  }
+}
+
+///|
 fn init_pending_screenshot_entity_captures_resource(world : @ecs.World) -> Unit {
   if world
     .resource(pending_screenshot_entity_captures_resource_key)
@@ -196,6 +233,17 @@ fn init_pending_screenshot_entity_captures_resource(world : @ecs.World) -> Unit 
   world.insert_resource(
     pending_screenshot_entity_captures_resource_key,
     PendingScreenshotEntityCaptures::PendingScreenshotEntityCaptures(),
+  )
+}
+
+///|
+fn init_captured_screenshots_resource(world : @ecs.World) -> Unit {
+  if world.resource(captured_screenshots_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    captured_screenshots_resource_key,
+    CapturedScreenshots::CapturedScreenshots(),
   )
 }
 
@@ -301,9 +349,10 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
+fn screenshot_collect_capture_requests(world : @ecs.World) -> Unit {
   let remaining : Array[PendingScreenshotEntityCapture] = []
   let pending = ensure_pending_screenshot_entity_captures(world)
+  let completed : Array[CapturedScreenshot] = []
   for pending_capture in pending.peek().captures {
     let capture_id = pending_capture.capture_id
     let entity = pending_capture.entity
@@ -312,18 +361,35 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
       remaining.push(pending_capture)
       continue
     }
-    try! (world.entity_mut(entity).insert_component(Captured::{  }) |> ignore)
-    world.trigger(
-      ScreenshotCaptured::{
-        entity,
-        image: @asset.Image::new(capture.width, capture.height, capture.pixels),
-      },
-      caller=Some(
-        "mgstudio_render::view::window::screenshot_finalize_capture_requests",
-      ),
-    )
+    completed.push(CapturedScreenshot::{
+      entity,
+      image: @asset.Image::new(capture.width, capture.height, capture.pixels),
+    })
   }
   pending.set(PendingScreenshotEntityCaptures::{ captures: remaining })
+  if completed.length() > 0 {
+    ensure_captured_screenshots(world).modify(fn(state) {
+      for capture in completed {
+        state.captures.push(capture)
+      }
+    })
+  }
+}
+
+///|
+pub fn trigger_screenshots(world : @ecs.World) -> Unit {
+  let captured_screenshots = ensure_captured_screenshots(world)
+  let captures = captured_screenshots.peek().captures.copy()
+  captured_screenshots.set(CapturedScreenshots::CapturedScreenshots())
+  for capture in captures {
+    let entity = capture.entity
+    guard world.is_alive(entity) else { continue }
+    try! (world.entity_mut(entity).insert_component(Captured::{  }) |> ignore)
+    world.trigger(
+      ScreenshotCaptured::{ entity, image: capture.image },
+      caller=Some("mgstudio_render::view::window::trigger_screenshots"),
+    )
+  }
 }
 
 ///|
