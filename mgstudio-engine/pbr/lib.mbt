@@ -16,6 +16,15 @@
 const PBR_PLUGIN_NAME : String = "mgstudio.pbr.PbrPlugin"
 
 ///|
+const PBR_BLUENOISE_PATH : String = "pbr/bluenoise/stbn.ktx2"
+
+///|
+const PBR_AREA_LIGHT_LUTS_PATH : String = "pbr/ltc/ltc.ktx2"
+
+///|
+const PBR_DFG_LUT_PATH : String = "pbr/environment_map/dfg.ktx2"
+
+///|
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
@@ -140,6 +149,153 @@ fn pbr_plugin_initialize_default_standard_material(world : @ecs.World) -> Unit {
       ),
     )
   })
+}
+
+///|
+pub(all) struct Bluenoise {
+  texture : @asset.Handle[@asset.Image]
+}
+
+///|
+pub let ecs_key_bluenoise : @ecs.ResourceKey[Bluenoise] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Bluenoise",
+)
+
+///|
+pub impl @app.Resource for Bluenoise with fn resource() {
+  ecs_key_bluenoise
+}
+
+///|
+pub(all) struct AreaLightLuts {
+  image : @asset.Handle[@asset.Image]
+}
+
+///|
+pub let ecs_key_area_light_luts : @ecs.ResourceKey[AreaLightLuts] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::AreaLightLuts",
+)
+
+///|
+pub impl @app.Resource for AreaLightLuts with fn resource() {
+  ecs_key_area_light_luts
+}
+
+///|
+pub(all) struct DfgLut {
+  texture : @asset.Handle[@asset.Image]
+}
+
+///|
+pub let ecs_key_dfg_lut : @ecs.ResourceKey[DfgLut] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::DfgLut",
+)
+
+///|
+pub impl @app.Resource for DfgLut with fn resource() {
+  ecs_key_dfg_lut
+}
+
+///|
+fn pbr_plugin_register_internal_image_assets(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let mut next = app
+  next = @asset.embedded_asset(next, PBR_BLUENOISE_PATH, PBR_BLUENOISE_PATH)
+  next = @asset.embedded_asset(
+    next,
+    PBR_AREA_LIGHT_LUTS_PATH,
+    PBR_AREA_LIGHT_LUTS_PATH,
+  )
+  next = @asset.embedded_asset(next, PBR_DFG_LUT_PATH, PBR_DFG_LUT_PATH)
+  next
+}
+
+///|
+fn pbr_load_bluenoise(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  @asset.asset_world_load_with_settings(world, PBR_BLUENOISE_PATH, fn(
+    settings,
+  ) {
+    settings.is_srgb = false
+    settings.sampler = @asset.ImageSampler::Default
+    settings.asset_usage = @asset.RenderAssetUsages::render_world()
+  })
+}
+
+///|
+fn pbr_load_area_light_luts(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  @asset.asset_world_load_with_settings(world, PBR_AREA_LIGHT_LUTS_PATH, fn(
+    settings,
+  ) {
+    settings.is_srgb = false
+    settings.sampler = @asset.ImageSampler::linear()
+    settings.asset_usage = @asset.RenderAssetUsages::render_world()
+  })
+}
+
+///|
+fn pbr_load_dfg_lut(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  @asset.asset_world_load_with_settings(world, PBR_DFG_LUT_PATH, fn(settings) {
+    settings.is_srgb = false
+    settings.sampler = @asset.ImageSampler::linear()
+    settings.asset_usage = @asset.RenderAssetUsages::render_world()
+  })
+}
+
+///|
+fn pbr_render_world_needs_internal_luts(
+  render_world : @ecs.World,
+) -> (Bool, Bool, Bool) {
+  (
+    render_world.get_resource(ecs_key_bluenoise) is None,
+    render_world.get_resource(ecs_key_area_light_luts) is None,
+    render_world.get_resource(ecs_key_dfg_lut) is None,
+  )
+}
+
+///|
+fn pbr_plugin_initialize_internal_luts(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let render_needs = match app.get_sub_app(@app.RenderApp) {
+    Some(render_app) => pbr_render_world_needs_internal_luts(render_app.world())
+    None => return app
+  }
+  let main_world = app.world()
+  let bluenoise = if render_needs.0 {
+    Some(pbr_load_bluenoise(main_world))
+  } else {
+    None
+  }
+  let area_light_luts = if render_needs.1 {
+    Some(pbr_load_area_light_luts(main_world))
+  } else {
+    None
+  }
+  let dfg_lut = if render_needs.2 {
+    Some(pbr_load_dfg_lut(main_world))
+  } else {
+    None
+  }
+  let next = app
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_app) {
+      let render_world = render_app.world()
+      if bluenoise is Some(texture) {
+        render_world.insert_resource(ecs_key_bluenoise, Bluenoise::{ texture, })
+      }
+      if area_light_luts is Some(image) {
+        render_world.insert_resource(ecs_key_area_light_luts, AreaLightLuts::{
+          image,
+        })
+      }
+      if dfg_lut is Some(texture) {
+        render_world.insert_resource(ecs_key_dfg_lut, DfgLut::{ texture, })
+      }
+      render_app
+    }),
+  )
+  next
 }
 
 ///|
@@ -318,6 +474,7 @@ fn pbr_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   let runtime_config = PbrPluginRuntimeConfig::from_plugin(plugin)
   let mut next = @shader.shader_plugin(app)
+  next = pbr_plugin_register_internal_image_assets(next)
   next = pbr_plugin_ensure_mesh_asset_resources(next)
   if !next.contains_resource(ecs_key_pbr_plugin_marker) {
     let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
@@ -348,6 +505,7 @@ fn pbr_plugin_install_with(
   next = pbr_plugin_sync_fog_state(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
+  next = pbr_plugin_initialize_internal_luts(next)
   next
 }
 

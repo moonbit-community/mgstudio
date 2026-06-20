@@ -171,6 +171,8 @@ pub fn draw_wireframe_mesh_pulled_direct_range(Wireframe3d, RenderMeshInstances,
 
 pub fn draw_wireframe_mesh_pulled_indirect_plan(Wireframe3d) -> DrawWireframeMeshPulledIndirectPlan?
 
+pub let ecs_key_area_light_luts : @ecs.ResourceKey[AreaLightLuts]
+
 pub let ecs_key_atmosphere : @ecs.ComponentKey[@light.Atmosphere]
 
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.AtmosphereEnvironmentMapLight]
@@ -180,6 +182,8 @@ pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[@light.AtmosphereSetting
 pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure]
 
 pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
+
+pub let ecs_key_bluenoise : @ecs.ResourceKey[Bluenoise]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
@@ -210,6 +214,8 @@ pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pi
 pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
+
+pub let ecs_key_dfg_lut : @ecs.ResourceKey[DfgLut]
 
 pub let ecs_key_directional_light : @ecs.ComponentKey[@light.DirectionalLight]
 
@@ -798,6 +804,11 @@ pub suberror WireframeRenderCommandError {
 }
 
 // Types and methods
+pub(all) struct AreaLightLuts {
+  image : @asset.Handle[@image.Image]
+}
+pub impl @app.Resource for AreaLightLuts
+
 pub struct AutoExposure {
   min_ev100 : Float
   max_ev100 : Float
@@ -830,6 +841,11 @@ pub struct AutoExposureCompensationCurve {
 pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 pub impl @asset.Asset for AutoExposureCompensationCurve
+
+pub(all) struct Bluenoise {
+  texture : @asset.Handle[@image.Image]
+}
+pub impl @app.Resource for Bluenoise
 
 pub struct Camera3d {
   depth_load_op : Camera3dDepthLoadOp
@@ -1049,6 +1065,11 @@ pub(all) enum DepthOfFieldMode {
   Gaussian
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DepthOfFieldMode::default() -> Self
+
+pub(all) struct DfgLut {
+  texture : @asset.Handle[@image.Image]
+}
+pub impl @app.Resource for DfgLut
 
 pub struct DirtyWireframeSpecializations {
   changed_renderables : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]

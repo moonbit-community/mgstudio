@@ -79,6 +79,48 @@ fn read_default_standard_material(
 }
 
 ///|
+fn read_bluenoise(render_world : @ecs.World) -> Bluenoise {
+  match render_world.get_resource(ecs_key_bluenoise) {
+    Some(resource) => resource
+    None => abort("missing Bluenoise resource")
+  }
+}
+
+///|
+fn read_area_light_luts(render_world : @ecs.World) -> AreaLightLuts {
+  match render_world.get_resource(ecs_key_area_light_luts) {
+    Some(resource) => resource
+    None => abort("missing AreaLightLuts resource")
+  }
+}
+
+///|
+fn read_dfg_lut(render_world : @ecs.World) -> DfgLut {
+  match render_world.get_resource(ecs_key_dfg_lut) {
+    Some(resource) => resource
+    None => abort("missing DfgLut resource")
+  }
+}
+
+///|
+fn image_render_asset_usage_or_abort(
+  world : @ecs.World,
+  handle : @asset.Handle[@asset.Image],
+) -> @asset.RenderAssetUsages {
+  match world.get_resource(@asset.asset_server_resource_key) {
+    Some(server) => {
+      for entry in server.image_render_asset_usages {
+        if entry.0 == handle.id() {
+          return entry.1
+        }
+      }
+      abort("missing image render asset usage")
+    }
+    None => abort("missing AssetServer resource")
+  }
+}
+
+///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
@@ -188,9 +230,9 @@ test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
 ///|
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
   let app = pbr_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::RenderPlugin(),
-    ),
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )
   let config = read_pbr_runtime_config(app.world())
   debug_inspect(config.prepass_enabled, content="true")
@@ -257,11 +299,52 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 }
 
 ///|
+test "render3d: pbr plugin initializes bevy internal LUT resources" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let bluenoise = read_bluenoise(render_world)
+  let area_light_luts = read_area_light_luts(render_world)
+  let dfg_lut = read_dfg_lut(render_world)
+
+  debug_inspect(bluenoise.texture.id() > 0, content="true")
+  debug_inspect(area_light_luts.image.id() > 0, content="true")
+  debug_inspect(dfg_lut.texture.id() > 0, content="true")
+  let srgb_flags = @asset.asset_with_world(app.world(), fn() {
+    (
+      @asset.asset_image_is_srgb(bluenoise.texture),
+      @asset.asset_image_is_srgb(area_light_luts.image),
+      @asset.asset_image_is_srgb(dfg_lut.texture),
+    )
+  })
+  debug_inspect(srgb_flags.0, content="false")
+  debug_inspect(srgb_flags.1, content="false")
+  debug_inspect(srgb_flags.2, content="false")
+  debug_inspect(
+    image_render_asset_usage_or_abort(app.world(), bluenoise.texture) ==
+    @asset.RenderAssetUsages::render_world(),
+    content="true",
+  )
+  debug_inspect(
+    image_render_asset_usage_or_abort(app.world(), area_light_luts.image) ==
+    @asset.RenderAssetUsages::render_world(),
+    content="true",
+  )
+  debug_inspect(
+    image_render_asset_usage_or_abort(app.world(), dfg_lut.texture) ==
+    @asset.RenderAssetUsages::render_world(),
+    content="true",
+  )
+}
+
+///|
 test "render3d: pbr plugin config updates runtime feature switches" {
   let _app = pbr_plugin_with(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::RenderPlugin(),
-    ),
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin()),
     PbrPlugin::{
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
@@ -328,9 +411,9 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
 
   let _reset = pbr_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::RenderPlugin(),
-    ),
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )
   debug_inspect(
     @gltf_loader.gltf_pbr_material_handler_enabled(),
@@ -381,6 +464,7 @@ test "render3d: root pbr exposes deferred lighting planning surface" {
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(
       @app.PluginGroupBuilder::start_named("test-pbr")
@@ -438,9 +522,9 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 ///|
 test "render3d: render3d_plugin alias maps to pbr plugin" {
   let app = render3d_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::RenderPlugin(),
-    ),
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )
   debug_inspect(
     app.contains_resource(ecs_key_pbr_plugin_runtime_config),
