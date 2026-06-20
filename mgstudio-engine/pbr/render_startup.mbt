@@ -59,3 +59,46 @@ pub fn configure_pbr_render_startup_systems(
     ),
   )
 }
+
+///|
+fn[T] pbr_init_render_resource_if_missing(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+  init : () -> T,
+) -> Unit {
+  if world.get_resource(key) is None {
+    world.insert_resource(key, init())
+  }
+}
+
+///|
+fn configure_pbr_render_world_resources(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  pbr_init_render_resource_if_missing(
+    world,
+    @pbr_render.LightMeta::resource(),
+    fn() { @pbr_render.LightMeta::LightMeta() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    RenderMaterialBindings::resource(),
+    fn() { RenderMaterialBindings::RenderMaterialBindings() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    @render_view.RenderShadowLodOrigin::resource(),
+    fn() { @render_view.RenderShadowLodOrigin::RenderShadowLodOrigin() },
+  )
+  sub_app
+}
+
+///|
+pub fn configure_pbr_render_app_build_flow(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  sub_app
+  |> configure_pbr_render_startup_systems
+  |> configure_pbr_render_world_resources
+}

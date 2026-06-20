@@ -68,3 +68,11 @@ test "render view: extracted target format follows Bevy HDR and compositing rule
     content="true",
   )
 }
+
+///|
+test "render view: shadow LOD origin defaults to zero" {
+  let origin = RenderShadowLodOrigin::RenderShadowLodOrigin()
+  inspect(origin.is_default(), content="true")
+  let custom = RenderShadowLodOrigin::new(@math.Vec3::new(1.0F, 2.0F, 3.0F))
+  inspect(custom.is_default(), content="false")
+}

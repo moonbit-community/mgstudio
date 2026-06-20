@@ -51,3 +51,38 @@ pub fn[T] UniformBuffer::is_dirty(self : UniformBuffer[T]) -> Bool {
 pub fn[T] UniformBuffer::clear_dirty(self : UniformBuffer[T]) -> Unit {
   self.dirty = false
 }
+
+///|
+pub struct DynamicUniformBuffer[T] {
+  values : Array[T]
+}
+
+///|
+pub fn[T] DynamicUniformBuffer::new() -> DynamicUniformBuffer[T] {
+  DynamicUniformBuffer::{ values: [] }
+}
+
+///|
+pub fn[T] DynamicUniformBuffer::push(
+  self : DynamicUniformBuffer[T],
+  value : T,
+) -> Unit {
+  self.values.push(value)
+}
+
+///|
+pub fn[T] DynamicUniformBuffer::clear(self : DynamicUniformBuffer[T]) -> Unit {
+  self.values.clear()
+}
+
+///|
+pub fn[T] DynamicUniformBuffer::len(self : DynamicUniformBuffer[T]) -> Int {
+  self.values.length()
+}
+
+///|
+pub fn[T] DynamicUniformBuffer::values(
+  self : DynamicUniformBuffer[T],
+) -> Array[T] {
+  self.values
+}

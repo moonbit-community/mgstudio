@@ -51,6 +51,43 @@ pub fn Msaa::from_samples(samples : Int) -> Msaa {
 }
 
 ///|
+pub struct RenderShadowLodOrigin {
+  origin : @math.Vec3
+}
+
+///|
+pub fn RenderShadowLodOrigin::RenderShadowLodOrigin() -> RenderShadowLodOrigin {
+  RenderShadowLodOrigin::{ origin: @math.Vec3::zero() }
+}
+
+///|
+pub fn RenderShadowLodOrigin::new(origin : @math.Vec3) -> RenderShadowLodOrigin {
+  RenderShadowLodOrigin::{ origin, }
+}
+
+///|
+pub fn RenderShadowLodOrigin::origin(
+  self : RenderShadowLodOrigin,
+) -> @math.Vec3 {
+  self.origin
+}
+
+///|
+pub fn RenderShadowLodOrigin::is_default(self : RenderShadowLodOrigin) -> Bool {
+  self.origin.length_squared() == 0.0F
+}
+
+///|
+pub let render_shadow_lod_origin_resource_key : @ecs.ResourceKey[
+  RenderShadowLodOrigin,
+] = @ecs.register_resource(debug_name="mgstudio_render::RenderShadowLodOrigin")
+
+///|
+pub impl @app.Resource for RenderShadowLodOrigin with fn resource() {
+  render_shadow_lod_origin_resource_key
+}
+
+///|
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
   debug_name="render.view.msaa",
 )

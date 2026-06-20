@@ -396,6 +396,51 @@ pub fn MaterialBindingId::slot(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::RenderMaterialBindings`.
+
+///|
+pub struct RenderMaterialBindings {
+  bindings : Map[Int, MaterialBindingId]
+}
+
+///|
+pub fn RenderMaterialBindings::RenderMaterialBindings() -> RenderMaterialBindings {
+  RenderMaterialBindings::{ bindings: {} }
+}
+
+///|
+pub fn RenderMaterialBindings::len(self : RenderMaterialBindings) -> Int {
+  self.bindings.length()
+}
+
+///|
+pub fn RenderMaterialBindings::get(
+  self : RenderMaterialBindings,
+  material_id : Int,
+) -> MaterialBindingId? {
+  self.bindings.get(material_id)
+}
+
+///|
+pub fn RenderMaterialBindings::set(
+  self : RenderMaterialBindings,
+  material_id : Int,
+  binding : MaterialBindingId,
+) -> Unit {
+  self.bindings.set(material_id, binding)
+}
+
+///|
+pub let ecs_key_render_material_bindings : @ecs.ResourceKey[
+  RenderMaterialBindings,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderMaterialBindings")
+
+///|
+pub impl @app.Resource for RenderMaterialBindings with fn resource() {
+  ecs_key_render_material_bindings
+}
+
+///|
 pub struct MaterialBindGroupEntry {
   material_id : Int
   binding_id : MaterialBindingId

@@ -388,6 +388,33 @@ test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
 }
 
 ///|
+test "render3d: pbr plugin initializes Bevy-shaped render resources" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let light_meta = match
+    render_world.get_resource(@pbr_render.LightMeta::resource()) {
+    Some(value) => value
+    None => abort("missing LightMeta render resource")
+  }
+  debug_inspect(light_meta.view_gpu_lights_len(), content="0")
+  let material_bindings = match
+    render_world.get_resource(RenderMaterialBindings::resource()) {
+    Some(value) => value
+    None => abort("missing RenderMaterialBindings resource")
+  }
+  debug_inspect(material_bindings.len(), content="0")
+  let shadow_lod_origin = match
+    render_world.get_resource(@render_view.RenderShadowLodOrigin::resource()) {
+    Some(value) => value
+    None => abort("missing RenderShadowLodOrigin resource")
+  }
+  debug_inspect(shadow_lod_origin.is_default(), content="true")
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

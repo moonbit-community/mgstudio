@@ -354,6 +354,34 @@ pub struct GpuLights3d {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::LightMeta`.
+
+///|
+pub struct LightMeta {
+  view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
+}
+
+///|
+pub fn LightMeta::LightMeta() -> LightMeta {
+  LightMeta::{ view_gpu_lights: @render_resource.DynamicUniformBuffer::new() }
+}
+
+///|
+pub fn LightMeta::view_gpu_lights_len(self : LightMeta) -> Int {
+  self.view_gpu_lights.len()
+}
+
+///|
+pub let ecs_key_light_meta : @ecs.ResourceKey[LightMeta] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::LightMeta",
+)
+
+///|
+pub impl @app.Resource for LightMeta with fn resource() {
+  ecs_key_light_meta
+}
+
+///|
 const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 
 ///|

@@ -2,9 +2,11 @@
 package "Milky2018/mgstudio/render/view"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/compositing_space",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -16,6 +18,8 @@ pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
 
 pub fn normalize_bgra8_for_render_target(target_is_window~ : Bool, UInt) -> UInt
+
+pub let render_shadow_lod_origin_resource_key : @ecs.ResourceKey[RenderShadowLodOrigin]
 
 pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEntity) -> Bool
 
@@ -38,6 +42,15 @@ pub fn Msaa::default() -> Self
 pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
 pub impl @ecs.Component for Msaa
+
+pub struct RenderShadowLodOrigin {
+  origin : @math.Vec3
+}
+pub fn RenderShadowLodOrigin::RenderShadowLodOrigin() -> Self
+pub fn RenderShadowLodOrigin::is_default(Self) -> Bool
+pub fn RenderShadowLodOrigin::new(@math.Vec3) -> Self
+pub fn RenderShadowLodOrigin::origin(Self) -> @math.Vec3
+pub impl @app.Resource for RenderShadowLodOrigin
 
 pub struct RetainedViewEntity {
   main_entity : @core.Entity

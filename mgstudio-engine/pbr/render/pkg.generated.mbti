@@ -159,6 +159,8 @@ pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (Sub
 
 pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
+pub let ecs_key_light_meta : @ecs.ResourceKey[LightMeta]
+
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
 
 pub let ecs_key_shadow_samplers : @ecs.ResourceKey[ShadowSamplers]
@@ -711,6 +713,13 @@ pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Direct(Array[GpuPreprocessShaderWorkItem3d])
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
 }
+
+pub struct LightMeta {
+  view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
+}
+pub fn LightMeta::LightMeta() -> Self
+pub fn LightMeta::view_gpu_lights_len(Self) -> Int
+pub impl @app.Resource for LightMeta
 
 pub struct MeshBindGroupPair3d {
   motion_vectors : MeshPreparedBindGroup3d

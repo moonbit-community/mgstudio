@@ -153,6 +153,8 @@ pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMa
 
 pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mesh], S) -> @asset.Handle[@Milky2018/mgstudio/mesh.Mesh]
 
+pub fn configure_pbr_render_app_build_flow(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
+
 pub fn configure_pbr_render_startup_systems(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
 pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -322,6 +324,8 @@ pub let ecs_key_previous_global_transform : @ecs.ComponentKey[@Milky2018/mgstudi
 pub let ecs_key_previous_view_data : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/prepass.PreviousViewData]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+pub let ecs_key_render_material_bindings : @ecs.ResourceKey[RenderMaterialBindings]
 
 pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
 
@@ -1776,6 +1780,15 @@ pub fn[M] RenderMaterial3dInstances::get(Self[M], @core.Entity) -> @asset.Handle
 pub fn[M] RenderMaterial3dInstances::new() -> Self[M]
 pub fn[M] RenderMaterial3dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
 pub impl[M : Material] @app.Resource for RenderMaterial3dInstances[M]
+
+pub struct RenderMaterialBindings {
+  bindings : Map[Int, MaterialBindingId]
+}
+pub fn RenderMaterialBindings::RenderMaterialBindings() -> Self
+pub fn RenderMaterialBindings::get(Self, Int) -> MaterialBindingId?
+pub fn RenderMaterialBindings::len(Self) -> Int
+pub fn RenderMaterialBindings::set(Self, Int, MaterialBindingId) -> Unit
+pub impl @app.Resource for RenderMaterialBindings
 
 pub struct RenderMaterialInstance {
   asset_id : Int

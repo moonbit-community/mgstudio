@@ -308,6 +308,15 @@ pub fn DepthStencilState::new(UInt, Bool, UInt) -> Self
 pub fn DepthStencilState::with_bias_slope_scale(Self, Float) -> Self
 pub impl Default for DepthStencilState
 
+pub struct DynamicUniformBuffer[T] {
+  values : Array[T]
+}
+pub fn[T] DynamicUniformBuffer::clear(Self[T]) -> Unit
+pub fn[T] DynamicUniformBuffer::len(Self[T]) -> Int
+pub fn[T] DynamicUniformBuffer::new() -> Self[T]
+pub fn[T] DynamicUniformBuffer::push(Self[T], T) -> Unit
+pub fn[T] DynamicUniformBuffer::values(Self[T]) -> Array[T]
+
 pub struct FragmentState {
   shader : String?
   shader_defs : Array[ShaderDefVal]
