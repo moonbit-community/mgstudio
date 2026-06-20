@@ -483,11 +483,6 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
-    @render.ecs_key_sync_to_render_world,
-    @render.SyncToRenderWorld::SyncToRenderWorld(),
-  )
-  try! world.set_by_key(
-    entity,
     ecs_key_shadow_filtering_method,
     ShadowFilteringMethod::Temporal,
   )
@@ -538,11 +533,6 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
   let mut app = app0
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    @render.ecs_key_sync_to_render_world,
-    @render.SyncToRenderWorld::SyncToRenderWorld(),
-  )
   try! world.set_by_key(
     entity,
     ecs_key_ambient_light,
