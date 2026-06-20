@@ -142,3 +142,99 @@ test "queue_line_gizmos consumes extracted GizmoMeshConfig-backed assets" {
   @sprite.gizmos_reset()
   debug_inspect(@gizmos_render.queue_line_gizmos_2d(world), content="1")
 }
+
+///|
+test "GpuLineGizmo source bytes keep Bevy vertex buffer layout sizes" {
+  let position_bytes = @gizmos_render.line_gizmo_position_bytes([
+    @math.Vec3::new(1.0F, 2.0F, 3.0F),
+    @math.Vec3::new(4.0F, 5.0F, 6.0F),
+  ])
+  let color_bytes = @gizmos_render.line_gizmo_color_bytes([
+    @color.linear_rgba_with_alpha(0.1F, 0.2F, 0.3F, 0.4F),
+    @color.linear_rgba_with_alpha(0.5F, 0.6F, 0.7F, 0.8F),
+  ])
+  debug_inspect(position_bytes.length(), content="24")
+  debug_inspect(color_bytes.length(), content="32")
+}
+
+///|
+test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
+  let world = @ecs.World::new()
+  let entities = @gizmos_render.ensure_line_gizmo_entities(world)
+  let draw_functions = @gizmos_render.ensure_line_gizmo_draw_functions(world)
+  let handle = @asset.Handle::new(7)
+  let mesh_config = @gizmos.GizmoMeshConfig::new(
+    line_perspective=true,
+    line_style=@gizmos.GizmoLineStyle::Dotted,
+    line_joints=@gizmos.GizmoLineJoint::Round(8),
+    render_layers=@camera_render_layers.RenderLayers::layer(1),
+    handle~,
+  )
+  let render_entity = world.spawn()
+  let main_entity = @render.MainEntity::new(world.spawn())
+  let items = @gizmos_render.line_gizmo_phase_items_for_counts(
+    render_entity,
+    main_entity,
+    entities,
+    draw_functions,
+    @gizmos_render.LineGizmoRenderDimension::Dim3,
+    mesh_config,
+    2,
+    4,
+  )
+  debug_inspect(items.length(), content="3")
+  debug_inspect(
+    items[0].pipeline_key().kind()
+    is @gizmos_render.LineGizmoPhaseKind::LineList,
+    content="true",
+  )
+  debug_inspect(
+    items[1].pipeline_key().kind()
+    is @gizmos_render.LineGizmoPhaseKind::LineStrip,
+    content="true",
+  )
+  debug_inspect(
+    items[2].pipeline_key().kind()
+    is @gizmos_render.LineGizmoPhaseKind::LineJoint,
+    content="true",
+  )
+  debug_inspect(items[0].indexed(), content="true")
+  debug_inspect(items[0].handle_id(), content="7")
+  debug_inspect(items[0].pipeline_key().perspective(), content="true")
+  debug_inspect(
+    items[2].pipeline_key().line_joints() is Round(8),
+    content="true",
+  )
+}
+
+///|
+test "line gizmo phase planning skips joints without enough strip vertices" {
+  let world = @ecs.World::new()
+  let entities = @gizmos_render.ensure_line_gizmo_entities(world)
+  let draw_functions = @gizmos_render.ensure_line_gizmo_draw_functions(world)
+  let handle = @asset.Handle::new(9)
+  let mesh_config = @gizmos.GizmoMeshConfig::new(
+    line_perspective=false,
+    line_style=@gizmos.GizmoLineStyle::Solid,
+    line_joints=@gizmos.GizmoLineJoint::Miter,
+    render_layers=@camera_render_layers.RenderLayers::RenderLayers(),
+    handle~,
+  )
+  let items = @gizmos_render.line_gizmo_phase_items_for_counts(
+    world.spawn(),
+    @render.MainEntity::new(world.spawn()),
+    entities,
+    draw_functions,
+    @gizmos_render.LineGizmoRenderDimension::Dim2,
+    mesh_config,
+    0,
+    2,
+  )
+  debug_inspect(items.length(), content="1")
+  debug_inspect(items[0].indexed(), content="false")
+  debug_inspect(
+    items[0].pipeline_key().kind()
+    is @gizmos_render.LineGizmoPhaseKind::LineStrip,
+    content="true",
+  )
+}

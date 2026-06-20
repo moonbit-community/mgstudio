@@ -78,6 +78,482 @@ pub fn RetainedLineGizmo::new(entity : @core.Entity) -> RetainedLineGizmo {
 }
 
 ///|
+let gpu_line_gizmo_render_asset_resource_keys : @render.RenderAssetResourceKeys[
+  GpuLineGizmo,
+] = @render.register_render_asset_resource_keys(
+  "mgstudio_gizmos_render::GpuLineGizmo",
+)
+
+///|
+pub impl @render.RenderAssetResource for GpuLineGizmo with fn render_asset_resource_debug_name() {
+  "mgstudio_gizmos_render::GpuLineGizmo"
+}
+
+///|
+pub impl @render.RenderAssetResource for GpuLineGizmo with fn render_asset_resource_keys() {
+  gpu_line_gizmo_render_asset_resource_keys
+}
+
+///|
+pub struct GpuLineGizmo {
+  list_position_buffer : @wgpu.Buffer
+  list_color_buffer : @wgpu.Buffer
+  list_vertex_count : Int
+  strip_position_buffer : @wgpu.Buffer
+  strip_color_buffer : @wgpu.Buffer
+  strip_vertex_count : Int
+}
+
+///|
+pub fn GpuLineGizmo::list_position_buffer(self : GpuLineGizmo) -> @wgpu.Buffer {
+  self.list_position_buffer
+}
+
+///|
+pub fn GpuLineGizmo::list_color_buffer(self : GpuLineGizmo) -> @wgpu.Buffer {
+  self.list_color_buffer
+}
+
+///|
+pub fn GpuLineGizmo::list_vertex_count(self : GpuLineGizmo) -> Int {
+  self.list_vertex_count
+}
+
+///|
+pub fn GpuLineGizmo::strip_position_buffer(self : GpuLineGizmo) -> @wgpu.Buffer {
+  self.strip_position_buffer
+}
+
+///|
+pub fn GpuLineGizmo::strip_color_buffer(self : GpuLineGizmo) -> @wgpu.Buffer {
+  self.strip_color_buffer
+}
+
+///|
+pub fn GpuLineGizmo::strip_vertex_count(self : GpuLineGizmo) -> Int {
+  self.strip_vertex_count
+}
+
+///|
+pub fn GpuLineGizmo::release(self : GpuLineGizmo) -> Unit {
+  self.list_position_buffer.release()
+  self.list_color_buffer.release()
+  self.strip_position_buffer.release()
+  self.strip_color_buffer.release()
+}
+
+///|
+const LINE_GIZMO_VEC3_SIZE_BYTES : Int = 12
+
+///|
+const LINE_GIZMO_RGBA_SIZE_BYTES : Int = 16
+
+///|
+fn line_gizmo_vertex_buffer_usage() -> @wgpu.BufferUsage {
+  @wgpu.BufferUsage::from_u64(
+    @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
+}
+
+///|
+pub fn line_gizmo_position_bytes(positions : Array[@math.Vec3]) -> Bytes {
+  let out = Buffer::Buffer(
+    size_hint=positions.length() * LINE_GIZMO_VEC3_SIZE_BYTES,
+  )
+  for position in positions {
+    out.write_float_le(position.x)
+    out.write_float_le(position.y)
+    out.write_float_le(position.z)
+  }
+  out.to_bytes()
+}
+
+///|
+pub fn line_gizmo_color_bytes(colors : Array[@color.LinearRgba]) -> Bytes {
+  let out = Buffer::Buffer(
+    size_hint=colors.length() * LINE_GIZMO_RGBA_SIZE_BYTES,
+  )
+  for color in colors {
+    let (r, g, b, a) = color.to_linear_rgba_tuple()
+    out.write_float_le(r)
+    out.write_float_le(g)
+    out.write_float_le(b)
+    out.write_float_le(a)
+  }
+  out.to_bytes()
+}
+
+///|
+pub fn prepare_gpu_line_gizmo(
+  device : @wgpu.Device,
+  gizmo : @gizmos.GizmoAsset,
+) -> GpuLineGizmo {
+  let buffer = gizmo.buffer()
+  let usage = line_gizmo_vertex_buffer_usage()
+  GpuLineGizmo::{
+    list_position_buffer: device.create_buffer_init(
+      usage~,
+      line_gizmo_position_bytes(buffer.list_positions()),
+    ),
+    list_color_buffer: device.create_buffer_init(
+      usage~,
+      line_gizmo_color_bytes(buffer.list_colors()),
+    ),
+    list_vertex_count: buffer.list_positions().length(),
+    strip_position_buffer: device.create_buffer_init(
+      usage~,
+      line_gizmo_position_bytes(buffer.strip_positions()),
+    ),
+    strip_color_buffer: device.create_buffer_init(
+      usage~,
+      line_gizmo_color_bytes(buffer.strip_colors()),
+    ),
+    strip_vertex_count: buffer.strip_positions().length(),
+  }
+}
+
+///|
+pub(all) enum LineGizmoRenderDimension {
+  Dim2
+  Dim3
+} derive(Eq, Debug)
+
+///|
+pub(all) enum LineGizmoPhaseKind {
+  LineList
+  LineStrip
+  LineJoint
+} derive(Eq, Debug)
+
+///|
+pub struct LineGizmoPhasePipelineKey {
+  dimension : LineGizmoRenderDimension
+  kind : LineGizmoPhaseKind
+  perspective : Bool
+  line_style : @gizmos.GizmoLineStyle
+  line_joints : @gizmos.GizmoLineJoint
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::new(
+  dimension : LineGizmoRenderDimension,
+  kind : LineGizmoPhaseKind,
+  perspective : Bool,
+  line_style : @gizmos.GizmoLineStyle,
+  line_joints : @gizmos.GizmoLineJoint,
+) -> LineGizmoPhasePipelineKey {
+  LineGizmoPhasePipelineKey::{
+    dimension,
+    kind,
+    perspective,
+    line_style,
+    line_joints,
+  }
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::dimension(
+  self : LineGizmoPhasePipelineKey,
+) -> LineGizmoRenderDimension {
+  self.dimension
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::kind(
+  self : LineGizmoPhasePipelineKey,
+) -> LineGizmoPhaseKind {
+  self.kind
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::perspective(
+  self : LineGizmoPhasePipelineKey,
+) -> Bool {
+  self.perspective
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::line_style(
+  self : LineGizmoPhasePipelineKey,
+) -> @gizmos.GizmoLineStyle {
+  self.line_style
+}
+
+///|
+pub fn LineGizmoPhasePipelineKey::line_joints(
+  self : LineGizmoPhasePipelineKey,
+) -> @gizmos.GizmoLineJoint {
+  self.line_joints
+}
+
+///|
+pub struct LineGizmoPhaseItem {
+  render_entity : @core.Entity
+  main_entity : @render.MainEntity
+  renderer_entity : @render.MainEntity
+  handle_id : Int
+  draw_function : @material.DrawFunctionId
+  pipeline_key : LineGizmoPhasePipelineKey
+  batch_start : Int
+  batch_end : Int
+  indexed : Bool
+}
+
+///|
+pub fn LineGizmoPhaseItem::render_entity(
+  self : LineGizmoPhaseItem,
+) -> @core.Entity {
+  self.render_entity
+}
+
+///|
+pub fn LineGizmoPhaseItem::main_entity(
+  self : LineGizmoPhaseItem,
+) -> @render.MainEntity {
+  self.main_entity
+}
+
+///|
+pub fn LineGizmoPhaseItem::renderer_entity(
+  self : LineGizmoPhaseItem,
+) -> @render.MainEntity {
+  self.renderer_entity
+}
+
+///|
+pub fn LineGizmoPhaseItem::handle_id(self : LineGizmoPhaseItem) -> Int {
+  self.handle_id
+}
+
+///|
+pub fn LineGizmoPhaseItem::draw_function(
+  self : LineGizmoPhaseItem,
+) -> @material.DrawFunctionId {
+  self.draw_function
+}
+
+///|
+pub fn LineGizmoPhaseItem::pipeline_key(
+  self : LineGizmoPhaseItem,
+) -> LineGizmoPhasePipelineKey {
+  self.pipeline_key
+}
+
+///|
+pub fn LineGizmoPhaseItem::batch_range(self : LineGizmoPhaseItem) -> (Int, Int) {
+  (self.batch_start, self.batch_end)
+}
+
+///|
+pub fn LineGizmoPhaseItem::indexed(self : LineGizmoPhaseItem) -> Bool {
+  self.indexed
+}
+
+///|
+pub struct LineGizmoPhaseItems {
+  items : Array[LineGizmoPhaseItem]
+}
+
+///|
+pub fn LineGizmoPhaseItems::LineGizmoPhaseItems() -> LineGizmoPhaseItems {
+  LineGizmoPhaseItems::{ items: [] }
+}
+
+///|
+pub let ecs_res_key_line_gizmo_phase_items : @ecs.ResourceKey[
+  LineGizmoPhaseItems,
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos_render::LineGizmoPhaseItems",
+)
+
+///|
+pub impl @app.Resource for LineGizmoPhaseItems with fn resource() {
+  ecs_res_key_line_gizmo_phase_items
+}
+
+///|
+pub fn LineGizmoPhaseItems::clear(self : LineGizmoPhaseItems) -> Unit {
+  self.items.clear()
+}
+
+///|
+pub fn LineGizmoPhaseItems::push(
+  self : LineGizmoPhaseItems,
+  item : LineGizmoPhaseItem,
+) -> Unit {
+  self.items.push(item)
+}
+
+///|
+pub fn LineGizmoPhaseItems::len(self : LineGizmoPhaseItems) -> Int {
+  self.items.length()
+}
+
+///|
+pub fn LineGizmoPhaseItems::items(
+  self : LineGizmoPhaseItems,
+) -> Array[LineGizmoPhaseItem] {
+  self.items.copy()
+}
+
+///|
+pub struct LineGizmoEntities {
+  line_gizmo_renderer : @render.MainEntity
+  line_strip_gizmo_renderer : @render.MainEntity
+  line_joint_gizmo_renderer : @render.MainEntity
+}
+
+///|
+pub fn LineGizmoEntities::new(
+  line_gizmo_renderer : @render.MainEntity,
+  line_strip_gizmo_renderer : @render.MainEntity,
+  line_joint_gizmo_renderer : @render.MainEntity,
+) -> LineGizmoEntities {
+  LineGizmoEntities::{
+    line_gizmo_renderer,
+    line_strip_gizmo_renderer,
+    line_joint_gizmo_renderer,
+  }
+}
+
+///|
+pub fn LineGizmoEntities::line_gizmo_renderer(
+  self : LineGizmoEntities,
+) -> @render.MainEntity {
+  self.line_gizmo_renderer
+}
+
+///|
+pub fn LineGizmoEntities::line_strip_gizmo_renderer(
+  self : LineGizmoEntities,
+) -> @render.MainEntity {
+  self.line_strip_gizmo_renderer
+}
+
+///|
+pub fn LineGizmoEntities::line_joint_gizmo_renderer(
+  self : LineGizmoEntities,
+) -> @render.MainEntity {
+  self.line_joint_gizmo_renderer
+}
+
+///|
+pub let ecs_res_key_line_gizmo_entities : @ecs.ResourceKey[LineGizmoEntities] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos_render::LineGizmoEntities",
+)
+
+///|
+pub impl @app.Resource for LineGizmoEntities with fn resource() {
+  ecs_res_key_line_gizmo_entities
+}
+
+///|
+pub fn ensure_line_gizmo_entities(world : @ecs.World) -> LineGizmoEntities {
+  match world.get_resource(ecs_res_key_line_gizmo_entities) {
+    Some(entities) => entities
+    None => {
+      let entities = LineGizmoEntities::new(
+        @render.MainEntity::new(world.spawn()),
+        @render.MainEntity::new(world.spawn()),
+        @render.MainEntity::new(world.spawn()),
+      )
+      world.insert_resource(ecs_res_key_line_gizmo_entities, entities)
+      entities
+    }
+  }
+}
+
+///|
+pub struct LineGizmoDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  line_gizmo_2d : @material.DrawFunctionId
+  line_strip_gizmo_2d : @material.DrawFunctionId
+  line_joint_gizmo_2d : @material.DrawFunctionId
+  line_gizmo_3d : @material.DrawFunctionId
+  line_strip_gizmo_3d : @material.DrawFunctionId
+  line_joint_gizmo_3d : @material.DrawFunctionId
+}
+
+///|
+pub fn LineGizmoDrawFunctions::LineGizmoDrawFunctions() -> LineGizmoDrawFunctions {
+  let draw_functions = @material.DrawFunctions::new()
+  let line_gizmo_2d = draw_functions.register("DrawLineGizmo2d")
+  let line_strip_gizmo_2d = draw_functions.register("DrawLineGizmo2dStrip")
+  let line_joint_gizmo_2d = draw_functions.register("DrawLineJointGizmo2d")
+  let line_gizmo_3d = draw_functions.register("DrawLineGizmo3d")
+  let line_strip_gizmo_3d = draw_functions.register("DrawLineGizmo3dStrip")
+  let line_joint_gizmo_3d = draw_functions.register("DrawLineJointGizmo3d")
+  LineGizmoDrawFunctions::{
+    draw_functions,
+    line_gizmo_2d,
+    line_strip_gizmo_2d,
+    line_joint_gizmo_2d,
+    line_gizmo_3d,
+    line_strip_gizmo_3d,
+    line_joint_gizmo_3d,
+  }
+}
+
+///|
+pub let ecs_res_key_line_gizmo_draw_functions : @ecs.ResourceKey[
+  LineGizmoDrawFunctions,
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos_render::DrawFunctions<LineGizmo>",
+)
+
+///|
+pub impl @app.Resource for LineGizmoDrawFunctions with fn resource() {
+  ecs_res_key_line_gizmo_draw_functions
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_gizmo_2d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_gizmo_2d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_strip_gizmo_2d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_strip_gizmo_2d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_joint_gizmo_2d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_joint_gizmo_2d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_gizmo_3d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_gizmo_3d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_strip_gizmo_3d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_strip_gizmo_3d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::line_joint_gizmo_3d(
+  self : LineGizmoDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.line_joint_gizmo_3d
+}
+
+///|
+pub fn LineGizmoDrawFunctions::len(self : LineGizmoDrawFunctions) -> Int {
+  self.draw_functions.len()
+}
+
+///|
 priv struct ExtractedLineGizmo {
   uniform : LineGizmoUniform
   mesh_config : @gizmos.GizmoMeshConfig
@@ -238,6 +714,195 @@ fn line_gizmo_assets(
   let source_world = @render.render_source_world(render_world)
   let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
   source_world.get_resource(assets_key)
+}
+
+///|
+fn gpu_line_gizmo_assets(
+  render_world : @ecs.World,
+) -> @render.RenderAssets[GpuLineGizmo]? {
+  let key : @ecs.ResourceKey[@render.RenderAssets[GpuLineGizmo]] = @render.RenderAssets::resource()
+  render_world.get_resource(key)
+}
+
+///|
+pub fn ensure_line_gizmo_phase_items(world : @ecs.World) -> LineGizmoPhaseItems {
+  match world.get_resource(ecs_res_key_line_gizmo_phase_items) {
+    Some(items) => items
+    None => {
+      let items = LineGizmoPhaseItems::LineGizmoPhaseItems()
+      world.insert_resource(ecs_res_key_line_gizmo_phase_items, items)
+      items
+    }
+  }
+}
+
+///|
+pub fn ensure_line_gizmo_draw_functions(
+  world : @ecs.World,
+) -> LineGizmoDrawFunctions {
+  match world.get_resource(ecs_res_key_line_gizmo_draw_functions) {
+    Some(functions) => functions
+    None => {
+      let functions = LineGizmoDrawFunctions::LineGizmoDrawFunctions()
+      world.insert_resource(ecs_res_key_line_gizmo_draw_functions, functions)
+      functions
+    }
+  }
+}
+
+///|
+pub fn line_gizmo_phase_items_for_counts(
+  render_entity : @core.Entity,
+  main_entity : @render.MainEntity,
+  line_gizmo_entities : LineGizmoEntities,
+  draw_functions : LineGizmoDrawFunctions,
+  dimension : LineGizmoRenderDimension,
+  mesh_config : @gizmos.GizmoMeshConfig,
+  list_vertex_count : Int,
+  strip_vertex_count : Int,
+) -> Array[LineGizmoPhaseItem] {
+  let items : Array[LineGizmoPhaseItem] = []
+  let (line_draw, strip_draw, joint_draw, indexed) = match dimension {
+    Dim2 =>
+      (
+        draw_functions.line_gizmo_2d(),
+        draw_functions.line_strip_gizmo_2d(),
+        draw_functions.line_joint_gizmo_2d(),
+        false,
+      )
+    Dim3 =>
+      (
+        draw_functions.line_gizmo_3d(),
+        draw_functions.line_strip_gizmo_3d(),
+        draw_functions.line_joint_gizmo_3d(),
+        true,
+      )
+  }
+  if list_vertex_count > 0 {
+    items.push(LineGizmoPhaseItem::{
+      render_entity,
+      main_entity,
+      renderer_entity: line_gizmo_entities.line_gizmo_renderer(),
+      handle_id: mesh_config.handle().id(),
+      draw_function: line_draw,
+      pipeline_key: LineGizmoPhasePipelineKey::new(
+        dimension,
+        LineList,
+        mesh_config.line_perspective(),
+        mesh_config.line_style(),
+        mesh_config.line_joints(),
+      ),
+      batch_start: 0,
+      batch_end: 1,
+      indexed,
+    })
+  }
+  if strip_vertex_count >= 2 {
+    items.push(LineGizmoPhaseItem::{
+      render_entity,
+      main_entity,
+      renderer_entity: line_gizmo_entities.line_strip_gizmo_renderer(),
+      handle_id: mesh_config.handle().id(),
+      draw_function: strip_draw,
+      pipeline_key: LineGizmoPhasePipelineKey::new(
+        dimension,
+        LineStrip,
+        mesh_config.line_perspective(),
+        mesh_config.line_style(),
+        mesh_config.line_joints(),
+      ),
+      batch_start: 0,
+      batch_end: 1,
+      indexed,
+    })
+  }
+  if strip_vertex_count >= 3 &&
+    !(mesh_config.line_joints() is @gizmos.GizmoLineJoint::None) {
+    items.push(LineGizmoPhaseItem::{
+      render_entity,
+      main_entity,
+      renderer_entity: line_gizmo_entities.line_joint_gizmo_renderer(),
+      handle_id: mesh_config.handle().id(),
+      draw_function: joint_draw,
+      pipeline_key: LineGizmoPhasePipelineKey::new(
+        dimension,
+        LineJoint,
+        mesh_config.line_perspective(),
+        mesh_config.line_style(),
+        mesh_config.line_joints(),
+      ),
+      batch_start: 0,
+      batch_end: 1,
+      indexed,
+    })
+  }
+  items
+}
+
+///|
+fn queue_line_gizmo_phase_items(
+  render_world : @ecs.World,
+  dimension : LineGizmoRenderDimension,
+) -> Int {
+  guard gpu_line_gizmo_assets(render_world) is Some(gpu_line_gizmos) else {
+    return 0
+  }
+  let phase_items = ensure_line_gizmo_phase_items(render_world)
+  phase_items.clear()
+  let line_gizmo_entities = ensure_line_gizmo_entities(render_world)
+  let draw_functions = ensure_line_gizmo_draw_functions(render_world)
+  let query : @ecs.Query[
+    (
+      @ecs.Read[LineGizmoUniform],
+      @ecs.Read[@gizmos.GizmoMeshConfig],
+      @ecs.Read[@render.MainEntity],
+    ),
+    @ecs.All,
+  ] = @ecs.query(render_world)
+  let mut queued = 0
+  try! query.view(fn(render_entity, data) {
+    let (_uniform_comp, mesh_config_comp, main_entity_comp) = data
+    let mesh_config = mesh_config_comp.value()
+    guard gpu_line_gizmos.get(mesh_config.handle().id()) is Some(gpu_line_gizmo) else {
+      return
+    }
+    let items = line_gizmo_phase_items_for_counts(
+      render_entity,
+      main_entity_comp.value(),
+      line_gizmo_entities,
+      draw_functions,
+      dimension,
+      mesh_config,
+      gpu_line_gizmo.list_vertex_count(),
+      gpu_line_gizmo.strip_vertex_count(),
+    )
+    for item in items {
+      phase_items.push(item)
+      queued = queued + 1
+    }
+  })
+  queued
+}
+
+///|
+pub fn queue_line_gizmo_phase_items_3d(render_world : @ecs.World) -> Int {
+  queue_line_gizmo_phase_items(render_world, Dim3)
+}
+
+///|
+pub fn queue_line_gizmo_phase_items_2d(render_world : @ecs.World) -> Int {
+  queue_line_gizmo_phase_items(render_world, Dim2)
+}
+
+///|
+pub fn init_line_gizmo_render_resources(render_world : @ecs.World) -> Unit {
+  ensure_line_gizmo_entities(render_world) |> ignore
+  ensure_line_gizmo_draw_functions(render_world) |> ignore
+  ensure_line_gizmo_phase_items(render_world) |> ignore
+  let render_assets_key : @ecs.ResourceKey[@render.RenderAssets[GpuLineGizmo]] = @render.RenderAssets::resource()
+  if render_world.get_resource(render_assets_key) is None {
+    render_world.insert_resource(render_assets_key, @render.RenderAssets::new())
+  }
 }
 
 ///|

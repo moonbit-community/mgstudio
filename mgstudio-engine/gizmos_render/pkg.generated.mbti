@@ -3,14 +3,32 @@ package "Milky2018/mgstudio/gizmos_render"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gizmos",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform]
+
+pub let ecs_res_key_line_gizmo_draw_functions : @ecs.ResourceKey[LineGizmoDrawFunctions]
+
+pub let ecs_res_key_line_gizmo_entities : @ecs.ResourceKey[LineGizmoEntities]
+
+pub let ecs_res_key_line_gizmo_phase_items : @ecs.ResourceKey[LineGizmoPhaseItems]
+
+pub fn ensure_line_gizmo_draw_functions(@ecs.World) -> LineGizmoDrawFunctions
+
+pub fn ensure_line_gizmo_entities(@ecs.World) -> LineGizmoEntities
+
+pub fn ensure_line_gizmo_phase_items(@ecs.World) -> LineGizmoPhaseItems
 
 pub fn extract_line_gizmos(@ecs.World) -> Unit
 
@@ -28,6 +46,8 @@ pub fn gizmos_render_system_set_2d() -> String
 
 pub fn gizmos_render_system_set_3d() -> String
 
+pub fn init_line_gizmo_render_resources(@ecs.World) -> Unit
+
 pub fn line_gizmo_2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn line_gizmo_2d_plugin_with(@app.App[@ecs.World], LineGizmo2dPlugin) -> @app.App[@ecs.World]
@@ -35,6 +55,18 @@ pub fn line_gizmo_2d_plugin_with(@app.App[@ecs.World], LineGizmo2dPlugin) -> @ap
 pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @app.App[@ecs.World]
+
+pub fn line_gizmo_color_bytes(Array[@color.Color]) -> Bytes
+
+pub fn line_gizmo_phase_items_for_counts(@core.Entity, @render.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
+
+pub fn line_gizmo_position_bytes(Array[@math.Vec3]) -> Bytes
+
+pub fn prepare_gpu_line_gizmo(@wgpu_mbt.Device, @gizmos.GizmoAsset) -> GpuLineGizmo
+
+pub fn queue_line_gizmo_phase_items_2d(@ecs.World) -> Int
+
+pub fn queue_line_gizmo_phase_items_3d(@ecs.World) -> Int
 
 pub fn queue_line_gizmos_2d(@ecs.World) -> Int
 
@@ -53,6 +85,23 @@ pub(all) enum GizmoRenderSystems {
   QueueLineGizmos3d
 } derive(Eq, @debug.Debug)
 
+pub struct GpuLineGizmo {
+  list_position_buffer : @wgpu_mbt.Buffer
+  list_color_buffer : @wgpu_mbt.Buffer
+  list_vertex_count : Int
+  strip_position_buffer : @wgpu_mbt.Buffer
+  strip_color_buffer : @wgpu_mbt.Buffer
+  strip_vertex_count : Int
+}
+pub fn GpuLineGizmo::list_color_buffer(Self) -> @wgpu_mbt.Buffer
+pub fn GpuLineGizmo::list_position_buffer(Self) -> @wgpu_mbt.Buffer
+pub fn GpuLineGizmo::list_vertex_count(Self) -> Int
+pub fn GpuLineGizmo::release(Self) -> Unit
+pub fn GpuLineGizmo::strip_color_buffer(Self) -> @wgpu_mbt.Buffer
+pub fn GpuLineGizmo::strip_position_buffer(Self) -> @wgpu_mbt.Buffer
+pub fn GpuLineGizmo::strip_vertex_count(Self) -> Int
+pub impl @render.RenderAssetResource for GpuLineGizmo
+
 pub struct LineGizmo2dPlugin {
 }
 pub fn LineGizmo2dPlugin::LineGizmo2dPlugin() -> Self
@@ -62,6 +111,91 @@ pub struct LineGizmo3dPlugin {
 }
 pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo3dPlugin
+
+pub struct LineGizmoDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  line_gizmo_2d : @material.DrawFunctionId
+  line_strip_gizmo_2d : @material.DrawFunctionId
+  line_joint_gizmo_2d : @material.DrawFunctionId
+  line_gizmo_3d : @material.DrawFunctionId
+  line_strip_gizmo_3d : @material.DrawFunctionId
+  line_joint_gizmo_3d : @material.DrawFunctionId
+}
+pub fn LineGizmoDrawFunctions::LineGizmoDrawFunctions() -> Self
+pub fn LineGizmoDrawFunctions::len(Self) -> Int
+pub fn LineGizmoDrawFunctions::line_gizmo_2d(Self) -> @material.DrawFunctionId
+pub fn LineGizmoDrawFunctions::line_gizmo_3d(Self) -> @material.DrawFunctionId
+pub fn LineGizmoDrawFunctions::line_joint_gizmo_2d(Self) -> @material.DrawFunctionId
+pub fn LineGizmoDrawFunctions::line_joint_gizmo_3d(Self) -> @material.DrawFunctionId
+pub fn LineGizmoDrawFunctions::line_strip_gizmo_2d(Self) -> @material.DrawFunctionId
+pub fn LineGizmoDrawFunctions::line_strip_gizmo_3d(Self) -> @material.DrawFunctionId
+pub impl @app.Resource for LineGizmoDrawFunctions
+
+pub struct LineGizmoEntities {
+  line_gizmo_renderer : @render.MainEntity
+  line_strip_gizmo_renderer : @render.MainEntity
+  line_joint_gizmo_renderer : @render.MainEntity
+}
+pub fn LineGizmoEntities::line_gizmo_renderer(Self) -> @render.MainEntity
+pub fn LineGizmoEntities::line_joint_gizmo_renderer(Self) -> @render.MainEntity
+pub fn LineGizmoEntities::line_strip_gizmo_renderer(Self) -> @render.MainEntity
+pub fn LineGizmoEntities::new(@render.MainEntity, @render.MainEntity, @render.MainEntity) -> Self
+pub impl @app.Resource for LineGizmoEntities
+
+pub struct LineGizmoPhaseItem {
+  render_entity : @core.Entity
+  main_entity : @render.MainEntity
+  renderer_entity : @render.MainEntity
+  handle_id : Int
+  draw_function : @material.DrawFunctionId
+  pipeline_key : LineGizmoPhasePipelineKey
+  batch_start : Int
+  batch_end : Int
+  indexed : Bool
+}
+pub fn LineGizmoPhaseItem::batch_range(Self) -> (Int, Int)
+pub fn LineGizmoPhaseItem::draw_function(Self) -> @material.DrawFunctionId
+pub fn LineGizmoPhaseItem::handle_id(Self) -> Int
+pub fn LineGizmoPhaseItem::indexed(Self) -> Bool
+pub fn LineGizmoPhaseItem::main_entity(Self) -> @render.MainEntity
+pub fn LineGizmoPhaseItem::pipeline_key(Self) -> LineGizmoPhasePipelineKey
+pub fn LineGizmoPhaseItem::render_entity(Self) -> @core.Entity
+pub fn LineGizmoPhaseItem::renderer_entity(Self) -> @render.MainEntity
+
+pub struct LineGizmoPhaseItems {
+  items : Array[LineGizmoPhaseItem]
+}
+pub fn LineGizmoPhaseItems::LineGizmoPhaseItems() -> Self
+pub fn LineGizmoPhaseItems::clear(Self) -> Unit
+pub fn LineGizmoPhaseItems::items(Self) -> Array[LineGizmoPhaseItem]
+pub fn LineGizmoPhaseItems::len(Self) -> Int
+pub fn LineGizmoPhaseItems::push(Self, LineGizmoPhaseItem) -> Unit
+pub impl @app.Resource for LineGizmoPhaseItems
+
+pub(all) enum LineGizmoPhaseKind {
+  LineList
+  LineStrip
+  LineJoint
+} derive(Eq, @debug.Debug)
+
+pub struct LineGizmoPhasePipelineKey {
+  dimension : LineGizmoRenderDimension
+  kind : LineGizmoPhaseKind
+  perspective : Bool
+  line_style : @sprite.GizmoLineStyle
+  line_joints : @sprite.GizmoLineJoint
+}
+pub fn LineGizmoPhasePipelineKey::dimension(Self) -> LineGizmoRenderDimension
+pub fn LineGizmoPhasePipelineKey::kind(Self) -> LineGizmoPhaseKind
+pub fn LineGizmoPhasePipelineKey::line_joints(Self) -> @sprite.GizmoLineJoint
+pub fn LineGizmoPhasePipelineKey::line_style(Self) -> @sprite.GizmoLineStyle
+pub fn LineGizmoPhasePipelineKey::new(LineGizmoRenderDimension, LineGizmoPhaseKind, Bool, @sprite.GizmoLineStyle, @sprite.GizmoLineJoint) -> Self
+pub fn LineGizmoPhasePipelineKey::perspective(Self) -> Bool
+
+pub(all) enum LineGizmoRenderDimension {
+  Dim2
+  Dim3
+} derive(Eq, @debug.Debug)
 
 pub struct LineGizmoUniform {
   world_from_local : @math.Affine3

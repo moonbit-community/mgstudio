@@ -72,6 +72,12 @@ pub fn gizmo_render_plugin_with(
   @render.try_with_render_app(next, fn(sub_app) {
     sub_app
     .add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(init_line_gizmo_render_resources).named(
+        "mgstudio_gizmos_render::init_line_gizmo_render_resources",
+      ),
+    )
+    .add_systems(
       @render.render_schedule_stage(),
       @app.system(extract_line_gizmos).in_set(
         @render.render_system_set_extract_commands,
