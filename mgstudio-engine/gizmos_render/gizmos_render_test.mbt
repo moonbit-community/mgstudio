@@ -158,6 +158,98 @@ test "GpuLineGizmo source bytes keep Bevy vertex buffer layout sizes" {
 }
 
 ///|
+test "line gizmo vertex buffer layouts mirror Bevy list strip and joint layouts" {
+  let list_layouts = @gizmos_render.line_gizmo_vertex_buffer_layouts(false)
+  debug_inspect(list_layouts.length(), content="2")
+  debug_inspect(list_layouts[0].array_stride(), content="24")
+  debug_inspect(list_layouts[0].step_mode() is Instance, content="true")
+  debug_inspect(list_layouts[0].attributes().length(), content="2")
+  debug_inspect(list_layouts[0].attributes()[1].offset(), content="12")
+  debug_inspect(list_layouts[0].attributes()[1].shader_location(), content="1")
+  debug_inspect(list_layouts[1].array_stride(), content="32")
+  debug_inspect(list_layouts[1].attributes()[1].offset(), content="16")
+  debug_inspect(list_layouts[1].attributes()[1].shader_location(), content="3")
+  let strip_layouts = @gizmos_render.line_gizmo_vertex_buffer_layouts(true)
+  debug_inspect(strip_layouts.length(), content="4")
+  debug_inspect(strip_layouts[0].array_stride(), content="12")
+  debug_inspect(strip_layouts[1].attributes()[0].shader_location(), content="1")
+  debug_inspect(strip_layouts[2].array_stride(), content="16")
+  debug_inspect(strip_layouts[3].attributes()[0].shader_location(), content="3")
+  let joint_layouts = @gizmos_render.line_joint_gizmo_vertex_buffer_layouts()
+  debug_inspect(joint_layouts.length(), content="4")
+  debug_inspect(joint_layouts[0].attributes()[0].shader_location(), content="0")
+  debug_inspect(joint_layouts[1].attributes()[0].shader_location(), content="1")
+  debug_inspect(joint_layouts[2].attributes()[0].shader_location(), content="2")
+  debug_inspect(joint_layouts[3].attributes()[0].shader_location(), content="3")
+}
+
+///|
+test "line gizmo pipeline plans preserve Bevy 2d and 3d specialization keys" {
+  let plan2d = @gizmos_render.line_gizmo_2d_pipeline_plan(
+    @gizmos_render.LineGizmo2dPipelineKey::new(
+      msaa_samples=4U,
+      target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      strip=true,
+      line_style=@gizmos.GizmoLineStyle::Dashed(gap_scale=2.0F, line_scale=3.0F),
+    ),
+  )
+  debug_inspect(plan2d.label(), content="\"LineGizmo Pipeline 2D\"")
+  debug_inspect(plan2d.fragment_entry_point(), content="\"fragment_dashed\"")
+  debug_inspect(plan2d.vertex_buffer_layouts().length(), content="4")
+  debug_inspect(plan2d.depth_write_enabled(), content="false")
+  debug_inspect(
+    plan2d.depth_compare() == @wgpu.COMPARE_FUNCTION_ALWAYS,
+    content="true",
+  )
+  debug_inspect(plan2d.msaa_samples(), content="4")
+  debug_inspect(plan2d.indexed(), content="false")
+  let plan3d = @gizmos_render.line_gizmo_3d_pipeline_plan(
+    @gizmos_render.LineGizmo3dPipelineKey::new(
+      msaa_samples=2U,
+      target_format=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      strip=false,
+      perspective=true,
+      line_style=@gizmos.GizmoLineStyle::Dotted,
+    ),
+  )
+  debug_inspect(plan3d.label(), content="\"LineGizmo 3d Pipeline\"")
+  debug_inspect(plan3d.fragment_entry_point(), content="\"fragment_dotted\"")
+  debug_inspect(plan3d.vertex_buffer_layouts().length(), content="2")
+  debug_inspect(plan3d.depth_write_enabled(), content="true")
+  debug_inspect(
+    plan3d.depth_compare() == @wgpu.COMPARE_FUNCTION_GREATER,
+    content="true",
+  )
+  debug_inspect(plan3d.shader_defs().length(), content="1")
+  debug_inspect(plan3d.indexed(), content="true")
+}
+
+///|
+test "line joint gizmo pipeline plans preserve Bevy joint entry points" {
+  let bevel = @gizmos_render.line_joint_gizmo_2d_pipeline_plan(
+    @gizmos_render.LineJointGizmo2dPipelineKey::new(
+      msaa_samples=1U,
+      target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      joints=@gizmos.GizmoLineJoint::Bevel,
+    ),
+  )
+  debug_inspect(bevel.vertex_entry_point(), content="Some(\"vertex_bevel\")")
+  debug_inspect(bevel.fragment_entry_point(), content="\"fragment\"")
+  let round = @gizmos_render.line_joint_gizmo_3d_pipeline_plan(
+    @gizmos_render.LineJointGizmo3dPipelineKey::new(
+      msaa_samples=1U,
+      target_format=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      perspective=true,
+      joints=@gizmos.GizmoLineJoint::Round(12),
+    ),
+  )
+  debug_inspect(round.vertex_entry_point(), content="Some(\"vertex_round\")")
+  debug_inspect(round.shader_defs().length(), content="1")
+  debug_inspect(round.depth_write_enabled(), content="true")
+  debug_inspect(round.indexed(), content="true")
+}
+
+///|
 test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
   let world = @ecs.World::new()
   let entities = @gizmos_render.ensure_line_gizmo_entities(world)

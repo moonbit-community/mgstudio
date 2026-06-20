@@ -27,6 +27,217 @@ pub fn LineGizmo2dPlugin::LineGizmo2dPlugin() -> LineGizmo2dPlugin {
 }
 
 ///|
+pub struct LineGizmo2dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  strip : Bool
+  line_style : @gizmos.GizmoLineStyle
+}
+
+///|
+pub fn LineGizmo2dPipelineKey::new(
+  msaa_samples~ : UInt,
+  target_format~ : UInt,
+  strip~ : Bool,
+  line_style~ : @gizmos.GizmoLineStyle,
+) -> LineGizmo2dPipelineKey {
+  LineGizmo2dPipelineKey::{ msaa_samples, target_format, strip, line_style }
+}
+
+///|
+pub fn LineGizmo2dPipelineKey::strip(self : LineGizmo2dPipelineKey) -> Bool {
+  self.strip
+}
+
+///|
+pub fn LineGizmo2dPipelineKey::line_style(
+  self : LineGizmo2dPipelineKey,
+) -> @gizmos.GizmoLineStyle {
+  self.line_style
+}
+
+///|
+pub struct LineJointGizmo2dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  joints : @gizmos.GizmoLineJoint
+}
+
+///|
+pub fn LineJointGizmo2dPipelineKey::new(
+  msaa_samples~ : UInt,
+  target_format~ : UInt,
+  joints~ : @gizmos.GizmoLineJoint,
+) -> LineJointGizmo2dPipelineKey {
+  LineJointGizmo2dPipelineKey::{ msaa_samples, target_format, joints }
+}
+
+///|
+pub fn LineJointGizmo2dPipelineKey::joints(
+  self : LineJointGizmo2dPipelineKey,
+) -> @gizmos.GizmoLineJoint {
+  self.joints
+}
+
+///|
+pub struct LineGizmoPipelinePlan {
+  label : String
+  shader_path : String
+  fragment_entry_point : String
+  vertex_entry_point : String?
+  shader_defs : Array[@render.ShaderDefVal]
+  vertex_buffer_layouts : Array[@mesh.VertexBufferLayout]
+  depth_format : UInt
+  depth_write_enabled : Bool
+  depth_compare : UInt
+  target_format : UInt
+  msaa_samples : UInt
+  indexed : Bool
+}
+
+///|
+pub fn LineGizmoPipelinePlan::label(self : LineGizmoPipelinePlan) -> String {
+  self.label
+}
+
+///|
+pub fn LineGizmoPipelinePlan::shader_path(
+  self : LineGizmoPipelinePlan,
+) -> String {
+  self.shader_path
+}
+
+///|
+pub fn LineGizmoPipelinePlan::fragment_entry_point(
+  self : LineGizmoPipelinePlan,
+) -> String {
+  self.fragment_entry_point
+}
+
+///|
+pub fn LineGizmoPipelinePlan::vertex_entry_point(
+  self : LineGizmoPipelinePlan,
+) -> String? {
+  self.vertex_entry_point
+}
+
+///|
+pub fn LineGizmoPipelinePlan::shader_defs(
+  self : LineGizmoPipelinePlan,
+) -> Array[@render.ShaderDefVal] {
+  self.shader_defs
+}
+
+///|
+pub fn LineGizmoPipelinePlan::vertex_buffer_layouts(
+  self : LineGizmoPipelinePlan,
+) -> Array[@mesh.VertexBufferLayout] {
+  self.vertex_buffer_layouts
+}
+
+///|
+pub fn LineGizmoPipelinePlan::depth_format(
+  self : LineGizmoPipelinePlan,
+) -> UInt {
+  self.depth_format
+}
+
+///|
+pub fn LineGizmoPipelinePlan::depth_write_enabled(
+  self : LineGizmoPipelinePlan,
+) -> Bool {
+  self.depth_write_enabled
+}
+
+///|
+pub fn LineGizmoPipelinePlan::depth_compare(
+  self : LineGizmoPipelinePlan,
+) -> UInt {
+  self.depth_compare
+}
+
+///|
+pub fn LineGizmoPipelinePlan::target_format(
+  self : LineGizmoPipelinePlan,
+) -> UInt {
+  self.target_format
+}
+
+///|
+pub fn LineGizmoPipelinePlan::msaa_samples(
+  self : LineGizmoPipelinePlan,
+) -> UInt {
+  self.msaa_samples
+}
+
+///|
+pub fn LineGizmoPipelinePlan::indexed(self : LineGizmoPipelinePlan) -> Bool {
+  self.indexed
+}
+
+///|
+pub fn line_gizmo_fragment_entry_point(
+  line_style : @gizmos.GizmoLineStyle,
+) -> String {
+  match line_style {
+    Solid => "fragment_solid"
+    Dotted => "fragment_dotted"
+    Dashed(_) => "fragment_dashed"
+  }
+}
+
+///|
+pub fn line_joint_gizmo_vertex_entry_point(
+  joints : @gizmos.GizmoLineJoint,
+) -> String {
+  match joints {
+    Miter => "vertex_miter"
+    Round(_) => "vertex_round"
+    None | Bevel => "vertex_bevel"
+  }
+}
+
+///|
+pub fn line_gizmo_2d_pipeline_plan(
+  key : LineGizmo2dPipelineKey,
+) -> LineGizmoPipelinePlan {
+  LineGizmoPipelinePlan::{
+    label: "LineGizmo Pipeline 2D",
+    shader_path: "mgstudio_gizmos_render::lines.wgsl",
+    fragment_entry_point: line_gizmo_fragment_entry_point(key.line_style),
+    vertex_entry_point: None,
+    shader_defs: [],
+    vertex_buffer_layouts: line_gizmo_vertex_buffer_layouts(key.strip),
+    depth_format: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    depth_write_enabled: false,
+    depth_compare: @wgpu.COMPARE_FUNCTION_ALWAYS,
+    target_format: key.target_format,
+    msaa_samples: key.msaa_samples,
+    indexed: false,
+  }
+}
+
+///|
+pub fn line_joint_gizmo_2d_pipeline_plan(
+  key : LineJointGizmo2dPipelineKey,
+) -> LineGizmoPipelinePlan {
+  LineGizmoPipelinePlan::{
+    label: "LineJointGizmo Pipeline 2D",
+    shader_path: "mgstudio_gizmos_render::line_joints.wgsl",
+    fragment_entry_point: "fragment",
+    vertex_entry_point: Some(line_joint_gizmo_vertex_entry_point(key.joints)),
+    shader_defs: [],
+    vertex_buffer_layouts: line_joint_gizmo_vertex_buffer_layouts(),
+    depth_format: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    depth_write_enabled: false,
+    depth_compare: @wgpu.COMPARE_FUNCTION_ALWAYS,
+    target_format: key.target_format,
+    msaa_samples: key.msaa_samples,
+    indexed: false,
+  }
+}
+
+///|
 pub fn line_gizmo_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   line_gizmo_2d_plugin_with(app, LineGizmo2dPlugin::LineGizmo2dPlugin())
 }

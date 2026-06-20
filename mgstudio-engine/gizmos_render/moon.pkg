@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/sprite",

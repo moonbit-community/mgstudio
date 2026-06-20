@@ -149,6 +149,149 @@ const LINE_GIZMO_VEC3_SIZE_BYTES : Int = 12
 const LINE_GIZMO_RGBA_SIZE_BYTES : Int = 16
 
 ///|
+pub fn line_gizmo_vertex_buffer_layouts(
+  strip : Bool,
+) -> Array[@mesh.VertexBufferLayout] {
+  let position_layout = @mesh.VertexBufferLayout::new(
+    array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
+    step_mode=@mesh.MeshVertexStepMode::Instance,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x3,
+        shader_location=0,
+      ),
+    ],
+  )
+  let color_layout = @mesh.VertexBufferLayout::new(
+    array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
+    step_mode=@mesh.MeshVertexStepMode::Instance,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x4,
+        shader_location=2,
+      ),
+    ],
+  )
+  if strip {
+    [
+      position_layout,
+      @mesh.VertexBufferLayout::new(
+        array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
+        step_mode=@mesh.MeshVertexStepMode::Instance,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=1,
+          ),
+        ],
+      ),
+      color_layout,
+      @mesh.VertexBufferLayout::new(
+        array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
+        step_mode=@mesh.MeshVertexStepMode::Instance,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x4,
+            shader_location=3,
+          ),
+        ],
+      ),
+    ]
+  } else {
+    [
+      @mesh.VertexBufferLayout::new(
+        array_stride=LINE_GIZMO_VEC3_SIZE_BYTES * 2,
+        step_mode=@mesh.MeshVertexStepMode::Instance,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=0,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=LINE_GIZMO_VEC3_SIZE_BYTES,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=1,
+          ),
+        ],
+      ),
+      @mesh.VertexBufferLayout::new(
+        array_stride=LINE_GIZMO_RGBA_SIZE_BYTES * 2,
+        step_mode=@mesh.MeshVertexStepMode::Instance,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x4,
+            shader_location=2,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=LINE_GIZMO_RGBA_SIZE_BYTES,
+            format=@mesh.MeshVertexFormat::Float32x4,
+            shader_location=3,
+          ),
+        ],
+      ),
+    ]
+  }
+}
+
+///|
+pub fn line_joint_gizmo_vertex_buffer_layouts() -> Array[
+  @mesh.VertexBufferLayout,
+] {
+  [
+    @mesh.VertexBufferLayout::new(
+      array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
+      step_mode=@mesh.MeshVertexStepMode::Instance,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+      ],
+    ),
+    @mesh.VertexBufferLayout::new(
+      array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
+      step_mode=@mesh.MeshVertexStepMode::Instance,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=1,
+        ),
+      ],
+    ),
+    @mesh.VertexBufferLayout::new(
+      array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
+      step_mode=@mesh.MeshVertexStepMode::Instance,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=2,
+        ),
+      ],
+    ),
+    @mesh.VertexBufferLayout::new(
+      array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
+      step_mode=@mesh.MeshVertexStepMode::Instance,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x4,
+          shader_location=3,
+        ),
+      ],
+    ),
+  ]
+}
+
+///|
 fn line_gizmo_vertex_buffer_usage() -> @wgpu.BufferUsage {
   @wgpu.BufferUsage::from_u64(
     @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST,

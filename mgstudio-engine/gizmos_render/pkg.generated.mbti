@@ -9,7 +9,9 @@ import {
   "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/sprite",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
@@ -48,9 +50,13 @@ pub fn gizmos_render_system_set_3d() -> String
 
 pub fn init_line_gizmo_render_resources(@ecs.World) -> Unit
 
+pub fn line_gizmo_2d_pipeline_plan(LineGizmo2dPipelineKey) -> LineGizmoPipelinePlan
+
 pub fn line_gizmo_2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn line_gizmo_2d_plugin_with(@app.App[@ecs.World], LineGizmo2dPlugin) -> @app.App[@ecs.World]
+
+pub fn line_gizmo_3d_pipeline_plan(LineGizmo3dPipelineKey) -> LineGizmoPipelinePlan
 
 pub fn line_gizmo_3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -58,9 +64,21 @@ pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @ap
 
 pub fn line_gizmo_color_bytes(Array[@color.Color]) -> Bytes
 
+pub fn line_gizmo_fragment_entry_point(@sprite.GizmoLineStyle) -> String
+
 pub fn line_gizmo_phase_items_for_counts(@core.Entity, @render.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
 
 pub fn line_gizmo_position_bytes(Array[@math.Vec3]) -> Bytes
+
+pub fn line_gizmo_vertex_buffer_layouts(Bool) -> Array[@mesh.VertexBufferLayout]
+
+pub fn line_joint_gizmo_2d_pipeline_plan(LineJointGizmo2dPipelineKey) -> LineGizmoPipelinePlan
+
+pub fn line_joint_gizmo_3d_pipeline_plan(LineJointGizmo3dPipelineKey) -> LineGizmoPipelinePlan
+
+pub fn line_joint_gizmo_vertex_buffer_layouts() -> Array[@mesh.VertexBufferLayout]
+
+pub fn line_joint_gizmo_vertex_entry_point(@sprite.GizmoLineJoint) -> String
 
 pub fn prepare_gpu_line_gizmo(@wgpu_mbt.Device, @gizmos.GizmoAsset) -> GpuLineGizmo
 
@@ -102,10 +120,30 @@ pub fn GpuLineGizmo::strip_position_buffer(Self) -> @wgpu_mbt.Buffer
 pub fn GpuLineGizmo::strip_vertex_count(Self) -> Int
 pub impl @render.RenderAssetResource for GpuLineGizmo
 
+pub struct LineGizmo2dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  strip : Bool
+  line_style : @sprite.GizmoLineStyle
+}
+pub fn LineGizmo2dPipelineKey::line_style(Self) -> @sprite.GizmoLineStyle
+pub fn LineGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, line_style~ : @sprite.GizmoLineStyle) -> Self
+pub fn LineGizmo2dPipelineKey::strip(Self) -> Bool
+
 pub struct LineGizmo2dPlugin {
 }
 pub fn LineGizmo2dPlugin::LineGizmo2dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo2dPlugin
+
+pub struct LineGizmo3dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  strip : Bool
+  perspective : Bool
+  line_style : @sprite.GizmoLineStyle
+}
+pub fn LineGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle) -> Self
+pub fn LineGizmo3dPipelineKey::perspective(Self) -> Bool
 
 pub struct LineGizmo3dPlugin {
 }
@@ -192,6 +230,33 @@ pub fn LineGizmoPhasePipelineKey::line_style(Self) -> @sprite.GizmoLineStyle
 pub fn LineGizmoPhasePipelineKey::new(LineGizmoRenderDimension, LineGizmoPhaseKind, Bool, @sprite.GizmoLineStyle, @sprite.GizmoLineJoint) -> Self
 pub fn LineGizmoPhasePipelineKey::perspective(Self) -> Bool
 
+pub struct LineGizmoPipelinePlan {
+  label : String
+  shader_path : String
+  fragment_entry_point : String
+  vertex_entry_point : String?
+  shader_defs : Array[@render_resource.ShaderDefVal]
+  vertex_buffer_layouts : Array[@mesh.VertexBufferLayout]
+  depth_format : UInt
+  depth_write_enabled : Bool
+  depth_compare : UInt
+  target_format : UInt
+  msaa_samples : UInt
+  indexed : Bool
+}
+pub fn LineGizmoPipelinePlan::depth_compare(Self) -> UInt
+pub fn LineGizmoPipelinePlan::depth_format(Self) -> UInt
+pub fn LineGizmoPipelinePlan::depth_write_enabled(Self) -> Bool
+pub fn LineGizmoPipelinePlan::fragment_entry_point(Self) -> String
+pub fn LineGizmoPipelinePlan::indexed(Self) -> Bool
+pub fn LineGizmoPipelinePlan::label(Self) -> String
+pub fn LineGizmoPipelinePlan::msaa_samples(Self) -> UInt
+pub fn LineGizmoPipelinePlan::shader_defs(Self) -> Array[@render_resource.ShaderDefVal]
+pub fn LineGizmoPipelinePlan::shader_path(Self) -> String
+pub fn LineGizmoPipelinePlan::target_format(Self) -> UInt
+pub fn LineGizmoPipelinePlan::vertex_buffer_layouts(Self) -> Array[@mesh.VertexBufferLayout]
+pub fn LineGizmoPipelinePlan::vertex_entry_point(Self) -> String?
+
 pub(all) enum LineGizmoRenderDimension {
   Dim2
   Dim3
@@ -212,6 +277,22 @@ pub fn LineGizmoUniform::line_scale(Self) -> Float
 pub fn LineGizmoUniform::line_width(Self) -> Float
 pub fn LineGizmoUniform::world_from_local(Self) -> @math.Affine3
 pub impl @ecs.Component for LineGizmoUniform
+
+pub struct LineJointGizmo2dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  joints : @sprite.GizmoLineJoint
+}
+pub fn LineJointGizmo2dPipelineKey::joints(Self) -> @sprite.GizmoLineJoint
+pub fn LineJointGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, joints~ : @sprite.GizmoLineJoint) -> Self
+
+pub struct LineJointGizmo3dPipelineKey {
+  msaa_samples : UInt
+  target_format : UInt
+  perspective : Bool
+  joints : @sprite.GizmoLineJoint
+}
+pub fn LineJointGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, perspective~ : Bool, joints~ : @sprite.GizmoLineJoint) -> Self
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity
