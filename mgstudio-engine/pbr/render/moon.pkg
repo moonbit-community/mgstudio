@@ -30,6 +30,7 @@ import {
   "Milky2018/wgsl/common" @wgsl_common,
   "Milky2018/moon_wgsl_naga_oil/compose" @wgsl_compose,
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

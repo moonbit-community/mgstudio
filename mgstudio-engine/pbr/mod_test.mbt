@@ -331,6 +331,63 @@ test "render3d: pbr plugin finish initializes global cluster settings" {
 }
 
 ///|
+test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let expected_binding_type = device.get_supported_read_only_binding_type_u32(
+    CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
+  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let render_sub_app = app
+    .sub_app(@app.RenderApp)
+    .set_update_schedule(Some(@render.render_startup_schedule_stage()))
+  let render_world = render_sub_app.world()
+  debug_inspect(
+    render_world.resource(@pbr_render.ecs_key_shadow_samplers).is_present(),
+    content="false",
+  )
+  debug_inspect(
+    render_world.resource(ecs_key_global_clusterable_object_meta).is_present(),
+    content="false",
+  )
+  debug_inspect(
+    render_world.resource(ecs_key_fallback_bindless_resources).is_present(),
+    content="false",
+  )
+  render_world.insert_resource(
+    @render.render_device_resource_key,
+    @renderer.RenderDevice::from_wgpu(device),
+  )
+  ignore(render_sub_app.run_startup())
+  debug_inspect(
+    render_world.resource(@pbr_render.ecs_key_shadow_samplers).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    render_world.resource(ecs_key_fallback_bindless_resources).is_present(),
+    content="true",
+  )
+  let meta = match
+    render_world.get_resource(ecs_key_global_clusterable_object_meta) {
+    Some(value) => value
+    None => abort("missing GlobalClusterableObjectMeta resource")
+  }
+  debug_inspect(meta.entity_to_index_len(), content="0")
+  if meta.gpu_clustered_lights().binding_type() != expected_binding_type {
+    abort(
+      "GlobalClusterableObjectMeta binding type did not match RenderDevice limits",
+    )
+  }
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

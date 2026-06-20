@@ -16,6 +16,107 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
 
 ///|
+pub(all) struct FallbackBindlessResources {
+  filtering_sampler : @wgpu.Sampler
+  non_filtering_sampler : @wgpu.Sampler
+  comparison_sampler : @wgpu.Sampler
+}
+
+///|
+pub let ecs_key_fallback_bindless_resources : @ecs.ResourceKey[
+  FallbackBindlessResources,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::FallbackBindlessResources")
+
+///|
+pub impl @app.Resource for FallbackBindlessResources with fn resource() {
+  ecs_key_fallback_bindless_resources
+}
+
+///|
+pub fn FallbackBindlessResources::filtering_sampler(
+  self : FallbackBindlessResources,
+) -> @wgpu.Sampler {
+  self.filtering_sampler
+}
+
+///|
+pub fn FallbackBindlessResources::non_filtering_sampler(
+  self : FallbackBindlessResources,
+) -> @wgpu.Sampler {
+  self.non_filtering_sampler
+}
+
+///|
+pub fn FallbackBindlessResources::comparison_sampler(
+  self : FallbackBindlessResources,
+) -> @wgpu.Sampler {
+  self.comparison_sampler
+}
+
+///|
+fn pbr_create_fallback_filtering_sampler(
+  device : @wgpu.Device,
+) -> @wgpu.Sampler {
+  let sampler = device.create_sampler_u32(
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+  )
+  sampler.set_label("fallback filtering sampler")
+  sampler
+}
+
+///|
+fn pbr_create_fallback_non_filtering_sampler(
+  device : @wgpu.Device,
+) -> @wgpu.Sampler {
+  let sampler = device.create_sampler_u32(
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+  )
+  sampler.set_label("fallback non-filtering sampler")
+  sampler
+}
+
+///|
+fn pbr_create_fallback_comparison_sampler(
+  device : @wgpu.Device,
+) -> @wgpu.Sampler {
+  let sampler = device.create_sampler_u32(
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.FILTER_MODE_NEAREST,
+    @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+    compare_u32=@wgpu.COMPARE_FUNCTION_ALWAYS,
+  )
+  sampler.set_label("fallback comparison sampler")
+  sampler
+}
+
+///|
+pub fn init_fallback_bindless_resources(world : @ecs.World) -> Unit {
+  guard world.get_resource(@render.render_device_resource_key)
+    is Some(render_device) else {
+    return
+  }
+  let device = render_device.wgpu_device()
+  world.insert_resource(ecs_key_fallback_bindless_resources, FallbackBindlessResources::{
+    filtering_sampler: pbr_create_fallback_filtering_sampler(device),
+    non_filtering_sampler: pbr_create_fallback_non_filtering_sampler(device),
+    comparison_sampler: pbr_create_fallback_comparison_sampler(device),
+  })
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/pbr_material.rs`
 // `StandardMaterial` derives `AsBindGroup` with the binding indices mirrored
 // here for the descriptor-level material pipeline specializer.

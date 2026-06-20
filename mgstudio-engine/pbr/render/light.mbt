@@ -92,6 +92,71 @@ const DIRECTIONAL_LIGHT_FLAG_NONE : UInt = 0U
 const DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED : UInt = 0xFFFFU
 
 ///|
+pub(all) struct ShadowSamplers {
+  point_light_comparison_sampler : @wgpu.Sampler
+  directional_light_comparison_sampler : @wgpu.Sampler
+}
+
+///|
+pub let ecs_key_shadow_samplers : @ecs.ResourceKey[ShadowSamplers] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ShadowSamplers",
+)
+
+///|
+pub impl @app.Resource for ShadowSamplers with fn resource() {
+  ecs_key_shadow_samplers
+}
+
+///|
+pub fn ShadowSamplers::point_light_comparison_sampler(
+  self : ShadowSamplers,
+) -> @wgpu.Sampler {
+  self.point_light_comparison_sampler
+}
+
+///|
+pub fn ShadowSamplers::directional_light_comparison_sampler(
+  self : ShadowSamplers,
+) -> @wgpu.Sampler {
+  self.directional_light_comparison_sampler
+}
+
+///|
+fn pbr_create_shadow_comparison_sampler(
+  device : @wgpu.Device,
+  label : String,
+) -> @wgpu.Sampler {
+  let sampler = device.create_sampler_u32(
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+    @wgpu.FILTER_MODE_LINEAR,
+    @wgpu.FILTER_MODE_LINEAR,
+    @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+    compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+  )
+  sampler.set_label(label)
+  sampler
+}
+
+///|
+pub fn init_shadow_samplers(world : @ecs.World) -> Unit {
+  guard world.get_resource(@render_gpu.render_device_resource_key)
+    is Some(render_device) else {
+    return
+  }
+  let device = render_device.wgpu_device()
+  world.insert_resource(ecs_key_shadow_samplers, ShadowSamplers::{
+    point_light_comparison_sampler: pbr_create_shadow_comparison_sampler(
+      device, "point light shadow map sampler",
+    ),
+    directional_light_comparison_sampler: pbr_create_shadow_comparison_sampler(
+      device, "directional light shadow map sampler",
+    ),
+  })
+}
+
+///|
 fn render3d_sqrt2() -> Float {
   @math.sqrt(2.0F)
 }

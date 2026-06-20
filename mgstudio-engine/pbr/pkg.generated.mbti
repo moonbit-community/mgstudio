@@ -27,6 +27,7 @@ import {
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
@@ -152,6 +153,8 @@ pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMa
 
 pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mesh], S) -> @asset.Handle[@Milky2018/mgstudio/mesh.Mesh]
 
+pub fn configure_pbr_render_startup_systems(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
+
 pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn contact_shadows_plugin_install_with(@app.App[@ecs.World], ContactShadowsPlugin) -> @app.App[@ecs.World]
@@ -238,6 +241,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[@camera.Exposure]
 
+pub let ecs_key_fallback_bindless_resources : @ecs.ResourceKey[FallbackBindlessResources]
+
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[@decal.ForwardDecal]
@@ -255,6 +260,8 @@ pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@light.GeneratedEnvironmentMapLight]
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLight]
+
+pub let ecs_key_global_clusterable_object_meta : @ecs.ResourceKey[GlobalClusterableObjectMeta]
 
 pub let ecs_key_hdr : @ecs.ComponentKey[@hdr.Hdr]
 
@@ -427,6 +434,10 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
 pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+
+pub fn init_fallback_bindless_resources(@ecs.World) -> Unit
+
+pub fn init_global_clusterable_object_meta(@ecs.World) -> Unit
 
 pub fn material_default_alpha_mode() -> @material.AlphaMode3d
 
@@ -1171,6 +1182,16 @@ pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
 
+pub(all) struct FallbackBindlessResources {
+  filtering_sampler : @wgpu_mbt.Sampler
+  non_filtering_sampler : @wgpu_mbt.Sampler
+  comparison_sampler : @wgpu_mbt.Sampler
+}
+pub fn FallbackBindlessResources::comparison_sampler(Self) -> @wgpu_mbt.Sampler
+pub fn FallbackBindlessResources::filtering_sampler(Self) -> @wgpu_mbt.Sampler
+pub fn FallbackBindlessResources::non_filtering_sampler(Self) -> @wgpu_mbt.Sampler
+pub impl @app.Resource for FallbackBindlessResources
+
 pub enum FogFalloff3d {
   Linear(Float, Float)
   Exponential(Float)
@@ -1236,6 +1257,15 @@ pub(all) struct FreeCameraState {
 pub fn FreeCameraState::FreeCameraState() -> Self
 pub impl @ecs.Component for FreeCameraState
 
+pub(all) struct GlobalClusterableObjectMeta {
+  gpu_clustered_lights : GpuClusteredLights
+  entity_to_index : Map[UInt64, Int]
+}
+pub fn GlobalClusterableObjectMeta::entity_to_index_len(Self) -> Int
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights(Self) -> GpuClusteredLights
+pub fn GlobalClusterableObjectMeta::new(UInt) -> Self
+pub impl @app.Resource for GlobalClusterableObjectMeta
+
 pub struct GltfExtensionHandlerPbrState {
   default_material_label : String
   material_suffix : String
@@ -1243,6 +1273,13 @@ pub struct GltfExtensionHandlerPbrState {
 pub fn GltfExtensionHandlerPbrState::GltfExtensionHandlerPbrState() -> Self
 pub fn GltfExtensionHandlerPbrState::default_material_label(Self) -> String
 pub fn GltfExtensionHandlerPbrState::standard_material_label(Self, String) -> String
+
+pub(all) enum GpuClusteredLights {
+  StorageBuffer
+  UniformBuffer
+} derive(Eq, @debug.Debug)
+pub fn GpuClusteredLights::binding_type(Self) -> UInt
+pub fn GpuClusteredLights::from_binding_type(UInt) -> Self
 
 pub struct GpuScatteringMedium {
   runtime : ScatteringMediumRuntime

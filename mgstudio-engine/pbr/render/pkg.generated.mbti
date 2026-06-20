@@ -21,6 +21,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_wgsl_naga_oil/compose",
+  "Milky2018/wgpu_mbt",
   "Milky2018/wgsl/common",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashset",
@@ -160,6 +161,8 @@ pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
 
+pub let ecs_key_shadow_samplers : @ecs.ResourceKey[ShadowSamplers]
+
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset]
@@ -177,6 +180,8 @@ pub fn fog_plugin_install_with(@app.App[@ecs.World], FogPlugin) -> @app.App[@ecs
 pub fn gpu_mesh_preprocess_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gpu_mesh_preprocess_plugin_install_with(@app.App[@ecs.World], GpuMeshPreprocessPlugin) -> @app.App[@ecs.World]
+
+pub fn init_shadow_samplers(@ecs.World) -> Unit
 
 pub fn maxf(Float, Float) -> Float
 
@@ -1197,6 +1202,14 @@ pub struct ResetIndirectBatchSetsPipeline {
   pipeline_id : Int?
 }
 pub fn ResetIndirectBatchSetsPipeline::new(String, String) -> Self
+
+pub(all) struct ShadowSamplers {
+  point_light_comparison_sampler : @wgpu_mbt.Sampler
+  directional_light_comparison_sampler : @wgpu_mbt.Sampler
+}
+pub fn ShadowSamplers::directional_light_comparison_sampler(Self) -> @wgpu_mbt.Sampler
+pub fn ShadowSamplers::point_light_comparison_sampler(Self) -> @wgpu_mbt.Sampler
+pub impl @app.Resource for ShadowSamplers
 
 pub(all) struct SkinAllocation {
   offset : Int

@@ -37,6 +37,88 @@ pub const VIEW_CLUSTER_BINDINGS_MAX_INDICES : Int = 16384
 const CLUSTER_COUNT_SIZE : Int = 9
 
 ///|
+pub(all) enum GpuClusteredLights {
+  StorageBuffer
+  UniformBuffer
+} derive(Eq, Debug)
+
+///|
+pub fn GpuClusteredLights::from_binding_type(
+  binding_type : UInt,
+) -> GpuClusteredLights {
+  if binding_type == @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE {
+    StorageBuffer
+  } else {
+    UniformBuffer
+  }
+}
+
+///|
+pub fn GpuClusteredLights::binding_type(self : GpuClusteredLights) -> UInt {
+  match self {
+    StorageBuffer => @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE
+    UniformBuffer => @wgpu.BUFFER_BINDING_TYPE_UNIFORM
+  }
+}
+
+///|
+pub(all) struct GlobalClusterableObjectMeta {
+  gpu_clustered_lights : GpuClusteredLights
+  entity_to_index : Map[UInt64, Int]
+}
+
+///|
+pub let ecs_key_global_clusterable_object_meta : @ecs.ResourceKey[
+  GlobalClusterableObjectMeta,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::GlobalClusterableObjectMeta",
+)
+
+///|
+pub impl @app.Resource for GlobalClusterableObjectMeta with fn resource() {
+  ecs_key_global_clusterable_object_meta
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::new(
+  binding_type : UInt,
+) -> GlobalClusterableObjectMeta {
+  GlobalClusterableObjectMeta::{
+    gpu_clustered_lights: GpuClusteredLights::from_binding_type(binding_type),
+    entity_to_index: {},
+  }
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights(
+  self : GlobalClusterableObjectMeta,
+) -> GpuClusteredLights {
+  self.gpu_clustered_lights
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::entity_to_index_len(
+  self : GlobalClusterableObjectMeta,
+) -> Int {
+  self.entity_to_index.length()
+}
+
+///|
+pub fn init_global_clusterable_object_meta(world : @ecs.World) -> Unit {
+  guard world.get_resource(@render.render_device_resource_key)
+    is Some(render_device) else {
+    return
+  }
+  let binding_type = render_device.get_supported_read_only_binding_type_u32(
+    CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
+  )
+  world.insert_resource(
+    ecs_key_global_clusterable_object_meta,
+    GlobalClusterableObjectMeta::new(binding_type),
+  )
+}
+
+///|
 const CLUSTER_OFFSET_BITS : Int = 32 - CLUSTER_COUNT_SIZE * 2
 
 ///|
