@@ -104,6 +104,47 @@ test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
 }
 
 ///|
+test "render3d: pbr plugin registers deferred shader libraries when deferred plugin is disabled" {
+  @shader_source.clear_embedded_shader_sources()
+  ignore(
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::{
+      ..PbrPlugin::PbrPlugin(),
+      add_default_deferred_lighting_plugin: false,
+    }),
+  )
+  let deferred_types_source = match
+    @shader_source.embedded_shader_source(
+      "pbr/deferred/pbr_deferred_types.wgsl",
+    ) {
+    Some(source) => source
+    None => abort("missing deferred PBR types shader")
+  }
+  let deferred_functions_source = match
+    @shader_source.embedded_shader_source(
+      "pbr/deferred/pbr_deferred_functions.wgsl",
+    ) {
+    Some(source) => source
+    None => abort("missing deferred PBR functions shader")
+  }
+  debug_inspect(
+    deferred_types_source.contains(
+      "#define_import_path bevy_pbr::pbr_deferred_types",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    deferred_functions_source.contains(
+      "#define_import_path bevy_pbr::pbr_deferred_functions",
+    ),
+    content="true",
+  )
+}
+
+///|
 fn read_global_cluster_settings(
   world : @ecs.World,
 ) -> @light_cluster.GlobalClusterSettings {
