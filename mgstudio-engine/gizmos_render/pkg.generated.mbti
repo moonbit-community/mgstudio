@@ -76,7 +76,11 @@ pub fn line_gizmo_fragment_entry_point(@sprite.GizmoLineStyle) -> String
 
 pub fn line_gizmo_phase_items_for_counts(@core.Entity, @render.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
 
+pub fn line_gizmo_pipeline_plan_for_phase(LineGizmoPhasePipelineKey, msaa_samples~ : UInt, target_format~ : UInt) -> LineGizmoPipelinePlan
+
 pub fn line_gizmo_position_bytes(Array[@math.Vec3]) -> Bytes
+
+pub fn line_gizmo_render_command_plan(LineGizmoPhaseItem, LineGizmoUniform, list_vertex_count~ : Int, strip_vertex_count~ : Int, msaa_samples~ : UInt, target_format~ : UInt) -> LineGizmoRenderCommandPlan?
 
 pub fn line_gizmo_uniform_bytes(LineGizmoUniform) -> Bytes
 
@@ -159,6 +163,17 @@ pub struct LineGizmo3dPlugin {
 }
 pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo3dPlugin
+
+pub struct LineGizmoBindGroupPlan {
+  view_slot : UInt
+  uniform_slot : UInt
+  uniform_dynamic_offset : UInt
+  uniform_bytes : Bytes
+}
+pub fn LineGizmoBindGroupPlan::uniform_bytes(Self) -> Bytes
+pub fn LineGizmoBindGroupPlan::uniform_dynamic_offset(Self) -> UInt
+pub fn LineGizmoBindGroupPlan::uniform_slot(Self) -> UInt
+pub fn LineGizmoBindGroupPlan::view_slot(Self) -> UInt
 
 pub(all) enum LineGizmoDrawBufferKind {
   ListPosition
@@ -282,6 +297,17 @@ pub fn LineGizmoPipelinePlan::shader_path(Self) -> String
 pub fn LineGizmoPipelinePlan::target_format(Self) -> UInt
 pub fn LineGizmoPipelinePlan::vertex_buffer_layouts(Self) -> Array[@mesh.VertexBufferLayout]
 pub fn LineGizmoPipelinePlan::vertex_entry_point(Self) -> String?
+
+pub struct LineGizmoRenderCommandPlan {
+  phase_item : LineGizmoPhaseItem
+  pipeline : LineGizmoPipelinePlan
+  bind_groups : LineGizmoBindGroupPlan
+  draw : LineGizmoDrawPlan
+}
+pub fn LineGizmoRenderCommandPlan::bind_groups(Self) -> LineGizmoBindGroupPlan
+pub fn LineGizmoRenderCommandPlan::draw(Self) -> LineGizmoDrawPlan
+pub fn LineGizmoRenderCommandPlan::phase_item(Self) -> LineGizmoPhaseItem
+pub fn LineGizmoRenderCommandPlan::pipeline(Self) -> LineGizmoPipelinePlan
 
 pub(all) enum LineGizmoRenderDimension {
   Dim2

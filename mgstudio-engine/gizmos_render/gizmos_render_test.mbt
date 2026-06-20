@@ -518,3 +518,137 @@ test "line gizmo phase planning skips joints without enough strip vertices" {
     content="true",
   )
 }
+
+///|
+test "line gizmo render command plan combines Bevy command tuple inputs" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set(
+    entity,
+    @gizmos.Gizmo::Gizmo().with_line_config(@gizmos.GizmoLineConfig::{
+      width: 6.0F,
+      perspective: true,
+      style: @gizmos.GizmoLineStyle::Dotted,
+      joints: @gizmos.GizmoLineJoint::Round(4),
+    }),
+  )
+  try! world.set(entity, @transform.GlobalTransform::identity())
+  @gizmos_render.extract_line_gizmos(world)
+  let entities = @gizmos_render.ensure_line_gizmo_entities(world)
+  let draw_functions = @gizmos_render.ensure_line_gizmo_draw_functions(world)
+  let query : @ecs.Query[
+    (
+      @ecs.Read[@gizmos_render.LineGizmoUniform],
+      @ecs.Read[@gizmos.GizmoMeshConfig],
+      @ecs.Read[@render.MainEntity],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  let planned = Ref(0)
+  let phase_count = Ref(0)
+  let line_view_slot = Ref(99U)
+  let line_uniform_slot = Ref(99U)
+  let line_uniform_bytes = Ref(0)
+  let line_indexed = Ref(false)
+  let line_binding_count = Ref(0)
+  let line_instance_count = Ref(0U)
+  let strip_binding_count = Ref(0)
+  let strip_instance_count = Ref(0U)
+  let joint_shader_path = Ref("")
+  let joint_vertex_entry = Ref("")
+  let joint_vertex_count = Ref(0U)
+  let joint_instance_count = Ref(0U)
+  try! query.view(fn(render_entity, data) {
+    let (uniform_comp, mesh_config_comp, main_entity_comp) = data
+    let phase_items = @gizmos_render.line_gizmo_phase_items_for_counts(
+      render_entity,
+      main_entity_comp.value(),
+      entities,
+      draw_functions,
+      @gizmos_render.LineGizmoRenderDimension::Dim3,
+      mesh_config_comp.value(),
+      4,
+      5,
+    )
+    phase_count.val = phase_items.length()
+    match
+      @gizmos_render.line_gizmo_render_command_plan(
+        phase_items[0],
+        uniform_comp.value(),
+        list_vertex_count=4,
+        strip_vertex_count=5,
+        msaa_samples=4U,
+        target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      ) {
+      Some(line_plan) => {
+        line_view_slot.val = line_plan.bind_groups().view_slot()
+        line_uniform_slot.val = line_plan.bind_groups().uniform_slot()
+        line_uniform_bytes.val = line_plan
+          .bind_groups()
+          .uniform_bytes()
+          .length()
+        line_indexed.val = line_plan.pipeline().indexed()
+        line_binding_count.val = line_plan.draw().bindings().length()
+        line_instance_count.val = line_plan.draw().instance_count()
+      }
+      None => ()
+    }
+    match
+      @gizmos_render.line_gizmo_render_command_plan(
+        phase_items[1],
+        uniform_comp.value(),
+        list_vertex_count=4,
+        strip_vertex_count=5,
+        msaa_samples=4U,
+        target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      ) {
+      Some(strip_plan) => {
+        strip_binding_count.val = strip_plan.draw().bindings().length()
+        strip_instance_count.val = strip_plan.draw().instance_count()
+      }
+      None => ()
+    }
+    match
+      @gizmos_render.line_gizmo_render_command_plan(
+        phase_items[2],
+        uniform_comp.value(),
+        list_vertex_count=4,
+        strip_vertex_count=5,
+        msaa_samples=4U,
+        target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+      ) {
+      Some(joint_plan) => {
+        joint_shader_path.val = joint_plan.pipeline().shader_path()
+        joint_vertex_entry.val = match
+          joint_plan.pipeline().vertex_entry_point() {
+          Some(value) => value
+          None => ""
+        }
+        joint_vertex_count.val = joint_plan.draw().vertex_count()
+        joint_instance_count.val = joint_plan.draw().instance_count()
+      }
+      None => ()
+    }
+    planned.val = planned.val + 1
+  })
+  debug_inspect(phase_count.val, content="3")
+  debug_inspect(line_view_slot.val, content="0")
+  debug_inspect(line_uniform_slot.val, content="1")
+  debug_inspect(
+    line_uniform_bytes.val,
+    content="\{@gizmos_render.LINE_GIZMO_UNIFORM_SIZE_BYTES}",
+  )
+  debug_inspect(line_indexed.val, content="true")
+  debug_inspect(line_binding_count.val, content="2")
+  debug_inspect(line_instance_count.val, content="2")
+  debug_inspect(strip_binding_count.val, content="4")
+  debug_inspect(strip_instance_count.val, content="4")
+  debug_inspect(
+    joint_shader_path.val,
+    content="\"mgstudio_gizmos_render::line_joints.wgsl\"",
+  )
+  debug_inspect(joint_vertex_entry.val, content="\"vertex_round\"")
+  debug_inspect(joint_vertex_count.val, content="12")
+  debug_inspect(joint_instance_count.val, content="3")
+  debug_inspect(planned.val, content="1")
+}

@@ -84,6 +84,76 @@ pub fn LineGizmoDrawPlan::instance_count(self : LineGizmoDrawPlan) -> UInt {
 }
 
 ///|
+pub struct LineGizmoBindGroupPlan {
+  view_slot : UInt
+  uniform_slot : UInt
+  uniform_dynamic_offset : UInt
+  uniform_bytes : Bytes
+}
+
+///|
+pub fn LineGizmoBindGroupPlan::view_slot(self : LineGizmoBindGroupPlan) -> UInt {
+  self.view_slot
+}
+
+///|
+pub fn LineGizmoBindGroupPlan::uniform_slot(
+  self : LineGizmoBindGroupPlan,
+) -> UInt {
+  self.uniform_slot
+}
+
+///|
+pub fn LineGizmoBindGroupPlan::uniform_dynamic_offset(
+  self : LineGizmoBindGroupPlan,
+) -> UInt {
+  self.uniform_dynamic_offset
+}
+
+///|
+pub fn LineGizmoBindGroupPlan::uniform_bytes(
+  self : LineGizmoBindGroupPlan,
+) -> Bytes {
+  self.uniform_bytes
+}
+
+///|
+pub struct LineGizmoRenderCommandPlan {
+  phase_item : LineGizmoPhaseItem
+  pipeline : LineGizmoPipelinePlan
+  bind_groups : LineGizmoBindGroupPlan
+  draw : LineGizmoDrawPlan
+}
+
+///|
+pub fn LineGizmoRenderCommandPlan::phase_item(
+  self : LineGizmoRenderCommandPlan,
+) -> LineGizmoPhaseItem {
+  self.phase_item
+}
+
+///|
+pub fn LineGizmoRenderCommandPlan::pipeline(
+  self : LineGizmoRenderCommandPlan,
+) -> LineGizmoPipelinePlan {
+  self.pipeline
+}
+
+///|
+pub fn LineGizmoRenderCommandPlan::bind_groups(
+  self : LineGizmoRenderCommandPlan,
+) -> LineGizmoBindGroupPlan {
+  self.bind_groups
+}
+
+///|
+pub fn LineGizmoRenderCommandPlan::draw(
+  self : LineGizmoRenderCommandPlan,
+) -> LineGizmoDrawPlan {
+  self.draw
+}
+
+///|
 fn line_gizmo_bytes_for_vertices(vertex_count : Int, stride : Int) -> UInt64 {
   (vertex_count * stride).to_uint64()
 }
@@ -213,5 +283,93 @@ pub fn draw_line_joint_gizmo_plan(
     ],
     vertex_count,
     instance_count: (strip_vertex_count - 2).reinterpret_as_uint(),
+  })
+}
+
+///|
+pub fn line_gizmo_pipeline_plan_for_phase(
+  key : LineGizmoPhasePipelineKey,
+  msaa_samples~ : UInt,
+  target_format~ : UInt,
+) -> LineGizmoPipelinePlan {
+  match key.dimension() {
+    Dim2 =>
+      match key.kind() {
+        LineList | LineStrip =>
+          line_gizmo_2d_pipeline_plan(
+            LineGizmo2dPipelineKey::new(
+              msaa_samples~,
+              target_format~,
+              strip=key.kind() is LineStrip,
+              line_style=key.line_style(),
+            ),
+          )
+        LineJoint =>
+          line_joint_gizmo_2d_pipeline_plan(
+            LineJointGizmo2dPipelineKey::new(
+              msaa_samples~,
+              target_format~,
+              joints=key.line_joints(),
+            ),
+          )
+      }
+    Dim3 =>
+      match key.kind() {
+        LineList | LineStrip =>
+          line_gizmo_3d_pipeline_plan(
+            LineGizmo3dPipelineKey::new(
+              msaa_samples~,
+              target_format~,
+              strip=key.kind() is LineStrip,
+              perspective=key.perspective(),
+              line_style=key.line_style(),
+            ),
+          )
+        LineJoint =>
+          line_joint_gizmo_3d_pipeline_plan(
+            LineJointGizmo3dPipelineKey::new(
+              msaa_samples~,
+              target_format~,
+              perspective=key.perspective(),
+              joints=key.line_joints(),
+            ),
+          )
+      }
+  }
+}
+
+///|
+pub fn line_gizmo_render_command_plan(
+  item : LineGizmoPhaseItem,
+  uniform : LineGizmoUniform,
+  list_vertex_count~ : Int,
+  strip_vertex_count~ : Int,
+  msaa_samples~ : UInt,
+  target_format~ : UInt,
+) -> LineGizmoRenderCommandPlan? {
+  let key = item.pipeline_key()
+  let draw = match key.kind() {
+    LineList =>
+      draw_line_gizmo_plan(strip=false, list_vertex_count~, strip_vertex_count~)
+    LineStrip =>
+      draw_line_gizmo_plan(strip=true, list_vertex_count~, strip_vertex_count~)
+    LineJoint =>
+      draw_line_joint_gizmo_plan(strip_vertex_count~, joints=key.line_joints())
+  }
+  guard draw is Some(draw_plan) else { return None }
+  Some(LineGizmoRenderCommandPlan::{
+    phase_item: item,
+    pipeline: line_gizmo_pipeline_plan_for_phase(
+      key,
+      msaa_samples~,
+      target_format~,
+    ),
+    bind_groups: LineGizmoBindGroupPlan::{
+      view_slot: 0U,
+      uniform_slot: 1U,
+      uniform_dynamic_offset: 0U,
+      uniform_bytes: line_gizmo_uniform_bytes(uniform),
+    },
+    draw: draw_plan,
   })
 }
