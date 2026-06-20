@@ -284,6 +284,22 @@ fn ensure_captured_screenshots(
 }
 
 ///|
+fn ensure_render_screenshot_targets(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[RenderScreenshotTargets] {
+  match world.get_resource_mut(render_screenshot_targets_resource_key) {
+    Some(resource) => resource
+    None => {
+      world.insert_resource(
+        render_screenshot_targets_resource_key,
+        RenderScreenshotTargets::RenderScreenshotTargets(),
+      )
+      world.get_resource_mut(render_screenshot_targets_resource_key).unwrap()
+    }
+  }
+}
+
+///|
 fn init_pending_screenshot_entity_captures_resource(world : @ecs.World) -> Unit {
   if world
     .resource(pending_screenshot_entity_captures_resource_key)
@@ -336,6 +352,7 @@ fn screenshot_plugin_install(
   let mut next = app
   init_pending_screenshot_entity_captures_resource(next.world())
   init_captured_screenshots_resource(next.world())
+  init_render_screenshot_targets_resource(next.world())
   next = try_with_render_app(next, fn(render_sub_app) {
     init_render_screenshot_targets_resource(render_sub_app.world())
     init_render_screenshots_prepared_resource(render_sub_app.world())
@@ -351,6 +368,9 @@ fn screenshot_plugin_install(
     .add_systems(
       @app.Update,
       (
+        @app.system(extract_screenshots)
+        .named("mgstudio_render::extract_screenshots")
+        .in_set(screenshot_trigger_system_set),
         @app.system(screenshot_queue_capture_requests)
         .named("mgstudio_render::screenshot_queue_capture_requests")
         .in_set(screenshot_trigger_system_set),
@@ -427,18 +447,16 @@ fn screenshot_request_capture(
 }
 
 ///|
-pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
+fn extract_screenshots(world : @ecs.World) -> Unit {
   let entities : Array[@core.Entity] = []
   let seen_targets : Array[String] = []
   try! world
   .query_entities_filtered(
-    (
-      @ecs.With::new(ecs_key_screenshot),
-      @ecs.Without::new(ecs_key_capturing),
-      @ecs.Without::new(ecs_key_captured),
-    ),
+    (@ecs.With::new(ecs_key_screenshot), @ecs.Without::new(ecs_key_capturing)),
   )
   .view(fn(_query_entity, entity) { entities.push(entity) })
+  let targets = ensure_render_screenshot_targets(world)
+  targets.modify(fn(state) { state.targets.clear() })
   for entity in entities {
     guard screenshot_component(world, entity) is Some(screenshot) else {
       continue
@@ -456,11 +474,28 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
       continue
     }
     seen_targets.push(target_key)
+    try! (world.entity_mut(entity).insert_component(Capturing::{  }) |> ignore)
+    targets.modify(fn(state) { state.targets.set(entity, target_key) })
+  }
+}
+
+///|
+pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
+  let entities : Array[@core.Entity] = []
+  let targets = ensure_render_screenshot_targets(world)
+  for entry in targets.peek().targets.iter() {
+    let (entity, _) = entry
+    entities.push(entity)
+  }
+  for entity in entities {
+    guard world.is_alive(entity) else { continue }
+    guard screenshot_component(world, entity) is Some(screenshot) else {
+      continue
+    }
     let capture_id = screenshot_request_capture(world, screenshot)
     if capture_id <= 0 {
       continue
     }
-    try! (world.entity_mut(entity).insert_component(Capturing::{  }) |> ignore)
     ensure_pending_screenshot_entity_captures(world).modify(fn(state) {
       state.captures.push(PendingScreenshotEntityCapture::{ capture_id, entity })
     })

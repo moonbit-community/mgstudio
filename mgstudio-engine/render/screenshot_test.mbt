@@ -13,91 +13,15 @@
 // limitations under the License.
 
 ///|
-test "screenshot: duplicate screenshot targets are despawned during queueing" {
-  let world = @ecs.World::new()
-  let primary_window = world.spawn()
-  try! (world
-  .entity_mut(primary_window)
-  .insert_component(@window.Window::Window())
-  |> ignore)
-  try! (world
-  .entity_mut(primary_window)
-  .insert_component(@window.PrimaryWindow::{  })
-  |> ignore)
-
-  let first_request = world.spawn()
-  try! (world
-  .entity_mut(first_request)
-  .insert_component(Screenshot::primary_window())
-  |> ignore)
-
-  let duplicate_request = world.spawn()
-  try! (world
-  .entity_mut(duplicate_request)
-  .insert_component(Screenshot::window(primary_window))
-  |> ignore)
-
-  screenshot_queue_capture_requests(world)
-
-  debug_inspect(world.is_alive(first_request), content="true")
-  debug_inspect(world.is_alive(duplicate_request), content="false")
-}
-
-///|
-test "screenshot: non-primary window screenshot target still deduplicates" {
-  let world = @ecs.World::new()
-  let secondary_window = world.spawn()
-  try! (world
-  .entity_mut(secondary_window)
-  .insert_component(@window.Window::Window())
-  |> ignore)
-
-  let first_request = world.spawn()
-  try! (world
-  .entity_mut(first_request)
-  .insert_component(Screenshot::window(secondary_window))
-  |> ignore)
-
-  let duplicate_request = world.spawn()
-  try! (world
-  .entity_mut(duplicate_request)
-  .insert_component(Screenshot::window(secondary_window))
-  |> ignore)
-
-  screenshot_queue_capture_requests(world)
-
-  debug_inspect(world.is_alive(first_request), content="true")
-  debug_inspect(world.is_alive(duplicate_request), content="false")
-}
-
-///|
-test "screenshot: duplicate texture-view targets are despawned during queueing" {
-  let world = @ecs.World::new()
-
-  let first_request = world.spawn()
-  try! (world
-  .entity_mut(first_request)
-  .insert_component(Screenshot::texture_view(42))
-  |> ignore)
-
-  let duplicate_request = world.spawn()
-  try! (world
-  .entity_mut(duplicate_request)
-  .insert_component(Screenshot::texture_view(42))
-  |> ignore)
-
-  screenshot_queue_capture_requests(world)
-
-  debug_inspect(world.is_alive(first_request), content="true")
-  debug_inspect(world.is_alive(duplicate_request), content="false")
-}
-
-///|
 test "screenshot: RenderPlugin owns main-world screenshot systems" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let update_dot = app.schedule_graph_dot(@app.Update)
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::extract_screenshots\""),
+    content="true",
+  )
   debug_inspect(
     update_dot.contains(
       "\"mgstudio_render::screenshot_queue_capture_requests\"",
@@ -131,6 +55,10 @@ test "screenshot: ScreenshotPlugin owns screenshot systems" {
     ScreenshotPlugin::ScreenshotPlugin(),
   )
   let update_dot = app.schedule_graph_dot(@app.Update)
+  debug_inspect(
+    update_dot.contains("\"mgstudio_render::extract_screenshots\""),
+    content="true",
+  )
   debug_inspect(
     update_dot.contains(
       "\"mgstudio_render::screenshot_queue_capture_requests\"",

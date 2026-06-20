@@ -13,6 +13,95 @@
 // limitations under the License.
 
 ///|
+test "screenshot: duplicate screenshot targets are despawned during extraction" {
+  let world = @ecs.World::new()
+  let primary_window = world.spawn()
+  try! (world
+  .entity_mut(primary_window)
+  .insert_component(@window.Window::Window())
+  |> ignore)
+  try! (world
+  .entity_mut(primary_window)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
+
+  let first_request = world.spawn()
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::primary_window())
+  |> ignore)
+
+  let duplicate_request = world.spawn()
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::window(primary_window))
+  |> ignore)
+
+  extract_screenshots(world)
+
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
+  debug_inspect(
+    try! world.entity(first_request).contains(key=ecs_key_capturing),
+    content="true",
+  )
+  let targets = world
+    .resource(render_screenshot_targets_resource_key)
+    .get()
+    .unwrap()
+  debug_inspect(targets.targets.length(), content="1")
+}
+
+///|
+test "screenshot: non-primary window screenshot target still deduplicates" {
+  let world = @ecs.World::new()
+  let secondary_window = world.spawn()
+  try! (world
+  .entity_mut(secondary_window)
+  .insert_component(@window.Window::Window())
+  |> ignore)
+
+  let first_request = world.spawn()
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::window(secondary_window))
+  |> ignore)
+
+  let duplicate_request = world.spawn()
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::window(secondary_window))
+  |> ignore)
+
+  extract_screenshots(world)
+
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
+}
+
+///|
+test "screenshot: duplicate texture-view targets are despawned during extraction" {
+  let world = @ecs.World::new()
+
+  let first_request = world.spawn()
+  try! (world
+  .entity_mut(first_request)
+  .insert_component(Screenshot::texture_view(42))
+  |> ignore)
+
+  let duplicate_request = world.spawn()
+  try! (world
+  .entity_mut(duplicate_request)
+  .insert_component(Screenshot::texture_view(42))
+  |> ignore)
+
+  extract_screenshots(world)
+
+  debug_inspect(world.is_alive(first_request), content="true")
+  debug_inspect(world.is_alive(duplicate_request), content="false")
+}
+
+///|
 test "screenshot: RenderPlugin initializes pending capture state resource" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::RenderPlugin(),
@@ -26,6 +115,10 @@ test "screenshot: RenderPlugin initializes pending capture state resource" {
   )
   debug_inspect(
     app.world().resource(captured_screenshots_resource_key).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    app.world().resource(render_screenshot_targets_resource_key).is_present(),
     content="true",
   )
   let render_app = app.get_sub_app(@app.RenderApp).unwrap()
