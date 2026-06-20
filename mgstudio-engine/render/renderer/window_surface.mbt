@@ -802,6 +802,28 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
 }
 
 ///|
+pub fn GpuBackend::prepare_initial_surface_frames(self : GpuBackend) -> Unit {
+  let state = window_surface_runtime_state
+  for binding in state.surfaces {
+    if !binding.needs_initial_present {
+      continue
+    }
+    guard surface_state_index_by_surface_id(self, binding.surface_id)
+      is Some(index) else {
+      continue
+    }
+    let surface_state = self.surfaces[index]
+    if surface_state.configured_width <= 0 ||
+      surface_state.configured_height <= 0 {
+      continue
+    }
+    if self.begin_frame_binding(binding.surface_id) {
+      record_active_frame(binding.surface_id, binding.target_id)
+    }
+  }
+}
+
+///|
 fn GpuBackend::prepare_frame_submission_binding(
   self : GpuBackend,
   surface_id : Int,
@@ -1053,6 +1075,13 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
     return true
   }
   false
+}
+
+///|
+pub fn prepare_initial_surface_frames() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_initial_surface_frames()
+  }
 }
 
 ///|

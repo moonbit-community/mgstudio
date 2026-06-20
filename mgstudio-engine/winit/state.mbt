@@ -517,12 +517,11 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     } else {
       self.debug_screenshot_surface_index
     }
-    let mut begun_frame_count = 0
-    let begin_frames_trace_start_us = @app.timeline_trace_begin_span(
+    let screenshot_queue_trace_start_us = @app.timeline_trace_begin_span(
       @app.TimelineTraceCategory::System,
-      "mgstudio_winit::runner.begin_frames",
+      "mgstudio_winit::runner.screenshot_capture_requests",
     )
-    for i, binding in ordered_surface_bindings {
+    for i in 0..<ordered_surface_bindings.length() {
       if !self.debug_screenshot_requested &&
         self.debug_screenshot_path is Some(_) &&
         self.debug_screenshot_texture_id <= 0 &&
@@ -534,21 +533,11 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
           self.debug_screenshot_capture_id = capture_id
         }
       }
-      if binding.width <= 0 || binding.height <= 0 {
-        continue
-      }
-      @render.host_gpu_set_active_surface_target(binding.target_id)
-      if @render.host_gpu_begin_frame(binding.surface) {
-        begun_frame_count = begun_frame_count + 1
-      }
     }
-    @app.timeline_trace_emit_counter_int(
-      "winit.runner.frames", begun_frame_count,
-    )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::System,
-      "mgstudio_winit::runner.begin_frames",
-      begin_frames_trace_start_us,
+      "mgstudio_winit::runner.screenshot_capture_requests",
+      screenshot_queue_trace_start_us,
     )
     winit_runner_trace_span("mgstudio_winit::runner.screenshot_queue", fn() {
       @window.screenshot_queue_capture_requests(self.app_ref.val.world())

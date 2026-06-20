@@ -274,6 +274,11 @@ pub fn present_active_frames(_world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn prepare_window_surfaces(_world : @ecs.World) -> Unit {
+  @renderer.prepare_initial_surface_frames()
+}
+
+///|
 fn process_pipeline_queue_system(world : @ecs.World) -> Unit {
   guard world.get_resource(pipeline_cache_resource_key) is Some(cache) else {
     return

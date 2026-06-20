@@ -148,6 +148,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(prepare_window_surfaces)
+        .named("mgstudio_render::prepare_window_surfaces")
+        .in_set(render_system_set_prepare_views),
+      )
+      .add_systems(
+        render_schedule_stage(),
         @app.system(process_pipeline_queue_system)
         .named("mgstudio_render::process_pipeline_queue_system")
         .in_set(render_system_set_process_pipeline_queue),

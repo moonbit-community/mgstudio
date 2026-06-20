@@ -400,6 +400,8 @@ pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.Res
 
 pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> B raise PrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
+pub fn prepare_window_surfaces(@ecs.World) -> Unit
+
 pub fn present_active_frames(@ecs.World) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
