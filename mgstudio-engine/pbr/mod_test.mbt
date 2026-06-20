@@ -652,6 +652,106 @@ test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
 }
 
 ///|
+fn pbr_extract_material_instance_or_abort(
+  app : @app.App[@ecs.World],
+  entity : @core.Entity,
+) -> RenderMaterialInstance {
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let instances = render_world
+    .get_resource(ecs_key_render_material_instances)
+    .unwrap()
+  match instances.get(entity) {
+    Some(instance) => instance
+    None => abort("missing RenderMaterialInstance")
+  }
+}
+
+///|
+test "render3d: pbr plugin extracts and sweeps material instances through render schedule" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let world = app.world()
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(1)),
+  )
+  try! world.set_by_key(
+    entity,
+    ecs_key_mesh_material3d,
+    MeshMaterial3d::new(@asset.Handle::new(10)),
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  app = app.update()
+  let first_instance = pbr_extract_material_instance_or_abort(app, entity)
+  debug_inspect(first_instance.asset_id(), content="10")
+  debug_inspect(first_instance.last_change_tick(), content="0")
+  debug_inspect(
+    app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_resource(ecs_key_render_material_instances)
+    .unwrap()
+    .current_change_tick(),
+    content="1",
+  )
+
+  app.world().increment_change_tick() |> ignore
+  ignore(try! app.world().remove_by_key(entity, ecs_key_mesh_material3d))
+  app.world().increment_change_tick() |> ignore
+  app = app.update()
+  debug_inspect(
+    app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_resource(ecs_key_render_material_instances)
+    .unwrap()
+    .mesh_material(entity),
+    content="-1",
+  )
+
+  app.world().increment_change_tick() |> ignore
+  try! app
+  .world()
+  .set_by_key(
+    entity,
+    ecs_key_mesh_material3d,
+    MeshMaterial3d::new(@asset.Handle::new(30)),
+  )
+  app.world().increment_change_tick() |> ignore
+  app = app.update()
+  debug_inspect(
+    pbr_extract_material_instance_or_abort(app, entity).asset_id(),
+    content="30",
+  )
+
+  app = app.update()
+  app.world().increment_change_tick() |> ignore
+  ignore(try! app.world().remove_by_key(entity, ecs_key_mesh3d))
+  app.world().increment_change_tick() |> ignore
+  app = app.update()
+  debug_inspect(
+    app
+    .sub_app(@app.RenderApp)
+    .world()
+    .get_resource(ecs_key_render_material_instances)
+    .unwrap()
+    .mesh_material(entity),
+    content="-1",
+  )
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

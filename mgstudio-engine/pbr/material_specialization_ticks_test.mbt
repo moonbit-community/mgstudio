@@ -18,8 +18,7 @@ test "pbr material specialization: entity ticks capture system and material inst
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(31, 0)
 
-  material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
-  |> ignore
+  material_instances.advance_change_tick()
   entity_ticks.extract_entity_needs_specialization(
     entity, 7, material_instances,
   )
@@ -117,8 +116,7 @@ test "pbr material specialization: sweep removes stale ticks and cached pipeline
   entity_ticks.extract_entity_needs_specialization(
     entity, 3, material_instances,
   )
-  material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
-  |> ignore
+  material_instances.advance_change_tick()
   cache.insert(view_a, entity, 3, @material.CachedRenderPipelineId::new(7UL))
   cache.insert(view_b, entity, 3, @material.CachedRenderPipelineId::new(8UL))
 

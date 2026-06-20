@@ -48,11 +48,16 @@ pub fn RenderMaterialInstance::last_change_tick(
 pub struct RenderMaterialInstances {
   instances : Map[UInt64, RenderMaterialInstance]
   mut current_change_tick : @core.Tick
+  mut last_source_change_tick : @core.Tick
 }
 
 ///|
 pub fn RenderMaterialInstances::RenderMaterialInstances() -> RenderMaterialInstances {
-  RenderMaterialInstances::{ instances: {}, current_change_tick: 0 }
+  RenderMaterialInstances::{
+    instances: {},
+    current_change_tick: 0,
+    last_source_change_tick: 0,
+  }
 }
 
 ///|
@@ -70,6 +75,25 @@ pub fn RenderMaterialInstances::current_change_tick(
   self : RenderMaterialInstances,
 ) -> @core.Tick {
   self.current_change_tick
+}
+
+///|
+fn RenderMaterialInstances::source_system_ticks(
+  self : RenderMaterialInstances,
+  source_world : @ecs.World,
+) -> @core.SystemTicks {
+  @core.SystemTicks::new(
+    self.last_source_change_tick,
+    source_world.read_change_tick(),
+  )
+}
+
+///|
+fn RenderMaterialInstances::set_last_source_change_tick(
+  self : RenderMaterialInstances,
+  tick : @core.Tick,
+) -> Unit {
+  self.last_source_change_tick = tick
 }
 
 ///|
@@ -146,30 +170,15 @@ pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(
   self : RenderMaterialInstances,
   entity : @core.Entity,
 ) -> Bool {
-  let removed = self.early_sweep_removed_mesh_material(entity)
-  self.current_change_tick = @core.tick_wrapping_add(
-    self.current_change_tick,
-    1,
-  )
-  removed
+  self.early_sweep_removed_mesh_material(entity)
 }
 
 ///|
-pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(
+pub fn RenderMaterialInstances::advance_change_tick(
   self : RenderMaterialInstances,
-) -> Int {
-  let stale_keys : Array[UInt64] = []
-  for key, instance in self.instances {
-    if instance.last_change_tick() != self.current_change_tick {
-      stale_keys.push(key)
-    }
-  }
-  for key in stale_keys {
-    ignore(self.instances.remove(key))
-  }
+) -> Unit {
   self.current_change_tick = @core.tick_wrapping_add(
     self.current_change_tick,
     1,
   )
-  stale_keys.length()
 }

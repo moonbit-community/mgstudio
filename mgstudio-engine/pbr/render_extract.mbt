@@ -119,6 +119,168 @@ fn extract_ambient_light(render_world : @ecs.World) -> Unit {
 }
 
 ///|
+let material_extraction_systems : @app.SystemSet = @app.system_set(
+  "mgstudio_pbr::MaterialExtractionSystems",
+)
+
+///|
+let early_sweep_material_instances_set : @app.SystemSet = @app.system_set(
+  "mgstudio_pbr::early_sweep_material_instances",
+)
+
+///|
+let late_sweep_material_instances_set : @app.SystemSet = @app.system_set(
+  "mgstudio_pbr::late_sweep_material_instances",
+)
+
+///|
+fn collect_changed_mesh_material_entities(
+  source_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Map[UInt64, @core.Entity] {
+  let changed_entities : Map[UInt64, @core.Entity] = {}
+  for
+    entity in source_world
+    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
+    .read() {
+    changed_entities.set(entity.to_bits(), entity)
+  }
+  for
+    entity in source_world
+    .changed_components(ecs_key_mesh_material3d, system_ticks)
+    .read() {
+    changed_entities.set(entity.to_bits(), entity)
+  }
+  changed_entities
+}
+
+///|
+fn collect_removed_mesh_material_entities(
+  source_world : @ecs.World,
+  key : @ecs.ComponentKey[MeshMaterial3d],
+  system_ticks : @core.SystemTicks,
+) -> Array[@core.Entity] {
+  let removed_entities : Map[UInt64, @core.Entity] = {}
+  for entity in source_world.removed_components(key, system_ticks).read() {
+    removed_entities.set(entity.to_bits(), entity)
+  }
+  let values : Array[@core.Entity] = []
+  for _, entity in removed_entities {
+    values.push(entity)
+  }
+  values
+}
+
+///|
+fn collect_removed_mesh3d_entities(
+  source_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Array[@core.Entity] {
+  let removed_entities : Map[UInt64, @core.Entity] = {}
+  for
+    entity in source_world
+    .removed_components(ecs_key_mesh3d, system_ticks)
+    .read() {
+    removed_entities.set(entity.to_bits(), entity)
+  }
+  let values : Array[@core.Entity] = []
+  for _, entity in removed_entities {
+    values.push(entity)
+  }
+  values
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::extract_mesh_materials`.
+fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  let system_ticks = match
+    render_world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) => instances.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
+  let changed_entities = collect_changed_mesh_material_entities(
+    source_world, system_ticks,
+  )
+  let material_instances = match
+    render_world.get_resource_mut(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => abort("missing RenderMaterialInstances resource")
+  }
+  material_instances.modify(fn(instances) {
+    for _, entity in changed_entities {
+      match
+        (
+          try! source_world.get_by_key(
+            entity, @visibility.ecs_key_view_visibility,
+          ),
+          try! source_world.get_by_key(entity, ecs_key_mesh_material3d),
+        ) {
+        (Some(view_visibility), Some(material)) =>
+          instances.extract_mesh_material(
+            entity,
+            view_visibility.is_visible(),
+            material,
+          )
+        _ => ()
+      }
+    }
+  })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::early_sweep_material_instances`.
+fn early_sweep_material_instances(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  let system_ticks = match
+    render_world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) => instances.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
+  let material_instances = match
+    render_world.get_resource_mut(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => abort("missing RenderMaterialInstances resource")
+  }
+  let removed_materials = collect_removed_mesh_material_entities(
+    source_world, ecs_key_mesh_material3d, system_ticks,
+  )
+  material_instances.modify(fn(instances) {
+    for entity in removed_materials {
+      ignore(instances.early_sweep_removed_mesh_material(entity))
+    }
+  })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::late_sweep_material_instances`.
+fn late_sweep_material_instances(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  let source_this_run = source_world.read_change_tick()
+  let system_ticks = match
+    render_world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) =>
+      @core.SystemTicks::new(instances.last_source_change_tick, source_this_run)
+    None => @core.SystemTicks::new(0, source_this_run)
+  }
+  let material_instances = match
+    render_world.get_resource_mut(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => abort("missing RenderMaterialInstances resource")
+  }
+  let removed_meshes = collect_removed_mesh3d_entities(
+    source_world, system_ticks,
+  )
+  material_instances.modify(fn(instances) {
+    for entity in removed_meshes {
+      ignore(instances.late_sweep_removed_mesh3d(entity))
+    }
+    instances.advance_change_tick()
+    instances.set_last_source_change_tick(source_this_run)
+  })
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::extract_shadow_lod_origin`.
 fn extract_shadow_lod_origin(render_world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(render_world)

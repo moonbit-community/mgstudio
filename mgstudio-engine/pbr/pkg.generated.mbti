@@ -1803,14 +1803,15 @@ pub fn RenderMaterialInstance::new(Int, Int64) -> Self
 pub struct RenderMaterialInstances {
   instances : Map[UInt64, RenderMaterialInstance]
   mut current_change_tick : Int64
+  mut last_source_change_tick : Int64
 }
 pub fn RenderMaterialInstances::RenderMaterialInstances() -> Self
+pub fn RenderMaterialInstances::advance_change_tick(Self) -> Unit
 pub fn RenderMaterialInstances::current_change_tick(Self) -> Int64
 pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
 pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstance?
 pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) -> Bool
-pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 pub fn RenderMaterialInstances::remove_mesh_material(Self, @core.Entity) -> Bool

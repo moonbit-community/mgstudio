@@ -127,6 +127,18 @@ fn configure_pbr_render_extract_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(extract_mesh_materials)
+    .named("mgstudio_pbr::extract_mesh_materials")
+    .in_set(material_extraction_systems),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(early_sweep_material_instances)
+    .named("mgstudio_pbr::early_sweep_material_instances")
+    .in_set(early_sweep_material_instances_set),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(extract_shadow_filtering_method)
     .named("mgstudio_pbr::extract_shadow_filtering_method")
     .in_set(@render.render_system_set_extract_commands),
@@ -142,6 +154,31 @@ fn configure_pbr_render_extract_systems(
     @app.system(extract_shadow_lod_origin)
     .named("mgstudio_pbr::extract_shadow_lod_origin")
     .in_set(@render.render_system_set_extract_commands),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(late_sweep_material_instances)
+    .named("mgstudio_pbr::late_sweep_material_instances")
+    .in_set(late_sweep_material_instances_set),
+  )
+  .configure_set(
+    @render.render_schedule_stage(),
+    material_extraction_systems,
+    before=[early_sweep_material_instances_set],
+    in_sets=[@render.render_system_set_extract_commands],
+  )
+  .configure_set(
+    @render.render_schedule_stage(),
+    early_sweep_material_instances_set,
+    after=[material_extraction_systems],
+    before=[late_sweep_material_instances_set],
+    in_sets=[@render.render_system_set_extract_commands],
+  )
+  .configure_set(
+    @render.render_schedule_stage(),
+    late_sweep_material_instances_set,
+    after=[early_sweep_material_instances_set],
+    in_sets=[@render.render_system_set_extract_commands],
   )
 }
 
