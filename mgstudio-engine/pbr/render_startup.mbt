@@ -26,6 +26,16 @@ let ecs_key_pbr_render_startup_systems_installed : @ecs.ResourceKey[
 )
 
 ///|
+priv struct PbrRenderExtractSystemsInstalled {}
+
+///|
+let ecs_key_pbr_render_extract_systems_installed : @ecs.ResourceKey[
+  PbrRenderExtractSystemsInstalled,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PbrRenderExtractSystemsInstalled",
+)
+
+///|
 pub fn configure_pbr_render_startup_systems(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -95,10 +105,33 @@ fn configure_pbr_render_world_resources(
 }
 
 ///|
+fn configure_pbr_render_extract_systems(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  if sub_app
+    .world()
+    .resource(ecs_key_pbr_render_extract_systems_installed)
+    .is_present() {
+    return sub_app
+  }
+  let marker = PbrRenderExtractSystemsInstalled::{  }
+  sub_app
+  .world()
+  .insert_resource(ecs_key_pbr_render_extract_systems_installed, marker)
+  sub_app.add_systems(
+    @render.render_schedule_stage(),
+    @app.system(@pbr_render.extract_ambient_light_resource)
+    .named("mgstudio_pbr::extract_ambient_light_resource")
+    .in_set(@render.render_system_set_extract_commands),
+  )
+}
+
+///|
 pub fn configure_pbr_render_app_build_flow(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   sub_app
   |> configure_pbr_render_startup_systems
   |> configure_pbr_render_world_resources
+  |> configure_pbr_render_extract_systems
 }

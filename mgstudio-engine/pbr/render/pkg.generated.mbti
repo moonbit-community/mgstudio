@@ -175,6 +175,8 @@ pub fn ensure_render3d_mesh_runtime_state_resource(@ecs.World) -> Unit
 
 pub fn ensure_skin_uniforms_resource(@ecs.World) -> Unit
 
+pub fn extract_ambient_light_resource(@ecs.World) -> Unit
+
 pub fn fog_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn fog_plugin_install_with(@app.App[@ecs.World], FogPlugin) -> @app.App[@ecs.World]

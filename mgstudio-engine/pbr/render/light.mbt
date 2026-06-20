@@ -108,6 +108,18 @@ pub impl @app.Resource for ShadowSamplers with fn resource() {
 }
 
 ///|
+priv struct AmbientLightResourceExtractState {
+  last_source_changed_tick : @core.Tick?
+}
+
+///|
+let ecs_key_ambient_light_resource_extract_state : @ecs.ResourceKey[
+  AmbientLightResourceExtractState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::AmbientLightResourceExtractState",
+)
+
+///|
 pub fn ShadowSamplers::point_light_comparison_sampler(
   self : ShadowSamplers,
 ) -> @wgpu.Sampler {
@@ -154,6 +166,57 @@ pub fn init_shadow_samplers(world : @ecs.World) -> Unit {
       device, "directional light shadow map sampler",
     ),
   })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::extract_ambient_light_resource`.
+fn ambient_light_resource_source_tick_matches(
+  lhs : @core.Tick?,
+  rhs : @core.Tick?,
+) -> Bool {
+  match (lhs, rhs) {
+    (Some(left), Some(right)) => left == right
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
+fn extract_ambient_light_resource_from_worlds(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  let resource_key = @light.ecs_key_global_ambient_light
+  guard source_world.get_resource(resource_key) is Some(main_resource) else {
+    return
+  }
+  let source_changed_tick = source_world.resource_changed_tick(resource_key)
+  let previous_changed_tick = match
+    render_world.get_resource(ecs_key_ambient_light_resource_extract_state) {
+    Some(state) => state.last_source_changed_tick
+    None => None
+  }
+  let target_missing = render_world.get_resource(resource_key) is None
+  if target_missing ||
+    !ambient_light_resource_source_tick_matches(
+      previous_changed_tick, source_changed_tick,
+    ) {
+    let state = AmbientLightResourceExtractState::{
+      last_source_changed_tick: source_changed_tick,
+    }
+    render_world.insert_resource(resource_key, main_resource)
+    render_world.insert_resource(
+      ecs_key_ambient_light_resource_extract_state, state,
+    )
+  }
+}
+
+///|
+pub fn extract_ambient_light_resource(render_world : @ecs.World) -> Unit {
+  extract_ambient_light_resource_from_worlds(
+    @render_gpu.render_source_world(render_world),
+    render_world,
+  )
 }
 
 ///|

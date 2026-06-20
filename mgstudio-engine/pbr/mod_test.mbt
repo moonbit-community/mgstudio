@@ -415,6 +415,63 @@ test "render3d: pbr plugin initializes Bevy-shaped render resources" {
 }
 
 ///|
+test "render3d: pbr plugin extracts global ambient light through render schedule" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  app
+  .world()
+  .insert_resource(
+    @light.ecs_key_global_ambient_light,
+    @light.GlobalAmbientLight::new(
+      @color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      2.0F,
+    ).with_affects_lightmapped_meshes(false),
+  )
+
+  app = app.update()
+  let first_render_world = app.sub_app(@app.RenderApp).world()
+  let first_changed_tick = first_render_world
+    .resource_changed_tick(@light.ecs_key_global_ambient_light)
+    .unwrap()
+  let first_ambient = first_render_world
+    .get_resource(@light.ecs_key_global_ambient_light)
+    .unwrap()
+  debug_inspect(first_ambient.brightness, content="2")
+  debug_inspect(first_ambient.affects_lightmapped_meshes, content="false")
+
+  app = app.update()
+  let second_render_world = app.sub_app(@app.RenderApp).world()
+  let unchanged_tick = second_render_world
+    .resource_changed_tick(@light.ecs_key_global_ambient_light)
+    .unwrap()
+  debug_inspect(unchanged_tick == first_changed_tick, content="true")
+
+  app
+  .world()
+  .insert_resource(
+    @light.ecs_key_global_ambient_light,
+    @light.GlobalAmbientLight::new(
+      @color.Color::new(1.0F, 0.5F, 0.25F, 1.0F),
+      6.0F,
+    ),
+  )
+  app = app.update()
+  let third_render_world = app.sub_app(@app.RenderApp).world()
+  let second_changed_tick = third_render_world
+    .resource_changed_tick(@light.ecs_key_global_ambient_light)
+    .unwrap()
+  let second_ambient = third_render_world
+    .get_resource(@light.ecs_key_global_ambient_light)
+    .unwrap()
+  debug_inspect(second_changed_tick != unchanged_tick, content="true")
+  debug_inspect(second_ambient.brightness, content="6")
+}
+
+///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
