@@ -178,8 +178,8 @@ pub struct ViewGpuClusteringBuffers {
 
 ///|
 pub struct GpuClusteringMeshBuffers {
-  vertices : Array[@math.Vec2]
-  indices : Array[UInt]
+  vertex_buffer : @wgpu.Buffer
+  index_buffer : @wgpu.Buffer
 }
 
 ///|
@@ -1242,30 +1242,84 @@ fn ViewGpuClusteringBuffers::write_buffers(
 }
 
 ///|
-pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers() -> GpuClusteringMeshBuffers {
-  GpuClusteringMeshBuffers::{
-    vertices: [
-      @math.Vec2::new(0.0, 0.0),
-      @math.Vec2::new(1.0, 0.0),
-      @math.Vec2::new(0.0, 1.0),
-      @math.Vec2::new(1.0, 1.0),
-    ],
-    indices: [0U, 1U, 2U, 1U, 3U, 2U],
+fn gpu_clustering_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 24) & 0xFFU).reinterpret_as_int().to_byte())
+}
+
+///|
+fn gpu_clustering_mesh_f32le_bytes(vertices : Array[@math.Vec2]) -> Bytes {
+  let out : Array[Byte] = []
+  for vertex in vertices {
+    gpu_clustering_push_u32_le(out, vertex.x.reinterpret_as_uint())
+    gpu_clustering_push_u32_le(out, vertex.y.reinterpret_as_uint())
   }
+  Bytes::from_array(out)
 }
 
 ///|
-pub fn GpuClusteringMeshBuffers::vertices(
-  self : GpuClusteringMeshBuffers,
-) -> Array[@math.Vec2] {
-  self.vertices.copy()
+fn gpu_clustering_mesh_u32le_bytes(indices : Array[UInt]) -> Bytes {
+  let out : Array[Byte] = []
+  for index in indices {
+    gpu_clustering_push_u32_le(out, index)
+  }
+  Bytes::from_array(out)
 }
 
 ///|
-pub fn GpuClusteringMeshBuffers::indices(
+fn gpu_clustering_vertices() -> Array[@math.Vec2] {
+  [
+    @math.Vec2::new(0.0, 0.0),
+    @math.Vec2::new(1.0, 0.0),
+    @math.Vec2::new(0.0, 1.0),
+    @math.Vec2::new(1.0, 1.0),
+  ]
+}
+
+///|
+fn gpu_clustering_indices() -> Array[UInt] {
+  [0U, 1U, 2U, 1U, 3U, 2U]
+}
+
+///|
+pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers(
+  render_device : @renderer.RenderDevice,
+) -> GpuClusteringMeshBuffers {
+  let vertex_buffer = render_device
+    .wgpu_device()
+    .create_buffer_init(
+      usage=@wgpu.BufferUsage::from_u64(
+        @wgpu.BUFFER_USAGE_COPY_DST | @wgpu.BUFFER_USAGE_VERTEX,
+      ),
+      gpu_clustering_mesh_f32le_bytes(gpu_clustering_vertices()),
+    )
+  vertex_buffer.set_label("GPU clustering vertex buffer")
+  let index_buffer = render_device
+    .wgpu_device()
+    .create_buffer_init(
+      usage=@wgpu.BufferUsage::from_u64(
+        @wgpu.BUFFER_USAGE_COPY_DST | @wgpu.BUFFER_USAGE_INDEX,
+      ),
+      gpu_clustering_mesh_u32le_bytes(gpu_clustering_indices()),
+    )
+  index_buffer.set_label("GPU clustering index buffer")
+  GpuClusteringMeshBuffers::{ vertex_buffer, index_buffer }
+}
+
+///|
+pub fn GpuClusteringMeshBuffers::vertex_buffer(
   self : GpuClusteringMeshBuffers,
-) -> Array[UInt] {
-  self.indices.copy()
+) -> @wgpu.Buffer {
+  self.vertex_buffer
+}
+
+///|
+pub fn GpuClusteringMeshBuffers::index_buffer(
+  self : GpuClusteringMeshBuffers,
+) -> @wgpu.Buffer {
+  self.index_buffer
 }
 
 ///|
@@ -2296,7 +2350,7 @@ fn gpu_clustering_configure_render_app_finish(
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     GpuClusteringMeshBuffers::resource(),
-    fn() { GpuClusteringMeshBuffers::GpuClusteringMeshBuffers() },
+    fn() { GpuClusteringMeshBuffers::GpuClusteringMeshBuffers(render_device) },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,

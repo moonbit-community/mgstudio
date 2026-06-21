@@ -833,8 +833,8 @@ test "render3d: gpu clustering plugin finish initializes render resources" {
     let mesh_buffers = render_world
       .get_resource(GpuClusteringMeshBuffers::resource())
       .unwrap()
-    debug_inspect(mesh_buffers.vertices().length(), content="4")
-    debug_inspect(mesh_buffers.indices(), content="[0, 1, 2, 1, 3, 2]")
+    debug_inspect(mesh_buffers.vertex_buffer().size(), content="32")
+    debug_inspect(mesh_buffers.index_buffer().size(), content="24")
   }
   device.release()
   adapter.release()

@@ -1465,12 +1465,12 @@ pub fn GpuClusteredLights::max_clustered_lights(Self) -> Int?
 pub fn GpuClusteredLights::write_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
 
 pub struct GpuClusteringMeshBuffers {
-  vertices : Array[@math.Vec2]
-  indices : Array[UInt]
+  vertex_buffer : @wgpu_mbt.Buffer
+  index_buffer : @wgpu_mbt.Buffer
 }
-pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers() -> Self
-pub fn GpuClusteringMeshBuffers::indices(Self) -> Array[UInt]
-pub fn GpuClusteringMeshBuffers::vertices(Self) -> Array[@math.Vec2]
+pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers(@renderer.RenderDevice) -> Self
+pub fn GpuClusteringMeshBuffers::index_buffer(Self) -> @wgpu_mbt.Buffer
+pub fn GpuClusteringMeshBuffers::vertex_buffer(Self) -> @wgpu_mbt.Buffer
 pub impl @app.Resource for GpuClusteringMeshBuffers
 
 pub struct GpuClusteringPlugin {
