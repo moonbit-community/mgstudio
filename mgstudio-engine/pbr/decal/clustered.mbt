@@ -76,7 +76,7 @@ pub struct RenderClusteredDecals {
   binding_index_to_textures : Array[Int]
   texture_to_binding_index : Map[Int, Int]
   decals : Array[RenderClusteredDecal]
-  entity_to_decal_index : Map[Int, Int]
+  entity_to_decal_index : Map[UInt64, Int]
 }
 
 ///|
@@ -165,7 +165,7 @@ pub fn RenderClusteredDecals::insert_decal_with_local_from_world(
       bounding_sphere_radius~,
     ),
   )
-  self.entity_to_decal_index.set(entity.id, decal_index)
+  self.entity_to_decal_index.set(entity.to_bits(), decal_index)
   decal_index
 }
 
@@ -174,7 +174,18 @@ pub fn RenderClusteredDecals::get_decal_index(
   self : RenderClusteredDecals,
   entity : @core.Entity,
 ) -> Int? {
-  self.entity_to_decal_index.get(entity.id)
+  self.entity_to_decal_index.get(entity.to_bits())
+}
+
+///|
+pub fn RenderClusteredDecals::entity_decal_indices(
+  self : RenderClusteredDecals,
+) -> Array[(@core.Entity, Int)] {
+  let pairs : Array[(@core.Entity, Int)] = []
+  self.entity_to_decal_index.each(fn(bits, index) {
+    pairs.push((@core.Entity::from_bits(bits), index))
+  })
+  pairs
 }
 
 ///|
@@ -744,8 +755,13 @@ pub fn render3d_render_clustered_decals_ref_or_init(
 
 ///|
 pub impl @app.Plugin for ClusteredDecalPlugin with fn build(self, app) {
+  let sync_component : @render.SyncComponentPlugin[
+    ClusteredDecal,
+    ClusteredDecalPlugin,
+  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  let next = @render.sync_component_plugin_with(app, sync_component)
   register_embedded_wgsl_sources()
-  clustered_decal_plugin_install_with(app, self)
+  clustered_decal_plugin_install_with(next, self)
 }
 
 ///|

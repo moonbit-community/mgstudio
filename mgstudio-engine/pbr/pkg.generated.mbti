@@ -624,6 +624,8 @@ pub fn pbr_plugin_runtime_config(@ecs.World) -> PbrPluginRuntimeConfig
 
 pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
+pub let pbr_prepare_lights_set : String
+
 pub fn pbr_prepass_enabled(@ecs.World) -> Bool
 
 pub fn pbr_prepass_material_specialization_decision(@material.MaterialProperties, UInt64, UInt64, has_deferred_prepass? : Bool, lightmapped? : Bool, lightmap_bicubic_sampling? : Bool, visibility_range_dither? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool, emulate_unclipped_depth? : Bool) -> PbrPrepassMaterialSpecializationDecision
@@ -1428,11 +1430,14 @@ pub(all) struct GlobalClusterableObjectMeta {
   entity_to_index : Map[UInt64, Int]
 }
 pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(Self, GpuClusteredLight) -> Unit
+pub fn GlobalClusterableObjectMeta::clear_entity_to_index(Self) -> Unit
+pub fn GlobalClusterableObjectMeta::entity_index(Self, @core.Entity) -> Int?
 pub fn GlobalClusterableObjectMeta::entity_to_index_len(Self) -> Int
 pub fn GlobalClusterableObjectMeta::gpu_clustered_light_count(Self) -> Int
 pub fn GlobalClusterableObjectMeta::gpu_clustered_lights(Self) -> GpuClusteredLights
 pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_binding(Self) -> @wgpu_mbt.Buffer?
 pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_gpu_capacity(Self) -> UInt64
+pub fn GlobalClusterableObjectMeta::insert_entity_index(Self, @core.Entity, Int) -> Unit
 pub fn GlobalClusterableObjectMeta::new(UInt) -> Self
 pub fn GlobalClusterableObjectMeta::write_gpu_clustered_lights_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
 pub impl @app.Resource for GlobalClusterableObjectMeta

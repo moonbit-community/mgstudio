@@ -275,6 +275,30 @@ pub fn GlobalClusterableObjectMeta::entity_to_index_len(
 }
 
 ///|
+pub fn GlobalClusterableObjectMeta::clear_entity_to_index(
+  self : GlobalClusterableObjectMeta,
+) -> Unit {
+  self.entity_to_index.clear()
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::insert_entity_index(
+  self : GlobalClusterableObjectMeta,
+  entity : @core.Entity,
+  index : Int,
+) -> Unit {
+  self.entity_to_index.set(entity.to_bits(), index)
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::entity_index(
+  self : GlobalClusterableObjectMeta,
+  entity : @core.Entity,
+) -> Int? {
+  self.entity_to_index.get(entity.to_bits())
+}
+
+///|
 pub fn GlobalClusterableObjectMeta::gpu_clustered_light_count(
   self : GlobalClusterableObjectMeta,
 ) -> Int {

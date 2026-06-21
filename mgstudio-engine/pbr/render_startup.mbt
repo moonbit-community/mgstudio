@@ -56,6 +56,34 @@ let ecs_key_pbr_render_prepare_systems_installed : @ecs.ResourceKey[
 )
 
 ///|
+pub let pbr_prepare_lights_set : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.prepare_lights",
+)
+
+///|
+fn prepare_clustered_decals(world : @ecs.World) -> Unit {
+  let render_decals = match
+    world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
+    Some(value) => value
+    None => abort("prepare_clustered_decals: missing RenderClusteredDecals")
+  }
+  let meta_ref = match
+    world.get_resource_mut(ecs_key_global_clusterable_object_meta) {
+    Some(value) => value
+    None =>
+      abort("prepare_clustered_decals: missing GlobalClusterableObjectMeta")
+  }
+  meta_ref.modify(fn(global_clusterable_object_meta) {
+    for pair in render_decals.entity_decal_indices() {
+      let (entity, index) = pair
+      if (try! world.contains_by_key(entity, @pbr_decal.ecs_key_clustered_decal)) {
+        global_clusterable_object_meta.insert_entity_index(entity, index)
+      }
+    }
+  })
+}
+
+///|
 pub fn configure_pbr_render_startup_systems(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -140,12 +168,21 @@ fn configure_pbr_render_prepare_systems(
   .insert_resource(ecs_key_pbr_render_prepare_systems_installed, PbrRenderPrepareSystemsInstalled::{
 
   })
-  sub_app.add_systems(
+  sub_app
+  .add_systems(
     @render.render_schedule_stage(),
     @app.system(prepare_lights)
     .named("mgstudio_pbr::prepare_lights")
     .after(@core_pipeline.core_pipeline_camera_driver_set)
+    .in_set(pbr_prepare_lights_set)
     .in_set(@render.render_system_set_create_views),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_clustered_decals)
+    .named("mgstudio_pbr::prepare_clustered_decals")
+    .after(pbr_prepare_lights_set)
+    .in_set(@render.render_system_set_prepare_views),
   )
 }
 

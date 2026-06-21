@@ -125,6 +125,62 @@ fn prepare_lights_schedule_spawn_view(world : @ecs.World) -> Unit {
 }
 
 ///|
+struct PrepareClusteredDecalsScheduleProbe {
+  mut decal_entity : @core.Entity?
+  mut light_texture_entity : @core.Entity?
+}
+
+///|
+let prepare_clustered_decals_schedule_probe_key : @ecs.ResourceKey[
+  PrepareClusteredDecalsScheduleProbe,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr.test.prepare_clustered_decals_schedule_probe",
+)
+
+///|
+fn prepare_clustered_decals_schedule_seed(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    @light_cluster.GlobalClusterSettings::resource(),
+    @light_cluster.GlobalClusterSettings::new(true, true, None, 204, 16384),
+  )
+  let view = world.spawn()
+  try! world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
+  )
+  try! world.set_by_key(view, ecs_key_camera3d, Camera3d::Camera3d())
+  let decal_entity = world.spawn()
+  let decal = @light.ClusteredDecal::ClusteredDecal().with_tag(3)
+  try! world.set_by_key(decal_entity, @pbr_decal.ecs_key_clustered_decal, decal)
+  let light_texture_entity = world.spawn()
+  let render_decals_ref = @pbr_decal.render3d_render_clustered_decals_ref_or_init(
+    world,
+  )
+  render_decals_ref.modify(fn(render_decals) {
+    ignore(render_decals.insert_decal(decal_entity, decal))
+    ignore(
+      render_decals.insert_decal(
+        light_texture_entity,
+        @light.ClusteredDecal::ClusteredDecal().with_tag(5),
+      ),
+    )
+  })
+  match world.get_resource_mut(ecs_key_global_clusterable_object_meta) {
+    Some(meta_ref) =>
+      meta_ref.modify(fn(meta) { meta.insert_entity_index(decal_entity, 99) })
+    None => ()
+  }
+  match world.get_resource(prepare_clustered_decals_schedule_probe_key) {
+    Some(probe) => {
+      probe.decal_entity = Some(decal_entity)
+      probe.light_texture_entity = Some(light_texture_entity)
+    }
+    None => ()
+  }
+}
+
+///|
 test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
   @shader_source.clear_embedded_shader_sources()
   ignore(
@@ -827,6 +883,76 @@ test "render3d: prepare_lights runs after the camera driver set" {
     is Some(_),
     content="true",
   )
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
+test "render3d: clustered decals prepare after prepare_lights" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  ignore(
+    app.modify_sub_app(@app.RenderApp, fn(render_app) {
+      render_app
+      .world()
+      .insert_resource(@render.render_device_resource_key, render_device)
+      render_app
+      .world()
+      .insert_resource(@render.render_queue_resource_key, render_queue)
+      render_app
+      .world()
+      .insert_resource(prepare_clustered_decals_schedule_probe_key, PrepareClusteredDecalsScheduleProbe::{
+        decal_entity: None,
+        light_texture_entity: None,
+      })
+      render_app.add_systems(
+        @render.render_schedule_stage(),
+        @app.system(prepare_clustered_decals_schedule_seed)
+        .in_set(@core_pipeline.core_pipeline_camera_driver_set)
+        .in_set(@render.render_system_set_create_views),
+      )
+    }),
+  )
+
+  app = app.update()
+
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let decal_entity = match
+    render_world
+    .get_resource(prepare_clustered_decals_schedule_probe_key)
+    .unwrap().decal_entity {
+    Some(entity) => entity
+    None => abort("clustered decal schedule probe did not seed a decal")
+  }
+  let light_texture_entity = match
+    render_world
+    .get_resource(prepare_clustered_decals_schedule_probe_key)
+    .unwrap().light_texture_entity {
+    Some(entity) => entity
+    None => abort("clustered decal schedule probe did not seed a light texture")
+  }
+  let meta = match
+    render_world.get_resource(ecs_key_global_clusterable_object_meta) {
+    Some(value) => value
+    None => abort("missing GlobalClusterableObjectMeta")
+  }
+  debug_inspect(meta.entity_index(decal_entity), content="Some(0)")
+  debug_inspect(meta.entity_index(light_texture_entity), content="None")
+  debug_inspect(meta.entity_to_index_len(), content="1")
 
   device.release()
   adapter.release()

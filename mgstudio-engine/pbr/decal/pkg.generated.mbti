@@ -159,10 +159,11 @@ pub struct RenderClusteredDecals {
   binding_index_to_textures : Array[Int]
   texture_to_binding_index : Map[Int, Int]
   decals : Array[RenderClusteredDecal]
-  entity_to_decal_index : Map[Int, Int]
+  entity_to_decal_index : Map[UInt64, Int]
 }
 pub fn RenderClusteredDecals::RenderClusteredDecals() -> Self
 pub fn RenderClusteredDecals::clear(Self) -> Unit
+pub fn RenderClusteredDecals::entity_decal_indices(Self) -> Array[(@core.Entity, Int)]
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int
