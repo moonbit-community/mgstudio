@@ -46,6 +46,16 @@ let ecs_key_pbr_render_light_view_observers_installed : @ecs.ResourceKey[
 )
 
 ///|
+priv struct PbrRenderPrepareSystemsInstalled {}
+
+///|
+let ecs_key_pbr_render_prepare_systems_installed : @ecs.ResourceKey[
+  PbrRenderPrepareSystemsInstalled,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PbrRenderPrepareSystemsInstalled",
+)
+
+///|
 pub fn configure_pbr_render_startup_systems(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -113,6 +123,29 @@ pub fn configure_pbr_render_light_view_observers(
     ),
   )
   sub_app
+}
+
+///|
+fn configure_pbr_render_prepare_systems(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  if sub_app
+    .world()
+    .resource(ecs_key_pbr_render_prepare_systems_installed)
+    .is_present() {
+    return sub_app
+  }
+  sub_app
+  .world()
+  .insert_resource(ecs_key_pbr_render_prepare_systems_installed, PbrRenderPrepareSystemsInstalled::{
+
+  })
+  sub_app.add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_lights)
+    .named("mgstudio_pbr::prepare_lights")
+    .in_set(@render.render_system_set_create_views),
+  )
 }
 
 ///|
@@ -241,5 +274,6 @@ pub fn configure_pbr_render_app_build_flow(
   |> configure_pbr_render_startup_systems
   |> configure_pbr_render_world_resources
   |> configure_pbr_render_extract_systems
+  |> configure_pbr_render_prepare_systems
   |> configure_pbr_render_light_view_observers
 }

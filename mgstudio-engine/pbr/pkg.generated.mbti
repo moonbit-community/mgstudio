@@ -672,6 +672,8 @@ pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
 
 pub fn prepare_clusters_for_gpu_clustering(@ecs.World) -> Unit
 
+pub fn prepare_lights(@ecs.World) -> Unit
+
 pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
 
 pub fn[M : Material] prepared_material_assets_or_empty(@ecs.World, @asset.Handle[M]) -> @Milky2018/mgstudio/render.RenderAssets[PreparedMaterial[M]]

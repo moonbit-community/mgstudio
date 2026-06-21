@@ -549,6 +549,97 @@ test "render3d: gpu clustering prepare creates dummy textures per extracted view
 }
 
 ///|
+test "render3d: prepare_lights writes view uniform offsets for camera views" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(@render.render_queue_resource_key, render_queue)
+  world.insert_resource(
+    @pbr_render.LightMeta::resource(),
+    @pbr_render.LightMeta::LightMeta(),
+  )
+  let direct_view = world.spawn()
+  let main_view = world.spawn()
+  let indirect_view = world.spawn()
+  let non_camera_view = world.spawn()
+  try! world.set_by_key(
+    direct_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(direct_view),
+    ),
+  )
+  try! world.set_by_key(direct_view, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(main_view, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    indirect_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(indirect_view),
+    ),
+  )
+  try! world.set_by_key(
+    indirect_view,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(main_view),
+  )
+  try! world.set_by_key(
+    non_camera_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(non_camera_view),
+    ),
+  )
+
+  prepare_lights(world)
+
+  let direct_offset = match
+    (try! world.get_by_key(
+      direct_view,
+      @pbr_render.ViewLightsUniformOffset::component(),
+    )) {
+    Some(value) => value
+    None => abort("missing direct view lights uniform offset")
+  }
+  let indirect_offset = match
+    (try! world.get_by_key(
+      indirect_view,
+      @pbr_render.ViewLightsUniformOffset::component(),
+    )) {
+    Some(value) => value
+    None => abort("missing indirect view lights uniform offset")
+  }
+  let uniform_size = @pbr_render.render3d_gpu_lights_uniform_bytes(
+      @pbr_render.GpuLights3d::GpuLights3d(),
+    )
+    .length()
+    .reinterpret_as_uint()
+  debug_inspect(direct_offset.offset(), content="0")
+  debug_inspect(indirect_offset.offset(), content=uniform_size.to_string())
+  debug_inspect(
+    (try! world.get_by_key(
+      non_camera_view,
+      @pbr_render.ViewLightsUniformOffset::component(),
+    ))
+    is None,
+    content="true",
+  )
+  let light_meta = world
+    .get_resource(@pbr_render.LightMeta::resource())
+    .unwrap()
+  debug_inspect(light_meta.view_gpu_lights_len(), content="2")
+  debug_inspect(light_meta.view_gpu_lights_binding() is Some(_), content="true")
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: gpu clustering prepare creates per-view buffers" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()
