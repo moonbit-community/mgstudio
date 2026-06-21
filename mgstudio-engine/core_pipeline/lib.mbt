@@ -21,6 +21,12 @@
 const CORE_PIPELINE_PLUGIN_NAME : String = "mgstudio.core_pipeline.CorePipelinePlugin"
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs::sort_cameras`.
+pub let core_pipeline_camera_driver_set : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.camera_driver",
+)
+
+///|
 pub struct CorePipelinePlugin {}
 
 ///|
@@ -125,7 +131,9 @@ fn core_pipeline_configure_render_sub_app(
   }
   @render.configure_base_render_sets(sub_app).add_systems(
     @render.render_schedule_stage(),
-    @app.system(camera_driver).in_set(@render.render_system_set_create_views),
+    @app.system(camera_driver)
+    .in_set(core_pipeline_camera_driver_set)
+    .in_set(@render.render_system_set_create_views),
   )
 }
 

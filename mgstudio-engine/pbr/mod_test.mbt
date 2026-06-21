@@ -89,6 +89,42 @@ fn read_default_standard_material(
 }
 
 ///|
+struct PrepareLightsScheduleProbe {
+  mut spawned_view : @core.Entity?
+}
+
+///|
+let prepare_lights_schedule_probe_key : @ecs.ResourceKey[
+  PrepareLightsScheduleProbe,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr.test.prepare_lights_schedule_probe",
+)
+
+///|
+fn prepare_lights_schedule_spawn_view(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    @light_cluster.GlobalClusterSettings::resource(),
+    @light_cluster.GlobalClusterSettings::new(true, true, None, 204, 16384),
+  )
+  match world.get_resource(prepare_lights_schedule_probe_key) {
+    Some(probe) =>
+      if probe.spawned_view is None {
+        let view = world.spawn()
+        try! world.set_by_key(
+          view,
+          @render_view.ExtractedView::component(),
+          @render_view.ExtractedView::new(
+            @render_view.RetainedViewEntity::new(view),
+          ),
+        )
+        try! world.set_by_key(view, ecs_key_camera3d, Camera3d::Camera3d())
+        probe.spawned_view = Some(view)
+      }
+    None => ()
+  }
+}
+
+///|
 test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
   @shader_source.clear_embedded_shader_sources()
   ignore(
@@ -727,6 +763,74 @@ test "render3d: prepare_lights packs render-world extracted lights" {
     @pbr_render.render3d_collect_gpu_lights(app.world()).n_directional_lights,
     content="0",
   )
+}
+
+///|
+test "render3d: prepare_lights runs after the camera driver set" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  ignore(
+    app.modify_sub_app(@app.RenderApp, fn(render_app) {
+      render_app
+      .world()
+      .insert_resource(@render.render_device_resource_key, render_device)
+      render_app
+      .world()
+      .insert_resource(@render.render_queue_resource_key, render_queue)
+      render_app
+      .world()
+      .insert_resource(prepare_lights_schedule_probe_key, PrepareLightsScheduleProbe::{
+        spawned_view: None,
+      })
+      render_app.add_systems(
+        @render.render_schedule_stage(),
+        @app.system(prepare_lights_schedule_spawn_view)
+        .in_set(@core_pipeline.core_pipeline_camera_driver_set)
+        .in_set(@render.render_system_set_create_views),
+      )
+    }),
+  )
+
+  app = app.update()
+
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let spawned_view = match
+    render_world.get_resource(prepare_lights_schedule_probe_key).unwrap().spawned_view {
+    Some(entity) => entity
+    None => abort("camera driver probe did not spawn a view")
+  }
+  debug_inspect(
+    (try! render_world.get_by_key(
+      spawned_view,
+      @pbr_render.ViewLightsUniformOffset::component(),
+    ))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! render_world.get_by_key(
+      spawned_view,
+      @pbr_render.ViewLightEntities::component(),
+    ))
+    is Some(_),
+    content="true",
+  )
+
+  device.release()
+  adapter.release()
+  instance.release()
 }
 
 ///|

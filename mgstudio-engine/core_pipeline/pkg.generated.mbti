@@ -44,6 +44,8 @@ pub fn core3d_system_set_post_process() -> String
 
 pub fn core3d_system_set_prepass() -> String
 
+pub let core_pipeline_camera_driver_set : String
+
 pub fn core_pipeline_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn core_pipeline_plugin_with(@app.App[@ecs.World], CorePipelinePlugin) -> @app.App[@ecs.World]

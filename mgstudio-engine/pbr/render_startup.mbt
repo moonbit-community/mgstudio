@@ -144,6 +144,7 @@ fn configure_pbr_render_prepare_systems(
     @render.render_schedule_stage(),
     @app.system(prepare_lights)
     .named("mgstudio_pbr::prepare_lights")
+    .after(@core_pipeline.core_pipeline_camera_driver_set)
     .in_set(@render.render_system_set_create_views),
   )
 }
