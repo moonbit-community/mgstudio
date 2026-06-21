@@ -150,6 +150,287 @@ fn GpuBackend::create_pipeline_cache_compute_pipeline(
 }
 
 ///|
+fn GpuBackend::create_pipeline_cache_render_layout(
+  self : GpuBackend,
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> @wgpu.PipelineLayout? raise GpuBackendError {
+  let layout_descriptors = descriptor.layout()
+  if layout_descriptors.length() == 0 && descriptor.immediate_size == 0U {
+    return None
+  }
+  let bind_group_layouts : Array[@wgpu.BindGroupLayout] = []
+  for index in 0..<layout_descriptors.length() {
+    let layout_descriptor = layout_descriptors[index]
+    let layout = create_bind_group_layout_from_render_resource_descriptor(
+      self,
+      layout_descriptor,
+      "mgstudio_pipeline_cache_render_bgl_\{index}",
+    )
+    bind_group_layouts.push(layout)
+  }
+  let layout = if descriptor.immediate_size > 0U {
+    self.device.create_pipeline_layout_with_immediates(bind_group_layouts, [
+      (
+        ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT),
+        0U,
+        descriptor.immediate_size,
+      ),
+    ])
+  } else {
+    self.device.create_pipeline_layout_many(bind_group_layouts)
+  }
+  match descriptor.label() {
+    Some(label) => layout.set_label("\{label} layout")
+    None => layout.set_label("mgstudio_pipeline_cache_render_layout")
+  }
+  Some(layout)
+}
+
+///|
+fn pipeline_cache_apply_vertex_buffer_layout(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
+  first : Bool,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  if first {
+    builder.set_vertex_buffer_layout(
+      vertex_buffer_layout.array_stride.to_uint64(),
+      mesh_vertex_step_mode_to_wgpu(vertex_buffer_layout.step_mode),
+    )
+  } else {
+    ignore(
+      builder.add_vertex_buffer_layout(
+        vertex_buffer_layout.array_stride.to_uint64(),
+        mesh_vertex_step_mode_to_wgpu(vertex_buffer_layout.step_mode),
+      ),
+    )
+  }
+  for attribute in vertex_buffer_layout.attributes {
+    builder.add_vertex_attribute(
+      mesh_vertex_format_to_wgpu(attribute.format),
+      attribute.offset.to_uint64(),
+      attribute.shader_location.reinterpret_as_uint(),
+    )
+  }
+}
+
+///|
+fn pipeline_cache_apply_vertex_buffer_layouts(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  vertex_buffer_layouts : Array[@mesh.VertexBufferLayout],
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  for index in 0..<vertex_buffer_layouts.length() {
+    pipeline_cache_apply_vertex_buffer_layout(
+      builder,
+      vertex_buffer_layouts[index],
+      index == 0,
+    )
+  }
+}
+
+///|
+fn pipeline_cache_apply_fragment_targets(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  fragment : @render_resource.FragmentState?,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  match fragment {
+    None => builder.clear_fragment()
+    Some(fragment_state) => {
+      let targets = fragment_state.targets()
+      builder.set_color_target_count(targets.length().reinterpret_as_uint())
+      for index in 0..<targets.length() {
+        let index_u = index.reinterpret_as_uint()
+        match targets[index] {
+          Some(target) => {
+            builder.set_color_target_format_at(index_u, tf(target.format()))
+            builder.set_color_target_write_mask_at(index_u, target.write_mask())
+          }
+          None => builder.set_color_target_unused_at(index_u)
+        }
+      }
+    }
+  }
+}
+
+///|
+fn pipeline_cache_apply_primitive_state(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  primitive : @render_resource.PrimitiveState,
+) -> Unit raise GpuBackendError {
+  if primitive.front_face != @wgpu.FRONT_FACE_CCW {
+    fatal("wgpu: render pipeline cache cannot yet express non-CCW front_face")
+  }
+  match primitive.strip_index_format {
+    Some(_) =>
+      fatal("wgpu: render pipeline cache cannot yet express strip_index_format")
+    None => ()
+  }
+  try {
+    builder.set_topology_u32(primitive.topology)
+    match primitive.cull_mode {
+      Some(cull_mode) => builder.set_cull_mode_u32(cull_mode)
+      None => builder.set_cull_mode_u32(@wgpu.CULL_MODE_NONE)
+    }
+    match primitive.polygon_mode {
+      Some(polygon_mode) => builder.set_polygon_mode_u32(polygon_mode)
+      None => ()
+    }
+  } catch {
+    err =>
+      fatal("wgpu: failed to apply render primitive state: \{err.message()}")
+  }
+}
+
+///|
+fn pipeline_cache_apply_depth_stencil_state(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  depth_stencil : @render_resource.DepthStencilState?,
+) -> Unit raise GpuBackendError {
+  match depth_stencil {
+    None => ()
+    Some(depth) =>
+      builder.set_depth_stencil(
+        tf(depth.format),
+        depth_write_enabled=depth.depth_write_enabled,
+        depth_compare_u32=depth.depth_compare,
+      ) catch {
+        err =>
+          fatal("wgpu: failed to apply render depth state: \{err.message()}")
+      }
+  }
+}
+
+///|
+fn pipeline_cache_apply_multisample_state(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  multisample : @render_resource.MultisampleState,
+) -> Unit raise GpuBackendError {
+  let mask = if multisample.mask == 0xffffffffffffffffUL {
+    0xffffffffU
+  } else if multisample.mask > 0xffffffffUL {
+    fatal("wgpu: render pipeline cache cannot express 64-bit MSAA mask")
+  } else {
+    multisample.mask.to_uint()
+  }
+  builder.set_multisample(
+    multisample.count,
+    mask_u32=mask,
+    alpha_to_coverage_enabled=multisample.alpha_to_coverage_enabled,
+  ) catch {
+    err =>
+      fatal("wgpu: failed to apply render multisample state: \{err.message()}")
+  }
+}
+
+///|
+fn GpuBackend::create_pipeline_cache_render_pipeline(
+  self : GpuBackend,
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> @render_resource.RenderPipeline raise GpuBackendError {
+  let vertex = descriptor.vertex()
+  let vertex_shader_path = match vertex.shader {
+    Some(path) => path
+    None =>
+      raise GpuBackendError::ShaderNotReady(
+        "render pipeline vertex shader path is not configured",
+      )
+  }
+  let vertex_source = load_wgsl_preprocessed(
+    self.assets_base,
+    vertex_shader_path,
+    pipeline_cache_shader_bool_defines(vertex.shader_defs),
+    pipeline_cache_shader_value_defines(vertex.shader_defs),
+  )
+  let vertex_shader = self.device.create_shader_module_wgsl(vertex_source)
+  let fragment = descriptor.fragment()
+  let fragment_shader : @wgpu.ShaderModule? = match fragment {
+    Some(fragment_state) =>
+      match fragment_state.shader() {
+        Some(fragment_shader_path) => {
+          let fragment_source = load_wgsl_preprocessed(
+            self.assets_base,
+            fragment_shader_path,
+            pipeline_cache_shader_bool_defines(fragment_state.shader_defs()),
+            pipeline_cache_shader_value_defines(fragment_state.shader_defs()),
+          )
+          Some(self.device.create_shader_module_wgsl(fragment_source))
+        }
+        None =>
+          raise GpuBackendError::ShaderNotReady(
+            "render pipeline fragment shader path is not configured",
+          )
+      }
+    None => None
+  }
+  let layout = self.create_pipeline_cache_render_layout(descriptor) catch {
+    err => {
+      vertex_shader.release()
+      match fragment_shader {
+        Some(shader) => shader.release()
+        None => ()
+      }
+      raise err
+    }
+  }
+  let pipeline = try {
+    let builder = match layout {
+      Some(pipeline_layout) =>
+        @wgpu.RenderPipelineDescBuilder::new(
+          vertex_shader,
+          layout=pipeline_layout,
+        )
+      None => @wgpu.RenderPipelineDescBuilder::new(vertex_shader)
+    }
+    let vertex_entry = vertex.entry_point.unwrap_or("vertex")
+    let fragment_entry = match fragment {
+      Some(fragment_state) => fragment_state.entry_point().unwrap_or("fragment")
+      None => "fragment"
+    }
+    builder.set_entry_points(vertex_entry, fragment_entry)
+    match fragment_shader {
+      Some(shader) => builder.set_fragment_module(shader)
+      None => builder.clear_fragment()
+    }
+    pipeline_cache_apply_fragment_targets(builder, fragment)
+    pipeline_cache_apply_primitive_state(builder, descriptor.primitive)
+    pipeline_cache_apply_depth_stencil_state(builder, descriptor.depth_stencil)
+    pipeline_cache_apply_multisample_state(builder, descriptor.multisample)
+    pipeline_cache_apply_vertex_buffer_layouts(builder, vertex.buffers)
+    builder.disable_blend()
+    builder.create_pipeline(self.device)
+  } catch {
+    err => {
+      vertex_shader.release()
+      match fragment_shader {
+        Some(shader) => shader.release()
+        None => ()
+      }
+      fatal(
+        "wgpu: failed to create pipeline-cache render pipeline \{vertex_shader_path}: \{to_repr(err).to_string()}",
+      )
+    }
+  }
+  match descriptor.label() {
+    Some(label) => pipeline.set_label(label)
+    None => pipeline.set_label("mgstudio_pipeline_cache_render_pipeline")
+  }
+  vertex_shader.release()
+  match fragment_shader {
+    Some(shader) => shader.release()
+    None => ()
+  }
+  @render_resource.RenderPipeline::from_wgpu(pipeline)
+}
+
+///|
+pub fn materialize_pipeline_cache_render_pipeline_descriptor(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> @render_resource.RenderPipeline? raise GpuBackendError {
+  guard ensure_backend() is Some(backend) else { return None }
+  Some(backend.create_pipeline_cache_render_pipeline(descriptor))
+}
+
+///|
 pub fn materialize_pipeline_cache_compute_pipeline_descriptor(
   descriptor : @render_resource.ComputePipelineDescriptor,
 ) -> @render_resource.ComputePipeline? raise GpuBackendError {

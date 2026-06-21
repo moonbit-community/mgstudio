@@ -301,11 +301,36 @@ fn register_pipeline_cache_render_pipeline_descriptors(
     }
     let cached_pipeline = pipelines[index]
     match cached_pipeline.descriptor() {
-      @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) =>
+      @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) => {
         @renderer.register_mesh3d_material_pipeline_descriptor(
           material_pipeline_id=pipeline_id,
           descriptor~,
         )
+        try {
+          let cached_id = @render_resource.CachedRenderPipelineId::new(
+            pipeline_id,
+          )
+          match
+            @renderer.materialize_pipeline_cache_render_pipeline_descriptor(
+              descriptor,
+            ) {
+            Some(pipeline) =>
+              cache.mark_render_pipeline_ready(cached_id, pipeline) catch {
+                _ => ()
+              }
+            None => ()
+          }
+        } catch {
+          @renderer.ShaderNotReady(_) =>
+            cache.retry_pipeline(pipeline_id) catch {
+              _ => ()
+            }
+          err =>
+            cache.mark_pipeline_error(pipeline_id, to_repr(err).to_string()) catch {
+              _ => ()
+            }
+        }
+      }
       @render_resource.PipelineDescriptor::ComputePipelineDescriptor(descriptor) =>
         try {
           let cached_id = @render_resource.CachedComputePipelineId::new(
