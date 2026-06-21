@@ -306,7 +306,31 @@ fn register_pipeline_cache_render_pipeline_descriptors(
           material_pipeline_id=pipeline_id,
           descriptor~,
         )
-      @render_resource.PipelineDescriptor::ComputePipelineDescriptor(_) => ()
+      @render_resource.PipelineDescriptor::ComputePipelineDescriptor(descriptor) =>
+        try {
+          let cached_id = @render_resource.CachedComputePipelineId::new(
+            pipeline_id,
+          )
+          match
+            @renderer.materialize_pipeline_cache_compute_pipeline_descriptor(
+              descriptor,
+            ) {
+            Some(pipeline) =>
+              cache.mark_compute_pipeline_ready(cached_id, pipeline) catch {
+                _ => ()
+              }
+            None => ()
+          }
+        } catch {
+          @renderer.ShaderNotReady(_) =>
+            cache.retry_pipeline(pipeline_id) catch {
+              _ => ()
+            }
+          err =>
+            cache.mark_pipeline_error(pipeline_id, to_repr(err).to_string()) catch {
+              _ => ()
+            }
+        }
     }
   }
 }

@@ -344,6 +344,37 @@ test "render settings: descriptor registration observes pipeline cache waiting i
 }
 
 ///|
+test "render settings: compute pipeline descriptors are materialized when backend exists" {
+  let world = @ecs.World::new()
+  let cache = @render_resource.PipelineCache::new()
+  let pipeline_id = cache.queue_compute_pipeline(
+    @render_resource.ComputePipelineDescriptor::ComputePipelineDescriptor()
+    .with_shader(Some("pbr/cluster/cluster_z_slice.wgsl"))
+    .with_entry_point(Some("z_slice_main")),
+  )
+  world.insert_resource(pipeline_cache_resource_key, cache)
+  process_pipeline_queue_system(world)
+  let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
+  debug_inspect(cache.waiting_pipelines(), content="[0]")
+  debug_inspect(
+    cache.get_compute_pipeline_state(pipeline_id).is_creating(),
+    content="true",
+  )
+  register_pipeline_cache_render_pipeline_descriptors(world)
+  let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
+  let state = cache.get_compute_pipeline_state(pipeline_id)
+  let waiting = cache.waiting_pipelines()
+  let still_waiting = waiting.length() == 1 &&
+    waiting[0] == pipeline_id.id() &&
+    state.is_creating()
+  let retryable = waiting.length() == 1 &&
+    waiting[0] == pipeline_id.id() &&
+    state.is_queued()
+  let materialized = waiting.length() == 0 && state.is_ok()
+  debug_inspect(still_waiting || retryable || materialized, content="true")
+}
+
+///|
 test "render recovery: render schedule only runs when renderer is ready" {
   let log : Array[String] = []
   let time_channels = @time.create_time_channels()

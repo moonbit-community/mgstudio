@@ -296,6 +296,7 @@ pub fn ComputePipelineDescriptor::entry_point(Self) -> String?
 pub fn ComputePipelineDescriptor::label(Self) -> String?
 pub fn ComputePipelineDescriptor::layout(Self) -> Array[BindGroupLayoutDescriptor]
 pub fn ComputePipelineDescriptor::shader(Self) -> String?
+pub fn ComputePipelineDescriptor::shader_defs(Self) -> Array[ShaderDefVal]
 pub fn ComputePipelineDescriptor::with_entry_point(Self, String?) -> Self
 pub fn ComputePipelineDescriptor::with_immediate_size(Self, UInt) -> Self
 pub fn ComputePipelineDescriptor::with_label(Self, String?) -> Self

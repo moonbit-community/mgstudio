@@ -281,6 +281,8 @@ pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, world_from_lo
 
 pub fn host_meshlet_material_shade_draw_entry(material_id~ : Int, material_pipeline_id~ : UInt64, draw_entry~ : HostMesh3dMainPassDrawEntry) -> HostMeshletMaterialShadeDrawEntry
 
+pub fn materialize_pipeline_cache_compute_pipeline_descriptor(@render_resource.ComputePipelineDescriptor) -> @render_resource.ComputePipeline? raise GpuBackendError
+
 pub fn mesh2d_vertex_layout(Int) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
 
 pub fn mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt) -> Bool

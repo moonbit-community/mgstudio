@@ -477,6 +477,13 @@ pub fn ComputePipelineDescriptor::entry_point(
 }
 
 ///|
+pub fn ComputePipelineDescriptor::shader_defs(
+  self : ComputePipelineDescriptor,
+) -> Array[ShaderDefVal] {
+  self.shader_defs.copy()
+}
+
+///|
 pub fn ComputePipelineDescriptor::with_label(
   self : ComputePipelineDescriptor,
   label : String?,
