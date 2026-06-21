@@ -24,6 +24,20 @@ test "render3d: gpu clustering schedules metadata staging copy" {
   )
   let staging_buffer = readback.get_or_create_staging_buffer(render_device)
   let uploaded_buffers = ViewGpuClusteringBuffers::ViewGpuClusteringBuffers()
+  let farthest_z = 9.75F
+  let encoded_farthest_z = farthest_z.reinterpret_as_uint() ^ 0x8000_0000U
+  uploaded_buffers.set_metadata(
+    ClusterMetadata::from_gpu_readback(
+      ClusterRasterIndirectDrawParams::new(6U, 19U, 0U, 0U, 0U),
+      1U,
+      2U,
+      3U,
+      4U,
+      8U,
+      35U,
+      encoded_farthest_z,
+    ),
+  )
   uploaded_buffers.write_buffers(render_device, render_queue)
   let encoder = render_device.create_command_encoder()
 
@@ -37,7 +51,25 @@ test "render3d: gpu clustering schedules metadata staging copy" {
   render_queue.submit([command_buffer])
   command_buffer.release()
   encoder.release()
-  staging_buffer.release()
+
+  debug_inspect(
+    gpu_clustering_process_readback_staging_buffer(
+      instance, readback, staging_buffer,
+    ),
+    content="true",
+  )
+  debug_inspect(readback.z_slice_list_capacity(), content="32")
+  debug_inspect(readback.max_index_list_capacity(), content="64")
+  debug_inspect(readback.free_staging_buffer_count(), content="1")
+  let statistics = match readback.last_frame_statistics() {
+    Some(value) => value
+    None => abort("missing GPU clustering staging readback statistics")
+  }
+  debug_inspect(statistics.index_list_size(), content="35")
+  debug_inspect(statistics.farthest_z(), content="9.75")
+  let recycled_buffer = readback.get_or_create_staging_buffer(render_device)
+  recycled_buffer.release()
+
   device.release()
   adapter.release()
   instance.release()

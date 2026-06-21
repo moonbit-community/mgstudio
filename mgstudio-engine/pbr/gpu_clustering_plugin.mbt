@@ -2160,6 +2160,33 @@ pub fn gpu_clustering_schedule_readback_staging(
 }
 
 ///|
+pub fn gpu_clustering_process_readback_staging_buffer(
+  instance : @wgpu.Instance,
+  view_clustering_readback_data : ViewClusteringReadbackData,
+  staging_buffer : @wgpu.Buffer,
+) -> Bool {
+  let bytes = staging_buffer.map_read_sync(
+    instance,
+    0UL,
+    GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
+  )
+  if bytes.length() == 0 {
+    return false
+  }
+  match ClusterMetadata::from_readback_bytes(bytes) {
+    None => false
+    Some(gpu_clustering_metadata) => {
+      view_clustering_readback_data.update_from_metadata(
+        gpu_clustering_metadata,
+      )
+      staging_buffer.unmap()
+      view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
+      true
+    }
+  }
+}
+
+///|
 fn gpu_clustering_finish_bind_group_or_abort(
   builder : @wgpu.BindGroupBuilder,
   device : @wgpu.Device,

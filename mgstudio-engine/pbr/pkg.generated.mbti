@@ -469,6 +469,8 @@ pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
 
 pub fn gpu_clustering_plugin_with(@app.App[@ecs.World], GpuClusteringPlugin) -> @app.App[@ecs.World]
 
+pub fn gpu_clustering_process_readback_staging_buffer(@wgpu_mbt.Instance, ViewClusteringReadbackData, @wgpu_mbt.Buffer) -> Bool
+
 pub fn gpu_clustering_schedule_readback_staging(@wgpu_mbt.CommandEncoder, ViewGpuClusteringBuffers, @wgpu_mbt.Buffer) -> Bool
 
 pub fn gpu_clustering_sortable_u32_to_f32_bits(UInt) -> UInt
