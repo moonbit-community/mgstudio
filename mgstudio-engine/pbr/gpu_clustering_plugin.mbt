@@ -2370,14 +2370,13 @@ fn gpu_clustering_configure_render_app_finish(
   sub_app
   .add_systems(
     @render.render_schedule_stage(),
-    @app.system(prepare_clusters_for_gpu_clustering)
-    .in_set(@render.render_system_set_prepare)
-    .run_if(gpu_clustering_is_enabled),
-  )
-  .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(upload_view_gpu_clustering_buffers)
-    .in_set(@render.render_system_set_prepare)
+    @app.chain(
+      (
+        @app.system(prepare_clusters_for_gpu_clustering),
+        @app.system(upload_view_gpu_clustering_buffers),
+      ),
+    )
+    .in_set(@render.render_system_set_prepare_resources)
     .run_if(gpu_clustering_is_enabled),
   )
   .add_systems(
