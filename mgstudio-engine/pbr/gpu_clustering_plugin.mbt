@@ -22,6 +22,9 @@ pub const GPU_CLUSTERING_ALLOCATION_WORKGROUP_SIZE : Int = 256
 pub const GPU_CLUSTERING_Z_SLICING_WORKGROUP_SIZE : Int = 64
 
 ///|
+pub const GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES : UInt64 = 48UL
+
+///|
 const GPU_CLUSTERING_PLUGIN_NAME : String = "mgstudio.pbr.GpuClusteringPlugin"
 
 ///|
@@ -125,8 +128,10 @@ pub struct ViewClusteringLastFrameStatistics {
 pub struct ViewClusteringReadbackData {
   z_slice_list_capacity : Int
   max_index_list_capacity : Int
+  metadata_staging_pending_buffers : Array[@wgpu.Buffer]
+  metadata_staging_free_buffers : Array[@wgpu.Buffer]
   last_frame_statistics : ViewClusteringLastFrameStatistics?
-} derive(Eq, Debug)
+}
 
 ///|
 pub struct ClusterableObjectZSlice {
@@ -949,6 +954,8 @@ pub fn ViewClusteringReadbackData::new(
   ViewClusteringReadbackData::{
     z_slice_list_capacity: settings.initial_z_slice_list_capacity(),
     max_index_list_capacity: settings.initial_index_list_capacity(),
+    metadata_staging_pending_buffers: [],
+    metadata_staging_free_buffers: [],
     last_frame_statistics: None,
   }
 }
@@ -987,6 +994,52 @@ pub fn ViewClusteringReadbackData::max_index_list_capacity(
   self : ViewClusteringReadbackData,
 ) -> Int {
   self.max_index_list_capacity
+}
+
+///|
+pub fn ViewClusteringReadbackData::pending_staging_buffer_count(
+  self : ViewClusteringReadbackData,
+) -> Int {
+  self.metadata_staging_pending_buffers.length()
+}
+
+///|
+pub fn ViewClusteringReadbackData::free_staging_buffer_count(
+  self : ViewClusteringReadbackData,
+) -> Int {
+  self.metadata_staging_free_buffers.length()
+}
+
+///|
+pub fn ViewClusteringReadbackData::get_or_create_staging_buffer(
+  self : ViewClusteringReadbackData,
+  render_device : @renderer.RenderDevice,
+) -> @wgpu.Buffer {
+  let staging_buffer = match self.metadata_staging_free_buffers.pop() {
+    Some(buffer) => buffer
+    None => {
+      let buffer = render_device
+        .wgpu_device()
+        .create_buffer(
+          size=GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
+          usage=pbr_gpu_clustering_buffer_usage(
+            @wgpu.BUFFER_USAGE_COPY_DST | @wgpu.BUFFER_USAGE_MAP_READ,
+          ),
+        )
+      buffer.set_label("clustering metadata staging buffer")
+      buffer
+    }
+  }
+  self.metadata_staging_pending_buffers.push(staging_buffer)
+  staging_buffer
+}
+
+///|
+pub fn ViewClusteringReadbackData::recycle_staging_buffer(
+  self : ViewClusteringReadbackData,
+  staging_buffer : @wgpu.Buffer,
+) -> Unit {
+  self.metadata_staging_free_buffers.push(staging_buffer)
 }
 
 ///|

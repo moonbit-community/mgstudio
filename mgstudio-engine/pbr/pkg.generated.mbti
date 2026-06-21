@@ -61,6 +61,8 @@ pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
 
 pub const GPU_CLUSTERING_ALLOCATION_WORKGROUP_SIZE : Int = 256
 
+pub const GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES : UInt64 = 48
+
 pub const GPU_CLUSTERING_INITIAL_INDEX_LIST_CAPACITY : Int = 65536
 
 pub const GPU_CLUSTERING_INITIAL_Z_SLICE_LIST_CAPACITY : Int = 1024
@@ -2380,11 +2382,17 @@ pub fn ViewClusteringLastFrameStatistics::new(UInt, Float) -> Self
 pub struct ViewClusteringReadbackData {
   z_slice_list_capacity : Int
   max_index_list_capacity : Int
+  metadata_staging_pending_buffers : Array[@wgpu_mbt.Buffer]
+  metadata_staging_free_buffers : Array[@wgpu_mbt.Buffer]
   last_frame_statistics : ViewClusteringLastFrameStatistics?
-} derive(Eq, @debug.Debug)
+}
+pub fn ViewClusteringReadbackData::free_staging_buffer_count(Self) -> Int
+pub fn ViewClusteringReadbackData::get_or_create_staging_buffer(Self, @renderer.RenderDevice) -> @wgpu_mbt.Buffer
 pub fn ViewClusteringReadbackData::last_frame_statistics(Self) -> ViewClusteringLastFrameStatistics?
 pub fn ViewClusteringReadbackData::max_index_list_capacity(Self) -> Int
 pub fn ViewClusteringReadbackData::new(@cluster.GlobalClusterGpuSettings) -> Self
+pub fn ViewClusteringReadbackData::pending_staging_buffer_count(Self) -> Int
+pub fn ViewClusteringReadbackData::recycle_staging_buffer(Self, @wgpu_mbt.Buffer) -> Unit
 pub fn ViewClusteringReadbackData::z_slice_list_capacity(Self) -> Int
 
 pub struct ViewContactShadowsUniformOffset {

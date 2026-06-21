@@ -774,6 +774,35 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
 }
 
 ///|
+test "render3d: gpu clustering readback data reuses staging buffers" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let readback = ViewClusteringReadbackData::new(
+    @light_cluster.GlobalClusterGpuSettings::new(8, 16),
+  )
+  debug_inspect(readback.pending_staging_buffer_count(), content="0")
+  debug_inspect(readback.free_staging_buffer_count(), content="0")
+
+  let first = readback.get_or_create_staging_buffer(render_device)
+  debug_inspect(readback.pending_staging_buffer_count(), content="1")
+  debug_inspect(readback.free_staging_buffer_count(), content="0")
+
+  readback.recycle_staging_buffer(first)
+  debug_inspect(readback.pending_staging_buffer_count(), content="1")
+  debug_inspect(readback.free_staging_buffer_count(), content="1")
+
+  let second = readback.get_or_create_staging_buffer(render_device)
+  debug_inspect(readback.pending_staging_buffer_count(), content="2")
+  debug_inspect(readback.free_staging_buffer_count(), content="0")
+
+  second.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()
