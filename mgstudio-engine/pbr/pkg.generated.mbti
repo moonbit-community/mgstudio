@@ -1050,7 +1050,9 @@ pub fn ClusterMetadata::clustered_light_count(Self) -> UInt
 pub fn ClusterMetadata::decal_count(Self) -> UInt
 pub fn ClusterMetadata::farthest_z(Self) -> UInt
 pub fn ClusterMetadata::from_gpu_readback(ClusterRasterIndirectDrawParams, UInt, UInt, UInt, UInt, UInt, UInt, UInt) -> Self
+pub fn ClusterMetadata::from_readback_bytes(Bytes) -> Self?
 pub fn ClusterMetadata::index_list_capacity(Self) -> UInt
+pub fn ClusterMetadata::indirect_draw_params(Self) -> ClusterRasterIndirectDrawParams
 pub fn ClusterMetadata::irradiance_volume_count(Self) -> UInt
 pub fn ClusterMetadata::new(UInt, UInt, UInt, UInt, UInt, UInt) -> Self
 pub fn ClusterMetadata::reflection_probe_count(Self) -> UInt
@@ -1073,6 +1075,10 @@ pub struct ClusterRasterIndirectDrawParams {
   first_instance : UInt
 } derive(Eq, @debug.Debug)
 pub fn ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams() -> Self
+pub fn ClusterRasterIndirectDrawParams::base_vertex(Self) -> UInt
+pub fn ClusterRasterIndirectDrawParams::first_index(Self) -> UInt
+pub fn ClusterRasterIndirectDrawParams::first_instance(Self) -> UInt
+pub fn ClusterRasterIndirectDrawParams::index_count(Self) -> UInt
 pub fn ClusterRasterIndirectDrawParams::instance_count(Self) -> UInt
 pub fn ClusterRasterIndirectDrawParams::new(UInt, UInt, UInt, UInt, UInt) -> Self
 

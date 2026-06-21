@@ -833,6 +833,50 @@ test "render3d: gpu clustering readback metadata updates capacities and statisti
 }
 
 ///|
+fn gpu_clustering_test_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+  out.push(((value >> 24) & 0xFFU).reinterpret_as_int().to_byte())
+}
+
+///|
+test "render3d: gpu clustering readback bytes decode cluster metadata layout" {
+  let farthest_z = 21.25F
+  let encoded_farthest_z = farthest_z.reinterpret_as_uint() ^ 0x8000_0000U
+  let raw : Array[Byte] = []
+  for
+    value in [
+      9U, 18U, 3U, 4U, 5U, 6U, 7U, 8U, 10U, 11U, 12U, encoded_farthest_z,
+    ] {
+    gpu_clustering_test_push_u32_le(raw, value)
+  }
+  let bytes = Bytes::from_array(raw)
+
+  let decoded = match ClusterMetadata::from_readback_bytes(bytes) {
+    Some(value) => value
+    None => abort("failed to decode GPU clustering metadata bytes")
+  }
+  let params = decoded.indirect_draw_params()
+  debug_inspect(params.index_count(), content="9")
+  debug_inspect(params.instance_count(), content="18")
+  debug_inspect(params.first_index(), content="3")
+  debug_inspect(params.base_vertex(), content="4")
+  debug_inspect(params.first_instance(), content="5")
+  debug_inspect(decoded.clustered_light_count(), content="6")
+  debug_inspect(decoded.reflection_probe_count(), content="7")
+  debug_inspect(decoded.irradiance_volume_count(), content="8")
+  debug_inspect(decoded.decal_count(), content="10")
+  debug_inspect(decoded.z_slice_list_capacity(), content="11")
+  debug_inspect(decoded.index_list_capacity(), content="12")
+  debug_inspect(decoded.farthest_z(), content=encoded_farthest_z.to_string())
+  debug_inspect(
+    ClusterMetadata::from_readback_bytes(Bytes::from_array([])) is None,
+    content="true",
+  )
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

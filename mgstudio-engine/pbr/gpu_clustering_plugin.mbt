@@ -888,6 +888,34 @@ pub fn ClusterRasterIndirectDrawParams::instance_count(
 }
 
 ///|
+pub fn ClusterRasterIndirectDrawParams::index_count(
+  self : ClusterRasterIndirectDrawParams,
+) -> UInt {
+  self.index_count
+}
+
+///|
+pub fn ClusterRasterIndirectDrawParams::first_index(
+  self : ClusterRasterIndirectDrawParams,
+) -> UInt {
+  self.first_index
+}
+
+///|
+pub fn ClusterRasterIndirectDrawParams::base_vertex(
+  self : ClusterRasterIndirectDrawParams,
+) -> UInt {
+  self.base_vertex
+}
+
+///|
+pub fn ClusterRasterIndirectDrawParams::first_instance(
+  self : ClusterRasterIndirectDrawParams,
+) -> UInt {
+  self.first_instance
+}
+
+///|
 pub fn ClusterMetadata::ClusterMetadata() -> ClusterMetadata {
   ClusterMetadata::{
     indirect_draw_params: ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams(),
@@ -948,6 +976,89 @@ pub fn ClusterMetadata::from_gpu_readback(
 }
 
 ///|
+fn gpu_clustering_read_u8(bytes : Bytes, offset : Int) -> Int? {
+  guard offset >= 0 && offset < bytes.length() else { return None }
+  Some(bytes[offset].to_int() & 0xFF)
+}
+
+///|
+fn gpu_clustering_read_u32_le(bytes : Bytes, offset : Int) -> UInt? {
+  guard gpu_clustering_read_u8(bytes, offset) is Some(b0) else { return None }
+  guard gpu_clustering_read_u8(bytes, offset + 1) is Some(b1) else {
+    return None
+  }
+  guard gpu_clustering_read_u8(bytes, offset + 2) is Some(b2) else {
+    return None
+  }
+  guard gpu_clustering_read_u8(bytes, offset + 3) is Some(b3) else {
+    return None
+  }
+  Some(
+    b0.reinterpret_as_uint() |
+    (b1.reinterpret_as_uint() << 8) |
+    (b2.reinterpret_as_uint() << 16) |
+    (b3.reinterpret_as_uint() << 24),
+  )
+}
+
+///|
+pub fn ClusterMetadata::from_readback_bytes(bytes : Bytes) -> ClusterMetadata? {
+  guard bytes.length() >= GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES.to_int() else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 0) is Some(index_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 4) is Some(instance_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 8) is Some(first_index) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 12) is Some(base_vertex) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 16) is Some(first_instance) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 20) is Some(clustered_light_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 24) is Some(reflection_probe_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 28) is Some(irradiance_volume_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 32) is Some(decal_count) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 36) is Some(z_slice_list_capacity) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 40) is Some(index_list_capacity) else {
+    return None
+  }
+  guard gpu_clustering_read_u32_le(bytes, 44) is Some(farthest_z) else {
+    return None
+  }
+  Some(
+    ClusterMetadata::from_gpu_readback(
+      ClusterRasterIndirectDrawParams::new(
+        index_count, instance_count, first_index, base_vertex, first_instance,
+      ),
+      clustered_light_count,
+      reflection_probe_count,
+      irradiance_volume_count,
+      decal_count,
+      z_slice_list_capacity,
+      index_list_capacity,
+      farthest_z,
+    ),
+  )
+}
+
+///|
 pub fn ClusterMetadata::clustered_light_count(self : ClusterMetadata) -> UInt {
   self.clustered_light_count
 }
@@ -980,6 +1091,13 @@ pub fn ClusterMetadata::z_slice_list_capacity(self : ClusterMetadata) -> UInt {
 ///|
 pub fn ClusterMetadata::farthest_z(self : ClusterMetadata) -> UInt {
   self.farthest_z
+}
+
+///|
+pub fn ClusterMetadata::indirect_draw_params(
+  self : ClusterMetadata,
+) -> ClusterRasterIndirectDrawParams {
+  self.indirect_draw_params
 }
 
 ///|
