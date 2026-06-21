@@ -89,19 +89,12 @@ pub fn hotpatch_mark_patched(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn hotpatch_forward_runtime_flag(world : @ecs.World) -> Unit {
-  if app_rendering_enabled() {
-    return
-  }
-  hotpatch_mark_patched(world)
-}
 
 ///|
 pub fn hotpatch_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
   app
   .init_resource(fn() { HotPatchChanges::HotPatchChanges() })
   .add_message(HotPatched::message())
-  .add_last_system(hotpatch_forward_runtime_flag)
 }
 
 ///|
@@ -110,17 +103,6 @@ pub fn hotpatch_reset_runtime() -> Unit {
 }
 
 ///|
-pub fn hotpatch_stop_rendering() -> Unit {
-  app_rendering_stop()
-}
-
-///|
-pub fn hotpatch_resume_rendering() -> Unit {
-  app_rendering_resume()
-}
-
-///|
 pub fn hotpatch_restart_runtime() -> Unit {
   app_runtime_reset()
-  app_rendering_resume()
 }

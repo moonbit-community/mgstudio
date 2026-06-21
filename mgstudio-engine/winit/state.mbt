@@ -503,84 +503,78 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     surface_bindings_trace_start_us,
   )
 
-  if @app.app_rendering_enabled() {
-    let next_render_frame = self.debug_screenshot_render_frame + 1
-    let ordered_surface_bindings = runner_surface_binding_ordered(
-      self.runner_surfaces,
-      self.primary_window,
-    )
-    let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
-      0
-    } else if self.debug_screenshot_surface_index >=
-      ordered_surface_bindings.length() {
-      0
-    } else {
-      self.debug_screenshot_surface_index
-    }
-    let screenshot_queue_trace_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::System,
-      "mgstudio_winit::runner.screenshot_capture_requests",
-    )
-    for i in 0..<ordered_surface_bindings.length() {
-      if !self.debug_screenshot_requested &&
-        self.debug_screenshot_path is Some(_) &&
-        self.debug_screenshot_texture_id <= 0 &&
-        next_render_frame >= self.debug_screenshot_frame &&
-        i == capture_surface_index {
-        let capture_id = @render.screenshot_capture_surface_request()
-        if capture_id > 0 {
-          self.debug_screenshot_requested = true
-          self.debug_screenshot_capture_id = capture_id
-        }
-      }
-    }
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::System,
-      "mgstudio_winit::runner.screenshot_capture_requests",
-      screenshot_queue_trace_start_us,
-    )
-    winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
-      self.app_ref.val = self.app_ref.val.run_once()
-    })
-    self.debug_screenshot_render_frame = next_render_frame
-    if !self.debug_screenshot_saved && self.debug_screenshot_path is Some(path) {
-      let capture0 = if self.debug_screenshot_texture_id > 0 &&
-        next_render_frame >= self.debug_screenshot_frame {
-        @render.screenshot_capture_texture_sync(
-          texture_id=self.debug_screenshot_texture_id,
-        )
-      } else if self.debug_screenshot_capture_id > 0 {
-        @render.screenshot_take_capture_result(self.debug_screenshot_capture_id)
-      } else {
-        None
-      }
-      let capture = if self.debug_screenshot_texture_id > 0 {
-        capture0
-      } else {
-        screenshot_capture_with_texture_fallback(capture0)
-      }
-      if capture is Some(capture) {
-        @asset.host_asset_save_rgba8_png(
-          width=capture.width,
-          height=capture.height,
-          pixels=capture.pixels,
-          path~,
-        )
-        self.debug_screenshot_saved = true
-        if self.debug_screenshot_exit_on_save {
-          @window.window_request_close_all_hosts(self.app_ref.val.world())
-          return
-        }
-      }
-    }
-    if @render.screenshot_parity_capture_completed() {
-      @window.window_request_close_all_hosts(self.app_ref.val.world())
-      return
-    }
+  let next_render_frame = self.debug_screenshot_render_frame + 1
+  let ordered_surface_bindings = runner_surface_binding_ordered(
+    self.runner_surfaces,
+    self.primary_window,
+  )
+  let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
+    0
+  } else if self.debug_screenshot_surface_index >=
+    ordered_surface_bindings.length() {
+    0
   } else {
-    winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
-      self.app_ref.val = self.app_ref.val.run_once()
-    })
+    self.debug_screenshot_surface_index
+  }
+  let screenshot_queue_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::runner.screenshot_capture_requests",
+  )
+  for i in 0..<ordered_surface_bindings.length() {
+    if !self.debug_screenshot_requested &&
+      self.debug_screenshot_path is Some(_) &&
+      self.debug_screenshot_texture_id <= 0 &&
+      next_render_frame >= self.debug_screenshot_frame &&
+      i == capture_surface_index {
+      let capture_id = @render.screenshot_capture_surface_request()
+      if capture_id > 0 {
+        self.debug_screenshot_requested = true
+        self.debug_screenshot_capture_id = capture_id
+      }
+    }
+  }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "mgstudio_winit::runner.screenshot_capture_requests",
+    screenshot_queue_trace_start_us,
+  )
+  winit_runner_trace_span("mgstudio_winit::runner.app_run_once", fn() {
+    self.app_ref.val = self.app_ref.val.run_once()
+  })
+  self.debug_screenshot_render_frame = next_render_frame
+  if !self.debug_screenshot_saved && self.debug_screenshot_path is Some(path) {
+    let capture0 = if self.debug_screenshot_texture_id > 0 &&
+      next_render_frame >= self.debug_screenshot_frame {
+      @render.screenshot_capture_texture_sync(
+        texture_id=self.debug_screenshot_texture_id,
+      )
+    } else if self.debug_screenshot_capture_id > 0 {
+      @render.screenshot_take_capture_result(self.debug_screenshot_capture_id)
+    } else {
+      None
+    }
+    let capture = if self.debug_screenshot_texture_id > 0 {
+      capture0
+    } else {
+      screenshot_capture_with_texture_fallback(capture0)
+    }
+    if capture is Some(capture) {
+      @asset.host_asset_save_rgba8_png(
+        width=capture.width,
+        height=capture.height,
+        pixels=capture.pixels,
+        path~,
+      )
+      self.debug_screenshot_saved = true
+      if self.debug_screenshot_exit_on_save {
+        @window.window_request_close_all_hosts(self.app_ref.val.world())
+        return
+      }
+    }
+  }
+  if @render.screenshot_parity_capture_completed() {
+    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    return
   }
   if self.app_ref.val.should_exit() is Some(_) {
     @window.window_request_close_all_hosts(self.app_ref.val.world())

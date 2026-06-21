@@ -19,12 +19,6 @@ pub fn[T] any_with_component(@ecs.ComponentKey[T]) -> (@ecs.World) -> Bool
 
 pub fn app_label(String) -> AppLabel
 
-pub fn app_rendering_enabled() -> Bool
-
-pub fn app_rendering_resume() -> Unit
-
-pub fn app_rendering_stop() -> Unit
-
 pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
@@ -94,10 +88,6 @@ pub fn hotpatch_plugin(App[@ecs.World]) -> App[@ecs.World]
 pub fn hotpatch_reset_runtime() -> Unit
 
 pub fn hotpatch_restart_runtime() -> Unit
-
-pub fn hotpatch_resume_rendering() -> Unit
-
-pub fn hotpatch_stop_rendering() -> Unit
 
 pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
 
@@ -199,13 +189,7 @@ pub fn[C] register_validate_parent_has_component_keys(String) -> ValidateParentH
 
 pub fn register_world_system(@ecs.World, (@ecs.World) -> Unit) -> SystemId
 
-pub fn render_runtime_error() -> RenderRuntimeError?
-
-pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
-
 pub fn report_world_error(@ecs.World, Error, ErrorContext) -> Unit
-
-pub fn reset_render_error_handler() -> Unit
 
 pub fn[T] resource_added(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
@@ -264,8 +248,6 @@ pub fn schedule_runner_plugin_loop_hz(Float) -> ScheduleRunnerPlugin
 pub fn schedule_runner_plugin_once() -> ScheduleRunnerPlugin
 
 pub fn set_default_error_handler(@ecs.World, (Error, ErrorContext) -> Unit) -> Unit
-
-pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
 pub fn[S : States] set_state(S) -> Unit
 
@@ -1069,22 +1051,6 @@ pub impl[S : States] Resource for PreviousState[S]
 
 type QuerySystemAccess
 
-pub(all) enum RenderErrorPolicy {
-  Ignore
-  Panic
-  ExitApp
-  StopRendering
-  Recover
-} derive(Eq, @debug.Debug)
-
-pub(all) enum RenderRuntimeError {
-  OutOfMemory
-  Validation
-  DeviceLost
-  Loop
-  Unknown(String)
-} derive(Eq, @debug.Debug)
-
 pub struct Res[T] {
   value : T
   world : @ecs.World?
@@ -1526,8 +1492,6 @@ pub type ErrorHandler = (Error, ErrorContext) -> Unit
 pub type FallibleSystemFn[W] = (W) -> Unit raise
 
 pub type LogLayer = (LogRecord) -> Unit
-
-pub type RenderErrorHandler = (RenderRuntimeError) -> RenderErrorPolicy
 
 pub type RunConditionFn[W] = (W) -> Bool
 

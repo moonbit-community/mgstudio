@@ -908,17 +908,32 @@ pub fn RenderEntity::id(Self) -> @core.Entity
 pub fn RenderEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for RenderEntity
 
+pub(all) struct RenderError {
+  ty : RenderErrorType
+  description : String
+} derive(Eq, @debug.Debug)
+pub fn RenderError::new(RenderErrorType, String) -> Self
+
 pub(all) struct RenderErrorHandler {
-  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy
+  handler : (RenderError, @ecs.World, @ecs.World) -> RenderErrorPolicy
 }
 pub fn RenderErrorHandler::RenderErrorHandler() -> Self
-pub fn RenderErrorHandler::new((@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy) -> Self
+pub fn RenderErrorHandler::new((RenderError, @ecs.World, @ecs.World) -> RenderErrorPolicy) -> Self
+pub impl @app.Resource for RenderErrorHandler
 
 pub(all) enum RenderErrorPolicy {
   Ignore
   StopRendering
   Recover(RenderCreation)
 }
+
+pub(all) enum RenderErrorType {
+  OutOfMemory
+  Validation
+  DeviceLost
+  Internal
+  Unknown(String)
+} derive(Eq, @debug.Debug)
 
 pub struct RenderGraph {
 }
@@ -967,10 +982,10 @@ pub fn RenderScheduleOrder::labels(Self) -> Array[@app.ScheduleStage]
 pub(all) enum RenderState {
   Initializing
   Ready
-  Errored(@app.RenderRuntimeError)
+  Errored(RenderError)
   Reinitializing
 }
-pub fn RenderState::errored(@app.RenderRuntimeError) -> Self
+pub fn RenderState::errored(RenderError) -> Self
 pub fn RenderState::initializing() -> Self
 pub fn RenderState::is_ready(Self) -> Bool
 pub fn RenderState::ready() -> Self

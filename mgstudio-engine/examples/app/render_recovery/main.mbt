@@ -13,6 +13,58 @@
 // limitations under the License.
 
 ///|
+priv enum ExampleRenderError {
+  None
+  OutOfMemory
+  Validation
+  DeviceLost
+  Loop
+} derive(Eq)
+
+///|
+let example_render_error_resource_key : @ecs.ResourceKey[ExampleRenderError] = @ecs.register_resource(
+  debug_name="examples.app.render_recovery.ExampleRenderError",
+)
+
+///|
+impl @app.Resource for ExampleRenderError with fn resource() {
+  example_render_error_resource_key
+}
+
+///|
+fn example_error_to_render_error(
+  error : ExampleRenderError,
+) -> @render.RenderError {
+  match error {
+    None =>
+      @render.RenderError::new(
+        @render.RenderErrorType::Unknown("none"),
+        "no render error",
+      )
+    OutOfMemory =>
+      @render.RenderError::new(
+        @render.RenderErrorType::OutOfMemory,
+        "requested out-of-memory render error",
+      )
+    Validation =>
+      @render.RenderError::new(
+        @render.RenderErrorType::Validation,
+        "requested validation render error",
+      )
+    DeviceLost =>
+      @render.RenderError::new(
+        @render.RenderErrorType::DeviceLost,
+        "requested device-lost render error",
+      )
+    Loop =>
+      @render.RenderError::new(
+        @render.RenderErrorType::DeviceLost,
+        "requested infinite shader loop render error",
+      )
+  }
+}
+
+///|
 fn setup() -> Unit {
   println("Press O/V/D/L to trigger render runtime errors")
   println(
@@ -22,75 +74,101 @@ fn setup() -> Unit {
 
 ///|
 fn set_ignore_policy(
-  _error : @app.RenderRuntimeError,
-) -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::Ignore
+  _error : @render.RenderError,
+  _main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> @render.RenderErrorPolicy {
+  @render.RenderErrorPolicy::Ignore
 }
 
 ///|
-fn set_panic_policy(_error : @app.RenderRuntimeError) -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::Panic
+fn set_panic_policy(
+  error : @render.RenderError,
+  _main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> @render.RenderErrorPolicy {
+  abort("Rendering error \{to_repr(error).to_string()}")
 }
 
 ///|
-fn set_exit_policy(_error : @app.RenderRuntimeError) -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::ExitApp
+fn set_exit_policy(
+  _error : @render.RenderError,
+  main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> @render.RenderErrorPolicy {
+  let key = @app.AppExit::message()
+  if !main_world.contains_message(key) {
+    main_world.init_message(key)
+  }
+  ignore(main_world.send_message(key, @app.AppExit::error()))
+  @render.RenderErrorPolicy::StopRendering
 }
 
 ///|
-fn set_stop_policy(_error : @app.RenderRuntimeError) -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::StopRendering
+fn set_stop_policy(
+  _error : @render.RenderError,
+  _main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> @render.RenderErrorPolicy {
+  @render.RenderErrorPolicy::StopRendering
 }
 
 ///|
 fn set_recover_policy(
-  _error : @app.RenderRuntimeError,
-) -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::Recover
+  _error : @render.RenderError,
+  _main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> @render.RenderErrorPolicy {
+  @render.RenderErrorPolicy::Recover(@render.RenderCreation::default())
 }
 
 ///|
-fn input_system() -> Unit {
+fn input_system(
+  error : @app.ResMut[ExampleRenderError],
+  handler : @app.ResMut[@render.RenderErrorHandler],
+) -> Unit {
+  error.set(None)
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    @app.set_render_error_handler(set_ignore_policy)
+    handler.set(@render.RenderErrorHandler::new(set_ignore_policy))
     println("render policy: Ignore")
   }
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    @app.set_render_error_handler(set_panic_policy)
+    handler.set(@render.RenderErrorHandler::new(set_panic_policy))
     println("render policy: Panic")
   }
   if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    @app.set_render_error_handler(set_exit_policy)
+    handler.set(@render.RenderErrorHandler::new(set_exit_policy))
     println("render policy: ExitApp")
   }
   if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    @app.set_render_error_handler(set_stop_policy)
+    handler.set(@render.RenderErrorHandler::new(set_stop_policy))
     println("render policy: StopRendering")
   }
   if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    @app.set_render_error_handler(set_recover_policy)
+    handler.set(@render.RenderErrorHandler::new(set_recover_policy))
     println("render policy: Recover")
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    @app.report_render_runtime_error(@app.RenderRuntimeError::OutOfMemory)
+    error.set(OutOfMemory)
   }
   if @input.key_just_pressed(@window.KeyCode::KeyV) {
-    @app.report_render_runtime_error(@app.RenderRuntimeError::Validation)
+    error.set(Validation)
   }
   if @input.key_just_pressed(@window.KeyCode::KeyD) {
-    @app.report_render_runtime_error(@app.RenderRuntimeError::DeviceLost)
+    error.set(DeviceLost)
   }
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
-    @app.report_render_runtime_error(@app.RenderRuntimeError::Loop)
+    error.set(Loop)
   }
 }
 
 ///|
-fn report_status() -> Unit {
-  if @app.render_runtime_error() is Some(error) {
+fn report_status(error : @app.Res[ExampleRenderError]) -> Unit {
+  if error.get() != None {
+    let render_error = example_error_to_render_error(error.get())
     println(
-      "last render runtime error: \{to_repr(error).to_string()}, rendering_enabled=\{@app.app_rendering_enabled().to_string()}",
+      "requested render runtime error: \{to_repr(render_error).to_string()}",
     )
   }
 }
@@ -99,8 +177,9 @@ fn report_status() -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(ExampleRenderError::None)
   .add_systems_fn(@app.Startup, setup)
-  .add_systems_fn(@app.Update, input_system)
-  .add_systems_fn(@app.Update, report_status)
+  .add_systems_param2(@app.Update, input_system)
+  .add_systems_param(@app.Update, report_status)
   .run()
 }

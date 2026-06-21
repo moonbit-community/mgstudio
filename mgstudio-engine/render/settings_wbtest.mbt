@@ -606,7 +606,7 @@ test "render recovery: reinitializing consumes future render resources before st
 test "render error handler: ignore policy marks renderer ready" {
   let main_world = @ecs.World::new()
   let render_world = @ecs.World::new()
-  render_world.insert_resource(
+  main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
       RenderErrorPolicy::Ignore
@@ -614,7 +614,9 @@ test "render error handler: ignore policy marks renderer ready" {
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(@app.RenderRuntimeError::Validation),
+    RenderState::errored(
+      RenderError::new(RenderErrorType::Validation, "validation"),
+    ),
   )
 
   update_render_state(main_world, render_world)
@@ -633,7 +635,7 @@ test "render error handler: recover policy creates future resources and restarts
       @app.system(init_pending_command_buffers_resource),
     )
   let render_world = render_sub_app.world()
-  render_world.insert_resource(
+  main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
       RenderErrorPolicy::Recover(RenderCreation::manual_resources(resources))
@@ -641,7 +643,9 @@ test "render error handler: recover policy creates future resources and restarts
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(@app.RenderRuntimeError::DeviceLost),
+    RenderState::errored(
+      RenderError::new(RenderErrorType::DeviceLost, "device lost"),
+    ),
   )
   let app = @app.App::new(main_world)
     .insert_sub_app(@app.RenderApp, render_sub_app)
@@ -682,4 +686,27 @@ test "render error handler: recover policy creates future resources and restarts
     render_world.resource(pending_command_buffers_resource_key).is_present(),
     content="true",
   )
+}
+
+///|
+test "render error handler: default handler sends app exit from main world" {
+  let main_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  main_world.insert_resource(
+    render_error_handler_resource_key,
+    RenderErrorHandler::RenderErrorHandler(),
+  )
+  render_world.insert_resource(
+    render_state_resource_key,
+    RenderState::errored(
+      RenderError::new(RenderErrorType::Validation, "validation"),
+    ),
+  )
+
+  update_render_state(main_world, render_world)
+  let key = @app.AppExit::message()
+  let reader = main_world.message_reader(key)
+  let exits = reader.read()
+  debug_inspect(exits.length(), content="1")
+  debug_inspect(exits[0].is_error(), content="true")
 }

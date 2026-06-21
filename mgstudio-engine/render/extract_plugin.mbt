@@ -76,6 +76,12 @@ fn render_plugin_install_with(
       RenderAssetBytesPerFrame::RenderAssetBytesPerFrame(),
     )
   }
+  if !next.contains_resource(render_error_handler_resource_key) {
+    next = next.insert_world_resource(
+      render_error_handler_resource_key,
+      RenderErrorHandler::RenderErrorHandler(),
+    )
+  }
   if next.get_sub_app(@app.RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_recovery_schedule_stage()),
@@ -104,17 +110,6 @@ fn render_plugin_install_with(
         None => ()
       }
       init_render_state(render_sub_app.world())
-      if !render_sub_app
-        .world()
-        .resource(render_error_handler_resource_key)
-        .is_present() {
-        render_sub_app
-        .world()
-        .insert_resource(
-          render_error_handler_resource_key,
-          RenderErrorHandler::RenderErrorHandler(),
-        )
-      }
       render_sub_app
       .world()
       .insert_resource(@time.time_sender_resource_key, time_channels.0)

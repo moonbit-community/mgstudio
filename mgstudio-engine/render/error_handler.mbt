@@ -19,8 +19,31 @@
 pub(all) enum RenderState {
   Initializing
   Ready
-  Errored(@app.RenderRuntimeError)
+  Errored(RenderError)
   Reinitializing
+}
+
+///|
+pub(all) enum RenderErrorType {
+  OutOfMemory
+  Validation
+  DeviceLost
+  Internal
+  Unknown(String)
+} derive(Eq, Debug)
+
+///|
+pub(all) struct RenderError {
+  ty : RenderErrorType
+  description : String
+} derive(Eq, Debug)
+
+///|
+pub fn RenderError::new(
+  ty : RenderErrorType,
+  description : String,
+) -> RenderError {
+  RenderError::{ ty, description }
 }
 
 ///|
@@ -32,15 +55,20 @@ pub(all) enum RenderErrorPolicy {
 
 ///|
 pub(all) struct RenderErrorHandler {
-  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy
+  handler : (RenderError, @ecs.World, @ecs.World) -> RenderErrorPolicy
 }
 
 ///|
 fn default_render_error_handler(
-  _error : @app.RenderRuntimeError,
-  _main_world : @ecs.World,
+  _error : RenderError,
+  main_world : @ecs.World,
   _render_world : @ecs.World,
 ) -> RenderErrorPolicy {
+  let key = @app.AppExit::message()
+  if !main_world.contains_message(key) {
+    main_world.init_message(key)
+  }
+  ignore(main_world.send_message(key, @app.AppExit::error()))
   RenderErrorPolicy::StopRendering
 }
 
@@ -51,7 +79,7 @@ pub fn RenderErrorHandler::RenderErrorHandler() -> RenderErrorHandler {
 
 ///|
 pub fn RenderErrorHandler::new(
-  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy,
+  handler : (RenderError, @ecs.World, @ecs.World) -> RenderErrorPolicy,
 ) -> RenderErrorHandler {
   RenderErrorHandler::{ handler, }
 }
@@ -62,9 +90,14 @@ pub let render_error_handler_resource_key : @ecs.ResourceKey[RenderErrorHandler]
 )
 
 ///|
+pub impl @app.Resource for RenderErrorHandler with fn resource() {
+  render_error_handler_resource_key
+}
+
+///|
 fn RenderErrorHandler::handle(
   self : RenderErrorHandler,
-  error : @app.RenderRuntimeError,
+  error : RenderError,
   main_world : @ecs.World,
   render_world : @ecs.World,
 ) -> Unit {
@@ -106,7 +139,7 @@ pub fn RenderState::reinitializing() -> RenderState {
 }
 
 ///|
-pub fn RenderState::errored(error : @app.RenderRuntimeError) -> RenderState {
+pub fn RenderState::errored(error : RenderError) -> RenderState {
   Errored(error)
 }
 
@@ -191,7 +224,7 @@ fn update_render_state(
       }
     Errored(error) => {
       let handler = match
-        render_world.get_resource(render_error_handler_resource_key) {
+        main_world.get_resource(render_error_handler_resource_key) {
         Some(value) => value
         None => RenderErrorHandler::RenderErrorHandler()
       }
