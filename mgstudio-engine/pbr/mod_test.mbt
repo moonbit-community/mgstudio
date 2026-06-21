@@ -573,6 +573,7 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   )
   meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
   meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
+  meta.write_gpu_clustered_lights_buffer(render_device, render_queue)
   world.insert_resource(GlobalClusterableObjectMeta::resource(), meta)
   let readback = RenderViewClusteringReadbackData::RenderViewClusteringReadbackData()
   readback.views.set(
@@ -706,6 +707,64 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   )
   debug_inspect(
     uploaded_buffers.scratchpad_offsets_and_counts_gpu_capacity() > 0UL,
+    content="true",
+  )
+
+  let light_probes_buffer = @pbr_light_probe.LightProbesBuffer::LightProbesBuffer()
+  ignore(
+    light_probes_buffer.push_uniform_bytes(
+      Bytes::make(@pbr_light_probe.LIGHT_PROBES_UNIFORM_SIZE_BYTES, b'\x00'),
+    ),
+  )
+  light_probes_buffer.write_buffer(
+    render_device.wgpu_device(),
+    render_queue.wgpu_queue(),
+  )
+  world.insert_resource(
+    @pbr_light_probe.LightProbesBuffer::resource(),
+    light_probes_buffer,
+  )
+  let decals_buffer = @pbr_decal.DecalsBuffer::DecalsBuffer()
+  @pbr_decal.render3d_upload_decals(render_decals, decals_buffer)
+  decals_buffer.write_buffer(
+    render_device.wgpu_device(),
+    render_queue.wgpu_queue(),
+  )
+  world.insert_resource(@pbr_decal.DecalsBuffer::resource(), decals_buffer)
+  let light_meta = @pbr_render.LightMeta::LightMeta()
+  ignore(
+    light_meta.push_view_gpu_lights(@pbr_render.GpuLights3d::GpuLights3d()),
+  )
+  light_meta.write_view_gpu_lights_buffer(
+    render_device.wgpu_device(),
+    render_queue.wgpu_queue(),
+  )
+  world.insert_resource(@pbr_render.LightMeta::resource(), light_meta)
+  let view_uniforms = @render_view.ViewUniforms::ViewUniforms()
+  ignore(view_uniforms.push(@render_view.ViewUniform::ViewUniform()))
+  view_uniforms.write_buffer(
+    render_device.wgpu_device(),
+    render_queue.wgpu_queue(),
+  )
+  world.insert_resource(@render_view.ViewUniforms::resource(), view_uniforms)
+  world.insert_resource(
+    ClusteringRasterPipeline::resource(),
+    ClusteringRasterPipeline::ClusteringRasterPipeline(),
+  )
+  world.insert_resource(
+    ClusteringZSlicingPipeline::resource(),
+    ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+  )
+  world.insert_resource(
+    ClusteringAllocationPipeline::resource(),
+    ClusteringAllocationPipeline::ClusteringAllocationPipeline(),
+  )
+
+  prepare_clustering_bind_groups(world)
+
+  debug_inspect(
+    (try! world.get_by_key(view, ViewClusteringBindGroups::component()))
+    is Some(_),
     content="true",
   )
 

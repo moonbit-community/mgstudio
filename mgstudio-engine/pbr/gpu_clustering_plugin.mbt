@@ -188,6 +188,14 @@ pub struct ViewClusteringDummyTexture {
 }
 
 ///|
+pub struct ViewClusteringBindGroups {
+  clustering_bind_group_z_slicing_pass : @wgpu.BindGroup
+  clustering_bind_group_count_pass : @wgpu.BindGroup
+  clustering_bind_group_allocate_pass : @wgpu.BindGroup
+  clustering_bind_group_populate_pass : @wgpu.BindGroup
+}
+
+///|
 pub struct ViewGpuClusteringPipelineIds {
   clustering_z_slicing_pipeline_id : @render_resource.CachedComputePipelineId
   clustering_count_pipeline_id : @render_resource.CachedRenderPipelineId
@@ -346,6 +354,16 @@ pub impl @ecs.Component for ViewClusteringDummyTexture with fn component() {
 ///|
 pub impl @ecs.Component for ViewGpuClusteringBuffers with fn component() {
   ecs_key_view_gpu_clustering_buffers
+}
+
+///|
+pub let ecs_key_view_clustering_bind_groups : @ecs.ComponentKey[
+  ViewClusteringBindGroups,
+] = @ecs.register_component(debug_name="mgstudio_pbr::ViewClusteringBindGroups")
+
+///|
+pub impl @ecs.Component for ViewClusteringBindGroups with fn component() {
+  ecs_key_view_clustering_bind_groups
 }
 
 ///|
@@ -1265,6 +1283,49 @@ pub fn ViewClusteringDummyTexture::texture(
 }
 
 ///|
+pub fn ViewClusteringBindGroups::new(
+  clustering_bind_group_z_slicing_pass : @wgpu.BindGroup,
+  clustering_bind_group_count_pass : @wgpu.BindGroup,
+  clustering_bind_group_allocate_pass : @wgpu.BindGroup,
+  clustering_bind_group_populate_pass : @wgpu.BindGroup,
+) -> ViewClusteringBindGroups {
+  ViewClusteringBindGroups::{
+    clustering_bind_group_z_slicing_pass,
+    clustering_bind_group_count_pass,
+    clustering_bind_group_allocate_pass,
+    clustering_bind_group_populate_pass,
+  }
+}
+
+///|
+pub fn ViewClusteringBindGroups::z_slicing_bind_group(
+  self : ViewClusteringBindGroups,
+) -> @wgpu.BindGroup {
+  self.clustering_bind_group_z_slicing_pass
+}
+
+///|
+pub fn ViewClusteringBindGroups::count_bind_group(
+  self : ViewClusteringBindGroups,
+) -> @wgpu.BindGroup {
+  self.clustering_bind_group_count_pass
+}
+
+///|
+pub fn ViewClusteringBindGroups::allocate_bind_group(
+  self : ViewClusteringBindGroups,
+) -> @wgpu.BindGroup {
+  self.clustering_bind_group_allocate_pass
+}
+
+///|
+pub fn ViewClusteringBindGroups::populate_bind_group(
+  self : ViewClusteringBindGroups,
+) -> @wgpu.BindGroup {
+  self.clustering_bind_group_populate_pass
+}
+
+///|
 fn gpu_clustering_next_multiple_of(value : Int, quantum : Int) -> Int {
   if quantum <= 0 {
     abort("GPU clustering texture quantum must be positive")
@@ -1345,6 +1406,181 @@ fn[T] gpu_clustering_resource_or_abort(
     Some(value) => value
     None => abort("missing GPU clustering render resource: \{label}")
   }
+}
+
+///|
+fn gpu_clustering_buffer_binding_type_to_wgpu(
+  kind : @render_resource.BufferBindingType,
+) -> UInt {
+  match kind {
+    Uniform => @wgpu.BUFFER_BINDING_TYPE_UNIFORM
+    Storage(read_only) =>
+      if read_only {
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE
+      } else {
+        @wgpu.BUFFER_BINDING_TYPE_STORAGE
+      }
+  }
+}
+
+///|
+fn gpu_clustering_texture_sample_type_to_wgpu(
+  kind : @render_resource.TextureSampleType,
+) -> UInt {
+  match kind {
+    Float(filterable) =>
+      if filterable {
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT
+      } else {
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT
+      }
+    Depth => @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH
+    SInt => @wgpu.TEXTURE_SAMPLE_TYPE_SINT
+    UInt => @wgpu.TEXTURE_SAMPLE_TYPE_UINT
+  }
+}
+
+///|
+fn gpu_clustering_texture_view_dimension_to_wgpu(
+  dimension : @render_resource.TextureViewDimension,
+) -> UInt {
+  match dimension {
+    D1 => @wgpu.TEXTURE_VIEW_DIMENSION_1D
+    D2 => @wgpu.TEXTURE_VIEW_DIMENSION_2D
+    D2Array => @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY
+    Cube => @wgpu.TEXTURE_VIEW_DIMENSION_CUBE
+    CubeArray => @wgpu.TEXTURE_VIEW_DIMENSION_CUBE_ARRAY
+    D3 => @wgpu.TEXTURE_VIEW_DIMENSION_3D
+  }
+}
+
+///|
+fn gpu_clustering_sampler_binding_type_to_wgpu(
+  kind : @render_resource.SamplerBindingType,
+) -> UInt {
+  match kind {
+    Filtering => @wgpu.SAMPLER_BINDING_TYPE_FILTERING
+    NonFiltering => @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING
+    Comparison => @wgpu.SAMPLER_BINDING_TYPE_COMPARISON
+  }
+}
+
+///|
+fn gpu_clustering_storage_texture_access_to_wgpu(
+  access : @render_resource.StorageTextureAccess,
+) -> UInt {
+  match access {
+    WriteOnly => @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY
+    ReadOnly => @wgpu.STORAGE_TEXTURE_ACCESS_READ_ONLY
+    ReadWrite => @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE
+  }
+}
+
+///|
+fn gpu_clustering_add_render_resource_layout_entry(
+  builder : @wgpu.BindGroupLayoutBuilder,
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Bool {
+  if entry.binding() < 0 {
+    return false
+  }
+  let binding = entry.binding().reinterpret_as_uint()
+  let visibility = @wgpu.ShaderStage::from_u64(entry.visibility().to_uint64())
+  let count = if entry.count() > 1 {
+    entry.count().reinterpret_as_uint()
+  } else {
+    1U
+  }
+  match entry.kind() {
+    Buffer =>
+      builder.add_buffer(
+        binding,
+        visibility,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=0UL,
+      )
+    Texture =>
+      builder.add_texture(
+        binding,
+        visibility,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        count~,
+      )
+    Sampler =>
+      builder.add_sampler(
+        binding,
+        visibility,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+        count~,
+      )
+    StorageTexture =>
+      builder.add_storage_texture(
+        binding,
+        visibility,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+    External => false
+    BufferBinding(buffer_kind, has_dynamic_offset, min_binding_size) =>
+      builder.add_buffer(
+        binding,
+        visibility,
+        gpu_clustering_buffer_binding_type_to_wgpu(buffer_kind),
+        has_dynamic_offset~,
+        min_binding_size~,
+      )
+    TextureBinding(sample_type, view_dimension, multisampled) =>
+      builder.add_texture(
+        binding,
+        visibility,
+        gpu_clustering_texture_sample_type_to_wgpu(sample_type),
+        gpu_clustering_texture_view_dimension_to_wgpu(view_dimension),
+        multisampled~,
+        count~,
+      )
+    SamplerBinding(sampler_type) =>
+      builder.add_sampler(
+        binding,
+        visibility,
+        gpu_clustering_sampler_binding_type_to_wgpu(sampler_type),
+        count~,
+      )
+    StorageTextureBinding(access, format, view_dimension) =>
+      builder.add_storage_texture(
+        binding,
+        visibility,
+        gpu_clustering_storage_texture_access_to_wgpu(access),
+        @wgpu.TextureFormat::from_u32(format),
+        gpu_clustering_texture_view_dimension_to_wgpu(view_dimension),
+      )
+  }
+}
+
+///|
+fn gpu_clustering_create_bind_group_layout_from_descriptor(
+  render_device : @renderer.RenderDevice,
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
+  label_suffix : String,
+) -> @wgpu.BindGroupLayout {
+  let entries = descriptor.entries()
+  let builder = @wgpu.BindGroupLayoutBuilder::new(
+    max_entries=entries.length().to_uint64(),
+  )
+  for entry in entries {
+    if !gpu_clustering_add_render_resource_layout_entry(builder, entry) {
+      builder.free()
+      abort(
+        "wgpu: unsupported GPU clustering bind group layout descriptor entry in " +
+        descriptor.label(),
+      )
+    }
+  }
+  builder.finish(
+    render_device.wgpu_device(),
+    label="mgstudio_gpu_clustering_" + label_suffix + "_" + descriptor.label(),
+  )
 }
 
 ///|
@@ -1581,6 +1817,253 @@ pub fn upload_view_gpu_clustering_buffers(world : @ecs.World) -> Unit {
   ) {
     view_gpu_clustering_buffers.ensure_nonempty_scratchpad_offsets_and_counts()
     view_gpu_clustering_buffers.write_buffers(render_device, render_queue)
+  })
+}
+
+///|
+fn gpu_clustering_finish_bind_group_or_abort(
+  builder : @wgpu.BindGroupBuilder,
+  device : @wgpu.Device,
+  layout : @wgpu.BindGroupLayout,
+  label : String,
+) -> @wgpu.BindGroup {
+  builder.finish(device, layout, label~)
+}
+
+///|
+pub fn prepare_clustering_bind_groups(world : @ecs.World) -> Unit {
+  let render_device = gpu_clustering_resource_or_abort(
+    world, @render.render_device_resource_key, "RenderDevice",
+  )
+  let clustering_z_slicing_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringZSlicingPipeline::resource(),
+    "ClusteringZSlicingPipeline",
+  )
+  let clustering_raster_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringRasterPipeline::resource(),
+    "ClusteringRasterPipeline",
+  )
+  let clustering_allocation_pipeline = gpu_clustering_resource_or_abort(
+    world,
+    ClusteringAllocationPipeline::resource(),
+    "ClusteringAllocationPipeline",
+  )
+  let global_clusterable_object_meta = gpu_clustering_resource_or_abort(
+    world,
+    GlobalClusterableObjectMeta::resource(),
+    "GlobalClusterableObjectMeta",
+  )
+  let light_probes_buffer = gpu_clustering_resource_or_abort(
+    world,
+    @pbr_light_probe.LightProbesBuffer::resource(),
+    "LightProbesBuffer",
+  )
+  let decals_buffer_resource = gpu_clustering_resource_or_abort(
+    world,
+    @pbr_decal.DecalsBuffer::resource(),
+    "DecalsBuffer",
+  )
+  let light_meta = gpu_clustering_resource_or_abort(
+    world,
+    @pbr_render.LightMeta::resource(),
+    "LightMeta",
+  )
+  let view_uniforms = gpu_clustering_resource_or_abort(
+    world,
+    @render_view.ViewUniforms::resource(),
+    "ViewUniforms",
+  )
+  let gpu_clustered_lights_binding = match
+    global_clusterable_object_meta.gpu_clustered_lights_binding() {
+    Some(buffer) => buffer
+    None => return
+  }
+  let light_probes_binding = match light_probes_buffer.binding() {
+    Some(buffer) => buffer
+    None => return
+  }
+  let decals_buffer = match decals_buffer_resource.buffer() {
+    Some(buffer) => buffer
+    None => return
+  }
+  let lights_binding = match light_meta.view_gpu_lights_binding() {
+    Some(buffer) => buffer
+    None => return
+  }
+  let view_binding = match view_uniforms.binding() {
+    Some(buffer) => buffer
+    None => return
+  }
+  let device = render_device.wgpu_device()
+  let z_slicing_layout = gpu_clustering_create_bind_group_layout_from_descriptor(
+    render_device,
+    clustering_z_slicing_pipeline.layout(),
+    "z_slicing_pass",
+  )
+  let count_layout = gpu_clustering_create_bind_group_layout_from_descriptor(
+    render_device,
+    clustering_raster_pipeline.count_pass_layout(),
+    "count_pass",
+  )
+  let allocation_layout = gpu_clustering_create_bind_group_layout_from_descriptor(
+    render_device,
+    clustering_allocation_pipeline.layout(),
+    "allocation_pass",
+  )
+  let populate_layout = gpu_clustering_create_bind_group_layout_from_descriptor(
+    render_device,
+    clustering_raster_pipeline.populate_pass_layout(),
+    "populate_pass",
+  )
+  world.for_each_component(@render_view.ExtractedView::component(), fn(
+    view_entity,
+    _view,
+  ) {
+    let view_gpu_clustering_buffers = match
+      (world.get_by_key(view_entity, ViewGpuClusteringBuffers::component()) catch {
+        _ =>
+          abort(
+            "prepare_clustering_bind_groups: failed to read view GPU clustering buffers",
+          )
+      }) {
+      Some(value) => value
+      None => return
+    }
+    let view_cluster_bindings = match
+      (world.get_by_key(view_entity, ViewClusterBindings::component()) catch {
+        _ =>
+          abort(
+            "prepare_clustering_bind_groups: failed to read view cluster bindings",
+          )
+      }) {
+      Some(value) => value
+      None => return
+    }
+    let z_slices_buffer = match
+      view_gpu_clustering_buffers.z_slices_gpu_buffer() {
+      Some(buffer) => buffer
+      None => return
+    }
+    let cluster_metadata_buffer = match
+      view_gpu_clustering_buffers.cluster_metadata_gpu_buffer() {
+      Some(buffer) => buffer
+      None => return
+    }
+    let scratchpad_offsets_and_counts_buffer = match
+      view_gpu_clustering_buffers.scratchpad_offsets_and_counts_gpu_buffer() {
+      Some(buffer) => buffer
+      None => return
+    }
+    let clusterable_object_index_lists = match
+      view_cluster_bindings.clusterable_object_index_lists_gpu_buffer() {
+      Some(buffer) => buffer
+      None => return
+    }
+    let cluster_offsets_and_counts = match
+      view_cluster_bindings.cluster_offsets_and_counts_gpu_buffer() {
+      Some(buffer) => buffer
+      None => return
+    }
+    let z_slicing_builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
+    let z_slicing_ok = z_slicing_builder.add_buffer(0U, cluster_metadata_buffer) &&
+      z_slicing_builder.add_buffer(1U, z_slices_buffer) &&
+      z_slicing_builder.add_buffer(2U, gpu_clustered_lights_binding) &&
+      z_slicing_builder.add_buffer(
+        3U,
+        light_probes_binding,
+        size=@pbr_light_probe.LIGHT_PROBES_UNIFORM_SIZE_BYTES.to_uint64(),
+      ) &&
+      z_slicing_builder.add_buffer(4U, decals_buffer) &&
+      z_slicing_builder.add_buffer(5U, lights_binding) &&
+      z_slicing_builder.add_buffer(
+        6U,
+        view_binding,
+        size=@render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
+      )
+    if !z_slicing_ok {
+      z_slicing_builder.free()
+      abort("prepare_clustering_bind_groups: failed to build z slicing group")
+    }
+    let count_builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+    let count_ok = count_builder.add_buffer(0U, z_slices_buffer) &&
+      count_builder.add_buffer(1U, clusterable_object_index_lists) &&
+      count_builder.add_buffer(2U, gpu_clustered_lights_binding) &&
+      count_builder.add_buffer(
+        3U,
+        light_probes_binding,
+        size=@pbr_light_probe.LIGHT_PROBES_UNIFORM_SIZE_BYTES.to_uint64(),
+      ) &&
+      count_builder.add_buffer(4U, decals_buffer) &&
+      count_builder.add_buffer(5U, lights_binding) &&
+      count_builder.add_buffer(
+        6U,
+        view_binding,
+        size=@render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
+      ) &&
+      count_builder.add_buffer(7U, cluster_offsets_and_counts)
+    if !count_ok {
+      count_builder.free()
+      abort("prepare_clustering_bind_groups: failed to build count group")
+    }
+    let allocation_builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
+    let allocation_ok = allocation_builder.add_buffer(
+        0U, cluster_offsets_and_counts,
+      ) &&
+      allocation_builder.add_buffer(1U, lights_binding) &&
+      allocation_builder.add_buffer(2U, cluster_metadata_buffer) &&
+      allocation_builder.add_buffer(3U, scratchpad_offsets_and_counts_buffer)
+    if !allocation_ok {
+      allocation_builder.free()
+      abort("prepare_clustering_bind_groups: failed to build allocation group")
+    }
+    let populate_builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
+    let populate_ok = populate_builder.add_buffer(0U, z_slices_buffer) &&
+      populate_builder.add_buffer(1U, clusterable_object_index_lists) &&
+      populate_builder.add_buffer(2U, gpu_clustered_lights_binding) &&
+      populate_builder.add_buffer(
+        3U,
+        light_probes_binding,
+        size=@pbr_light_probe.LIGHT_PROBES_UNIFORM_SIZE_BYTES.to_uint64(),
+      ) &&
+      populate_builder.add_buffer(4U, decals_buffer) &&
+      populate_builder.add_buffer(5U, lights_binding) &&
+      populate_builder.add_buffer(
+        6U,
+        view_binding,
+        size=@render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
+      ) &&
+      populate_builder.add_buffer(7U, cluster_offsets_and_counts) &&
+      populate_builder.add_buffer(8U, scratchpad_offsets_and_counts_buffer)
+    if !populate_ok {
+      populate_builder.free()
+      abort("prepare_clustering_bind_groups: failed to build populate group")
+    }
+    let z_slicing_bind_group = gpu_clustering_finish_bind_group_or_abort(
+      z_slicing_builder, device, z_slicing_layout, "clustering Z slicing pass bind group",
+    )
+    let count_bind_group = gpu_clustering_finish_bind_group_or_abort(
+      count_builder, device, count_layout, "clustering count pass bind group",
+    )
+    let allocation_bind_group = gpu_clustering_finish_bind_group_or_abort(
+      allocation_builder, device, allocation_layout, "clustering allocate pass bind group",
+    )
+    let populate_bind_group = gpu_clustering_finish_bind_group_or_abort(
+      populate_builder, device, populate_layout, "clustering populate pass bind group",
+    )
+    world.set_by_key(
+      view_entity,
+      ViewClusteringBindGroups::component(),
+      ViewClusteringBindGroups::new(
+        z_slicing_bind_group, count_bind_group, allocation_bind_group, populate_bind_group,
+      ),
+    ) catch {
+      _ =>
+        abort(
+          "prepare_clustering_bind_groups: failed to insert clustering bind groups",
+        )
+    }
   })
 }
 
@@ -1853,6 +2336,12 @@ fn gpu_clustering_configure_render_app_finish(
     @render.render_schedule_stage(),
     @app.system(prepare_clustering_pipelines)
     .in_set(@render.render_system_set_prepare)
+    .run_if(gpu_clustering_is_enabled),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_clustering_bind_groups)
+    .in_set(@render.render_system_set_prepare_bind_groups)
     .run_if(gpu_clustering_is_enabled),
   )
 }

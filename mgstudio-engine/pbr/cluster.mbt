@@ -55,6 +55,8 @@ pub struct GpuClusteredLight {
 pub(all) struct GpuClusteredLights {
   data : Array[GpuClusteredLight]
   is_storage_buffer : Bool
+  mut gpu_buffer : @wgpu.Buffer?
+  mut gpu_capacity : UInt64
 }
 
 ///|
@@ -79,9 +81,19 @@ pub fn GpuClusteredLights::from_binding_type(
   binding_type : UInt,
 ) -> GpuClusteredLights {
   if binding_type == @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE {
-    GpuClusteredLights::{ data: [], is_storage_buffer: true }
+    GpuClusteredLights::{
+      data: [],
+      is_storage_buffer: true,
+      gpu_buffer: None,
+      gpu_capacity: 0UL,
+    }
   } else {
-    GpuClusteredLights::{ data: [], is_storage_buffer: false }
+    GpuClusteredLights::{
+      data: [],
+      is_storage_buffer: false,
+      gpu_buffer: None,
+      gpu_capacity: 0UL,
+    }
   }
 }
 
@@ -118,6 +130,106 @@ pub fn GpuClusteredLights::add(
 ///|
 pub fn GpuClusteredLights::is_storage_buffer(self : GpuClusteredLights) -> Bool {
   self.is_storage_buffer
+}
+
+///|
+pub fn GpuClusteredLights::binding(self : GpuClusteredLights) -> @wgpu.Buffer? {
+  self.gpu_buffer
+}
+
+///|
+pub fn GpuClusteredLights::gpu_capacity(self : GpuClusteredLights) -> UInt64 {
+  self.gpu_capacity
+}
+
+///|
+pub fn GpuClusteredLights::max_clustered_lights(
+  self : GpuClusteredLights,
+) -> Int? {
+  if self.is_storage_buffer {
+    None
+  } else {
+    Some(MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS)
+  }
+}
+
+///|
+fn pbr_gpu_clustered_lights_push_vec4(
+  out : Array[Byte],
+  value : @math.Vec4,
+) -> Unit {
+  pbr_gpu_clustering_push_u32_le(out, value.x.reinterpret_as_uint())
+  pbr_gpu_clustering_push_u32_le(out, value.y.reinterpret_as_uint())
+  pbr_gpu_clustering_push_u32_le(out, value.z.reinterpret_as_uint())
+  pbr_gpu_clustering_push_u32_le(out, value.w.reinterpret_as_uint())
+}
+
+///|
+fn pbr_gpu_clustered_lights_bytes(lights : Array[GpuClusteredLight]) -> Bytes {
+  let out : Array[Byte] = []
+  for light in lights {
+    pbr_gpu_clustered_lights_push_vec4(out, light.light_custom_data)
+    pbr_gpu_clustered_lights_push_vec4(out, light.color_inverse_square_range)
+    pbr_gpu_clustered_lights_push_vec4(out, light.position_radius)
+    pbr_gpu_clustering_push_u32_le(out, light.flags)
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      light.shadow_depth_bias.reinterpret_as_uint(),
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      light.shadow_normal_bias.reinterpret_as_uint(),
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      light.spot_light_tan_angle.reinterpret_as_uint(),
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      light.soft_shadow_size.reinterpret_as_uint(),
+    )
+    pbr_gpu_clustering_push_u32_le(
+      out,
+      light.shadow_map_near_z.reinterpret_as_uint(),
+    )
+    pbr_gpu_clustering_push_u32_le(out, light.decal_index)
+    pbr_gpu_clustering_push_u32_le(out, light.range.reinterpret_as_uint())
+  }
+  Bytes::from_array(out)
+}
+
+///|
+pub fn GpuClusteredLights::write_buffer(
+  self : GpuClusteredLights,
+  render_device : @renderer.RenderDevice,
+  render_queue : @renderer.RenderQueue,
+) -> Unit {
+  if self.is_storage_buffer {
+    if self.data.length() == 0 {
+      self.data.push(GpuClusteredLight::GpuClusteredLight())
+    }
+  } else {
+    while self.data.length() < MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
+      self.data.push(GpuClusteredLight::GpuClusteredLight())
+    }
+  }
+  let bytes = pbr_gpu_clustered_lights_bytes(self.data)
+  let usage = if self.is_storage_buffer {
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+  } else {
+    @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
+  }
+  let (buffer, capacity) = pbr_gpu_clustering_write_buffer(
+    render_device,
+    render_queue,
+    self.gpu_buffer,
+    self.gpu_capacity,
+    bytes,
+    "clustered lights buffer",
+    usage_bits=usage,
+  )
+  self.gpu_buffer = Some(buffer)
+  self.gpu_capacity = capacity
 }
 
 ///|
@@ -175,6 +287,29 @@ pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(
   light : GpuClusteredLight,
 ) -> Unit {
   self.gpu_clustered_lights.add(light)
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::write_gpu_clustered_lights_buffer(
+  self : GlobalClusterableObjectMeta,
+  render_device : @renderer.RenderDevice,
+  render_queue : @renderer.RenderQueue,
+) -> Unit {
+  self.gpu_clustered_lights.write_buffer(render_device, render_queue)
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_binding(
+  self : GlobalClusterableObjectMeta,
+) -> @wgpu.Buffer? {
+  self.gpu_clustered_lights.binding()
+}
+
+///|
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_gpu_capacity(
+  self : GlobalClusterableObjectMeta,
+) -> UInt64 {
+  self.gpu_clustered_lights.gpu_capacity()
 }
 
 ///|

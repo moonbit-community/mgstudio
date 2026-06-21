@@ -387,6 +387,8 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShado
 
 pub let ecs_key_view_cluster_bindings : @ecs.ComponentKey[ViewClusterBindings]
 
+pub let ecs_key_view_clustering_bind_groups : @ecs.ComponentKey[ViewClusteringBindGroups]
+
 pub let ecs_key_view_clustering_dummy_texture : @ecs.ComponentKey[ViewClusteringDummyTexture]
 
 pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[ViewContactShadowsUniformOffset]
@@ -650,6 +652,8 @@ pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @mat
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
 pub fn prepare_cluster_dummy_textures(@ecs.World) -> Unit
+
+pub fn prepare_clustering_bind_groups(@ecs.World) -> Unit
 
 pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
 
@@ -1403,7 +1407,10 @@ pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(Self, GpuClusteredLi
 pub fn GlobalClusterableObjectMeta::entity_to_index_len(Self) -> Int
 pub fn GlobalClusterableObjectMeta::gpu_clustered_light_count(Self) -> Int
 pub fn GlobalClusterableObjectMeta::gpu_clustered_lights(Self) -> GpuClusteredLights
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_binding(Self) -> @wgpu_mbt.Buffer?
+pub fn GlobalClusterableObjectMeta::gpu_clustered_lights_gpu_capacity(Self) -> UInt64
 pub fn GlobalClusterableObjectMeta::new(UInt) -> Self
+pub fn GlobalClusterableObjectMeta::write_gpu_clustered_lights_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
 pub impl @app.Resource for GlobalClusterableObjectMeta
 
 pub struct GltfExtensionHandlerPbrState {
@@ -1443,13 +1450,19 @@ pub fn GpuClusteredLight::GpuClusteredLight() -> Self
 pub(all) struct GpuClusteredLights {
   data : Array[GpuClusteredLight]
   is_storage_buffer : Bool
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
 }
 pub fn GpuClusteredLights::add(Self, GpuClusteredLight) -> Unit
+pub fn GpuClusteredLights::binding(Self) -> @wgpu_mbt.Buffer?
 pub fn GpuClusteredLights::binding_type(Self) -> UInt
 pub fn GpuClusteredLights::clear(Self) -> Unit
 pub fn GpuClusteredLights::from_binding_type(UInt) -> Self
+pub fn GpuClusteredLights::gpu_capacity(Self) -> UInt64
 pub fn GpuClusteredLights::is_storage_buffer(Self) -> Bool
 pub fn GpuClusteredLights::len(Self) -> Int
+pub fn GpuClusteredLights::max_clustered_lights(Self) -> Int?
+pub fn GpuClusteredLights::write_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
 
 pub struct GpuClusteringMeshBuffers {
   vertices : Array[@math.Vec2]
@@ -2335,6 +2348,19 @@ pub fn ViewClusterBindings3d::push_index(Self, UInt) -> Bool
 pub fn ViewClusterBindings3d::push_offset_and_counts(Self, UInt, ClusterableObjectCounts3d) -> Bool
 pub fn ViewClusterBindings3d::uniform_packed_offsets_and_counts(Self) -> Array[UInt]
 pub fn ViewClusterBindings3d::with_limits(Int, Int) -> Self
+
+pub struct ViewClusteringBindGroups {
+  clustering_bind_group_z_slicing_pass : @wgpu_mbt.BindGroup
+  clustering_bind_group_count_pass : @wgpu_mbt.BindGroup
+  clustering_bind_group_allocate_pass : @wgpu_mbt.BindGroup
+  clustering_bind_group_populate_pass : @wgpu_mbt.BindGroup
+}
+pub fn ViewClusteringBindGroups::allocate_bind_group(Self) -> @wgpu_mbt.BindGroup
+pub fn ViewClusteringBindGroups::count_bind_group(Self) -> @wgpu_mbt.BindGroup
+pub fn ViewClusteringBindGroups::new(@wgpu_mbt.BindGroup, @wgpu_mbt.BindGroup, @wgpu_mbt.BindGroup, @wgpu_mbt.BindGroup) -> Self
+pub fn ViewClusteringBindGroups::populate_bind_group(Self) -> @wgpu_mbt.BindGroup
+pub fn ViewClusteringBindGroups::z_slicing_bind_group(Self) -> @wgpu_mbt.BindGroup
+pub impl @ecs.Component for ViewClusteringBindGroups
 
 pub struct ViewClusteringDummyTexture {
   texture : @texture.CachedTexture
