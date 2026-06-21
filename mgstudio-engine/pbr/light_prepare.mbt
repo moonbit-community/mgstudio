@@ -75,6 +75,13 @@ pub fn prepare_lights(world : @ecs.World) -> Unit {
     ) catch {
       _ => abort("prepare_lights: failed to insert ViewLightsUniformOffset")
     }
+    world.set_by_key(
+      view_entity,
+      @pbr_render.ViewLightEntities::component(),
+      @pbr_render.ViewLightEntities::ViewLightEntities(),
+    ) catch {
+      _ => abort("prepare_lights: failed to insert ViewLightEntities")
+    }
   })
   light_meta.write_view_gpu_lights_buffer(
     render_device.wgpu_device(),

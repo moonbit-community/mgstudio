@@ -813,6 +813,46 @@ pub impl @ecs.Component for ViewLightsUniformOffset with fn component() {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::ViewLightEntities`.
+pub struct ViewLightEntities {
+  lights : Array[@core.Entity]
+}
+
+///|
+pub fn ViewLightEntities::new(
+  lights : Array[@core.Entity],
+) -> ViewLightEntities {
+  ViewLightEntities::{ lights, }
+}
+
+///|
+pub fn ViewLightEntities::ViewLightEntities() -> ViewLightEntities {
+  ViewLightEntities::{ lights: [] }
+}
+
+///|
+pub fn ViewLightEntities::lights(
+  self : ViewLightEntities,
+) -> Array[@core.Entity] {
+  self.lights
+}
+
+///|
+pub fn ViewLightEntities::len(self : ViewLightEntities) -> Int {
+  self.lights.length()
+}
+
+///|
+pub let ecs_key_view_light_entities : @ecs.ComponentKey[ViewLightEntities] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ViewLightEntities",
+)
+
+///|
+pub impl @ecs.Component for ViewLightEntities with fn component() {
+  ecs_key_view_light_entities
+}
+
+///|
 pub struct LightMeta {
   view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
   mut view_gpu_lights_buffer : @wgpu.Buffer?

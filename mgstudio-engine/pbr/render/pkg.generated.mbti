@@ -182,6 +182,8 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset]
 
+pub let ecs_key_view_light_entities : @ecs.ComponentKey[ViewLightEntities]
+
 pub let ecs_key_view_lights_uniform_offset : @ecs.ComponentKey[ViewLightsUniformOffset]
 
 pub fn ensure_morph_resources(@ecs.World) -> Unit
@@ -1347,6 +1349,15 @@ pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
 pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
 pub fn ViewFrustum::half_spaces(Self) -> Array[@math.HalfSpace]
 pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
+
+pub struct ViewLightEntities {
+  lights : Array[@core.Entity]
+}
+pub fn ViewLightEntities::ViewLightEntities() -> Self
+pub fn ViewLightEntities::len(Self) -> Int
+pub fn ViewLightEntities::lights(Self) -> Array[@core.Entity]
+pub fn ViewLightEntities::new(Array[@core.Entity]) -> Self
+pub impl @ecs.Component for ViewLightEntities
 
 pub struct ViewLightsUniformOffset {
   offset : UInt

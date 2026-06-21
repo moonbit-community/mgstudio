@@ -628,6 +628,32 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
     is None,
     content="true",
   )
+  let direct_view_lights = match
+    (try! world.get_by_key(
+      direct_view,
+      @pbr_render.ViewLightEntities::component(),
+    )) {
+    Some(value) => value
+    None => abort("missing direct view light entities")
+  }
+  let indirect_view_lights = match
+    (try! world.get_by_key(
+      indirect_view,
+      @pbr_render.ViewLightEntities::component(),
+    )) {
+    Some(value) => value
+    None => abort("missing indirect view light entities")
+  }
+  debug_inspect(direct_view_lights.len(), content="0")
+  debug_inspect(indirect_view_lights.len(), content="0")
+  debug_inspect(
+    (try! world.get_by_key(
+      non_camera_view,
+      @pbr_render.ViewLightEntities::component(),
+    ))
+    is None,
+    content="true",
+  )
   let light_meta = world
     .get_resource(@pbr_render.LightMeta::resource())
     .unwrap()
