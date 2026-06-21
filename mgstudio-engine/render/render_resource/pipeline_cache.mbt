@@ -22,6 +22,12 @@ pub(all) enum Pipeline {
 }
 
 ///|
+pub(all) enum CachedPipelineError {
+  Retryable(String)
+  Fatal(String)
+}
+
+///|
 pub struct CachedPipeline {
   descriptor : PipelineDescriptor
   state : CachedPipelineState
@@ -32,7 +38,7 @@ pub(all) enum CachedPipelineState {
   Queued
   Creating
   Ok(Pipeline)
-  Err(String)
+  Err(CachedPipelineError)
 }
 
 ///|
@@ -60,7 +66,7 @@ pub fn CachedPipelineState::error_message(
   self : CachedPipelineState,
 ) -> String? {
   match self {
-    Err(message) => Some(message)
+    Err(Retryable(message)) | Err(Fatal(message)) => Some(message)
     _ => None
   }
 }
@@ -188,6 +194,19 @@ fn PipelineCache::remove_waiting_pipeline(
 }
 
 ///|
+fn PipelineCache::ensure_waiting_pipeline(
+  self : PipelineCache,
+  id : UInt64,
+) -> Unit {
+  for waiting_id in self.waiting_pipelines {
+    if waiting_id == id {
+      return
+    }
+  }
+  self.waiting_pipelines.push(id)
+}
+
+///|
 pub fn PipelineCache::mark_render_pipeline_ready(
   self : PipelineCache,
   id : CachedRenderPipelineId,
@@ -243,13 +262,30 @@ pub fn PipelineCache::mark_pipeline_error(
   }
   self.pipelines[index] = CachedPipeline::{
     descriptor: self.pipelines[index].descriptor,
-    state: CachedPipelineState::Err(message),
+    state: CachedPipelineState::Err(CachedPipelineError::Fatal(message)),
   }
   self.remove_waiting_pipeline(id)
 }
 
 ///|
-pub fn PipelineCache::retry_pipeline(
+pub fn PipelineCache::mark_pipeline_retryable_error(
+  self : PipelineCache,
+  id : UInt64,
+  message : String,
+) -> Unit raise PipelineCacheAccessError {
+  let index = id.to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+  }
+  self.pipelines[index] = CachedPipeline::{
+    descriptor: self.pipelines[index].descriptor,
+    state: CachedPipelineState::Err(CachedPipelineError::Retryable(message)),
+  }
+  self.ensure_waiting_pipeline(id)
+}
+
+///|
+fn PipelineCache::requeue_pipeline(
   self : PipelineCache,
   id : UInt64,
 ) -> Unit raise PipelineCacheAccessError {
@@ -261,8 +297,7 @@ pub fn PipelineCache::retry_pipeline(
     descriptor: self.pipelines[index].descriptor,
     state: CachedPipelineState::Queued,
   }
-  self.remove_waiting_pipeline(id)
-  self.waiting_pipelines.push(id)
+  self.ensure_waiting_pipeline(id)
 }
 
 ///|
@@ -278,7 +313,12 @@ fn PipelineCache::process_pipeline(self : PipelineCache, id : UInt64) -> Unit {
         state: CachedPipelineState::Creating,
       }
     Creating => ()
-    Err(_) => self.remove_waiting_pipeline(id)
+    Err(Retryable(_)) =>
+      self.requeue_pipeline(id) catch {
+        PipelineNotProcessed(_) => ()
+        WrongPipelineKind(_) => ()
+      }
+    Err(Fatal(_)) => self.remove_waiting_pipeline(id)
     Ok(_) => self.remove_waiting_pipeline(id)
   }
 }
@@ -351,7 +391,7 @@ pub fn PipelineCache::process_queue(self : PipelineCache) -> Unit {
     let id = self.pipelines.length().to_uint64()
     self.pipelines.push(CachedPipeline::{
       descriptor: new_pipeline.descriptor,
-      state: CachedPipelineState::Creating,
+      state: new_pipeline.state,
     })
     self.waiting_pipelines.push(id)
   }

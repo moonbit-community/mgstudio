@@ -369,7 +369,7 @@ test "render settings: compute pipeline descriptors are materialized when backen
     state.is_creating()
   let retryable = waiting.length() == 1 &&
     waiting[0] == pipeline_id.id() &&
-    state.is_queued()
+    (state.is_queued() || state.is_err())
   let materialized = waiting.length() == 0 && state.is_ok()
   debug_inspect(still_waiting || retryable || materialized, content="true")
 }

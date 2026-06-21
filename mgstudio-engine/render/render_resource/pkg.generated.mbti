@@ -244,11 +244,16 @@ pub struct CachedPipeline {
 pub fn CachedPipeline::descriptor(Self) -> PipelineDescriptor
 pub fn CachedPipeline::state(Self) -> CachedPipelineState
 
+pub(all) enum CachedPipelineError {
+  Retryable(String)
+  Fatal(String)
+}
+
 pub(all) enum CachedPipelineState {
   Queued
   Creating
   Ok(Pipeline)
-  Err(String)
+  Err(CachedPipelineError)
 }
 pub fn CachedPipelineState::error_message(Self) -> String?
 pub fn CachedPipelineState::is_creating(Self) -> Bool
@@ -423,6 +428,7 @@ pub fn PipelineCache::get_render_pipeline_descriptor(Self, CachedRenderPipelineI
 pub fn PipelineCache::get_render_pipeline_state(Self, CachedRenderPipelineId) -> CachedPipelineState
 pub fn PipelineCache::mark_compute_pipeline_ready(Self, CachedComputePipelineId, ComputePipeline) -> Unit raise PipelineCacheAccessError
 pub fn PipelineCache::mark_pipeline_error(Self, UInt64, String) -> Unit raise PipelineCacheAccessError
+pub fn PipelineCache::mark_pipeline_retryable_error(Self, UInt64, String) -> Unit raise PipelineCacheAccessError
 pub fn PipelineCache::mark_render_pipeline_ready(Self, CachedRenderPipelineId, RenderPipeline) -> Unit raise PipelineCacheAccessError
 pub fn PipelineCache::new() -> Self
 pub fn PipelineCache::pipeline_count(Self) -> Int
@@ -431,7 +437,6 @@ pub fn PipelineCache::process_queue(Self) -> Unit
 pub fn PipelineCache::queue_compute_pipeline(Self, ComputePipelineDescriptor) -> CachedComputePipelineId
 pub fn PipelineCache::queue_render_pipeline(Self, RenderPipelineDescriptor) -> CachedRenderPipelineId
 pub fn PipelineCache::queued_pipeline_count(Self) -> Int
-pub fn PipelineCache::retry_pipeline(Self, UInt64) -> Unit raise PipelineCacheAccessError
 pub fn PipelineCache::waiting_pipelines(Self) -> Array[UInt64]
 
 pub(all) enum PipelineDescriptor {

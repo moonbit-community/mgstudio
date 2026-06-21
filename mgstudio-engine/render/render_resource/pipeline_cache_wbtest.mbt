@@ -93,7 +93,7 @@ test "pipeline cache: waiting pipeline ids are observed without consumption" {
 }
 
 ///|
-test "pipeline cache: completion errors leave waiting set and retry requeues" {
+test "pipeline cache: retryable errors requeue through process_queue" {
   let cache = PipelineCache::new()
   let render_id = cache.queue_render_pipeline(
     RenderPipelineDescriptor::RenderPipelineDescriptor(),
@@ -103,8 +103,11 @@ test "pipeline cache: completion errors leave waiting set and retry requeues" {
   )
   cache.process_queue()
 
-  try! cache.mark_pipeline_error(render_id.id(), "shader import pending")
-  debug_inspect(cache.waiting_pipelines(), content="[1]")
+  try! cache.mark_pipeline_retryable_error(
+    render_id.id(),
+    "shader import pending",
+  )
+  debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
   debug_inspect(
     cache.get_render_pipeline_state(render_id).is_err(),
     content="true",
@@ -114,16 +117,23 @@ test "pipeline cache: completion errors leave waiting set and retry requeues" {
     content="Some(\"shader import pending\")",
   )
 
-  try! cache.retry_pipeline(render_id.id())
-  debug_inspect(cache.waiting_pipelines(), content="[1, 0]")
+  cache.process_queue()
+  debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
   debug_inspect(
     cache.get_render_pipeline_state(render_id).is_queued(),
     content="true",
   )
   cache.process_queue()
-  debug_inspect(cache.waiting_pipelines(), content="[1, 0]")
+  debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
   debug_inspect(
     cache.get_render_pipeline_state(render_id).is_creating(),
+    content="true",
+  )
+
+  try! cache.mark_pipeline_error(compute_id.id(), "invalid shader module")
+  debug_inspect(cache.waiting_pipelines(), content="[0]")
+  debug_inspect(
+    cache.get_compute_pipeline_state(compute_id).is_err(),
     content="true",
   )
 

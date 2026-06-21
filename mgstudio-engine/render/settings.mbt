@@ -300,6 +300,9 @@ fn register_pipeline_cache_render_pipeline_descriptors(
       continue
     }
     let cached_pipeline = pipelines[index]
+    if !cached_pipeline.state().is_creating() {
+      continue
+    }
     match cached_pipeline.descriptor() {
       @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) => {
         @renderer.register_mesh3d_material_pipeline_descriptor(
@@ -321,8 +324,8 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             None => ()
           }
         } catch {
-          @renderer.ShaderNotReady(_) =>
-            cache.retry_pipeline(pipeline_id) catch {
+          @renderer.ShaderNotReady(message) =>
+            cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
           err =>
@@ -347,8 +350,8 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             None => ()
           }
         } catch {
-          @renderer.ShaderNotReady(_) =>
-            cache.retry_pipeline(pipeline_id) catch {
+          @renderer.ShaderNotReady(message) =>
+            cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
           err =>
