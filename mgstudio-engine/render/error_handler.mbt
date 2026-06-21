@@ -92,7 +92,7 @@ pub fn mark_renderer_ready(world : @ecs.World) -> Unit {
 
 ///|
 fn update_render_state(
-  _main_world : @ecs.World,
+  main_world : @ecs.World,
   render_world : @ecs.World,
 ) -> Unit {
   let state = match render_world.get_resource(render_state_resource_key) {
@@ -116,7 +116,17 @@ fn update_render_state(
         )
       }
     Ready => ()
-    Reinitializing => ()
+    Reinitializing =>
+      match take_future_render_resources(main_world) {
+        Some(resources) => {
+          resources.unpack_into(main_world, render_world)
+          render_world.insert_resource(
+            render_state_resource_key,
+            RenderState::initializing(),
+          )
+        }
+        None => ()
+      }
     Errored(_) => ()
   }
 }

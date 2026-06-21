@@ -540,3 +540,64 @@ test "render plugin: initializes render state as not ready" {
   mark_renderer_ready(render_world)
   debug_inspect(renderer_is_ready(render_world), content="true")
 }
+
+///|
+test "render recovery: reinitializing consumes future render resources before startup" {
+  let backend = @renderer.GpuBackend::new()
+  let resources = RenderResources::from_backend(backend)
+  let main_world = @ecs.World::new()
+  debug_inspect(
+    insert_future_render_resources(
+      RenderCreation::manual_resources(resources),
+      main_world,
+    ),
+    content="true",
+  )
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .add_schedule(@app.Schedule::new(render_startup_schedule_stage()))
+    .add_systems(
+      render_startup_schedule_stage(),
+      @app.system(init_pending_command_buffers_resource),
+    )
+  let render_world = render_sub_app.world()
+  render_world.insert_resource(
+    render_state_resource_key,
+    RenderState::reinitializing(),
+  )
+  let app = @app.App::new(main_world)
+    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .set_sub_app_extract(@app.RenderApp, fn(
+      main_world : @ecs.World,
+      render_world : @ecs.World,
+    ) {
+      update_render_state(main_world, render_world)
+      (main_world, render_world)
+    })
+
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    app.world().resource(future_render_resources_resource_key).is_present(),
+    content="false",
+  )
+  let state_after_reinit = render_world
+    .get_resource(render_state_resource_key)
+    .unwrap()
+  debug_inspect(state_after_reinit is Initializing, content="true")
+  debug_inspect(
+    render_world.resource(render_device_resource_key).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="false",
+  )
+
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(renderer_is_ready(render_world), content="true")
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="true",
+  )
+}

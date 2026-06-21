@@ -164,6 +164,57 @@ pub fn RenderResources::instance(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`FutureRenderResources`).
+priv struct FutureRenderResources {
+  mut resources : RenderResources?
+}
+
+///|
+fn FutureRenderResources::take(
+  self : FutureRenderResources,
+) -> RenderResources? {
+  let resources = self.resources
+  self.resources = None
+  resources
+}
+
+///|
+let future_render_resources_resource_key : @ecs.ResourceKey[
+  FutureRenderResources,
+] = @ecs.register_resource(debug_name="mgstudio_render::FutureRenderResources")
+
+///|
+fn insert_future_render_resources(
+  render_creation : RenderCreation,
+  main_world : @ecs.World,
+) -> Bool {
+  match render_creation {
+    Manual(resources) => {
+      main_world.insert_resource(future_render_resources_resource_key, FutureRenderResources::{
+        resources: Some(resources),
+      })
+      true
+    }
+    Automatic(_) => false
+  }
+}
+
+///|
+fn take_future_render_resources(main_world : @ecs.World) -> RenderResources? {
+  match main_world.get_resource_mut(future_render_resources_resource_key) {
+    Some(future_resources) => {
+      let resources = future_resources.modify(fn(value) { value.take() })
+      if resources is Some(_) {
+        main_world.remove_resource(future_render_resources_resource_key)
+        |> ignore
+      }
+      resources
+    }
+    None => None
+  }
+}
+
+///|
 pub let render_device_resource_key : @ecs.ResourceKey[@renderer.RenderDevice] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderDevice",
 )

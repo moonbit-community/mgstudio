@@ -95,12 +95,13 @@ fn render_plugin_install_with(
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   @render_texture.register_asset_texture_backend()
+  ignore(insert_future_render_resources(plugin.render_creation(), next.world()))
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
-      match plugin.render_creation() {
-        Manual(resources) =>
+      match take_future_render_resources(next.world()) {
+        Some(resources) =>
           resources.unpack_into(next.world(), render_sub_app.world())
-        Automatic(_) => ()
+        None => ()
       }
       init_render_state(render_sub_app.world())
       render_sub_app
