@@ -788,6 +788,31 @@ pub fn GpuLights3d::GpuLights3d() -> GpuLights3d {
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::LightMeta`.
 
 ///|
+pub struct ViewLightsUniformOffset {
+  offset : UInt
+}
+
+///|
+pub fn ViewLightsUniformOffset::new(offset : UInt) -> ViewLightsUniformOffset {
+  ViewLightsUniformOffset::{ offset, }
+}
+
+///|
+pub fn ViewLightsUniformOffset::offset(self : ViewLightsUniformOffset) -> UInt {
+  self.offset
+}
+
+///|
+pub let ecs_key_view_lights_uniform_offset : @ecs.ComponentKey[
+  ViewLightsUniformOffset,
+] = @ecs.register_component(debug_name="mgstudio_pbr::ViewLightsUniformOffset")
+
+///|
+pub impl @ecs.Component for ViewLightsUniformOffset with fn component() {
+  ecs_key_view_lights_uniform_offset
+}
+
+///|
 pub struct LightMeta {
   view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
   mut view_gpu_lights_buffer : @wgpu.Buffer?

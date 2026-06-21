@@ -13,6 +13,29 @@
 // limitations under the License.
 
 ///|
+test "render3d: gpu clustering command pass counts follow Bevy" {
+  let metadata = ClusterMetadata::new(11U, 13U, 17U, 19U, 0U, 0U)
+  debug_inspect(gpu_clustering_clusterable_object_count(metadata), content="60")
+  debug_inspect(
+    gpu_clustering_z_slice_dispatch_count(
+      gpu_clustering_clusterable_object_count(metadata).reinterpret_as_int(),
+    ),
+    content="1",
+  )
+  let config = ExtractedClusterConfig::new(0.1F, 1000.0F, 17, 13, 5)
+  debug_inspect(
+    gpu_clustering_allocation_pass_workgroup_count(config, false),
+    content="5",
+  )
+  debug_inspect(
+    gpu_clustering_allocation_pass_workgroup_count(config, true),
+    content="1",
+  )
+  let view_lights_offset = @pbr_render.ViewLightsUniformOffset::new(256U)
+  debug_inspect(view_lights_offset.offset(), content="256")
+}
+
+///|
 test "render3d: gpu clustering schedules metadata staging copy" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

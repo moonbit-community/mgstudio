@@ -413,6 +413,29 @@ pub fn gpu_clustering_allocation_dispatch_count(cluster_count : Int) -> Int {
 }
 
 ///|
+fn gpu_clustering_clusterable_object_count(metadata : ClusterMetadata) -> UInt {
+  metadata.clustered_light_count() +
+  metadata.reflection_probe_count() +
+  metadata.irradiance_volume_count() +
+  metadata.decal_count()
+}
+
+///|
+fn gpu_clustering_allocation_pass_workgroup_count(
+  extracted_cluster_config : ExtractedClusterConfig,
+  global_pass : Bool,
+) -> UInt {
+  if global_pass {
+    1U
+  } else {
+    let dimensions = extracted_cluster_config.dimensions()
+    gpu_clustering_allocation_dispatch_count(
+      dimensions.0 * dimensions.1 * dimensions.2,
+    ).reinterpret_as_uint()
+  }
+}
+
+///|
 fn gpu_clustering_div_ceil(value : Int, divisor : Int) -> Int {
   if divisor <= 0 {
     abort("gpu clustering divisor must be positive")
@@ -2184,6 +2207,277 @@ pub fn gpu_clustering_process_readback_staging_buffer(
       true
     }
   }
+}
+
+///|
+priv struct ResolvedViewGpuClusteringPipelines {
+  z_slicing : @render_resource.ComputePipeline
+  count : @render_resource.RenderPipeline
+  allocation_local : @render_resource.ComputePipeline
+  allocation_global : @render_resource.ComputePipeline
+  populate : @render_resource.RenderPipeline
+}
+
+///|
+fn gpu_clustering_resolve_view_pipelines(
+  pipeline_cache : @render_resource.PipelineCache,
+  pipeline_ids : ViewGpuClusteringPipelineIds,
+) -> ResolvedViewGpuClusteringPipelines? {
+  guard pipeline_cache.get_compute_pipeline(
+      pipeline_ids.clustering_z_slicing_pipeline_id(),
+    )
+    is Some(z_slicing) else {
+    return None
+  }
+  guard pipeline_cache.get_render_pipeline(
+      pipeline_ids.clustering_count_pipeline_id(),
+    )
+    is Some(count) else {
+    return None
+  }
+  guard pipeline_cache.get_compute_pipeline(
+      pipeline_ids.clustering_allocation_local_pipeline_id(),
+    )
+    is Some(allocation_local) else {
+    return None
+  }
+  guard pipeline_cache.get_compute_pipeline(
+      pipeline_ids.clustering_allocation_global_pipeline_id(),
+    )
+    is Some(allocation_global) else {
+    return None
+  }
+  guard pipeline_cache.get_render_pipeline(
+      pipeline_ids.clustering_populate_pipeline_id(),
+    )
+    is Some(populate) else {
+    return None
+  }
+  Some(ResolvedViewGpuClusteringPipelines::{
+    z_slicing,
+    count,
+    allocation_local,
+    allocation_global,
+    populate,
+  })
+}
+
+///|
+fn gpu_clustering_run_z_slicing_pass(
+  command_encoder : @wgpu.CommandEncoder,
+  clustering_z_slicing_pipeline : @render_resource.ComputePipeline,
+  clustering_z_slicing_bind_group : @wgpu.BindGroup,
+  view_gpu_clustering_buffers : ViewGpuClusteringBuffers,
+  view_light_probes_uniform_offset : @pbr_light_probe.ViewLightProbesUniformOffset,
+  view_lights_uniform_offset : @pbr_render.ViewLightsUniformOffset,
+  view_uniform_offset : @render_view.ViewUniformOffset,
+) -> Unit {
+  let compute_pass = command_encoder.begin_compute_pass()
+  compute_pass.set_pipeline(clustering_z_slicing_pipeline.into_inner())
+  compute_pass.set_bind_group(0U, clustering_z_slicing_bind_group, [
+    view_light_probes_uniform_offset.offset(),
+    view_lights_uniform_offset.offset(),
+    view_uniform_offset.offset(),
+  ])
+  let workgroup_count = gpu_clustering_z_slice_dispatch_count(
+    gpu_clustering_clusterable_object_count(
+      view_gpu_clustering_buffers.metadata(),
+    ).reinterpret_as_int(),
+  ).reinterpret_as_uint()
+  compute_pass.dispatch_workgroups(workgroup_count, 1U, 1U)
+  compute_pass.end()
+  compute_pass.release()
+}
+
+///|
+fn gpu_clustering_begin_raster_pass(
+  command_encoder : @wgpu.CommandEncoder,
+  view_clustering_dummy_texture : ViewClusteringDummyTexture,
+  populate_pass : Bool,
+) -> @wgpu.RenderPass {
+  populate_pass |> ignore
+  let builder = @wgpu.RenderPassDescBuilder::new(1U) catch {
+    _ => abort("wgpu: failed to create GPU clustering raster pass descriptor")
+  }
+  builder.set_color_attachment(
+    0U,
+    view_clustering_dummy_texture.texture().default_view().into_inner(),
+    load_op_u32=@wgpu.LOAD_OP_CLEAR,
+    store_op_u32=@wgpu.STORE_OP_DISCARD,
+    clear_r_f32=0.0F,
+    clear_g_f32=0.0F,
+    clear_b_f32=0.0F,
+    clear_a_f32=1.0F,
+  ) catch {
+    _ => abort("wgpu: failed to set GPU clustering raster attachment")
+  }
+  builder.begin(command_encoder) catch {
+    _ => abort("wgpu: failed to begin GPU clustering raster pass")
+  }
+}
+
+///|
+fn gpu_clustering_run_rasterization_pass(
+  command_encoder : @wgpu.CommandEncoder,
+  clustering_render_pipeline : @render_resource.RenderPipeline,
+  clustering_bind_group : @wgpu.BindGroup,
+  view_gpu_clustering_buffers : ViewGpuClusteringBuffers,
+  view_light_probes_uniform_offset : @pbr_light_probe.ViewLightProbesUniformOffset,
+  view_lights_uniform_offset : @pbr_render.ViewLightsUniformOffset,
+  view_uniform_offset : @render_view.ViewUniformOffset,
+  view_clustering_dummy_texture : ViewClusteringDummyTexture,
+  extracted_cluster_config : ExtractedClusterConfig,
+  clustering_mesh_buffers : GpuClusteringMeshBuffers,
+  populate_pass : Bool,
+) -> Bool {
+  guard view_gpu_clustering_buffers.cluster_metadata_gpu_buffer()
+    is Some(cluster_metadata_buffer) else {
+    @app.log_error("Z slicing metadata buffer was never uploaded")
+    return false
+  }
+  let render_pass = gpu_clustering_begin_raster_pass(
+    command_encoder, view_clustering_dummy_texture, populate_pass,
+  )
+  render_pass.set_pipeline(clustering_render_pipeline.into_inner())
+  render_pass.set_bind_group(0U, clustering_bind_group, [
+    view_light_probes_uniform_offset.offset(),
+    view_lights_uniform_offset.offset(),
+    view_uniform_offset.offset(),
+  ])
+  let dimensions = extracted_cluster_config.dimensions()
+  render_pass.set_viewport(
+    0.0F,
+    0.0F,
+    Float::from_double(dimensions.0.to_double()),
+    Float::from_double(dimensions.1.to_double()),
+    0.0F,
+    1.0F,
+  )
+  let vertex_buffer = clustering_mesh_buffers.vertex_buffer()
+  render_pass.set_vertex_buffer(0U, vertex_buffer, 0UL, vertex_buffer.size())
+  let index_buffer = clustering_mesh_buffers.index_buffer()
+  render_pass.set_index_buffer_u32(index_buffer, 0UL, index_buffer.size())
+  render_pass.draw_indexed_indirect(cluster_metadata_buffer, 0UL)
+  render_pass.end()
+  render_pass.release()
+  true
+}
+
+///|
+fn gpu_clustering_run_allocation_pass(
+  command_encoder : @wgpu.CommandEncoder,
+  clustering_allocation_pipeline : @render_resource.ComputePipeline,
+  view_clustering_bind_groups : ViewClusteringBindGroups,
+  view_lights_uniform_offset : @pbr_render.ViewLightsUniformOffset,
+  extracted_cluster_config : ExtractedClusterConfig,
+  global_pass : Bool,
+) -> Unit {
+  let compute_pass = command_encoder.begin_compute_pass()
+  compute_pass.set_pipeline(clustering_allocation_pipeline.into_inner())
+  compute_pass.set_bind_group(
+    0U,
+    view_clustering_bind_groups.allocate_bind_group(),
+    [view_lights_uniform_offset.offset()],
+  )
+  compute_pass.dispatch_workgroups(
+    gpu_clustering_allocation_pass_workgroup_count(
+      extracted_cluster_config, global_pass,
+    ),
+    1U,
+    1U,
+  )
+  compute_pass.end()
+  compute_pass.release()
+}
+
+///|
+pub fn gpu_clustering_cluster_on_gpu_commands(
+  command_encoder : @wgpu.CommandEncoder,
+  render_device : @renderer.RenderDevice,
+  pipeline_cache : @render_resource.PipelineCache,
+  clustering_mesh_buffers : GpuClusteringMeshBuffers,
+  render_view_clustering_readback_data : RenderViewClusteringReadbackData,
+  view_main_entity : @render.MainEntity,
+  view_gpu_clustering_buffers : ViewGpuClusteringBuffers,
+  view_gpu_clustering_pipeline_ids : ViewGpuClusteringPipelineIds,
+  view_clustering_dummy_texture : ViewClusteringDummyTexture,
+  view_clustering_bind_groups : ViewClusteringBindGroups,
+  view_light_probes_uniform_offset : @pbr_light_probe.ViewLightProbesUniformOffset,
+  view_lights_uniform_offset : @pbr_render.ViewLightsUniformOffset,
+  view_uniform_offset : @render_view.ViewUniformOffset,
+  extracted_cluster_config : ExtractedClusterConfig,
+) -> Bool {
+  guard render_view_clustering_readback_data.view_data(view_main_entity)
+    is Some(view_clustering_readback_data) else {
+    return false
+  }
+  guard gpu_clustering_resolve_view_pipelines(
+      pipeline_cache, view_gpu_clustering_pipeline_ids,
+    )
+    is Some(pipelines) else {
+    return false
+  }
+  let staging_buffer = view_clustering_readback_data.get_or_create_staging_buffer(
+    render_device,
+  )
+  gpu_clustering_run_z_slicing_pass(
+    command_encoder,
+    pipelines.z_slicing,
+    view_clustering_bind_groups.z_slicing_bind_group(),
+    view_gpu_clustering_buffers,
+    view_light_probes_uniform_offset,
+    view_lights_uniform_offset,
+    view_uniform_offset,
+  )
+  if !gpu_clustering_run_rasterization_pass(
+      command_encoder,
+      pipelines.count,
+      view_clustering_bind_groups.count_bind_group(),
+      view_gpu_clustering_buffers,
+      view_light_probes_uniform_offset,
+      view_lights_uniform_offset,
+      view_uniform_offset,
+      view_clustering_dummy_texture,
+      extracted_cluster_config,
+      clustering_mesh_buffers,
+      false,
+    ) {
+    return false
+  }
+  gpu_clustering_run_allocation_pass(
+    command_encoder,
+    pipelines.allocation_local,
+    view_clustering_bind_groups,
+    view_lights_uniform_offset,
+    extracted_cluster_config,
+    false,
+  )
+  gpu_clustering_run_allocation_pass(
+    command_encoder,
+    pipelines.allocation_global,
+    view_clustering_bind_groups,
+    view_lights_uniform_offset,
+    extracted_cluster_config,
+    true,
+  )
+  if !gpu_clustering_run_rasterization_pass(
+      command_encoder,
+      pipelines.populate,
+      view_clustering_bind_groups.populate_bind_group(),
+      view_gpu_clustering_buffers,
+      view_light_probes_uniform_offset,
+      view_lights_uniform_offset,
+      view_uniform_offset,
+      view_clustering_dummy_texture,
+      extracted_cluster_config,
+      clustering_mesh_buffers,
+      true,
+    ) {
+    return false
+  }
+  gpu_clustering_schedule_readback_staging(
+    command_encoder, view_gpu_clustering_buffers, staging_buffer,
+  )
 }
 
 ///|

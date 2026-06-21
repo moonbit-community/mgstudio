@@ -18,6 +18,7 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr/decal",
+  "Milky2018/mgstudio/pbr/light_probe",
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
@@ -464,6 +465,8 @@ pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wirefram
 pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
 
 pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
+
+pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @Milky2018/mgstudio/render.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> Bool
 
 pub fn gpu_clustering_is_enabled(@ecs.World) -> Bool
 
