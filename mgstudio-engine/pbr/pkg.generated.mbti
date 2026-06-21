@@ -488,9 +488,15 @@ pub fn init_fallback_bindless_resources(@ecs.World) -> Unit
 
 pub fn init_global_clusterable_object_meta(@ecs.World) -> Unit
 
+pub fn material_bind_group_allocator_for_support(Bool, Int?) -> MaterialBindGroupAllocator
+
 pub fn material_default_alpha_mode() -> @material.AlphaMode3d
 
 pub fn material_default_bind_group() -> MaterialBindGroup
+
+pub fn material_default_bindless_slot_count() -> Int?
+
+pub fn material_default_bindless_supported(@renderer.RenderDevice) -> Bool
 
 pub fn material_default_depth_bias() -> Float
 
@@ -825,6 +831,10 @@ pub fn standard_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets
 pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
 
 pub fn standard_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
+
+pub fn standard_material_bindless_slot_count() -> Int?
+
+pub fn standard_material_bindless_supported(@renderer.RenderDevice) -> Bool
 
 pub fn standard_material_from_gltf_material(@material.StandardMaterial) -> @material.StandardMaterial
 
@@ -3075,6 +3085,8 @@ pub(open) trait Material {
   fn reads_view_transmission_texture(Self) -> Bool
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
+  fn bindless_supported(@renderer.RenderDevice) -> Bool
+  fn bindless_slot_count() -> Int?
   fn bind_group(Self) -> MaterialBindGroup
   fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor
 }

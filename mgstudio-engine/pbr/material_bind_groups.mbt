@@ -279,6 +279,24 @@ pub fn material_uses_bindless_resources(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_resource/bind_group.rs`
+// (`AsBindGroup::bindless_slot_count`) plus
+// `bevy/crates/bevy_pbr/src/pbr_material.rs` (`#[bindless(index_table(range(0..31)))]`).
+pub fn standard_material_bindless_slot_count() -> Int? {
+  Some(31)
+}
+
+///|
+// Bevy's StandardMaterial bindless data path needs storage binding arrays for
+// `#[data(..., binding_array(10))]`. Keep this false until wgpu_mbt exposes
+// the corresponding feature query; texture binding arrays alone are not enough.
+pub fn standard_material_bindless_supported(
+  _render_device : @renderer.RenderDevice,
+) -> Bool {
+  false
+}
+
+///|
 pub struct MaterialBindGroupAllocatorInstallPlan {
   material_label : String
   uses_bindless_resources : Bool
@@ -326,6 +344,18 @@ pub fn standard_material_bind_group_allocator_install_plan(
     ),
     bindless_slot_count,
     layout_descriptor: standard_material_bind_group_layout_descriptor(),
+  }
+}
+
+///|
+pub fn material_bind_group_allocator_for_support(
+  bindless_supported : Bool,
+  bindless_slot_count : Int?,
+) -> MaterialBindGroupAllocator {
+  if material_uses_bindless_resources(bindless_supported, bindless_slot_count) {
+    MaterialBindGroupAllocator::default_bindless()
+  } else {
+    MaterialBindGroupAllocator::default_non_bindless()
   }
 }
 

@@ -435,8 +435,18 @@ fn add_standard_material_bind_group_allocator(world : @ecs.World) -> Unit {
     is Some(allocators) else {
     return
   }
+  let bindless_supported = match
+    world.get_resource(@render.render_device_resource_key) {
+    Some(render_device) => standard_material_bindless_supported(render_device)
+    None => false
+  }
   allocators.modify(fn(value) {
-    ignore(value.install_standard_material(false, None))
+    ignore(
+      value.install_standard_material(
+        bindless_supported,
+        standard_material_bindless_slot_count(),
+      ),
+    )
   })
 }
 

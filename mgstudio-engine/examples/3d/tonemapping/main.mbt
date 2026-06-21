@@ -240,6 +240,18 @@ impl @pbr.Material for ColorGradientMaterial with fn enable_shadows() {
 }
 
 ///|
+impl @pbr.Material for ColorGradientMaterial with fn bindless_supported(
+  render_device,
+) {
+  @pbr.material_default_bindless_supported(render_device)
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn bindless_slot_count() {
+  @pbr.material_default_bindless_slot_count()
+}
+
+///|
 impl @pbr.Material for ColorGradientMaterial with fn bind_group(self) {
   ignore(self)
   @pbr.material_default_bind_group()

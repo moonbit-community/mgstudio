@@ -145,6 +145,16 @@ impl Material for ParityCustomMaterial with fn enable_shadows() {
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn bindless_supported(render_device) {
+  material_default_bindless_supported(render_device)
+}
+
+///|
+impl Material for ParityCustomMaterial with fn bindless_slot_count() {
+  material_default_bindless_slot_count()
+}
+
+///|
 impl Material for ParityCustomMaterial with fn bind_group(self) {
   MaterialBindGroup::new([
     MaterialBinding::uniform(0, self.color),

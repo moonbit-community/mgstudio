@@ -554,6 +554,8 @@ pub(open) trait Material {
   fn reads_view_transmission_texture(self : Self) -> Bool
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
+  fn bindless_supported(render_device : @renderer.RenderDevice) -> Bool
+  fn bindless_slot_count() -> Int?
   fn bind_group(self : Self) -> MaterialBindGroup
   fn specialize(
     descriptor : @render.RenderPipelineDescriptor,
@@ -600,6 +602,18 @@ pub fn material_default_enable_prepass() -> Bool {
 ///|
 pub fn material_default_enable_shadows() -> Bool {
   true
+}
+
+///|
+pub fn material_default_bindless_supported(
+  _render_device : @renderer.RenderDevice,
+) -> Bool {
+  true
+}
+
+///|
+pub fn material_default_bindless_slot_count() -> Int? {
+  None
 }
 
 ///|
@@ -1200,8 +1214,19 @@ fn[M : Material] add_material_bind_group_allocator_system(
     return
   }
   let label = material_bind_group_allocator_label(probe)
+  let bindless_supported = match
+    world.get_resource(@render.render_device_resource_key) {
+    Some(render_device) => M::bindless_supported(render_device)
+    None => false
+  }
   allocators.modify(fn(value) {
-    value.insert(label, MaterialBindGroupAllocator::default_non_bindless())
+    value.insert(
+      label,
+      material_bind_group_allocator_for_support(
+        bindless_supported,
+        M::bindless_slot_count(),
+      ),
+    )
   })
 }
 
