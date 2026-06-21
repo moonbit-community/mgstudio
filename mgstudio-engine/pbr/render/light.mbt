@@ -452,6 +452,20 @@ pub fn DirectionalLightViewEntities::len(
 }
 
 ///|
+pub fn DirectionalLightViewEntities::despawn_view_entities(
+  self : DirectionalLightViewEntities,
+  world : @ecs.World,
+) -> Unit {
+  for entities in self.view_entities_by_view.values() {
+    for entity in entities {
+      world.despawn(entity) catch {
+        _ => ()
+      }
+    }
+  }
+}
+
+///|
 pub let ecs_key_directional_light_view_entities : @ecs.ComponentKey[
   DirectionalLightViewEntities,
 ] = @ecs.register_component(
@@ -489,6 +503,18 @@ pub fn PointAndSpotLightViewEntities::len(
 }
 
 ///|
+pub fn PointAndSpotLightViewEntities::despawn_view_entities(
+  self : PointAndSpotLightViewEntities,
+  world : @ecs.World,
+) -> Unit {
+  for entity in self.entities {
+    world.despawn(entity) catch {
+      _ => ()
+    }
+  }
+}
+
+///|
 pub let ecs_key_point_and_spot_light_view_entities : @ecs.ComponentKey[
   PointAndSpotLightViewEntities,
 ] = @ecs.register_component(
@@ -498,6 +524,54 @@ pub let ecs_key_point_and_spot_light_view_entities : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for PointAndSpotLightViewEntities with fn component() {
   ecs_key_point_and_spot_light_view_entities
+}
+
+///|
+// Bevy source: `bevy_pbr/src/render/light.rs::add_light_view_entities`.
+pub fn add_light_view_entities(
+  add : @ecs.ComponentOn[@ecs.Add, ExtractedDirectionalLight3d],
+) -> Unit {
+  let world = add.world()
+  world.set_by_key(
+    add.entity(),
+    ecs_key_directional_light_view_entities,
+    DirectionalLightViewEntities::DirectionalLightViewEntities(),
+  ) catch {
+    _ => ()
+  }
+}
+
+///|
+// Bevy source: `bevy_pbr/src/render/light.rs::remove_light_view_entities`.
+pub fn remove_light_view_entities(
+  remove : @ecs.ComponentOn[@ecs.Remove, DirectionalLightViewEntities],
+) -> Unit {
+  let world = remove.world()
+  match
+    (world.get_by_key(remove.entity(), ecs_key_directional_light_view_entities) catch {
+      _ => None
+    }) {
+    Some(entities) => entities.despawn_view_entities(world)
+    None => ()
+  }
+}
+
+///|
+// Bevy source: `bevy_pbr/src/render/light.rs::remove_point_and_spot_light_view_entities`.
+pub fn remove_point_and_spot_light_view_entities(
+  remove : @ecs.ComponentOn[@ecs.Remove, PointAndSpotLightViewEntities],
+) -> Unit {
+  let world = remove.world()
+  match
+    (world.get_by_key(
+      remove.entity(),
+      ecs_key_point_and_spot_light_view_entities,
+    ) catch {
+      _ => None
+    }) {
+    Some(entities) => entities.despawn_view_entities(world)
+    None => ()
+  }
 }
 
 ///|

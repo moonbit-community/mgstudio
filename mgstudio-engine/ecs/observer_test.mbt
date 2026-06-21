@@ -388,6 +388,56 @@ test "ecs observer: world add_component_observer fires on remove" {
 }
 
 ///|
+test "ecs observer: remove observer can still read the removed component" {
+  let world = World::new()
+  let remove_values : Array[Int] = []
+  let despawn_values : Array[Int] = []
+
+  ignore(
+    world.add_remove_component_observer(fn(
+      event : ComponentOn[Remove, ObserverMarker],
+    ) {
+      match
+        (event.world().get_by_key(event.entity(), observer_marker_key) catch {
+          _ => None
+        }) {
+        Some(marker) => remove_values.push(marker.value)
+        None => remove_values.push(-1)
+      }
+    }),
+  )
+
+  let removed = world.spawn()
+  try! world.set_by_key(removed, observer_marker_key, ObserverMarker::{
+    value: 11,
+  })
+  ignore(try! world.remove_by_key(removed, observer_marker_key))
+
+  ignore(
+    world.add_remove_component_observer(fn(
+      event : ComponentOn[Remove, ObserverMarker],
+    ) {
+      match
+        (event.world().get_by_key(event.entity(), observer_marker_key) catch {
+          _ => None
+        }) {
+        Some(marker) => despawn_values.push(marker.value)
+        None => despawn_values.push(-1)
+      }
+    }),
+  )
+
+  let despawned = world.spawn()
+  try! world.set_by_key(despawned, observer_marker_key, ObserverMarker::{
+    value: 23,
+  })
+  try! world.despawn(despawned)
+
+  debug_inspect(remove_values, content="[11, 23]")
+  debug_inspect(despawn_values, content="[23]")
+}
+
+///|
 test "ecs observer: add observers only fire on first insertion" {
   let world = World::new()
   let entity = world.spawn()

@@ -36,6 +36,16 @@ let ecs_key_pbr_render_extract_systems_installed : @ecs.ResourceKey[
 )
 
 ///|
+priv struct PbrRenderLightViewObserversInstalled {}
+
+///|
+let ecs_key_pbr_render_light_view_observers_installed : @ecs.ResourceKey[
+  PbrRenderLightViewObserversInstalled,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PbrRenderLightViewObserversInstalled",
+)
+
+///|
 pub fn configure_pbr_render_startup_systems(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -68,6 +78,41 @@ pub fn configure_pbr_render_startup_systems(
       "mgstudio_pbr::init_fallback_bindless_resources",
     ),
   )
+}
+
+///|
+pub fn configure_pbr_render_light_view_observers(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  if sub_app
+    .world()
+    .resource(ecs_key_pbr_render_light_view_observers_installed)
+    .is_present() {
+    return sub_app
+  }
+  sub_app
+  .world()
+  .insert_resource(ecs_key_pbr_render_light_view_observers_installed, PbrRenderLightViewObserversInstalled::{
+
+  })
+  ignore(
+    sub_app
+    .world()
+    .add_add_component_observer(@pbr_render.add_light_view_entities),
+  )
+  ignore(
+    sub_app
+    .world()
+    .add_remove_component_observer(@pbr_render.remove_light_view_entities),
+  )
+  ignore(
+    sub_app
+    .world()
+    .add_remove_component_observer(
+      @pbr_render.remove_point_and_spot_light_view_entities,
+    ),
+  )
+  sub_app
 }
 
 ///|
@@ -196,4 +241,5 @@ pub fn configure_pbr_render_app_build_flow(
   |> configure_pbr_render_startup_systems
   |> configure_pbr_render_world_resources
   |> configure_pbr_render_extract_systems
+  |> configure_pbr_render_light_view_observers
 }

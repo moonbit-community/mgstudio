@@ -130,11 +130,20 @@ fn World::commit_removed_component_effects(
         removal.local_id,
       ),
     )
-    self.run_remove_observers(transaction.entity, removal.definition_id)
     self
     .ensure_removed_component_messages(removal.definition_id)
     .send(tick, transaction.entity)
     self.clear_component_tick_records(transaction.entity, removal.definition_id)
+  }
+}
+
+///|
+fn World::run_component_remove_transaction_remove_observer_phase(
+  self : World,
+  transaction : ComponentRemoveTransaction,
+) -> Unit {
+  for removal in transaction.removals {
+    self.run_remove_observers(transaction.entity, removal.definition_id)
   }
 }
 
@@ -148,6 +157,7 @@ fn World::commit_component_remove_transaction(
   }
   let removal = transaction.removals[0]
   self.run_component_remove_transaction_replace_remove_phase(transaction)
+  self.run_component_remove_transaction_remove_observer_phase(transaction)
   ignore(
     self.remove_component_write_by_local_id(
       transaction.entity,
@@ -160,7 +170,6 @@ fn World::commit_component_remove_transaction(
     removal.local_id,
   )
   self.mark_structure_changed()
-  self.run_remove_observers(transaction.entity, removal.definition_id)
   self
   .ensure_removed_component_messages(removal.definition_id)
   .send(component_write_tick(self), transaction.entity)
@@ -174,11 +183,12 @@ fn World::commit_component_despawn_transaction(
 ) -> Unit raise EcsError {
   self.run_component_remove_transaction_despawn_phase(transaction)
   self.run_component_remove_transaction_replace_remove_phase(transaction)
+  self.run_component_remove_transaction_remove_observer_phase(transaction)
+  self.commit_removed_component_effects(transaction)
   self.entities.despawn(transaction.entity) catch {
     err => raise EntityStateError(err)
   }
   self.clear_entity_archetype_tracking(transaction.entity)
   self.mark_entity_lifecycle_changed()
   self.mark_structure_changed()
-  self.commit_removed_component_effects(transaction)
 }

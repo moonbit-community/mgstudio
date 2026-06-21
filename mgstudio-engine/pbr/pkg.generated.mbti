@@ -163,6 +163,8 @@ pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mes
 
 pub fn configure_pbr_render_app_build_flow(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
+pub fn configure_pbr_render_light_view_observers(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
+
 pub fn configure_pbr_render_startup_systems(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
 pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]

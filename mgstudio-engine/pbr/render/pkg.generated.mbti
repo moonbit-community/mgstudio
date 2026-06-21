@@ -148,6 +148,8 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 pub fn absf(Float) -> Float
 
+pub fn add_light_view_entities(@ecs.ComponentOn[@ecs.Add, ExtractedDirectionalLight3d]) -> Unit
+
 pub fn build_indirect_parameters_pipeline_key(Bool, Bool, Bool, Bool, Bool, Bool) -> BuildIndirectParametersPipelineKey
 
 pub fn clamp01(Float) -> Float
@@ -237,6 +239,10 @@ pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn remove_directional_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
+
+pub fn remove_light_view_entities(@ecs.ComponentOn[@ecs.Remove, DirectionalLightViewEntities]) -> Unit
+
+pub fn remove_point_and_spot_light_view_entities(@ecs.ComponentOn[@ecs.Remove, PointAndSpotLightViewEntities]) -> Unit
 
 pub fn remove_point_light_sync_target(@ecs.World, @core.Entity) -> @ecs.World
 
@@ -568,6 +574,7 @@ pub struct DirectionalLightViewEntities {
   view_entities_by_view : @hashmap.HashMap[@core.Entity, Array[@core.Entity]]
 }
 pub fn DirectionalLightViewEntities::DirectionalLightViewEntities() -> Self
+pub fn DirectionalLightViewEntities::despawn_view_entities(Self, @ecs.World) -> Unit
 pub fn DirectionalLightViewEntities::insert(Self, @core.Entity, Array[@core.Entity]) -> Unit
 pub fn DirectionalLightViewEntities::len(Self) -> Int
 pub impl @ecs.Component for DirectionalLightViewEntities
@@ -1039,6 +1046,7 @@ pub struct PointAndSpotLightViewEntities {
   entities : Array[@core.Entity]
 }
 pub fn PointAndSpotLightViewEntities::PointAndSpotLightViewEntities() -> Self
+pub fn PointAndSpotLightViewEntities::despawn_view_entities(Self, @ecs.World) -> Unit
 pub fn PointAndSpotLightViewEntities::len(Self) -> Int
 pub fn PointAndSpotLightViewEntities::new(Array[@core.Entity]) -> Self
 pub impl @ecs.Component for PointAndSpotLightViewEntities
