@@ -2481,6 +2481,150 @@ pub fn gpu_clustering_cluster_on_gpu_commands(
 }
 
 ///|
+fn[T] cluster_on_gpu_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  key : @ecs.ComponentKey[T],
+) -> T? {
+  world.get_by_key(entity, key) catch {
+    _ => abort("cluster_on_gpu: failed to read view component")
+  }
+}
+
+///|
+fn cluster_on_gpu(world : @ecs.World) -> Unit {
+  let render_device = match
+    world.get_resource(@render.render_device_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  let pipeline_cache = match
+    world.get_resource(@render.pipeline_cache_resource_key) {
+    Some(value) => value
+    None => return
+  }
+  let clustering_mesh_buffers = match
+    world.get_resource(GpuClusteringMeshBuffers::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_view_clustering_readback_data = match
+    world.get_resource(RenderViewClusteringReadbackData::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let mut command_encoder : @wgpu.CommandEncoder? = None
+  let mut encoded_any = false
+  world.for_each_component(@render_view.ExtractedView::component(), fn(
+    view_entity,
+    _view,
+  ) {
+    guard cluster_on_gpu_component(
+        world, view_entity, @render.ecs_key_main_entity,
+      )
+      is Some(view_main_entity) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        ViewGpuClusteringBuffers::component(),
+      )
+      is Some(view_gpu_clustering_buffers) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        ViewGpuClusteringPipelineIds::component(),
+      )
+      is Some(view_gpu_clustering_pipeline_ids) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        ViewClusteringDummyTexture::component(),
+      )
+      is Some(view_clustering_dummy_texture) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        ViewClusteringBindGroups::component(),
+      )
+      is Some(view_clustering_bind_groups) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        @pbr_light_probe.ViewLightProbesUniformOffset::component(),
+      )
+      is Some(view_light_probes_uniform_offset) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        @pbr_render.ViewLightsUniformOffset::component(),
+      )
+      is Some(view_lights_uniform_offset) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        @render_view.ViewUniformOffset::component(),
+      )
+      is Some(view_uniform_offset) else {
+      return
+    }
+    guard cluster_on_gpu_component(
+        world,
+        view_entity,
+        ExtractedClusterConfig::component(),
+      )
+      is Some(extracted_cluster_config) else {
+      return
+    }
+    let encoder = match command_encoder {
+      Some(value) => value
+      None => {
+        let value = render_device.create_command_encoder()
+        command_encoder = Some(value)
+        value
+      }
+    }
+    if gpu_clustering_cluster_on_gpu_commands(
+        encoder, render_device, pipeline_cache, clustering_mesh_buffers, render_view_clustering_readback_data,
+        view_main_entity, view_gpu_clustering_buffers, view_gpu_clustering_pipeline_ids,
+        view_clustering_dummy_texture, view_clustering_bind_groups, view_light_probes_uniform_offset,
+        view_lights_uniform_offset, view_uniform_offset, extracted_cluster_config,
+      ) {
+      encoded_any = true
+    }
+  })
+  match command_encoder {
+    None => ()
+    Some(encoder) =>
+      if encoded_any {
+        guard world.get_resource_mut(
+            @render.pending_command_buffers_resource_key,
+          )
+          is Some(pending_mut) else {
+          encoder.release()
+          return
+        }
+        pending_mut.modify(fn(pending) { pending.push_encoder(encoder) })
+      } else {
+        encoder.release()
+      }
+  }
+}
+
+///|
 fn gpu_clustering_finish_bind_group_or_abort(
   builder : @wgpu.BindGroupBuilder,
   device : @wgpu.Device,
@@ -3001,6 +3145,13 @@ fn gpu_clustering_configure_render_app_finish(
     @render.render_schedule_stage(),
     @app.system(prepare_clustering_bind_groups)
     .in_set(@render.render_system_set_prepare_bind_groups)
+    .run_if(gpu_clustering_is_enabled),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(cluster_on_gpu)
+    .named("mgstudio_pbr::cluster_on_gpu")
+    .in_set(@render.render_system_set_render)
     .run_if(gpu_clustering_is_enabled),
   )
 }
