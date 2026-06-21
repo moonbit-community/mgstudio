@@ -776,6 +776,7 @@ pub struct LightMeta {
 pub fn LightMeta::LightMeta() -> Self
 pub fn LightMeta::clear_view_gpu_lights(Self) -> Unit
 pub fn LightMeta::push_view_gpu_lights(Self, GpuLights3d) -> UInt
+pub fn LightMeta::view_gpu_lights_at(Self, Int) -> GpuLights3d?
 pub fn LightMeta::view_gpu_lights_binding(Self) -> @wgpu_mbt.Buffer?
 pub fn LightMeta::view_gpu_lights_capacity(Self) -> UInt64
 pub fn LightMeta::view_gpu_lights_len(Self) -> Int

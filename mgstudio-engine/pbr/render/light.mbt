@@ -834,6 +834,14 @@ pub fn LightMeta::view_gpu_lights_len(self : LightMeta) -> Int {
 }
 
 ///|
+pub fn LightMeta::view_gpu_lights_at(
+  self : LightMeta,
+  index : Int,
+) -> GpuLights3d? {
+  self.view_gpu_lights.values().get(index)
+}
+
+///|
 pub fn LightMeta::push_view_gpu_lights(
   self : LightMeta,
   lights : GpuLights3d,

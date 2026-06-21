@@ -640,6 +640,70 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
 }
 
 ///|
+test "render3d: prepare_lights packs render-world extracted lights" {
+  let app0 = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let mut app = app0
+  let camera = app.world().spawn()
+  try! app.world().set_by_key(camera, ecs_key_camera3d, Camera3d::Camera3d())
+  let directional_light = app.world().spawn()
+  try! app
+  .world()
+  .set_by_key(
+    directional_light,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  try! app
+  .world()
+  .set_by_key(
+    directional_light,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+  try! app
+  .world()
+  .set_by_key(
+    directional_light,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  app = app.update()
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let view = render_world.spawn()
+  try! render_world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
+  )
+  try! render_world.set_by_key(
+    view,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(camera),
+  )
+
+  prepare_lights(render_world)
+
+  let light_meta = render_world
+    .get_resource(@pbr_render.LightMeta::resource())
+    .unwrap()
+  let gpu_lights = match light_meta.view_gpu_lights_at(0) {
+    Some(value) => value
+    None => abort("missing prepared view GPU lights")
+  }
+  debug_inspect(gpu_lights.n_directional_lights, content="1")
+  debug_inspect(
+    @pbr_render.render3d_collect_gpu_lights(app.world()).n_directional_lights,
+    content="0",
+  )
+}
+
+///|
 test "render3d: gpu clustering prepare creates per-view buffers" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

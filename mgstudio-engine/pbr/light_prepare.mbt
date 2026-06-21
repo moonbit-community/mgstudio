@@ -58,7 +58,7 @@ pub fn prepare_lights(world : @ecs.World) -> Unit {
     None => return
   }
   let source_world = @render.render_source_world(world)
-  let gpu_lights = @pbr_render.render3d_collect_gpu_lights(source_world)
+  let gpu_lights = @pbr_render.render3d_collect_gpu_lights(world)
   light_meta.clear_view_gpu_lights()
   world.for_each_component(@render_view.ExtractedView::component(), fn(
     view_entity,
