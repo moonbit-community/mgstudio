@@ -424,6 +424,23 @@ pub impl @app.Plugin for StandardMaterialPlugin with fn build(self, app) {
 }
 
 ///|
+fn add_standard_material_bind_group_allocator(world : @ecs.World) -> Unit {
+  if world.get_resource(ecs_key_material_bind_group_allocators) is None {
+    world.insert_resource(
+      ecs_key_material_bind_group_allocators,
+      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
+    )
+  }
+  guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
+    is Some(allocators) else {
+    return
+  }
+  allocators.modify(fn(value) {
+    ignore(value.install_standard_material(false, None))
+  })
+}
+
+///|
 pub fn standard_material_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -438,10 +455,18 @@ pub fn standard_material_plugin_with(
   app : @app.App[@ecs.World],
   plugin : StandardMaterialPlugin,
 ) -> @app.App[@ecs.World] {
-  app.insert_world_resource(
+  let app = app.insert_world_resource(
     ecs_key_standard_material_plugin_state,
     StandardMaterialPluginState::from_plugin(plugin),
   )
+  @render.try_with_render_app(app, fn(sub_app) {
+    sub_app.add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(add_standard_material_bind_group_allocator).named(
+        "mgstudio_pbr::add_material_bind_group_allocator<StandardMaterial>",
+      ),
+    )
+  })
 }
 
 ///|

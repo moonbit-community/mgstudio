@@ -179,3 +179,32 @@ test "pbr material: standard material plugin state retains build plan" {
     content="extract_mesh_materials<StandardMaterial>",
   )
 }
+
+///|
+test "pbr material: standard material plugin installs render startup allocator" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MaterialsPlugin::MaterialsPlugin())
+    .add_plugins(StandardMaterialPlugin::StandardMaterialPlugin())
+  let render_sub_app = app
+    .sub_app(@app.RenderApp)
+    .set_update_schedule(Some(@render.render_startup_schedule_stage()))
+  let render_world = render_sub_app.world()
+  match render_world.get_resource(ecs_key_material_bind_group_allocators) {
+    Some(allocators) =>
+      debug_inspect(allocators.contains("StandardMaterial"), content="false")
+    None => debug_inspect(false, content="true")
+  }
+  ignore(render_sub_app.run_startup())
+  match render_world.get_resource(ecs_key_material_bind_group_allocators) {
+    Some(allocators) => {
+      debug_inspect(allocators.contains("StandardMaterial"), content="true")
+      match allocators.get("StandardMaterial") {
+        Some(MaterialBindGroupAllocator::NonBindless(_)) =>
+          debug_inspect(true, content="true")
+        _ => debug_inspect(false, content="true")
+      }
+    }
+    None => debug_inspect(false, content="true")
+  }
+}

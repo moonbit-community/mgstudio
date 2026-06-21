@@ -259,6 +259,40 @@ test "pbr material plugin: plugin registers assets typed component and render re
 }
 
 ///|
+test "pbr material plugin: render startup installs typed bind group allocator" {
+  let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      ParityCustomMaterial::ParityCustomMaterial()
+    },
+  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(plugin)
+  let render_sub_app = app
+    .sub_app(@app.RenderApp)
+    .set_update_schedule(Some(@render.render_startup_schedule_stage()))
+  let render_world = render_sub_app.world()
+  debug_inspect(
+    render_world.resource(ecs_key_material_bind_group_allocators).is_present(),
+    content="false",
+  )
+  ignore(render_sub_app.run_startup())
+  match render_world.get_resource(ecs_key_material_bind_group_allocators) {
+    Some(allocators) => {
+      debug_inspect(
+        allocators.contains("mgstudio_pbr_test::ParityCustomMaterial"),
+        content="true",
+      )
+      match allocators.get("mgstudio_pbr_test::ParityCustomMaterial") {
+        Some(MaterialBindGroupAllocator::NonBindless(_)) =>
+          debug_inspect(true, content="true")
+        _ => debug_inspect(false, content="true")
+      }
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "pbr material plugin: debug flags mirror Bevy plugin configuration" {
   let default_plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin()
   inspect(

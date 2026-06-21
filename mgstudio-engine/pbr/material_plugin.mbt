@@ -1177,6 +1177,35 @@ fn[M : Material] register_material_runtime_world(
 }
 
 ///|
+fn[M : Material] material_bind_group_allocator_label(
+  _probe : @asset.Handle[M],
+) -> String {
+  ignore(_probe)
+  M::material_debug_name()
+}
+
+///|
+fn[M : Material] add_material_bind_group_allocator_system(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+) -> Unit {
+  if world.get_resource(ecs_key_material_bind_group_allocators) is None {
+    world.insert_resource(
+      ecs_key_material_bind_group_allocators,
+      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
+    )
+  }
+  guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
+    is Some(allocators) else {
+    return
+  }
+  let label = material_bind_group_allocator_label(probe)
+  allocators.modify(fn(value) {
+    value.insert(label, MaterialBindGroupAllocator::default_non_bindless())
+  })
+}
+
+///|
 pub fn material_runtime_registry_contains_entity(
   source_world : @ecs.World,
   registry : MaterialRuntimeRegistry,
@@ -1287,6 +1316,14 @@ fn[M : Material + @asset.Asset] material_plugin_build(
     ensure_material_runtime_registry_resource_in_world(render_world)
     register_material_runtime_world(render_world, probe)
     @render.configure_base_render_sets(render_app)
+    .add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        add_material_bind_group_allocator_system(world, probe)
+      }).named(
+        "mgstudio_pbr::add_material_bind_group_allocator<\{M::material_debug_name()}>",
+      ),
+    )
     .add_systems(
       @render.render_schedule_stage(),
       @app.system(fn(world : @ecs.World) {
