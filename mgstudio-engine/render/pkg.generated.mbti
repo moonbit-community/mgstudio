@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
+  "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/window",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
@@ -811,6 +812,19 @@ pub fn Mesh3dInstanceVertexBufferData::length(Self) -> Int
 pub fn Mesh3dInstanceVertexBufferData::new(buffer_id~ : Int, bytes~ : Bytes, length~ : Int) -> Self
 pub impl @ecs.Component for Mesh3dInstanceVertexBufferData
 
+pub struct PendingQueues {
+  views : @hashmap.HashMap[@view.RetainedViewEntity, ViewPendingQueues]
+}
+pub fn PendingQueues::PendingQueues() -> Self
+pub fn PendingQueues::contains_view(Self, @view.RetainedViewEntity) -> Bool
+pub fn PendingQueues::current_len(Self, @view.RetainedViewEntity) -> Int
+pub fn PendingQueues::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
+pub fn PendingQueues::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> ViewPendingQueues
+pub fn PendingQueues::prev_len(Self, @view.RetainedViewEntity) -> Int
+pub fn PendingQueues::push_current(Self, @view.RetainedViewEntity, @core.Entity, MainEntity) -> Unit
+pub fn PendingQueues::view_len(Self) -> Int
+pub fn PendingQueues::view_or_insert(Self, @view.RetainedViewEntity) -> ViewPendingQueues
+
 pub struct PendingSyncEntity {
   records : Array[EntityRecord]
 }
@@ -1107,6 +1121,17 @@ pub struct UniformComponentPluginState {
 pub fn UniformComponentPluginState::component_debug_name(Self) -> String
 pub fn UniformComponentPluginState::new(String) -> Self
 pub fn UniformComponentPluginState::prepared_count(Self) -> Int
+
+pub struct ViewPendingQueues {
+  mut current_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
+}
+pub fn ViewPendingQueues::ViewPendingQueues() -> Self
+pub fn ViewPendingQueues::current_len(Self) -> Int
+pub fn ViewPendingQueues::prepare_for_new_frame(Self) -> Unit
+pub fn ViewPendingQueues::prev_frame(Self) -> @hashset.HashSet[(@core.Entity, MainEntity)]
+pub fn ViewPendingQueues::prev_len(Self) -> Int
+pub fn ViewPendingQueues::push_current(Self, @core.Entity, MainEntity) -> Unit
 
 pub struct WgpuSettings {
   device_label : String?

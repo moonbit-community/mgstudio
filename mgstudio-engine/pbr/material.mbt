@@ -83,6 +83,35 @@ pub struct MaterialsPluginState {
 }
 
 ///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/material.rs` (`PendingMeshMaterialQueues`).
+pub struct PendingMeshMaterialQueues {
+  queues : @render.PendingQueues
+}
+
+///|
+pub fn PendingMeshMaterialQueues::PendingMeshMaterialQueues() -> PendingMeshMaterialQueues {
+  PendingMeshMaterialQueues::{ queues: @render.PendingQueues::PendingQueues() }
+}
+
+///|
+pub fn PendingMeshMaterialQueues::queues(
+  self : PendingMeshMaterialQueues,
+) -> @render.PendingQueues {
+  self.queues
+}
+
+///|
+pub let ecs_key_pending_mesh_material_queues : @ecs.ResourceKey[
+  PendingMeshMaterialQueues,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::PendingMeshMaterialQueues")
+
+///|
+pub impl @app.Resource for PendingMeshMaterialQueues with fn resource() {
+  ecs_key_pending_mesh_material_queues
+}
+
+///|
 pub fn MaterialsPluginState::MaterialsPluginState() -> MaterialsPluginState {
   MaterialsPluginState::{
     debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
@@ -145,6 +174,18 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
     world.insert_resource(
       ecs_key_material_bind_group_allocators,
       MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
+    )
+  }
+  if world.get_resource(PendingMeshMaterialQueues::resource()) is None {
+    world.insert_resource(
+      PendingMeshMaterialQueues::resource(),
+      PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    )
+  }
+  if world.get_resource(@pbr_render.PendingShadowQueues::resource()) is None {
+    world.insert_resource(
+      @pbr_render.PendingShadowQueues::resource(),
+      @pbr_render.PendingShadowQueues::PendingShadowQueues(),
     )
   }
 }

@@ -35,6 +35,14 @@ test "render3d: materials startup initializes bevy material render resources" {
     content="true",
   )
   debug_inspect(
+    world.get_resource(PendingMeshMaterialQueues::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    world.get_resource(@pbr_render.PendingShadowQueues::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
     get_default_opaque_renderer_method_resource(world).is_present(),
     content="true",
   )
@@ -56,6 +64,46 @@ test "render3d: materials startup preserves existing material render resources" 
         ticks.get(entity).map(fn(pair) { pair.system_tick() }),
         content="Some(5)",
       )
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "render3d: materials startup preserves pending queue resources" {
+  let world = @ecs.World::new()
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(10, 1))
+  let mesh_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  mesh_queues
+  .queues()
+  .push_current(
+    view,
+    @core.Entity::new(1, 1),
+    @render.MainEntity::new(@core.Entity::new(2, 1)),
+  )
+  let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  shadow_queues
+  .queues()
+  .push_current(
+    view,
+    @core.Entity::new(3, 1),
+    @render.MainEntity::new(@core.Entity::new(4, 1)),
+  )
+  world.insert_resource(PendingMeshMaterialQueues::resource(), mesh_queues)
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    shadow_queues,
+  )
+
+  init_materials_resources(world)
+
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.queues().current_len(view), content="1")
+    None => debug_inspect(false, content="true")
+  }
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.queues().current_len(view), content="1")
     None => debug_inspect(false, content="true")
   }
 }

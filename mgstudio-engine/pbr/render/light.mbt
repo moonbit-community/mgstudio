@@ -92,6 +92,35 @@ const DIRECTIONAL_LIGHT_FLAG_NONE : UInt = 0U
 const DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED : UInt = 0xFFFFU
 
 ///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/light.rs` (`PendingShadowQueues`).
+pub struct PendingShadowQueues {
+  queues : @render_gpu.PendingQueues
+}
+
+///|
+pub fn PendingShadowQueues::PendingShadowQueues() -> PendingShadowQueues {
+  PendingShadowQueues::{ queues: @render_gpu.PendingQueues::PendingQueues() }
+}
+
+///|
+pub fn PendingShadowQueues::queues(
+  self : PendingShadowQueues,
+) -> @render_gpu.PendingQueues {
+  self.queues
+}
+
+///|
+let ecs_key_pending_shadow_queues : @ecs.ResourceKey[PendingShadowQueues] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PendingShadowQueues",
+)
+
+///|
+pub impl @app.Resource for PendingShadowQueues with fn resource() {
+  ecs_key_pending_shadow_queues
+}
+
+///|
 pub(all) struct ShadowSamplers {
   point_light_comparison_sampler : @wgpu.Sampler
   directional_light_comparison_sampler : @wgpu.Sampler

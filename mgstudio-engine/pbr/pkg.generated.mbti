@@ -326,6 +326,8 @@ pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[@Milky2018/mg
 
 pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[PbrPluginRuntimeConfig]
 
+pub let ecs_key_pending_mesh_material_queues : @ecs.ResourceKey[PendingMeshMaterialQueues]
+
 pub let ecs_key_pending_wireframe_queues : @ecs.ResourceKey[PendingWireframeQueues]
 
 pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
@@ -1946,6 +1948,13 @@ pub struct PbrPrepassPipelineSpecializer {
 }
 pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
 pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
+
+pub struct PendingMeshMaterialQueues {
+  queues : @Milky2018/mgstudio/render.PendingQueues
+}
+pub fn PendingMeshMaterialQueues::PendingMeshMaterialQueues() -> Self
+pub fn PendingMeshMaterialQueues::queues(Self) -> @Milky2018/mgstudio/render.PendingQueues
+pub impl @app.Resource for PendingMeshMaterialQueues
 
 pub struct PendingWireframeQueues {
   views : Map[UInt64, ViewPendingWireframeQueues]

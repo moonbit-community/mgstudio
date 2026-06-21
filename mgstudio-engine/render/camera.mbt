@@ -123,6 +123,156 @@ pub fn host_gpu_set_active_surface_target(target_id : Int) -> Unit {
 
 ///|
 // Bevy source:
+// - `bevy/crates/bevy_render/src/camera.rs` (`PendingQueues`).
+pub struct ViewPendingQueues {
+  mut current_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
+}
+
+///|
+pub fn ViewPendingQueues::ViewPendingQueues() -> ViewPendingQueues {
+  ViewPendingQueues::{
+    current_frame: @hashset.HashSet([]),
+    prev_frame: @hashset.HashSet([]),
+  }
+}
+
+///|
+pub fn ViewPendingQueues::prepare_for_new_frame(
+  self : ViewPendingQueues,
+) -> Unit {
+  let prev_frame = self.prev_frame
+  self.prev_frame = self.current_frame
+  self.current_frame = prev_frame
+  self.current_frame.clear()
+}
+
+///|
+pub fn ViewPendingQueues::push_current(
+  self : ViewPendingQueues,
+  render_entity : @core.Entity,
+  main_entity : MainEntity,
+) -> Unit {
+  self.current_frame.add((render_entity, main_entity))
+}
+
+///|
+pub fn ViewPendingQueues::prev_frame(
+  self : ViewPendingQueues,
+) -> @hashset.HashSet[(@core.Entity, MainEntity)] {
+  self.prev_frame
+}
+
+///|
+pub fn ViewPendingQueues::current_len(self : ViewPendingQueues) -> Int {
+  self.current_frame.length()
+}
+
+///|
+pub fn ViewPendingQueues::prev_len(self : ViewPendingQueues) -> Int {
+  self.prev_frame.length()
+}
+
+///|
+pub struct PendingQueues {
+  views : @hashmap.HashMap[@render_view.RetainedViewEntity, ViewPendingQueues]
+}
+
+///|
+pub fn PendingQueues::PendingQueues() -> PendingQueues {
+  PendingQueues::{ views: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn PendingQueues::view_or_insert(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> ViewPendingQueues {
+  match self.views.get(retained_view_entity) {
+    Some(queues) => queues
+    None => {
+      let queues = ViewPendingQueues::ViewPendingQueues()
+      self.views.set(retained_view_entity, queues)
+      queues
+    }
+  }
+}
+
+///|
+pub fn PendingQueues::prepare_for_new_frame(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> ViewPendingQueues {
+  let queues = self.view_or_insert(retained_view_entity)
+  queues.prepare_for_new_frame()
+  queues
+}
+
+///|
+pub fn PendingQueues::push_current(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  main_entity : MainEntity,
+) -> Unit {
+  self
+  .view_or_insert(retained_view_entity)
+  .push_current(render_entity, main_entity)
+}
+
+///|
+pub fn PendingQueues::current_len(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Int {
+  match self.views.get(retained_view_entity) {
+    Some(queues) => queues.current_len()
+    None => 0
+  }
+}
+
+///|
+pub fn PendingQueues::prev_len(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Int {
+  match self.views.get(retained_view_entity) {
+    Some(queues) => queues.prev_len()
+    None => 0
+  }
+}
+
+///|
+pub fn PendingQueues::contains_view(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Bool {
+  self.views.contains(retained_view_entity)
+}
+
+///|
+pub fn PendingQueues::view_len(self : PendingQueues) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn PendingQueues::expire_stale_views(
+  self : PendingQueues,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale : Array[@render_view.RetainedViewEntity] = []
+  for view, _queues in self.views {
+    if !live_views.contains(view) {
+      stale.push(view)
+    }
+  }
+  for view in stale {
+    self.views.remove(view)
+  }
+}
+
+///|
+// Bevy source:
 // - `bevy/crates/bevy_render/src/camera.rs` (`SortedCameras`).
 pub struct SortedCameras {
   mut entities : Array[@core.Entity]

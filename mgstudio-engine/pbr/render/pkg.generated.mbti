@@ -1017,6 +1017,13 @@ pub(all) enum OrthographicScalingMode3d {
   FixedHorizontal(Float)
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
+pub struct PendingShadowQueues {
+  queues : @Milky2018/mgstudio/render.PendingQueues
+}
+pub fn PendingShadowQueues::PendingShadowQueues() -> Self
+pub fn PendingShadowQueues::queues(Self) -> @Milky2018/mgstudio/render.PendingQueues
+pub impl @app.Resource for PendingShadowQueues
+
 pub(all) struct PerspectiveProjection3d {
   mut fov : Float
   mut near : Float
