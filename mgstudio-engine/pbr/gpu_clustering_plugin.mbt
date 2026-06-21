@@ -2136,6 +2136,30 @@ pub fn upload_view_gpu_clustering_buffers(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn gpu_clustering_schedule_readback_staging(
+  command_encoder : @wgpu.CommandEncoder,
+  view_gpu_clustering_buffers : ViewGpuClusteringBuffers,
+  staging_buffer : @wgpu.Buffer,
+) -> Bool {
+  match view_gpu_clustering_buffers.cluster_metadata_gpu_buffer() {
+    None => {
+      @app.log_error("No clustering Z slicing metadata buffer found")
+      false
+    }
+    Some(metadata_buffer) => {
+      command_encoder.copy_buffer_to_buffer(
+        metadata_buffer,
+        0UL,
+        staging_buffer,
+        0UL,
+        GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
+      )
+      true
+    }
+  }
+}
+
+///|
 fn gpu_clustering_finish_bind_group_or_abort(
   builder : @wgpu.BindGroupBuilder,
   device : @wgpu.Device,
