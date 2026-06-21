@@ -93,6 +93,61 @@ test "pipeline cache: waiting pipeline ids are observed without consumption" {
 }
 
 ///|
+test "pipeline cache: completion errors leave waiting set and retry requeues" {
+  let cache = PipelineCache::new()
+  let render_id = cache.queue_render_pipeline(
+    RenderPipelineDescriptor::RenderPipelineDescriptor(),
+  )
+  let compute_id = cache.queue_compute_pipeline(
+    ComputePipelineDescriptor::ComputePipelineDescriptor(),
+  )
+  cache.process_queue()
+
+  try! cache.mark_pipeline_error(render_id.id(), "shader import pending")
+  debug_inspect(cache.waiting_pipelines(), content="[1]")
+  debug_inspect(
+    cache.get_render_pipeline_state(render_id).is_err(),
+    content="true",
+  )
+  debug_inspect(
+    cache.get_render_pipeline_state(render_id).error_message(),
+    content="Some(\"shader import pending\")",
+  )
+
+  try! cache.retry_pipeline(render_id.id())
+  debug_inspect(cache.waiting_pipelines(), content="[1, 0]")
+  debug_inspect(
+    cache.get_render_pipeline_state(render_id).is_queued(),
+    content="true",
+  )
+  cache.process_queue()
+  debug_inspect(cache.waiting_pipelines(), content="[1, 0]")
+  debug_inspect(
+    cache.get_render_pipeline_state(render_id).is_creating(),
+    content="true",
+  )
+
+  try {
+    cache.get_render_pipeline_descriptor(CachedRenderPipelineId::new(99UL))
+    |> ignore
+    fail("unprocessed pipeline should reject descriptor access")
+  } catch {
+    PipelineNotProcessed(id) => debug_inspect(id, content="99")
+    _ => fail("expected PipelineNotProcessed")
+  }
+  try {
+    cache.get_render_pipeline_descriptor(
+      CachedRenderPipelineId::new(compute_id.id()),
+    )
+    |> ignore
+    fail("compute pipeline should not be readable as render")
+  } catch {
+    WrongPipelineKind(id) => debug_inspect(id, content="1")
+    _ => fail("expected WrongPipelineKind")
+  }
+}
+
+///|
 test "pipeline cache: descriptor access rejects unprocessed ids and wrong kinds" {
   let cache = PipelineCache::new()
   let render_id = cache.queue_render_pipeline(

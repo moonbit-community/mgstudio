@@ -56,6 +56,16 @@ pub fn CachedPipelineState::is_err(self : CachedPipelineState) -> Bool {
 }
 
 ///|
+pub fn CachedPipelineState::error_message(
+  self : CachedPipelineState,
+) -> String? {
+  match self {
+    Err(message) => Some(message)
+    _ => None
+  }
+}
+
+///|
 pub fn CachedPipeline::descriptor(self : CachedPipeline) -> PipelineDescriptor {
   self.descriptor
 }
@@ -163,6 +173,117 @@ pub suberror PipelineCacheAccessError {
 }
 
 ///|
+fn PipelineCache::remove_waiting_pipeline(
+  self : PipelineCache,
+  id : UInt64,
+) -> Unit {
+  let mut index = 0
+  while index < self.waiting_pipelines.length() {
+    if self.waiting_pipelines[index] == id {
+      ignore(self.waiting_pipelines.remove(index))
+    } else {
+      index = index + 1
+    }
+  }
+}
+
+///|
+pub fn PipelineCache::mark_render_pipeline_ready(
+  self : PipelineCache,
+  id : CachedRenderPipelineId,
+  pipeline : RenderPipeline,
+) -> Unit raise PipelineCacheAccessError {
+  let index = id.id().to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+  }
+  match self.pipelines[index].descriptor {
+    RenderPipelineDescriptor(_) =>
+      self.pipelines[index] = CachedPipeline::{
+        descriptor: self.pipelines[index].descriptor,
+        state: CachedPipelineState::Ok(Pipeline::RenderPipeline(pipeline)),
+      }
+    ComputePipelineDescriptor(_) =>
+      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+  }
+  self.remove_waiting_pipeline(id.id())
+}
+
+///|
+pub fn PipelineCache::mark_compute_pipeline_ready(
+  self : PipelineCache,
+  id : CachedComputePipelineId,
+  pipeline : ComputePipeline,
+) -> Unit raise PipelineCacheAccessError {
+  let index = id.id().to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+  }
+  match self.pipelines[index].descriptor {
+    RenderPipelineDescriptor(_) =>
+      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+    ComputePipelineDescriptor(_) =>
+      self.pipelines[index] = CachedPipeline::{
+        descriptor: self.pipelines[index].descriptor,
+        state: CachedPipelineState::Ok(Pipeline::ComputePipeline(pipeline)),
+      }
+  }
+  self.remove_waiting_pipeline(id.id())
+}
+
+///|
+pub fn PipelineCache::mark_pipeline_error(
+  self : PipelineCache,
+  id : UInt64,
+  message : String,
+) -> Unit raise PipelineCacheAccessError {
+  let index = id.to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+  }
+  self.pipelines[index] = CachedPipeline::{
+    descriptor: self.pipelines[index].descriptor,
+    state: CachedPipelineState::Err(message),
+  }
+  self.remove_waiting_pipeline(id)
+}
+
+///|
+pub fn PipelineCache::retry_pipeline(
+  self : PipelineCache,
+  id : UInt64,
+) -> Unit raise PipelineCacheAccessError {
+  let index = id.to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+  }
+  self.pipelines[index] = CachedPipeline::{
+    descriptor: self.pipelines[index].descriptor,
+    state: CachedPipelineState::Queued,
+  }
+  self.remove_waiting_pipeline(id)
+  self.waiting_pipelines.push(id)
+}
+
+///|
+fn PipelineCache::process_pipeline(self : PipelineCache, id : UInt64) -> Unit {
+  let index = id.to_int()
+  if index < 0 || index >= self.pipelines.length() {
+    return
+  }
+  match self.pipelines[index].state {
+    Queued =>
+      self.pipelines[index] = CachedPipeline::{
+        descriptor: self.pipelines[index].descriptor,
+        state: CachedPipelineState::Creating,
+      }
+    Creating => ()
+    Err(_) => self.remove_waiting_pipeline(id)
+    Ok(_) => self.remove_waiting_pipeline(id)
+  }
+}
+
+///|
 pub fn PipelineCache::get_render_pipeline_descriptor(
   self : PipelineCache,
   id : CachedRenderPipelineId,
@@ -235,4 +356,8 @@ pub fn PipelineCache::process_queue(self : PipelineCache) -> Unit {
     self.waiting_pipelines.push(id)
   }
   self.new_pipelines.clear()
+  let waiting_pipelines = self.waiting_pipelines()
+  for id in waiting_pipelines {
+    self.process_pipeline(id)
+  }
 }
