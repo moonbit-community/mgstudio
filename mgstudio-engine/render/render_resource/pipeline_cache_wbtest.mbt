@@ -75,7 +75,7 @@ test "pipeline cache: process_queue exposes descriptors and waiting ids" {
 }
 
 ///|
-test "pipeline cache: waiting pipeline ids drain once" {
+test "pipeline cache: waiting pipeline ids are observed without consumption" {
   let cache = PipelineCache::new()
   ignore(
     cache.queue_render_pipeline(
@@ -88,9 +88,8 @@ test "pipeline cache: waiting pipeline ids drain once" {
     ),
   )
   cache.process_queue()
-  debug_inspect(cache.drain_waiting_pipelines(), content="[0, 1]")
-  debug_inspect(cache.waiting_pipelines(), content="[]")
-  debug_inspect(cache.drain_waiting_pipelines(), content="[]")
+  debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
+  debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
 }
 
 ///|

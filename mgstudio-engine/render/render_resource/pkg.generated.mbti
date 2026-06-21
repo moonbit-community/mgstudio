@@ -413,7 +413,6 @@ pub struct PipelineCache {
   waiting_pipelines : Array[UInt64]
   new_pipelines : Array[CachedPipeline]
 }
-pub fn PipelineCache::drain_waiting_pipelines(Self) -> Array[UInt64]
 pub fn PipelineCache::get_compute_pipeline(Self, CachedComputePipelineId) -> ComputePipeline?
 pub fn PipelineCache::get_compute_pipeline_descriptor(Self, CachedComputePipelineId) -> ComputePipelineDescriptor raise PipelineCacheAccessError
 pub fn PipelineCache::get_compute_pipeline_state(Self, CachedComputePipelineId) -> CachedPipelineState

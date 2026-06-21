@@ -326,6 +326,24 @@ test "render schedule: pipeline queue is chained inside render set" {
 }
 
 ///|
+test "render settings: descriptor registration observes pipeline cache waiting ids" {
+  let world = @ecs.World::new()
+  let cache = @render_resource.PipelineCache::new()
+  ignore(
+    cache.queue_render_pipeline(
+      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
+    ),
+  )
+  world.insert_resource(pipeline_cache_resource_key, cache)
+  process_pipeline_queue_system(world)
+  let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
+  debug_inspect(cache.waiting_pipelines(), content="[0]")
+  register_pipeline_cache_render_pipeline_descriptors(world)
+  let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
+  debug_inspect(cache.waiting_pipelines(), content="[0]")
+}
+
+///|
 test "render recovery: render schedule only runs when renderer is ready" {
   let log : Array[String] = []
   let time_channels = @time.create_time_channels()

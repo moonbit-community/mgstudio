@@ -294,7 +294,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
     return
   }
   let pipelines = cache.pipelines()
-  for pipeline_id in cache.drain_waiting_pipelines() {
+  for pipeline_id in cache.waiting_pipelines() {
     let index = pipeline_id.to_int()
     if index < 0 || index >= pipelines.length() {
       continue
