@@ -3069,6 +3069,7 @@ fn gpu_clustering_configure_render_app_finish(
   if render_device.limits_max_storage_buffers_per_shader_stage_u32() == 0U {
     return sub_app
   }
+  let graph_stage = @render.RenderGraph::schedule()
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     SpecializedClusteringRasterPipelines::resource(),
@@ -3148,10 +3149,10 @@ fn gpu_clustering_configure_render_app_finish(
     .run_if(gpu_clustering_is_enabled),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    graph_stage,
     @app.system(cluster_on_gpu)
     .named("mgstudio_pbr::cluster_on_gpu")
-    .in_set(@render.render_system_set_render)
+    .in_set(@core_pipeline.core3d_system_set_prepass())
     .run_if(gpu_clustering_is_enabled),
   )
 }
