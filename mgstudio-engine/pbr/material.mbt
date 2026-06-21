@@ -164,6 +164,21 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
       SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
     )
   }
+  if world.get_resource(@pbr_render.LightKeyCache::resource()) is None {
+    world.insert_resource(
+      @pbr_render.LightKeyCache::resource(),
+      @pbr_render.LightKeyCache::LightKeyCache(),
+    )
+  }
+  if world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is None {
+    world.insert_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+      @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+    )
+  }
   if world.get_resource(ecs_key_render_material_instances) is None {
     world.insert_resource(
       ecs_key_render_material_instances,

@@ -27,6 +27,17 @@ test "render3d: materials startup initializes bevy material render resources" {
     content="true",
   )
   debug_inspect(
+    world.get_resource(@pbr_render.LightKeyCache::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
     world.get_resource(ecs_key_render_material_instances) is Some(_),
     content="true",
   )
@@ -104,6 +115,56 @@ test "render3d: materials startup preserves pending queue resources" {
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(view), content="1")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "render3d: materials startup preserves shadow specialization caches" {
+  let world = @ecs.World::new()
+  let view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(10, 1),
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=1,
+  )
+  let main_entity = @render.MainEntity::new(@core.Entity::new(11, 1))
+  let light_key_cache = @pbr_render.LightKeyCache::LightKeyCache()
+  light_key_cache.insert(
+    view,
+    @material.ErasedMeshPipelineKey::new(13UL, "MeshPipelineKey"),
+  )
+  let shadow_cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  shadow_cache.insert(
+    view,
+    main_entity,
+    @material.CachedRenderPipelineId::new(21UL),
+    @material.DrawFunctionId::new(5U),
+  )
+  world.insert_resource(@pbr_render.LightKeyCache::resource(), light_key_cache)
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    shadow_cache,
+  )
+
+  init_materials_resources(world)
+
+  match world.get_resource(@pbr_render.LightKeyCache::resource()) {
+    Some(cache) =>
+      debug_inspect(
+        cache.get(view).map(fn(key) { key.bits() }),
+        content="Some(13)",
+      )
+    None => debug_inspect(false, content="true")
+  }
+  match
+    world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache) =>
+      debug_inspect(
+        cache.pipeline_id(view, main_entity).map(fn(value) { value.id() }),
+        content="Some(21)",
+      )
     None => debug_inspect(false, content="true")
   }
 }

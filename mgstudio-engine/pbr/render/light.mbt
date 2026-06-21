@@ -93,6 +93,191 @@ const DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED : UInt = 0xFFFFU
 
 ///|
 // Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/light.rs` (`LightKeyCache`).
+pub struct LightKeyCache {
+  keys : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    @material.ErasedMeshPipelineKey,
+  ]
+}
+
+///|
+pub fn LightKeyCache::LightKeyCache() -> LightKeyCache {
+  LightKeyCache::{ keys: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn LightKeyCache::len(self : LightKeyCache) -> Int {
+  self.keys.length()
+}
+
+///|
+pub fn LightKeyCache::get(
+  self : LightKeyCache,
+  view : @render_view.RetainedViewEntity,
+) -> @material.ErasedMeshPipelineKey? {
+  self.keys.get(view)
+}
+
+///|
+pub fn LightKeyCache::insert(
+  self : LightKeyCache,
+  view : @render_view.RetainedViewEntity,
+  key : @material.ErasedMeshPipelineKey,
+) -> Unit {
+  self.keys.set(view, key)
+}
+
+///|
+let ecs_key_light_key_cache : @ecs.ResourceKey[LightKeyCache] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::LightKeyCache",
+)
+
+///|
+pub impl @app.Resource for LightKeyCache with fn resource() {
+  ecs_key_light_key_cache
+}
+
+///|
+pub struct SpecializedShadowMaterialViewPipelineCache {
+  map : @hashmap.HashMap[
+    @render_gpu.MainEntity,
+    (@material.CachedRenderPipelineId, @material.DrawFunctionId),
+  ]
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::SpecializedShadowMaterialViewPipelineCache() -> SpecializedShadowMaterialViewPipelineCache {
+  SpecializedShadowMaterialViewPipelineCache::{ map: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::len(
+  self : SpecializedShadowMaterialViewPipelineCache,
+) -> Int {
+  self.map.length()
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::get(
+  self : SpecializedShadowMaterialViewPipelineCache,
+  entity : @render_gpu.MainEntity,
+) -> (@material.CachedRenderPipelineId, @material.DrawFunctionId)? {
+  self.map.get(entity)
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::insert(
+  self : SpecializedShadowMaterialViewPipelineCache,
+  entity : @render_gpu.MainEntity,
+  pipeline_id : @material.CachedRenderPipelineId,
+  draw_function_id : @material.DrawFunctionId,
+) -> Unit {
+  self.map.set(entity, (pipeline_id, draw_function_id))
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::remove(
+  self : SpecializedShadowMaterialViewPipelineCache,
+  entity : @render_gpu.MainEntity,
+) -> Bool {
+  if self.map.contains(entity) {
+    self.map.remove(entity)
+    true
+  } else {
+    false
+  }
+}
+
+///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/light.rs`
+//   (`SpecializedShadowMaterialPipelineCache`).
+pub struct SpecializedShadowMaterialPipelineCache {
+  views : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    SpecializedShadowMaterialViewPipelineCache,
+  ]
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache() -> SpecializedShadowMaterialPipelineCache {
+  SpecializedShadowMaterialPipelineCache::{ views: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::len(
+  self : SpecializedShadowMaterialPipelineCache,
+) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::get(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+) -> SpecializedShadowMaterialViewPipelineCache? {
+  self.views.get(view)
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::view_or_insert(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+) -> SpecializedShadowMaterialViewPipelineCache {
+  match self.views.get(view) {
+    Some(cache) => cache
+    None => {
+      let cache = SpecializedShadowMaterialViewPipelineCache::SpecializedShadowMaterialViewPipelineCache()
+      self.views.set(view, cache)
+      cache
+    }
+  }
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::insert(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+  entity : @render_gpu.MainEntity,
+  pipeline_id : @material.CachedRenderPipelineId,
+  draw_function_id : @material.DrawFunctionId,
+) -> Unit {
+  self.view_or_insert(view).insert(entity, pipeline_id, draw_function_id)
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::pipeline_id(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+  entity : @render_gpu.MainEntity,
+) -> @material.CachedRenderPipelineId? {
+  match self.get(view) {
+    Some(view_cache) =>
+      view_cache
+      .get(entity)
+      .map(fn(entry) {
+        let (pipeline_id, _) = entry
+        pipeline_id
+      })
+    None => None
+  }
+}
+
+///|
+let ecs_key_specialized_shadow_material_pipeline_cache : @ecs.ResourceKey[
+  SpecializedShadowMaterialPipelineCache,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::SpecializedShadowMaterialPipelineCache",
+)
+
+///|
+pub impl @app.Resource for SpecializedShadowMaterialPipelineCache with fn resource() {
+  ecs_key_specialized_shadow_material_pipeline_cache
+}
+
+///|
+// Bevy source:
 // - `bevy/crates/bevy_pbr/src/render/light.rs` (`PendingShadowQueues`).
 pub struct PendingShadowQueues {
   queues : @render_gpu.PendingQueues

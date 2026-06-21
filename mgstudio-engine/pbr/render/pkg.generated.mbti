@@ -18,6 +18,7 @@ import {
   "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_wgsl_naga_oil/compose",
@@ -770,6 +771,15 @@ pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
 }
 
+pub struct LightKeyCache {
+  keys : @hashmap.HashMap[@view.RetainedViewEntity, @material.ErasedMeshPipelineKey]
+}
+pub fn LightKeyCache::LightKeyCache() -> Self
+pub fn LightKeyCache::get(Self, @view.RetainedViewEntity) -> @material.ErasedMeshPipelineKey?
+pub fn LightKeyCache::insert(Self, @view.RetainedViewEntity, @material.ErasedMeshPipelineKey) -> Unit
+pub fn LightKeyCache::len(Self) -> Int
+pub impl @app.Resource for LightKeyCache
+
 pub struct LightMeta {
   view_gpu_lights : @render_resource.DynamicUniformBuffer[GpuLights3d]
   mut view_gpu_lights_buffer : @wgpu_mbt.Buffer?
@@ -1331,6 +1341,26 @@ pub struct SkinUniforms {
 }
 pub fn SkinUniforms::new() -> Self
 pub impl @app.Resource for SkinUniforms
+
+pub struct SpecializedShadowMaterialPipelineCache {
+  views : @hashmap.HashMap[@view.RetainedViewEntity, SpecializedShadowMaterialViewPipelineCache]
+}
+pub fn SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache() -> Self
+pub fn SpecializedShadowMaterialPipelineCache::get(Self, @view.RetainedViewEntity) -> SpecializedShadowMaterialViewPipelineCache?
+pub fn SpecializedShadowMaterialPipelineCache::insert(Self, @view.RetainedViewEntity, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId, @material.DrawFunctionId) -> Unit
+pub fn SpecializedShadowMaterialPipelineCache::len(Self) -> Int
+pub fn SpecializedShadowMaterialPipelineCache::pipeline_id(Self, @view.RetainedViewEntity, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedShadowMaterialPipelineCache::view_or_insert(Self, @view.RetainedViewEntity) -> SpecializedShadowMaterialViewPipelineCache
+pub impl @app.Resource for SpecializedShadowMaterialPipelineCache
+
+pub struct SpecializedShadowMaterialViewPipelineCache {
+  map : @hashmap.HashMap[@Milky2018/mgstudio/render.MainEntity, (@render_resource.CachedRenderPipelineId, @material.DrawFunctionId)]
+}
+pub fn SpecializedShadowMaterialViewPipelineCache::SpecializedShadowMaterialViewPipelineCache() -> Self
+pub fn SpecializedShadowMaterialViewPipelineCache::get(Self, @Milky2018/mgstudio/render.MainEntity) -> (@render_resource.CachedRenderPipelineId, @material.DrawFunctionId)?
+pub fn SpecializedShadowMaterialViewPipelineCache::insert(Self, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId, @material.DrawFunctionId) -> Unit
+pub fn SpecializedShadowMaterialViewPipelineCache::len(Self) -> Int
+pub fn SpecializedShadowMaterialViewPipelineCache::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

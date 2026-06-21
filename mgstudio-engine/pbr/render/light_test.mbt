@@ -100,6 +100,70 @@ fn test_cluster_decal_index_matches(
 }
 
 ///|
+test "pbr render light: LightKeyCache stores keys by retained view entity" {
+  let cache = LightKeyCache::LightKeyCache()
+  let main_view = @core.Entity::new(10, 1)
+  let first = @render_view.RetainedViewEntity::new(
+    main_view,
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=0,
+  )
+  let second = @render_view.RetainedViewEntity::new(
+    main_view,
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=1,
+  )
+
+  cache.insert(
+    first,
+    @material.ErasedMeshPipelineKey::new(3UL, "MeshPipelineKey"),
+  )
+  cache.insert(
+    second,
+    @material.ErasedMeshPipelineKey::new(7UL, "MeshPipelineKey"),
+  )
+
+  debug_inspect(cache.len(), content="2")
+  debug_inspect(cache.get(first).map(fn(key) { key.bits() }), content="Some(3)")
+  debug_inspect(
+    cache.get(second).map(fn(key) { key.bits() }),
+    content="Some(7)",
+  )
+}
+
+///|
+test "pbr render light: SpecializedShadowMaterialPipelineCache stores per view light pipelines" {
+  let cache = SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  let view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(10, 1),
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=2,
+  )
+  let entity = @render_gpu.MainEntity::new(@core.Entity::new(11, 1))
+  let pipeline_id = @material.CachedRenderPipelineId::new(55UL)
+  let draw_function_id = @material.DrawFunctionId::new(3U)
+
+  cache.insert(view, entity, pipeline_id, draw_function_id)
+
+  debug_inspect(cache.len(), content="1")
+  debug_inspect(
+    cache.pipeline_id(view, entity).map(fn(value) { value.id() }),
+    content="Some(55)",
+  )
+  let cached_entry = match cache.get(view) {
+    Some(view_cache) => view_cache.get(entity)
+    None => None
+  }
+  match cached_entry {
+    Some((cached_pipeline, cached_draw)) => {
+      debug_inspect(cached_pipeline.id(), content="55")
+      debug_inspect(cached_draw.id(), content="3")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
   @hierarchy.hierarchy_install_component_metadata()
   @transform.transform_install_component_metadata()
