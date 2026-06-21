@@ -24,6 +24,68 @@ pub(all) enum RenderState {
 }
 
 ///|
+pub(all) enum RenderErrorPolicy {
+  Ignore
+  StopRendering
+  Recover(RenderCreation)
+}
+
+///|
+pub(all) struct RenderErrorHandler {
+  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy
+}
+
+///|
+fn default_render_error_handler(
+  _error : @app.RenderRuntimeError,
+  _main_world : @ecs.World,
+  _render_world : @ecs.World,
+) -> RenderErrorPolicy {
+  RenderErrorPolicy::StopRendering
+}
+
+///|
+pub fn RenderErrorHandler::RenderErrorHandler() -> RenderErrorHandler {
+  RenderErrorHandler::{ handler: default_render_error_handler }
+}
+
+///|
+pub fn RenderErrorHandler::new(
+  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy,
+) -> RenderErrorHandler {
+  RenderErrorHandler::{ handler, }
+}
+
+///|
+pub let render_error_handler_resource_key : @ecs.ResourceKey[RenderErrorHandler] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderErrorHandler",
+)
+
+///|
+fn RenderErrorHandler::handle(
+  self : RenderErrorHandler,
+  error : @app.RenderRuntimeError,
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  match (self.handler)(error, main_world, render_world) {
+    Ignore => mark_renderer_ready(render_world)
+    StopRendering => ()
+    Recover(render_creation) => {
+      if !insert_future_render_resources(render_creation, main_world) {
+        abort(
+          "RenderErrorPolicy::Recover could not insert future render resources",
+        )
+      }
+      render_world.insert_resource(
+        render_state_resource_key,
+        RenderState::reinitializing(),
+      )
+    }
+  }
+}
+
+///|
 pub let render_state_resource_key : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderState",
 )
@@ -127,46 +189,13 @@ fn update_render_state(
         }
         None => ()
       }
-    Errored(_) => ()
+    Errored(error) => {
+      let handler = match
+        render_world.get_resource(render_error_handler_resource_key) {
+        Some(value) => value
+        None => RenderErrorHandler::RenderErrorHandler()
+      }
+      handler.handle(error, main_world, render_world)
+    }
   }
-}
-
-///|
-pub fn render_runtime_error() -> @app.RenderRuntimeError? {
-  @app.render_runtime_error()
-}
-
-///|
-pub fn app_rendering_enabled() -> Bool {
-  @app.app_rendering_enabled()
-}
-
-///|
-pub fn app_rendering_stop() -> Unit {
-  @app.app_rendering_stop()
-}
-
-///|
-pub fn app_rendering_resume() -> Unit {
-  @app.app_rendering_resume()
-}
-
-///|
-pub fn set_render_error_handler(handler : @app.RenderErrorHandler) -> Unit {
-  @app.set_render_error_handler(handler)
-}
-
-///|
-pub fn reset_render_error_handler() -> Unit {
-  @app.reset_render_error_handler()
-}
-
-///|
-pub fn report_render_runtime_error(error : @app.RenderRuntimeError) -> Unit {
-  @app.report_render_runtime_error(error)
-}
-
-///|
-pub fn render_error_policy_recover() -> @app.RenderErrorPolicy {
-  @app.RenderErrorPolicy::Recover
 }

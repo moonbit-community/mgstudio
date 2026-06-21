@@ -104,6 +104,17 @@ fn render_plugin_install_with(
         None => ()
       }
       init_render_state(render_sub_app.world())
+      if !render_sub_app
+        .world()
+        .resource(render_error_handler_resource_key)
+        .is_present() {
+        render_sub_app
+        .world()
+        .insert_resource(
+          render_error_handler_resource_key,
+          RenderErrorHandler::RenderErrorHandler(),
+        )
+      }
       render_sub_app
       .world()
       .insert_resource(@time.time_sender_resource_key, time_channels.0)

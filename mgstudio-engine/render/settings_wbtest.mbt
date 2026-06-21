@@ -601,3 +601,85 @@ test "render recovery: reinitializing consumes future render resources before st
     content="true",
   )
 }
+
+///|
+test "render error handler: ignore policy marks renderer ready" {
+  let main_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  render_world.insert_resource(
+    render_error_handler_resource_key,
+    RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
+      RenderErrorPolicy::Ignore
+    }),
+  )
+  render_world.insert_resource(
+    render_state_resource_key,
+    RenderState::errored(@app.RenderRuntimeError::Validation),
+  )
+
+  update_render_state(main_world, render_world)
+  debug_inspect(renderer_is_ready(render_world), content="true")
+}
+
+///|
+test "render error handler: recover policy creates future resources and restarts" {
+  let backend = @renderer.GpuBackend::new()
+  let resources = RenderResources::from_backend(backend)
+  let main_world = @ecs.World::new()
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+    .add_schedule(@app.Schedule::new(render_startup_schedule_stage()))
+    .add_systems(
+      render_startup_schedule_stage(),
+      @app.system(init_pending_command_buffers_resource),
+    )
+  let render_world = render_sub_app.world()
+  render_world.insert_resource(
+    render_error_handler_resource_key,
+    RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
+      RenderErrorPolicy::Recover(RenderCreation::manual_resources(resources))
+    }),
+  )
+  render_world.insert_resource(
+    render_state_resource_key,
+    RenderState::errored(@app.RenderRuntimeError::DeviceLost),
+  )
+  let app = @app.App::new(main_world)
+    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .set_sub_app_extract(@app.RenderApp, fn(
+      main_world : @ecs.World,
+      render_world : @ecs.World,
+    ) {
+      update_render_state(main_world, render_world)
+      (main_world, render_world)
+    })
+
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let state_after_error = render_world
+    .get_resource(render_state_resource_key)
+    .unwrap()
+  debug_inspect(state_after_error is Reinitializing, content="true")
+  debug_inspect(
+    app.world().resource(future_render_resources_resource_key).is_present(),
+    content="true",
+  )
+
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let state_after_reinit = render_world
+    .get_resource(render_state_resource_key)
+    .unwrap()
+  debug_inspect(state_after_reinit is Initializing, content="true")
+  debug_inspect(
+    app.world().resource(future_render_resources_resource_key).is_present(),
+    content="false",
+  )
+
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(renderer_is_ready(render_world), content="true")
+  debug_inspect(
+    render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="true",
+  )
+}

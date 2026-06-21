@@ -44,12 +44,6 @@ pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
 
 pub const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = 16384
 
-pub fn app_rendering_enabled() -> Bool
-
-pub fn app_rendering_resume() -> Unit
-
-pub fn app_rendering_stop() -> Unit
-
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn asset_create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int
@@ -434,7 +428,7 @@ pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
 
-pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
+pub let render_error_handler_resource_key : @ecs.ResourceKey[RenderErrorHandler]
 
 pub fn render_extract_app_label() -> @app.AppLabel
 
@@ -461,8 +455,6 @@ pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub let render_queue_resource_key : @ecs.ResourceKey[@renderer.RenderQueue]
 
 pub fn render_recovery_schedule_stage() -> @app.ScheduleStage
-
-pub fn render_runtime_error() -> @app.RenderRuntimeError?
 
 pub let render_schedule_order_resource_key : @ecs.ResourceKey[RenderScheduleOrder]
 
@@ -520,11 +512,7 @@ pub let render_system_set_specialize : String
 
 pub fn renderer_is_ready(@ecs.World) -> Bool
 
-pub fn report_render_runtime_error(@app.RenderRuntimeError) -> Unit
-
 pub fn reset_render_asset_bytes_per_frame(@ecs.World) -> Unit
-
-pub fn reset_render_error_handler() -> Unit
 
 pub fn save_to_disk(String) -> (@ecs.On[ScreenshotCaptured]) -> Unit
 
@@ -545,8 +533,6 @@ pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub let screenshot_trigger_system_set : String
-
-pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
 pub fn slab_allocator_allocation_shape(Int, SlabItemLayoutInfo) -> SlabAllocationShape
 
@@ -921,6 +907,18 @@ pub struct RenderEntity {
 pub fn RenderEntity::id(Self) -> @core.Entity
 pub fn RenderEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for RenderEntity
+
+pub(all) struct RenderErrorHandler {
+  handler : (@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy
+}
+pub fn RenderErrorHandler::RenderErrorHandler() -> Self
+pub fn RenderErrorHandler::new((@app.RenderRuntimeError, @ecs.World, @ecs.World) -> RenderErrorPolicy) -> Self
+
+pub(all) enum RenderErrorPolicy {
+  Ignore
+  StopRendering
+  Recover(RenderCreation)
+}
 
 pub struct RenderGraph {
 }
