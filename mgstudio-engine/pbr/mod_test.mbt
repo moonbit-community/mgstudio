@@ -803,6 +803,36 @@ test "render3d: gpu clustering readback data reuses staging buffers" {
 }
 
 ///|
+test "render3d: gpu clustering readback metadata updates capacities and statistics" {
+  let readback = ViewClusteringReadbackData::new(
+    @light_cluster.GlobalClusterGpuSettings::new(8, 16),
+  )
+  let farthest_z = 12.5F
+  let encoded_farthest_z = farthest_z.reinterpret_as_uint() ^ 0x8000_0000U
+  let metadata = ClusterMetadata::from_gpu_readback(
+    ClusterRasterIndirectDrawParams::new(6U, 17U, 0U, 0U, 0U),
+    0U,
+    0U,
+    0U,
+    0U,
+    8U,
+    33U,
+    encoded_farthest_z,
+  )
+
+  readback.update_from_metadata(metadata)
+
+  debug_inspect(readback.z_slice_list_capacity(), content="32")
+  debug_inspect(readback.max_index_list_capacity(), content="64")
+  let statistics = match readback.last_frame_statistics() {
+    Some(value) => value
+    None => abort("missing GPU clustering readback statistics")
+  }
+  debug_inspect(statistics.index_list_size(), content="33")
+  debug_inspect(statistics.farthest_z(), content="12.5")
+}
+
+///|
 test "render3d: gpu clustering plugin finish initializes render resources" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()

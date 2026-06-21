@@ -469,6 +469,8 @@ pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
 
 pub fn gpu_clustering_plugin_with(@app.App[@ecs.World], GpuClusteringPlugin) -> @app.App[@ecs.World]
 
+pub fn gpu_clustering_sortable_u32_to_f32_bits(UInt) -> UInt
+
 pub fn gpu_clustering_z_slice_dispatch_count(Int) -> Int
 
 pub fn init_fallback_bindless_resources(@ecs.World) -> Unit
@@ -1046,6 +1048,8 @@ pub struct ClusterMetadata {
 pub fn ClusterMetadata::ClusterMetadata() -> Self
 pub fn ClusterMetadata::clustered_light_count(Self) -> UInt
 pub fn ClusterMetadata::decal_count(Self) -> UInt
+pub fn ClusterMetadata::farthest_z(Self) -> UInt
+pub fn ClusterMetadata::from_gpu_readback(ClusterRasterIndirectDrawParams, UInt, UInt, UInt, UInt, UInt, UInt, UInt) -> Self
 pub fn ClusterMetadata::index_list_capacity(Self) -> UInt
 pub fn ClusterMetadata::irradiance_volume_count(Self) -> UInt
 pub fn ClusterMetadata::new(UInt, UInt, UInt, UInt, UInt, UInt) -> Self
@@ -1069,6 +1073,7 @@ pub struct ClusterRasterIndirectDrawParams {
   first_instance : UInt
 } derive(Eq, @debug.Debug)
 pub fn ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams() -> Self
+pub fn ClusterRasterIndirectDrawParams::instance_count(Self) -> UInt
 pub fn ClusterRasterIndirectDrawParams::new(UInt, UInt, UInt, UInt, UInt) -> Self
 
 pub struct ClusterableObjectCounts3d {
@@ -2380,11 +2385,11 @@ pub fn ViewClusteringLastFrameStatistics::index_list_size(Self) -> UInt
 pub fn ViewClusteringLastFrameStatistics::new(UInt, Float) -> Self
 
 pub struct ViewClusteringReadbackData {
-  z_slice_list_capacity : Int
-  max_index_list_capacity : Int
+  mut z_slice_list_capacity : Int
+  mut max_index_list_capacity : Int
   metadata_staging_pending_buffers : Array[@wgpu_mbt.Buffer]
   metadata_staging_free_buffers : Array[@wgpu_mbt.Buffer]
-  last_frame_statistics : ViewClusteringLastFrameStatistics?
+  mut last_frame_statistics : ViewClusteringLastFrameStatistics?
 }
 pub fn ViewClusteringReadbackData::free_staging_buffer_count(Self) -> Int
 pub fn ViewClusteringReadbackData::get_or_create_staging_buffer(Self, @renderer.RenderDevice) -> @wgpu_mbt.Buffer
@@ -2393,6 +2398,7 @@ pub fn ViewClusteringReadbackData::max_index_list_capacity(Self) -> Int
 pub fn ViewClusteringReadbackData::new(@cluster.GlobalClusterGpuSettings) -> Self
 pub fn ViewClusteringReadbackData::pending_staging_buffer_count(Self) -> Int
 pub fn ViewClusteringReadbackData::recycle_staging_buffer(Self, @wgpu_mbt.Buffer) -> Unit
+pub fn ViewClusteringReadbackData::update_from_metadata(Self, ClusterMetadata) -> Unit
 pub fn ViewClusteringReadbackData::z_slice_list_capacity(Self) -> Int
 
 pub struct ViewContactShadowsUniformOffset {

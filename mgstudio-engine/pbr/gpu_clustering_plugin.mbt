@@ -126,11 +126,11 @@ pub struct ViewClusteringLastFrameStatistics {
 
 ///|
 pub struct ViewClusteringReadbackData {
-  z_slice_list_capacity : Int
-  max_index_list_capacity : Int
+  mut z_slice_list_capacity : Int
+  mut max_index_list_capacity : Int
   metadata_staging_pending_buffers : Array[@wgpu.Buffer]
   metadata_staging_free_buffers : Array[@wgpu.Buffer]
-  last_frame_statistics : ViewClusteringLastFrameStatistics?
+  mut last_frame_statistics : ViewClusteringLastFrameStatistics?
 }
 
 ///|
@@ -881,6 +881,13 @@ pub fn ClusterRasterIndirectDrawParams::new(
 }
 
 ///|
+pub fn ClusterRasterIndirectDrawParams::instance_count(
+  self : ClusterRasterIndirectDrawParams,
+) -> UInt {
+  self.instance_count
+}
+
+///|
 pub fn ClusterMetadata::ClusterMetadata() -> ClusterMetadata {
   ClusterMetadata::{
     indirect_draw_params: ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams(),
@@ -918,6 +925,29 @@ pub fn ClusterMetadata::new(
 }
 
 ///|
+pub fn ClusterMetadata::from_gpu_readback(
+  indirect_draw_params : ClusterRasterIndirectDrawParams,
+  clustered_light_count : UInt,
+  reflection_probe_count : UInt,
+  irradiance_volume_count : UInt,
+  decal_count : UInt,
+  z_slice_list_capacity : UInt,
+  index_list_capacity : UInt,
+  farthest_z : UInt,
+) -> ClusterMetadata {
+  ClusterMetadata::{
+    indirect_draw_params,
+    clustered_light_count,
+    reflection_probe_count,
+    irradiance_volume_count,
+    decal_count,
+    z_slice_list_capacity,
+    index_list_capacity,
+    farthest_z,
+  }
+}
+
+///|
 pub fn ClusterMetadata::clustered_light_count(self : ClusterMetadata) -> UInt {
   self.clustered_light_count
 }
@@ -945,6 +975,33 @@ pub fn ClusterMetadata::index_list_capacity(self : ClusterMetadata) -> UInt {
 ///|
 pub fn ClusterMetadata::z_slice_list_capacity(self : ClusterMetadata) -> UInt {
   self.z_slice_list_capacity
+}
+
+///|
+pub fn ClusterMetadata::farthest_z(self : ClusterMetadata) -> UInt {
+  self.farthest_z
+}
+
+///|
+fn gpu_clustering_next_power_of_two(value : Int) -> Int {
+  if value <= 1 {
+    return 1
+  }
+  let mut current = 1
+  while current < value {
+    current = current * 2
+  }
+  current
+}
+
+///|
+pub fn gpu_clustering_sortable_u32_to_f32_bits(bits : UInt) -> UInt {
+  let mask = if (bits & 0x8000_0000U) != 0U {
+    0x8000_0000U
+  } else {
+    0xFFFF_FFFFU
+  }
+  bits ^ mask
 }
 
 ///|
@@ -994,6 +1051,39 @@ pub fn ViewClusteringReadbackData::max_index_list_capacity(
   self : ViewClusteringReadbackData,
 ) -> Int {
   self.max_index_list_capacity
+}
+
+///|
+pub fn ViewClusteringReadbackData::update_from_metadata(
+  self : ViewClusteringReadbackData,
+  gpu_clustering_metadata : ClusterMetadata,
+) -> Unit {
+  let instance_count = gpu_clustering_metadata.indirect_draw_params
+    .instance_count()
+    .reinterpret_as_int()
+  if self.z_slice_list_capacity < instance_count {
+    self.z_slice_list_capacity = gpu_clustering_next_power_of_two(
+      instance_count,
+    )
+  }
+  let index_list_capacity = gpu_clustering_metadata
+    .index_list_capacity()
+    .reinterpret_as_int()
+  if self.max_index_list_capacity < index_list_capacity {
+    self.max_index_list_capacity = gpu_clustering_next_power_of_two(
+      index_list_capacity,
+    )
+  }
+  self.last_frame_statistics = Some(
+    ViewClusteringLastFrameStatistics::new(
+      gpu_clustering_metadata.index_list_capacity(),
+      Float::reinterpret_from_uint(
+        gpu_clustering_sortable_u32_to_f32_bits(
+          gpu_clustering_metadata.farthest_z(),
+        ),
+      ),
+    ),
+  )
 }
 
 ///|
