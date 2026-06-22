@@ -7,7 +7,10 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"

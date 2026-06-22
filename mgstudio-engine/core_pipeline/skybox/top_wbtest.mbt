@@ -88,6 +88,19 @@ test "skybox: draw params come from extracted uniforms and inverse rotation" {
 test "skybox: prepare pipelines writes render-world view component" {
   let world = @ecs.World::new()
   let render_entity = world.spawn()
+  try! world.set_by_key(
+    render_entity,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(render_entity),
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    ),
+  )
+  try! world.set_by_key(
+    render_entity,
+    @render_view.Msaa::component(),
+    @render_view.Msaa::Sample4,
+  )
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
   let skybox = @light.Skybox::new(image, 1.0F)
   let extracted = ExtractedSkyboxes::ExtractedSkyboxes()
@@ -99,13 +112,50 @@ test "skybox: prepare pipelines writes render-world view component" {
     ),
   )
   world.insert_resource(ExtractedSkyboxes::resource(), extracted)
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
 
   prepare_skybox_pipelines(world)
 
   debug_inspect(view_has_skybox_pipeline(world, render_entity), content="true")
-  debug_inspect(
-    (try! world.get_by_key(render_entity, ecs_key_skybox_pipeline_id))
-    is Some(_),
-    content="true",
+  guard (try! world.get_by_key(render_entity, ecs_key_skybox_pipeline_id))
+    is Some(pipeline_id) else {
+    abort("expected SkyboxPipelineId")
+  }
+  debug_inspect(pipeline_id.pipeline_id().id(), content="0")
+  let pipeline_cache = world
+    .get_resource(@render.pipeline_cache_resource_key)
+    .unwrap()
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="1")
+}
+
+///|
+test "skybox: prepare pipelines requires Bevy render-view components" {
+  let world = @ecs.World::new()
+  let render_entity = world.spawn()
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(19)
+  let skybox = @light.Skybox::new(image, 1.0F)
+  let extracted = ExtractedSkyboxes::ExtractedSkyboxes()
+  extracted.push(
+    ExtractedSkybox::new(
+      render_entity~,
+      skybox~,
+      uniforms=SkyboxUniforms::from_skybox(skybox, 1.0F),
+    ),
   )
+  world.insert_resource(ExtractedSkyboxes::resource(), extracted)
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
+
+  prepare_skybox_pipelines(world)
+
+  debug_inspect(view_has_skybox_pipeline(world, render_entity), content="false")
+  let pipeline_cache = world
+    .get_resource(@render.pipeline_cache_resource_key)
+    .unwrap()
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="0")
 }

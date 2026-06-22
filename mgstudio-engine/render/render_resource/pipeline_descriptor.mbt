@@ -288,6 +288,20 @@ pub impl Default for MultisampleState with fn default() {
 }
 
 ///|
+pub fn MultisampleState::new(
+  count : UInt,
+  mask? : UInt64 = 0xffffffffffffffffUL,
+  alpha_to_coverage_enabled? : Bool = false,
+) -> MultisampleState {
+  MultisampleState::{ count, mask, alpha_to_coverage_enabled }
+}
+
+///|
+pub fn MultisampleState::count(self : MultisampleState) -> UInt {
+  self.count
+}
+
+///|
 pub struct RenderPipelineDescriptor {
   label : String?
   layout : Array[BindGroupLayoutDescriptor]
@@ -402,6 +416,14 @@ pub fn RenderPipelineDescriptor::with_primitive(
   primitive : PrimitiveState,
 ) -> RenderPipelineDescriptor {
   RenderPipelineDescriptor::{ ..self, primitive, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_multisample(
+  self : RenderPipelineDescriptor,
+  multisample : MultisampleState,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, multisample, }
 }
 
 ///|

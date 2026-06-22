@@ -408,6 +408,8 @@ pub struct MultisampleState {
   alpha_to_coverage_enabled : Bool
 }
 pub fn MultisampleState::MultisampleState() -> Self
+pub fn MultisampleState::count(Self) -> UInt
+pub fn MultisampleState::new(UInt, mask? : UInt64, alpha_to_coverage_enabled? : Bool) -> Self
 pub impl Default for MultisampleState
 
 pub(all) enum Pipeline {
@@ -502,6 +504,7 @@ pub fn RenderPipelineDescriptor::with_fragment(Self, FragmentState?) -> Self
 pub fn RenderPipelineDescriptor::with_immediate_size(Self, UInt) -> Self
 pub fn RenderPipelineDescriptor::with_label(Self, String?) -> Self
 pub fn RenderPipelineDescriptor::with_layout(Self, Array[BindGroupLayoutDescriptor]) -> Self
+pub fn RenderPipelineDescriptor::with_multisample(Self, MultisampleState) -> Self
 pub fn RenderPipelineDescriptor::with_primitive(Self, PrimitiveState) -> Self
 pub fn RenderPipelineDescriptor::with_vertex(Self, VertexState) -> Self
 pub impl Default for RenderPipelineDescriptor

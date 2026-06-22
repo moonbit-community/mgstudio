@@ -31,30 +31,45 @@ pub fn SkyboxPlugin::SkyboxPlugin() -> SkyboxPlugin {
 pub const SKYBOX_PIPELINE_LABEL : String = "skybox_pipeline"
 
 ///|
+const SKYBOX_SHADER_PATH : String = "core_pipeline/skybox/skybox.wgsl"
+
+///|
+const SKYBOX_UNIFORM_BUFFER_SIZE_BYTES : UInt64 = 80UL
+
+///|
 pub struct SkyboxPipelineKey {
-  hdr : Bool
+  target_format_raw : UInt
   samples : Int
-  depth_format : String
+  depth_format_raw : UInt
 } derive(Eq, Debug)
 
 ///|
 pub fn SkyboxPipelineKey::new(
-  hdr? : Bool = true,
+  target_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
   samples? : Int = 1,
-  depth_format? : String = "depth32float",
+  depth_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
 ) -> SkyboxPipelineKey {
   let samples = if samples <= 0 { 1 } else { samples }
-  SkyboxPipelineKey::{ hdr, samples, depth_format }
+  SkyboxPipelineKey::{ target_format_raw, samples, depth_format_raw }
 }
 
 ///|
 pub struct SkyboxPipelineId {
-  pipeline_id : Int
+  pipeline_id : @render_resource.CachedRenderPipelineId
 }
 
 ///|
-pub fn SkyboxPipelineId::new(pipeline_id~ : Int) -> SkyboxPipelineId {
+pub fn SkyboxPipelineId::new(
+  pipeline_id~ : @render_resource.CachedRenderPipelineId,
+) -> SkyboxPipelineId {
   SkyboxPipelineId::{ pipeline_id, }
+}
+
+///|
+pub fn SkyboxPipelineId::pipeline_id(
+  self : SkyboxPipelineId,
+) -> @render_resource.CachedRenderPipelineId {
+  self.pipeline_id
 }
 
 ///|
@@ -104,7 +119,7 @@ pub impl @ecs.Component for SkyboxBindGroup with fn component() {
 ///|
 pub struct SkyboxPrepareViewState {
   has_skybox : Bool
-  hdr : Bool
+  target_format_raw : UInt
   msaa_samples : Int
   has_view_uniform_binding : Bool
   has_skybox_uniform_binding : Bool
@@ -114,7 +129,7 @@ pub struct SkyboxPrepareViewState {
 ///|
 pub fn SkyboxPrepareViewState::new(
   has_skybox? : Bool = false,
-  hdr? : Bool = true,
+  target_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
   msaa_samples? : Int = 1,
   has_view_uniform_binding? : Bool = false,
   has_skybox_uniform_binding? : Bool = false,
@@ -122,7 +137,7 @@ pub fn SkyboxPrepareViewState::new(
 ) -> SkyboxPrepareViewState {
   SkyboxPrepareViewState::{
     has_skybox,
-    hdr,
+    target_format_raw,
     msaa_samples,
     has_view_uniform_binding,
     has_skybox_uniform_binding,
@@ -138,12 +153,12 @@ pub fn skybox_should_prepare_pipeline(state : SkyboxPrepareViewState) -> Bool {
 ///|
 pub fn skybox_pipeline_key(
   state : SkyboxPrepareViewState,
-  depth_format? : String = "depth32float",
+  depth_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
 ) -> SkyboxPipelineKey {
   SkyboxPipelineKey::new(
-    hdr=state.hdr,
+    target_format_raw=state.target_format_raw,
     samples=state.msaa_samples,
-    depth_format~,
+    depth_format_raw~,
   )
 }
 
@@ -153,6 +168,97 @@ pub fn skybox_should_prepare_bind_group(state : SkyboxPrepareViewState) -> Bool 
   state.has_view_uniform_binding &&
   state.has_skybox_uniform_binding &&
   state.has_skybox_gpu_image
+}
+
+///|
+fn skybox_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor {
+  let vertex_fragment = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  @render_resource.BindGroupLayoutDescriptor::new("skybox_bind_group_layout", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      fragment,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::Cube,
+        false,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      1,
+      fragment,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      2,
+      vertex_fragment,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        @render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      3,
+      vertex_fragment,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        SKYBOX_UNIFORM_BUFFER_SIZE_BYTES,
+      ),
+    ),
+  ])
+}
+
+///|
+fn skybox_render_pipeline_descriptor(
+  key : SkyboxPipelineKey,
+) -> @render_resource.RenderPipelineDescriptor {
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+  .with_label(Some(SKYBOX_PIPELINE_LABEL))
+  .with_layout([skybox_bind_group_layout_descriptor()])
+  .with_vertex(
+    @render_resource.VertexState::new(
+      Some(SKYBOX_SHADER_PATH),
+      [],
+      Some("skybox_vertex"),
+      [],
+    ),
+  )
+  .with_primitive(
+    @render_resource.PrimitiveState::PrimitiveState().with_cull_mode(None),
+  )
+  .with_depth_stencil(
+    Some(
+      @render_resource.DepthStencilState::new(
+        key.depth_format_raw,
+        false,
+        @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      ),
+    ),
+  )
+  .with_multisample(
+    @render_resource.MultisampleState::new(key.samples.reinterpret_as_uint()),
+  )
+  .with_fragment(
+    Some(
+      @render_resource.FragmentState::new(
+        Some(SKYBOX_SHADER_PATH),
+        [],
+        Some("skybox_fragment"),
+        [
+          Some(
+            @render_resource.ColorTargetState::new(
+              key.target_format_raw,
+              @wgpu.COLOR_WRITE_MASK_ALL,
+            ),
+          ),
+        ],
+      ),
+    ),
+  )
 }
 
 ///|
@@ -381,11 +487,14 @@ fn skybox_plugin_install_with(
 pub struct SkyboxPipelineState {
   mut pipeline_count : Int
   mut bind_group_count : Int
+  pipelines : Array[
+    (SkyboxPipelineKey, @render_resource.CachedRenderPipelineId),
+  ]
 }
 
 ///|
 pub fn SkyboxPipelineState::SkyboxPipelineState() -> SkyboxPipelineState {
-  SkyboxPipelineState::{ pipeline_count: 0, bind_group_count: 0 }
+  SkyboxPipelineState::{ pipeline_count: 0, bind_group_count: 0, pipelines: [] }
 }
 
 ///|
@@ -408,6 +517,36 @@ pub fn SkyboxPipelineState::record_bind_group(
   self : SkyboxPipelineState,
 ) -> Unit {
   self.bind_group_count = self.bind_group_count + 1
+}
+
+///|
+fn SkyboxPipelineState::pipeline_id(
+  self : SkyboxPipelineState,
+  key : SkyboxPipelineKey,
+) -> @render_resource.CachedRenderPipelineId? {
+  for entry in self.pipelines {
+    let (entry_key, pipeline_id) = entry
+    if entry_key == key {
+      return Some(pipeline_id)
+    }
+  }
+  None
+}
+
+///|
+fn SkyboxPipelineState::insert_pipeline(
+  self : SkyboxPipelineState,
+  key : SkyboxPipelineKey,
+  pipeline_id : @render_resource.CachedRenderPipelineId,
+) -> Unit {
+  for index in 0..<self.pipelines.length() {
+    let (entry_key, _) = self.pipelines[index]
+    if entry_key == key {
+      self.pipelines[index] = (key, pipeline_id)
+      return
+    }
+  }
+  self.pipelines.push((key, pipeline_id))
 }
 
 ///|
@@ -534,6 +673,49 @@ fn remove_stale_skybox_bind_group_components(
 }
 
 ///|
+fn skybox_pipeline_key_for_render_entity(
+  world : @ecs.World,
+  render_entity : @core.Entity,
+) -> SkyboxPipelineKey? {
+  guard (try! world.get_by_key(
+      render_entity,
+      @render_view.ExtractedView::component(),
+    ))
+    is Some(view) else {
+    return None
+  }
+  guard (try! world.get_by_key(render_entity, @render_view.Msaa::component()))
+    is Some(msaa) else {
+    return None
+  }
+  Some(
+    SkyboxPipelineKey::new(
+      target_format_raw=view.target_format_raw(),
+      samples=msaa.samples(),
+      depth_format_raw=@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    ),
+  )
+}
+
+///|
+fn skybox_specialize_pipeline(
+  state : SkyboxPipelineState,
+  pipeline_cache : @render_resource.PipelineCache,
+  key : SkyboxPipelineKey,
+) -> @render_resource.CachedRenderPipelineId {
+  match state.pipeline_id(key) {
+    Some(pipeline_id) => pipeline_id
+    None => {
+      let pipeline_id = pipeline_cache.queue_render_pipeline(
+        skybox_render_pipeline_descriptor(key),
+      )
+      state.insert_pipeline(key, pipeline_id)
+      pipeline_id
+    }
+  }
+}
+
+///|
 fn configure_skybox_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -605,15 +787,47 @@ fn extract_skybox(world : @ecs.World) -> Unit {
 ///|
 fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
   let mut pipeline_count = 0
+  guard world.get_resource(@render.pipeline_cache_resource_key)
+    is Some(pipeline_cache) else {
+    remove_stale_skybox_pipeline_components(
+      world,
+      ExtractedSkyboxes::ExtractedSkyboxes(),
+    )
+    skybox_pipeline_state_mut_or_init(world).modify(fn(state) {
+      state.set_counts(
+        pipeline_count=0,
+        bind_group_count=state.bind_group_count,
+      )
+    })
+    return
+  }
   match world.get_resource(ExtractedSkyboxes::resource()) {
     Some(extracted) => {
       remove_stale_skybox_pipeline_components(world, extracted)
       for entry in extracted.entries {
         if entry.is_ready_for_pipeline() {
+          guard skybox_pipeline_key_for_render_entity(
+              world,
+              entry.render_entity,
+            )
+            is Some(key) else {
+            ignore(
+              try! world.remove_by_key(
+                entry.render_entity,
+                ecs_key_skybox_pipeline_id,
+              ),
+            )
+            continue
+          }
+          let pipeline_id = skybox_pipeline_state_mut_or_init(world).modify(fn(
+            state,
+          ) {
+            skybox_specialize_pipeline(state, pipeline_cache, key)
+          })
           try! world.set_by_key(
             entry.render_entity,
             ecs_key_skybox_pipeline_id,
-            SkyboxPipelineId::new(pipeline_id=entry.render_entity.id),
+            SkyboxPipelineId::new(pipeline_id~),
           )
           pipeline_count = pipeline_count + 1
         }

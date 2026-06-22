@@ -181,6 +181,53 @@ fn render3d_preprocess_retained_camera_keys(
 }
 
 ///|
+fn render3d_sync_extracted_view_components(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+) -> Unit {
+  for extracted_camera in cameras {
+    let render_entity = extracted_camera.entity.render_entity
+    if !world.is_alive(render_entity) {
+      continue
+    }
+    let camera = extracted_camera.payload.camera
+    let target_size = extracted_camera.payload.target_size
+    let (viewport_x, viewport_y, viewport_w, viewport_h) = match
+      camera.viewport {
+      Some(viewport) => {
+        let position = viewport.physical_position()
+        let size = viewport.physical_size()
+        (position.x, position.y, size.x, size.y)
+      }
+      None => (0, 0, target_size.x, target_size.y)
+    }
+    let target_format_raw = @render_view.extracted_view_target_format_raw(
+      hdr=extracted_camera.payload.hdr_enabled,
+    )
+    try! world.set_by_key(
+      render_entity,
+      @render_view.ExtractedView::component(),
+      @render_view.ExtractedView::new(
+        @render_view.RetainedViewEntity::new(
+          extracted_camera.entity.main_entity,
+        ),
+        target_format_raw~,
+        viewport_x~,
+        viewport_y~,
+        viewport_z=viewport_w,
+        viewport_w=viewport_h,
+        invert_culling=extracted_camera.payload.invert_culling,
+      ),
+    )
+    try! world.set_by_key(
+      render_entity,
+      @render_view.Msaa::component(),
+      extracted_camera.payload.msaa.unwrap_or(@render_view.Msaa::default()),
+    )
+  }
+}
+
+///|
 pub fn render3d_prepare_resources_cleanup_system(world : @ecs.World) -> Unit {
   @render.host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(
     retained_camera_keys=render3d_preprocess_retained_camera_keys(
@@ -673,6 +720,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return
   }
+  render3d_sync_extracted_view_components(world, cameras)
   let meshes = mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
     let meshes = morph_indices.modify(fn(morph_indices_value) {
       skin_uniforms.modify(fn(skin_uniforms_value) {
