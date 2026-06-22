@@ -34,134 +34,118 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn obstacle_rotation(i : Int, j : Int) -> @math.Quat {
-  let seed = float_from_int(i * 97 + j * 131 + 198783)
-  let axis_raw = @math.Vec3::new(
-    @math.sin(seed * 0.017F + 0.11F),
-    @math.cos(seed * 0.023F + 0.73F),
-    @math.sin(seed * 0.029F + 1.79F),
-  )
-  let axis = if axis_raw.length_squared() < 0.000001F {
-    @math.Vec3::new(0.0F, 1.0F, 0.0F)
-  } else {
-    axis_raw.normalize_or_zero()
-  }
-  let angle = @math.sin(seed * 0.037F + 0.5F) * PI
-  @math.Quat::from_axis_angle(axis, angle)
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-
-  let decal_material = @pbr.forward_decal_material_add(
-    @pbr.ForwardDecalMaterial::new(
-      @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
-        Some(asset_server.load("textures/uv_checker_bw.png")),
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  decal_standard_materials : @app.ResMut[
+    @asset.Assets[@pbr.ForwardDecalMaterial],
+  ],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let decal_material = decal_standard_materials
+    .peek()
+    .add(
+      @pbr.ForwardDecalMaterial::new(
+        @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
+          Some(asset_server.get().load("textures/uv_checker_bw.png")),
+        ),
+        @pbr.ForwardDecalMaterialExt::new(1.0F),
       ),
-      @pbr.ForwardDecalMaterialExt::new(1.0F),
+    )
+
+  commands.spawn(
+    (
+      @ecs.Name::new("Decal"),
+      @pbr.ForwardDecal::ForwardDecal(),
+      @pbr.forward_decal_mesh_material3d(decal_material),
+      @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
     ),
   )
-  let decal = world.spawn_empty()
-  try! world.set_by_key(
-    decal,
-    @pbr.ecs_key_mesh_material3d,
-    @pbr.forward_decal_mesh_material3d(decal_material),
-  )
-  try! world.set_by_key(
-    decal,
-    @transform.ecs_key_transform,
-    @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
-  )
-  try! world.set_by_key(
-    decal,
-    @pbr.ecs_key_forward_decal,
-    @pbr.ForwardDecal::ForwardDecal(),
-  )
+  |> ignore
 
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  commands.spawn(
+    (
+      @ecs.Name::new("Camera"),
+      @camera.Camera3d::Camera3d(),
+      @camera_controller.FreeCamera::FreeCamera(),
+      @pbr.DepthPrepass::DepthPrepass(),
+      @transform.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::FreeCamera(),
   )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::DepthPrepass(),
-  )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_fxaa,
-    @post_process.Fxaa::Fxaa(),
-  )
+  |> ignore
 
-  let white_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white()),
-  )
+  let white_material = standard_materials
+    .peek()
+    .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
 
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
+  commands.spawn(
+    (
+      @ecs.Name::new("Floor"),
+      @mesh.Mesh3d::new(
+        meshes.peek()
         |> @pbr.add_mesh(
           @mesh_primitives.RectangleMeshBuilder::new(10.0F, 10.0F).build(),
-        )
-      }),
+        ),
+      ),
+      @pbr.MeshMaterial3d::new(white_material),
+      @transform.Transform::identity().with_rotation(
+        @math.Quat::from_rotation_x(-FRAC_PI_2),
+      ),
     ),
-    @pbr.MeshMaterial3d::new(white_material),
-    @transform.Transform::identity().with_rotation(
-      @math.Quat::from_rotation_x(-FRAC_PI_2),
-    ),
-  ).spawn(world)
+  )
   |> ignore
 
   let center_offset = (float_from_int(GRID_COUNT) - 1.0F) * 0.5F
+  let rng = @chacha_rng.ChaCha8Rng::seed_from_u64(19878367467713UL)
   for i in 0..<GRID_COUNT {
     for j in 0..<GRID_COUNT {
+      let rotation_vec = @math.Vec3::new(
+        rng.random_float(),
+        rng.random_float(),
+        rng.random_float(),
+      )
+      let rotation = rng.random_range(360)
       let x = float_from_int(i) - center_offset
       let z = float_from_int(j) - center_offset
       let transform = @transform.Transform::from_xyz(x, -0.2F, z).with_rotation(
-        obstacle_rotation(i, j),
-      )
-      @pbr.MeshMaterial3dBundle::new(
-        @mesh.Mesh3d::new(
-          @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-            assets
-            |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE))
-          }),
+        @math.Quat::from_axis_angle(
+          rotation_vec.normalize_or_zero(),
+          float_from_int(rotation) * PI / 180.0F,
         ),
-        @pbr.MeshMaterial3d::new(white_material),
-        transform,
-      ).spawn(world)
+      )
+      commands.spawn(
+        (
+          @mesh.Mesh3d::new(
+            meshes.peek()
+            |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)),
+          ),
+          @pbr.MeshMaterial3d::new(white_material),
+          transform,
+        ),
+      )
       |> ignore
     }
   }
 
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
+  commands.spawn(
+    (
+      @ecs.Name::new("Light"),
+      @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
+      @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    ),
   )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-  )
+  |> ignore
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_plugins(@camera_controller.FreeCameraPlugin::FreeCameraPlugin())
+  .add_systems_param5(@app.Startup, setup)
   .run()
 }
