@@ -2240,6 +2240,7 @@ pub struct SpecializedMaterialPipelineCache {
   views : Map[UInt64, SpecializedMaterialViewPipelineCache]
 }
 pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> Self
+pub fn SpecializedMaterialPipelineCache::clear(Self) -> Unit
 pub fn SpecializedMaterialPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache?
 pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity, Int64, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedMaterialPipelineCache::len(Self) -> Int

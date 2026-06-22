@@ -1088,6 +1088,49 @@ test "pbr material prepass specialization caches descriptors separately" {
 }
 
 ///|
+test "pbr material pipeline capability changes invalidate specialized descriptors" {
+  let world = @ecs.World::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
+  world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  guard properties.base_specialize is Some(base_specialize) else {
+    abort("expected StandardMaterial base specialize hook")
+  }
+  let key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+  )
+  ignore(
+    try! @material.material_specialize_base(
+      base_specialize,
+      world,
+      key,
+      pbr_material_specializer_test_layout(),
+      properties,
+    ),
+  )
+  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
+  inspect(
+    state.peek().specialized_material_pipelines.mesh_layout_cache_len(),
+    content="1",
+  )
+  state.set(state.peek().with_pipeline_capabilities(true, true))
+  inspect(
+    state.peek().specialized_material_pipelines.mesh_layout_cache_len(),
+    content="0",
+  )
+  inspect(
+    state.peek().specialized_prepass_material_pipelines.mesh_layout_cache_len(),
+    content="0",
+  )
+}
+
+///|
 test "pbr prepass runtime pipeline ids preserve global pipeline cache ids" {
   let prepass_zero = pbr_prepass_runtime_pipeline_id(
     @material.CachedRenderPipelineId::new(0UL),

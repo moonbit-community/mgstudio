@@ -211,6 +211,13 @@ pub fn SpecializedMaterialPipelineCache::len(
 }
 
 ///|
+pub fn SpecializedMaterialPipelineCache::clear(
+  self : SpecializedMaterialPipelineCache,
+) -> Unit {
+  self.views.clear()
+}
+
+///|
 pub fn SpecializedMaterialPipelineCache::get(
   self : SpecializedMaterialPipelineCache,
   view : @core.Entity,

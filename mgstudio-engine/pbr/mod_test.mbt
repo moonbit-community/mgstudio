@@ -2251,7 +2251,9 @@ test "render3d: Mesh3d tuple insert receives visibility required components" {
   let world = app.world()
   let entity = world.spawn_empty()
   ignore(
-    try! world.entity_mut(entity).insert(
+    try! world
+    .entity_mut(entity)
+    .insert(
       (
         @mesh.Mesh3d::new(@asset.Handle::new(1)),
         MeshMaterial3d::new(@asset.Handle::new(2)),

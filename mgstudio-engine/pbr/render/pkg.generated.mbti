@@ -1226,7 +1226,7 @@ pub struct Render3dMeshRuntimeState {
   specialized_prepass_material_pipelines : @material.SpecializedMeshPipelines
 }
 pub fn Render3dMeshRuntimeState::new() -> Self
-pub fn Render3dMeshRuntimeState::with_binding_arrays_are_usable(Self, Bool) -> Self
+pub fn Render3dMeshRuntimeState::with_pipeline_capabilities(Self, Bool, Bool) -> Self
 pub impl @app.Resource for Render3dMeshRuntimeState
 
 pub struct Render3dMeshUploadCacheState {

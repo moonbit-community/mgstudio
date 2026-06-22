@@ -624,14 +624,23 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
   )
+  let clustered_decals_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
+  )
   let mesh_runtime_state_value = mesh_runtime_state.peek()
   if mesh_runtime_state_value.binding_arrays_are_usable !=
-    binding_arrays_are_usable {
+    binding_arrays_are_usable ||
+    mesh_runtime_state_value.clustered_decals_are_usable !=
+    clustered_decals_are_usable {
     mesh_runtime_state.set(
-      mesh_runtime_state_value.with_binding_arrays_are_usable(
-        binding_arrays_are_usable,
+      mesh_runtime_state_value.with_pipeline_capabilities(
+        binding_arrays_are_usable, clustered_decals_are_usable,
       ),
     )
+    match world.get_resource_mut(ecs_key_specialized_material_pipeline_cache) {
+      Some(cache) => cache.modify(fn(value) { value.clear() })
+      None => ()
+    }
   }
   let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
   let skin_uniforms = @pbr_render.skin_uniforms_mut_or_abort(world)
@@ -675,6 +684,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         })
       })
     })
+    render3d_prepare_shader_asset_paths(source_world, meshes)
     render3d_prewarm_mesh_pipelines(
       world, mesh_runtime_state_value, cameras, meshes,
     )
@@ -685,7 +695,6 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     }
     meshes
   })
-  render3d_prepare_shader_asset_paths(source_world, meshes)
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,

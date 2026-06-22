@@ -34,18 +34,31 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
     mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
-    clustered_decals_are_usable: true,
+    clustered_decals_are_usable: @render_gpu.host_gpu_mesh3d_binding_arrays_are_usable(
+      required_storage_textures_per_shader_stage=0U,
+    ),
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
     specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
   }
 }
 
 ///|
-pub fn Render3dMeshRuntimeState::with_binding_arrays_are_usable(
+pub fn Render3dMeshRuntimeState::with_pipeline_capabilities(
   self : Render3dMeshRuntimeState,
   binding_arrays_are_usable : Bool,
+  clustered_decals_are_usable : Bool,
 ) -> Render3dMeshRuntimeState {
-  Render3dMeshRuntimeState::{ ..self, binding_arrays_are_usable, }
+  if self.binding_arrays_are_usable == binding_arrays_are_usable &&
+    self.clustered_decals_are_usable == clustered_decals_are_usable {
+    return self
+  }
+  Render3dMeshRuntimeState::{
+    ..self,
+    binding_arrays_are_usable,
+    clustered_decals_are_usable,
+    specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
+    specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
+  }
 }
 
 ///|

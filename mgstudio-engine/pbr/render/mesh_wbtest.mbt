@@ -16,5 +16,31 @@
 test "pbr/render mesh: runtime state enables binding array material path" {
   let state = Render3dMeshRuntimeState::new()
   inspect(state.binding_arrays_are_usable, content="false")
-  inspect(state.clustered_decals_are_usable, content="true")
+  inspect(
+    state.clustered_decals_are_usable,
+    content=@render_gpu.host_gpu_mesh3d_binding_arrays_are_usable(
+      required_storage_textures_per_shader_stage=0U,
+    ).to_string(),
+  )
+}
+
+///|
+test "pbr/render mesh: pipeline capability changes reset specialized pipeline caches" {
+  let state = Render3dMeshRuntimeState::new().with_pipeline_capabilities(
+    false, false,
+  )
+  let unchanged = state.with_pipeline_capabilities(false, false)
+  inspect(unchanged.binding_arrays_are_usable, content="false")
+  inspect(unchanged.clustered_decals_are_usable, content="false")
+  let changed = state.with_pipeline_capabilities(true, true)
+  inspect(changed.binding_arrays_are_usable, content="true")
+  inspect(changed.clustered_decals_are_usable, content="true")
+  inspect(
+    changed.specialized_material_pipelines.mesh_layout_cache_len(),
+    content="0",
+  )
+  inspect(
+    changed.specialized_prepass_material_pipelines.mesh_layout_cache_len(),
+    content="0",
+  )
 }
