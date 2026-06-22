@@ -90,6 +90,12 @@ fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
 }
 
 ///|
+test "window: RawHandleWrapper exposes host-owned content view handle lookup" {
+  let raw_handle = RawHandleWrapper::new(WindowWrapper::new(-1))
+  debug_inspect(raw_handle.content_view_handle() is None, content="true")
+}
+
+///|
 fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
   let reader = world.message_reader(ecs_key_window_destroyed)
   reader.read()

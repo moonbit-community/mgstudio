@@ -376,3 +376,29 @@ test "render view window: surface configuration uses Bevy window fields" {
     content="true",
   )
 }
+
+///|
+test "render view window: create_surface_for_window reports missing content view" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let window = ExtractedWindow::new(
+    entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(-1)),
+    640,
+    360,
+    @window_pkg.PresentMode::Fifo,
+    None,
+    @window_pkg.CompositeAlphaMode::Auto,
+  )
+  let render_instance = @renderer.RenderInstance::from_wgpu(
+    @wgpu.Instance::create(),
+  )
+  try {
+    create_surface_for_window(window, render_instance) |> ignore
+    debug_inspect(false, content="true")
+  } catch {
+    WindowSurfaceCreateError::MissingContentViewHandle(_, host_window) =>
+      debug_inspect(host_window, content="-1")
+    _ => debug_inspect(false, content="true")
+  }
+}

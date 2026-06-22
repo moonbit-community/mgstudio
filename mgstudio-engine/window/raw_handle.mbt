@@ -38,6 +38,13 @@ pub fn RawHandleWrapper::window(self : RawHandleWrapper) -> HostWindow {
 }
 
 ///|
+pub fn RawHandleWrapper::content_view_handle(
+  self : RawHandleWrapper,
+) -> UInt64? {
+  @windowing.content_view_handle(self.window)
+}
+
+///|
 pub(all) struct RawHandleWrapperHolder {
   handle : Ref[RawHandleWrapper?]
 }

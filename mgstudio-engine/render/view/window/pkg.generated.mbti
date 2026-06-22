@@ -18,6 +18,8 @@ pub const DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : UInt = 2
 
 pub fn composite_alpha_mode_raw(@Milky2018/mgstudio/window.CompositeAlphaMode) -> UInt
 
+pub fn create_surface_for_window(ExtractedWindow, @renderer.RenderInstance) -> @wgpu_mbt.Surface raise WindowSurfaceCreateError
+
 pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
 
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
@@ -73,6 +75,11 @@ pub fn window_screenshot_take_capture_result(Int) -> @renderer.ScreenshotCapture
 pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces]
 
 // Errors
+pub suberror WindowSurfaceCreateError {
+  MissingContentViewHandle(@core.Entity, Int)
+  NativeSurfaceCreateFailed(@core.Entity, String)
+}
+pub fn WindowSurfaceCreateError::message(Self) -> String
 
 // Types and methods
 pub struct ExtractedWindow {

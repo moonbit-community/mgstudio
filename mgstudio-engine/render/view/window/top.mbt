@@ -19,6 +19,24 @@
 pub struct WindowRenderPlugin {}
 
 ///|
+pub suberror WindowSurfaceCreateError {
+  MissingContentViewHandle(@core.Entity, Int)
+  NativeSurfaceCreateFailed(@core.Entity, String)
+}
+
+///|
+pub fn WindowSurfaceCreateError::message(
+  self : WindowSurfaceCreateError,
+) -> String {
+  match self {
+    MissingContentViewHandle(entity, window) =>
+      "missing content view handle for window entity \{entity.to_bits()} host window \{window}"
+    NativeSurfaceCreateFailed(entity, message) =>
+      "failed to create surface for window entity \{entity.to_bits()}: \{message}"
+  }
+}
+
+///|
 pub fn WindowRenderPlugin::WindowRenderPlugin() -> WindowRenderPlugin {
   WindowRenderPlugin::{  }
 }
@@ -452,6 +470,28 @@ pub fn surface_configuration_for_window(
     desired_maximum_frame_latency_raw(window.desired_maximum_frame_latency),
   )
   .with_view_formats(view_formats)
+}
+
+///|
+pub fn create_surface_for_window(
+  window : ExtractedWindow,
+  render_instance : @renderer.RenderInstance,
+) -> @wgpu.Surface raise WindowSurfaceCreateError {
+  let ns_view = match window.handle.content_view_handle() {
+    Some(handle) => handle
+    None =>
+      raise WindowSurfaceCreateError::MissingContentViewHandle(
+        window.entity,
+        window.handle.window(),
+      )
+  }
+  render_instance.wgpu_instance().create_surface_macos_ns_view_u64(ns_view) catch {
+    err =>
+      raise WindowSurfaceCreateError::NativeSurfaceCreateFailed(
+        window.entity,
+        err.message(),
+      )
+  }
 }
 
 ///|
