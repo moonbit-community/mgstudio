@@ -13,9 +13,10 @@
 // limitations under the License.
 
 ///|
+/// Load a cubemap texture onto a cube like a skybox and cycle through different
+/// compressed texture formats.
 ///
-/// Exact parity target: Bevy camera/light/cubemap-swap flow with runtime
-/// compressed-format capability gating.
+/// Bevy source: `bevy/examples/3d/skybox.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -24,385 +25,228 @@ const PI : Float = 3.141592653589793F
 const CUBEMAP_SWAP_DELAY : Float = 3.0F
 
 ///|
-const CUBEMAP_COUNT : Int = 4
+priv struct CubemapAsset {
+  path : String
+  required_format : Int
+}
 
 ///|
-priv struct CubemapState {
+fn CubemapAsset::new(path : String, required_format : Int) -> CubemapAsset {
+  CubemapAsset::{ path, required_format }
+}
+
+///|
+let cubemaps : Array[CubemapAsset] = [
+  CubemapAsset::new(
+    "textures/Ryfjallet_cubemap.png",
+    @asset.COMPRESSED_IMAGE_FORMAT_NONE,
+  ),
+  CubemapAsset::new(
+    "textures/Ryfjallet_cubemap_astc4x4.ktx2",
+    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
+  ),
+  CubemapAsset::new(
+    "textures/Ryfjallet_cubemap_bc7.ktx2",
+    @asset.COMPRESSED_IMAGE_FORMAT_BC,
+  ),
+  CubemapAsset::new(
+    "textures/Ryfjallet_cubemap_etc2.ktx2",
+    @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
+  ),
+]
+
+///|
+priv struct Cubemap {
   mut is_loaded : Bool
   mut index : Int
-  mut image_handle : @asset.Handle[@asset.Image]?
-  mut supported_formats : Int
-  mut camera : @core.Entity?
-  mut next_swap_time : Float
-  mut directional_light : @core.Entity?
-  mut help_text : @text.TextHandle?
+  mut image_handle : @asset.Handle[@asset.Image]
 }
 
 ///|
-let cubemap_state : Ref[CubemapState] = Ref({
-  is_loaded: false,
-  index: 0,
-  image_handle: None,
-  supported_formats: 0,
-  camera: None,
-  next_swap_time: 0.0F,
-  directional_light: None,
-  help_text: None,
-})
+fn Cubemap::new(
+  is_loaded~ : Bool,
+  index~ : Int,
+  image_handle~ : @asset.Handle[@asset.Image],
+) -> Cubemap {
+  Cubemap::{ is_loaded, index, image_handle }
+}
 
 ///|
-fn cubemap_path(index : Int) -> String {
-  if index == 0 {
-    "textures/Ryfjallet_cubemap.png".to_string()
-  } else if index == 1 {
-    "textures/Ryfjallet_cubemap_astc4x4.ktx2".to_string()
-  } else if index == 2 {
-    "textures/Ryfjallet_cubemap_bc7.ktx2".to_string()
-  } else if index == 3 {
-    "textures/Ryfjallet_cubemap_etc2.ktx2".to_string()
+let cubemap_resource_key : @ecs.ResourceKey[Cubemap] = @ecs.register_resource(
+  debug_name="examples.skybox.Cubemap",
+)
+
+///|
+impl @app.Resource for Cubemap with fn resource() {
+  cubemap_resource_key
+}
+
+///|
+fn cubemap_asset(index : Int) -> CubemapAsset {
+  if index >= 0 && index < cubemaps.length() {
+    cubemaps[index]
   } else {
-    "textures/Ryfjallet_cubemap.png".to_string()
+    cubemaps[0]
   }
 }
 
 ///|
-fn cubemap_format_name(index : Int) -> String {
-  if index == 0 {
-    "PNG".to_string()
-  } else if index == 1 {
-    "ASTC 4x4 (KTX2)".to_string()
-  } else if index == 2 {
-    "BC7 (KTX2)".to_string()
-  } else if index == 3 {
-    "ETC2 (KTX2)".to_string()
-  } else {
-    "PNG".to_string()
-  }
-}
-
-///|
-fn cubemap_required_format(index : Int) -> Int {
-  if index == 0 {
-    @asset.COMPRESSED_IMAGE_FORMAT_NONE
-  } else if index == 1 {
-    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR
-  } else if index == 2 {
-    @asset.COMPRESSED_IMAGE_FORMAT_BC
-  } else if index == 3 {
-    @asset.COMPRESSED_IMAGE_FORMAT_ETC2
-  } else {
-    @asset.COMPRESSED_IMAGE_FORMAT_NONE
-  }
-}
-
-///|
-fn select_initial_cubemap_index(supported_formats : Int) -> Int {
-  for index in 0..<CUBEMAP_COUNT {
-    if @asset.asset_compressed_image_formats_contains(
-        supported_formats,
-        cubemap_required_format(index),
-      ) {
-      return index
-    }
-  }
-  0
-}
-
-///|
-fn supported_format_tags(supported_formats : Int) -> String {
-  let tags : Array[String] = ["PNG"]
-  if @asset.asset_compressed_image_formats_contains(
-      supported_formats,
-      @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
-    ) {
-    tags.push("ASTC")
-  }
-  if @asset.asset_compressed_image_formats_contains(
-      supported_formats,
-      @asset.COMPRESSED_IMAGE_FORMAT_BC,
-    ) {
-    tags.push("BC")
-  }
-  if @asset.asset_compressed_image_formats_contains(
-      supported_formats,
-      @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
-    ) {
-    tags.push("ETC2")
-  }
-  let mut out = ""
-  for i in 0..<tags.length() {
-    if i > 0 {
-      out = "\{out},"
-    }
-    out = out + tags[i]
-  }
-  out
-}
-
-///|
-fn supports_any_compressed_cubemap_format(supported_formats : Int) -> Bool {
-  @asset.asset_compressed_image_formats_contains(
-    supported_formats,
-    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
-  ) ||
-  @asset.asset_compressed_image_formats_contains(
-    supported_formats,
-    @asset.COMPRESSED_IMAGE_FORMAT_BC,
-  ) ||
-  @asset.asset_compressed_image_formats_contains(
-    supported_formats,
-    @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
-  )
-}
-
-///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @color.Color,
-  brightness : Float,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
-}
-
-///|
-fn update_help_text() -> Unit {
-  if cubemap_state.val.help_text is Some(handle) {
-    let status = if cubemap_state.val.is_loaded {
-      "Loaded"
-    } else {
-      "Loading..."
-    }
-    let capability_note = if supports_any_compressed_cubemap_format(
-        cubemap_state.val.supported_formats,
-      ) {
-      "Compressed cubemap cycling: enabled for runtime/GPU supported formats."
-    } else {
-      "Compressed cubemap cycling: no ASTC/BC/ETC2 support reported in this environment."
-    }
-    @text.text_set_content(
-      handle,
-      "skybox\nCurrent cubemap: \{cubemap_path(cubemap_state.val.index)}\nFormat: \{cubemap_format_name(cubemap_state.val.index)}\nRuntime supported formats: \{supported_format_tags(cubemap_state.val.supported_formats)}\nStatus: \{status}\n\nAuto-swap interval: 3s\nControls:\n  Hold left mouse: grab cursor and look around\n  M: toggle cursor grab\n  WASD/E/Q: move camera\n  Shift: run\n  Mouse wheel: adjust movement speed\n\{capability_note}",
-    )
-  }
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  cubemap_state.val.is_loaded = false
-  cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
-  cubemap_state.val.index = select_initial_cubemap_index(
-    cubemap_state.val.supported_formats,
-  )
-  cubemap_state.val.image_handle = None
-  cubemap_state.val.camera = None
-  cubemap_state.val.next_swap_time = 0.0F
-  cubemap_state.val.directional_light = None
-  cubemap_state.val.help_text = None
-
-  let directional_light = world.spawn_empty()
-  try! world.set_by_key(
-    directional_light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 32_000.0F, true),
-  )
-  try! world.set_by_key(
-    directional_light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(-PI / 4.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@color.Color::white(), 32_000.0F, true),
+        @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
+          @math.Quat::from_rotation_x(-PI / 4.0F),
+        ),
+      ),
     ),
   )
-  cubemap_state.val.directional_light = Some(directional_light)
 
-  set_global_ambient_light(
-    world,
-    @color.Color::new(210.0F / 255.0F, 220.0F / 255.0F, 240.0F / 255.0F, 1.0F),
-    1.0F,
-  )
-
-  let camera_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
-    @math.Vec3::zero(),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  )
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    camera_transform,
-  ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
-  )
-  // Keep the Bevy TAA component surface for parity; web runtimes may treat it
-  // as a marker/no-op until full backend parity is available.
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::FreeCamera(),
-  )
-  cubemap_state.val.camera = Some(camera)
-
-  let asset_server = @asset.AssetServer::new()
-  let initial_image = asset_server.load(cubemap_path(cubemap_state.val.index))
-  cubemap_state.val.image_handle = Some(initial_image)
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_skybox,
-    @pbr.Skybox::new(initial_image, 1000.0F),
-  )
-
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  let skybox_handle = asset_server.get().load_image(cubemaps[0].path)
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @pbr.Msaa::Off,
+        @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+        @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.FreeCamera::FreeCamera(),
+        @pbr.Skybox::new(skybox_handle, 1000.0F),
       ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  cubemap_state.val.help_text = Some(help_text)
-  update_help_text()
+    ),
+  )
+
+  commands.insert_resource(
+    @pbr.GlobalAmbientLight::new(
+      @color.Color::new(210.0F / 255.0F, 220.0F / 255.0F, 240.0F / 255.0F, 1.0F),
+      1.0F,
+    ),
+  )
+
+  commands.insert_resource(
+    Cubemap::new(is_loaded=false, index=0, image_handle=skybox_handle),
+  )
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in skybox example")
-  }
-}
-
-///|
-fn cycle_cubemap_asset(world : @ecs.World) -> Unit {
-  let now = world_time(world).elapsed_seconds()
-  if cubemap_state.val.next_swap_time == 0.0F {
-    cubemap_state.val.next_swap_time = now + CUBEMAP_SWAP_DELAY
+fn cycle_cubemap_asset(
+  time : @app.Res[@time.Time[Unit]],
+  next_swap : @app.Local[Float],
+  cubemap : @app.ResMut[Cubemap],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let now = time.get().elapsed_seconds()
+  if next_swap.get() == 0.0F {
+    next_swap.set(now + CUBEMAP_SWAP_DELAY)
     return
-  } else if now < cubemap_state.val.next_swap_time {
+  } else if now < next_swap.get() {
     return
   }
+  next_swap.set(next_swap.get() + CUBEMAP_SWAP_DELAY)
 
-  cubemap_state.val.next_swap_time = cubemap_state.val.next_swap_time +
-    CUBEMAP_SWAP_DELAY
-
-  cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
-  let supported_formats = cubemap_state.val.supported_formats
-  let mut new_index = cubemap_state.val.index
-  for _ in 0..<CUBEMAP_COUNT {
-    new_index = (new_index + 1) % CUBEMAP_COUNT
+  let supported_compressed_formats = @asset.asset_supported_compressed_image_formats()
+  let mut new_index = cubemap.peek().index
+  for _ in 0..<cubemaps.length() {
+    new_index = (new_index + 1) % cubemaps.length()
     if @asset.asset_compressed_image_formats_contains(
-        supported_formats,
-        cubemap_required_format(new_index),
+        supported_compressed_formats,
+        cubemap_asset(new_index).required_format,
       ) {
       break
     }
     println(
-      "Skipping unsupported cubemap format: \{cubemap_format_name(new_index)}",
+      "Skipping format which is not supported by current hardware: \{cubemap_asset(new_index).path}",
     )
   }
-  if new_index == cubemap_state.val.index {
+
+  if new_index == cubemap.peek().index {
     return
   }
 
-  cubemap_state.val.index = new_index
-  cubemap_state.val.is_loaded = false
-  let asset_server = @asset.AssetServer::new()
-  cubemap_state.val.image_handle = Some(
-    asset_server.load(cubemap_path(new_index)),
-  )
-  update_help_text()
+  cubemap.modify(fn(state) {
+    state.index = new_index
+    state.image_handle = asset_server
+      .get()
+      .load_image(cubemap_asset(new_index).path)
+    state.is_loaded = false
+  })
 }
 
 ///|
-fn asset_loaded(world : @ecs.World) -> Unit {
-  if cubemap_state.val.is_loaded {
+fn asset_loaded(
+  asset_server : @app.Res[@asset.AssetServer],
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+  cubemap : @app.ResMut[Cubemap],
+  skyboxes : @ecs.Query[@ecs.Write[@pbr.Skybox], @ecs.All],
+) -> Unit {
+  let cubemap_value = cubemap.peek()
+  if cubemap_value.is_loaded {
     return
   }
-  guard cubemap_state.val.image_handle is Some(handle) else { return }
-  if !@asset.asset_is_texture_loaded(handle) {
+  if !(asset_server.get().load_state(cubemap_value.image_handle)
+    is @asset.LoadState::Loaded) {
     return
   }
-  let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
-  match world.get_resource_mut(image_assets_key) {
-    Some(images_ref) =>
-      images_ref.modify(fn(images) {
-        match images.get_mut(handle) {
-          Some(image) =>
-            if image.array_layout() is None {
-              let layers = image.height() / image.width()
-              if image.reinterpret_stacked_2d_as_array(layers) {
-                image.set_texture_view_dimension(
-                  Some(@asset.ImageTextureViewDimension::Cube),
-                )
-              } else {
-                abort(
-                  "skybox image must be a stacked 2D texture with evenly divisible layers",
-                )
-              }
-            }
-          None => abort("skybox image asset missing after texture load")
+
+  let image_ready = images.modify(fn(store) {
+    match store.get_mut(cubemap_value.image_handle) {
+      Some(image) => {
+        if image.array_layout() is None {
+          let layers = image.height() / image.width()
+          if image.reinterpret_stacked_2d_as_array(layers) {
+            image.set_texture_view_dimension(
+              Some(@asset.ImageTextureViewDimension::Cube),
+            )
+          } else {
+            abort(
+              "skybox image must be a stacked 2D texture with evenly divisible layers",
+            )
+          }
         }
-      })
-    None => abort("Assets<Image> resource missing in skybox example")
-  }
-  guard cubemap_state.val.camera is Some(camera_entity) else { return }
-  if (try! world.get_by_key(camera_entity, @pbr.ecs_key_skybox)) is Some(skybox) {
-    println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
-    try! (world.replace(
-      camera_entity,
-      @pbr.ecs_key_skybox,
-      skybox.with_image(Some(handle)),
-    )
-    |> ignore)
-  }
-
-  cubemap_state.val.is_loaded = true
-  update_help_text()
-}
-
-///|
-fn animate_light_direction(world : @ecs.World) -> Unit {
-  guard cubemap_state.val.directional_light is Some(light_entity) else {
+        true
+      }
+      None => false
+    }
+  })
+  if !image_ready {
     return
   }
-  if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
-    is Some(transform) {
-    let next_rotation = transform.rotation
-      .mul(
-        @math.Quat::from_rotation_y(world_time(world).delta_seconds() * 0.5F),
-      )
-      .normalize()
-    try! (world.replace(
-      light_entity,
-      @transform.ecs_key_transform,
-      transform.with_rotation(next_rotation),
-    )
-    |> ignore)
-  }
+
+  println("Swapping to \{cubemap_asset(cubemap_value.index).path}")
+  try! skyboxes.view(fn(_entity, skybox) {
+    skybox.set(skybox.peek().with_image(Some(cubemap_value.image_handle)))
+  })
+  cubemap.modify(fn(state) { state.is_loaded = true })
 }
 
 ///|
-fn update(world : @ecs.World) -> Unit {
-  cycle_cubemap_asset(world)
-  asset_loaded(world)
-  animate_light_direction(world)
+fn animate_light_direction(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@pbr.DirectionalLight],
+  ],
+) -> Unit {
+  let delta = time.get().delta_secs() * 0.5F
+  try! query.view(fn(_entity, transform) {
+    transform.set(
+      transform
+      .peek()
+      .with_rotation(
+        transform.peek().rotation
+        .mul(@math.Quat::from_rotation_y(delta))
+        .normalize(),
+      ),
+    )
+  })
 }
 
 ///|
@@ -410,7 +254,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update)
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param4(@app.Update, cycle_cubemap_asset)
+  .add_systems_param4(@app.Update, asset_loaded)
+  .add_systems_param2(@app.Update, animate_light_direction)
   .run()
 }
