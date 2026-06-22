@@ -42,6 +42,7 @@ struct Mesh3dPipelineCacheEntry {
   cull_mode : Int
   blend_kind : Int
   skinned : Bool
+  lightmapped : Bool
   forward_decal : Bool
   tonemap_in_shader : Bool
   tonemapping_mode : Int
@@ -65,6 +66,7 @@ fn mesh3d_pipeline_get(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
@@ -75,6 +77,7 @@ fn mesh3d_pipeline_get(
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
+      entry.lightmapped == lightmapped &&
       entry.forward_decal == forward_decal &&
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.tonemapping_mode == tonemapping_mode &&
@@ -116,6 +119,7 @@ fn mesh3d_pipeline_failed(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> Bool {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
@@ -126,6 +130,7 @@ fn mesh3d_pipeline_failed(
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
+      entry.lightmapped == lightmapped &&
       entry.forward_decal == forward_decal &&
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.tonemapping_mode == tonemapping_mode &&
@@ -159,6 +164,7 @@ fn mesh3d_pipeline_set(
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
   pipeline : @wgpu.RenderPipeline,
+  lightmapped? : Bool = false,
 ) -> Unit {
   backend.mesh3d_pipeline_cache.push({
     color_format,
@@ -168,6 +174,7 @@ fn mesh3d_pipeline_set(
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,
+    lightmapped,
     forward_decal,
     tonemap_in_shader,
     tonemapping_mode,
@@ -194,11 +201,12 @@ fn mesh3d_pipeline_set_failed(
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
   message : String,
+  lightmapped? : Bool = false,
 ) -> Unit {
   if mesh3d_pipeline_get(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     )
     is Some(_) {
     return
@@ -206,7 +214,7 @@ fn mesh3d_pipeline_set_failed(
   if mesh3d_pipeline_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     ) {
     return
   }
@@ -218,6 +226,7 @@ fn mesh3d_pipeline_set_failed(
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,
+    lightmapped,
     forward_decal,
     tonemap_in_shader,
     tonemapping_mode,

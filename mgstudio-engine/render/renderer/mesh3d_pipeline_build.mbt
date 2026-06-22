@@ -204,6 +204,7 @@ fn mesh3d_forward_shader_defines(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> @hashmap.HashMap[String, Bool] {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("VERTEX_POSITIONS", true)
@@ -215,6 +216,9 @@ fn mesh3d_forward_shader_defines(
   defines.set("MAY_DISCARD", true)
   if skinned {
     defines.set("SKINNED", true)
+  }
+  if lightmapped {
+    defines.set("LIGHTMAP", true)
   }
   match shadow_filter_method {
     0 => defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
@@ -239,10 +243,12 @@ fn mesh3d_forward_shader_defines_from_descriptor(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> @hashmap.HashMap[String, Bool] {
   guard descriptor is Some(desc) else {
     return mesh3d_forward_shader_defines(
-      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method, lightmapped~,
     )
   }
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
@@ -262,6 +268,9 @@ fn mesh3d_forward_shader_defines_from_descriptor(
   }
   if skinned {
     defines.set("SKINNED", true)
+  }
+  if lightmapped {
+    defines.set("LIGHTMAP", true)
   }
   match shadow_filter_method {
     0 => defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
@@ -443,13 +452,14 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
   shader_path : String,
+  lightmapped? : Bool = false,
 ) -> String raise GpuBackendError {
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
     mesh3d_forward_shader_defines_from_descriptor(
       descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     ),
     mesh3d_forward_value_defines(descriptor~),
   )
@@ -498,6 +508,7 @@ fn mesh3d_create_forward_shader_modules(
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
   label_prefix : String,
+  lightmapped? : Bool = false,
 ) -> Mesh3dForwardShaderModules raise GpuBackendError {
   let vertex_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
@@ -508,6 +519,7 @@ fn mesh3d_create_forward_shader_modules(
     deband_dither_enabled,
     shadow_filter_method,
     MESH3D_FORWARD_VERTEX_SHADER_PATH,
+    lightmapped~,
   )
   let fragment_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
@@ -518,6 +530,7 @@ fn mesh3d_create_forward_shader_modules(
     deband_dither_enabled,
     shadow_filter_method,
     MESH3D_FORWARD_SHADER_PATH,
+    lightmapped~,
   )
   let vertex = mesh3d_create_forward_shader_module(
     backend,
@@ -1557,9 +1570,11 @@ fn mesh3d_create_empty_bind_group(
 }
 
 ///|
-fn mesh3d_default_draw_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor {
+fn mesh3d_default_draw_bind_group_layout_descriptor(
+  lightmapped? : Bool = false,
+) -> @render_resource.BindGroupLayoutDescriptor {
   let view_stage = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
-  @render_resource.BindGroupLayoutDescriptor::new("mesh_layout", [
+  let entries = [
     @render_resource.BindGroupLayoutEntry::new(
       0,
       view_stage,
@@ -1578,7 +1593,33 @@ fn mesh3d_default_draw_bind_group_layout_descriptor() -> @render_resource.BindGr
         MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
       ),
     ),
-  ])
+  ]
+  if lightmapped {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        4,
+        @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+        @render_resource.BindingType::TextureBinding(
+          @render_resource.TextureSampleType::Float(true),
+          @render_resource.TextureViewDimension::D2,
+          false,
+        ),
+      ),
+    )
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        5,
+        @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+        @render_resource.BindingType::SamplerBinding(
+          @render_resource.SamplerBindingType::Filtering,
+        ),
+      ),
+    )
+  }
+  @render_resource.BindGroupLayoutDescriptor::new(
+    if lightmapped { "lightmapped_mesh_layout" } else { "mesh_layout" },
+    entries,
+  )
 }
 
 ///|
@@ -1842,10 +1883,12 @@ fn mesh3d_material_pipeline_layout_cache_get(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
   view_layout_key_bits : UInt,
+  draw_layout_lightmapped : Bool,
 ) -> Mesh3dMaterialPipelineLayoutCacheEntry? {
   for entry in backend.mesh3d_material_pipeline_layout_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
-      entry.view_layout_key_bits == view_layout_key_bits {
+      entry.view_layout_key_bits == view_layout_key_bits &&
+      entry.draw_layout_lightmapped == draw_layout_lightmapped {
       return Some(entry)
     }
   }
@@ -1858,19 +1901,32 @@ fn mesh3d_material_pipeline_layout_get_or_create(
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+  default_lightmapped? : Bool = false,
 ) -> Mesh3dMaterialPipelineLayoutCacheEntry raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
   let view_layout_key_bits = default_view_layout_key.bits()
   if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
-    if view_layout_key_bits != 0U {
+    if view_layout_key_bits != 0U || default_lightmapped {
       if mesh3d_material_pipeline_layout_cache_get(
-          backend, material_pipeline_id, view_layout_key_bits,
+          backend, material_pipeline_id, view_layout_key_bits, default_lightmapped,
         )
         is Some(entry) {
         return entry
       }
-      guard backend.mesh3d_bgl_draw is Some(draw_bgl) else {
-        fatal("wgpu: missing mesh3d draw bind group layout")
+      let draw_layout_descriptor = mesh3d_default_draw_bind_group_layout_descriptor(
+        lightmapped=default_lightmapped,
+      )
+      let draw_bgl = if default_lightmapped {
+        mesh3d_create_bind_group_layout_from_descriptor(
+          backend,
+          draw_layout_descriptor,
+          "default_draw_lightmapped",
+        )
+      } else {
+        guard backend.mesh3d_bgl_draw is Some(base_draw_bgl) else {
+          fatal("wgpu: missing mesh3d draw bind group layout")
+        }
+        base_draw_bgl
       }
       guard backend.mesh3d_bgl_material is Some(material_bgl) else {
         fatal("wgpu: missing mesh3d material bind group layout")
@@ -1903,11 +1959,12 @@ fn mesh3d_material_pipeline_layout_get_or_create(
       let entry = {
         material_pipeline_id,
         view_layout_key_bits,
+        draw_layout_lightmapped: default_lightmapped,
         view_bind_group_layout_descriptor: mesh_view_layout.main_bind_group_layout_descriptor(),
         view_bind_group_layout: view_bgl,
         binding_arrays_bind_group_layout_descriptor: mesh_view_layout.binding_array_bind_group_layout_descriptor(),
         binding_arrays_bind_group_layout: binding_arrays_bgl,
-        draw_bind_group_layout_descriptor: mesh3d_default_draw_bind_group_layout_descriptor(),
+        draw_bind_group_layout_descriptor: draw_layout_descriptor,
         draw_bind_group_layout: draw_bgl,
         material_bind_group_layout: material_bgl,
         pipeline_layout,
@@ -1934,6 +1991,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     return {
       material_pipeline_id,
       view_layout_key_bits,
+      draw_layout_lightmapped: false,
       view_bind_group_layout_descriptor: mesh_view_layout.main_bind_group_layout_descriptor(),
       view_bind_group_layout: view_bgl,
       binding_arrays_bind_group_layout_descriptor: mesh_view_layout.binding_array_bind_group_layout_descriptor(),
@@ -1945,7 +2003,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     }
   }
   if mesh3d_material_pipeline_layout_cache_get(
-      backend, material_pipeline_id, 0U,
+      backend, material_pipeline_id, 0U, false,
     )
     is Some(entry) {
     return entry
@@ -2004,6 +2062,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
   let entry = {
     material_pipeline_id,
     view_layout_key_bits: 0U,
+    draw_layout_lightmapped: false,
     view_bind_group_layout_descriptor: view_layout_descriptor,
     view_bind_group_layout: view_bgl,
     binding_arrays_bind_group_layout_descriptor: binding_arrays_layout_descriptor,
@@ -2134,6 +2193,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> Unit raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
@@ -2141,7 +2201,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if mesh3d_pipeline_get(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     )
     is Some(_) {
     return
@@ -2149,7 +2209,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if mesh3d_pipeline_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     ) {
     return
   }
@@ -2162,18 +2222,19 @@ fn ensure_mesh3d_pipeline_rgba8(
     default_view_layout_key=mesh3d_default_mesh_view_layout_key(
       tonemap_in_shader~,
     ),
+    default_lightmapped=lightmapped,
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(
-    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, "mesh3d rgba8",
+    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method, "mesh3d rgba8", lightmapped~,
   ) catch {
     ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
         safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message,
+        deband_dither_enabled, shadow_filter_method, message, lightmapped~,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -2222,7 +2283,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     mesh3d_pipeline_set_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message,
+      shadow_filter_method, message, lightmapped~,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -2239,7 +2300,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   mesh3d_pipeline_set(
     backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
     blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, pipeline,
+    shadow_filter_method, pipeline, lightmapped~,
   )
   modules.release()
 }
@@ -2260,6 +2321,7 @@ fn ensure_mesh3d_pipeline_surface(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
   // surface-format specializations.
@@ -2272,7 +2334,7 @@ fn ensure_mesh3d_pipeline_surface(
   if mesh3d_pipeline_get(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     )
     is Some(_) {
     return
@@ -2280,7 +2342,7 @@ fn ensure_mesh3d_pipeline_surface(
   if mesh3d_pipeline_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      shadow_filter_method, lightmapped~,
     ) {
     return
   }
@@ -2293,18 +2355,19 @@ fn ensure_mesh3d_pipeline_surface(
     default_view_layout_key=mesh3d_default_mesh_view_layout_key(
       tonemap_in_shader~,
     ),
+    default_lightmapped=lightmapped,
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(
-    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, "mesh3d surface",
+    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method, "mesh3d surface", lightmapped~,
   ) catch {
     ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
         safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message,
+        deband_dither_enabled, shadow_filter_method, message, lightmapped~,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -2353,7 +2416,7 @@ fn ensure_mesh3d_pipeline_surface(
     mesh3d_pipeline_set_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
       blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message,
+      shadow_filter_method, message, lightmapped~,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -2370,7 +2433,7 @@ fn ensure_mesh3d_pipeline_surface(
   mesh3d_pipeline_set(
     backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
     blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, pipeline,
+    shadow_filter_method, pipeline, lightmapped~,
   )
   modules.release()
 }
@@ -2391,6 +2454,7 @@ fn mesh3d_pipeline_for_current_pass(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  lightmapped? : Bool = false,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let material_descriptor = mesh3d_material_pipeline_descriptor_find(
     backend, material_pipeline_id,
@@ -2435,7 +2499,7 @@ fn mesh3d_pipeline_for_current_pass(
       ensure_mesh3d_pipeline_surface(
         backend, format, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
         cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method,
+        deband_dither_enabled, shadow_filter_method, lightmapped~,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -2451,6 +2515,7 @@ fn mesh3d_pipeline_for_current_pass(
         tonemapping_mode,
         deband_dither_enabled,
         shadow_filter_method,
+        lightmapped~,
       )
     }
     _ => ()
@@ -2458,7 +2523,7 @@ fn mesh3d_pipeline_for_current_pass(
   ensure_mesh3d_pipeline_rgba8(
     backend, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
     cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-    deband_dither_enabled, shadow_filter_method,
+    deband_dither_enabled, shadow_filter_method, lightmapped~,
   )
   mesh3d_pipeline_get(
     backend,
@@ -2474,6 +2539,7 @@ fn mesh3d_pipeline_for_current_pass(
     tonemapping_mode,
     deband_dither_enabled,
     shadow_filter_method,
+    lightmapped~,
   )
 }
 

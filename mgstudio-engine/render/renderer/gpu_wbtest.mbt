@@ -1318,6 +1318,50 @@ test "renderer: default mesh3d draw descriptor matches storage plus skin layout"
 }
 
 ///|
+test "renderer: lightmapped mesh3d draw descriptor matches Bevy mesh layout" {
+  let descriptor = mesh3d_default_draw_bind_group_layout_descriptor(
+    lightmapped=true,
+  )
+  inspect(descriptor.label(), content="lightmapped_mesh_layout")
+  inspect(descriptor.entries().length(), content="4")
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 4),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 5),
+    content="true",
+  )
+  match descriptor.entries()[2].kind() {
+    @render_resource.BindingType::TextureBinding(
+      @render_resource.TextureSampleType::Float(true),
+      @render_resource.TextureViewDimension::D2,
+      false
+    ) => ()
+    _ => fail("expected lightmap texture binding")
+  }
+  match descriptor.entries()[3].kind() {
+    @render_resource.BindingType::SamplerBinding(
+      @render_resource.SamplerBindingType::Filtering
+    ) => ()
+    _ => fail("expected lightmap sampler binding")
+  }
+}
+
+///|
+test "renderer: lightmapped default forward shader defines LIGHTMAP" {
+  let defines = mesh3d_forward_shader_defines(
+    false,
+    false,
+    0,
+    false,
+    0,
+    lightmapped=true,
+  )
+  debug_inspect(defines.get("LIGHTMAP"), content="Some(true)")
+}
+
+///|
 test "renderer: mesh3d draw dynamic offsets follow morph binding order" {
   let descriptor = @render_resource.BindGroupLayoutDescriptor::new("mesh", [
     @render_resource.BindGroupLayoutEntry::new(
