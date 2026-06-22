@@ -542,6 +542,37 @@ test "render plugin: initializes render state as not ready" {
 }
 
 ///|
+test "render plugin: future resources unpack during plugin finish" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  debug_inspect(
+    app.world().resource(future_render_resources_resource_key).is_present(),
+    content="true",
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    render_world.resource(render_device_resource_key).is_present(),
+    content="false",
+  )
+
+  let app = app.finish()
+  debug_inspect(
+    app.world().resource(future_render_resources_resource_key).is_present(),
+    content="false",
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    render_world.resource(render_device_resource_key).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    render_world.resource(@render_view.ViewUniforms::resource()).is_present(),
+    content="true",
+  )
+}
+
+///|
 test "render recovery: reinitializing consumes future render resources before startup" {
   let backend = @renderer.GpuBackend::new()
   let resources = RenderResources::from_backend(backend)
@@ -684,6 +715,34 @@ test "render error handler: recover policy creates future resources and restarts
   debug_inspect(renderer_is_ready(render_world), content="true")
   debug_inspect(
     render_world.resource(pending_command_buffers_resource_key).is_present(),
+    content="true",
+  )
+}
+
+///|
+test "render error handler: recover default creation enters reinitializing" {
+  let main_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  main_world.insert_resource(
+    render_error_handler_resource_key,
+    RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
+      RenderErrorPolicy::Recover(RenderCreation::default())
+    }),
+  )
+  render_world.insert_resource(
+    render_state_resource_key,
+    RenderState::errored(
+      RenderError::new(RenderErrorType::DeviceLost, "device lost"),
+    ),
+  )
+
+  update_render_state(main_world, render_world)
+  let state_after_error = render_world
+    .get_resource(render_state_resource_key)
+    .unwrap()
+  debug_inspect(state_after_error is Reinitializing, content="true")
+  debug_inspect(
+    main_world.resource(future_render_resources_resource_key).is_present(),
     content="true",
   )
 }

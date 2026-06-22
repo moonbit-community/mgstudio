@@ -179,6 +179,11 @@ fn FutureRenderResources::take(
 }
 
 ///|
+fn FutureRenderResources::is_some(self : FutureRenderResources) -> Bool {
+  self.resources is Some(_)
+}
+
+///|
 let future_render_resources_resource_key : @ecs.ResourceKey[
   FutureRenderResources,
 ] = @ecs.register_resource(debug_name="mgstudio_render::FutureRenderResources")
@@ -188,15 +193,60 @@ fn insert_future_render_resources(
   render_creation : RenderCreation,
   main_world : @ecs.World,
 ) -> Bool {
+  fn insert_resources(resources : RenderResources) -> Unit {
+    main_world.insert_resource(future_render_resources_resource_key, FutureRenderResources::{
+      resources: Some(resources),
+    })
+  }
   match render_creation {
     Manual(resources) => {
-      main_world.insert_resource(future_render_resources_resource_key, FutureRenderResources::{
-        resources: Some(resources),
-      })
+      insert_resources(resources)
       true
     }
-    Automatic(_) => false
+    Automatic(_) =>
+      match primary_render_resources() {
+        Some(resources) => {
+          insert_resources(resources)
+          true
+        }
+        None => false
+      }
   }
+}
+
+///|
+fn future_render_resources_ready(main_world : @ecs.World) -> Bool {
+  match main_world.get_resource(future_render_resources_resource_key) {
+    Some(resources) => resources.is_some()
+    None => true
+  }
+}
+
+///|
+fn primary_render_resources() -> RenderResources? {
+  let device = match @renderer.primary_render_device() {
+    Some(value) => value
+    None => return None
+  }
+  let queue = match @renderer.primary_render_queue() {
+    Some(value) => value
+    None => return None
+  }
+  let adapter_info = match @renderer.primary_render_adapter_info() {
+    Some(value) => value
+    None => return None
+  }
+  let render_adapter = match @renderer.primary_render_adapter() {
+    Some(value) => value
+    None => return None
+  }
+  let instance = match @renderer.primary_render_instance() {
+    Some(value) => value
+    None => return None
+  }
+  Some(
+    RenderResources::new(device, queue, adapter_info, render_adapter, instance),
+  )
 }
 
 ///|

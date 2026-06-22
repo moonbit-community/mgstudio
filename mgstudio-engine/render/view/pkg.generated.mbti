@@ -27,6 +27,8 @@ pub let ecs_key_view_uniform_offset : @ecs.ComponentKey[ViewUniformOffset]
 
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
 
+pub fn init_view_uniforms(@ecs.World) -> Unit
+
 pub fn normalize_bgra8_for_render_target(target_is_window~ : Bool, UInt) -> UInt
 
 pub let render_shadow_lod_origin_resource_key : @ecs.ResourceKey[RenderShadowLodOrigin]
@@ -106,6 +108,11 @@ pub fn RetainedViewEntity::auxiliary_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::main_entity(Self) -> @core.Entity
 pub fn RetainedViewEntity::new(@core.Entity, auxiliary_entity? : @core.Entity?, subview_index? : Int) -> Self
 pub fn RetainedViewEntity::subview_index(Self) -> Int
+
+pub struct ViewPlugin {
+}
+pub fn ViewPlugin::ViewPlugin() -> Self
+pub impl @app.Plugin for ViewPlugin
 
 pub(all) struct ViewUniform {
   clip_from_world : ViewUniformMat4

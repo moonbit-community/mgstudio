@@ -33,13 +33,28 @@ test "pbr light probe: uniform mirrors Bevy light probe capacities" {
 }
 
 ///|
-test "pbr light probe: plugin initializes plugin state and uniform resources" {
-  let app = light_probe_plugin(@app.App::new(@ecs.World::new()))
+test "pbr light probe: plugin initializes main state and render buffer resource" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(LightProbePlugin::LightProbePlugin())
   inspect(
     app.contains_resource(ecs_key_light_probe_plugin_state),
     content="true",
   )
-  inspect(app.contains_resource(ecs_key_light_probes_buffer), content="true")
+  inspect(app.contains_resource(ecs_key_light_probes_buffer), content="false")
+  let render_sub_app = app
+    .sub_app(@app.RenderApp)
+    .set_update_schedule(Some(@render.render_startup_schedule_stage()))
+  let render_world = render_sub_app.world()
+  inspect(
+    render_world.resource(ecs_key_light_probes_buffer).is_present(),
+    content="false",
+  )
+  ignore(render_sub_app.run_startup())
+  inspect(
+    render_world.resource(ecs_key_light_probes_buffer).is_present(),
+    content="true",
+  )
 }
 
 ///|

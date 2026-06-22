@@ -36,6 +36,8 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProb
 
 pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
 
+pub fn init_light_probes_buffer(@ecs.World) -> Unit
+
 pub fn light_probe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn light_probe_plugin_state_with_extracted_probe_count(LightProbePluginState, Int) -> LightProbePluginState

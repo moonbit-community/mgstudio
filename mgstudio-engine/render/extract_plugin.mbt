@@ -104,11 +104,6 @@ fn render_plugin_install_with(
   ignore(insert_future_render_resources(plugin.render_creation(), next.world()))
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
-      match take_future_render_resources(next.world()) {
-        Some(resources) =>
-          resources.unpack_into(next.world(), render_sub_app.world())
-        None => ()
-      }
       init_render_state(render_sub_app.world())
       render_sub_app
       .world()
@@ -215,6 +210,7 @@ fn render_plugin_install_with(
     @post_process_bloom.register_embedded_wgsl_sources()
     @post_process_effect_stack.register_embedded_wgsl_sources()
     @post_process_motion_blur.register_embedded_wgsl_sources()
+    next = next.add_plugins(@render_view.ViewPlugin::ViewPlugin())
     next = next.add_plugins(
       @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),
     )
@@ -230,6 +226,33 @@ fn render_plugin_install_with(
 
     })
   }
+  next
+}
+
+///|
+fn render_plugin_ready_with(
+  app : @app.App[@ecs.World],
+  _plugin : RenderPlugin,
+) -> Bool {
+  future_render_resources_ready(app.world())
+}
+
+///|
+fn render_plugin_finish_with(
+  app : @app.App[@ecs.World],
+  _plugin : RenderPlugin,
+) -> @app.App[@ecs.World] {
+  let next = app
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      match take_future_render_resources(next.world()) {
+        Some(resources) =>
+          resources.unpack_into(next.world(), render_sub_app.world())
+        None => ()
+      }
+      render_sub_app
+    }),
+  )
   next
 }
 

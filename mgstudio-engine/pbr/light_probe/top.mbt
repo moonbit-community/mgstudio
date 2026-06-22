@@ -75,9 +75,28 @@ pub fn light_probe_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : LightProbePlugin,
 ) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { LightProbePluginState::LightProbePluginState() })
-  .init_resource(fn() { LightProbesBuffer::LightProbesBuffer() })
+  let app = app.init_resource(fn() {
+    LightProbePluginState::LightProbePluginState()
+  })
+  @render.try_with_render_app(app, fn(render_app) {
+    render_app.add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(init_light_probes_buffer).named(
+        "mgstudio_pbr::init_light_probes_buffer",
+      ),
+    )
+  })
+}
+
+///|
+pub fn init_light_probes_buffer(world : @ecs.World) -> Unit {
+  if world.resource(ecs_key_light_probes_buffer).is_present() {
+    return
+  }
+  world.insert_resource(
+    ecs_key_light_probes_buffer,
+    LightProbesBuffer::LightProbesBuffer(),
+  )
 }
 
 ///|

@@ -105,3 +105,13 @@ pub impl @app.Plugin for RenderPlugin with fn name(_self) {
 pub impl @app.Plugin for RenderPlugin with fn build(self, app) {
   render_plugin_install_with(app, self)
 }
+
+///|
+pub impl @app.Plugin for RenderPlugin with fn ready(self, app) {
+  render_plugin_ready_with(app, self)
+}
+
+///|
+pub impl @app.Plugin for RenderPlugin with fn finish(self, app) {
+  render_plugin_finish_with(app, self)
+}

@@ -16,6 +16,39 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
 
 ///|
+const VIEW_PLUGIN_NAME : String = "mgstudio.render.view.ViewPlugin"
+
+///|
+pub struct ViewPlugin {}
+
+///|
+pub fn ViewPlugin::ViewPlugin() -> ViewPlugin {
+  ViewPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for ViewPlugin with fn name(_self) {
+  VIEW_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for ViewPlugin with fn build(_self, app) {
+  app
+}
+
+///|
+pub impl @app.Plugin for ViewPlugin with fn finish(_self, app) {
+  let next = app
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_app) {
+      init_view_uniforms(render_app.world())
+      render_app
+    }),
+  )
+  next
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/view/mod.rs`.
 pub(all) enum Msaa {
   Off
@@ -402,6 +435,17 @@ pub fn ViewUniforms::binding(self : ViewUniforms) -> @wgpu.Buffer? {
 ///|
 pub fn ViewUniforms::gpu_capacity(self : ViewUniforms) -> UInt64 {
   self.gpu_capacity
+}
+
+///|
+pub fn init_view_uniforms(world : @ecs.World) -> Unit {
+  if world.resource(view_uniforms_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    view_uniforms_resource_key,
+    ViewUniforms::ViewUniforms(),
+  )
 }
 
 ///|
