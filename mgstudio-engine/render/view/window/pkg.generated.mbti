@@ -37,6 +37,8 @@ pub fn need_surface_configuration(ExtractedWindows, WindowSurfaces) -> Bool
 
 pub fn preferred_surface_format(Array[@wgpu_mbt.TextureFormat]) -> @wgpu_mbt.TextureFormat
 
+pub fn prepare_windows(ExtractedWindows, WindowSurfaces, @renderer.RenderAdapter, @renderer.RenderDevice, @camera_sort.SortedCameras) -> Unit raise WindowSurfaceCreateError
+
 pub fn present_mode_fallbacks_raw(@Milky2018/mgstudio/window.PresentMode) -> Array[UInt]
 
 pub fn present_mode_raw(ExtractedWindow, Array[UInt]) -> UInt
@@ -99,7 +101,7 @@ pub struct ExtractedWindow {
   desired_maximum_frame_latency : Int?
   mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
-  swap_chain_texture_format : @wgpu_mbt.TextureFormat?
+  mut swap_chain_texture_format : @wgpu_mbt.TextureFormat?
   mut swap_chain_texture_view_format : @wgpu_mbt.TextureFormat?
   mut size_changed : Bool
   mut present_mode_changed : Bool

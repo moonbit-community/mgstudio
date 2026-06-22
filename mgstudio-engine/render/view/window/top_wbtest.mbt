@@ -298,6 +298,40 @@ test "render view window: camera target gating follows Bevy prepare_windows cond
 }
 
 ///|
+test "render view window: surface acquire statuses follow prepare_windows branches" {
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    surface_texture_status_is_success(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    surface_texture_status_name(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED,
+    ),
+    content="\"Outdated\"",
+  )
+  debug_inspect(
+    surface_texture_status_name(
+      @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED,
+    ),
+    content="\"Occluded\"",
+  )
+}
+
+///|
 test "render view window: present mode fallbacks follow Bevy ordering" {
   let auto_vsync = present_mode_fallbacks_raw(
     @window_pkg.PresentMode::AutoVsync,

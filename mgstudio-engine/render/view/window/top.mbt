@@ -67,7 +67,7 @@ pub struct ExtractedWindow {
   desired_maximum_frame_latency : Int?
   mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
-  swap_chain_texture_format : @wgpu.TextureFormat?
+  mut swap_chain_texture_format : @wgpu.TextureFormat?
   mut swap_chain_texture_view_format : @wgpu.TextureFormat?
   mut size_changed : Bool
   mut present_mode_changed : Bool
@@ -314,6 +314,111 @@ pub fn extracted_window_is_camera_target(
     }
   }
   false
+}
+
+///|
+fn surface_texture_status_is_success(status : UInt) -> Bool {
+  status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL ||
+  status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL
+}
+
+///|
+fn surface_texture_status_name(status : UInt) -> String {
+  if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_OPTIMAL {
+    "SuccessOptimal"
+  } else if status ==
+    @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_SUCCESS_SUBOPTIMAL {
+    "SuccessSuboptimal"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_TIMEOUT {
+    "Timeout"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
+    "Outdated"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_LOST {
+    "Lost"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED {
+    "Occluded"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_DEVICE_LOST {
+    "DeviceLost"
+  } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_ERROR {
+    "Error"
+  } else {
+    "Unknown"
+  }
+}
+
+///|
+fn set_window_swapchain_texture_if_success(
+  window : ExtractedWindow,
+  frame : @wgpu.SurfaceTexture,
+) -> Bool {
+  let status = frame.status()
+  if surface_texture_status_is_success(status) {
+    window.set_swapchain_texture(frame)
+    true
+  } else {
+    frame.release()
+    false
+  }
+}
+
+///|
+pub fn prepare_windows(
+  windows : ExtractedWindows,
+  window_surfaces : WindowSurfaces,
+  render_adapter : @renderer.RenderAdapter,
+  render_device : @renderer.RenderDevice,
+  sorted_cameras : @render_camera_sort.SortedCameras,
+) -> Unit raise WindowSurfaceCreateError {
+  let entities : Array[@core.Entity] = []
+  for entity in windows.windows.keys() {
+    entities.push(entity)
+  }
+  for entity in entities {
+    guard windows.get(entity) is Some(window) else { continue }
+    if !extracted_window_is_camera_target(windows, sorted_cameras, window) &&
+      !window.needs_initial_present {
+      continue
+    }
+    guard window_surfaces.surface_data(window.entity) is Some(surface_data) else {
+      continue
+    }
+    if window.has_swapchain_texture() &&
+      !window.size_changed &&
+      !window.present_mode_changed {
+      continue
+    }
+    let frame = surface_data.surface.get_current_texture()
+    let status = frame.status()
+    if surface_texture_status_is_success(status) {
+      window.set_swapchain_texture(frame)
+    } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
+      frame.release()
+      configure_surface_for_window(
+        window.entity,
+        surface_data.surface,
+        surface_data.configuration,
+        render_adapter,
+        render_device,
+      )
+      let retry_frame = surface_data.surface.get_current_texture()
+      let retry_status = retry_frame.status()
+      if !set_window_swapchain_texture_if_success(window, retry_frame) {
+        @app.log_warn(
+          "Couldn't get swap chain texture after configuring. Cause: '\{surface_texture_status_name(retry_status)}'",
+        )
+        continue
+      }
+    } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OCCLUDED {
+      frame.release()
+    } else {
+      @app.log_error(
+        "Couldn't get swap chain texture: \{surface_texture_status_name(status)}",
+      )
+      frame.release()
+    }
+    window.swap_chain_texture_format = Some(surface_data.configuration.format)
+    windows.insert(entity, window)
+  }
 }
 
 ///|
