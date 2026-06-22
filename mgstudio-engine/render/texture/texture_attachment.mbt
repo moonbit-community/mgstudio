@@ -50,7 +50,9 @@ pub fn TextureAttachment::layer(self : TextureAttachment) -> Int {
 pub fn TextureAttachment::as_manual_texture_view(
   self : TextureAttachment,
 ) -> ManualTextureViewHandle {
-  self.texture_id + self.mip_level + self.layer
+  ManualTextureViewHandle::new(
+    self.texture_id * 10_000 + self.mip_level * 100 + self.layer,
+  )
 }
 
 ///|

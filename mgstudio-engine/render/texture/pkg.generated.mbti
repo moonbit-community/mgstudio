@@ -3,10 +3,13 @@ package "Milky2018/mgstudio/render/texture"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/render_target",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/wgpu_mbt",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -72,7 +75,9 @@ pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, neares
 
 pub fn host_gpu_create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 
-pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
+pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> @render_target.ManualTextureViewHandle
+
+pub let manual_texture_views_resource_key : @ecs.ResourceKey[ManualTextureViews]
 
 pub fn register_asset_texture_backend() -> Unit
 
@@ -126,12 +131,27 @@ pub fn GpuImage::view(Self) -> @wgpu_mbt.TextureView?
 pub fn GpuImage::width(Self) -> Int
 
 pub struct ManualTextureView {
-  texture_id : Int
-  mip_level : Int
+  texture_view : @render_resource.TextureView
+  size : @math.UVec2
+  view_format : @wgpu_mbt.TextureFormat
 }
-pub fn ManualTextureView::mip_level(Self) -> Int
-pub fn ManualTextureView::new(Int, Int) -> Self
-pub fn ManualTextureView::texture_id(Self) -> Int
+pub fn ManualTextureView::new(@render_resource.TextureView, @math.UVec2, @wgpu_mbt.TextureFormat) -> Self
+pub fn ManualTextureView::size(Self) -> @math.UVec2
+pub fn ManualTextureView::texture_view(Self) -> @render_resource.TextureView
+pub fn ManualTextureView::view_format(Self) -> @wgpu_mbt.TextureFormat
+pub fn ManualTextureView::with_default_format(@render_resource.TextureView, @math.UVec2) -> Self
+
+pub struct ManualTextureViews {
+  views : @hashmap.HashMap[@render_target.ManualTextureViewHandle, ManualTextureView]
+}
+pub fn ManualTextureViews::ManualTextureViews() -> Self
+pub fn ManualTextureViews::clear(Self) -> Unit
+pub fn ManualTextureViews::get(Self, @render_target.ManualTextureViewHandle) -> ManualTextureView?
+pub fn ManualTextureViews::insert(Self, @render_target.ManualTextureViewHandle, ManualTextureView) -> Unit
+pub fn ManualTextureViews::is_empty(Self) -> Bool
+pub fn ManualTextureViews::len(Self) -> Int
+pub fn ManualTextureViews::remove(Self, @render_target.ManualTextureViewHandle) -> ManualTextureView?
+pub impl @app.Resource for ManualTextureViews
 
 pub struct OutputColorAttachment {
   view : @render_resource.TextureView
@@ -150,7 +170,7 @@ pub struct TextureAttachment {
   mip_level : Int
   layer : Int
 }
-pub fn TextureAttachment::as_manual_texture_view(Self) -> Int
+pub fn TextureAttachment::as_manual_texture_view(Self) -> @render_target.ManualTextureViewHandle
 pub fn TextureAttachment::layer(Self) -> Int
 pub fn TextureAttachment::mip_level(Self) -> Int
 pub fn TextureAttachment::new(Int, Int, Int) -> Self
@@ -196,7 +216,7 @@ pub(all) struct TextureCacheEntry {
 }
 
 // Type aliases
-pub type ManualTextureViewHandle = Int
+pub using @render_target {type ManualTextureViewHandle}
 
 // Traits
 

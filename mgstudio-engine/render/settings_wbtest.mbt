@@ -573,6 +573,28 @@ test "render plugin: future resources unpack during plugin finish" {
 }
 
 ///|
+test "render plugin: initializes manual texture views in main and render worlds" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  debug_inspect(
+    app
+    .world()
+    .resource(@render_texture.ManualTextureViews::resource())
+    .is_present(),
+    content="true",
+  )
+  let app = app.finish()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    render_world
+    .resource(@render_texture.ManualTextureViews::resource())
+    .is_present(),
+    content="true",
+  )
+}
+
+///|
 test "render recovery: reinitializing consumes future render resources before startup" {
   let backend = @renderer.GpuBackend::new()
   let resources = RenderResources::from_backend(backend)

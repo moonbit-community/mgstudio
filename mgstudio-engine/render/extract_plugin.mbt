@@ -82,6 +82,12 @@ fn render_plugin_install_with(
       RenderErrorHandler::RenderErrorHandler(),
     )
   }
+  if !next.contains_resource(@render_texture.ManualTextureViews::resource()) {
+    next = next.insert_world_resource(
+      @render_texture.ManualTextureViews::resource(),
+      @render_texture.ManualTextureViews::ManualTextureViews(),
+    )
+  }
   if next.get_sub_app(@app.RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_recovery_schedule_stage()),
@@ -125,6 +131,17 @@ fn render_plugin_install_with(
         render_asset_bytes_per_frame_limiter_resource_key,
         RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
       )
+      if !render_sub_app
+        .world()
+        .resource(@render_texture.ManualTextureViews::resource())
+        .is_present() {
+        render_sub_app
+        .world()
+        .insert_resource(
+          @render_texture.ManualTextureViews::resource(),
+          @render_texture.ManualTextureViews::ManualTextureViews(),
+        )
+      }
       if !render_sub_app
         .world()
         .resource(@render_texture.TextureCache::resource())
@@ -210,6 +227,11 @@ fn render_plugin_install_with(
     @post_process_bloom.register_embedded_wgsl_sources()
     @post_process_effect_stack.register_embedded_wgsl_sources()
     @post_process_motion_blur.register_embedded_wgsl_sources()
+    let extract_manual_texture_views_plugin : ExtractResourcePlugin[
+      @render_texture.ManualTextureViews,
+      Unit,
+    ] = ExtractResourcePlugin::ExtractResourcePlugin()
+    next = next.add_plugins(extract_manual_texture_views_plugin)
     next = next.add_plugins(@render_view.ViewPlugin::ViewPlugin())
     next = next.add_plugins(
       @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),
