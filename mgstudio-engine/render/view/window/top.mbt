@@ -40,16 +40,16 @@ pub type ManualTextureViewHandle = @camera_render_target.ManualTextureViewHandle
 pub struct ExtractedWindow {
   entity : @core.Entity
   handle : @window_pkg.RawHandleWrapper
-  physical_width : Int
-  physical_height : Int
-  present_mode : @window_pkg.PresentMode
+  mut physical_width : Int
+  mut physical_height : Int
+  mut present_mode : @window_pkg.PresentMode
   desired_maximum_frame_latency : Int?
-  swap_chain_texture_view : @render_resource.TextureView?
+  mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
   swap_chain_texture_format : @wgpu.TextureFormat?
   swap_chain_texture_view_format : @wgpu.TextureFormat?
-  size_changed : Bool
-  present_mode_changed : Bool
+  mut size_changed : Bool
+  mut present_mode_changed : Bool
   alpha_mode : @window_pkg.CompositeAlphaMode
   needs_initial_present : Bool
 }
@@ -102,6 +102,18 @@ pub fn ExtractedWindow::present(self : ExtractedWindow) -> Unit {
 pub struct ExtractedWindows {
   mut primary : @core.Entity?
   windows : @hashmap.HashMap[@core.Entity, ExtractedWindow]
+}
+
+///|
+priv struct ExtractWindowsMessageCursors {
+  mut window_closing : @ecs.MessageCursor[@window_pkg.WindowClosing]
+}
+
+///|
+fn ExtractWindowsMessageCursors::ExtractWindowsMessageCursors() -> ExtractWindowsMessageCursors {
+  ExtractWindowsMessageCursors::{
+    window_closing: @ecs.MessageCursor::MessageCursor(),
+  }
 }
 
 ///|
@@ -212,6 +224,13 @@ pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces] = @ecs.r
 )
 
 ///|
+let extract_windows_message_cursors_resource_key : @ecs.ResourceKey[
+  ExtractWindowsMessageCursors,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::ExtractWindowsMessageCursors",
+)
+
+///|
 pub fn init_extracted_windows(world : @ecs.World) -> Unit {
   if world.resource(extracted_windows_resource_key).is_present() {
     return
@@ -234,6 +253,41 @@ pub fn init_window_surfaces(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn init_extract_windows_message_cursors(world : @ecs.World) -> Unit {
+  if world.resource(extract_windows_message_cursors_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    extract_windows_message_cursors_resource_key,
+    ExtractWindowsMessageCursors::ExtractWindowsMessageCursors(),
+  )
+}
+
+///|
+fn ensure_extracted_windows(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[ExtractedWindows] {
+  init_extracted_windows(world)
+  world.get_resource_mut(extracted_windows_resource_key).unwrap()
+}
+
+///|
+fn ensure_window_surfaces(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[WindowSurfaces] {
+  init_window_surfaces(world)
+  world.get_resource_mut(window_surfaces_resource_key).unwrap()
+}
+
+///|
+fn ensure_extract_windows_message_cursors(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[ExtractWindowsMessageCursors] {
+  init_extract_windows_message_cursors(world)
+  world.get_resource_mut(extract_windows_message_cursors_resource_key).unwrap()
+}
+
+///|
 pub impl @app.Resource for ExtractedWindows with fn resource() {
   extracted_windows_resource_key
 }
@@ -252,10 +306,125 @@ fn window_render_plugin_install(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
       init_extracted_windows(render_sub_app.world())
       init_window_surfaces(render_sub_app.world())
+      init_extract_windows_message_cursors(render_sub_app.world())
       render_sub_app
     }),
   )
   next
+}
+
+///|
+fn extract_windows_closing_events(
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Array[@window_pkg.WindowClosing] {
+  let events : Array[@window_pkg.WindowClosing] = []
+  if !main_world.contains_message(@window_pkg.ecs_key_window_closing) {
+    return events
+  }
+  ensure_extract_windows_message_cursors(render_world).modify(fn(state) {
+    let reader = main_world.message_reader(
+      @window_pkg.ecs_key_window_closing,
+      cursor=state.window_closing,
+    )
+    for event in reader.read() {
+      events.push(event)
+    }
+    state.window_closing = reader.cursor()
+  })
+  events
+}
+
+///|
+fn extracted_window_from_components(
+  entity : @core.Entity,
+  window : @window_pkg.Window,
+  handle : @window_pkg.RawHandleWrapper,
+) -> ExtractedWindow {
+  ExtractedWindow::new(
+    entity,
+    handle,
+    window.physical_width(),
+    window.physical_height(),
+    window.present_mode,
+    window.desired_maximum_frame_latency,
+    window.composite_alpha_mode,
+  )
+}
+
+///|
+fn update_extracted_window_from_components(
+  previous : ExtractedWindow,
+  window : @window_pkg.Window,
+) -> ExtractedWindow {
+  let next = previous
+  if next.swap_chain_texture is None {
+    next.swap_chain_texture_view = None
+  }
+  let new_width = window.physical_width().max(1)
+  let new_height = window.physical_height().max(1)
+  next.size_changed = new_width != next.physical_width ||
+    new_height != next.physical_height
+  next.present_mode_changed = window.present_mode != next.present_mode
+  if next.size_changed {
+    next.physical_width = new_width
+    next.physical_height = new_height
+  }
+  if next.present_mode_changed {
+    next.present_mode = window.present_mode
+  }
+  next
+}
+
+///|
+pub fn extract_windows(
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  let extracted_windows = ensure_extracted_windows(render_world)
+  let window_query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[@window_pkg.Window],
+      @ecs.Read[@window_pkg.RawHandleWrapper],
+      @ecs.Read[@window_pkg.PrimaryWindow]?,
+    ),
+    @ecs.All,
+  ] = @ecs.query(main_world)
+  try! window_query.view(fn(_query_entity, data) {
+    let (entity, window_ref, handle_ref, primary_ref) = data
+    extracted_windows.modify(fn(windows) {
+      if primary_ref is Some(_) {
+        windows.primary = Some(entity)
+      }
+      let previous = windows.get(entity)
+      let next = match previous {
+        Some(existing) =>
+          update_extracted_window_from_components(existing, window_ref.value())
+        None =>
+          extracted_window_from_components(
+            entity,
+            window_ref.value(),
+            handle_ref.value(),
+          )
+      }
+      windows.insert(entity, next)
+    })
+  })
+
+  let closing_events = extract_windows_closing_events(main_world, render_world)
+  if closing_events.length() == 0 {
+    return
+  }
+  let window_surfaces = ensure_window_surfaces(render_world)
+  for closing_window in closing_events {
+    extracted_windows.modify(fn(windows) {
+      windows.remove(closing_window.window)
+    })
+    window_surfaces.modify(fn(surfaces) {
+      surfaces.remove(closing_window.window)
+    })
+  }
 }
 
 ///|

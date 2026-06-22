@@ -14,6 +14,8 @@ import {
 }
 
 // Values
+pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
+
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
 
 pub fn init_extracted_windows(@ecs.World) -> Unit
@@ -56,16 +58,16 @@ pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces]
 pub struct ExtractedWindow {
   entity : @core.Entity
   handle : @Milky2018/mgstudio/window.RawHandleWrapper
-  physical_width : Int
-  physical_height : Int
-  present_mode : @Milky2018/mgstudio/window.PresentMode
+  mut physical_width : Int
+  mut physical_height : Int
+  mut present_mode : @Milky2018/mgstudio/window.PresentMode
   desired_maximum_frame_latency : Int?
-  swap_chain_texture_view : @render_resource.TextureView?
+  mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
   swap_chain_texture_format : @wgpu_mbt.TextureFormat?
   swap_chain_texture_view_format : @wgpu_mbt.TextureFormat?
-  size_changed : Bool
-  present_mode_changed : Bool
+  mut size_changed : Bool
+  mut present_mode_changed : Bool
   alpha_mode : @Milky2018/mgstudio/window.CompositeAlphaMode
   needs_initial_present : Bool
 }

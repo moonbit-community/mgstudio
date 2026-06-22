@@ -174,6 +174,17 @@ fn render_plugin_install_with(
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(fn(render_world : @ecs.World) {
+          @render_view_window.extract_windows(
+            render_source_world(render_world),
+            render_world,
+          )
+        })
+        .named("mgstudio_render::view::window::extract_windows")
+        .in_set(render_system_set_extract_commands),
+      )
+      .add_systems(
+        render_schedule_stage(),
         @app.system(despawn_temporary_render_entities).in_set(
           render_system_set_cleanup,
         ),
