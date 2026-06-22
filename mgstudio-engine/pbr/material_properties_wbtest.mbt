@@ -111,6 +111,120 @@ test "render3d: extended material metadata is reflected into extracted propertie
 }
 
 ///|
+struct ParityMaterialExtension {}
+
+///|
+fn ParityMaterialExtension::ParityMaterialExtension() -> ParityMaterialExtension {
+  ParityMaterialExtension::{  }
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn extension_tag(_self) {
+  87
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn vertex_shader(_self) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn fragment_shader(
+  _self,
+) {
+  Some("shaders/extended_material.wgsl")
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn prepass_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn prepass_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn deferred_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn deferred_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn alpha_mode(_self) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn opaque_render_method(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn enable_prepass(_self) {
+  true
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn enable_shadows(_self) {
+  true
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn specialize(_self) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn bind_group_layout_entries(
+  _self,
+) {
+  []
+}
+
+///|
+impl MaterialExtension for ParityMaterialExtension with fn bind_group_bindings(
+  _self,
+) {
+  []
+}
+
+///|
+test "render3d: material extension prepass flag does not require camera prepasses" {
+  let metadata = material_extension_metadata_from_extension(
+    ParityMaterialExtension::ParityMaterialExtension(),
+  )
+  inspect(metadata.requires_depth_prepass, content="false")
+  inspect(metadata.requires_deferred_prepass, content="false")
+  let props = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(metadata),
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  inspect(props.prepass_enabled, content="true")
+  debug_inspect(
+    props.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
+    content="Some(\"shaders/extended_material.wgsl\")",
+  )
+}
+
+///|
 test "render3d: forward decal material extension metadata matches Bevy hooks" {
   let metadata = forward_decal_material_extension_metadata(
     ForwardDecalMaterialExt::new(1.0F),

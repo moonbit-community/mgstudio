@@ -119,8 +119,6 @@ pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   .with_deferred_fragment_shader_path(extension.deferred_fragment_shader())
   .with_alpha_mode_override(extension.alpha_mode())
   .with_opaque_render_method_override(extension.opaque_render_method())
-  .with_requires_depth_prepass(extension.enable_prepass())
-  .with_requires_deferred_prepass(extension.enable_prepass())
   .with_disable_shadows(!extension.enable_shadows())
   .with_user_specialize(extension.specialize())
   .with_extension_bind_group_layout_entries(
