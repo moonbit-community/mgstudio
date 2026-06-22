@@ -1827,6 +1827,7 @@ pub struct RenderAdapterInfo {
   device_type : UInt
   backend : UInt
 }
+pub fn RenderAdapterInfo::adreno_model(Self) -> Int?
 pub fn RenderAdapterInfo::backend(Self) -> UInt
 pub fn RenderAdapterInfo::device(Self) -> String
 pub fn RenderAdapterInfo::device_id(Self) -> UInt
@@ -1862,6 +1863,10 @@ pub fn RenderDevice::create_shader_module_wgsl(Self, String) -> @wgpu_mbt.Shader
 pub fn RenderDevice::from_backend(GpuBackend) -> Self
 pub fn RenderDevice::from_wgpu(@wgpu_mbt.Device) -> Self
 pub fn RenderDevice::get_supported_read_only_binding_type_u32(Self, UInt) -> UInt
+pub fn RenderDevice::has_feature_native_buffer_binding_array(Self) -> Bool
+pub fn RenderDevice::has_feature_native_sampled_texture_and_storage_buffer_array_non_uniform_indexing(Self) -> Bool
+pub fn RenderDevice::has_feature_native_storage_resource_binding_array(Self) -> Bool
+pub fn RenderDevice::has_feature_native_texture_binding_array(Self) -> Bool
 pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_immediate_size_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(Self) -> UInt

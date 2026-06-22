@@ -607,6 +607,30 @@ test "renderer: backend requests texture binding arrays when adapter supports it
 }
 
 ///|
+test "renderer: backend requests buffer binding arrays when adapter supports it" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let adapter_supports = backend.adapter.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_BUFFER_BINDING_ARRAY,
+  )
+  let device_supports = backend.device.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_BUFFER_BINDING_ARRAY,
+  )
+  debug_inspect(!adapter_supports || device_supports, content="true")
+}
+
+///|
+test "renderer: backend requests storage resource binding arrays when adapter supports it" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let adapter_supports = backend.adapter.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_STORAGE_RESOURCE_BINDING_ARRAY,
+  )
+  let device_supports = backend.device.has_feature_native_u32(
+    @wgpu.NATIVE_FEATURE_STORAGE_RESOURCE_BINDING_ARRAY,
+  )
+  debug_inspect(!adapter_supports || device_supports, content="true")
+}
+
+///|
 test "renderer: backend requests sampled texture non-uniform indexing when adapter supports it" {
   let backend = GpuBackend::new(assets_base="assets")
   let feature = @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING

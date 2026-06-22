@@ -55,12 +55,14 @@ pub fn mesh3d_binding_arrays_are_usable(
   required_storage_textures_per_shader_stage~ : UInt,
 ) -> Bool {
   if ensure_backend() is Some(backend) {
-    backend.device.has_feature_native_u32(
-      @wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY,
-    ) &&
-    backend.device.has_feature_native_u32(
-      @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
-    ) &&
+    let adapter_info = RenderAdapterInfo::from_backend(backend)
+    let adreno_model_is_usable = match adapter_info.adreno_model() {
+      Some(model) => model > 610
+      None => true
+    }
+    adreno_model_is_usable &&
+    backend.device.has_feature_native_texture_binding_array() &&
+    backend.device.has_feature_native_sampled_texture_and_storage_buffer_array_non_uniform_indexing() &&
     backend.device.limits_max_storage_textures_per_shader_stage_u32() >=
     required_storage_textures_per_shader_stage
   } else {

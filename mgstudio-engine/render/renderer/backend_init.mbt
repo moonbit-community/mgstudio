@@ -56,6 +56,14 @@ pub fn GpuBackend::new(
   if adapter.has_feature_native_u32(@wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY) {
     required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_BINDING_ARRAY)
   }
+  if adapter.has_feature_native_u32(@wgpu.NATIVE_FEATURE_BUFFER_BINDING_ARRAY) {
+    required_features.push(@wgpu.NATIVE_FEATURE_BUFFER_BINDING_ARRAY)
+  }
+  if adapter.has_feature_native_u32(
+      @wgpu.NATIVE_FEATURE_STORAGE_RESOURCE_BINDING_ARRAY,
+    ) {
+    required_features.push(@wgpu.NATIVE_FEATURE_STORAGE_RESOURCE_BINDING_ARRAY)
+  }
   if adapter.has_feature_native_u32(
       @wgpu.NATIVE_FEATURE_SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
     ) {

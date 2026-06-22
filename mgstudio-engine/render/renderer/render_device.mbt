@@ -120,6 +120,36 @@ pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(
 }
 
 ///|
+pub fn RenderDevice::has_feature_native_texture_binding_array(
+  self : RenderDevice,
+) -> Bool {
+  self.wgpu_device().has_feature_native_texture_binding_array()
+}
+
+///|
+pub fn RenderDevice::has_feature_native_buffer_binding_array(
+  self : RenderDevice,
+) -> Bool {
+  self.wgpu_device().has_feature_native_buffer_binding_array()
+}
+
+///|
+pub fn RenderDevice::has_feature_native_storage_resource_binding_array(
+  self : RenderDevice,
+) -> Bool {
+  self.wgpu_device().has_feature_native_storage_resource_binding_array()
+}
+
+///|
+pub fn RenderDevice::has_feature_native_sampled_texture_and_storage_buffer_array_non_uniform_indexing(
+  self : RenderDevice,
+) -> Bool {
+  self
+  .wgpu_device()
+  .has_feature_native_sampled_texture_and_storage_buffer_array_non_uniform_indexing()
+}
+
+///|
 pub fn RenderDevice::supports_read_only_storage_buffer_binding(
   self : RenderDevice,
   required_storage_buffers_per_shader_stage : UInt,
@@ -367,6 +397,33 @@ pub fn RenderAdapterInfo::device_type(self : RenderAdapterInfo) -> UInt {
 ///|
 pub fn RenderAdapterInfo::backend(self : RenderAdapterInfo) -> UInt {
   self.backend
+}
+
+///|
+pub fn RenderAdapterInfo::adreno_model(self : RenderAdapterInfo) -> Int? {
+  render_adapter_info_adreno_model_from_name(self.name)
+}
+
+///|
+fn render_adapter_info_adreno_model_from_name(name : String) -> Int? {
+  let prefix = "Adreno (TM) "
+  guard name.length() >= prefix.length() else { return None }
+  guard name[0:prefix.length()].to_owned() == prefix else { return None }
+  let mut value = 0
+  let mut found_digit = false
+  for index in prefix.length()..<name.length() {
+    let code = name.code_unit_at(index).to_int()
+    if code < 48 || code > 57 {
+      break
+    }
+    found_digit = true
+    value = value * 10 + (code - 48)
+  }
+  if found_digit {
+    Some(value)
+  } else {
+    None
+  }
 }
 
 ///|

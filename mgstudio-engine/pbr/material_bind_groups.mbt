@@ -287,9 +287,9 @@ pub fn standard_material_bindless_slot_count() -> Int? {
 }
 
 ///|
-// Bevy's StandardMaterial bindless data path needs storage binding arrays for
-// `#[data(..., binding_array(10))]`. Keep this false until wgpu_mbt exposes
-// the corresponding feature query; texture binding arrays alone are not enough.
+// Bevy's generated `AsBindGroup::bindless_supported` also checks
+// `max_binding_array_sampler_elements_per_shader_stage`. Keep StandardMaterial
+// bindless disabled until wgpu_mbt exposes that exact limit.
 pub fn standard_material_bindless_supported(
   _render_device : @renderer.RenderDevice,
 ) -> Bool {
