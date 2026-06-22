@@ -141,7 +141,7 @@ fn spawn_plane(
     abort("clustered_decal_maps plane must compute flat normals")
   }
   match flat_normals.generate_tangents() {
-    Some(_) => abort("clustered_decal_maps plane must generate tangents")
+    Some(_) => abort("clustered_decal_maps plane tangent generation failed")
     None => ()
   }
   let material = @pbr.standard_material_add(

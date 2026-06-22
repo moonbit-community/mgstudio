@@ -74,12 +74,16 @@ fn prepare_clustered_decals(world : @ecs.World) -> Unit {
       abort("prepare_clustered_decals: missing GlobalClusterableObjectMeta")
   }
   meta_ref.modify(fn(global_clusterable_object_meta) {
-    for pair in render_decals.entity_decal_indices() {
-      let (entity, index) = pair
-      if (try! world.contains_by_key(entity, @pbr_decal.ecs_key_clustered_decal)) {
-        global_clusterable_object_meta.insert_entity_index(entity, index)
+    world.for_each_component(@pbr_decal.ecs_key_clustered_decal, fn(
+      entity,
+      _decal,
+    ) {
+      match render_decals.get_decal_index(entity) {
+        Some(index) =>
+          global_clusterable_object_meta.insert_entity_index(entity, index)
+        None => ()
       }
-    }
+    })
   })
 }
 
