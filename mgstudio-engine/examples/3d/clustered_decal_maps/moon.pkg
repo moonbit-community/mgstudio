@@ -1,6 +1,7 @@
 import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/components2d" @camera_components2d,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
@@ -8,7 +9,8 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/examples/support/chacha_rng" @example_rng,
-  "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/examples/helpers/widgets_lib",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/sprite",
@@ -16,6 +18,7 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }
