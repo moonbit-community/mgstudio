@@ -22,6 +22,7 @@ pub struct WindowRenderPlugin {}
 pub suberror WindowSurfaceCreateError {
   MissingContentViewHandle(@core.Entity, Int)
   NativeSurfaceCreateFailed(@core.Entity, String)
+  NativeSurfaceConfigureFailed(@core.Entity, String)
 }
 
 ///|
@@ -33,6 +34,8 @@ pub fn WindowSurfaceCreateError::message(
       "missing content view handle for window entity \{entity.to_bits()} host window \{window}"
     NativeSurfaceCreateFailed(entity, message) =>
       "failed to create surface for window entity \{entity.to_bits()}: \{message}"
+    NativeSurfaceConfigureFailed(entity, message) =>
+      "failed to configure surface for window entity \{entity.to_bits()}: \{message}"
   }
 }
 
@@ -229,6 +232,14 @@ pub fn WindowSurfaces::remove(
 ) -> Unit {
   self.surfaces.remove(entity)
   self.configured_windows.remove(entity)
+}
+
+///|
+pub fn WindowSurfaces::surface_data(
+  self : WindowSurfaces,
+  entity : @core.Entity,
+) -> SurfaceData? {
+  self.surfaces.get(entity)
 }
 
 ///|
@@ -473,6 +484,40 @@ pub fn surface_configuration_for_window(
 }
 
 ///|
+fn surface_configuration_from_surface(
+  window : ExtractedWindow,
+  surface : @wgpu.Surface,
+  render_adapter : @renderer.RenderAdapter,
+) -> @wgpu.SurfaceConfiguration {
+  surface_configuration_for_window(
+    window,
+    surface.capabilities_present_modes(render_adapter.wgpu_adapter()),
+    surface.capabilities_formats(render_adapter.wgpu_adapter()),
+  )
+}
+
+///|
+fn configure_surface_for_window(
+  entity : @core.Entity,
+  surface : @wgpu.Surface,
+  configuration : @wgpu.SurfaceConfiguration,
+  render_adapter : @renderer.RenderAdapter,
+  render_device : @renderer.RenderDevice,
+) -> Unit raise WindowSurfaceCreateError {
+  surface.configure_with_or_raise(
+    render_adapter.wgpu_adapter(),
+    render_device.wgpu_device(),
+    configuration,
+  ) catch {
+    err =>
+      raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
+        entity,
+        err.message(),
+      )
+  }
+}
+
+///|
 pub fn create_surface_for_window(
   window : ExtractedWindow,
   render_instance : @renderer.RenderInstance,
@@ -491,6 +536,94 @@ pub fn create_surface_for_window(
         window.entity,
         err.message(),
       )
+  }
+}
+
+///|
+fn surface_data_for_window(
+  window : ExtractedWindow,
+  render_instance : @renderer.RenderInstance,
+  render_adapter : @renderer.RenderAdapter,
+  render_device : @renderer.RenderDevice,
+) -> SurfaceData raise WindowSurfaceCreateError {
+  let surface = create_surface_for_window(window, render_instance)
+  let configuration = surface_configuration_from_surface(
+    window, surface, render_adapter,
+  )
+  configure_surface_for_window(
+    window.entity,
+    surface,
+    configuration,
+    render_adapter,
+    render_device,
+  )
+  SurfaceData::{
+    surface,
+    configuration,
+    texture_view_format: surface_texture_view_format(configuration.format),
+  }
+}
+
+///|
+fn reconfigured_surface_data_for_window(
+  window : ExtractedWindow,
+  data : SurfaceData,
+  render_adapter : @renderer.RenderAdapter,
+  render_device : @renderer.RenderDevice,
+) -> SurfaceData raise WindowSurfaceCreateError {
+  let configuration = surface_configuration_from_surface(
+    window,
+    data.surface,
+    render_adapter,
+  )
+  configure_surface_for_window(
+    window.entity,
+    data.surface,
+    configuration,
+    render_adapter,
+    render_device,
+  )
+  SurfaceData::{
+    surface: data.surface,
+    configuration,
+    texture_view_format: surface_texture_view_format(configuration.format),
+  }
+}
+
+///|
+pub fn create_surfaces(
+  windows : ExtractedWindows,
+  window_surfaces : WindowSurfaces,
+  render_instance : @renderer.RenderInstance,
+  render_adapter : @renderer.RenderAdapter,
+  render_device : @renderer.RenderDevice,
+) -> Unit raise WindowSurfaceCreateError {
+  let entities : Array[@core.Entity] = []
+  for entity in windows.windows.keys() {
+    entities.push(entity)
+  }
+  for entity in entities {
+    guard windows.get(entity) is Some(window) else { continue }
+    let data = match window_surfaces.surfaces.get(entity) {
+      Some(existing) =>
+        if window.size_changed || window.present_mode_changed {
+          let next_window = window
+          next_window.swap_chain_texture = None
+          next_window.swap_chain_texture_view = None
+          windows.insert(entity, next_window)
+          reconfigured_surface_data_for_window(
+            next_window, existing, render_adapter, render_device,
+          )
+        } else {
+          existing
+        }
+      None =>
+        surface_data_for_window(
+          window, render_instance, render_adapter, render_device,
+        )
+    }
+    window_surfaces.surfaces.set(entity, data)
+    ignore(window_surfaces.configured_windows.add(entity))
   }
 }
 

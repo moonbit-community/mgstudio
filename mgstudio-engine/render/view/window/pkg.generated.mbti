@@ -20,6 +20,8 @@ pub fn composite_alpha_mode_raw(@Milky2018/mgstudio/window.CompositeAlphaMode) -
 
 pub fn create_surface_for_window(ExtractedWindow, @renderer.RenderInstance) -> @wgpu_mbt.Surface raise WindowSurfaceCreateError
 
+pub fn create_surfaces(ExtractedWindows, WindowSurfaces, @renderer.RenderInstance, @renderer.RenderAdapter, @renderer.RenderDevice) -> Unit raise WindowSurfaceCreateError
+
 pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
 
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
@@ -78,6 +80,7 @@ pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces]
 pub suberror WindowSurfaceCreateError {
   MissingContentViewHandle(@core.Entity, Int)
   NativeSurfaceCreateFailed(@core.Entity, String)
+  NativeSurfaceConfigureFailed(@core.Entity, String)
 }
 pub fn WindowSurfaceCreateError::message(Self) -> String
 
@@ -135,6 +138,7 @@ pub fn WindowSurfaces::is_configured(Self, @core.Entity) -> Bool
 pub fn WindowSurfaces::is_empty(Self) -> Bool
 pub fn WindowSurfaces::len(Self) -> Int
 pub fn WindowSurfaces::remove(Self, @core.Entity) -> Unit
+pub fn WindowSurfaces::surface_data(Self, @core.Entity) -> SurfaceData?
 pub impl @app.Resource for WindowSurfaces
 
 // Type aliases
