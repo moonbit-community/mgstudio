@@ -256,6 +256,18 @@ fn render3d_execute_camera_main_pass(
   prepass_deferred_lighting_pass_id_texture_id~ : Int,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
+  let lightmap_bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+  )
+  match world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
+    Some(render_lightmaps) =>
+      render_lightmaps.modify(fn(value) {
+        value.set_bindless_supported(lightmap_bindless_supported)
+        value.clear()
+      })
+    None => ()
+  }
   let point_shadow_binding = shadow_bindings.point
   let directional_shadow_binding = shadow_bindings.directional
   let render_decals = match
@@ -453,6 +465,9 @@ fn render3d_execute_camera_main_pass(
     let draw_material = mesh.material
     let (
       lightmap_texture_id,
+      lightmap_slab_index,
+      lightmap_slot_index,
+      lightmap_slab_texture_ids,
       lightmap_uv_min_x,
       lightmap_uv_min_y,
       lightmap_uv_max_x,
@@ -461,9 +476,34 @@ fn render3d_execute_camera_main_pass(
       Some(lightmap) if lightmap.image.id() >= 0 => {
         let uv_min = lightmap.uv_rect.min()
         let uv_max = lightmap.uv_rect.max()
-        (lightmap.image.id(), uv_min.x, uv_min.y, uv_max.x, uv_max.y)
+        let (slab_index, slot_index, slab_texture_ids) = match
+          world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
+          Some(render_lightmaps) =>
+            render_lightmaps.modify(fn(value) {
+              let render_lightmap = value.insert_lightmap(
+                extracted_mesh.entity.main_entity,
+                lightmap,
+              )
+              (
+                render_lightmap.slab_index.to_int(),
+                render_lightmap.slot_index.to_int(),
+                value.slab_texture_ids(render_lightmap.slab_index),
+              )
+            })
+          None => (-1, 0, [lightmap.image.id()])
+        }
+        (
+          lightmap.image.id(),
+          slab_index,
+          slot_index,
+          slab_texture_ids,
+          uv_min.x,
+          uv_min.y,
+          uv_max.x,
+          uv_max.y,
+        )
       }
-      _ => (-1, 0.0F, 0.0F, 0.0F, 0.0F)
+      _ => (-1, -1, -1, [], 0.0F, 0.0F, 0.0F, 0.0F)
     }
     let draw_alpha = base_draw_alpha
     let mut texture_id = match draw_material.base_color_texture {
@@ -704,6 +744,9 @@ fn render3d_execute_camera_main_pass(
       previous_morph_weights_index=mesh.previous_morph_weights_index,
       morph_targets_texture_id=mesh.morph_targets_texture_id,
       lightmap_texture_id~,
+      lightmap_slab_index~,
+      lightmap_slot_index~,
+      lightmap_slab_texture_ids~,
       lightmap_uv_min_x~,
       lightmap_uv_min_y~,
       lightmap_uv_max_x~,

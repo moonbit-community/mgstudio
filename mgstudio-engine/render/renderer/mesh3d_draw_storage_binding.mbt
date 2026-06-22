@@ -13,6 +13,90 @@
 // limitations under the License.
 
 ///|
+fn mesh3d_lightmap_texture_id_at(
+  lightmap_texture_id : Int,
+  lightmap_slab_texture_ids : Array[Int],
+  index : Int,
+) -> Int {
+  if index >= 0 &&
+    index < lightmap_slab_texture_ids.length() &&
+    lightmap_slab_texture_ids[index] >= 0 {
+    lightmap_slab_texture_ids[index]
+  } else if index == 0 {
+    lightmap_texture_id
+  } else {
+    -1
+  }
+}
+
+///|
+fn mesh3d_lightmap_texture_views(
+  backend : GpuBackend,
+  lightmap_texture_id : Int,
+  lightmap_slab_texture_ids : Array[Int],
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Array[@wgpu.TextureView] {
+  let views : Array[@wgpu.TextureView] = []
+  let count = mesh3d_layout_binding_count(entry)
+  for index in 0..<count {
+    let texture_id = mesh3d_lightmap_texture_id_at(
+      lightmap_texture_id, lightmap_slab_texture_ids, index,
+    )
+    match (resolve_mesh3d_texture(backend, texture_id) catch { _ => None }) {
+      Some(texture) => views.push(texture.view)
+      None => ()
+    }
+  }
+  views
+}
+
+///|
+fn mesh3d_lightmap_samplers(
+  backend : GpuBackend,
+  lightmap_texture_id : Int,
+  lightmap_slab_texture_ids : Array[Int],
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Array[@wgpu.Sampler] {
+  let samplers : Array[@wgpu.Sampler] = []
+  let count = mesh3d_layout_binding_count(entry)
+  for index in 0..<count {
+    let texture_id = mesh3d_lightmap_texture_id_at(
+      lightmap_texture_id, lightmap_slab_texture_ids, index,
+    )
+    match (resolve_mesh3d_texture(backend, texture_id) catch { _ => None }) {
+      Some(texture) => samplers.push(texture.sampler)
+      None => ()
+    }
+  }
+  samplers
+}
+
+///|
+fn mesh3d_add_samplers_for_layout_entry(
+  builder : @wgpu.BindGroupBuilder,
+  binding : UInt,
+  samplers : Array[@wgpu.Sampler],
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Bool {
+  if samplers.length() == 0 {
+    return false
+  }
+  if entry.count() > 1 {
+    let sampler_array : Array[@wgpu.Sampler] = []
+    for i in 0..<entry.count() {
+      if i < samplers.length() {
+        sampler_array.push(samplers[i])
+      } else {
+        sampler_array.push(samplers[samplers.length() - 1])
+      }
+    }
+    builder.add_sampler_array(binding, sampler_array)
+  } else {
+    builder.add_sampler(binding, samplers[0])
+  }
+}
+
+///|
 fn GpuBackend::create_mesh3d_draw_bind_group(
   self : GpuBackend,
   bgl : @wgpu.BindGroupLayout,
@@ -20,6 +104,7 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
   draw_buf : @wgpu.Buffer,
   draw_size : UInt64,
   lightmap_texture_id : Int,
+  lightmap_slab_texture_ids : Array[Int],
   morph_target_texture_id : Int,
   morph_descriptor_index : UInt,
   current_morph_weights_byte_offset : Int,
@@ -110,31 +195,23 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
       }
       4 => {
         guard lightmap_texture_id >= 0 else { false }
-        guard (resolve_mesh3d_texture(self, lightmap_texture_id) catch {
-            _ => None
-          })
-          is Some(lightmap_texture) else {
-          false
-        }
-        mesh3d_add_texture_view_for_layout_entry(
+        mesh3d_add_texture_views_for_layout_entry(
           builder,
           4U,
-          lightmap_texture.view,
+          mesh3d_lightmap_texture_views(
+            self, lightmap_texture_id, lightmap_slab_texture_ids, entry,
+          ),
           entry,
         )
       }
       5 => {
         guard lightmap_texture_id >= 0 else { false }
-        guard (resolve_mesh3d_texture(self, lightmap_texture_id) catch {
-            _ => None
-          })
-          is Some(lightmap_texture) else {
-          false
-        }
-        mesh3d_add_sampler_for_layout_entry(
+        mesh3d_add_samplers_for_layout_entry(
           builder,
           5U,
-          lightmap_texture.sampler,
+          mesh3d_lightmap_samplers(
+            self, lightmap_texture_id, lightmap_slab_texture_ids, entry,
+          ),
           entry,
         )
       }
@@ -207,6 +284,8 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
   bgl : @wgpu.BindGroupLayout,
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   lightmap_texture_id : Int,
+  lightmap_slab_index : Int,
+  lightmap_slab_texture_ids : Array[Int],
   morph_target_texture_id : Int,
   morph_descriptor_index : UInt,
   current_morph_weights_byte_offset : Int,
@@ -222,15 +301,15 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     slot_index < self.mesh3d_draw_slot_skin_revisions.length() &&
     slot_index < self.mesh3d_draw_slot_morph_revisions.length() &&
     slot_index < self.mesh3d_draw_slot_material_pipeline_ids.length() &&
-    slot_index < self.mesh3d_draw_slot_lightmap_texture_ids.length() &&
+    slot_index < self.mesh3d_draw_slot_lightmap_slab_indices.length() &&
     slot_index < self.mesh3d_draw_slot_morph_target_texture_ids.length() &&
     self.mesh3d_draw_slot_skin_revisions[slot_index] ==
     self.mesh3d_skin_revision &&
     self.mesh3d_draw_slot_morph_revisions[slot_index] == morph_revision &&
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] ==
     material_pipeline_id &&
-    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] ==
-    lightmap_texture_id &&
+    self.mesh3d_draw_slot_lightmap_slab_indices[slot_index] ==
+    lightmap_slab_index &&
     self.mesh3d_draw_slot_morph_target_texture_ids[slot_index] ==
     resolved_morph_target_texture_id {
     if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
@@ -255,6 +334,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
         draw_buf,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         lightmap_texture_id,
+        lightmap_slab_texture_ids,
         morph_target_texture_id,
         morph_descriptor_index,
         current_morph_weights_byte_offset,
@@ -271,7 +351,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     self.mesh3d_draw_slot_skin_revisions.push(self.mesh3d_skin_revision)
     self.mesh3d_draw_slot_morph_revisions.push(morph_revision)
     self.mesh3d_draw_slot_material_pipeline_ids.push(material_pipeline_id)
-    self.mesh3d_draw_slot_lightmap_texture_ids.push(lightmap_texture_id)
+    self.mesh3d_draw_slot_lightmap_slab_indices.push(lightmap_slab_index)
     self.mesh3d_draw_slot_morph_target_texture_ids.push(
       resolved_morph_target_texture_id,
     )
@@ -281,8 +361,8 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     self.mesh3d_draw_slot_morph_revisions[slot_index] != morph_revision ||
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] !=
     material_pipeline_id ||
-    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] !=
-    lightmap_texture_id ||
+    self.mesh3d_draw_slot_lightmap_slab_indices[slot_index] !=
+    lightmap_slab_index ||
     self.mesh3d_draw_slot_morph_target_texture_ids[slot_index] !=
     resolved_morph_target_texture_id {
     let slot = self.mesh3d_draw_slots[slot_index]
@@ -292,6 +372,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
         slot.buffer,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         lightmap_texture_id,
+        lightmap_slab_texture_ids,
         morph_target_texture_id,
         morph_descriptor_index,
         current_morph_weights_byte_offset,
@@ -309,7 +390,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     self.mesh3d_draw_slot_skin_revisions[slot_index] = self.mesh3d_skin_revision
     self.mesh3d_draw_slot_morph_revisions[slot_index] = morph_revision
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] = material_pipeline_id
-    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] = lightmap_texture_id
+    self.mesh3d_draw_slot_lightmap_slab_indices[slot_index] = lightmap_slab_index
     self.mesh3d_draw_slot_morph_target_texture_ids[slot_index] = resolved_morph_target_texture_id
   }
   Some(self.mesh3d_draw_slots[slot_index])
@@ -328,6 +409,8 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
     mesh3d_default_draw_bind_group_layout_descriptor(),
     -1,
     -1,
+    [],
+    -1,
     0U,
     -1,
     -1,
@@ -342,6 +425,8 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   required_size : UInt64,
   lightmap_texture_id : Int,
+  lightmap_slab_index : Int,
+  lightmap_slab_texture_ids : Array[Int],
   morph_target_texture_id : Int,
   morph_descriptor_index : UInt,
   current_morph_weights_byte_offset : Int,
@@ -359,7 +444,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
     self.mesh3d_instance_draw_skin_revision == self.mesh3d_skin_revision &&
     self.mesh3d_instance_draw_morph_revision == morph_revision &&
     self.mesh3d_instance_draw_material_pipeline_id == material_pipeline_id &&
-    self.mesh3d_instance_draw_lightmap_texture_id == lightmap_texture_id &&
+    self.mesh3d_instance_draw_lightmap_slab_index == lightmap_slab_index &&
     self.mesh3d_instance_draw_morph_target_texture_id ==
     resolved_morph_target_texture_id {
     if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
@@ -387,9 +472,9 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
     _ => self.device.create_buffer(size=next_capacity, usage~)
   }
   guard self.create_mesh3d_draw_bind_group(
-      bgl, layout_descriptor, draw_buf, next_capacity, lightmap_texture_id, morph_target_texture_id,
-      morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
-      "mgstudio_mesh3d_instance_draw_bg",
+      bgl, layout_descriptor, draw_buf, next_capacity, lightmap_texture_id, lightmap_slab_texture_ids,
+      morph_target_texture_id, morph_descriptor_index, current_morph_weights_byte_offset,
+      previous_morph_weights_byte_offset, "mgstudio_mesh3d_instance_draw_bg",
     )
     is Some(draw_bg) else {
     return None
@@ -405,7 +490,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   self.mesh3d_instance_draw_skin_revision = self.mesh3d_skin_revision
   self.mesh3d_instance_draw_morph_revision = morph_revision
   self.mesh3d_instance_draw_material_pipeline_id = material_pipeline_id
-  self.mesh3d_instance_draw_lightmap_texture_id = lightmap_texture_id
+  self.mesh3d_instance_draw_lightmap_slab_index = lightmap_slab_index
   self.mesh3d_instance_draw_morph_target_texture_id = resolved_morph_target_texture_id
   Some((draw_buf, draw_bg))
 }
@@ -422,6 +507,8 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
     mesh3d_default_draw_bind_group_layout_descriptor(),
     required_size,
     -1,
+    -1,
+    [],
     -1,
     0U,
     -1,

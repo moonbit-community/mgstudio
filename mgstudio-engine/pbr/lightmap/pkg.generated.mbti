@@ -57,10 +57,11 @@ pub impl @app.Resource for LightmapPluginState
 pub struct LightmapSlab {
   capacity : Int
   allocated : Int
+  lightmap_texture_ids : Array[Int]
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn LightmapSlab::LightmapSlab() -> Self
 pub fn LightmapSlab::available_slots(Self) -> Int
 pub fn LightmapSlab::is_full(Self) -> Bool
+pub fn LightmapSlab::new(Bool) -> Self
 
 pub struct LightmapSlabIndex {
   value : Int
@@ -94,6 +95,7 @@ pub fn RenderLightmaps::get(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::insert_lightmap(Self, @core.Entity, Lightmap) -> RenderLightmap
 pub fn RenderLightmaps::remove(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::set_bindless_supported(Self, Bool) -> Unit
+pub fn RenderLightmaps::slab_texture_ids(Self, LightmapSlabIndex) -> Array[Int]
 pub impl @app.Resource for RenderLightmaps
 
 // Type aliases

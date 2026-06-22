@@ -200,7 +200,7 @@ pub struct GpuBackend {
   mesh3d_draw_slot_skin_revisions : Array[Int]
   mesh3d_draw_slot_morph_revisions : Array[Int]
   mesh3d_draw_slot_material_pipeline_ids : Array[UInt64]
-  mesh3d_draw_slot_lightmap_texture_ids : Array[Int]
+  mesh3d_draw_slot_lightmap_slab_indices : Array[Int]
   mesh3d_draw_slot_morph_target_texture_ids : Array[Int]
   mut mesh3d_draw_slot_used : Int
   mut mesh3d_skin_current_buf : @wgpu.Buffer?
@@ -226,7 +226,7 @@ pub struct GpuBackend {
   mut mesh3d_instance_draw_skin_revision : Int
   mut mesh3d_instance_draw_morph_revision : Int
   mut mesh3d_instance_draw_material_pipeline_id : UInt64
-  mut mesh3d_instance_draw_lightmap_texture_id : Int
+  mut mesh3d_instance_draw_lightmap_slab_index : Int
   mut mesh3d_instance_draw_morph_target_texture_id : Int
   mut mesh3d_instance_draw_used : Int
   mut mesh3d_prepared_draw_camera_key_hi : Int

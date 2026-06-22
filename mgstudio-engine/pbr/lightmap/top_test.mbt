@@ -30,11 +30,48 @@ test "pbr/lightmap: render-lightmaps allocates and removes entries" {
   debug_inspect(render_lightmaps.entity_count(), content="2")
   debug_inspect(render_lightmap0.slab_index.to_int(), content="0")
   debug_inspect(render_lightmap0.slot_index.to_int(), content="0")
-  debug_inspect(render_lightmap1.slot_index.to_int(), content="1")
+  debug_inspect(render_lightmap1.slab_index.to_int(), content="1")
+  debug_inspect(render_lightmap1.slot_index.to_int(), content="0")
+  debug_inspect(
+    render_lightmaps.slab_texture_ids(render_lightmap0.slab_index).length(),
+    content="1",
+  )
+  debug_inspect(
+    render_lightmaps.slab_texture_ids(render_lightmap0.slab_index)[0],
+    content="7",
+  )
 
   ignore(render_lightmaps.remove(entity0))
   debug_inspect(render_lightmaps.entity_count(), content="1")
   debug_inspect(render_lightmaps.get(entity0) is None, content="true")
+  debug_inspect(
+    render_lightmaps.slab_texture_ids(render_lightmap0.slab_index)[0],
+    content="-1",
+  )
+}
+
+///|
+test "pbr/lightmap: bindless slabs expose four texture slots" {
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
+  render_lightmaps.set_bindless_supported(true)
+  render_lightmaps.clear()
+  let render_lightmap0 = render_lightmaps.insert_lightmap(
+    @core.Entity::new(20, 1),
+    Lightmap::new(@asset.Handle::new(7)),
+  )
+  let render_lightmap1 = render_lightmaps.insert_lightmap(
+    @core.Entity::new(21, 1),
+    Lightmap::new(@asset.Handle::new(8)),
+  )
+  let texture_ids = render_lightmaps.slab_texture_ids(
+    render_lightmap0.slab_index,
+  )
+  debug_inspect(render_lightmap1.slab_index.to_int(), content="0")
+  debug_inspect(render_lightmap1.slot_index.to_int(), content="1")
+  debug_inspect(texture_ids.length(), content="4")
+  debug_inspect(texture_ids[0], content="7")
+  debug_inspect(texture_ids[1], content="8")
+  debug_inspect(texture_ids[2], content="-1")
 }
 
 ///|

@@ -249,6 +249,9 @@ pub(all) struct MeshGpuDrawPayload3d {
   forward_decal_inv_depth_fade_factor : Float
   lightmap_exposure : Float
   lightmap_texture_id : Int
+  lightmap_slab_index : Int
+  lightmap_slot_index : Int
+  lightmap_slab_texture_ids : Array[Int]
   lightmap_uv_min_x : Float
   lightmap_uv_min_y : Float
   lightmap_uv_max_x : Float
@@ -402,6 +405,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   previous_morph_weights_index? : Int = -1,
   morph_targets_texture_id? : Int = -1,
   lightmap_texture_id? : Int = -1,
+  lightmap_slab_index? : Int = -1,
+  lightmap_slot_index? : Int = -1,
+  lightmap_slab_texture_ids? : Array[Int] = [],
   lightmap_uv_min_x? : Float = 0.0F,
   lightmap_uv_min_y? : Float = 0.0F,
   lightmap_uv_max_x? : Float = 0.0F,
@@ -480,6 +486,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     forward_decal_inv_depth_fade_factor,
     lightmap_exposure: material.lightmap_exposure,
     lightmap_texture_id,
+    lightmap_slab_index,
+    lightmap_slot_index,
+    lightmap_slab_texture_ids,
     lightmap_uv_min_x,
     lightmap_uv_min_y,
     lightmap_uv_max_x,
@@ -587,6 +596,9 @@ pub fn render3d_host_main_pass_draw_entry(
     material_flags=payload.material_flags,
     lightmap_exposure=payload.lightmap_exposure,
     lightmap_texture_id=payload.lightmap_texture_id,
+    lightmap_slab_index=payload.lightmap_slab_index,
+    lightmap_slot_index=payload.lightmap_slot_index,
+    lightmap_slab_texture_ids=payload.lightmap_slab_texture_ids,
     lightmap_uv_min_x=payload.lightmap_uv_min_x,
     lightmap_uv_min_y=payload.lightmap_uv_min_y,
     lightmap_uv_max_x=payload.lightmap_uv_max_x,
@@ -694,6 +706,9 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     },
     lightmap_exposure=payload.lightmap_exposure,
     lightmap_texture_id=payload.lightmap_texture_id,
+    lightmap_slab_index=payload.lightmap_slab_index,
+    lightmap_slot_index=payload.lightmap_slot_index,
+    lightmap_slab_texture_ids=payload.lightmap_slab_texture_ids,
     lightmap_uv_min_x=payload.lightmap_uv_min_x,
     lightmap_uv_min_y=payload.lightmap_uv_min_y,
     lightmap_uv_max_x=payload.lightmap_uv_max_x,

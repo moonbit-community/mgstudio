@@ -528,9 +528,15 @@ fn mesh3d_pack_lightmap_uv_rect_words(
 ///|
 fn mesh3d_material_and_lightmap_bind_group_slot(
   lightmap_texture_id : Int,
+  lightmap_slot_index : Int,
 ) -> UInt {
   if lightmap_texture_id >= 0 {
-    0U
+    let slot = if lightmap_slot_index >= 0 {
+      lightmap_slot_index.reinterpret_as_uint()
+    } else {
+      0U
+    }
+    slot << 16
   } else {
     0xFFFF0000U
   }
@@ -563,6 +569,7 @@ fn mesh3d_mesh_uniform_words(
   current_skin_index : UInt,
   mesh_flags : UInt,
   lightmap_texture_id : Int,
+  lightmap_slot_index : Int,
   lightmap_uv_min_x : Float,
   lightmap_uv_min_y : Float,
   lightmap_uv_max_x : Float,
@@ -606,7 +613,11 @@ fn mesh3d_mesh_uniform_words(
   words.push(lightmap_uv_rect_y)
   words.push(first_vertex_index)
   words.push(current_skin_index)
-  words.push(mesh3d_material_and_lightmap_bind_group_slot(lightmap_texture_id))
+  words.push(
+    mesh3d_material_and_lightmap_bind_group_slot(
+      lightmap_texture_id, lightmap_slot_index,
+    ),
+  )
   words.push(0U)
   words.push(morph_descriptor_index)
   for _ in 0..<3 {
@@ -676,6 +687,7 @@ fn mesh3d_draw_uniform_bytes(
   mesh_flags : UInt,
   point_shadow_depth_bias : Float,
   lightmap_texture_id : Int,
+  lightmap_slot_index : Int,
   lightmap_uv_min_x : Float,
   lightmap_uv_min_y : Float,
   lightmap_uv_max_x : Float,
@@ -719,8 +731,8 @@ fn mesh3d_draw_uniform_bytes(
     world_from_local, world_from_local, x, y, z, rotation_x, rotation_y, rotation_z,
     rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
     rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
-    lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
-    morph_descriptor_index,
+    lightmap_slot_index, lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x,
+    lightmap_uv_max_y, first_vertex_index, morph_descriptor_index,
   )
   u32le_pack(words)
 }
@@ -918,6 +930,7 @@ fn mesh3d_draw_uniform_write(
   mesh_flags : UInt,
   point_shadow_depth_bias : Float,
   lightmap_texture_id : Int,
+  lightmap_slot_index : Int,
   lightmap_uv_min_x : Float,
   lightmap_uv_min_y : Float,
   lightmap_uv_max_x : Float,
@@ -964,8 +977,8 @@ fn mesh3d_draw_uniform_write(
       world_from_local, world_from_local, x, y, z, rotation_x, rotation_y, rotation_z,
       rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
       rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
-      lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y,
-      first_vertex_index, morph_descriptor_index,
+      lightmap_slot_index, lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x,
+      lightmap_uv_max_y, first_vertex_index, morph_descriptor_index,
     ),
   )
 }

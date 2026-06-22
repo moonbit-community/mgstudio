@@ -65,6 +65,7 @@ priv struct MeshGpuBatchSetKey3d {
   clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   lightmap_exposure : Float
+  lightmap_slab_index : Int
   deferred_lighting_pass_id : Int
   transmission_source_texture_id : Int
   transmission_blur_taps : Float
@@ -155,6 +156,7 @@ fn render3d_mesh_gpu_batch_set_key(
     clearcoat_perceptual_roughness: payload.clearcoat_perceptual_roughness,
     alpha_cutoff: payload.alpha_cutoff,
     lightmap_exposure: payload.lightmap_exposure,
+    lightmap_slab_index: payload.lightmap_slab_index,
     deferred_lighting_pass_id: payload.deferred_lighting_pass_id,
     transmission_source_texture_id: payload.transmission_source_texture_id,
     transmission_blur_taps: payload.transmission_blur_taps,
@@ -239,6 +241,7 @@ fn render3d_mesh_gpu_batch_set_key_eq(
   lhs.clearcoat_perceptual_roughness == rhs.clearcoat_perceptual_roughness &&
   lhs.alpha_cutoff == rhs.alpha_cutoff &&
   lhs.lightmap_exposure == rhs.lightmap_exposure &&
+  lhs.lightmap_slab_index == rhs.lightmap_slab_index &&
   lhs.deferred_lighting_pass_id == rhs.deferred_lighting_pass_id &&
   lhs.transmission_source_texture_id == rhs.transmission_source_texture_id &&
   lhs.transmission_blur_taps == rhs.transmission_blur_taps &&

@@ -161,11 +161,17 @@ pub fn RenderLightmap::new(
 pub struct LightmapSlab {
   capacity : Int
   allocated : Int
+  lightmap_texture_ids : Array[Int]
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn LightmapSlab::LightmapSlab() -> LightmapSlab {
-  LightmapSlab::{ capacity: LIGHTMAPS_PER_SLAB, allocated: 0 }
+pub fn LightmapSlab::new(bindless_supported : Bool) -> LightmapSlab {
+  let capacity = if bindless_supported { LIGHTMAPS_PER_SLAB } else { 1 }
+  let lightmap_texture_ids : Array[Int] = []
+  for _ in 0..<capacity {
+    lightmap_texture_ids.push(-1)
+  }
+  LightmapSlab::{ capacity, allocated: 0, lightmap_texture_ids }
 }
 
 ///|
@@ -194,7 +200,7 @@ pub struct RenderLightmaps {
 pub fn RenderLightmaps::RenderLightmaps() -> RenderLightmaps {
   RenderLightmaps::{
     render_lightmaps: {},
-    slabs: [LightmapSlab::LightmapSlab()],
+    slabs: [LightmapSlab::new(false)],
     bindless_supported: false,
   }
 }
@@ -213,25 +219,38 @@ fn lightmap_clamp_slab_index(slabs : Array[LightmapSlab], index : Int) -> Int {
 ///|
 fn render_lightmaps_allocate_slot(
   render_lightmaps : RenderLightmaps,
+  lightmap_texture_id : Int,
 ) -> (LightmapSlabIndex, LightmapSlotIndex) {
   for index in 0..<render_lightmaps.slabs.length() {
     let slab = render_lightmaps.slabs[index]
     if !slab.is_full() {
       let slot = slab.allocated
+      let texture_ids = slab.lightmap_texture_ids
+      if slot >= 0 && slot < texture_ids.length() {
+        texture_ids[slot] = lightmap_texture_id
+      }
       render_lightmaps.slabs[index] = LightmapSlab::{
         ..slab,
         allocated: slab.allocated + 1,
+        lightmap_texture_ids: texture_ids,
       }
       return (LightmapSlabIndex::new(index), LightmapSlotIndex::new(slot))
     }
   }
-  render_lightmaps.slabs.push(LightmapSlab::LightmapSlab())
+  render_lightmaps.slabs.push(
+    LightmapSlab::new(render_lightmaps.bindless_supported),
+  )
   let new_index = render_lightmaps.slabs.length() - 1
   let slab = render_lightmaps.slabs[new_index]
   let slot = slab.allocated
+  let texture_ids = slab.lightmap_texture_ids
+  if slot >= 0 && slot < texture_ids.length() {
+    texture_ids[slot] = lightmap_texture_id
+  }
   render_lightmaps.slabs[new_index] = LightmapSlab::{
     ..slab,
     allocated: slab.allocated + 1,
+    lightmap_texture_ids: texture_ids,
   }
   (LightmapSlabIndex::new(new_index), LightmapSlotIndex::new(slot))
 }
@@ -240,7 +259,7 @@ fn render_lightmaps_allocate_slot(
 pub fn RenderLightmaps::clear(self : RenderLightmaps) -> Unit {
   self.render_lightmaps.clear()
   self.slabs.clear()
-  self.slabs.push(LightmapSlab::LightmapSlab())
+  self.slabs.push(LightmapSlab::new(self.bindless_supported))
 }
 
 ///|
@@ -257,7 +276,14 @@ pub fn RenderLightmaps::insert_lightmap(
   entity : @core.Entity,
   lightmap : Lightmap,
 ) -> RenderLightmap {
-  let (slab_index, slot_index) = render_lightmaps_allocate_slot(self)
+  match self.render_lightmaps.get(entity.id) {
+    Some(existing) => return existing
+    None => ()
+  }
+  let (slab_index, slot_index) = render_lightmaps_allocate_slot(
+    self,
+    lightmap.image.id(),
+  )
   let render_lightmap = RenderLightmap::new(
     lightmap.uv_rect,
     slab_index,
@@ -289,6 +315,11 @@ pub fn RenderLightmaps::remove(
         let slab_raw_index = lightmap.slab_index.to_int()
         let slab_index = lightmap_clamp_slab_index(self.slabs, slab_raw_index)
         let slab = self.slabs[slab_index]
+        let slot_index = lightmap.slot_index.to_int()
+        let texture_ids = slab.lightmap_texture_ids
+        if slot_index >= 0 && slot_index < texture_ids.length() {
+          texture_ids[slot_index] = -1
+        }
         self.slabs[slab_index] = LightmapSlab::{
           ..slab,
           allocated: if slab.allocated <= 0 {
@@ -296,6 +327,7 @@ pub fn RenderLightmaps::remove(
           } else {
             slab.allocated - 1
           },
+          lightmap_texture_ids: texture_ids,
         }
       }
       Some(lightmap)
@@ -307,6 +339,22 @@ pub fn RenderLightmaps::remove(
 ///|
 pub fn RenderLightmaps::entity_count(self : RenderLightmaps) -> Int {
   self.render_lightmaps.length()
+}
+
+///|
+pub fn RenderLightmaps::slab_texture_ids(
+  self : RenderLightmaps,
+  slab_index : LightmapSlabIndex,
+) -> Array[Int] {
+  let texture_ids : Array[Int] = []
+  let raw_index = slab_index.to_int()
+  if raw_index < 0 || raw_index >= self.slabs.length() {
+    return texture_ids
+  }
+  for id in self.slabs[raw_index].lightmap_texture_ids {
+    texture_ids.push(id)
+  }
+  texture_ids
 }
 
 ///|
