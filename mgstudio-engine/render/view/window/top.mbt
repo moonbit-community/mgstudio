@@ -111,9 +111,12 @@ pub fn ExtractedWindow::has_swapchain_texture(self : ExtractedWindow) -> Bool {
 ///|
 pub fn ExtractedWindow::set_swapchain_texture(
   self : ExtractedWindow,
+  surface : @wgpu.Surface,
   frame : @wgpu.SurfaceTexture,
 ) -> Unit {
-  let surface_texture = @render_resource.SurfaceTexture::from_wgpu(frame)
+  let surface_texture = @render_resource.SurfaceTexture::from_wgpu(
+    surface, frame,
+  )
   let texture = surface_texture.take_texture()
   self.swap_chain_texture_view_format = Some(
     surface_texture_format_add_srgb_suffix(texture.format()),
@@ -350,10 +353,11 @@ fn surface_texture_status_name(status : UInt) -> String {
 fn set_window_swapchain_texture_if_success(
   window : ExtractedWindow,
   frame : @wgpu.SurfaceTexture,
+  surface : @wgpu.Surface,
 ) -> Bool {
   let status = frame.status()
   if surface_texture_status_is_success(status) {
-    window.set_swapchain_texture(frame)
+    window.set_swapchain_texture(surface, frame)
     true
   } else {
     frame.release()
@@ -390,7 +394,7 @@ pub fn prepare_windows(
     let frame = surface_data.surface.get_current_texture()
     let status = frame.status()
     if surface_texture_status_is_success(status) {
-      window.set_swapchain_texture(frame)
+      window.set_swapchain_texture(surface_data.surface, frame)
     } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
       frame.release()
       configure_surface_for_window(
@@ -402,7 +406,11 @@ pub fn prepare_windows(
       )
       let retry_frame = surface_data.surface.get_current_texture()
       let retry_status = retry_frame.status()
-      if !set_window_swapchain_texture_if_success(window, retry_frame) {
+      if !set_window_swapchain_texture_if_success(
+          window,
+          retry_frame,
+          surface_data.surface,
+        ) {
         @app.log_warn(
           "Couldn't get swap chain texture after configuring. Cause: '\{surface_texture_status_name(retry_status)}'",
         )

@@ -29,7 +29,8 @@ pub struct TextureView {
 
 ///|
 pub struct SurfaceTexture {
-  value : @wgpu.SurfaceTexture
+  surface : @wgpu.Surface
+  texture : @wgpu.Texture
 }
 
 ///|
@@ -124,19 +125,24 @@ pub fn TextureView::set_label(self : TextureView, label : String) -> Unit {
 
 ///|
 pub fn SurfaceTexture::from_wgpu(
+  surface : @wgpu.Surface,
   value : @wgpu.SurfaceTexture,
 ) -> SurfaceTexture {
-  SurfaceTexture::{ value, }
+  let texture = value.take_texture()
+  value.release()
+  SurfaceTexture::{ surface: surface.add_ref(), texture }
 }
 
 ///|
 pub fn SurfaceTexture::present(self : SurfaceTexture) -> Unit {
-  self.value.release()
+  self.surface.present() |> ignore
+  self.texture.release()
+  self.surface.release()
 }
 
 ///|
 pub fn SurfaceTexture::take_texture(self : SurfaceTexture) -> Texture {
-  Texture::from_wgpu(self.value.take_texture())
+  Texture::from_wgpu(self.texture)
 }
 
 ///|

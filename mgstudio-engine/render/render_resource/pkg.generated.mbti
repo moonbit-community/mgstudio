@@ -593,9 +593,10 @@ pub(all) enum StorageTextureAccess {
 }
 
 pub struct SurfaceTexture {
-  value : @wgpu_mbt.SurfaceTexture
+  surface : @wgpu_mbt.Surface
+  texture : @wgpu_mbt.Texture
 }
-pub fn SurfaceTexture::from_wgpu(@wgpu_mbt.SurfaceTexture) -> Self
+pub fn SurfaceTexture::from_wgpu(@wgpu_mbt.Surface, @wgpu_mbt.SurfaceTexture) -> Self
 pub fn SurfaceTexture::present(Self) -> Unit
 pub fn SurfaceTexture::take_texture(Self) -> Texture
 
