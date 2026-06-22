@@ -205,12 +205,119 @@ impl MaterialExtension for ParityMaterialExtension with fn bind_group_bindings(
 }
 
 ///|
+struct ParityNoPrepassMaterialExtension {}
+
+///|
+fn ParityNoPrepassMaterialExtension::ParityNoPrepassMaterialExtension() -> ParityNoPrepassMaterialExtension {
+  ParityNoPrepassMaterialExtension::{  }
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn extension_tag(
+  _self,
+) {
+  88
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn fragment_shader(
+  _self,
+) {
+  Some("shaders/extended_material.wgsl")
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn prepass_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn prepass_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn deferred_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn deferred_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn alpha_mode(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn opaque_render_method(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn enable_prepass(
+  _self,
+) {
+  false
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn enable_shadows(
+  _self,
+) {
+  true
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn specialize(
+  _self,
+) {
+  None
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn bind_group_layout_entries(
+  _self,
+) {
+  []
+}
+
+///|
+impl MaterialExtension for ParityNoPrepassMaterialExtension with fn bind_group_bindings(
+  _self,
+) {
+  []
+}
+
+///|
 test "render3d: material extension prepass flag does not require camera prepasses" {
   let metadata = material_extension_metadata_from_extension(
     ParityMaterialExtension::ParityMaterialExtension(),
   )
   inspect(metadata.requires_depth_prepass, content="false")
   inspect(metadata.requires_deferred_prepass, content="false")
+  inspect(metadata.prepass_enabled, content="true")
   let props = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),
     Some(metadata),
@@ -218,6 +325,47 @@ test "render3d: material extension prepass flag does not require camera prepasse
     true,
   )
   inspect(props.prepass_enabled, content="true")
+  debug_inspect(
+    props.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
+    content="Some(\"shaders/extended_material.wgsl\")",
+  )
+}
+
+///|
+test "render3d: material extension prepass disabled follows Bevy prepared material properties" {
+  let metadata = material_extension_metadata_from_extension(
+    ParityNoPrepassMaterialExtension::ParityNoPrepassMaterialExtension(),
+  )
+  inspect(metadata.requires_depth_prepass, content="false")
+  inspect(metadata.requires_deferred_prepass, content="false")
+  inspect(metadata.prepass_enabled, content="false")
+  let props = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(metadata),
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  inspect(props.prepass_enabled, content="false")
+  debug_inspect(
+    pbr_prepass_material_specialization_decision(
+      props,
+      0UL,
+      MESH_PIPELINE_KEY_DEPTH_PREPASS,
+    )
+    is PbrPrepassMaterialSpecializationDecision::Remove,
+    content="true",
+  )
+  let disabled_by_plugin = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    Some(
+      material_extension_metadata_from_extension(
+        ParityMaterialExtension::ParityMaterialExtension(),
+      ),
+    ),
+    OpaqueRendererMethod::Forward,
+    false,
+  )
+  inspect(disabled_by_plugin.prepass_enabled, content="false")
   debug_inspect(
     props.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/extended_material.wgsl\")",

@@ -211,6 +211,7 @@ pub struct ExtendedMaterialMetadata3d {
   requires_deferred_prepass : Bool
   disable_shadows : Bool
   user_specialize : ((String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
+  prepass_enabled : Bool
   extension_bind_group_layout_entries : Array[@render_resource.BindGroupLayoutEntry]
   extension_bind_group_bindings : Array[MaterialExtensionBinding3d]
 }
@@ -230,6 +231,7 @@ pub fn ExtendedMaterialMetadata3d::with_meshlet_deferred_fragment_shader_path(Se
 pub fn ExtendedMaterialMetadata3d::with_meshlet_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_meshlet_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(Self, OpaqueRendererMethod?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_prepass_enabled(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(Self, Bool) -> Self
@@ -330,6 +332,7 @@ pub fn MeshMaterial3d::with_extension_meshlet_deferred_fragment_shader_path(Self
 pub fn MeshMaterial3d::with_extension_meshlet_fragment_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_meshlet_prepass_fragment_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendererMethod?) -> Self
+pub fn MeshMaterial3d::with_extension_prepass_enabled(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self

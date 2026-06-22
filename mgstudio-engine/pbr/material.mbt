@@ -630,6 +630,10 @@ pub fn render3d_material_properties_for_standard_material(
     Some(metadata) => !metadata.disable_shadows
     None => true
   }
+  let prepass_enabled = match extension {
+    Some(metadata) => prepass_enabled && metadata.prepass_enabled
+    None => prepass_enabled
+  }
   let standard_material_key = standard_material_key_from_material(
     effective_material,
   )

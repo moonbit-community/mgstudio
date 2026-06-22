@@ -120,6 +120,7 @@ pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   .with_alpha_mode_override(extension.alpha_mode())
   .with_opaque_render_method_override(extension.opaque_render_method())
   .with_disable_shadows(!extension.enable_shadows())
+  .with_prepass_enabled(extension.enable_prepass())
   .with_user_specialize(extension.specialize())
   .with_extension_bind_group_layout_entries(
     extension.bind_group_layout_entries(),

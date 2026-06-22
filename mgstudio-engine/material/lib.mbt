@@ -1159,6 +1159,7 @@ pub struct ExtendedMaterialMetadata3d {
   requires_deferred_prepass : Bool
   disable_shadows : Bool
   user_specialize : UserSpecializeFn?
+  prepass_enabled : Bool
   extension_bind_group_layout_entries : Array[
     @render_resource.BindGroupLayoutEntry,
   ]
@@ -1184,6 +1185,7 @@ pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMater
     requires_deferred_prepass: false,
     disable_shadows: false,
     user_specialize: None,
+    prepass_enabled: true,
     extension_bind_group_layout_entries: [],
     extension_bind_group_bindings: [],
   }
@@ -1356,6 +1358,14 @@ pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
   disable_shadows : Bool,
 ) -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{ ..self, disable_shadows, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_prepass_enabled(
+  self : ExtendedMaterialMetadata3d,
+  prepass_enabled : Bool,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, prepass_enabled, }
 }
 
 ///|
@@ -1636,6 +1646,21 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(
   MeshMaterial3d::{
     ..self,
     extended_material: Some(extension.with_disable_shadows(disable_shadows)),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_prepass_enabled(
+  self : MeshMaterial3d,
+  prepass_enabled : Bool,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(extension.with_prepass_enabled(prepass_enabled)),
   }
 }
 
