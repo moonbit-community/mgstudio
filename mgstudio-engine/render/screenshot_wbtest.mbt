@@ -86,13 +86,13 @@ test "screenshot: duplicate texture-view targets are despawned during extraction
   let first_request = world.spawn()
   try! (world
   .entity_mut(first_request)
-  .insert_component(Screenshot::texture_view(42))
+  .insert_component(Screenshot::texture_view(ManualTextureViewHandle::new(42)))
   |> ignore)
 
   let duplicate_request = world.spawn()
   try! (world
   .entity_mut(duplicate_request)
-  .insert_component(Screenshot::texture_view(42))
+  .insert_component(Screenshot::texture_view(ManualTextureViewHandle::new(42)))
   |> ignore)
 
   extract_screenshots(world)

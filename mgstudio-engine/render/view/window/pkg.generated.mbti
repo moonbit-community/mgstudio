@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/render/view/window"
 
 import {
+  "Milky2018/mgstudio/camera/render_target",
   "Milky2018/mgstudio/render/renderer",
 }
 
@@ -20,7 +21,7 @@ pub fn screenshot_parity_capture_completed() -> Bool
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
-pub fn window_manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
+pub fn window_manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> @render_target.ManualTextureViewHandle
 
 pub fn window_screenshot_capture_surface_request() -> Int
 
@@ -39,7 +40,7 @@ pub fn window_screenshot_take_capture_result(Int) -> @renderer.ScreenshotCapture
 // Types and methods
 
 // Type aliases
-pub type ManualTextureViewHandle = Int
+pub using @render_target {type ManualTextureViewHandle}
 
 // Traits
 

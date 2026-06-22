@@ -416,7 +416,7 @@ fn screenshot_target_key(
     }
     Image(image) => Some("image:\{image.id().to_string()}")
     TextureView(texture_view) =>
-      Some("texture_view:\{texture_view.to_string()}")
+      Some("texture_view:\{texture_view.value().to_string()}")
   }
 }
 
@@ -442,7 +442,7 @@ fn screenshot_request_capture(
     }
     Image(image) => screenshot_capture_texture_request(texture_id=image.id())
     TextureView(texture_view) =>
-      screenshot_capture_texture_request(texture_id=texture_view)
+      screenshot_capture_texture_request(texture_id=texture_view.value())
   }
 }
 

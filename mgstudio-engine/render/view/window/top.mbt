@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_render/src/view/window/mod.rs`.
 
 ///|
-pub type ManualTextureViewHandle = Int
+pub type ManualTextureViewHandle = @camera_render_target.ManualTextureViewHandle
 
 ///|
 pub fn window_screenshot_capture_surface_request() -> Int {
@@ -59,5 +59,5 @@ pub fn window_manual_texture_view_handle(
   texture_id~ : Int,
   mip_level~ : Int,
 ) -> ManualTextureViewHandle {
-  texture_id * 10_000 + mip_level
+  ManualTextureViewHandle::new(texture_id * 10_000 + mip_level)
 }
