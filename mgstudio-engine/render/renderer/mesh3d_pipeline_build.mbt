@@ -247,8 +247,12 @@ fn mesh3d_forward_shader_defines_from_descriptor(
 ) -> @hashmap.HashMap[String, Bool] {
   guard descriptor is Some(desc) else {
     return mesh3d_forward_shader_defines(
-      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      skinned,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     )
   }
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
@@ -458,8 +462,13 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
     assets_base,
     shader_path,
     mesh3d_forward_shader_defines_from_descriptor(
-      descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      descriptor,
+      skinned,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     ),
     mesh3d_forward_value_defines(descriptor~),
   )
@@ -1617,7 +1626,11 @@ fn mesh3d_default_draw_bind_group_layout_descriptor(
     )
   }
   @render_resource.BindGroupLayoutDescriptor::new(
-    if lightmapped { "lightmapped_mesh_layout" } else { "mesh_layout" },
+    if lightmapped {
+      "lightmapped_mesh_layout"
+    } else {
+      "mesh_layout"
+    },
     entries,
   )
 }
@@ -1918,9 +1931,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
       )
       let draw_bgl = if default_lightmapped {
         mesh3d_create_bind_group_layout_from_descriptor(
-          backend,
-          draw_layout_descriptor,
-          "default_draw_lightmapped",
+          backend, draw_layout_descriptor, "default_draw_lightmapped",
         )
       } else {
         guard backend.mesh3d_bgl_draw is Some(base_draw_bgl) else {
@@ -2199,17 +2210,39 @@ fn ensure_mesh3d_pipeline_rgba8(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     ) {
     return
   }
@@ -2226,15 +2259,34 @@ fn ensure_mesh3d_pipeline_rgba8(
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(
-    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode,
-    deband_dither_enabled, shadow_filter_method, "mesh3d rgba8", lightmapped~,
+    backend,
+    material_descriptor,
+    skinned,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    "mesh3d rgba8",
+    lightmapped~,
   ) catch {
     ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
-        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
-        safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message, lightmapped~,
+        backend,
+        color_format,
+        msaa_sample_count,
+        topology,
+        material_pipeline_id,
+        safe_cull_mode,
+        blend_kind,
+        skinned,
+        forward_decal,
+        tonemap_in_shader,
+        tonemapping_mode,
+        deband_dither_enabled,
+        shadow_filter_method,
+        message,
+        lightmapped~,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -2281,9 +2333,21 @@ fn ensure_mesh3d_pipeline_rgba8(
     pipeline.release()
     modules.release()
     mesh3d_pipeline_set_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      message,
+      lightmapped~,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -2298,9 +2362,21 @@ fn ensure_mesh3d_pipeline_rgba8(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, pipeline, lightmapped~,
+    backend,
+    color_format,
+    msaa_sample_count,
+    topology,
+    material_pipeline_id,
+    safe_cull_mode,
+    blend_kind,
+    skinned,
+    forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    pipeline,
+    lightmapped~,
   )
   modules.release()
 }
@@ -2332,17 +2408,39 @@ fn ensure_mesh3d_pipeline_surface(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     ) {
     return
   }
@@ -2359,15 +2457,34 @@ fn ensure_mesh3d_pipeline_surface(
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(
-    backend, material_descriptor, skinned, tonemap_in_shader, tonemapping_mode,
-    deband_dither_enabled, shadow_filter_method, "mesh3d surface", lightmapped~,
+    backend,
+    material_descriptor,
+    skinned,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    "mesh3d surface",
+    lightmapped~,
   ) catch {
     ShaderNotReady(_) => return
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
-        backend, color_format, msaa_sample_count, topology, material_pipeline_id,
-        safe_cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message, lightmapped~,
+        backend,
+        color_format,
+        msaa_sample_count,
+        topology,
+        material_pipeline_id,
+        safe_cull_mode,
+        blend_kind,
+        skinned,
+        forward_decal,
+        tonemap_in_shader,
+        tonemapping_mode,
+        deband_dither_enabled,
+        shadow_filter_method,
+        message,
+        lightmapped~,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -2414,9 +2531,21 @@ fn ensure_mesh3d_pipeline_surface(
     pipeline.release()
     modules.release()
     mesh3d_pipeline_set_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      safe_cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      message,
+      lightmapped~,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -2431,9 +2560,21 @@ fn ensure_mesh3d_pipeline_surface(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, msaa_sample_count, topology, material_pipeline_id, safe_cull_mode,
-    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, pipeline, lightmapped~,
+    backend,
+    color_format,
+    msaa_sample_count,
+    topology,
+    material_pipeline_id,
+    safe_cull_mode,
+    blend_kind,
+    skinned,
+    forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    pipeline,
+    lightmapped~,
   )
   modules.release()
 }
@@ -2497,9 +2638,21 @@ fn mesh3d_pipeline_for_current_pass(
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
-        backend, format, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
-        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, lightmapped~,
+        backend,
+        format,
+        msaa_sample_count,
+        topology,
+        material_pipeline_id,
+        material_descriptor,
+        cull_mode,
+        blend_kind,
+        skinned,
+        forward_decal,
+        tonemap_in_shader,
+        tonemapping_mode,
+        deband_dither_enabled,
+        shadow_filter_method,
+        lightmapped~,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -2521,9 +2674,20 @@ fn mesh3d_pipeline_for_current_pass(
     _ => ()
   }
   ensure_mesh3d_pipeline_rgba8(
-    backend, msaa_sample_count, topology, material_pipeline_id, material_descriptor,
-    cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-    deband_dither_enabled, shadow_filter_method, lightmapped~,
+    backend,
+    msaa_sample_count,
+    topology,
+    material_pipeline_id,
+    material_descriptor,
+    cull_mode,
+    blend_kind,
+    skinned,
+    forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
+    shadow_filter_method,
+    lightmapped~,
   )
   mesh3d_pipeline_get(
     backend,

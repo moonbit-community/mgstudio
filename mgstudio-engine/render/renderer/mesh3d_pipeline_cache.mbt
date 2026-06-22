@@ -204,17 +204,39 @@ fn mesh3d_pipeline_set_failed(
   lightmapped? : Bool = false,
 ) -> Unit {
   if mesh3d_pipeline_get(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, lightmapped~,
+      backend,
+      color_format,
+      msaa_sample_count,
+      topology,
+      material_pipeline_id,
+      cull_mode,
+      blend_kind,
+      skinned,
+      forward_decal,
+      tonemap_in_shader,
+      tonemapping_mode,
+      deband_dither_enabled,
+      shadow_filter_method,
+      lightmapped~,
     ) {
     return
   }

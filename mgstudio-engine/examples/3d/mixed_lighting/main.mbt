@@ -576,7 +576,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(
     @pbr.GlobalAmbientLight::new(
-      @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @camera_clear_color.ClearColor::ClearColor().color,
       10000.0F,
     ).with_affects_lightmapped_meshes(true),
   )

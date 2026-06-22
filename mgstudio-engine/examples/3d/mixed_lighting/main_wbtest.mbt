@@ -21,7 +21,7 @@ fn mixed_lighting_test_app() -> @app.App[@ecs.World] {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(
     @pbr.GlobalAmbientLight::new(
-      @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @camera_clear_color.ClearColor::ClearColor().color,
       10000.0F,
     ).with_affects_lightmapped_meshes(true),
   )
@@ -69,14 +69,35 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
   let mesh_names : Array[String] = []
   let lightmapped_meshes : Array[String] = []
   let visible_lightmapped_meshes : Array[String] = []
+  let lightmapped_meshes_with_uv1 : Array[String] = []
   let realtime_directional_lights = Ref(0)
   let ignored_pickable_spheres = Ref(0)
   let world = app.world()
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  guard world.get_resource(mesh_assets_key) is Some(mesh_assets) else {
+    abort("expected mesh assets")
+  }
   world.for_each_component(@gltf.GltfMeshName::component(), fn(entity, name) {
     mesh_names.push(name.as_str())
     if (try! world.contains_by_key(entity, @pbr.ecs_key_lightmap)) {
       lightmapped_meshes.push(name.as_str())
-      match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+      match (try! world.get_by_key(entity, @mesh.ecs_key_mesh3d)) {
+        Some(mesh3d) =>
+          match mesh_assets.get(mesh3d.mesh()) {
+            Some(mesh_asset) =>
+              match mesh_asset.as_3d_geometry() {
+                Some(geometry) =>
+                  if geometry.has_uv1s() {
+                    lightmapped_meshes_with_uv1.push(name.as_str())
+                  }
+                None => ()
+              }
+            None => ()
+          }
+        None => ()
+      }
+      match
+        (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
         Some(visibility) =>
           if visibility.is_visible() {
             visible_lightmapped_meshes.push(name.as_str())
@@ -89,13 +110,17 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
       ignored_pickable_spheres.val = ignored_pickable_spheres.val + 1
     }
   })
-  world.for_each_component(@pbr.DirectionalLight::component(), fn(_entity, light) {
+  world.for_each_component(@pbr.DirectionalLight::component(), fn(
+    _entity,
+    light,
+  ) {
     if light.affects_lightmapped_mesh_diffuse && light.shadow_maps_enabled {
       realtime_directional_lights.val = realtime_directional_lights.val + 1
     }
   })
   debug_inspect(mesh_names.length(), content="6")
   debug_inspect(lightmapped_meshes.length(), content="5")
+  debug_inspect(lightmapped_meshes_with_uv1.length(), content="5")
   debug_inspect(visible_lightmapped_meshes.length(), content="5")
   debug_inspect(realtime_directional_lights.val, content="1")
   debug_inspect(ignored_pickable_spheres.val, content="1")
