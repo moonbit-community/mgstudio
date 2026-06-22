@@ -23,6 +23,10 @@ import {
   "Milky2018/mgstudio/window",
 }
 
+import {
+  "Milky2018/mgstudio/visibility",
+} for "wbtest"
+
 supported_targets = "native"
 
 options(

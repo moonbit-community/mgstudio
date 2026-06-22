@@ -68,6 +68,7 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
   }
   let mesh_names : Array[String] = []
   let lightmapped_meshes : Array[String] = []
+  let visible_lightmapped_meshes : Array[String] = []
   let realtime_directional_lights = Ref(0)
   let ignored_pickable_spheres = Ref(0)
   let world = app.world()
@@ -75,6 +76,13 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
     mesh_names.push(name.as_str())
     if (try! world.contains_by_key(entity, @pbr.ecs_key_lightmap)) {
       lightmapped_meshes.push(name.as_str())
+      match (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+        Some(visibility) =>
+          if visibility.is_visible() {
+            visible_lightmapped_meshes.push(name.as_str())
+          }
+        None => ()
+      }
     }
     if name.as_str() == "Sphere" &&
       (try! world.contains_by_key(entity, @picking.Pickable::component())) {
@@ -88,6 +96,7 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
   })
   debug_inspect(mesh_names.length(), content="6")
   debug_inspect(lightmapped_meshes.length(), content="5")
+  debug_inspect(visible_lightmapped_meshes.length(), content="5")
   debug_inspect(realtime_directional_lights.val, content="1")
   debug_inspect(ignored_pickable_spheres.val, content="1")
 }
