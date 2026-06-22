@@ -559,7 +559,7 @@ pub fn sorted_cameras_or_default(@ecs.World) -> SortedCameras
 
 pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ecs.ResourceMut[SortedCameras]
 
-pub fn sorted_cameras_replace_entities(@ecs.ResourceMut[SortedCameras], Array[@core.Entity]) -> Unit
+pub fn sorted_cameras_replace(@ecs.ResourceMut[SortedCameras], Array[SortedCamera]) -> Unit
 
 pub fn sync_build(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -600,6 +600,13 @@ pub(all) suberror PrepareAssetError {
 pub struct AssetExtractionSystems {
 }
 pub fn AssetExtractionSystems::new() -> Self
+
+pub(all) enum CameraOutputMode {
+  Write
+  Skip
+} derive(Eq, @debug.Debug)
+pub fn CameraOutputMode::default() -> Self
+pub fn CameraOutputMode::writes(Self) -> Bool
 
 pub struct CameraRenderGraph {
   schedule : @app.ScheduleStage
@@ -1101,9 +1108,28 @@ pub(all) enum SlabKind {
   LargeObject
 } derive(Eq, @debug.Debug)
 
-pub struct SortedCameras {
-  mut entities : Array[@core.Entity]
+pub struct SortedCamera {
+  entity : @core.Entity
+  order : Int
+  target : @render_target.NormalizedRenderTarget?
+  hdr : Bool
+  output_mode : CameraOutputMode
 }
+pub fn SortedCamera::entity(Self) -> @core.Entity
+pub fn SortedCamera::hdr(Self) -> Bool
+pub fn SortedCamera::new(@core.Entity, Int, @render_target.NormalizedRenderTarget?, Bool, CameraOutputMode) -> Self
+pub fn SortedCamera::order(Self) -> Int
+pub fn SortedCamera::output_mode(Self) -> CameraOutputMode
+pub fn SortedCamera::target(Self) -> @render_target.NormalizedRenderTarget?
+pub fn SortedCamera::writes_output(Self) -> Bool
+
+pub struct SortedCameras {
+  mut cameras : Array[SortedCamera]
+}
+pub fn SortedCameras::camera_entities(Self) -> Array[@core.Entity]
+pub fn SortedCameras::cameras(Self) -> Array[SortedCamera]
+pub fn SortedCameras::is_empty(Self) -> Bool
+pub fn SortedCameras::len(Self) -> Int
 pub fn SortedCameras::new() -> Self
 pub impl @app.Resource for SortedCameras
 

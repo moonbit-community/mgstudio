@@ -355,7 +355,7 @@ pub fn render3d_prepare_contact_shadows_system(world : @ecs.World) -> Unit {
   let offsets = buffer.modify(fn(value) {
     render3d_prepare_contact_shadows_settings(
       world,
-      sorted_cameras.entities,
+      sorted_cameras.camera_entities(),
       value,
     )
   })

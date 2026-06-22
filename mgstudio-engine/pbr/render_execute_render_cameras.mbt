@@ -96,7 +96,58 @@ fn render3d_execute_render_cameras(
 }
 
 ///|
-fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
+fn render3d_normalized_render_target(
+  target : @camera_camera.RenderTarget,
+) -> @camera_render_target.NormalizedRenderTarget? {
+  match target {
+    Screen =>
+      Some(
+        @camera_render_target.NormalizedRenderTarget::Window(
+          @window.WindowRef::Primary,
+        ),
+      )
+    Window(window_ref) =>
+      Some(@camera_render_target.NormalizedRenderTarget::Window(window_ref))
+    Image(handle) =>
+      Some(
+        @camera_render_target.NormalizedRenderTarget::Image(
+          @camera_render_target.ImageRenderTarget::from_handle(handle),
+        ),
+      )
+  }
+}
+
+///|
+fn render3d_sorted_camera_target_rank(
+  target : @camera_render_target.NormalizedRenderTarget?,
+) -> Int {
+  match target {
+    Some(Window(_)) => 0
+    Some(Image(_)) => 1
+    Some(TextureView(_)) => 2
+    Some(None(_, _)) => 3
+    None => 4
+  }
+}
+
+///|
+fn render3d_sorted_camera_target_key(
+  target : @camera_render_target.NormalizedRenderTarget?,
+) -> Int {
+  match target {
+    Some(Window(@window.WindowRef::Primary)) => -1
+    Some(Window(@window.WindowRef::Entity(entity))) => entity.id
+    Some(Image(handle)) => handle.handle_id()
+    Some(TextureView(handle)) => handle.value()
+    Some(None(width, height)) => width * 65536 + height
+    None => 0
+  }
+}
+
+///|
+fn render3d_sorted_camera_entries(
+  world : @ecs.World,
+) -> Array[@render.SortedCamera] {
   let entries : Array[Render3dCameraOrderEntry] = []
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
     let camera = match
@@ -112,12 +163,35 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
       return
     }
     let order = camera.order
-    entries.push(Render3dCameraOrderEntry::{ entity: render_entity.id(), order })
+    let target = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
+      Some(value) => value
+      None => @camera_camera.RenderTarget::Screen
+    }
+    entries.push(Render3dCameraOrderEntry::{
+      entity: render_entity.id(),
+      order,
+      target: render3d_normalized_render_target(target),
+    })
   })
   entries.sort_by(fn(a, b) {
     let order_cmp = @pbr_render.cmp_int(a.order, b.order)
     if order_cmp != 0 {
       return order_cmp
+    }
+    let target_rank_cmp = @pbr_render.cmp_int(
+      render3d_sorted_camera_target_rank(a.target),
+      render3d_sorted_camera_target_rank(b.target),
+    )
+    if target_rank_cmp != 0 {
+      return target_rank_cmp
+    }
+    let target_key_cmp = @pbr_render.cmp_int(
+      render3d_sorted_camera_target_key(a.target),
+      render3d_sorted_camera_target_key(b.target),
+    )
+    if target_key_cmp != 0 {
+      return target_key_cmp
     }
     let id_cmp = @pbr_render.cmp_int(a.entity.id, b.entity.id)
     if id_cmp != 0 {
@@ -125,9 +199,17 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
     }
     @pbr_render.cmp_int(a.entity.generation, b.entity.generation)
   })
-  let sorted : Array[@core.Entity] = []
+  let sorted : Array[@render.SortedCamera] = []
   for entry in entries {
-    sorted.push(entry.entity)
+    sorted.push(
+      @render.SortedCamera::new(
+        entry.entity,
+        entry.order,
+        entry.target,
+        false,
+        @render.CameraOutputMode::Write,
+      ),
+    )
   }
   sorted
 }
@@ -137,9 +219,9 @@ fn render3d_refresh_sorted_cameras(
   source_world : @ecs.World,
   sorted_cameras_ref : @ecs.ResourceMut[@render.SortedCameras],
 ) -> Unit {
-  @render.sorted_cameras_replace_entities(
+  @render.sorted_cameras_replace(
     sorted_cameras_ref,
-    render3d_sorted_camera_entities(source_world),
+    render3d_sorted_camera_entries(source_world),
   )
 }
 
@@ -148,12 +230,13 @@ fn render3d_prepared_camera_phase_items(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
 ) -> Array[CameraPhaseItem3d]? {
-  let prepared = @render.sorted_cameras_or_default(world).entities
+  let prepared = @render.sorted_cameras_or_default(world).cameras()
   if prepared.length() != cameras.length() {
     return None
   }
   let items : Array[CameraPhaseItem3d] = []
-  for entity in prepared {
+  for sorted_camera in prepared {
+    let entity = sorted_camera.entity()
     let mut found_index = -1
     for i in 0..<cameras.length() {
       let camera = cameras[i]

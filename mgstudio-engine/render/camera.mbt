@@ -273,14 +273,109 @@ pub fn PendingQueues::expire_stale_views(
 
 ///|
 // Bevy source:
-// - `bevy/crates/bevy_render/src/camera.rs` (`SortedCameras`).
+// - `bevy/crates/bevy_render/src/camera.rs` (`SortedCameras`,
+//   `SortedCamera`).
+pub(all) enum CameraOutputMode {
+  Write
+  Skip
+} derive(Eq, Debug)
+
+///|
+pub fn CameraOutputMode::default() -> CameraOutputMode {
+  Write
+}
+
+///|
+pub fn CameraOutputMode::writes(self : CameraOutputMode) -> Bool {
+  self == Write
+}
+
+///|
+pub struct SortedCamera {
+  entity : @core.Entity
+  order : Int
+  target : @camera_render_target.NormalizedRenderTarget?
+  hdr : Bool
+  output_mode : CameraOutputMode
+}
+
+///|
+pub fn SortedCamera::new(
+  entity : @core.Entity,
+  order : Int,
+  target : @camera_render_target.NormalizedRenderTarget?,
+  hdr : Bool,
+  output_mode : CameraOutputMode,
+) -> SortedCamera {
+  SortedCamera::{ entity, order, target, hdr, output_mode }
+}
+
+///|
+pub fn SortedCamera::entity(self : SortedCamera) -> @core.Entity {
+  self.entity
+}
+
+///|
+pub fn SortedCamera::order(self : SortedCamera) -> Int {
+  self.order
+}
+
+///|
+pub fn SortedCamera::target(
+  self : SortedCamera,
+) -> @camera_render_target.NormalizedRenderTarget? {
+  self.target
+}
+
+///|
+pub fn SortedCamera::hdr(self : SortedCamera) -> Bool {
+  self.hdr
+}
+
+///|
+pub fn SortedCamera::output_mode(self : SortedCamera) -> CameraOutputMode {
+  self.output_mode
+}
+
+///|
+pub fn SortedCamera::writes_output(self : SortedCamera) -> Bool {
+  self.output_mode.writes()
+}
+
+///|
 pub struct SortedCameras {
-  mut entities : Array[@core.Entity]
+  mut cameras : Array[SortedCamera]
 }
 
 ///|
 pub fn SortedCameras::new() -> SortedCameras {
-  SortedCameras::{ entities: [] }
+  SortedCameras::{ cameras: [] }
+}
+
+///|
+pub fn SortedCameras::len(self : SortedCameras) -> Int {
+  self.cameras.length()
+}
+
+///|
+pub fn SortedCameras::is_empty(self : SortedCameras) -> Bool {
+  self.len() == 0
+}
+
+///|
+pub fn SortedCameras::cameras(self : SortedCameras) -> Array[SortedCamera] {
+  self.cameras
+}
+
+///|
+pub fn SortedCameras::camera_entities(
+  self : SortedCameras,
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  for camera in self.cameras {
+    entities.push(camera.entity)
+  }
+  entities
 }
 
 ///|
@@ -321,16 +416,16 @@ pub fn sorted_cameras_or_default(world : @ecs.World) -> SortedCameras {
 }
 
 ///|
-pub fn sorted_cameras_replace_entities(
+pub fn sorted_cameras_replace(
   sorted_cameras_ref : @ecs.ResourceMut[SortedCameras],
-  entities : Array[@core.Entity],
+  cameras : Array[SortedCamera],
 ) -> Unit {
-  sorted_cameras_ref.modify(fn(value) { value.entities = entities })
+  sorted_cameras_ref.modify(fn(value) { value.cameras = cameras })
 }
 
 ///|
 pub fn sorted_cameras_clear(
   sorted_cameras_ref : @ecs.ResourceMut[SortedCameras],
 ) -> Unit {
-  sorted_cameras_ref.modify(fn(value) { value.entities.clear() })
+  sorted_cameras_ref.modify(fn(value) { value.cameras.clear() })
 }

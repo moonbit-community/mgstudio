@@ -550,7 +550,11 @@ pub fn render3d_prepare_fog_system(world : @ecs.World) -> Unit {
   let sorted_cameras = @render.sorted_cameras_or_default(world)
   let fog_meta = @pbr_render.render3d_fog_meta_mut_or_init(world)
   let fog_offsets = fog_meta.modify(fn(value) {
-    render3d_prepare_camera_fog_uniforms(world, sorted_cameras.entities, value)
+    render3d_prepare_camera_fog_uniforms(
+      world,
+      sorted_cameras.camera_entities(),
+      value,
+    )
   })
   @pbr_render.render3d_apply_view_fog_uniform_offsets(world, fog_offsets)
 }

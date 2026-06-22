@@ -212,6 +212,7 @@ priv struct CameraPhaseItem3d {
 priv struct Render3dCameraOrderEntry {
   entity : @core.Entity
   order : Int
+  target : @camera_render_target.NormalizedRenderTarget?
 }
 
 ///|
