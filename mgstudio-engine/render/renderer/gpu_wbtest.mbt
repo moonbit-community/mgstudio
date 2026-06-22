@@ -1724,6 +1724,27 @@ test "renderer: rgb9e5 3d texture upload preserves 3d dimension" {
 }
 
 ///|
+test "renderer: rgb9e5 stacked 2d texture upload preserves 2d-array dimension" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let bytes = Bytes::makei(4 * 4 * 4, _ => (0).to_byte())
+  let texture_id = backend.create_texture_stacked_2d_with_format(
+    4,
+    4,
+    1,
+    tf(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
+    [bytes],
+    false,
+    usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
+  )
+  let ok = match find_texture(backend, texture_id) {
+    Some(texture) =>
+      texture.texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_2D
+    None => false
+  }
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "renderer: bloom mip texture allocates requested mip count" {
   let backend = GpuBackend::new(assets_base="assets")
   let ok = try {
