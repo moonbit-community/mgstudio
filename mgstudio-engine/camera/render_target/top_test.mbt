@@ -1,0 +1,30 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+test "camera render target: normalized render targets keep Bevy target variants distinct" {
+  let window = NormalizedRenderTarget::Window(@window.WindowRef::Primary)
+  let image = NormalizedRenderTarget::Image(
+    ImageRenderTarget::from_handle(@asset.Handle::new(42)),
+  )
+  let texture_view = NormalizedRenderTarget::TextureView(
+    ManualTextureViewHandle::new(42),
+  )
+  let none = NormalizedRenderTarget::None(42, 1)
+  inspect(window == image, content="false")
+  inspect(image == texture_view, content="false")
+  inspect(texture_view == none, content="false")
+  inspect(ManualTextureViewHandle::new(42).value(), content="42")
+  inspect(ImageRenderTarget::new(7).handle_id(), content="7")
+}

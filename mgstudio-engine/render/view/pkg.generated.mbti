@@ -4,13 +4,16 @@ package "Milky2018/mgstudio/render/view"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/compositing_space",
+  "Milky2018/mgstudio/camera/render_target",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/texture",
   "Milky2018/mgstudio/visibility",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
@@ -27,6 +30,8 @@ pub let ecs_key_view_uniform_offset : @ecs.ComponentKey[ViewUniformOffset]
 
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
 
+pub fn init_view_target_attachments(@ecs.World) -> Unit
+
 pub fn init_view_uniforms(@ecs.World) -> Unit
 
 pub fn normalize_bgra8_for_render_target(target_is_window~ : Bool, UInt) -> UInt
@@ -36,6 +41,8 @@ pub let render_shadow_lod_origin_resource_key : @ecs.ResourceKey[RenderShadowLod
 pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEntity) -> Bool
 
 pub fn retained_view_entity_equals(RetainedViewEntity, RetainedViewEntity) -> Bool
+
+pub let view_target_attachments_resource_key : @ecs.ResourceKey[ViewTargetAttachments]
 
 pub let view_uniforms_resource_key : @ecs.ResourceKey[ViewUniforms]
 
@@ -113,6 +120,17 @@ pub struct ViewPlugin {
 }
 pub fn ViewPlugin::ViewPlugin() -> Self
 pub impl @app.Plugin for ViewPlugin
+
+pub struct ViewTargetAttachments {
+  attachments : @hashmap.HashMap[@render_target.NormalizedRenderTarget, @texture.OutputColorAttachment]
+}
+pub fn ViewTargetAttachments::ViewTargetAttachments() -> Self
+pub fn ViewTargetAttachments::clear(Self) -> Unit
+pub fn ViewTargetAttachments::get(Self, @render_target.NormalizedRenderTarget) -> @texture.OutputColorAttachment?
+pub fn ViewTargetAttachments::insert(Self, @render_target.NormalizedRenderTarget, @texture.OutputColorAttachment) -> Unit
+pub fn ViewTargetAttachments::is_empty(Self) -> Bool
+pub fn ViewTargetAttachments::len(Self) -> Int
+pub impl @app.Resource for ViewTargetAttachments
 
 pub(all) struct ViewUniform {
   clip_from_world : ViewUniformMat4

@@ -1,12 +1,15 @@
 import {
   "Milky2018/mgstudio/camera/compositing_space" @camera_compositing_space,
+  "Milky2018/mgstudio/camera/render_target" @camera_render_target,
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/texture" @render_texture,
   "Milky2018/mgstudio/visibility",
   "Milky2018/wgpu_mbt" @wgpu,
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 

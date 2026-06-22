@@ -25,7 +25,7 @@ pub(all) struct ClosingWindow {} derive(Eq, Debug)
 pub(all) enum WindowRef {
   Primary
   Entity(@core.Entity)
-} derive(Eq, ToJson, FromJson)
+} derive(Eq, Hash, Debug, ToJson, FromJson)
 
 ///|
 pub(all) enum MonitorSelection {

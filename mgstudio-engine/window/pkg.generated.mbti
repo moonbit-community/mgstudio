@@ -743,7 +743,7 @@ pub fn WindowPosition::set(Self, Int, Int) -> Self
 pub(all) enum WindowRef {
   Primary
   Entity(@Milky2018/mgstudio/core.Entity)
-} derive(Eq, ToJson, @json.FromJson)
+} derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct WindowResizeConstraints {
   min_width : Float

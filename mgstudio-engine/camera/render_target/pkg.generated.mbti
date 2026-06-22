@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/render_target"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/window",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct ImageRenderTarget {
+  handle_id : Int
+} derive(Eq, Hash, @debug.Debug)
+pub fn ImageRenderTarget::from_handle(@asset.Handle[@image.Image]) -> Self
+pub fn ImageRenderTarget::handle_id(Self) -> Int
+pub fn ImageRenderTarget::new(Int) -> Self
+
+pub struct ManualTextureViewHandle {
+  value : Int
+} derive(Eq, Hash, @debug.Debug)
+pub fn ManualTextureViewHandle::new(Int) -> Self
+pub fn ManualTextureViewHandle::value(Self) -> Int
+
+pub(all) enum NormalizedRenderTarget {
+  Window(@window.WindowRef)
+  Image(ImageRenderTarget)
+  TextureView(ManualTextureViewHandle)
+  None(Int, Int)
+} derive(Eq, Hash, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -52,3 +52,53 @@ pub fn TextureAttachment::as_manual_texture_view(
 ) -> ManualTextureViewHandle {
   self.texture_id + self.mip_level + self.layer
 }
+
+///|
+pub struct OutputColorAttachment {
+  view : @render_resource.TextureView
+  view_format : @wgpu.TextureFormat
+  mut is_first_call : Bool
+}
+
+///|
+pub fn OutputColorAttachment::new(
+  view : @render_resource.TextureView,
+  view_format : @wgpu.TextureFormat,
+) -> OutputColorAttachment {
+  OutputColorAttachment::{ view, view_format, is_first_call: true }
+}
+
+///|
+pub fn OutputColorAttachment::view(
+  self : OutputColorAttachment,
+) -> @render_resource.TextureView {
+  self.view
+}
+
+///|
+pub fn OutputColorAttachment::view_format(
+  self : OutputColorAttachment,
+) -> @wgpu.TextureFormat {
+  self.view_format
+}
+
+///|
+pub fn OutputColorAttachment::prepare_for_new_frame(
+  self : OutputColorAttachment,
+) -> Unit {
+  self.is_first_call = true
+}
+
+///|
+pub fn OutputColorAttachment::needs_present(
+  self : OutputColorAttachment,
+) -> Bool {
+  !self.is_first_call
+}
+
+///|
+pub fn OutputColorAttachment::mark_written(
+  self : OutputColorAttachment,
+) -> Unit {
+  self.is_first_call = false
+}

@@ -42,6 +42,7 @@ pub impl @app.Plugin for ViewPlugin with fn finish(_self, app) {
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_app) {
       init_view_uniforms(render_app.world())
+      init_view_target_attachments(render_app.world())
       render_app
     }),
   )
@@ -456,6 +457,72 @@ pub let view_uniforms_resource_key : @ecs.ResourceKey[ViewUniforms] = @ecs.regis
 ///|
 pub impl @app.Resource for ViewUniforms with fn resource() {
   view_uniforms_resource_key
+}
+
+///|
+pub struct ViewTargetAttachments {
+  attachments : @hashmap.HashMap[
+    @camera_render_target.NormalizedRenderTarget,
+    @render_texture.OutputColorAttachment,
+  ]
+}
+
+///|
+pub fn ViewTargetAttachments::ViewTargetAttachments() -> ViewTargetAttachments {
+  ViewTargetAttachments::{ attachments: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn ViewTargetAttachments::len(self : ViewTargetAttachments) -> Int {
+  self.attachments.length()
+}
+
+///|
+pub fn ViewTargetAttachments::is_empty(self : ViewTargetAttachments) -> Bool {
+  self.len() == 0
+}
+
+///|
+pub fn ViewTargetAttachments::insert(
+  self : ViewTargetAttachments,
+  target : @camera_render_target.NormalizedRenderTarget,
+  attachment : @render_texture.OutputColorAttachment,
+) -> Unit {
+  self.attachments.set(target, attachment)
+}
+
+///|
+pub fn ViewTargetAttachments::get(
+  self : ViewTargetAttachments,
+  target : @camera_render_target.NormalizedRenderTarget,
+) -> @render_texture.OutputColorAttachment? {
+  self.attachments.get(target)
+}
+
+///|
+pub fn ViewTargetAttachments::clear(self : ViewTargetAttachments) -> Unit {
+  self.attachments.clear()
+}
+
+///|
+pub let view_target_attachments_resource_key : @ecs.ResourceKey[
+  ViewTargetAttachments,
+] = @ecs.register_resource(debug_name="mgstudio_render::ViewTargetAttachments")
+
+///|
+pub fn init_view_target_attachments(world : @ecs.World) -> Unit {
+  if world.resource(view_target_attachments_resource_key).is_present() {
+    return
+  }
+  world.insert_resource(
+    view_target_attachments_resource_key,
+    ViewTargetAttachments::ViewTargetAttachments(),
+  )
+}
+
+///|
+pub impl @app.Resource for ViewTargetAttachments with fn resource() {
+  view_target_attachments_resource_key
 }
 
 ///|

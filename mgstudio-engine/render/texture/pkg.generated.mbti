@@ -133,6 +133,18 @@ pub fn ManualTextureView::mip_level(Self) -> Int
 pub fn ManualTextureView::new(Int, Int) -> Self
 pub fn ManualTextureView::texture_id(Self) -> Int
 
+pub struct OutputColorAttachment {
+  view : @render_resource.TextureView
+  view_format : @wgpu_mbt.TextureFormat
+  mut is_first_call : Bool
+}
+pub fn OutputColorAttachment::mark_written(Self) -> Unit
+pub fn OutputColorAttachment::needs_present(Self) -> Bool
+pub fn OutputColorAttachment::new(@render_resource.TextureView, @wgpu_mbt.TextureFormat) -> Self
+pub fn OutputColorAttachment::prepare_for_new_frame(Self) -> Unit
+pub fn OutputColorAttachment::view(Self) -> @render_resource.TextureView
+pub fn OutputColorAttachment::view_format(Self) -> @wgpu_mbt.TextureFormat
+
 pub struct TextureAttachment {
   texture_id : Int
   mip_level : Int

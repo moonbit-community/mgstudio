@@ -107,6 +107,61 @@ test "render view: ViewUniforms offsets advance by shader layout size" {
 }
 
 ///|
+test "render view: ViewPlugin finish initializes view target attachments resource" {
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let app = @app.App::new(@ecs.World::new())
+    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .add_plugins(ViewPlugin::ViewPlugin())
+    .finish()
+  let render_world = app.sub_app(@app.RenderApp).world()
+  inspect(
+    render_world.resource(view_uniforms_resource_key).is_present(),
+    content="true",
+  )
+  let attachments = render_world
+    .get_resource(view_target_attachments_resource_key)
+    .unwrap()
+  inspect(attachments.is_empty(), content="true")
+}
+
+///|
+test "render view: ViewTargetAttachments stores output color attachments by normalized target" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let texture = device.create_texture_u32(
+    1U,
+    1U,
+    1U,
+    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+  )
+  let view = @render_resource.TextureView::from_wgpu(texture.create_view())
+  let attachment = @render_texture.OutputColorAttachment::new(
+    view,
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+  )
+  let target = @camera_render_target.NormalizedRenderTarget::TextureView(
+    @camera_render_target.ManualTextureViewHandle::new(9),
+  )
+  let attachments = ViewTargetAttachments::ViewTargetAttachments()
+  attachments.insert(target, attachment)
+  inspect(attachments.len(), content="1")
+  let stored = attachments.get(target).unwrap()
+  inspect(stored.needs_present(), content="false")
+  stored.mark_written()
+  inspect(stored.needs_present(), content="true")
+  stored.prepare_for_new_frame()
+  inspect(stored.needs_present(), content="false")
+  attachments.clear()
+  inspect(attachments.is_empty(), content="true")
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render view: ViewUniforms writes real GPU buffer binding" {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()
