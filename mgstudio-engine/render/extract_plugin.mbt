@@ -232,6 +232,9 @@ fn render_plugin_install_with(
       Unit,
     ] = ExtractResourcePlugin::ExtractResourcePlugin()
     next = next.add_plugins(extract_manual_texture_views_plugin)
+    next = next.add_plugins(
+      @render_view_window.WindowRenderPlugin::WindowRenderPlugin(),
+    )
     next = next.add_plugins(@render_view.ViewPlugin::ViewPlugin())
     next = next.add_plugins(
       @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),

@@ -2,11 +2,24 @@
 package "Milky2018/mgstudio/render/view/window"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/render_target",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/wgpu_mbt",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
 }
 
 // Values
+pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
+
+pub fn init_extracted_windows(@ecs.World) -> Unit
+
+pub fn init_window_surfaces(@ecs.World) -> Unit
+
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn screenshot_capture_surface_request() -> Int
@@ -35,9 +48,65 @@ pub fn window_screenshot_parity_capture_completed() -> Bool
 
 pub fn window_screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
+pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces]
+
 // Errors
 
 // Types and methods
+pub struct ExtractedWindow {
+  entity : @core.Entity
+  handle : @Milky2018/mgstudio/window.RawHandleWrapper
+  physical_width : Int
+  physical_height : Int
+  present_mode : @Milky2018/mgstudio/window.PresentMode
+  desired_maximum_frame_latency : Int?
+  swap_chain_texture_view : @render_resource.TextureView?
+  mut swap_chain_texture : @render_resource.SurfaceTexture?
+  swap_chain_texture_format : @wgpu_mbt.TextureFormat?
+  swap_chain_texture_view_format : @wgpu_mbt.TextureFormat?
+  size_changed : Bool
+  present_mode_changed : Bool
+  alpha_mode : @Milky2018/mgstudio/window.CompositeAlphaMode
+  needs_initial_present : Bool
+}
+pub fn ExtractedWindow::has_swapchain_texture(Self) -> Bool
+pub fn ExtractedWindow::new(@core.Entity, @Milky2018/mgstudio/window.RawHandleWrapper, Int, Int, @Milky2018/mgstudio/window.PresentMode, Int?, @Milky2018/mgstudio/window.CompositeAlphaMode) -> Self
+pub fn ExtractedWindow::present(Self) -> Unit
+
+pub struct ExtractedWindows {
+  mut primary : @core.Entity?
+  windows : @hashmap.HashMap[@core.Entity, ExtractedWindow]
+}
+pub fn ExtractedWindows::ExtractedWindows() -> Self
+pub fn ExtractedWindows::clear(Self) -> Unit
+pub fn ExtractedWindows::get(Self, @core.Entity) -> ExtractedWindow?
+pub fn ExtractedWindows::insert(Self, @core.Entity, ExtractedWindow) -> Unit
+pub fn ExtractedWindows::is_empty(Self) -> Bool
+pub fn ExtractedWindows::len(Self) -> Int
+pub fn ExtractedWindows::remove(Self, @core.Entity) -> Unit
+pub impl @app.Resource for ExtractedWindows
+
+pub(all) struct SurfaceData {
+  surface : @wgpu_mbt.Surface
+  configuration : @wgpu_mbt.SurfaceConfiguration
+  texture_view_format : @wgpu_mbt.TextureFormat?
+}
+
+pub struct WindowRenderPlugin {
+}
+pub fn WindowRenderPlugin::WindowRenderPlugin() -> Self
+pub impl @app.Plugin for WindowRenderPlugin
+
+pub struct WindowSurfaces {
+  surfaces : @hashmap.HashMap[@core.Entity, SurfaceData]
+  configured_windows : @hashset.HashSet[@core.Entity]
+}
+pub fn WindowSurfaces::WindowSurfaces() -> Self
+pub fn WindowSurfaces::is_configured(Self, @core.Entity) -> Bool
+pub fn WindowSurfaces::is_empty(Self) -> Bool
+pub fn WindowSurfaces::len(Self) -> Int
+pub fn WindowSurfaces::remove(Self, @core.Entity) -> Unit
+pub impl @app.Resource for WindowSurfaces
 
 // Type aliases
 pub using @render_target {type ManualTextureViewHandle}

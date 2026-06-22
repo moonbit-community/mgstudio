@@ -791,3 +791,23 @@ test "render error handler: default handler sends app exit from main world" {
   debug_inspect(exits.length(), content="1")
   debug_inspect(exits[0].is_error(), content="true")
 }
+
+///|
+test "render plugin: installs window render resources in render world" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    render_world
+    .resource(@render_view_window.extracted_windows_resource_key)
+    .is_present(),
+    content="true",
+  )
+  debug_inspect(
+    render_world
+    .resource(@render_view_window.window_surfaces_resource_key)
+    .is_present(),
+    content="true",
+  )
+}

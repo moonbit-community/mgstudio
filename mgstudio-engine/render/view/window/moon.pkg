@@ -1,7 +1,15 @@
 import {
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/render_target" @camera_render_target,
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/mgstudio/window" @window_pkg,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 supported_targets = "native"
