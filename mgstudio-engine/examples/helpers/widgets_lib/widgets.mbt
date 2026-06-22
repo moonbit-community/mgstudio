@@ -94,6 +94,35 @@ pub impl @ecs.Component for RadioButtonText with fn component() {
 }
 
 ///|
+let visibility_widget_click_event_key : @ecs.MessageKey[
+  WidgetClickEvent[@visibility.Visibility],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<mgstudio_visibility::Visibility>",
+)
+
+///|
+let visibility_widget_click_sender_key : @ecs.ComponentKey[
+  WidgetClickSender[@visibility.Visibility],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<mgstudio_visibility::Visibility>",
+)
+
+///|
+pub impl WidgetValue for @visibility.Visibility with fn widget_debug_name() {
+  "mgstudio_visibility::Visibility"
+}
+
+///|
+pub impl WidgetValue for @visibility.Visibility with fn widget_click_event_key() {
+  visibility_widget_click_event_key
+}
+
+///|
+pub impl WidgetValue for @visibility.Visibility with fn widget_click_sender_key() {
+  visibility_widget_click_sender_key
+}
+
+///|
 pub fn[T : WidgetValue] widget_click_event_key() -> @ecs.MessageKey[
   WidgetClickEvent[T],
 ] {

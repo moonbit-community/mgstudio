@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/ui",
+  "Milky2018/mgstudio/visibility",
 }
 
 // Values
@@ -64,4 +65,5 @@ pub(open) trait WidgetValue {
   fn widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[Self]]
   fn widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[Self]]
 }
+pub impl WidgetValue for @visibility.Visibility
 
