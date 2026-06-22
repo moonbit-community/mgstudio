@@ -214,6 +214,72 @@ pub fn WindowSurfaces::remove(
 }
 
 ///|
+pub fn need_surface_configuration(
+  windows : ExtractedWindows,
+  window_surfaces : WindowSurfaces,
+) -> Bool {
+  for entry in windows.windows.iter() {
+    let (_, window) = entry
+    if !window_surfaces.configured_windows.contains(window.entity) ||
+      window.size_changed ||
+      window.present_mode_changed {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub const DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : UInt = 2U
+
+///|
+pub fn present_mode_fallbacks_raw(
+  present_mode : @window_pkg.PresentMode,
+) -> Array[UInt] {
+  match present_mode {
+    AutoVsync => [@wgpu.PRESENT_MODE_FIFO_RELAXED, @wgpu.PRESENT_MODE_FIFO]
+    AutoNoVsync =>
+      [
+        @wgpu.PRESENT_MODE_IMMEDIATE,
+        @wgpu.PRESENT_MODE_MAILBOX,
+        @wgpu.PRESENT_MODE_FIFO,
+      ]
+    Mailbox =>
+      [
+        @wgpu.PRESENT_MODE_MAILBOX,
+        @wgpu.PRESENT_MODE_IMMEDIATE,
+        @wgpu.PRESENT_MODE_FIFO,
+      ]
+    Fifo => [@wgpu.PRESENT_MODE_FIFO, @wgpu.PRESENT_MODE_FIFO]
+    FifoRelaxed => [@wgpu.PRESENT_MODE_FIFO_RELAXED, @wgpu.PRESENT_MODE_FIFO]
+    Immediate => [@wgpu.PRESENT_MODE_IMMEDIATE, @wgpu.PRESENT_MODE_FIFO]
+  }
+}
+
+///|
+fn present_mode_supported(supported_modes : Array[UInt], mode : UInt) -> Bool {
+  for supported in supported_modes {
+    if supported == mode {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn present_mode_raw(
+  window : ExtractedWindow,
+  supported_modes : Array[UInt],
+) -> UInt {
+  for fallback in present_mode_fallbacks_raw(window.present_mode) {
+    if present_mode_supported(supported_modes, fallback) {
+      return fallback
+    }
+  }
+  abort("Fallback system failed to choose present mode")
+}
+
+///|
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows] = @ecs.register_resource(
   debug_name="mgstudio_render::ExtractedWindows",
 )

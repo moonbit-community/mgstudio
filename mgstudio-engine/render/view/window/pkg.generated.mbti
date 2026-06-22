@@ -14,6 +14,8 @@ import {
 }
 
 // Values
+pub const DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : UInt = 2
+
 pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
 
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
@@ -21,6 +23,12 @@ pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
 pub fn init_extracted_windows(@ecs.World) -> Unit
 
 pub fn init_window_surfaces(@ecs.World) -> Unit
+
+pub fn need_surface_configuration(ExtractedWindows, WindowSurfaces) -> Bool
+
+pub fn present_mode_fallbacks_raw(@Milky2018/mgstudio/window.PresentMode) -> Array[UInt]
+
+pub fn present_mode_raw(ExtractedWindow, Array[UInt]) -> UInt
 
 pub fn register_embedded_wgsl_sources() -> Unit
 

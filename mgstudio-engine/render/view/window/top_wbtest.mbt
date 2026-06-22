@@ -207,3 +207,84 @@ test "render view window: extract_windows removes closing windows and consumes c
     content="320",
   )
 }
+
+///|
+test "render view window: need_surface_configuration follows configured and changed windows" {
+  let windows = ExtractedWindows::ExtractedWindows()
+  let surfaces = WindowSurfaces::WindowSurfaces()
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let extracted = ExtractedWindow::new(
+    entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    640,
+    360,
+    @window_pkg.PresentMode::Fifo,
+    None,
+    @window_pkg.CompositeAlphaMode::Auto,
+  )
+  windows.insert(entity, extracted)
+  debug_inspect(need_surface_configuration(windows, surfaces), content="true")
+  ignore(surfaces.configured_windows.add(entity))
+  debug_inspect(need_surface_configuration(windows, surfaces), content="false")
+  let changed = extracted
+  changed.size_changed = true
+  windows.insert(entity, changed)
+  debug_inspect(need_surface_configuration(windows, surfaces), content="true")
+}
+
+///|
+test "render view window: present mode fallbacks follow Bevy ordering" {
+  let auto_vsync = present_mode_fallbacks_raw(
+    @window_pkg.PresentMode::AutoVsync,
+  )
+  debug_inspect(
+    auto_vsync == [@wgpu.PRESENT_MODE_FIFO_RELAXED, @wgpu.PRESENT_MODE_FIFO],
+    content="true",
+  )
+  let auto_no_vsync = present_mode_fallbacks_raw(
+    @window_pkg.PresentMode::AutoNoVsync,
+  )
+  debug_inspect(
+    auto_no_vsync ==
+    [
+      @wgpu.PRESENT_MODE_IMMEDIATE,
+      @wgpu.PRESENT_MODE_MAILBOX,
+      @wgpu.PRESENT_MODE_FIFO,
+    ],
+    content="true",
+  )
+  let mailbox = present_mode_fallbacks_raw(@window_pkg.PresentMode::Mailbox)
+  debug_inspect(
+    mailbox ==
+    [
+      @wgpu.PRESENT_MODE_MAILBOX,
+      @wgpu.PRESENT_MODE_IMMEDIATE,
+      @wgpu.PRESENT_MODE_FIFO,
+    ],
+    content="true",
+  )
+}
+
+///|
+test "render view window: present_mode_raw chooses first supported fallback" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let window = ExtractedWindow::new(
+    entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    640,
+    360,
+    @window_pkg.PresentMode::AutoNoVsync,
+    None,
+    @window_pkg.CompositeAlphaMode::Auto,
+  )
+  debug_inspect(
+    present_mode_raw(window, [
+      @wgpu.PRESENT_MODE_FIFO,
+      @wgpu.PRESENT_MODE_MAILBOX,
+    ]) ==
+    @wgpu.PRESENT_MODE_MAILBOX,
+    content="true",
+  )
+}
