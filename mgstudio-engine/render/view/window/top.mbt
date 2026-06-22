@@ -68,7 +68,7 @@ pub struct ExtractedWindow {
   mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
   swap_chain_texture_format : @wgpu.TextureFormat?
-  swap_chain_texture_view_format : @wgpu.TextureFormat?
+  mut swap_chain_texture_view_format : @wgpu.TextureFormat?
   mut size_changed : Bool
   mut present_mode_changed : Bool
   alpha_mode : @window_pkg.CompositeAlphaMode
@@ -106,6 +106,24 @@ pub fn ExtractedWindow::new(
 ///|
 pub fn ExtractedWindow::has_swapchain_texture(self : ExtractedWindow) -> Bool {
   self.swap_chain_texture_view is Some(_) && self.swap_chain_texture is Some(_)
+}
+
+///|
+pub fn ExtractedWindow::set_swapchain_texture(
+  self : ExtractedWindow,
+  frame : @wgpu.SurfaceTexture,
+) -> Unit {
+  let surface_texture = @render_resource.SurfaceTexture::from_wgpu(frame)
+  let texture = surface_texture.take_texture()
+  self.swap_chain_texture_view_format = Some(
+    surface_texture_format_add_srgb_suffix(texture.format()),
+  )
+  self.swap_chain_texture_view = Some(
+    texture.create_view_2d_single_mip_with_format(
+      self.swap_chain_texture_view_format.unwrap(),
+    ),
+  )
+  self.swap_chain_texture = Some(surface_texture)
 }
 
 ///|

@@ -95,7 +95,7 @@ pub struct ExtractedWindow {
   mut swap_chain_texture_view : @render_resource.TextureView?
   mut swap_chain_texture : @render_resource.SurfaceTexture?
   swap_chain_texture_format : @wgpu_mbt.TextureFormat?
-  swap_chain_texture_view_format : @wgpu_mbt.TextureFormat?
+  mut swap_chain_texture_view_format : @wgpu_mbt.TextureFormat?
   mut size_changed : Bool
   mut present_mode_changed : Bool
   alpha_mode : @Milky2018/mgstudio/window.CompositeAlphaMode
@@ -104,6 +104,7 @@ pub struct ExtractedWindow {
 pub fn ExtractedWindow::has_swapchain_texture(Self) -> Bool
 pub fn ExtractedWindow::new(@core.Entity, @Milky2018/mgstudio/window.RawHandleWrapper, Int, Int, @Milky2018/mgstudio/window.PresentMode, Int?, @Milky2018/mgstudio/window.CompositeAlphaMode) -> Self
 pub fn ExtractedWindow::present(Self) -> Unit
+pub fn ExtractedWindow::set_swapchain_texture(Self, @wgpu_mbt.SurfaceTexture) -> Unit
 
 pub struct ExtractedWindows {
   mut primary : @core.Entity?

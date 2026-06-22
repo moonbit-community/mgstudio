@@ -604,6 +604,8 @@ pub struct Texture {
   value : @wgpu_mbt.Texture
 }
 pub fn Texture::create_view(Self) -> TextureView
+pub fn Texture::create_view_2d_single_mip_with_format(Self, @wgpu_mbt.TextureFormat) -> TextureView
+pub fn Texture::format(Self) -> @wgpu_mbt.TextureFormat
 pub fn Texture::from_wgpu(@wgpu_mbt.Texture) -> Self
 pub fn Texture::id(Self) -> UInt64
 pub fn Texture::into_inner(Self) -> @wgpu_mbt.Texture

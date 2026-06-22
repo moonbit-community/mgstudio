@@ -64,6 +64,30 @@ pub fn Texture::create_view(self : Texture) -> TextureView {
 }
 
 ///|
+pub fn Texture::create_view_2d_single_mip_with_format(
+  self : Texture,
+  format : @wgpu.TextureFormat,
+) -> TextureView {
+  TextureView::{
+    id: next_texture_view_id(),
+    value: self.value.create_view_u32(
+      format,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      @wgpu.TEXTURE_ASPECT_ALL,
+      0U,
+      1U,
+      0U,
+      1U,
+    ),
+  }
+}
+
+///|
+pub fn Texture::format(self : Texture) -> @wgpu.TextureFormat {
+  self.value.format_u32()
+}
+
+///|
 pub fn Texture::into_inner(self : Texture) -> @wgpu.Texture {
   self.value
 }
