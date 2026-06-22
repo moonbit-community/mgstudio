@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/camera/render_target",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/camera_sort",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/wgpu_mbt",
@@ -23,6 +24,8 @@ pub fn create_surface_for_window(ExtractedWindow, @renderer.RenderInstance) -> @
 pub fn create_surfaces(ExtractedWindows, WindowSurfaces, @renderer.RenderInstance, @renderer.RenderAdapter, @renderer.RenderDevice) -> Unit raise WindowSurfaceCreateError
 
 pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
+
+pub fn extracted_window_is_camera_target(ExtractedWindows, @camera_sort.SortedCameras, ExtractedWindow) -> Bool
 
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
 
@@ -51,6 +54,8 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 pub fn screenshot_parity_capture_completed() -> Bool
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
+
+pub fn sorted_camera_targets_window(ExtractedWindows, @camera_sort.SortedCamera, ExtractedWindow) -> Bool
 
 pub fn surface_configuration_for_window(ExtractedWindow, Array[UInt], Array[@wgpu_mbt.TextureFormat]) -> @wgpu_mbt.SurfaceConfiguration
 

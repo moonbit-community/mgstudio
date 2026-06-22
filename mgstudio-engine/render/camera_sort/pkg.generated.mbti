@@ -1,0 +1,64 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/camera_sort"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/render_target",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn ensure_sorted_cameras_resource(@ecs.World) -> Unit
+
+pub fn sorted_cameras_clear(@ecs.ResourceMut[SortedCameras]) -> Unit
+
+pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras]
+
+pub fn sorted_cameras_or_default(@ecs.World) -> SortedCameras
+
+pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ecs.ResourceMut[SortedCameras]
+
+pub fn sorted_cameras_replace(@ecs.ResourceMut[SortedCameras], Array[SortedCamera]) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum CameraOutputMode {
+  Write
+  Skip
+} derive(Eq, @debug.Debug)
+pub fn CameraOutputMode::default() -> Self
+pub fn CameraOutputMode::writes(Self) -> Bool
+
+pub struct SortedCamera {
+  entity : @core.Entity
+  order : Int
+  target : @render_target.NormalizedRenderTarget?
+  hdr : Bool
+  output_mode : CameraOutputMode
+}
+pub fn SortedCamera::entity(Self) -> @core.Entity
+pub fn SortedCamera::hdr(Self) -> Bool
+pub fn SortedCamera::new(@core.Entity, Int, @render_target.NormalizedRenderTarget?, Bool, CameraOutputMode) -> Self
+pub fn SortedCamera::order(Self) -> Int
+pub fn SortedCamera::output_mode(Self) -> CameraOutputMode
+pub fn SortedCamera::target(Self) -> @render_target.NormalizedRenderTarget?
+pub fn SortedCamera::writes_output(Self) -> Bool
+
+pub struct SortedCameras {
+  mut cameras : Array[SortedCamera]
+}
+pub fn SortedCameras::camera_entities(Self) -> Array[@core.Entity]
+pub fn SortedCameras::cameras(Self) -> Array[SortedCamera]
+pub fn SortedCameras::from_array(Array[SortedCamera]) -> Self
+pub fn SortedCameras::is_empty(Self) -> Bool
+pub fn SortedCameras::len(Self) -> Int
+pub fn SortedCameras::new() -> Self
+pub impl @app.Resource for SortedCameras
+
+// Type aliases
+
+// Traits
+

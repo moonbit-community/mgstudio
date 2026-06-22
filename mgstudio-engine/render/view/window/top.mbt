@@ -277,6 +277,46 @@ pub fn need_surface_configuration(
 }
 
 ///|
+fn window_ref_targets_entity(
+  windows : ExtractedWindows,
+  window_ref : @window_pkg.WindowRef,
+  entity : @core.Entity,
+) -> Bool {
+  match window_ref {
+    Primary => windows.primary == Some(entity)
+    Entity(window_entity) => window_entity == entity
+  }
+}
+
+///|
+pub fn sorted_camera_targets_window(
+  windows : ExtractedWindows,
+  sorted_camera : @render_camera_sort.SortedCamera,
+  window : ExtractedWindow,
+) -> Bool {
+  guard sorted_camera.writes_output() else { return false }
+  match sorted_camera.target() {
+    Some(Window(window_ref)) =>
+      window_ref_targets_entity(windows, window_ref, window.entity)
+    _ => false
+  }
+}
+
+///|
+pub fn extracted_window_is_camera_target(
+  windows : ExtractedWindows,
+  sorted_cameras : @render_camera_sort.SortedCameras,
+  window : ExtractedWindow,
+) -> Bool {
+  for sorted_camera in sorted_cameras.cameras() {
+    if sorted_camera_targets_window(windows, sorted_camera, window) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub const DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : UInt = 2U
 
 ///|

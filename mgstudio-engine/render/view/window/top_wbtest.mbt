@@ -234,6 +234,70 @@ test "render view window: need_surface_configuration follows configured and chan
 }
 
 ///|
+test "render view window: camera target gating follows Bevy prepare_windows condition" {
+  let windows = ExtractedWindows::ExtractedWindows()
+  let world = @ecs.World::new()
+  let primary_entity = world.spawn()
+  let secondary_entity = world.spawn()
+  let primary = ExtractedWindow::new(
+    primary_entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    640,
+    360,
+    @window_pkg.PresentMode::Fifo,
+    None,
+    @window_pkg.CompositeAlphaMode::Auto,
+  )
+  let secondary = ExtractedWindow::new(
+    secondary_entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(18)),
+    640,
+    360,
+    @window_pkg.PresentMode::Fifo,
+    None,
+    @window_pkg.CompositeAlphaMode::Auto,
+  )
+  windows.primary = Some(primary_entity)
+  windows.insert(primary_entity, primary)
+  windows.insert(secondary_entity, secondary)
+
+  let write_primary = @render_camera_sort.SortedCamera::new(
+    @core.Entity::new(30, 1),
+    0,
+    Some(
+      @camera_render_target.NormalizedRenderTarget::Window(
+        @window_pkg.WindowRef::Primary,
+      ),
+    ),
+    false,
+    @render_camera_sort.CameraOutputMode::Write,
+  )
+  let skip_secondary = @render_camera_sort.SortedCamera::new(
+    @core.Entity::new(31, 1),
+    1,
+    Some(
+      @camera_render_target.NormalizedRenderTarget::Window(
+        @window_pkg.WindowRef::Entity(secondary_entity),
+      ),
+    ),
+    false,
+    @render_camera_sort.CameraOutputMode::Skip,
+  )
+  let sorted = @render_camera_sort.SortedCameras::from_array([
+    write_primary, skip_secondary,
+  ])
+
+  debug_inspect(
+    extracted_window_is_camera_target(windows, sorted, primary),
+    content="true",
+  )
+  debug_inspect(
+    extracted_window_is_camera_target(windows, sorted, secondary),
+    content="false",
+  )
+}
+
+///|
 test "render view window: present mode fallbacks follow Bevy ordering" {
   let auto_vsync = present_mode_fallbacks_raw(
     @window_pkg.PresentMode::AutoVsync,

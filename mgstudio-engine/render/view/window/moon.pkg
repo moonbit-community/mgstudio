@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/camera/render_target" @camera_render_target,
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/camera_sort" @render_camera_sort,
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/shader/source" @shader_source,

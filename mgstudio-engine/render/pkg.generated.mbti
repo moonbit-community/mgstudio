@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/camera_sort",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
@@ -551,15 +552,15 @@ pub fn slab_allocator_plan_new_general_slab(Int, Int, SlabItemLayoutInfo, settin
 
 pub fn slab_allocator_should_allocate_large(Int, SlabItemLayoutInfo, settings? : SlabAllocatorSettings) -> Bool
 
-pub fn sorted_cameras_clear(@ecs.ResourceMut[SortedCameras]) -> Unit
+pub fn sorted_cameras_clear(@ecs.ResourceMut[@camera_sort.SortedCameras]) -> Unit
 
-pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras]
+pub let sorted_cameras_key : @ecs.ResourceKey[@camera_sort.SortedCameras]
 
-pub fn sorted_cameras_or_default(@ecs.World) -> SortedCameras
+pub fn sorted_cameras_or_default(@ecs.World) -> @camera_sort.SortedCameras
 
-pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ecs.ResourceMut[SortedCameras]
+pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ecs.ResourceMut[@camera_sort.SortedCameras]
 
-pub fn sorted_cameras_replace(@ecs.ResourceMut[SortedCameras], Array[SortedCamera]) -> Unit
+pub fn sorted_cameras_replace(@ecs.ResourceMut[@camera_sort.SortedCameras], Array[@camera_sort.SortedCamera]) -> Unit
 
 pub fn sync_build(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -600,13 +601,6 @@ pub(all) suberror PrepareAssetError {
 pub struct AssetExtractionSystems {
 }
 pub fn AssetExtractionSystems::new() -> Self
-
-pub(all) enum CameraOutputMode {
-  Write
-  Skip
-} derive(Eq, @debug.Debug)
-pub fn CameraOutputMode::default() -> Self
-pub fn CameraOutputMode::writes(Self) -> Bool
 
 pub struct CameraRenderGraph {
   schedule : @app.ScheduleStage
@@ -1108,31 +1102,6 @@ pub(all) enum SlabKind {
   LargeObject
 } derive(Eq, @debug.Debug)
 
-pub struct SortedCamera {
-  entity : @core.Entity
-  order : Int
-  target : @render_target.NormalizedRenderTarget?
-  hdr : Bool
-  output_mode : CameraOutputMode
-}
-pub fn SortedCamera::entity(Self) -> @core.Entity
-pub fn SortedCamera::hdr(Self) -> Bool
-pub fn SortedCamera::new(@core.Entity, Int, @render_target.NormalizedRenderTarget?, Bool, CameraOutputMode) -> Self
-pub fn SortedCamera::order(Self) -> Int
-pub fn SortedCamera::output_mode(Self) -> CameraOutputMode
-pub fn SortedCamera::target(Self) -> @render_target.NormalizedRenderTarget?
-pub fn SortedCamera::writes_output(Self) -> Bool
-
-pub struct SortedCameras {
-  mut cameras : Array[SortedCamera]
-}
-pub fn SortedCameras::camera_entities(Self) -> Array[@core.Entity]
-pub fn SortedCameras::cameras(Self) -> Array[SortedCamera]
-pub fn SortedCameras::is_empty(Self) -> Bool
-pub fn SortedCameras::len(Self) -> Int
-pub fn SortedCameras::new() -> Self
-pub impl @app.Resource for SortedCameras
-
 pub struct SyncComponentPlugin[_, _] {
 }
 pub fn[C, F] SyncComponentPlugin::SyncComponentPlugin() -> Self[C, F]
@@ -1200,6 +1169,8 @@ pub(all) enum WgpuSettingsPriority {
 pub fn WgpuSettingsPriority::default() -> Self
 
 // Type aliases
+pub using @camera_sort {type CameraOutputMode}
+
 pub using @render_resource {type FragmentState}
 
 pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
@@ -1255,6 +1226,10 @@ pub using @render_resource {type PrimitiveState}
 pub using @render_resource {type RenderPipelineDescriptor}
 
 pub using @render_resource {type ShaderDefVal}
+
+pub using @camera_sort {type SortedCamera}
+
+pub using @camera_sort {type SortedCameras}
 
 pub type UntypedRenderAssetId = Int
 
