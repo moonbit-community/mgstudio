@@ -2,6 +2,10 @@
 package "Milky2018/mgstudio/examples/3d/clustered_decals"
 
 import {
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/render/render_resource",
   "moonbitlang/core/debug",
 }
 
@@ -10,17 +14,23 @@ import {
 // Errors
 
 // Types and methods
+pub(all) struct CustomDecalExtension {
+}
+pub impl @pbr.MaterialExtension for CustomDecalExtension
+
 pub(all) enum DragMode {
   Move
   Scale
   Roll
 } derive(Eq, @debug.Debug)
+pub impl Default for DragMode
 
 pub(all) enum Selection {
   Camera
   DecalA
   DecalB
 } derive(Eq, @debug.Debug)
+pub impl Default for Selection
 
 // Type aliases
 

@@ -14,17 +14,19 @@
 
 ///|
 ///
-/// Baseline parity:
-/// - This example now attaches `ClusteredDecal` components directly with upstream-
-///   aligned texture/tag data.
-/// - This port preserves upstream control model (selection + drag mode) and
-///   scene layout, mapping decals onto textured translucent proxy meshes.
+/// Demonstrates clustered decals, which affix decals to surfaces.
+
+///|
+const SHADER_ASSET_PATH : String = "shaders/custom_clustered_decal.wgsl"
 
 ///|
 const CUBE_ROTATION_SPEED : Float = 0.02F
 
 ///|
 const PI : Float = 3.141592653589793F
+
+///|
+const FRAC_PI_3 : Float = 1.0471975511965976F
 
 ///|
 const MOVE_SPEED : Float = 0.008F
@@ -36,13 +38,19 @@ const SCALE_SPEED : Float = 0.05F
 const ROLL_SPEED : Float = 0.01F
 
 ///|
-const BUTTON_BORDER_RADIUS : Float = 12.0F
+fn color_lime() -> @color.Color {
+  @color.Color::srgb(0.0F, 1.0F, 0.0F)
+}
 
 ///|
-const BUTTON_HORIZONTAL_PADDING : Float = 12.0F
+fn color_orange_red() -> @color.Color {
+  @color.Color::srgb(1.0F, 0.27058825F, 0.0F)
+}
 
 ///|
-const BUTTON_VERTICAL_PADDING : Float = 6.0F
+fn color_silver() -> @color.Color {
+  @color.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F)
+}
 
 ///|
 pub(all) enum Selection {
@@ -52,6 +60,11 @@ pub(all) enum Selection {
 } derive(Eq, Debug)
 
 ///|
+pub impl Default for Selection with fn default() {
+  Selection::Camera
+}
+
+///|
 pub(all) enum DragMode {
   Move
   Scale
@@ -59,46 +72,198 @@ pub(all) enum DragMode {
 } derive(Eq, Debug)
 
 ///|
-priv struct SelectionWidget {
-  button : @core.Entity
-  selection : Selection
+pub impl Default for DragMode with fn default() {
+  DragMode::Move
 }
 
 ///|
-priv struct DragModeWidget {
-  button : @core.Entity
-  mode : DragMode
-}
-
-///|
-priv struct ClusteredDecalsState {
-  mut camera : @core.Entity?
-  mut rotating_cube : @core.Entity?
+priv struct AppStatus {
   mut selection : Selection
   mut drag_mode : DragMode
-  mut decal_a : @core.Entity?
-  mut decal_b : @core.Entity?
-  mut help_text : @core.Entity?
-  mut drag_mode_panel : @core.Entity?
-  selection_widgets : Array[SelectionWidget]
-  drag_mode_widgets : Array[DragModeWidget]
-  mut last_mouse : @math.Vec2?
 }
 
 ///|
-let clustered_decals_state : Ref[ClusteredDecalsState] = Ref({
-  camera: None,
-  rotating_cube: None,
-  selection: Selection::Camera,
-  drag_mode: DragMode::Move,
-  decal_a: None,
-  decal_b: None,
-  help_text: None,
-  drag_mode_panel: None,
-  selection_widgets: [],
-  drag_mode_widgets: [],
-  last_mouse: None,
-})
+fn AppStatus::AppStatus() -> AppStatus {
+  AppStatus::{ selection: Selection::Camera, drag_mode: DragMode::Move }
+}
+
+///|
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.3d.clustered_decals.AppStatus",
+)
+
+///|
+impl @app.Resource for AppStatus with fn resource() {
+  app_status_resource_key
+}
+
+///|
+let selection_component_key : @ecs.ComponentKey[Selection] = @ecs.register_component(
+  debug_name="examples.3d.clustered_decals.Selection",
+)
+
+///|
+impl @ecs.Component for Selection with fn component() {
+  selection_component_key
+}
+
+///|
+impl @widgets_lib.WidgetValue for Selection with fn widget_debug_name() {
+  "examples.3d.clustered_decals.Selection"
+}
+
+///|
+let selection_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[Selection],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.3d.clustered_decals.Selection>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for Selection with fn widget_click_event_key() {
+  selection_widget_click_event_key
+}
+
+///|
+let selection_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[Selection],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.3d.clustered_decals.Selection>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for Selection with fn widget_click_sender_key() {
+  selection_widget_click_sender_key
+}
+
+///|
+let drag_mode_component_key : @ecs.ComponentKey[DragMode] = @ecs.register_component(
+  debug_name="examples.3d.clustered_decals.DragMode",
+)
+
+///|
+impl @ecs.Component for DragMode with fn component() {
+  drag_mode_component_key
+}
+
+///|
+priv struct HelpText {}
+
+///|
+let help_text_component_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
+  debug_name="examples.3d.clustered_decals.HelpText",
+)
+
+///|
+impl @ecs.Component for HelpText with fn component() {
+  help_text_component_key
+}
+
+///|
+pub(all) struct CustomDecalExtension {}
+
+///|
+fn CustomDecalExtension::CustomDecalExtension() -> CustomDecalExtension {
+  CustomDecalExtension::{  }
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn extension_tag(
+  _self,
+) {
+  106
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn fragment_shader(
+  _self,
+) {
+  Some(SHADER_ASSET_PATH)
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn prepass_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn prepass_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn deferred_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn deferred_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn alpha_mode(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn opaque_render_method(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn enable_prepass(
+  _self,
+) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn enable_shadows(
+  _self,
+) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn specialize(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn bind_group_layout_entries(
+  _self,
+) {
+  []
+}
+
+///|
+pub impl @pbr.MaterialExtension for CustomDecalExtension with fn bind_group_bindings(
+  _self,
+) {
+  []
+}
 
 ///|
 fn selection_text(selection : Selection) -> String {
@@ -119,560 +284,329 @@ fn drag_mode_text(mode : DragMode) -> String {
 }
 
 ///|
-fn create_help_text() -> String {
-  "Click and drag to \{drag_mode_text(clustered_decals_state.val.drag_mode)} \{selection_text(clustered_decals_state.val.selection)}"
+fn create_help_string(app_status : AppStatus) -> String {
+  "Click and drag to \{drag_mode_text(app_status.drag_mode)} \{selection_text(app_status.selection)}"
 }
 
 ///|
-fn update_help_text() -> Unit {
-  guard clustered_decals_state.val.help_text is Some(entity) else { return }
-  guard @app.current_world() is Some(world) else { return }
-  guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_value) else {
-    return
-  }
-  text_value.content = create_help_text()
-  ignore(try! world.replace(entity, @text.ecs_key_text, text_value))
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Clustered Decals Example"
+  window
 }
 
 ///|
-fn button_background(selected : Bool) -> @ui.BackgroundColor {
-  @ui.BackgroundColor::new(
-    if selected {
-      @color.Color::white()
-    } else {
-      @color.Color::black()
-    },
+fn clustered_decals_are_usable() -> Bool {
+  @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
   )
 }
 
 ///|
-fn button_border(selected : Bool) -> @ui.BorderColor {
-  @ui.BorderColor::new(
-    if selected {
-      @color.Color::black()
-    } else {
-      @color.Color::white()
-    },
-  )
-}
-
-///|
-fn same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
-  a.id == b.id && a.generation == b.generation
-}
-
-///|
-fn spawn_button(
-  world : @ecs.World,
-  parent : @core.Entity,
-  font : @asset.Handle[@asset.Font],
-  label : String,
-) -> @core.Entity {
-  let button = world.spawn_empty()
-  try! world.set_by_key(
-    button,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(parent),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
-        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
-      ),
-    )
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_border_radius(
-      @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
-    ),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-        @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
-        @ui.Val::Px(BUTTON_VERTICAL_PADDING),
-      ),
-    )
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_border_radius(
-      @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
-    ),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_background_color,
-    button_background(false),
-  )
-  try! world.set_by_key(button, @ui.ecs_key_border_color, button_border(false))
-
-  let text_entity = world.spawn_empty()
-  try! world.set_by_key(
-    text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
-  )
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
-  try! world.set_by_key(
-    text_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(button),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
-  )
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-
-  button
-}
-
-///|
-fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
-  try! (world.spawn_bundle(
-    (
-      @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
-      @transform.Transform::identity(),
-    ),
-  )
-  |> ignore)
-
-  let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
-  try! world.set_by_key(
-    root,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-  )
-
-  let help_entity = world.spawn_empty()
-  try! world.set_by_key(
-    help_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-  )
-  try! world.set_by_key(help_entity, @text.ecs_key_text, @text.Text::new(""))
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(help_entity, @text.ecs_key_text, @text.Text::new(""))
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-  try! world.set_by_key(
-    help_entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-  )
-  clustered_decals_state.val.help_text = Some(help_entity)
-
-  let selection_panel = world.spawn_empty()
-  try! world.set_by_key(
-    selection_panel,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    selection_panel,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(10.0F))
-    .with_bottom(@ui.Val::Px(10.0F))
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_row_gap(@ui.Val::Px(6.0F))
-    .with_align_items(@ui.AlignItems::Center),
-  )
-
-  let hint_entity = world.spawn_empty()
-  try! world.set_by_key(
-    hint_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(selection_panel),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(selection_panel),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)).with_height(@ui.Val::Auto),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @text.ecs_key_text,
-    @text.Text::new("Drag to Move"),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(selection_panel),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)).with_height(@ui.Val::Auto),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @text.ecs_key_text,
-    @text.Text::new("Drag to Move"),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-  )
-  try! world.set_by_key(
-    hint_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::new(@color.Color::white()),
-  )
-
-  let camera_button = spawn_button(world, selection_panel, font, "Camera")
-  clustered_decals_state.val.selection_widgets.push({
-    button: camera_button,
-    selection: Selection::Camera,
-  })
-
-  let decal_a_button = spawn_button(world, selection_panel, font, "Decal A")
-  clustered_decals_state.val.selection_widgets.push({
-    button: decal_a_button,
-    selection: Selection::DecalA,
-  })
-
-  let decal_b_button = spawn_button(world, selection_panel, font, "Decal B")
-  clustered_decals_state.val.selection_widgets.push({
-    button: decal_b_button,
-    selection: Selection::DecalB,
-  })
-
-  let drag_mode_panel = world.spawn_empty()
-  try! world.set_by_key(
-    drag_mode_panel,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(root),
-  )
-  try! world.set_by_key(
-    drag_mode_panel,
-    @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_right(@ui.Val::Px(10.0F))
-    .with_bottom(@ui.Val::Px(10.0F))
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_row_gap(@ui.Val::Px(6.0F)),
-  )
-  clustered_decals_state.val.drag_mode_panel = Some(drag_mode_panel)
-
-  let scale_button = spawn_button(world, drag_mode_panel, font, "Scale")
-  clustered_decals_state.val.drag_mode_widgets.push({
-    button: scale_button,
-    mode: DragMode::Scale,
-  })
-
-  let roll_button = spawn_button(world, drag_mode_panel, font, "Roll")
-  clustered_decals_state.val.drag_mode_widgets.push({
-    button: roll_button,
-    mode: DragMode::Roll,
-  })
-}
-
-///|
-fn update_ui_state(world : @ecs.World) -> Unit {
-  for widget in clustered_decals_state.val.selection_widgets {
-    let selected = widget.selection == clustered_decals_state.val.selection
-    if (try! world.contains_by_key(widget.button, @ui.ecs_key_background_color)) {
-      try! (world.replace(
-        widget.button,
-        @ui.ecs_key_background_color,
-        button_background(selected),
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        widget.button,
-        @ui.ecs_key_background_color,
-        button_background(selected),
-      )
-    }
-    if (try! world.contains_by_key(widget.button, @ui.ecs_key_border_color)) {
-      try! (world.replace(
-        widget.button,
-        @ui.ecs_key_border_color,
-        button_border(selected),
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        widget.button,
-        @ui.ecs_key_border_color,
-        button_border(selected),
-      )
-    }
-  }
-
-  for widget in clustered_decals_state.val.drag_mode_widgets {
-    let selected = clustered_decals_state.val.drag_mode == widget.mode
-    if (try! world.contains_by_key(widget.button, @ui.ecs_key_background_color)) {
-      try! (world.replace(
-        widget.button,
-        @ui.ecs_key_background_color,
-        button_background(selected),
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        widget.button,
-        @ui.ecs_key_background_color,
-        button_background(selected),
-      )
-    }
-    if (try! world.contains_by_key(widget.button, @ui.ecs_key_border_color)) {
-      try! (world.replace(
-        widget.button,
-        @ui.ecs_key_border_color,
-        button_border(selected),
-      )
-      |> ignore)
-    } else {
-      try! world.set_by_key(
-        widget.button,
-        @ui.ecs_key_border_color,
-        button_border(selected),
-      )
-    }
-  }
-
-  if clustered_decals_state.val.drag_mode_panel is Some(panel) {
-    if (try! world.get_by_key(panel, @ui.ecs_key_node)) is Some(node) {
-      let show_drag_buttons = clustered_decals_state.val.selection !=
-        Selection::Camera
-      try! (world.replace(
-        panel,
-        @ui.ecs_key_node,
-        node.with_display(
-          if show_drag_buttons {
-            @ui.Display::Flex
-          } else {
-            @ui.Display::None
-          },
+fn spawn_cube(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let transform = @transform.Transform::identity()
+  transform.rotate_y(FRAC_PI_3)
+  let material = @pbr.StandardMaterial::from_color(color_silver())
+  let material_handle = materials.peek().add(material)
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
         ),
-      )
-      |> ignore)
-    }
-  }
+        @pbr.MeshMaterial3d::new(material_handle).with_extended_material(
+          Some(
+            @pbr.ExtendedMaterial::new(
+              material,
+              CustomDecalExtension::CustomDecalExtension(),
+            ).metadata(),
+          ),
+        ),
+        transform,
+      ),
+    ),
+  )
+}
 
-  update_help_text()
+///|
+fn spawn_light(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::DirectionalLight(),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  let camera = commands.spawn_component(@camera.Camera3d::Camera3d())
+  commands
+  .entity(camera)
+  .insert(
+    (
+      @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+      Selection::Camera,
+    ),
+  )
 }
 
 ///|
 fn calculate_initial_decal_transform(
-  position : @math.Vec3,
-  target : @math.Vec3,
+  start : @math.Vec3,
+  looking_at : @math.Vec3,
   size : @math.Vec2,
 ) -> @transform.Transform {
-  let direction = target.sub(position)
-  let center = position.add(direction.mul_scalar(0.5F))
+  let direction = looking_at.sub(start)
+  let center = start.add(direction.mul_scalar(0.5F))
   @transform.Transform::from_xyz(center.x, center.y, center.z)
   .with_scale(@math.Vec3::new(size.x * 0.5F, size.y * 0.5F, direction.length()))
-  .looking_at(target, @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  .looking_to(direction, @math.Vec3::new(0.0F, 1.0F, 0.0F))
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  clustered_decals_state.val.camera = None
-  clustered_decals_state.val.rotating_cube = None
-  clustered_decals_state.val.selection = Selection::Camera
-  clustered_decals_state.val.drag_mode = DragMode::Move
-  clustered_decals_state.val.decal_a = None
-  clustered_decals_state.val.decal_b = None
-  clustered_decals_state.val.help_text = None
-  clustered_decals_state.val.drag_mode_panel = None
-  clustered_decals_state.val.selection_widgets.clear()
-  clustered_decals_state.val.drag_mode_widgets.clear()
-  clustered_decals_state.val.last_mouse = None
-
-  let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+fn spawn_decals(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let base_color_texture = asset_server.load("branding/icon.png")
+  ignore(
+    commands.spawn(
+      (
+        @pbr.ClusteredDecal::ClusteredDecal()
+        .with_base_color_texture(Some(base_color_texture))
+        .with_tag(1),
+        calculate_initial_decal_transform(
+          @math.Vec3::new(1.0F, 3.0F, 5.0F),
+          @math.Vec3::zero(),
+          @math.Vec2::splat(1.1F),
+        ),
+        Selection::DecalA,
+      ),
     ),
   )
-  let cube = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(cube_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_y(1.0471975512F),
-    ),
-  ).spawn(world)
-  clustered_decals_state.val.rotating_cube = Some(cube)
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  clustered_decals_state.val.camera = Some(camera)
-
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
-  )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.ClusteredDecal::ClusteredDecal()
+        .with_base_color_texture(Some(base_color_texture))
+        .with_tag(2),
+        calculate_initial_decal_transform(
+          @math.Vec3::new(-2.0F, -1.0F, 4.0F),
+          @math.Vec3::zero(),
+          @math.Vec2::splat(2.0F),
+        ),
+        Selection::DecalB,
+      ),
     ),
   )
-
-  let decal_texture = asset_server.load("branding/icon.png")
-  let decal_a_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
-    )
-    .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_unlit(true),
-  )
-  let decal_b_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
-    )
-    .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_unlit(true),
-  )
-
-  let decal_a = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(decal_a_material),
-    calculate_initial_decal_transform(
-      @math.Vec3::new(1.0F, 3.0F, 5.0F),
-      @math.Vec3::zero(),
-      @math.Vec2::new(1.1F, 1.1F),
-    ),
-  ).spawn(world)
-  try! world.set_by_key(
-    decal_a,
-    @pbr.ecs_key_clustered_decal,
-    @pbr.ClusteredDecal::ClusteredDecal()
-    .with_base_color_texture(Some(decal_texture))
-    .with_tag(1),
-  )
-  clustered_decals_state.val.decal_a = Some(decal_a)
-
-  let decal_b = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(decal_b_material),
-    calculate_initial_decal_transform(
-      @math.Vec3::new(-2.0F, -1.0F, 4.0F),
-      @math.Vec3::zero(),
-      @math.Vec2::new(2.0F, 2.0F),
-    ),
-  ).spawn(world)
-  try! world.set_by_key(
-    decal_b,
-    @pbr.ecs_key_clustered_decal,
-    @pbr.ClusteredDecal::ClusteredDecal()
-    .with_base_color_texture(Some(decal_texture))
-    .with_tag(2),
-  )
-  clustered_decals_state.val.decal_b = Some(decal_b)
-
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  setup_ui(world, font)
-  update_ui_state(world)
 }
 
 ///|
-fn selected_entity() -> @core.Entity? {
-  match clustered_decals_state.val.selection {
-    Selection::Camera => clustered_decals_state.val.camera
-    Selection::DecalA => clustered_decals_state.val.decal_a
-    Selection::DecalB => clustered_decals_state.val.decal_b
+fn drag_button(
+  commands : @app.Commands,
+  parent : @core.Entity,
+  label : String,
+  mode : DragMode,
+) -> @core.Entity {
+  let (text, text_font, text_color) = @widgets_lib.ui_text(
+    label,
+    @color.Color::white(),
+  )
+  let button = commands.spawn(
+    (
+      @hierarchy.Parent::new(parent),
+      @ui.Node::Node()
+      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
+      .with_justify_content(@ui.JustifyContent::Center)
+      .with_align_items(@ui.AlignItems::Center)
+      .with_padding(
+        @ui.UiRect::new(
+          @ui.Val::Px(12.0F),
+          @ui.Val::Px(6.0F),
+          @ui.Val::Px(12.0F),
+          @ui.Val::Px(6.0F),
+        ),
+      )
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
+      @ui.Button::Button(),
+      @ui.BackgroundColor::new(@color.Color::black()),
+      @ui.BorderColor::new(@color.Color::white()),
+      mode,
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (@hierarchy.Parent::new(button), text, text_font, text_color),
+    ),
+  )
+  button
+}
+
+///|
+fn spawn_buttons(commands : @app.Commands) -> Unit {
+  let panel = commands.spawn_component(@widgets_lib.main_ui_node())
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Drag to Move", [
+      (Selection::Camera, "Camera"),
+      (Selection::DecalA, "Decal A"),
+      (Selection::DecalB, "Decal B"),
+    ]),
+  )
+  let drag_panel = commands.spawn_component(
+    @ui.Node::Node()
+    .with_flex_direction(@ui.FlexDirection::Row)
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_right(@ui.Val::Px(10.0F))
+    .with_bottom(@ui.Val::Px(10.0F))
+    .with_column_gap(@ui.Val::Px(6.0F)),
+  )
+  ignore(drag_button(commands, drag_panel, "Scale", DragMode::Scale))
+  ignore(drag_button(commands, drag_panel, "Roll", DragMode::Roll))
+}
+
+///|
+fn spawn_help_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(create_help_string(app_status)),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        HelpText::{  },
+      ),
+    ),
+  )
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  app_status : @app.Res[AppStatus],
+  app_exit : @ecs.MessageWriter[@app.AppExit],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  if !clustered_decals_are_usable() {
+    ignore(app_exit.write(@app.AppExit::error()))
+    return
   }
+  let asset_server = asset_server.get()
+  spawn_cube(commands, meshes, materials)
+  spawn_camera(commands)
+  spawn_light(commands)
+  spawn_decals(commands, asset_server)
+  spawn_buttons(commands)
+  spawn_help_text(commands, app_status.get())
+}
+
+///|
+fn draw_gizmos(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  decals : @ecs.Query[
+    (@ecs.Read[@transform.GlobalTransform], @ecs.Read[Selection]),
+    @ecs.With[@pbr.ClusteredDecal],
+  ],
+) -> Unit {
+  try! decals.view(fn(_entity, data) {
+    let (global_transform, selection) = data
+    let color = match selection.value() {
+      Selection::Camera => return
+      Selection::DecalA => color_orange_red()
+      Selection::DecalB => color_lime()
+    }
+    let transform = global_transform.value().to_transform_approx()
+    gizmos.cuboid_3d(transform, transform.scale, color)
+  })
+}
+
+///|
+fn rotate_cube(
+  meshes : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[@mesh.Mesh3d]],
+) -> Unit {
+  try! meshes.view(fn(_entity, transform) {
+    let next = transform.value()
+    next.rotate_y(CUBE_ROTATION_SPEED)
+    transform.set(next)
+  })
+}
+
+///|
+fn handle_ui_interactions(
+  interactions : @ecs.Query[
+    (
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[Selection]],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+  widget_click_events : @ecs.MessageWriter[
+    @widgets_lib.WidgetClickEvent[Selection],
+  ],
+) -> Unit {
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
+}
+
+///|
+fn update_radio_buttons(
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[Selection]],
+      @ecs.Write[@ui.BackgroundColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[Selection]],
+      @ecs.Write[@text.TextColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButtonText],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
+    @widgets_lib.update_ui_radio_button(
+      background_color,
+      status.selection == sender.value().get(),
+    )
+  })
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
+    @widgets_lib.update_ui_radio_button_text(
+      text_color,
+      status.selection == sender.value().get(),
+    )
+  })
+}
+
+///|
+fn handle_selection_change(
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[Selection]],
+  app_status : @app.ResMut[AppStatus],
+) -> Unit {
+  app_status.modify(fn(status) {
+    for event in events.read() {
+      status.selection = event.get()
+    }
+  })
 }
 
 ///|
@@ -687,238 +621,238 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn spherical_drag_translation(
-  position : @math.Vec3,
+fn signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else {
+    1.0F
+  }
+}
+
+///|
+fn selection_move_factors(selection : Selection) -> (Float, Float) {
+  match selection {
+    Selection::Camera => (1.0F, -1.0F)
+    Selection::DecalA | Selection::DecalB => (-1.0F, 1.0F)
+  }
+}
+
+///|
+fn move_selection_transform(
+  transform : @transform.Transform,
+  selection : Selection,
   delta : @math.Vec2,
-  phi_factor : Float,
-  theta_factor : Float,
-) -> @math.Vec3 {
+) -> @transform.Transform {
+  let position = transform.translation
   let radius = position.length()
-  let safe_radius = if radius < 0.001F { 0.001F } else { radius }
   let horizontal = @math.sqrt(position.x * position.x + position.z * position.z)
-  let mut theta = @math.atan2(horizontal, position.y)
-  let mut phi = @math.atan2(position.z, position.x)
+  let mut theta = @math.acos(position.y / radius)
+  let mut phi = signum(position.z) * @math.acos(position.x / horizontal)
+  let (phi_factor, theta_factor) = selection_move_factors(selection)
   phi = phi + phi_factor * delta.x * MOVE_SPEED
   theta = clampf(
     theta + theta_factor * delta.y * MOVE_SPEED,
     0.001F,
     PI - 0.001F,
   )
-  let sin_theta = @math.sin(theta)
-  @math.Vec3::new(
-    safe_radius * sin_theta * @math.cos(phi),
-    safe_radius * @math.cos(theta),
-    safe_radius * sin_theta * @math.sin(phi),
+  let translation = @math.Vec3::new(
+    radius * @math.sin(theta) * @math.cos(phi),
+    radius * @math.cos(theta),
+    radius * @math.sin(theta) * @math.sin(phi),
   )
-}
-
-///|
-fn orient_towards_center_preserve_roll(
-  transform : @transform.Transform,
-  translation : @math.Vec3,
-) -> @transform.Transform {
-  let roll = transform.rotation.to_rotation_z_angle()
+  let (_, _, roll) = transform.rotation.to_euler(@math.EulerRot::YXZ)
   let oriented = transform
     .with_translation(translation)
     .looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  let (yaw, pitch, _) = oriented.rotation.to_euler(@math.EulerRot::YXZ)
   oriented.with_rotation(
-    oriented.rotation.mul(@math.Quat::from_rotation_z(roll)).normalize(),
+    @math.Quat::from_euler(@math.EulerRot::YXZ, yaw, pitch, roll),
   )
 }
 
 ///|
-fn apply_drag_translation(
-  world : @ecs.World,
-  entity : @core.Entity,
-  delta : @math.Vec2,
-  phi_factor : Float,
-  theta_factor : Float,
+fn process_move_input(
+  selections : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[Selection]),
+    @ecs.All,
+  ],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  app_status : @app.Res[AppStatus],
 ) -> Unit {
-  guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
-    is Some(transform) else {
+  let status = app_status.get()
+  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
+    status.drag_mode != DragMode::Move {
     return
   }
-  let next_translation = spherical_drag_translation(
-    transform.translation,
-    delta,
-    phi_factor,
-    theta_factor,
-  )
-  try! (world.replace(
-    entity,
-    @transform.ecs_key_transform,
-    orient_towards_center_preserve_roll(transform, next_translation),
-  )
-  |> ignore)
-}
-
-///|
-fn apply_camera_drag(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
-  delta : @math.Vec2,
-) -> Unit {
-  apply_drag_translation(world, camera_entity, delta, 1.0F, -1.0F)
-}
-
-///|
-fn apply_decal_drag(
-  world : @ecs.World,
-  entity : @core.Entity,
-  delta : @math.Vec2,
-) -> Unit {
-  guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
-    is Some(transform) else {
-    return
-  }
-  match clustered_decals_state.val.drag_mode {
-    DragMode::Move => apply_drag_translation(world, entity, delta, -1.0F, 1.0F)
-    DragMode::Scale => {
-      let scale_factor = if 1.0F + delta.x * SCALE_SPEED < 0.05F {
-        0.05F
-      } else {
-        1.0F + delta.x * SCALE_SPEED
-      }
-      try! (world.replace(
-        entity,
-        @transform.ecs_key_transform,
-        transform.with_scale(transform.scale.mul_scalar(scale_factor)),
-      )
-      |> ignore)
-    }
-    DragMode::Roll => {
-      let rotation = transform.rotation
-        .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
-        .normalize()
-      try! (world.replace(
-        entity,
-        @transform.ecs_key_transform,
-        transform.with_rotation(rotation),
-      )
-      |> ignore)
-    }
-  }
-}
-
-///|
-fn handle_selection_change(world : @ecs.World) -> Bool {
-  let mut changed = false
-  world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
-    if interaction != @ui.Interaction::Pressed {
+  let delta = mouse_motion.get().delta
+  try! selections.view(fn(_entity, data) {
+    let (transform, selection) = data
+    let selection = selection.value()
+    if status.selection != selection {
       return
     }
-    for widget in clustered_decals_state.val.selection_widgets {
-      if same_entity(widget.button, entity) &&
-        clustered_decals_state.val.selection != widget.selection {
-        clustered_decals_state.val.selection = widget.selection
-        changed = true
-        break
-      }
+    transform.set(move_selection_transform(transform.value(), selection, delta))
+  })
+}
+
+///|
+fn process_scale_input(
+  selections : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[Selection]),
+    @ecs.All,
+  ],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
+    status.drag_mode != DragMode::Scale {
+    return
+  }
+  let delta = mouse_motion.get().delta
+  try! selections.view(fn(_entity, data) {
+    let (transform, selection) = data
+    if status.selection == selection.value() {
+      let value = transform.value()
+      transform.set(
+        value.with_scale(value.scale.mul_scalar(1.0F + delta.x * SCALE_SPEED)),
+      )
     }
   })
-  changed
 }
 
 ///|
-fn switch_drag_mode(world : @ecs.World) -> Bool {
-  let mut next_mode = DragMode::Move
-  let mut hover_resize_cursor = false
-  if clustered_decals_state.val.selection != Selection::Camera &&
-    !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    for widget in clustered_decals_state.val.drag_mode_widgets {
-      if (try! world.get_by_key(widget.button, @ui.ecs_key_interaction))
-        is Some(interaction) {
-        if interaction == @ui.Interaction::Hovered {
-          next_mode = widget.mode
-          hover_resize_cursor = true
-          break
-        }
-      }
+fn process_roll_input(
+  selections : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Read[Selection]),
+    @ecs.All,
+  ],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let status = app_status.get()
+  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
+    status.drag_mode != DragMode::Roll {
+    return
+  }
+  let delta = mouse_motion.get().delta
+  try! selections.view(fn(_entity, data) {
+    let (transform, selection) = data
+    if status.selection != selection.value() {
+      return
     }
-  }
-  @window.window_set_cursor_icon(
-    icon=if hover_resize_cursor {
-      @window.CursorIcon::from(@window.SystemCursorIcon::EwResize)
-    } else {
-      @window.CursorIcon::from(@window.SystemCursorIcon::Default)
-    },
-  )
-
-  if clustered_decals_state.val.drag_mode == next_mode {
-    false
-  } else {
-    clustered_decals_state.val.drag_mode = next_mode
-    true
-  }
+    let (yaw, pitch, roll) = transform.value().rotation.to_euler(
+      @math.EulerRot::YXZ,
+    )
+    transform.set(
+      transform
+      .value()
+      .with_rotation(
+        @math.Quat::from_euler(
+          @math.EulerRot::YXZ,
+          yaw,
+          pitch,
+          roll + delta.x * ROLL_SPEED,
+        ),
+      ),
+    )
+  })
 }
 
 ///|
-fn process_ui_controls(world : @ecs.World) -> Unit {
-  let selection_changed = handle_selection_change(world)
-  let drag_mode_changed = switch_drag_mode(world)
-  if selection_changed || drag_mode_changed {
-    update_ui_state(world)
+fn switch_drag_mode(
+  commands : @app.Commands,
+  interactions : @ecs.Query[
+    (@ecs.Read[@ui.Interaction], @ecs.Read[DragMode]),
+    @ecs.All,
+  ],
+  windows : @ecs.Query[@core.Entity, @ecs.With[@window.Window]],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  app_status : @app.ResMut[AppStatus],
+) -> Unit {
+  if mouse_buttons.pressed(@window.MouseButton::Left) {
+    return
   }
+  let mut hovered_mode : DragMode? = None
+  try! interactions.view(fn(_entity, data) {
+    let (interaction, drag_mode) = data
+    if interaction.value() == @ui.Interaction::Hovered {
+      hovered_mode = Some(drag_mode.value())
+    }
+  })
+  app_status.modify(fn(status) {
+    match hovered_mode {
+      Some(mode) => status.drag_mode = mode
+      None => status.drag_mode = DragMode::Move
+    }
+  })
+  try! windows.view(fn(_query_entity, window_entity) {
+    match hovered_mode {
+      Some(_) =>
+        commands
+        .entity(window_entity)
+        .insert_component(
+          @window.CursorIcon::from(@window.SystemCursorIcon::EwResize),
+        )
+      None =>
+        commands
+        .entity(window_entity)
+        .remove_component(@window.ecs_key_cursor_icon)
+    }
+  })
 }
 
 ///|
-fn process_drag_input(world : @ecs.World) -> Unit {
-  if @input.mouse_button_just_pressed(@window.MouseButton::Left) {
-    clustered_decals_state.val.last_mouse = @input.mouse_position()
-  }
-  if @input.mouse_button_just_released(@window.MouseButton::Left) {
-    clustered_decals_state.val.last_mouse = None
-  }
-  if !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    return
-  }
-
-  guard @input.mouse_position() is Some(current_mouse) else { return }
-  guard clustered_decals_state.val.last_mouse is Some(previous_mouse) else {
-    clustered_decals_state.val.last_mouse = Some(current_mouse)
-    return
-  }
-
-  let delta = current_mouse.sub(previous_mouse)
-  clustered_decals_state.val.last_mouse = Some(current_mouse)
-
-  guard selected_entity() is Some(entity) else { return }
-  if clustered_decals_state.val.selection == Selection::Camera {
-    apply_camera_drag(world, entity, delta)
-  } else {
-    apply_decal_drag(world, entity, delta)
-  }
+fn update_help_text(
+  help_text : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[HelpText]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let next = create_help_string(app_status.get())
+  try! help_text.view(fn(_entity, text) { text.set(@text.Text::new(next)) })
 }
 
 ///|
-fn rotate_cube(world : @ecs.World) -> Unit {
-  guard clustered_decals_state.val.rotating_cube is Some(cube_entity) else {
-    return
+fn update_button_visibility(
+  nodes : @ecs.Query[@ecs.Write[@visibility.Visibility], @ecs.With[DragMode]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let visible = match app_status.get().selection {
+    Selection::Camera => @visibility.Visibility::Hidden
+    Selection::DecalA | Selection::DecalB => @visibility.Visibility::Visible
   }
-  guard (try! world.get_by_key(cube_entity, @transform.ecs_key_transform))
-    is Some(transform) else {
-    return
-  }
-  let rotation = transform.rotation
-    .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
-    .normalize()
-  try! (world.replace(
-    cube_entity,
-    @transform.ecs_key_transform,
-    transform.with_rotation(rotation),
-  )
-  |> ignore)
+  try! nodes.view(fn(_entity, visibility) { visibility.set(visible) })
 }
 
 ///|
 fn main {
+  let widget_click_message_key : @ecs.MessageKey[
+    @widgets_lib.WidgetClickEvent[Selection],
+  ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, rotate_cube)
-  .add_systems_world(@app.Update, process_drag_input)
-  .add_system_config(
-    @app.system_config_world(process_ui_controls).after(@ui.ui_set_focus),
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
   )
+  .init_resource(fn() { AppStatus::AppStatus() })
+  .add_message(widget_click_message_key)
+  .add_systems_param6(@app.Startup, setup)
+  .add_systems_param2(@app.Update, draw_gizmos)
+  .add_systems_param(@app.Update, rotate_cube)
+  .add_systems_param2(@app.Update, handle_ui_interactions)
+  .add_systems_param2(@app.Update, handle_selection_change)
+  .add_systems_param3(@app.Update, update_radio_buttons)
+  .add_systems_param4(@app.Update, process_move_input)
+  .add_systems_param4(@app.Update, process_scale_input)
+  .add_systems_param4(@app.Update, process_roll_input)
+  .add_systems_param5(@app.Update, switch_drag_mode)
+  .add_systems_param2(@app.Update, update_help_text)
+  .add_systems_param2(@app.Update, update_button_visibility)
   .run()
 }
