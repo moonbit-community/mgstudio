@@ -58,6 +58,37 @@ test "renderer: surface frame present follows Bevy view target intent" {
 }
 
 ///|
+fn wbtest_bind_group_layout_has_binding(
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
+  binding : Int,
+) -> Bool {
+  for entry in descriptor.entries() {
+    if entry.binding() == binding {
+      return true
+    }
+  }
+  false
+}
+
+///|
+test "renderer: default mesh view layout can include clustered decal bindings" {
+  let layout = mesh3d_default_mesh_view_layout(clustered_decals_usable=true)
+  let binding_arrays = layout.binding_array_bind_group_layout_descriptor()
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(binding_arrays, 5),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(binding_arrays, 6),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(binding_arrays, 7),
+    content="true",
+  )
+}
+
+///|
 test "renderer: render context state starts empty and finish clears state" {
   let state = RenderContextState::RenderContextState()
   debug_inspect(state.is_empty(), content="true")

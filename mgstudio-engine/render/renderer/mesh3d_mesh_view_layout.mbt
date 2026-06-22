@@ -32,14 +32,22 @@ fn mesh3d_default_mesh_view_layout_key(
 }
 
 ///|
+fn mesh3d_clustered_decals_are_usable() -> Bool {
+  mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
+  )
+}
+
+///|
 fn mesh3d_default_mesh_view_layout(
   tonemap_in_shader? : Bool = false,
+  clustered_decals_usable? : Bool = mesh3d_clustered_decals_are_usable(),
 ) -> @mesh_view_layout.MeshPipelineViewLayout {
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
     mesh3d_default_mesh_view_layout_key(tonemap_in_shader~),
-    clustered_decals_usable=false,
+    clustered_decals_usable~,
     irradiance_volumes_usable=false,
     oit_supported=false,
   )

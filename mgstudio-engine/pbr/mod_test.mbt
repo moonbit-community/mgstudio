@@ -2244,6 +2244,36 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
 }
 
 ///|
+test "render3d: Mesh3d tuple insert receives visibility required components" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
+  let world = app.world()
+  let entity = world.spawn_empty()
+  ignore(
+    try! world.entity_mut(entity).insert(
+      (
+        @mesh.Mesh3d::new(@asset.Handle::new(1)),
+        MeshMaterial3d::new(@asset.Handle::new(2)),
+        @transform.Transform::identity(),
+      ),
+    ),
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, @visibility.ecs_key_visibility),
+    content="Some(Inherited)",
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, @visibility.ecs_key_inherited_visibility),
+    content="Some({ visible: true })",
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, @visibility.ecs_key_view_visibility),
+    content="Some({ bits: 1 })",
+  )
+}
+
+///|
 test "render3d: pbr plugin extracts lights through render schedule" {
   let app0 = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

@@ -1879,7 +1879,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
         true,
         true,
         default_view_layout_key,
-        clustered_decals_usable=false,
+        clustered_decals_usable=mesh3d_clustered_decals_are_usable(),
         irradiance_volumes_usable=false,
         oit_supported=false,
       )
