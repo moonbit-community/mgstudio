@@ -280,6 +280,181 @@ pub fn present_mode_raw(
 }
 
 ///|
+fn surface_texture_format_is_srgb_raw(format_raw : UInt) -> Bool {
+  match format_raw {
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_BC1_RGBA_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_BC2_RGBA_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_BC3_RGBA_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC5X4_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC5X5_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC6X5_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC6X6_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC8X5_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC8X6_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC8X8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC10X5_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC10X6_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC10X8_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC10X10_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC12X10_UNORM_SRGB
+    | @wgpu.TEXTURE_FORMAT_ASTC12X12_UNORM_SRGB => true
+    _ => false
+  }
+}
+
+///|
+fn surface_texture_format_add_srgb_suffix_raw(format_raw : UInt) -> UInt {
+  match format_raw {
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_BGRA8_UNORM => @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_BC1_RGBA_UNORM =>
+      @wgpu.TEXTURE_FORMAT_BC1_RGBA_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_BC2_RGBA_UNORM =>
+      @wgpu.TEXTURE_FORMAT_BC2_RGBA_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_BC3_RGBA_UNORM =>
+      @wgpu.TEXTURE_FORMAT_BC3_RGBA_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM =>
+      @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC5X4_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC5X4_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC5X5_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC5X5_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC6X5_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC6X5_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC6X6_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC6X6_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC8X5_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC8X5_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC8X6_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC8X6_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC8X8_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC8X8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC10X5_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC10X5_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC10X6_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC10X6_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC10X8_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC10X8_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC10X10_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC10X10_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC12X10_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC12X10_UNORM_SRGB
+    @wgpu.TEXTURE_FORMAT_ASTC12X12_UNORM =>
+      @wgpu.TEXTURE_FORMAT_ASTC12X12_UNORM_SRGB
+    _ => format_raw
+  }
+}
+
+///|
+pub fn surface_texture_format_is_srgb(format : @wgpu.TextureFormat) -> Bool {
+  surface_texture_format_is_srgb_raw(format.to_u32())
+}
+
+///|
+pub fn surface_texture_format_add_srgb_suffix(
+  format : @wgpu.TextureFormat,
+) -> @wgpu.TextureFormat {
+  @wgpu.TextureFormat::from_u32(
+    surface_texture_format_add_srgb_suffix_raw(format.to_u32()),
+  )
+}
+
+///|
+pub fn preferred_surface_format(
+  formats : Array[@wgpu.TextureFormat],
+) -> @wgpu.TextureFormat {
+  guard formats.length() > 0 else { abort("No supported formats for surface") }
+  let mut format = formats[0]
+  for available_format in formats {
+    let raw = available_format.to_u32()
+    if raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB ||
+      raw == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB {
+      format = available_format
+      break
+    }
+  }
+  format
+}
+
+///|
+pub fn surface_texture_view_format(
+  format : @wgpu.TextureFormat,
+) -> @wgpu.TextureFormat? {
+  if surface_texture_format_is_srgb(format) {
+    None
+  } else {
+    Some(surface_texture_format_add_srgb_suffix(format))
+  }
+}
+
+///|
+pub fn composite_alpha_mode_raw(
+  alpha_mode : @window_pkg.CompositeAlphaMode,
+) -> UInt {
+  match alpha_mode {
+    Auto => @wgpu.COMPOSITE_ALPHA_MODE_AUTO
+    Opaque => @wgpu.COMPOSITE_ALPHA_MODE_OPAQUE
+    PreMultiplied => @wgpu.COMPOSITE_ALPHA_MODE_PREMULTIPLIED
+    PostMultiplied => @wgpu.COMPOSITE_ALPHA_MODE_UNPREMULTIPLIED
+    Inherit => @wgpu.COMPOSITE_ALPHA_MODE_INHERIT
+  }
+}
+
+///|
+fn desired_maximum_frame_latency_raw(
+  desired_maximum_frame_latency : Int?,
+) -> UInt {
+  match desired_maximum_frame_latency {
+    Some(value) if value >= 1 => value.reinterpret_as_uint()
+    _ => DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+  }
+}
+
+///|
+pub fn surface_configuration_for_window(
+  window : ExtractedWindow,
+  supported_present_modes : Array[UInt],
+  supported_formats : Array[@wgpu.TextureFormat],
+) -> @wgpu.SurfaceConfiguration {
+  let format = preferred_surface_format(supported_formats)
+  let view_formats = match surface_texture_view_format(format) {
+    Some(view_format) => [view_format]
+    None => []
+  }
+  @wgpu.SurfaceConfiguration::new(
+    window.physical_width.reinterpret_as_uint(),
+    window.physical_height.reinterpret_as_uint(),
+    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+    format,
+    @wgpu.PresentMode::from_u32(
+      present_mode_raw(window, supported_present_modes),
+    ),
+    @wgpu.CompositeAlphaMode::from_u32(
+      composite_alpha_mode_raw(window.alpha_mode),
+    ),
+  )
+  .with_desired_maximum_frame_latency(
+    desired_maximum_frame_latency_raw(window.desired_maximum_frame_latency),
+  )
+  .with_view_formats(view_formats)
+}
+
+///|
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows] = @ecs.register_resource(
   debug_name="mgstudio_render::ExtractedWindows",
 )

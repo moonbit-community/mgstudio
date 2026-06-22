@@ -16,6 +16,8 @@ import {
 // Values
 pub const DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : UInt = 2
 
+pub fn composite_alpha_mode_raw(@Milky2018/mgstudio/window.CompositeAlphaMode) -> UInt
+
 pub fn extract_windows(@ecs.World, @ecs.World) -> Unit
 
 pub let extracted_windows_resource_key : @ecs.ResourceKey[ExtractedWindows]
@@ -25,6 +27,8 @@ pub fn init_extracted_windows(@ecs.World) -> Unit
 pub fn init_window_surfaces(@ecs.World) -> Unit
 
 pub fn need_surface_configuration(ExtractedWindows, WindowSurfaces) -> Bool
+
+pub fn preferred_surface_format(Array[@wgpu_mbt.TextureFormat]) -> @wgpu_mbt.TextureFormat
 
 pub fn present_mode_fallbacks_raw(@Milky2018/mgstudio/window.PresentMode) -> Array[UInt]
 
@@ -43,6 +47,14 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 pub fn screenshot_parity_capture_completed() -> Bool
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
+
+pub fn surface_configuration_for_window(ExtractedWindow, Array[UInt], Array[@wgpu_mbt.TextureFormat]) -> @wgpu_mbt.SurfaceConfiguration
+
+pub fn surface_texture_format_add_srgb_suffix(@wgpu_mbt.TextureFormat) -> @wgpu_mbt.TextureFormat
+
+pub fn surface_texture_format_is_srgb(@wgpu_mbt.TextureFormat) -> Bool
+
+pub fn surface_texture_view_format(@wgpu_mbt.TextureFormat) -> @wgpu_mbt.TextureFormat?
 
 pub fn window_manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> @render_target.ManualTextureViewHandle
 

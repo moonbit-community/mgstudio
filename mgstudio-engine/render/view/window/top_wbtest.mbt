@@ -288,3 +288,91 @@ test "render view window: present_mode_raw chooses first supported fallback" {
     content="true",
   )
 }
+
+///|
+test "render view window: preferred surface format follows Bevy srgb preference" {
+  let preferred = preferred_surface_format([
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB),
+  ])
+  debug_inspect(
+    preferred.to_u32() == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+    content="true",
+  )
+  let fallback = preferred_surface_format([
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM),
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+  ])
+  debug_inspect(
+    fallback.to_u32() == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+    content="true",
+  )
+}
+
+///|
+test "render view window: texture view format mirrors Bevy add_srgb_suffix path" {
+  let srgb = surface_texture_view_format(
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB),
+  )
+  debug_inspect(srgb is None, content="true")
+  let linear = surface_texture_view_format(
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM),
+  )
+  debug_inspect(
+    linear.unwrap().to_u32() == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
+    content="true",
+  )
+  let compressed = surface_texture_format_add_srgb_suffix(
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM),
+  )
+  debug_inspect(
+    compressed.to_u32() == @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB,
+    content="true",
+  )
+}
+
+///|
+test "render view window: surface configuration uses Bevy window fields" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let window = ExtractedWindow::new(
+    entity,
+    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    640,
+    360,
+    @window_pkg.PresentMode::AutoNoVsync,
+    Some(3),
+    @window_pkg.CompositeAlphaMode::PostMultiplied,
+  )
+  let configuration = surface_configuration_for_window(
+    window,
+    [@wgpu.PRESENT_MODE_FIFO, @wgpu.PRESENT_MODE_IMMEDIATE],
+    [@wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM)],
+  )
+  debug_inspect(configuration.width, content="640")
+  debug_inspect(configuration.height, content="360")
+  debug_inspect(
+    configuration.usage.to_u64() == @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT,
+    content="true",
+  )
+  debug_inspect(
+    configuration.format.to_u32() == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+    content="true",
+  )
+  debug_inspect(
+    configuration.present_mode_u32 == @wgpu.PRESENT_MODE_IMMEDIATE,
+    content="true",
+  )
+  debug_inspect(
+    configuration.alpha_mode_u32 == @wgpu.COMPOSITE_ALPHA_MODE_UNPREMULTIPLIED,
+    content="true",
+  )
+  debug_inspect(configuration.desired_maximum_frame_latency, content="3")
+  debug_inspect(configuration.view_formats.length(), content="1")
+  debug_inspect(
+    configuration.view_formats[0].to_u32() ==
+    @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
+    content="true",
+  )
+}
