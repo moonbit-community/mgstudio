@@ -300,6 +300,8 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
 
+pub let ecs_key_meshes_to_reextract_next_frame : @ecs.ResourceKey[MeshesToReextractNextFrame]
+
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.MotionVectorPrepass]
@@ -345,6 +347,8 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 pub let ecs_key_render_material_bindings : @ecs.ResourceKey[RenderMaterialBindings]
 
 pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
+
+pub let ecs_key_render_mesh_instance_gpu_queues : @ecs.ResourceKey[RenderMeshInstanceGpuQueues]
 
 pub let ecs_key_render_mesh_instances : @ecs.ResourceKey[RenderMeshInstances]
 
@@ -487,6 +491,8 @@ pub fn gpu_clustering_z_slice_dispatch_count(Int) -> Int
 pub fn init_fallback_bindless_resources(@ecs.World) -> Unit
 
 pub fn init_global_clusterable_object_meta(@ecs.World) -> Unit
+
+pub fn mark_all_meshes_for_reextraction(RenderMeshInstances, MeshesToReextractNextFrame) -> Unit
 
 pub fn material_bind_group_allocator_for_support(Bool, Int?) -> MaterialBindGroupAllocator
 
@@ -1799,6 +1805,14 @@ pub fn Mesh3dWireframe::material(Self) -> @asset.Handle[WireframeMaterial]
 pub fn Mesh3dWireframe::new(@asset.Handle[WireframeMaterial]) -> Self
 pub impl @ecs.Component for Mesh3dWireframe
 
+pub struct MeshCullingData {
+  aabb_center : @math.Vec4
+  aabb_half_extents : @math.Vec4
+} derive(Eq)
+pub fn MeshCullingData::aabb_center(Self) -> @math.Vec4
+pub fn MeshCullingData::aabb_half_extents(Self) -> @math.Vec4
+pub fn MeshCullingData::new(@primitives.Aabb?) -> Self
+
 pub struct MeshMaterial3dBundle {
   mesh : @Milky2018/mgstudio/mesh.Mesh3d
   material : @material.MeshMaterial3d
@@ -1854,6 +1868,18 @@ pub struct MeshRenderPluginState {
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
 }
 pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
+
+pub struct MeshesToReextractNextFrame {
+  entries : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
+}
+pub fn MeshesToReextractNextFrame::MeshesToReextractNextFrame() -> Self
+pub fn MeshesToReextractNextFrame::clear(Self) -> Unit
+pub fn MeshesToReextractNextFrame::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn MeshesToReextractNextFrame::entities(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn MeshesToReextractNextFrame::extend(Self, Array[@Milky2018/mgstudio/render.MainEntity]) -> Unit
+pub fn MeshesToReextractNextFrame::insert(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn MeshesToReextractNextFrame::len(Self) -> Int
+pub impl @app.Resource for MeshesToReextractNextFrame
 
 pub struct NoIndirectDrawing {
 } derive(ToJson, @json.FromJson)
@@ -2087,11 +2113,66 @@ pub fn RenderMeshInstanceFlags::no_cpu_culling() -> Self
 pub fn RenderMeshInstanceFlags::or(Self, Self) -> Self
 pub fn RenderMeshInstanceFlags::shadow_caster() -> Self
 
+pub struct RenderMeshInstanceGpuBuilder {
+  queue_data : RenderMeshQueueData
+}
+pub fn RenderMeshInstanceGpuBuilder::new(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceGpuBuilder::render_mesh_queue_data(Self) -> RenderMeshQueueData
+
+pub struct RenderMeshInstanceGpuCpuCullingQueue {
+  changed : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder)]
+  removed : Array[@Milky2018/mgstudio/render.MainEntity]
+}
+pub fn RenderMeshInstanceGpuCpuCullingQueue::RenderMeshInstanceGpuCpuCullingQueue() -> Self
+
+pub struct RenderMeshInstanceGpuGpuCullingQueue {
+  changed_cpu_culling : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
+  changed_gpu_culling : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
+  removed : Array[@Milky2018/mgstudio/render.MainEntity]
+}
+pub fn RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueue() -> Self
+
+pub struct RenderMeshInstanceGpuPrepared {
+  queue_data : RenderMeshQueueData
+}
+pub fn RenderMeshInstanceGpuPrepared::new(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(Self) -> RenderMeshQueueData
+
+pub struct RenderMeshInstanceGpuQueue {
+  mut state : RenderMeshInstanceGpuQueueState
+}
+pub fn RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue() -> Self
+pub fn RenderMeshInstanceGpuQueue::changed_len(Self) -> Int
+pub fn RenderMeshInstanceGpuQueue::gpu_changed_cpu_culling_len(Self) -> Int
+pub fn RenderMeshInstanceGpuQueue::gpu_changed_gpu_culling_len(Self) -> Int
+pub fn RenderMeshInstanceGpuQueue::init(Self, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueue::push(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData?, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueue::remove(Self, @Milky2018/mgstudio/render.MainEntity, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueue::removed_len(Self) -> Int
+pub fn RenderMeshInstanceGpuQueue::state(Self) -> RenderMeshInstanceGpuQueueState
+
+pub enum RenderMeshInstanceGpuQueueState {
+  NoQueue
+  CpuCulling(RenderMeshInstanceGpuCpuCullingQueue)
+  GpuCulling(RenderMeshInstanceGpuGpuCullingQueue)
+}
+
+pub struct RenderMeshInstanceGpuQueues {
+  queues : Array[RenderMeshInstanceGpuQueue]
+}
+pub fn RenderMeshInstanceGpuQueues::RenderMeshInstanceGpuQueues() -> Self
+pub fn RenderMeshInstanceGpuQueues::borrow_local_mut(Self) -> RenderMeshInstanceGpuQueue
+pub fn RenderMeshInstanceGpuQueues::init(Self, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueues::iter(Self) -> Array[RenderMeshInstanceGpuQueue]
+pub impl @app.Resource for RenderMeshInstanceGpuQueues
+
 pub enum RenderMeshInstances {
   CpuBuilding(RenderMeshInstancesCpu)
   GpuBuilding(RenderMeshInstancesGpu)
 }
+pub fn RenderMeshInstances::clear(Self) -> Unit
 pub fn RenderMeshInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstances::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
 pub fn RenderMeshInstances::len(Self) -> Int
 pub fn RenderMeshInstances::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
 pub fn RenderMeshInstances::new(use_gpu_instance_buffer_builder? : Bool) -> Self
@@ -2103,7 +2184,9 @@ pub struct RenderMeshInstancesCpu {
   entries : Map[UInt64, RenderMeshQueueData]
 }
 pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> Self
+pub fn RenderMeshInstancesCpu::clear(Self) -> Unit
 pub fn RenderMeshInstancesCpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesCpu::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
 pub fn RenderMeshInstancesCpu::len(Self) -> Int
 pub fn RenderMeshInstancesCpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
 pub fn RenderMeshInstancesCpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
@@ -2113,7 +2196,9 @@ pub struct RenderMeshInstancesGpu {
   entries : Map[UInt64, RenderMeshQueueData]
 }
 pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> Self
+pub fn RenderMeshInstancesGpu::clear(Self) -> Unit
 pub fn RenderMeshInstancesGpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesGpu::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
 pub fn RenderMeshInstancesGpu::len(Self) -> Int
 pub fn RenderMeshInstancesGpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
 pub fn RenderMeshInstancesGpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?

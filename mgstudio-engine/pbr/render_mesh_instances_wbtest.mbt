@@ -75,6 +75,73 @@ test "pbr: RenderMeshInstances has Bevy CPU and GPU building variants" {
 }
 
 ///|
+test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy CPU culling state" {
+  let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
+  let entity = @render.MainEntity::new(@core.Entity::new(30, 1))
+  let builder = RenderMeshInstanceGpuBuilder::new(
+    RenderMeshQueueData::new(51, 0U, true),
+  )
+  queue.init(false)
+  queue.push(entity, builder, None, false)
+  queue.remove(entity, false)
+  match queue.state() {
+    CpuCulling(cpu_queue) => {
+      debug_inspect(cpu_queue.changed.length(), content="1")
+      debug_inspect(cpu_queue.removed.length(), content="1")
+    }
+    _ => abort("queue should be in CPU culling mode")
+  }
+
+  queue.init(false)
+  debug_inspect(queue.changed_len(), content="0")
+  debug_inspect(queue.removed_len(), content="0")
+}
+
+///|
+test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy GPU culling split queues" {
+  let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
+  let cpu_entity = @render.MainEntity::new(@core.Entity::new(31, 1))
+  let gpu_entity = @render.MainEntity::new(@core.Entity::new(32, 1))
+  let builder = RenderMeshInstanceGpuBuilder::new(
+    RenderMeshQueueData::new(52, 2U, true),
+  )
+  let culling_data = MeshCullingData::new(None)
+  queue.init(true)
+  queue.push(cpu_entity, builder, Some(culling_data), false)
+  queue.push(gpu_entity, builder, Some(culling_data), true)
+  queue.remove(gpu_entity, true)
+
+  match queue.state() {
+    GpuCulling(gpu_queue) => {
+      debug_inspect(gpu_queue.changed_cpu_culling.length(), content="1")
+      debug_inspect(gpu_queue.changed_gpu_culling.length(), content="1")
+      debug_inspect(gpu_queue.removed.length(), content="1")
+    }
+    _ => abort("queue should be in GPU culling mode")
+  }
+  debug_inspect(queue.changed_len(), content="2")
+  debug_inspect(queue.gpu_changed_cpu_culling_len(), content="1")
+  debug_inspect(queue.gpu_changed_gpu_culling_len(), content="1")
+}
+
+///|
+test "pbr: MeshesToReextractNextFrame drains all render mesh instances" {
+  let first = @render.MainEntity::new(@core.Entity::new(40, 1))
+  let second = @render.MainEntity::new(@core.Entity::new(41, 1))
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  instances.insert(first, RenderMeshQueueData::new(60, 0U, true))
+  instances.insert(second, RenderMeshQueueData::new(61, 0U, true))
+  let meshes_to_reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+
+  mark_all_meshes_for_reextraction(instances, meshes_to_reextract)
+
+  debug_inspect(instances.len(), content="0")
+  debug_inspect(meshes_to_reextract.len(), content="2")
+  debug_inspect(meshes_to_reextract.contains(first), content="true")
+  debug_inspect(meshes_to_reextract.contains(second), content="true")
+}
+
+///|
 test "pbr: RenderMeshInstanceFlags preserves Bevy bit values" {
   let flags = RenderMeshInstanceFlags::shadow_caster()
     .or(RenderMeshInstanceFlags::automatic_batching())
