@@ -102,3 +102,19 @@ test "render3d: view matrix preserves Bevy camera local axes" {
   debug_inspect(render3d_view_test_approx_eq(up_view.y, 1.0F), content="true")
   debug_inspect(render3d_view_test_approx_eq(up_view.z, 0.0F), content="true")
 }
+
+///|
+test "render3d: view matrix preserves reflected camera scale" {
+  let transform = @transform.Transform::new(
+    @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    @math.Quat::identity(),
+    @math.Vec3::new(-1.0F, -1.0F, -1.0F),
+  )
+  let view_from_world = render3d_view_from_world_matrix(transform)
+  let x_view = view_from_world.mul_vec4(@math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F))
+  let y_view = view_from_world.mul_vec4(@math.Vec4::new(0.0F, 1.0F, 0.0F, 1.0F))
+  let z_view = view_from_world.mul_vec4(@math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F))
+  debug_inspect(render3d_view_test_approx_eq(x_view.x, -1.0F), content="true")
+  debug_inspect(render3d_view_test_approx_eq(y_view.y, -1.0F), content="true")
+  debug_inspect(render3d_view_test_approx_eq(z_view.z, -1.0F), content="true")
+}

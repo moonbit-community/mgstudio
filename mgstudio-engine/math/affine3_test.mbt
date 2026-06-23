@@ -20,7 +20,7 @@ fn affine3_test_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-test "math: affine decomposition preserves negative determinant scale" {
+test "math: affine decomposition matches glam negative determinant scale" {
   let affine = Affine3::from_mat3_translation(
     Mat3::from_cols(
       Vec3::new(1.0F, 0.0F, 0.0F),
@@ -32,8 +32,8 @@ test "math: affine decomposition preserves negative determinant scale" {
   let (scale, _rotation, translation) = affine.to_scale_rotation_translation()
   inspect(
     affine3_test_approx_eq(scale.x, -1.0F) &&
-    affine3_test_approx_eq(scale.y, -1.0F) &&
-    affine3_test_approx_eq(scale.z, -1.0F) &&
+    affine3_test_approx_eq(scale.y, 1.0F) &&
+    affine3_test_approx_eq(scale.z, 1.0F) &&
     affine3_test_approx_eq(translation.x, 2.0F) &&
     affine3_test_approx_eq(translation.y, 3.0F) &&
     affine3_test_approx_eq(translation.z, 4.0F),

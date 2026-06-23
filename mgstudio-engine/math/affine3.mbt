@@ -342,14 +342,13 @@ pub fn Affine3::inverse(self : Affine3) -> Affine3 {
 pub fn Affine3::to_scale_rotation_translation(
   self : Affine3,
 ) -> (Vec3, Quat, Vec3) {
-  let mut scale = Vec3::new(
-    self.matrix3.x_axis.length(),
+  let determinant = self.matrix3.determinant()
+  let scale_sign = if determinant < 0.0F { -1.0F } else { 1.0F }
+  let scale = Vec3::new(
+    self.matrix3.x_axis.length() * scale_sign,
     self.matrix3.y_axis.length(),
     self.matrix3.z_axis.length(),
   )
-  if self.matrix3.determinant() < 0.0F {
-    scale = scale.neg()
-  }
   let inv_scale_x = if scale.x <= 1.0e-12F && scale.x >= -1.0e-12F {
     0.0F
   } else {
