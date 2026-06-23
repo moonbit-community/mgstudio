@@ -162,13 +162,40 @@ pub fn RenderMeshQueueData::flags(
 }
 
 ///|
-pub struct RenderMeshInstances {
+pub struct RenderMeshInstancesCpu {
   entries : Map[UInt64, RenderMeshQueueData]
 }
 
 ///|
-pub fn RenderMeshInstances::RenderMeshInstances() -> RenderMeshInstances {
-  RenderMeshInstances::{ entries: {} }
+pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> RenderMeshInstancesCpu {
+  RenderMeshInstancesCpu::{ entries: {} }
+}
+
+///|
+pub struct RenderMeshInstancesGpu {
+  entries : Map[UInt64, RenderMeshQueueData]
+}
+
+///|
+pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> RenderMeshInstancesGpu {
+  RenderMeshInstancesGpu::{ entries: {} }
+}
+
+///|
+pub enum RenderMeshInstances {
+  CpuBuilding(RenderMeshInstancesCpu)
+  GpuBuilding(RenderMeshInstancesGpu)
+}
+
+///|
+pub fn RenderMeshInstances::new(
+  use_gpu_instance_buffer_builder? : Bool = false,
+) -> RenderMeshInstances {
+  if use_gpu_instance_buffer_builder {
+    GpuBuilding(RenderMeshInstancesGpu::RenderMeshInstancesGpu())
+  } else {
+    CpuBuilding(RenderMeshInstancesCpu::RenderMeshInstancesCpu())
+  }
 }
 
 ///|
@@ -182,13 +209,13 @@ pub impl @app.Resource for RenderMeshInstances with fn resource() {
 }
 
 ///|
-pub fn RenderMeshInstances::len(self : RenderMeshInstances) -> Int {
+pub fn RenderMeshInstancesCpu::len(self : RenderMeshInstancesCpu) -> Int {
   self.entries.length()
 }
 
 ///|
-pub fn RenderMeshInstances::insert(
-  self : RenderMeshInstances,
+pub fn RenderMeshInstancesCpu::insert(
+  self : RenderMeshInstancesCpu,
   entity : @render.MainEntity,
   data : RenderMeshQueueData,
 ) -> Unit {
@@ -196,8 +223,8 @@ pub fn RenderMeshInstances::insert(
 }
 
 ///|
-pub fn RenderMeshInstances::remove(
-  self : RenderMeshInstances,
+pub fn RenderMeshInstancesCpu::remove(
+  self : RenderMeshInstancesCpu,
   entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
   let key = entity.id().to_bits()
@@ -207,11 +234,102 @@ pub fn RenderMeshInstances::remove(
 }
 
 ///|
+pub fn RenderMeshInstancesCpu::mesh_asset_id(
+  self : RenderMeshInstancesCpu,
+  entity : @render.MainEntity,
+) -> Int? {
+  self.render_mesh_queue_data(entity).map(fn(data) { data.mesh_asset_id() })
+}
+
+///|
+pub fn RenderMeshInstancesCpu::render_mesh_queue_data(
+  self : RenderMeshInstancesCpu,
+  entity : @render.MainEntity,
+) -> RenderMeshQueueData? {
+  self.entries.get(entity.id().to_bits())
+}
+
+///|
+pub fn RenderMeshInstancesGpu::len(self : RenderMeshInstancesGpu) -> Int {
+  self.entries.length()
+}
+
+///|
+pub fn RenderMeshInstancesGpu::insert(
+  self : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+  data : RenderMeshQueueData,
+) -> Unit {
+  self.entries.set(entity.id().to_bits(), data)
+}
+
+///|
+pub fn RenderMeshInstancesGpu::remove(
+  self : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+) -> RenderMeshQueueData? {
+  let key = entity.id().to_bits()
+  let value = self.entries.get(key)
+  self.entries.remove(key)
+  value
+}
+
+///|
+pub fn RenderMeshInstancesGpu::mesh_asset_id(
+  self : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+) -> Int? {
+  self.render_mesh_queue_data(entity).map(fn(data) { data.mesh_asset_id() })
+}
+
+///|
+pub fn RenderMeshInstancesGpu::render_mesh_queue_data(
+  self : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+) -> RenderMeshQueueData? {
+  self.entries.get(entity.id().to_bits())
+}
+
+///|
+pub fn RenderMeshInstances::len(self : RenderMeshInstances) -> Int {
+  match self {
+    CpuBuilding(instances) => instances.len()
+    GpuBuilding(instances) => instances.len()
+  }
+}
+
+///|
+pub fn RenderMeshInstances::insert(
+  self : RenderMeshInstances,
+  entity : @render.MainEntity,
+  data : RenderMeshQueueData,
+) -> Unit {
+  match self {
+    CpuBuilding(instances) => instances.insert(entity, data)
+    GpuBuilding(instances) => instances.insert(entity, data)
+  }
+}
+
+///|
+pub fn RenderMeshInstances::remove(
+  self : RenderMeshInstances,
+  entity : @render.MainEntity,
+) -> RenderMeshQueueData? {
+  match self {
+    CpuBuilding(instances) => instances.remove(entity)
+    GpuBuilding(instances) => instances.remove(entity)
+  }
+}
+
+///|
 pub fn RenderMeshInstances::mesh_asset_id(
   self : RenderMeshInstances,
   entity : @render.MainEntity,
 ) -> Int? {
-  self.render_mesh_queue_data(entity).map(fn(data) { data.mesh_asset_id() })
+  match self {
+    CpuBuilding(instances) => instances.mesh_asset_id(entity)
+    GpuBuilding(instances) => instances.mesh_asset_id(entity)
+  }
 }
 
 ///|
@@ -219,7 +337,10 @@ pub fn RenderMeshInstances::render_mesh_queue_data(
   self : RenderMeshInstances,
   entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
-  self.entries.get(entity.id().to_bits())
+  match self {
+    CpuBuilding(instances) => instances.render_mesh_queue_data(entity)
+    GpuBuilding(instances) => instances.render_mesh_queue_data(entity)
+  }
 }
 
 ///|
@@ -246,7 +367,7 @@ fn render_mesh_queue_data_for_cpu_building(
 fn render_mesh_instances_for_cpu_building(
   meshes : Array[ExtractedMesh3d],
 ) -> RenderMeshInstances {
-  let instances = RenderMeshInstances::RenderMeshInstances()
+  let instances = RenderMeshInstances::new()
   for mesh in meshes {
     let payload = mesh.payload
     if payload.mesh_id <= 0 {

@@ -2087,16 +2087,37 @@ pub fn RenderMeshInstanceFlags::no_cpu_culling() -> Self
 pub fn RenderMeshInstanceFlags::or(Self, Self) -> Self
 pub fn RenderMeshInstanceFlags::shadow_caster() -> Self
 
-pub struct RenderMeshInstances {
-  entries : Map[UInt64, RenderMeshQueueData]
+pub enum RenderMeshInstances {
+  CpuBuilding(RenderMeshInstancesCpu)
+  GpuBuilding(RenderMeshInstancesGpu)
 }
-pub fn RenderMeshInstances::RenderMeshInstances() -> Self
 pub fn RenderMeshInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
 pub fn RenderMeshInstances::len(Self) -> Int
 pub fn RenderMeshInstances::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderMeshInstances::new(use_gpu_instance_buffer_builder? : Bool) -> Self
 pub fn RenderMeshInstances::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 pub fn RenderMeshInstances::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 pub impl @app.Resource for RenderMeshInstances
+
+pub struct RenderMeshInstancesCpu {
+  entries : Map[UInt64, RenderMeshQueueData]
+}
+pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> Self
+pub fn RenderMeshInstancesCpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesCpu::len(Self) -> Int
+pub fn RenderMeshInstancesCpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderMeshInstancesCpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesCpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+
+pub struct RenderMeshInstancesGpu {
+  entries : Map[UInt64, RenderMeshQueueData]
+}
+pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> Self
+pub fn RenderMeshInstancesGpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesGpu::len(Self) -> Int
+pub fn RenderMeshInstancesGpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderMeshInstancesGpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesGpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int

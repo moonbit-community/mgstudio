@@ -84,7 +84,7 @@ fn wireframe_render_command_test_mesh_state(
   @render_mesh.RenderMeshAssets,
   @render_mesh.MeshAllocator,
 ) {
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity,
     RenderMeshQueueData::new(mesh_id, 0U, true),
@@ -221,7 +221,7 @@ test "pbr: wireframe vertex pull params preserve Bevy field order" {
 test "pbr: wide wireframe bind group command returns dynamic offset" {
   let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
   let item = wireframe_render_command_test_item(main_entity)
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   let bind_groups = WireframeWideBindGroups::WireframeWideBindGroups()
   debug_inspect(
     set_wireframe_3d_wide_bind_group_dynamic_offset(
@@ -252,7 +252,7 @@ test "pbr: wide wireframe bind group command returns dynamic offset" {
 test "pbr: pulled wireframe direct draw range follows Bevy skip rules" {
   let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
   let item = wireframe_render_command_test_item(main_entity)
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
   let mesh_allocator = @render_mesh.MeshAllocator::new()
   debug_inspect(
@@ -297,7 +297,7 @@ test "pbr: pulled wireframe direct draw range follows Bevy skip rules" {
 test "pbr: pulled wireframe direct draw range uses vertex count for non-indexed mesh" {
   let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
   let item = wireframe_render_command_test_item(main_entity)
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity,
     RenderMeshQueueData::new(17, 0U, true),
@@ -361,7 +361,7 @@ test "pbr: wireframe render command decision plans thin command tuple" {
     draw_functions,
     instances,
     assets,
-    RenderMeshInstances::RenderMeshInstances(),
+    RenderMeshInstances::new(),
     @render_mesh.RenderMeshAssets::RenderMeshAssets(),
     @render_mesh.MeshAllocator::new(),
     WireframeWideBindGroups::WireframeWideBindGroups(),
@@ -505,7 +505,7 @@ test "pbr: wireframe render command decision fails unknown draw function" {
       draw_functions,
       instances,
       assets,
-      RenderMeshInstances::RenderMeshInstances(),
+      RenderMeshInstances::new(),
       @render_mesh.RenderMeshAssets::RenderMeshAssets(),
       @render_mesh.MeshAllocator::new(),
       WireframeWideBindGroups::WireframeWideBindGroups(),

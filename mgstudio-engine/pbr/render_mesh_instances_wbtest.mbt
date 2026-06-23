@@ -14,7 +14,7 @@
 
 ///|
 test "pbr: RenderMeshInstances exposes Bevy queue data by MainEntity" {
-  let instances = RenderMeshInstances::RenderMeshInstances()
+  let instances = RenderMeshInstances::new()
   let entity = @render.MainEntity::new(@core.Entity::new(10, 1))
   let flags = RenderMeshInstanceFlags::has_previous_skin().or(
     RenderMeshInstanceFlags::automatic_batching(),
@@ -43,6 +43,35 @@ test "pbr: RenderMeshInstances exposes Bevy queue data by MainEntity" {
     instances.render_mesh_queue_data(entity) is None,
     content="true",
   )
+}
+
+///|
+test "pbr: RenderMeshInstances has Bevy CPU and GPU building variants" {
+  let entity = @render.MainEntity::new(@core.Entity::new(22, 1))
+  let cpu_instances = RenderMeshInstances::new()
+  cpu_instances.insert(entity, RenderMeshQueueData::new(41, 0U, false))
+  match cpu_instances {
+    CpuBuilding(_) => ()
+    GpuBuilding(_) => abort("default should use CPU building")
+  }
+  debug_inspect(cpu_instances.mesh_asset_id(entity), content="Some(41)")
+
+  let gpu_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  gpu_instances.insert(entity, RenderMeshQueueData::new(42, 7U, true))
+  match gpu_instances {
+    CpuBuilding(_) => abort("explicit GPU builder should use GPU building")
+    GpuBuilding(_) => ()
+  }
+  let gpu_data = match gpu_instances.render_mesh_queue_data(entity) {
+    Some(value) => value
+    None => abort("missing GPU render mesh queue data")
+  }
+  debug_inspect(gpu_instances.len(), content="1")
+  debug_inspect(gpu_data.mesh_asset_id(), content="42")
+  debug_inspect(gpu_data.current_uniform_index(), content="7")
+  debug_inspect(gpu_data.should_batch(), content="true")
 }
 
 ///|

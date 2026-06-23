@@ -301,7 +301,7 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
-    RenderMeshInstances::RenderMeshInstances(),
+    RenderMeshInstances::new(),
     {},
     Wireframe3dPipeline::new(),
     @render_resource.PipelineCache::new(),
@@ -329,7 +329,7 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(first_main_entity, 8)
   instances.insert(second_main_entity, 8)
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     first_main_entity,
     RenderMeshQueueData::new(33, 1U, true),
@@ -397,7 +397,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(first_main_entity, 8)
   instances.insert(second_main_entity, 8)
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     first_main_entity,
     RenderMeshQueueData::new(
@@ -474,7 +474,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
       WireframeMaterial::new(@color.Color::white(), 1.0F, Quads),
     ),
   )
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity,
     RenderMeshQueueData::new(33, 1U, true),
@@ -1121,7 +1121,7 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
-    RenderMeshInstances::RenderMeshInstances(),
+    RenderMeshInstances::new(),
     @render_mesh.MeshAllocator::new(),
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
@@ -1150,7 +1150,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
       WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
     ),
   )
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity,
     RenderMeshQueueData::new(33, 9U, true),
@@ -1282,7 +1282,7 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     DirtyWireframeSpecializations::resource(),
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
   )
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity,
     RenderMeshQueueData::new(33, 9U, true),
@@ -1574,7 +1574,7 @@ test "pbr: prepare wide wireframe bind groups mirrors Bevy filtering" {
   render_meshes.insert(13, render_mesh)
   let mesh_allocator = @render_mesh.MeshAllocator::new()
   ignore(mesh_allocator.allocate_render_mesh(13, render_mesh, 80))
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   let first = @render.MainEntity::new(@core.Entity::new(1, 1))
   let duplicate = @render.MainEntity::new(@core.Entity::new(2, 1))
   let thin = @render.MainEntity::new(@core.Entity::new(3, 1))
@@ -1758,7 +1758,7 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
       WireframeMaterial::new(@color.Color::white(), 2.0F, Triangles),
     ),
   )
-  let render_mesh_instances = RenderMeshInstances::RenderMeshInstances()
+  let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
     main_entity_b,
     RenderMeshQueueData::new(13, 0U, true),
