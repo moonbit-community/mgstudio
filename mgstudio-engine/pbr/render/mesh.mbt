@@ -130,6 +130,35 @@ pub fn render3d_upload_mesh_handle_cached(
 }
 
 ///|
+pub fn render3d_mesh_upload_cache_has_valid(
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Bool {
+  let mesh_handle_id = mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return false
+  }
+  match mesh_runtime_state_value.mesh_upload_cache.get(mesh_handle_id) {
+    Some(mesh_id) =>
+      mesh_id > 0 && @render_gpu.host_gpu_mesh_info(mesh_id) is Some(_)
+    None => false
+  }
+}
+
+///|
+pub fn render3d_mesh_preprocess_static_cache_has(
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Bool {
+  let mesh_handle_id = mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return false
+  }
+  mesh_runtime_state_value.mesh_preprocess_static_cache.get(mesh_handle_id)
+  is Some(_)
+}
+
+///|
 pub struct Render3dMeshUploadCacheState {
   clear_count : Int
 }

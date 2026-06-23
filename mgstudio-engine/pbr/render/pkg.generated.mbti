@@ -387,9 +387,13 @@ pub fn render3d_mesh_layouts(binding_arrays_are_usable? : Bool) -> MeshLayouts3d
 
 pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
 
+pub fn render3d_mesh_preprocess_static_cache_has(Render3dMeshRuntimeState, @asset.Handle[@mesh.Mesh]) -> Bool
+
 pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
 
 pub fn render3d_mesh_runtime_state_mut_or_abort(@ecs.World) -> @ecs.ResourceMut[Render3dMeshRuntimeState]
+
+pub fn render3d_mesh_upload_cache_has_valid(Render3dMeshRuntimeState, @asset.Handle[@mesh.Mesh]) -> Bool
 
 pub fn render3d_mesh_upload_cache_state_after_clear(Render3dMeshUploadCacheState) -> Render3dMeshUploadCacheState
 
