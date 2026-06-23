@@ -78,6 +78,24 @@ test "scene: load gltf animation keeps stable handle" {
 }
 
 ///|
+test "scene: load gltf animation stays pending in the issuing frame" {
+  let asset_missing = Ref(false)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let asset_server = @asset.AssetServer::new()
+    let path = @gltf.GltfAssetLabel::Animation(1).from_asset(
+      "models/Foo/Foo.gltf",
+    )
+    let handle : @asset.Handle[@animation.AnimationClip] = asset_server.load(
+      path,
+    )
+    let key : @ecs.ResourceKey[@asset.Assets[@animation.AnimationClip]] = @asset.assets_resource_key()
+    let clips = world.get_resource(key).unwrap()
+    asset_missing.val = clips.get(handle) is None
+  })
+  debug_inspect(asset_missing.val, content="true")
+}
+
+///|
 test "scene: load gltf primitive mesh keeps stable handle" {
   let same_handle = Ref(false)
   run_scene_test_app(fn(_world : @ecs.World) {

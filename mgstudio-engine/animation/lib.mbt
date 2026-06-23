@@ -90,6 +90,12 @@ pub fn animation_clip_add(clip : AnimationClip) -> @asset.Handle[AnimationClip] 
 }
 
 ///|
+pub fn animation_clip_reserve_handle() -> @asset.Handle[AnimationClip] {
+  let assets = animation_asset_store_mut_or_abort()
+  assets.modify(fn(store) { store.reserve_handle() })
+}
+
+///|
 pub fn animation_clip_get(
   handle : @asset.Handle[AnimationClip],
 ) -> AnimationClip? {

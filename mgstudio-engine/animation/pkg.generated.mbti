@@ -34,6 +34,8 @@ pub fn animation_clip_add_translation_track(AnimationClip, AnimationTargetId, Ar
 
 pub fn animation_clip_get(@asset.Handle[AnimationClip]) -> AnimationClip?
 
+pub fn animation_clip_reserve_handle() -> @asset.Handle[AnimationClip]
+
 pub fn animation_clip_sample(AnimationClip, AnimationTargetId, Float) -> AnimationSample?
 
 pub fn animation_clip_set(@asset.Handle[AnimationClip], AnimationClip) -> Bool

@@ -481,7 +481,7 @@ pub fn scene_load_gltf_animation(
   if scene_animation_registry_get(asset_path) is Some(handle) {
     return handle
   }
-  let handle = @animation.animation_clip_add(@animation.AnimationClip::new())
+  let handle = @animation.animation_clip_reserve_handle()
   scene_registry_mut_or_abort().modify(fn(state) {
     state.animation_registry.push((asset_path, handle))
   })
