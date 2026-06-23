@@ -28,7 +28,7 @@ test "pbr: RenderMeshInstances exposes Bevy queue data by MainEntity" {
   debug_inspect(instances.len(), content="1")
   debug_inspect(instances.mesh_asset_id(entity), content="Some(33)")
   debug_inspect(data.mesh_asset_id(), content="33")
-  debug_inspect(data.current_uniform_index(), content="9")
+  debug_inspect(data.current_uniform_index(), content="0")
   debug_inspect(data.should_batch(), content="true")
   debug_inspect(
     data.flags().contains(RenderMeshInstanceFlags::has_previous_skin()),
@@ -71,6 +71,36 @@ test "pbr: RenderMeshInstances has Bevy CPU and GPU building variants" {
   debug_inspect(gpu_instances.len(), content="1")
   debug_inspect(gpu_data.mesh_asset_id(), content="42")
   debug_inspect(gpu_data.current_uniform_index(), content="7")
+  debug_inspect(gpu_data.should_batch(), content="true")
+}
+
+///|
+test "pbr: RenderMeshInstances stores Bevy-shaped CPU and GPU instance records" {
+  let entity = @render.MainEntity::new(@core.Entity::new(23, 1))
+  let flags = RenderMeshInstanceFlags::has_previous_transform().or(
+    RenderMeshInstanceFlags::automatic_batching(),
+  )
+  let cpu_instances = RenderMeshInstancesCpu::RenderMeshInstancesCpu()
+  cpu_instances.insert(entity, RenderMeshQueueData::new(70, 9U, true, flags~))
+  let cpu_data = match cpu_instances.render_mesh_queue_data(entity) {
+    Some(value) => value
+    None => abort("missing CPU render mesh queue data")
+  }
+  debug_inspect(cpu_data.mesh_asset_id(), content="70")
+  debug_inspect(cpu_data.current_uniform_index(), content="0")
+  debug_inspect(
+    cpu_data.flags().contains(RenderMeshInstanceFlags::has_previous_transform()),
+    content="true",
+  )
+
+  let gpu_instances = RenderMeshInstancesGpu::RenderMeshInstancesGpu()
+  gpu_instances.insert(entity, RenderMeshQueueData::new(71, 13U, true, flags~))
+  let gpu_data = match gpu_instances.render_mesh_queue_data(entity) {
+    Some(value) => value
+    None => abort("missing GPU render mesh queue data")
+  }
+  debug_inspect(gpu_data.mesh_asset_id(), content="71")
+  debug_inspect(gpu_data.current_uniform_index(), content="13")
   debug_inspect(gpu_data.should_batch(), content="true")
 }
 

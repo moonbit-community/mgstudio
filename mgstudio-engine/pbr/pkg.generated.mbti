@@ -1869,6 +1869,16 @@ pub struct MeshRenderPluginState {
 }
 pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
 
+pub struct MeshTransforms {
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
+  flags : UInt
+}
+pub fn MeshTransforms::flags(Self) -> UInt
+pub fn MeshTransforms::new(@math.Affine3, @math.Affine3, UInt) -> Self
+pub fn MeshTransforms::previous_world_from_local(Self) -> @math.Affine3
+pub fn MeshTransforms::world_from_local(Self) -> @math.Affine3
+
 pub struct MeshesToReextractNextFrame {
   entries : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
 }
@@ -2097,6 +2107,16 @@ pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 pub fn RenderMaterialInstances::remove_mesh_material(Self, @core.Entity) -> Bool
 
+pub struct RenderMeshInstanceCpu {
+  shared : RenderMeshInstanceSharedFlat
+  transforms : MeshTransforms?
+  render_layers : @render_layers.RenderLayers?
+}
+pub fn RenderMeshInstanceCpu::from_queue_data(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceCpu::mesh_asset_id(Self) -> Int
+pub fn RenderMeshInstanceCpu::new(RenderMeshInstanceSharedFlat, transforms? : MeshTransforms?, render_layers? : @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshInstanceCpu::render_mesh_queue_data(Self) -> RenderMeshQueueData
+
 pub struct RenderMeshInstanceFlags {
   bits : UInt
 } derive(Eq, @debug.Debug)
@@ -2113,17 +2133,40 @@ pub fn RenderMeshInstanceFlags::no_cpu_culling() -> Self
 pub fn RenderMeshInstanceFlags::or(Self, Self) -> Self
 pub fn RenderMeshInstanceFlags::shadow_caster() -> Self
 
-pub struct RenderMeshInstanceGpuBuilder {
-  queue_data : RenderMeshQueueData
+pub struct RenderMeshInstanceGpu {
+  shared : RenderMeshInstanceSharedFlat
+  gpu_specific : RenderMeshInstanceGpuFlat
+  render_layers : @render_layers.RenderLayers?
 }
+pub fn RenderMeshInstanceGpu::from_queue_data(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceGpu::mesh_asset_id(Self) -> Int
+pub fn RenderMeshInstanceGpu::new(RenderMeshInstanceSharedFlat, gpu_specific? : RenderMeshInstanceGpuFlat, render_layers? : @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshInstanceGpu::render_mesh_queue_data(Self) -> RenderMeshQueueData
+
+pub struct RenderMeshInstanceGpuBuilder {
+  shared : RenderMeshInstanceSharedFlat
+  world_from_local : @math.Affine3
+  lightmap_uv_rect : @math.UVec2
+  previous_input_index : UInt?
+  render_layers : @render_layers.RenderLayers?
+  mesh_flags : UInt
+}
+pub fn RenderMeshInstanceGpuBuilder::from_shared(RenderMeshInstanceSharedFlat, @math.Affine3, @math.UVec2, UInt?, @render_layers.RenderLayers?, UInt) -> Self
 pub fn RenderMeshInstanceGpuBuilder::new(RenderMeshQueueData) -> Self
 pub fn RenderMeshInstanceGpuBuilder::render_mesh_queue_data(Self) -> RenderMeshQueueData
+pub fn RenderMeshInstanceGpuBuilder::shared(Self) -> RenderMeshInstanceSharedFlat
 
 pub struct RenderMeshInstanceGpuCpuCullingQueue {
   changed : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder)]
   removed : Array[@Milky2018/mgstudio/render.MainEntity]
 }
 pub fn RenderMeshInstanceGpuCpuCullingQueue::RenderMeshInstanceGpuCpuCullingQueue() -> Self
+
+pub struct RenderMeshInstanceGpuFlat {
+  current_uniform_index : UInt
+}
+pub fn RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(current_uniform_index? : UInt) -> Self
+pub fn RenderMeshInstanceGpuFlat::current_uniform_index(Self) -> UInt
 
 pub struct RenderMeshInstanceGpuGpuCullingQueue {
   changed_cpu_culling : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
@@ -2133,8 +2176,11 @@ pub struct RenderMeshInstanceGpuGpuCullingQueue {
 pub fn RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueue() -> Self
 
 pub struct RenderMeshInstanceGpuPrepared {
-  queue_data : RenderMeshQueueData
+  shared : RenderMeshInstanceSharedFlat
+  current_uniform_index : UInt
+  render_layers : @render_layers.RenderLayers?
 }
+pub fn RenderMeshInstanceGpuPrepared::from_shared(RenderMeshInstanceSharedFlat, UInt, @render_layers.RenderLayers?) -> Self
 pub fn RenderMeshInstanceGpuPrepared::new(RenderMeshQueueData) -> Self
 pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(Self) -> RenderMeshQueueData
 
@@ -2166,6 +2212,25 @@ pub fn RenderMeshInstanceGpuQueues::init(Self, Bool) -> Unit
 pub fn RenderMeshInstanceGpuQueues::iter(Self) -> Array[RenderMeshInstanceGpuQueue]
 pub impl @app.Resource for RenderMeshInstanceGpuQueues
 
+pub struct RenderMeshInstanceSharedFlat {
+  mesh_asset_id : Int
+  material_bindings_index : MaterialBindingId
+  lightmap_slab_index : Int?
+  tag : UInt
+  current_uniform_index : UInt
+  flags : RenderMeshInstanceFlags
+}
+pub fn RenderMeshInstanceSharedFlat::current_uniform_index(Self) -> UInt
+pub fn RenderMeshInstanceSharedFlat::flags(Self) -> RenderMeshInstanceFlags
+pub fn RenderMeshInstanceSharedFlat::from_queue_data(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceSharedFlat::lightmap_slab_index(Self) -> Int?
+pub fn RenderMeshInstanceSharedFlat::material_bindings_index(Self) -> MaterialBindingId
+pub fn RenderMeshInstanceSharedFlat::mesh_asset_id(Self) -> Int
+pub fn RenderMeshInstanceSharedFlat::new(Int, material_bindings_index? : MaterialBindingId, lightmap_slab_index? : Int?, tag? : UInt, current_uniform_index? : UInt, flags? : RenderMeshInstanceFlags) -> Self
+pub fn RenderMeshInstanceSharedFlat::should_batch(Self) -> Bool
+pub fn RenderMeshInstanceSharedFlat::tag(Self) -> UInt
+pub fn RenderMeshInstanceSharedFlat::to_queue_data(Self, current_uniform_index? : UInt, render_layers? : @render_layers.RenderLayers?) -> RenderMeshQueueData
+
 pub enum RenderMeshInstances {
   CpuBuilding(RenderMeshInstancesCpu)
   GpuBuilding(RenderMeshInstancesGpu)
@@ -2181,7 +2246,7 @@ pub fn RenderMeshInstances::render_mesh_queue_data(Self, @Milky2018/mgstudio/ren
 pub impl @app.Resource for RenderMeshInstances
 
 pub struct RenderMeshInstancesCpu {
-  entries : Map[UInt64, RenderMeshQueueData]
+  entries : Map[UInt64, RenderMeshInstanceCpu]
 }
 pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> Self
 pub fn RenderMeshInstancesCpu::clear(Self) -> Unit
@@ -2193,7 +2258,7 @@ pub fn RenderMeshInstancesCpu::remove(Self, @Milky2018/mgstudio/render.MainEntit
 pub fn RenderMeshInstancesCpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 
 pub struct RenderMeshInstancesGpu {
-  entries : Map[UInt64, RenderMeshQueueData]
+  entries : Map[UInt64, RenderMeshInstanceGpu]
 }
 pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> Self
 pub fn RenderMeshInstancesGpu::clear(Self) -> Unit
@@ -2209,11 +2274,13 @@ pub struct RenderMeshQueueData {
   current_uniform_index : UInt
   should_batch : Bool
   flags : RenderMeshInstanceFlags
+  render_layers : @render_layers.RenderLayers?
 }
 pub fn RenderMeshQueueData::current_uniform_index(Self) -> UInt
 pub fn RenderMeshQueueData::flags(Self) -> RenderMeshInstanceFlags
 pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
-pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags) -> Self
+pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags, render_layers? : @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshQueueData::render_layers(Self) -> @render_layers.RenderLayers?
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 
 pub struct RenderViewClusteringReadbackData {

@@ -120,6 +120,7 @@ pub struct RenderMeshQueueData {
   current_uniform_index : UInt
   should_batch : Bool
   flags : RenderMeshInstanceFlags
+  render_layers : @camera_render_layers.RenderLayers?
 }
 
 ///|
@@ -128,12 +129,19 @@ pub fn RenderMeshQueueData::new(
   current_uniform_index : UInt,
   should_batch : Bool,
   flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
+  render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshQueueData {
+  let flags = if should_batch {
+    flags.or(RenderMeshInstanceFlags::automatic_batching())
+  } else {
+    flags
+  }
   RenderMeshQueueData::{
     mesh_asset_id,
     current_uniform_index,
     should_batch,
     flags,
+    render_layers,
   }
 }
 
@@ -159,6 +167,258 @@ pub fn RenderMeshQueueData::flags(
   self : RenderMeshQueueData,
 ) -> RenderMeshInstanceFlags {
   self.flags
+}
+
+///|
+pub fn RenderMeshQueueData::render_layers(
+  self : RenderMeshQueueData,
+) -> @camera_render_layers.RenderLayers? {
+  self.render_layers
+}
+
+///|
+pub struct MeshTransforms {
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
+  flags : UInt
+}
+
+///|
+pub fn MeshTransforms::new(
+  world_from_local : @math.Affine3,
+  previous_world_from_local : @math.Affine3,
+  flags : UInt,
+) -> MeshTransforms {
+  MeshTransforms::{ world_from_local, previous_world_from_local, flags }
+}
+
+///|
+pub fn MeshTransforms::world_from_local(self : MeshTransforms) -> @math.Affine3 {
+  self.world_from_local
+}
+
+///|
+pub fn MeshTransforms::previous_world_from_local(
+  self : MeshTransforms,
+) -> @math.Affine3 {
+  self.previous_world_from_local
+}
+
+///|
+pub fn MeshTransforms::flags(self : MeshTransforms) -> UInt {
+  self.flags
+}
+
+///|
+pub struct RenderMeshInstanceSharedFlat {
+  mesh_asset_id : Int
+  material_bindings_index : MaterialBindingId
+  lightmap_slab_index : Int?
+  tag : UInt
+  current_uniform_index : UInt
+  flags : RenderMeshInstanceFlags
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::new(
+  mesh_asset_id : Int,
+  material_bindings_index? : MaterialBindingId = MaterialBindingId::MaterialBindingId(),
+  lightmap_slab_index? : Int? = None,
+  tag? : UInt = 0U,
+  current_uniform_index? : UInt = 0U,
+  flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
+) -> RenderMeshInstanceSharedFlat {
+  RenderMeshInstanceSharedFlat::{
+    mesh_asset_id,
+    material_bindings_index,
+    lightmap_slab_index,
+    tag,
+    current_uniform_index,
+    flags,
+  }
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::from_queue_data(
+  data : RenderMeshQueueData,
+) -> RenderMeshInstanceSharedFlat {
+  RenderMeshInstanceSharedFlat::new(
+    data.mesh_asset_id(),
+    current_uniform_index=data.current_uniform_index(),
+    flags=data.flags(),
+  )
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::mesh_asset_id(
+  self : RenderMeshInstanceSharedFlat,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::material_bindings_index(
+  self : RenderMeshInstanceSharedFlat,
+) -> MaterialBindingId {
+  self.material_bindings_index
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::lightmap_slab_index(
+  self : RenderMeshInstanceSharedFlat,
+) -> Int? {
+  self.lightmap_slab_index
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::tag(
+  self : RenderMeshInstanceSharedFlat,
+) -> UInt {
+  self.tag
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::current_uniform_index(
+  self : RenderMeshInstanceSharedFlat,
+) -> UInt {
+  self.current_uniform_index
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::flags(
+  self : RenderMeshInstanceSharedFlat,
+) -> RenderMeshInstanceFlags {
+  self.flags
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::should_batch(
+  self : RenderMeshInstanceSharedFlat,
+) -> Bool {
+  self.flags.contains(RenderMeshInstanceFlags::automatic_batching())
+}
+
+///|
+pub fn RenderMeshInstanceSharedFlat::to_queue_data(
+  self : RenderMeshInstanceSharedFlat,
+  current_uniform_index? : UInt = self.current_uniform_index,
+  render_layers? : @camera_render_layers.RenderLayers? = None,
+) -> RenderMeshQueueData {
+  RenderMeshQueueData::new(
+    self.mesh_asset_id,
+    current_uniform_index,
+    self.should_batch(),
+    flags=self.flags,
+    render_layers~,
+  )
+}
+
+///|
+pub struct RenderMeshInstanceGpuFlat {
+  current_uniform_index : UInt
+}
+
+///|
+pub fn RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
+  current_uniform_index? : UInt = 0U,
+) -> RenderMeshInstanceGpuFlat {
+  RenderMeshInstanceGpuFlat::{ current_uniform_index, }
+}
+
+///|
+pub fn RenderMeshInstanceGpuFlat::current_uniform_index(
+  self : RenderMeshInstanceGpuFlat,
+) -> UInt {
+  self.current_uniform_index
+}
+
+///|
+pub struct RenderMeshInstanceCpu {
+  shared : RenderMeshInstanceSharedFlat
+  transforms : MeshTransforms?
+  render_layers : @camera_render_layers.RenderLayers?
+}
+
+///|
+pub fn RenderMeshInstanceCpu::new(
+  shared : RenderMeshInstanceSharedFlat,
+  transforms? : MeshTransforms? = None,
+  render_layers? : @camera_render_layers.RenderLayers? = None,
+) -> RenderMeshInstanceCpu {
+  RenderMeshInstanceCpu::{ shared, transforms, render_layers }
+}
+
+///|
+pub fn RenderMeshInstanceCpu::from_queue_data(
+  data : RenderMeshQueueData,
+) -> RenderMeshInstanceCpu {
+  RenderMeshInstanceCpu::new(
+    RenderMeshInstanceSharedFlat::from_queue_data(data),
+    render_layers=data.render_layers(),
+  )
+}
+
+///|
+pub fn RenderMeshInstanceCpu::mesh_asset_id(
+  self : RenderMeshInstanceCpu,
+) -> Int {
+  self.shared.mesh_asset_id()
+}
+
+///|
+pub fn RenderMeshInstanceCpu::render_mesh_queue_data(
+  self : RenderMeshInstanceCpu,
+) -> RenderMeshQueueData {
+  self.shared.to_queue_data(
+    current_uniform_index=0U,
+    render_layers=self.render_layers,
+  )
+}
+
+///|
+pub struct RenderMeshInstanceGpu {
+  shared : RenderMeshInstanceSharedFlat
+  gpu_specific : RenderMeshInstanceGpuFlat
+  render_layers : @camera_render_layers.RenderLayers?
+}
+
+///|
+pub fn RenderMeshInstanceGpu::new(
+  shared : RenderMeshInstanceSharedFlat,
+  gpu_specific? : RenderMeshInstanceGpuFlat = RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(),
+  render_layers? : @camera_render_layers.RenderLayers? = None,
+) -> RenderMeshInstanceGpu {
+  RenderMeshInstanceGpu::{ shared, gpu_specific, render_layers }
+}
+
+///|
+pub fn RenderMeshInstanceGpu::from_queue_data(
+  data : RenderMeshQueueData,
+) -> RenderMeshInstanceGpu {
+  RenderMeshInstanceGpu::new(
+    RenderMeshInstanceSharedFlat::from_queue_data(data),
+    gpu_specific=RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
+      current_uniform_index=data.current_uniform_index(),
+    ),
+    render_layers=data.render_layers(),
+  )
+}
+
+///|
+pub fn RenderMeshInstanceGpu::mesh_asset_id(
+  self : RenderMeshInstanceGpu,
+) -> Int {
+  self.shared.mesh_asset_id()
+}
+
+///|
+pub fn RenderMeshInstanceGpu::render_mesh_queue_data(
+  self : RenderMeshInstanceGpu,
+) -> RenderMeshQueueData {
+  self.shared.to_queue_data(
+    current_uniform_index=self.gpu_specific.current_uniform_index(),
+    render_layers=self.render_layers,
+  )
 }
 
 ///|
@@ -205,40 +465,100 @@ pub fn MeshCullingData::aabb_half_extents(self : MeshCullingData) -> @math.Vec4 
 
 ///|
 pub struct RenderMeshInstanceGpuBuilder {
-  queue_data : RenderMeshQueueData
+  shared : RenderMeshInstanceSharedFlat
+  world_from_local : @math.Affine3
+  lightmap_uv_rect : @math.UVec2
+  previous_input_index : UInt?
+  render_layers : @camera_render_layers.RenderLayers?
+  mesh_flags : UInt
 }
 
 ///|
 pub fn RenderMeshInstanceGpuBuilder::new(
   queue_data : RenderMeshQueueData,
 ) -> RenderMeshInstanceGpuBuilder {
-  RenderMeshInstanceGpuBuilder::{ queue_data, }
+  RenderMeshInstanceGpuBuilder::{
+    shared: RenderMeshInstanceSharedFlat::from_queue_data(queue_data),
+    world_from_local: @math.Affine3::identity(),
+    lightmap_uv_rect: @math.UVec2::zero(),
+    previous_input_index: None,
+    render_layers: queue_data.render_layers(),
+    mesh_flags: 0U,
+  }
+}
+
+///|
+pub fn RenderMeshInstanceGpuBuilder::from_shared(
+  shared : RenderMeshInstanceSharedFlat,
+  world_from_local : @math.Affine3,
+  lightmap_uv_rect : @math.UVec2,
+  previous_input_index : UInt?,
+  render_layers : @camera_render_layers.RenderLayers?,
+  mesh_flags : UInt,
+) -> RenderMeshInstanceGpuBuilder {
+  RenderMeshInstanceGpuBuilder::{
+    shared,
+    world_from_local,
+    lightmap_uv_rect,
+    previous_input_index,
+    render_layers,
+    mesh_flags,
+  }
 }
 
 ///|
 pub fn RenderMeshInstanceGpuBuilder::render_mesh_queue_data(
   self : RenderMeshInstanceGpuBuilder,
 ) -> RenderMeshQueueData {
-  self.queue_data
+  self.shared.to_queue_data(render_layers=self.render_layers)
+}
+
+///|
+pub fn RenderMeshInstanceGpuBuilder::shared(
+  self : RenderMeshInstanceGpuBuilder,
+) -> RenderMeshInstanceSharedFlat {
+  self.shared
 }
 
 ///|
 pub struct RenderMeshInstanceGpuPrepared {
-  queue_data : RenderMeshQueueData
+  shared : RenderMeshInstanceSharedFlat
+  current_uniform_index : UInt
+  render_layers : @camera_render_layers.RenderLayers?
 }
 
 ///|
 pub fn RenderMeshInstanceGpuPrepared::new(
   queue_data : RenderMeshQueueData,
 ) -> RenderMeshInstanceGpuPrepared {
-  RenderMeshInstanceGpuPrepared::{ queue_data, }
+  RenderMeshInstanceGpuPrepared::{
+    shared: RenderMeshInstanceSharedFlat::from_queue_data(queue_data),
+    current_uniform_index: queue_data.current_uniform_index(),
+    render_layers: queue_data.render_layers(),
+  }
+}
+
+///|
+pub fn RenderMeshInstanceGpuPrepared::from_shared(
+  shared : RenderMeshInstanceSharedFlat,
+  current_uniform_index : UInt,
+  render_layers : @camera_render_layers.RenderLayers?,
+) -> RenderMeshInstanceGpuPrepared {
+  RenderMeshInstanceGpuPrepared::{
+    shared,
+    current_uniform_index,
+    render_layers,
+  }
 }
 
 ///|
 pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(
   self : RenderMeshInstanceGpuPrepared,
 ) -> RenderMeshQueueData {
-  self.queue_data
+  self.shared.to_queue_data(
+    current_uniform_index=self.current_uniform_index,
+    render_layers=self.render_layers,
+  )
 }
 
 ///|
@@ -552,7 +872,7 @@ pub fn MeshesToReextractNextFrame::entities(
 
 ///|
 pub struct RenderMeshInstancesCpu {
-  entries : Map[UInt64, RenderMeshQueueData]
+  entries : Map[UInt64, RenderMeshInstanceCpu]
 }
 
 ///|
@@ -562,7 +882,7 @@ pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> RenderMeshInstancesCp
 
 ///|
 pub struct RenderMeshInstancesGpu {
-  entries : Map[UInt64, RenderMeshQueueData]
+  entries : Map[UInt64, RenderMeshInstanceGpu]
 }
 
 ///|
@@ -624,7 +944,10 @@ pub fn RenderMeshInstancesCpu::insert(
   entity : @render.MainEntity,
   data : RenderMeshQueueData,
 ) -> Unit {
-  self.entries.set(entity.id().to_bits(), data)
+  self.entries.set(
+    entity.id().to_bits(),
+    RenderMeshInstanceCpu::from_queue_data(data),
+  )
 }
 
 ///|
@@ -635,7 +958,7 @@ pub fn RenderMeshInstancesCpu::remove(
   let key = entity.id().to_bits()
   let value = self.entries.get(key)
   self.entries.remove(key)
-  value
+  value.map(fn(instance) { instance.render_mesh_queue_data() })
 }
 
 ///|
@@ -643,7 +966,9 @@ pub fn RenderMeshInstancesCpu::mesh_asset_id(
   self : RenderMeshInstancesCpu,
   entity : @render.MainEntity,
 ) -> Int? {
-  self.render_mesh_queue_data(entity).map(fn(data) { data.mesh_asset_id() })
+  self.entries
+  .get(entity.id().to_bits())
+  .map(fn(instance) { instance.mesh_asset_id() })
 }
 
 ///|
@@ -651,7 +976,9 @@ pub fn RenderMeshInstancesCpu::render_mesh_queue_data(
   self : RenderMeshInstancesCpu,
   entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
-  self.entries.get(entity.id().to_bits())
+  self.entries
+  .get(entity.id().to_bits())
+  .map(fn(instance) { instance.render_mesh_queue_data() })
 }
 
 ///|
@@ -681,7 +1008,10 @@ pub fn RenderMeshInstancesGpu::insert(
   entity : @render.MainEntity,
   data : RenderMeshQueueData,
 ) -> Unit {
-  self.entries.set(entity.id().to_bits(), data)
+  self.entries.set(
+    entity.id().to_bits(),
+    RenderMeshInstanceGpu::from_queue_data(data),
+  )
 }
 
 ///|
@@ -692,7 +1022,7 @@ pub fn RenderMeshInstancesGpu::remove(
   let key = entity.id().to_bits()
   let value = self.entries.get(key)
   self.entries.remove(key)
-  value
+  value.map(fn(instance) { instance.render_mesh_queue_data() })
 }
 
 ///|
@@ -700,7 +1030,9 @@ pub fn RenderMeshInstancesGpu::mesh_asset_id(
   self : RenderMeshInstancesGpu,
   entity : @render.MainEntity,
 ) -> Int? {
-  self.render_mesh_queue_data(entity).map(fn(data) { data.mesh_asset_id() })
+  self.entries
+  .get(entity.id().to_bits())
+  .map(fn(instance) { instance.mesh_asset_id() })
 }
 
 ///|
@@ -708,7 +1040,9 @@ pub fn RenderMeshInstancesGpu::render_mesh_queue_data(
   self : RenderMeshInstancesGpu,
   entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
-  self.entries.get(entity.id().to_bits())
+  self.entries
+  .get(entity.id().to_bits())
+  .map(fn(instance) { instance.render_mesh_queue_data() })
 }
 
 ///|
