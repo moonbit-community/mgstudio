@@ -49,7 +49,7 @@ fn mesh3d_cull_mode_from_wgpu(cull_mode : UInt?) -> Int {
 }
 
 ///|
-fn mesh3d_effective_custom_pipeline_cull_mode(
+fn mesh3d_effective_pipeline_cull_mode(
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
   fallback_cull_mode : Int,
 ) -> Int {
@@ -907,7 +907,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     !forward_decal {
     return None
   }
-  let effective_cull_mode = mesh3d_effective_custom_pipeline_cull_mode(
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
     material_descriptor, cull_mode,
   )
   if mesh3d_custom_pipeline_cache_get(
@@ -2238,7 +2238,10 @@ fn ensure_mesh3d_pipeline_rgba8(
   lightmapped? : Bool = false,
 ) -> Unit raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
       backend,
@@ -2436,7 +2439,10 @@ fn ensure_mesh3d_pipeline_surface(
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
       backend,
@@ -2648,6 +2654,9 @@ fn mesh3d_pipeline_for_current_pass(
   let blend_kind = mesh3d_blend_kind_from_material_flags(
     material_flags, transparent,
   )
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
   let msaa_sample_count = match backend.pass_state {
     Some(pass_state) => pass_state.msaa_sample_count
     None => 1
@@ -2675,7 +2684,7 @@ fn mesh3d_pipeline_for_current_pass(
         topology,
         material_pipeline_id,
         material_descriptor,
-        cull_mode,
+        effective_cull_mode,
         blend_kind,
         skinned,
         forward_decal,
@@ -2691,7 +2700,7 @@ fn mesh3d_pipeline_for_current_pass(
         msaa_sample_count,
         topology,
         material_pipeline_id,
-        cull_mode,
+        effective_cull_mode,
         blend_kind,
         skinned,
         forward_decal,
@@ -2710,7 +2719,7 @@ fn mesh3d_pipeline_for_current_pass(
     topology,
     material_pipeline_id,
     material_descriptor,
-    cull_mode,
+    effective_cull_mode,
     blend_kind,
     skinned,
     forward_decal,
@@ -2726,7 +2735,7 @@ fn mesh3d_pipeline_for_current_pass(
     msaa_sample_count,
     topology,
     material_pipeline_id,
-    cull_mode,
+    effective_cull_mode,
     blend_kind,
     skinned,
     forward_decal,
