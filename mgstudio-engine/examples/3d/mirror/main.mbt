@@ -31,6 +31,9 @@ const CAMERA_YAW_SPEED : Float = 0.004F
 const CAMERA_PITCH_LIMIT : Float = 1.5607963267948965F
 
 ///|
+const MIRROR_ROTATION_ANGLE : Float = -FRAC_PI_2
+
+///|
 const FOX_ASSET_PATH : String = "models/animated/Fox.glb"
 
 ///|
@@ -40,24 +43,84 @@ const LAYER_MAIN_SCENE : Int = 0
 const LAYER_MIRROR_SURFACE : Int = 1
 
 ///|
-pub(all) enum DragAction {
+priv enum DragAction {
   MoveCamera
   MoveFox
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
-priv struct MirrorState {
-  mut main_camera : @core.Entity
-  mut mirror_camera : @core.Entity
-  mut mirror_plane : @core.Entity
-  mut fox : @core.Entity
-  mut mirror_material : @asset.Handle[@pbr.StandardMaterial]?
-  mut mirror_target_size : @math.IVec2
-  mut drag_action : DragAction
-  mut orbit_yaw : Float
-  mut orbit_pitch : Float
-  mut last_mouse_position : @math.Vec2?
-  mut help_text : @text.TextHandle?
+impl @widgets_lib.WidgetValue for DragAction with fn widget_debug_name() {
+  "examples.3d.mirror.DragAction"
+}
+
+///|
+let drag_action_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[DragAction],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.3d.mirror.DragAction>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for DragAction with fn widget_click_event_key() {
+  drag_action_widget_click_event_key
+}
+
+///|
+let drag_action_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[DragAction],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.3d.mirror.DragAction>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for DragAction with fn widget_click_sender_key() {
+  drag_action_widget_click_sender_key
+}
+
+///|
+priv struct MirrorImage {
+  mut image : @asset.Handle[@asset.Image]
+}
+
+///|
+fn MirrorImage::new(image : @asset.Handle[@asset.Image]) -> MirrorImage {
+  MirrorImage::{ image, }
+}
+
+///|
+let mirror_image_resource_key : @ecs.ResourceKey[MirrorImage] = @ecs.register_resource(
+  debug_name="examples.3d.mirror.MirrorImage",
+)
+
+///|
+impl @app.Resource for MirrorImage with fn resource() {
+  mirror_image_resource_key
+}
+
+///|
+priv struct MirrorCamera {}
+
+///|
+let mirror_camera_component_key : @ecs.ComponentKey[MirrorCamera] = @ecs.register_component(
+  debug_name="examples.3d.mirror.MirrorCamera",
+)
+
+///|
+impl @ecs.Component for MirrorCamera with fn component() {
+  mirror_camera_component_key
+}
+
+///|
+priv struct Mirror {}
+
+///|
+let mirror_component_key : @ecs.ComponentKey[Mirror] = @ecs.register_component(
+  debug_name="examples.3d.mirror.Mirror",
+)
+
+///|
+impl @ecs.Component for Mirror with fn component() {
+  mirror_component_key
 }
 
 ///|
@@ -195,19 +258,37 @@ pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn bind_gro
 }
 
 ///|
-let mirror_state : Ref[MirrorState] = Ref({
-  main_camera: @core.Entity::placeholder(),
-  mirror_camera: @core.Entity::placeholder(),
-  mirror_plane: @core.Entity::placeholder(),
-  fox: @core.Entity::placeholder(),
-  mirror_material: None,
-  mirror_target_size: @math.IVec2::new(0, 0),
-  drag_action: DragAction::MoveCamera,
-  orbit_yaw: 0.0F,
-  orbit_pitch: 0.0F,
-  last_mouse_position: None,
-  help_text: None,
-})
+priv struct AppStatus {
+  mut drag_action : DragAction
+}
+
+///|
+fn AppStatus::AppStatus() -> AppStatus {
+  AppStatus::{ drag_action: DragAction::MoveCamera }
+}
+
+///|
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.3d.mirror.AppStatus",
+)
+
+///|
+impl @app.Resource for AppStatus with fn resource() {
+  app_status_resource_key
+}
+
+///|
+priv struct HelpText {}
+
+///|
+let help_text_component_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
+  debug_name="examples.3d.mirror.HelpText",
+)
+
+///|
+impl @ecs.Component for HelpText with fn component() {
+  help_text_component_key
+}
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -237,6 +318,16 @@ fn normalize_or(value : @math.Vec3, fallback : @math.Vec3) -> @math.Vec3 {
   } else {
     normalized
   }
+}
+
+///|
+fn camera_target() -> @math.Vec3 {
+  @math.Vec3::new(-25.0F, 20.0F, 0.0F)
+}
+
+///|
+fn mirror_position() -> @math.Vec3 {
+  @math.Vec3::new(-25.0F, 75.0F, 0.0F)
 }
 
 ///|
@@ -311,66 +402,333 @@ fn calculate_mirror_camera_transform_and_projection(
 }
 
 ///|
-fn orbit_angles_from_translation(translation : @math.Vec3) -> (Float, Float) {
-  let horizontal = @math.sqrt(
-    translation.x * translation.x + translation.z * translation.z,
-  )
-  let yaw = @math.atan2(translation.x, translation.z)
-  let pitch = @math.atan2(translation.y, horizontal)
-  (yaw, pitch)
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Mirror Example"
+  window
 }
 
 ///|
-fn camera_target() -> @math.Vec3 {
-  @math.Vec3::new(-25.0F, 20.0F, 0.0F)
-}
-
-///|
-fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
-  if mirror_state.val.main_camera.is_placeholder() {
-    return
+fn create_mirror_texture_image(
+  window_size : @math.IVec2,
+) -> @asset.Handle[@asset.Image] {
+  guard @app.current_world() is Some(world) else {
+    abort("mirror render target creation requires an active world")
   }
-
-  let target = camera_target()
-  let cos_pitch = @math.cos(mirror_state.val.orbit_pitch)
-  let offset_x = @math.sin(mirror_state.val.orbit_yaw) *
-    cos_pitch *
-    CAMERA_ORBIT_DISTANCE
-  let offset_y = @math.sin(mirror_state.val.orbit_pitch) * CAMERA_ORBIT_DISTANCE
-  let offset_z = @math.cos(mirror_state.val.orbit_yaw) *
-    cos_pitch *
-    CAMERA_ORBIT_DISTANCE
-  let position = target.add(@math.Vec3::new(offset_x, offset_y, offset_z))
-
-  let transform = @transform.Transform::from_xyz(
-    position.x,
-    position.y,
-    position.z,
-  ).looking_at(target, @math.Vec3::new(0.0F, 1.0F, 0.0F))
-
-  try! (world.replace(
-    mirror_state.val.main_camera,
-    @transform.ecs_key_transform,
-    transform,
+  @sprite_render.render2d_create_render_target(
+    world,
+    window_size.x.max(1),
+    window_size.y.max(1),
+    true,
   )
-  |> ignore)
 }
 
 ///|
-fn create_help_text() -> String {
-  let mode = if mirror_state.val.drag_action == DragAction::MoveCamera {
+fn first_window_size(
+  windows_query : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
+) -> @math.IVec2 {
+  let size_ref : Ref[@math.IVec2?] = Ref(None)
+  try! windows_query.view(fn(_entity, window) {
+    if size_ref.val is None {
+      let value = window.value()
+      size_ref.val = Some(
+        @math.IVec2::new(value.physical_width(), value.physical_height()),
+      )
+    }
+  })
+  size_ref.val.unwrap_or(@math.IVec2::new(1024, 1024))
+}
+
+///|
+fn create_mirror_texture_resource(
+  commands : @app.Commands,
+  windows_query : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
+) -> @asset.Handle[@asset.Image] {
+  let image = create_mirror_texture_image(first_window_size(windows_query))
+  commands.insert_resource(MirrorImage::new(image))
+  image
+}
+
+///|
+fn spawn_main_camera(
+  commands : @app.Commands,
+  camera_projection : @camera.PerspectiveProjection3d,
+) -> @transform.Transform {
+  let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
+    .normalize_or_zero()
+    .mul_scalar(CAMERA_ORBIT_DISTANCE)
+  let camera_transform = @transform.Transform::from_xyz(
+    initial_main_translation.x,
+    initial_main_translation.y,
+    initial_main_translation.z,
+  ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new_with_projection(
+      @camera_camera.Camera::Camera(),
+      @camera.Projection::Perspective(camera_projection),
+      camera_transform,
+    ),
+  )
+  commands
+  .entity(camera)
+  .insert_component(
+    @camera_render_layers.RenderLayers::from_layers([
+      LAYER_MAIN_SCENE,
+      LAYER_MIRROR_SURFACE,
+    ]),
+  )
+  camera_transform
+}
+
+///|
+fn spawn_light(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@color.Color::white(), 5000.0F, true),
+        @transform.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
+          @math.Vec3::new(-50.0F, 0.0F, 100.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_ground_plane(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh = meshes.modify(fn(assets) {
+    assets
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(400.0F, 400.0F),
+      ).build(),
+    )
+  })
+  let material = standard_materials.modify(fn(assets) {
+    assets.add(
+      @pbr.StandardMaterial::from_color(
+        @color.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
+      ),
+    )
+  })
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(mesh),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::from_rotation(
+          @math.Quat::from_rotation_x(-FRAC_PI_2),
+        ).with_translation(@math.Vec3::new(-25.0F, 0.0F, 0.0F)),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_fox(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    {
+      let scene = @scene.scene_load_gltf_scene(
+        asset_server.get(),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
+      )
+      commands.spawn(
+        (
+          @scene.WorldAssetRoot::new(scene),
+          @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F),
+        ),
+      )
+    },
+  )
+}
+
+///|
+fn spawn_mirror(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  mirror_render_target : @asset.Handle[@asset.Image],
+) -> @transform.Transform {
+  let mirror_transform = @transform.Transform::identity()
+    .with_scale(@math.Vec3::new(300.0F, 1.0F, 150.0F))
+    .with_rotation(@math.Quat::from_rotation_x(MIRROR_ROTATION_ANGLE))
+    .with_translation(mirror_position())
+  let mirror_material_value = @pbr.StandardMaterial::from_color(
+      @color.Color::black(),
+    )
+    .with_emissive(@color.Color::white())
+    .with_emissive_texture(Some(mirror_render_target))
+    .with_perceptual_roughness(0.0F)
+    .with_metallic(1.0F)
+  let mesh = meshes.modify(fn(assets) {
+    assets
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(@math.Vec2::splat(1.0F)).build(),
+    )
+  })
+  let material = standard_materials.modify(fn(assets) {
+    assets.add(mirror_material_value)
+  })
+  let mirror_entity = commands.spawn(
+    (
+      @mesh.Mesh3d::new(mesh),
+      @pbr.MeshMaterial3d::new(material).with_extended_material(
+        Some(
+          @pbr.ExtendedMaterial::new(
+            mirror_material_value,
+            ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
+          ).metadata(),
+        ),
+      ),
+      mirror_transform,
+      Mirror::{  },
+      @camera_render_layers.RenderLayers::layer(LAYER_MIRROR_SURFACE),
+    ),
+  )
+  ignore(mirror_entity)
+  mirror_transform
+}
+
+///|
+fn spawn_mirror_camera(
+  commands : @app.Commands,
+  camera_transform : @transform.Transform,
+  camera_projection : @camera.PerspectiveProjection3d,
+  mirror_transform : @transform.Transform,
+  mirror_render_target : @asset.Handle[@asset.Image],
+) -> Unit {
+  let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
+    camera_transform, camera_projection, mirror_transform,
+  )
+  let mirror_camera = @camera.Camera3dBundle::new_with_projection(
+    @camera_camera.Camera::new(@color.Color::black())
+    .with_order(-1)
+    .with_invert_culling(true),
+    @camera.Projection::Perspective(mirror_camera_projection),
+    mirror_camera_transform,
+  )
+  let mirror_camera = commands.spawn(mirror_camera)
+  let entity = commands.entity(mirror_camera)
+  entity.insert_component(
+    @camera_camera.RenderTarget::Image(mirror_render_target),
+  )
+  entity.insert_component(
+    @camera_render_layers.RenderLayers::layer(LAYER_MAIN_SCENE),
+  )
+  entity.insert_component(MirrorCamera::{  })
+}
+
+///|
+fn spawn_buttons(commands : @app.Commands) -> Unit {
+  let ui_camera = commands.spawn(
+    (
+      @camera_components2d.Camera2d::Camera2d(),
+      @camera_camera.Camera::Camera().with_order(100).with_clear_color_none(),
+      @transform.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
+    ),
+  )
+  let panel = commands.spawn(
+    (@hierarchy.Parent::new(root), @widgets_lib.main_ui_node()),
+  )
+  ignore(
+    @widgets_lib.spawn_option_buttons(commands, panel, "Drag Action", [
+      (DragAction::MoveCamera, "Move Camera"),
+      (DragAction::MoveFox, "Move Fox"),
+    ]),
+  )
+}
+
+///|
+fn create_help_string(app_status : AppStatus) -> String {
+  let mode = if app_status.drag_action == DragAction::MoveCamera {
     "camera"
   } else {
     "fox"
   }
-  "Click and drag to move the \{mode}\n1: Move camera\n2: Move fox"
+  "Click and drag to move the \{mode}"
 }
 
 ///|
-fn update_help_text() -> Unit {
-  if mirror_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, create_help_text())
-  }
+fn spawn_help_text(
+  commands : @app.Commands,
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(create_help_string(app_status.get())),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        HelpText::{  },
+      ),
+    ),
+  )
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  windows_query : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let camera_projection = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
+  let camera_transform = spawn_main_camera(commands, camera_projection)
+  spawn_light(commands)
+  spawn_ground_plane(commands, meshes, standard_materials)
+  spawn_fox(commands, asset_server)
+  let mirror_render_target = create_mirror_texture_resource(
+    commands, windows_query,
+  )
+  let mirror_transform = spawn_mirror(
+    commands, meshes, standard_materials, mirror_render_target,
+  )
+  spawn_mirror_camera(
+    commands, camera_transform, camera_projection, mirror_transform, mirror_render_target,
+  )
+  spawn_buttons(commands)
+  spawn_help_text(commands, app_status)
+}
+
+///|
+fn pointer_over_ui(
+  interactions_query : @ecs.Query[
+    @ecs.Read[@ui.Interaction],
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+) -> Bool {
+  let over : Ref[Bool] = Ref(false)
+  try! interactions_query.view(fn(_entity, interaction) {
+    if interaction.value() != @ui.Interaction::None {
+      over.val = true
+    }
+  })
+  over.val
 }
 
 ///|
@@ -392,312 +750,112 @@ fn ray_plane_intersection(
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  mirror_state.val.main_camera = @core.Entity::placeholder()
-  mirror_state.val.mirror_camera = @core.Entity::placeholder()
-  mirror_state.val.mirror_plane = @core.Entity::placeholder()
-  mirror_state.val.fox = @core.Entity::placeholder()
-  mirror_state.val.mirror_material = None
-  mirror_state.val.mirror_target_size = @math.IVec2::new(0, 0)
-  mirror_state.val.drag_action = DragAction::MoveCamera
-  mirror_state.val.orbit_yaw = 0.0F
-  mirror_state.val.orbit_pitch = 0.0F
-  mirror_state.val.last_mouse_position = None
-  mirror_state.val.help_text = None
-
-  let target_width = if @window.window_width() > 1 {
-    @window.window_width()
-  } else {
-    1024
-  }
-  let target_height = if @window.window_height() > 1 {
-    @window.window_height()
-  } else {
-    1024
-  }
-  let mirror_target = @sprite_render.render2d_create_render_target(
-    world, target_width, target_height, true,
-  )
-  mirror_state.val.mirror_target_size = @math.IVec2::new(
-    target_width, target_height,
-  )
-
-  // Ground: current mgstudio render APIs use a large plane for this sample.
-  @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(400.0F, 400.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @color.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
-        ),
-      ),
-    ),
-    @transform.Transform::from_xyz(-25.0F, 0.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(-FRAC_PI_2),
-    ),
-  ).spawn(world)
-  |> ignore
-
-  // Fox scene.
-  let asset_server = @asset.AssetServer::new()
-  let fox = world.spawn_empty()
-  try! world.set_by_key(
-    fox,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
-      ),
-    ),
-  )
-  try! world.set_by_key(
-    fox,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F),
-  )
-  mirror_state.val.fox = fox
-
-  // Mirror plane.
-  let mirror_transform = @transform.Transform::from_xyz(-25.0F, 75.0F, 0.0F)
-    .with_rotation(@math.Quat::from_rotation_x(-FRAC_PI_2))
-    .with_scale(@math.Vec3::new(300.0F, 1.0F, 150.0F))
-  let mirror_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::black())
-    .with_emissive(@color.Color::white())
-    .with_emissive_texture(Some(mirror_target))
-    .with_perceptual_roughness(0.0F)
-    .with_metallic(1.0F),
-  )
-  mirror_state.val.mirror_material = Some(mirror_material)
-  let mirror_entity = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::splat(1.0F),
-          ).build(),
-        )
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(mirror_material).with_extended_material(
-      Some(
-        @pbr.ExtendedMaterial::new(
-          @pbr.StandardMaterial::from_color(@color.Color::black())
-          .with_emissive(@color.Color::white())
-          .with_emissive_texture(Some(mirror_target))
-          .with_perceptual_roughness(0.0F)
-          .with_metallic(1.0F),
-          ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
-        ).metadata(),
-      ),
-    ),
-    mirror_transform,
-  ).spawn(world)
-  try! world.set_by_key(
-    mirror_entity,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(LAYER_MIRROR_SURFACE),
-  )
-  mirror_state.val.mirror_plane = mirror_entity
-
-  // Lighting.
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 5000.0F, true),
-  )
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
-      @math.Vec3::new(-50.0F, 0.0F, 100.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-
-  // Main camera.
-  let main_camera_projection = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
-  let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
-    .normalize_or_zero()
-    .mul_scalar(CAMERA_ORBIT_DISTANCE)
-  let main_camera_transform = @transform.Transform::from_xyz(
-    initial_main_translation.x,
-    initial_main_translation.y,
-    initial_main_translation.z,
-  ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let main_camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::Camera(),
-    @camera.Projection::Perspective(main_camera_projection),
-    main_camera_transform,
-  ).spawn(world)
-  try! world.set_by_key(
-    main_camera,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::from_layers([
-      LAYER_MAIN_SCENE,
-      LAYER_MIRROR_SURFACE,
-    ]),
-  )
-  mirror_state.val.main_camera = main_camera
-  let (initial_yaw, initial_pitch) = orbit_angles_from_translation(
-    main_camera_transform.translation.sub(camera_target()),
-  )
-  mirror_state.val.orbit_yaw = initial_yaw
-  mirror_state.val.orbit_pitch = initial_pitch
-
-  // Mirror camera (renders to texture).
-  let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
-    main_camera_transform, main_camera_projection, mirror_transform,
-  )
-  let mirror_camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::new(@color.Color::black())
-    .with_order(-1)
-    .with_invert_culling(true),
-    @camera.Projection::Perspective(mirror_camera_projection),
-    mirror_camera_transform,
-  ).spawn(world)
-  try! world.set_by_key(
-    mirror_camera,
-    @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Image(mirror_target),
-  )
-  try! world.set_by_key(
-    mirror_camera,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(LAYER_MAIN_SCENE),
-  )
-  mirror_state.val.mirror_camera = mirror_camera
-
-  // Help text.
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(create_help_text()),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
+fn handle_window_resize_messages(
+  windows_query : @ecs.Query[@ecs.Read[@window.Window], @ecs.All],
+  mirror_cameras_query : @ecs.Query[
+    @ecs.Write[@camera_camera.RenderTarget],
+    @ecs.With[MirrorCamera],
+  ],
+  mirrors_query : @ecs.Query[@ecs.Read[@pbr.MeshMaterial3d], @ecs.With[Mirror]],
+  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  mirror_image : @app.ResMut[MirrorImage],
+  resize_messages : @ecs.MessageReader[@window.WindowResized],
+) -> Unit {
+  guard resize_messages.read().length() > 0 else { return }
+  let image = create_mirror_texture_image(first_window_size(windows_query))
+  mirror_image.modify(fn(resource) {
+    ignore(resource.image)
+    resource.image = image
+  })
+  try! mirror_cameras_query.view(fn(_entity, target) {
+    target.set(@camera_camera.RenderTarget::Image(image))
+  })
+  try! mirrors_query.view(fn(_entity, material) {
+    let handle = material.value().material_asset_id()
+    let material_handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
+      handle,
     )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  mirror_state.val.help_text = Some(help_text)
+    standard_materials.modify(fn(assets) {
+      if assets.get(material_handle) is Some(material_value) {
+        ignore(
+          assets.set(
+            material_handle,
+            material_value.with_emissive_texture(Some(image)),
+          ),
+        )
+      }
+    })
+  })
 }
 
 ///|
-fn handle_drag_action_change() -> Unit {
-  let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    mirror_state.val.drag_action = DragAction::MoveCamera
-    changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    mirror_state.val.drag_action = DragAction::MoveFox
-    changed = true
-  }
-  if changed {
-    mirror_state.val.last_mouse_position = None
-    update_help_text()
-  }
-}
-
-///|
-fn move_camera_on_mouse_down(world : @ecs.World) -> Unit {
-  if mirror_state.val.drag_action != DragAction::MoveCamera ||
-    !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    mirror_state.val.last_mouse_position = None
+fn move_fox_on_mouse_down(
+  scene_roots_query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    (@ecs.With[@scene.WorldAssetRoot], @ecs.Without[@camera.Camera3d]),
+  ],
+  windows_query : @ecs.Query[
+    @ecs.Read[@window.Window],
+    @ecs.With[@window.PrimaryWindow],
+  ],
+  cameras_query : @ecs.Query[
+    (
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[@camera.Projection],
+    ),
+    (
+      @ecs.With[@camera.Camera3d],
+      @ecs.Without[MirrorCamera],
+      @ecs.Without[@scene.WorldAssetRoot],
+    ),
+  ],
+  interactions_query : @ecs.Query[
+    @ecs.Read[@ui.Interaction],
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if app_status.get().drag_action != DragAction::MoveFox ||
+    !mouse_buttons.pressed(@window.MouseButton::Left) ||
+    pointer_over_ui(interactions_query) {
     return
   }
-  guard @input.mouse_position() is Some(current_mouse_pos) else {
-    mirror_state.val.last_mouse_position = None
+  let window_ref : Ref[@window.Window?] = Ref(None)
+  try! windows_query.view(fn(_entity, window) {
+    if window_ref.val is None {
+      window_ref.val = Some(window.value())
+    }
+  })
+  guard window_ref.val is Some(window) else { return }
+  guard window.cursor_position() is Some(mouse_position) else { return }
+
+  let camera_ref : Ref[
+    (@camera_camera.Camera, @transform.Transform, @camera.Projection)?,
+  ] = Ref(None)
+  try! cameras_query.view(fn(_entity, data) {
+    if camera_ref.val is None {
+      let (camera, transform, projection) = data
+      camera_ref.val = Some(
+        (camera.value(), transform.value(), projection.value()),
+      )
+    }
+  })
+  guard camera_ref.val is Some((camera, camera_transform, projection)) else {
     return
   }
-
-  let delta = if mirror_state.val.last_mouse_position is Some(last_mouse_pos) {
-    current_mouse_pos.sub(last_mouse_pos)
-  } else {
-    @math.Vec2::new(0.0F, 0.0F)
-  }
-  mirror_state.val.last_mouse_position = Some(current_mouse_pos)
-  if delta.x == 0.0F && delta.y == 0.0F {
-    return
-  }
-
-  mirror_state.val.orbit_pitch = clampf(
-    mirror_state.val.orbit_pitch + delta.y * CAMERA_PITCH_SPEED,
-    -CAMERA_PITCH_LIMIT,
-    CAMERA_PITCH_LIMIT,
-  )
-  mirror_state.val.orbit_yaw = mirror_state.val.orbit_yaw +
-    delta.x * CAMERA_YAW_SPEED
-  set_main_camera_transform_from_orbit(world)
-}
-
-///|
-fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
-  if mirror_state.val.drag_action != DragAction::MoveFox ||
-    !@input.mouse_button_pressed(@window.MouseButton::Left) ||
-    mirror_state.val.fox.is_placeholder() ||
-    mirror_state.val.main_camera.is_placeholder() {
-    return
-  }
-
-  guard @input.mouse_position() is Some(screen_pos) else { return }
-
-  guard (try! world.get_by_key(
-      mirror_state.val.main_camera,
-      @transform.ecs_key_transform,
-    ))
-    is Some(camera_transform) else {
-    return
-  }
-  guard (try! world.get_by_key(
-      mirror_state.val.main_camera,
-      @camera_camera.ecs_key_camera,
-    ))
-    is Some(camera) else {
-    return
-  }
-  guard (try! world.get_by_key(
-      mirror_state.val.main_camera,
-      @pbr.ecs_key_projection,
-    ))
-    is Some(projection) else {
-    return
-  }
-
-  let target_size = @math.IVec2::new(
-    @window.window_width(),
-    @window.window_height(),
-  )
-  let scale_factor = @window.window_scale_factor()
   guard @camera.camera_viewport_to_world_ray(
-      screen_pos, camera, projection, camera_transform, target_size, scale_factor,
+      mouse_position,
+      camera,
+      projection,
+      camera_transform,
+      @math.IVec2::new(window.physical_width(), window.physical_height()),
+      window.scale_factor(),
     )
     is Some((ray_origin, ray_dir)) else {
     return
   }
-
   guard ray_plane_intersection(
       ray_origin,
       ray_dir,
@@ -707,140 +865,285 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     is Some(hit) else {
     return
   }
-
-  if (try! world.get_by_key(mirror_state.val.fox, @transform.ecs_key_transform))
-    is Some(fox_transform) {
-    try! (world.replace(
-      mirror_state.val.fox,
-      @transform.ecs_key_transform,
-      fox_transform.with_translation(
-        @math.Vec3::new(hit.x, fox_transform.translation.y, hit.z),
-      ),
+  try! scene_roots_query.view(fn(_entity, transform) {
+    let value = transform.value()
+    transform.set(
+      value.with_translation(@math.Vec3::new(hit.x, value.translation.y, hit.z)),
     )
-    |> ignore)
-  }
+  })
 }
 
 ///|
-fn handle_window_resize_messages(world : @ecs.World) -> Unit {
-  if mirror_state.val.mirror_camera.is_placeholder() {
-    return
-  }
-
-  let width = @window.window_width()
-  let height = @window.window_height()
-  if width <= 1 || height <= 1 {
-    return
-  }
-
-  let size = @math.IVec2::new(width, height)
-  if size.x == mirror_state.val.mirror_target_size.x &&
-    size.y == mirror_state.val.mirror_target_size.y {
-    return
-  }
-
-  let mirror_target = @sprite_render.render2d_create_render_target(
-    world, width, height, true,
-  )
-  mirror_state.val.mirror_target_size = size
-
-  if (try! world.contains_by_key(
-      mirror_state.val.mirror_camera,
-      @camera_camera.ecs_key_render_target,
-    )) {
-    try! (world.replace(
-      mirror_state.val.mirror_camera,
-      @camera_camera.ecs_key_render_target,
-      @camera_camera.RenderTarget::Image(mirror_target),
-    )
-    |> ignore)
-  } else {
-    try! world.set_by_key(
-      mirror_state.val.mirror_camera,
-      @camera_camera.ecs_key_render_target,
-      @camera_camera.RenderTarget::Image(mirror_target),
-    )
-  }
-
-  if mirror_state.val.mirror_material is Some(material_handle) {
-    if @pbr.standard_material_get(material_handle) is Some(material) {
-      @pbr.standard_material_set(
-        material_handle,
-        material.with_emissive_texture(Some(mirror_target)),
-      )
-      |> ignore
+fn handle_mouse_action_change(
+  app_status : @app.ResMut[AppStatus],
+  events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[DragAction]],
+) -> Unit {
+  app_status.modify(fn(status) {
+    for event in events.read() {
+      status.drag_action = event.get()
     }
+  })
+}
+
+///|
+fn update_radio_buttons(
+  radio_buttons : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[DragAction]],
+      @ecs.Write[@ui.BackgroundColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  radio_button_texts : @ecs.Query[
+    (
+      @ecs.Read[@widgets_lib.WidgetClickSender[DragAction]],
+      @ecs.Write[@text.TextColor],
+    ),
+    @ecs.With[@widgets_lib.RadioButtonText],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let drag_action = app_status.get().drag_action
+  try! radio_buttons.view(fn(_entity, data) {
+    let (sender, background_color) = data
+    @widgets_lib.update_ui_radio_button(
+      background_color,
+      sender.value().get() == drag_action,
+    )
+  })
+  try! radio_button_texts.view(fn(_entity, data) {
+    let (sender, text_color) = data
+    @widgets_lib.update_ui_radio_button_text(
+      text_color,
+      sender.value().get() == drag_action,
+    )
+  })
+}
+
+///|
+fn move_camera_on_mouse_down(
+  main_cameras_query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    (@ecs.With[@camera_camera.Camera], @ecs.Without[MirrorCamera]),
+  ],
+  interactions_query : @ecs.Query[
+    @ecs.Read[@ui.Interaction],
+    @ecs.With[@widgets_lib.RadioButton],
+  ],
+  mouse_buttons : @input.ButtonInput[@window.MouseButton],
+  mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if app_status.get().drag_action != DragAction::MoveCamera ||
+    !mouse_buttons.pressed(@window.MouseButton::Left) ||
+    pointer_over_ui(interactions_query) {
+    return
   }
+  let delta = mouse_motion.get().delta
+  let delta_pitch = delta.y * CAMERA_PITCH_SPEED
+  let delta_yaw = delta.x * CAMERA_YAW_SPEED
+  try! main_cameras_query.view(fn(_entity, main_camera_transform) {
+    let value = main_camera_transform.value()
+    let (yaw, pitch, _roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+    let pitch = clampf(
+      pitch + delta_pitch,
+      -CAMERA_PITCH_LIMIT,
+      CAMERA_PITCH_LIMIT,
+    )
+    let yaw = yaw + delta_yaw
+    let rotation = @math.Quat::from_euler(@math.EulerRot::YXZ, yaw, pitch, 0.0F)
+    let forward = quat_rotate_vec3(rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F))
+    main_camera_transform.set(
+      value
+      .with_rotation(rotation)
+      .with_translation(forward.mul_scalar(-CAMERA_ORBIT_DISTANCE)),
+    )
+  })
 }
 
 ///|
 fn update_mirror_camera_on_main_camera_transform_change(
-  world : @ecs.World,
+  main_cameras_query : @ecs.Query[
+    (@ecs.Read[@transform.Transform], @ecs.Read[@camera.Projection]),
+    (
+      @ecs.Changed[@transform.Transform],
+      @ecs.With[@camera_camera.Camera],
+      @ecs.Without[MirrorCamera],
+    ),
+  ],
+  mirror_cameras_query : @ecs.Query[
+    (@ecs.Write[@transform.Transform], @ecs.Write[@camera.Projection]),
+    (
+      @ecs.With[@camera_camera.Camera],
+      @ecs.With[MirrorCamera],
+      @ecs.Without[Mirror],
+    ),
+  ],
+  mirrors_query : @ecs.Query[
+    @ecs.Read[@transform.Transform],
+    (@ecs.Without[MirrorCamera], @ecs.With[Mirror]),
+  ],
 ) -> Unit {
-  if mirror_state.val.main_camera.is_placeholder() ||
-    mirror_state.val.mirror_camera.is_placeholder() ||
-    mirror_state.val.mirror_plane.is_placeholder() {
+  let main_ref : Ref[(@transform.Transform, @camera.PerspectiveProjection3d)?] = Ref(
+    None,
+  )
+  try! main_cameras_query.view(fn(_entity, data) {
+    if main_ref.val is None {
+      let (transform, projection) = data
+      if projection.value() is Perspective(perspective) {
+        main_ref.val = Some((transform.value(), perspective))
+      }
+    }
+  })
+  guard main_ref.val is Some((main_camera_transform, main_projection)) else {
     return
   }
-
-  guard (try! world.get_by_key(
-      mirror_state.val.main_camera,
-      @transform.ecs_key_transform,
-    ))
-    is Some(main_camera_transform) else {
-    return
-  }
-  guard (try! world.get_by_key(
-      mirror_state.val.mirror_plane,
-      @transform.ecs_key_transform,
-    ))
-    is Some(mirror_transform) else {
-    return
-  }
-
-  guard (try! world.get_by_key(
-      mirror_state.val.main_camera,
-      @pbr.ecs_key_projection,
-    ))
-    is Some(main_camera_projection_component) else {
-    return
-  }
-  guard main_camera_projection_component is Perspective(main_projection) else {
-    return
-  }
-
+  let mirror_ref : Ref[@transform.Transform?] = Ref(None)
+  try! mirrors_query.view(fn(_entity, mirror_transform) {
+    if mirror_ref.val is None {
+      mirror_ref.val = Some(mirror_transform.value())
+    }
+  })
+  guard mirror_ref.val is Some(mirror_transform) else { return }
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
     main_camera_transform, main_projection, mirror_transform,
   )
+  try! mirror_cameras_query.view(fn(_entity, data) {
+    let (transform, projection) = data
+    transform.set(mirror_camera_transform)
+    projection.set(@camera.Projection::Perspective(mirror_camera_projection))
+  })
+}
 
-  try! (world.replace(
-    mirror_state.val.mirror_camera,
-    @transform.ecs_key_transform,
-    mirror_camera_transform,
+///|
+fn play_fox_animation(
+  commands : @app.Commands,
+  animation_players_query : @ecs.Query[
+    (@core.Entity, @ecs.Write[@animation.AnimationPlayer]),
+    @ecs.Without[@animation.AnimationGraphHandle],
+  ],
+  asset_server : @app.Res[@asset.AssetServer],
+  animation_graphs : @app.ResMut[@asset.Assets[@animation.AnimationGraph]],
+) -> Unit {
+  if animation_players_query.count() == 0 {
+    return
+  }
+  let fox_animation = asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Animation(0).from_asset(FOX_ASSET_PATH))
+  let (fox_animation_graph, fox_animation_node) = @animation.AnimationGraph::from_clip(
+    fox_animation,
   )
-  |> ignore)
-  try! (world.replace(
-    mirror_state.val.mirror_camera,
-    @pbr.ecs_key_projection,
-    @camera.Projection::Perspective(mirror_camera_projection),
-  )
-  |> ignore)
+  let fox_animation_graph = animation_graphs.modify(fn(assets) {
+    assets.add(fox_animation_graph)
+  })
+  try! animation_players_query.view(fn(_query_entity, data) {
+    let (entity, animation_player) = data
+    commands
+    .entity(entity)
+    .insert_component(@animation.AnimationGraphHandle::new(fox_animation_graph))
+    animation_player.modify(fn(player) {
+      player.play(fox_animation_node).repeat() |> ignore
+    })
+  })
+}
+
+///|
+fn update_help_text(
+  help_text : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[HelpText]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let content = create_help_string(app_status.get())
+  try! help_text.view(fn(_entity, text) { text.set(@text.Text::new(content)) })
+}
+
+///|
+fn handle_ui_interactions(
+  interactions : @ecs.Query[
+    (
+      @ecs.Read[@ui.Interaction],
+      @ecs.Read[@widgets_lib.WidgetClickSender[DragAction]],
+    ),
+    @ecs.With[@ui.Button],
+  ],
+  widget_click_events : @ecs.MessageWriter[
+    @widgets_lib.WidgetClickEvent[DragAction],
+  ],
+) -> Unit {
+  @widgets_lib.handle_ui_interactions(interactions, widget_click_events)
 }
 
 ///|
 fn main {
+  let widget_click_message_key : @ecs.MessageKey[
+    @widgets_lib.WidgetClickEvent[DragAction],
+  ] = @widgets_lib.widget_click_event_key()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, handle_window_resize_messages)
-  .add_systems_fn(@app.Update, handle_drag_action_change)
-  .add_systems_world(@app.Update, move_camera_on_mouse_down)
-  .add_systems_world(@app.Update, move_fox_on_mouse_down)
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
+  .init_resource(fn() { AppStatus::AppStatus() })
+  .add_message(widget_click_message_key)
+  .add_systems(
+    @app.Startup,
+    @app.system_config_param6(setup).named("mirror.setup"),
+  )
   .add_systems(
     @app.Update,
-    @app.system_config_world(
-      update_mirror_camera_on_main_camera_transform_change,
+    @app.system_config_param6(handle_window_resize_messages).named(
+      "mirror.handle_window_resize_messages",
     ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param5(move_camera_on_mouse_down).named(
+      "mirror.move_camera_on_mouse_down",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param6(move_fox_on_mouse_down).named(
+      "mirror.move_fox_on_mouse_down",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_ui_interactions).named(
+      "mirror.handle_ui_interactions",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(handle_mouse_action_change)
+    .named("mirror.handle_mouse_action_change")
+    .run_if_on_message(widget_click_message_key),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(update_radio_buttons).named(
+      "mirror.update_radio_buttons",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(
+      update_mirror_camera_on_main_camera_transform_change,
+    ).named("mirror.update_mirror_camera_on_main_camera_transform_change"),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param4(play_fox_animation).named(
+      "mirror.play_fox_animation",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(update_help_text).named("mirror.update_help_text"),
   )
   .run()
 }
