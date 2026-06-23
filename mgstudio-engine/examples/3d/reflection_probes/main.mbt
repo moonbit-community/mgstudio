@@ -14,11 +14,9 @@
 
 ///|
 ///
-/// Parity note:
-/// - Reflection mode switching, roughness control, camera rotation, and probe
-///   placement follow Bevy's control flow.
-/// - `GeneratedEnvironmentMapLight` is represented by Bevy-shaped API in
-///   mgstudio; runtime cubemap filtering remains adapted.
+/// This example shows how to place reflection probes in the scene.
+///
+/// Bevy source: `bevy/examples/3d/reflection_probes.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -48,43 +46,147 @@ const SPECULAR_ENV_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_z
 const SPECULAR_REFLECTION_PROBE_ASSET : String = "environment_maps/cubes_reflection_probe_specular_rgb9e5_zstd.ktx2"
 
 ///|
-pub(all) enum ReflectionMode {
+enum ReflectionMode {
   EnvironmentMap
   ReflectionProbe
   GeneratedEnvironmentMap
 } derive(Eq, Debug)
 
 ///|
-priv struct ReflectionProbesState {
-  mut reflection_mode : ReflectionMode
-  mut rotating : Bool
-  mut sphere_roughness : Float
-  mut camera : @core.Entity?
-  mut sphere_material : @asset.Handle[@pbr.StandardMaterial]?
-  mut cubes_scene : @core.Entity?
-  mut reflection_probe : @core.Entity?
-  mut help_text : @text.TextHandle?
-  mut diffuse_environment_map : @asset.Handle[@asset.Image]?
-  mut specular_environment_map : @asset.Handle[@asset.Image]?
-  mut specular_reflection_probe : @asset.Handle[@asset.Image]?
-  mut environment_map_usage_ready : Bool
+fn ReflectionMode::next(self : ReflectionMode) -> ReflectionMode {
+  match self {
+    ReflectionMode::EnvironmentMap => ReflectionMode::ReflectionProbe
+    ReflectionMode::ReflectionProbe => ReflectionMode::GeneratedEnvironmentMap
+    ReflectionMode::GeneratedEnvironmentMap => ReflectionMode::EnvironmentMap
+  }
 }
 
 ///|
-let reflection_probes_state : Ref[ReflectionProbesState] = Ref({
-  reflection_mode: ReflectionMode::ReflectionProbe,
-  rotating: false,
-  sphere_roughness: 0.2F,
-  camera: None,
-  sphere_material: None,
-  cubes_scene: None,
-  reflection_probe: None,
-  help_text: None,
-  diffuse_environment_map: None,
-  specular_environment_map: None,
-  specular_reflection_probe: None,
-  environment_map_usage_ready: false,
-})
+fn ReflectionMode::to_string(self : ReflectionMode) -> String {
+  match self {
+    ReflectionMode::EnvironmentMap => "Environment map"
+    ReflectionMode::ReflectionProbe => "Reflection probe"
+    ReflectionMode::GeneratedEnvironmentMap => "Generated environment map"
+  }
+}
+
+///|
+struct AppStatus {
+  mut reflection_mode : ReflectionMode
+  mut rotating : Bool
+  mut sphere_roughness : Float
+}
+
+///|
+fn AppStatus::AppStatus() -> AppStatus {
+  AppStatus::{
+    reflection_mode: ReflectionMode::ReflectionProbe,
+    rotating: false,
+    sphere_roughness: 0.2F,
+  }
+}
+
+///|
+fn help_float_2(value : Float) -> String {
+  let scaled = (value * 100.0F).round().to_int()
+  let whole = scaled / 100
+  let fraction = scaled % 100
+  let fraction_text = if fraction < 10 {
+    "0\{fraction}"
+  } else {
+    fraction.to_string()
+  }
+  "\{whole}.\{fraction_text}"
+}
+
+///|
+fn AppStatus::create_text(self : AppStatus) -> @text.Text {
+  let rotation_help_text = if self.rotating {
+    STOP_ROTATION_HELP_TEXT
+  } else {
+    START_ROTATION_HELP_TEXT
+  }
+  @text.Text::new(
+    "\{self.reflection_mode.to_string()}\n\{rotation_help_text}\nRoughness: \{help_float_2(self.sphere_roughness)}\n\{REFLECTION_MODE_HELP_TEXT}\nUp/Down arrows to change roughness",
+  )
+}
+
+///|
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.reflection_probes.AppStatus",
+)
+
+///|
+impl @app.Resource for AppStatus with fn resource() {
+  app_status_resource_key
+}
+
+///|
+struct Cubemaps {
+  diffuse_environment_map : @asset.Handle[@asset.Image]
+  specular_environment_map : @asset.Handle[@asset.Image]
+  specular_reflection_probe : @asset.Handle[@asset.Image]
+}
+
+///|
+fn Cubemaps::from_asset_server(asset_server : @asset.AssetServer) -> Cubemaps {
+  Cubemaps::{
+    diffuse_environment_map: asset_server.load_image(DIFFUSE_ENV_MAP_ASSET),
+    specular_environment_map: asset_server.load_image(SPECULAR_ENV_MAP_ASSET),
+    specular_reflection_probe: asset_server.load_image(
+      SPECULAR_REFLECTION_PROBE_ASSET,
+    ),
+  }
+}
+
+///|
+let cubemaps_resource_key : @ecs.ResourceKey[Cubemaps] = @ecs.register_resource(
+  debug_name="examples.reflection_probes.Cubemaps",
+)
+
+///|
+impl @app.Resource for Cubemaps with fn resource() {
+  cubemaps_resource_key
+}
+
+///|
+struct SphereMaterial {}
+
+///|
+let sphere_material_key : @ecs.ComponentKey[SphereMaterial] = @ecs.register_component(
+  debug_name="examples.reflection_probes.SphereMaterial",
+)
+
+///|
+impl @ecs.Component for SphereMaterial with fn component() {
+  sphere_material_key
+}
+
+///|
+struct CubesScene {}
+
+///|
+let cubes_scene_key : @ecs.ComponentKey[CubesScene] = @ecs.register_component(
+  debug_name="examples.reflection_probes.CubesScene",
+)
+
+///|
+impl @ecs.Component for CubesScene with fn component() {
+  cubes_scene_key
+}
+
+///|
+struct HelpText {}
+
+///|
+let help_text_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
+  debug_name="examples.reflection_probes.HelpText",
+)
+
+///|
+impl @ecs.Component for HelpText with fn component() {
+  help_text_key
+}
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -98,321 +200,285 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn reflection_mode_text(mode : ReflectionMode) -> String {
-  match mode {
-    ReflectionMode::EnvironmentMap => "Environment map"
-    ReflectionMode::ReflectionProbe => "Reflection probe"
-    ReflectionMode::GeneratedEnvironmentMap => "Generated environment map"
-  }
+fn create_camera_environment_map_light(
+  cubemaps : Cubemaps,
+) -> @pbr.EnvironmentMapLight {
+  @pbr.EnvironmentMapLight::new(
+    Some(cubemaps.diffuse_environment_map),
+    Some(cubemaps.specular_environment_map),
+    ENV_MAP_INTENSITY,
+  )
 }
 
 ///|
-fn create_help_text() -> String {
-  let rotation_help_text = if reflection_probes_state.val.rotating {
-    STOP_ROTATION_HELP_TEXT
-  } else {
-    START_ROTATION_HELP_TEXT
-  }
-  reflection_mode_text(reflection_probes_state.val.reflection_mode) +
-  "\n\{rotation_help_text}\nRoughness: \{reflection_probes_state.val.sphere_roughness.to_string()}\n\{REFLECTION_MODE_HELP_TEXT}\nUp/Down arrows to change roughness"
+fn spawn_scene(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @scene.WorldAssetRoot::new(
+          @scene.scene_load_gltf_scene(
+            asset_server,
+            @gltf.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
+          ),
+        ),
+        CubesScene::{  },
+      ),
+    ),
+  )
 }
 
 ///|
-fn update_help_text() -> Unit {
-  if reflection_probes_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, create_help_text())
-  }
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @pbr.Hdr::Hdr(),
+        @pbr.Exposure::new(11.0F),
+        @post_process.Tonemapping::AcesFitted,
+        @transform.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
 }
 
 ///|
-fn spawn_sphere_mesh() -> @mesh.Mesh3d {
+fn spawn_sphere(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  app_status : AppStatus,
+) -> Unit {
   let sphere_mesh = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
     @math.Sphere::new(1.0F),
   ).ico(7) catch {
     @mesh_primitives_dim3.IcosphereError::TooManyVertices(_, _) =>
       abort("reflection_probes sphere subdivisions produce too many vertices")
   }
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(@mesh.Mesh::from_3d_geometry(sphere_mesh))
-    }),
-  )
-}
-
-///|
-fn set_entity_visibility(
-  world : @ecs.World,
-  entity : @core.Entity?,
-  visible : Bool,
-) -> Unit {
-  guard entity is Some(actual) else { return }
-  let value = if visible {
-    @visibility.Visibility::Inherited
-  } else {
-    @visibility.Visibility::Hidden
-  }
-  if (try! world.contains_by_key(actual, @visibility.ecs_key_visibility)) {
-    try! (world.replace(actual, @visibility.ecs_key_visibility, value) |> ignore)
-  } else {
-    try! world.set_by_key(actual, @visibility.ecs_key_visibility, value)
-  }
-}
-
-///|
-fn create_camera_environment_map_light() -> @pbr.EnvironmentMapLight {
-  @pbr.EnvironmentMapLight::new(
-    reflection_probes_state.val.diffuse_environment_map,
-    reflection_probes_state.val.specular_environment_map,
-    ENV_MAP_INTENSITY,
-  )
-}
-
-///|
-fn remove_reflection_probe(world : @ecs.World) -> Unit {
-  if reflection_probes_state.val.reflection_probe is Some(probe) {
-    world.despawn(probe) catch {
-      _ => ()
-    }
-  }
-  reflection_probes_state.val.reflection_probe = None
-}
-
-///|
-fn spawn_reflection_probe(world : @ecs.World) -> Unit {
-  remove_reflection_probe(world)
-  let probe = world.spawn_empty()
-  reflection_probes_state.val.reflection_probe = Some(probe)
-
-  try! world.set_by_key(
-    probe,
-    @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::LightProbe(),
-  )
-  try! world.set_by_key(
-    probe,
-    @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::new(
-      reflection_probes_state.val.diffuse_environment_map,
-      reflection_probes_state.val.specular_reflection_probe,
-      ENV_MAP_INTENSITY,
+  let sphere_mesh = meshes.peek().add(@mesh.Mesh::from_3d_geometry(sphere_mesh))
+  let sphere_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@color.Color::white())
+      .with_metallic(1.0F)
+      .with_perceptual_roughness(app_status.sphere_roughness),
+    )
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3d::new(sphere_material),
+        SphereMaterial::{  },
+      ),
     ),
   )
-  try! world.set_by_key(
-    probe,
-    @pbr.ecs_key_parallax_correction,
-    @pbr.ParallaxCorrection::None,
-  )
-  try! world.set_by_key(
-    probe,
-    @transform.ecs_key_transform,
-    @transform.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
-  )
 }
 
 ///|
-fn apply_reflection_mode(world : @ecs.World) -> Unit {
-  guard reflection_probes_state.val.camera is Some(camera) else { return }
-
-  remove_reflection_probe(world)
-  try! (world.take(camera, @pbr.ecs_key_environment_map_light) |> ignore)
-  try! (world.take(camera, @pbr.ecs_key_generated_environment_map_light)
-  |> ignore)
-
-  match reflection_probes_state.val.reflection_mode {
-    ReflectionMode::EnvironmentMap => {
-      set_entity_visibility(
-        world,
-        reflection_probes_state.val.cubes_scene,
-        false,
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_environment_map_light,
-        create_camera_environment_map_light(),
-      )
-    }
-    ReflectionMode::ReflectionProbe => {
-      set_entity_visibility(
-        world,
-        reflection_probes_state.val.cubes_scene,
-        true,
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_environment_map_light,
-        create_camera_environment_map_light(),
-      )
-      spawn_reflection_probe(world)
-    }
-    ReflectionMode::GeneratedEnvironmentMap => {
-      set_entity_visibility(
-        world,
-        reflection_probes_state.val.cubes_scene,
-        false,
-      )
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_generated_environment_map_light,
-        @pbr.GeneratedEnvironmentMapLight::new(
-          reflection_probes_state.val.specular_environment_map,
+fn spawn_reflection_probe(
+  commands : @app.Commands,
+  cubemaps : Cubemaps,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.LightProbe::LightProbe(),
+        @pbr.EnvironmentMapLight::new(
+          Some(cubemaps.diffuse_environment_map),
+          Some(cubemaps.specular_reflection_probe),
           ENV_MAP_INTENSITY,
         ),
-      )
-    }
-  }
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  reflection_probes_state.val.reflection_mode = ReflectionMode::ReflectionProbe
-  reflection_probes_state.val.rotating = false
-  reflection_probes_state.val.sphere_roughness = 0.2F
-  reflection_probes_state.val.camera = None
-  reflection_probes_state.val.sphere_material = None
-  reflection_probes_state.val.cubes_scene = None
-  reflection_probes_state.val.reflection_probe = None
-  reflection_probes_state.val.help_text = None
-  reflection_probes_state.val.environment_map_usage_ready = false
-
-  let asset_server = @asset.AssetServer::new()
-
-  reflection_probes_state.val.diffuse_environment_map = Some(
-    asset_server.load(DIFFUSE_ENV_MAP_ASSET),
-  )
-  reflection_probes_state.val.specular_environment_map = Some(
-    asset_server.load(SPECULAR_ENV_MAP_ASSET),
-  )
-  reflection_probes_state.val.specular_reflection_probe = Some(
-    asset_server.load(SPECULAR_REFLECTION_PROBE_ASSET),
-  )
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  reflection_probes_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_exposure,
-    @pbr.Exposure::new(11.0F),
-  )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::AcesFitted,
-  )
-  if reflection_probes_state.val.specular_environment_map
-    is Some(specular_env_map) {
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_skybox,
-      @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY),
-    )
-  }
-
-  let sphere_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_metallic(1.0F)
-    .with_perceptual_roughness(reflection_probes_state.val.sphere_roughness),
-  )
-  reflection_probes_state.val.sphere_material = Some(sphere_material)
-  @pbr.MeshMaterial3dBundle::new(
-    spawn_sphere_mesh(),
-    @pbr.MeshMaterial3d::new(sphere_material),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  let cubes_scene = world.spawn_empty()
-  try! world.set_by_key(
-    cubes_scene,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
+        @pbr.ParallaxCorrection::None,
       ),
     ),
   )
-  reflection_probes_state.val.cubes_scene = Some(cubes_scene)
+}
 
-  let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::TextFont()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, -320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+///|
+fn spawn_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        app_status.create_text(),
+        @ui.Node::Node()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_bottom(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
+        HelpText::{  },
+      ),
+    ),
+  )
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  asset_server : @app.Res[@asset.AssetServer],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let asset_server = asset_server.get()
+  let cubemaps = Cubemaps::from_asset_server(asset_server)
+  let app_status = app_status.get()
+  commands.insert_resource(cubemaps)
+  spawn_camera(commands)
+  spawn_sphere(commands, meshes, materials, app_status)
+  spawn_reflection_probe(commands, cubemaps)
+  spawn_scene(commands, asset_server)
+  spawn_text(commands, app_status)
+}
+
+///|
+fn add_environment_map_to_camera(
+  commands : @app.Commands,
+  query : @ecs.Query[@ecs.Read[@camera.Camera3d], @ecs.Added[@camera.Camera3d]],
+  cubemaps : @app.Res[Cubemaps],
+) -> Unit {
+  let cubemaps = cubemaps.get()
+  try! query.view(fn(camera_entity, _camera) {
+    commands
+    .entity(camera_entity)
+    .insert(
+      (
+        create_camera_environment_map_light(cubemaps),
+        @pbr.Skybox::new(cubemaps.specular_environment_map, ENV_MAP_INTENSITY),
       ),
     )
-    .with_anchor(@sprite.Anchor::bottom_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  reflection_probes_state.val.help_text = Some(help_text)
-
-  apply_reflection_mode(world)
-  update_help_text()
+  })
 }
 
 ///|
-fn setup_environment_map_usage() -> Unit {
-  if reflection_probes_state.val.environment_map_usage_ready {
-    return
-  }
-  if reflection_probes_state.val.specular_environment_map
-    is Some(specular_environment_map) {
-    if !@asset.asset_image_has_usage(
-        specular_environment_map,
-        @asset.IMAGE_USAGE_COPY_SRC,
-      ) {
-      @asset.asset_image_add_usage(
-        specular_environment_map,
-        @asset.IMAGE_USAGE_COPY_SRC,
-      )
-    }
-    reflection_probes_state.val.environment_map_usage_ready = true
-  }
-}
-
-///|
-fn cycle_reflection_mode(world : @ecs.World) -> Unit {
+fn change_reflection_type(
+  commands : @app.Commands,
+  light_probe_query : @ecs.Query[@ecs.Read[@pbr.LightProbe], @ecs.All],
+  cubes_scene_query : @ecs.Query[@ecs.Read[CubesScene], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Read[@camera.Camera3d], @ecs.All],
+  app_status : @app.ResMut[AppStatus],
+  cubemaps : @app.Res[Cubemaps],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
 
-  reflection_probes_state.val.reflection_mode = match
-    reflection_probes_state.val.reflection_mode {
-    ReflectionMode::EnvironmentMap => ReflectionMode::ReflectionProbe
-    ReflectionMode::ReflectionProbe => ReflectionMode::GeneratedEnvironmentMap
-    ReflectionMode::GeneratedEnvironmentMap => ReflectionMode::EnvironmentMap
+  let next_mode = app_status.modify(fn(status) {
+    status.reflection_mode = status.reflection_mode.next()
+    status.reflection_mode
+  })
+  let cubemaps = cubemaps.get()
+  let asset_server = asset_server.get()
+
+  try! light_probe_query.view(fn(light_probe, _data) {
+    commands.entity(light_probe).despawn()
+  })
+  try! cubes_scene_query.view(fn(scene_entity, _data) {
+    commands.entity(scene_entity).despawn()
+  })
+
+  match next_mode {
+    ReflectionMode::EnvironmentMap | ReflectionMode::GeneratedEnvironmentMap =>
+      ()
+    ReflectionMode::ReflectionProbe => {
+      spawn_reflection_probe(commands, cubemaps)
+      spawn_scene(commands, asset_server)
+    }
   }
 
-  apply_reflection_mode(world)
-  update_help_text()
+  try! camera_query.view(fn(camera_entity, _data) {
+    let camera_commands = commands.entity(camera_entity)
+    camera_commands.remove_component(@pbr.ecs_key_environment_map_light)
+    camera_commands.remove_component(
+      @pbr.ecs_key_generated_environment_map_light,
+    )
+    match next_mode {
+      ReflectionMode::EnvironmentMap | ReflectionMode::ReflectionProbe =>
+        camera_commands.insert_component(
+          create_camera_environment_map_light(cubemaps),
+        )
+      ReflectionMode::GeneratedEnvironmentMap =>
+        camera_commands.insert_component(
+          @pbr.GeneratedEnvironmentMapLight::new(
+            Some(cubemaps.specular_environment_map),
+            ENV_MAP_INTENSITY,
+          ),
+        )
+    }
+  })
 }
 
 ///|
-fn toggle_rotation() -> Unit {
+fn toggle_rotation(app_status : @app.ResMut[AppStatus]) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Enter) {
-    reflection_probes_state.val.rotating = !reflection_probes_state.val.rotating
-    update_help_text()
+    app_status.modify(fn(status) { status.rotating = !status.rotating })
   }
 }
 
 ///|
-fn change_sphere_roughness() -> Unit {
+fn update_text(
+  text_query : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[HelpText]],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  let next = app_status.get().create_text()
+  try! text_query.view(fn(_entity, text) { text.set(next) })
+}
+
+///|
+fn rotate_camera(
+  time : @app.Res[@time.Time[Unit]],
+  camera_query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if !app_status.get().rotating {
+    return
+  }
+  let angle = time.get().delta_seconds() * PI / 5.0F
+  let cos_v = @math.cos(angle)
+  let sin_v = @math.sin(angle)
+  try! camera_query.view(fn(_entity, transform) {
+    let current = transform.peek()
+    let x = current.translation.x
+    let z = current.translation.z
+    transform.set(
+      @transform.Transform::from_xyz(
+        cos_v * x - sin_v * z,
+        current.translation.y,
+        sin_v * x + cos_v * z,
+      ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
+    )
+  })
+}
+
+///|
+fn setup_environment_map_usage(
+  cubemaps : @app.Res[Cubemaps],
+  _images : @app.ResMut[@asset.Assets[@asset.Image]],
+) -> Unit {
+  let handle = cubemaps.get().specular_environment_map
+  if !@asset.asset_image_has_usage(handle, @asset.IMAGE_USAGE_COPY_SRC) {
+    @asset.asset_image_add_usage(handle, @asset.IMAGE_USAGE_COPY_SRC)
+  }
+}
+
+///|
+fn change_sphere_roughness(
+  app_status : @app.ResMut[AppStatus],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  sphere_query : @ecs.Query[
+    @ecs.Read[@pbr.MeshMaterial3d],
+    @ecs.With[SphereMaterial],
+  ],
+) -> Unit {
   let roughness_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
     0.01F
   } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
@@ -420,80 +486,49 @@ fn change_sphere_roughness() -> Unit {
   } else {
     0.0F
   }
-
   if roughness_delta == 0.0F {
     return
   }
 
-  reflection_probes_state.val.sphere_roughness = clampf(
-    reflection_probes_state.val.sphere_roughness + roughness_delta,
-    0.0F,
-    1.0F,
-  )
-
-  if reflection_probes_state.val.sphere_material is Some(handle) {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      @pbr.standard_material_set(
-        handle,
-        material.with_perceptual_roughness(
-          reflection_probes_state.val.sphere_roughness,
-        ),
+  let next_roughness = app_status.modify(fn(status) {
+    status.sphere_roughness = clampf(
+      status.sphere_roughness + roughness_delta,
+      0.0F,
+      1.0F,
+    )
+    status.sphere_roughness
+  })
+  materials.modify(fn(materials) {
+    try! sphere_query.view(fn(_entity, material_handle) {
+      let handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
+        material_handle.value().material_asset_id(),
       )
-      |> ignore
-    }
-  }
-
-  update_help_text()
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in reflection_probes example")
-  }
-}
-
-///|
-fn rotate_camera(world : @ecs.World) -> Unit {
-  if !reflection_probes_state.val.rotating {
-    return
-  }
-  guard reflection_probes_state.val.camera is Some(camera) else { return }
-  guard (try! world.get_by_key(camera, @transform.ecs_key_transform))
-    is Some(transform) else {
-    return
-  }
-
-  let angle = world_time(world).delta_seconds() * PI / 5.0F
-  let cos_v = @math.cos(angle)
-  let sin_v = @math.sin(angle)
-  let x = transform.translation.x
-  let z = transform.translation.z
-  let rotated_x = cos_v * x - sin_v * z
-  let rotated_z = sin_v * x + cos_v * z
-
-  try! (world.replace(
-    camera,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(
-      rotated_x,
-      transform.translation.y,
-      rotated_z,
-    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-  )
-  |> ignore)
+      match materials.get(handle) {
+        Some(material) =>
+          ignore(
+            materials.set(
+              handle,
+              material.with_perceptual_roughness(next_roughness),
+            ),
+          )
+        None => ()
+      }
+    })
+  })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_fn(@app.Update, setup_environment_map_usage)
-  .add_systems_world(@app.Update, cycle_reflection_mode)
-  .add_systems_fn(@app.Update, toggle_rotation)
-  .add_systems_fn(@app.Update, change_sphere_roughness)
-  .add_systems_world(@app.Update, rotate_camera)
+  .init_resource(fn() { AppStatus::AppStatus() })
+  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param3(@app.PreUpdate, add_environment_map_to_camera)
+  .add_systems_param7(@app.Update, change_reflection_type)
+  .add_systems_param(@app.Update, toggle_rotation)
+  .add_systems_param3(@app.Update, change_sphere_roughness)
+  .add_systems_param3(@app.Update, rotate_camera)
+  .add_systems_param2(@app.Update, update_text)
+  .add_systems_param2(@app.Update, setup_environment_map_usage)
   .run()
 }
