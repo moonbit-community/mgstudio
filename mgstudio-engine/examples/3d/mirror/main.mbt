@@ -415,12 +415,15 @@ fn create_mirror_texture_image(
   guard @app.current_world() is Some(world) else {
     abort("mirror render target creation requires an active world")
   }
-  @sprite_render.render2d_create_render_target(
-    world,
-    window_size.x.max(1),
-    window_size.y.max(1),
-    true,
+  ignore(world)
+  let texture_id = @render.asset_create_render_target_with_formats(
+    width=window_size.x.max(1),
+    height=window_size.y.max(1),
+    nearest=true,
+    format=@wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB),
+    sample_format=None,
   )
+  @asset.Handle::new(texture_id)
 }
 
 ///|
