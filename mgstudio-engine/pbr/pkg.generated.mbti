@@ -704,6 +704,8 @@ pub fn[M] register_material_keys(String) -> MaterialKeys[M]
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
+pub fn remove_mesh_input_uniform(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt?
+
 pub fn render3d_apply_view_contact_shadows_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewContactShadowsUniformOffset)]) -> Unit
 
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
@@ -1813,6 +1815,26 @@ pub fn MeshCullingData::aabb_center(Self) -> @math.Vec4
 pub fn MeshCullingData::aabb_half_extents(Self) -> @math.Vec4
 pub fn MeshCullingData::new(@primitives.Aabb?) -> Self
 
+pub struct MeshInputUniform {
+  world_from_local : @math.Affine3
+  lightmap_uv_rect : @math.UVec2
+  flags : UInt
+  previous_input_index : UInt
+  timestamp : UInt
+  first_vertex_index : UInt
+  first_index_index : UInt
+  index_count : UInt
+  current_skin_index : UInt
+  material_and_lightmap_bind_group_slot : UInt
+  tag : UInt
+  morph_descriptor_index : UInt
+}
+pub fn MeshInputUniform::from_shared(RenderMeshInstanceSharedFlat, world_from_local? : @math.Affine3, lightmap_uv_rect? : @math.UVec2, flags? : UInt, timestamp? : UInt) -> Self
+pub fn MeshInputUniform::new(world_from_local? : @math.Affine3, lightmap_uv_rect? : @math.UVec2, flags? : UInt, previous_input_index? : UInt, timestamp? : UInt, first_vertex_index? : UInt, first_index_index? : UInt, index_count? : UInt, current_skin_index? : UInt, material_and_lightmap_bind_group_slot? : UInt, tag? : UInt, morph_descriptor_index? : UInt) -> Self
+pub fn MeshInputUniform::previous_input_index(Self) -> UInt
+pub fn MeshInputUniform::tag(Self) -> UInt
+pub fn MeshInputUniform::with_previous_input_index(Self, UInt) -> Self
+
 pub struct MeshMaterial3dBundle {
   mesh : @Milky2018/mgstudio/mesh.Mesh3d
   material : @material.MeshMaterial3d
@@ -2177,12 +2199,14 @@ pub fn RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueu
 
 pub struct RenderMeshInstanceGpuPrepared {
   shared : RenderMeshInstanceSharedFlat
-  current_uniform_index : UInt
+  mesh_input_uniform : MeshInputUniform
   render_layers : @render_layers.RenderLayers?
 }
-pub fn RenderMeshInstanceGpuPrepared::from_shared(RenderMeshInstanceSharedFlat, UInt, @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshInstanceGpuPrepared::from_shared(RenderMeshInstanceSharedFlat, MeshInputUniform, @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshInstanceGpuPrepared::mesh_input_uniform(Self) -> MeshInputUniform
 pub fn RenderMeshInstanceGpuPrepared::new(RenderMeshQueueData) -> Self
 pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(Self) -> RenderMeshQueueData
+pub fn RenderMeshInstanceGpuPrepared::update(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform], @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt
 
 pub struct RenderMeshInstanceGpuQueue {
   mut state : RenderMeshInstanceGpuQueueState

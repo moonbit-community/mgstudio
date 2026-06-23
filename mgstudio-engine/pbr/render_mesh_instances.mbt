@@ -422,6 +422,93 @@ pub fn RenderMeshInstanceGpu::render_mesh_queue_data(
 }
 
 ///|
+pub struct MeshInputUniform {
+  world_from_local : @math.Affine3
+  lightmap_uv_rect : @math.UVec2
+  flags : UInt
+  previous_input_index : UInt
+  timestamp : UInt
+  first_vertex_index : UInt
+  first_index_index : UInt
+  index_count : UInt
+  current_skin_index : UInt
+  material_and_lightmap_bind_group_slot : UInt
+  tag : UInt
+  morph_descriptor_index : UInt
+}
+
+///|
+fn mesh_input_uniform_invalid_index() -> UInt {
+  0xFFFF_FFFFU
+}
+
+///|
+pub fn MeshInputUniform::new(
+  world_from_local? : @math.Affine3 = @math.Affine3::identity(),
+  lightmap_uv_rect? : @math.UVec2 = @math.UVec2::zero(),
+  flags? : UInt = 0U,
+  previous_input_index? : UInt = mesh_input_uniform_invalid_index(),
+  timestamp? : UInt = 0U,
+  first_vertex_index? : UInt = 0U,
+  first_index_index? : UInt = 0U,
+  index_count? : UInt = 0U,
+  current_skin_index? : UInt = mesh_input_uniform_invalid_index(),
+  material_and_lightmap_bind_group_slot? : UInt = 0U,
+  tag? : UInt = 0U,
+  morph_descriptor_index? : UInt = mesh_input_uniform_invalid_index(),
+) -> MeshInputUniform {
+  MeshInputUniform::{
+    world_from_local,
+    lightmap_uv_rect,
+    flags,
+    previous_input_index,
+    timestamp,
+    first_vertex_index,
+    first_index_index,
+    index_count,
+    current_skin_index,
+    material_and_lightmap_bind_group_slot,
+    tag,
+    morph_descriptor_index,
+  }
+}
+
+///|
+pub fn MeshInputUniform::from_shared(
+  shared : RenderMeshInstanceSharedFlat,
+  world_from_local? : @math.Affine3 = @math.Affine3::identity(),
+  lightmap_uv_rect? : @math.UVec2 = @math.UVec2::zero(),
+  flags? : UInt = 0U,
+  timestamp? : UInt = 0U,
+) -> MeshInputUniform {
+  MeshInputUniform::new(
+    world_from_local~,
+    lightmap_uv_rect~,
+    flags~,
+    timestamp~,
+    tag=shared.tag(),
+  )
+}
+
+///|
+pub fn MeshInputUniform::previous_input_index(self : MeshInputUniform) -> UInt {
+  self.previous_input_index
+}
+
+///|
+pub fn MeshInputUniform::tag(self : MeshInputUniform) -> UInt {
+  self.tag
+}
+
+///|
+pub fn MeshInputUniform::with_previous_input_index(
+  self : MeshInputUniform,
+  previous_input_index : UInt,
+) -> MeshInputUniform {
+  MeshInputUniform::{ ..self, previous_input_index, }
+}
+
+///|
 pub struct MeshCullingData {
   aabb_center : @math.Vec4
   aabb_half_extents : @math.Vec4
@@ -523,7 +610,7 @@ pub fn RenderMeshInstanceGpuBuilder::shared(
 ///|
 pub struct RenderMeshInstanceGpuPrepared {
   shared : RenderMeshInstanceSharedFlat
-  current_uniform_index : UInt
+  mesh_input_uniform : MeshInputUniform
   render_layers : @camera_render_layers.RenderLayers?
 }
 
@@ -531,9 +618,10 @@ pub struct RenderMeshInstanceGpuPrepared {
 pub fn RenderMeshInstanceGpuPrepared::new(
   queue_data : RenderMeshQueueData,
 ) -> RenderMeshInstanceGpuPrepared {
+  let shared = RenderMeshInstanceSharedFlat::from_queue_data(queue_data)
   RenderMeshInstanceGpuPrepared::{
-    shared: RenderMeshInstanceSharedFlat::from_queue_data(queue_data),
-    current_uniform_index: queue_data.current_uniform_index(),
+    shared,
+    mesh_input_uniform: MeshInputUniform::from_shared(shared),
     render_layers: queue_data.render_layers(),
   }
 }
@@ -541,24 +629,89 @@ pub fn RenderMeshInstanceGpuPrepared::new(
 ///|
 pub fn RenderMeshInstanceGpuPrepared::from_shared(
   shared : RenderMeshInstanceSharedFlat,
-  current_uniform_index : UInt,
+  mesh_input_uniform : MeshInputUniform,
   render_layers : @camera_render_layers.RenderLayers?,
 ) -> RenderMeshInstanceGpuPrepared {
-  RenderMeshInstanceGpuPrepared::{
-    shared,
-    current_uniform_index,
-    render_layers,
-  }
+  RenderMeshInstanceGpuPrepared::{ shared, mesh_input_uniform, render_layers }
 }
 
 ///|
 pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(
   self : RenderMeshInstanceGpuPrepared,
 ) -> RenderMeshQueueData {
-  self.shared.to_queue_data(
-    current_uniform_index=self.current_uniform_index,
-    render_layers=self.render_layers,
+  self.shared.to_queue_data(render_layers=self.render_layers)
+}
+
+///|
+pub fn RenderMeshInstanceGpuPrepared::mesh_input_uniform(
+  self : RenderMeshInstanceGpuPrepared,
+) -> MeshInputUniform {
+  self.mesh_input_uniform
+}
+
+///|
+pub fn RenderMeshInstanceGpuPrepared::update(
+  self : RenderMeshInstanceGpuPrepared,
+  entity : @render.MainEntity,
+  render_mesh_instances : RenderMeshInstancesGpu,
+  current_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+  previous_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+) -> UInt {
+  let key = entity.id().to_bits()
+  let current_uniform_index = match render_mesh_instances.entries.get(key) {
+    Some(existing_instance) => {
+      let index = existing_instance.gpu_specific.current_uniform_index()
+      let previous_mesh_input_uniform = current_input_buffer.get_unchecked(
+        index.reinterpret_as_int(),
+      )
+      let previous_input_index = previous_input_buffer
+        .add(previous_mesh_input_uniform)
+        .reinterpret_as_uint()
+      current_input_buffer.set(
+        index.reinterpret_as_int(),
+        self.mesh_input_uniform.with_previous_input_index(previous_input_index),
+      )
+      index
+    }
+    None =>
+      current_input_buffer.add(self.mesh_input_uniform).reinterpret_as_uint()
+  }
+  render_mesh_instances.entries.set(
+    key,
+    RenderMeshInstanceGpu::new(
+      self.shared,
+      gpu_specific=RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
+        current_uniform_index~,
+      ),
+      render_layers=self.render_layers,
+    ),
   )
+  current_uniform_index
+}
+
+///|
+pub fn remove_mesh_input_uniform(
+  entity : @render.MainEntity,
+  render_mesh_instances : RenderMeshInstancesGpu,
+  current_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+) -> UInt? {
+  let key = entity.id().to_bits()
+  let removed_instance = render_mesh_instances.entries.get(key)
+  render_mesh_instances.entries.remove(key)
+  match removed_instance {
+    Some(instance) => {
+      let removed_uniform_index = instance.gpu_specific.current_uniform_index()
+      current_input_buffer.remove(removed_uniform_index.reinterpret_as_int())
+      Some(removed_uniform_index)
+    }
+    None => None
+  }
 }
 
 ///|

@@ -105,6 +105,83 @@ test "pbr: RenderMeshInstances stores Bevy-shaped CPU and GPU instance records" 
 }
 
 ///|
+test "pbr: RenderMeshInstanceGpuPrepared updates current and previous input buffers" {
+  let entity = @render.MainEntity::new(@core.Entity::new(24, 1))
+  let instances = RenderMeshInstancesGpu::RenderMeshInstancesGpu()
+  let current_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ] = @render_batching.InstanceInputUniformBuffer::new()
+  let previous_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ] = @render_batching.InstanceInputUniformBuffer::new()
+  let first_shared = RenderMeshInstanceSharedFlat::new(80, tag=5U)
+  let first_prepared = RenderMeshInstanceGpuPrepared::from_shared(
+    first_shared,
+    MeshInputUniform::from_shared(first_shared, timestamp=1U),
+    None,
+  )
+
+  let first_index = first_prepared.update(
+    entity, instances, current_buffer, previous_buffer,
+  )
+  debug_inspect(first_index, content="0")
+  debug_inspect(current_buffer.len(), content="1")
+  debug_inspect(previous_buffer.len(), content="0")
+  debug_inspect(
+    instances.render_mesh_queue_data(entity).unwrap().current_uniform_index(),
+    content="0",
+  )
+
+  let second_shared = RenderMeshInstanceSharedFlat::new(80, tag=6U)
+  let second_prepared = RenderMeshInstanceGpuPrepared::from_shared(
+    second_shared,
+    MeshInputUniform::from_shared(second_shared, timestamp=2U),
+    None,
+  )
+  let second_index = second_prepared.update(
+    entity, instances, current_buffer, previous_buffer,
+  )
+  let current_uniform = current_buffer.get_unchecked(
+    second_index.reinterpret_as_int(),
+  )
+
+  debug_inspect(second_index, content="0")
+  debug_inspect(current_buffer.len(), content="1")
+  debug_inspect(previous_buffer.len(), content="1")
+  debug_inspect(current_uniform.previous_input_index(), content="0")
+  debug_inspect(current_uniform.tag(), content="6")
+}
+
+///|
+test "pbr: remove_mesh_input_uniform removes GPU instance and frees buffer slot" {
+  let entity = @render.MainEntity::new(@core.Entity::new(25, 1))
+  let instances = RenderMeshInstancesGpu::RenderMeshInstancesGpu()
+  let current_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ] = @render_batching.InstanceInputUniformBuffer::new()
+  let previous_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ] = @render_batching.InstanceInputUniformBuffer::new()
+  let shared = RenderMeshInstanceSharedFlat::new(81, tag=7U)
+  let prepared = RenderMeshInstanceGpuPrepared::from_shared(
+    shared,
+    MeshInputUniform::from_shared(shared),
+    None,
+  )
+  ignore(prepared.update(entity, instances, current_buffer, previous_buffer))
+
+  debug_inspect(
+    remove_mesh_input_uniform(entity, instances, current_buffer),
+    content="Some(0)",
+  )
+  debug_inspect(
+    instances.render_mesh_queue_data(entity) is None,
+    content="true",
+  )
+  debug_inspect(current_buffer.get(0) is None, content="true")
+}
+
+///|
 test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy CPU culling state" {
   let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
   let entity = @render.MainEntity::new(@core.Entity::new(30, 1))
