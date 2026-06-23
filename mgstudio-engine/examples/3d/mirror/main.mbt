@@ -338,11 +338,6 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
-fn quat_conjugate(q : @math.Quat) -> @math.Quat {
-  @math.Quat::new(-q.x, -q.y, -q.z, q.w)
-}
-
-///|
 fn mirror_reflection_affine_neg_z() -> @math.Affine3 {
   @math.Affine3::from_mat3_translation(
     @math.Mat3::from_cols(
@@ -355,11 +350,6 @@ fn mirror_reflection_affine_neg_z() -> @math.Affine3 {
 }
 
 ///|
-fn mirror_reflect_vec3_neg_z(value : @math.Vec3) -> @math.Vec3 {
-  @math.Vec3::new(value.x, value.y, -value.z)
-}
-
-///|
 fn calculate_mirror_camera_transform_and_projection(
   main_camera_transform : @transform.Transform,
   main_camera_projection : @camera.PerspectiveProjection3d,
@@ -368,23 +358,13 @@ fn calculate_mirror_camera_transform_and_projection(
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
 
-  let reflected_translation = mirror_reflection_affine_neg_z().transform_point3(
-    main_camera_transform.translation,
+  let reflected_affine = mirror_reflection_affine_neg_z().mul(
+    @transform.GlobalTransform::from_transform(main_camera_transform).affine(),
   )
-  let reflected_forward = mirror_reflect_vec3_neg_z(
-    quat_rotate_vec3(
-      main_camera_transform.rotation,
-      @math.Vec3::new(0.0F, 0.0F, -1.0F),
-    ),
-  )
-  let reflected_up = mirror_reflect_vec3_neg_z(
-    quat_rotate_vec3(main_camera_transform.rotation, world_up),
-  )
+  let (reflected_scale, reflected_rotation, reflected_translation) = reflected_affine.to_scale_rotation_translation()
   let mirror_camera_transform = @transform.Transform::new(
-    reflected_translation,
-    main_camera_transform.rotation,
-    main_camera_transform.scale,
-  ).looking_to(reflected_forward, reflected_up)
+    reflected_translation, reflected_rotation, reflected_scale,
+  )
 
   let mirror_normal = normalize_or(
     quat_rotate_vec3(mirror_transform.rotation, world_up),
@@ -393,12 +373,13 @@ fn calculate_mirror_camera_transform_and_projection(
   let distance_from_camera_to_mirror = mirror_transform.translation
     .sub(main_camera_transform.translation)
     .dot(mirror_normal)
-  let view_from_world_rotation = quat_conjugate(
-    main_camera_transform.rotation.normalize(),
-  )
+  let view_from_world = @transform.GlobalTransform::from_transform(
+      main_camera_transform,
+    ).affine().matrix3
+    .inverse()
+    .unwrap_or(@math.Mat3::identity())
   let mirror_projection_plane_normal = normalize_or(
-    quat_rotate_vec3(
-      view_from_world_rotation,
+    view_from_world.mul_vec3(
       quat_rotate_vec3(mirror_transform.rotation, negative_world_up),
     ),
     @math.Vec3::new(0.0F, 0.0F, -1.0F),
