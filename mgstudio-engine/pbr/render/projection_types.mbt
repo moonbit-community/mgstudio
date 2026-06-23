@@ -534,7 +534,7 @@ fn render3d_adjust_perspective_matrix_for_clip_plane(
   matrix : ProjectionMatrix3d,
 ) -> ProjectionMatrix3d {
   let clip_plane = projection.near_clip_plane
-  if clip_plane == render3d_default_near_clip_plane(projection.near) {
+  if clip_plane.x == 0.0F && clip_plane.y == 0.0F && clip_plane.z == -1.0F {
     return matrix
   }
   match render3d_projection_matrix_inverse(matrix) {
@@ -547,14 +547,7 @@ fn render3d_adjust_perspective_matrix_for_clip_plane(
         1.0F,
       )
       let q = inverse.mul_vec4(q_prime)
-      let denominator = render3d_vec4_dot(clip_plane, q)
-      let safe_denominator = if denominator >= -1.0e-12F &&
-        denominator <= 1.0e-12F {
-        1.0F
-      } else {
-        denominator
-      }
-      let a = -q.z / safe_denominator
+      let a = -q.z / render3d_vec4_dot(clip_plane, q)
       let m3_prime = @math.Vec4::new(
         -clip_plane.x * a,
         -clip_plane.y * a,

@@ -173,7 +173,7 @@ test "render3d: camera pass projection applies Bevy temporal jitter" {
 }
 
 ///|
-test "render3d: perspective clip plane rewrites third row without changing render near distance" {
+test "render3d: default-facing clip plane keeps perspective matrix unchanged when distance differs" {
   let projection = Projection::Perspective(
     @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d().with_near_clip_plane(
       @math.Vec4::new(0.0F, 0.0F, -1.0F, -2.0F),
@@ -188,7 +188,28 @@ test "render3d: perspective clip plane rewrites third row without changing rende
     360,
   )
   let ok = projection_approx_eq_wb(clip_from_view.z_axis.z, 0.0F) &&
-    projection_approx_eq_wb(clip_from_view.w_axis.z, 2.0F) &&
+    projection_approx_eq_wb(clip_from_view.w_axis.z, 0.1F) &&
+    projection_approx_eq_wb(pass_projection.camera_near, 0.1F)
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "render3d: oblique perspective clip plane rewrites third row without changing render near distance" {
+  let projection = Projection::Perspective(
+    @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d().with_near_clip_plane(
+      @math.Vec4::new(0.0F, -1.0F, 0.0F, -2.0F),
+    ),
+  )
+  let clip_from_view = projection.get_clip_from_view()
+  let pass_projection = render3d_camera_pass_projection(
+    projection,
+    None,
+    None,
+    640,
+    360,
+  )
+  let ok = projection_approx_eq_wb(clip_from_view.z_axis.z, -1.0F) &&
+    clip_from_view.y_axis.z != 0.0F &&
     projection_approx_eq_wb(pass_projection.camera_near, 0.1F)
   debug_inspect(ok, content="true")
 }
