@@ -503,12 +503,7 @@ fn spawn_ground_plane(
   standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let mesh = meshes.modify(fn(assets) {
-    assets
-    |> @pbr.add_mesh(
-      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-        @math.Vec2::new(400.0F, 400.0F),
-      ).build(),
-    )
+    assets |> @mesh_primitives.add_mesh(@math.Circle::new(200.0F))
   })
   let material = standard_materials.modify(fn(assets) {
     assets.add(
