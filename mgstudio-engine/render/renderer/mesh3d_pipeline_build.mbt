@@ -34,6 +34,34 @@ fn mesh3d_fragment_shader_path_or_default(shader_path : String?) -> String {
 }
 
 ///|
+fn mesh3d_cull_mode_from_wgpu(cull_mode : UInt?) -> Int {
+  match cull_mode {
+    Some(mode) =>
+      if mode == @wgpu.CULL_MODE_FRONT {
+        1
+      } else if mode == @wgpu.CULL_MODE_BACK {
+        2
+      } else {
+        0
+      }
+    None => 0
+  }
+}
+
+///|
+fn mesh3d_effective_custom_pipeline_cull_mode(
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  fallback_cull_mode : Int,
+) -> Int {
+  guard material_descriptor is Some(descriptor) else {
+    return fallback_cull_mode
+  }
+  let draw_flags = fallback_cull_mode -
+    (fallback_cull_mode & MESH3D_CULL_MODE_MASK)
+  draw_flags | mesh3d_cull_mode_from_wgpu(descriptor.primitive.cull_mode)
+}
+
+///|
 fn mesh3d_custom_pipeline_cache_key(
   material_pipeline_id : UInt64,
   vertex_shader_path : String,
@@ -879,10 +907,13 @@ fn mesh3d_custom_pipeline_get_or_create(
     !forward_decal {
     return None
   }
+  let effective_cull_mode = mesh3d_effective_custom_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
   if mesh3d_custom_pipeline_cache_get(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
-      cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      effective_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     )
     is Some(pipeline) {
@@ -891,12 +922,12 @@ fn mesh3d_custom_pipeline_get_or_create(
   if mesh3d_custom_pipeline_cache_failed(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
-      cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      effective_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ) {
     return None
   }
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend,

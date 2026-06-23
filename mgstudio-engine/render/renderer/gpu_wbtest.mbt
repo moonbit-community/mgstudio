@@ -1994,6 +1994,24 @@ test "renderer: motion-vector mesh layout uses storage morph descriptors" {
 }
 
 ///|
+test "renderer: custom mesh3d pipeline honors descriptor cull mode" {
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_primitive(
+    @render_resource.PrimitiveState::PrimitiveState().with_cull_mode(
+      Some(@wgpu.CULL_MODE_FRONT),
+    ),
+  )
+  let fallback = MESH3D_DRAW_FLAG_DECAL | 2
+  debug_inspect(
+    mesh3d_effective_custom_pipeline_cull_mode(Some(descriptor), fallback),
+    content="257",
+  )
+  debug_inspect(
+    mesh3d_effective_custom_pipeline_cull_mode(None, fallback),
+    content="258",
+  )
+}
+
+///|
 test "renderer: sprite uv axis metrics preserves flipped spans" {
   let (signed_scale, region_extent) = sprite_uv_axis_metrics(1.0F, 0.0F, 128)
   let ok = signed_scale == -1.0F && region_extent == 128.0F
