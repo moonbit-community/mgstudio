@@ -319,6 +319,8 @@ pub struct DeferredEntityCommands {
 #callsite(autofill(loc))
 pub fn DeferredEntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
 pub fn DeferredEntityCommands::entity(Self) -> @core.Entity
+#callsite(autofill(loc))
+pub fn[T] DeferredEntityCommands::remove_by_key(Self, ComponentKey[T], loc~ : SourceLoc) -> Unit
 
 pub struct DeferredWorld {
   // private fields

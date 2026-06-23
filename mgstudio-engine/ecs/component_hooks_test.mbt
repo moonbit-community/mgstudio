@@ -67,6 +67,21 @@ pub impl Component for HookCommandsTestComponent with fn component() {
 }
 
 ///|
+struct HookRemoveCommandsTestComponent {} derive(Eq, Debug)
+
+///|
+let hook_remove_commands_test_component_key : ComponentKey[
+  HookRemoveCommandsTestComponent,
+] = register_component(
+  debug_name="tests.ecs.component_hooks.deferred_remove_commands",
+)
+
+///|
+pub impl Component for HookRemoveCommandsTestComponent with fn component() {
+  hook_remove_commands_test_component_key
+}
+
+///|
 struct HooksWithRegistrationTestComponent {} derive(Eq, Debug)
 
 ///|
@@ -184,6 +199,21 @@ fn hook_commands_test_install_hooks(world : World) -> Unit {
   ignore(
     try! hooks.on_remove(fn(world, context) {
       world.commands().entity(context.entity()).despawn()
+    }),
+  )
+}
+
+///|
+fn hook_remove_commands_test_install_hooks(world : World) -> Unit {
+  let hooks = world.register_component_hooks_for_key(
+    hook_remove_commands_test_component_key,
+  )
+  ignore(
+    try! hooks.on_remove(fn(world, context) {
+      world
+      .commands()
+      .entity(context.entity())
+      .remove_by_key(hook_test_component_key)
     }),
   )
 }
@@ -316,6 +346,32 @@ test "ecs component hooks: deferred hook commands flush after callback" {
 
   ignore(try! world.remove_by_key(entity, hook_commands_test_component_key))
   debug_inspect(world.is_alive(entity), content="false")
+}
+
+///|
+test "ecs component hooks: deferred remove commands flush after callback" {
+  let world = World::new()
+  hook_remove_commands_test_install_hooks(world)
+  let entity = world.spawn()
+
+  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
+    value: 1,
+  })
+  try! world.set_by_key(entity, hook_remove_commands_test_component_key, HookRemoveCommandsTestComponent::{
+
+  })
+  debug_inspect(
+    try! world.contains_by_key(entity, hook_test_component_key),
+    content="true",
+  )
+
+  ignore(
+    try! world.remove_by_key(entity, hook_remove_commands_test_component_key),
+  )
+  debug_inspect(
+    try! world.contains_by_key(entity, hook_test_component_key),
+    content="false",
+  )
 }
 
 ///|

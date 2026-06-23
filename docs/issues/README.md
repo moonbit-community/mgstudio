@@ -227,6 +227,7 @@ graph TD
   ISS_148["ISS-148: Unblock sampler binding-array rendering for Bevy lightmaps"]
   ISS_149["ISS-149: Restore reflection_probes example source shape"]
   ISS_150["ISS-150: Restore mirror example source shape"]
+  ISS_151["ISS-151: Skip dead entities during PBR material extraction"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

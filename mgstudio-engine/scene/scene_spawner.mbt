@@ -370,32 +370,20 @@ fn scene_despawn_instance(world : @ecs.World, instance_id : Int) -> Unit {
 }
 
 ///|
-fn scene_clear_instance_components(
-  world : @ecs.World,
-  entity : @core.Entity,
+fn scene_despawn_instance_deferred(
+  world : @ecs.DeferredWorld,
+  instance_id : Int,
 ) -> Unit {
-  guard world.is_alive(entity) else { return }
-  scene_remove_ready_component(world, entity)
-  if (try! world.contains_by_key(entity, ecs_key_scene_instance)) {
-    try! (world.remove_by_key(entity, ecs_key_scene_instance) |> ignore)
-  }
-}
-
-///|
-fn scene_detach_root_instance(
-  world : @ecs.World,
-  entity : @core.Entity,
-  despawn_entities? : Bool = false,
-) -> Unit {
-  guard scene_instance_component(world, entity) is Some(instance) else {
+  guard scene_runtime_remove_instance(world.world(), instance_id)
+    is Some(instance) else {
     return
   }
-  if despawn_entities {
-    scene_despawn_instance(world, instance.instance_id)
-  } else {
-    scene_unregister_instance(world, instance.instance_id)
+  let commands = world.commands()
+  for entity in instance.spawned_entities {
+    if world.is_alive(entity) {
+      commands.entity(entity).despawn()
+    }
   }
-  scene_clear_instance_components(world, entity)
 }
 
 ///|
@@ -403,11 +391,12 @@ fn scene_root_on_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  scene_detach_root_instance(
-    world.world(),
-    context.entity(),
-    despawn_entities=true,
-  )
+  let entity = context.entity()
+  guard scene_instance_component(world.world(), entity) is Some(instance) else {
+    return
+  }
+  scene_despawn_instance_deferred(world, instance.instance_id)
+  world.commands().entity(entity).remove_by_key(ecs_key_scene_instance)
 }
 
 ///|

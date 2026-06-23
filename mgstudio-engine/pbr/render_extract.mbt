@@ -209,6 +209,9 @@ fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
   }
   material_instances.modify(fn(instances) {
     for _, entity in changed_entities {
+      if !source_world.is_alive(entity) {
+        continue
+      }
       match
         (
           try! source_world.get_by_key(

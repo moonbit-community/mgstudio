@@ -289,6 +289,19 @@ pub fn DeferredEntityCommands::despawn(
 }
 
 ///|
+#callsite(autofill(loc))
+pub fn[T] DeferredEntityCommands::remove_by_key(
+  self : DeferredEntityCommands,
+  key : ComponentKey[T],
+  loc~ : SourceLoc,
+) -> Unit {
+  let entity = self.entity
+  self.commands.world.enqueue_deferred_hook_command(fn(world : World) {
+    ignore(try! world.remove_by_key(entity, key, loc~))
+  })
+}
+
+///|
 pub fn ComponentHooks::new(
   on_add? : ((DeferredWorld, HookContext) -> Unit)? = None,
   on_insert? : ((DeferredWorld, HookContext) -> Unit)? = None,
