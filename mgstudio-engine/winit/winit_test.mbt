@@ -148,6 +148,25 @@ test "winit: backend sync is owned by winit plugin" {
 }
 
 ///|
+test "winit: startup systems see the primary host window" {
+  let startup_host_count = Ref(-1)
+  let startup_primary_width = Ref(-1)
+  let _app = winit_plugin(
+      @window.window_plugin(@app.App::new(@ecs.World::new())),
+    )
+    .add_startup_system(fn(world : @ecs.World) {
+      startup_host_count.val = @window.window_host_entries(world).length()
+      startup_primary_width.val = @window.window_physical_width_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+    })
+    .run_startup()
+  debug_inspect(startup_host_count.val, content="1")
+  debug_inspect(startup_primary_width.val > 0, content="true")
+}
+
+///|
 test "winit: plugin initializes bevy-aligned default settings resource" {
   let app_with_winit = winit_plugin(
     @window.window_plugin(@app.App::new(@ecs.World::new())),

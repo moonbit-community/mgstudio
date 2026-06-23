@@ -89,6 +89,11 @@ pub fn winit_plugin_with(
       @a11y.a11y_set,
     ),
   )
+  .add_pre_startup_system_config(
+    @app.system(winit_window_backend_sync_system).named(
+      "mgstudio_winit::startup_backend_sync",
+    ),
+  )
   .add_systems(
     @app.Last,
     (
