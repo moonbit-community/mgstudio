@@ -277,18 +277,52 @@ fn AabbAccumulator::add_point(
 }
 
 ///|
-fn AabbAccumulator::add_aabb(
+fn AabbAccumulator::add_transformed_joint_aabb(
   self : AabbAccumulator,
-  aabb : @math.Aabb3d,
+  input : JointAabb,
+  transform : @math.Affine3,
 ) -> Unit {
-  self.add_point(aabb.min)
-  self.add_point(aabb.max)
+  let mx = transform.matrix3.x_axis
+  let my = transform.matrix3.y_axis
+  let mz = transform.matrix3.z_axis
+  let mt = transform.translation
+  let center = input.center
+  let half_size = input.half_size
+
+  let tc = mx
+    .mul_scalar(center.x)
+    .add(my.mul_scalar(center.y))
+    .add(mz.mul_scalar(center.z))
+    .add(mt)
+  let ts = vec3_abs(mx)
+    .mul_scalar(half_size.x)
+    .add(vec3_abs(my).mul_scalar(half_size.y))
+    .add(vec3_abs(mz).mul_scalar(half_size.z))
+  let min = tc.sub(ts)
+  let max = tc.add(ts)
+  if self.has_value {
+    self.min = vec3_min(self.min, min)
+    self.max = vec3_max(self.max, max)
+  } else {
+    self.has_value = true
+    self.min = min
+    self.max = max
+  }
 }
 
 ///|
 fn AabbAccumulator::finish(self : AabbAccumulator) -> JointAabb? {
   if self.has_value {
     Some(JointAabb::from_aabb3d(@math.Aabb3d::from_min_max(self.min, self.max)))
+  } else {
+    None
+  }
+}
+
+///|
+fn AabbAccumulator::finish_aabb3d(self : AabbAccumulator) -> @math.Aabb3d? {
+  if self.has_value {
+    Some(@math.Aabb3d::from_min_max(self.min, self.max))
   } else {
     None
   }
@@ -473,12 +507,12 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
       None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
     }
     let world_from_model = world_from_joint.affine().mul(joint_from_model)
-    accumulator.add_aabb(
-      transform_joint_aabb(modelspace_joint_aabb, world_from_model),
+    accumulator.add_transformed_joint_aabb(
+      modelspace_joint_aabb, world_from_model,
     )
   }
-  let worldspace_entity_aabb = match accumulator.finish() {
-    Some(aabb) => aabb.to_aabb3d()
+  let worldspace_entity_aabb = match accumulator.finish_aabb3d() {
+    Some(aabb) => aabb
     None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
   }
   match world_from_entity {
@@ -563,12 +597,12 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
       }
     }
     let world_from_model = world_from_joint.affine().mul(joint_from_model)
-    accumulator.add_aabb(
-      transform_joint_aabb(modelspace_joint_aabb, world_from_model),
+    accumulator.add_transformed_joint_aabb(
+      modelspace_joint_aabb, world_from_model,
     )
   }
-  let worldspace_entity_aabb = match accumulator.finish() {
-    Some(aabb) => aabb.to_aabb3d()
+  let worldspace_entity_aabb = match accumulator.finish_aabb3d() {
+    Some(aabb) => aabb
     None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
   }
   let aabb = match world_from_entity {
