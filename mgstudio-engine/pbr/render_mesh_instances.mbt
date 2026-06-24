@@ -2240,39 +2240,6 @@ fn render_mesh_instances_gpu_removed_mesh3d_set(
 }
 
 ///|
-fn render_mesh_instances_gpu_all_meshes_query(
-  source_world : @ecs.World,
-  meshes : Array[ExtractedMesh3d],
-) -> Map[UInt64, RenderMeshInstanceGpuExtractionRow] {
-  let query : Map[UInt64, RenderMeshInstanceGpuExtractionRow] = {}
-  for extracted_mesh in meshes {
-    let entity = extracted_mesh.entity.main_entity
-    match
-      render_mesh_instance_gpu_extraction_row_from_source(source_world, entity) {
-      Some(row) => query.set(entity.to_bits(), row)
-      None => ()
-    }
-  }
-  query
-}
-
-///|
-fn render_mesh_instances_gpu_all_meshes_query_get(
-  source_world : @ecs.World,
-  all_meshes_query : Map[UInt64, RenderMeshInstanceGpuExtractionRow],
-  entity : @render.MainEntity,
-) -> RenderMeshInstanceGpuExtractionRow? {
-  match all_meshes_query.get(entity.id().to_bits()) {
-    Some(row) => Some(row)
-    None =>
-      render_mesh_instance_gpu_extraction_row_from_source(
-        source_world,
-        entity.id(),
-      )
-  }
-}
-
-///|
 fn render_mesh_instances_gpu_queue_extraction_row(
   queue : RenderMeshInstanceGpuQueue,
   gpu_instances : RenderMeshInstancesGpu,
@@ -2494,7 +2461,6 @@ fn render_mesh_instances_collect_gpu_building_resource(
 fn render_mesh_instances_extract_gpu_building_resource(
   world : @ecs.World,
   source_world : @ecs.World,
-  meshes : Array[ExtractedMesh3d],
   any_gpu_culling : Bool,
 ) -> Unit {
   let system_ticks = render_mesh_instance_gpu_extraction_system_ticks(
@@ -2514,9 +2480,6 @@ fn render_mesh_instances_extract_gpu_building_resource(
     source_world, system_ticks,
   )
   queues.init(any_gpu_culling)
-  let all_meshes_query = render_mesh_instances_gpu_all_meshes_query(
-    source_world, meshes,
-  )
   let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
     source_world, system_ticks,
   )
@@ -2525,8 +2488,9 @@ fn render_mesh_instances_extract_gpu_building_resource(
   for item in changed_meshes_query.values() {
     let bits = item.id().to_bits()
     match
-      render_mesh_instances_gpu_all_meshes_query_get(
-        source_world, all_meshes_query, item,
+      render_mesh_instance_gpu_extraction_row_from_source(
+        source_world,
+        item.id(),
       ) {
       Some(row) => {
         render_mesh_instances_gpu_queue_extraction_row(
@@ -2541,8 +2505,9 @@ fn render_mesh_instances_extract_gpu_building_resource(
     let bits = item.id().to_bits()
     if !changed_entities.contains(bits) {
       match
-        render_mesh_instances_gpu_all_meshes_query_get(
-          source_world, all_meshes_query, item,
+        render_mesh_instance_gpu_extraction_row_from_source(
+          source_world,
+          item.id(),
         ) {
         Some(row) =>
           render_mesh_instances_gpu_queue_extraction_row(

@@ -713,19 +713,7 @@ test "pbr: GPU-building extraction does not remove stale meshes without source r
   instances.insert(stale_entity, RenderMeshQueueData::new(199, 3U, true))
   world.insert_resource(RenderMeshInstances::resource(), instances)
 
-  render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [
-      render_mesh_instances_test_mesh_for_entity(first, 110),
-      render_mesh_instances_test_mesh_for_entity(
-        second,
-        111,
-        has_no_cpu_culling=true,
-      ),
-    ],
-    true,
-  )
+  render_mesh_instances_extract_gpu_building_resource(world, source_world, true)
 
   let queues = match
     world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
@@ -771,10 +759,7 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
   )
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
 
   let queues = match
@@ -808,10 +793,7 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
   world.insert_resource(RenderMeshInstances::resource(), instances)
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
   let queues = match
     world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
@@ -822,10 +804,7 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
 
   ignore(source_world.increment_change_tick())
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
 
   debug_inspect(queues.borrow_local_mut().changed_len(), content="0")
@@ -834,10 +813,7 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
   reextract.insert(entity)
   world.insert_resource(MeshesToReextractNextFrame::resource(), reextract)
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
   debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
 }
@@ -855,10 +831,7 @@ test "pbr: GPU-building extraction queues source changed meshes" {
   world.insert_resource(RenderMeshInstances::resource(), instances)
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [render_mesh_instances_test_mesh_for_entity(entity, 214)],
-    false,
+    world, source_world, false,
   )
 
   let queues = match
@@ -886,10 +859,7 @@ test "pbr: GPU-building extraction removes changed hidden meshes" {
   world.insert_resource(RenderMeshInstances::resource(), instances)
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
 
   let queues = match
@@ -928,10 +898,7 @@ test "pbr: GPU-building extraction keeps material-unready meshes for reextract" 
   world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [],
-    false,
+    world, source_world, false,
   )
   let queues = match
     world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
@@ -1057,10 +1024,7 @@ test "pbr: runtime GPU-building collect consumes queued meshes" {
   world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
 
   render_mesh_instances_extract_gpu_building_resource(
-    world,
-    source_world,
-    [render_mesh_instances_test_mesh_for_entity(entity, 130)],
-    false,
+    world, source_world, false,
   )
   render_mesh_instances_collect_gpu_building_resource(world)
 
