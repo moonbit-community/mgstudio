@@ -672,20 +672,41 @@ fn render_mesh_instances_test_mesh_for_entity(
 }
 
 ///|
+fn render_mesh_instances_test_insert_gpu_source_mesh(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+  mesh_id : Int,
+  visible? : Bool = true,
+) -> Unit {
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(mesh_id)),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(visible),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+}
+
+///|
 test "pbr: GPU-building extraction queues real meshes and stale removals" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
   let first = source_world.spawn()
   let second = source_world.spawn()
-  try! source_world.set_by_key(
-    first,
-    @mesh.ecs_key_mesh3d,
-    @mesh.Mesh3d::new(@asset.Handle::new(110)),
-  )
+  render_mesh_instances_test_insert_gpu_source_mesh(source_world, first, 110)
+  render_mesh_instances_test_insert_gpu_source_mesh(source_world, second, 111)
   try! source_world.set_by_key(
     second,
-    @mesh.ecs_key_mesh3d,
-    @mesh.Mesh3d::new(@asset.Handle::new(111)),
+    @visibility.ecs_key_no_cpu_culling,
+    @visibility.NoCpuCulling::NoCpuCulling(),
   )
   let stale_entity = @render.MainEntity::new(@core.Entity::new(99, 0))
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
@@ -726,7 +747,11 @@ test "pbr: GPU-building extraction queues real meshes and stale removals" {
 test "pbr: GPU-building extraction preserves previous input index and lightmap packing" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
-  let entity = @render.MainEntity::new(@core.Entity::new(12, 0))
+  let source_entity = source_world.spawn()
+  let entity = @render.MainEntity::new(source_entity)
+  render_mesh_instances_test_insert_gpu_source_mesh(
+    source_world, source_entity, 212,
+  )
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(entity, RenderMeshQueueData::new(212, 5U, true))
   world.insert_resource(RenderMeshInstances::resource(), instances)
@@ -736,18 +761,19 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
   let lightmap = Lightmap::new(@asset.Handle::new(7)).with_uv_rect(
     @math.Rect::new(@math.Vec2::new(0.25F, 0.5F), @math.Vec2::new(0.75F, 1.0F)),
   )
+  try! source_world.set_by_key(source_entity, ecs_key_lightmap, lightmap)
+  try! source_world.set_by_key(
+    source_entity,
+    ecs_key_previous_global_transform,
+    @pbr_prepass.PreviousGlobalTransform::from_global_transform(
+      @transform.GlobalTransform::identity(),
+    ),
+  )
 
   render_mesh_instances_extract_gpu_building_resource(
     world,
     source_world,
-    [
-      render_mesh_instances_test_mesh(
-        12,
-        212,
-        has_previous_transform=true,
-        lightmap=Some(lightmap),
-      ),
-    ],
+    [],
     false,
   )
 
@@ -772,7 +798,11 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
 test "pbr: GPU-building extraction skips unchanged known meshes until reextract" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
-  let entity = @render.MainEntity::new(@core.Entity::new(13, 0))
+  let source_entity = source_world.spawn()
+  let entity = @render.MainEntity::new(source_entity)
+  render_mesh_instances_test_insert_gpu_source_mesh(
+    source_world, source_entity, 213,
+  )
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(entity, RenderMeshQueueData::new(213, 6U, true))
   world.insert_resource(RenderMeshInstances::resource(), instances)
@@ -780,15 +810,24 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
   render_mesh_instances_extract_gpu_building_resource(
     world,
     source_world,
-    [render_mesh_instances_test_mesh(13, 213)],
+    [],
     false,
   )
-
   let queues = match
     world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
     Some(value) => value
     None => abort("missing GPU mesh queues")
   }
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
+
+  ignore(source_world.increment_change_tick())
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    source_world,
+    [],
+    false,
+  )
+
   debug_inspect(queues.borrow_local_mut().changed_len(), content="0")
 
   let reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
@@ -797,7 +836,7 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
   render_mesh_instances_extract_gpu_building_resource(
     world,
     source_world,
-    [render_mesh_instances_test_mesh(13, 213)],
+    [],
     false,
   )
   debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
@@ -809,11 +848,7 @@ test "pbr: GPU-building extraction queues source changed meshes" {
   let source_world = @ecs.World::new()
   let entity = source_world.spawn()
   ignore(source_world.increment_change_tick())
-  try! source_world.set_by_key(
-    entity,
-    @mesh.ecs_key_mesh3d,
-    @mesh.Mesh3d::new(@asset.Handle::new(214)),
-  )
+  render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 214)
   let main_entity = @render.MainEntity::new(entity)
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(main_entity, RenderMeshQueueData::new(214, 7U, true))
@@ -839,15 +874,11 @@ test "pbr: GPU-building extraction removes changed hidden meshes" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
   let entity = source_world.spawn()
-  try! source_world.set_by_key(
+  render_mesh_instances_test_insert_gpu_source_mesh(
+    source_world,
     entity,
-    @mesh.ecs_key_mesh3d,
-    @mesh.Mesh3d::new(@asset.Handle::new(215)),
-  )
-  try! source_world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    @visibility.ViewVisibility::new(false),
+    215,
+    visible=false,
   )
   let main_entity = @render.MainEntity::new(entity)
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
@@ -867,6 +898,65 @@ test "pbr: GPU-building extraction removes changed hidden meshes" {
     None => abort("missing GPU mesh queues")
   }
   debug_inspect(queues.borrow_local_mut().removed_len(), content="1")
+}
+
+///|
+test "pbr: GPU-building extraction keeps material-unready meshes for reextract" {
+  let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 216)
+  world.insert_resource(
+    RenderMeshInstances::resource(),
+    RenderMeshInstances::new(use_gpu_instance_buffer_builder=true),
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity,
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(2160)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(
+    mesh_allocator.allocate_render_mesh(
+      216,
+      @render_mesh.RenderMesh::new(vertex_count=3, indexed=true, index_count=3),
+      32,
+    ),
+  )
+  world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    source_world,
+    [],
+    false,
+  )
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU mesh queues")
+  }
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
+
+  render_mesh_instances_collect_gpu_building_resource(world)
+
+  let reextract = match
+    world.get_resource(MeshesToReextractNextFrame::resource()) {
+    Some(value) => value
+    None => abort("missing reextract resource")
+  }
+  debug_inspect(reextract.len(), content="1")
+  debug_inspect(
+    reextract.contains(@render.MainEntity::new(entity)),
+    content="true",
+  )
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing RenderMeshInstances")
+  }
+  debug_inspect(instances.len(), content="0")
 }
 
 ///|
@@ -932,11 +1022,7 @@ test "pbr: runtime GPU-building collect consumes queued meshes" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
   let entity = source_world.spawn()
-  try! source_world.set_by_key(
-    entity,
-    @mesh.ecs_key_mesh3d,
-    @mesh.Mesh3d::new(@asset.Handle::new(130)),
-  )
+  render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 130)
   world.insert_resource(
     RenderMeshInstances::resource(),
     RenderMeshInstances::new(use_gpu_instance_buffer_builder=true),

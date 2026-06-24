@@ -1946,18 +1946,140 @@ fn render_mesh_instances_pack_lightmap_uv_rect(
 }
 
 ///|
-fn render_mesh_instance_shared_for_gpu_building(
-  mesh : Mesh3dExtractedPayload,
+priv struct RenderMeshInstanceGpuExtractionRow {
+  entity : @core.Entity
+  view_visibility : @visibility.ViewVisibility
+  world_from_local : @math.Affine3
+  previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
+  lightmap : Lightmap?
+  aabb : @camera_primitives.Aabb?
+  mesh : @mesh.Mesh3d
+  tag : @mesh.MeshTag?
+  has_no_frustum_culling : Bool
+  has_not_shadow_receiver : Bool
+  has_transmitted_shadow_receiver : Bool
+  has_not_shadow_caster : Bool
+  has_no_automatic_batching : Bool
+  has_no_cpu_culling : Bool
+  render_layers : @camera_render_layers.RenderLayers?
+}
+
+///|
+fn render_mesh_instance_gpu_extraction_row_from_source(
+  source_world : @ecs.World,
+  entity : @core.Entity,
+) -> RenderMeshInstanceGpuExtractionRow? {
+  guard source_world.is_alive(entity) else { return None }
+  let view_visibility = match
+    (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+    Some(value) => value
+    None => return None
+  }
+  let global_transform = match
+    (try! source_world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(value) => value
+    None => return None
+  }
+  let mesh = match
+    (try! source_world.get_by_key(entity, @mesh.ecs_key_mesh3d)) {
+    Some(value) => value
+    None => return None
+  }
+  Some(RenderMeshInstanceGpuExtractionRow::{
+    entity,
+    view_visibility,
+    world_from_local: global_transform.affine(),
+    previous_global_transform: try! source_world.get_by_key(
+      entity, ecs_key_previous_global_transform,
+    ),
+    lightmap: try! source_world.get_by_key(entity, ecs_key_lightmap),
+    aabb: try! source_world.get_by_key(entity, @camera_primitives.ecs_key_aabb),
+    mesh,
+    tag: try! source_world.get_by_key(entity, @mesh.ecs_key_mesh_tag),
+    has_no_frustum_culling: (try! source_world.get_by_key(
+      entity, @visibility.ecs_key_no_frustum_culling,
+    ))
+    is Some(_),
+    has_not_shadow_receiver: (try! source_world.get_by_key(
+      entity, ecs_key_not_shadow_receiver,
+    ))
+    is Some(_),
+    has_transmitted_shadow_receiver: (try! source_world.get_by_key(
+      entity, ecs_key_transmitted_shadow_receiver,
+    ))
+    is Some(_),
+    has_not_shadow_caster: (try! source_world.get_by_key(
+      entity, ecs_key_not_shadow_caster,
+    ))
+    is Some(_),
+    has_no_automatic_batching: (try! source_world.get_by_key(
+      entity, @render_batching.ecs_key_no_automatic_batching,
+    ))
+    is Some(_),
+    has_no_cpu_culling: (try! source_world.get_by_key(
+      entity, @visibility.ecs_key_no_cpu_culling,
+    ))
+    is Some(_),
+    render_layers: try! source_world.get_by_key(
+      entity, @camera_render_layers.ecs_key_render_layers,
+    ),
+  })
+}
+
+///|
+fn render_mesh_instance_shared_for_gpu_extraction_row(
+  row : RenderMeshInstanceGpuExtractionRow,
 ) -> RenderMeshInstanceSharedFlat {
   let flags = RenderMeshInstanceFlags::from_extraction_components(
-    mesh.has_previous_transform,
-    mesh.has_previous_skin,
-    mesh.has_previous_morph,
-    mesh.has_not_shadow_caster,
-    mesh.has_no_automatic_batching,
-    mesh.has_no_cpu_culling,
+    row.previous_global_transform is Some(_),
+    false,
+    false,
+    row.has_not_shadow_caster,
+    row.has_no_automatic_batching,
+    row.has_no_cpu_culling,
   )
-  RenderMeshInstanceSharedFlat::new(mesh.mesh_id, tag=0U, flags~)
+  let tag = match row.tag {
+    Some(value) => value.value()
+    None => 0U
+  }
+  RenderMeshInstanceSharedFlat::new(row.mesh.mesh().id(), tag~, flags~)
+}
+
+///|
+fn render_mesh_instance_gpu_extraction_row_mesh_flags(
+  row : RenderMeshInstanceGpuExtractionRow,
+) -> UInt {
+  let mut flags = RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
+  if row.has_no_frustum_culling {
+    flags = flags | RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING
+  }
+  if !row.has_not_shadow_receiver {
+    flags = flags | RENDER3D_MESH_FLAGS_SHADOW_RECEIVER
+  }
+  if row.has_transmitted_shadow_receiver {
+    flags = flags | RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER
+  }
+  if row.world_from_local.matrix3.determinant() >= 0.0F {
+    flags = flags | RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
+  }
+  flags
+}
+
+///|
+fn render_mesh_instance_gpu_builder_from_extraction_row(
+  instances : RenderMeshInstancesGpu,
+  row : RenderMeshInstanceGpuExtractionRow,
+) -> RenderMeshInstanceGpuBuilder {
+  let entity = @render.MainEntity::new(row.entity)
+  let shared = render_mesh_instance_shared_for_gpu_extraction_row(row)
+  RenderMeshInstanceGpuBuilder::from_shared(
+    shared,
+    row.world_from_local,
+    render_mesh_instances_pack_lightmap_uv_rect(row.lightmap),
+    render_mesh_instances_gpu_previous_input_index(instances, entity, shared),
+    row.render_layers,
+    render_mesh_instance_gpu_extraction_row_mesh_flags(row),
+  )
 }
 
 ///|
@@ -1973,24 +2095,6 @@ fn render_mesh_instances_gpu_previous_input_index(
     Some(instance) => Some(instance.gpu_specific.current_uniform_index())
     None => None
   }
-}
-
-///|
-fn render_mesh_instance_gpu_builder_from_extracted(
-  instances : RenderMeshInstancesGpu,
-  extracted_mesh : ExtractedMesh3d,
-) -> RenderMeshInstanceGpuBuilder {
-  let entity = @render.MainEntity::new(extracted_mesh.entity.main_entity)
-  let payload = extracted_mesh.payload
-  let shared = render_mesh_instance_shared_for_gpu_building(payload)
-  RenderMeshInstanceGpuBuilder::from_shared(
-    shared,
-    payload.world_from_local,
-    render_mesh_instances_pack_lightmap_uv_rect(payload.lightmap),
-    render_mesh_instances_gpu_previous_input_index(instances, entity, shared),
-    Some(payload.layers),
-    render3d_mesh_flags(extracted_mesh),
-  )
 }
 
 ///|
@@ -2056,28 +2160,6 @@ fn render_mesh_instances_gpu_changed_mesh_set(
   render_mesh_instances_gpu_extend_changed_component_entities(
     source_world, @mesh.ecs_key_skinned_mesh, system_ticks, entities,
   )
-  entities
-}
-
-///|
-fn render_mesh_instances_gpu_hidden_changed_mesh_set(
-  source_world : @ecs.World,
-  system_ticks : @core.SystemTicks,
-) -> Map[UInt64, @render.MainEntity] {
-  let entities : Map[UInt64, @render.MainEntity] = {}
-  for
-    entity in source_world
-    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
-    .read() {
-    match
-      (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
-      Some(view_visibility) =>
-        if !view_visibility.is_visible() {
-          entities.set(entity.to_bits(), @render.MainEntity::new(entity))
-        }
-      None => ()
-    }
-  }
   entities
 }
 
@@ -2159,35 +2241,58 @@ fn render_mesh_instances_gpu_removed_mesh3d_set(
 
 ///|
 fn render_mesh_instances_gpu_all_meshes_query(
+  source_world : @ecs.World,
   meshes : Array[ExtractedMesh3d],
-) -> Map[UInt64, ExtractedMesh3d] {
-  let query : Map[UInt64, ExtractedMesh3d] = {}
+) -> Map[UInt64, RenderMeshInstanceGpuExtractionRow] {
+  let query : Map[UInt64, RenderMeshInstanceGpuExtractionRow] = {}
   for extracted_mesh in meshes {
-    if extracted_mesh.payload.mesh_id > 0 {
-      query.set(extracted_mesh.entity.main_entity.to_bits(), extracted_mesh)
+    let entity = extracted_mesh.entity.main_entity
+    match
+      render_mesh_instance_gpu_extraction_row_from_source(source_world, entity) {
+      Some(row) => query.set(entity.to_bits(), row)
+      None => ()
     }
   }
   query
 }
 
 ///|
-fn render_mesh_instances_gpu_queue_extracted_mesh(
+fn render_mesh_instances_gpu_all_meshes_query_get(
+  source_world : @ecs.World,
+  all_meshes_query : Map[UInt64, RenderMeshInstanceGpuExtractionRow],
+  entity : @render.MainEntity,
+) -> RenderMeshInstanceGpuExtractionRow? {
+  match all_meshes_query.get(entity.id().to_bits()) {
+    Some(row) => Some(row)
+    None =>
+      render_mesh_instance_gpu_extraction_row_from_source(
+        source_world,
+        entity.id(),
+      )
+  }
+}
+
+///|
+fn render_mesh_instances_gpu_queue_extraction_row(
   queue : RenderMeshInstanceGpuQueue,
   gpu_instances : RenderMeshInstancesGpu,
-  extracted_mesh : ExtractedMesh3d,
+  row : RenderMeshInstanceGpuExtractionRow,
   any_gpu_culling : Bool,
 ) -> Unit {
-  let payload = extracted_mesh.payload
-  let entity = @render.MainEntity::new(extracted_mesh.entity.main_entity)
-  let builder = render_mesh_instance_gpu_builder_from_extracted(
-    gpu_instances, extracted_mesh,
+  let entity = @render.MainEntity::new(row.entity)
+  if !row.view_visibility.is_visible() {
+    queue.remove(entity, any_gpu_culling)
+    return
+  }
+  let builder = render_mesh_instance_gpu_builder_from_extraction_row(
+    gpu_instances, row,
   )
   let culling_data = if any_gpu_culling {
-    Some(MeshCullingData::new(payload.aabb))
+    Some(MeshCullingData::new(row.aabb))
   } else {
     None
   }
-  queue.push(entity, builder, culling_data, payload.has_no_cpu_culling)
+  queue.push(entity, builder, culling_data, row.has_no_cpu_culling)
 }
 
 ///|
@@ -2409,11 +2514,10 @@ fn render_mesh_instances_extract_gpu_building_resource(
     source_world, system_ticks,
   )
   queues.init(any_gpu_culling)
-  let all_meshes_query = render_mesh_instances_gpu_all_meshes_query(meshes)
-  let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
-    source_world, system_ticks,
+  let all_meshes_query = render_mesh_instances_gpu_all_meshes_query(
+    source_world, meshes,
   )
-  let hidden_changed_meshes = render_mesh_instances_gpu_hidden_changed_mesh_set(
+  let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
     source_world, system_ticks,
   )
   let changed_entities : Map[UInt64, @render.MainEntity] = {}
@@ -2421,27 +2525,29 @@ fn render_mesh_instances_extract_gpu_building_resource(
   let queue = queues.borrow_local_mut()
   for item in changed_meshes_query.values() {
     let bits = item.id().to_bits()
-    match all_meshes_query.get(bits) {
-      Some(extracted_mesh) => {
-        render_mesh_instances_gpu_queue_extracted_mesh(
-          queue, gpu_instances, extracted_mesh, any_gpu_culling,
+    match
+      render_mesh_instances_gpu_all_meshes_query_get(
+        source_world, all_meshes_query, item,
+      ) {
+      Some(row) => {
+        render_mesh_instances_gpu_queue_extraction_row(
+          queue, gpu_instances, row, any_gpu_culling,
         )
         changed_entities.set(bits, item)
       }
-      None =>
-        if hidden_changed_meshes.contains(bits) {
-          queue.remove(item, any_gpu_culling)
-          changed_entities.set(bits, item)
-        }
+      None => ()
     }
   }
   for item in potential_reextraction_set.values() {
     let bits = item.id().to_bits()
     if !changed_entities.contains(bits) {
-      match all_meshes_query.get(bits) {
-        Some(extracted_mesh) =>
-          render_mesh_instances_gpu_queue_extracted_mesh(
-            queue, gpu_instances, extracted_mesh, any_gpu_culling,
+      match
+        render_mesh_instances_gpu_all_meshes_query_get(
+          source_world, all_meshes_query, item,
+        ) {
+        Some(row) =>
+          render_mesh_instances_gpu_queue_extraction_row(
+            queue, gpu_instances, row, any_gpu_culling,
           )
         None => ()
       }
