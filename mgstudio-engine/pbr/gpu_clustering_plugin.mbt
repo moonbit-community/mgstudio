@@ -3003,6 +3003,15 @@ fn gpu_clustering_register_embedded_assets() -> Unit {
   @shader_source.load_embedded_shader_source(
     "pbr/cluster/cluster.wgsl", pbr_cluster_wgsl_source,
   )
+  @shader_source.load_embedded_shader_source(
+    "pbr/cluster/cluster_allocate.wgsl", pbr_cluster_allocate_wgsl_source,
+  )
+  @shader_source.load_embedded_shader_source(
+    "pbr/cluster/cluster_raster.wgsl", pbr_cluster_raster_wgsl_source,
+  )
+  @shader_source.load_embedded_shader_source(
+    "pbr/cluster/cluster_z_slice.wgsl", pbr_cluster_z_slice_wgsl_source,
+  )
   @asset.register_embedded_asset_virtual_bytes(
     "pbr/cluster/cluster.wgsl",
     @asset.asset_text_to_bytes(pbr_cluster_wgsl_source),
