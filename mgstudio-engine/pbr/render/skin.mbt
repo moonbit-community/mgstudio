@@ -853,6 +853,19 @@ pub fn render3d_prepared_skin_binding_keys(
 }
 
 ///|
+pub fn SkinUniforms::skin_byte_offset(
+  self : SkinUniforms,
+  entity : @core.Entity,
+) -> UInt? {
+  let (current_offset, _) = render3d_prepared_skin_binding_keys(self, entity)
+  if current_offset < 0 {
+    None
+  } else {
+    Some(current_offset.reinterpret_as_uint())
+  }
+}
+
+///|
 pub fn skins_use_uniform_buffers() -> Bool {
   false
 }

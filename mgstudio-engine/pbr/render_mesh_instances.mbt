@@ -608,6 +608,92 @@ pub fn RenderMeshInstanceGpuBuilder::shared(
 }
 
 ///|
+pub fn RenderMeshInstanceGpuBuilder::prepare(
+  self : RenderMeshInstanceGpuBuilder,
+  entity : @render.MainEntity,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  mesh_material_ids : RenderMaterialInstances,
+  render_material_bindings : RenderMaterialBindings,
+  render_lightmaps : @lightmap.RenderLightmaps,
+  skin_uniforms : @pbr_render.SkinUniforms,
+  morph_indices : @pbr_render.MorphIndices,
+  timestamp : UInt,
+) -> RenderMeshInstanceGpuPrepared? {
+  let material_id = mesh_material_ids.mesh_material(entity.id())
+  let material_binding_id = if material_id != DUMMY_MESH_MATERIAL_ID {
+    match render_material_bindings.get(material_id) {
+      Some(binding) => binding
+      None => return None
+    }
+  } else {
+    MaterialBindingId::MaterialBindingId()
+  }
+  let (first_vertex_index, vertex_count) = match
+    mesh_allocator.mesh_vertex_slice(self.shared.mesh_asset_id()) {
+    Some(vertex_slice) =>
+      (
+        vertex_slice.start().reinterpret_as_uint(),
+        (vertex_slice.end() - vertex_slice.start()).reinterpret_as_uint(),
+      )
+    None => (0U, 0U)
+  }
+  let (mesh_is_indexed, first_index_index, index_count) = match
+    mesh_allocator.mesh_index_slice(self.shared.mesh_asset_id()) {
+    Some(index_slice) =>
+      (
+        true,
+        index_slice.start().reinterpret_as_uint(),
+        (index_slice.end() - index_slice.start()).reinterpret_as_uint(),
+      )
+    None => (false, 0U, 0U)
+  }
+  let current_skin_index = match skin_uniforms.skin_byte_offset(entity.id()) {
+    Some(index) => index
+    None => mesh_input_uniform_invalid_index()
+  }
+  let render_lightmap = render_lightmaps.get(entity.id())
+  let lightmap_slot = match render_lightmap {
+    Some(lightmap) => lightmap.slot_index.to_int().reinterpret_as_uint()
+    None => 0xFFFFU
+  }
+  let lightmap_slab_index = match render_lightmap {
+    Some(lightmap) => Some(lightmap.slab_index.to_int())
+    None => None
+  }
+  let morph_descriptor_index = match
+    morph_indices.morph_descriptor_index(entity.id()) {
+    Some(index) => index
+    None => mesh_input_uniform_invalid_index()
+  }
+  let material_slot = material_binding_id.slot().to_int().reinterpret_as_uint()
+  let material_and_lightmap_bind_group_slot = material_slot |
+    (lightmap_slot << 16)
+  let shared = RenderMeshInstanceSharedFlat::{
+    ..self.shared,
+    material_bindings_index: material_binding_id,
+    lightmap_slab_index,
+  }
+  let mesh_input_uniform = MeshInputUniform::new(
+    world_from_local=self.world_from_local,
+    lightmap_uv_rect=self.lightmap_uv_rect,
+    flags=self.mesh_flags,
+    timestamp~,
+    first_vertex_index~,
+    first_index_index~,
+    index_count=if mesh_is_indexed { index_count } else { vertex_count },
+    current_skin_index~,
+    material_and_lightmap_bind_group_slot~,
+    tag=shared.tag(),
+    morph_descriptor_index~,
+  )
+  Some(RenderMeshInstanceGpuPrepared::{
+    shared,
+    mesh_input_uniform,
+    render_layers: self.render_layers,
+  })
+}
+
+///|
 pub struct RenderMeshInstanceGpuPrepared {
   shared : RenderMeshInstanceSharedFlat
   mesh_input_uniform : MeshInputUniform

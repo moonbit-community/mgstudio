@@ -182,6 +182,117 @@ test "pbr: remove_mesh_input_uniform removes GPU instance and frees buffer slot"
 }
 
 ///|
+test "pbr: RenderMeshInstanceGpuBuilder prepare waits for non-dummy material bindings" {
+  let entity = @render.MainEntity::new(@core.Entity::new(26, 1))
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(12)),
+  )
+  let builder = RenderMeshInstanceGpuBuilder::new(
+    RenderMeshQueueData::new(90, 0U, true),
+  )
+
+  debug_inspect(
+    builder.prepare(
+      entity,
+      @render_mesh.MeshAllocator::new(),
+      material_instances,
+      RenderMaterialBindings::RenderMaterialBindings(),
+      @lightmap.RenderLightmaps::RenderLightmaps(),
+      @pbr_render.SkinUniforms::new(),
+      @pbr_render.MorphIndices::new(),
+      3U,
+    )
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "pbr: RenderMeshInstanceGpuBuilder prepare builds Bevy mesh input uniform" {
+  let entity = @render.MainEntity::new(@core.Entity::new(27, 1))
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(12)),
+  )
+  let material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  material_bindings.set(
+    12,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(2),
+      MaterialBindGroupSlot::new(11),
+    ),
+  )
+  let allocator = @render_mesh.MeshAllocator::new()
+  ignore(
+    allocator.allocate(
+      90,
+      96,
+      @render_mesh.MeshAllocatorElementLayout::vertex(32),
+    ),
+  )
+  ignore(
+    allocator.allocate(
+      90,
+      24,
+      @render_mesh.MeshAllocatorElementLayout::index_u32(),
+    ),
+  )
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
+  ignore(
+    render_lightmaps.insert_lightmap(
+      entity.id(),
+      @lightmap.Lightmap::new(@asset.Handle::new(7)),
+    ),
+  )
+  let morph_indices = @pbr_render.MorphIndices::new()
+  morph_indices.current.set(entity.id().to_bits(), 33U)
+  let flags = RenderMeshInstanceFlags::no_cpu_culling()
+  let builder = RenderMeshInstanceGpuBuilder::from_shared(
+    RenderMeshInstanceSharedFlat::new(90, tag=8U),
+    @math.Affine3::identity(),
+    @math.UVec2::new(4, 5),
+    None,
+    None,
+    flags.bits(),
+  )
+  let prepared = match
+    builder.prepare(
+      entity,
+      allocator,
+      material_instances,
+      material_bindings,
+      render_lightmaps,
+      @pbr_render.SkinUniforms::new(),
+      morph_indices,
+      44U,
+    ) {
+    Some(value) => value
+    None => abort("expected prepared mesh instance")
+  }
+  let uniform = prepared.mesh_input_uniform()
+
+  debug_inspect(
+    prepared.shared.material_bindings_index().slot().to_int(),
+    content="11",
+  )
+  debug_inspect(prepared.shared.lightmap_slab_index(), content="Some(0)")
+  debug_inspect(uniform.timestamp, content="44")
+  debug_inspect(uniform.flags, content="32")
+  debug_inspect(uniform.first_vertex_index, content="0")
+  debug_inspect(uniform.first_index_index, content="0")
+  debug_inspect(uniform.index_count, content="6")
+  debug_inspect(uniform.current_skin_index, content="4294967295")
+  debug_inspect(uniform.material_and_lightmap_bind_group_slot, content="11")
+  debug_inspect(uniform.tag(), content="8")
+  debug_inspect(uniform.morph_descriptor_index, content="33")
+}
+
+///|
 test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy CPU culling state" {
   let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
   let entity = @render.MainEntity::new(@core.Entity::new(30, 1))

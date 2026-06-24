@@ -986,6 +986,7 @@ pub struct MorphIndices {
   mut current : Map[UInt64, UInt]
   mut prev : Map[UInt64, UInt]
 }
+pub fn MorphIndices::morph_descriptor_index(Self, @core.Entity) -> UInt?
 pub fn MorphIndices::new() -> Self
 pub impl @app.Resource for MorphIndices
 
@@ -1347,6 +1348,7 @@ pub struct SkinUniforms {
   mut total_joints : Int
 }
 pub fn SkinUniforms::new() -> Self
+pub fn SkinUniforms::skin_byte_offset(Self, @core.Entity) -> UInt?
 pub impl @app.Resource for SkinUniforms
 
 pub struct SpecializedShadowMaterialPipelineCache {

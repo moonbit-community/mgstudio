@@ -97,6 +97,21 @@ pub fn morph_indices_swap_and_reset(morph_indices_value : MorphIndices) -> Unit 
 }
 
 ///|
+fn morph_indices_entity_key(entity : @core.Entity) -> UInt64 {
+  let hi = entity.id.reinterpret_as_uint().to_uint64()
+  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
+  (hi << 32) | lo
+}
+
+///|
+pub fn MorphIndices::morph_descriptor_index(
+  self : MorphIndices,
+  entity : @core.Entity,
+) -> UInt? {
+  self.current.get(morph_indices_entity_key(entity))
+}
+
+///|
 pub fn morph_uniforms_swap_and_reset(
   morph_uniforms_value : MorphUniforms,
 ) -> Unit {

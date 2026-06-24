@@ -2175,6 +2175,7 @@ pub struct RenderMeshInstanceGpuBuilder {
 }
 pub fn RenderMeshInstanceGpuBuilder::from_shared(RenderMeshInstanceSharedFlat, @math.Affine3, @math.UVec2, UInt?, @render_layers.RenderLayers?, UInt) -> Self
 pub fn RenderMeshInstanceGpuBuilder::new(RenderMeshQueueData) -> Self
+pub fn RenderMeshInstanceGpuBuilder::prepare(Self, @Milky2018/mgstudio/render.MainEntity, @Milky2018/mgstudio/render/mesh.MeshAllocator, RenderMaterialInstances, RenderMaterialBindings, @lightmap.RenderLightmaps, @Milky2018/mgstudio/pbr/render.SkinUniforms, @Milky2018/mgstudio/pbr/render.MorphIndices, UInt) -> RenderMeshInstanceGpuPrepared?
 pub fn RenderMeshInstanceGpuBuilder::render_mesh_queue_data(Self) -> RenderMeshQueueData
 pub fn RenderMeshInstanceGpuBuilder::shared(Self) -> RenderMeshInstanceSharedFlat
 
