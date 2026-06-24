@@ -696,7 +696,7 @@ fn render_mesh_instances_test_insert_gpu_source_mesh(
 }
 
 ///|
-test "pbr: GPU-building extraction queues real meshes and stale removals" {
+test "pbr: GPU-building extraction does not remove stale meshes without source removal" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
   let first = source_world.spawn()
@@ -737,7 +737,7 @@ test "pbr: GPU-building extraction queues real meshes and stale removals" {
     GpuCulling(gpu_queue) => {
       debug_inspect(gpu_queue.changed_cpu_culling.length(), content="1")
       debug_inspect(gpu_queue.changed_gpu_culling.length(), content="1")
-      debug_inspect(gpu_queue.removed.length(), content="1")
+      debug_inspect(gpu_queue.removed.length(), content="0")
     }
     _ => abort("expected GPU culling queue")
   }

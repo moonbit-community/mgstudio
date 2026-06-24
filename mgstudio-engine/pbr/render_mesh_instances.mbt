@@ -2521,7 +2521,6 @@ fn render_mesh_instances_extract_gpu_building_resource(
     source_world, system_ticks,
   )
   let changed_entities : Map[UInt64, @render.MainEntity] = {}
-  let queued_removed : Map[UInt64, Bool] = {}
   let queue = queues.borrow_local_mut()
   for item in changed_meshes_query.values() {
     let bits = item.id().to_bits()
@@ -2557,16 +2556,6 @@ fn render_mesh_instances_extract_gpu_building_resource(
     let bits = item.id().to_bits()
     if !changed_entities.contains(bits) && !meshes_to_reextract.contains(item) {
       queue.remove(item, any_gpu_culling)
-      queued_removed.set(bits, true)
-    }
-  }
-  for entity in gpu_instances.keys() {
-    let bits = entity.id().to_bits()
-    if !all_meshes_query.contains(bits) &&
-      !changed_entities.contains(bits) &&
-      !meshes_to_reextract.contains(entity) &&
-      !queued_removed.contains(bits) {
-      queue.remove(entity, any_gpu_culling)
     }
   }
   render_mesh_instance_gpu_extraction_set_last_source_change_tick(
