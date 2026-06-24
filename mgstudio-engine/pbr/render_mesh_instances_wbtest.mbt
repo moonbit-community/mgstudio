@@ -591,3 +591,139 @@ test "pbr: RenderMeshInstanceFlags mirrors Bevy extraction flags" {
     content="false",
   )
 }
+
+///|
+fn render_mesh_instances_test_mesh(
+  entity_id : Int,
+  mesh_id : Int,
+  has_no_cpu_culling? : Bool = false,
+  has_previous_transform? : Bool = false,
+  lightmap? : Lightmap? = None,
+) -> ExtractedMesh3d {
+  let transform = @transform.Transform::identity()
+  let world_from_local = @math.Affine3::identity()
+  ExtractedMesh3d::{
+    entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
+    payload: Mesh3dExtractedPayload::{
+      mesh_handle: @asset.Handle::new(mesh_id),
+      mesh_id,
+      mesh_topology_kind: 0,
+      mesh_is_indexed: true,
+      mesh_preprocess_static: None,
+      world_from_local,
+      previous_world_from_local: world_from_local,
+      transform,
+      previous_transform: transform,
+      visibility_range: None,
+      aabb: None,
+      aabb_center_world: None,
+      material: @material.StandardMaterial::StandardMaterial(),
+      material_extension: None,
+      material_properties: @material.MaterialProperties::MaterialProperties(),
+      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_vertex_shader_path: None,
+      material_fragment_shader_path: None,
+      material_pipeline_id: None,
+      lightmap,
+      is_forward_decal: false,
+      forward_decal_material_ext: None,
+      clustered_decal: None,
+      has_not_shadow_caster: false,
+      has_not_shadow_receiver: false,
+      has_transmitted_shadow_receiver: false,
+      has_no_frustum_culling: false,
+      has_no_automatic_batching: false,
+      has_no_cpu_culling,
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      has_no_wireframe: false,
+      wireframe_asset_id: None,
+      wireframe_material: None,
+      wireframe_color: None,
+      wireframe_line_width: None,
+      wireframe_topology: None,
+      skinning_key_hi: -1,
+      has_previous_transform,
+      has_previous_skin: false,
+      has_previous_morph: false,
+      morph_weights_index: -1,
+      previous_morph_weights_index: -1,
+      morph_targets_texture_id: -1,
+      instance_vertex_buffer_id: -1,
+      motion_vector_enabled: false,
+    },
+  }
+}
+
+///|
+test "pbr: GPU-building extraction queues real meshes and stale removals" {
+  let world = @ecs.World::new()
+  let stale_entity = @render.MainEntity::new(@core.Entity::new(99, 0))
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  instances.insert(stale_entity, RenderMeshQueueData::new(199, 3U, true))
+  world.insert_resource(RenderMeshInstances::resource(), instances)
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    [
+      render_mesh_instances_test_mesh(10, 110),
+      render_mesh_instances_test_mesh(11, 111, has_no_cpu_culling=true),
+    ],
+    true,
+  )
+
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU mesh queues")
+  }
+  let queue = queues.borrow_local_mut()
+  match queue.state() {
+    GpuCulling(gpu_queue) => {
+      debug_inspect(gpu_queue.changed_cpu_culling.length(), content="1")
+      debug_inspect(gpu_queue.changed_gpu_culling.length(), content="1")
+      debug_inspect(gpu_queue.removed.length(), content="1")
+    }
+    _ => abort("expected GPU culling queue")
+  }
+}
+
+///|
+test "pbr: GPU-building extraction preserves previous input index and lightmap packing" {
+  let world = @ecs.World::new()
+  let entity = @render.MainEntity::new(@core.Entity::new(12, 0))
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  instances.insert(entity, RenderMeshQueueData::new(212, 5U, true))
+  world.insert_resource(RenderMeshInstances::resource(), instances)
+  let lightmap = Lightmap::new(@asset.Handle::new(7)).with_uv_rect(
+    @math.Rect::new(@math.Vec2::new(0.25F, 0.5F), @math.Vec2::new(0.75F, 1.0F)),
+  )
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    [
+      render_mesh_instances_test_mesh(
+        12,
+        212,
+        has_previous_transform=true,
+        lightmap=Some(lightmap),
+      ),
+    ],
+    false,
+  )
+
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU mesh queues")
+  }
+  match queues.borrow_local_mut().state() {
+    CpuCulling(cpu_queue) => {
+      debug_inspect(cpu_queue.changed.length(), content="1")
+      let (_, builder) = cpu_queue.changed[0]
+      debug_inspect(builder.previous_input_index, content="Some(5)")
+      debug_inspect(builder.lightmap_uv_rect.x, content="-2147467264")
+      debug_inspect(builder.lightmap_uv_rect.y, content="-16385")
+    }
+    _ => abort("expected CPU culling queue")
+  }
+}

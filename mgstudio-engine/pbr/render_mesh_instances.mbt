@@ -1823,6 +1823,186 @@ fn render_mesh_queue_data_for_cpu_building(
 }
 
 ///|
+fn render_mesh_instances_unorm16(value : Float) -> UInt {
+  let rounded = (value * 65535.0F).round().to_int()
+  if rounded <= 0 {
+    0U
+  } else if rounded >= 0xFFFF {
+    0xFFFFU
+  } else {
+    rounded.reinterpret_as_uint()
+  }
+}
+
+///|
+fn render_mesh_instances_pack_lightmap_uv_rect(
+  lightmap : Lightmap?,
+) -> @math.UVec2 {
+  match lightmap {
+    Some(lightmap) => {
+      let rect_min = lightmap.uv_rect.min()
+      let rect_max = lightmap.uv_rect.max()
+      let x = render_mesh_instances_unorm16(rect_min.x)
+      let y = render_mesh_instances_unorm16(rect_min.y)
+      let z = render_mesh_instances_unorm16(rect_max.x)
+      let w = render_mesh_instances_unorm16(rect_max.y)
+      @math.UVec2::new(
+        (x | (y << 16)).reinterpret_as_int(),
+        (z | (w << 16)).reinterpret_as_int(),
+      )
+    }
+    None => @math.UVec2::zero()
+  }
+}
+
+///|
+fn render_mesh_instance_shared_for_gpu_building(
+  mesh : Mesh3dExtractedPayload,
+) -> RenderMeshInstanceSharedFlat {
+  let flags = RenderMeshInstanceFlags::from_extraction_components(
+    mesh.has_previous_transform,
+    mesh.has_previous_skin,
+    mesh.has_previous_morph,
+    mesh.has_not_shadow_caster,
+    mesh.has_no_automatic_batching,
+    mesh.has_no_cpu_culling,
+  )
+  RenderMeshInstanceSharedFlat::new(mesh.mesh_id, tag=0U, flags~)
+}
+
+///|
+fn render_mesh_instances_gpu_previous_input_index(
+  instances : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+  shared : RenderMeshInstanceSharedFlat,
+) -> UInt? {
+  if !shared.flags().contains(RenderMeshInstanceFlags::has_previous_transform()) {
+    return None
+  }
+  match instances.entries.get(entity.id().to_bits()) {
+    Some(instance) => Some(instance.gpu_specific.current_uniform_index())
+    None => None
+  }
+}
+
+///|
+fn render_mesh_instance_gpu_builder_from_extracted(
+  instances : RenderMeshInstancesGpu,
+  extracted_mesh : ExtractedMesh3d,
+) -> RenderMeshInstanceGpuBuilder {
+  let entity = @render.MainEntity::new(extracted_mesh.entity.main_entity)
+  let payload = extracted_mesh.payload
+  let shared = render_mesh_instance_shared_for_gpu_building(payload)
+  RenderMeshInstanceGpuBuilder::from_shared(
+    shared,
+    payload.world_from_local,
+    render_mesh_instances_pack_lightmap_uv_rect(payload.lightmap),
+    render_mesh_instances_gpu_previous_input_index(instances, entity, shared),
+    Some(payload.layers),
+    render3d_mesh_flags(extracted_mesh),
+  )
+}
+
+///|
+fn render_mesh_instances_gpu_resource_or_insert(
+  world : @ecs.World,
+) -> RenderMeshInstances {
+  match world.get_resource(RenderMeshInstances::resource()) {
+    Some(instances) =>
+      match instances {
+        GpuBuilding(_) => instances
+        CpuBuilding(_) => {
+          let next = RenderMeshInstances::new(
+            use_gpu_instance_buffer_builder=true,
+          )
+          world.insert_resource(RenderMeshInstances::resource(), next)
+          match world.get_resource(RenderMeshInstances::resource()) {
+            Some(value) => value
+            None => abort("RenderMeshInstances resource missing after insert")
+          }
+        }
+      }
+    None => {
+      let next = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+      world.insert_resource(RenderMeshInstances::resource(), next)
+      match world.get_resource(RenderMeshInstances::resource()) {
+        Some(value) => value
+        None => abort("RenderMeshInstances resource missing after insert")
+      }
+    }
+  }
+}
+
+///|
+fn render_mesh_instance_gpu_queues_or_insert(
+  world : @ecs.World,
+) -> RenderMeshInstanceGpuQueues {
+  match world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(queues) => queues
+    None => {
+      let queues = RenderMeshInstanceGpuQueues::RenderMeshInstanceGpuQueues()
+      world.insert_resource(RenderMeshInstanceGpuQueues::resource(), queues)
+      queues
+    }
+  }
+}
+
+///|
+fn meshes_to_reextract_next_frame_or_insert(
+  world : @ecs.World,
+) -> MeshesToReextractNextFrame {
+  match world.get_resource(MeshesToReextractNextFrame::resource()) {
+    Some(value) => value
+    None => {
+      let value = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+      world.insert_resource(MeshesToReextractNextFrame::resource(), value)
+      value
+    }
+  }
+}
+
+///|
+fn render_mesh_instances_extract_gpu_building_resource(
+  world : @ecs.World,
+  meshes : Array[ExtractedMesh3d],
+  any_gpu_culling : Bool,
+) -> Unit {
+  let instances = render_mesh_instances_gpu_resource_or_insert(world)
+  let gpu_instances = match instances {
+    GpuBuilding(value) => value
+    CpuBuilding(_) => return
+  }
+  let queues = render_mesh_instance_gpu_queues_or_insert(world)
+  let meshes_to_reextract = meshes_to_reextract_next_frame_or_insert(world)
+  queues.init(any_gpu_culling)
+  let seen : Map[UInt64, @render.MainEntity] = {}
+  let queue = queues.borrow_local_mut()
+  for extracted_mesh in meshes {
+    let payload = extracted_mesh.payload
+    if payload.mesh_id <= 0 {
+      continue
+    }
+    let entity = @render.MainEntity::new(extracted_mesh.entity.main_entity)
+    seen.set(entity.id().to_bits(), entity)
+    let builder = render_mesh_instance_gpu_builder_from_extracted(
+      gpu_instances, extracted_mesh,
+    )
+    let culling_data = if any_gpu_culling {
+      Some(MeshCullingData::new(payload.aabb))
+    } else {
+      None
+    }
+    queue.push(entity, builder, culling_data, payload.has_no_cpu_culling)
+  }
+  for entity in gpu_instances.keys() {
+    if !seen.contains(entity.id().to_bits()) &&
+      !meshes_to_reextract.contains(entity) {
+      queue.remove(entity, any_gpu_culling)
+    }
+  }
+}
+
+///|
 fn render_mesh_instances_for_cpu_building(
   meshes : Array[ExtractedMesh3d],
 ) -> RenderMeshInstances {

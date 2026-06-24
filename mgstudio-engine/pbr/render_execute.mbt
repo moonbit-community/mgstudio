@@ -737,7 +737,11 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
       world, mesh_runtime_state_value, cameras, meshes,
     )
     if frame_config.gpu_instance_buffer_builder_enabled {
-      render_mesh_instances_remove_cpu_building_resource(world)
+      render_mesh_instances_extract_gpu_building_resource(
+        world,
+        meshes,
+        frame_config.gpu_culling_supported,
+      )
     } else {
       render_mesh_instances_update_cpu_building_resource(world, meshes)
     }
