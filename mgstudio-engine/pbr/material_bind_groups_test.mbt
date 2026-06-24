@@ -82,6 +82,31 @@ test "render3d: allocator exposes slab and allocation counters" {
 }
 
 ///|
+test "render3d: material allocator allocates bindless material bindings only" {
+  let bindless = MaterialBindGroupAllocator::Bindless(
+    MaterialBindGroupBindlessAllocator::with_slab_capacity(2),
+  )
+  match bindless.allocate_bindless_material(10) {
+    Some(binding) => {
+      debug_inspect(binding.group().to_int(), content="0")
+      debug_inspect(binding.slot().to_int(), content="0")
+    }
+    None => abort("expected bindless material binding")
+  }
+  match bindless.allocate_bindless_material(11) {
+    Some(binding) => debug_inspect(binding.slot().to_int(), content="1")
+    None => abort("expected second bindless material binding")
+  }
+  debug_inspect(bindless.allocate_bindless_material(12) is None, content="true")
+
+  let non_bindless = MaterialBindGroupAllocator::default_non_bindless()
+  debug_inspect(
+    non_bindless.allocate_bindless_material(13) is None,
+    content="true",
+  )
+}
+
+///|
 test "render3d: material uses bindless resources follows bevy support and slot rule" {
   debug_inspect(material_uses_bindless_resources(true, Some(2)), content="true")
   debug_inspect(

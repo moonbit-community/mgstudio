@@ -1080,6 +1080,14 @@ pub fn prepare_mesh3d_material_bind_group(
 }
 
 ///|
+pub fn frame_count() -> UInt {
+  match ensure_backend() {
+    Some(backend) => backend.frame_count
+    None => 0U
+  }
+}
+
+///|
 pub fn prepare_mesh3d_clustered_decals(
   decal_words~ : Array[UInt],
   texture_ids~ : Array[Int],

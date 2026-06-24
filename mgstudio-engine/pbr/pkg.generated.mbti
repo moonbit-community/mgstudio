@@ -354,6 +354,8 @@ pub let ecs_key_render_material_bindings : @ecs.ResourceKey[RenderMaterialBindin
 
 pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
 
+pub let ecs_key_render_mesh_instance_gpu_batched_instance_buffers : @ecs.ResourceKey[RenderMeshInstanceGpuBatchedInstanceBuffers]
+
 pub let ecs_key_render_mesh_instance_gpu_queues : @ecs.ResourceKey[RenderMeshInstanceGpuQueues]
 
 pub let ecs_key_render_mesh_instances : @ecs.ResourceKey[RenderMeshInstances]
@@ -1591,6 +1593,7 @@ pub(all) enum MaterialBindGroupAllocator {
   Bindless(MaterialBindGroupBindlessAllocator)
   NonBindless(MaterialBindGroupNonBindlessAllocator)
 }
+pub fn MaterialBindGroupAllocator::allocate_bindless_material(Self, Int) -> MaterialBindingId?
 pub fn MaterialBindGroupAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupAllocator::default_bindless() -> Self
 pub fn MaterialBindGroupAllocator::default_non_bindless() -> Self
@@ -2196,6 +2199,13 @@ pub fn RenderMeshInstanceGpu::from_queue_data(RenderMeshQueueData) -> Self
 pub fn RenderMeshInstanceGpu::mesh_asset_id(Self) -> Int
 pub fn RenderMeshInstanceGpu::new(RenderMeshInstanceSharedFlat, gpu_specific? : RenderMeshInstanceGpuFlat, render_layers? : @render_layers.RenderLayers?) -> Self
 pub fn RenderMeshInstanceGpu::render_mesh_queue_data(Self) -> RenderMeshQueueData
+
+pub struct RenderMeshInstanceGpuBatchedInstanceBuffers {
+  buffers : @batching.BatchedInstanceBuffers[Unit, MeshInputUniform]
+}
+pub fn RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers() -> Self
+pub fn RenderMeshInstanceGpuBatchedInstanceBuffers::current_input_len(Self) -> Int
+pub impl @app.Resource for RenderMeshInstanceGpuBatchedInstanceBuffers
 
 pub struct RenderMeshInstanceGpuBuilder {
   shared : RenderMeshInstanceSharedFlat

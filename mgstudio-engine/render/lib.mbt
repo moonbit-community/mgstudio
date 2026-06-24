@@ -2470,6 +2470,11 @@ pub fn host_gpu_mesh_allocator_snapshot() -> @render_mesh.MeshAllocator? {
 }
 
 ///|
+pub fn host_gpu_frame_count() -> UInt {
+  @renderer.frame_count()
+}
+
+///|
 pub fn host_gpu_update_mesh3d_xyznuvrgba(
   mesh_id~ : Int,
   vertices_xyznuvrgba~ : Array[Float],

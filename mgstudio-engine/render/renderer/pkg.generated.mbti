@@ -247,6 +247,8 @@ pub fn execute_queued_line_gizmo_phase_draws(phase_kind~ : Int, view_layers_mask
 
 pub fn frame_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
+pub fn frame_count() -> UInt
+
 pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix

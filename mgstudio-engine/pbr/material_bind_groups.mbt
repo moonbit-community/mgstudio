@@ -777,6 +777,17 @@ pub fn MaterialBindGroupAllocator::allocations(
 }
 
 ///|
+pub fn MaterialBindGroupAllocator::allocate_bindless_material(
+  self : MaterialBindGroupAllocator,
+  material_id : Int,
+) -> MaterialBindingId? {
+  match self {
+    Bindless(allocator) => allocator.allocate(material_id)
+    NonBindless(_) => None
+  }
+}
+
+///|
 pub struct MaterialBindGroupAllocators {
   allocators : Map[String, MaterialBindGroupAllocator]
 }

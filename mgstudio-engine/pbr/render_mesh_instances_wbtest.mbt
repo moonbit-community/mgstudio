@@ -727,3 +727,107 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
     _ => abort("expected CPU culling queue")
   }
 }
+
+///|
+test "pbr: material bind group preparation records bindless material bindings" {
+  let mesh = render_mesh_instances_test_mesh(20, 120)
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    mesh.entity.main_entity,
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(21)),
+  )
+  let render_material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  let material_bind_group_allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
+  material_bind_group_allocators.insert(
+    "StandardMaterial",
+    MaterialBindGroupAllocator::Bindless(
+      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
+    ),
+  )
+
+  render3d_prepare_extracted_mesh_material_bind_group(
+    mesh,
+    {},
+    Some(material_instances),
+    Some(render_material_bindings),
+    Some(material_bind_group_allocators),
+  )
+
+  match render_material_bindings.get(21) {
+    Some(binding) => {
+      debug_inspect(binding.group().to_int(), content="0")
+      debug_inspect(binding.slot().to_int(), content="0")
+    }
+    None => abort("missing prepared material binding")
+  }
+}
+
+///|
+test "pbr: runtime GPU-building collect consumes queued meshes" {
+  let world = @ecs.World::new()
+  let entity = @core.Entity::new(30, 0)
+  world.insert_resource(
+    RenderMeshInstances::resource(),
+    RenderMeshInstances::new(use_gpu_instance_buffer_builder=true),
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity,
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(31)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let render_material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  render_material_bindings.set(
+    31,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(0),
+      MaterialBindGroupSlot::new(0),
+    ),
+  )
+  world.insert_resource(
+    RenderMaterialBindings::resource(),
+    render_material_bindings,
+  )
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  ignore(
+    mesh_allocator.allocate_render_mesh(
+      130,
+      @render_mesh.RenderMesh::new(vertex_count=3, indexed=true, index_count=3),
+      32,
+    ),
+  )
+  world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    [render_mesh_instances_test_mesh(30, 130)],
+    false,
+  )
+  render_mesh_instances_collect_gpu_building_resource(world)
+
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing RenderMeshInstances")
+  }
+  debug_inspect(instances.len(), content="1")
+  let buffers = match
+    world.get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource()) {
+    Some(value) => value
+    None => abort("missing GPU batched instance buffers")
+  }
+  debug_inspect(buffers.current_input_len(), content="1")
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU queues")
+  }
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="0")
+  let reextract = match
+    world.get_resource(MeshesToReextractNextFrame::resource()) {
+    Some(value) => value
+    None => abort("missing reextract resource")
+  }
+  debug_inspect(reextract.len(), content="0")
+}

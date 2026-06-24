@@ -1548,6 +1548,37 @@ pub fn MeshesToReextractNextFrame::entities(
 }
 
 ///|
+pub struct RenderMeshInstanceGpuBatchedInstanceBuffers {
+  buffers : @render_batching.BatchedInstanceBuffers[Unit, MeshInputUniform]
+}
+
+///|
+pub fn RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers() -> RenderMeshInstanceGpuBatchedInstanceBuffers {
+  RenderMeshInstanceGpuBatchedInstanceBuffers::{
+    buffers: @render_batching.BatchedInstanceBuffers::new(),
+  }
+}
+
+///|
+pub let ecs_key_render_mesh_instance_gpu_batched_instance_buffers : @ecs.ResourceKey[
+  RenderMeshInstanceGpuBatchedInstanceBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::RenderMeshInstanceGpuBatchedInstanceBuffers",
+)
+
+///|
+pub impl @app.Resource for RenderMeshInstanceGpuBatchedInstanceBuffers with fn resource() {
+  ecs_key_render_mesh_instance_gpu_batched_instance_buffers
+}
+
+///|
+pub fn RenderMeshInstanceGpuBatchedInstanceBuffers::current_input_len(
+  self : RenderMeshInstanceGpuBatchedInstanceBuffers,
+) -> Int {
+  self.buffers.current_input_buffer.len()
+}
+
+///|
 pub struct RenderMeshInstancesCpu {
   entries : Map[UInt64, RenderMeshInstanceCpu]
 }
@@ -1959,6 +1990,143 @@ fn meshes_to_reextract_next_frame_or_insert(
       value
     }
   }
+}
+
+///|
+fn render_mesh_instance_gpu_batched_instance_buffers_or_insert(
+  world : @ecs.World,
+) -> RenderMeshInstanceGpuBatchedInstanceBuffers {
+  match
+    world.get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource()) {
+    Some(value) => value
+    None => {
+      let value = RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers()
+      world.insert_resource(
+        RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+        value,
+      )
+      value
+    }
+  }
+}
+
+///|
+fn mesh_culling_data_buffer_or_insert(
+  world : @ecs.World,
+) -> MeshCullingDataBuffer {
+  match world.get_resource(MeshCullingDataBuffer::resource()) {
+    Some(value) => value
+    None => {
+      let value = MeshCullingDataBuffer::MeshCullingDataBuffer()
+      world.insert_resource(MeshCullingDataBuffer::resource(), value)
+      value
+    }
+  }
+}
+
+///|
+fn render_gpu_culled_entities_or_insert(
+  world : @ecs.World,
+) -> RenderGpuCulledEntities {
+  match world.get_resource(RenderGpuCulledEntities::resource()) {
+    Some(value) => value
+    None => {
+      let value = RenderGpuCulledEntities::RenderGpuCulledEntities()
+      world.insert_resource(RenderGpuCulledEntities::resource(), value)
+      value
+    }
+  }
+}
+
+///|
+fn render_material_bindings_or_insert(
+  world : @ecs.World,
+) -> RenderMaterialBindings {
+  match world.get_resource(RenderMaterialBindings::resource()) {
+    Some(value) => value
+    None => {
+      let value = RenderMaterialBindings::RenderMaterialBindings()
+      world.insert_resource(RenderMaterialBindings::resource(), value)
+      value
+    }
+  }
+}
+
+///|
+fn render_lightmaps_or_insert(world : @ecs.World) -> @lightmap.RenderLightmaps {
+  match world.get_resource(@lightmap.RenderLightmaps::resource()) {
+    Some(value) => value
+    None => {
+      let value = @lightmap.RenderLightmaps::RenderLightmaps()
+      world.insert_resource(@lightmap.RenderLightmaps::resource(), value)
+      value
+    }
+  }
+}
+
+///|
+fn render_mesh_instances_frame_timestamp(world : @ecs.World) -> UInt {
+  ignore(world)
+  @render.host_gpu_frame_count()
+}
+
+///|
+fn render_mesh_instances_collect_gpu_building_resource(
+  world : @ecs.World,
+) -> Unit {
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(GpuBuilding(_) as instances) => instances
+    _ => return
+  }
+  @render.sync_mesh_allocator_resource_from_backend_system(world)
+  guard world.get_resource(@render_mesh.MeshAllocator::resource())
+    is Some(mesh_allocator) else {
+    return
+  }
+  guard world.get_resource(ecs_key_render_material_instances)
+    is Some(mesh_material_ids) else {
+    return
+  }
+  @pbr_render.ensure_skin_uniforms_resource(world)
+  @pbr_render.ensure_morph_resources(world)
+  let batched_instance_buffers = render_mesh_instance_gpu_batched_instance_buffers_or_insert(
+    world,
+  )
+  let mesh_culling_data_buffer = mesh_culling_data_buffer_or_insert(world)
+  let render_mesh_instance_queues = render_mesh_instance_gpu_queues_or_insert(
+    world,
+  )
+  let render_gpu_culled_entities = render_gpu_culled_entities_or_insert(world)
+  let render_material_bindings = render_material_bindings_or_insert(world)
+  let render_lightmaps = render_lightmaps_or_insert(world)
+  guard world.get_resource(@pbr_render.SkinUniforms::resource())
+    is Some(skin_uniforms) else {
+    return
+  }
+  guard world.get_resource(@pbr_render.MorphIndices::resource())
+    is Some(morph_indices) else {
+    return
+  }
+  let timestamp = render_mesh_instances_frame_timestamp(world)
+  let meshes_to_reextract_next_frame = meshes_to_reextract_next_frame_or_insert(
+    world,
+  )
+  collect_meshes_for_gpu_building(
+    render_mesh_instances,
+    batched_instance_buffers.buffers,
+    mesh_culling_data_buffer,
+    render_mesh_instance_queues,
+    render_gpu_culled_entities,
+    mesh_allocator,
+    mesh_material_ids,
+    render_material_bindings,
+    render_lightmaps,
+    skin_uniforms,
+    morph_indices,
+    timestamp,
+    meshes_to_reextract_next_frame,
+  )
 }
 
 ///|

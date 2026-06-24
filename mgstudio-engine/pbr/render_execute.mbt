@@ -254,10 +254,52 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+const RENDER3D_STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL : String = "StandardMaterial"
+
+///|
+fn render3d_prepare_extracted_mesh_material_binding(
+  mesh : ExtractedMesh3d,
+  material_instances : RenderMaterialInstances?,
+  render_material_bindings : RenderMaterialBindings?,
+  material_bind_group_allocators : MaterialBindGroupAllocators?,
+) -> Unit {
+  guard material_instances is Some(material_instances) else { return }
+  guard render_material_bindings is Some(render_material_bindings) else {
+    return
+  }
+  guard material_bind_group_allocators is Some(material_bind_group_allocators) else {
+    return
+  }
+  let material_id = material_instances.mesh_material(mesh.entity.main_entity)
+  if material_id == DUMMY_MESH_MATERIAL_ID {
+    return
+  }
+  if render_material_bindings.get(material_id) is Some(_) {
+    return
+  }
+  guard material_bind_group_allocators.get(
+      RENDER3D_STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL,
+    )
+    is Some(allocator) else {
+    return
+  }
+  match allocator.allocate_bindless_material(material_id) {
+    Some(binding) => render_material_bindings.set(material_id, binding)
+    None => ()
+  }
+}
+
+///|
 fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
   prepared_material_bind_groups : Map[String, Bool],
+  material_instances : RenderMaterialInstances?,
+  render_material_bindings : RenderMaterialBindings?,
+  material_bind_group_allocators : MaterialBindGroupAllocators?,
 ) -> Unit {
+  render3d_prepare_extracted_mesh_material_binding(
+    mesh, material_instances, render_material_bindings, material_bind_group_allocators,
+  )
   let draw_material = mesh.payload.material
   let mut texture_id = match draw_material.base_color_texture {
     Some(texture) => texture.id()
@@ -758,14 +800,25 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
 pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   if render3d_queue_frame_snapshot(world) is Some(frame) {
     let prepared_material_bind_groups : Map[String, Bool] = {}
+    let material_instances = world.get_resource(
+      ecs_key_render_material_instances,
+    )
+    let render_material_bindings = world.get_resource(
+      RenderMaterialBindings::resource(),
+    )
+    let material_bind_group_allocators = world.get_resource(
+      ecs_key_material_bind_group_allocators,
+    )
     for camera in frame.cameras {
       render3d_prepare_extracted_camera_view_bind_group(camera)
     }
     for mesh in frame.meshes {
       render3d_prepare_extracted_mesh_material_bind_group(
-        mesh, prepared_material_bind_groups,
+        mesh, prepared_material_bind_groups, material_instances, render_material_bindings,
+        material_bind_group_allocators,
       )
     }
+    render_mesh_instances_collect_gpu_building_resource(world)
   }
   ignore(@pbr_render.render3d_mesh_layouts())
 }
