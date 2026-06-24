@@ -461,6 +461,53 @@ pub fn RenderMaterialBindings::set(
 }
 
 ///|
+const STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL : String = "StandardMaterial"
+
+///|
+fn prepare_render_material_binding(
+  material_id : Int,
+  render_material_bindings : RenderMaterialBindings?,
+  material_bind_group_allocators : MaterialBindGroupAllocators?,
+) -> Unit {
+  guard render_material_bindings is Some(render_material_bindings) else {
+    return
+  }
+  guard material_bind_group_allocators is Some(material_bind_group_allocators) else {
+    return
+  }
+  if material_id == DUMMY_MESH_MATERIAL_ID {
+    return
+  }
+  if render_material_bindings.get(material_id) is Some(_) {
+    return
+  }
+  guard material_bind_group_allocators.get(
+      STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL,
+    )
+    is Some(allocator) else {
+    return
+  }
+  match allocator.allocate_bindless_material(material_id) {
+    Some(binding) => render_material_bindings.set(material_id, binding)
+    None => ()
+  }
+}
+
+///|
+fn prepare_render_material_bindings(
+  material_instances : RenderMaterialInstances?,
+  render_material_bindings : RenderMaterialBindings?,
+  material_bind_group_allocators : MaterialBindGroupAllocators?,
+) -> Unit {
+  guard material_instances is Some(material_instances) else { return }
+  for material_id in material_instances.material_asset_ids() {
+    prepare_render_material_binding(
+      material_id, render_material_bindings, material_bind_group_allocators,
+    )
+  }
+}
+
+///|
 pub let ecs_key_render_material_bindings : @ecs.ResourceKey[
   RenderMaterialBindings,
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderMaterialBindings")

@@ -254,53 +254,6 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-const RENDER3D_STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL : String = "StandardMaterial"
-
-///|
-fn render3d_prepare_material_binding(
-  material_id : Int,
-  render_material_bindings : RenderMaterialBindings?,
-  material_bind_group_allocators : MaterialBindGroupAllocators?,
-) -> Unit {
-  guard render_material_bindings is Some(render_material_bindings) else {
-    return
-  }
-  guard material_bind_group_allocators is Some(material_bind_group_allocators) else {
-    return
-  }
-  if material_id == DUMMY_MESH_MATERIAL_ID {
-    return
-  }
-  if render_material_bindings.get(material_id) is Some(_) {
-    return
-  }
-  guard material_bind_group_allocators.get(
-      RENDER3D_STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL,
-    )
-    is Some(allocator) else {
-    return
-  }
-  match allocator.allocate_bindless_material(material_id) {
-    Some(binding) => render_material_bindings.set(material_id, binding)
-    None => ()
-  }
-}
-
-///|
-fn render3d_prepare_material_bindings(
-  material_instances : RenderMaterialInstances?,
-  render_material_bindings : RenderMaterialBindings?,
-  material_bind_group_allocators : MaterialBindGroupAllocators?,
-) -> Unit {
-  guard material_instances is Some(material_instances) else { return }
-  for material_id in material_instances.material_asset_ids() {
-    render3d_prepare_material_binding(
-      material_id, render_material_bindings, material_bind_group_allocators,
-    )
-  }
-}
-
-///|
 fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
   prepared_material_bind_groups : Map[String, Bool],
@@ -799,7 +752,7 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
     for camera in frame.cameras {
       render3d_prepare_extracted_camera_view_bind_group(camera)
     }
-    render3d_prepare_material_bindings(
+    prepare_render_material_bindings(
       material_instances, render_material_bindings, material_bind_group_allocators,
     )
     for mesh in frame.meshes {

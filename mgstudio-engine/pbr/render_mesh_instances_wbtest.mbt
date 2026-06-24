@@ -1198,7 +1198,7 @@ test "pbr: material bind group preparation records bindless material bindings" {
     ),
   )
 
-  render3d_prepare_material_bindings(
+  prepare_render_material_bindings(
     Some(material_instances),
     Some(render_material_bindings),
     Some(material_bind_group_allocators),
