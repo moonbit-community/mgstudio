@@ -551,6 +551,164 @@ pub fn MeshCullingData::aabb_half_extents(self : MeshCullingData) -> @math.Vec4 
 }
 
 ///|
+pub struct MeshCullingDataBuffer {
+  data : Array[MeshCullingData]
+}
+
+///|
+pub fn MeshCullingDataBuffer::MeshCullingDataBuffer() -> MeshCullingDataBuffer {
+  MeshCullingDataBuffer::{ data: [] }
+}
+
+///|
+pub fn MeshCullingDataBuffer::len(self : MeshCullingDataBuffer) -> Int {
+  self.data.length()
+}
+
+///|
+pub fn MeshCullingDataBuffer::grow(
+  self : MeshCullingDataBuffer,
+  len : UInt,
+) -> Unit {
+  let target = len.reinterpret_as_int()
+  while self.data.length() < target {
+    self.data.push(MeshCullingData::new(None))
+  }
+}
+
+///|
+pub fn MeshCullingDataBuffer::set(
+  self : MeshCullingDataBuffer,
+  index : UInt,
+  data : MeshCullingData,
+) -> Unit {
+  let int_index = index.reinterpret_as_int()
+  self.grow((int_index + 1).reinterpret_as_uint())
+  self.data[int_index] = data
+}
+
+///|
+pub fn MeshCullingDataBuffer::get(
+  self : MeshCullingDataBuffer,
+  index : UInt,
+) -> MeshCullingData? {
+  let int_index = index.reinterpret_as_int()
+  if int_index < 0 || int_index >= self.data.length() {
+    None
+  } else {
+    Some(self.data[int_index])
+  }
+}
+
+///|
+pub let ecs_key_mesh_culling_data_buffer : @ecs.ResourceKey[
+  MeshCullingDataBuffer,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::MeshCullingDataBuffer")
+
+///|
+pub impl @app.Resource for MeshCullingDataBuffer with fn resource() {
+  ecs_key_mesh_culling_data_buffer
+}
+
+///|
+pub fn MeshCullingData::update(
+  self : MeshCullingData,
+  mesh_culling_data_buffer : MeshCullingDataBuffer,
+  instance_data_index : UInt,
+) -> Unit {
+  mesh_culling_data_buffer.set(instance_data_index, self)
+}
+
+///|
+pub struct RenderGpuCulledEntities {
+  entities : Map[UInt64, @camera_render_layers.RenderLayers]
+  added : Array[@render.MainEntity]
+  removed : Array[@render.MainEntity]
+  changed_layers : Array[@render.MainEntity]
+}
+
+///|
+pub fn RenderGpuCulledEntities::RenderGpuCulledEntities() -> RenderGpuCulledEntities {
+  RenderGpuCulledEntities::{
+    entities: {},
+    added: [],
+    removed: [],
+    changed_layers: [],
+  }
+}
+
+///|
+pub let ecs_key_render_gpu_culled_entities : @ecs.ResourceKey[
+  RenderGpuCulledEntities,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderGpuCulledEntities")
+
+///|
+pub impl @app.Resource for RenderGpuCulledEntities with fn resource() {
+  ecs_key_render_gpu_culled_entities
+}
+
+///|
+pub fn RenderGpuCulledEntities::prepare_for_new_frame(
+  self : RenderGpuCulledEntities,
+) -> Unit {
+  self.added.clear()
+  self.removed.clear()
+  self.changed_layers.clear()
+}
+
+///|
+pub fn RenderGpuCulledEntities::update(
+  self : RenderGpuCulledEntities,
+  new_entity : @render.MainEntity,
+  render_layers : @camera_render_layers.RenderLayers,
+  no_cpu_culling : Bool,
+) -> Unit {
+  let key = new_entity.id().to_bits()
+  if self.entities.contains(key) {
+    if no_cpu_culling {
+      self.entities.set(key, render_layers)
+    } else {
+      self.entities.remove(key)
+      self.removed.push(new_entity)
+    }
+  } else if no_cpu_culling {
+    self.entities.set(key, render_layers)
+    self.added.push(new_entity)
+  }
+}
+
+///|
+pub fn RenderGpuCulledEntities::remove(
+  self : RenderGpuCulledEntities,
+  old_entity : @render.MainEntity,
+) -> Unit {
+  self.removed.push(old_entity)
+  self.entities.remove(old_entity.id().to_bits())
+}
+
+///|
+pub fn RenderGpuCulledEntities::contains(
+  self : RenderGpuCulledEntities,
+  entity : @render.MainEntity,
+) -> Bool {
+  self.entities.contains(entity.id().to_bits())
+}
+
+///|
+pub fn RenderGpuCulledEntities::added_len(
+  self : RenderGpuCulledEntities,
+) -> Int {
+  self.added.length()
+}
+
+///|
+pub fn RenderGpuCulledEntities::removed_len(
+  self : RenderGpuCulledEntities,
+) -> Int {
+  self.removed.length()
+}
+
+///|
 pub struct RenderMeshInstanceGpuBuilder {
   shared : RenderMeshInstanceSharedFlat
   world_from_local : @math.Affine3
@@ -801,6 +959,122 @@ pub fn remove_mesh_input_uniform(
 }
 
 ///|
+fn render_mesh_instance_gpu_layers_equal(
+  a : @camera_render_layers.RenderLayers?,
+  b : @camera_render_layers.RenderLayers?,
+) -> Bool {
+  match (a, b) {
+    (None, None) => true
+    (Some(a), Some(b)) => a.mask() == b.mask()
+    _ => false
+  }
+}
+
+///|
+fn render_mesh_instance_gpu_layers_or_default(
+  layers : @camera_render_layers.RenderLayers?,
+) -> @camera_render_layers.RenderLayers {
+  match layers {
+    Some(value) => value
+    None => @camera_render_layers.RenderLayers::RenderLayers()
+  }
+}
+
+///|
+fn render_mesh_instance_gpu_no_cpu_culling(
+  instance : RenderMeshInstanceGpu,
+) -> Bool {
+  instance.shared.flags().contains(RenderMeshInstanceFlags::no_cpu_culling())
+}
+
+///|
+fn collect_meshes_for_gpu_building_accept_prepared(
+  entity : @render.MainEntity,
+  prepared : RenderMeshInstanceGpuPrepared,
+  mesh_culling_data : MeshCullingData?,
+  render_mesh_instances : RenderMeshInstancesGpu,
+  current_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+  previous_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+  mesh_culling_data_buffer : MeshCullingDataBuffer,
+  render_gpu_culled_entities : RenderGpuCulledEntities,
+) -> Unit {
+  let instance_data_index = prepared.update(
+    entity, render_mesh_instances, current_input_buffer, previous_input_buffer,
+  )
+  match mesh_culling_data {
+    Some(value) => value.update(mesh_culling_data_buffer, instance_data_index)
+    None => ()
+  }
+  match render_mesh_instances.entries.get(entity.id().to_bits()) {
+    Some(instance) =>
+      render_gpu_culled_entities.update(
+        entity,
+        render_mesh_instance_gpu_layers_or_default(instance.render_layers),
+        render_mesh_instance_gpu_no_cpu_culling(instance),
+      )
+    None => ()
+  }
+}
+
+///|
+fn collect_meshes_for_gpu_building_try_fast_gpu_culling_update(
+  entity : @render.MainEntity,
+  prepared : RenderMeshInstanceGpuPrepared,
+  mesh_culling_data : MeshCullingData,
+  render_mesh_instances : RenderMeshInstancesGpu,
+  current_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+  previous_input_buffer : @render_batching.InstanceInputUniformBuffer[
+    MeshInputUniform,
+  ],
+  mesh_culling_data_buffer : MeshCullingDataBuffer,
+) -> Bool {
+  let key = entity.id().to_bits()
+  let existing_instance = match render_mesh_instances.entries.get(key) {
+    Some(value) => value
+    None => return false
+  }
+  guard render_mesh_instance_gpu_layers_equal(
+    prepared.render_layers,
+    existing_instance.render_layers,
+  ) else {
+    return false
+  }
+  guard prepared.shared
+    .flags()
+    .contains(RenderMeshInstanceFlags::no_cpu_culling()) ==
+    render_mesh_instance_gpu_no_cpu_culling(existing_instance) else {
+    return false
+  }
+  let current_uniform_index = existing_instance.gpu_specific.current_uniform_index()
+  let previous_mesh_input_uniform = current_input_buffer.get_unchecked(
+    current_uniform_index.reinterpret_as_int(),
+  )
+  let previous_input_index = previous_input_buffer
+    .add(previous_mesh_input_uniform)
+    .reinterpret_as_uint()
+  current_input_buffer.set(
+    current_uniform_index.reinterpret_as_int(),
+    prepared.mesh_input_uniform.with_previous_input_index(previous_input_index),
+  )
+  render_mesh_instances.entries.set(
+    key,
+    RenderMeshInstanceGpu::new(
+      prepared.shared,
+      gpu_specific=existing_instance.gpu_specific,
+      render_layers=existing_instance.render_layers,
+    ),
+  )
+  mesh_culling_data.update(mesh_culling_data_buffer, current_uniform_index)
+  true
+}
+
+///|
 pub struct RenderMeshInstanceGpuCpuCullingQueue {
   changed : Array[(@render.MainEntity, RenderMeshInstanceGpuBuilder)]
   removed : Array[@render.MainEntity]
@@ -1036,6 +1310,170 @@ pub fn RenderMeshInstanceGpuQueues::init(
   for queue in self.queues {
     queue.init(any_gpu_culling)
   }
+}
+
+///|
+fn collect_meshes_for_gpu_building_prepare(
+  entity : @render.MainEntity,
+  builder : RenderMeshInstanceGpuBuilder,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  mesh_material_ids : RenderMaterialInstances,
+  render_material_bindings : RenderMaterialBindings,
+  render_lightmaps : @lightmap.RenderLightmaps,
+  skin_uniforms : @pbr_render.SkinUniforms,
+  morph_indices : @pbr_render.MorphIndices,
+  timestamp : UInt,
+  meshes_to_reextract_next_frame : MeshesToReextractNextFrame,
+) -> RenderMeshInstanceGpuPrepared? {
+  match
+    builder.prepare(
+      entity, mesh_allocator, mesh_material_ids, render_material_bindings, render_lightmaps,
+      skin_uniforms, morph_indices, timestamp,
+    ) {
+    Some(prepared) => Some(prepared)
+    None => {
+      meshes_to_reextract_next_frame.insert(entity)
+      None
+    }
+  }
+}
+
+///|
+pub fn[BD] collect_meshes_for_gpu_building(
+  render_mesh_instances : RenderMeshInstances,
+  batched_instance_buffers : @render_batching.BatchedInstanceBuffers[
+    BD,
+    MeshInputUniform,
+  ],
+  mesh_culling_data_buffer : MeshCullingDataBuffer,
+  render_mesh_instance_queues : RenderMeshInstanceGpuQueues,
+  render_gpu_culled_entities : RenderGpuCulledEntities,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  mesh_material_ids : RenderMaterialInstances,
+  render_material_bindings : RenderMaterialBindings,
+  render_lightmaps : @lightmap.RenderLightmaps,
+  skin_uniforms : @pbr_render.SkinUniforms,
+  morph_indices : @pbr_render.MorphIndices,
+  timestamp : UInt,
+  meshes_to_reextract_next_frame : MeshesToReextractNextFrame,
+) -> Unit {
+  let gpu_instances = match render_mesh_instances {
+    GpuBuilding(instances) => instances
+    CpuBuilding(_) => return
+  }
+  meshes_to_reextract_next_frame.clear()
+  let current_input_buffer = batched_instance_buffers.current_input_buffer
+  let previous_input_buffer = batched_instance_buffers.previous_input_buffer
+  if !current_input_buffer.is_empty() {
+    mesh_culling_data_buffer.grow(
+      current_input_buffer.len().reinterpret_as_uint(),
+    )
+  }
+  render_gpu_culled_entities.prepare_for_new_frame()
+  for queue in render_mesh_instance_queues.iter() {
+    match queue.state {
+      NoQueue => ()
+      CpuCulling(cpu_queue) => {
+        for item in cpu_queue.changed {
+          let (entity, builder) = item
+          match
+            collect_meshes_for_gpu_building_prepare(
+              entity, builder, mesh_allocator, mesh_material_ids, render_material_bindings,
+              render_lightmaps, skin_uniforms, morph_indices, timestamp, meshes_to_reextract_next_frame,
+            ) {
+            Some(prepared) =>
+              collect_meshes_for_gpu_building_accept_prepared(
+                entity,
+                prepared,
+                None,
+                gpu_instances,
+                current_input_buffer,
+                previous_input_buffer,
+                mesh_culling_data_buffer,
+                render_gpu_culled_entities,
+              )
+            None => ()
+          }
+        }
+        for entity in cpu_queue.removed {
+          ignore(
+            remove_mesh_input_uniform(
+              entity, gpu_instances, current_input_buffer,
+            ),
+          )
+          render_gpu_culled_entities.remove(entity)
+        }
+        cpu_queue.changed.clear()
+        cpu_queue.removed.clear()
+      }
+      GpuCulling(gpu_queue) => {
+        for item in gpu_queue.changed_cpu_culling {
+          let (entity, builder, culling_data) = item
+          match
+            collect_meshes_for_gpu_building_prepare(
+              entity, builder, mesh_allocator, mesh_material_ids, render_material_bindings,
+              render_lightmaps, skin_uniforms, morph_indices, timestamp, meshes_to_reextract_next_frame,
+            ) {
+            Some(prepared) =>
+              if !collect_meshes_for_gpu_building_try_fast_gpu_culling_update(
+                  entity, prepared, culling_data, gpu_instances, current_input_buffer,
+                  previous_input_buffer, mesh_culling_data_buffer,
+                ) {
+                collect_meshes_for_gpu_building_accept_prepared(
+                  entity,
+                  prepared,
+                  Some(culling_data),
+                  gpu_instances,
+                  current_input_buffer,
+                  previous_input_buffer,
+                  mesh_culling_data_buffer,
+                  render_gpu_culled_entities,
+                )
+              }
+            None => ()
+          }
+        }
+        for item in gpu_queue.changed_gpu_culling {
+          let (entity, builder, culling_data) = item
+          match
+            collect_meshes_for_gpu_building_prepare(
+              entity, builder, mesh_allocator, mesh_material_ids, render_material_bindings,
+              render_lightmaps, skin_uniforms, morph_indices, timestamp, meshes_to_reextract_next_frame,
+            ) {
+            Some(prepared) =>
+              if !collect_meshes_for_gpu_building_try_fast_gpu_culling_update(
+                  entity, prepared, culling_data, gpu_instances, current_input_buffer,
+                  previous_input_buffer, mesh_culling_data_buffer,
+                ) {
+                collect_meshes_for_gpu_building_accept_prepared(
+                  entity,
+                  prepared,
+                  Some(culling_data),
+                  gpu_instances,
+                  current_input_buffer,
+                  previous_input_buffer,
+                  mesh_culling_data_buffer,
+                  render_gpu_culled_entities,
+                )
+              }
+            None => ()
+          }
+        }
+        for entity in gpu_queue.removed {
+          ignore(
+            remove_mesh_input_uniform(
+              entity, gpu_instances, current_input_buffer,
+            ),
+          )
+          render_gpu_culled_entities.remove(entity)
+        }
+        gpu_queue.changed_cpu_culling.clear()
+        gpu_queue.changed_gpu_culling.clear()
+        gpu_queue.removed.clear()
+      }
+    }
+  }
+  previous_input_buffer.ensure_nonempty(MeshInputUniform::new())
 }
 
 ///|

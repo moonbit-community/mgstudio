@@ -293,6 +293,188 @@ test "pbr: RenderMeshInstanceGpuBuilder prepare builds Bevy mesh input uniform" 
 }
 
 ///|
+test "pbr: collect_meshes_for_gpu_building prepares ready CPU-culling queues and reextracts unready materials" {
+  let ready = @render.MainEntity::new(@core.Entity::new(28, 1))
+  let unready = @render.MainEntity::new(@core.Entity::new(29, 1))
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    ready.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(12)),
+  )
+  material_instances.extract_mesh_material(
+    unready.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(13)),
+  )
+  let material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  material_bindings.set(
+    12,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(0),
+      MaterialBindGroupSlot::new(3),
+    ),
+  )
+  let allocator = @render_mesh.MeshAllocator::new()
+  ignore(
+    allocator.allocate(
+      90,
+      96,
+      @render_mesh.MeshAllocatorElementLayout::vertex(32),
+    ),
+  )
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  let buffers : @render_batching.BatchedInstanceBuffers[Unit, MeshInputUniform] = @render_batching.BatchedInstanceBuffers::new()
+  let culling_buffer = MeshCullingDataBuffer::MeshCullingDataBuffer()
+  let queues = RenderMeshInstanceGpuQueues::RenderMeshInstanceGpuQueues()
+  queues.init(false)
+  let queue = queues.borrow_local_mut()
+  queue.push(
+    ready,
+    RenderMeshInstanceGpuBuilder::from_shared(
+      RenderMeshInstanceSharedFlat::new(90, tag=1U),
+      @math.Affine3::identity(),
+      @math.UVec2::zero(),
+      None,
+      None,
+      0U,
+    ),
+    None,
+    false,
+  )
+  queue.push(
+    unready,
+    RenderMeshInstanceGpuBuilder::new(RenderMeshQueueData::new(91, 0U, true)),
+    None,
+    false,
+  )
+  let render_gpu_culled_entities = RenderGpuCulledEntities::RenderGpuCulledEntities()
+  let reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+
+  collect_meshes_for_gpu_building(
+    instances,
+    buffers,
+    culling_buffer,
+    queues,
+    render_gpu_culled_entities,
+    allocator,
+    material_instances,
+    material_bindings,
+    @lightmap.RenderLightmaps::RenderLightmaps(),
+    @pbr_render.SkinUniforms::new(),
+    @pbr_render.MorphIndices::new(),
+    55U,
+    reextract,
+  )
+
+  debug_inspect(instances.len(), content="1")
+  debug_inspect(
+    instances.render_mesh_queue_data(ready).unwrap().mesh_asset_id(),
+    content="90",
+  )
+  debug_inspect(buffers.current_input_buffer.len(), content="1")
+  debug_inspect(buffers.previous_input_buffer.len(), content="1")
+  debug_inspect(reextract.contains(unready), content="true")
+  debug_inspect(queue.changed_len(), content="0")
+  debug_inspect(render_gpu_culled_entities.added_len(), content="0")
+}
+
+///|
+test "pbr: collect_meshes_for_gpu_building updates GPU-culling visibility and removals" {
+  let entity = @render.MainEntity::new(@core.Entity::new(33, 1))
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(14)),
+  )
+  let material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  material_bindings.set(
+    14,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(0),
+      MaterialBindGroupSlot::new(4),
+    ),
+  )
+  let allocator = @render_mesh.MeshAllocator::new()
+  ignore(
+    allocator.allocate(
+      92,
+      96,
+      @render_mesh.MeshAllocatorElementLayout::vertex(32),
+    ),
+  )
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  let buffers : @render_batching.BatchedInstanceBuffers[Unit, MeshInputUniform] = @render_batching.BatchedInstanceBuffers::new()
+  let culling_buffer = MeshCullingDataBuffer::MeshCullingDataBuffer()
+  let queues = RenderMeshInstanceGpuQueues::RenderMeshInstanceGpuQueues()
+  queues.init(true)
+  let queue = queues.borrow_local_mut()
+  queue.push(
+    entity,
+    RenderMeshInstanceGpuBuilder::from_shared(
+      RenderMeshInstanceSharedFlat::new(
+        92,
+        tag=2U,
+        flags=RenderMeshInstanceFlags::no_cpu_culling(),
+      ),
+      @math.Affine3::identity(),
+      @math.UVec2::zero(),
+      None,
+      None,
+      RenderMeshInstanceFlags::no_cpu_culling().bits(),
+    ),
+    Some(MeshCullingData::new(None)),
+    true,
+  )
+  let render_gpu_culled_entities = RenderGpuCulledEntities::RenderGpuCulledEntities()
+  let reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+
+  collect_meshes_for_gpu_building(
+    instances,
+    buffers,
+    culling_buffer,
+    queues,
+    render_gpu_culled_entities,
+    allocator,
+    material_instances,
+    material_bindings,
+    @lightmap.RenderLightmaps::RenderLightmaps(),
+    @pbr_render.SkinUniforms::new(),
+    @pbr_render.MorphIndices::new(),
+    56U,
+    reextract,
+  )
+  debug_inspect(instances.len(), content="1")
+  debug_inspect(buffers.current_input_buffer.len(), content="1")
+  debug_inspect(culling_buffer.len(), content="1")
+  debug_inspect(render_gpu_culled_entities.added_len(), content="1")
+  debug_inspect(render_gpu_culled_entities.contains(entity), content="true")
+
+  queues.init(true)
+  queue.remove(entity, true)
+  collect_meshes_for_gpu_building(
+    instances,
+    buffers,
+    culling_buffer,
+    queues,
+    render_gpu_culled_entities,
+    allocator,
+    material_instances,
+    material_bindings,
+    @lightmap.RenderLightmaps::RenderLightmaps(),
+    @pbr_render.SkinUniforms::new(),
+    @pbr_render.MorphIndices::new(),
+    57U,
+    reextract,
+  )
+  debug_inspect(instances.len(), content="0")
+  debug_inspect(buffers.current_input_buffer.get(0) is None, content="true")
+  debug_inspect(render_gpu_culled_entities.removed_len(), content="1")
+  debug_inspect(render_gpu_culled_entities.contains(entity), content="false")
+}
+
+///|
 test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy CPU culling state" {
   let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
   let entity = @render.MainEntity::new(@core.Entity::new(30, 1))

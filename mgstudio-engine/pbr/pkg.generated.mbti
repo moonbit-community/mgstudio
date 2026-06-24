@@ -162,6 +162,8 @@ pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMa
 
 pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mesh], S) -> @asset.Handle[@Milky2018/mgstudio/mesh.Mesh]
 
+pub fn[BD] collect_meshes_for_gpu_building(RenderMeshInstances, @batching.BatchedInstanceBuffers[BD, MeshInputUniform], MeshCullingDataBuffer, RenderMeshInstanceGpuQueues, RenderGpuCulledEntities, @Milky2018/mgstudio/render/mesh.MeshAllocator, RenderMaterialInstances, RenderMaterialBindings, @lightmap.RenderLightmaps, @Milky2018/mgstudio/pbr/render.SkinUniforms, @Milky2018/mgstudio/pbr/render.MorphIndices, UInt, MeshesToReextractNextFrame) -> Unit
+
 pub fn configure_pbr_render_app_build_flow(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
 pub fn configure_pbr_render_light_view_observers(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
@@ -296,6 +298,8 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[@Milky2018/mgstudio/mesh.Mesh3d]
 
 pub let ecs_key_mesh3d_wireframe : @ecs.ComponentKey[Mesh3dWireframe]
 
+pub let ecs_key_mesh_culling_data_buffer : @ecs.ResourceKey[MeshCullingDataBuffer]
+
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
 
 pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
@@ -343,6 +347,8 @@ pub let ecs_key_previous_global_transform : @ecs.ComponentKey[@Milky2018/mgstudi
 pub let ecs_key_previous_view_data : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/prepass.PreviousViewData]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+pub let ecs_key_render_gpu_culled_entities : @ecs.ResourceKey[RenderGpuCulledEntities]
 
 pub let ecs_key_render_material_bindings : @ecs.ResourceKey[RenderMaterialBindings]
 
@@ -1814,6 +1820,17 @@ pub struct MeshCullingData {
 pub fn MeshCullingData::aabb_center(Self) -> @math.Vec4
 pub fn MeshCullingData::aabb_half_extents(Self) -> @math.Vec4
 pub fn MeshCullingData::new(@primitives.Aabb?) -> Self
+pub fn MeshCullingData::update(Self, MeshCullingDataBuffer, UInt) -> Unit
+
+pub struct MeshCullingDataBuffer {
+  data : Array[MeshCullingData]
+}
+pub fn MeshCullingDataBuffer::MeshCullingDataBuffer() -> Self
+pub fn MeshCullingDataBuffer::get(Self, UInt) -> MeshCullingData?
+pub fn MeshCullingDataBuffer::grow(Self, UInt) -> Unit
+pub fn MeshCullingDataBuffer::len(Self) -> Int
+pub fn MeshCullingDataBuffer::set(Self, UInt, MeshCullingData) -> Unit
+pub impl @app.Resource for MeshCullingDataBuffer
 
 pub struct MeshInputUniform {
   world_from_local : @math.Affine3
@@ -2086,6 +2103,21 @@ pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
 pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
 pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData) -> Self
+
+pub struct RenderGpuCulledEntities {
+  entities : Map[UInt64, @render_layers.RenderLayers]
+  added : Array[@Milky2018/mgstudio/render.MainEntity]
+  removed : Array[@Milky2018/mgstudio/render.MainEntity]
+  changed_layers : Array[@Milky2018/mgstudio/render.MainEntity]
+}
+pub fn RenderGpuCulledEntities::RenderGpuCulledEntities() -> Self
+pub fn RenderGpuCulledEntities::added_len(Self) -> Int
+pub fn RenderGpuCulledEntities::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn RenderGpuCulledEntities::prepare_for_new_frame(Self) -> Unit
+pub fn RenderGpuCulledEntities::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn RenderGpuCulledEntities::removed_len(Self) -> Int
+pub fn RenderGpuCulledEntities::update(Self, @Milky2018/mgstudio/render.MainEntity, @render_layers.RenderLayers, Bool) -> Unit
+pub impl @app.Resource for RenderGpuCulledEntities
 
 pub struct RenderMaterial3dInstances[M] {
   instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
