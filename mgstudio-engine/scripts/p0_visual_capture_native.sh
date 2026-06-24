@@ -73,13 +73,13 @@ start_app() {
   echo "[capture] native exe ${PACKAGE} (delay_frames=${delay_frames})"
   (
     cd "${ENGINE_DIR}"
-    MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
-      MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}" \
-      MGSTUDIO_SCREENSHOT_PATH="${OUTPUT_PNG}" \
-      MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE=1 \
-      MGSTUDIO_SCREENSHOT_FRAME="${screenshot_frame}" \
-      MGSTUDIO_RENDER3D_DISABLE_GPU_PREPROCESS="${DISABLE_GPU_PREPROCESS}" \
-      "${APP_EXE}" >"${RUN_LOG}" 2>&1
+    export MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}"
+    export MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}"
+    export MGSTUDIO_SCREENSHOT_PATH="${OUTPUT_PNG}"
+    export MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE=1
+    export MGSTUDIO_SCREENSHOT_FRAME="${screenshot_frame}"
+    export MGSTUDIO_RENDER3D_DISABLE_GPU_PREPROCESS="${DISABLE_GPU_PREPROCESS}"
+    exec "${APP_EXE}" >"${RUN_LOG}" 2>&1
   ) &
   APP_PID=$!
 }
