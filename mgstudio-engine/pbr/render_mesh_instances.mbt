@@ -2559,8 +2559,9 @@ fn render_mesh_instances_update_cpu_building_resource(
 }
 
 ///|
-fn render_mesh_instances_remove_cpu_building_resource(
-  world : @ecs.World,
-) -> Unit {
-  ignore(world.remove_resource(RenderMeshInstances::resource()))
+fn render_mesh_instances_clear_resource(world : @ecs.World) -> Unit {
+  match world.get_resource(RenderMeshInstances::resource()) {
+    Some(instances) => instances.clear()
+    None => ()
+  }
 }

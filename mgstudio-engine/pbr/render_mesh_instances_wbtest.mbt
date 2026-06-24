@@ -75,6 +75,48 @@ test "pbr: RenderMeshInstances has Bevy CPU and GPU building variants" {
 }
 
 ///|
+test "pbr: RenderMeshInstances clear preserves persistent render resource variant" {
+  let entity = @render.MainEntity::new(@core.Entity::new(222, 1))
+  let cpu_world = @ecs.World::new()
+  let cpu_instances = RenderMeshInstances::new()
+  cpu_instances.insert(entity, RenderMeshQueueData::new(43, 0U, false))
+  cpu_world.insert_resource(RenderMeshInstances::resource(), cpu_instances)
+
+  render_mesh_instances_clear_resource(cpu_world)
+
+  let cpu_after = match
+    cpu_world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing CPU RenderMeshInstances")
+  }
+  match cpu_after {
+    CpuBuilding(_) => ()
+    GpuBuilding(_) => abort("CPU clear should preserve CPU variant")
+  }
+  debug_inspect(cpu_after.len(), content="0")
+
+  let gpu_world = @ecs.World::new()
+  let gpu_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  gpu_instances.insert(entity, RenderMeshQueueData::new(44, 3U, true))
+  gpu_world.insert_resource(RenderMeshInstances::resource(), gpu_instances)
+
+  render_mesh_instances_clear_resource(gpu_world)
+
+  let gpu_after = match
+    gpu_world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing GPU RenderMeshInstances")
+  }
+  match gpu_after {
+    CpuBuilding(_) => abort("GPU clear should preserve GPU variant")
+    GpuBuilding(_) => ()
+  }
+  debug_inspect(gpu_after.len(), content="0")
+}
+
+///|
 test "pbr: RenderMeshInstances stores Bevy-shaped CPU and GPU instance records" {
   let entity = @render.MainEntity::new(@core.Entity::new(23, 1))
   let flags = RenderMeshInstanceFlags::has_previous_transform().or(
