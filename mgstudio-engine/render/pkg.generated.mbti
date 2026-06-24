@@ -574,8 +574,6 @@ pub fn[C : @ecs.Component, F] sync_component_plugin_with(@app.App[@ecs.World], S
 
 pub fn[C : @ecs.Component, F] sync_component_plugin_with_target_removal(@app.App[@ecs.World], SyncComponentPlugin[C, F], (@ecs.World, @core.Entity) -> @ecs.World) -> @app.App[@ecs.World]
 
-pub fn sync_mesh_allocator_resource_from_backend_system(@ecs.World) -> Unit
-
 pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 
 pub fn sync_world_plugin_with(@app.App[@ecs.World], SyncWorldPlugin) -> @app.App[@ecs.World]

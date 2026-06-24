@@ -174,6 +174,14 @@ fn render_plugin_install_with(
       )
       .add_systems(
         render_schedule_stage(),
+        @app.system(sync_mesh_allocator_resource_from_backend_system)
+        .named(
+          "mgstudio_render::mesh::sync_mesh_allocator_resource_from_backend",
+        )
+        .in_set(render_system_set_prepare_assets),
+      )
+      .add_systems(
+        render_schedule_stage(),
         @app.system(fn(render_world : @ecs.World) {
           @render_view_window.extract_windows(
             render_source_world(render_world),
@@ -293,9 +301,7 @@ fn render_plugin_finish_with(
 }
 
 ///|
-pub fn sync_mesh_allocator_resource_from_backend_system(
-  world : @ecs.World,
-) -> Unit {
+fn sync_mesh_allocator_resource_from_backend_system(world : @ecs.World) -> Unit {
   match host_gpu_mesh_allocator_snapshot() {
     Some(allocator) =>
       if allocator.slab_count() > 0 ||

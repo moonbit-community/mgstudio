@@ -1323,7 +1323,6 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
     Some(value) => value
     None => return
   }
-  @render.sync_mesh_allocator_resource_from_backend_system(world)
   let mesh_allocator = match
     world.get_resource(@render_mesh.MeshAllocator::resource()) {
     Some(value) => value
@@ -1404,7 +1403,6 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
     Some(value) => value
     None => return
   }
-  @render.sync_mesh_allocator_resource_from_backend_system(world)
   let mesh_allocator = match
     world.get_resource(@render_mesh.MeshAllocator::resource()) {
     Some(value) => value

@@ -2496,7 +2496,6 @@ fn render_mesh_instances_collect_gpu_building_resource(
     Some(GpuBuilding(_) as instances) => instances
     _ => return
   }
-  @render.sync_mesh_allocator_resource_from_backend_system(world)
   guard world.get_resource(@render_mesh.MeshAllocator::resource())
     is Some(mesh_allocator) else {
     return
