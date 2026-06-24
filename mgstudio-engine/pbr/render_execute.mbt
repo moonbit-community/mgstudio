@@ -257,20 +257,17 @@ pub fn render3d_prepare_resources_flush_system(world : @ecs.World) -> Unit {
 const RENDER3D_STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL : String = "StandardMaterial"
 
 ///|
-fn render3d_prepare_extracted_mesh_material_binding(
-  mesh : ExtractedMesh3d,
-  material_instances : RenderMaterialInstances?,
+fn render3d_prepare_material_binding(
+  material_id : Int,
   render_material_bindings : RenderMaterialBindings?,
   material_bind_group_allocators : MaterialBindGroupAllocators?,
 ) -> Unit {
-  guard material_instances is Some(material_instances) else { return }
   guard render_material_bindings is Some(render_material_bindings) else {
     return
   }
   guard material_bind_group_allocators is Some(material_bind_group_allocators) else {
     return
   }
-  let material_id = material_instances.mesh_material(mesh.entity.main_entity)
   if material_id == DUMMY_MESH_MATERIAL_ID {
     return
   }
@@ -290,16 +287,24 @@ fn render3d_prepare_extracted_mesh_material_binding(
 }
 
 ///|
-fn render3d_prepare_extracted_mesh_material_bind_group(
-  mesh : ExtractedMesh3d,
-  prepared_material_bind_groups : Map[String, Bool],
+fn render3d_prepare_material_bindings(
   material_instances : RenderMaterialInstances?,
   render_material_bindings : RenderMaterialBindings?,
   material_bind_group_allocators : MaterialBindGroupAllocators?,
 ) -> Unit {
-  render3d_prepare_extracted_mesh_material_binding(
-    mesh, material_instances, render_material_bindings, material_bind_group_allocators,
-  )
+  guard material_instances is Some(material_instances) else { return }
+  for material_id in material_instances.material_asset_ids() {
+    render3d_prepare_material_binding(
+      material_id, render_material_bindings, material_bind_group_allocators,
+    )
+  }
+}
+
+///|
+fn render3d_prepare_extracted_mesh_material_bind_group(
+  mesh : ExtractedMesh3d,
+  prepared_material_bind_groups : Map[String, Bool],
+) -> Unit {
   let draw_material = mesh.payload.material
   let mut texture_id = match draw_material.base_color_texture {
     Some(texture) => texture.id()
@@ -812,10 +817,12 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
     for camera in frame.cameras {
       render3d_prepare_extracted_camera_view_bind_group(camera)
     }
+    render3d_prepare_material_bindings(
+      material_instances, render_material_bindings, material_bind_group_allocators,
+    )
     for mesh in frame.meshes {
       render3d_prepare_extracted_mesh_material_bind_group(
-        mesh, prepared_material_bind_groups, material_instances, render_material_bindings,
-        material_bind_group_allocators,
+        mesh, prepared_material_bind_groups,
       )
     }
     render_mesh_instances_collect_gpu_building_resource(world)

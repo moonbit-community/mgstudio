@@ -1179,9 +1179,15 @@ test "pbr: GPU-building extraction reads source removed Mesh3d entities" {
 ///|
 test "pbr: material bind group preparation records bindless material bindings" {
   let mesh = render_mesh_instances_test_mesh(20, 120)
+  let duplicate_material_entity = @core.Entity::new(21, 0)
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
     mesh.entity.main_entity,
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(21)),
+  )
+  material_instances.extract_mesh_material(
+    duplicate_material_entity,
     true,
     MeshMaterial3d::new(@asset.Handle::new(21)),
   )
@@ -1194,14 +1200,13 @@ test "pbr: material bind group preparation records bindless material bindings" {
     ),
   )
 
-  render3d_prepare_extracted_mesh_material_bind_group(
-    mesh,
-    {},
+  render3d_prepare_material_bindings(
     Some(material_instances),
     Some(render_material_bindings),
     Some(material_bind_group_allocators),
   )
 
+  debug_inspect(render_material_bindings.len(), content="1")
   match render_material_bindings.get(21) {
     Some(binding) => {
       debug_inspect(binding.group().to_int(), content="0")

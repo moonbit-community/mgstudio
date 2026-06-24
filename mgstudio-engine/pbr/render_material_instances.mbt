@@ -116,6 +116,26 @@ pub fn RenderMaterialInstances::mesh_material(
 }
 
 ///|
+fn RenderMaterialInstances::material_asset_ids(
+  self : RenderMaterialInstances,
+) -> Array[Int] {
+  let material_ids : Array[Int] = []
+  let seen : Map[Int, Bool] = {}
+  for _, instance in self.instances {
+    let material_id = instance.asset_id()
+    if material_id == DUMMY_MESH_MATERIAL_ID {
+      continue
+    }
+    if seen.contains(material_id) {
+      continue
+    }
+    seen.set(material_id, true)
+    material_ids.push(material_id)
+  }
+  material_ids
+}
+
+///|
 pub fn RenderMaterialInstances::extract_mesh_material(
   self : RenderMaterialInstances,
   entity : @core.Entity,
