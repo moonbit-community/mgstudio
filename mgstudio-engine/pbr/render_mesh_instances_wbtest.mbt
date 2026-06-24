@@ -771,6 +771,29 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
 }
 
 ///|
+test "pbr: GPU-building extraction reads source removed Mesh3d entities" {
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(313)),
+  )
+  ignore(source_world.increment_change_tick())
+  debug_inspect(
+    try! source_world.remove_by_key(entity, @mesh.ecs_key_mesh3d),
+    content="true",
+  )
+
+  let removed = render_mesh_instances_gpu_removed_mesh3d_set(
+    source_world,
+    @core.SystemTicks::new(0, source_world.read_change_tick()),
+  )
+  debug_inspect(removed.length(), content="1")
+  debug_inspect(removed.contains(entity.to_bits()), content="true")
+}
+
+///|
 test "pbr: material bind group preparation records bindless material bindings" {
   let mesh = render_mesh_instances_test_mesh(20, 120)
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()

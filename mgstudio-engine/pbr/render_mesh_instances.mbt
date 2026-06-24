@@ -2104,6 +2104,21 @@ fn render_mesh_instances_gpu_potential_reextraction_set(
 }
 
 ///|
+fn render_mesh_instances_gpu_removed_mesh3d_set(
+  source_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Map[UInt64, @render.MainEntity] {
+  let entities : Map[UInt64, @render.MainEntity] = {}
+  for
+    entity in source_world
+    .removed_components(@mesh.ecs_key_mesh3d, system_ticks)
+    .read() {
+    entities.set(entity.to_bits(), @render.MainEntity::new(entity))
+  }
+  entities
+}
+
+///|
 fn render_mesh_instances_gpu_resource_or_insert(
   world : @ecs.World,
 ) -> RenderMeshInstances {
@@ -2318,8 +2333,12 @@ fn render_mesh_instances_extract_gpu_building_resource(
   let potential_reextraction_set = render_mesh_instances_gpu_potential_reextraction_set(
     source_world, system_ticks, meshes_to_reextract,
   )
+  let removed_mesh3d_set = render_mesh_instances_gpu_removed_mesh3d_set(
+    source_world, system_ticks,
+  )
   queues.init(any_gpu_culling)
   let seen : Map[UInt64, @render.MainEntity] = {}
+  let queued_removed : Map[UInt64, Bool] = {}
   let queue = queues.borrow_local_mut()
   for extracted_mesh in meshes {
     let payload = extracted_mesh.payload
@@ -2349,9 +2368,18 @@ fn render_mesh_instances_extract_gpu_building_resource(
     }
     queue.push(entity, builder, culling_data, payload.has_no_cpu_culling)
   }
+  for item in removed_mesh3d_set.values() {
+    let bits = item.id().to_bits()
+    if !seen.contains(bits) && !meshes_to_reextract.contains(item) {
+      queue.remove(item, any_gpu_culling)
+      queued_removed.set(bits, true)
+    }
+  }
   for entity in gpu_instances.keys() {
-    if !seen.contains(entity.id().to_bits()) &&
-      !meshes_to_reextract.contains(entity) {
+    let bits = entity.id().to_bits()
+    if !seen.contains(bits) &&
+      !meshes_to_reextract.contains(entity) &&
+      !queued_removed.contains(bits) {
       queue.remove(entity, any_gpu_culling)
     }
   }
