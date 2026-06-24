@@ -207,27 +207,44 @@ fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
     Some(value) => value
     None => abort("missing RenderMaterialInstances resource")
   }
+  if render_world.get_resource(ecs_key_render_material_shader_paths) is None {
+    render_world.insert_resource(
+      ecs_key_render_material_shader_paths,
+      RenderMaterialShaderPaths::RenderMaterialShaderPaths(),
+    )
+  }
+  let material_shader_paths = match
+    render_world.get_resource_mut(ecs_key_render_material_shader_paths) {
+    Some(value) => value
+    None => abort("missing RenderMaterialShaderPaths resource")
+  }
   material_instances.modify(fn(instances) {
-    for _, entity in changed_entities {
-      if !source_world.is_alive(entity) {
-        continue
+    material_shader_paths.modify(fn(shader_paths) {
+      for _, entity in changed_entities {
+        if !source_world.is_alive(entity) {
+          continue
+        }
+        match
+          (
+            try! source_world.get_by_key(
+              entity, @visibility.ecs_key_view_visibility,
+            ),
+            try! source_world.get_by_key(entity, ecs_key_mesh_material3d),
+          ) {
+          (Some(view_visibility), Some(material)) => {
+            instances.extract_mesh_material(
+              entity,
+              view_visibility.is_visible(),
+              material,
+            )
+            if view_visibility.is_visible() {
+              shader_paths.extract_mesh_material(material)
+            }
+          }
+          _ => ()
+        }
       }
-      match
-        (
-          try! source_world.get_by_key(
-            entity, @visibility.ecs_key_view_visibility,
-          ),
-          try! source_world.get_by_key(entity, ecs_key_mesh_material3d),
-        ) {
-        (Some(view_visibility), Some(material)) =>
-          instances.extract_mesh_material(
-            entity,
-            view_visibility.is_visible(),
-            material,
-          )
-        _ => ()
-      }
-    }
+    })
   })
 }
 

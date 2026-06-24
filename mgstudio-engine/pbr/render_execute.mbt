@@ -402,16 +402,6 @@ fn render3d_prepare_extracted_camera_view_bind_group(
 }
 
 ///|
-fn render3d_material_shader_paths_for_extracted_mesh(
-  extracted_mesh : ExtractedMesh3d,
-) -> (String?, String?) {
-  (
-    extracted_mesh.payload.material_vertex_shader_path,
-    extracted_mesh.payload.material_fragment_shader_path,
-  )
-}
-
-///|
 fn render3d_camera_msaa_samples(camera : Camera3dViewPayload) -> Int {
   match camera.msaa {
     Some(msaa) => msaa.samples()
@@ -654,36 +644,28 @@ fn render3d_prewarm_mesh_pipelines(
 ///|
 fn render3d_prepare_shader_asset_paths(
   source_world : @ecs.World,
-  meshes : Array[ExtractedMesh3d],
+  world : @ecs.World,
 ) -> Unit {
-  let prepared_paths : Map[String, Bool] = {}
-  for extracted_mesh in meshes {
-    let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
-      extracted_mesh,
-    )
-    let paths = [vertex_shader_path, fragment_shader_path]
-    for shader_path in paths {
-      guard shader_path is Some(path) else { continue }
-      if prepared_paths.contains(path) {
-        continue
+  guard world.get_resource(ecs_key_render_material_shader_paths)
+    is Some(shader_paths) else {
+    return
+  }
+  for path in shader_paths.paths() {
+    if @shader.shader_path_is_wesl(path) {
+      @shader_runtime_render.shader_register_wesl_runtime_source(
+        source_world,
+        path,
+        [],
+      ) catch {
+        err =>
+          abort(
+            "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
+          )
       }
-      prepared_paths.set(path, true)
-      if @shader.shader_path_is_wesl(path) {
-        @shader_runtime_render.shader_register_wesl_runtime_source(
-          source_world,
-          path,
-          [],
-        ) catch {
-          err =>
-            abort(
-              "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
-            )
-        }
-      } else {
-        @shader_runtime_render.shader_register_wgsl_runtime_source(
-          source_world, path,
-        )
-      }
+    } else {
+      @shader_runtime_render.shader_register_wgsl_runtime_source(
+        source_world, path,
+      )
     }
   }
 }
@@ -779,7 +761,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         })
       })
     })
-    render3d_prepare_shader_asset_paths(source_world, meshes)
+    render3d_prepare_shader_asset_paths(source_world, world)
     render3d_prewarm_mesh_pipelines(
       world, mesh_runtime_state_value, cameras, meshes,
     )

@@ -66,6 +66,58 @@ pub let ecs_key_render_material_instances : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderMaterialInstances")
 
 ///|
+priv struct RenderMaterialShaderPaths {
+  paths : Map[String, Bool]
+}
+
+///|
+fn RenderMaterialShaderPaths::RenderMaterialShaderPaths() -> RenderMaterialShaderPaths {
+  RenderMaterialShaderPaths::{ paths: {} }
+}
+
+///|
+let ecs_key_render_material_shader_paths : @ecs.ResourceKey[
+  RenderMaterialShaderPaths,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::RenderMaterialShaderPaths")
+
+///|
+fn RenderMaterialShaderPaths::insert(
+  self : RenderMaterialShaderPaths,
+  path : String?,
+) -> Unit {
+  guard path is Some(value) else { return }
+  self.paths.set(value, true)
+}
+
+///|
+fn RenderMaterialShaderPaths::extract_mesh_material(
+  self : RenderMaterialShaderPaths,
+  material : MeshMaterial3d,
+) -> Unit {
+  guard material.extended_material is Some(extension) else { return }
+  self.insert(extension.vertex_shader_path)
+  self.insert(extension.fragment_shader_path)
+  self.insert(extension.prepass_vertex_shader_path)
+  self.insert(extension.prepass_fragment_shader_path)
+  self.insert(extension.deferred_vertex_shader_path)
+  self.insert(extension.deferred_fragment_shader_path)
+  self.insert(extension.meshlet_fragment_shader_path)
+  self.insert(extension.meshlet_prepass_fragment_shader_path)
+  self.insert(extension.meshlet_deferred_fragment_shader_path)
+}
+
+///|
+fn RenderMaterialShaderPaths::paths(
+  self : RenderMaterialShaderPaths,
+) -> Array[String] {
+  let values : Array[String] = []
+  for path in self.paths.keys() {
+    values.push(path)
+  }
+  values
+}
+
+///|
 pub fn RenderMaterialInstances::len(self : RenderMaterialInstances) -> Int {
   self.instances.length()
 }

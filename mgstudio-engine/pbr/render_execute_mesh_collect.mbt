@@ -60,8 +60,6 @@ priv struct Render3dResolvedMeshMaterial {
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
-  material_vertex_shader_path : String?
-  material_fragment_shader_path : String?
   forward_decal_material_ext : ForwardDecalMaterialExt?
 }
 
@@ -173,18 +171,6 @@ fn render3d_resolve_mesh_material(
   let material_properties = render3d_material_properties_for_standard_material(
     material, material_extension, default_opaque_renderer_method, material_prepass_enabled,
   )
-  let material_vertex_shader_path = material_properties.get_shader(
-    @material.MATERIAL_VERTEX_SHADER_LABEL,
-  )
-  let material_fragment_shader_path = match
-    material_properties.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL) {
-    Some(path) => Some(path)
-    None =>
-      match material_extension {
-        Some(extension) => extension.fragment_shader_path
-        None => None
-      }
-  }
   let resolved = Render3dResolvedMeshMaterial::{
     material,
     material_extension,
@@ -192,8 +178,6 @@ fn render3d_resolve_mesh_material(
     material_bind_group_data: @pbr_render.render3d_resolve_material_extension_bind_group_data(
       material_extension,
     ),
-    material_vertex_shader_path,
-    material_fragment_shader_path,
     forward_decal_material_ext,
   }
   if material_handle.material_family is @material.Material3dFamily::Standard &&
@@ -450,12 +434,6 @@ fn render3d_extract_mesh_for_entity(
             material_extension: None,
             material_properties: value.material_properties(),
             material_bind_group_data: value.material_bind_group_data(),
-            material_vertex_shader_path: value
-            .material_properties()
-            .get_shader(@material.MATERIAL_VERTEX_SHADER_LABEL),
-            material_fragment_shader_path: value
-            .material_properties()
-            .get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
             forward_decal_material_ext: None,
           }
         None =>
@@ -472,8 +450,6 @@ fn render3d_extract_mesh_for_entity(
   let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
   let material_bind_group_data = resolved_material.material_bind_group_data
-  let material_vertex_shader_path = resolved_material.material_vertex_shader_path
-  let material_fragment_shader_path = resolved_material.material_fragment_shader_path
   let layers = match prefetched_layers {
     Some(v) => v
     None => @camera_render_layers.RenderLayers::RenderLayers()
@@ -637,8 +613,6 @@ fn render3d_extract_mesh_for_entity(
         material_extension: resolved_material_extension,
         material_properties,
         material_bind_group_data,
-        material_vertex_shader_path,
-        material_fragment_shader_path,
         material_pipeline_id: None,
         lightmap,
         is_forward_decal,

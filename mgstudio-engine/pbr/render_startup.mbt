@@ -218,6 +218,11 @@ fn configure_pbr_render_world_resources(
   )
   pbr_init_render_resource_if_missing(
     world,
+    ecs_key_render_material_shader_paths,
+    fn() { RenderMaterialShaderPaths::RenderMaterialShaderPaths() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
     @render_view.RenderShadowLodOrigin::resource(),
     fn() { @render_view.RenderShadowLodOrigin::RenderShadowLodOrigin() },
   )
