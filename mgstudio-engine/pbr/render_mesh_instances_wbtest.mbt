@@ -657,6 +657,7 @@ fn render_mesh_instances_test_mesh(
 ///|
 test "pbr: GPU-building extraction queues real meshes and stale removals" {
   let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
   let stale_entity = @render.MainEntity::new(@core.Entity::new(99, 0))
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(stale_entity, RenderMeshQueueData::new(199, 3U, true))
@@ -664,6 +665,7 @@ test "pbr: GPU-building extraction queues real meshes and stale removals" {
 
   render_mesh_instances_extract_gpu_building_resource(
     world,
+    source_world,
     [
       render_mesh_instances_test_mesh(10, 110),
       render_mesh_instances_test_mesh(11, 111, has_no_cpu_culling=true),
@@ -690,16 +692,21 @@ test "pbr: GPU-building extraction queues real meshes and stale removals" {
 ///|
 test "pbr: GPU-building extraction preserves previous input index and lightmap packing" {
   let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
   let entity = @render.MainEntity::new(@core.Entity::new(12, 0))
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(entity, RenderMeshQueueData::new(212, 5U, true))
   world.insert_resource(RenderMeshInstances::resource(), instances)
+  let reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+  reextract.insert(entity)
+  world.insert_resource(MeshesToReextractNextFrame::resource(), reextract)
   let lightmap = Lightmap::new(@asset.Handle::new(7)).with_uv_rect(
     @math.Rect::new(@math.Vec2::new(0.25F, 0.5F), @math.Vec2::new(0.75F, 1.0F)),
   )
 
   render_mesh_instances_extract_gpu_building_resource(
     world,
+    source_world,
     [
       render_mesh_instances_test_mesh(
         12,
@@ -726,6 +733,41 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
     }
     _ => abort("expected CPU culling queue")
   }
+}
+
+///|
+test "pbr: GPU-building extraction skips unchanged known meshes until reextract" {
+  let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
+  let entity = @render.MainEntity::new(@core.Entity::new(13, 0))
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  instances.insert(entity, RenderMeshQueueData::new(213, 6U, true))
+  world.insert_resource(RenderMeshInstances::resource(), instances)
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    source_world,
+    [render_mesh_instances_test_mesh(13, 213)],
+    false,
+  )
+
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU mesh queues")
+  }
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="0")
+
+  let reextract = MeshesToReextractNextFrame::MeshesToReextractNextFrame()
+  reextract.insert(entity)
+  world.insert_resource(MeshesToReextractNextFrame::resource(), reextract)
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    source_world,
+    [render_mesh_instances_test_mesh(13, 213)],
+    false,
+  )
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
 }
 
 ///|
@@ -802,6 +844,7 @@ test "pbr: runtime GPU-building collect consumes queued meshes" {
 
   render_mesh_instances_extract_gpu_building_resource(
     world,
+    @ecs.World::new(),
     [render_mesh_instances_test_mesh(30, 130)],
     false,
   )

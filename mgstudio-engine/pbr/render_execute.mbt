@@ -781,6 +781,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     if frame_config.gpu_instance_buffer_builder_enabled {
       render_mesh_instances_extract_gpu_building_resource(
         world,
+        source_world,
         meshes,
         frame_config.gpu_culling_supported,
       )
