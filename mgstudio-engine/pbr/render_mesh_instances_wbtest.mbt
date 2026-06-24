@@ -771,6 +771,37 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
 }
 
 ///|
+test "pbr: GPU-building extraction queues source changed meshes" {
+  let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  ignore(source_world.increment_change_tick())
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(214)),
+  )
+  let main_entity = @render.MainEntity::new(entity)
+  let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
+  instances.insert(main_entity, RenderMeshQueueData::new(214, 7U, true))
+  world.insert_resource(RenderMeshInstances::resource(), instances)
+
+  render_mesh_instances_extract_gpu_building_resource(
+    world,
+    source_world,
+    [render_mesh_instances_test_mesh(entity.id, 214)],
+    false,
+  )
+
+  let queues = match
+    world.get_resource(RenderMeshInstanceGpuQueues::resource()) {
+    Some(value) => value
+    None => abort("missing GPU mesh queues")
+  }
+  debug_inspect(queues.borrow_local_mut().changed_len(), content="1")
+}
+
+///|
 test "pbr: GPU-building extraction reads source removed Mesh3d entities" {
   let source_world = @ecs.World::new()
   let entity = source_world.spawn()
