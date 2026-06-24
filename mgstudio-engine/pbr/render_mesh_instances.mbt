@@ -1298,11 +1298,25 @@ let ecs_key_render_mesh_instance_gpu_extraction_state : @ecs.ResourceKey[
 )
 
 ///|
+fn render_mesh_instance_gpu_extraction_source_this_run(
+  source_world : @ecs.World,
+) -> @core.Tick {
+  let tick = source_world.read_change_tick()
+  if tick > 0 {
+    tick
+  } else {
+    1
+  }
+}
+
+///|
 fn render_mesh_instance_gpu_extraction_system_ticks(
   render_world : @ecs.World,
   source_world : @ecs.World,
 ) -> @core.SystemTicks {
-  let this_run = source_world.read_change_tick()
+  let this_run = render_mesh_instance_gpu_extraction_source_this_run(
+    source_world,
+  )
   let last_run = match
     render_world.get_resource(ecs_key_render_mesh_instance_gpu_extraction_state) {
     Some(state) => state.last_source_change_tick
@@ -1980,66 +1994,69 @@ fn render_mesh_instance_gpu_builder_from_extracted(
 }
 
 ///|
-fn[T] render_mesh_instances_gpu_component_changed(
+fn[T] render_mesh_instances_gpu_extend_changed_component_entities(
   source_world : @ecs.World,
-  entity : @core.Entity,
   key : @ecs.ComponentKey[T],
   system_ticks : @core.SystemTicks,
-) -> Bool {
-  source_world.is_changed_by_key(entity, key, system_ticks)
+  entities : Map[UInt64, @render.MainEntity],
+) -> Unit {
+  for entity in source_world.changed_components(key, system_ticks).read() {
+    entities.set(entity.to_bits(), @render.MainEntity::new(entity))
+  }
 }
 
 ///|
-fn render_mesh_instances_gpu_source_changed(
+fn render_mesh_instances_gpu_changed_mesh_set(
   source_world : @ecs.World,
-  entity : @core.Entity,
   system_ticks : @core.SystemTicks,
-) -> Bool {
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @visibility.ecs_key_view_visibility, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @transform.ecs_key_global_transform, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, ecs_key_previous_global_transform, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, ecs_key_lightmap, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @camera_primitives.ecs_key_aabb, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @mesh.ecs_key_mesh3d, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @mesh.ecs_key_mesh_tag, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @visibility.ecs_key_no_frustum_culling, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, ecs_key_not_shadow_receiver, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, ecs_key_transmitted_shadow_receiver, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, ecs_key_not_shadow_caster, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @render_batching.ecs_key_no_automatic_batching, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @visibility.ecs_key_no_cpu_culling, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @visibility.ecs_key_visibility_range, system_ticks,
-  ) ||
-  render_mesh_instances_gpu_component_changed(
-    source_world, entity, @mesh.ecs_key_skinned_mesh, system_ticks,
+) -> Map[UInt64, @render.MainEntity] {
+  let entities : Map[UInt64, @render.MainEntity] = {}
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @visibility.ecs_key_view_visibility, system_ticks, entities,
   )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @transform.ecs_key_global_transform, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, ecs_key_previous_global_transform, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, ecs_key_lightmap, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @camera_primitives.ecs_key_aabb, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @mesh.ecs_key_mesh3d, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @mesh.ecs_key_mesh_tag, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @visibility.ecs_key_no_frustum_culling, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, ecs_key_not_shadow_receiver, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, ecs_key_transmitted_shadow_receiver, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, ecs_key_not_shadow_caster, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @render_batching.ecs_key_no_automatic_batching, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @visibility.ecs_key_no_cpu_culling, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @visibility.ecs_key_visibility_range, system_ticks, entities,
+  )
+  render_mesh_instances_gpu_extend_changed_component_entities(
+    source_world, @mesh.ecs_key_skinned_mesh, system_ticks, entities,
+  )
+  entities
 }
 
 ///|
@@ -2371,29 +2388,23 @@ fn render_mesh_instances_extract_gpu_building_resource(
   )
   queues.init(any_gpu_culling)
   let all_meshes_query = render_mesh_instances_gpu_all_meshes_query(meshes)
+  let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
+    source_world, system_ticks,
+  )
   let changed_entities : Map[UInt64, @render.MainEntity] = {}
   let queued_removed : Map[UInt64, Bool] = {}
   let queue = queues.borrow_local_mut()
-  for extracted_mesh in meshes {
-    let payload = extracted_mesh.payload
-    if payload.mesh_id <= 0 {
-      continue
+  for item in changed_meshes_query.values() {
+    let bits = item.id().to_bits()
+    match all_meshes_query.get(bits) {
+      Some(extracted_mesh) => {
+        render_mesh_instances_gpu_queue_extracted_mesh(
+          queue, gpu_instances, extracted_mesh, any_gpu_culling,
+        )
+        changed_entities.set(bits, item)
+      }
+      None => ()
     }
-    let entity = @render.MainEntity::new(extracted_mesh.entity.main_entity)
-    let entity_bits = entity.id().to_bits()
-    let known_instance = gpu_instances.entries.contains(entity_bits)
-    let changed = render_mesh_instances_gpu_source_changed(
-      source_world,
-      entity.id(),
-      system_ticks,
-    )
-    if known_instance && !changed {
-      continue
-    }
-    render_mesh_instances_gpu_queue_extracted_mesh(
-      queue, gpu_instances, extracted_mesh, any_gpu_culling,
-    )
-    changed_entities.set(entity_bits, entity)
   }
   for item in potential_reextraction_set.values() {
     let bits = item.id().to_bits()
@@ -2424,7 +2435,7 @@ fn render_mesh_instances_extract_gpu_building_resource(
   }
   render_mesh_instance_gpu_extraction_set_last_source_change_tick(
     world,
-    source_world.read_change_tick(),
+    render_mesh_instance_gpu_extraction_source_this_run(source_world),
   )
 }
 

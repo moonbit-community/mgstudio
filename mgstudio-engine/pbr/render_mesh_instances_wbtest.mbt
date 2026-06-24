@@ -600,10 +600,27 @@ fn render_mesh_instances_test_mesh(
   has_previous_transform? : Bool = false,
   lightmap? : Lightmap? = None,
 ) -> ExtractedMesh3d {
+  render_mesh_instances_test_mesh_for_entity(
+    @core.Entity::new(entity_id, 0),
+    mesh_id,
+    has_no_cpu_culling~,
+    has_previous_transform~,
+    lightmap~,
+  )
+}
+
+///|
+fn render_mesh_instances_test_mesh_for_entity(
+  entity : @core.Entity,
+  mesh_id : Int,
+  has_no_cpu_culling? : Bool = false,
+  has_previous_transform? : Bool = false,
+  lightmap? : Lightmap? = None,
+) -> ExtractedMesh3d {
   let transform = @transform.Transform::identity()
   let world_from_local = @math.Affine3::identity()
   ExtractedMesh3d::{
-    entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
+    entity: phase_entity_ref3d_for_main(entity),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(mesh_id),
       mesh_id,
@@ -658,6 +675,18 @@ fn render_mesh_instances_test_mesh(
 test "pbr: GPU-building extraction queues real meshes and stale removals" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()
+  let first = source_world.spawn()
+  let second = source_world.spawn()
+  try! source_world.set_by_key(
+    first,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(110)),
+  )
+  try! source_world.set_by_key(
+    second,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(111)),
+  )
   let stale_entity = @render.MainEntity::new(@core.Entity::new(99, 0))
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
   instances.insert(stale_entity, RenderMeshQueueData::new(199, 3U, true))
@@ -667,8 +696,12 @@ test "pbr: GPU-building extraction queues real meshes and stale removals" {
     world,
     source_world,
     [
-      render_mesh_instances_test_mesh(10, 110),
-      render_mesh_instances_test_mesh(11, 111, has_no_cpu_culling=true),
+      render_mesh_instances_test_mesh_for_entity(first, 110),
+      render_mesh_instances_test_mesh_for_entity(
+        second,
+        111,
+        has_no_cpu_culling=true,
+      ),
     ],
     true,
   )
@@ -789,7 +822,7 @@ test "pbr: GPU-building extraction queues source changed meshes" {
   render_mesh_instances_extract_gpu_building_resource(
     world,
     source_world,
-    [render_mesh_instances_test_mesh(entity.id, 214)],
+    [render_mesh_instances_test_mesh_for_entity(entity, 214)],
     false,
   )
 
@@ -862,7 +895,13 @@ test "pbr: material bind group preparation records bindless material bindings" {
 ///|
 test "pbr: runtime GPU-building collect consumes queued meshes" {
   let world = @ecs.World::new()
-  let entity = @core.Entity::new(30, 0)
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(130)),
+  )
   world.insert_resource(
     RenderMeshInstances::resource(),
     RenderMeshInstances::new(use_gpu_instance_buffer_builder=true),
@@ -898,8 +937,8 @@ test "pbr: runtime GPU-building collect consumes queued meshes" {
 
   render_mesh_instances_extract_gpu_building_resource(
     world,
-    @ecs.World::new(),
-    [render_mesh_instances_test_mesh(30, 130)],
+    source_world,
+    [render_mesh_instances_test_mesh_for_entity(entity, 130)],
     false,
   )
   render_mesh_instances_collect_gpu_building_resource(world)
