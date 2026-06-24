@@ -1711,10 +1711,16 @@ pub fn RenderMeshInstancesCpu::insert(
   entity : @render.MainEntity,
   data : RenderMeshQueueData,
 ) -> Unit {
-  self.entries.set(
-    entity.id().to_bits(),
-    RenderMeshInstanceCpu::from_queue_data(data),
-  )
+  self.insert_instance(entity, RenderMeshInstanceCpu::from_queue_data(data))
+}
+
+///|
+fn RenderMeshInstancesCpu::insert_instance(
+  self : RenderMeshInstancesCpu,
+  entity : @render.MainEntity,
+  instance : RenderMeshInstanceCpu,
+) -> Unit {
+  self.entries.set(entity.id().to_bits(), instance)
 }
 
 ///|
@@ -1893,26 +1899,6 @@ pub fn mark_all_meshes_for_reextraction(
 }
 
 ///|
-fn render_mesh_queue_data_for_cpu_building(
-  mesh : Mesh3dExtractedPayload,
-) -> RenderMeshQueueData {
-  let flags = RenderMeshInstanceFlags::from_extraction_components(
-    mesh.has_previous_transform,
-    mesh.has_previous_skin,
-    mesh.has_previous_morph,
-    mesh.has_not_shadow_caster,
-    mesh.has_no_automatic_batching,
-    false,
-  )
-  RenderMeshQueueData::new(
-    mesh.mesh_id,
-    0U,
-    flags.contains(RenderMeshInstanceFlags::automatic_batching()),
-    flags~,
-  )
-}
-
-///|
 fn render_mesh_instances_unorm16(value : Float) -> UInt {
   let rounded = (value * 65535.0F).round().to_int()
   if rounded <= 0 {
@@ -1961,6 +1947,7 @@ priv struct RenderMeshInstanceGpuExtractionRow {
   has_not_shadow_caster : Bool
   has_no_automatic_batching : Bool
   has_no_cpu_culling : Bool
+  visibility_range : @visibility.VisibilityRange?
   render_layers : @camera_render_layers.RenderLayers?
 }
 
@@ -2020,6 +2007,9 @@ fn render_mesh_instance_gpu_extraction_row_from_source(
       entity, @visibility.ecs_key_no_cpu_culling,
     ))
     is Some(_),
+    visibility_range: try! source_world.get_by_key(
+      entity, @visibility.ecs_key_visibility_range,
+    ),
     render_layers: try! source_world.get_by_key(
       entity, @camera_render_layers.ecs_key_render_layers,
     ),
@@ -2046,10 +2036,37 @@ fn render_mesh_instance_shared_for_gpu_extraction_row(
 }
 
 ///|
-fn render_mesh_instance_gpu_extraction_row_mesh_flags(
+fn render_mesh_instance_extraction_row_lod_index(
   row : RenderMeshInstanceGpuExtractionRow,
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
+) -> Int? {
+  guard row.visibility_range is Some(_) else { return None }
+  guard render_visibility_ranges is Some(ranges) else { return None }
+  ranges.lod_index_for_entity(row.entity.id)
+}
+
+///|
+fn render_mesh_instance_extraction_row_mesh_flags(
+  row : RenderMeshInstanceGpuExtractionRow,
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
 ) -> UInt {
-  let mut flags = RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
+  let mut flags = match
+    render_mesh_instance_extraction_row_lod_index(row, render_visibility_ranges) {
+    Some(lod_index) =>
+      if lod_index >= 0 && lod_index < 0xFFFF {
+        lod_index.reinterpret_as_uint()
+      } else {
+        RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
+      }
+    None => RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
+  }
+  match row.visibility_range {
+    Some(range) =>
+      if range.use_aabb() {
+        flags = flags | RENDER3D_MESH_FLAGS_AABB_BASED_VISIBILITY_RANGE
+      }
+    None => ()
+  }
   if row.has_no_frustum_culling {
     flags = flags | RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING
   }
@@ -2069,6 +2086,7 @@ fn render_mesh_instance_gpu_extraction_row_mesh_flags(
 fn render_mesh_instance_gpu_builder_from_extraction_row(
   instances : RenderMeshInstancesGpu,
   row : RenderMeshInstanceGpuExtractionRow,
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
 ) -> RenderMeshInstanceGpuBuilder {
   let entity = @render.MainEntity::new(row.entity)
   let shared = render_mesh_instance_shared_for_gpu_extraction_row(row)
@@ -2078,7 +2096,77 @@ fn render_mesh_instance_gpu_builder_from_extraction_row(
     render_mesh_instances_pack_lightmap_uv_rect(row.lightmap),
     render_mesh_instances_gpu_previous_input_index(instances, entity, shared),
     row.render_layers,
-    render_mesh_instance_gpu_extraction_row_mesh_flags(row),
+    render_mesh_instance_extraction_row_mesh_flags(
+      row, render_visibility_ranges,
+    ),
+  )
+}
+
+///|
+fn render_mesh_instance_cpu_material_binding_id(
+  row : RenderMeshInstanceGpuExtractionRow,
+  mesh_material_ids : RenderMaterialInstances?,
+  render_material_bindings : RenderMaterialBindings?,
+) -> MaterialBindingId {
+  guard mesh_material_ids is Some(material_ids) else {
+    return MaterialBindingId::MaterialBindingId()
+  }
+  let material_id = material_ids.mesh_material(row.entity)
+  guard material_id != DUMMY_MESH_MATERIAL_ID else {
+    return MaterialBindingId::MaterialBindingId()
+  }
+  match render_material_bindings {
+    Some(bindings) =>
+      match bindings.get(material_id) {
+        Some(binding) => binding
+        None => MaterialBindingId::MaterialBindingId()
+      }
+    None => MaterialBindingId::MaterialBindingId()
+  }
+}
+
+///|
+fn render_mesh_instance_cpu_from_extraction_row(
+  row : RenderMeshInstanceGpuExtractionRow,
+  mesh_material_ids : RenderMaterialInstances?,
+  render_material_bindings : RenderMaterialBindings?,
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
+) -> RenderMeshInstanceCpu {
+  let shared_flags = RenderMeshInstanceFlags::from_extraction_components(
+    row.previous_global_transform is Some(_),
+    false,
+    false,
+    row.has_not_shadow_caster,
+    row.has_no_automatic_batching,
+    false,
+  )
+  let tag = match row.tag {
+    Some(value) => value.value()
+    None => 0U
+  }
+  let shared = RenderMeshInstanceSharedFlat::new(
+    row.mesh.mesh().id(),
+    material_bindings_index=render_mesh_instance_cpu_material_binding_id(
+      row, mesh_material_ids, render_material_bindings,
+    ),
+    tag~,
+    flags=shared_flags,
+  )
+  let previous_world_from_local = match row.previous_global_transform {
+    Some(value) => value.affine()
+    None => row.world_from_local
+  }
+  let transforms = MeshTransforms::new(
+    row.world_from_local,
+    previous_world_from_local,
+    render_mesh_instance_extraction_row_mesh_flags(
+      row, render_visibility_ranges,
+    ),
+  )
+  RenderMeshInstanceCpu::new(
+    shared,
+    transforms=Some(transforms),
+    render_layers=row.render_layers,
   )
 }
 
@@ -2244,6 +2332,7 @@ fn render_mesh_instances_gpu_queue_extraction_row(
   queue : RenderMeshInstanceGpuQueue,
   gpu_instances : RenderMeshInstancesGpu,
   row : RenderMeshInstanceGpuExtractionRow,
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
   any_gpu_culling : Bool,
 ) -> Unit {
   let entity = @render.MainEntity::new(row.entity)
@@ -2252,7 +2341,7 @@ fn render_mesh_instances_gpu_queue_extraction_row(
     return
   }
   let builder = render_mesh_instance_gpu_builder_from_extraction_row(
-    gpu_instances, row,
+    gpu_instances, row, render_visibility_ranges,
   )
   let culling_data = if any_gpu_culling {
     Some(MeshCullingData::new(row.aabb))
@@ -2479,6 +2568,9 @@ fn render_mesh_instances_extract_gpu_building_resource(
   let removed_mesh3d_set = render_mesh_instances_gpu_removed_mesh3d_set(
     source_world, system_ticks,
   )
+  let render_visibility_ranges = world.get_resource(
+    @render_visibility.ecs_key_render_visibility_ranges,
+  )
   queues.init(any_gpu_culling)
   let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
     source_world, system_ticks,
@@ -2494,7 +2586,7 @@ fn render_mesh_instances_extract_gpu_building_resource(
       ) {
       Some(row) => {
         render_mesh_instances_gpu_queue_extraction_row(
-          queue, gpu_instances, row, any_gpu_culling,
+          queue, gpu_instances, row, render_visibility_ranges, any_gpu_culling,
         )
         changed_entities.set(bits, item)
       }
@@ -2511,7 +2603,7 @@ fn render_mesh_instances_extract_gpu_building_resource(
         ) {
         Some(row) =>
           render_mesh_instances_gpu_queue_extraction_row(
-            queue, gpu_instances, row, any_gpu_culling,
+            queue, gpu_instances, row, render_visibility_ranges, any_gpu_culling,
           )
         None => ()
       }
@@ -2530,32 +2622,117 @@ fn render_mesh_instances_extract_gpu_building_resource(
 }
 
 ///|
-fn render_mesh_instances_for_cpu_building(
-  meshes : Array[ExtractedMesh3d],
+fn render_mesh_instances_cpu_resource_or_insert(
+  world : @ecs.World,
 ) -> RenderMeshInstances {
-  let instances = RenderMeshInstances::new()
-  for mesh in meshes {
-    let payload = mesh.payload
-    if payload.mesh_id <= 0 {
-      continue
+  match world.get_resource(RenderMeshInstances::resource()) {
+    Some(instances) =>
+      match instances {
+        CpuBuilding(_) => instances
+        GpuBuilding(_) => {
+          let next = RenderMeshInstances::new()
+          world.insert_resource(RenderMeshInstances::resource(), next)
+          match world.get_resource(RenderMeshInstances::resource()) {
+            Some(value) => value
+            None => abort("RenderMeshInstances resource missing after insert")
+          }
+        }
+      }
+    None => {
+      let next = RenderMeshInstances::new()
+      world.insert_resource(RenderMeshInstances::resource(), next)
+      match world.get_resource(RenderMeshInstances::resource()) {
+        Some(value) => value
+        None => abort("RenderMeshInstances resource missing after insert")
+      }
     }
-    instances.insert(
-      @render.MainEntity::new(mesh.entity.main_entity),
-      render_mesh_queue_data_for_cpu_building(payload),
-    )
   }
-  instances
 }
 
 ///|
 fn render_mesh_instances_update_cpu_building_resource(
   world : @ecs.World,
-  meshes : Array[ExtractedMesh3d],
+  source_world : @ecs.World,
 ) -> Unit {
-  world.insert_resource(
-    RenderMeshInstances::resource(),
-    render_mesh_instances_for_cpu_building(meshes),
+  let instances = render_mesh_instances_cpu_resource_or_insert(world)
+  let cpu_instances = match instances {
+    CpuBuilding(value) => value
+    GpuBuilding(_) => return
+  }
+  cpu_instances.clear()
+  let mesh_material_ids = world.get_resource(ecs_key_render_material_instances)
+  let render_material_bindings = world.get_resource(
+    RenderMaterialBindings::resource(),
   )
+  let render_visibility_ranges = world.get_resource(
+    @render_visibility.ecs_key_render_visibility_ranges,
+  )
+  let mesh_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Read[@mesh.Mesh3d],
+        @ecs.Read[@visibility.ViewVisibility],
+        @ecs.Read[@transform.GlobalTransform],
+      ),
+      (
+        @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
+        @ecs.Optional[@mesh.MeshTag],
+        @ecs.Optional[@visibility.VisibilityRange],
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+      ),
+      (
+        (
+          @ecs.Has[@visibility.NoFrustumCulling],
+          @ecs.Has[NotShadowReceiver],
+          @ecs.Has[TransmittedShadowReceiver],
+        ),
+        (
+          @ecs.Has[NotShadowCaster],
+          @ecs.Has[@render_batching.NoAutomaticBatching],
+        ),
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! mesh_query.view(fn(_query_entity, data) {
+    let (
+      entity,
+      (mesh, view_visibility, global_transform),
+      (previous_global_transform, tag, visibility_range, render_layers),
+      (
+        (no_frustum_culling, not_shadow_receiver, transmitted_shadow_receiver),
+        (not_shadow_caster, no_automatic_batching),
+      ),
+    ) = data
+    if !view_visibility.value().is_visible() {
+      return
+    }
+    let row = RenderMeshInstanceGpuExtractionRow::{
+      entity,
+      view_visibility: view_visibility.value(),
+      world_from_local: global_transform.value().affine(),
+      previous_global_transform: previous_global_transform.value(),
+      lightmap: None,
+      aabb: None,
+      mesh: mesh.value(),
+      tag: tag.value(),
+      has_no_frustum_culling: no_frustum_culling.present(),
+      has_not_shadow_receiver: not_shadow_receiver.present(),
+      has_transmitted_shadow_receiver: transmitted_shadow_receiver.present(),
+      has_not_shadow_caster: not_shadow_caster.present(),
+      has_no_automatic_batching: no_automatic_batching.present(),
+      has_no_cpu_culling: false,
+      visibility_range: visibility_range.value(),
+      render_layers: render_layers.value(),
+    }
+    cpu_instances.insert_instance(
+      @render.MainEntity::new(entity),
+      render_mesh_instance_cpu_from_extraction_row(
+        row, mesh_material_ids, render_material_bindings, render_visibility_ranges,
+      ),
+    )
+  })
 }
 
 ///|

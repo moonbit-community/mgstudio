@@ -785,7 +785,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         frame_config.gpu_culling_supported,
       )
     } else {
-      render_mesh_instances_update_cpu_building_resource(world, meshes)
+      render_mesh_instances_update_cpu_building_resource(world, source_world)
     }
     meshes
   })

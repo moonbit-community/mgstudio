@@ -41,6 +41,9 @@ const RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER : UInt = 1U << 30
 const RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
 
 ///|
+const RENDER3D_MESH_FLAGS_AABB_BASED_VISIBILITY_RANGE : UInt = 1U << 27
+
+///|
 fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
   let mut flags = 0
   if mesh.payload.is_forward_decal || mesh.payload.clustered_decal is Some(_) {

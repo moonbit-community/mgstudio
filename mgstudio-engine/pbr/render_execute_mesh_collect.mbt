@@ -277,7 +277,7 @@ fn render3d_extract_mesh_for_entity(
     prefetched_clustered_decal,
     prefetched_has_not_shadow_caster,
     prefetched_has_no_frustum_culling,
-    prefetched_has_no_automatic_batching,
+    _prefetched_has_no_automatic_batching,
     prefetched_has_no_cpu_culling,
     prefetched_has_not_shadow_receiver,
     prefetched_has_transmitted_shadow_receiver,
@@ -487,7 +487,6 @@ fn render3d_extract_mesh_for_entity(
   } else {
     None
   }
-  let has_previous_transform = previous_global_transform is Some(_)
   let aabb = prefetched_aabb
   let entity_key = render3d_mesh_entity_key(entity)
   let has_previous_skin = skin_uniforms_value.previous_skins.contains(
@@ -588,7 +587,6 @@ fn render3d_extract_mesh_for_entity(
   let clustered_decal = prefetched_clustered_decal
   let has_not_shadow_caster = prefetched_has_not_shadow_caster
   let has_no_frustum_culling = prefetched_has_no_frustum_culling
-  let has_no_automatic_batching = prefetched_has_no_automatic_batching
   let has_no_cpu_culling = prefetched_has_no_cpu_culling
   let has_not_shadow_receiver = prefetched_has_not_shadow_receiver
   let has_transmitted_shadow_receiver = prefetched_has_transmitted_shadow_receiver
@@ -650,7 +648,6 @@ fn render3d_extract_mesh_for_entity(
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
         has_no_frustum_culling,
-        has_no_automatic_batching,
         has_no_cpu_culling,
         layers,
         has_no_wireframe,
@@ -660,9 +657,7 @@ fn render3d_extract_mesh_for_entity(
         wireframe_line_width,
         wireframe_topology,
         skinning_key_hi,
-        has_previous_transform,
         has_previous_skin,
-        has_previous_morph,
         morph_weights_index,
         previous_morph_weights_index,
         morph_targets_texture_id,

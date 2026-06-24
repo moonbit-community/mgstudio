@@ -117,6 +117,197 @@ test "pbr: RenderMeshInstances clear preserves persistent render resource varian
 }
 
 ///|
+test "pbr: CPU-building extraction reads Bevy source query rows" {
+  let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(301)),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+    ),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_previous_global_transform,
+    @pbr_prepass.PreviousGlobalTransform::from_global_transform(
+      @transform.GlobalTransform::from_transform(
+        @transform.Transform::from_xyz(4.0F, 5.0F, 6.0F),
+      ),
+    ),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh_tag,
+    @mesh.MeshTag::new(77U),
+  )
+  let visibility_range = @visibility.VisibilityRange::new(
+    1.0F, 2.0F, 3.0F, 4.0F, true,
+  )
+  try! source_world.set_by_key(
+    entity, @visibility.ecs_key_visibility_range, visibility_range,
+  )
+  try! source_world.set_by_key(
+    entity,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(3),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_no_frustum_culling,
+    @visibility.NoFrustumCulling::NoFrustumCulling(),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_not_shadow_receiver,
+    NotShadowReceiver::NotShadowReceiver(),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_transmitted_shadow_receiver,
+    TransmittedShadowReceiver::TransmittedShadowReceiver(),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_not_shadow_caster,
+    NotShadowCaster::NotShadowCaster(),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @render_batching.ecs_key_no_automatic_batching,
+    @render_batching.NoAutomaticBatching::NoAutomaticBatching(),
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    entity,
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(401)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  material_bindings.set(
+    401,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(2),
+      MaterialBindGroupSlot::new(11),
+    ),
+  )
+  world.insert_resource(RenderMaterialBindings::resource(), material_bindings)
+  let render_visibility_ranges = @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges()
+  render_visibility_ranges.insert(entity.id, visibility_range)
+  world.insert_resource(
+    @render_visibility.ecs_key_render_visibility_ranges, render_visibility_ranges,
+  )
+
+  render_mesh_instances_update_cpu_building_resource(world, source_world)
+
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
+    Some(CpuBuilding(value)) => value
+    Some(GpuBuilding(_)) => abort("expected CPU RenderMeshInstances")
+    None => abort("missing RenderMeshInstances")
+  }
+  let instance = match instances.entries.get(entity.to_bits()) {
+    Some(value) => value
+    None => abort("missing CPU render mesh instance")
+  }
+  let transforms = instance.transforms.unwrap()
+  let mesh_flags = transforms.flags()
+  debug_inspect(instances.len(), content="1")
+  debug_inspect(instance.shared.mesh_asset_id(), content="301")
+  debug_inspect(
+    instance.shared.material_bindings_index().group().to_int(),
+    content="2",
+  )
+  debug_inspect(
+    instance.shared.material_bindings_index().slot().to_int(),
+    content="11",
+  )
+  debug_inspect(instance.shared.tag(), content="77")
+  debug_inspect(
+    instance.shared.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
+    content="false",
+  )
+  debug_inspect(
+    instance.shared
+    .flags()
+    .contains(RenderMeshInstanceFlags::automatic_batching()),
+    content="false",
+  )
+  debug_inspect(instance.render_layers.unwrap().contains(3), content="true")
+  debug_inspect(mesh_flags & 0xFFFFU, content="0")
+  debug_inspect(
+    (mesh_flags & RENDER3D_MESH_FLAGS_AABB_BASED_VISIBILITY_RANGE) != 0U,
+    content="true",
+  )
+  debug_inspect(
+    (mesh_flags & RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING) != 0U,
+    content="true",
+  )
+  debug_inspect(
+    (mesh_flags & RENDER3D_MESH_FLAGS_SHADOW_RECEIVER) != 0U,
+    content="false",
+  )
+  debug_inspect(
+    (mesh_flags & RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER) != 0U,
+    content="true",
+  )
+  debug_inspect(
+    (mesh_flags & RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3) != 0U,
+    content="true",
+  )
+  debug_inspect(
+    transforms.world_from_local().to_scale_rotation_translation().2.x,
+    content="1",
+  )
+  debug_inspect(
+    transforms.previous_world_from_local().to_scale_rotation_translation().2.x,
+    content="4",
+  )
+}
+
+///|
+test "pbr: CPU-building extraction skips invisible source rows" {
+  let world = @ecs.World::new()
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(302)),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  try! source_world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+
+  render_mesh_instances_update_cpu_building_resource(world, source_world)
+
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
+    Some(CpuBuilding(value)) => value
+    Some(GpuBuilding(_)) => abort("expected CPU RenderMeshInstances")
+    None => abort("missing RenderMeshInstances")
+  }
+  debug_inspect(instances.len(), content="0")
+}
+
+///|
 test "pbr: RenderMeshInstances stores Bevy-shaped CPU and GPU instance records" {
   let entity = @render.MainEntity::new(@core.Entity::new(23, 1))
   let flags = RenderMeshInstanceFlags::has_previous_transform().or(
@@ -639,14 +830,12 @@ fn render_mesh_instances_test_mesh(
   entity_id : Int,
   mesh_id : Int,
   has_no_cpu_culling? : Bool = false,
-  has_previous_transform? : Bool = false,
   lightmap? : Lightmap? = None,
 ) -> ExtractedMesh3d {
   render_mesh_instances_test_mesh_for_entity(
     @core.Entity::new(entity_id, 0),
     mesh_id,
     has_no_cpu_culling~,
-    has_previous_transform~,
     lightmap~,
   )
 }
@@ -656,7 +845,6 @@ fn render_mesh_instances_test_mesh_for_entity(
   entity : @core.Entity,
   mesh_id : Int,
   has_no_cpu_culling? : Bool = false,
-  has_previous_transform? : Bool = false,
   lightmap? : Lightmap? = None,
 ) -> ExtractedMesh3d {
   let transform = @transform.Transform::identity()
@@ -691,7 +879,6 @@ fn render_mesh_instances_test_mesh_for_entity(
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
-      has_no_automatic_batching: false,
       has_no_cpu_culling,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
       has_no_wireframe: false,
@@ -701,9 +888,7 @@ fn render_mesh_instances_test_mesh_for_entity(
       wireframe_line_width: None,
       wireframe_topology: None,
       skinning_key_hi: -1,
-      has_previous_transform,
       has_previous_skin: false,
-      has_previous_morph: false,
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
