@@ -144,7 +144,20 @@ fn default_wgsl_value_defines() -> @hashmap.HashMap[
   String,
   @wgsl_common.ShaderDefValue,
 ] {
-  @shader_compile.default_shader_value_defines()
+  let value_defines = @shader_compile.default_shader_value_defines()
+  value_defines.set(
+    "MAX_DIRECTIONAL_LIGHTS",
+    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_DIRECTIONAL_LIGHTS),
+  )
+  value_defines.set(
+    "MAX_CASCADES_PER_LIGHT",
+    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_CASCADES_PER_LIGHT),
+  )
+  value_defines.set(
+    "MAX_RECT_LIGHTS",
+    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_RECT_LIGHTS),
+  )
+  value_defines
 }
 
 ///|

@@ -2012,6 +2012,41 @@ test "renderer: mesh3d pipeline honors descriptor cull mode" {
 }
 
 ///|
+test "renderer: mesh3d shader value defines match Bevy native light limits" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "test/mesh_view_types.wgsl", "#define_import_path test::mesh_view_types\nstruct DirectionalLight { value: u32, }\nstruct RectLight { value: u32, }\nstruct Lights {\n  directional_lights: array<DirectionalLight, #{MAX_DIRECTIONAL_LIGHTS}u>,\n  cascades: array<u32, #{MAX_CASCADES_PER_LIGHT}u>,\n  rect_lights: array<RectLight, #{MAX_RECT_LIGHTS}u>,\n}\n",
+  )
+  register_wgsl_source(
+    "test/main.wgsl", "#import test::mesh_view_types::Lights\nvar<private> lights: Lights;\nfn use_lights() -> u32 { return lights.directional_lights[0u].value; }\n",
+  )
+  let preprocessed = load_wgsl_preprocessed(
+    "",
+    "test/main.wgsl",
+    @hashmap.HashMap([]),
+    default_wgsl_value_defines(),
+  ) catch {
+    _ => abort("failed to preprocess mesh3d value define probe")
+  }
+  debug_inspect(
+    preprocessed.contains("array<DirectionalLight, 10u>") ||
+    preprocessed.contains(", 10>"),
+    content="true",
+  )
+  debug_inspect(
+    preprocessed.contains("array<u32, 4u>") ||
+    preprocessed.contains("array<u32, 4>"),
+    content="true",
+  )
+  debug_inspect(
+    preprocessed.contains("array<RectLight, 8u>") ||
+    preprocessed.contains(", 8>"),
+    content="true",
+  )
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 test "renderer: sprite uv axis metrics preserves flipped spans" {
   let (signed_scale, region_extent) = sprite_uv_axis_metrics(1.0F, 0.0F, 128)
   let ok = signed_scale == -1.0F && region_extent == 128.0F

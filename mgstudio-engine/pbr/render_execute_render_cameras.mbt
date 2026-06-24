@@ -34,7 +34,8 @@ fn render3d_execute_render_cameras(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_lighting",
   )
-  let lighting = @pbr_render.render3d_collect_lighting(source_world)
+  ignore(source_world)
+  let lighting = @pbr_render.render3d_collect_lighting(world)
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_lighting",

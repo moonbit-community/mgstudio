@@ -44,6 +44,49 @@ fn test_f32_bits(value : Float) -> UInt {
 }
 
 ///|
+test "pbr render light: gpu lights uniform bytes match mesh_view_types native layout" {
+  let world = @ecs.World::new()
+  let directional = world.spawn()
+  try! (world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  |> ignore)
+  let rect = world.spawn()
+  try! (world.set_by_key(
+    rect,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    rect,
+    @light.ecs_key_rect_light,
+    @light.RectLight::new(
+      @color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      32.0F * @math.pi(),
+      12.0F,
+      4.0F,
+      8.0F,
+    ),
+  )
+  |> ignore)
+  light_test_extract_lights(world)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.n_directional_lights, content="1")
+  inspect(gpu_lights.n_rect_lights, content="1")
+  inspect(gpu_lights.rect_lights.length(), content=MAX_RECT_LIGHTS.to_string())
+  let bytes = render3d_gpu_lights_uniform_bytes(gpu_lights)
+  inspect(bytes.length(), content="4576")
+  inspect(test_u32le_at(bytes, 4048), content="1")
+  inspect(test_u32le_at(bytes, 4060), content="1")
+  inspect(test_u32le_at(bytes, 4064), content=test_f32_bits(0.25F).to_string())
+  inspect(test_u32le_at(bytes, 4080), content=test_f32_bits(1.0F).to_string())
+  inspect(test_u32le_at(bytes, 4092), content=test_f32_bits(4.0F).to_string())
+}
+
+///|
 fn test_cluster_offsets_has_point_light(
   bytes : Bytes,
   cluster_count : Int,

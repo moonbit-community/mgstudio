@@ -45,6 +45,8 @@ pub const MAX_CASCADES_PER_LIGHT : Int = 4
 
 pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
 
+pub const MAX_RECT_LIGHTS : Int = 8
+
 pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = 4
 
 pub const RENDER3D_GPU_FOG_MODE_EXPONENTIAL : UInt = 2
@@ -276,6 +278,8 @@ pub fn render3d_collect_extracted_clusterable_point_lights(@ecs.World) -> Array[
 pub fn render3d_collect_extracted_directional_lights(@ecs.World) -> Array[ExtractedDirectionalLight3d]
 
 pub fn render3d_collect_extracted_point_lights(@ecs.World) -> Array[ExtractedPointLight3d]
+
+pub fn render3d_collect_extracted_rect_lights(@ecs.World) -> Array[ExtractedRectLight3d]
 
 pub fn render3d_collect_extracted_spot_lights(@ecs.World) -> Array[ExtractedPointLight3d]
 
@@ -710,6 +714,8 @@ pub struct GpuLights3d {
   n_directional_lights : Int
   spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
+  n_rect_lights : Int
+  rect_lights : Array[GpuRectLight3d]
 }
 pub fn GpuLights3d::GpuLights3d() -> Self
 
@@ -773,6 +779,16 @@ pub(all) struct GpuPreprocessShaderWorkItem3d {
 pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Direct(Array[GpuPreprocessShaderWorkItem3d])
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
+}
+
+pub struct GpuRectLight3d {
+  color : @color.Color
+  position : @math.Vec3
+  width : Float
+  right : @math.Vec3
+  height : Float
+  up : @math.Vec3
+  range : Float
 }
 
 pub struct LightKeyCache {

@@ -56,6 +56,9 @@ pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
 pub const MAX_CASCADES_PER_LIGHT : Int = 4
 
 ///|
+pub const MAX_RECT_LIGHTS : Int = 8
+
+///|
 const POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED : UInt = 1U << 0
 
 ///|
@@ -975,6 +978,17 @@ pub struct GpuDirectionalLight3d {
 }
 
 ///|
+pub struct GpuRectLight3d {
+  color : @color.Color
+  position : @math.Vec3
+  width : Float
+  right : @math.Vec3
+  height : Float
+  up : @math.Vec3
+  range : Float
+}
+
+///|
 pub struct GpuLights3d {
   directional_lights : Array[GpuDirectionalLight3d]
   ambient_color : @color.Color
@@ -983,6 +997,8 @@ pub struct GpuLights3d {
   n_directional_lights : Int
   spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
+  n_rect_lights : Int
+  rect_lights : Array[GpuRectLight3d]
 }
 
 ///|
@@ -995,6 +1011,8 @@ pub fn GpuLights3d::GpuLights3d() -> GpuLights3d {
     n_directional_lights: 0,
     spot_light_shadowmap_offset: 0,
     ambient_light_affects_lightmapped_meshes: 0,
+    n_rect_lights: 0,
+    rect_lights: [],
   }
 }
 
@@ -1291,6 +1309,42 @@ fn render3d_lights_push_directional_light(
 }
 
 ///|
+fn render3d_gpu_rect_light_default() -> GpuRectLight3d {
+  GpuRectLight3d::{
+    color: @color.Color::black(),
+    position: @math.Vec3::zero(),
+    width: 0.0F,
+    right: @math.Vec3::zero(),
+    height: 0.0F,
+    up: @math.Vec3::zero(),
+    range: 0.0F,
+  }
+}
+
+///|
+fn render3d_lights_push_rect_light(
+  words : Array[UInt],
+  light : GpuRectLight3d,
+) -> Unit {
+  render3d_lights_push_f32(words, light.color.r)
+  render3d_lights_push_f32(words, light.color.g)
+  render3d_lights_push_f32(words, light.color.b)
+  render3d_lights_push_f32(words, light.color.a)
+  render3d_lights_push_f32(words, light.position.x)
+  render3d_lights_push_f32(words, light.position.y)
+  render3d_lights_push_f32(words, light.position.z)
+  render3d_lights_push_f32(words, light.width)
+  render3d_lights_push_f32(words, light.right.x)
+  render3d_lights_push_f32(words, light.right.y)
+  render3d_lights_push_f32(words, light.right.z)
+  render3d_lights_push_f32(words, light.height)
+  render3d_lights_push_f32(words, light.up.x)
+  render3d_lights_push_f32(words, light.up.y)
+  render3d_lights_push_f32(words, light.up.z)
+  render3d_lights_push_f32(words, light.range)
+}
+
+///|
 fn render3d_lights_u32le_pack(words : Array[UInt]) -> Bytes {
   Bytes::makei(words.length() * 4, i => {
     let word = words[i / 4]
@@ -1343,7 +1397,15 @@ pub fn render3d_gpu_lights_uniform_bytes(lights : GpuLights3d) -> Bytes {
     words,
     lights.ambient_light_affects_lightmapped_meshes.reinterpret_as_uint(),
   )
-  render3d_lights_push_u32(words, 0U)
+  render3d_lights_push_u32(words, lights.n_rect_lights.reinterpret_as_uint())
+  for rect_light_index in 0..<MAX_RECT_LIGHTS {
+    let rect_light = if rect_light_index < lights.rect_lights.length() {
+      lights.rect_lights[rect_light_index]
+    } else {
+      render3d_gpu_rect_light_default()
+    }
+    render3d_lights_push_rect_light(words, rect_light)
+  }
   render3d_lights_u32le_pack(words)
 }
 
@@ -2527,6 +2589,24 @@ pub fn render3d_collect_extracted_clusterable_point_lights(
 }
 
 ///|
+pub fn render3d_collect_extracted_rect_lights(
+  world : @ecs.World,
+) -> Array[ExtractedRectLight3d] {
+  let extracted : Array[ExtractedRectLight3d] = []
+  world.for_each_component(ecs_key_extracted_rect_light3d, fn(_, light) {
+    extracted.push(light)
+  })
+  extracted.sort_by(fn(left, right) {
+    let id_cmp = cmp_int(left.entity.id, right.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(left.entity.generation, right.entity.generation)
+  })
+  extracted
+}
+
+///|
 pub fn render3d_collect_extracted_directional_lights(
   world : @ecs.World,
 ) -> Array[ExtractedDirectionalLight3d] {
@@ -2918,6 +2998,7 @@ fn render3d_visible_clusterable_objects(
 ///|
 pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
+  let rect_lights = render3d_collect_extracted_rect_lights(world)
   let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
     world,
   )
@@ -3061,6 +3142,27 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   while gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
     gpu_directional_lights.push(render3d_gpu_directional_light_default())
   }
+  let gpu_rect_lights : Array[GpuRectLight3d] = []
+  let rect_light_count = if rect_lights.length() < MAX_RECT_LIGHTS {
+    rect_lights.length()
+  } else {
+    MAX_RECT_LIGHTS
+  }
+  for i in 0..<rect_light_count {
+    let rect_light = rect_lights[i]
+    gpu_rect_lights.push(GpuRectLight3d::{
+      color: render3d_scale_color(rect_light.color, rect_light.intensity),
+      position: rect_light.transform.translation,
+      width: rect_light.width,
+      right: rect_light.transform.right(),
+      height: rect_light.height,
+      up: rect_light.transform.up(),
+      range: rect_light.range,
+    })
+  }
+  while gpu_rect_lights.length() < MAX_RECT_LIGHTS {
+    gpu_rect_lights.push(render3d_gpu_rect_light_default())
+  }
   GpuLights3d::{
     directional_lights: gpu_directional_lights,
     ambient_color: render3d_scale_color(ambient.color, ambient.brightness),
@@ -3081,6 +3183,8 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     } else {
       0
     },
+    n_rect_lights: rect_light_count,
+    rect_lights: gpu_rect_lights,
   }
 }
 
