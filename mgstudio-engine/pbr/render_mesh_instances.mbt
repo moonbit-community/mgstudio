@@ -2060,6 +2060,28 @@ fn render_mesh_instances_gpu_changed_mesh_set(
 }
 
 ///|
+fn render_mesh_instances_gpu_hidden_changed_mesh_set(
+  source_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Map[UInt64, @render.MainEntity] {
+  let entities : Map[UInt64, @render.MainEntity] = {}
+  for
+    entity in source_world
+    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
+    .read() {
+    match
+      (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
+      Some(view_visibility) =>
+        if !view_visibility.is_visible() {
+          entities.set(entity.to_bits(), @render.MainEntity::new(entity))
+        }
+      None => ()
+    }
+  }
+  entities
+}
+
+///|
 fn[T] render_mesh_instances_gpu_extend_removed_component_entities(
   source_world : @ecs.World,
   key : @ecs.ComponentKey[T],
@@ -2391,6 +2413,9 @@ fn render_mesh_instances_extract_gpu_building_resource(
   let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
     source_world, system_ticks,
   )
+  let hidden_changed_meshes = render_mesh_instances_gpu_hidden_changed_mesh_set(
+    source_world, system_ticks,
+  )
   let changed_entities : Map[UInt64, @render.MainEntity] = {}
   let queued_removed : Map[UInt64, Bool] = {}
   let queue = queues.borrow_local_mut()
@@ -2403,7 +2428,11 @@ fn render_mesh_instances_extract_gpu_building_resource(
         )
         changed_entities.set(bits, item)
       }
-      None => ()
+      None =>
+        if hidden_changed_meshes.contains(bits) {
+          queue.remove(item, any_gpu_culling)
+          changed_entities.set(bits, item)
+        }
     }
   }
   for item in potential_reextraction_set.values() {
@@ -2428,6 +2457,7 @@ fn render_mesh_instances_extract_gpu_building_resource(
   for entity in gpu_instances.keys() {
     let bits = entity.id().to_bits()
     if !all_meshes_query.contains(bits) &&
+      !changed_entities.contains(bits) &&
       !meshes_to_reextract.contains(entity) &&
       !queued_removed.contains(bits) {
       queue.remove(entity, any_gpu_culling)
