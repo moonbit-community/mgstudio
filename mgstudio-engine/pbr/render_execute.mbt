@@ -449,13 +449,13 @@ fn render3d_prewarm_material_pipeline(
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   mesh : Mesh3dExtractedPayload,
   camera : Camera3dViewPayload,
-  view_entity : @core.Entity,
+  retained_view_entity : @render_view.RetainedViewEntity,
   visible_entity : @core.Entity,
   specialization_tick : @core.Tick,
 ) -> @material.CachedRenderPipelineId? {
   match world.get_resource(ecs_key_specialized_material_pipeline_cache) {
     Some(cache) =>
-      match cache.pipeline_id(view_entity, visible_entity) {
+      match cache.pipeline_id(retained_view_entity, visible_entity) {
         Some(pipeline_id) => return Some(pipeline_id)
         None => ()
       }
@@ -521,7 +521,7 @@ fn render3d_prewarm_material_pipeline(
       ignore(
         cache_ref.modify(fn(cache) {
           cache.insert(
-            view_entity, visible_entity, specialization_tick, pipeline_id,
+            retained_view_entity, visible_entity, specialization_tick, pipeline_id,
           )
         }),
       )
@@ -562,12 +562,15 @@ fn render3d_prewarm_mesh_pipelines(
     let mesh = extracted_mesh.payload
     let mut material_pipeline_id : @material.CachedRenderPipelineId? = None
     for camera in cameras {
+      let retained_view_entity = @render_view.RetainedViewEntity::new(
+        camera.entity.main_entity,
+      )
       let view_pipeline_id = render3d_prewarm_material_pipeline(
         world,
         mesh_runtime_state_value,
         mesh,
         camera.payload,
-        camera.entity.main_entity,
+        retained_view_entity,
         extracted_mesh.entity.main_entity,
         specialization_tick,
       )

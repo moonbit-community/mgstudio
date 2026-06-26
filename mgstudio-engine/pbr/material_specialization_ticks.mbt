@@ -158,6 +158,13 @@ pub fn SpecializedMaterialViewPipelineCache::len(
 }
 
 ///|
+pub fn SpecializedMaterialViewPipelineCache::clear(
+  self : SpecializedMaterialViewPipelineCache,
+) -> Unit {
+  self.entries.clear()
+}
+
+///|
 pub fn SpecializedMaterialViewPipelineCache::get(
   self : SpecializedMaterialViewPipelineCache,
   entity : @core.Entity,
@@ -190,12 +197,15 @@ pub fn SpecializedMaterialViewPipelineCache::remove(
 
 ///|
 pub struct SpecializedMaterialPipelineCache {
-  views : Map[UInt64, SpecializedMaterialViewPipelineCache]
+  views : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    SpecializedMaterialViewPipelineCache,
+  ]
 }
 
 ///|
 pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> SpecializedMaterialPipelineCache {
-  SpecializedMaterialPipelineCache::{ views: {} }
+  SpecializedMaterialPipelineCache::{ views: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -222,15 +232,15 @@ pub fn SpecializedMaterialPipelineCache::clear(
 ///|
 pub fn SpecializedMaterialPipelineCache::get(
   self : SpecializedMaterialPipelineCache,
-  view : @core.Entity,
+  view : @render_view.RetainedViewEntity,
 ) -> SpecializedMaterialViewPipelineCache? {
-  self.views.get(view.to_bits())
+  self.views.get(view)
 }
 
 ///|
 pub fn SpecializedMaterialPipelineCache::pipeline_id(
   self : SpecializedMaterialPipelineCache,
-  view : @core.Entity,
+  view : @render_view.RetainedViewEntity,
   entity : @core.Entity,
 ) -> @material.CachedRenderPipelineId? {
   match self.get(view) {
@@ -243,23 +253,38 @@ pub fn SpecializedMaterialPipelineCache::pipeline_id(
 ///|
 pub fn SpecializedMaterialPipelineCache::view_or_insert(
   self : SpecializedMaterialPipelineCache,
-  view : @core.Entity,
+  view : @render_view.RetainedViewEntity,
 ) -> SpecializedMaterialViewPipelineCache {
-  let key = view.to_bits()
-  match self.views.get(key) {
+  match self.views.get(view) {
     Some(cache) => cache
     None => {
       let cache = SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache()
-      self.views.set(key, cache)
+      self.views.set(view, cache)
       cache
     }
   }
 }
 
 ///|
+pub fn SpecializedMaterialPipelineCache::clear_view(
+  self : SpecializedMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  match self.views.get(view) {
+    Some(cache) => {
+      cache.clear()
+      if cache.len() == 0 {
+        self.views.remove(view)
+      }
+    }
+    None => ()
+  }
+}
+
+///|
 pub fn SpecializedMaterialPipelineCache::insert(
   self : SpecializedMaterialPipelineCache,
-  view : @core.Entity,
+  view : @render_view.RetainedViewEntity,
   entity : @core.Entity,
   tick : @core.Tick,
   pipeline_id : @material.CachedRenderPipelineId,
@@ -281,6 +306,22 @@ pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(
     }
   }
   removed
+}
+
+///|
+pub fn SpecializedMaterialPipelineCache::expire_stale_views(
+  self : SpecializedMaterialPipelineCache,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale : Array[@render_view.RetainedViewEntity] = []
+  for view, _cache in self.views {
+    if !live_views.contains(view) {
+      stale.push(view)
+    }
+  }
+  for view in stale {
+    self.views.remove(view)
+  }
 }
 
 ///|

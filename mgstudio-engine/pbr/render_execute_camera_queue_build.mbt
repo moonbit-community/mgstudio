@@ -72,7 +72,9 @@ fn render3d_build_camera_queue_entry(
       camera_frustum_planes,
       camera.has_no_cpu_culling,
       camera_indirect_enabled,
-      view_entity=Some(view_entity),
+      retained_view_entity=Some(
+        @render_view.RetainedViewEntity::new(view_entity),
+      ),
       specialized_material_pipeline_cache~,
     ),
     meshes,

@@ -80,10 +80,10 @@ pub fn render3d_should_apply_cpu_frustum_culling_flags(
 ///|
 fn render3d_mesh_pipeline_id_for_view(
   mesh : ExtractedMesh3d,
-  view_entity : @core.Entity?,
+  retained_view_entity : @render_view.RetainedViewEntity?,
   specialized_material_pipeline_cache : SpecializedMaterialPipelineCache?,
 ) -> @material.CachedRenderPipelineId? {
-  match (view_entity, specialized_material_pipeline_cache) {
+  match (retained_view_entity, specialized_material_pipeline_cache) {
     (Some(view), Some(cache)) =>
       cache.pipeline_id(view, mesh.entity.main_entity)
     _ => mesh.payload.material_pipeline_id
@@ -92,7 +92,7 @@ fn render3d_mesh_pipeline_id_for_view(
 
 ///|
 test "render3d gpu preprocess: view cache miss does not fall back to extracted pipeline id" {
-  let view = @core.Entity::new(61, 0)
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(61, 0))
   let entity = @core.Entity::new(62, 0)
   let payload_pipeline = @material.CachedRenderPipelineId::new(91UL)
   let cached_pipeline = @material.CachedRenderPipelineId::new(92UL)
@@ -175,7 +175,7 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
 ///|
 fn render3d_traced_mesh_pipeline_id_for_view(
   mesh : ExtractedMesh3d,
-  view_entity : @core.Entity?,
+  retained_view_entity : @render_view.RetainedViewEntity?,
   specialized_material_pipeline_cache : SpecializedMaterialPipelineCache?,
 ) -> @material.CachedRenderPipelineId? {
   let trace_start_us = @app.timeline_trace_begin_span(
@@ -183,7 +183,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
     "render_3d_pipeline_lookup",
   )
   let pipeline_id = render3d_mesh_pipeline_id_for_view(
-    mesh, view_entity, specialized_material_pipeline_cache,
+    mesh, retained_view_entity, specialized_material_pipeline_cache,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -200,7 +200,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
-  view_entity? : @core.Entity? = None,
+  retained_view_entity? : @render_view.RetainedViewEntity? = None,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
@@ -241,7 +241,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       extracted_index: i,
       phase,
       pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
-        mesh, view_entity, specialized_material_pipeline_cache,
+        mesh, retained_view_entity, specialized_material_pipeline_cache,
       ),
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
@@ -284,7 +284,7 @@ fn render3d_collect_meshes_for_gpu_building(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
-  view_entity? : @core.Entity? = None,
+  retained_view_entity? : @render_view.RetainedViewEntity? = None,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
@@ -325,7 +325,7 @@ fn render3d_collect_meshes_for_gpu_building(
       extracted_index: i,
       phase,
       pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
-        mesh, view_entity, specialized_material_pipeline_cache,
+        mesh, retained_view_entity, specialized_material_pipeline_cache,
       ),
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
@@ -1577,7 +1577,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
-  view_entity? : @core.Entity? = None,
+  retained_view_entity? : @render_view.RetainedViewEntity? = None,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
@@ -1588,7 +1588,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
     camera_transform,
     camera_frustum_planes,
     camera_has_no_cpu_culling,
-    view_entity~,
+    retained_view_entity~,
     specialized_material_pipeline_cache~,
   )
   render3d_write_batched_instance_buffers(work_items)
@@ -1602,7 +1602,7 @@ fn render3d_queue_mesh_phase_items(
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   camera_has_no_cpu_culling : Bool,
   use_gpu_instance_buffer_builder : Bool,
-  view_entity? : @core.Entity? = None,
+  retained_view_entity? : @render_view.RetainedViewEntity? = None,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
@@ -1612,7 +1612,7 @@ fn render3d_queue_mesh_phase_items(
       camera_transform,
       camera_frustum_planes,
       camera_has_no_cpu_culling,
-      view_entity~,
+      retained_view_entity~,
       specialized_material_pipeline_cache~,
     )
   }
@@ -1622,7 +1622,7 @@ fn render3d_queue_mesh_phase_items(
     camera_transform,
     camera_frustum_planes,
     camera_has_no_cpu_culling,
-    view_entity~,
+    retained_view_entity~,
     specialized_material_pipeline_cache~,
   )
 }

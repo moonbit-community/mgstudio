@@ -40,7 +40,7 @@ test "pbr material specialization: entity ticks capture system and material inst
 ///|
 test "pbr material specialization: cache stores per-view pipeline ids" {
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
-  let view = @core.Entity::new(1, 0)
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(1, 0))
   let entity = @core.Entity::new(2, 0)
   let pipeline_id = @material.CachedRenderPipelineId::new(55UL)
 
@@ -89,7 +89,7 @@ test "pbr material specialization: sweep preserves same-frame material type repl
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
-  let view = @core.Entity::new(4, 0)
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(4, 0))
   let entity = @core.Entity::new(5, 0)
 
   entity_ticks.extract_entity_needs_specialization(
@@ -116,8 +116,8 @@ test "pbr material specialization: sweep removes stale ticks and cached pipeline
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
-  let view_a = @core.Entity::new(9, 0)
-  let view_b = @core.Entity::new(10, 0)
+  let view_a = @render_view.RetainedViewEntity::new(@core.Entity::new(9, 0))
+  let view_b = @render_view.RetainedViewEntity::new(@core.Entity::new(10, 0))
   let entity = @core.Entity::new(11, 0)
 
   entity_ticks.extract_entity_needs_specialization(
@@ -142,4 +142,43 @@ test "pbr material specialization: sweep removes stale ticks and cached pipeline
     cache.get(view_b).map(fn(value) { value.len() }),
     content="Some(0)",
   )
+}
+
+///|
+test "pbr material specialization: cache clears dirty views and expires stale retained views" {
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  let live_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(20, 0),
+    auxiliary_entity=Some(@core.Entity::new(21, 0)),
+    subview_index=1,
+  )
+  let stale_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(22, 0),
+  )
+  let entity = @core.Entity::new(23, 0)
+  cache.insert(
+    live_view,
+    entity,
+    1,
+    @material.CachedRenderPipelineId::new(31UL),
+  )
+  cache.insert(
+    stale_view,
+    entity,
+    1,
+    @material.CachedRenderPipelineId::new(32UL),
+  )
+
+  cache.clear_view(live_view)
+  debug_inspect(cache.pipeline_id(live_view, entity) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(stale_view, entity).map(fn(value) { value.id() }),
+    content="Some(32)",
+  )
+
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  live_views.add(live_view)
+  cache.expire_stale_views(live_views)
+  debug_inspect(cache.pipeline_id(stale_view, entity) is None, content="true")
 }
