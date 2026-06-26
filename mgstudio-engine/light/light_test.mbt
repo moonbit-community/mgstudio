@@ -111,6 +111,16 @@ test "rect light constructor preserves Bevy plain field semantics" {
 }
 
 ///|
+test "spot light default angles match Bevy" {
+  let spot = @light.SpotLight::SpotLight()
+  debug_inspect(spot.inner_angle.to_double(), content="0")
+  debug_inspect(
+    approx_eq(spot.outer_angle, @math.pi() / 4.0F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),

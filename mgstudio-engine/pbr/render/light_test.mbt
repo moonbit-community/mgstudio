@@ -44,6 +44,17 @@ fn test_f32_bits(value : Float) -> UInt {
 }
 
 ///|
+test "pbr render light: fallback spot angles match Bevy defaults" {
+  let world = @ecs.World::new()
+  let lighting = render3d_collect_lighting(world)
+  inspect(approx_eq(lighting.spot_inner_angle, 0.0F, 1.0e-6F), content="true")
+  inspect(
+    approx_eq(lighting.spot_outer_angle, @math.pi() / 4.0F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: gpu lights uniform bytes match mesh_view_types native layout" {
   let world = @ecs.World::new()
   let directional = world.spawn()

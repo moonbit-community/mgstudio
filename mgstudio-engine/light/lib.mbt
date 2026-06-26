@@ -577,6 +577,9 @@ const SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
 const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
 
 ///|
+const SPOT_LIGHT_DEFAULT_OUTER_ANGLE : Float = 0.7853981633974483F
+
+///|
 pub struct PointLight {
   color : @color.Color
   intensity : Float
@@ -1167,8 +1170,8 @@ pub fn SpotLight::SpotLight() -> SpotLight {
     intensity: 1_000_000.0F,
     range: 20.0F,
     radius: 0.0F,
-    inner_angle: 0.6F,
-    outer_angle: 0.8F,
+    inner_angle: 0.0F,
+    outer_angle: SPOT_LIGHT_DEFAULT_OUTER_ANGLE,
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
     soft_shadows_enabled: false,
