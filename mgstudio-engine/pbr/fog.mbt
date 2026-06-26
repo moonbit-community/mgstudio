@@ -469,25 +469,6 @@ fn render3d_camera_distance_fog(
     fog = fog.with_color(render3d_color_lerp(fog.color, albedo_color, 0.15F))
   }
   if atmosphere_settings is Some(atmosphere_settings_value) {
-    let unit_scale = if atmosphere_settings_value.scene_units_to_m <= 0.0F {
-      0.0001F
-    } else {
-      atmosphere_settings_value.scene_units_to_m
-    }
-    let falloff = match fog.falloff {
-      FogFalloff3d::Linear(start, end_) =>
-        FogFalloff3d::linear(start * unit_scale, end_ * unit_scale)
-      FogFalloff3d::Exponential(density) =>
-        FogFalloff3d::exponential(density / unit_scale)
-      FogFalloff3d::ExponentialSquared(density) =>
-        FogFalloff3d::exponential_squared(density / @math.sqrt(unit_scale))
-      FogFalloff3d::Atmospheric(extinction, inscattering) =>
-        FogFalloff3d::atmospheric(
-          extinction.mul_scalar(1.0F / unit_scale),
-          inscattering.mul_scalar(1.0F / unit_scale),
-        )
-    }
-    fog = fog.with_falloff(falloff)
     if atmosphere_settings_value.rendering_method is AtmosphereMode::Raymarched {
       fog = fog.with_directional_light_exponent(
         fog.directional_light_exponent + 1.0F,

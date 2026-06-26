@@ -502,9 +502,9 @@ fn setup(world : @ecs.World) -> Unit {
     atmosphere: @pbr.Atmosphere::earthlike(
       @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
     ),
-    atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings()
-    .with_scene_units_to_m(1.0F)
-    .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
+    atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings().with_rendering_method(
+      @pbr.AtmosphereMode::LookupTexture,
+    ),
     volumetric_fog: @pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(
       0.0F,
     ),

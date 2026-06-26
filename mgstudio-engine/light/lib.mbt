@@ -292,7 +292,16 @@ pub fn AtmosphereMode::default() -> AtmosphereMode {
 ///|
 /// Bevy-shaped atmosphere settings component.
 pub struct AtmosphereSettings {
-  scene_units_to_m : Float
+  transmittance_lut_size : @math.UVec2
+  multiscattering_lut_size : @math.UVec2
+  sky_view_lut_size : @math.UVec2
+  aerial_view_lut_size : (@math.UVec2, Int)
+  transmittance_lut_samples : Int
+  multiscattering_lut_dirs : Int
+  multiscattering_lut_samples : Int
+  sky_view_lut_samples : Int
+  aerial_view_lut_samples : Int
+  aerial_view_lut_max_distance : Float
   sky_max_samples : Int
   rendering_method : AtmosphereMode
 } derive(ToJson, FromJson)
@@ -300,25 +309,99 @@ pub struct AtmosphereSettings {
 ///|
 pub fn AtmosphereSettings::AtmosphereSettings() -> AtmosphereSettings {
   AtmosphereSettings::{
-    scene_units_to_m: 1.0F,
+    transmittance_lut_size: @math.UVec2::new(256, 128),
+    multiscattering_lut_size: @math.UVec2::new(32, 32),
+    sky_view_lut_size: @math.UVec2::new(400, 200),
+    aerial_view_lut_size: (@math.UVec2::new(32, 32), 32),
+    transmittance_lut_samples: 40,
+    multiscattering_lut_dirs: 64,
+    multiscattering_lut_samples: 20,
+    sky_view_lut_samples: 16,
+    aerial_view_lut_samples: 10,
+    aerial_view_lut_max_distance: 32_000.0F,
     sky_max_samples: 16,
     rendering_method: AtmosphereMode::LookupTexture,
   }
 }
 
 ///|
-pub fn AtmosphereSettings::with_scene_units_to_m(
+pub fn AtmosphereSettings::with_transmittance_lut_size(
   self : AtmosphereSettings,
-  scene_units_to_m : Float,
+  transmittance_lut_size : @math.UVec2,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{
-    ..self,
-    scene_units_to_m: if scene_units_to_m <= 0.0F {
-      0.0001F
-    } else {
-      scene_units_to_m
-    },
-  }
+  AtmosphereSettings::{ ..self, transmittance_lut_size, }
+}
+
+///|
+pub fn AtmosphereSettings::with_multiscattering_lut_size(
+  self : AtmosphereSettings,
+  multiscattering_lut_size : @math.UVec2,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, multiscattering_lut_size, }
+}
+
+///|
+pub fn AtmosphereSettings::with_sky_view_lut_size(
+  self : AtmosphereSettings,
+  sky_view_lut_size : @math.UVec2,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, sky_view_lut_size, }
+}
+
+///|
+pub fn AtmosphereSettings::with_aerial_view_lut_size(
+  self : AtmosphereSettings,
+  aerial_view_lut_size : (@math.UVec2, Int),
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, aerial_view_lut_size, }
+}
+
+///|
+pub fn AtmosphereSettings::with_transmittance_lut_samples(
+  self : AtmosphereSettings,
+  transmittance_lut_samples : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, transmittance_lut_samples, }
+}
+
+///|
+pub fn AtmosphereSettings::with_multiscattering_lut_dirs(
+  self : AtmosphereSettings,
+  multiscattering_lut_dirs : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, multiscattering_lut_dirs, }
+}
+
+///|
+pub fn AtmosphereSettings::with_multiscattering_lut_samples(
+  self : AtmosphereSettings,
+  multiscattering_lut_samples : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, multiscattering_lut_samples, }
+}
+
+///|
+pub fn AtmosphereSettings::with_sky_view_lut_samples(
+  self : AtmosphereSettings,
+  sky_view_lut_samples : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, sky_view_lut_samples, }
+}
+
+///|
+pub fn AtmosphereSettings::with_aerial_view_lut_samples(
+  self : AtmosphereSettings,
+  aerial_view_lut_samples : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, aerial_view_lut_samples, }
+}
+
+///|
+pub fn AtmosphereSettings::with_aerial_view_lut_max_distance(
+  self : AtmosphereSettings,
+  aerial_view_lut_max_distance : Float,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, aerial_view_lut_max_distance, }
 }
 
 ///|
@@ -326,14 +409,7 @@ pub fn AtmosphereSettings::with_sky_max_samples(
   self : AtmosphereSettings,
   sky_max_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{
-    ..self,
-    sky_max_samples: if sky_max_samples <= 0 {
-      1
-    } else {
-      sky_max_samples
-    },
-  }
+  AtmosphereSettings::{ ..self, sky_max_samples, }
 }
 
 ///|
@@ -342,11 +418,6 @@ pub fn AtmosphereSettings::with_rendering_method(
   rendering_method : AtmosphereMode,
 ) -> AtmosphereSettings {
   AtmosphereSettings::{ ..self, rendering_method, }
-}
-
-///|
-pub fn AtmosphereSettings::scene_units_to_m(self : AtmosphereSettings) -> Float {
-  self.scene_units_to_m
 }
 
 ///|

@@ -13,14 +13,44 @@
 // limitations under the License.
 
 ///|
-test "pbr atmosphere: gpu settings runtime override clamps invalid values" {
-  let settings = pbr_gpu_atmosphere_settings_with_runtime(
-    -1.0F,
-    0,
-    AtmosphereMode::LookupTexture,
+test "pbr atmosphere: gpu settings copy Bevy atmosphere settings fields" {
+  let source = AtmosphereSettings::AtmosphereSettings()
+    .with_transmittance_lut_size(@math.UVec2::new(64, 16))
+    .with_multiscattering_lut_size(@math.UVec2::new(8, 4))
+    .with_sky_view_lut_size(@math.UVec2::new(32, 12))
+    .with_aerial_view_lut_size((@math.UVec2::new(6, 5), 4))
+    .with_transmittance_lut_samples(3)
+    .with_multiscattering_lut_dirs(7)
+    .with_multiscattering_lut_samples(9)
+    .with_sky_view_lut_samples(11)
+    .with_aerial_view_lut_samples(13)
+    .with_aerial_view_lut_max_distance(17.0F)
+    .with_sky_max_samples(0)
+    .with_rendering_method(AtmosphereMode::Raymarched)
+  let settings = pbr_gpu_atmosphere_settings(source)
+  inspect(settings.transmittance_lut_size.x, content="64")
+  inspect(settings.transmittance_lut_size.y, content="16")
+  inspect(settings.multiscattering_lut_size.x, content="8")
+  inspect(settings.multiscattering_lut_size.y, content="4")
+  inspect(settings.sky_view_lut_size.x, content="32")
+  inspect(settings.sky_view_lut_size.y, content="12")
+  inspect(settings.aerial_view_lut_size.0.x, content="6")
+  inspect(settings.aerial_view_lut_size.0.y, content="5")
+  inspect(settings.aerial_view_lut_size.1, content="4")
+  inspect(settings.transmittance_lut_samples, content="3")
+  inspect(settings.multiscattering_lut_dirs, content="7")
+  inspect(settings.multiscattering_lut_samples, content="9")
+  inspect(settings.sky_view_lut_samples, content="11")
+  inspect(settings.aerial_view_lut_samples, content="13")
+  inspect(settings.aerial_view_lut_max_distance, content="17")
+  inspect(settings.sky_max_samples, content="0")
+  inspect(
+    match settings.rendering_method {
+      AtmosphereMode::Raymarched => true
+      _ => false
+    },
+    content="true",
   )
-  inspect(settings.scene_units_to_m, content="1")
-  inspect(settings.sky_max_samples, content="16")
 }
 
 ///|

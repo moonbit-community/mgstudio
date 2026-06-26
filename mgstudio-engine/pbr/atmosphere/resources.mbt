@@ -33,7 +33,6 @@ pub struct GpuAtmosphereSettings {
   sky_view_lut_samples : Int
   aerial_view_lut_samples : Int
   aerial_view_lut_max_distance : Float
-  scene_units_to_m : Float
   sky_max_samples : Int
   rendering_method : AtmosphereMode
 }
@@ -82,7 +81,6 @@ pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
     sky_view_lut_samples: 16,
     aerial_view_lut_samples: 10,
     aerial_view_lut_max_distance: 32_000.0F,
-    scene_units_to_m: 1.0F,
     sky_max_samples: 16,
     rendering_method: AtmosphereMode::LookupTexture,
   }
@@ -294,47 +292,25 @@ pub fn AtmosphereBuffer::AtmosphereBuffer() -> AtmosphereBuffer {
 pub fn pbr_gpu_atmosphere_settings(
   settings : AtmosphereSettings,
 ) -> GpuAtmosphereSettings {
-  pbr_gpu_atmosphere_settings_with_runtime(
-    settings.scene_units_to_m(),
-    settings.sky_max_samples(),
-    settings.rendering_method(),
-  )
-}
-
-///|
-pub fn pbr_gpu_atmosphere_settings_with_runtime(
-  scene_units_to_m : Float,
-  sky_max_samples : Int,
-  rendering_method : AtmosphereMode,
-) -> GpuAtmosphereSettings {
-  let defaults = GpuAtmosphereSettings::GpuAtmosphereSettings()
   GpuAtmosphereSettings::{
-    ..defaults,
-    scene_units_to_m: if scene_units_to_m <= 0.0F {
-      defaults.scene_units_to_m
-    } else {
-      scene_units_to_m
-    },
-    sky_max_samples: if sky_max_samples <= 0 {
-      defaults.sky_max_samples
-    } else {
-      sky_max_samples
-    },
-    rendering_method,
+    transmittance_lut_size: settings.transmittance_lut_size,
+    multiscattering_lut_size: settings.multiscattering_lut_size,
+    sky_view_lut_size: settings.sky_view_lut_size,
+    aerial_view_lut_size: settings.aerial_view_lut_size,
+    transmittance_lut_samples: settings.transmittance_lut_samples,
+    multiscattering_lut_dirs: settings.multiscattering_lut_dirs,
+    multiscattering_lut_samples: settings.multiscattering_lut_samples,
+    sky_view_lut_samples: settings.sky_view_lut_samples,
+    aerial_view_lut_samples: settings.aerial_view_lut_samples,
+    aerial_view_lut_max_distance: settings.aerial_view_lut_max_distance,
+    sky_max_samples: settings.sky_max_samples,
+    rendering_method: settings.rendering_method,
   }
 }
 
 ///|
 pub fn pbr_atmosphere_settings_default() -> AtmosphereSettings {
   AtmosphereSettings()
-}
-
-///|
-pub fn pbr_atmosphere_settings_with_scene_units_to_m(
-  settings : AtmosphereSettings,
-  scene_units_to_m : Float,
-) -> AtmosphereSettings {
-  settings.with_scene_units_to_m(scene_units_to_m)
 }
 
 ///|

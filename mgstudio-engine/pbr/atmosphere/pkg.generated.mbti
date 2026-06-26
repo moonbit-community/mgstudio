@@ -38,8 +38,6 @@ pub fn pbr_atmosphere_settings_default() -> @light.AtmosphereSettings
 
 pub fn pbr_atmosphere_settings_with_rendering_method(@light.AtmosphereSettings, @light.AtmosphereMode) -> @light.AtmosphereSettings
 
-pub fn pbr_atmosphere_settings_with_scene_units_to_m(@light.AtmosphereSettings, Float) -> @light.AtmosphereSettings
-
 pub fn pbr_atmosphere_settings_with_sky_max_samples(@light.AtmosphereSettings, Int) -> @light.AtmosphereSettings
 
 pub fn pbr_atmosphere_with_radii(@light.Atmosphere, Float, Float) -> @light.Atmosphere
@@ -51,8 +49,6 @@ pub fn pbr_generated_environment_map_light_from_atmosphere(@asset.Handle[@image.
 pub fn pbr_gpu_atmosphere(@light.Atmosphere, @math.Affine3) -> GpuAtmosphere
 
 pub fn pbr_gpu_atmosphere_settings(@light.AtmosphereSettings) -> GpuAtmosphereSettings
-
-pub fn pbr_gpu_atmosphere_settings_with_runtime(Float, Int, @light.AtmosphereMode) -> GpuAtmosphereSettings
 
 pub fn pbr_validate_atmosphere_environment_map_size(@math.UVec2) -> @math.UVec2
 
@@ -190,7 +186,6 @@ pub struct GpuAtmosphereSettings {
   sky_view_lut_samples : Int
   aerial_view_lut_samples : Int
   aerial_view_lut_max_distance : Float
-  scene_units_to_m : Float
   sky_max_samples : Int
   rendering_method : @light.AtmosphereMode
 }
