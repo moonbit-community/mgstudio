@@ -1591,18 +1591,21 @@ pub fn GpuBackend::create_depth_prepass_target(
 pub fn GpuBackend::create_point_light_shadow_target(
   self : GpuBackend,
   size : Int,
+  cubes? : Int = 1,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   let default_texture = ensure_default_texture(self)
   let id = alloc_id(self)
   let safe_size = if size <= 0 { 1U } else { size.reinterpret_as_uint() }
+  let safe_cubes = if cubes <= 0 { 1U } else { cubes.reinterpret_as_uint() }
+  let safe_layers = safe_cubes * 6U
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let tex = self.device.create_texture_u32(
     safe_size,
     safe_size,
-    6U,
+    safe_layers,
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
@@ -1618,7 +1621,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
     1U,
   )
   let layer_views : Array[@wgpu.TextureView] = []
-  for face in 0..<6 {
+  for face in 0..<safe_layers.reinterpret_as_int() {
     layer_views.push(
       tex.create_view_u32(
         tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
@@ -1637,7 +1640,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
     @wgpu.TEXTURE_VIEW_DIMENSION_CUBE_ARRAY,
     @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
     0U,
-    6U,
+    safe_layers,
     0U,
     1U,
   )
@@ -2505,10 +2508,10 @@ pub fn create_render_target_with_formats(
 }
 
 ///|
-pub fn create_point_light_shadow_target(size~ : Int) -> Int {
+pub fn create_point_light_shadow_target(size~ : Int, cubes? : Int = 1) -> Int {
   if ensure_backend() is Some(backend) {
     try {
-      return backend.create_point_light_shadow_target(size)
+      return backend.create_point_light_shadow_target(size, cubes~)
     } catch {
       _ => ()
     }

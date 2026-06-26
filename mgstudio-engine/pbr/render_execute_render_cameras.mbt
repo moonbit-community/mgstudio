@@ -35,7 +35,10 @@ fn render3d_execute_render_cameras(
     "execute_3d_collect_lighting",
   )
   ignore(source_world)
-  let lighting = @pbr_render.render3d_collect_lighting(world)
+  let lighting = render3d_lighting_with_clusterable_indices(
+    world,
+    @pbr_render.render3d_collect_lighting(world),
+  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_lighting",
@@ -94,6 +97,26 @@ fn render3d_execute_render_cameras(
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
+}
+
+///|
+fn render3d_lighting_with_clusterable_indices(
+  world : @ecs.World,
+  lighting : Render3dLightingState,
+) -> Render3dLightingState {
+  let point_light_index = match lighting.point_entity {
+    Some(entity) =>
+      match world.get_resource(ecs_key_global_clusterable_object_meta) {
+        Some(meta) =>
+          match meta.entity_index(entity) {
+            Some(index) => if index < 0 { 0 } else { index }
+            None => lighting.point_light_index
+          }
+        None => lighting.point_light_index
+      }
+    None => lighting.point_light_index
+  }
+  Render3dLightingState::{ ..lighting, point_light_index, }
 }
 
 ///|

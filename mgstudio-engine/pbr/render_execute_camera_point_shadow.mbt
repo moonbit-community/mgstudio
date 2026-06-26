@@ -31,8 +31,16 @@ fn render3d_execute_camera_point_shadow_pass(
   guard pass_lighting.point_entity is Some(point_entity) else {
     return render3d_point_shadow_binding_none()
   }
+  let point_light_index = if pass_lighting.point_light_index < 0 {
+    0
+  } else {
+    pass_lighting.point_light_index
+  }
   let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
-    world, point_entity, point_light_shadow_map_size,
+    world,
+    point_entity,
+    point_light_shadow_map_size,
+    point_light_index + 1,
   )
   let point_shadow_texture_id = shadow_target_id
   let point_shadow_enabled = 1.0F
@@ -81,7 +89,9 @@ fn render3d_execute_camera_point_shadow_pass(
     )
     let shadow_view = Render3dShadowView::{
       target_id: shadow_target_id,
-      target_layer: face_index,
+      target_layer: render3d_point_shadow_target_layer(
+        point_light_index, face_index,
+      ),
       width: shadow_view_size,
       height: shadow_view_size,
       transform: shadow_camera_transform,
@@ -91,7 +101,7 @@ fn render3d_execute_camera_point_shadow_pass(
         light_entity=point_entity,
         face_index~,
       ),
-      pass_name: render3d_point_shadow_pass_name(0, face_index),
+      pass_name: render3d_point_shadow_pass_name(point_light_index, face_index),
       occlusion_culling_subview: None,
     }
     render3d_execute_shadow_phase_view(
@@ -115,6 +125,7 @@ fn render3d_execute_camera_point_shadow_pass(
 priv struct PointLightShadowTargetsEntry {
   entity : @core.Entity
   size : Int
+  cubes : Int
   target_id : Int
 }
 
@@ -155,21 +166,25 @@ fn render3d_point_light_shadow_target_get_or_create(
   world : @ecs.World,
   entity : @core.Entity,
   size : Int,
+  cubes : Int,
 ) -> Int {
   let shadow_targets_mut = render3d_point_light_shadow_targets_mut_or_init(
     world,
   )
   let shadow_targets = shadow_targets_mut.peek().entries
   let safe_size = if size <= 0 { 1 } else { size }
+  let safe_cubes = if cubes <= 0 { 1 } else { cubes }
   for item in shadow_targets {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation &&
-      item.size == safe_size {
+      item.size == safe_size &&
+      item.cubes == safe_cubes {
       return item.target_id
     }
   }
   let target_id = @render.host_gpu_create_point_light_shadow_target(
     size=safe_size,
+    cubes=safe_cubes,
   )
   let next : Array[PointLightShadowTargetsEntry] = []
   let mut replaced = false
@@ -177,7 +192,7 @@ fn render3d_point_light_shadow_target_get_or_create(
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
-        next.push({ entity, size: safe_size, target_id })
+        next.push({ entity, size: safe_size, cubes: safe_cubes, target_id })
         replaced = true
       }
     } else {
@@ -185,8 +200,18 @@ fn render3d_point_light_shadow_target_get_or_create(
     }
   }
   if !replaced {
-    next.push({ entity, size: safe_size, target_id })
+    next.push({ entity, size: safe_size, cubes: safe_cubes, target_id })
   }
   shadow_targets_mut.modify(fn(state) { state.entries = next })
   target_id
+}
+
+///|
+fn render3d_point_shadow_target_layer(
+  light_index : Int,
+  face_index : Int,
+) -> Int {
+  let safe_light_index = if light_index < 0 { 0 } else { light_index }
+  let safe_face_index = if face_index < 0 { 0 } else { face_index }
+  safe_light_index * 6 + safe_face_index
 }

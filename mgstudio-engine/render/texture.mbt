@@ -161,8 +161,11 @@ pub fn asset_create_render_target_with_formats(
 }
 
 ///|
-pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int {
-  @renderer.create_point_light_shadow_target(size~)
+pub fn host_gpu_create_point_light_shadow_target(
+  size~ : Int,
+  cubes? : Int = 1,
+) -> Int {
+  @renderer.create_point_light_shadow_target(size~, cubes~)
 }
 
 ///|

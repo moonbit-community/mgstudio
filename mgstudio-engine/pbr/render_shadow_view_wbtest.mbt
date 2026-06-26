@@ -60,6 +60,29 @@ test "pbr directional shadow target reserves Bevy spot layers" {
 }
 
 ///|
+test "pbr point shadow target layer follows Bevy cubemap array indexing" {
+  inspect(render3d_point_shadow_target_layer(0, 0), content="0")
+  inspect(render3d_point_shadow_target_layer(0, 5), content="5")
+  inspect(render3d_point_shadow_target_layer(2, 0), content="12")
+  inspect(render3d_point_shadow_target_layer(2, 5), content="17")
+}
+
+///|
+test "pbr lighting state uses global clusterable point light index" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let meta = GlobalClusterableObjectMeta::new(0U)
+  meta.insert_entity_index(entity, 3)
+  world.insert_resource(ecs_key_global_clusterable_object_meta, meta)
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    point_entity: Some(entity),
+  }
+  let resolved = render3d_lighting_with_clusterable_indices(world, lighting)
+  inspect(resolved.point_light_index, content="3")
+}
+
+///|
 test "pbr shadow view pass names match Bevy light and view indices" {
   inspect(
     render3d_directional_shadow_pass_name(0, 2),

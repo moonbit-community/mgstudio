@@ -210,7 +210,7 @@ pub fn host_gpu_create_motion_vector_prepass_target_rg16f(width~ : Int, height~ 
 
 pub fn host_gpu_create_normal_prepass_target_rgb10a2unorm(width~ : Int, height~ : Int, sample_count? : Int) -> Int
 
-pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
+pub fn host_gpu_create_point_light_shadow_target(size~ : Int, cubes? : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 

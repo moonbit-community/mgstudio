@@ -34,6 +34,7 @@ pub(all) struct Render3dLightingState {
   point_color : @color.Color
   point_intensity : Float
   point_range : Float
+  point_light_index : Int
   point_shadow_maps_enabled : Bool
   point_shadow_depth_bias : Float
   point_shadow_map_near_z : Float
@@ -3594,6 +3595,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     point_color: @color.Color::white(),
     point_intensity: 0.0F,
     point_range: 1.0F,
+    point_light_index: 0,
     point_shadow_maps_enabled: false,
     point_shadow_depth_bias: 0.08F,
     point_shadow_map_near_z: 0.1F,

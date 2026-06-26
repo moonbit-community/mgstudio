@@ -1235,6 +1235,7 @@ pub(all) struct Render3dLightingState {
   point_color : @color.Color
   point_intensity : Float
   point_range : Float
+  point_light_index : Int
   point_shadow_maps_enabled : Bool
   point_shadow_depth_bias : Float
   point_shadow_map_near_z : Float
