@@ -318,9 +318,9 @@ pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.NormalPrepass]
 
-pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[@light.NotShadowCaster]
 
-pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver]
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[@light.NotShadowReceiver]
 
 pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
 
@@ -402,7 +402,7 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
-pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[@light.TransmittedShadowReceiver]
 
 pub let ecs_key_view_cluster_bindings : @ecs.ComponentKey[ViewClusterBindings]
 
@@ -1933,16 +1933,6 @@ pub struct NoWireframe {
 pub fn NoWireframe::NoWireframe() -> Self
 pub impl @ecs.Component for NoWireframe
 
-pub struct NotShadowCaster {
-} derive(ToJson, @json.FromJson)
-pub fn NotShadowCaster::NotShadowCaster() -> Self
-pub impl @ecs.Component for NotShadowCaster
-
-pub struct NotShadowReceiver {
-} derive(ToJson, @json.FromJson)
-pub fn NotShadowReceiver::NotShadowReceiver() -> Self
-pub impl @ecs.Component for NotShadowReceiver
-
 pub struct OcclusionCulling {
 } derive(ToJson, @json.FromJson)
 pub fn OcclusionCulling::OcclusionCulling() -> Self
@@ -2559,11 +2549,6 @@ pub fn StandardMaterialPluginState::debug_flags(Self) -> @Milky2018/mgstudio/ren
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
 
-pub struct TransmittedShadowReceiver {
-} derive(ToJson, @json.FromJson)
-pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
-pub impl @ecs.Component for TransmittedShadowReceiver
-
 pub struct ViewClusterBindings {
   mut n_indices : Int
   mut n_offsets : Int
@@ -3168,6 +3153,10 @@ pub using @view {type Msaa}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 
+pub using @light {type NotShadowCaster}
+
+pub using @light {type NotShadowReceiver}
+
 pub using @material {type OpaqueRendererMethod}
 
 pub using @Milky2018/mgstudio/pbr/render {type OrthographicProjection3d}
@@ -3225,6 +3214,8 @@ pub using @post_process {type TemporalAntiAliasing}
 pub using @post_process {type TemporalJitter}
 
 pub using @post_process {type Tonemapping}
+
+pub using @light {type TransmittedShadowReceiver}
 
 pub using @Milky2018/mgstudio/pbr/render {type ViewFrustum}
 

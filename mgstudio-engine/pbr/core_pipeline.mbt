@@ -420,31 +420,13 @@ pub fn NoIndirectDrawing::NoIndirectDrawing() -> NoIndirectDrawing {
 }
 
 ///|
-/// Marker component aligned with Bevy's `NotShadowCaster`.
-pub struct NotShadowCaster {} derive(ToJson, FromJson)
+pub type NotShadowCaster = @light.NotShadowCaster
 
 ///|
-pub fn NotShadowCaster::NotShadowCaster() -> NotShadowCaster {
-  NotShadowCaster::{  }
-}
+pub type NotShadowReceiver = @light.NotShadowReceiver
 
 ///|
-/// Marker component aligned with Bevy's `NotShadowReceiver`.
-pub struct NotShadowReceiver {} derive(ToJson, FromJson)
-
-///|
-pub fn NotShadowReceiver::NotShadowReceiver() -> NotShadowReceiver {
-  NotShadowReceiver::{  }
-}
-
-///|
-/// Marker component aligned with Bevy's `TransmittedShadowReceiver`.
-pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
-
-///|
-pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
-  TransmittedShadowReceiver::{  }
-}
+pub type TransmittedShadowReceiver = @light.TransmittedShadowReceiver
 
 ///|
 /// Camera transparency settings aligned with Bevy's

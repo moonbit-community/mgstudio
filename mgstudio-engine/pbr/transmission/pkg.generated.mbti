@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr/transmission"
 import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -11,7 +12,7 @@ import {
 // Values
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[ScreenSpaceTransmission]
 
-pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[@light.TransmittedShadowReceiver]
 
 pub fn main_transmissive_pass_3d_should_copy_texture_per_step(MainTransmissivePass3dConfig) -> Bool
 
@@ -89,11 +90,6 @@ pub fn Transmissive3d::new(@core.Entity, @core.Entity, Float, Int, Int, Int, Int
 pub fn Transmissive3d::simple(@core.Entity, @core.Entity, Float, Int, Int) -> Self
 pub fn Transmissive3d::sort_key(Self) -> Float
 
-pub struct TransmittedShadowReceiver {
-} derive(ToJson, @json.FromJson)
-pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
-pub impl @ecs.Component for TransmittedShadowReceiver
-
 pub struct ViewTransmissionTexture {
   texture_id : Int
   width : Int
@@ -104,6 +100,7 @@ pub fn ViewTransmissionTexture::ViewTransmissionTexture() -> Self
 pub fn ViewTransmissionTexture::is_ready(Self) -> Bool
 
 // Type aliases
+pub using @light {type TransmittedShadowReceiver}
 
 // Traits
 

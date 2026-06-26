@@ -16,22 +16,12 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/transmission/node.rs`.
 
 ///|
-pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
-
-///|
-pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
-  TransmittedShadowReceiver::{  }
-}
+pub type TransmittedShadowReceiver = @light.TransmittedShadowReceiver
 
 ///|
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
   TransmittedShadowReceiver,
-] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
-
-///|
-pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
-  ecs_key_transmitted_shadow_receiver
-}
+] = @light.ecs_key_transmitted_shadow_receiver
 
 ///|
 pub struct MainTransmissivePass3dConfig {

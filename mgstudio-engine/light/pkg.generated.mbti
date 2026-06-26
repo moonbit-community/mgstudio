@@ -77,6 +77,10 @@ pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe]
 
 pub let ecs_key_light_probe_component : @ecs.ComponentKey[LightProbe]
 
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
+
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver]
+
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection]
 
 pub let ecs_key_parallax_correction_component : @ecs.ComponentKey[ParallaxCorrection]
@@ -110,6 +114,8 @@ pub let ecs_key_spot_light_texture_component : @ecs.ComponentKey[SpotLightTextur
 pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk]
 
 pub let ecs_key_sun_disk_component : @ecs.ComponentKey[SunDisk]
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
 pub let ecs_key_volumetric_fog : @ecs.ComponentKey[VolumetricFog]
 
@@ -436,6 +442,16 @@ pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for LightProbe
 
+pub struct NotShadowCaster {
+} derive(ToJson, @json.FromJson)
+pub fn NotShadowCaster::NotShadowCaster() -> Self
+pub impl @ecs.Component for NotShadowCaster
+
+pub struct NotShadowReceiver {
+} derive(ToJson, @json.FromJson)
+pub fn NotShadowReceiver::NotShadowReceiver() -> Self
+pub impl @ecs.Component for NotShadowReceiver
+
 #alias(ParallaxCorrectionComponent)
 pub(all) enum ParallaxCorrection {
   None
@@ -616,6 +632,11 @@ pub fn SunDisk::off() -> Self
 pub fn SunDisk::with_angular_size(Self, Float) -> Self
 pub fn SunDisk::with_intensity(Self, Float) -> Self
 pub impl @ecs.Component for SunDisk
+
+pub struct TransmittedShadowReceiver {
+} derive(ToJson, @json.FromJson)
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
+pub impl @ecs.Component for TransmittedShadowReceiver
 
 #alias(VolumetricFogComponent)
 pub struct VolumetricFog {

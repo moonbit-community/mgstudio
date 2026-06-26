@@ -111,6 +111,33 @@ pub fn get_shadow_lod_origin(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
+/// Marker component aligned with Bevy's `NotShadowCaster`.
+pub struct NotShadowCaster {} derive(ToJson, FromJson)
+
+///|
+pub fn NotShadowCaster::NotShadowCaster() -> NotShadowCaster {
+  NotShadowCaster::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `NotShadowReceiver`.
+pub struct NotShadowReceiver {} derive(ToJson, FromJson)
+
+///|
+pub fn NotShadowReceiver::NotShadowReceiver() -> NotShadowReceiver {
+  NotShadowReceiver::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `TransmittedShadowReceiver`.
+pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
+
+///|
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
+  TransmittedShadowReceiver::{  }
+}
+
+///|
 /// Bevy-aligned marker component for directional volumetric lighting.
 pub struct VolumetricLight {}
 
@@ -1988,6 +2015,21 @@ pub let ecs_key_ambient_light : @ecs.ComponentKey[AmbientLight] = @ecs.register_
 )
 
 ///|
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @ecs.register_component(
+  debug_name="render3d.not_shadow_caster",
+)
+
+///|
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @ecs.register_component(
+  debug_name="render3d.not_shadow_receiver",
+)
+
+///|
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
+  TransmittedShadowReceiver,
+] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
+
+///|
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @ecs.register_component(
   debug_name="render3d.volumetric_light",
 )
@@ -2089,6 +2131,21 @@ pub impl @ecs.Component for SunDisk with fn component() {
 ///|
 pub impl @ecs.Component for AmbientLight with fn component() {
   ecs_key_ambient_light
+}
+
+///|
+pub impl @ecs.Component for NotShadowCaster with fn component() {
+  ecs_key_not_shadow_caster
+}
+
+///|
+pub impl @ecs.Component for NotShadowReceiver with fn component() {
+  ecs_key_not_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
+  ecs_key_transmitted_shadow_receiver
 }
 
 ///|

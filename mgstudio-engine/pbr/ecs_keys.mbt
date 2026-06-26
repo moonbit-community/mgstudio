@@ -169,9 +169,7 @@ pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.re
 )
 
 ///|
-pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @ecs.register_component(
-  debug_name="render3d.not_shadow_caster",
-)
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @light.ecs_key_not_shadow_caster
 
 ///|
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr_render.ecs_key_sub_camera_view3d
@@ -205,9 +203,7 @@ pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @ec
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @light.ecs_key_spot_light_texture
 
 ///|
-pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @ecs.register_component(
-  debug_name="render3d.not_shadow_receiver",
-)
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @light.ecs_key_not_shadow_receiver
 
 ///|
 pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @light.ecs_key_point_light_texture
@@ -273,7 +269,7 @@ pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
 ///|
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
   TransmittedShadowReceiver,
-] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
+] = @light.ecs_key_transmitted_shadow_receiver
 
 ///|
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
@@ -375,11 +371,6 @@ pub impl @ecs.Component for FreeCameraState with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for NotShadowCaster with fn component() {
-  ecs_key_not_shadow_caster
-}
-
-///|
 pub impl @ecs.Component for OcclusionCulling with fn component() {
   ecs_key_occlusion_culling
 }
@@ -390,11 +381,6 @@ pub impl @ecs.Component for NoIndirectDrawing with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for NotShadowReceiver with fn component() {
-  ecs_key_not_shadow_receiver
-}
-
-///|
 pub impl @ecs.Component for Projection with fn component() {
   ecs_key_projection
 }
@@ -402,11 +388,6 @@ pub impl @ecs.Component for Projection with fn component() {
 ///|
 pub impl @ecs.Component for ShadowFilteringMethod with fn component() {
   ecs_key_shadow_filtering_method
-}
-
-///|
-pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
-  ecs_key_transmitted_shadow_receiver
 }
 
 ///|
