@@ -44,6 +44,16 @@ fn test_f32_bits(value : Float) -> UInt {
 }
 
 ///|
+fn light_test_cluster_camera() -> @camera_camera.Camera {
+  @camera_camera.Camera::Camera().with_viewport(
+    @camera_viewport.Viewport::new(
+      @math.IVec2::new(0, 0),
+      @math.IVec2::new(1280, 720),
+    ),
+  )
+}
+
+///|
 test "pbr render light: fallback spot angles match Bevy defaults" {
   let world = @ecs.World::new()
   let lighting = render3d_collect_lighting(world)
@@ -1182,7 +1192,7 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
   try! (world.set_by_key(
     camera,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    light_test_cluster_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -1238,7 +1248,7 @@ test "pbr render light: storage cluster buffers include clustered decal ranges" 
   try! (world.set_by_key(
     camera,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    light_test_cluster_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -1306,7 +1316,7 @@ test "pbr render light: point shadow clustered custom data matches Bevy projecti
   try! (world.set_by_key(
     camera,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    light_test_cluster_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
