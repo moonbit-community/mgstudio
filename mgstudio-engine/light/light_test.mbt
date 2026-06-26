@@ -102,6 +102,22 @@ test "scattering medium earth terms match Bevy source shape" {
 }
 
 ///|
+test "scattering term defaults match Bevy" {
+  let term = @light.ScatteringTerm::ScatteringTerm()
+  inspect(approx_eq(term.absorption.x, 0.0F, 0.000001F), content="true")
+  inspect(approx_eq(term.scattering.x, 0.0F, 0.000001F), content="true")
+  inspect(if term.falloff is Linear { true } else { false }, content="true")
+  inspect(
+    if term.phase is Mie(asymmetry) {
+      approx_eq(asymmetry, 0.8F, 0.000001F)
+    } else {
+      false
+    },
+    content="true",
+  )
+}
+
+///|
 test "point shadow map constructor preserves Bevy plain field semantics" {
   let authored = @light.PointLightShadowMap::new(0).with_size(-7)
   debug_inspect(authored.size, content="-7")

@@ -333,6 +333,7 @@ pub enum Falloff {
   Exponential(Float)
   Tent(Float, Float)
 } derive(ToJson, @json.FromJson)
+pub fn Falloff::Falloff() -> Self
 pub fn Falloff::exponential(Float) -> Self
 pub fn Falloff::linear() -> Self
 pub fn Falloff::sample(Self, Float) -> Float
@@ -449,6 +450,7 @@ pub enum PhaseFunction {
   Rayleigh
   Mie(Float)
 } derive(ToJson, @json.FromJson)
+pub fn PhaseFunction::PhaseFunction() -> Self
 pub fn PhaseFunction::isotropic() -> Self
 pub fn PhaseFunction::mie(Float) -> Self
 pub fn PhaseFunction::rayleigh() -> Self
@@ -539,6 +541,7 @@ pub struct ScatteringTerm {
   falloff : Falloff
   phase : PhaseFunction
 } derive(ToJson, @json.FromJson)
+pub fn ScatteringTerm::ScatteringTerm() -> Self
 pub fn ScatteringTerm::new(@math.Vec3, @math.Vec3, Falloff, PhaseFunction) -> Self
 
 pub struct ShowLightGizmo {

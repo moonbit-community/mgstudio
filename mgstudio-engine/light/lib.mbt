@@ -455,6 +455,11 @@ pub enum PhaseFunction {
 } derive(ToJson, FromJson)
 
 ///|
+pub fn Falloff::Falloff() -> Falloff {
+  Linear
+}
+
+///|
 pub fn Falloff::linear() -> Falloff {
   Linear
 }
@@ -482,6 +487,11 @@ pub fn PhaseFunction::rayleigh() -> PhaseFunction {
 ///|
 pub fn PhaseFunction::mie(asymmetry : Float) -> PhaseFunction {
   Mie(asymmetry)
+}
+
+///|
+pub fn PhaseFunction::PhaseFunction() -> PhaseFunction {
+  PhaseFunction::mie(0.8F)
 }
 
 ///|
@@ -525,6 +535,16 @@ pub fn ScatteringTerm::new(
   phase : PhaseFunction,
 ) -> ScatteringTerm {
   ScatteringTerm::{ absorption, scattering, falloff, phase }
+}
+
+///|
+pub fn ScatteringTerm::ScatteringTerm() -> ScatteringTerm {
+  ScatteringTerm::new(
+    @math.Vec3::zero(),
+    @math.Vec3::zero(),
+    Falloff::Falloff(),
+    PhaseFunction::PhaseFunction(),
+  )
 }
 
 ///|
