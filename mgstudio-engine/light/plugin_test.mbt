@@ -160,3 +160,37 @@ test "light plugin: exposes Bevy simulation light system sets" {
     content="\"mgstudio.light.SimulationLightSystems.CheckLightVisibility\"",
   )
 }
+
+///|
+test "light: WithLight matches point, spot, directional, and rect lights" {
+  let world = @ecs.World::new()
+  let point = world.spawn()
+  let spot = world.spawn()
+  let directional = world.spawn()
+  let rect = world.spawn()
+  let mesh = world.spawn()
+
+  try! world.set(point, @light.PointLight::PointLight())
+  try! world.set(spot, @light.SpotLight::SpotLight())
+  try! world.set(directional, @light.DirectionalLight::DirectionalLight())
+  try! world.set(rect, @light.RectLight::RectLight())
+  try! world.set(mesh, @visibility.Visibility::Visible)
+
+  let query : @ecs.Query[@core.Entity, WithLight] = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.With::new(@light.ecs_key_point_light),
+        @ecs.With::new(@light.ecs_key_spot_light),
+        @ecs.With::new(@light.ecs_key_directional_light),
+        @ecs.With::new(@light.ecs_key_rect_light),
+      ),
+    ),
+  )
+  debug_inspect(query.count(), content="4")
+  debug_inspect(try! (query.get(point) is Some(_)), content="true")
+  debug_inspect(try! (query.get(spot) is Some(_)), content="true")
+  debug_inspect(try! (query.get(directional) is Some(_)), content="true")
+  debug_inspect(try! (query.get(rect) is Some(_)), content="true")
+  debug_inspect(try! (query.get(mesh) is None), content="true")
+}

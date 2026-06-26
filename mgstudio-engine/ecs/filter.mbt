@@ -2127,3 +2127,120 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   QueryFilter::depends_on_ticks(self.1) ||
   QueryFilter::depends_on_ticks(self.2)
 }
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn matches_any(self, world, entity) {
+  QueryFilter::matches(self.0, world, entity) ||
+  QueryFilter::matches(self.1, world, entity) ||
+  QueryFilter::matches(self.2, world, entity) ||
+  QueryFilter::matches(self.3, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn matches_table_row_any(self, world, entity, table_id, row_index) {
+  QueryFilter::matches_table_row(self.0, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.1, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.2, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.3, world, entity, table_id, row_index)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn mentions_component_any(self, component_id) {
+  QueryFilter::mentions_component(self.0, component_id) ||
+  QueryFilter::mentions_component(self.1, component_id) ||
+  QueryFilter::mentions_component(self.2, component_id) ||
+  QueryFilter::mentions_component(self.3, component_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn matches_component_set_any(self, set_contains_id) {
+  QueryFilter::matches_component_set(self.0, set_contains_id) ||
+  QueryFilter::matches_component_set(self.1, set_contains_id) ||
+  QueryFilter::matches_component_set(self.2, set_contains_id) ||
+  QueryFilter::matches_component_set(self.3, set_contains_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn collect_access_any(self, access) {
+  QueryFilter::collect_access(self.0, access)
+  QueryFilter::collect_access(self.1, access)
+  QueryFilter::collect_access(self.2, access)
+  QueryFilter::collect_access(self.3, access)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn requires_entity_check_any(self) {
+  QueryFilter::requires_entity_check(self.0) ||
+  QueryFilter::requires_entity_check(self.1) ||
+  QueryFilter::requires_entity_check(self.2) ||
+  QueryFilter::requires_entity_check(self.3)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn requires_entity_check_any_for_world(self, world) {
+  QueryFilter::requires_entity_check_for_world(self.0, world) ||
+  QueryFilter::requires_entity_check_for_world(self.1, world) ||
+  QueryFilter::requires_entity_check_for_world(self.2, world) ||
+  QueryFilter::requires_entity_check_for_world(self.3, world)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn is_dense_any(self, world) {
+  QueryFilter::is_dense(self.0, world) &&
+  QueryFilter::is_dense(self.1, world) &&
+  QueryFilter::is_dense(self.2, world) &&
+  QueryFilter::is_dense(self.3, world)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+  D,
+) with fn depends_on_ticks_any(self) {
+  QueryFilter::depends_on_ticks(self.0) ||
+  QueryFilter::depends_on_ticks(self.1) ||
+  QueryFilter::depends_on_ticks(self.2) ||
+  QueryFilter::depends_on_ticks(self.3)
+}

@@ -689,6 +689,7 @@ pub fn VolumetricLight::VolumetricLight() -> Self
 pub impl @ecs.Component for VolumetricLight
 
 // Type aliases
+pub type WithLight = @ecs.Or[(@ecs.With[PointLight], @ecs.With[SpotLight], @ecs.With[DirectionalLight], @ecs.With[RectLight])]
 
 // Traits
 
