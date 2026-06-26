@@ -157,5 +157,9 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.Update,
     @app.system_config_param2(automatically_add_parallax_correction_components),
   )
-  .add_post_update_system(validate_directional_light_shadow_map_size)
+  .add_post_update_system_config(
+    @app.system(validate_directional_light_shadow_map_size).before(
+      simulation_light_set_update_directional_light_cascades,
+    ),
+  )
 }

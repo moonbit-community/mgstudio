@@ -137,6 +137,18 @@ pub fn light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
+pub let simulation_light_set_assign_lights_to_clusters : String
+
+pub let simulation_light_set_check_light_visibility : String
+
+pub let simulation_light_set_update_bounds : String
+
+pub let simulation_light_set_update_directional_light_cascades : String
+
+pub let simulation_light_set_update_light_frusta : String
+
+pub fn simulation_light_system_set_name(SimulationLightSystems) -> String
+
 pub fn validate_directional_light_shadow_map_size(@ecs.World) -> Unit
 
 // Errors
@@ -576,6 +588,14 @@ pub struct ShowLightGizmo {
 pub fn ShowLightGizmo::ShowLightGizmo() -> Self
 pub fn ShowLightGizmo::with_color(Self, LightGizmoColor?) -> Self
 pub impl @ecs.Component for ShowLightGizmo
+
+pub(all) enum SimulationLightSystems {
+  UpdateBounds
+  AssignLightsToClusters
+  UpdateDirectionalLightCascades
+  UpdateLightFrusta
+  CheckLightVisibility
+} derive(Eq, @debug.Debug)
 
 #alias(SkyboxComponent)
 pub struct Skybox {

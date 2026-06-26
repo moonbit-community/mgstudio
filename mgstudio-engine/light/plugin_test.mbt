@@ -130,3 +130,33 @@ test "light plugin: ambient light requires camera component" {
     content="true",
   )
 }
+
+///|
+test "light plugin: exposes Bevy simulation light system sets" {
+  debug_inspect(
+    simulation_light_system_set_name(SimulationLightSystems::UpdateBounds),
+    content="\"mgstudio.light.SimulationLightSystems.UpdateBounds\"",
+  )
+  debug_inspect(
+    simulation_light_system_set_name(
+      SimulationLightSystems::AssignLightsToClusters,
+    ),
+    content="\"mgstudio.light.SimulationLightSystems.AssignLightsToClusters\"",
+  )
+  debug_inspect(
+    simulation_light_system_set_name(
+      SimulationLightSystems::UpdateDirectionalLightCascades,
+    ),
+    content="\"mgstudio.light.SimulationLightSystems.UpdateDirectionalLightCascades\"",
+  )
+  debug_inspect(
+    simulation_light_system_set_name(SimulationLightSystems::UpdateLightFrusta),
+    content="\"mgstudio.light.SimulationLightSystems.UpdateLightFrusta\"",
+  )
+  debug_inspect(
+    simulation_light_system_set_name(
+      SimulationLightSystems::CheckLightVisibility,
+    ),
+    content="\"mgstudio.light.SimulationLightSystems.CheckLightVisibility\"",
+  )
+}
