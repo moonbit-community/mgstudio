@@ -531,6 +531,61 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
 }
 
 ///|
+test "light cluster: assign system filters lights by render layers" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    cluster_test_camera(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  |> ignore)
+
+  let point_visible = world.spawn()
+  try! (world.set_by_key(
+    point_visible,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight().with_range(10.0F),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    point_visible,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  |> ignore)
+
+  let point_hidden = world.spawn()
+  try! (world.set_by_key(
+    point_hidden,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight().with_range(80.0F),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    point_hidden,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(2),
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  debug_inspect(clusters.last_frame_farthest_z(), content="Some(10)")
+  inspect(visible.point_and_spot_light_count(), content="1")
+}
+
+///|
 test "light cluster: light probes require LightProbe and use transform radius" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()

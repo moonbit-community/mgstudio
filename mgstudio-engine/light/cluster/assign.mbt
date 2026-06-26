@@ -166,6 +166,7 @@ priv struct ClusterableObjectAssignmentData {
   transform : @transform.Transform
   range : Float
   object_type : ClusterableObjectType
+  render_layers : @camera_render_layers.RenderLayers
 }
 
 ///|
@@ -181,6 +182,18 @@ fn cluster_assign_entity_transform(
         Some(transform) => transform
         None => @transform.Transform::identity()
       }
+  }
+}
+
+///|
+fn cluster_assign_entity_render_layers(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @camera_render_layers.RenderLayers {
+  match
+    (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers)) {
+    Some(render_layers) => render_layers
+    None => @camera_render_layers.RenderLayers::RenderLayers()
   }
 }
 
@@ -211,6 +224,7 @@ fn cluster_assign_collect_objects(
         light.shadow_maps_enabled,
         false,
       ),
+      render_layers: cluster_assign_entity_render_layers(world, entity),
     })
   })
   world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
@@ -226,6 +240,7 @@ fn cluster_assign_collect_objects(
         false,
         light.outer_angle,
       ),
+      render_layers: cluster_assign_entity_render_layers(world, entity),
     })
   })
   if global_cluster_settings.supports_storage_buffers {
@@ -245,6 +260,7 @@ fn cluster_assign_collect_objects(
         transform,
         range: cluster_assign_light_probe_radius(transform),
         object_type: ClusterableObjectType::ReflectionProbe,
+        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
       })
     })
     world.for_each_component(@light.ecs_key_irradiance_volume, fn(
@@ -263,6 +279,7 @@ fn cluster_assign_collect_objects(
         transform,
         range: cluster_assign_light_probe_radius(transform),
         object_type: ClusterableObjectType::IrradianceVolume,
+        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
       })
     })
   }
@@ -280,6 +297,7 @@ fn cluster_assign_collect_objects(
         transform,
         range: transform.scale.length(),
         object_type: ClusterableObjectType::Decal,
+        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
       })
     })
   }
@@ -524,11 +542,15 @@ fn cluster_assign_fill_object_clusters(
   clusters : Clusters,
   visible : VisibleClusterableObjects,
   object : ClusterableObjectAssignmentData,
+  view_layers : @camera_render_layers.RenderLayers,
   clip_from_view : ClusterProjectionMatrix3d,
   view_from_world : ClusterProjectionMatrix3d,
   cluster_factors : @math.Vec2,
   is_orthographic : Bool,
 ) -> Unit {
+  if !view_layers.intersects(object.render_layers) {
+    return
+  }
   let center_view4 = view_from_world.mul_vec4(
     @math.Vec4::new(
       object.transform.translation.x,
@@ -657,6 +679,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     )
     let clip_from_view = projection.clip_from_view()
     let is_orthographic = projection.is_orthographic()
+    let view_layers = cluster_assign_entity_render_layers(world, entity)
     let requested_dimensions = cluster_config_dimensions_for_screen_size(
       config, screen_width, screen_height,
     )
@@ -704,21 +727,6 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
         }
       ClusterFarZMode::Constant(value) => value
     }
-    let mut current_frame_farthest_z = 0.0F
-    for object in clusterable_objects {
-      let view_position = view_from_world.mul_vec4(
-        @math.Vec4::new(
-          object.transform.translation.x,
-          object.transform.translation.y,
-          object.transform.translation.z,
-          1.0F,
-        ),
-      )
-      let object_far = -view_position.z + object.range
-      if object_far > current_frame_farthest_z {
-        current_frame_farthest_z = object_far
-      }
-    }
     let mut near = cluster_config_first_slice_depth(config)
     if is_orthographic {
       near = projection.orthographic_first_slice_depth()
@@ -747,10 +755,26 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       cluster_assign_float_from_int(dimensions_z),
       is_orthographic,
     )
+    let mut current_frame_farthest_z = 0.0F
     for object in clusterable_objects {
+      if !view_layers.intersects(object.render_layers) {
+        continue
+      }
+      let view_position = view_from_world.mul_vec4(
+        @math.Vec4::new(
+          object.transform.translation.x,
+          object.transform.translation.y,
+          object.transform.translation.z,
+          1.0F,
+        ),
+      )
+      let object_far = -view_position.z + object.range
+      if object_far > current_frame_farthest_z {
+        current_frame_farthest_z = object_far
+      }
       cluster_assign_fill_object_clusters(
-        clusters, visible, object, clip_from_view, view_from_world, cluster_factors,
-        is_orthographic,
+        clusters, visible, object, view_layers, clip_from_view, view_from_world,
+        cluster_factors, is_orthographic,
       )
     }
     let mut total_cluster_index_count = 0

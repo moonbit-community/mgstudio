@@ -1,6 +1,7 @@
 import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
   "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "moonbitlang/core/math" @math_core,
   "Milky2018/mgstudio/app",
