@@ -2016,7 +2016,7 @@ fn render3d_extract_spot_light(
 ) -> ExtractedPointLight3d {
   let transform = render3d_extract_light_transform(world, entity)
   let inner = light.inner_angle
-  let outer = if light.outer_angle < inner { inner } else { light.outer_angle }
+  let outer = light.outer_angle
   let safe_shadow_map_size = if directional_light_shadow_map_size <= 0 {
     1
   } else {

@@ -1221,14 +1221,7 @@ pub fn SpotLight::with_inner_angle(
   self : SpotLight,
   inner_angle : Float,
 ) -> SpotLight {
-  let safe_inner_angle = if inner_angle < 0.0F {
-    0.0F
-  } else if inner_angle > self.outer_angle {
-    self.outer_angle
-  } else {
-    inner_angle
-  }
-  SpotLight::{ ..self, inner_angle: safe_inner_angle }
+  SpotLight::{ ..self, inner_angle, }
 }
 
 ///|
@@ -1236,21 +1229,7 @@ pub fn SpotLight::with_outer_angle(
   self : SpotLight,
   outer_angle : Float,
 ) -> SpotLight {
-  let safe_outer_angle = if outer_angle <= 0.0001F {
-    0.0001F
-  } else {
-    outer_angle
-  }
-  let safe_inner_angle = if self.inner_angle > safe_outer_angle {
-    safe_outer_angle
-  } else {
-    self.inner_angle
-  }
-  SpotLight::{
-    ..self,
-    outer_angle: safe_outer_angle,
-    inner_angle: safe_inner_angle,
-  }
+  SpotLight::{ ..self, outer_angle, }
 }
 
 ///|

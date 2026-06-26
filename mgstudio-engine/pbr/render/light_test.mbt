@@ -335,6 +335,31 @@ test "pbr render light: spot extraction follows bevy intensity and normal-bias s
 }
 
 ///|
+test "pbr render light: spot extraction preserves authored angles" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::SpotLight()
+    .with_inner_angle(1.25F)
+    .with_outer_angle(0.25F),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_spot_lights(world)
+  inspect(extracted.length(), content="1")
+  match extracted[0].spot_light_angles {
+    Some((inner, outer)) => {
+      inspect(approx_eq(inner, 1.25F, 1.0e-6F), content="true")
+      inspect(approx_eq(outer, 0.25F, 1.0e-6F), content="true")
+    }
+    None => inspect(false, content="true")
+  }
+}
+
+///|
 test "pbr render light: directional dir_to_light uses transform back vector" {
   let world = @ecs.World::new()
   let entity = world.spawn()

@@ -121,6 +121,20 @@ test "spot light default angles match Bevy" {
 }
 
 ///|
+test "spot light angle setters preserve plain field semantics" {
+  let spot = @light.SpotLight::SpotLight()
+    .with_inner_angle(-0.25F)
+    .with_outer_angle(-0.5F)
+  debug_inspect(spot.inner_angle.to_double(), content="-0.25")
+  debug_inspect(spot.outer_angle.to_double(), content="-0.5")
+  let inverted = @light.SpotLight::SpotLight()
+    .with_inner_angle(1.5F)
+    .with_outer_angle(0.25F)
+  debug_inspect(inverted.inner_angle.to_double(), content="1.5")
+  debug_inspect(inverted.outer_angle.to_double(), content="0.25")
+}
+
+///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),
