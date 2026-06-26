@@ -64,16 +64,7 @@ pub type Tonemapping = @post_process.Tonemapping
 pub type DebandDither = @post_process.DebandDither
 
 ///|
-pub(all) enum DeferredLightingShadowFilteringMethod {
-  Hardware2x2
-  Gaussian
-  Temporal
-} derive(Eq, Debug)
-
-///|
-pub fn DeferredLightingShadowFilteringMethod::default() -> DeferredLightingShadowFilteringMethod {
-  DeferredLightingShadowFilteringMethod::Gaussian
-}
+pub type DeferredLightingShadowFilteringMethod = @light.ShadowFilteringMethod
 
 ///|
 pub struct DeferredPbrLightingState {

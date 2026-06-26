@@ -138,6 +138,19 @@ pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShad
 }
 
 ///|
+/// Camera shadow filtering mode aligned with Bevy's `ShadowFilteringMethod`.
+pub(all) enum ShadowFilteringMethod {
+  Hardware2x2
+  Gaussian
+  Temporal
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
+  ShadowFilteringMethod::Gaussian
+}
+
+///|
 /// Bevy-aligned marker component for directional volumetric lighting.
 pub struct VolumetricLight {}
 
@@ -2030,6 +2043,11 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
 
 ///|
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[
+  ShadowFilteringMethod,
+] = @ecs.register_component(debug_name="render3d.shadow_filtering_method")
+
+///|
 pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @ecs.register_component(
   debug_name="render3d.volumetric_light",
 )
@@ -2146,6 +2164,11 @@ pub impl @ecs.Component for NotShadowReceiver with fn component() {
 ///|
 pub impl @ecs.Component for TransmittedShadowReceiver with fn component() {
   ecs_key_transmitted_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for ShadowFilteringMethod with fn component() {
+  ecs_key_shadow_filtering_method
 }
 
 ///|

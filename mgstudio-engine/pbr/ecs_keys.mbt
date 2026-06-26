@@ -244,7 +244,7 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 ///|
 pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[
   ShadowFilteringMethod,
-] = @ecs.register_component(debug_name="render3d.shadow_filtering_method")
+] = @light.ecs_key_shadow_filtering_method
 
 ///|
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
@@ -383,11 +383,6 @@ pub impl @ecs.Component for NoIndirectDrawing with fn component() {
 ///|
 pub impl @ecs.Component for Projection with fn component() {
   ecs_key_projection
-}
-
-///|
-pub impl @ecs.Component for ShadowFilteringMethod with fn component() {
-  ecs_key_shadow_filtering_method
 }
 
 ///|

@@ -584,17 +584,7 @@ pub type ScreenSpaceAmbientOcclusionQualityLevel = @post_process.ScreenSpaceAmbi
 pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
 
 ///|
-/// Camera shadow filtering mode aligned with Bevy's `ShadowFilteringMethod`.
-pub(all) enum ShadowFilteringMethod {
-  Hardware2x2
-  Gaussian
-  Temporal
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
-pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
-  ShadowFilteringMethod::Gaussian
-}
+pub type ShadowFilteringMethod = @light.ShadowFilteringMethod
 
 ///|
 /// Camera screen-space transmission quality aligned with Bevy's

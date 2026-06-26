@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/pbr/deferred"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/post_process",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -121,19 +122,12 @@ pub struct DeferredLightingPreparePlan {
   color_target_format : String
 }
 
-pub(all) enum DeferredLightingShadowFilteringMethod {
-  Hardware2x2
-  Gaussian
-  Temporal
-} derive(Eq, @debug.Debug)
-pub fn DeferredLightingShadowFilteringMethod::default() -> Self
-
 pub struct DeferredLightingViewState {
   hdr : Bool
   invert_culling : Bool
   tonemapping : @post_process.Tonemapping?
   deband_dither : @post_process.DebandDither?
-  shadow_filter_method : DeferredLightingShadowFilteringMethod?
+  shadow_filter_method : @light.ShadowFilteringMethod?
   screen_space_ambient_occlusion : Bool
   screen_space_reflections : Bool
   distance_fog : Bool
@@ -147,7 +141,7 @@ pub struct DeferredLightingViewState {
   atmosphere : Bool
   binding_arrays_are_usable : Bool
 }
-pub fn DeferredLightingViewState::new(hdr? : Bool, invert_culling? : Bool, tonemapping? : @post_process.Tonemapping?, deband_dither? : @post_process.DebandDither?, shadow_filter_method? : DeferredLightingShadowFilteringMethod?, screen_space_ambient_occlusion? : Bool, screen_space_reflections? : Bool, distance_fog? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, environment_map? : Bool, irradiance_volume? : Bool, skip_deferred_lighting? : Bool, atmosphere? : Bool, binding_arrays_are_usable? : Bool) -> Self
+pub fn DeferredLightingViewState::new(hdr? : Bool, invert_culling? : Bool, tonemapping? : @post_process.Tonemapping?, deband_dither? : @post_process.DebandDither?, shadow_filter_method? : @light.ShadowFilteringMethod?, screen_space_ambient_occlusion? : Bool, screen_space_reflections? : Bool, distance_fog? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, environment_map? : Bool, irradiance_volume? : Bool, skip_deferred_lighting? : Bool, atmosphere? : Bool, binding_arrays_are_usable? : Bool) -> Self
 
 pub struct DeferredPbrLightingPlugin {
 }
@@ -175,6 +169,8 @@ pub impl @ecs.Component for SkipDeferredLighting
 
 // Type aliases
 pub using @post_process {type DebandDither}
+
+pub using @light {type ShadowFilteringMethod as DeferredLightingShadowFilteringMethod}
 
 pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPlugin}
 

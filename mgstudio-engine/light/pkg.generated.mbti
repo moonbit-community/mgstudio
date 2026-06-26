@@ -99,6 +99,8 @@ pub let ecs_key_point_light_texture_component : @ecs.ComponentKey[PointLightText
 
 pub let ecs_key_rect_light : @ecs.ComponentKey[RectLight]
 
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
+
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
 pub let ecs_key_skybox_component : @ecs.ComponentKey[Skybox]
@@ -559,6 +561,14 @@ pub struct ScatteringTerm {
 } derive(ToJson, @json.FromJson)
 pub fn ScatteringTerm::ScatteringTerm() -> Self
 pub fn ScatteringTerm::new(@math.Vec3, @math.Vec3, Falloff, PhaseFunction) -> Self
+
+pub(all) enum ShadowFilteringMethod {
+  Hardware2x2
+  Gaussian
+  Temporal
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ShadowFilteringMethod::default() -> Self
+pub impl @ecs.Component for ShadowFilteringMethod
 
 pub struct ShowLightGizmo {
   color : LightGizmoColor?

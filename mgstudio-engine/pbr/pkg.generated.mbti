@@ -374,7 +374,7 @@ pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@post_process.Scree
 
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@transmission.ScreenSpaceTransmission]
 
-pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[@light.ShadowFilteringMethod]
 
 pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/deferred.SkipDeferredLighting]
 
@@ -2402,14 +2402,6 @@ pub struct ScreenSpaceTransmissionPlugin {
 pub fn ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin() -> Self
 pub impl @app.Plugin for ScreenSpaceTransmissionPlugin
 
-pub(all) enum ShadowFilteringMethod {
-  Hardware2x2
-  Gaussian
-  Temporal
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn ShadowFilteringMethod::default() -> Self
-pub impl @ecs.Component for ShadowFilteringMethod
-
 pub struct SpecializedClusteringAllocationPipelines {
   entries : Array[(ClusteringAllocationPipelineKey, @render_resource.CachedComputePipelineId)]
 }
@@ -3083,7 +3075,7 @@ pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPipelineDescrip
 
 pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPreparePlan}
 
-pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingShadowFilteringMethod}
+pub using @light {type ShadowFilteringMethod as DeferredLightingShadowFilteringMethod}
 
 pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingViewState}
 
@@ -3192,6 +3184,8 @@ pub using @post_process {type ScreenSpaceReflections}
 pub using @transmission {type ScreenSpaceTransmission}
 
 pub using @transmission {type ScreenSpaceTransmissionQuality}
+
+pub using @light {type ShadowFilteringMethod}
 
 pub using @light {type ShowLightGizmo}
 
