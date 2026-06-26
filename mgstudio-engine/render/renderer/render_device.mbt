@@ -113,6 +113,13 @@ pub fn RenderDevice::limits_max_immediate_size_u32(self : RenderDevice) -> UInt 
 }
 
 ///|
+pub fn RenderDevice::limits_max_texture_array_layers_u32(
+  self : RenderDevice,
+) -> UInt {
+  self.wgpu_device().limits_max_texture_array_layers_u32()
+}
+
+///|
 pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(
   self : RenderDevice,
 ) -> UInt {

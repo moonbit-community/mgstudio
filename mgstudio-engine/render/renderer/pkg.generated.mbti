@@ -1876,6 +1876,7 @@ pub fn RenderDevice::has_feature_native_texture_binding_array(Self) -> Bool
 pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_immediate_size_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(Self) -> UInt
+pub fn RenderDevice::limits_max_texture_array_layers_u32(Self) -> UInt
 pub fn RenderDevice::new(WgpuWrapper[@wgpu_mbt.Device]) -> Self
 pub fn RenderDevice::poll(Self, wait? : Bool) -> Bool
 pub fn RenderDevice::queue(Self) -> RenderQueue

@@ -992,6 +992,60 @@ test "pbr render light: clustered point light reads decal index" {
 }
 
 ///|
+test "pbr render light: clustered spot light sets Bevy spot flag bit" {
+  let world = @ecs.World::new()
+
+  let spot = world.spawn()
+  try! (world.set_by_key(
+    spot,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::SpotLight(),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
+    inspect("missing", content="clustered")
+    return
+  }
+  let flags = test_u32le_at(clustered, 12 * 4)
+  inspect((flags & (1U << 5)) != 0U, content="true")
+}
+
+///|
+test "pbr render light: clustered light shadow flags respect texture cube cap" {
+  let world = @ecs.World::new()
+
+  for _ in 0..<(256 / 6 + 1) {
+    let point = world.spawn()
+    try! (world.set_by_key(
+      point,
+      @light.ecs_key_point_light,
+      @light.PointLight::PointLight().with_shadow_maps_enabled(true),
+    )
+    |> ignore)
+    try! (world.set_by_key(
+      point,
+      @light.ecs_key_volumetric_light,
+      @light.VolumetricLight::VolumetricLight(),
+    )
+    |> ignore)
+  }
+
+  light_test_extract_lights(world)
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
+    inspect("missing", content="clustered")
+    return
+  }
+  let capped_index = 256 / 6
+  let capped_flags = test_u32le_at(clustered, capped_index * 20 * 4 + 12 * 4)
+  inspect((capped_flags & (1U << 0)) == 0U, content="true")
+  inspect((capped_flags & (1U << 2)) == 0U, content="true")
+}
+
+///|
 test "pbr render light: point extraction order keeps shadow and volumetric first" {
   let world = @ecs.World::new()
   let no_shadow = world.spawn()

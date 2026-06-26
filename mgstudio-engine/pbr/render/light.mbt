@@ -74,6 +74,9 @@ const POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE : UInt = 1U << 3
 const POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED : UInt = 1U << 4
 
 ///|
+const POINT_LIGHT_FLAG_SPOT_LIGHT : UInt = 1U << 5
+
+///|
 const POINT_LIGHT_FLAG_NONE : UInt = 0U
 
 ///|
@@ -1221,6 +1224,159 @@ const MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES : Int = 16384
 const MAX_STORAGE_BUFFER_CLUSTERS : Int = 4096
 
 ///|
+priv struct Render3dClusteredLightFlagLimits {
+  point_light_count : Int
+  point_light_shadow_maps_count : Int
+  point_light_volumetric_enabled_count : Int
+  spot_light_shadow_maps_count : Int
+  spot_light_volumetric_enabled_count : Int
+}
+
+///|
+fn render3d_min_int(left : Int, right : Int) -> Int {
+  if left < right {
+    left
+  } else {
+    right
+  }
+}
+
+///|
+fn render3d_max_int(left : Int, right : Int) -> Int {
+  if left > right {
+    left
+  } else {
+    right
+  }
+}
+
+///|
+fn render3d_lights_max_texture_array_layers(world : @ecs.World) -> Int {
+  match world.get_resource(@render_gpu.render_device_resource_key) {
+    Some(render_device) =>
+      render_device.limits_max_texture_array_layers_u32().reinterpret_as_int()
+    None =>
+      // Unit tests call this CPU mirror without a render device. Bevy's runtime
+      // path always receives `RenderDevice`; use the WebGPU native floor here
+      // only for offline byte-layout tests.
+      256
+  }
+}
+
+///|
+fn render3d_clustered_light_flag_limits(
+  world : @ecs.World,
+  clusterable_lights : Array[ExtractedClusterablePointLight3d],
+) -> Render3dClusteredLightFlagLimits {
+  let max_texture_array_layers = render3d_lights_max_texture_array_layers(world)
+  let max_texture_cubes = max_texture_array_layers / 6
+  let mut point_light_count = 0
+  let mut point_light_shadow_maps_enabled_count = 0
+  let mut point_light_volumetric_enabled_count = 0
+  let mut spot_light_shadow_maps_enabled_count = 0
+  let mut spot_light_volumetric_enabled_count = 0
+  for clustered in clusterable_lights {
+    let light = clustered.light()
+    if clustered.is_spot_light() {
+      if light.shadow_maps_enabled {
+        spot_light_shadow_maps_enabled_count += 1
+      }
+      if light.volumetric {
+        spot_light_volumetric_enabled_count += 1
+      }
+    } else {
+      point_light_count += 1
+      if light.shadow_maps_enabled {
+        point_light_shadow_maps_enabled_count += 1
+      }
+      if light.volumetric {
+        point_light_volumetric_enabled_count += 1
+      }
+    }
+  }
+  let directional_lights = render3d_collect_extracted_directional_lights(world)
+  let mut directional_shadow_enabled_count = 0
+  let directional_count = render3d_min_int(
+    directional_lights.length(),
+    MAX_DIRECTIONAL_LIGHTS,
+  )
+  for i in 0..<directional_count {
+    if directional_lights[i].shadow_maps_enabled {
+      directional_shadow_enabled_count += 1
+    }
+  }
+  directional_shadow_enabled_count = render3d_min_int(
+    directional_shadow_enabled_count,
+    max_texture_array_layers / MAX_CASCADES_PER_LIGHT,
+  )
+  let remaining_spot_texture_layers = render3d_max_int(
+    0,
+    max_texture_array_layers -
+    directional_shadow_enabled_count * MAX_CASCADES_PER_LIGHT,
+  )
+  Render3dClusteredLightFlagLimits::{
+    point_light_count,
+    point_light_shadow_maps_count: render3d_min_int(
+      point_light_shadow_maps_enabled_count, max_texture_cubes,
+    ),
+    point_light_volumetric_enabled_count: render3d_min_int(
+      point_light_volumetric_enabled_count, max_texture_cubes,
+    ),
+    spot_light_shadow_maps_count: render3d_min_int(
+      spot_light_shadow_maps_enabled_count, remaining_spot_texture_layers,
+    ),
+    spot_light_volumetric_enabled_count: render3d_min_int(
+      spot_light_volumetric_enabled_count, remaining_spot_texture_layers,
+    ),
+  }
+}
+
+///|
+fn render3d_clustered_point_light_flags(
+  clustered : ExtractedClusterablePointLight3d,
+  index : Int,
+  limits : Render3dClusteredLightFlagLimits,
+) -> UInt {
+  let extracted = clustered.light()
+  let mut flags = POINT_LIGHT_FLAG_NONE
+  if extracted.shadow_maps_enabled {
+    if clustered.is_spot_light() {
+      let spot_index = index - limits.point_light_count
+      if spot_index >= 0 && spot_index < limits.spot_light_shadow_maps_count {
+        flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
+      }
+    } else if index < limits.point_light_shadow_maps_count {
+      flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
+    }
+  }
+  if extracted.contact_shadows_enabled {
+    flags = flags | POINT_LIGHT_FLAG_CONTACT_SHADOWS_ENABLED
+  }
+  if clustered.is_spot_light() {
+    flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT
+    let light_direction = render3d_transform_forward(extracted.transform)
+    if light_direction.y < 0.0F {
+      flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
+    }
+  }
+  if extracted.volumetric && extracted.shadow_maps_enabled {
+    if clustered.is_spot_light() {
+      let spot_index = index - limits.point_light_count
+      if spot_index >= 0 &&
+        spot_index < limits.spot_light_volumetric_enabled_count {
+        flags = flags | POINT_LIGHT_FLAG_VOLUMETRIC
+      }
+    } else if index < limits.point_light_volumetric_enabled_count {
+      flags = flags | POINT_LIGHT_FLAG_VOLUMETRIC
+    }
+  }
+  if extracted.affects_lightmapped_mesh_diffuse {
+    flags = flags | POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE
+  }
+  flags
+}
+
+///|
 fn render3d_lights_push_f32(words : Array[UInt], value : Float) -> Unit {
   words.push(value.reinterpret_as_uint())
 }
@@ -1543,6 +1699,8 @@ fn render3d_lights_push_clustered_light(
   world : @ecs.World,
   words : Array[UInt],
   item : ExtractedClusterablePointLight3d?,
+  index : Int,
+  flag_limits : Render3dClusteredLightFlagLimits,
 ) -> Unit {
   match item {
     None =>
@@ -1583,7 +1741,10 @@ fn render3d_lights_push_clustered_light(
           render3d_lights_push_f32(words, extracted.transform.translation.y)
           render3d_lights_push_f32(words, extracted.transform.translation.z)
           render3d_lights_push_f32(words, extracted.radius)
-          render3d_lights_push_u32(words, render3d_point_light_flags(extracted))
+          render3d_lights_push_u32(
+            words,
+            render3d_clustered_point_light_flags(clustered, index, flag_limits),
+          )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
           render3d_lights_push_f32(words, render3d_tan(outer))
@@ -1639,7 +1800,10 @@ fn render3d_lights_push_clustered_light(
           render3d_lights_push_f32(words, extracted.transform.translation.y)
           render3d_lights_push_f32(words, extracted.transform.translation.z)
           render3d_lights_push_f32(words, extracted.radius)
-          render3d_lights_push_u32(words, render3d_point_light_flags(extracted))
+          render3d_lights_push_u32(
+            words,
+            render3d_clustered_point_light_flags(clustered, index, flag_limits),
+          )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
           render3d_lights_push_f32(words, 0.0F)
@@ -1680,13 +1844,18 @@ fn render3d_gpu_cluster_buffers(
   irradiance_volume_entities : Array[@core.Entity],
 ) -> (Bytes, Bytes, Bytes) {
   let clustered_words : Array[UInt] = []
+  let flag_limits = render3d_clustered_light_flag_limits(
+    world, clusterable_lights,
+  )
   for i in 0..<MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
     let item = if i < clusterable_lights.length() {
       Some(clusterable_lights[i])
     } else {
       None
     }
-    render3d_lights_push_clustered_light(world, clustered_words, item)
+    render3d_lights_push_clustered_light(
+      world, clustered_words, item, i, flag_limits,
+    )
   }
   let index_words : Array[UInt] = []
   let offset_words : Array[UInt] = []
@@ -1933,6 +2102,7 @@ pub fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
     flags = flags | POINT_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
   if extracted.spot_light_angles is Some(_) {
+    flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT
     let light_direction = render3d_transform_forward(extracted.transform)
     if light_direction.y < 0.0F {
       flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
