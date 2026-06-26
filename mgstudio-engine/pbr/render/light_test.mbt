@@ -283,6 +283,83 @@ fn light_test_extract_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn light_test_insert_shadow_map_visible_components(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  try! world.set_by_key(
+    entity,
+    @render_view_visibility.ecs_key_render_shadow_map_visible_entities,
+    @render_view_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+  )
+  try! world.set_by_key(
+    entity,
+    @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    @render_view_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+  )
+}
+
+///|
+fn light_test_shadow_map_visible_components_removed(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  (try! world.get_by_key(
+    entity, @render_view_visibility.ecs_key_render_shadow_map_visible_entities,
+  ))
+  is None &&
+  (try! world.get_by_key(
+    entity, @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+  ))
+  is None
+}
+
+///|
+test "pbr render light: extraction clears shadow map visible components when shadows are disabled" {
+  let world = @ecs.World::new()
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight(),
+  )
+  |> ignore)
+  light_test_insert_shadow_map_visible_components(world, point)
+
+  let spot = world.spawn()
+  try! (world.set_by_key(
+    spot,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::SpotLight(),
+  )
+  |> ignore)
+  light_test_insert_shadow_map_visible_components(world, spot)
+
+  let directional = world.spawn()
+  try! (world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  |> ignore)
+  light_test_insert_shadow_map_visible_components(world, directional)
+
+  light_test_extract_lights(world)
+  inspect(
+    light_test_shadow_map_visible_components_removed(world, point),
+    content="true",
+  )
+  inspect(
+    light_test_shadow_map_visible_components_removed(world, spot),
+    content="true",
+  )
+  inspect(
+    light_test_shadow_map_visible_components_removed(world, directional),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(

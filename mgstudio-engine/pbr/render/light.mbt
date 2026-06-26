@@ -2496,6 +2496,11 @@ fn extract_point_lights(
       light_extract_remove_point_light(render_world, render_entity)
       return
     }
+    if !light.shadow_maps_enabled {
+      light_sync_target_remove_common_shadow_components(
+        render_world, render_entity,
+      )
+    }
     let volumetric = (try! source_world.get_by_key(
         entity, @light.ecs_key_volumetric_light,
       ))
@@ -2531,6 +2536,11 @@ fn extract_spot_lights(
       light_extract_remove_point_light(render_world, render_entity)
       return
     }
+    if !light.shadow_maps_enabled {
+      light_sync_target_remove_common_shadow_components(
+        render_world, render_entity,
+      )
+    }
     let volumetric = (try! source_world.get_by_key(
         entity, @light.ecs_key_volumetric_light,
       ))
@@ -2565,6 +2575,11 @@ fn extract_directional_lights(
     if !render3d_light_is_view_visible(source_world, entity) {
       light_extract_remove_directional_light(render_world, render_entity)
       return
+    }
+    if !light.shadow_maps_enabled {
+      light_sync_target_remove_common_shadow_components(
+        render_world, render_entity,
+      )
     }
     let volumetric = (try! source_world.get_by_key(
         entity, @light.ecs_key_volumetric_light,
