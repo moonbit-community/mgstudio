@@ -258,8 +258,20 @@ fn configure_pbr_render_extract_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(clear_dirty_specializations_system)
+    .named("mgstudio_pbr::clear_dirty_specializations")
+    .in_set(material_dirty_specializations_clear_set),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(extract_mesh_materials)
     .named("mgstudio_pbr::extract_mesh_materials")
+    .in_set(material_extraction_systems),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_entities_needs_specialization)
+    .named("mgstudio_pbr::extract_entities_needs_specialization")
     .in_set(material_extraction_systems),
   )
   .add_systems(
@@ -288,13 +300,26 @@ fn configure_pbr_render_extract_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(extract_entities_that_need_specializations_removed)
+    .named("mgstudio_pbr::extract_entities_that_need_specializations_removed")
+    .in_set(material_dirty_specializations_removed_set),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(late_sweep_material_instances)
     .named("mgstudio_pbr::late_sweep_material_instances")
     .in_set(late_sweep_material_instances_set),
   )
   .configure_set(
     @render.render_schedule_stage(),
+    material_dirty_specializations_clear_set,
+    before=[material_extraction_systems],
+    in_sets=[@render.render_system_set_extract_commands],
+  )
+  .configure_set(
+    @render.render_schedule_stage(),
     material_extraction_systems,
+    after=[material_dirty_specializations_clear_set],
     before=[early_sweep_material_instances_set],
     in_sets=[@render.render_system_set_extract_commands],
   )
@@ -302,13 +327,20 @@ fn configure_pbr_render_extract_systems(
     @render.render_schedule_stage(),
     early_sweep_material_instances_set,
     after=[material_extraction_systems],
+    before=[material_dirty_specializations_removed_set],
+    in_sets=[@render.render_system_set_extract_commands],
+  )
+  .configure_set(
+    @render.render_schedule_stage(),
+    material_dirty_specializations_removed_set,
+    after=[early_sweep_material_instances_set],
     before=[late_sweep_material_instances_set],
     in_sets=[@render.render_system_set_extract_commands],
   )
   .configure_set(
     @render.render_schedule_stage(),
     late_sweep_material_instances_set,
-    after=[early_sweep_material_instances_set],
+    after=[material_dirty_specializations_removed_set],
     in_sets=[@render.render_system_set_extract_commands],
   )
 }

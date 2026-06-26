@@ -1333,7 +1333,7 @@ pub struct EntitySpecializationTicks {
   entities : Map[UInt64, EntitySpecializationTickPair]
 }
 pub fn EntitySpecializationTicks::EntitySpecializationTicks() -> Self
-pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, Int64, RenderMaterialInstances) -> Unit
+pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, Int64, RenderMaterialInstances, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations) -> Unit
 pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializationTickPair?
 pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
 pub fn EntitySpecializationTicks::len(Self) -> Int

@@ -16,11 +16,12 @@
 test "pbr material specialization: entity ticks capture system and material instance ticks" {
   let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
   let entity = @core.Entity::new(31, 0)
 
   material_instances.advance_change_tick()
   entity_ticks.extract_entity_needs_specialization(
-    entity, 7, material_instances,
+    entity, 7, material_instances, dirty,
   )
 
   match entity_ticks.get(entity) {
@@ -30,6 +31,10 @@ test "pbr material specialization: entity ticks capture system and material inst
     }
     None => debug_inspect(false, content="true")
   }
+  debug_inspect(
+    dirty.changed_contains(@render.MainEntity::new(entity)),
+    content="true",
+  )
 }
 
 ///|
@@ -83,11 +88,12 @@ test "pbr material specialization: sweep preserves same-frame material type repl
   let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
   let view = @core.Entity::new(4, 0)
   let entity = @core.Entity::new(5, 0)
 
   entity_ticks.extract_entity_needs_specialization(
-    entity, 3, material_instances,
+    entity, 3, material_instances, dirty,
   )
   cache.insert(view, entity, 3, @material.CachedRenderPipelineId::new(77UL))
 
@@ -109,12 +115,13 @@ test "pbr material specialization: sweep removes stale ticks and cached pipeline
   let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
   let view_a = @core.Entity::new(9, 0)
   let view_b = @core.Entity::new(10, 0)
   let entity = @core.Entity::new(11, 0)
 
   entity_ticks.extract_entity_needs_specialization(
-    entity, 3, material_instances,
+    entity, 3, material_instances, dirty,
   )
   material_instances.advance_change_tick()
   cache.insert(view_a, entity, 3, @material.CachedRenderPipelineId::new(7UL))

@@ -100,6 +100,7 @@ pub fn EntitySpecializationTicks::extract_entity_needs_specialization(
   entity : @core.Entity,
   system_tick : @core.Tick,
   render_material_instances : RenderMaterialInstances,
+  dirty_specializations : @render_visibility.DirtySpecializations,
 ) -> Unit {
   self.insert(
     entity,
@@ -108,6 +109,7 @@ pub fn EntitySpecializationTicks::extract_entity_needs_specialization(
       render_material_instances.current_change_tick(),
     ),
   )
+  dirty_specializations.insert_changed(@render.MainEntity::new(entity))
 }
 
 ///|
