@@ -484,8 +484,8 @@ pub fn ScatteringMedium::density_multiplier(self : ScatteringMedium) -> Float {
 ///|
 /// Bevy-shaped atmosphere component.
 pub struct Atmosphere {
-  bottom_radius : Float
-  top_radius : Float
+  inner_radius : Float
+  outer_radius : Float
   ground_albedo : @math.Vec3
   medium : ScatteringMedium
 } derive(ToJson, FromJson)
@@ -498,8 +498,8 @@ pub fn Atmosphere::Atmosphere() -> Atmosphere {
 ///|
 pub fn Atmosphere::earthlike(medium : ScatteringMedium) -> Atmosphere {
   Atmosphere::{
-    bottom_radius: 6_360_000.0F,
-    top_radius: 6_460_000.0F,
+    inner_radius: 6_360_000.0F,
+    outer_radius: 6_460_000.0F,
     ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
     medium,
   }
@@ -508,10 +508,10 @@ pub fn Atmosphere::earthlike(medium : ScatteringMedium) -> Atmosphere {
 ///|
 pub fn Atmosphere::with_radii(
   self : Atmosphere,
-  bottom_radius : Float,
-  top_radius : Float,
+  inner_radius : Float,
+  outer_radius : Float,
 ) -> Atmosphere {
-  Atmosphere::{ ..self, bottom_radius, top_radius }
+  Atmosphere::{ ..self, inner_radius, outer_radius }
 }
 
 ///|

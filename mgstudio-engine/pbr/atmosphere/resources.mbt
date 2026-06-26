@@ -62,8 +62,8 @@ pub fn pbr_gpu_atmosphere(
 ) -> GpuAtmosphere {
   GpuAtmosphere::{
     ground_albedo: atmosphere.ground_albedo,
-    inner_radius: atmosphere.bottom_radius,
-    outer_radius: atmosphere.top_radius,
+    inner_radius: atmosphere.inner_radius,
+    outer_radius: atmosphere.outer_radius,
     world_to_atmosphere,
   }
 }

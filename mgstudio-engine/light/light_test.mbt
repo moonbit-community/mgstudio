@@ -286,8 +286,8 @@ test "atmosphere radii preserve Bevy plain field semantics" {
   let atmosphere = @light.Atmosphere::earthlike(
     @light.ScatteringMedium::earthlike(),
   ).with_radii(-1.0F, -2.0F)
-  inspect(atmosphere.bottom_radius.to_double(), content="-1")
-  inspect(atmosphere.top_radius.to_double(), content="-2")
+  inspect(atmosphere.inner_radius.to_double(), content="-1")
+  inspect(atmosphere.outer_radius.to_double(), content="-2")
 }
 
 ///|

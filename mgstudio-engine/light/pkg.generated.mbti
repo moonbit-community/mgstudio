@@ -146,8 +146,8 @@ pub impl @ecs.Component for AmbientLight
 
 #alias(AtmosphereComponent)
 pub struct Atmosphere {
-  bottom_radius : Float
-  top_radius : Float
+  inner_radius : Float
+  outer_radius : Float
   ground_albedo : @math.Vec3
   medium : ScatteringMedium
 } derive(ToJson, @json.FromJson)

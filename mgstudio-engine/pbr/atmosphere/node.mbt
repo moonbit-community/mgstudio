@@ -20,8 +20,8 @@ pub type Atmosphere = @light.Atmosphere
 
 ///|
 pub struct ExtractedAtmosphere {
-  bottom_radius : Float
-  top_radius : Float
+  inner_radius : Float
+  outer_radius : Float
   ground_albedo : @math.Vec3
   medium_id : Int
 }
@@ -29,8 +29,8 @@ pub struct ExtractedAtmosphere {
 ///|
 pub fn ExtractedAtmosphere::ExtractedAtmosphere() -> ExtractedAtmosphere {
   ExtractedAtmosphere::{
-    bottom_radius: 6_360_000.0F,
-    top_radius: 6_460_000.0F,
+    inner_radius: 6_360_000.0F,
+    outer_radius: 6_460_000.0F,
     ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
     medium_id: 0,
   }
@@ -38,12 +38,12 @@ pub fn ExtractedAtmosphere::ExtractedAtmosphere() -> ExtractedAtmosphere {
 
 ///|
 pub fn pbr_extracted_atmosphere(
-  bottom_radius : Float,
-  top_radius : Float,
+  inner_radius : Float,
+  outer_radius : Float,
   ground_albedo : @math.Vec3,
   medium_id : Int,
 ) -> ExtractedAtmosphere {
-  ExtractedAtmosphere::{ bottom_radius, top_radius, ground_albedo, medium_id }
+  ExtractedAtmosphere::{ inner_radius, outer_radius, ground_albedo, medium_id }
 }
 
 ///|
@@ -70,8 +70,8 @@ pub fn pbr_atmosphere_earthlike(medium : @light.ScatteringMedium) -> Atmosphere 
 ///|
 pub fn pbr_atmosphere_with_radii(
   atmosphere : Atmosphere,
-  bottom_radius : Float,
-  top_radius : Float,
+  inner_radius : Float,
+  outer_radius : Float,
 ) -> Atmosphere {
-  atmosphere.with_radii(bottom_radius, top_radius)
+  atmosphere.with_radii(inner_radius, outer_radius)
 }

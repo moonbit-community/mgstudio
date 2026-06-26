@@ -160,8 +160,8 @@ pub struct AtmosphereTransforms {
 pub fn AtmosphereTransforms::AtmosphereTransforms() -> Self
 
 pub struct ExtractedAtmosphere {
-  bottom_radius : Float
-  top_radius : Float
+  inner_radius : Float
+  outer_radius : Float
   ground_albedo : @math.Vec3
   medium_id : Int
 }

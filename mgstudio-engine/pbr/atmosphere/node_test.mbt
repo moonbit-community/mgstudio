@@ -20,7 +20,7 @@ test "pbr atmosphere: extracted atmosphere preserves Bevy radius fields" {
     @math.Vec3::new(0.1F, 0.2F, 0.3F),
     42,
   )
-  inspect(extracted.bottom_radius.to_double(), content="-1")
-  inspect(extracted.top_radius.to_double(), content="-2")
+  inspect(extracted.inner_radius.to_double(), content="-1")
+  inspect(extracted.outer_radius.to_double(), content="-2")
   inspect(extracted.medium_id, content="42")
 }
