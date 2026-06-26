@@ -96,6 +96,21 @@ test "light gizmo config group defaults align with light kinds" {
 }
 
 ///|
+test "rect light constructor preserves Bevy plain field semantics" {
+  let rect = @light.RectLight::new(
+    @color.Color::white(),
+    -10.0F,
+    -20.0F,
+    -1.5F,
+    -2.5F,
+  )
+  debug_inspect(rect.intensity().to_double(), content="-10")
+  debug_inspect(rect.range().to_double(), content="-20")
+  debug_inspect(rect.width().to_double(), content="-1.5")
+  debug_inspect(rect.height().to_double(), content="-2.5")
+}
+
+///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),

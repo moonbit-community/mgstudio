@@ -43,13 +43,7 @@ pub fn RectLight::new(
   width : Float,
   height : Float,
 ) -> RectLight {
-  RectLight::{
-    color,
-    intensity: light_sanitize_non_negative(intensity),
-    range: light_sanitize_non_negative(range),
-    width: light_sanitize_non_negative(width),
-    height: light_sanitize_non_negative(height),
-  }
+  RectLight::{ color, intensity, range, width, height }
 }
 
 ///|
