@@ -44,3 +44,15 @@ test "pbr directional shadow view omits occlusion culling subview when disabled"
   )
   inspect(subview is None, content="true")
 }
+
+///|
+test "pbr shadow view pass names match Bevy light and view indices" {
+  inspect(
+    render3d_directional_shadow_pass_name(0, 2),
+    content="shadow_directional_light_0_cascade_2",
+  )
+  inspect(
+    render3d_point_shadow_pass_name(0, 5),
+    content="shadow_point_light_0_face_5",
+  )
+}

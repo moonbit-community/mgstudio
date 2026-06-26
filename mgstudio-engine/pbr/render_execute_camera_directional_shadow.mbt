@@ -366,7 +366,7 @@ fn render3d_execute_camera_directional_shadow_pass(
         light_entity~,
         cascade_index~,
       ),
-      pass_name: "shadow_directional_light_cascade",
+      pass_name: render3d_directional_shadow_pass_name(0, cascade_index),
       occlusion_culling_subview: render3d_directional_shadow_occlusion_culling_subview(
         pass_lighting, target_id, shadow_map_size,
       ),

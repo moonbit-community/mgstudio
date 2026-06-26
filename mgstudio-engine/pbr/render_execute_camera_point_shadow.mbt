@@ -91,7 +91,7 @@ fn render3d_execute_camera_point_shadow_pass(
         light_entity=point_entity,
         face_index~,
       ),
-      pass_name: "shadow_point_light_face",
+      pass_name: render3d_point_shadow_pass_name(0, face_index),
       occlusion_culling_subview: None,
     }
     render3d_execute_shadow_phase_view(

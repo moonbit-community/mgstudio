@@ -87,6 +87,22 @@ fn render3d_shadow_light_entity_debug_key(entity : Render3dLightEntity) -> Int {
 }
 
 ///|
+fn render3d_directional_shadow_pass_name(
+  light_index : Int,
+  cascade_index : Int,
+) -> String {
+  "shadow_directional_light_\{light_index}_cascade_\{cascade_index}"
+}
+
+///|
+fn render3d_point_shadow_pass_name(
+  light_index : Int,
+  face_index : Int,
+) -> String {
+  "shadow_point_light_\{light_index}_face_\{face_index}"
+}
+
+///|
 fn render3d_shadow_view_cache_key(
   camera_entity : @core.Entity,
   entity : Render3dLightEntity,
