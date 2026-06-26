@@ -47,7 +47,7 @@ pub fn clustered_decal() -> ClusteredDecal {
 }
 
 ///|
-pub fn clustered_decal_with_tag(tag : Int) -> ClusteredDecal {
+pub fn clustered_decal_with_tag(tag : UInt) -> ClusteredDecal {
   @light.ClusteredDecal::ClusteredDecal().with_tag(tag)
 }
 

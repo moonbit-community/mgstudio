@@ -223,7 +223,7 @@ pub struct ClusteredDecal {
   normal_map_texture : @asset.Handle[@image.Image]?
   metallic_roughness_texture : @asset.Handle[@image.Image]?
   emissive_texture : @asset.Handle[@image.Image]?
-  tag : Int
+  tag : UInt
 } derive(ToJson, @json.FromJson)
 pub fn ClusteredDecal::ClusteredDecal() -> Self
 pub fn ClusteredDecal::base_color_texture_id(Self) -> Int?
@@ -235,7 +235,7 @@ pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]
 pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub fn ClusteredDecal::with_tag(Self, UInt) -> Self
 pub impl @ecs.Component for ClusteredDecal
 
 pub(all) enum CubemapLayout3d {

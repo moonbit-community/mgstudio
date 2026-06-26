@@ -29,7 +29,7 @@ pub fn clustered_decal_plugin_install_with(@app.App[@ecs.World], ClusteredDecalP
 
 pub fn clustered_decal_with_base_color_texture(@asset.Handle[@image.Image]?) -> @light.ClusteredDecal
 
-pub fn clustered_decal_with_tag(Int) -> @light.ClusteredDecal
+pub fn clustered_decal_with_tag(UInt) -> @light.ClusteredDecal
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[@light.ClusteredDecal]
 
@@ -147,13 +147,13 @@ pub struct RenderClusteredDecal {
   emissive_texture_index : Int
   world_position : @math.Vec3
   bounding_sphere_radius : Float
-  tag : Int
-  pad_a : Int
-  pad_b : Int
-  pad_c : Int
+  tag : UInt
+  pad_a : UInt
+  pad_b : UInt
+  pad_c : UInt
 }
 pub fn RenderClusteredDecal::RenderClusteredDecal() -> Self
-pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, Int, world_position? : @math.Vec3, bounding_sphere_radius? : Float) -> Self
+pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, UInt, world_position? : @math.Vec3, bounding_sphere_radius? : Float) -> Self
 
 pub struct RenderClusteredDecals {
   binding_index_to_textures : Array[Int]

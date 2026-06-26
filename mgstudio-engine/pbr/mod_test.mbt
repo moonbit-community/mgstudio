@@ -151,7 +151,7 @@ fn prepare_clustered_decals_schedule_seed(world : @ecs.World) -> Unit {
   )
   try! world.set_by_key(view, ecs_key_camera3d, Camera3d::Camera3d())
   let decal_entity = world.spawn()
-  let decal = @light.ClusteredDecal::ClusteredDecal().with_tag(3)
+  let decal = @light.ClusteredDecal::ClusteredDecal().with_tag(3U)
   try! world.set_by_key(decal_entity, @pbr_decal.ecs_key_clustered_decal, decal)
   let light_texture_entity = world.spawn()
   let render_decals_ref = @pbr_decal.render3d_render_clustered_decals_ref_or_init(
@@ -162,7 +162,7 @@ fn prepare_clustered_decals_schedule_seed(world : @ecs.World) -> Unit {
     ignore(
       render_decals.insert_decal(
         light_texture_entity,
-        @light.ClusteredDecal::ClusteredDecal().with_tag(5),
+        @light.ClusteredDecal::ClusteredDecal().with_tag(5U),
       ),
     )
   })

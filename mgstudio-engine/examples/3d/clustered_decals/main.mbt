@@ -387,7 +387,7 @@ fn spawn_decals(
       (
         @pbr.ClusteredDecal::ClusteredDecal()
         .with_base_color_texture(Some(base_color_texture))
-        .with_tag(1),
+        .with_tag(1U),
         calculate_initial_decal_transform(
           @math.Vec3::new(1.0F, 3.0F, 5.0F),
           @math.Vec3::zero(),
@@ -402,7 +402,7 @@ fn spawn_decals(
       (
         @pbr.ClusteredDecal::ClusteredDecal()
         .with_base_color_texture(Some(base_color_texture))
-        .with_tag(2),
+        .with_tag(2U),
         calculate_initial_decal_transform(
           @math.Vec3::new(-2.0F, -1.0F, 4.0F),
           @math.Vec3::zero(),

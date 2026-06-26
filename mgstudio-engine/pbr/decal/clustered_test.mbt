@@ -21,11 +21,11 @@ test "pbr/decal: clustered render-table deduplicates texture indices" {
   let decal0 = ClusteredDecal::new()
     .with_base_color_texture(Some(@asset.Handle::new(100)))
     .with_normal_map_texture(Some(@asset.Handle::new(200)))
-    .with_tag(7)
+    .with_tag(7U)
   let decal1 = ClusteredDecal::new()
     .with_base_color_texture(Some(@asset.Handle::new(100)))
     .with_emissive_texture(Some(@asset.Handle::new(300)))
-    .with_tag(9)
+    .with_tag(9U)
 
   ignore(render_decals.insert_decal(entity0, decal0))
   ignore(render_decals.insert_decal(entity1, decal1))
@@ -35,9 +35,9 @@ test "pbr/decal: clustered render-table deduplicates texture indices" {
 }
 
 ///|
-test "pbr/decal: clustered tag is clamped to non-negative" {
-  let decal = ClusteredDecal::new().with_tag(-5)
-  debug_inspect(decal.tag, content="0")
+test "pbr/decal: clustered tag is an unsigned Bevy tag" {
+  let decal = ClusteredDecal::new().with_tag(5U)
+  debug_inspect(decal.tag, content="5")
 }
 
 ///|

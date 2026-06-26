@@ -30,10 +30,10 @@ pub struct RenderClusteredDecal {
   emissive_texture_index : Int
   world_position : @math.Vec3
   bounding_sphere_radius : Float
-  tag : Int
-  pad_a : Int
-  pad_b : Int
-  pad_c : Int
+  tag : UInt
+  pad_a : UInt
+  pad_b : UInt
+  pad_c : UInt
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn RenderClusteredDecal::new(
   normal_map_texture_index : Int,
   metallic_roughness_texture_index : Int,
   emissive_texture_index : Int,
-  tag : Int,
+  tag : UInt,
   world_position? : @math.Vec3 = @math.Vec3::zero(),
   bounding_sphere_radius? : Float = 0.0F,
 ) -> RenderClusteredDecal {
@@ -55,20 +55,16 @@ pub fn RenderClusteredDecal::new(
     emissive_texture_index,
     world_position,
     bounding_sphere_radius,
-    tag: if tag < 0 {
-      0
-    } else {
-      tag
-    },
-    pad_a: 0,
-    pad_b: 0,
-    pad_c: 0,
+    tag,
+    pad_a: 0U,
+    pad_b: 0U,
+    pad_c: 0U,
   }
 }
 
 ///|
 pub fn RenderClusteredDecal::RenderClusteredDecal() -> RenderClusteredDecal {
-  RenderClusteredDecal::new(@math.Affine3::identity(), -1, -1, -1, -1, 0)
+  RenderClusteredDecal::new(@math.Affine3::identity(), -1, -1, -1, -1, 0U)
 }
 
 ///|
@@ -338,10 +334,10 @@ fn render_clustered_decal_push_gpu_words(
   render_clustered_decal_push_f32(words, decal.world_position.y)
   render_clustered_decal_push_f32(words, decal.world_position.z)
   render_clustered_decal_push_f32(words, decal.bounding_sphere_radius)
-  render_clustered_decal_push_u32(words, decal.tag.reinterpret_as_uint())
-  render_clustered_decal_push_u32(words, decal.pad_a.reinterpret_as_uint())
-  render_clustered_decal_push_u32(words, decal.pad_b.reinterpret_as_uint())
-  render_clustered_decal_push_u32(words, decal.pad_c.reinterpret_as_uint())
+  render_clustered_decal_push_u32(words, decal.tag)
+  render_clustered_decal_push_u32(words, decal.pad_a)
+  render_clustered_decal_push_u32(words, decal.pad_b)
+  render_clustered_decal_push_u32(words, decal.pad_c)
 }
 
 ///|
@@ -547,14 +543,14 @@ pub impl @app.Plugin for ClusteredDecalPlugin with fn name(_self) {
 }
 
 ///|
-fn clustered_decal_cubemap_layout_tag(layout : @light.CubemapLayout3d) -> Int {
+fn clustered_decal_cubemap_layout_tag(layout : @light.CubemapLayout3d) -> UInt {
   match layout {
-    @light.CubemapLayout3d::CrossVertical => 0
-    @light.CubemapLayout3d::CrossHorizontal => 1
-    @light.CubemapLayout3d::LineVertical => 2
-    @light.CubemapLayout3d::LineHorizontal => 3
-    @light.CubemapLayout3d::Equirectangular => 4
-    @light.CubemapLayout3d::Faces => 5
+    @light.CubemapLayout3d::CrossVertical => 0U
+    @light.CubemapLayout3d::CrossHorizontal => 1U
+    @light.CubemapLayout3d::LineVertical => 2U
+    @light.CubemapLayout3d::LineHorizontal => 3U
+    @light.CubemapLayout3d::Equirectangular => 4U
+    @light.CubemapLayout3d::Faces => 5U
   }
 }
 
@@ -700,7 +696,7 @@ fn clustered_decal_extract_directional_light_textures(
       entity,
       @light.ClusteredDecal::ClusteredDecal()
       .with_base_color_texture(texture.image)
-      .with_tag(if texture.tiled { 1 } else { 0 }),
+      .with_tag(if texture.tiled { 1U } else { 0U }),
     )
   })
 }

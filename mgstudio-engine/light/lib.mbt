@@ -28,15 +28,6 @@ fn light_sanitize_non_negative(value : Float) -> Float {
 }
 
 ///|
-fn light_clustered_decal_tag_safe(tag : Int) -> Int {
-  if tag < 0 {
-    0
-  } else {
-    tag
-  }
-}
-
-///|
 fn light_min_entity(
   current : @core.Entity?,
   candidate : @core.Entity,
@@ -1586,7 +1577,7 @@ pub struct ClusteredDecal {
   normal_map_texture : @asset.Handle[@asset.Image]?
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   emissive_texture : @asset.Handle[@asset.Image]?
-  tag : Int
+  tag : UInt
 } derive(ToJson, FromJson)
 
 ///|
@@ -1596,7 +1587,7 @@ pub fn ClusteredDecal::ClusteredDecal() -> ClusteredDecal {
     normal_map_texture: None,
     metallic_roughness_texture: None,
     emissive_texture: None,
-    tag: 0,
+    tag: 0U,
   }
 }
 
@@ -1640,9 +1631,9 @@ pub fn ClusteredDecal::with_emissive_texture(
 ///|
 pub fn ClusteredDecal::with_tag(
   self : ClusteredDecal,
-  tag : Int,
+  tag : UInt,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, tag: light_clustered_decal_tag_safe(tag) }
+  ClusteredDecal::{ ..self, tag, }
 }
 
 ///|
