@@ -45,12 +45,12 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
   let point_shadow = @light.PointLightShadowMap::new(2048)
   let directional_shadow = @light.DirectionalLightShadowMap::new(1024)
   let medium = @light.ScatteringMedium::ScatteringMedium().with_density_multiplier(
-    1.5,
+    -1.5,
   )
   let fog = @light.VolumetricFog::VolumetricFog().with_step_count(96)
   debug_inspect(point_shadow.size, content="2048")
   debug_inspect(directional_shadow.size, content="1024")
-  debug_inspect(medium.density_multiplier.to_double(), content="1.5")
+  debug_inspect(medium.density_multiplier.to_double(), content="-1.5")
   debug_inspect(fog.step_count, content="96")
 }
 

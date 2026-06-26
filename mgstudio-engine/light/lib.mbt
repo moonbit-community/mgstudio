@@ -411,9 +411,7 @@ pub fn ScatteringMedium::with_density_multiplier(
   density_multiplier : Float,
 ) -> ScatteringMedium {
   self |> ignore
-  ScatteringMedium::{
-    density_multiplier: light_sanitize_non_negative(density_multiplier),
-  }
+  ScatteringMedium::{ density_multiplier, }
 }
 
 ///|
