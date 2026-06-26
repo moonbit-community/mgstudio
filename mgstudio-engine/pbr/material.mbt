@@ -164,6 +164,13 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
       SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
     )
   }
+  if world.get_resource(@render_visibility.DirtySpecializations::resource())
+    is None {
+    world.insert_resource(
+      @render_visibility.DirtySpecializations::resource(),
+      @render_visibility.DirtySpecializations::DirtySpecializations(),
+    )
+  }
   if world.get_resource(@pbr_render.LightKeyCache::resource()) is None {
     world.insert_resource(
       @pbr_render.LightKeyCache::resource(),

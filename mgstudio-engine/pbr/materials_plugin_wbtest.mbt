@@ -27,6 +27,11 @@ test "render3d: materials startup initializes bevy material render resources" {
     content="true",
   )
   debug_inspect(
+    world.get_resource(@render_visibility.DirtySpecializations::resource())
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
     world.get_resource(@pbr_render.LightKeyCache::resource()) is Some(_),
     content="true",
   )

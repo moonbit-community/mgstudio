@@ -404,6 +404,33 @@ pub fn DirtySpecializations::clear(self : DirtySpecializations) -> Unit {
 }
 
 ///|
+// Bevy source:
+// - `bevy/crates/bevy_render/src/camera.rs::clear_dirty_specializations`.
+pub fn clear_dirty_specializations(
+  dirty_specializations : DirtySpecializations,
+) -> Unit {
+  dirty_specializations.clear()
+}
+
+///|
+// Bevy source:
+// - `bevy/crates/bevy_render/src/camera.rs::expire_specializations_for_views`.
+pub fn DirtySpecializations::expire_stale_views(
+  self : DirtySpecializations,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale : Array[@render_view.RetainedViewEntity] = []
+  for view in self.views.iter() {
+    if !live_views.contains(view) {
+      stale.push(view)
+    }
+  }
+  for view in stale {
+    self.views.remove(view)
+  }
+}
+
+///|
 pub fn DirtySpecializations::insert_changed(
   self : DirtySpecializations,
   entity : @render.MainEntity,

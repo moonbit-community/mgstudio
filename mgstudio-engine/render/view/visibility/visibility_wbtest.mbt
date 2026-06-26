@@ -212,3 +212,37 @@ test "render visibility: DirtySpecializations view wipe queues and dequeues all 
   debug_inspect(dequeued.length(), content="2")
   debug_inspect(queued.length(), content="2")
 }
+
+///|
+test "render visibility: DirtySpecializations clears and expires stale views" {
+  let dirty = DirtySpecializations::DirtySpecializations()
+  let live_view = test_retained_view(100)
+  let stale_view = test_retained_view(101)
+  let main_entity = test_main_entity(102)
+  let live : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+
+  dirty.insert_changed(main_entity)
+  dirty.insert_removed(test_main_entity(103))
+  dirty.insert_view(live_view)
+  dirty.insert_view(stale_view)
+  live.add(live_view)
+
+  dirty.expire_stale_views(live)
+
+  debug_inspect(dirty.views_len(), content="1")
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(live_view),
+    content="true",
+  )
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(stale_view),
+    content="false",
+  )
+
+  clear_dirty_specializations(dirty)
+
+  debug_inspect(dirty.changed_len(), content="0")
+  debug_inspect(dirty.removed_len(), content="0")
+  debug_inspect(dirty.views_len(), content="0")
+}

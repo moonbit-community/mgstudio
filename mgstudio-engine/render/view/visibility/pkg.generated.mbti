@@ -17,6 +17,8 @@ pub const VISIBILITY_RANGES_STORAGE_BUFFER_COUNT : Int = 4
 
 pub const VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE : Int = 64
 
+pub fn clear_dirty_specializations(DirtySpecializations) -> Unit
+
 pub let ecs_key_dirty_specializations : @ecs.ResourceKey[DirtySpecializations]
 
 pub let ecs_key_render_extracted_shadow_map_visible_entities : @ecs.ComponentKey[RenderExtractedShadowMapVisibleEntities]
@@ -58,6 +60,7 @@ pub fn DirtySpecializations::changed_contains(Self, @render.MainEntity) -> Bool
 pub fn DirtySpecializations::changed_len(Self) -> Int
 pub fn DirtySpecializations::clear(Self) -> Unit
 pub fn DirtySpecializations::entity_pair_from_visible_main_entity(Self, RenderVisibleEntitiesClass, @render.MainEntity) -> (@core.Entity, @render.MainEntity)?
+pub fn DirtySpecializations::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
 pub fn DirtySpecializations::insert_changed(Self, @render.MainEntity) -> Unit
 pub fn DirtySpecializations::insert_removed(Self, @render.MainEntity) -> Unit
 pub fn DirtySpecializations::insert_view(Self, @view.RetainedViewEntity) -> Unit
