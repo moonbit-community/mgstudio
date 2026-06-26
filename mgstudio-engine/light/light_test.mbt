@@ -89,6 +89,10 @@ test "light gizmo config group defaults align with light kinds" {
   debug_inspect(config.point_light_color.r.to_double(), content="1")
   debug_inspect(config.spot_light_color.g.to_double(), content="1")
   debug_inspect(config.directional_light_color.b.to_double(), content="1")
+  debug_inspect(
+    config.rect_light_color.r.to_double(),
+    content="0.21404114365577698",
+  )
 }
 
 ///|

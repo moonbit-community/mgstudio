@@ -154,6 +154,26 @@ fn setup_scene(world : @ecs.World) -> Unit {
       ),
     ),
   )
+  let rect_light = world.spawn_empty()
+  ignore(
+    try! world
+    .entity_mut(rect_light)
+    .insert(
+      (
+        @light.RectLight::new(
+          @color.Color::srgb(1.0F, 0.647F, 0.0F),
+          200_000.0F,
+          20.0F,
+          1.5F,
+          0.8F,
+        ),
+        @transform.Transform::from_xyz(0.0F, 3.0F, -3.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
 
   let camera = @camera.Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
@@ -321,7 +341,7 @@ fn main {
   .add_systems_param(@app.Startup, configure_light_gizmos)
   .add_systems_param(@app.Update, rotate_camera)
   .add_systems_param2(@app.Update, update_config)
-  .add_systems_param4(@app.Update, @light.draw_light_gizmos)
-  .add_systems_param4(@app.Update, @light.draw_all_light_gizmos)
+  .add_systems_param5(@app.Update, @light.draw_light_gizmos)
+  .add_systems_param5(@app.Update, @light.draw_all_light_gizmos)
   .run()
 }

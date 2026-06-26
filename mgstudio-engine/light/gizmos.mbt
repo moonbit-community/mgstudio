@@ -46,6 +46,7 @@ pub(all) struct LightGizmoConfigGroup {
   point_light_color : @color.Color
   spot_light_color : @color.Color
   directional_light_color : @color.Color
+  rect_light_color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
@@ -56,6 +57,7 @@ pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> LightGizmoConfigGroup {
     point_light_color: @color.Color::srgb(1.0F, 0.0F, 0.0F),
     spot_light_color: @color.Color::srgb(0.0F, 1.0F, 0.0F),
     directional_light_color: @color.Color::srgb(0.0F, 0.0F, 1.0F),
+    rect_light_color: @color.Color::srgb(0.5F, 0.0F, 0.0F),
   }
 }
 
@@ -309,6 +311,25 @@ fn draw_directional_light_gizmo(
 }
 
 ///|
+fn draw_rect_light_gizmo(
+  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  transform : @transform.Transform,
+  rect_light : RectLight,
+  color : @color.Color,
+) -> Unit {
+  gizmos.rect_3d(
+    @math.Isometry3d::new(transform.translation, transform.rotation),
+    @math.Vec2::new(rect_light.width(), rect_light.height()),
+    color,
+  )
+  gizmos.arrow_3d(
+    transform.translation,
+    transform.translation.add(transform.forward().mul_scalar(0.6F)),
+    color,
+  )
+}
+
+///|
 pub fn draw_light_gizmos(
   point_query : @ecs.Query[
     (
@@ -332,6 +353,15 @@ pub fn draw_light_gizmos(
     (
       @core.Entity,
       @ecs.Read[DirectionalLight],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[ShowLightGizmo],
+    ),
+    @ecs.All,
+  ],
+  rect_query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[RectLight],
       @ecs.Read[@transform.Transform],
       @ecs.Read[ShowLightGizmo],
     ),
@@ -388,6 +418,22 @@ pub fn draw_light_gizmos(
   }) catch {
     _ => ()
   }
+  rect_query.for_each(fn(_entity, item) {
+    let (entity, rect_light_comp, transform_comp, show_light_gizmo_comp) = item
+    let rect_light = rect_light_comp.value()
+    let transform = transform_comp.value()
+    let show_light_gizmo = show_light_gizmo_comp.value()
+    let color = light_gizmo_resolve_color(
+      entity,
+      show_light_gizmo.color,
+      config_group,
+      rect_light.color(),
+      config_group.rect_light_color,
+    )
+    draw_rect_light_gizmo(gizmos, transform, rect_light, color)
+  }) catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -402,6 +448,10 @@ pub fn draw_all_light_gizmos(
   ],
   directional_query : @ecs.Query[
     (@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform]),
+    @ecs.Without[ShowLightGizmo],
+  ],
+  rect_query : @ecs.Query[
+    (@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform]),
     @ecs.Without[ShowLightGizmo],
   ],
   gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
@@ -452,6 +502,21 @@ pub fn draw_all_light_gizmos(
       config_group.directional_light_color,
     )
     draw_directional_light_gizmo(gizmos, transform, color)
+  }) catch {
+    _ => ()
+  }
+  rect_query.for_each(fn(_entity, item) {
+    let (entity, rect_light_comp, transform_comp) = item
+    let rect_light = rect_light_comp.value()
+    let transform = transform_comp.value()
+    let color = light_gizmo_resolve_color(
+      entity,
+      None,
+      config_group,
+      rect_light.color(),
+      config_group.rect_light_color,
+    )
+    draw_rect_light_gizmo(gizmos, transform, rect_light, color)
   }) catch {
     _ => ()
   }
