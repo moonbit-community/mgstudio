@@ -961,6 +961,37 @@ test "pbr render light: directional light reads decal index from clustered decal
 }
 
 ///|
+test "pbr render light: clustered point light reads decal index" {
+  let world = @ecs.World::new()
+
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight(),
+  )
+  |> ignore)
+
+  let decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
+  let inserted_decal_index = decals.insert_decal(
+    point,
+    @pbr_decal.ClusteredDecal::ClusteredDecal(),
+  )
+  world.insert_resource(@pbr_decal.ecs_key_render_clustered_decals, decals)
+
+  light_test_extract_lights(world)
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
+    inspect("missing", content="clustered")
+    return
+  }
+  inspect(
+    test_u32le_at(clustered, 18 * 4),
+    content=inserted_decal_index.reinterpret_as_uint().to_string(),
+  )
+}
+
+///|
 test "pbr render light: point extraction order keeps shadow and volumetric first" {
   let world = @ecs.World::new()
   let no_shadow = world.spawn()

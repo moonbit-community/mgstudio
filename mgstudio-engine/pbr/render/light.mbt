@@ -1540,6 +1540,7 @@ fn render3d_clustered_decal_index(
 
 ///|
 fn render3d_lights_push_clustered_light(
+  world : @ecs.World,
   words : Array[UInt],
   item : ExtractedClusterablePointLight3d?,
 ) -> Unit {
@@ -1595,7 +1596,18 @@ fn render3d_lights_push_clustered_light(
             },
           )
           render3d_lights_push_f32(words, extracted.shadow_map_near_z)
-          render3d_lights_push_u32(words, 0xFFFF_FFFFU)
+          let decal_index = render3d_clustered_decal_index(
+            world,
+            extracted.entity,
+          )
+          render3d_lights_push_u32(
+            words,
+            if decal_index >= 0 {
+              decal_index.reinterpret_as_uint()
+            } else {
+              0xFFFF_FFFFU
+            },
+          )
           render3d_lights_push_f32(words, 0.0F)
         }
         _ => {
@@ -1640,7 +1652,18 @@ fn render3d_lights_push_clustered_light(
             },
           )
           render3d_lights_push_f32(words, extracted.shadow_map_near_z)
-          render3d_lights_push_u32(words, 0xFFFF_FFFFU)
+          let decal_index = render3d_clustered_decal_index(
+            world,
+            extracted.entity,
+          )
+          render3d_lights_push_u32(
+            words,
+            if decal_index >= 0 {
+              decal_index.reinterpret_as_uint()
+            } else {
+              0xFFFF_FFFFU
+            },
+          )
           render3d_lights_push_f32(words, 0.0F)
         }
       }
@@ -1663,7 +1686,7 @@ fn render3d_gpu_cluster_buffers(
     } else {
       None
     }
-    render3d_lights_push_clustered_light(clustered_words, item)
+    render3d_lights_push_clustered_light(world, clustered_words, item)
   }
   let index_words : Array[UInt] = []
   let offset_words : Array[UInt] = []
