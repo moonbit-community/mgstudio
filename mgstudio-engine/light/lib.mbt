@@ -1101,10 +1101,7 @@ pub fn SunDisk::off() -> SunDisk {
 
 ///|
 pub fn SunDisk::new(angular_size : Float, intensity : Float) -> SunDisk {
-  SunDisk::{
-    angular_size: light_sanitize_non_negative(angular_size),
-    intensity: light_sanitize_non_negative(intensity),
-  }
+  SunDisk::{ angular_size, intensity }
 }
 
 ///|
@@ -1112,12 +1109,12 @@ pub fn SunDisk::with_angular_size(
   self : SunDisk,
   angular_size : Float,
 ) -> SunDisk {
-  SunDisk::{ ..self, angular_size: light_sanitize_non_negative(angular_size) }
+  SunDisk::{ ..self, angular_size, }
 }
 
 ///|
 pub fn SunDisk::with_intensity(self : SunDisk, intensity : Float) -> SunDisk {
-  SunDisk::{ ..self, intensity: light_sanitize_non_negative(intensity) }
+  SunDisk::{ ..self, intensity, }
 }
 
 ///|

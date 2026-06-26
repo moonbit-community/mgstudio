@@ -1881,7 +1881,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   try! (world.set_by_key(
     entity_override,
     @light.ecs_key_sun_disk,
-    @light.SunDisk::off(),
+    @light.SunDisk::new(-0.25F, -2.0F),
   )
   |> ignore)
 
@@ -1889,11 +1889,11 @@ test "pbr render light: directional sun disk defaults and component override pro
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="2")
   inspect(
-    approx_eq(extracted[1].sun_disk_angular_size, 0.0F, 1.0e-6F),
+    approx_eq(extracted[1].sun_disk_angular_size, -0.25F, 1.0e-6F),
     content="true",
   )
   inspect(
-    approx_eq(extracted[1].sun_disk_intensity, 0.0F, 1.0e-6F),
+    approx_eq(extracted[1].sun_disk_intensity, -2.0F, 1.0e-6F),
     content="true",
   )
 
@@ -1903,7 +1903,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   inspect(
     approx_eq(
       override_gpu.directional_lights[1].sun_disk_angular_size,
-      0.0F,
+      -0.25F,
       1.0e-6F,
     ),
     content="true",
@@ -1911,7 +1911,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   inspect(
     approx_eq(
       override_gpu.directional_lights[1].sun_disk_intensity,
-      0.0F,
+      -2.0F,
       1.0e-6F,
     ),
     content="true",

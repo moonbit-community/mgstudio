@@ -237,6 +237,11 @@ test "sun disk defaults and off profile align with bevy intent" {
   let off = @light.SunDisk::off()
   debug_inspect(approx_eq(off.angular_size, 0.0F, 1.0e-6F), content="true")
   debug_inspect(approx_eq(off.intensity, 0.0F, 1.0e-6F), content="true")
+  let custom = @light.SunDisk::new(-0.25F, -2.0F)
+    .with_angular_size(-0.5F)
+    .with_intensity(-3.0F)
+  debug_inspect(custom.angular_size.to_double(), content="-0.5")
+  debug_inspect(custom.intensity.to_double(), content="-3")
 }
 
 ///|
