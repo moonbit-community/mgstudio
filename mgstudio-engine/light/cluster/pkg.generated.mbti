@@ -111,6 +111,8 @@ pub struct Clusters {
   mut dimensions_z : Int
   mut near : Float
   mut far : Float
+  mut last_frame_farthest_z : Float?
+  mut last_frame_total_cluster_index_count : Int?
   clusterable_objects : Array[ObjectsInCluster]
 } derive(Eq, @debug.Debug)
 pub fn Clusters::Clusters() -> Self
@@ -118,6 +120,8 @@ pub fn Clusters::clear(Self) -> Unit
 pub fn Clusters::clusterable_objects(Self) -> Array[ObjectsInCluster]
 pub fn Clusters::dimensions(Self) -> (Int, Int, Int)
 pub fn Clusters::far(Self) -> Float
+pub fn Clusters::last_frame_farthest_z(Self) -> Float?
+pub fn Clusters::last_frame_total_cluster_index_count(Self) -> Int?
 pub fn Clusters::near(Self) -> Float
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit

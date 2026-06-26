@@ -16,6 +16,9 @@
 // Bevy source: `bevy/crates/bevy_light/src/cluster/assign.rs`.
 
 ///|
+const DEFAULT_FAR_DEPTH : Float = 1000.0F
+
+///|
 pub(all) enum ClusterableObjectType {
   PointLight(Bool, Bool)
   SpotLight(Bool, Bool, Float)
@@ -593,6 +596,11 @@ fn cluster_assign_fill_object_clusters(
 ///|
 pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
   let clusterable_objects = cluster_assign_collect_objects(world)
+  let global_cluster_settings = match
+    world.get_resource(ecs_key_global_cluster_settings) {
+    Some(settings) => settings
+    None => GlobalClusterSettings::GlobalClusterSettings()
+  }
   let camera_entities = []
   world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
     camera_entities.push(entity)
@@ -612,37 +620,73 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     let projection = cluster_assign_camera_projection(
       world, entity, screen_width, screen_height,
     )
+    let previous_clusters = try! world.get_by_key(entity, Clusters::component())
     let camera_transform = cluster_assign_entity_transform(world, entity)
     let view_from_world = cluster_assign_view_from_world_matrix(
       camera_transform,
     )
     let clip_from_view = projection.clip_from_view()
     let is_orthographic = projection.is_orthographic()
-    let (dimensions_x, dimensions_y, dimensions_z) = cluster_config_dimensions_for_screen_size(
+    let requested_dimensions = cluster_config_dimensions_for_screen_size(
       config, screen_width, screen_height,
     )
+    let mut dimensions_x = requested_dimensions.0
+    let mut dimensions_y = requested_dimensions.1
+    let dimensions_z = requested_dimensions.2
+    if cluster_config_dynamic_resizing(config) {
+      match previous_clusters {
+        Some(previous) =>
+          match previous.last_frame_total_cluster_index_count {
+            Some(previous_index_count) =>
+              if previous_index_count >
+                global_cluster_settings.view_cluster_bindings_max_indices {
+                let index_ratio = Float::from_double(
+                    global_cluster_settings.view_cluster_bindings_max_indices.to_double(),
+                  ) /
+                  Float::from_double(previous_index_count.to_double())
+                let xy_ratio = @math.sqrt(index_ratio)
+                let resized_x = @math_core.floor(
+                  (Float::from_double(dimensions_x.to_double()) * xy_ratio).to_double(),
+                ).to_int()
+                let resized_y = @math_core.floor(
+                  (Float::from_double(dimensions_y.to_double()) * xy_ratio).to_double(),
+                ).to_int()
+                dimensions_x = if resized_x < 1 { 1 } else { resized_x }
+                dimensions_y = if resized_y < 1 { 1 } else { resized_y }
+              }
+            _ => ()
+          }
+        None => ()
+      }
+    }
     let tile_size_x = cluster_assign_tile_size(screen_width, dimensions_x)
     let tile_size_y = cluster_assign_tile_size(screen_height, dimensions_y)
     let cluster_count = dimensions_x * dimensions_y * dimensions_z
     let mut far = match cluster_config_far_z_mode(config) {
-      ClusterFarZMode::MaxClusterableObjectRange => 0.0F
+      ClusterFarZMode::MaxClusterableObjectRange =>
+        match previous_clusters {
+          Some(previous) =>
+            match previous.last_frame_farthest_z {
+              Some(value) => value
+              None => DEFAULT_FAR_DEPTH
+            }
+          None => DEFAULT_FAR_DEPTH
+        }
       ClusterFarZMode::Constant(value) => value
     }
-    if cluster_config_far_z_mode(config)
-      is ClusterFarZMode::MaxClusterableObjectRange {
-      for object in clusterable_objects {
-        let view_position = view_from_world.mul_vec4(
-          @math.Vec4::new(
-            object.transform.translation.x,
-            object.transform.translation.y,
-            object.transform.translation.z,
-            1.0F,
-          ),
-        )
-        let object_far = -view_position.z + object.range
-        if object_far > far {
-          far = object_far
-        }
+    let mut current_frame_farthest_z = 0.0F
+    for object in clusterable_objects {
+      let view_position = view_from_world.mul_vec4(
+        @math.Vec4::new(
+          object.transform.translation.x,
+          object.transform.translation.y,
+          object.transform.translation.z,
+          1.0F,
+        ),
+      )
+      let object_far = -view_position.z + object.range
+      if object_far > current_frame_farthest_z {
+        current_frame_farthest_z = object_far
       }
     }
     let mut near = cluster_config_first_slice_depth(config)
@@ -662,6 +706,8 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       dimensions_z,
       near,
       far,
+      last_frame_farthest_z: None,
+      last_frame_total_cluster_index_count: None,
       clusterable_objects: cluster_assign_cluster_objects(cluster_count),
     }
     let visible = VisibleClusterableObjects::new()
@@ -677,6 +723,14 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
         is_orthographic,
       )
     }
+    let mut total_cluster_index_count = 0
+    for cluster in clusters.clusterable_objects {
+      total_cluster_index_count += cluster.clusterables.length()
+    }
+    clusters.last_frame_total_cluster_index_count = Some(
+      total_cluster_index_count,
+    )
+    clusters.last_frame_farthest_z = Some(current_frame_farthest_z)
     try! world.set_by_key(entity, Clusters::component(), clusters)
     try! world.set_by_key(
       entity,
