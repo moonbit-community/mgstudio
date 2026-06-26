@@ -499,11 +499,7 @@ pub fn AtmosphereEnvironmentMapLight::new(
   AtmosphereEnvironmentMapLight::{
     intensity,
     affects_lightmapped_mesh_diffuse,
-    size: if size.x <= 0 || size.y <= 0 {
-      @math.UVec2::new(512, 512)
-    } else {
-      size
-    },
+    size,
   }
 }
 
@@ -528,14 +524,7 @@ pub fn AtmosphereEnvironmentMapLight::with_size(
   self : AtmosphereEnvironmentMapLight,
   size : @math.UVec2,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{
-    ..self,
-    size: if size.x <= 0 || size.y <= 0 {
-      @math.UVec2::new(512, 512)
-    } else {
-      size
-    },
-  }
+  AtmosphereEnvironmentMapLight::{ ..self, size, }
 }
 
 ///|

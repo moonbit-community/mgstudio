@@ -271,6 +271,17 @@ test "light probe intensities preserve Bevy plain field semantics" {
 }
 
 ///|
+test "atmosphere environment map size preserves Bevy authoring semantics" {
+  let atmosphere = @light.AtmosphereEnvironmentMapLight::new(
+    1.0F,
+    true,
+    @math.UVec2::new(0, 333),
+  ).with_size(@math.UVec2::new(777, 0))
+  inspect(atmosphere.size.x, content="777")
+  inspect(atmosphere.size.y, content="0")
+}
+
+///|
 test "skybox brightness preserves Bevy plain field semantics" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
   let skybox = @light.Skybox::new(image, -1.5F).with_brightness(-2.5F)
