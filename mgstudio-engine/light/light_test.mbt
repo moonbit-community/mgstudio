@@ -265,6 +265,13 @@ test "light probe intensities preserve Bevy plain field semantics" {
 }
 
 ///|
+test "skybox brightness preserves Bevy plain field semantics" {
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
+  let skybox = @light.Skybox::new(image, -1.5F).with_brightness(-2.5F)
+  debug_inspect(skybox.brightness.to_double(), content="-2.5")
+}
+
+///|
 fn spawn_light_test_camera(
   world : @ecs.World,
   x : Float,

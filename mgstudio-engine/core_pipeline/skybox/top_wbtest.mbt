@@ -47,12 +47,13 @@ test "skybox: render sub app configuration installs Bevy-shaped resources" {
 ///|
 test "skybox: uniforms match Bevy brightness and inverse-rotation transform" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(7)
-  let skybox = @light.Skybox::new(image, 2.0F).with_rotation(
+  let skybox = @light.Skybox::new(image, -2.0F).with_rotation(
     @math.Quat::identity(),
   )
   let uniforms = SkyboxUniforms::from_skybox(skybox, 3.0F)
 
-  debug_inspect(skybox_test_approx(uniforms.brightness, 6.0F), content="true")
+  debug_inspect(skybox_test_approx(uniforms.brightness, -6.0F), content="true")
+  debug_inspect(uniforms.is_ready_for_bind_group(), content="true")
   debug_inspect(uniforms.transform.length(), content="16")
   debug_inspect(
     skybox_test_approx(uniforms.transform[0], 1.0F) &&

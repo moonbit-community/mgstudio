@@ -349,7 +349,7 @@ fn SkyboxUniforms::from_skybox(
 
 ///|
 fn SkyboxUniforms::is_ready_for_bind_group(self : SkyboxUniforms) -> Bool {
-  self.transform.length() == 16 && self.brightness >= 0.0F
+  self.transform.length() == 16
 }
 
 ///|

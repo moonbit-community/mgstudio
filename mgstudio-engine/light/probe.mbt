@@ -77,11 +77,7 @@ pub fn Skybox::new(
   image : @asset.Handle[@asset.Image],
   brightness : Float,
 ) -> Skybox {
-  Skybox::{
-    ..Skybox(),
-    image: Some(image),
-    brightness: light_sanitize_non_negative(brightness),
-  }
+  Skybox::{ ..Skybox(), image: Some(image), brightness }
 }
 
 ///|
@@ -94,7 +90,7 @@ pub fn Skybox::with_image(
 
 ///|
 pub fn Skybox::with_brightness(self : Skybox, brightness : Float) -> Skybox {
-  Skybox::{ ..self, brightness: light_sanitize_non_negative(brightness) }
+  Skybox::{ ..self, brightness, }
 }
 
 ///|
