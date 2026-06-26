@@ -21,6 +21,24 @@ fn cluster_approx_eq(a : Float, b : Float, eps : Float) -> Bool {
 }
 
 ///|
+fn cluster_test_camera() -> @camera_camera.Camera {
+  cluster_test_camera_with_size(1280, 720)
+}
+
+///|
+fn cluster_test_camera_with_size(
+  width : Int,
+  height : Int,
+) -> @camera_camera.Camera {
+  @camera_camera.Camera::Camera().with_viewport(
+    @camera_viewport.Viewport::new(
+      @math.IVec2::new(0, 0),
+      @math.IVec2::new(width, height),
+    ),
+  )
+}
+
+///|
 test "light cluster: calculate_cluster_factors matches bevy perspective formula shape" {
   let factors = calculate_cluster_factors(0.1F, 1000.0F, 24.0F, false)
   inspect(cluster_approx_eq(factors.x, 2.4971933F, 1.0e-5F), content="true")
@@ -93,7 +111,7 @@ test "light cluster: assign system populates camera cluster payload with default
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
   cluster_assign_lights_system(world)
@@ -131,7 +149,7 @@ test "light cluster: assign system uses previous frame max range for default far
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
   let point = world.spawn()
@@ -184,7 +202,7 @@ test "light cluster: assign system uses previous frame index count for dynamic r
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
@@ -210,7 +228,7 @@ test "light cluster: ClusterConfig::None clears clusters and preserves last-fram
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -249,13 +267,91 @@ test "light cluster: ClusterConfig::None clears clusters and preserves last-fram
 }
 
 ///|
-test "light cluster: assign system writes visible point lights into cluster lists" {
+test "light cluster: camera without physical viewport clears clusters" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
     @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+  let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
+  previous_clusters.last_frame_farthest_z = Some(88.0F)
+  previous_clusters.last_frame_total_cluster_index_count = Some(4321)
+  try! (world.set_by_key(
+    camera_entity,
+    Clusters::component(),
+    previous_clusters,
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  inspect(clusters.tile_size_x, content="1")
+  inspect(clusters.tile_size_y, content="1")
+  inspect(clusters.dimensions_x, content="0")
+  inspect(clusters.dimensions_y, content="0")
+  inspect(clusters.dimensions_z, content="0")
+  debug_inspect(clusters.last_frame_farthest_z(), content="Some(88)")
+  debug_inspect(
+    clusters.last_frame_total_cluster_index_count(),
+    content="Some(4321)",
+  )
+  inspect(visible.point_and_spot_light_count(), content="0")
+}
+
+///|
+test "light cluster: zero-sized camera viewport clears clusters" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    cluster_test_camera_with_size(0, 720),
+  )
+  |> ignore)
+  let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
+  previous_clusters.last_frame_farthest_z = Some(99.0F)
+  previous_clusters.last_frame_total_cluster_index_count = Some(7654)
+  try! (world.set_by_key(
+    camera_entity,
+    Clusters::component(),
+    previous_clusters,
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  inspect(clusters.tile_size_x, content="1")
+  inspect(clusters.tile_size_y, content="1")
+  inspect(clusters.dimensions_x, content="0")
+  inspect(clusters.dimensions_y, content="0")
+  inspect(clusters.dimensions_z, content="0")
+  debug_inspect(clusters.last_frame_farthest_z(), content="Some(99)")
+  debug_inspect(
+    clusters.last_frame_total_cluster_index_count(),
+    content="Some(7654)",
+  )
+  inspect(visible.point_and_spot_light_count(), content="0")
+}
+
+///|
+test "light cluster: assign system writes visible point lights into cluster lists" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    cluster_test_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -296,7 +392,7 @@ test "light cluster: assign system honors constant far z mode from config" {
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -327,7 +423,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
 
@@ -441,7 +537,7 @@ test "light cluster: light probes require LightProbe and use transform radius" {
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
+    cluster_test_camera(),
   )
   |> ignore)
 

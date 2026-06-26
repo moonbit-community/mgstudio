@@ -104,13 +104,35 @@ fn cluster_assign_tile_size(screen_size : Int, cluster_dimension : Int) -> Int {
 ///|
 fn cluster_assign_viewport_size(camera : @camera_camera.Camera) -> (Int, Int) {
   match camera.physical_viewport_size() {
-    Some(viewport_size) => {
-      let width = if viewport_size.x <= 0 { 1 } else { viewport_size.x }
-      let height = if viewport_size.y <= 0 { 1 } else { viewport_size.y }
-      (width, height)
-    }
-    None => (1280, 720)
+    Some(viewport_size) =>
+      if viewport_size.x <= 0 || viewport_size.y <= 0 {
+        (0, 0)
+      } else {
+        (viewport_size.x, viewport_size.y)
+      }
+    None => (0, 0)
   }
+}
+
+///|
+fn cluster_assign_clear_view(
+  world : @ecs.World,
+  entity : @core.Entity,
+  previous_clusters : Clusters?,
+) -> Unit {
+  let cleared_clusters = match previous_clusters {
+    Some(clusters) => {
+      clusters.clear()
+      clusters
+    }
+    None => Clusters::Clusters()
+  }
+  try! world.set_by_key(entity, Clusters::component(), cleared_clusters)
+  try! world.set_by_key(
+    entity,
+    VisibleClusterableObjects::component(),
+    VisibleClusterableObjects::new(),
+  )
 }
 
 ///|
@@ -613,19 +635,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     }
     let previous_clusters = try! world.get_by_key(entity, Clusters::component())
     if config is ClusterConfig::None {
-      let cleared_clusters = match previous_clusters {
-        Some(clusters) => {
-          clusters.clear()
-          clusters
-        }
-        None => Clusters::Clusters()
-      }
-      try! world.set_by_key(entity, Clusters::component(), cleared_clusters)
-      try! world.set_by_key(
-        entity,
-        VisibleClusterableObjects::component(),
-        VisibleClusterableObjects::new(),
-      )
+      cluster_assign_clear_view(world, entity, previous_clusters)
       continue
     }
     let camera = match
@@ -634,6 +644,10 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       None => continue
     }
     let (screen_width, screen_height) = cluster_assign_viewport_size(camera)
+    if screen_width == 0 || screen_height == 0 {
+      cluster_assign_clear_view(world, entity, previous_clusters)
+      continue
+    }
     let projection = cluster_assign_camera_projection(
       world, entity, screen_width, screen_height,
     )
