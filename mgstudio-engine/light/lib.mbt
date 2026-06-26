@@ -508,7 +508,7 @@ pub fn AtmosphereEnvironmentMapLight::new(
   size : @math.UVec2,
 ) -> AtmosphereEnvironmentMapLight {
   AtmosphereEnvironmentMapLight::{
-    intensity: light_sanitize_non_negative(intensity),
+    intensity,
     affects_lightmapped_mesh_diffuse,
     size: if size.x <= 0 || size.y <= 0 {
       @math.UVec2::new(512, 512)
@@ -523,10 +523,7 @@ pub fn AtmosphereEnvironmentMapLight::with_intensity(
   self : AtmosphereEnvironmentMapLight,
   intensity : Float,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{
-    ..self,
-    intensity: light_sanitize_non_negative(intensity),
-  }
+  AtmosphereEnvironmentMapLight::{ ..self, intensity, }
 }
 
 ///|
@@ -1455,10 +1452,7 @@ pub fn EnvironmentMapLight::with_intensity(
   self : EnvironmentMapLight,
   intensity : Float,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{
-    ..self,
-    intensity: light_sanitize_non_negative(intensity),
-  }
+  EnvironmentMapLight::{ ..self, intensity, }
 }
 
 ///|
@@ -1518,10 +1512,7 @@ pub fn GeneratedEnvironmentMapLight::with_intensity(
   self : GeneratedEnvironmentMapLight,
   intensity : Float,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{
-    ..self,
-    intensity: light_sanitize_non_negative(intensity),
-  }
+  GeneratedEnvironmentMapLight::{ ..self, intensity, }
 }
 
 ///|
@@ -1563,7 +1554,7 @@ pub struct IrradianceVolume {
 pub fn IrradianceVolume::IrradianceVolume() -> IrradianceVolume {
   IrradianceVolume::{
     voxels: None,
-    intensity: 1.0F,
+    intensity: 0.0F,
     affects_lightmapped_meshes: true,
   }
 }
@@ -1573,11 +1564,7 @@ pub fn IrradianceVolume::new(
   voxels : @asset.Handle[@asset.Image]?,
   intensity : Float,
 ) -> IrradianceVolume {
-  IrradianceVolume::{
-    voxels,
-    intensity: light_sanitize_non_negative(intensity),
-    affects_lightmapped_meshes: true,
-  }
+  IrradianceVolume::{ voxels, intensity, affects_lightmapped_meshes: true }
 }
 
 ///|
@@ -1593,10 +1580,7 @@ pub fn IrradianceVolume::with_intensity(
   self : IrradianceVolume,
   intensity : Float,
 ) -> IrradianceVolume {
-  IrradianceVolume::{
-    ..self,
-    intensity: light_sanitize_non_negative(intensity),
-  }
+  IrradianceVolume::{ ..self, intensity, }
 }
 
 ///|

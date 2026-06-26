@@ -245,6 +245,26 @@ test "sun disk defaults and off profile align with bevy intent" {
 }
 
 ///|
+test "light probe intensities preserve Bevy plain field semantics" {
+  let atmosphere = @light.AtmosphereEnvironmentMapLight::new(
+    -1.5F,
+    false,
+    @math.UVec2::new(256, 256),
+  ).with_intensity(-2.5F)
+  debug_inspect(atmosphere.intensity.to_double(), content="-2.5")
+  let environment = @light.EnvironmentMapLight::new(None, None, -3.5F)
+  debug_inspect(environment.intensity.to_double(), content="-3.5")
+  let generated = @light.GeneratedEnvironmentMapLight::new(None, -4.5F)
+  debug_inspect(generated.intensity.to_double(), content="-4.5")
+  let irradiance_default = @light.IrradianceVolume::IrradianceVolume()
+  debug_inspect(irradiance_default.intensity.to_double(), content="0")
+  let irradiance = @light.IrradianceVolume::new(None, -5.5F).with_intensity(
+    -6.5F,
+  )
+  debug_inspect(irradiance.intensity.to_double(), content="-6.5")
+}
+
+///|
 fn spawn_light_test_camera(
   world : @ecs.World,
   x : Float,
