@@ -2116,11 +2116,24 @@ pub fn render3d_point_light_flags(extracted : ExtractedPointLight3d) -> UInt {
 pub fn render3d_directional_light_flags(
   extracted : ExtractedDirectionalLight3d,
 ) -> UInt {
+  render3d_directional_light_flags_for_gpu(
+    extracted,
+    extracted.shadow_maps_enabled,
+    extracted.volumetric && extracted.shadow_maps_enabled,
+  )
+}
+
+///|
+fn render3d_directional_light_flags_for_gpu(
+  extracted : ExtractedDirectionalLight3d,
+  shadow_maps_enabled : Bool,
+  volumetric_enabled : Bool,
+) -> UInt {
   let mut flags = DIRECTIONAL_LIGHT_FLAG_NONE
-  if extracted.shadow_maps_enabled {
+  if shadow_maps_enabled {
     flags = flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED
   }
-  if extracted.volumetric && extracted.shadow_maps_enabled {
+  if volumetric_enabled {
     flags = flags | DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC
   }
   if extracted.affects_lightmapped_mesh_diffuse {
@@ -2782,6 +2795,58 @@ pub fn render3d_collect_extracted_directional_lights(
 }
 
 ///|
+fn render3d_directional_light_requested_cascade_count(
+  item : ExtractedDirectionalLight3d,
+) -> Int {
+  if !item.shadow_maps_enabled || item.cascade_count <= 0 {
+    0
+  } else if item.cascade_count > MAX_CASCADES_PER_LIGHT {
+    MAX_CASCADES_PER_LIGHT
+  } else {
+    item.cascade_count
+  }
+}
+
+///|
+fn render3d_directional_light_shadow_state(
+  item : ExtractedDirectionalLight3d,
+  current_depth_texture_base_index : Int,
+  max_texture_array_layers : Int,
+) -> (Bool, Int) {
+  if !item.shadow_maps_enabled {
+    return (false, 0)
+  }
+  let requested_cascades = render3d_directional_light_requested_cascade_count(
+    item,
+  )
+  if current_depth_texture_base_index + requested_cascades <=
+    max_texture_array_layers {
+    (true, requested_cascades)
+  } else {
+    (false, 0)
+  }
+}
+
+///|
+fn render3d_directional_lights_volumetric_enabled_count(
+  directional : Array[ExtractedDirectionalLight3d],
+  max_texture_array_layers : Int,
+) -> Int {
+  let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
+    directional.length()
+  } else {
+    MAX_DIRECTIONAL_LIGHTS
+  }
+  let mut count = 0
+  for index in 0..<max_count {
+    if directional[index].volumetric {
+      count += 1
+    }
+  }
+  render3d_min_int(count, max_texture_array_layers / MAX_CASCADES_PER_LIGHT)
+}
+
+///|
 fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
   GpuDirectionalCascade3d::{
     far_bound: 0.0F,
@@ -3261,6 +3326,10 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
   let mut directional_shadow_texture_base_index = 0
   let view_render_layers = render3d_cluster_view_render_layers(world)
+  let max_texture_array_layers = render3d_lights_max_texture_array_layers(world)
+  let directional_volumetric_enabled_count = render3d_directional_lights_volumetric_enabled_count(
+    directional, max_texture_array_layers,
+  )
   let mut directional_source_index = 0
   while directional_source_index < directional.length() &&
         gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
@@ -3269,20 +3338,17 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     if !item.render_layers.intersects(view_render_layers) {
       continue
     }
+    let visible_directional_index = gpu_directional_lights.length()
+    let (shadow_maps_enabled, num_cascades) = render3d_directional_light_shadow_state(
+      item, directional_shadow_texture_base_index, max_texture_array_layers,
+    )
+    let volumetric_enabled = item.volumetric &&
+      shadow_maps_enabled &&
+      visible_directional_index < directional_volumetric_enabled_count
     let cascades : Array[GpuDirectionalCascade3d] = []
-    let cascade_count = if item.shadow_maps_enabled {
-      if item.cascade_count <= 0 {
-        0
-      } else {
-        item.cascade_count
-      }
-    } else {
-      0
-    }
-    for _ in 0..<cascade_count {
+    for _ in 0..<num_cascades {
       cascades.push(render3d_gpu_directional_cascade_default())
     }
-    let num_cascades = cascades.length()
     while cascades.length() < MAX_CASCADES_PER_LIGHT {
       cascades.push(render3d_gpu_directional_cascade_default())
     }
@@ -3290,7 +3356,9 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       cascades,
       color: render3d_scale_color(item.color, item.illuminance),
       dir_to_light: render3d_transform_back(item.transform),
-      flags: render3d_directional_light_flags(item),
+      flags: render3d_directional_light_flags_for_gpu(
+        item, shadow_maps_enabled, volumetric_enabled,
+      ),
       soft_shadow_size: item.soft_shadow_size.unwrap_or(0.0F),
       shadow_depth_bias: item.shadow_depth_bias,
       shadow_normal_bias: item.shadow_normal_bias,
