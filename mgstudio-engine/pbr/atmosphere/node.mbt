@@ -43,20 +43,7 @@ pub fn pbr_extracted_atmosphere(
   ground_albedo : @math.Vec3,
   medium_id : Int,
 ) -> ExtractedAtmosphere {
-  ExtractedAtmosphere::{
-    bottom_radius: if bottom_radius <= 0.0F {
-      1.0F
-    } else {
-      bottom_radius
-    },
-    top_radius: if top_radius <= bottom_radius {
-      bottom_radius + 1.0F
-    } else {
-      top_radius
-    },
-    ground_albedo,
-    medium_id,
-  }
+  ExtractedAtmosphere::{ bottom_radius, top_radius, ground_albedo, medium_id }
 }
 
 ///|

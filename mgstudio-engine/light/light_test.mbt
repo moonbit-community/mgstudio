@@ -282,6 +282,15 @@ test "atmosphere environment map size preserves Bevy authoring semantics" {
 }
 
 ///|
+test "atmosphere radii preserve Bevy plain field semantics" {
+  let atmosphere = @light.Atmosphere::earthlike(
+    @light.ScatteringMedium::earthlike(),
+  ).with_radii(-1.0F, -2.0F)
+  inspect(atmosphere.bottom_radius.to_double(), content="-1")
+  inspect(atmosphere.top_radius.to_double(), content="-2")
+}
+
+///|
 test "skybox brightness preserves Bevy plain field semantics" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
   let skybox = @light.Skybox::new(image, -1.5F).with_brightness(-2.5F)

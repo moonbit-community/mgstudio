@@ -511,21 +511,7 @@ pub fn Atmosphere::with_radii(
   bottom_radius : Float,
   top_radius : Float,
 ) -> Atmosphere {
-  let safe_bottom_radius = if bottom_radius <= 0.0F {
-    0.0001F
-  } else {
-    bottom_radius
-  }
-  let safe_top_radius = if top_radius < safe_bottom_radius {
-    safe_bottom_radius
-  } else {
-    top_radius
-  }
-  Atmosphere::{
-    ..self,
-    bottom_radius: safe_bottom_radius,
-    top_radius: safe_top_radius,
-  }
+  Atmosphere::{ ..self, bottom_radius, top_radius }
 }
 
 ///|
