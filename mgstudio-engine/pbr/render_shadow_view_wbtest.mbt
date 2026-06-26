@@ -67,7 +67,8 @@ test "pbr shadow view pass names match Bevy light and view indices" {
   )
   inspect(
     render3d_point_shadow_pass_name(0, 5),
-    content="shadow_point_light_0_face_5",
+    content="shadow_point_light_0_-z",
   )
-  inspect(render3d_spot_shadow_pass_name(4), content="shadow_spot_light_4")
+  inspect(render3d_cube_face_index_to_name(6), content="invalid")
+  inspect(render3d_spot_shadow_pass_name(0), content="shadow_spot_light_0")
 }

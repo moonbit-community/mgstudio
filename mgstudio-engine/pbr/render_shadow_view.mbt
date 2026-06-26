@@ -101,7 +101,20 @@ fn render3d_point_shadow_pass_name(
   light_index : Int,
   face_index : Int,
 ) -> String {
-  "shadow_point_light_\{light_index}_face_\{face_index}"
+  "shadow_point_light_\{light_index}_\{render3d_cube_face_index_to_name(face_index)}"
+}
+
+///|
+fn render3d_cube_face_index_to_name(face_index : Int) -> String {
+  match face_index {
+    0 => "+x"
+    1 => "-x"
+    2 => "+y"
+    3 => "-y"
+    4 => "+z"
+    5 => "-z"
+    _ => "invalid"
+  }
 }
 
 ///|

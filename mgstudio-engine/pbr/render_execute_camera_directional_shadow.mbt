@@ -469,7 +469,7 @@ fn render3d_execute_camera_spot_shadow_pass(
     projection: spot_projection,
     clip_from_world: Some(clip_from_world),
     light_entity: Render3dLightEntity::Spot(light_entity~),
-    pass_name: render3d_spot_shadow_pass_name(target_layer),
+    pass_name: render3d_spot_shadow_pass_name(0),
     occlusion_culling_subview: None,
   }
   render3d_execute_shadow_phase_view(
