@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/viewport",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -616,6 +617,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
+  render_layers : @render_layers.RenderLayers
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }

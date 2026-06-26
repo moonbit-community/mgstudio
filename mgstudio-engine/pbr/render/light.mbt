@@ -607,6 +607,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
+  render_layers : @camera_render_layers.RenderLayers
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
@@ -2235,6 +2236,11 @@ fn render3d_extract_directional_light(
   volumetric : Bool,
 ) -> ExtractedDirectionalLight3d {
   let transform = render3d_extract_light_transform(world, entity)
+  let render_layers = match
+    (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers)) {
+    Some(layers) => layers
+    None => @camera_render_layers.RenderLayers::RenderLayers()
+  }
   let sun_disk = match
     (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
     Some(v) => v
@@ -2268,6 +2274,7 @@ fn render3d_extract_directional_light(
     cascade_bounds: cascade_config.bounds,
     cascade_overlap_proportion,
     cascade_minimum_distance: cascade_config.minimum_distance,
+    render_layers,
     sun_disk_angular_size: sun_disk.angular_size,
     sun_disk_intensity: sun_disk.intensity,
   }
@@ -2323,6 +2330,9 @@ fn extract_directional_light_changed(
   ) ||
   world.is_changed_by_key(
     entity, @visibility.ecs_key_view_visibility, system_ticks,
+  ) ||
+  world.is_changed_by_key(
+    entity, @camera_render_layers.ecs_key_render_layers, system_ticks,
   ) ||
   world.is_changed_by_key(entity, @light.ecs_key_volumetric_light, system_ticks) ||
   world.is_changed_by_key(entity, @light.ecs_key_sun_disk, system_ticks)
@@ -2910,6 +2920,23 @@ fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
+fn render3d_cluster_view_render_layers(
+  world : @ecs.World,
+) -> @camera_render_layers.RenderLayers {
+  match render3d_cluster_camera_entity(world) {
+    Some(entity) =>
+      match
+        (try! world.get_by_key(
+          entity, @camera_render_layers.ecs_key_render_layers,
+        )) {
+        Some(layers) => layers
+        None => @camera_render_layers.RenderLayers::RenderLayers()
+      }
+    None => @camera_render_layers.RenderLayers::RenderLayers()
+  }
+}
+
+///|
 fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
   if render3d_cluster_camera_entity(world) is Some(entity) &&
     (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
@@ -3269,13 +3296,15 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   }
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
   let mut directional_shadow_texture_base_index = 0
-  let max_count = if directional.length() < MAX_DIRECTIONAL_LIGHTS {
-    directional.length()
-  } else {
-    MAX_DIRECTIONAL_LIGHTS
-  }
-  for i in 0..<max_count {
-    let item = directional[i]
+  let view_render_layers = render3d_cluster_view_render_layers(world)
+  let mut directional_source_index = 0
+  while directional_source_index < directional.length() &&
+        gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
+    let item = directional[directional_source_index]
+    directional_source_index += 1
+    if !item.render_layers.intersects(view_render_layers) {
+      continue
+    }
     let cascades : Array[GpuDirectionalCascade3d] = []
     let cascade_count = if item.shadow_maps_enabled {
       if item.cascade_count <= 0 {
@@ -3310,6 +3339,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     })
     directional_shadow_texture_base_index += num_cascades
   }
+  let directional_count = gpu_directional_lights.length()
   while gpu_directional_lights.length() < MAX_DIRECTIONAL_LIGHTS {
     gpu_directional_lights.push(render3d_gpu_directional_light_default())
   }
@@ -3346,7 +3376,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       cluster_factors_zw.x,
       cluster_factors_zw.y,
     ),
-    n_directional_lights: max_count,
+    n_directional_lights: directional_count,
     spot_light_shadowmap_offset: directional_shadow_texture_base_index -
     point_light_count,
     ambient_light_affects_lightmapped_meshes: if ambient.affects_lightmapped_meshes {

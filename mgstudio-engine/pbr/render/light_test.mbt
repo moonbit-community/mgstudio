@@ -933,6 +933,71 @@ test "pbr render light: directional depth texture base index accumulates cascade
 }
 
 ///|
+test "pbr render light: directional gpu lights respect camera render layers" {
+  let world = @ecs.World::new()
+
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    light_test_cluster_camera(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  |> ignore)
+
+  let hidden = world.spawn()
+  try! (world.set_by_key(
+    hidden,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::new(
+      @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      2.0F,
+      false,
+    ),
+  )
+  |> ignore)
+
+  let visible = world.spawn()
+  try! (world.set_by_key(
+    visible,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::new(
+      @color.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
+      4.0F,
+      false,
+    ),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    visible,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="1")
+  inspect(
+    approx_eq(gpu.directional_lights[0].color.r, 0.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu.directional_lights[0].color.g, 2.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu.directional_lights[0].color.b, 0.0F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: directional light reads decal index from clustered decals resource" {
   let world = @ecs.World::new()
 
