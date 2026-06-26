@@ -553,6 +553,50 @@ test "pbr render light: spot extraction preserves authored scalar fields" {
 }
 
 ///|
+test "pbr render light: lighting state carries spot shadow data" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::SpotLight()
+    .with_shadow_maps_enabled(true)
+    .with_shadow_depth_bias(0.125F)
+    .with_shadow_normal_bias(2.0F)
+    .with_shadow_map_near_z(0.25F)
+    .with_inner_angle(0.25F)
+    .with_outer_angle(0.75F),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let lighting = render3d_collect_lighting(world)
+  inspect(lighting.spot_entity is Some(_), content="true")
+  guard lighting.spot_entity is Some(spot_entity) else {
+    abort("expected spot entity in lighting state")
+  }
+  inspect(spot_entity.id, content=entity.id.to_string())
+  inspect(lighting.spot_shadow_maps_enabled, content="true")
+  inspect(
+    approx_eq(lighting.spot_shadow_depth_bias, 0.125F, 1.0e-6F),
+    content="true",
+  )
+  let expected_normal_bias = 2.0F *
+    (2.0F * @math.sin(0.75F) / @math.cos(0.75F) / 2048.0F) *
+    @math.sqrt(2.0F)
+  inspect(
+    approx_eq(lighting.spot_shadow_normal_bias, expected_normal_bias, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(lighting.spot_shadow_map_near_z, 0.25F, 1.0e-6F),
+    content="true",
+  )
+  inspect(approx_eq(lighting.spot_inner_angle, 0.25F, 1.0e-6F), content="true")
+  inspect(approx_eq(lighting.spot_outer_angle, 0.75F, 1.0e-6F), content="true")
+}
+
+///|
 test "pbr render light: directional dir_to_light uses transform back vector" {
   let world = @ecs.World::new()
   let entity = world.spawn()

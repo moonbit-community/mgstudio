@@ -1237,6 +1237,11 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  spot_entity : @core.Entity?
+  spot_shadow_maps_enabled : Bool
+  spot_shadow_depth_bias : Float
+  spot_shadow_normal_bias : Float
+  spot_shadow_map_near_z : Float
   gpu_lights : GpuLights3d?
   gpu_clustered_lights_bytes : Bytes?
   gpu_clusterable_object_index_lists_bytes : Bytes?

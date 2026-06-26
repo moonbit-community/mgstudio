@@ -44,6 +44,11 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  spot_entity : @core.Entity?
+  spot_shadow_maps_enabled : Bool
+  spot_shadow_depth_bias : Float
+  spot_shadow_normal_bias : Float
+  spot_shadow_map_near_z : Float
   gpu_lights : GpuLights3d?
   gpu_clustered_lights_bytes : Bytes?
   gpu_clusterable_object_index_lists_bytes : Bytes?
@@ -3522,6 +3527,11 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_range: 1.0F,
     spot_inner_angle: 0.0F,
     spot_outer_angle: 0.7853981633974483F,
+    spot_entity: None,
+    spot_shadow_maps_enabled: false,
+    spot_shadow_depth_bias: 0.02F,
+    spot_shadow_normal_bias: 0.0F,
+    spot_shadow_map_near_z: 0.1F,
     gpu_lights: None,
     gpu_clustered_lights_bytes: None,
     gpu_clusterable_object_index_lists_bytes: None,
@@ -3592,6 +3602,11 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_range: spot.range,
           spot_inner_angle: inner,
           spot_outer_angle: outer,
+          spot_entity: Some(spot.entity),
+          spot_shadow_maps_enabled: spot.shadow_maps_enabled,
+          spot_shadow_depth_bias: spot.shadow_depth_bias,
+          spot_shadow_normal_bias: spot.shadow_normal_bias,
+          spot_shadow_map_near_z: spot.shadow_map_near_z,
         }
       None =>
         lighting = Render3dLightingState::{
@@ -3601,6 +3616,11 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_color: spot.color,
           spot_intensity: spot.intensity,
           spot_range: spot.range,
+          spot_entity: Some(spot.entity),
+          spot_shadow_maps_enabled: spot.shadow_maps_enabled,
+          spot_shadow_depth_bias: spot.shadow_depth_bias,
+          spot_shadow_normal_bias: spot.shadow_normal_bias,
+          spot_shadow_map_near_z: spot.shadow_map_near_z,
         }
     }
   }
