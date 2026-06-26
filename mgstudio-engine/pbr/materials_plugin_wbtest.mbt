@@ -125,6 +125,41 @@ test "render3d: materials startup preserves pending queue resources" {
 }
 
 ///|
+test "render3d: pending mesh material queues prepare live views and expire stale views" {
+  let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(30, 1))
+  let stale_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(31, 1),
+  )
+  let queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  queues
+  .queues()
+  .push_current(
+    live_view,
+    @core.Entity::new(32, 1),
+    @render.MainEntity::new(@core.Entity::new(33, 1)),
+  )
+  queues
+  .queues()
+  .push_current(
+    stale_view,
+    @core.Entity::new(34, 1),
+    @render.MainEntity::new(@core.Entity::new(35, 1)),
+  )
+
+  ignore(queues.prepare_for_new_frame(live_view))
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  live_views.add(live_view)
+  queues.expire_stale_views(live_views)
+
+  debug_inspect(queues.current_len(live_view), content="0")
+  debug_inspect(queues.prev_len(live_view), content="1")
+  debug_inspect(queues.current_len(stale_view), content="0")
+  debug_inspect(queues.prev_len(stale_view), content="0")
+  debug_inspect(queues.view_len(), content="1")
+}
+
+///|
 test "render3d: materials startup preserves shadow specialization caches" {
   let world = @ecs.World::new()
   let view = @render_view.RetainedViewEntity::new(

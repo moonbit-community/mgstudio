@@ -2012,7 +2012,12 @@ pub struct PendingMeshMaterialQueues {
   queues : @Milky2018/mgstudio/render.PendingQueues
 }
 pub fn PendingMeshMaterialQueues::PendingMeshMaterialQueues() -> Self
+pub fn PendingMeshMaterialQueues::current_len(Self, @view.RetainedViewEntity) -> Int
+pub fn PendingMeshMaterialQueues::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
+pub fn PendingMeshMaterialQueues::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> @Milky2018/mgstudio/render.ViewPendingQueues
+pub fn PendingMeshMaterialQueues::prev_len(Self, @view.RetainedViewEntity) -> Int
 pub fn PendingMeshMaterialQueues::queues(Self) -> @Milky2018/mgstudio/render.PendingQueues
+pub fn PendingMeshMaterialQueues::view_len(Self) -> Int
 pub impl @app.Resource for PendingMeshMaterialQueues
 
 pub struct PendingWireframeQueues {

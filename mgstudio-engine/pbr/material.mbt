@@ -102,6 +102,45 @@ pub fn PendingMeshMaterialQueues::queues(
 }
 
 ///|
+pub fn PendingMeshMaterialQueues::prepare_for_new_frame(
+  self : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> @render.ViewPendingQueues {
+  self.queues.prepare_for_new_frame(retained_view_entity)
+}
+
+///|
+pub fn PendingMeshMaterialQueues::expire_stale_views(
+  self : PendingMeshMaterialQueues,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  self.queues.expire_stale_views(live_views)
+}
+
+///|
+pub fn PendingMeshMaterialQueues::view_len(
+  self : PendingMeshMaterialQueues,
+) -> Int {
+  self.queues.view_len()
+}
+
+///|
+pub fn PendingMeshMaterialQueues::current_len(
+  self : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Int {
+  self.queues.current_len(retained_view_entity)
+}
+
+///|
+pub fn PendingMeshMaterialQueues::prev_len(
+  self : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Int {
+  self.queues.prev_len(retained_view_entity)
+}
+
+///|
 pub let ecs_key_pending_mesh_material_queues : @ecs.ResourceKey[
   PendingMeshMaterialQueues,
 ] = @ecs.register_resource(debug_name="mgstudio_pbr::PendingMeshMaterialQueues")

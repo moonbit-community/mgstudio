@@ -573,6 +573,28 @@ fn render3d_apply_dirty_material_specialization_cache(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_prepare_pending_mesh_material_queues(
+  world : @ecs.World,
+  retained_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let pending_queues = match
+    world.get_resource_mut(PendingMeshMaterialQueues::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing PendingMeshMaterialQueues resource during pbr material specialization",
+      )
+  }
+  pending_queues.modify(fn(queues) {
+    for retained_view_entity in retained_views.iter() {
+      ignore(queues.prepare_for_new_frame(retained_view_entity))
+    }
+    queues.expire_stale_views(retained_views)
+  })
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -582,6 +604,7 @@ fn render3d_prewarm_mesh_pipelines(
   let specialization_tick = world.read_change_tick()
   let retained_views = render3d_retained_view_entities(cameras)
   render3d_apply_dirty_material_specialization_cache(world, retained_views)
+  render3d_prepare_pending_mesh_material_queues(world, retained_views)
   let mut motion_vector_prewarm_needed = false
   for camera in cameras {
     if camera.payload.motion_vector_prepass_enabled {
