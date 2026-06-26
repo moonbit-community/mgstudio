@@ -193,9 +193,7 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @light
 pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @render_occlusion_culling.ecs_key_occlusion_culling
 
 ///|
-pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @ecs.register_component(
-  debug_name="render3d.no_indirect_drawing",
-)
+pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @render_view.ecs_key_no_indirect_drawing
 
 ///|
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @light.ecs_key_spot_light_texture
@@ -366,11 +364,6 @@ pub impl @ecs.Component for Mesh3dWireframe with fn component() {
 ///|
 pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
-}
-
-///|
-pub impl @ecs.Component for NoIndirectDrawing with fn component() {
-  ecs_key_no_indirect_drawing
 }
 
 ///|

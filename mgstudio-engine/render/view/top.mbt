@@ -571,6 +571,24 @@ pub impl @ecs.Component for Msaa with fn component() {
 }
 
 ///|
+pub struct NoIndirectDrawing {} derive(ToJson, FromJson)
+
+///|
+pub fn NoIndirectDrawing::NoIndirectDrawing() -> NoIndirectDrawing {
+  NoIndirectDrawing::{  }
+}
+
+///|
+pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @ecs.register_component(
+  debug_name="render.view.no_indirect_drawing",
+)
+
+///|
+pub impl @ecs.Component for NoIndirectDrawing with fn component() {
+  ecs_key_no_indirect_drawing
+}
+
+///|
 pub struct ExtractedView {
   retained_view_entity : RetainedViewEntity
   target_format_raw : UInt

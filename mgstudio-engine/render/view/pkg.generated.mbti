@@ -26,6 +26,8 @@ pub let ecs_key_extracted_view : @ecs.ComponentKey[ExtractedView]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
 
+pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
+
 pub let ecs_key_view_uniform_offset : @ecs.ComponentKey[ViewUniformOffset]
 
 pub fn extracted_view_target_format_raw(output_texture_format_raw? : UInt, hdr? : Bool, compositing_space? : @compositing_space.CompositingSpace?) -> UInt
@@ -96,6 +98,11 @@ pub fn Msaa::default() -> Self
 pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
 pub impl @ecs.Component for Msaa
+
+pub struct NoIndirectDrawing {
+} derive(ToJson, @json.FromJson)
+pub fn NoIndirectDrawing::NoIndirectDrawing() -> Self
+pub impl @ecs.Component for NoIndirectDrawing
 
 pub struct RenderShadowLodOrigin {
   origin : @math.Vec3

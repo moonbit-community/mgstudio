@@ -313,7 +313,7 @@ pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/co
 
 pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
-pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing]
+pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[@view.NoIndirectDrawing]
 
 pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
 
@@ -1924,11 +1924,6 @@ pub fn MeshesToReextractNextFrame::insert(Self, @Milky2018/mgstudio/render.MainE
 pub fn MeshesToReextractNextFrame::len(Self) -> Int
 pub impl @app.Resource for MeshesToReextractNextFrame
 
-pub struct NoIndirectDrawing {
-} derive(ToJson, @json.FromJson)
-pub fn NoIndirectDrawing::NoIndirectDrawing() -> Self
-pub impl @ecs.Component for NoIndirectDrawing
-
 pub struct NoWireframe {
 } derive(ToJson, @json.FromJson)
 pub fn NoWireframe::NoWireframe() -> Self
@@ -3138,6 +3133,8 @@ pub using @motion_blur {type MotionBlur}
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
 
 pub using @view {type Msaa}
+
+pub using @view {type NoIndirectDrawing}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 

@@ -41,6 +41,21 @@ test "render view: window BGRA8 SRGB target format normalizes like Bevy" {
 }
 
 ///|
+test "render view: NoIndirectDrawing marker is owned by render view" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_no_indirect_drawing,
+    NoIndirectDrawing::NoIndirectDrawing(),
+  )
+  inspect(
+    (try! world.get_by_key(entity, NoIndirectDrawing::component())) is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "render view: extracted target format follows Bevy HDR and compositing rules" {
   inspect(
     extracted_view_target_format_raw(

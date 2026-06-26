@@ -758,6 +758,27 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
 }
 
 ///|
+test "render3d: NoIndirectDrawing reuses render view owner key" {
+  debug_inspect(
+    ecs_key_no_indirect_drawing.id() ==
+    @render_view.ecs_key_no_indirect_drawing.id(),
+    content="true",
+  )
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_no_indirect_drawing,
+    NoIndirectDrawing::NoIndirectDrawing(),
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, @render_view.NoIndirectDrawing::component()))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "render3d: prepare_lights packs render-world extracted lights" {
   let app0 = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())

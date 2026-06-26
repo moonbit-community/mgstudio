@@ -405,13 +405,7 @@ pub type DeferredPrepass = @pbr_prepass.DeferredPrepass
 pub type OcclusionCulling = @render_occlusion_culling.OcclusionCulling
 
 ///|
-/// Marker component aligned with Bevy's `NoIndirectDrawing`.
-pub struct NoIndirectDrawing {} derive(ToJson, FromJson)
-
-///|
-pub fn NoIndirectDrawing::NoIndirectDrawing() -> NoIndirectDrawing {
-  NoIndirectDrawing::{  }
-}
+pub type NoIndirectDrawing = @render_view.NoIndirectDrawing
 
 ///|
 pub type NotShadowCaster = @light.NotShadowCaster
