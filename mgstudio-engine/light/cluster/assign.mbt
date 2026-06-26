@@ -792,25 +792,4 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       visible,
     )
   }
-
-  // Keep previously-created non-camera entries in sync for compatibility paths.
-  world.for_each_component(VisibleClusterableObjects::component(), fn(
-    entity,
-    existing,
-  ) {
-    if (try! world.contains_by_key(entity, @camera_camera.ecs_key_camera)) {
-      return
-    }
-    let next = VisibleClusterableObjects::new()
-    for object in clusterable_objects {
-      next.add(object.entity, object.object_type)
-    }
-    if next != existing {
-      try! world.set_by_key(
-        entity,
-        VisibleClusterableObjects::component(),
-        next,
-      )
-    }
-  })
 }
