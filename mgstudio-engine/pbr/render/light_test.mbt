@@ -1735,6 +1735,38 @@ test "pbr render light: cluster config none yields zero cluster payload" {
 }
 
 ///|
+test "pbr render light: inactive camera clusters are ignored" {
+  let world = @ecs.World::new()
+  let inactive = world.spawn()
+  try! (world.set_by_key(
+    inactive,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    inactive,
+    @light_cluster.Clusters::component(),
+    @light_cluster.Clusters::new(64, 64, 12, 6, 8, 1.0F, 81.0F),
+  )
+  |> ignore)
+  let active = world.spawn()
+  try! (world.set_by_key(
+    active,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(gpu_lights.cluster_dimensions.0, content="16")
+  inspect(gpu_lights.cluster_dimensions.1, content="9")
+  inspect(gpu_lights.cluster_dimensions.2, content="24")
+  inspect(gpu_lights.cluster_dimensions.3, content="3456")
+}
+
+///|
 test "pbr render light: cluster payload prefers runtime clusters component" {
   let world = @ecs.World::new()
   let entity = world.spawn()
