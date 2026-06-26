@@ -55,6 +55,12 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
 }
 
 ///|
+test "point shadow map constructor preserves Bevy plain field semantics" {
+  let authored = @light.PointLightShadowMap::new(0).with_size(-7)
+  debug_inspect(authored.size, content="-7")
+}
+
+///|
 test "volumetric fog setters preserve Bevy plain field semantics" {
   let fog = @light.VolumetricFog::VolumetricFog()
     .with_ambient_intensity(-2.5F)

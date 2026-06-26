@@ -723,7 +723,7 @@ pub fn PointLightShadowMap::PointLightShadowMap() -> PointLightShadowMap {
 
 ///|
 pub fn PointLightShadowMap::new(size : Int) -> PointLightShadowMap {
-  PointLightShadowMap::{ size: if size <= 0 { 1 } else { size } }
+  PointLightShadowMap::{ size, }
 }
 
 ///|
@@ -732,7 +732,7 @@ pub fn PointLightShadowMap::with_size(
   size : Int,
 ) -> PointLightShadowMap {
   self |> ignore
-  PointLightShadowMap::new(size)
+  PointLightShadowMap::{ size, }
 }
 
 ///|
