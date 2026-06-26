@@ -204,6 +204,51 @@ test "light cluster: assign system uses previous frame index count for dynamic r
 }
 
 ///|
+test "light cluster: ClusterConfig::None clears clusters and preserves last-frame statistics" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    ClusterConfig::component(),
+    ClusterConfig::None,
+  )
+  |> ignore)
+  let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
+  previous_clusters.last_frame_farthest_z = Some(77.0F)
+  previous_clusters.last_frame_total_cluster_index_count = Some(1234)
+  try! (world.set_by_key(
+    camera_entity,
+    Clusters::component(),
+    previous_clusters,
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  inspect(clusters.tile_size_x, content="1")
+  inspect(clusters.tile_size_y, content="1")
+  inspect(clusters.dimensions_x, content="0")
+  inspect(clusters.dimensions_y, content="0")
+  inspect(clusters.dimensions_z, content="0")
+  debug_inspect(clusters.last_frame_farthest_z(), content="Some(77)")
+  debug_inspect(
+    clusters.last_frame_total_cluster_index_count(),
+    content="Some(1234)",
+  )
+  inspect(visible.point_and_spot_light_count(), content="0")
+}
+
+///|
 test "light cluster: assign system writes visible point lights into cluster lists" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()

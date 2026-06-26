@@ -611,6 +611,23 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       Some(cluster_config) => cluster_config
       None => ClusterConfig::default()
     }
+    let previous_clusters = try! world.get_by_key(entity, Clusters::component())
+    if config is ClusterConfig::None {
+      let cleared_clusters = match previous_clusters {
+        Some(clusters) => {
+          clusters.clear()
+          clusters
+        }
+        None => Clusters::Clusters()
+      }
+      try! world.set_by_key(entity, Clusters::component(), cleared_clusters)
+      try! world.set_by_key(
+        entity,
+        VisibleClusterableObjects::component(),
+        VisibleClusterableObjects::new(),
+      )
+      continue
+    }
     let camera = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(camera_component) => camera_component
@@ -620,7 +637,6 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     let projection = cluster_assign_camera_projection(
       world, entity, screen_width, screen_height,
     )
-    let previous_clusters = try! world.get_by_key(entity, Clusters::component())
     let camera_transform = cluster_assign_entity_transform(world, entity)
     let view_from_world = cluster_assign_view_from_world_matrix(
       camera_transform,
