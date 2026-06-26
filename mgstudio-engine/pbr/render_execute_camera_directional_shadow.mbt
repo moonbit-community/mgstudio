@@ -328,12 +328,12 @@ fn render3d_execute_camera_directional_shadow_pass(
   guard pass_lighting.directional_entity is Some(light_entity) else {
     return render3d_directional_shadow_binding_none()
   }
-  let target_id = render3d_directional_light_shadow_target_get_or_create(
-    world,
-    light_entity,
-    camera_entity,
-    shadow_map_size,
+  let target_layers = render3d_directional_spot_shadow_target_layers(
     cascades.length(),
+    pass_lighting.spot_shadow_maps_enabled,
+  )
+  let target_id = render3d_directional_light_shadow_target_get_or_create(
+    world, light_entity, camera_entity, shadow_map_size, target_layers,
   )
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
@@ -386,6 +386,25 @@ fn render3d_execute_camera_directional_shadow_pass(
     enabled: 1.0F,
     cascade_data: render3d_directional_shadow_cascade_data(cascades),
     cascade_count: cascades.length(),
+  }
+}
+
+///|
+fn render3d_directional_spot_shadow_target_layers(
+  directional_cascade_count : Int,
+  spot_shadow_maps_enabled : Bool,
+) -> Int {
+  let directional_layers = if directional_cascade_count <= 0 {
+    0
+  } else {
+    directional_cascade_count
+  }
+  let spot_layers = if spot_shadow_maps_enabled { 1 } else { 0 }
+  let total = directional_layers + spot_layers
+  if total <= 0 {
+    1
+  } else {
+    total
   }
 }
 

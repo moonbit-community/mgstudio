@@ -46,6 +46,14 @@ test "pbr directional shadow view omits occlusion culling subview when disabled"
 }
 
 ///|
+test "pbr directional shadow target reserves Bevy spot layers" {
+  inspect(render3d_directional_spot_shadow_target_layers(4, false), content="4")
+  inspect(render3d_directional_spot_shadow_target_layers(4, true), content="5")
+  inspect(render3d_directional_spot_shadow_target_layers(0, true), content="1")
+  inspect(render3d_directional_spot_shadow_target_layers(0, false), content="1")
+}
+
+///|
 test "pbr shadow view pass names match Bevy light and view indices" {
   inspect(
     render3d_directional_shadow_pass_name(0, 2),
