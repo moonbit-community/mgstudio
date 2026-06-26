@@ -367,6 +367,9 @@ fn render3d_execute_camera_directional_shadow_pass(
         cascade_index~,
       ),
       pass_name: "shadow_directional_light_cascade",
+      occlusion_culling_subview: render3d_directional_shadow_occlusion_culling_subview(
+        pass_lighting, target_id, shadow_map_size,
+      ),
     }
     render3d_execute_shadow_phase_view(
       world,
@@ -384,6 +387,23 @@ fn render3d_execute_camera_directional_shadow_pass(
     cascade_data: render3d_directional_shadow_cascade_data(cascades),
     cascade_count: cascades.length(),
   }
+}
+
+///|
+fn render3d_directional_shadow_occlusion_culling_subview(
+  lighting : Render3dLightingState,
+  target_id : Int,
+  shadow_map_size : Int,
+) -> @render_occlusion_culling.OcclusionCullingSubview? {
+  if !lighting.directional_occlusion_culling {
+    return None
+  }
+  Some(
+    @render_occlusion_culling.OcclusionCullingSubview::new(
+      depth_texture_view_id=target_id,
+      depth_texture_size=shadow_map_size,
+    ),
+  )
 }
 
 ///|

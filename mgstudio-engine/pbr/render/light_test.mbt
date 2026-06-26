@@ -1095,6 +1095,8 @@ test "pbr render light: directional extraction reads render occlusion culling ma
   let extracted = render3d_collect_extracted_directional_lights(world)
   inspect(extracted.length(), content="1")
   inspect(extracted[0].occlusion_culling, content="true")
+  let lighting = render3d_collect_lighting(world)
+  inspect(lighting.directional_occlusion_culling, content="true")
 }
 
 ///|

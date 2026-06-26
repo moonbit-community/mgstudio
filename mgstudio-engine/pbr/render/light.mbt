@@ -28,6 +28,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
   directional_cascade_minimum_distance : Float
+  directional_occlusion_culling : Bool
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color
@@ -3447,6 +3448,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_cascade_bounds: [],
     directional_cascade_overlap_proportion: 0.0F,
     directional_cascade_minimum_distance: 0.1F,
+    directional_occlusion_culling: false,
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @color.Color::white(),
@@ -3496,6 +3498,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_cascade_bounds: directional.cascade_bounds,
       directional_cascade_overlap_proportion: directional.cascade_overlap_proportion,
       directional_cascade_minimum_distance: directional.cascade_minimum_distance,
+      directional_occlusion_culling: directional.occlusion_culling,
     }
   }
   let point_lights = render3d_collect_extracted_point_lights(world)

@@ -1221,6 +1221,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
   directional_cascade_minimum_distance : Float
+  directional_occlusion_culling : Bool
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color

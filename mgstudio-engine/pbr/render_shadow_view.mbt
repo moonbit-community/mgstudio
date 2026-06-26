@@ -34,6 +34,7 @@ priv struct Render3dShadowView {
   clip_from_world : @pbr_render.ProjectionMatrix3d?
   light_entity : Render3dLightEntity
   pass_name : String
+  occlusion_culling_subview : @render_occlusion_culling.OcclusionCullingSubview?
 }
 
 ///|
@@ -112,6 +113,7 @@ fn render3d_shadow_view_begin_pass(
 ) -> Unit {
   ignore(render3d_shadow_light_entity_debug_key(shadow_view.light_entity))
   ignore(shadow_view.pass_name)
+  ignore(shadow_view.occlusion_culling_subview)
   @pbr_render.render3d_begin_pass_3d(
     target_id=shadow_view.target_id,
     target_layer=shadow_view.target_layer,
