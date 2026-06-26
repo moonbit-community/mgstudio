@@ -55,9 +55,7 @@ pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 // Errors
 
 // Types and methods
-pub struct AudioOutput {
-  // private fields
-}
+type AudioOutput
 pub fn AudioOutput::AudioOutput() -> Self
 pub impl @app.Resource for AudioOutput
 

@@ -109,9 +109,7 @@ pub(all) enum ShaderCacheSource {
   Wgsl(String)
 } derive(Eq, @debug.Debug)
 
-pub struct ShaderData[ShaderModule, ShaderId] {
-  // private fields
-}
+type ShaderData[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::ShaderData() -> Self[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId] ShaderData::cache_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal], ShaderModule) -> Unit
 pub fn[ShaderModule, ShaderId] ShaderData::dependent_count(Self[ShaderModule, ShaderId]) -> Int

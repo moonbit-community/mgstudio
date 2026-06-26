@@ -320,9 +320,7 @@ pub(all) enum AnimationNodeType {
   Add
 }
 
-pub struct AnimationPlayer {
-  // private fields
-}
+type AnimationPlayer
 pub fn AnimationPlayer::AnimationPlayer() -> Self
 pub fn AnimationPlayer::adjust_speeds(Self, Float) -> Self
 pub fn AnimationPlayer::all_finished(Self) -> Bool

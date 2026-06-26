@@ -19,9 +19,7 @@ pub impl @ecs.Component for Armor
 type Attack
 pub impl @ecs.TriggerEvent for Attack
 
-pub struct AttackSchedule {
-  // private fields
-}
+type AttackSchedule
 pub fn AttackSchedule::AttackSchedule() -> Self
 pub impl @app.Resource for AttackSchedule
 

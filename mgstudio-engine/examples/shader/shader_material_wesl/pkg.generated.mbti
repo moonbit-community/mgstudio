@@ -17,9 +17,7 @@ pub impl @ecs.Component for Spin
 type UtilityShaderHandle
 pub impl @app.Resource for UtilityShaderHandle
 
-pub struct UtilityShaderPlugin {
-  // private fields
-}
+type UtilityShaderPlugin
 pub fn UtilityShaderPlugin::UtilityShaderPlugin() -> Self
 pub impl @app.Plugin for UtilityShaderPlugin
 

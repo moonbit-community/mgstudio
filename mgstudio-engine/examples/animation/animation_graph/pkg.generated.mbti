@@ -23,9 +23,7 @@ pub impl @ecs.Component for ClipNodeLabel
 type ExampleAnimationGraph
 pub impl @app.Resource for ExampleAnimationGraph
 
-pub struct ExampleAnimationWeights {
-  // private fields
-}
+type ExampleAnimationWeights
 pub fn ExampleAnimationWeights::ExampleAnimationWeights() -> Self
 pub impl @ecs.Component for ExampleAnimationWeights
 pub impl Default for ExampleAnimationWeights

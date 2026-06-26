@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/rect_light"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type FloorMaterial
+pub impl @app.Resource for FloorMaterial
+
+type RoughnessDisplay
+pub impl @ecs.Component for RoughnessDisplay
+
+// Type aliases
+
+// Traits
+

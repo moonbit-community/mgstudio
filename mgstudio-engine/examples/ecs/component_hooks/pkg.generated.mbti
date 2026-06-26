@@ -16,9 +16,7 @@ type MyComponent derive(Eq)
 pub fn MyComponent::new(@events.KeyCode) -> Self
 pub impl @ecs.Component for MyComponent
 
-pub struct MyComponentIndex {
-  // private fields
-}
+type MyComponentIndex
 pub fn MyComponentIndex::MyComponentIndex() -> Self
 pub impl @app.Resource for MyComponentIndex
 

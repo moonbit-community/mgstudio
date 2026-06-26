@@ -11,9 +11,7 @@ import {
 // Errors
 
 // Types and methods
-pub struct ScrollDragState {
-  // private fields
-}
+type ScrollDragState
 pub fn ScrollDragState::ScrollDragState() -> Self
 pub impl @app.Resource for ScrollDragState
 pub impl Default for ScrollDragState

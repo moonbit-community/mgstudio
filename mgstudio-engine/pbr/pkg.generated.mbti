@@ -1228,9 +1228,7 @@ pub fn ContactShadowsUniform::length(Self) -> Float
 pub fn ContactShadowsUniform::linear_steps(Self) -> UInt
 pub fn ContactShadowsUniform::thickness(Self) -> Float
 
-pub struct CustomProjection3d {
-  // private fields
-}
+type CustomProjection3d
 pub fn CustomProjection3d::CustomProjection3d() -> Self
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
 pub fn CustomProjection3d::far(Self) -> Float

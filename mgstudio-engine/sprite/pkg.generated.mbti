@@ -187,9 +187,7 @@ pub fn GizmoConfig::GizmoConfig() -> Self
 pub extenum GizmoConfigGroupCell {
 }
 
-pub struct GizmoConfigStore {
-  // private fields
-}
+type GizmoConfigStore
 pub fn GizmoConfigStore::GizmoConfigStore() -> Self
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config(Self, T) -> (GizmoConfig, T)
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])
