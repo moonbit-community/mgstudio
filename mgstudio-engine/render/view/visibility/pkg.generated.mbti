@@ -9,12 +9,15 @@ import {
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/view",
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
 }
 
 // Values
 pub const VISIBILITY_RANGES_STORAGE_BUFFER_COUNT : Int = 4
 
 pub const VISIBILITY_RANGE_UNIFORM_BUFFER_SIZE : Int = 64
+
+pub let ecs_key_dirty_specializations : @ecs.ResourceKey[DirtySpecializations]
 
 pub let ecs_key_render_extracted_shadow_map_visible_entities : @ecs.ComponentKey[RenderExtractedShadowMapVisibleEntities]
 
@@ -45,6 +48,29 @@ pub fn visibility_ranges_should_use_uniform_buffer(Int, Bool) -> Bool
 // Errors
 
 // Types and methods
+pub struct DirtySpecializations {
+  changed_renderables : @hashset.HashSet[@render.MainEntity]
+  removed_renderables : @hashset.HashSet[@render.MainEntity]
+  views : @hashset.HashSet[@view.RetainedViewEntity]
+}
+pub fn DirtySpecializations::DirtySpecializations() -> Self
+pub fn DirtySpecializations::changed_contains(Self, @render.MainEntity) -> Bool
+pub fn DirtySpecializations::changed_len(Self) -> Int
+pub fn DirtySpecializations::clear(Self) -> Unit
+pub fn DirtySpecializations::entity_pair_from_visible_main_entity(Self, RenderVisibleEntitiesClass, @render.MainEntity) -> (@core.Entity, @render.MainEntity)?
+pub fn DirtySpecializations::insert_changed(Self, @render.MainEntity) -> Unit
+pub fn DirtySpecializations::insert_removed(Self, @render.MainEntity) -> Unit
+pub fn DirtySpecializations::insert_view(Self, @view.RetainedViewEntity) -> Unit
+pub fn DirtySpecializations::iter_to_dequeue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass) -> Array[@render.MainEntity]
+pub fn DirtySpecializations::iter_to_despecialize(Self) -> Array[@render.MainEntity]
+pub fn DirtySpecializations::iter_to_queue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @render.MainEntity)]) -> Array[(@core.Entity, @render.MainEntity)]
+pub fn DirtySpecializations::iter_to_specialize(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @render.MainEntity)]) -> Array[(@core.Entity, @render.MainEntity)]
+pub fn DirtySpecializations::must_wipe_specializations_for_view(Self, @view.RetainedViewEntity) -> Bool
+pub fn DirtySpecializations::removed_contains(Self, @render.MainEntity) -> Bool
+pub fn DirtySpecializations::removed_len(Self) -> Int
+pub fn DirtySpecializations::views_len(Self) -> Int
+pub impl @app.Resource for DirtySpecializations
+
 pub struct RenderExtractedShadowMapVisibleEntities {
   subviews : @hashmap.HashMap[@view.RetainedViewEntity, RenderExtractedVisibleEntities]
 }

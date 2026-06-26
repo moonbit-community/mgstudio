@@ -369,6 +369,248 @@ pub fn RenderVisibleEntitiesClass::visible_len(
 }
 
 ///|
+// Bevy source:
+// - `bevy/crates/bevy_render/src/camera.rs` (`DirtySpecializations`).
+pub struct DirtySpecializations {
+  changed_renderables : @hashset.HashSet[@render.MainEntity]
+  removed_renderables : @hashset.HashSet[@render.MainEntity]
+  views : @hashset.HashSet[@render_view.RetainedViewEntity]
+}
+
+///|
+pub fn DirtySpecializations::DirtySpecializations() -> DirtySpecializations {
+  DirtySpecializations::{
+    changed_renderables: @hashset.HashSet([]),
+    removed_renderables: @hashset.HashSet([]),
+    views: @hashset.HashSet([]),
+  }
+}
+
+///|
+pub let ecs_key_dirty_specializations : @ecs.ResourceKey[DirtySpecializations] = @ecs.register_resource(
+  debug_name="render.view.visibility.DirtySpecializations",
+)
+
+///|
+pub impl @app.Resource for DirtySpecializations with fn resource() {
+  ecs_key_dirty_specializations
+}
+
+///|
+pub fn DirtySpecializations::clear(self : DirtySpecializations) -> Unit {
+  self.changed_renderables.clear()
+  self.removed_renderables.clear()
+  self.views.clear()
+}
+
+///|
+pub fn DirtySpecializations::insert_changed(
+  self : DirtySpecializations,
+  entity : @render.MainEntity,
+) -> Unit {
+  self.changed_renderables.add(entity)
+}
+
+///|
+pub fn DirtySpecializations::insert_removed(
+  self : DirtySpecializations,
+  entity : @render.MainEntity,
+) -> Unit {
+  self.removed_renderables.add(entity)
+}
+
+///|
+pub fn DirtySpecializations::insert_view(
+  self : DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  self.views.add(view)
+}
+
+///|
+pub fn DirtySpecializations::changed_len(self : DirtySpecializations) -> Int {
+  self.changed_renderables.length()
+}
+
+///|
+pub fn DirtySpecializations::removed_len(self : DirtySpecializations) -> Int {
+  self.removed_renderables.length()
+}
+
+///|
+pub fn DirtySpecializations::views_len(self : DirtySpecializations) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn DirtySpecializations::changed_contains(
+  self : DirtySpecializations,
+  entity : @render.MainEntity,
+) -> Bool {
+  self.changed_renderables.contains(entity)
+}
+
+///|
+pub fn DirtySpecializations::removed_contains(
+  self : DirtySpecializations,
+  entity : @render.MainEntity,
+) -> Bool {
+  self.removed_renderables.contains(entity)
+}
+
+///|
+pub fn DirtySpecializations::must_wipe_specializations_for_view(
+  self : DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+) -> Bool {
+  self.views.contains(view)
+}
+
+///|
+pub fn DirtySpecializations::iter_to_despecialize(
+  self : DirtySpecializations,
+) -> Array[@render.MainEntity] {
+  let entities : Array[@render.MainEntity] = []
+  for entity in self.changed_renderables.iter() {
+    entities.push(entity)
+  }
+  for entity in self.removed_renderables.iter() {
+    entities.push(entity)
+  }
+  entities
+}
+
+///|
+pub fn DirtySpecializations::entity_pair_from_visible_main_entity(
+  _self : DirtySpecializations,
+  render_visible_mesh_entities : RenderVisibleEntitiesClass,
+  main_entity : @render.MainEntity,
+) -> (@core.Entity, @render.MainEntity)? {
+  for pair in render_visible_mesh_entities.entities_cpu_culling {
+    if pair.1 == main_entity {
+      return Some(pair)
+    }
+  }
+  match render_visible_mesh_entities.entities_gpu_culling.get(main_entity) {
+    Some(entity) => Some((entity, main_entity))
+    None => None
+  }
+}
+
+///|
+fn dirty_specialization_main_entity_in_pairs(
+  pairs : Array[(@core.Entity, @render.MainEntity)],
+  main_entity : @render.MainEntity,
+) -> Bool {
+  for pair in pairs {
+    if pair.1 == main_entity {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn DirtySpecializations::iter_to_specialize(
+  self : DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+  render_visible_mesh_entities : RenderVisibleEntitiesClass,
+  last_frame_view_pending_queues : @hashset.HashSet[
+    (@core.Entity, @render.MainEntity),
+  ],
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let result : Array[(@core.Entity, @render.MainEntity)] = []
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair)
+    }
+  } else {
+    for pair in render_visible_mesh_entities.added_entities() {
+      result.push(pair)
+    }
+    for main_entity in self.changed_renderables.iter() {
+      match
+        self.entity_pair_from_visible_main_entity(
+          render_visible_mesh_entities, main_entity,
+        ) {
+        Some(pair) => result.push(pair)
+        None => ()
+      }
+    }
+  }
+  for pair in last_frame_view_pending_queues.iter() {
+    if render_visible_mesh_entities.entity_pair_is_visible(pair.0, pair.1) {
+      result.push(pair)
+    }
+  }
+  result
+}
+
+///|
+pub fn DirtySpecializations::iter_to_dequeue(
+  self : DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+  render_visible_mesh_entities : RenderVisibleEntitiesClass,
+) -> Array[@render.MainEntity] {
+  let result : Array[@render.MainEntity] = []
+  for pair in render_visible_mesh_entities.removed_entities() {
+    result.push(pair.1)
+  }
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair.1)
+    }
+  } else {
+    for main_entity in self.changed_renderables.iter() {
+      result.push(main_entity)
+    }
+    for main_entity in self.removed_renderables.iter() {
+      result.push(main_entity)
+    }
+  }
+  result
+}
+
+///|
+pub fn DirtySpecializations::iter_to_queue(
+  self : DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+  render_visible_mesh_entities : RenderVisibleEntitiesClass,
+  last_frame_view_pending_queues : @hashset.HashSet[
+    (@core.Entity, @render.MainEntity),
+  ],
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let result : Array[(@core.Entity, @render.MainEntity)] = []
+  if self.must_wipe_specializations_for_view(view) {
+    for pair in render_visible_mesh_entities.iter_visible() {
+      result.push(pair)
+    }
+  } else {
+    let added = render_visible_mesh_entities.added_entities()
+    for pair in added {
+      result.push(pair)
+    }
+    for main_entity in self.changed_renderables.iter() {
+      if !dirty_specialization_main_entity_in_pairs(added, main_entity) {
+        match
+          self.entity_pair_from_visible_main_entity(
+            render_visible_mesh_entities, main_entity,
+          ) {
+          Some(pair) => result.push(pair)
+          None => ()
+        }
+      }
+    }
+  }
+  for pair in last_frame_view_pending_queues.iter() {
+    if render_visible_mesh_entities.entity_pair_is_visible(pair.0, pair.1) {
+      result.push(pair)
+    }
+  }
+  result
+}
+
+///|
 pub let ecs_key_render_visible_entities : @ecs.ComponentKey[
   RenderVisibleEntities,
 ] = @ecs.register_component(

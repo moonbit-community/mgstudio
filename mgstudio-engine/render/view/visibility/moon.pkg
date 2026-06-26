@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/view" @render_view,
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
   "Milky2018/mgstudio/visibility" @root_visibility,
 }
 
