@@ -643,7 +643,7 @@ pub fn PointLight::with_color(
 
 ///|
 pub fn PointLight::with_range(self : PointLight, range : Float) -> PointLight {
-  PointLight::{ ..self, range: light_sanitize_non_negative(range) }
+  PointLight::{ ..self, range, }
 }
 
 ///|
@@ -651,12 +651,12 @@ pub fn PointLight::with_intensity(
   self : PointLight,
   intensity : Float,
 ) -> PointLight {
-  PointLight::{ ..self, intensity: light_sanitize_non_negative(intensity) }
+  PointLight::{ ..self, intensity, }
 }
 
 ///|
 pub fn PointLight::with_radius(self : PointLight, radius : Float) -> PointLight {
-  PointLight::{ ..self, radius: light_sanitize_non_negative(radius) }
+  PointLight::{ ..self, radius, }
 }
 
 ///|
@@ -696,10 +696,7 @@ pub fn PointLight::with_shadow_depth_bias(
   self : PointLight,
   shadow_depth_bias : Float,
 ) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_depth_bias: light_sanitize_non_negative(shadow_depth_bias),
-  }
+  PointLight::{ ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -707,10 +704,7 @@ pub fn PointLight::with_shadow_normal_bias(
   self : PointLight,
   shadow_normal_bias : Float,
 ) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_normal_bias: light_sanitize_non_negative(shadow_normal_bias),
-  }
+  PointLight::{ ..self, shadow_normal_bias, }
 }
 
 ///|
@@ -718,14 +712,7 @@ pub fn PointLight::with_shadow_map_near_z(
   self : PointLight,
   shadow_map_near_z : Float,
 ) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
-      0.0001F
-    } else {
-      shadow_map_near_z
-    },
-  }
+  PointLight::{ ..self, shadow_map_near_z, }
 }
 
 ///|

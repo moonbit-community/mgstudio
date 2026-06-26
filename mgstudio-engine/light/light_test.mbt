@@ -135,6 +135,23 @@ test "spot light angle setters preserve plain field semantics" {
 }
 
 ///|
+test "point light setters preserve Bevy plain field semantics" {
+  let point = @light.PointLight::PointLight()
+    .with_intensity(-10.0F)
+    .with_range(-20.0F)
+    .with_radius(-0.5F)
+    .with_shadow_depth_bias(-0.1F)
+    .with_shadow_normal_bias(-0.2F)
+    .with_shadow_map_near_z(-0.3F)
+  debug_inspect(point.intensity.to_double(), content="-10")
+  debug_inspect(point.range.to_double(), content="-20")
+  debug_inspect(point.radius.to_double(), content="-0.5")
+  inspect(approx_eq(point.shadow_depth_bias, -0.1F, 1.0e-6F), content="true")
+  inspect(approx_eq(point.shadow_normal_bias, -0.2F, 1.0e-6F), content="true")
+  inspect(approx_eq(point.shadow_map_near_z, -0.3F, 1.0e-6F), content="true")
+}
+
+///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),

@@ -302,6 +302,31 @@ test "pbr render light: point extraction follows bevy intensity and normal-bias 
 }
 
 ///|
+test "pbr render light: point extraction preserves authored fields" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight()
+    .with_range(-20.0F)
+    .with_radius(-0.5F)
+    .with_shadow_map_near_z(-0.3F),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_point_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(approx_eq(extracted[0].range, -20.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(extracted[0].radius, -0.5F, 1.0e-6F), content="true")
+  inspect(
+    approx_eq(extracted[0].shadow_map_near_z, -0.3F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: spot extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(
