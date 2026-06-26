@@ -1111,7 +1111,7 @@ test "pbr render light: clustered light shadow flags respect texture cube cap" {
 }
 
 ///|
-test "pbr render light: point extraction order keeps shadow and volumetric first" {
+test "pbr render light: point extraction order follows entity id" {
   let world = @ecs.World::new()
   let no_shadow = world.spawn()
   try! (world.set_by_key(
@@ -1146,13 +1146,13 @@ test "pbr render light: point extraction order keeps shadow and volumetric first
   light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_point_lights(world)
   inspect(extracted.length(), content="3")
-  inspect(extracted[0].entity.id, content="2")
+  inspect(extracted[0].entity.id, content="0")
   inspect(extracted[1].entity.id, content="1")
-  inspect(extracted[2].entity.id, content="0")
+  inspect(extracted[2].entity.id, content="2")
 }
 
 ///|
-test "pbr render light: spot extraction order keeps shadow and volumetric first" {
+test "pbr render light: spot extraction order follows entity id" {
   let world = @ecs.World::new()
   let no_shadow = world.spawn()
   try! (world.set_by_key(
@@ -1187,9 +1187,9 @@ test "pbr render light: spot extraction order keeps shadow and volumetric first"
   light_test_extract_lights(world)
   let extracted = render3d_collect_extracted_spot_lights(world)
   inspect(extracted.length(), content="3")
-  inspect(extracted[0].entity.id, content="2")
+  inspect(extracted[0].entity.id, content="0")
   inspect(extracted[1].entity.id, content="1")
-  inspect(extracted[2].entity.id, content="0")
+  inspect(extracted[2].entity.id, content="2")
 }
 
 ///|
@@ -1226,8 +1226,8 @@ test "pbr render light: clusterable point-light ordering keeps points before spo
   inspect(ordered[0].is_point_light(), content="true")
   inspect(ordered[1].is_point_light(), content="true")
   inspect(ordered[2].is_spot_light(), content="true")
-  inspect(ordered[0].light().entity.id, content="2")
-  inspect(ordered[1].light().entity.id, content="1")
+  inspect(ordered[0].light().entity.id, content="1")
+  inspect(ordered[1].light().entity.id, content="2")
   inspect(ordered[2].light().entity.id, content="0")
 }
 

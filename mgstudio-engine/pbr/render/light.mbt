@@ -482,15 +482,6 @@ fn render3d_bool_sort_key(value : Bool) -> Int {
 }
 
 ///|
-fn render3d_bool_inverted_sort_key(value : Bool) -> Int {
-  if value {
-    0
-  } else {
-    1
-  }
-}
-
-///|
 fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_point_light_shadow_map) {
@@ -2656,20 +2647,6 @@ pub fn render3d_collect_extracted_point_lights(
     }
   })
   extracted.sort_by(fn(left, right) {
-    let shadow_cmp = cmp_int(
-      render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
-      render3d_bool_inverted_sort_key(right.shadow_maps_enabled),
-    )
-    if shadow_cmp != 0 {
-      return shadow_cmp
-    }
-    let volumetric_cmp = cmp_int(
-      render3d_bool_inverted_sort_key(left.volumetric),
-      render3d_bool_inverted_sort_key(right.volumetric),
-    )
-    if volumetric_cmp != 0 {
-      return volumetric_cmp
-    }
     let id_cmp = cmp_int(left.entity.id, right.entity.id)
     if id_cmp != 0 {
       return id_cmp
@@ -2690,20 +2667,6 @@ pub fn render3d_collect_extracted_spot_lights(
     }
   })
   extracted.sort_by(fn(left, right) {
-    let shadow_cmp = cmp_int(
-      render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
-      render3d_bool_inverted_sort_key(right.shadow_maps_enabled),
-    )
-    if shadow_cmp != 0 {
-      return shadow_cmp
-    }
-    let volumetric_cmp = cmp_int(
-      render3d_bool_inverted_sort_key(left.volumetric),
-      render3d_bool_inverted_sort_key(right.volumetric),
-    )
-    if volumetric_cmp != 0 {
-      return volumetric_cmp
-    }
     let id_cmp = cmp_int(left.entity.id, right.entity.id)
     if id_cmp != 0 {
       return id_cmp
@@ -2723,20 +2686,6 @@ fn render3d_clusterable_light_sort_by_key(
   let type_cmp = cmp_int(left_order, right_order)
   if type_cmp != 0 {
     return type_cmp
-  }
-  let shadow_cmp = cmp_int(
-    render3d_bool_inverted_sort_key(left.shadow_maps_enabled),
-    render3d_bool_inverted_sort_key(right.shadow_maps_enabled),
-  )
-  if shadow_cmp != 0 {
-    return shadow_cmp
-  }
-  let volumetric_cmp = cmp_int(
-    render3d_bool_inverted_sort_key(left.volumetric),
-    render3d_bool_inverted_sort_key(right.volumetric),
-  )
-  if volumetric_cmp != 0 {
-    return volumetric_cmp
   }
   let id_cmp = cmp_int(left.entity.id, right.entity.id)
   if id_cmp != 0 {
