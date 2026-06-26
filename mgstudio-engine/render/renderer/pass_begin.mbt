@@ -15,6 +15,24 @@
 // Begin-pass entrypoints and saved-pass reopening runtime.
 
 ///|
+fn render_pass_sparse_prepass_attachment_count(
+  base_kind : Int,
+  color_attachment_present : Bool,
+  secondary_color_attachment_present : Bool,
+  deferred_attachment_present : Bool,
+  deferred_lighting_pass_id_attachment_present : Bool,
+) -> UInt {
+  if deferred_attachment_present || deferred_lighting_pass_id_attachment_present {
+    4U
+  } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
+    (color_attachment_present || secondary_color_attachment_present) {
+    2U
+  } else {
+    0U
+  }
+}
+
+///|
 pub fn GpuBackend::begin_pass(
   self : GpuBackend,
   target_id : Int,
@@ -1050,10 +1068,17 @@ pub fn GpuBackend::begin_pass_3d(
     )
   }
   mesh3d_dispatch_pending_ssao_for_pass(self, pass_state)
-  let has_deferred_prepass_color_attachments = deferred_color_view is Some(_) ||
-    deferred_lighting_pass_id_color_view is Some(_)
-  let pass = if has_deferred_prepass_color_attachments {
-    let builder = @wgpu.RenderPassDescBuilder::new(4U) catch {
+  let sparse_prepass_attachment_count = render_pass_sparse_prepass_attachment_count(
+    base_kind,
+    color_view is Some(_),
+    secondary_color_view is Some(_),
+    deferred_color_view is Some(_),
+    deferred_lighting_pass_id_color_view is Some(_),
+  )
+  let pass = if sparse_prepass_attachment_count > 0U {
+    let builder = @wgpu.RenderPassDescBuilder::new(
+      sparse_prepass_attachment_count,
+    ) catch {
       _ =>
         fatal("wgpu: failed to create deferred prepass render pass descriptor")
     }

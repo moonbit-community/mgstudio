@@ -1755,6 +1755,25 @@ pub fn RenderMeshInstancesCpu::render_mesh_queue_data(
 }
 
 ///|
+fn RenderMeshInstancesCpu::insert_mesh_instance_flags(
+  self : RenderMeshInstancesCpu,
+  entity : @render.MainEntity,
+  flags : RenderMeshInstanceFlags,
+) -> Unit {
+  let key = entity.id().to_bits()
+  match self.entries.get(key) {
+    Some(instance) => {
+      let shared = RenderMeshInstanceSharedFlat::{
+        ..instance.shared,
+        flags: instance.shared.flags().or(flags),
+      }
+      self.entries.set(key, RenderMeshInstanceCpu::{ ..instance, shared, })
+    }
+    None => ()
+  }
+}
+
+///|
 pub fn RenderMeshInstancesGpu::len(self : RenderMeshInstancesGpu) -> Int {
   self.entries.length()
 }
@@ -1816,6 +1835,25 @@ pub fn RenderMeshInstancesGpu::render_mesh_queue_data(
   self.entries
   .get(entity.id().to_bits())
   .map(fn(instance) { instance.render_mesh_queue_data() })
+}
+
+///|
+fn RenderMeshInstancesGpu::insert_mesh_instance_flags(
+  self : RenderMeshInstancesGpu,
+  entity : @render.MainEntity,
+  flags : RenderMeshInstanceFlags,
+) -> Unit {
+  let key = entity.id().to_bits()
+  match self.entries.get(key) {
+    Some(instance) => {
+      let shared = RenderMeshInstanceSharedFlat::{
+        ..instance.shared,
+        flags: instance.shared.flags().or(flags),
+      }
+      self.entries.set(key, RenderMeshInstanceGpu::{ ..instance, shared, })
+    }
+    None => ()
+  }
 }
 
 ///|
@@ -1886,6 +1924,20 @@ pub fn RenderMeshInstances::render_mesh_queue_data(
   match self {
     CpuBuilding(instances) => instances.render_mesh_queue_data(entity)
     GpuBuilding(instances) => instances.render_mesh_queue_data(entity)
+  }
+}
+
+///|
+fn RenderMeshInstances::insert_mesh_instance_flags(
+  self : RenderMeshInstances,
+  entity : @render.MainEntity,
+  flags : RenderMeshInstanceFlags,
+) -> Unit {
+  match self {
+    CpuBuilding(instances) =>
+      instances.insert_mesh_instance_flags(entity, flags)
+    GpuBuilding(instances) =>
+      instances.insert_mesh_instance_flags(entity, flags)
   }
 }
 
@@ -2738,6 +2790,36 @@ fn render_mesh_instances_update_cpu_building_resource(
 fn render_mesh_instances_clear_resource(world : @ecs.World) -> Unit {
   match world.get_resource(RenderMeshInstances::resource()) {
     Some(instances) => instances.clear()
+    None => ()
+  }
+}
+
+///|
+fn render_mesh_instances_set_mesh_motion_vector_flags(
+  world : @ecs.World,
+) -> Unit {
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  match world.get_resource(@pbr_render.SkinUniforms::resource()) {
+    Some(skin_uniforms) =>
+      for skin_key in skin_uniforms.previous_skins.iter() {
+        instances.insert_mesh_instance_flags(
+          @render.MainEntity::new(@core.Entity::from_bits(skin_key)),
+          RenderMeshInstanceFlags::has_previous_skin(),
+        )
+      }
+    None => ()
+  }
+  match world.get_resource(@pbr_render.MorphIndices::resource()) {
+    Some(morph_indices) =>
+      morph_indices.prev.each(fn(entity_key, _) {
+        instances.insert_mesh_instance_flags(
+          @render.MainEntity::new(@core.Entity::from_bits(entity_key)),
+          RenderMeshInstanceFlags::has_previous_morph(),
+        )
+      })
     None => ()
   }
 }

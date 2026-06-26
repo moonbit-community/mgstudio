@@ -117,6 +117,107 @@ test "pbr: RenderMeshInstances clear preserves persistent render resource varian
 }
 
 ///|
+test "pbr: RenderMeshInstances motion-vector flags follow Bevy skin and morph tables" {
+  let skin_entity = @core.Entity::new(223, 1)
+  let morph_entity = @core.Entity::new(224, 1)
+  let cpu_world = @ecs.World::new()
+  let cpu_instances = RenderMeshInstances::new()
+  cpu_instances.insert(
+    @render.MainEntity::new(skin_entity),
+    RenderMeshQueueData::new(45, 0U, false),
+  )
+  cpu_instances.insert(
+    @render.MainEntity::new(morph_entity),
+    RenderMeshQueueData::new(46, 0U, false),
+  )
+  cpu_world.insert_resource(RenderMeshInstances::resource(), cpu_instances)
+  let skin_uniforms = @pbr_render.SkinUniforms::new()
+  skin_uniforms.previous_skins.add(skin_entity.to_bits())
+  cpu_world.insert_resource(@pbr_render.SkinUniforms::resource(), skin_uniforms)
+  let morph_indices = @pbr_render.MorphIndices::new()
+  morph_indices.prev.set(morph_entity.to_bits(), 7U)
+  cpu_world.insert_resource(@pbr_render.MorphIndices::resource(), morph_indices)
+
+  render_mesh_instances_set_mesh_motion_vector_flags(cpu_world)
+
+  let cpu_after = match
+    cpu_world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing CPU RenderMeshInstances")
+  }
+  let cpu_skin = match
+    cpu_after.render_mesh_queue_data(@render.MainEntity::new(skin_entity)) {
+    Some(value) => value
+    None => abort("missing CPU skin instance")
+  }
+  let cpu_morph = match
+    cpu_after.render_mesh_queue_data(@render.MainEntity::new(morph_entity)) {
+    Some(value) => value
+    None => abort("missing CPU morph instance")
+  }
+  debug_inspect(
+    cpu_skin.flags().contains(RenderMeshInstanceFlags::has_previous_skin()),
+    content="true",
+  )
+  debug_inspect(
+    cpu_morph.flags().contains(RenderMeshInstanceFlags::has_previous_morph()),
+    content="true",
+  )
+
+  let gpu_world = @ecs.World::new()
+  let gpu_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  gpu_instances.insert(
+    @render.MainEntity::new(skin_entity),
+    RenderMeshQueueData::new(47, 3U, true),
+  )
+  gpu_instances.insert(
+    @render.MainEntity::new(morph_entity),
+    RenderMeshQueueData::new(48, 4U, true),
+  )
+  gpu_world.insert_resource(RenderMeshInstances::resource(), gpu_instances)
+  let gpu_skin_uniforms = @pbr_render.SkinUniforms::new()
+  gpu_skin_uniforms.previous_skins.add(skin_entity.to_bits())
+  gpu_world.insert_resource(
+    @pbr_render.SkinUniforms::resource(),
+    gpu_skin_uniforms,
+  )
+  let gpu_morph_indices = @pbr_render.MorphIndices::new()
+  gpu_morph_indices.prev.set(morph_entity.to_bits(), 9U)
+  gpu_world.insert_resource(
+    @pbr_render.MorphIndices::resource(),
+    gpu_morph_indices,
+  )
+
+  render_mesh_instances_set_mesh_motion_vector_flags(gpu_world)
+
+  let gpu_after = match
+    gpu_world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => abort("missing GPU RenderMeshInstances")
+  }
+  let gpu_skin = match
+    gpu_after.render_mesh_queue_data(@render.MainEntity::new(skin_entity)) {
+    Some(value) => value
+    None => abort("missing GPU skin instance")
+  }
+  let gpu_morph = match
+    gpu_after.render_mesh_queue_data(@render.MainEntity::new(morph_entity)) {
+    Some(value) => value
+    None => abort("missing GPU morph instance")
+  }
+  debug_inspect(
+    gpu_skin.flags().contains(RenderMeshInstanceFlags::has_previous_skin()),
+    content="true",
+  )
+  debug_inspect(
+    gpu_morph.flags().contains(RenderMeshInstanceFlags::has_previous_morph()),
+    content="true",
+  )
+}
+
+///|
 test "pbr: CPU-building extraction reads Bevy source query rows" {
   let world = @ecs.World::new()
   let source_world = @ecs.World::new()

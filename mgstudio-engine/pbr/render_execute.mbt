@@ -727,6 +727,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     } else {
       render_mesh_instances_update_cpu_building_resource(world, source_world)
     }
+    render_mesh_instances_set_mesh_motion_vector_flags(world)
     meshes
   })
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)

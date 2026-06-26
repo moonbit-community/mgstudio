@@ -848,6 +848,38 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
 }
 
 ///|
+test "renderer: motion-vector-only prepass uses Bevy sparse color target count" {
+  inspect(
+    render_pass_sparse_prepass_attachment_count(
+      PASS_KIND_BASE_MOTION_VECTOR,
+      false,
+      true,
+      false,
+      false,
+    ),
+    content="2",
+  )
+  inspect(
+    render_pass_sparse_prepass_attachment_count(
+      PASS_KIND_BASE_MOTION_VECTOR,
+      false,
+      false,
+      false,
+      false,
+    ),
+    content="0",
+  )
+  inspect(
+    render_pass_sparse_prepass_attachment_count(0, true, false, false, false),
+    content="0",
+  )
+  inspect(
+    render_pass_sparse_prepass_attachment_count(0, false, false, true, false),
+    content="4",
+  )
+}
+
+///|
 test "renderer: large mesh3d upload switches to u32 index buffers" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
