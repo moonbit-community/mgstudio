@@ -132,16 +132,6 @@ fn render3d_camera_world_to_atmosphere(
 }
 
 ///|
-fn render3d_atmosphere_mode_to_int(
-  mode : @pbr_atmosphere.AtmosphereMode,
-) -> Int {
-  match mode {
-    LookupTexture => 0
-    Raymarched => 1
-  }
-}
-
-///|
 fn render3d_prepare_camera_atmosphere_resources(
   camera : Camera3dViewPayload,
 ) -> Unit {
@@ -203,9 +193,7 @@ fn render3d_prepare_camera_atmosphere_resources(
     aerial_view_lut_samples=gpu_settings.aerial_view_lut_samples,
     aerial_view_lut_max_distance=gpu_settings.aerial_view_lut_max_distance,
     sky_max_samples=gpu_settings.sky_max_samples,
-    rendering_method=render3d_atmosphere_mode_to_int(
-      gpu_settings.rendering_method,
-    ),
+    rendering_method=gpu_settings.rendering_method,
   )
   @render.host_gpu_dispatch_mesh3d_atmosphere_luts()
 }

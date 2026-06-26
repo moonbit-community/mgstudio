@@ -44,13 +44,7 @@ test "pbr atmosphere: gpu settings copy Bevy atmosphere settings fields" {
   inspect(settings.aerial_view_lut_samples, content="13")
   inspect(settings.aerial_view_lut_max_distance, content="17")
   inspect(settings.sky_max_samples, content="0")
-  inspect(
-    match settings.rendering_method {
-      AtmosphereMode::Raymarched => true
-      _ => false
-    },
-    content="true",
-  )
+  inspect(settings.rendering_method, content="1")
 }
 
 ///|

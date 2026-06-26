@@ -189,7 +189,7 @@ pub struct GpuAtmosphereSettings {
   aerial_view_lut_samples : Int
   aerial_view_lut_max_distance : Float
   sky_max_samples : Int
-  rendering_method : @light.AtmosphereMode
+  rendering_method : Int
 }
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> Self
 

@@ -34,7 +34,7 @@ pub struct GpuAtmosphereSettings {
   aerial_view_lut_samples : Int
   aerial_view_lut_max_distance : Float
   sky_max_samples : Int
-  rendering_method : AtmosphereMode
+  rendering_method : Int
 }
 
 ///|
@@ -82,7 +82,7 @@ pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
     aerial_view_lut_samples: 10,
     aerial_view_lut_max_distance: 32_000.0F,
     sky_max_samples: 16,
-    rendering_method: AtmosphereMode::LookupTexture,
+    rendering_method: 0,
   }
 }
 
@@ -304,7 +304,15 @@ pub fn pbr_gpu_atmosphere_settings(
     aerial_view_lut_samples: settings.aerial_view_lut_samples,
     aerial_view_lut_max_distance: settings.aerial_view_lut_max_distance,
     sky_max_samples: settings.sky_max_samples,
-    rendering_method: settings.rendering_method,
+    rendering_method: pbr_atmosphere_mode_to_int(settings.rendering_method),
+  }
+}
+
+///|
+fn pbr_atmosphere_mode_to_int(mode : AtmosphereMode) -> Int {
+  match mode {
+    LookupTexture => 0
+    Raymarched => 1
   }
 }
 
