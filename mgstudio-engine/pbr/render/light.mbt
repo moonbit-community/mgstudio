@@ -2438,6 +2438,13 @@ fn light_extract_remove_directional_light(
       _ => false
     },
   )
+  ignore(
+    render_world.remove_by_key(
+      render_entity, @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    ) catch {
+      _ => false
+    },
+  )
 }
 
 ///|

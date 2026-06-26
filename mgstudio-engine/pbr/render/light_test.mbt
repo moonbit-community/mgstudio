@@ -360,6 +360,56 @@ test "pbr render light: extraction clears shadow map visible components when sha
 }
 
 ///|
+test "pbr render light: invisible directional extraction clears only extracted shadow visibility" {
+  let world = @ecs.World::new()
+  let directional = world.spawn()
+  let light = @light.DirectionalLight::DirectionalLight()
+  try! (world.set_by_key(directional, @light.ecs_key_directional_light, light)
+  |> ignore)
+  try! (world.set_by_key(
+    directional,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  |> ignore)
+  light_test_extract_lights(world)
+  inspect(
+    (try! world.get_by_key(directional, ecs_key_extracted_directional_light3d))
+    is Some(_),
+    content="true",
+  )
+  light_test_insert_shadow_map_visible_components(world, directional)
+
+  ignore(world.increment_change_tick())
+  try! (world.set_by_key(
+    directional,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(false),
+  )
+  |> ignore)
+  light_test_extract_lights(world)
+  inspect(
+    (try! world.get_by_key(directional, ecs_key_extracted_directional_light3d))
+    is None,
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(
+      directional, @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(
+      directional, @render_view_visibility.ecs_key_render_shadow_map_visible_entities,
+    ))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(
