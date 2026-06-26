@@ -167,6 +167,28 @@ test "point light setters preserve Bevy plain field semantics" {
 }
 
 ///|
+test "directional light setters preserve Bevy plain field semantics" {
+  let directional = @light.DirectionalLight::DirectionalLight()
+    .with_illuminance(-10.0F)
+    .with_soft_shadow_size(Some(-0.5F))
+    .with_shadow_depth_bias(-0.1F)
+    .with_shadow_normal_bias(-0.2F)
+  debug_inspect(directional.illuminance.to_double(), content="-10")
+  match directional.soft_shadow_size {
+    Some(value) => debug_inspect(value.to_double(), content="-0.5")
+    None => inspect(false, content="true")
+  }
+  inspect(
+    approx_eq(directional.shadow_depth_bias, -0.1F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(directional.shadow_normal_bias, -0.2F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),

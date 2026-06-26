@@ -999,10 +999,7 @@ pub fn DirectionalLight::with_illuminance(
   self : DirectionalLight,
   illuminance : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    illuminance: light_sanitize_non_negative(illuminance),
-  }
+  DirectionalLight::{ ..self, illuminance, }
 }
 
 ///|
@@ -1034,11 +1031,7 @@ pub fn DirectionalLight::with_soft_shadow_size(
   self : DirectionalLight,
   soft_shadow_size : Float?,
 ) -> DirectionalLight {
-  let safe_soft_shadow_size = match soft_shadow_size {
-    Some(value) => Some(light_sanitize_non_negative(value))
-    None => None
-  }
-  DirectionalLight::{ ..self, soft_shadow_size: safe_soft_shadow_size }
+  DirectionalLight::{ ..self, soft_shadow_size, }
 }
 
 ///|
@@ -1065,10 +1058,7 @@ pub fn DirectionalLight::with_shadow_depth_bias(
   self : DirectionalLight,
   shadow_depth_bias : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    shadow_depth_bias: light_sanitize_non_negative(shadow_depth_bias),
-  }
+  DirectionalLight::{ ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -1076,10 +1066,7 @@ pub fn DirectionalLight::with_shadow_normal_bias(
   self : DirectionalLight,
   shadow_normal_bias : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    shadow_normal_bias: light_sanitize_non_negative(shadow_normal_bias),
-  }
+  DirectionalLight::{ ..self, shadow_normal_bias, }
 }
 
 ///|

@@ -469,6 +469,43 @@ test "pbr render light: directional dir_to_light uses transform back vector" {
 }
 
 ///|
+test "pbr render light: directional extraction preserves authored scalar fields" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight()
+    .with_illuminance(-10.0F)
+    .with_soft_shadow_size(Some(-0.5F))
+    .with_shadow_depth_bias(-0.1F)
+    .with_shadow_normal_bias(-0.2F),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(approx_eq(extracted[0].illuminance, -10.0F, 1.0e-6F), content="true")
+  match extracted[0].soft_shadow_size {
+    Some(value) => inspect(approx_eq(value, -0.5F, 1.0e-6F), content="true")
+    None => inspect(false, content="true")
+  }
+  inspect(
+    approx_eq(extracted[0].shadow_depth_bias, -0.1F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(
+      extracted[0].shadow_normal_bias,
+      -0.2F * @math.sqrt(2.0F),
+      1.0e-6F,
+    ),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: directional light uses propagated required GlobalTransform" {
   let world = @ecs.World::new()
   let entity = world.spawn()
