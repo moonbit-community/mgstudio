@@ -85,12 +85,91 @@ fn render3d_mesh_pipeline_id_for_view(
 ) -> @material.CachedRenderPipelineId? {
   match (view_entity, specialized_material_pipeline_cache) {
     (Some(view), Some(cache)) =>
-      match cache.pipeline_id(view, mesh.entity.main_entity) {
-        Some(pipeline_id) => Some(pipeline_id)
-        None => mesh.payload.material_pipeline_id
-      }
+      cache.pipeline_id(view, mesh.entity.main_entity)
     _ => mesh.payload.material_pipeline_id
   }
+}
+
+///|
+test "render3d gpu preprocess: view cache miss does not fall back to extracted pipeline id" {
+  let view = @core.Entity::new(61, 0)
+  let entity = @core.Entity::new(62, 0)
+  let payload_pipeline = @material.CachedRenderPipelineId::new(91UL)
+  let cached_pipeline = @material.CachedRenderPipelineId::new(92UL)
+  let transform = @transform.Transform::identity()
+  let world_from_local = @math.Affine3::identity()
+  let mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d_for_main(entity),
+    payload: Mesh3dExtractedPayload::{
+      mesh_handle: @asset.Handle::new(17),
+      mesh_id: 17,
+      mesh_topology_kind: 0,
+      mesh_is_indexed: true,
+      mesh_preprocess_static: None,
+      world_from_local,
+      previous_world_from_local: world_from_local,
+      transform,
+      previous_transform: transform,
+      visibility_range: None,
+      aabb: None,
+      aabb_center_world: None,
+      material: @material.StandardMaterial::StandardMaterial(),
+      material_extension: None,
+      material_properties: @material.MaterialProperties::MaterialProperties(),
+      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_pipeline_id: Some(payload_pipeline),
+      lightmap: None,
+      is_forward_decal: false,
+      forward_decal_material_ext: None,
+      clustered_decal: None,
+      has_not_shadow_caster: false,
+      has_not_shadow_receiver: false,
+      has_transmitted_shadow_receiver: false,
+      has_no_frustum_culling: false,
+      has_no_cpu_culling: false,
+      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      has_no_wireframe: false,
+      wireframe_asset_id: None,
+      wireframe_material: None,
+      wireframe_color: None,
+      wireframe_line_width: None,
+      wireframe_topology: None,
+      skinning_key_hi: -1,
+      has_previous_skin: false,
+      morph_weights_index: -1,
+      previous_morph_weights_index: -1,
+      morph_targets_texture_id: -1,
+      instance_vertex_buffer_id: -1,
+      motion_vector_enabled: false,
+    },
+  }
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+
+  debug_inspect(
+    render3d_mesh_pipeline_id_for_view(mesh, Some(view), Some(cache)).map(fn(
+      value,
+    ) {
+      value.id()
+    }),
+    content="None",
+  )
+
+  cache.insert(view, entity, 1, cached_pipeline)
+  debug_inspect(
+    render3d_mesh_pipeline_id_for_view(mesh, Some(view), Some(cache)).map(fn(
+      value,
+    ) {
+      value.id()
+    }),
+    content="Some(92)",
+  )
+
+  debug_inspect(
+    render3d_mesh_pipeline_id_for_view(mesh, None, None).map(fn(value) {
+      value.id()
+    }),
+    content="Some(91)",
+  )
 }
 
 ///|
