@@ -736,16 +736,6 @@ pub fn PointLightShadowMap::with_size(
 }
 
 ///|
-fn directional_shadow_map_size_safe(size : Int) -> Int {
-  let safe = if size <= 0 { 1 } else { size }
-  let mut pow2 = 1
-  while pow2 < safe {
-    pow2 = pow2 * 2
-  }
-  pow2
-}
-
-///|
 /// Directional/spot-light shadow map resource aligned with Bevy's
 /// `DirectionalLightShadowMap`.
 pub struct DirectionalLightShadowMap {
@@ -759,7 +749,7 @@ pub fn DirectionalLightShadowMap::DirectionalLightShadowMap() -> DirectionalLigh
 
 ///|
 pub fn DirectionalLightShadowMap::new(size : Int) -> DirectionalLightShadowMap {
-  DirectionalLightShadowMap::{ size: directional_shadow_map_size_safe(size) }
+  DirectionalLightShadowMap::{ size, }
 }
 
 ///|
@@ -768,7 +758,7 @@ pub fn DirectionalLightShadowMap::with_size(
   size : Int,
 ) -> DirectionalLightShadowMap {
   self |> ignore
-  DirectionalLightShadowMap::new(size)
+  DirectionalLightShadowMap::{ size, }
 }
 
 ///|

@@ -359,6 +359,8 @@ test "shadow LOD origin selection returns none without cameras or explicit origi
 
 ///|
 test "directional shadow map validation produces next power-of-two size" {
+  let authored = @light.DirectionalLightShadowMap::new(1500).with_size(1537)
+  debug_inspect(authored.size, content="1537")
   debug_inspect(
     @light.directional_light_validated_shadow_map_size(1500),
     content="2048",
