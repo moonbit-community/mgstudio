@@ -141,7 +141,7 @@ fn render3d_prepare_camera_atmosphere_resources(
     None => @pbr_atmosphere.pbr_atmosphere_settings_default()
   }
   let gpu_medium = GpuScatteringMedium::new(
-    ScatteringMediumRuntime::from_medium(atmosphere.medium),
+    atmosphere.medium,
     ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   @render.host_gpu_prepare_mesh3d_scattering_medium_resources(

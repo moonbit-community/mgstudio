@@ -27,11 +27,8 @@ fn medium_approx_eq(a : Float, b : Float) -> Bool {
 
 ///|
 test "pbr medium: gpu medium LUT lengths follow source medium" {
-  let runtime = ScatteringMediumRuntime::from_medium(
-    ScatteringMedium::earth(8, 4),
-  )
   let gpu_medium = GpuScatteringMedium::new(
-    runtime,
+    ScatteringMedium::earth(8, 4),
     ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   inspect(gpu_medium.density_lut_len(), content="16")
@@ -50,9 +47,8 @@ test "pbr medium: gpu medium LUT samples source terms" {
       @light.PhaseFunction::isotropic(),
     ),
   ])
-  let runtime = ScatteringMediumRuntime::from_medium(medium)
   let gpu_medium = GpuScatteringMedium::new(
-    runtime,
+    medium,
     ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   let density = gpu_medium.density_lut()
