@@ -441,6 +441,54 @@ pub fn extract_ambient_light_resource(render_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn extract_point_light_shadow_map_resource_from_worlds(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let resource_key = @light.ecs_key_point_light_shadow_map
+  guard source_world.get_resource(resource_key) is Some(main_resource) else {
+    return
+  }
+  let target_missing = render_world.get_resource(resource_key) is None
+  if target_missing ||
+    source_world.is_resource_changed(resource_key, system_ticks) {
+    render_world.insert_resource(resource_key, main_resource)
+  }
+}
+
+///|
+fn extract_directional_light_shadow_map_resource_from_worlds(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let resource_key = @light.ecs_key_directional_light_shadow_map
+  guard source_world.get_resource(resource_key) is Some(main_resource) else {
+    return
+  }
+  let target_missing = render_world.get_resource(resource_key) is None
+  if target_missing ||
+    source_world.is_resource_changed(resource_key, system_ticks) {
+    render_world.insert_resource(resource_key, main_resource)
+  }
+}
+
+///|
+fn extract_shadow_map_resources_from_worlds(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  extract_point_light_shadow_map_resource_from_worlds(
+    source_world, render_world, system_ticks,
+  )
+  extract_directional_light_shadow_map_resource_from_worlds(
+    source_world, render_world, system_ticks,
+  )
+}
+
+///|
 fn render3d_sqrt2() -> Float {
   @math.sqrt(2.0F)
 }
@@ -2671,6 +2719,9 @@ pub fn extract_lights(render_world : @ecs.World) -> Unit {
   )
   let source_world = @render_gpu.render_source_world(render_world)
   let system_ticks = light_extraction_system_ticks(render_world, source_world)
+  extract_shadow_map_resources_from_worlds(
+    source_world, render_world, system_ticks,
+  )
   extract_point_lights(source_world, render_world, system_ticks)
   extract_spot_lights(source_world, render_world, system_ticks)
   extract_directional_lights(source_world, render_world, system_ticks)

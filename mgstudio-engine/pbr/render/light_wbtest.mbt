@@ -43,6 +43,68 @@ fn light_wbtest_extract_directional_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn light_wbtest_point_shadow_map_size(world : @ecs.World) -> Int {
+  match world.get_resource(@light.ecs_key_point_light_shadow_map) {
+    Some(value) => value.size
+    None => -1
+  }
+}
+
+///|
+fn light_wbtest_directional_shadow_map_size(world : @ecs.World) -> Int {
+  match world.get_resource(@light.ecs_key_directional_light_shadow_map) {
+    Some(value) => value.size
+    None => -1
+  }
+}
+
+///|
+test "pbr/render light: extract_lights mirrors Bevy shadow map resources into render world" {
+  let source_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  source_world.insert_resource(
+    @light.ecs_key_point_light_shadow_map,
+    @light.PointLightShadowMap::new(512),
+  )
+  source_world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(1024),
+  )
+
+  extract_shadow_map_resources_from_worlds(
+    source_world,
+    render_world,
+    @core.SystemTicks::new(0, 1),
+  )
+  inspect(light_wbtest_point_shadow_map_size(render_world), content="512")
+  inspect(
+    light_wbtest_directional_shadow_map_size(render_world),
+    content="1024",
+  )
+
+  ignore(source_world.increment_change_tick())
+  ignore(source_world.increment_change_tick())
+  source_world.insert_resource(
+    @light.ecs_key_point_light_shadow_map,
+    @light.PointLightShadowMap::new(2048),
+  )
+  source_world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(4096),
+  )
+  extract_shadow_map_resources_from_worlds(
+    source_world,
+    render_world,
+    @core.SystemTicks::new(1, 2),
+  )
+  inspect(light_wbtest_point_shadow_map_size(render_world), content="2048")
+  inspect(
+    light_wbtest_directional_shadow_map_size(render_world),
+    content="4096",
+  )
+}
+
+///|
 test "pbr/render light: directional shadow flags respect texture array layer cap" {
   let world = @ecs.World::new()
 
