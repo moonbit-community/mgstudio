@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/gizmos/primitives" @gizmos_primitives,
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/light/light_consts/lux" @light_lux,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/mesh",

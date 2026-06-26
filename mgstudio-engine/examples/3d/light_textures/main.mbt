@@ -41,12 +41,6 @@ const SCALE_SPEED : Float = 0.05F
 const ROLL_SPEED : Float = 0.01F
 
 ///|
-const AMBIENT_DAYLIGHT : Float = 10_000.0F
-
-///|
-const CLEAR_SUNRISE : Float = 400.0F
-
-///|
 fn color_silver() -> @color.Color {
   @color.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F)
 }
@@ -273,7 +267,7 @@ fn spawn_light(
         @hierarchy.Parent::new(parent),
         @pbr.DirectionalLight::new(
           @color.Color::white(),
-          AMBIENT_DAYLIGHT,
+          @light_lux.AMBIENT_DAYLIGHT,
           false,
         ),
         @pbr.DirectionalLightTexture::new(
@@ -1033,7 +1027,7 @@ fn update_directional_light(
   try! lights.view(fn(_query_entity, data) {
     let (entity, light, maybe_texture) = data
     if directional_visible {
-      light.set(light.value().with_illuminance(AMBIENT_DAYLIGHT))
+      light.set(light.value().with_illuminance(@light_lux.AMBIENT_DAYLIGHT))
       if maybe_texture is None {
         commands
         .entity(entity)
@@ -1049,14 +1043,14 @@ fn update_directional_light(
         )
       }
     } else if any_texture_light_visible {
-      light.set(light.value().with_illuminance(CLEAR_SUNRISE))
+      light.set(light.value().with_illuminance(@light_lux.CLEAR_SUNRISE))
       if maybe_texture is Some(_) {
         commands
         .entity(entity)
         .remove_component(@pbr.ecs_key_directional_light_texture)
       }
     } else {
-      light.set(light.value().with_illuminance(AMBIENT_DAYLIGHT))
+      light.set(light.value().with_illuminance(@light_lux.AMBIENT_DAYLIGHT))
       if maybe_texture is Some(_) {
         commands
         .entity(entity)

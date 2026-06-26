@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/light/light_consts/lux"
+
+// Values
+pub const AMBIENT_DAYLIGHT : Float = 10_000.0
+
+pub const CIVIL_TWILIGHT : Float = 3.4
+
+pub const CLEAR_SUNRISE : Float = 400.0
+
+pub const DARK_OVERCAST_DAY : Float = 100.0
+
+pub const DIRECT_SUNLIGHT : Float = 100_000.0
+
+pub const FULL_DAYLIGHT : Float = 20_000.0
+
+pub const FULL_MOON_NIGHT : Float = 0.05
+
+pub const HALLWAY : Float = 80.0
+
+pub const LIVING_ROOM : Float = 50.0
+
+pub const MOONLESS_NIGHT : Float = 0.0001
+
+pub const OFFICE : Float = 320.0
+
+pub const OVERCAST_DAY : Float = 1000.0
+
+pub const RAW_SUNLIGHT : Float = 130_000.0
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

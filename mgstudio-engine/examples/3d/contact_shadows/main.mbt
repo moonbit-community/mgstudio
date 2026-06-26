@@ -20,9 +20,6 @@
 const LIGHT_ROTATION_SPEED : Float = 0.002F
 
 ///|
-const VERY_LARGE_CINEMA_LIGHT : Float = 1_000_000.0F
-
-///|
 enum ContactShadowState {
   Enabled
   Disabled
@@ -260,7 +257,7 @@ fn spawn_lights(commands : @app.Commands) -> Unit {
   let point_light = commands.spawn(
     (
       @pbr.PointLight::PointLight()
-      .with_intensity(VERY_LARGE_CINEMA_LIGHT * 0.4F)
+      .with_intensity(@light_lumens.VERY_LARGE_CINEMA_LIGHT * 0.4F)
       .with_shadow_maps_enabled(true)
       .with_contact_shadows_enabled(true),
       @visibility.Visibility::Visible,
@@ -270,7 +267,7 @@ fn spawn_lights(commands : @app.Commands) -> Unit {
   let spot_light = commands.spawn(
     (
       @pbr.SpotLight::SpotLight()
-      .with_intensity(VERY_LARGE_CINEMA_LIGHT * 0.4F)
+      .with_intensity(@light_lumens.VERY_LARGE_CINEMA_LIGHT * 0.4F)
       .with_shadow_maps_enabled(true)
       .with_contact_shadows_enabled(true),
       @visibility.Visibility::Hidden,

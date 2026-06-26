@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/light/light_consts/lumens"
+
+// Values
+pub const LUMENS_PER_HALOGEN_WATTS : Float = 19.8
+
+pub const LUMENS_PER_INCANDESCENT_WATTS : Float = 13.8
+
+pub const LUMENS_PER_LED_WATTS : Float = 90.0
+
+pub const VERY_LARGE_CINEMA_LIGHT : Float = 1_000_000.0
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
