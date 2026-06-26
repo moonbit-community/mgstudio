@@ -60,14 +60,7 @@ pub fn RenderViewIrradianceVolumeInfo::with_intensity(
   self : RenderViewIrradianceVolumeInfo,
   intensity : Float,
 ) -> RenderViewIrradianceVolumeInfo {
-  RenderViewIrradianceVolumeInfo::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
+  RenderViewIrradianceVolumeInfo::{ ..self, intensity, }
 }
 
 ///|

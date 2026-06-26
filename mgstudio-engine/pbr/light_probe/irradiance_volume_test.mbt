@@ -35,6 +35,14 @@ test "pbr light probe: multiple entry mode padded to max size" {
 }
 
 ///|
+test "pbr light probe: render view irradiance intensity preserves Bevy plain field semantics" {
+  let volume = RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo().with_intensity(
+    -2.5F,
+  )
+  debug_inspect(volume.intensity.to_double(), content="-2.5")
+}
+
+///|
 test "pbr light probe: irradiance texture id entries select single mode" {
   let entries = pbr_irradiance_volume_texture_id_entries([31, 32], false, 4)
   debug_inspect(
