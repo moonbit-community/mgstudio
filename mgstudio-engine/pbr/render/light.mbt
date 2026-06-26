@@ -2680,7 +2680,6 @@ priv struct Render3dClusterRuntimeFallback {
 ///|
 priv struct Render3dVisibleClusterableObjectsFallback {
   mut camera : @light_cluster.VisibleClusterableObjects?
-  mut any : @light_cluster.VisibleClusterableObjects?
 }
 
 ///|
@@ -2947,16 +2946,10 @@ fn render3d_visible_clusterable_objects(
     is Some(visible) {
     return Some(visible)
   }
-  let fallback = Render3dVisibleClusterableObjectsFallback::{
-    camera: None,
-    any: None,
-  }
+  let fallback = Render3dVisibleClusterableObjectsFallback::{ camera: None }
   world.for_each_component(
     @light_cluster.VisibleClusterableObjects::component(),
     fn(entity, visible) {
-      if fallback.any is None {
-        fallback.any = Some(visible)
-      }
       if fallback.camera is Some(_) {
         return
       }
@@ -2965,10 +2958,7 @@ fn render3d_visible_clusterable_objects(
       }
     },
   )
-  match fallback.camera {
-    Some(visible) => Some(visible)
-    None => fallback.any
-  }
+  fallback.camera
 }
 
 ///|

@@ -1452,6 +1452,53 @@ test "pbr render light: cluster far fallback follows max visible clusterable ran
 }
 
 ///|
+test "pbr render light: cluster far ignores non-camera visible cluster list" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  |> ignore)
+  let small_light = world.spawn()
+  try! (world.set_by_key(
+    small_light,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight().with_range(20.0F),
+  )
+  |> ignore)
+  let large_light = world.spawn()
+  try! (world.set_by_key(
+    large_light,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight().with_range(120.0F),
+  )
+  |> ignore)
+  let list_owner = world.spawn()
+  try! (world.set_by_key(
+    list_owner,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::from_lists([small_light], [], []),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let expected_factors_zw = @light_cluster.calculate_cluster_factors(
+    5.0F, 120.0F, 24.0F, false,
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.z, expected_factors_zw.x, 1.0e-5F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: cluster far fallback prefers camera visible cluster list" {
   let world = @ecs.World::new()
   let camera = world.spawn()
