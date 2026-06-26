@@ -47,6 +47,7 @@ pub(all) struct Render3dLightingState {
   spot_outer_angle : Float
   spot_entity : @core.Entity?
   spot_transform : @transform.Transform
+  spot_light_index : Int
   spot_shadow_maps_enabled : Bool
   spot_shadow_depth_bias : Float
   spot_shadow_normal_bias : Float
@@ -3608,6 +3609,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_outer_angle: 0.7853981633974483F,
     spot_entity: None,
     spot_transform: @transform.Transform::identity(),
+    spot_light_index: 0,
     spot_shadow_maps_enabled: false,
     spot_shadow_depth_bias: 0.02F,
     spot_shadow_normal_bias: 0.0F,

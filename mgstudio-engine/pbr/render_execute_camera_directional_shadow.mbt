@@ -328,9 +328,14 @@ fn render3d_execute_camera_directional_shadow_pass(
   if cascades.length() == 0 && !spot_enabled {
     return render3d_directional_shadow_binding_none()
   }
+  let spot_shadow_layer_count = if spot_enabled {
+    pass_lighting.spot_light_index + 1
+  } else {
+    0
+  }
   let target_layers = render3d_directional_spot_shadow_target_layers(
     cascades.length(),
-    spot_enabled,
+    spot_shadow_layer_count,
   )
   let target_id = render3d_directional_light_shadow_target_get_or_create(
     world, camera_entity, shadow_map_size, target_layers,
@@ -392,7 +397,10 @@ fn render3d_execute_camera_directional_shadow_pass(
       meshes,
       shadow_pass_kind,
       target_id,
-      cascades.length(),
+      render3d_spot_shadow_target_layer(
+        cascades.length(),
+        pass_lighting.spot_light_index,
+      ),
       shadow_map_size,
     )
   }
@@ -469,7 +477,7 @@ fn render3d_execute_camera_spot_shadow_pass(
     projection: spot_projection,
     clip_from_world: Some(clip_from_world),
     light_entity: Render3dLightEntity::Spot(light_entity~),
-    pass_name: render3d_spot_shadow_pass_name(0),
+    pass_name: render3d_spot_shadow_pass_name(pass_lighting.spot_light_index),
     occlusion_culling_subview: None,
   }
   render3d_execute_shadow_phase_view(
@@ -486,20 +494,42 @@ fn render3d_execute_camera_spot_shadow_pass(
 ///|
 fn render3d_directional_spot_shadow_target_layers(
   directional_cascade_count : Int,
-  spot_shadow_maps_enabled : Bool,
+  spot_shadow_layer_count : Int,
 ) -> Int {
   let directional_layers = if directional_cascade_count <= 0 {
     0
   } else {
     directional_cascade_count
   }
-  let spot_layers = if spot_shadow_maps_enabled { 1 } else { 0 }
+  let spot_layers = if spot_shadow_layer_count <= 0 {
+    0
+  } else {
+    spot_shadow_layer_count
+  }
   let total = directional_layers + spot_layers
   if total <= 0 {
     1
   } else {
     total
   }
+}
+
+///|
+fn render3d_spot_shadow_target_layer(
+  directional_cascade_count : Int,
+  spot_light_index : Int,
+) -> Int {
+  let directional_layers = if directional_cascade_count <= 0 {
+    0
+  } else {
+    directional_cascade_count
+  }
+  let safe_spot_light_index = if spot_light_index < 0 {
+    0
+  } else {
+    spot_light_index
+  }
+  directional_layers + safe_spot_light_index
 }
 
 ///|

@@ -116,7 +116,50 @@ fn render3d_lighting_with_clusterable_indices(
       }
     None => lighting.point_light_index
   }
-  Render3dLightingState::{ ..lighting, point_light_index, }
+  let point_light_count = render3d_clusterable_point_light_count(world)
+  let spot_light_index = match lighting.spot_entity {
+    Some(entity) =>
+      match world.get_resource(ecs_key_global_clusterable_object_meta) {
+        Some(meta) =>
+          match meta.entity_index(entity) {
+            Some(index) =>
+              render3d_spot_light_index_from_global_index(
+                index, point_light_count,
+              )
+            None => lighting.spot_light_index
+          }
+        None => lighting.spot_light_index
+      }
+    None => lighting.spot_light_index
+  }
+  Render3dLightingState::{ ..lighting, point_light_index, spot_light_index }
+}
+
+///|
+fn render3d_spot_light_index_from_global_index(
+  global_light_index : Int,
+  point_light_count : Int,
+) -> Int {
+  let spot_index = global_light_index - point_light_count
+  if spot_index < 0 {
+    0
+  } else {
+    spot_index
+  }
+}
+
+///|
+fn render3d_clusterable_point_light_count(world : @ecs.World) -> Int {
+  let mut point_light_count = 0
+  for
+    item in @pbr_render.render3d_collect_extracted_clusterable_point_lights(
+      world,
+    ) {
+    if item.is_point_light() {
+      point_light_count += 1
+    }
+  }
+  point_light_count
 }
 
 ///|

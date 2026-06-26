@@ -53,10 +53,18 @@ test "pbr directional shadow view omits occlusion culling subview when disabled"
 
 ///|
 test "pbr directional shadow target reserves Bevy spot layers" {
-  inspect(render3d_directional_spot_shadow_target_layers(4, false), content="4")
-  inspect(render3d_directional_spot_shadow_target_layers(4, true), content="5")
-  inspect(render3d_directional_spot_shadow_target_layers(0, true), content="1")
-  inspect(render3d_directional_spot_shadow_target_layers(0, false), content="1")
+  inspect(render3d_directional_spot_shadow_target_layers(4, 0), content="4")
+  inspect(render3d_directional_spot_shadow_target_layers(4, 1), content="5")
+  inspect(render3d_directional_spot_shadow_target_layers(4, 3), content="7")
+  inspect(render3d_directional_spot_shadow_target_layers(0, 1), content="1")
+  inspect(render3d_directional_spot_shadow_target_layers(0, 0), content="1")
+}
+
+///|
+test "pbr spot shadow target layer follows Bevy directional-array indexing" {
+  inspect(render3d_spot_shadow_target_layer(4, 0), content="4")
+  inspect(render3d_spot_shadow_target_layer(4, 2), content="6")
+  inspect(render3d_spot_shadow_target_layer(0, 2), content="2")
 }
 
 ///|
@@ -70,16 +78,23 @@ test "pbr point shadow target layer follows Bevy cubemap array indexing" {
 ///|
 test "pbr lighting state uses global clusterable point light index" {
   let world = @ecs.World::new()
-  let entity = world.spawn()
+  let point_entity = world.spawn()
   let meta = GlobalClusterableObjectMeta::new(0U)
-  meta.insert_entity_index(entity, 3)
+  meta.insert_entity_index(point_entity, 3)
   world.insert_resource(ecs_key_global_clusterable_object_meta, meta)
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
-    point_entity: Some(entity),
+    point_entity: Some(point_entity),
   }
   let resolved = render3d_lighting_with_clusterable_indices(world, lighting)
   inspect(resolved.point_light_index, content="3")
+}
+
+///|
+test "pbr spot light index subtracts Bevy point light prefix" {
+  inspect(render3d_spot_light_index_from_global_index(1, 1), content="0")
+  inspect(render3d_spot_light_index_from_global_index(3, 1), content="2")
+  inspect(render3d_spot_light_index_from_global_index(0, 2), content="0")
 }
 
 ///|

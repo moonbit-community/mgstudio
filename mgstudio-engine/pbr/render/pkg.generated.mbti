@@ -1248,6 +1248,7 @@ pub(all) struct Render3dLightingState {
   spot_outer_angle : Float
   spot_entity : @core.Entity?
   spot_transform : @transform.Transform
+  spot_light_index : Int
   spot_shadow_maps_enabled : Bool
   spot_shadow_depth_bias : Float
   spot_shadow_normal_bias : Float
