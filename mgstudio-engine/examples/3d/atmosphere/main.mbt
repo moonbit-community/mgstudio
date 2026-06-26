@@ -53,7 +53,7 @@ let atmosphere_state : Ref[AtmosphereState] = Ref({
   mode: 0,
   exposure_ev100: BASE_EXPOSURE_EV100,
   sun_pitch: 0.0F,
-  atmosphere: @pbr.Atmosphere::earthlike(
+  atmosphere: @pbr.Atmosphere::earth(
     @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
   ),
   atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings(),
@@ -499,7 +499,7 @@ fn setup(world : @ecs.World) -> Unit {
     mode: 0,
     exposure_ev100: BASE_EXPOSURE_EV100,
     sun_pitch: 0.0F,
-    atmosphere: @pbr.Atmosphere::earthlike(
+    atmosphere: @pbr.Atmosphere::earth(
       @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
     ),
     atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings().with_rendering_method(

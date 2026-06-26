@@ -152,7 +152,8 @@ pub struct Atmosphere {
   medium : ScatteringMedium
 } derive(ToJson, @json.FromJson)
 pub fn Atmosphere::Atmosphere() -> Self
-pub fn Atmosphere::earthlike(ScatteringMedium) -> Self
+pub fn Atmosphere::earth(ScatteringMedium) -> Self
+pub fn Atmosphere::mars(ScatteringMedium) -> Self
 pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
 pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self

@@ -492,15 +492,25 @@ pub struct Atmosphere {
 
 ///|
 pub fn Atmosphere::Atmosphere() -> Atmosphere {
-  Atmosphere::earthlike(ScatteringMedium::ScatteringMedium())
+  Atmosphere::earth(ScatteringMedium::ScatteringMedium())
 }
 
 ///|
-pub fn Atmosphere::earthlike(medium : ScatteringMedium) -> Atmosphere {
+pub fn Atmosphere::earth(medium : ScatteringMedium) -> Atmosphere {
   Atmosphere::{
     inner_radius: 6_360_000.0F,
     outer_radius: 6_460_000.0F,
     ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
+    medium,
+  }
+}
+
+///|
+pub fn Atmosphere::mars(medium : ScatteringMedium) -> Atmosphere {
+  Atmosphere::{
+    inner_radius: 3_389_500.0F,
+    outer_radius: 3_509_500.0F,
+    ground_albedo: @math.Vec3::new(0.1F, 0.1F, 0.1F),
     medium,
   }
 }

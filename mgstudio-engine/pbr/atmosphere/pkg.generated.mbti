@@ -24,7 +24,7 @@ pub fn atmosphere_plugin_state_with_lut_ready(AtmospherePluginState, Bool) -> At
 
 pub fn pbr_atmosphere_default() -> @light.Atmosphere
 
-pub fn pbr_atmosphere_earthlike(@light.ScatteringMedium) -> @light.Atmosphere
+pub fn pbr_atmosphere_earth(@light.ScatteringMedium) -> @light.Atmosphere
 
 pub fn pbr_atmosphere_environment_map(@asset.Handle[@image.Image]?, @math.UVec2) -> AtmosphereEnvironmentMap
 
@@ -33,6 +33,8 @@ pub fn pbr_atmosphere_environment_map_light_default() -> @light.AtmosphereEnviro
 pub fn pbr_atmosphere_environment_map_light_new(Float, Bool, @math.UVec2) -> @light.AtmosphereEnvironmentMapLight
 
 pub fn pbr_atmosphere_environment_map_light_with_intensity(@light.AtmosphereEnvironmentMapLight, Float) -> @light.AtmosphereEnvironmentMapLight
+
+pub fn pbr_atmosphere_mars(@light.ScatteringMedium) -> @light.Atmosphere
 
 pub fn pbr_atmosphere_settings_default() -> @light.AtmosphereSettings
 

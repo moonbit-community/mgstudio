@@ -63,8 +63,13 @@ pub fn pbr_atmosphere_default() -> Atmosphere {
 }
 
 ///|
-pub fn pbr_atmosphere_earthlike(medium : @light.ScatteringMedium) -> Atmosphere {
-  Atmosphere::earthlike(medium)
+pub fn pbr_atmosphere_earth(medium : @light.ScatteringMedium) -> Atmosphere {
+  Atmosphere::earth(medium)
+}
+
+///|
+pub fn pbr_atmosphere_mars(medium : @light.ScatteringMedium) -> Atmosphere {
+  Atmosphere::mars(medium)
 }
 
 ///|
