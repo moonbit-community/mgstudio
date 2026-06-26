@@ -21,6 +21,7 @@
 priv enum Render3dLightEntity {
   Directional(light_entity~ : @core.Entity, cascade_index~ : Int)
   Point(light_entity~ : @core.Entity, face_index~ : Int)
+  Spot(light_entity~ : @core.Entity)
 }
 
 ///|
@@ -83,6 +84,7 @@ fn render3d_shadow_light_entity_debug_key(entity : Render3dLightEntity) -> Int {
       light_entity.id * 31 + light_entity.generation * 17 + cascade_index
     Point(light_entity~, face_index~) =>
       light_entity.id * 31 + light_entity.generation * 17 + face_index
+    Spot(light_entity~) => light_entity.id * 31 + light_entity.generation * 17
   }
 }
 
@@ -103,6 +105,11 @@ fn render3d_point_shadow_pass_name(
 }
 
 ///|
+fn render3d_spot_shadow_pass_name(light_index : Int) -> String {
+  "shadow_spot_light_\{light_index}"
+}
+
+///|
 fn render3d_shadow_view_cache_key(
   camera_entity : @core.Entity,
   entity : Render3dLightEntity,
@@ -116,6 +123,8 @@ fn render3d_shadow_view_cache_key(
       1 + light_entity.id * 257 + light_entity.generation * 17 + cascade_index
     Point(light_entity~, face_index~) =>
       2 + light_entity.id * 257 + light_entity.generation * 17 + face_index
+    Spot(light_entity~) =>
+      3 + light_entity.id * 257 + light_entity.generation * 17
   }
   (camera_key, shadow_key)
 }

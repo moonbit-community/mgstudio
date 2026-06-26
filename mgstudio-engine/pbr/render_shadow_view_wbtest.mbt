@@ -14,8 +14,14 @@ test "pbr shadow view cache keys are distinct per Bevy retained shadow view" {
     camera,
     Render3dLightEntity::Directional(light_entity=light, cascade_index=0),
   )
+  let spot = render3d_shadow_view_cache_key(
+    camera,
+    Render3dLightEntity::Spot(light_entity=light),
+  )
   inspect(point0 == point1, content="false")
   inspect(point0 == cascade0, content="false")
+  inspect(point0 == spot, content="false")
+  inspect(cascade0 == spot, content="false")
 }
 
 ///|
@@ -63,4 +69,5 @@ test "pbr shadow view pass names match Bevy light and view indices" {
     render3d_point_shadow_pass_name(0, 5),
     content="shadow_point_light_0_face_5",
   )
+  inspect(render3d_spot_shadow_pass_name(4), content="shadow_spot_light_4")
 }

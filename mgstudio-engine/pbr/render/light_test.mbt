@@ -556,6 +556,7 @@ test "pbr render light: spot extraction preserves authored scalar fields" {
 test "pbr render light: lighting state carries spot shadow data" {
   let world = @ecs.World::new()
   let entity = world.spawn()
+  let spot_transform = @transform.Transform::from_xyz(3.0F, 4.0F, 5.0F)
   try! (world.set_by_key(
     entity,
     @light.ecs_key_spot_light,
@@ -568,6 +569,8 @@ test "pbr render light: lighting state carries spot shadow data" {
     .with_outer_angle(0.75F),
   )
   |> ignore)
+  try! (world.set_by_key(entity, @transform.ecs_key_transform, spot_transform)
+  |> ignore)
 
   light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
@@ -576,6 +579,18 @@ test "pbr render light: lighting state carries spot shadow data" {
     abort("expected spot entity in lighting state")
   }
   inspect(spot_entity.id, content=entity.id.to_string())
+  inspect(
+    approx_eq(lighting.spot_transform.translation.x, 3.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(lighting.spot_transform.translation.y, 4.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(lighting.spot_transform.translation.z, 5.0F, 1.0e-6F),
+    content="true",
+  )
   inspect(lighting.spot_shadow_maps_enabled, content="true")
   inspect(
     approx_eq(lighting.spot_shadow_depth_bias, 0.125F, 1.0e-6F),
@@ -594,6 +609,39 @@ test "pbr render light: lighting state carries spot shadow data" {
   )
   inspect(approx_eq(lighting.spot_inner_angle, 0.25F, 1.0e-6F), content="true")
   inspect(approx_eq(lighting.spot_outer_angle, 0.75F, 1.0e-6F), content="true")
+}
+
+///|
+test "pbr render light: spot shadow basis matches Bevy identity transform" {
+  let basis = render3d_spot_light_orthonormal_basis(
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+  )
+  inspect(approx_eq(basis.x_axis.x, 1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.x_axis.y, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.x_axis.z, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.y_axis.x, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.y_axis.y, 1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.y_axis.z, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.z_axis.x, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.z_axis.y, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.z_axis.z, 1.0F, 1.0e-6F), content="true")
+}
+
+///|
+test "pbr render light: spot shadow clip_from_world uses Bevy reverse infinite projection" {
+  let transform = @transform.Transform::from_xyz(3.0F, 4.0F, 5.0F)
+  let clip_from_world = render3d_spot_light_clip_from_world(
+    transform, 0.5F, 0.25F,
+  )
+  let near_world = @math.Vec3::new(3.0F, 4.0F, 4.75F)
+  let projected = clip_from_world.project_point3(near_world)
+  inspect(projected is Some(_), content="true")
+  guard projected is Some(projected) else {
+    abort("expected spot near point to project")
+  }
+  inspect(approx_eq(projected.x, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(projected.y, 0.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(projected.z, 1.0F, 1.0e-6F), content="true")
 }
 
 ///|

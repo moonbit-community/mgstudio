@@ -482,6 +482,8 @@ pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
 
 pub fn render3d_projection_matrix_apply_temporal_jitter(ProjectionMatrix3d, @post_process.TemporalJitter, Int, Int) -> ProjectionMatrix3d
 
+pub fn render3d_projection_matrix_from_affine3(@math.Affine3) -> ProjectionMatrix3d
+
 pub fn render3d_projection_matrix_inverse(ProjectionMatrix3d) -> ProjectionMatrix3d?
 
 pub fn render3d_projection_near_from_clip_matrix(ProjectionMatrix3d) -> Float
@@ -509,6 +511,12 @@ pub fn render3d_set_diagnostic_queued_visible_mesh_count(@ecs.World, Int) -> Uni
 pub fn render3d_set_runtime_initialized(@ecs.World, Bool) -> Unit
 
 pub fn render3d_signum(Float) -> Float
+
+pub fn render3d_spot_light_clip_from_view(Float, Float) -> ProjectionMatrix3d
+
+pub fn render3d_spot_light_clip_from_world(@transform.Transform, Float, Float) -> ProjectionMatrix3d
+
+pub fn render3d_spot_light_orthonormal_basis(@math.Vec3) -> @math.Mat3
 
 pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
 
@@ -1238,6 +1246,7 @@ pub(all) struct Render3dLightingState {
   spot_inner_angle : Float
   spot_outer_angle : Float
   spot_entity : @core.Entity?
+  spot_transform : @transform.Transform
   spot_shadow_maps_enabled : Bool
   spot_shadow_depth_bias : Float
   spot_shadow_normal_bias : Float

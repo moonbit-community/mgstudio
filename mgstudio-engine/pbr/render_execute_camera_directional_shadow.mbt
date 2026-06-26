@@ -310,83 +310,177 @@ fn render3d_execute_camera_directional_shadow_pass(
   meshes : Array[ExtractedMesh3d],
   shadow_pass_kind : Int,
 ) -> Render3dDirectionalShadowBinding {
-  if !pass_lighting.directional_shadow_maps_enabled ||
-    pass_lighting.directional_entity is None {
-    return render3d_directional_shadow_binding_none()
-  }
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
     None => @light.DirectionalLightShadowMap::DirectionalLightShadowMap().size
   }
-  let cascades = render3d_directional_shadow_cascades(
-    camera, pass_lighting, shadow_map_size,
-  )
-  if cascades.length() == 0 {
-    return render3d_directional_shadow_binding_none()
+  let directional_enabled = pass_lighting.directional_shadow_maps_enabled &&
+    pass_lighting.directional_entity is Some(_)
+  let cascades = if directional_enabled {
+    render3d_directional_shadow_cascades(camera, pass_lighting, shadow_map_size)
+  } else {
+    []
   }
-  guard pass_lighting.directional_entity is Some(light_entity) else {
+  let spot_enabled = pass_lighting.spot_shadow_maps_enabled &&
+    pass_lighting.spot_entity is Some(_) &&
+    pass_lighting.spot_range > 0.0F
+  if cascades.length() == 0 && !spot_enabled {
     return render3d_directional_shadow_binding_none()
   }
   let target_layers = render3d_directional_spot_shadow_target_layers(
     cascades.length(),
-    pass_lighting.spot_shadow_maps_enabled,
+    spot_enabled,
   )
   let target_id = render3d_directional_light_shadow_target_get_or_create(
-    world, light_entity, camera_entity, shadow_map_size, target_layers,
+    world, camera_entity, shadow_map_size, target_layers,
   )
-  for cascade_index in 0..<cascades.length() {
-    let cascade = cascades[cascade_index]
-    let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "render_3d_shadow_phase_construction",
-    )
-    let visible_indices = render3d_shadow_visible_extracted_indices(
-      meshes,
-      camera.layers,
-      render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
-    )
-    let cascade_phase_items = render3d_queue_shadow_phase_items(
-      meshes, visible_indices,
-    )
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "render_3d_shadow_phase_construction",
-      shadow_phase_trace_start_us,
-    )
-    let shadow_view = Render3dShadowView::{
-      target_id,
-      target_layer: cascade_index,
-      width: shadow_map_size,
-      height: shadow_map_size,
-      transform: cascade.transform,
-      projection: cascade.projection,
-      clip_from_world: Some(cascade.clip_from_world),
-      light_entity: Render3dLightEntity::Directional(
-        light_entity~,
-        cascade_index~,
-      ),
-      pass_name: render3d_directional_shadow_pass_name(0, cascade_index),
-      occlusion_culling_subview: render3d_directional_shadow_occlusion_culling_subview(
-        pass_lighting, target_id, shadow_map_size,
-      ),
+  if pass_lighting.directional_entity is Some(light_entity) {
+    for cascade_index in 0..<cascades.length() {
+      let cascade = cascades[cascade_index]
+      let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "render_3d_shadow_phase_construction",
+      )
+      let visible_indices = render3d_shadow_visible_extracted_indices(
+        meshes,
+        camera.layers,
+        render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
+      )
+      let cascade_phase_items = render3d_queue_shadow_phase_items(
+        meshes, visible_indices,
+      )
+      @app.timeline_trace_end_span(
+        @app.TimelineTraceCategory::RenderQueue,
+        "render_3d_shadow_phase_construction",
+        shadow_phase_trace_start_us,
+      )
+      let shadow_view = Render3dShadowView::{
+        target_id,
+        target_layer: cascade_index,
+        width: shadow_map_size,
+        height: shadow_map_size,
+        transform: cascade.transform,
+        projection: cascade.projection,
+        clip_from_world: Some(cascade.clip_from_world),
+        light_entity: Render3dLightEntity::Directional(
+          light_entity~,
+          cascade_index~,
+        ),
+        pass_name: render3d_directional_shadow_pass_name(0, cascade_index),
+        occlusion_culling_subview: render3d_directional_shadow_occlusion_culling_subview(
+          pass_lighting, target_id, shadow_map_size,
+        ),
+      }
+      render3d_execute_shadow_phase_view(
+        world,
+        camera_entity,
+        pass_lighting,
+        shadow_pass_kind,
+        0.1F,
+        meshes,
+        { shadow_view, items: cascade_phase_items },
+      )
     }
-    render3d_execute_shadow_phase_view(
+  }
+  if spot_enabled {
+    render3d_execute_camera_spot_shadow_pass(
       world,
       camera_entity,
+      camera,
       pass_lighting,
-      shadow_pass_kind,
-      0.1F,
       meshes,
-      { shadow_view, items: cascade_phase_items },
+      shadow_pass_kind,
+      target_id,
+      cascades.length(),
+      shadow_map_size,
     )
   }
   {
     texture_id: target_id,
-    enabled: 1.0F,
+    enabled: if cascades.length() > 0 {
+      1.0F
+    } else {
+      0.0F
+    },
     cascade_data: render3d_directional_shadow_cascade_data(cascades),
     cascade_count: cascades.length(),
   }
+}
+
+///|
+fn render3d_execute_camera_spot_shadow_pass(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  pass_lighting : Render3dLightingState,
+  meshes : Array[ExtractedMesh3d],
+  shadow_pass_kind : Int,
+  target_id : Int,
+  target_layer : Int,
+  shadow_map_size : Int,
+) -> Unit {
+  guard pass_lighting.spot_entity is Some(light_entity) else { return }
+  let spot_near = if pass_lighting.spot_shadow_map_near_z > 0.0001F {
+    pass_lighting.spot_shadow_map_near_z
+  } else {
+    0.0001F
+  }
+  let spot_projection = @pbr_render.render3d_pass_projection(
+    @pbr_render.render3d_spot_light_clip_from_view(
+      pass_lighting.spot_outer_angle,
+      spot_near,
+    ),
+    @pbr_render.render3d_spot_light_clip_from_view(
+      pass_lighting.spot_outer_angle,
+      spot_near,
+    ),
+    spot_near,
+    pass_lighting.spot_range,
+  )
+  let clip_from_world = @pbr_render.render3d_spot_light_clip_from_world(
+    pass_lighting.spot_transform,
+    pass_lighting.spot_outer_angle,
+    spot_near,
+  )
+  let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_shadow_phase_construction",
+  )
+  let visible_indices = render3d_shadow_visible_extracted_indices(
+    meshes,
+    camera.layers,
+    render3d_directional_shadow_frustum_planes(clip_from_world),
+  )
+  let spot_phase_items = render3d_queue_shadow_phase_items(
+    meshes, visible_indices,
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "render_3d_shadow_phase_construction",
+    shadow_phase_trace_start_us,
+  )
+  let shadow_view = Render3dShadowView::{
+    target_id,
+    target_layer,
+    width: shadow_map_size,
+    height: shadow_map_size,
+    transform: pass_lighting.spot_transform,
+    projection: spot_projection,
+    clip_from_world: Some(clip_from_world),
+    light_entity: Render3dLightEntity::Spot(light_entity~),
+    pass_name: render3d_spot_shadow_pass_name(target_layer),
+    occlusion_culling_subview: None,
+  }
+  render3d_execute_shadow_phase_view(
+    world,
+    camera_entity,
+    pass_lighting,
+    shadow_pass_kind,
+    spot_near,
+    meshes,
+    { shadow_view, items: spot_phase_items },
+  )
 }
 
 ///|
@@ -427,7 +521,6 @@ fn render3d_directional_shadow_occlusion_culling_subview(
 
 ///|
 priv struct DirectionalLightShadowTargetsEntry {
-  light_entity : @core.Entity
   camera_entity : @core.Entity
   size : Int
   layers : Int
@@ -471,7 +564,6 @@ fn render3d_directional_light_shadow_targets_mut_or_init(
 ///|
 fn render3d_directional_light_shadow_target_get_or_create(
   world : @ecs.World,
-  light_entity : @core.Entity,
   camera_entity : @core.Entity,
   size : Int,
   layers : Int,
@@ -483,9 +575,7 @@ fn render3d_directional_light_shadow_target_get_or_create(
   let safe_size = if size <= 0 { 1 } else { size }
   let safe_layers = if layers <= 0 { 1 } else { layers }
   for item in shadow_targets {
-    if item.light_entity.id == light_entity.id &&
-      item.light_entity.generation == light_entity.generation &&
-      item.camera_entity.id == camera_entity.id &&
+    if item.camera_entity.id == camera_entity.id &&
       item.camera_entity.generation == camera_entity.generation &&
       item.size == safe_size &&
       item.layers == safe_layers {
@@ -499,13 +589,10 @@ fn render3d_directional_light_shadow_target_get_or_create(
   let next : Array[DirectionalLightShadowTargetsEntry] = []
   let mut replaced = false
   for item in shadow_targets {
-    if item.light_entity.id == light_entity.id &&
-      item.light_entity.generation == light_entity.generation &&
-      item.camera_entity.id == camera_entity.id &&
+    if item.camera_entity.id == camera_entity.id &&
       item.camera_entity.generation == camera_entity.generation {
       if !replaced {
         next.push({
-          light_entity,
           camera_entity,
           size: safe_size,
           layers: safe_layers,
@@ -518,13 +605,7 @@ fn render3d_directional_light_shadow_target_get_or_create(
     }
   }
   if !replaced {
-    next.push({
-      light_entity,
-      camera_entity,
-      size: safe_size,
-      layers: safe_layers,
-      target_id,
-    })
+    next.push({ camera_entity, size: safe_size, layers: safe_layers, target_id })
   }
   shadow_targets_mut.modify(fn(state) { state.entries = next })
   target_id

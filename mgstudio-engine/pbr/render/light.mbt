@@ -45,6 +45,7 @@ pub(all) struct Render3dLightingState {
   spot_inner_angle : Float
   spot_outer_angle : Float
   spot_entity : @core.Entity?
+  spot_transform : @transform.Transform
   spot_shadow_maps_enabled : Bool
   spot_shadow_depth_bias : Float
   spot_shadow_normal_bias : Float
@@ -514,6 +515,82 @@ fn render3d_tan(value : Float) -> Float {
 ///|
 fn render3d_transform_back(transform : @transform.Transform) -> @math.Vec3 {
   quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, 1.0F)).normalize_or_zero()
+}
+
+///|
+pub fn render3d_spot_light_orthonormal_basis(
+  z_basis : @math.Vec3,
+) -> @math.Mat3 {
+  let normalized_z = z_basis.normalize_or_zero()
+  let sign = if normalized_z.z < 0.0F { -1.0F } else { 1.0F }
+  let a = -1.0F / (sign + normalized_z.z)
+  let b = normalized_z.x * normalized_z.y * a
+  let x_basis = @math.Vec3::new(
+    1.0F + sign * normalized_z.x * normalized_z.x * a,
+    sign * b,
+    0.0F - sign * normalized_z.x,
+  )
+  let y_basis = @math.Vec3::new(
+    b,
+    sign + normalized_z.y * normalized_z.y * a,
+    0.0F - normalized_z.y,
+  )
+  @math.Mat3::from_cols(x_basis, y_basis, normalized_z)
+}
+
+///|
+pub fn render3d_spot_light_clip_from_view(
+  angle : Float,
+  near_z : Float,
+) -> ProjectionMatrix3d {
+  render3d_perspective_projection_matrix_raw(near_z, angle * 2.0F, 1.0F)
+}
+
+///|
+pub fn render3d_projection_matrix_from_affine3(
+  affine : @math.Affine3,
+) -> ProjectionMatrix3d {
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(
+      affine.matrix3.x_axis.x,
+      affine.matrix3.x_axis.y,
+      affine.matrix3.x_axis.z,
+      0.0F,
+    ),
+    @math.Vec4::new(
+      affine.matrix3.y_axis.x,
+      affine.matrix3.y_axis.y,
+      affine.matrix3.y_axis.z,
+      0.0F,
+    ),
+    @math.Vec4::new(
+      affine.matrix3.z_axis.x,
+      affine.matrix3.z_axis.y,
+      affine.matrix3.z_axis.z,
+      0.0F,
+    ),
+    @math.Vec4::new(
+      affine.translation.x,
+      affine.translation.y,
+      affine.translation.z,
+      1.0F,
+    ),
+  )
+}
+
+///|
+pub fn render3d_spot_light_clip_from_world(
+  transform : @transform.Transform,
+  angle : Float,
+  near_z : Float,
+) -> ProjectionMatrix3d {
+  let world_from_view = @math.Affine3::from_mat3_translation(
+    render3d_spot_light_orthonormal_basis(render3d_transform_back(transform)),
+    transform.translation,
+  )
+  render3d_spot_light_clip_from_view(angle, near_z).mul(
+    render3d_projection_matrix_from_affine3(world_from_view.inverse()),
+  )
 }
 
 ///|
@@ -3528,6 +3605,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_inner_angle: 0.0F,
     spot_outer_angle: 0.7853981633974483F,
     spot_entity: None,
+    spot_transform: @transform.Transform::identity(),
     spot_shadow_maps_enabled: false,
     spot_shadow_depth_bias: 0.02F,
     spot_shadow_normal_bias: 0.0F,
@@ -3603,6 +3681,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_inner_angle: inner,
           spot_outer_angle: outer,
           spot_entity: Some(spot.entity),
+          spot_transform: spot.transform,
           spot_shadow_maps_enabled: spot.shadow_maps_enabled,
           spot_shadow_depth_bias: spot.shadow_depth_bias,
           spot_shadow_normal_bias: spot.shadow_normal_bias,
@@ -3617,6 +3696,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_intensity: spot.intensity,
           spot_range: spot.range,
           spot_entity: Some(spot.entity),
+          spot_transform: spot.transform,
           spot_shadow_maps_enabled: spot.shadow_maps_enabled,
           spot_shadow_depth_bias: spot.shadow_depth_bias,
           spot_shadow_normal_bias: spot.shadow_normal_bias,
