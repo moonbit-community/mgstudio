@@ -402,13 +402,7 @@ pub type MotionVectorPrepass = @pbr_prepass.MotionVectorPrepass
 pub type DeferredPrepass = @pbr_prepass.DeferredPrepass
 
 ///|
-/// Marker component aligned with Bevy's `OcclusionCulling`.
-pub struct OcclusionCulling {} derive(ToJson, FromJson)
-
-///|
-pub fn OcclusionCulling::OcclusionCulling() -> OcclusionCulling {
-  OcclusionCulling::{  }
-}
+pub type OcclusionCulling = @render_occlusion_culling.OcclusionCulling
 
 ///|
 /// Marker component aligned with Bevy's `NoIndirectDrawing`.

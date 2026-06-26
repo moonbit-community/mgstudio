@@ -1075,6 +1075,29 @@ test "pbr render light: directional gpu lights respect camera render layers" {
 }
 
 ///|
+test "pbr render light: directional extraction reads render occlusion culling marker" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    entity,
+    @render_occlusion_culling.ecs_key_occlusion_culling,
+    @render_occlusion_culling.OcclusionCulling::OcclusionCulling(),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(extracted[0].occlusion_culling, content="true")
+}
+
+///|
 test "pbr render light: directional light reads decal index from clustered decals resource" {
   let world = @ecs.World::new()
 

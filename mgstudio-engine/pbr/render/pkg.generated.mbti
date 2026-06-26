@@ -618,6 +618,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
   render_layers : @render_layers.RenderLayers
+  occlusion_culling : Bool
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }

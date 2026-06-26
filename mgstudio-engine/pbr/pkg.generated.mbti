@@ -25,6 +25,7 @@ import {
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
+  "Milky2018/mgstudio/render/occlusion_culling",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
@@ -322,7 +323,7 @@ pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[@light.NotShadowCaster]
 
 pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[@light.NotShadowReceiver]
 
-pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[@occlusion_culling.OcclusionCulling]
 
 pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[OrderIndependentTransparencySettings]
 
@@ -1933,11 +1934,6 @@ pub struct NoWireframe {
 pub fn NoWireframe::NoWireframe() -> Self
 pub impl @ecs.Component for NoWireframe
 
-pub struct OcclusionCulling {
-} derive(ToJson, @json.FromJson)
-pub fn OcclusionCulling::OcclusionCulling() -> Self
-pub impl @ecs.Component for OcclusionCulling
-
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
   fragments_per_pixel_average : Float
@@ -3148,6 +3144,8 @@ pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 pub using @light {type NotShadowCaster}
 
 pub using @light {type NotShadowReceiver}
+
+pub using @occlusion_culling {type OcclusionCulling}
 
 pub using @material {type OpaqueRendererMethod}
 

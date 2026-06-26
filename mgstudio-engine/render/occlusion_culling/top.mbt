@@ -57,7 +57,7 @@ pub fn occlusion_culling_plugin_with(
 }
 
 ///|
-pub struct OcclusionCulling {} derive(Eq, Debug)
+pub struct OcclusionCulling {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn OcclusionCulling::OcclusionCulling() -> OcclusionCulling {

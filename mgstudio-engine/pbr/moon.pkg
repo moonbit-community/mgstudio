@@ -38,6 +38,7 @@ import {
   "Milky2018/mgstudio/render/batching" @render_batching,
   "Milky2018/mgstudio/render/mesh" @render_mesh,
   "Milky2018/mgstudio/render/mesh_view_layout",
+  "Milky2018/mgstudio/render/occlusion_culling" @render_occlusion_culling,
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture" @render_texture,

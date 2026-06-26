@@ -599,6 +599,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
   render_layers : @camera_render_layers.RenderLayers
+  occlusion_culling : Bool
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
@@ -2245,6 +2246,10 @@ fn render3d_extract_directional_light(
     Some(layers) => layers
     None => @camera_render_layers.RenderLayers::RenderLayers()
   }
+  let occlusion_culling = (try! world.get_by_key(
+      entity, @render_occlusion_culling.ecs_key_occlusion_culling,
+    ))
+    is Some(_)
   let sun_disk = match
     (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
     Some(v) => v
@@ -2279,6 +2284,7 @@ fn render3d_extract_directional_light(
     cascade_overlap_proportion,
     cascade_minimum_distance: cascade_config.minimum_distance,
     render_layers,
+    occlusion_culling,
     sun_disk_angular_size: sun_disk.angular_size,
     sun_disk_intensity: sun_disk.intensity,
   }
@@ -2339,6 +2345,9 @@ fn extract_directional_light_changed(
     entity, @camera_render_layers.ecs_key_render_layers, system_ticks,
   ) ||
   world.is_changed_by_key(entity, @light.ecs_key_volumetric_light, system_ticks) ||
+  world.is_changed_by_key(
+    entity, @render_occlusion_culling.ecs_key_occlusion_culling, system_ticks,
+  ) ||
   world.is_changed_by_key(entity, @light.ecs_key_sun_disk, system_ticks)
 }
 

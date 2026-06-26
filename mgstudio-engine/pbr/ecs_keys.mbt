@@ -190,9 +190,7 @@ pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume] = @light.ecs_key_fog_v
 pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @light.ecs_key_irradiance_volume
 
 ///|
-pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.register_component(
-  debug_name="render3d.occlusion_culling",
-)
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @render_occlusion_culling.ecs_key_occlusion_culling
 
 ///|
 pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @ecs.register_component(
@@ -368,11 +366,6 @@ pub impl @ecs.Component for Mesh3dWireframe with fn component() {
 ///|
 pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
-}
-
-///|
-pub impl @ecs.Component for OcclusionCulling with fn component() {
-  ecs_key_occlusion_culling
 }
 
 ///|

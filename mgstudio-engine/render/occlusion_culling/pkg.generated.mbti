@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -28,7 +29,7 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 // Types and methods
 pub struct OcclusionCulling {
-} derive(Eq, @debug.Debug)
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn OcclusionCulling::OcclusionCulling() -> Self
 pub impl @ecs.Component for OcclusionCulling
 
