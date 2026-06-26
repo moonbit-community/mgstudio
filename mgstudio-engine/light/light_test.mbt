@@ -44,14 +44,61 @@ test "light boundary re-exports direct light component APIs" {
 test "light boundary re-exports shadow maps and volumetric APIs" {
   let point_shadow = @light.PointLightShadowMap::new(2048)
   let directional_shadow = @light.DirectionalLightShadowMap::new(1024)
-  let medium = @light.ScatteringMedium::ScatteringMedium().with_density_multiplier(
-    -1.5,
+  let medium = @light.ScatteringMedium::earth(8, 4).with_density_multiplier(
+    2.0F,
   )
   let fog = @light.VolumetricFog::VolumetricFog().with_step_count(96)
   debug_inspect(point_shadow.size, content="2048")
   debug_inspect(directional_shadow.size, content="1024")
-  debug_inspect(medium.density_multiplier.to_double(), content="-1.5")
+  debug_inspect(medium.falloff_resolution, content="8")
+  debug_inspect(medium.phase_resolution, content="4")
+  debug_inspect(medium.terms.length(), content="3")
+  inspect(
+    approx_eq(medium.terms[0].scattering.x, 11.604e-6F, 0.000000001F),
+    content="true",
+  )
   debug_inspect(fog.step_count, content="96")
+}
+
+///|
+test "scattering medium earth terms match Bevy source shape" {
+  let medium = @light.ScatteringMedium::earth(8, 4)
+  debug_inspect(medium.label, content="Some(\"earth_atmosphere\")")
+  debug_inspect(medium.falloff_resolution, content="8")
+  debug_inspect(medium.phase_resolution, content="4")
+  debug_inspect(medium.terms.length(), content="3")
+  inspect(
+    if medium.terms[0].falloff is Exponential(scale) {
+      approx_eq(scale, 8.0F / 60.0F, 0.000001F)
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[0].phase is Rayleigh {
+      true
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[1].phase is Mie(asymmetry) {
+      approx_eq(asymmetry, 0.8F, 0.000001F)
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[2].falloff is Tent(center, width) {
+      approx_eq(center, 0.75F, 0.000001F) && approx_eq(width, 0.3F, 0.000001F)
+    } else {
+      false
+    },
+    content="true",
+  )
 }
 
 ///|
@@ -284,7 +331,7 @@ test "atmosphere environment map size preserves Bevy authoring semantics" {
 ///|
 test "atmosphere radii preserve Bevy plain field semantics" {
   let atmosphere = @light.Atmosphere::earth(
-    @light.ScatteringMedium::earthlike(),
+    @light.ScatteringMedium::earth(256, 256),
   ).with_radii(-1.0F, -2.0F)
   inspect(atmosphere.inner_radius.to_double(), content="-1")
   inspect(atmosphere.outer_radius.to_double(), content="-2")
@@ -292,11 +339,11 @@ test "atmosphere radii preserve Bevy plain field semantics" {
 
 ///|
 test "atmosphere constructors preserve Bevy planet constants" {
-  let earth = @light.Atmosphere::earth(@light.ScatteringMedium::earthlike())
+  let earth = @light.Atmosphere::earth(@light.ScatteringMedium::earth(256, 256))
   inspect(earth.inner_radius.to_double(), content="6360000")
   inspect(earth.outer_radius.to_double(), content="6460000")
   debug_inspect(approx_eq(earth.ground_albedo.x, 0.3F, 1.0e-6F), content="true")
-  let mars = @light.Atmosphere::mars(@light.ScatteringMedium::earthlike())
+  let mars = @light.Atmosphere::mars(@light.ScatteringMedium::earth(256, 256))
   inspect(mars.inner_radius.to_double(), content="3389500")
   inspect(mars.outer_radius.to_double(), content="3509500")
   debug_inspect(approx_eq(mars.ground_albedo.x, 0.1F, 1.0e-6F), content="true")

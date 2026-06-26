@@ -83,7 +83,7 @@ fn atmosphere_resource_test_approx_eq(lhs : Float, rhs : Float) -> Bool {
 
 ///|
 test "pbr atmosphere: gpu atmosphere maps source component radii and albedo" {
-  let atmosphere = Atmosphere::earth(@light.ScatteringMedium::earthlike())
+  let atmosphere = Atmosphere::earth(@light.ScatteringMedium::earth(256, 256))
     .with_radii(10.0F, 20.0F)
     .with_ground_albedo(@math.Vec3::new(0.1F, 0.2F, 0.3F))
   let gpu = pbr_gpu_atmosphere(atmosphere, @math.Affine3::identity())

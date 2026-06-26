@@ -52,6 +52,11 @@ pub fn pow(base : Float, exponent : Float) -> Float {
 }
 
 ///|
+pub fn exp(value : Float) -> Float {
+  Float::from_double(@coremath.exp(value.to_double()))
+}
+
+///|
 pub fn pi() -> Float {
   Float::from_double(@coremath.PI)
 }

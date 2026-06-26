@@ -21,12 +21,14 @@ test "pbr medium: default sampler is linear clamp" {
 }
 
 ///|
-test "pbr medium: gpu medium LUT lengths follow config" {
-  let config = ScatteringMediumLutConfig::ScatteringMediumLutConfig()
-    .with_falloff_resolution(8)
-    .with_phase_resolution(4)
-  let runtime = ScatteringMediumRuntime::ScatteringMediumRuntime().with_lut_config(
-    config,
+fn medium_approx_eq(a : Float, b : Float) -> Bool {
+  (a - b).abs() < 0.000001F
+}
+
+///|
+test "pbr medium: gpu medium LUT lengths follow source medium" {
+  let runtime = ScatteringMediumRuntime::from_medium(
+    ScatteringMedium::earth(8, 4),
   )
   let gpu_medium = GpuScatteringMedium::new(
     runtime,
@@ -39,17 +41,39 @@ test "pbr medium: gpu medium LUT lengths follow config" {
 }
 
 ///|
-test "pbr medium: source density multiplier reaches GPU LUT" {
-  let medium = ScatteringMedium::earthlike().with_density_multiplier(2.0F)
-  let runtime = ScatteringMediumRuntime::from_medium(medium).with_lut_config(
-    ScatteringMediumLutConfig::ScatteringMediumLutConfig()
-    .with_falloff_resolution(1)
-    .with_phase_resolution(1),
-  )
+test "pbr medium: gpu medium LUT samples source terms" {
+  let medium = ScatteringMedium::new(1, 1, [
+    @light.ScatteringTerm::new(
+      @math.Vec3::new(2.0F, 3.0F, 4.0F),
+      @math.Vec3::new(5.0F, 6.0F, 7.0F),
+      @light.Falloff::linear(),
+      @light.PhaseFunction::isotropic(),
+    ),
+  ])
+  let runtime = ScatteringMediumRuntime::from_medium(medium)
   let gpu_medium = GpuScatteringMedium::new(
     runtime,
     ScatteringMediumSampler::ScatteringMediumSampler(),
   )
-  inspect(gpu_medium.density_lut()[0].x, content="1")
-  inspect(gpu_medium.scattering_lut()[0].x, content="0.5")
+  let density = gpu_medium.density_lut()
+  let scattering = gpu_medium.scattering_lut()
+  inspect(medium_approx_eq(density[0].x, 1.0F), content="true")
+  inspect(medium_approx_eq(density[0].y, 1.5F), content="true")
+  inspect(medium_approx_eq(density[0].z, 2.0F), content="true")
+  inspect(medium_approx_eq(density[1].x, 2.5F), content="true")
+  inspect(medium_approx_eq(density[1].y, 3.0F), content="true")
+  inspect(medium_approx_eq(density[1].z, 3.5F), content="true")
+  let isotropic_at_half_falloff = 0.5F * 0.25F / @math.pi()
+  inspect(
+    medium_approx_eq(scattering[0].x, 5.0F * isotropic_at_half_falloff),
+    content="true",
+  )
+  inspect(
+    medium_approx_eq(scattering[0].y, 6.0F * isotropic_at_half_falloff),
+    content="true",
+  )
+  inspect(
+    medium_approx_eq(scattering[0].z, 7.0F * isotropic_at_half_falloff),
+    content="true",
+  )
 }

@@ -22,15 +22,6 @@ const SCATTERING_MEDIUM_PLUGIN_NAME : String = "mgstudio.pbr.ScatteringMediumPlu
 pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
-fn pbr_scattering_medium_sanitize_non_negative(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
-
-///|
 fn pbr_scattering_medium_sanitize_resolution(value : Int) -> Int {
   if value <= 0 {
     1
@@ -40,14 +31,22 @@ fn pbr_scattering_medium_sanitize_resolution(value : Int) -> Int {
 }
 
 ///|
-fn pbr_scattering_medium_clamp01(value : Float) -> Float {
-  if value <= 0.0F {
-    0.0F
-  } else if value >= 1.0F {
+fn pbr_scattering_medium_signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else if value > 0.0F {
     1.0F
   } else {
-    value
+    0.0F
   }
+}
+
+///|
+fn pbr_scattering_medium_vec3_mul(
+  lhs : @math.Vec3,
+  rhs : @math.Vec3,
+) -> @math.Vec3 {
+  @math.Vec3::new(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z)
 }
 
 ///|
@@ -116,99 +115,25 @@ pub fn ScatteringMediumSampler::is_linear_clamp(
 }
 
 ///|
-pub struct ScatteringMediumLutConfig {
-  falloff_resolution : Int
-  phase_resolution : Int
-}
-
-///|
-pub fn ScatteringMediumLutConfig::ScatteringMediumLutConfig() -> ScatteringMediumLutConfig {
-  ScatteringMediumLutConfig::{ falloff_resolution: 128, phase_resolution: 64 }
-}
-
-///|
-pub fn ScatteringMediumLutConfig::with_falloff_resolution(
-  self : ScatteringMediumLutConfig,
-  falloff_resolution : Int,
-) -> ScatteringMediumLutConfig {
-  ScatteringMediumLutConfig::{
-    ..self,
-    falloff_resolution: pbr_scattering_medium_sanitize_resolution(
-      falloff_resolution,
-    ),
-  }
-}
-
-///|
-pub fn ScatteringMediumLutConfig::with_phase_resolution(
-  self : ScatteringMediumLutConfig,
-  phase_resolution : Int,
-) -> ScatteringMediumLutConfig {
-  ScatteringMediumLutConfig::{
-    ..self,
-    phase_resolution: pbr_scattering_medium_sanitize_resolution(
-      phase_resolution,
-    ),
-  }
-}
-
-///|
 pub struct ScatteringMediumRuntime {
   medium : ScatteringMedium
-  density_multiplier : Float
-  lut_config : ScatteringMediumLutConfig
 }
 
 ///|
 pub fn ScatteringMediumRuntime::ScatteringMediumRuntime() -> ScatteringMediumRuntime {
-  ScatteringMediumRuntime::{
-    medium: ScatteringMedium(),
-    density_multiplier: 1.0F,
-    lut_config: ScatteringMediumLutConfig::ScatteringMediumLutConfig(),
-  }
+  ScatteringMediumRuntime::{ medium: ScatteringMedium() }
 }
 
 ///|
-pub fn ScatteringMediumRuntime::earthlike() -> ScatteringMediumRuntime {
-  let default_runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
-  ScatteringMediumRuntime::{
-    medium: ScatteringMedium::earthlike(),
-    density_multiplier: default_runtime.density_multiplier,
-    lut_config: default_runtime.lut_config,
-  }
+pub fn ScatteringMediumRuntime::earth() -> ScatteringMediumRuntime {
+  ScatteringMediumRuntime::{ medium: ScatteringMedium::earth(256, 256) }
 }
 
 ///|
 pub fn ScatteringMediumRuntime::from_medium(
   medium : ScatteringMedium,
 ) -> ScatteringMediumRuntime {
-  let default_runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
-  ScatteringMediumRuntime::{
-    medium,
-    density_multiplier: medium.density_multiplier(),
-    lut_config: default_runtime.lut_config,
-  }
-}
-
-///|
-pub fn ScatteringMediumRuntime::with_density_multiplier(
-  self : ScatteringMediumRuntime,
-  density_multiplier : Float,
-) -> ScatteringMediumRuntime {
-  ScatteringMediumRuntime::{
-    ..self,
-    density_multiplier: pbr_scattering_medium_sanitize_non_negative(
-      density_multiplier,
-    ),
-  }
-}
-
-///|
-pub fn ScatteringMediumRuntime::with_lut_config(
-  self : ScatteringMediumRuntime,
-  lut_config : ScatteringMediumLutConfig,
-) -> ScatteringMediumRuntime {
-  ScatteringMediumRuntime::{ ..self, lut_config, }
+  ScatteringMediumRuntime::{ medium, }
 }
 
 ///|
@@ -228,35 +153,36 @@ fn pbr_scattering_medium_phase_sample(
 }
 
 ///|
-fn pbr_scattering_medium_phase_response(neg_l_dot_v : Float) -> Float {
-  pbr_scattering_medium_clamp01((neg_l_dot_v + 1.0F) * 0.5F)
-}
-
-///|
-fn pbr_scattering_medium_sample_density(
-  runtime : ScatteringMediumRuntime,
-  falloff : Float,
-) -> Float {
-  runtime.density_multiplier * pbr_scattering_medium_clamp01(falloff)
-}
-
-///|
 pub fn pbr_scattering_medium_default_density_lut(
   runtime : ScatteringMediumRuntime,
 ) -> Array[@math.Vec4] {
   let falloff_resolution = pbr_scattering_medium_sanitize_resolution(
-    runtime.lut_config.falloff_resolution,
+    runtime.medium.falloff_resolution,
   )
   let density : Array[@math.Vec4] = []
   for i in 0..<falloff_resolution {
     let falloff = pbr_scattering_medium_falloff_sample(i, falloff_resolution)
-    let value = pbr_scattering_medium_sample_density(runtime, falloff)
-    density.push(@math.Vec4::new(value, value, value, 1.0F))
+    let mut absorption = @math.Vec3::zero()
+    for term in runtime.medium.terms {
+      absorption = absorption.add(
+        term.absorption.mul_scalar(term.falloff.sample(falloff)),
+      )
+    }
+    density.push(
+      @math.Vec4::new(absorption.x, absorption.y, absorption.z, 0.0F),
+    )
   }
   for i in 0..<falloff_resolution {
     let falloff = pbr_scattering_medium_falloff_sample(i, falloff_resolution)
-    let value = pbr_scattering_medium_sample_density(runtime, falloff)
-    density.push(@math.Vec4::new(value, value, value, 1.0F))
+    let mut scattering = @math.Vec3::zero()
+    for term in runtime.medium.terms {
+      scattering = scattering.add(
+        term.scattering.mul_scalar(term.falloff.sample(falloff)),
+      )
+    }
+    density.push(
+      @math.Vec4::new(scattering.x, scattering.y, scattering.z, 0.0F),
+    )
   }
   density
 }
@@ -266,21 +192,36 @@ pub fn pbr_scattering_medium_default_scattering_lut(
   runtime : ScatteringMediumRuntime,
 ) -> Array[@math.Vec4] {
   let falloff_resolution = pbr_scattering_medium_sanitize_resolution(
-    runtime.lut_config.falloff_resolution,
+    runtime.medium.falloff_resolution,
   )
   let phase_resolution = pbr_scattering_medium_sanitize_resolution(
-    runtime.lut_config.phase_resolution,
+    runtime.medium.phase_resolution,
   )
   let scattering : Array[@math.Vec4] = []
+  let phase_mapping_n = 0.5F
+  let inv_n = 1.0F / phase_mapping_n
   for raw_i in 0..<(falloff_resolution * phase_resolution) {
     let i = raw_i % phase_resolution
     let j = raw_i / phase_resolution
     let falloff = pbr_scattering_medium_falloff_sample(i, falloff_resolution)
     let phase = pbr_scattering_medium_phase_sample(j, phase_resolution)
-    let neg_l_dot_v = phase * 2.0F - 1.0F
-    let value = pbr_scattering_medium_sample_density(runtime, falloff) *
-      pbr_scattering_medium_phase_response(neg_l_dot_v)
-    scattering.push(@math.Vec4::new(value, value, value, phase))
+    let s = 2.0F * phase - 1.0F
+    let neg_l_dot_v = pbr_scattering_medium_signum(s) *
+      (1.0F - @math.pow(1.0F - @math.abs(s), inv_n))
+    let mut value = @math.Vec3::zero()
+    for term in runtime.medium.terms {
+      let f = term.falloff.sample(falloff)
+      match term.phase.sample(neg_l_dot_v) {
+        Some(phase_value) =>
+          value = value.add(
+            pbr_scattering_medium_vec3_mul(term.scattering, phase_value).mul_scalar(
+              f,
+            ),
+          )
+        None => ()
+      }
+    }
+    scattering.push(@math.Vec4::new(value.x, value.y, value.z, 0.0F))
   }
   scattering
 }
@@ -374,7 +315,7 @@ pub fn GpuScatteringMedium::density_lut_width(
   self : GpuScatteringMedium,
 ) -> Int {
   pbr_scattering_medium_sanitize_resolution(
-    self.runtime.lut_config.falloff_resolution,
+    self.runtime.medium.falloff_resolution,
   )
 }
 
@@ -390,7 +331,7 @@ pub fn GpuScatteringMedium::scattering_lut_width(
   self : GpuScatteringMedium,
 ) -> Int {
   pbr_scattering_medium_sanitize_resolution(
-    self.runtime.lut_config.falloff_resolution,
+    self.runtime.medium.falloff_resolution,
   )
 }
 
@@ -399,7 +340,7 @@ pub fn GpuScatteringMedium::scattering_lut_height(
   self : GpuScatteringMedium,
 ) -> Int {
   pbr_scattering_medium_sanitize_resolution(
-    self.runtime.lut_config.phase_resolution,
+    self.runtime.medium.phase_resolution,
   )
 }
 
@@ -420,7 +361,6 @@ pub fn GpuScatteringMedium::scattering_lut_rgba32f_bytes(
 ///|
 pub struct ScatteringMediumPlugin {
   enabled : Bool
-  runtime_config : ScatteringMediumLutConfig
   sampler : ScatteringMediumSampler
 }
 
@@ -428,7 +368,6 @@ pub struct ScatteringMediumPlugin {
 pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> ScatteringMediumPlugin {
   ScatteringMediumPlugin::{
     enabled: true,
-    runtime_config: ScatteringMediumLutConfig::ScatteringMediumLutConfig(),
     sampler: ScatteringMediumSampler::ScatteringMediumSampler(),
   }
 }
@@ -436,14 +375,6 @@ pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> ScatteringMediumPlugi
 ///|
 pub fn ScatteringMediumPlugin::disabled() -> ScatteringMediumPlugin {
   ScatteringMediumPlugin::{ ..ScatteringMediumPlugin(), enabled: false }
-}
-
-///|
-pub fn ScatteringMediumPlugin::with_lut_config(
-  self : ScatteringMediumPlugin,
-  runtime_config : ScatteringMediumLutConfig,
-) -> ScatteringMediumPlugin {
-  ScatteringMediumPlugin::{ ..self, runtime_config, }
 }
 
 ///|
@@ -457,7 +388,6 @@ pub fn ScatteringMediumPlugin::with_sampler(
 ///|
 pub struct ScatteringMediumPluginState {
   enabled : Bool
-  runtime_config : ScatteringMediumLutConfig
   sampler : ScatteringMediumSampler
   default_gpu_medium : GpuScatteringMedium
 }
@@ -485,14 +415,10 @@ fn init_scattering_medium_resources(
   plugin : ScatteringMediumPlugin,
 ) -> Unit {
   let sampler = plugin.sampler
-  let runtime = ScatteringMediumRuntime::{
-    ..ScatteringMediumRuntime(),
-    lut_config: plugin.runtime_config,
-  }
+  let runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
   let default_gpu_medium = GpuScatteringMedium::new(runtime, sampler)
   let plugin_state = ScatteringMediumPluginState::{
     enabled: plugin.enabled,
-    runtime_config: plugin.runtime_config,
     sampler,
     default_gpu_medium,
   }
@@ -539,8 +465,8 @@ pub fn pbr_scattering_medium_default() -> ScatteringMedium {
 }
 
 ///|
-pub fn pbr_scattering_medium_earthlike() -> ScatteringMedium {
-  ScatteringMedium::earthlike()
+pub fn pbr_scattering_medium_earth() -> ScatteringMedium {
+  ScatteringMedium::earth(256, 256)
 }
 
 ///|
@@ -557,29 +483,8 @@ pub fn pbr_scattering_medium_runtime_default() -> ScatteringMediumRuntime {
 }
 
 ///|
-pub fn pbr_scattering_medium_runtime_earthlike() -> ScatteringMediumRuntime {
-  ScatteringMediumRuntime::earthlike()
-}
-
-///|
-pub fn pbr_scattering_medium_runtime_with_density_multiplier(
-  runtime : ScatteringMediumRuntime,
-  density_multiplier : Float,
-) -> ScatteringMediumRuntime {
-  runtime.with_density_multiplier(density_multiplier)
-}
-
-///|
-pub fn pbr_scattering_medium_runtime_with_lut_config(
-  runtime : ScatteringMediumRuntime,
-  lut_config : ScatteringMediumLutConfig,
-) -> ScatteringMediumRuntime {
-  runtime.with_lut_config(lut_config)
-}
-
-///|
-pub fn pbr_scattering_medium_lut_config_default() -> ScatteringMediumLutConfig {
-  ScatteringMediumLutConfig::ScatteringMediumLutConfig()
+pub fn pbr_scattering_medium_runtime_earth() -> ScatteringMediumRuntime {
+  ScatteringMediumRuntime::earth()
 }
 
 ///|

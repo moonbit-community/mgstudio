@@ -433,8 +433,63 @@ pub fn AtmosphereSettings::rendering_method(
 }
 
 ///|
+pub struct ScatteringTerm {
+  absorption : @math.Vec3
+  scattering : @math.Vec3
+  falloff : Falloff
+  phase : PhaseFunction
+} derive(ToJson, FromJson)
+
+///|
+pub enum Falloff {
+  Linear
+  Exponential(Float)
+  Tent(Float, Float)
+} derive(ToJson, FromJson)
+
+///|
+pub enum PhaseFunction {
+  Isotropic
+  Rayleigh
+  Mie(Float)
+} derive(ToJson, FromJson)
+
+///|
+pub fn Falloff::linear() -> Falloff {
+  Linear
+}
+
+///|
+pub fn Falloff::exponential(scale : Float) -> Falloff {
+  Exponential(scale)
+}
+
+///|
+pub fn Falloff::tent(center : Float, width : Float) -> Falloff {
+  Tent(center, width)
+}
+
+///|
+pub fn PhaseFunction::isotropic() -> PhaseFunction {
+  Isotropic
+}
+
+///|
+pub fn PhaseFunction::rayleigh() -> PhaseFunction {
+  Rayleigh
+}
+
+///|
+pub fn PhaseFunction::mie(asymmetry : Float) -> PhaseFunction {
+  Mie(asymmetry)
+}
+
+///|
 pub struct ScatteringMedium {
-  density_multiplier : Float
+  label : String?
+  falloff_resolution : Int
+  phase_resolution : Int
+  terms : Array[ScatteringTerm]
 } derive(ToJson, FromJson)
 
 ///|
@@ -459,26 +514,125 @@ pub impl @asset.Asset for ScatteringMedium with fn asset_resource_keys() {
 
 ///|
 pub fn ScatteringMedium::ScatteringMedium() -> ScatteringMedium {
-  ScatteringMedium::{ density_multiplier: 1.0F }
+  ScatteringMedium::earth(256, 256)
 }
 
 ///|
-pub fn ScatteringMedium::earthlike() -> ScatteringMedium {
-  ScatteringMedium::ScatteringMedium()
+pub fn ScatteringTerm::new(
+  absorption : @math.Vec3,
+  scattering : @math.Vec3,
+  falloff : Falloff,
+  phase : PhaseFunction,
+) -> ScatteringTerm {
+  ScatteringTerm::{ absorption, scattering, falloff, phase }
+}
+
+///|
+pub fn ScatteringMedium::new(
+  falloff_resolution : Int,
+  phase_resolution : Int,
+  terms : Array[ScatteringTerm],
+) -> ScatteringMedium {
+  ScatteringMedium::{ label: None, falloff_resolution, phase_resolution, terms }
+}
+
+///|
+pub fn ScatteringMedium::with_label(
+  self : ScatteringMedium,
+  label : String,
+) -> ScatteringMedium {
+  ScatteringMedium::{ ..self, label: Some(label) }
+}
+
+///|
+pub fn ScatteringMedium::earth(
+  falloff_resolution : Int,
+  phase_resolution : Int,
+) -> ScatteringMedium {
+  ScatteringMedium::new(falloff_resolution, phase_resolution, [
+    ScatteringTerm::new(
+      @math.Vec3::zero(),
+      @math.Vec3::new(5.802e-6F, 13.558e-6F, 33.100e-6F),
+      Falloff::exponential(8.0F / 60.0F),
+      PhaseFunction::rayleigh(),
+    ),
+    ScatteringTerm::new(
+      @math.Vec3::splat(3.996e-6F),
+      @math.Vec3::splat(0.444e-6F),
+      Falloff::exponential(1.2F / 60.0F),
+      PhaseFunction::mie(0.8F),
+    ),
+    ScatteringTerm::new(
+      @math.Vec3::new(0.650e-6F, 1.881e-6F, 0.085e-6F),
+      @math.Vec3::zero(),
+      Falloff::tent(0.75F, 0.3F),
+      PhaseFunction::isotropic(),
+    ),
+  ]).with_label("earth_atmosphere")
 }
 
 ///|
 pub fn ScatteringMedium::with_density_multiplier(
   self : ScatteringMedium,
-  density_multiplier : Float,
+  multiplier : Float,
 ) -> ScatteringMedium {
-  self |> ignore
-  ScatteringMedium::{ density_multiplier, }
+  let terms : Array[ScatteringTerm] = []
+  for term in self.terms {
+    terms.push(ScatteringTerm::{
+      ..term,
+      absorption: term.absorption.mul_scalar(multiplier),
+      scattering: term.scattering.mul_scalar(multiplier),
+    })
+  }
+  ScatteringMedium::{ ..self, terms, }
 }
 
 ///|
-pub fn ScatteringMedium::density_multiplier(self : ScatteringMedium) -> Float {
-  self.density_multiplier
+pub fn Falloff::sample(self : Falloff, p : Float) -> Float {
+  match self {
+    Linear => p
+    Exponential(scale) =>
+      if scale == 0.0F {
+        p
+      } else {
+        let s = -1.0F / scale
+        let exp_p_s = @math.exp((1.0F - p) * s)
+        let exp_s = @math.exp(s)
+        (exp_p_s - exp_s) / (1.0F - exp_s)
+      }
+    Tent(center, width) => {
+      let value = 1.0F - (p - center).abs() / (0.5F * width)
+      if value < 0.0F {
+        0.0F
+      } else {
+        value
+      }
+    }
+  }
+}
+
+///|
+pub fn PhaseFunction::sample(
+  self : PhaseFunction,
+  neg_l_dot_v : Float,
+) -> @math.Vec3? {
+  let frac_4_pi = 0.25F / @math.pi()
+  let frac_3_16_pi = 0.1875F / @math.pi()
+  match self {
+    Isotropic => Some(@math.Vec3::splat(frac_4_pi))
+    Rayleigh =>
+      Some(@math.Vec3::splat(frac_3_16_pi * (1.0F + neg_l_dot_v * neg_l_dot_v)))
+    Mie(asymmetry) => {
+      let denom = 1.0F + asymmetry * asymmetry - 2.0F * asymmetry * neg_l_dot_v
+      Some(
+        @math.Vec3::splat(
+          frac_4_pi *
+          (1.0F - asymmetry * asymmetry) /
+          (denom * @math.sqrt(denom)),
+        ),
+      )
+    }
+  }
 }
 
 ///|

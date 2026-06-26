@@ -658,7 +658,7 @@ pub fn pbr_scattering_medium_default_density_lut(ScatteringMediumRuntime) -> Arr
 
 pub fn pbr_scattering_medium_default_scattering_lut(ScatteringMediumRuntime) -> Array[@math.Vec4]
 
-pub fn pbr_scattering_medium_earthlike() -> @light.ScatteringMedium
+pub fn pbr_scattering_medium_earth() -> @light.ScatteringMedium
 
 pub fn pbr_scattering_medium_gpu_default() -> GpuScatteringMedium
 
@@ -666,15 +666,9 @@ pub fn pbr_scattering_medium_gpu_from_runtime(ScatteringMediumRuntime) -> GpuSca
 
 pub fn pbr_scattering_medium_gpu_with_sampler(ScatteringMediumRuntime, ScatteringMediumSampler) -> GpuScatteringMedium
 
-pub fn pbr_scattering_medium_lut_config_default() -> ScatteringMediumLutConfig
-
 pub fn pbr_scattering_medium_runtime_default() -> ScatteringMediumRuntime
 
-pub fn pbr_scattering_medium_runtime_earthlike() -> ScatteringMediumRuntime
-
-pub fn pbr_scattering_medium_runtime_with_density_multiplier(ScatteringMediumRuntime, Float) -> ScatteringMediumRuntime
-
-pub fn pbr_scattering_medium_runtime_with_lut_config(ScatteringMediumRuntime, ScatteringMediumLutConfig) -> ScatteringMediumRuntime
+pub fn pbr_scattering_medium_runtime_earth() -> ScatteringMediumRuntime
 
 pub fn pbr_scattering_medium_sampler_default() -> ScatteringMediumSampler
 
@@ -2386,42 +2380,27 @@ pub struct RenderWireframeMaterial {
 } derive(ToJson, @json.FromJson)
 pub fn RenderWireframeMaterial::from_material(WireframeMaterial) -> Self
 
-pub struct ScatteringMediumLutConfig {
-  falloff_resolution : Int
-  phase_resolution : Int
-}
-pub fn ScatteringMediumLutConfig::ScatteringMediumLutConfig() -> Self
-pub fn ScatteringMediumLutConfig::with_falloff_resolution(Self, Int) -> Self
-pub fn ScatteringMediumLutConfig::with_phase_resolution(Self, Int) -> Self
-
 pub struct ScatteringMediumPlugin {
   enabled : Bool
-  runtime_config : ScatteringMediumLutConfig
   sampler : ScatteringMediumSampler
 }
 pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> Self
 pub fn ScatteringMediumPlugin::disabled() -> Self
-pub fn ScatteringMediumPlugin::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
 pub fn ScatteringMediumPlugin::with_sampler(Self, ScatteringMediumSampler) -> Self
 pub impl @app.Plugin for ScatteringMediumPlugin
 
 pub struct ScatteringMediumPluginState {
   enabled : Bool
-  runtime_config : ScatteringMediumLutConfig
   sampler : ScatteringMediumSampler
   default_gpu_medium : GpuScatteringMedium
 }
 
 pub struct ScatteringMediumRuntime {
   medium : @light.ScatteringMedium
-  density_multiplier : Float
-  lut_config : ScatteringMediumLutConfig
 }
 pub fn ScatteringMediumRuntime::ScatteringMediumRuntime() -> Self
-pub fn ScatteringMediumRuntime::earthlike() -> Self
+pub fn ScatteringMediumRuntime::earth() -> Self
 pub fn ScatteringMediumRuntime::from_medium(@light.ScatteringMedium) -> Self
-pub fn ScatteringMediumRuntime::with_density_multiplier(Self, Float) -> Self
-pub fn ScatteringMediumRuntime::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
 
 pub struct ScatteringMediumSampler {
   address_mode_u : @image.ImageAddressMode

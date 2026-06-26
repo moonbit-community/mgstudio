@@ -328,6 +328,16 @@ pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for EnvironmentMapLight
 
+pub enum Falloff {
+  Linear
+  Exponential(Float)
+  Tent(Float, Float)
+} derive(ToJson, @json.FromJson)
+pub fn Falloff::exponential(Float) -> Self
+pub fn Falloff::linear() -> Self
+pub fn Falloff::sample(Self, Float) -> Float
+pub fn Falloff::tent(Float, Float) -> Self
+
 #alias(FogVolumeComponent)
 pub struct FogVolume {
   fog_color : @color.Color
@@ -434,6 +444,16 @@ pub(all) enum ParallaxCorrection {
 pub fn ParallaxCorrection::default() -> Self
 pub impl @ecs.Component for ParallaxCorrection
 
+pub enum PhaseFunction {
+  Isotropic
+  Rayleigh
+  Mie(Float)
+} derive(ToJson, @json.FromJson)
+pub fn PhaseFunction::isotropic() -> Self
+pub fn PhaseFunction::mie(Float) -> Self
+pub fn PhaseFunction::rayleigh() -> Self
+pub fn PhaseFunction::sample(Self, Float) -> @math.Vec3?
+
 #alias(PointLightComponent)
 pub struct PointLight {
   color : @color.Color
@@ -501,13 +521,25 @@ pub impl @ecs.Component for RectLight
 
 #alias(AtmosphereMedium)
 pub struct ScatteringMedium {
-  density_multiplier : Float
+  label : String?
+  falloff_resolution : Int
+  phase_resolution : Int
+  terms : Array[ScatteringTerm]
 } derive(ToJson, @json.FromJson)
 pub fn ScatteringMedium::ScatteringMedium() -> Self
-pub fn ScatteringMedium::density_multiplier(Self) -> Float
-pub fn ScatteringMedium::earthlike() -> Self
+pub fn ScatteringMedium::earth(Int, Int) -> Self
+pub fn ScatteringMedium::new(Int, Int, Array[ScatteringTerm]) -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
+pub fn ScatteringMedium::with_label(Self, String) -> Self
 pub impl @asset.Asset for ScatteringMedium
+
+pub struct ScatteringTerm {
+  absorption : @math.Vec3
+  scattering : @math.Vec3
+  falloff : Falloff
+  phase : PhaseFunction
+} derive(ToJson, @json.FromJson)
+pub fn ScatteringTerm::new(@math.Vec3, @math.Vec3, Falloff, PhaseFunction) -> Self
 
 pub struct ShowLightGizmo {
   color : LightGizmoColor?

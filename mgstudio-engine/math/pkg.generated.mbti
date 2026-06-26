@@ -32,6 +32,8 @@ pub fn cos(Float) -> Float
 
 pub fn even_interp(Interval, Int, Float) -> InterpolationDatum[Int]
 
+pub fn exp(Float) -> Float
+
 pub fn interval(Float, Float) -> Interval raise InvalidIntervalError
 
 pub fn irect(IVec2, IVec2) -> IRect
