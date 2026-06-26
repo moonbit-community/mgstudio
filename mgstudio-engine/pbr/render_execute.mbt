@@ -534,6 +534,45 @@ fn render3d_prewarm_material_pipeline(
 }
 
 ///|
+fn render3d_retained_view_entities(
+  cameras : Array[ExtractedCamera3d],
+) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
+  let retained_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  for camera in cameras {
+    retained_views.add(
+      @render_view.RetainedViewEntity::new(camera.entity.main_entity),
+    )
+  }
+  retained_views
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_apply_dirty_material_specialization_cache(
+  world : @ecs.World,
+  retained_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let dirty_specializations = match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(value) => value
+    None => return
+  }
+  match world.get_resource_mut(ecs_key_specialized_material_pipeline_cache) {
+    Some(cache_ref) =>
+      cache_ref.modify(fn(cache) {
+        for retained_view_entity in retained_views.iter() {
+          cache.apply_dirty_specializations_for_view(
+            dirty_specializations, retained_view_entity,
+          )
+        }
+        cache.expire_stale_views(retained_views)
+      })
+    None => ()
+  }
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -541,6 +580,8 @@ fn render3d_prewarm_mesh_pipelines(
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let specialization_tick = world.read_change_tick()
+  let retained_views = render3d_retained_view_entities(cameras)
+  render3d_apply_dirty_material_specialization_cache(world, retained_views)
   let mut motion_vector_prewarm_needed = false
   for camera in cameras {
     if camera.payload.motion_vector_prepass_enabled {

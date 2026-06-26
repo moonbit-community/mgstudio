@@ -282,6 +282,33 @@ pub fn SpecializedMaterialPipelineCache::clear_view(
 }
 
 ///|
+pub fn SpecializedMaterialPipelineCache::remove(
+  self : SpecializedMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+  entity : @core.Entity,
+) -> Bool {
+  match self.views.get(view) {
+    Some(cache) => cache.remove(entity)
+    None => false
+  }
+}
+
+///|
+pub fn SpecializedMaterialPipelineCache::apply_dirty_specializations_for_view(
+  self : SpecializedMaterialPipelineCache,
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  if dirty_specializations.must_wipe_specializations_for_view(view) {
+    self.clear_view(view)
+  } else {
+    for main_entity in dirty_specializations.iter_to_despecialize() {
+      ignore(self.remove(view, main_entity.id()))
+    }
+  }
+}
+
+///|
 pub fn SpecializedMaterialPipelineCache::insert(
   self : SpecializedMaterialPipelineCache,
   view : @render_view.RetainedViewEntity,

@@ -182,3 +182,55 @@ test "pbr material specialization: cache clears dirty views and expires stale re
   cache.expire_stale_views(live_views)
   debug_inspect(cache.pipeline_id(stale_view, entity) is None, content="true")
 }
+
+///|
+test "pbr material specialization: cache applies dirty specialization removals per retained view" {
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  let dirty = @render_visibility.DirtySpecializations::DirtySpecializations()
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(30, 0))
+  let other_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(31, 0),
+  )
+  let changed_entity = @core.Entity::new(32, 0)
+  let removed_entity = @core.Entity::new(33, 0)
+  let stable_entity = @core.Entity::new(34, 0)
+
+  cache.insert(
+    view,
+    changed_entity,
+    1,
+    @material.CachedRenderPipelineId::new(41UL),
+  )
+  cache.insert(
+    view,
+    removed_entity,
+    1,
+    @material.CachedRenderPipelineId::new(42UL),
+  )
+  cache.insert(
+    view,
+    stable_entity,
+    1,
+    @material.CachedRenderPipelineId::new(43UL),
+  )
+  cache.insert(
+    other_view,
+    changed_entity,
+    1,
+    @material.CachedRenderPipelineId::new(44UL),
+  )
+  dirty.insert_changed(@render.MainEntity::new(changed_entity))
+  dirty.insert_removed(@render.MainEntity::new(removed_entity))
+
+  cache.apply_dirty_specializations_for_view(dirty, view)
+  debug_inspect(cache.pipeline_id(view, changed_entity) is None, content="true")
+  debug_inspect(cache.pipeline_id(view, removed_entity) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(view, stable_entity).map(fn(value) { value.id() }),
+    content="Some(43)",
+  )
+  debug_inspect(
+    cache.pipeline_id(other_view, changed_entity).map(fn(value) { value.id() }),
+    content="Some(44)",
+  )
+}

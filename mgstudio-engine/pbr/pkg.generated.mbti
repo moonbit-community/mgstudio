@@ -2421,6 +2421,7 @@ pub struct SpecializedMaterialPipelineCache {
   views : @hashmap.HashMap[@view.RetainedViewEntity, SpecializedMaterialViewPipelineCache]
 }
 pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> Self
+pub fn SpecializedMaterialPipelineCache::apply_dirty_specializations_for_view(Self, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @view.RetainedViewEntity) -> Unit
 pub fn SpecializedMaterialPipelineCache::clear(Self) -> Unit
 pub fn SpecializedMaterialPipelineCache::clear_view(Self, @view.RetainedViewEntity) -> Unit
 pub fn SpecializedMaterialPipelineCache::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
@@ -2428,6 +2429,7 @@ pub fn SpecializedMaterialPipelineCache::get(Self, @view.RetainedViewEntity) -> 
 pub fn SpecializedMaterialPipelineCache::insert(Self, @view.RetainedViewEntity, @core.Entity, Int64, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedMaterialPipelineCache::len(Self) -> Int
 pub fn SpecializedMaterialPipelineCache::pipeline_id(Self, @view.RetainedViewEntity, @core.Entity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedMaterialPipelineCache::remove(Self, @view.RetainedViewEntity, @core.Entity) -> Bool
 pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
 pub fn SpecializedMaterialPipelineCache::view_or_insert(Self, @view.RetainedViewEntity) -> SpecializedMaterialViewPipelineCache
 
