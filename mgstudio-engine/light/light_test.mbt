@@ -135,6 +135,21 @@ test "spot light angle setters preserve plain field semantics" {
 }
 
 ///|
+test "spot light scalar setters preserve Bevy plain field semantics" {
+  let spot = @light.SpotLight::SpotLight()
+    .with_intensity(-10.0F)
+    .with_radius(-0.5F)
+    .with_shadow_depth_bias(-0.1F)
+    .with_shadow_normal_bias(-0.2F)
+    .with_shadow_map_near_z(-0.3F)
+  debug_inspect(spot.intensity.to_double(), content="-10")
+  debug_inspect(spot.radius.to_double(), content="-0.5")
+  inspect(approx_eq(spot.shadow_depth_bias, -0.1F, 1.0e-6F), content="true")
+  inspect(approx_eq(spot.shadow_normal_bias, -0.2F, 1.0e-6F), content="true")
+  inspect(approx_eq(spot.shadow_map_near_z, -0.3F, 1.0e-6F), content="true")
+}
+
+///|
 test "point light setters preserve Bevy plain field semantics" {
   let point = @light.PointLight::PointLight()
     .with_intensity(-10.0F)

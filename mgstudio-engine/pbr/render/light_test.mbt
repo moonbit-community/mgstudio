@@ -385,6 +385,37 @@ test "pbr render light: spot extraction preserves authored angles" {
 }
 
 ///|
+test "pbr render light: spot extraction preserves authored scalar fields" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::new(
+      @color.Color::white(),
+      4.0F * @math.pi(),
+      -20.0F,
+      0.1F,
+      0.25F,
+      false,
+    )
+    .with_radius(-0.5F)
+    .with_shadow_map_near_z(-0.3F),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_spot_lights(world)
+  inspect(extracted.length(), content="1")
+  inspect(approx_eq(extracted[0].range, -20.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(extracted[0].radius, -0.5F, 1.0e-6F), content="true")
+  inspect(
+    approx_eq(extracted[0].shadow_map_near_z, -0.3F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: directional dir_to_light uses transform back vector" {
   let world = @ecs.World::new()
   let entity = world.spawn()

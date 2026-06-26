@@ -1200,7 +1200,7 @@ pub fn SpotLight::with_intensity(
   self : SpotLight,
   intensity : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, intensity: light_sanitize_non_negative(intensity) }
+  SpotLight::{ ..self, intensity, }
 }
 
 ///|
@@ -1221,7 +1221,7 @@ pub fn SpotLight::with_outer_angle(
 
 ///|
 pub fn SpotLight::with_radius(self : SpotLight, radius : Float) -> SpotLight {
-  SpotLight::{ ..self, radius: light_sanitize_non_negative(radius) }
+  SpotLight::{ ..self, radius, }
 }
 
 ///|
@@ -1261,10 +1261,7 @@ pub fn SpotLight::with_shadow_depth_bias(
   self : SpotLight,
   shadow_depth_bias : Float,
 ) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_depth_bias: light_sanitize_non_negative(shadow_depth_bias),
-  }
+  SpotLight::{ ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -1272,10 +1269,7 @@ pub fn SpotLight::with_shadow_normal_bias(
   self : SpotLight,
   shadow_normal_bias : Float,
 ) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_normal_bias: light_sanitize_non_negative(shadow_normal_bias),
-  }
+  SpotLight::{ ..self, shadow_normal_bias, }
 }
 
 ///|
@@ -1283,14 +1277,7 @@ pub fn SpotLight::with_shadow_map_near_z(
   self : SpotLight,
   shadow_map_near_z : Float,
 ) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
-      0.0001F
-    } else {
-      shadow_map_near_z
-    },
-  }
+  SpotLight::{ ..self, shadow_map_near_z, }
 }
 
 ///|

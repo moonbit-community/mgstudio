@@ -2019,26 +2019,14 @@ fn render3d_extract_spot_light(
     // Bevy parity: spot-light authoring uses lumens, extracted runtime stores
     // luminous intensity (lumens/steradian).
     intensity: light.intensity / (4.0F * @math.pi()),
-    range: if light.range > 0.0F {
-      light.range
-    } else {
-      1.0F
-    },
-    radius: if light.radius > 0.0F {
-      light.radius
-    } else {
-      0.0F
-    },
+    range: light.range,
+    radius: light.radius,
     transform,
     shadow_maps_enabled: light.shadow_maps_enabled,
     contact_shadows_enabled: light.contact_shadows_enabled,
     shadow_depth_bias: light.shadow_depth_bias,
     shadow_normal_bias: light.shadow_normal_bias * texel_size * render3d_sqrt2(),
-    shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
-      light.shadow_map_near_z
-    } else {
-      0.0001F
-    },
+    shadow_map_near_z: light.shadow_map_near_z,
     spot_light_angles: Some((inner, outer)),
     volumetric,
     soft_shadows_enabled: light.soft_shadows_enabled,
