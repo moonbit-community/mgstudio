@@ -1326,6 +1326,7 @@ pub fn[T : Resource] SubApp::is_ambiguous_resource_allowed(Self[@ecs.World], key
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
 pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApp::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn SubApp::schedule_graph_dot(Self[@ecs.World], ScheduleStage, settings? : ScheduleGraphSettings) -> String
 pub fn[W] SubApp::set_extract(Self[W], (W, W) -> (W, W)) -> Self[W]
 pub fn[W] SubApp::set_update_schedule(Self[W], ScheduleStage?) -> Self[W]
 pub fn[W] SubApp::take_extract(Self[W]) -> (Self[W], ((W, W) -> (W, W))?)

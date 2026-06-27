@@ -89,6 +89,104 @@ fn read_default_standard_material(
 }
 
 ///|
+test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let sub_app = app.sub_app(@app.RenderApp)
+  let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("pbr.render3d.")
+    },
+  )
+  let render_dot = sub_app.schedule_graph_dot(
+    @render.render_schedule_stage(),
+    settings~,
+  )
+  debug_inspect(render_dot.contains("\"pbr.render3d.extract\""), content="true")
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_morphs\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_skin_bindings\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_fog\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_resources_cleanup\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_resources_flush\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_meshes\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.prepare_bind_groups\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.queue_meshes\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"pbr.render3d.queue_sweep\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.extract\" -> \"pbr.render3d.prepare_meshes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.prepare_meshes\" -> \"pbr.render3d.queue_meshes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.queue_meshes\" -> \"pbr.render3d.queue_sweep\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.prepare_resources_cleanup\" -> \"pbr.render3d.prepare_morphs\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.prepare_morphs\" -> \"pbr.render3d.prepare_resources_flush\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.prepare_resources_flush\" -> \"pbr.render3d.prepare_bind_groups\"",
+    ),
+    content="true",
+  )
+  let graph_dot = sub_app.schedule_graph_dot(
+    @render.RenderGraph::schedule(),
+    settings~,
+  )
+  debug_inspect(graph_dot.contains("\"pbr.render3d.execute\""), content="true")
+}
+
+///|
 struct PrepareLightsScheduleProbe {
   mut spawned_view : @core.Entity?
 }

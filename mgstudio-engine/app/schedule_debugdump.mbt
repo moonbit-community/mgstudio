@@ -80,24 +80,22 @@ fn schedule_graph_include(
 }
 
 ///|
-pub fn App::schedule_graph_dot(
-  self : App[@ecs.World],
+fn schedule_graph_dot_for_registry(
+  schedule : ScheduleRegistry[@ecs.World],
+  world : @ecs.World,
   stage : ScheduleStage,
-  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
+  settings : ScheduleGraphSettings,
 ) -> String {
-  let schedule_entry = schedule_entry_for_stage(
-    self.sub_apps.main.schedule,
-    stage,
-  )
+  let schedule_entry = schedule_entry_for_stage(schedule, stage)
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
   let systems = if graph_plan.build_error is Some(_) {
-    schedule_systems(self.sub_apps.main.schedule, stage)
+    schedule_systems(schedule, stage)
   } else {
     schedule_resolve_access_plan(
       schedule_entry,
       graph_plan,
       schedule_entry.graph.settings,
-      self.world(),
+      world,
       @utils.IntBitSet::new(),
       @utils.IntBitSet::new(),
     ).schedule.systems
@@ -113,7 +111,7 @@ pub fn App::schedule_graph_dot(
       schedule_entry,
       graph_plan,
       schedule_entry.graph.settings,
-      self.world(),
+      world,
       @utils.IntBitSet::new(),
       @utils.IntBitSet::new(),
     ).schedule.execution_order
@@ -143,4 +141,27 @@ pub fn App::schedule_graph_dot(
 
   lines.push("}")
   lines.join("\n")
+}
+
+///|
+pub fn App::schedule_graph_dot(
+  self : App[@ecs.World],
+  stage : ScheduleStage,
+  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
+) -> String {
+  schedule_graph_dot_for_registry(
+    self.sub_apps.main.schedule,
+    self.world(),
+    stage,
+    settings,
+  )
+}
+
+///|
+pub fn SubApp::schedule_graph_dot(
+  self : SubApp[@ecs.World],
+  stage : ScheduleStage,
+  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
+) -> String {
+  schedule_graph_dot_for_registry(self.schedule, self.world, stage, settings)
 }

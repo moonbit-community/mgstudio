@@ -180,69 +180,69 @@ fn configure_mesh_render_sub_app(
   @render.configure_base_render_sets(sub_app)
   .add_systems(
     stage,
-    @app.system(render3d_extract_system_in_render_app).in_set(
-      render3d_set_extract,
-    ),
+    @app.system(render3d_extract_system_in_render_app)
+    .named("pbr.render3d.extract")
+    .in_set(render3d_set_extract),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_morphs_system_in_render_app).in_set(
-      render3d_set_prepare_resources,
-    ),
+    @app.system(render3d_prepare_morphs_system_in_render_app)
+    .named("pbr.render3d.prepare_morphs")
+    .in_set(render3d_set_prepare_resources_flush),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_skin_bindings_system_in_render_app).in_set(
-      render3d_set_prepare_resources,
-    ),
+    @app.system(render3d_prepare_skin_bindings_system_in_render_app)
+    .named("pbr.render3d.prepare_skin_bindings")
+    .in_set(render3d_set_prepare_resources),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_fog_system_in_render_app).in_set(
-      render3d_set_prepare_resources,
-    ),
+    @app.system(render3d_prepare_fog_system_in_render_app)
+    .named("pbr.render3d.prepare_fog")
+    .in_set(render3d_set_prepare_resources),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_resources_cleanup_system_in_render_app).in_set(
-      render3d_set_prepare_resources,
-    ),
+    @app.system(render3d_prepare_resources_cleanup_system_in_render_app)
+    .named("pbr.render3d.prepare_resources_cleanup")
+    .in_set(render3d_set_prepare_resources),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_resources_flush_system_in_render_app).in_set(
-      render3d_set_prepare_resources_flush,
-    ),
+    @app.system(render3d_prepare_resources_flush_system_in_render_app)
+    .named("pbr.render3d.prepare_resources_flush")
+    .in_set(render3d_set_prepare_resources_flush),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_meshes_system_in_render_app).in_set(
-      render3d_set_prepare_meshes,
-    ),
+    @app.system(render3d_prepare_meshes_system_in_render_app)
+    .named("pbr.render3d.prepare_meshes")
+    .in_set(render3d_set_prepare_meshes),
   )
   .add_systems(
     stage,
-    @app.system(render3d_prepare_bind_groups_system_in_render_app).in_set(
-      render3d_set_prepare_bind_groups,
-    ),
+    @app.system(render3d_prepare_bind_groups_system_in_render_app)
+    .named("pbr.render3d.prepare_bind_groups")
+    .in_set(render3d_set_prepare_bind_groups),
   )
   .add_systems(
     stage,
-    @app.system(render3d_queue_meshes_system_in_render_app).in_set(
-      render3d_set_queue_meshes,
-    ),
+    @app.system(render3d_queue_meshes_system_in_render_app)
+    .named("pbr.render3d.queue_meshes")
+    .in_set(render3d_set_queue_meshes),
   )
   .add_systems(
     stage,
-    @app.system(render3d_queue_sweep_system_in_render_app).in_set(
-      render3d_set_queue_sweep,
-    ),
+    @app.system(render3d_queue_sweep_system_in_render_app)
+    .named("pbr.render3d.queue_sweep")
+    .in_set(render3d_set_queue_sweep),
   )
   .add_systems(
     graph_stage,
-    @app.system(render3d_execute_system_in_render_app).in_set(
-      render3d_set_render,
-    ),
+    @app.system(render3d_execute_system_in_render_app)
+    .named("pbr.render3d.execute")
+    .in_set(render3d_set_render),
   )
 }
 
