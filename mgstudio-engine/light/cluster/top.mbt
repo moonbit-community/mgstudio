@@ -614,6 +614,19 @@ pub fn Clusters::last_frame_total_cluster_index_count(self : Clusters) -> Int? {
 }
 
 ///|
+pub fn Clusters::with_last_frame_statistics(
+  self : Clusters,
+  farthest_z : Float,
+  total_cluster_index_count : Int,
+) -> Clusters {
+  Clusters::{
+    ..self,
+    last_frame_farthest_z: Some(farthest_z),
+    last_frame_total_cluster_index_count: Some(total_cluster_index_count),
+  }
+}
+
+///|
 pub fn Clusters::clusterable_objects(
   self : Clusters,
 ) -> Array[ObjectsInCluster] {

@@ -130,6 +130,7 @@ pub fn Clusters::last_frame_total_cluster_index_count(Self) -> Int?
 pub fn Clusters::near(Self) -> Float
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
+pub fn Clusters::with_last_frame_statistics(Self, Float, Int) -> Self
 pub impl @ecs.Component for Clusters
 
 pub struct GlobalClusterGpuSettings {

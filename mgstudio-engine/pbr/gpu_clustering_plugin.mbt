@@ -2142,6 +2142,83 @@ pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn extract_clusters_for_gpu_clustering(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  render_world
+  .components_registrator()
+  .register_component_by_key(ExtractedClusterConfig::component())
+  |> ignore
+  let readback = render_world.get_resource(
+    RenderViewClusteringReadbackData::resource(),
+  )
+  source_world.for_each_component(@light_cluster.Clusters::component(), fn(
+    source_view_entity,
+    clusters,
+  ) {
+    guard (try! source_world.get_by_key(
+        source_view_entity, @render.ecs_key_render_entity,
+      ))
+      is Some(render_entity) else {
+      return
+    }
+    let render_view_entity = render_entity.id()
+    let camera_is_active = match
+      (try! source_world.get_by_key(
+        source_view_entity, @camera_camera.ecs_key_camera,
+      )) {
+      Some(camera) => camera.is_active
+      None => true
+    }
+    if !camera_is_active {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          ExtractedClusterConfig::component(),
+        ) catch {
+          _ => false
+        },
+      )
+      return
+    }
+    render_world.set_by_key(
+      render_view_entity,
+      ExtractedClusterConfig::component(),
+      ExtractedClusterConfig::from_clusters(clusters),
+    ) catch {
+      _ => abort("extract_clusters_for_gpu_clustering: failed to insert config")
+    }
+    match readback {
+      Some(readback_data) =>
+        match
+          readback_data.view_data(@render.MainEntity::new(source_view_entity)) {
+          Some(view_clustering_buffer_size_data) =>
+            match view_clustering_buffer_size_data.last_frame_statistics() {
+              Some(statistics) => {
+                let updated_clusters = clusters.with_last_frame_statistics(
+                  statistics.farthest_z(),
+                  statistics.index_list_size().reinterpret_as_int(),
+                )
+                source_world.set_by_key(
+                  source_view_entity,
+                  @light_cluster.Clusters::component(),
+                  updated_clusters,
+                ) catch {
+                  _ =>
+                    abort(
+                      "extract_clusters_for_gpu_clustering: failed to update source clusters",
+                    )
+                }
+              }
+              None => ()
+            }
+          None => ()
+        }
+      None => ()
+    }
+  })
+}
+
+///|
 pub fn upload_view_gpu_clustering_buffers(world : @ecs.World) -> Unit {
   let render_device = gpu_clustering_resource_or_abort(
     world, @render.render_device_resource_key, "RenderDevice",

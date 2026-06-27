@@ -260,6 +260,13 @@ fn configure_pbr_render_extract_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(extract_clusters_for_gpu_clustering)
+    .named("mgstudio_pbr::extract_clusters_for_gpu_clustering")
+    .in_set(@render.render_system_set_extract_commands)
+    .run_if(gpu_clustering_is_enabled_during_extraction),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(@pbr_render.extract_ambient_light_resource)
     .named("mgstudio_pbr::extract_ambient_light_resource")
     .in_set(@render.render_system_set_extract_commands),

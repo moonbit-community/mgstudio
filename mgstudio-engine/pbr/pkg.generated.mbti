@@ -461,6 +461,8 @@ pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata
 
 pub fn extract_clusters_for_cpu_clustering(@ecs.World) -> Unit
 
+pub fn extract_clusters_for_gpu_clustering(@ecs.World) -> Unit
+
 pub fn forward_decal_material_add(@decal.ForwardDecalMaterial) -> @asset.Handle[@decal.ForwardDecalMaterial]
 
 pub fn forward_decal_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor

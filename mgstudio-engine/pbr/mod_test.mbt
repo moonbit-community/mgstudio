@@ -216,6 +216,12 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     ),
     content="true",
   )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::extract_clusters_for_gpu_clustering\"",
+    ),
+    content="true",
+  )
 }
 
 ///|
@@ -1333,6 +1339,69 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   device.release()
   adapter.release()
   instance.release()
+}
+
+///|
+test "render3d: gpu clustering extract writes configs and syncs readback statistics" {
+  let world = @ecs.World::new()
+  let source_view = world.spawn()
+  let render_view = world.spawn()
+  let clusters = @light_cluster.Clusters::new(120, 120, 2, 3, 4, 0.5F, 96.0F)
+  try! world.set_by_key(
+    source_view,
+    @light_cluster.Clusters::component(),
+    clusters,
+  )
+  try! world.set_by_key(
+    source_view,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    source_view,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_view),
+  )
+  let readback = RenderViewClusteringReadbackData::RenderViewClusteringReadbackData()
+  let view_readback = ViewClusteringReadbackData::new(
+    @light_cluster.GlobalClusterGpuSettings::new(8, 16),
+  )
+  let farthest_z = 19.25F
+  view_readback.update_from_metadata(
+    ClusterMetadata::from_gpu_readback(
+      ClusterRasterIndirectDrawParams::new(6U, 0U, 0U, 0U, 0U),
+      0U,
+      0U,
+      0U,
+      0U,
+      8U,
+      33U,
+      farthest_z.reinterpret_as_uint() ^ 0x8000_0000U,
+    ),
+  )
+  readback.views.set(source_view.to_bits(), view_readback)
+  world.insert_resource(RenderViewClusteringReadbackData::resource(), readback)
+
+  extract_clusters_for_gpu_clustering(world)
+
+  let extracted_config = match
+    (try! world.get_by_key(render_view, ExtractedClusterConfig::component())) {
+    Some(value) => value
+    None => abort("missing ExtractedClusterConfig")
+  }
+  debug_inspect(extracted_config.dimensions(), content="(2, 3, 4)")
+  debug_inspect(extracted_config.near(), content="0.5")
+  debug_inspect(extracted_config.far(), content="96")
+  let updated_clusters = match
+    (try! world.get_by_key(source_view, @light_cluster.Clusters::component())) {
+    Some(value) => value
+    None => abort("missing source clusters")
+  }
+  debug_inspect(
+    updated_clusters.last_frame_total_cluster_index_count(),
+    content="Some(33)",
+  )
+  debug_inspect(updated_clusters.last_frame_farthest_z(), content="Some(19.25)")
 }
 
 ///|
