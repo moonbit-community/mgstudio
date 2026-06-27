@@ -33,6 +33,22 @@ test "motion blur: uniform extract clamps invalid local constructor inputs" {
 }
 
 ///|
+test "motion blur: uniform bytes match WGSL layout size" {
+  let uniform = MotionBlurUniform::new(0.5F, 3)
+  let bytes = uniform.bytes()
+  inspect(bytes.length(), content="16")
+  inspect(MOTION_BLUR_UNIFORM_SIZE_BYTES, content="16")
+  inspect(bytes[0].to_int() & 0xFF, content="0")
+  inspect(bytes[1].to_int() & 0xFF, content="0")
+  inspect(bytes[2].to_int() & 0xFF, content="0")
+  inspect(bytes[3].to_int() & 0xFF, content="63")
+  inspect(bytes[4].to_int() & 0xFF, content="3")
+  inspect(bytes[5].to_int() & 0xFF, content="0")
+  inspect(bytes[6].to_int() & 0xFF, content="0")
+  inspect(bytes[7].to_int() & 0xFF, content="0")
+}
+
+///|
 test "motion blur: sample helper stays tied to component settings" {
   let disabled = motion_blur_generate_samples(MotionBlur::new(0.0F, 8))
   inspect(disabled.length(), content="0")
@@ -95,6 +111,62 @@ test "motion blur: extract only writes uniforms for camera views" {
     render_non_camera_entity, ecs_key_motion_blur_uniform,
   )
   inspect(non_camera_uniform is None, content="true")
+}
+
+///|
+test "motion blur: prepare uniforms writes GPU buffer and per-view offsets" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @render.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(@render.render_queue_resource_key, render_queue)
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(
+    first,
+    ecs_key_motion_blur_uniform,
+    MotionBlurUniform::new(0.5F, 1),
+  )
+  try! world.set_by_key(
+    second,
+    ecs_key_motion_blur_uniform,
+    MotionBlurUniform::new(1.0F, 2),
+  )
+
+  prepare_motion_blur_uniforms(world)
+
+  let uniforms = world.get_resource(MotionBlurUniforms::resource()).unwrap()
+  inspect(uniforms.len(), content="2")
+  inspect(uniforms.binding() is Some(_), content="true")
+  inspect(
+    uniforms.gpu_capacity() >= (MOTION_BLUR_UNIFORM_SIZE_BYTES * 2).to_uint64(),
+    content="true",
+  )
+  let first_offset = try! world.get_by_key(
+    first,
+    ViewMotionBlurUniformOffset::component(),
+  )
+  let second_offset = try! world.get_by_key(
+    second,
+    ViewMotionBlurUniformOffset::component(),
+  )
+  guard first_offset is Some(first_offset_value) else {
+    abort("expected first motion blur uniform offset")
+  }
+  guard second_offset is Some(second_offset_value) else {
+    abort("expected second motion blur uniform offset")
+  }
+  inspect(first_offset_value.offset(), content="0")
+  inspect(
+    second_offset_value.offset(),
+    content=MOTION_BLUR_UNIFORM_SIZE_BYTES.to_string(),
+  )
+  device.release()
+  adapter.release()
+  instance.release()
 }
 
 ///|

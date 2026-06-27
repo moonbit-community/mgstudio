@@ -19,6 +19,9 @@
 const MOTION_BLUR_PLUGIN_NAME : String = "mgstudio.post_process.motion_blur.MotionBlurPlugin"
 
 ///|
+pub const MOTION_BLUR_UNIFORM_SIZE_BYTES : Int = 16
+
+///|
 pub struct MotionBlurPlugin {}
 
 ///|
@@ -105,6 +108,29 @@ pub fn MotionBlurUniform::new(
 }
 
 ///|
+fn motion_blur_uniform_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+  out.push(((value >> 16) & 0xFFU).to_byte())
+  out.push(((value >> 24) & 0xFFU).to_byte())
+}
+
+///|
+fn motion_blur_uniform_push_f32_le(out : Array[Byte], value : Float) -> Unit {
+  motion_blur_uniform_push_u32_le(out, value.reinterpret_as_uint())
+}
+
+///|
+pub fn MotionBlurUniform::bytes(self : MotionBlurUniform) -> Bytes {
+  let out : Array[Byte] = []
+  motion_blur_uniform_push_f32_le(out, self.shutter_angle)
+  motion_blur_uniform_push_u32_le(out, self.samples.reinterpret_as_uint())
+  motion_blur_uniform_push_u32_le(out, 0U)
+  motion_blur_uniform_push_u32_le(out, 0U)
+  Bytes::from_array(out)
+}
+
+///|
 pub let ecs_key_motion_blur_uniform : @ecs.ComponentKey[MotionBlurUniform] = @ecs.register_component(
   debug_name="render3d.motion_blur_uniform",
 )
@@ -127,6 +153,152 @@ pub fn motion_blur_extract_uniform(settings : MotionBlur) -> MotionBlurUniform {
 ///|
 pub fn motion_blur_uniform_is_active(uniform : MotionBlurUniform) -> Bool {
   uniform.samples > 0 && uniform.shutter_angle > 0.0F
+}
+
+///|
+pub struct ViewMotionBlurUniformOffset {
+  offset : UInt
+}
+
+///|
+pub fn ViewMotionBlurUniformOffset::new(
+  offset : UInt,
+) -> ViewMotionBlurUniformOffset {
+  ViewMotionBlurUniformOffset::{ offset, }
+}
+
+///|
+pub fn ViewMotionBlurUniformOffset::offset(
+  self : ViewMotionBlurUniformOffset,
+) -> UInt {
+  self.offset
+}
+
+///|
+pub let ecs_key_view_motion_blur_uniform_offset : @ecs.ComponentKey[
+  ViewMotionBlurUniformOffset,
+] = @ecs.register_component(
+  debug_name="post_process.motion_blur.uniform_offset",
+)
+
+///|
+pub impl @ecs.Component for ViewMotionBlurUniformOffset with fn component() {
+  ecs_key_view_motion_blur_uniform_offset
+}
+
+///|
+pub struct MotionBlurUniforms {
+  uniforms : @render_resource.DynamicUniformBuffer[MotionBlurUniform]
+  mut gpu_buffer : @wgpu.Buffer?
+  mut gpu_capacity : UInt64
+}
+
+///|
+pub fn MotionBlurUniforms::MotionBlurUniforms() -> MotionBlurUniforms {
+  MotionBlurUniforms::{
+    uniforms: @render_resource.DynamicUniformBuffer::new(),
+    gpu_buffer: None,
+    gpu_capacity: 0UL,
+  }
+}
+
+///|
+pub fn MotionBlurUniforms::clear(self : MotionBlurUniforms) -> Unit {
+  self.uniforms.clear()
+}
+
+///|
+pub fn MotionBlurUniforms::push(
+  self : MotionBlurUniforms,
+  uniform : MotionBlurUniform,
+) -> UInt {
+  let offset = (self.uniforms.len() * MOTION_BLUR_UNIFORM_SIZE_BYTES).reinterpret_as_uint()
+  self.uniforms.push(uniform)
+  offset
+}
+
+///|
+pub fn MotionBlurUniforms::len(self : MotionBlurUniforms) -> Int {
+  self.uniforms.len()
+}
+
+///|
+fn motion_blur_uniforms_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+fn MotionBlurUniforms::buffer_bytes(self : MotionBlurUniforms) -> Bytes {
+  let out : Array[Byte] = []
+  for uniform in self.uniforms.values() {
+    let bytes = uniform.bytes()
+    for byte in bytes {
+      out.push(byte)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+///|
+pub fn MotionBlurUniforms::write_buffer(
+  self : MotionBlurUniforms,
+  render_device : @render.RenderDevice,
+  render_queue : @render.RenderQueue,
+) -> Unit {
+  let bytes = self.buffer_bytes()
+  if bytes.length() == 0 {
+    return
+  }
+  let required_size = motion_blur_uniforms_non_zero_u64(
+    bytes.length().to_uint64(),
+  )
+  let device = render_device.wgpu_device()
+  let queue = render_queue.wgpu_queue()
+  let usage = @wgpu.BufferUsage::from_u64(
+    @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
+  let buffer = match self.gpu_buffer {
+    Some(existing) if self.gpu_capacity >= required_size => existing
+    Some(existing) => {
+      existing.release()
+      let next = device.create_buffer(size=required_size, usage~)
+      next.set_label("motion_blur_uniforms_buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+    None => {
+      let next = device.create_buffer(size=required_size, usage~)
+      next.set_label("motion_blur_uniforms_buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+  }
+  queue.write_buffer(buffer, 0UL, bytes)
+  self.gpu_buffer = Some(buffer)
+}
+
+///|
+pub fn MotionBlurUniforms::binding(self : MotionBlurUniforms) -> @wgpu.Buffer? {
+  self.gpu_buffer
+}
+
+///|
+pub fn MotionBlurUniforms::gpu_capacity(self : MotionBlurUniforms) -> UInt64 {
+  self.gpu_capacity
+}
+
+///|
+pub let ecs_key_motion_blur_uniforms : @ecs.ResourceKey[MotionBlurUniforms] = @ecs.register_resource(
+  debug_name="post_process.motion_blur.uniforms",
+)
+
+///|
+pub impl @app.Resource for MotionBlurUniforms with fn resource() {
+  ecs_key_motion_blur_uniforms
 }
 
 ///|
@@ -211,6 +383,96 @@ pub fn prepare_view_depth_texture_usages_for_motion_blur(
 }
 
 ///|
+pub fn init_motion_blur_uniforms(render_world : @ecs.World) -> Unit {
+  if render_world.resource(MotionBlurUniforms::resource()).is_present() {
+    return
+  }
+  render_world.insert_resource(
+    MotionBlurUniforms::resource(),
+    MotionBlurUniforms::MotionBlurUniforms(),
+  )
+}
+
+///|
+fn remove_stale_motion_blur_uniform_offsets(render_world : @ecs.World) -> Unit {
+  let stale : Array[@core.Entity] = []
+  let query : @ecs.Query[
+    (@core.Entity, @ecs.Read[ViewMotionBlurUniformOffset]),
+    @ecs.All,
+  ] = @ecs.query(render_world)
+  try! query.view(fn(_query_entity, data) {
+    let (entity, _offset) = data
+    if (try! render_world.get_by_key(entity, ecs_key_motion_blur_uniform))
+      is None {
+      stale.push(entity)
+    }
+  })
+  for entity in stale {
+    ignore(
+      try! render_world.remove_by_key(
+        entity, ecs_key_view_motion_blur_uniform_offset,
+      ),
+    )
+  }
+}
+
+///|
+fn motion_blur_uniforms_mut_or_init(
+  render_world : @ecs.World,
+) -> @ecs.ResourceMut[MotionBlurUniforms] {
+  if render_world.get_resource(MotionBlurUniforms::resource()) is None {
+    render_world.insert_resource(
+      MotionBlurUniforms::resource(),
+      MotionBlurUniforms::MotionBlurUniforms(),
+    )
+  }
+  match render_world.get_resource_mut(MotionBlurUniforms::resource()) {
+    Some(value) => value
+    None => abort("missing MotionBlurUniforms resource")
+  }
+}
+
+///|
+pub fn prepare_motion_blur_uniforms(render_world : @ecs.World) -> Unit {
+  remove_stale_motion_blur_uniform_offsets(render_world)
+  guard render_world.get_resource(@render.render_device_resource_key)
+    is Some(render_device) else {
+    return
+  }
+  guard render_world.get_resource(@render.render_queue_resource_key)
+    is Some(render_queue) else {
+    return
+  }
+  let prepared : Array[(@core.Entity, MotionBlurUniform)] = []
+  let query : @ecs.Query[(@core.Entity, @ecs.Read[MotionBlurUniform]), @ecs.All] = @ecs.query(
+    render_world,
+  )
+  try! query.view(fn(_query_entity, data) {
+    let (entity, uniform) = data
+    prepared.push((entity, uniform.value()))
+  })
+  let offsets = motion_blur_uniforms_mut_or_init(render_world).modify(fn(
+    uniforms,
+  ) {
+    uniforms.clear()
+    let offsets : Array[(@core.Entity, ViewMotionBlurUniformOffset)] = []
+    for item in prepared {
+      let (entity, uniform) = item
+      let offset = uniforms.push(uniform)
+      offsets.push((entity, ViewMotionBlurUniformOffset::new(offset)))
+    }
+    uniforms.write_buffer(render_device, render_queue)
+    offsets
+  })
+  for item in offsets {
+    let (entity, offset) = item
+    try! render_world.set_by_key(
+      entity, ecs_key_view_motion_blur_uniform_offset, offset,
+    )
+  }
+}
+
+///|
 pub fn motion_blur_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_plugins(MotionBlurPlugin::MotionBlurPlugin())
 }
@@ -234,10 +496,22 @@ pub fn motion_blur_plugin_with(
       ),
     )
     .add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(init_motion_blur_uniforms).named(
+        "mgstudio_post_process::init_motion_blur_uniforms",
+      ),
+    )
+    .add_systems(
       @render.render_schedule_stage(),
       @app.system(extract_motion_blur_uniforms)
       .named("mgstudio_post_process::extract_motion_blur_uniforms")
       .in_set(@render.render_system_set_extract_commands),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(prepare_motion_blur_uniforms)
+      .named("mgstudio_post_process::prepare_motion_blur_uniforms")
+      .in_set(@render.render_system_set_prepare),
     )
     .add_systems(
       @render.render_schedule_stage(),

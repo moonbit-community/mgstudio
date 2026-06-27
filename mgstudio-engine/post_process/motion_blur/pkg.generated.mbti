@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -17,6 +18,8 @@ pub const MOTION_BLUR_PIPELINE_LABEL : String = "motion_blur_pipeline"
 
 pub const MOTION_BLUR_SHADER_PATH : String = "post_process/motion_blur/motion_blur.wgsl"
 
+pub const MOTION_BLUR_UNIFORM_SIZE_BYTES : Int = 16
+
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
 
 pub let ecs_key_motion_blur_pipeline : @ecs.ResourceKey[MotionBlurPipeline]
@@ -25,11 +28,17 @@ pub let ecs_key_motion_blur_pipeline_id : @ecs.ComponentKey[MotionBlurPipelineId
 
 pub let ecs_key_motion_blur_uniform : @ecs.ComponentKey[MotionBlurUniform]
 
+pub let ecs_key_motion_blur_uniforms : @ecs.ResourceKey[MotionBlurUniforms]
+
 pub let ecs_key_specialized_motion_blur_pipelines : @ecs.ResourceKey[SpecializedMotionBlurPipelines]
+
+pub let ecs_key_view_motion_blur_uniform_offset : @ecs.ComponentKey[ViewMotionBlurUniformOffset]
 
 pub fn extract_motion_blur_uniforms(@ecs.World) -> Unit
 
 pub fn init_motion_blur_pipeline(@ecs.World) -> Unit
+
+pub fn init_motion_blur_uniforms(@ecs.World) -> Unit
 
 pub fn motion_blur_bind_group_layout_descriptor(multisampled~ : Bool) -> @render_resource.BindGroupLayoutDescriptor
 
@@ -52,6 +61,8 @@ pub fn motion_blur_uniform_component_key() -> @ecs.ComponentKey[MotionBlurUnifor
 pub fn motion_blur_uniform_is_active(MotionBlurUniform) -> Bool
 
 pub fn prepare_motion_blur_pipelines(@ecs.World) -> Unit
+
+pub fn prepare_motion_blur_uniforms(@ecs.World) -> Unit
 
 pub fn prepare_view_depth_texture_usages_for_motion_blur(@ecs.World) -> Unit
 
@@ -117,8 +128,23 @@ pub struct MotionBlurUniform {
   samples : Int
 }
 pub fn MotionBlurUniform::MotionBlurUniform() -> Self
+pub fn MotionBlurUniform::bytes(Self) -> Bytes
 pub fn MotionBlurUniform::new(Float, Int) -> Self
 pub impl @ecs.Component for MotionBlurUniform
+
+pub struct MotionBlurUniforms {
+  uniforms : @render_resource.DynamicUniformBuffer[MotionBlurUniform]
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
+}
+pub fn MotionBlurUniforms::MotionBlurUniforms() -> Self
+pub fn MotionBlurUniforms::binding(Self) -> @wgpu_mbt.Buffer?
+pub fn MotionBlurUniforms::clear(Self) -> Unit
+pub fn MotionBlurUniforms::gpu_capacity(Self) -> UInt64
+pub fn MotionBlurUniforms::len(Self) -> Int
+pub fn MotionBlurUniforms::push(Self, MotionBlurUniform) -> UInt
+pub fn MotionBlurUniforms::write_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
+pub impl @app.Resource for MotionBlurUniforms
 
 pub struct SpecializedMotionBlurPipelines {
   entries : Array[(MotionBlurPipelineKey, @render_resource.CachedRenderPipelineId)]
@@ -127,6 +153,13 @@ pub fn SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines() -> Self
 pub fn SpecializedMotionBlurPipelines::len(Self) -> Int
 pub fn SpecializedMotionBlurPipelines::queue(Self, @render_resource.PipelineCache, MotionBlurPipeline, MotionBlurPipelineKey) -> @render_resource.CachedRenderPipelineId
 pub impl @app.Resource for SpecializedMotionBlurPipelines
+
+pub struct ViewMotionBlurUniformOffset {
+  offset : UInt
+}
+pub fn ViewMotionBlurUniformOffset::new(UInt) -> Self
+pub fn ViewMotionBlurUniformOffset::offset(Self) -> UInt
+pub impl @ecs.Component for ViewMotionBlurUniformOffset
 
 // Type aliases
 

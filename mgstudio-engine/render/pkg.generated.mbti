@@ -264,7 +264,7 @@ pub fn host_gpu_draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotat
 
 pub fn host_gpu_draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
-pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler) -> Unit
+pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler, settings_buffer~ : @wgpu_mbt.Buffer, settings_offset~ : UInt) -> Unit
 
 pub fn host_gpu_draw_prepared_skybox(bind_group_id~ : Int) -> Unit
 
@@ -338,7 +338,7 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(target_id~ : Int, msaa_sa
 
 pub fn host_gpu_prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes~ : Bytes) -> Unit
 
-pub fn host_gpu_prepare_motion_blur(velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
+pub fn host_gpu_prepare_motion_blur(velocity_texture_id~ : Int) -> Unit
 
 pub fn host_gpu_prepare_skybox_bind_group(texture_id~ : Int, brightness~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float) -> Int?
 
@@ -1265,6 +1265,8 @@ pub using @render_resource {type PrimitiveState}
 pub using @renderer {type RenderDevice}
 
 pub using @render_resource {type RenderPipelineDescriptor}
+
+pub using @renderer {type RenderQueue}
 
 pub using @render_resource {type ShaderDefVal}
 
