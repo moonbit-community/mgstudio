@@ -420,6 +420,69 @@ test "render3d: shadow multidraw batch set mirrors Bevy packed bin offsets" {
 }
 
 ///|
+test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(903UL),
+    @material.DrawFunctionId::new(11U),
+    Some(5),
+    @render_mesh.MeshSlabs::new(21, index_slab_id=Some(22)),
+  )
+  let first_bin = Render3dShadowBinKeyData::new(404)
+  let second_bin = Render3dShadowBinKeyData::new(505)
+  let first_main = @render.MainEntity::new(@core.Entity::new(81, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(82, 1))
+  phase.add(
+    key,
+    first_bin,
+    (@core.Entity::new(91, 1), first_main),
+    40U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  phase.add(
+    key,
+    second_bin,
+    (@core.Entity::new(92, 1), second_main),
+    41U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  debug_inspect(phase.len(), content="2")
+  debug_inspect(phase.items().length(), content="0")
+  debug_inspect(phase.multidrawable_batch_set_count(), content="1")
+  debug_inspect(phase.multidrawable_cpu_instance_count(), content="2")
+  debug_inspect(phase.phase_type(first_main), content="Some(MultidrawableMesh)")
+  phase.remove(first_main)
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.input_uniform_index(first_main), content="None")
+  debug_inspect(phase.input_uniform_index(second_main), content="Some(41)")
+  phase.prepare_for_new_frame()
+  debug_inspect(phase.len(), content="0")
+  debug_inspect(phase.multidrawable_batch_set_count(), content="0")
+
+  let preprocessing_only_phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  preprocessing_only_phase.add(
+    key,
+    first_bin,
+    (@core.Entity::new(93, 1), first_main),
+    50U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  debug_inspect(
+    preprocessing_only_phase.multidrawable_batch_set_count(),
+    content="0",
+  )
+  debug_inspect(preprocessing_only_phase.items().length(), content="1")
+  debug_inspect(
+    preprocessing_only_phase.phase_type(first_main),
+    content="Some(BatchableMesh)",
+  )
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
