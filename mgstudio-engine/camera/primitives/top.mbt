@@ -67,6 +67,29 @@ pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
 }
 
 ///|
+pub fn ViewFrustum::from_clip_from_world(
+  clip_from_world : @math.Mat4,
+) -> ViewFrustum {
+  ViewFrustum::{
+    inner: @math.ViewFrustum::from_clip_from_world(clip_from_world),
+  }
+}
+
+///|
+pub fn ViewFrustum::from_clip_from_world_custom_far(
+  clip_from_world : @math.Mat4,
+  view_translation : @math.Vec3,
+  view_backward : @math.Vec3,
+  far : Float,
+) -> ViewFrustum {
+  ViewFrustum::{
+    inner: @math.ViewFrustum::from_clip_from_world_custom_far(
+      clip_from_world, view_translation, view_backward, far,
+    ),
+  }
+}
+
+///|
 pub fn ViewFrustum::half_spaces(self : ViewFrustum) -> Array[HalfSpace] {
   self.inner.half_spaces
 }

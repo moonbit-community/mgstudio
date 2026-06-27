@@ -202,6 +202,38 @@ test "math: Mat4 identity uses Bevy column-major axes" {
 }
 
 ///|
+test "math: Mat4 row and affine conversion preserve Bevy column-major shape" {
+  let matrix = Mat4::from_cols(
+    Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
+    Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
+    Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
+    Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
+  )
+  let row0 = matrix.row(0)
+  let row3 = matrix.row(3)
+  debug_inspect(
+    row0.x == 1.0F && row0.y == 5.0F && row0.z == 9.0F && row0.w == 13.0F,
+    content="true",
+  )
+  debug_inspect(
+    row3.x == 4.0F && row3.y == 8.0F && row3.z == 12.0F && row3.w == 16.0F,
+    content="true",
+  )
+
+  let transform = Mat4::from_affine3(
+    Affine3::from_translation(Vec3::new(1.0F, 2.0F, 3.0F)),
+  )
+  let transformed = transform.mul_vec4(Vec4::new(4.0F, 5.0F, 6.0F, 1.0F))
+  debug_inspect(
+    transformed.x == 5.0F &&
+    transformed.y == 7.0F &&
+    transformed.z == 9.0F &&
+    transformed.w == 1.0F,
+    content="true",
+  )
+}
+
+///|
 test "math: Mat4 perspective infinite reverse rh matches Bevy shape" {
   let matrix = Mat4::perspective_infinite_reverse_rh(pi_half(), 1.0F, 0.25F)
   let x = matrix.x_axis()
@@ -218,6 +250,24 @@ test "math: Mat4 perspective infinite reverse rh matches Bevy shape" {
     w.x == 0.0F && w.y == 0.0F && w.z == 0.25F && w.w == 0.0F,
     content="true",
   )
+}
+
+///|
+test "math: ViewFrustum custom far plane matches Bevy construction" {
+  let frustum = ViewFrustum::from_clip_from_world_custom_far(
+    Mat4::identity(),
+    Vec3::zero(),
+    Vec3::new(0.0F, 0.0F, 1.0F),
+    6.0F,
+  )
+  let half_spaces = frustum.half_spaces
+  let far = half_spaces[VIEW_FRUSTUM_FAR_PLANE_IDX]
+  let normal = far.normal()
+  debug_inspect(half_spaces.length(), content="6")
+  debug_inspect(normal.x == 0.0F, content="true")
+  debug_inspect(normal.y == 0.0F, content="true")
+  debug_inspect(normal.z == 1.0F, content="true")
+  debug_inspect(far.d() == 6.0F, content="true")
 }
 
 ///|

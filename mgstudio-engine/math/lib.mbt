@@ -269,6 +269,31 @@ pub fn Vec4::splat(v : Float) -> Vec4 {
 }
 
 ///|
+pub fn Vec4::add(self : Vec4, other : Vec4) -> Vec4 {
+  Vec4::new(
+    self.x + other.x,
+    self.y + other.y,
+    self.z + other.z,
+    self.w + other.w,
+  )
+}
+
+///|
+pub fn Vec4::sub(self : Vec4, other : Vec4) -> Vec4 {
+  Vec4::new(
+    self.x - other.x,
+    self.y - other.y,
+    self.z - other.z,
+    self.w - other.w,
+  )
+}
+
+///|
+pub fn Vec4::mul_scalar(self : Vec4, scalar : Float) -> Vec4 {
+  Vec4::new(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
+}
+
+///|
 // Bevy source: `bevy_math::Mat4`.
 pub struct Mat4 {
   x_axis : Vec4
@@ -312,6 +337,79 @@ pub fn Mat4::perspective_infinite_reverse_rh(
     Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
     Vec4::new(0.0F, 0.0F, z_near, 0.0F),
   )
+}
+
+///|
+pub fn Mat4::from_affine3(affine : Affine3) -> Mat4 {
+  Mat4::from_cols(
+    Vec4::new(
+      affine.matrix3.x_axis.x,
+      affine.matrix3.x_axis.y,
+      affine.matrix3.x_axis.z,
+      0.0F,
+    ),
+    Vec4::new(
+      affine.matrix3.y_axis.x,
+      affine.matrix3.y_axis.y,
+      affine.matrix3.y_axis.z,
+      0.0F,
+    ),
+    Vec4::new(
+      affine.matrix3.z_axis.x,
+      affine.matrix3.z_axis.y,
+      affine.matrix3.z_axis.z,
+      0.0F,
+    ),
+    Vec4::new(
+      affine.translation.x,
+      affine.translation.y,
+      affine.translation.z,
+      1.0F,
+    ),
+  )
+}
+
+///|
+pub fn Mat4::mul_vec4(self : Mat4, value : Vec4) -> Vec4 {
+  Vec4::new(
+    self.x_axis.x * value.x +
+    self.y_axis.x * value.y +
+    self.z_axis.x * value.z +
+    self.w_axis.x * value.w,
+    self.x_axis.y * value.x +
+    self.y_axis.y * value.y +
+    self.z_axis.y * value.z +
+    self.w_axis.y * value.w,
+    self.x_axis.z * value.x +
+    self.y_axis.z * value.y +
+    self.z_axis.z * value.z +
+    self.w_axis.z * value.w,
+    self.x_axis.w * value.x +
+    self.y_axis.w * value.y +
+    self.z_axis.w * value.z +
+    self.w_axis.w * value.w,
+  )
+}
+
+///|
+pub fn Mat4::mul(self : Mat4, other : Mat4) -> Mat4 {
+  Mat4::from_cols(
+    self.mul_vec4(other.x_axis),
+    self.mul_vec4(other.y_axis),
+    self.mul_vec4(other.z_axis),
+    self.mul_vec4(other.w_axis),
+  )
+}
+
+///|
+pub fn Mat4::row(self : Mat4, index : Int) -> Vec4 {
+  match index {
+    0 => Vec4::new(self.x_axis.x, self.y_axis.x, self.z_axis.x, self.w_axis.x)
+    1 => Vec4::new(self.x_axis.y, self.y_axis.y, self.z_axis.y, self.w_axis.y)
+    2 => Vec4::new(self.x_axis.z, self.y_axis.z, self.z_axis.z, self.w_axis.z)
+    3 => Vec4::new(self.x_axis.w, self.y_axis.w, self.z_axis.w, self.w_axis.w)
+    _ => abort("Mat4::row index out of bounds")
+  }
 }
 
 ///|

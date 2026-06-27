@@ -828,9 +828,13 @@ pub struct Mat4 {
   z_axis : Vec4
   w_axis : Vec4
 } derive(Eq)
+pub fn Mat4::from_affine3(Affine3) -> Self
 pub fn Mat4::from_cols(Vec4, Vec4, Vec4, Vec4) -> Self
 pub fn Mat4::identity() -> Self
+pub fn Mat4::mul(Self, Self) -> Self
+pub fn Mat4::mul_vec4(Self, Vec4) -> Vec4
 pub fn Mat4::perspective_infinite_reverse_rh(Float, Float, Float) -> Self
+pub fn Mat4::row(Self, Int) -> Vec4
 pub fn Mat4::w_axis(Self) -> Vec4
 pub fn Mat4::x_axis(Self) -> Vec4
 pub fn Mat4::y_axis(Self) -> Vec4
@@ -1262,8 +1266,11 @@ pub(all) struct Vec4 {
   mut z : Float
   mut w : Float
 } derive(Eq)
+pub fn Vec4::add(Self, Self) -> Self
+pub fn Vec4::mul_scalar(Self, Float) -> Self
 pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
+pub fn Vec4::sub(Self, Self) -> Self
 pub impl Ease for Vec4
 pub impl SplinePoint for Vec4
 pub impl StableInterpolate for Vec4
@@ -1275,6 +1282,8 @@ pub struct ViewFrustum {
   half_spaces : Array[HalfSpace]
 } derive(Eq, ToJson, @json.FromJson)
 pub fn ViewFrustum::corners(Self) -> Array[Vec3]?
+pub fn ViewFrustum::from_clip_from_world(Mat4) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(Mat4, Vec3, Vec3, Float) -> Self
 pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
 
 pub(all) enum WindingOrder {

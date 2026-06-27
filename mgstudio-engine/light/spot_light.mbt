@@ -89,6 +89,23 @@ type SpotLightBoundingSphereQuery = @ecs.Query[
 ]
 
 ///|
+type SpotLightFrustaQuery = @ecs.Query[
+  (
+    @ecs.Read[@transform.GlobalTransform],
+    @ecs.Read[SpotLight],
+    @ecs.Write[@camera_primitives.Frustum],
+    @ecs.Read[@visibility.ViewVisibility],
+  ),
+  @ecs.Or[
+    (
+      @ecs.Changed[@transform.GlobalTransform],
+      @ecs.Changed[SpotLight],
+      @ecs.Changed[@visibility.ViewVisibility],
+    ),
+  ],
+]
+
+///|
 // Bevy source: `bevy/crates/bevy_light/src/spot_light.rs::update_spot_light_bounding_spheres`.
 pub fn update_spot_light_bounding_spheres(world : @ecs.World) -> Unit {
   let query : SpotLightBoundingSphereQuery = @ecs.query_filtered(
@@ -117,4 +134,47 @@ pub fn update_spot_light_bounding_spheres(world : @ecs.World) -> Unit {
     let (entity, sphere) = update
     try! world.set_by_key(entity, @camera_primitives.ecs_key_sphere, sphere)
   }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/spot_light.rs::update_spot_light_frusta`.
+pub fn update_spot_light_frusta(world : @ecs.World) -> Unit {
+  let query : SpotLightFrustaQuery = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.Changed::new(@transform.ecs_key_global_transform),
+        @ecs.Changed::new(ecs_key_spot_light),
+        @ecs.Changed::new(@visibility.ecs_key_view_visibility),
+      ),
+    ),
+  )
+  try! query.for_each(fn(_entity, item) {
+    let (transform, spot_light, frustum, view_visibility) = item
+    let spot_light_value = spot_light.value()
+    if !spot_light_value.shadow_maps_enabled || !view_visibility.value().get() {
+      return
+    }
+
+    let transform_value = transform.value()
+    let view_backward = spot_light_global_transform_back(transform_value)
+    let spot_world_from_view = spot_light_world_from_view(transform_value)
+    let spot_clip_from_view = spot_light_clip_from_view(
+      spot_light_value.outer_angle,
+      spot_light_value.shadow_map_near_z,
+    )
+    let clip_from_world = spot_clip_from_view.mul(
+      @math.Mat4::from_affine3(spot_world_from_view.inverse()),
+    )
+    frustum.set(
+      @camera_primitives.Frustum::new(
+        @camera_primitives.ViewFrustum::from_clip_from_world_custom_far(
+          clip_from_world,
+          transform_value.translation(),
+          view_backward,
+          spot_light_value.range,
+        ),
+      ),
+    )
+  })
 }

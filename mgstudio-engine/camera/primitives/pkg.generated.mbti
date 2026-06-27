@@ -102,6 +102,8 @@ pub struct ViewFrustum {
   inner : @math.ViewFrustum
 } derive(Eq, ToJson, @json.FromJson)
 pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
+pub fn ViewFrustum::from_clip_from_world(@math.Mat4) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(@math.Mat4, @math.Vec3, @math.Vec3, Float) -> Self
 pub fn ViewFrustum::half_spaces(Self) -> Array[@math.HalfSpace]
 pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 

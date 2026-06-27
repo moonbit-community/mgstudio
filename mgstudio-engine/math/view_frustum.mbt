@@ -34,6 +34,53 @@ pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_math/src/primitives/view_frustum.rs::ViewFrustum::from_clip_from_world`.
+pub fn ViewFrustum::from_clip_from_world(clip_from_world : Mat4) -> ViewFrustum {
+  let row0 = clip_from_world.row(0)
+  let row1 = clip_from_world.row(1)
+  let row2 = clip_from_world.row(2)
+  let row3 = clip_from_world.row(3)
+  ViewFrustum::new([
+    HalfSpace::new(row3.add(row0)),
+    HalfSpace::new(row3.sub(row0)),
+    HalfSpace::new(row3.add(row1)),
+    HalfSpace::new(row3.sub(row1)),
+    HalfSpace::new(row3.add(row2)),
+    HalfSpace::new(row2),
+  ])
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_math/src/primitives/view_frustum.rs::ViewFrustum::from_clip_from_world_custom_far`.
+pub fn ViewFrustum::from_clip_from_world_custom_far(
+  clip_from_world : Mat4,
+  view_translation : Vec3,
+  view_backward : Vec3,
+  far : Float,
+) -> ViewFrustum {
+  let row0 = clip_from_world.row(0)
+  let row1 = clip_from_world.row(1)
+  let row2 = clip_from_world.row(2)
+  let row3 = clip_from_world.row(3)
+  let far_center = view_translation.sub(view_backward.mul_scalar(far))
+  ViewFrustum::new([
+    HalfSpace::new(row3.add(row0)),
+    HalfSpace::new(row3.sub(row0)),
+    HalfSpace::new(row3.add(row1)),
+    HalfSpace::new(row3.sub(row1)),
+    HalfSpace::new(row3.add(row2)),
+    HalfSpace::new(
+      Vec4::new(
+        view_backward.x,
+        view_backward.y,
+        view_backward.z,
+        -view_backward.dot(far_center),
+      ),
+    ),
+  ])
+}
+
+///|
 pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[Vec3]? {
   view_frustum_assert_half_spaces(self.half_spaces)
   let left = self.half_spaces[0]

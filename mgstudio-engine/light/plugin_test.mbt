@@ -470,6 +470,49 @@ test "light plugin: updates point and spot light bounding spheres" {
 }
 
 ///|
+test "light plugin: updates visible shadow-mapped spot light frusta" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+  let world = app.world()
+  let spot = world.spawn()
+  let spot_light = @light.SpotLight::new(
+    @color.Color::white(),
+    1_000_000.0F,
+    6.0F,
+    0.0F,
+    0.7853981633974483F,
+    true,
+  )
+  try! world.set(spot, spot_light)
+  try! world.set_by_key(
+    spot,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  app = app.update()
+
+  let frustum = try! app
+    .world()
+    .get_by_key(spot, @camera_primitives.ecs_key_frustum)
+  debug_inspect(frustum is Some(_), content="true")
+  match frustum {
+    Some(frustum) => {
+      let half_spaces = frustum.view_frustum().half_spaces()
+      debug_inspect(half_spaces.length(), content="6")
+      let far = half_spaces[@camera_primitives.VIEW_FRUSTUM_FAR_PLANE_IDX]
+      let normal = far.normal()
+      debug_inspect(normal.x.to_double(), content="0")
+      debug_inspect(normal.y.to_double(), content="0")
+      debug_inspect(normal.z.to_double(), content="1")
+      debug_inspect(far.d().to_double(), content="6")
+    }
+    None => ()
+  }
+}
+
+///|
 test "light: WithLight matches point, spot, directional, and rect lights" {
   let world = @ecs.World::new()
   let point = world.spawn()

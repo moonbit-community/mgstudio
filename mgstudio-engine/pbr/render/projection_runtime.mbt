@@ -34,16 +34,6 @@ pub(open) trait CameraProjection3d {
 }
 
 ///|
-fn view_frustum_vec4_add(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
-  @math.Vec4::new(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
-}
-
-///|
-fn view_frustum_vec4_sub(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
-  @math.Vec4::new(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
-}
-
-///|
 pub struct ViewFrustum {
   inner : @camera_primitives.ViewFrustum
 } derive(Eq, ToJson, FromJson)
@@ -52,18 +42,11 @@ pub struct ViewFrustum {
 pub fn ViewFrustum::from_clip_from_world(
   clip_from_world : ProjectionMatrix3d,
 ) -> ViewFrustum {
-  let row0 = clip_from_world.row(0)
-  let row1 = clip_from_world.row(1)
-  let row2 = clip_from_world.row(2)
-  let row3 = clip_from_world.row(3)
-  ViewFrustum::new([
-    HalfSpace::new(view_frustum_vec4_add(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row2)),
-    HalfSpace::new(row2),
-  ])
+  ViewFrustum::{
+    inner: @camera_primitives.ViewFrustum::from_clip_from_world(
+      clip_from_world.to_mat4(),
+    ),
+  }
 }
 
 ///|
@@ -73,26 +56,14 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
   view_backward : @math.Vec3,
   far : Float,
 ) -> ViewFrustum {
-  let row0 = clip_from_world.row(0)
-  let row1 = clip_from_world.row(1)
-  let row2 = clip_from_world.row(2)
-  let row3 = clip_from_world.row(3)
-  let far_center = view_translation.sub(view_backward.mul_scalar(far))
-  ViewFrustum::new([
-    HalfSpace::new(view_frustum_vec4_add(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row0)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_sub(row3, row1)),
-    HalfSpace::new(view_frustum_vec4_add(row3, row2)),
-    HalfSpace::new(
-      @math.Vec4::new(
-        view_backward.x,
-        view_backward.y,
-        view_backward.z,
-        -view_backward.dot(far_center),
-      ),
+  ViewFrustum::{
+    inner: @camera_primitives.ViewFrustum::from_clip_from_world_custom_far(
+      clip_from_world.to_mat4(),
+      view_translation,
+      view_backward,
+      far,
     ),
-  ])
+  }
 }
 
 ///|
