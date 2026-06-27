@@ -160,6 +160,167 @@ test "render3d: pending mesh material queues prepare live views and expire stale
 }
 
 ///|
+fn material_test_pair_contains(
+  pairs : Array[(@core.Entity, @render.MainEntity)],
+  render_entity : @core.Entity,
+  main_entity : @core.Entity,
+) -> Bool {
+  for pair in pairs {
+    if pair.0 == render_entity && pair.1 == @render.MainEntity::new(main_entity) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+test "render3d: extract render visible entities mirrors camera visible Mesh3d pairs" {
+  let world = @ecs.World::new()
+  let main_camera = world.spawn()
+  let render_camera = world.spawn()
+  let main_mesh = world.spawn()
+  let render_mesh = world.spawn()
+  try! world.set_by_key(main_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    main_camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    main_camera,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_camera),
+  )
+  try! world.set_by_key(
+    main_mesh,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_mesh),
+  )
+  let visible = @camera_camera.VisibleEntities::VisibleEntities()
+  visible.push(main_mesh, @mesh.ecs_key_mesh3d.id())
+  try! world.set_by_key(
+    main_camera, @camera_camera.ecs_key_visible_entities, visible,
+  )
+
+  render3d_extract_render_visible_entities(world, world)
+
+  match
+    (try! world.get_by_key(
+      render_camera, @render_visibility.ecs_key_render_visible_entities,
+    )) {
+    Some(render_visible) =>
+      match render_visible.get(render3d_mesh_visibility_class()) {
+        Some(mesh_visible) => {
+          debug_inspect(mesh_visible.visible_len(), content="1")
+          debug_inspect(mesh_visible.added_entities().length(), content="1")
+          debug_inspect(mesh_visible.removed_entities().length(), content="0")
+          debug_inspect(
+            mesh_visible.entity_pair_is_visible(
+              render_mesh,
+              @render.MainEntity::new(main_mesh),
+            ),
+            content="true",
+          )
+        }
+        None => debug_inspect(false, content="true")
+      }
+    None => debug_inspect(false, content="true")
+  }
+
+  let no_visible_meshes = @camera_camera.VisibleEntities::VisibleEntities()
+  try! world.set_by_key(
+    main_camera, @camera_camera.ecs_key_visible_entities, no_visible_meshes,
+  )
+  render3d_extract_render_visible_entities(world, world)
+
+  match
+    (try! world.get_by_key(
+      render_camera, @render_visibility.ecs_key_render_visible_entities,
+    )) {
+    Some(render_visible) =>
+      match render_visible.get(render3d_mesh_visibility_class()) {
+        Some(mesh_visible) => {
+          debug_inspect(mesh_visible.visible_len(), content="0")
+          debug_inspect(mesh_visible.added_entities().length(), content="0")
+          debug_inspect(mesh_visible.removed_entities().length(), content="1")
+        }
+        None => debug_inspect(false, content="true")
+      }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "render3d: material specialization candidates come from visible dirty and pending meshes" {
+  let world = @ecs.World::new()
+  let main_view = @core.Entity::new(41, 1)
+  let render_view = world.spawn()
+  let unchanged_main = @core.Entity::new(42, 1)
+  let unchanged_render = @core.Entity::new(43, 1)
+  let changed_main = @core.Entity::new(44, 1)
+  let changed_render = @core.Entity::new(45, 1)
+  let pending_main = @core.Entity::new(46, 1)
+  let pending_render = @core.Entity::new(47, 1)
+  let added_main = @core.Entity::new(48, 1)
+  let added_render = @core.Entity::new(49, 1)
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([
+    (unchanged_render, @render.MainEntity::new(unchanged_main)),
+    (changed_render, @render.MainEntity::new(changed_main)),
+    (pending_render, @render.MainEntity::new(pending_main)),
+  ])
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([
+    (unchanged_render, @render.MainEntity::new(unchanged_main)),
+    (changed_render, @render.MainEntity::new(changed_main)),
+    (pending_render, @render.MainEntity::new(pending_main)),
+    (added_render, @render.MainEntity::new(added_main)),
+  ])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  dirty_specializations.insert_changed(@render.MainEntity::new(changed_main))
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  pending_queues
+  .queues()
+  .push_current(
+    retained_view,
+    pending_render,
+    @render.MainEntity::new(pending_main),
+  )
+  ignore(pending_queues.prepare_for_new_frame(retained_view))
+
+  let candidates = render3d_material_specialization_candidates(
+    world, render_view, retained_view, dirty_specializations, pending_queues,
+  )
+
+  debug_inspect(candidates.length(), content="3")
+  debug_inspect(
+    material_test_pair_contains(candidates, added_render, added_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, changed_render, changed_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, pending_render, pending_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, unchanged_render, unchanged_main),
+    content="false",
+  )
+}
+
+///|
 test "render3d: materials startup preserves shadow specialization caches" {
   let world = @ecs.World::new()
   let view = @render_view.RetainedViewEntity::new(

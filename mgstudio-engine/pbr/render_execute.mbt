@@ -534,6 +534,143 @@ fn render3d_prewarm_material_pipeline(
 }
 
 ///|
+fn render3d_mesh_visibility_class() -> String {
+  ecs_key_mesh3d.id().to_string()
+}
+
+///|
+fn render3d_main_entity_compare(
+  left : @render.MainEntity,
+  right : @render.MainEntity,
+) -> Int {
+  let left_bits = left.id().to_bits()
+  let right_bits = right.id().to_bits()
+  if left_bits < right_bits {
+    -1
+  } else if left_bits > right_bits {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn render3d_visible_pair_compare(
+  left : (@core.Entity, @render.MainEntity),
+  right : (@core.Entity, @render.MainEntity),
+) -> Int {
+  render3d_main_entity_compare(left.1, right.1)
+}
+
+///|
+fn render3d_extract_visible_mesh_pairs(
+  source_world : @ecs.World,
+  visible_entities : @camera_camera.VisibleEntities,
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let pairs : Array[(@core.Entity, @render.MainEntity)] = []
+  for main_entity in visible_entities.get(@mesh.ecs_key_mesh3d.id()) {
+    pairs.push(
+      (
+        phase_entity_ref3d_for_world_main(source_world, main_entity).render_entity,
+        @render.MainEntity::new(main_entity),
+      ),
+    )
+  }
+  pairs.sort_by(render3d_visible_pair_compare)
+  pairs
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs`.
+fn render3d_extract_render_visible_entities(
+  world : @ecs.World,
+  source_world : @ecs.World,
+) -> Unit {
+  let live_render_views : Map[UInt64, Bool] = {}
+  let mesh_visibility_class = render3d_mesh_visibility_class()
+  let extracted_views : Array[
+    (@core.Entity, @camera_camera.Camera, @camera_camera.VisibleEntities),
+  ] = []
+  let camera_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Read[Camera3d],
+        @ecs.Optional[@camera_camera.Camera],
+        @ecs.Read[@camera_camera.VisibleEntities],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! camera_query.view(fn(_query_entity, data) {
+    let (main_view_entity, (_camera3d, camera_opt, visible_entities)) = data
+    let camera = match camera_opt.value() {
+      Some(value) => value
+      None => @camera_camera.Camera::Camera()
+    }
+    extracted_views.push((main_view_entity, camera, visible_entities.value()))
+  })
+  for extracted_view in extracted_views {
+    let (main_view_entity, camera, visible_entities) = extracted_view
+    let render_view_entity = phase_entity_ref3d_for_world_main(
+        source_world, main_view_entity,
+      ).render_entity
+    if !camera.is_active {
+      if world.is_alive(render_view_entity) {
+        ignore(
+          world.remove_by_key(
+            render_view_entity, @render_visibility.ecs_key_render_visible_entities,
+          ) catch {
+            _ => false
+          },
+        )
+      }
+      continue
+    }
+    guard world.is_alive(render_view_entity) else { continue }
+    live_render_views.set(render_view_entity.to_bits(), true)
+    let render_visible_entities = match
+      (try! world.get_by_key(
+        render_view_entity, @render_visibility.ecs_key_render_visible_entities,
+      )) {
+      Some(value) => value
+      None => @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+    }
+    let render_visible_mesh_entities = render_visible_entities.class_or_insert(
+      mesh_visibility_class,
+    )
+    render_visible_mesh_entities.prepare_for_new_frame()
+    render_visible_mesh_entities.update_cpu_culled_entities(
+      render3d_extract_visible_mesh_pairs(source_world, visible_entities),
+    )
+    render_visible_mesh_entities.sort_added_entities()
+    try! world.set_by_key(
+      render_view_entity, @render_visibility.ecs_key_render_visible_entities, render_visible_entities,
+    )
+  }
+  let stale_query : @ecs.Query[
+    (@core.Entity, @ecs.Read[@render_visibility.RenderVisibleEntities]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  let stale_entities : Array[@core.Entity] = []
+  try! stale_query.view(fn(_query_entity, data) {
+    let (render_view_entity, _visible_entities) = data
+    if !live_render_views.get(render_view_entity.to_bits()).unwrap_or(false) {
+      stale_entities.push(render_view_entity)
+    }
+  })
+  for entity in stale_entities {
+    ignore(
+      world.remove_by_key(
+        entity, @render_visibility.ecs_key_render_visible_entities,
+      ) catch {
+        _ => false
+      },
+    )
+  }
+}
+
+///|
 fn render3d_retained_view_entities(
   cameras : Array[ExtractedCamera3d],
 ) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
@@ -595,6 +732,45 @@ fn render3d_prepare_pending_mesh_material_queues(
 }
 
 ///|
+fn render3d_mesh_indices_by_main_entity(
+  meshes : Array[ExtractedMesh3d],
+) -> Map[UInt64, Int] {
+  let indices : Map[UInt64, Int] = {}
+  for index in 0..<meshes.length() {
+    indices.set(meshes[index].entity.main_entity.to_bits(), index)
+  }
+  indices
+}
+
+///|
+fn render3d_material_specialization_candidates(
+  world : @ecs.World,
+  render_view_entity : @core.Entity,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  pending_queues : PendingMeshMaterialQueues,
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  guard (try! world.get_by_key(
+      render_view_entity, @render_visibility.ecs_key_render_visible_entities,
+    ))
+    is Some(visible_entities) else {
+    return []
+  }
+  guard visible_entities.get(render3d_mesh_visibility_class())
+    is Some(render_visible_mesh_entities) else {
+    return []
+  }
+  let view_pending_mesh_material_queues = pending_queues
+    .queues()
+    .view_or_insert(retained_view_entity)
+  dirty_specializations.iter_to_specialize(
+    retained_view_entity,
+    render_visible_mesh_entities,
+    view_pending_mesh_material_queues.prev_frame(),
+  )
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -605,6 +781,23 @@ fn render3d_prewarm_mesh_pipelines(
   let retained_views = render3d_retained_view_entities(cameras)
   render3d_apply_dirty_material_specialization_cache(world, retained_views)
   render3d_prepare_pending_mesh_material_queues(world, retained_views)
+  let dirty_specializations = match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing DirtySpecializations resource during pbr material specialization",
+      )
+  }
+  let pending_queues = match
+    world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing PendingMeshMaterialQueues resource during pbr material specialization",
+      )
+  }
+  let mesh_indices_by_main_entity = render3d_mesh_indices_by_main_entity(meshes)
   let mut motion_vector_prewarm_needed = false
   for camera in cameras {
     if camera.payload.motion_vector_prepass_enabled {
@@ -621,33 +814,47 @@ fn render3d_prewarm_mesh_pipelines(
     }
   }
   let shadow_prewarm_cache = render3d_shadow_material_pipeline_prewarm_cache_new()
-  for mesh_index in 0..<meshes.length() {
-    let extracted_mesh = meshes[mesh_index]
-    let mesh = extracted_mesh.payload
-    let mut material_pipeline_id : @material.CachedRenderPipelineId? = None
-    for camera in cameras {
-      let retained_view_entity = @render_view.RetainedViewEntity::new(
-        camera.entity.main_entity,
-      )
+  for camera in cameras {
+    let retained_view_entity = @render_view.RetainedViewEntity::new(
+      camera.entity.main_entity,
+    )
+    let candidates = render3d_material_specialization_candidates(
+      world,
+      camera.entity.render_entity,
+      retained_view_entity,
+      dirty_specializations,
+      pending_queues,
+    )
+    for candidate in candidates {
+      let (_render_entity, main_entity) = candidate
+      guard mesh_indices_by_main_entity.get(main_entity.id().to_bits())
+        is Some(mesh_index) else {
+        continue
+      }
+      let extracted_mesh = meshes[mesh_index]
+      let mesh = extracted_mesh.payload
       let view_pipeline_id = render3d_prewarm_material_pipeline(
         world,
         mesh_runtime_state_value,
         mesh,
         camera.payload,
         retained_view_entity,
-        extracted_mesh.entity.main_entity,
+        main_entity.id(),
         specialization_tick,
       )
-      if material_pipeline_id is None {
-        material_pipeline_id = view_pipeline_id
+      if view_pipeline_id is Some(_) && mesh.material_pipeline_id is None {
+        meshes[mesh_index] = ExtractedMesh3d::{
+          ..extracted_mesh,
+          payload: Mesh3dExtractedPayload::{
+            ..mesh,
+            material_pipeline_id: view_pipeline_id,
+          },
+        }
       }
     }
-    if material_pipeline_id is Some(_) {
-      meshes[mesh_index] = ExtractedMesh3d::{
-        ..extracted_mesh,
-        payload: Mesh3dExtractedPayload::{ ..mesh, material_pipeline_id, },
-      }
-    }
+  }
+  for mesh_index in 0..<meshes.length() {
+    let mesh = meshes[mesh_index].payload
     if motion_vector_prewarm_needed && mesh.motion_vector_enabled {
       ignore(render3d_prewarm_motion_vector_material_pipeline(world, mesh))
     }
@@ -770,6 +977,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     return
   }
   render3d_sync_extracted_view_components(world, cameras)
+  render3d_extract_render_visible_entities(world, source_world)
   let meshes = mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
     let meshes = morph_indices.modify(fn(morph_indices_value) {
       skin_uniforms.modify(fn(skin_uniforms_value) {
