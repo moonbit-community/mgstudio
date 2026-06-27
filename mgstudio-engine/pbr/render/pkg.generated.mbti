@@ -22,6 +22,7 @@ import {
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/view",
+  "Milky2018/mgstudio/render/view/visibility",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_wgsl_naga_oil/compose",
@@ -157,6 +158,8 @@ pub fn absf(Float) -> Float
 pub fn add_light_view_entities(@ecs.ComponentOn[@ecs.Add, ExtractedDirectionalLight3d]) -> Unit
 
 pub fn build_indirect_parameters_pipeline_key(Bool, Bool, Bool, Bool, Bool, Bool) -> BuildIndirectParametersPipelineKey
+
+pub fn check_view_light_needs_specialization(LightKeyCache, @visibility.DirtySpecializations, @view.RetainedViewEntity, Bool, Bool) -> Unit
 
 pub fn clamp01(Float) -> Float
 

@@ -196,6 +196,39 @@ test "pbr render light: LightKeyCache stores keys by retained view entity" {
 }
 
 ///|
+test "pbr render light: shadow light key specialization matches Bevy view kind rules" {
+  let cache = LightKeyCache::LightKeyCache()
+  let dirty = @render_view_visibility.DirtySpecializations::DirtySpecializations()
+  let view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(30, 1),
+    auxiliary_entity=Some(@core.Entity::new(31, 1)),
+    subview_index=0,
+  )
+
+  check_view_light_needs_specialization(cache, dirty, view, false, true)
+  debug_inspect(cache.len(), content="0")
+  debug_inspect(dirty.views_len(), content="0")
+
+  check_view_light_needs_specialization(cache, dirty, view, true, true)
+  debug_inspect(
+    cache.get(view).map(fn(key) { key.bits() }),
+    content="Some(274877907460)",
+  )
+  debug_inspect(dirty.must_wipe_specializations_for_view(view), content="true")
+  dirty.clear()
+
+  check_view_light_needs_specialization(cache, dirty, view, true, true)
+  debug_inspect(dirty.views_len(), content="0")
+
+  check_view_light_needs_specialization(cache, dirty, view, true, false)
+  debug_inspect(
+    cache.get(view).map(fn(key) { key.bits() }),
+    content="Some(137438953476)",
+  )
+  debug_inspect(dirty.must_wipe_specializations_for_view(view), content="true")
+}
+
+///|
 test "pbr render light: SpecializedShadowMaterialPipelineCache stores per view light pipelines" {
   let cache = SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
   let view = @render_view.RetainedViewEntity::new(

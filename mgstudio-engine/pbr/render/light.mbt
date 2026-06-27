@@ -108,6 +108,39 @@ const DIRECTIONAL_LIGHT_FLAG_NONE : UInt = 0U
 const DIRECTIONAL_LIGHT_FLAG_UNINITIALIZED : UInt = 0xFFFFU
 
 ///|
+const LIGHT_MESH_PIPELINE_KEY_DEPTH_PREPASS : UInt64 = 1UL << 2
+
+///|
+const LIGHT_MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO : UInt64 = 1UL << 9
+
+///|
+const LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS : Int = 37
+
+///|
+const LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_PERSPECTIVE : UInt64 = 1UL <<
+  LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
+const LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC : UInt64 = 2UL <<
+  LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
+fn light_mesh_pipeline_key_for_shadow_view(
+  is_directional_light : Bool,
+) -> @material.ErasedMeshPipelineKey {
+  let projection_bits = if is_directional_light {
+    LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC |
+    LIGHT_MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO
+  } else {
+    LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_PERSPECTIVE
+  }
+  @material.ErasedMeshPipelineKey::new(
+    LIGHT_MESH_PIPELINE_KEY_DEPTH_PREPASS | projection_bits,
+    "MeshPipelineKey",
+  )
+}
+
+///|
 // Bevy source:
 // - `bevy/crates/bevy_pbr/src/render/light.rs` (`LightKeyCache`).
 pub struct LightKeyCache {
@@ -142,6 +175,33 @@ pub fn LightKeyCache::insert(
   key : @material.ErasedMeshPipelineKey,
 ) -> Unit {
   self.keys.set(view, key)
+}
+
+///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/light.rs::check_views_lights_need_specialization`.
+pub fn check_view_light_needs_specialization(
+  light_key_cache : LightKeyCache,
+  dirty_specializations : @render_view_visibility.DirtySpecializations,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  shadow_render_phase_exists : Bool,
+  is_directional_light : Bool,
+) -> Unit {
+  if !shadow_render_phase_exists {
+    return
+  }
+  let light_key = light_mesh_pipeline_key_for_shadow_view(is_directional_light)
+  match light_key_cache.get(retained_view_entity) {
+    Some(current_key) =>
+      if current_key.bits() != light_key.bits() {
+        light_key_cache.insert(retained_view_entity, light_key)
+        dirty_specializations.insert_view(retained_view_entity)
+      }
+    None => {
+      light_key_cache.insert(retained_view_entity, light_key)
+      dirty_specializations.insert_view(retained_view_entity)
+    }
+  }
 }
 
 ///|
