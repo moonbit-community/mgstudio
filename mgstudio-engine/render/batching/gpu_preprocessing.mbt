@@ -970,6 +970,28 @@ pub fn PreprocessWorkItemBuffers::push_multiple_uninit(
 }
 
 ///|
+pub fn PreprocessWorkItemBuffers::push_multiple_late_uninit(
+  self : PreprocessWorkItemBuffers,
+  indexed : Bool,
+  count : Int,
+) -> Unit {
+  let item = PreprocessWorkItem::uninit()
+  match self {
+    Indirect(_, _, Some(buffers)) => {
+      let buffer = if indexed {
+        buffers.late_indexed
+      } else {
+        buffers.late_non_indexed
+      }
+      for _ in 0..<count {
+        buffer.push(item)
+      }
+    }
+    _ => ()
+  }
+}
+
+///|
 pub fn PreprocessWorkItemBuffers::clear(
   self : PreprocessWorkItemBuffers,
 ) -> Unit {

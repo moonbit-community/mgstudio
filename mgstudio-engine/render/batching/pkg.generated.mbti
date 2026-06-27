@@ -223,6 +223,7 @@ pub fn PreprocessWorkItemBuffers::late_indirect_offsets(Self) -> (Int, Int)?
 pub fn PreprocessWorkItemBuffers::late_non_indexed_len(Self) -> Int
 pub fn PreprocessWorkItemBuffers::non_indexed_len(Self) -> Int
 pub fn PreprocessWorkItemBuffers::push(Self, Bool, PreprocessWorkItem) -> Unit
+pub fn PreprocessWorkItemBuffers::push_multiple_late_uninit(Self, Bool, Int) -> Unit
 pub fn PreprocessWorkItemBuffers::push_multiple_uninit(Self, Bool, Int) -> Unit
 
 pub struct UntypedPhaseBatchedInstanceBuffers[BD] {

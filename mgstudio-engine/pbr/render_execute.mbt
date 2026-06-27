@@ -2116,6 +2116,125 @@ pub fn Render3dShadowMultidrawableBatchSetData::is_empty(
 }
 
 ///|
+priv struct Render3dShadowMultidrawableBatchSetPreparer {
+  mut indirect_parameters_index : Int
+  mut batch_set_index : Int
+  mut work_item_count : Int
+}
+
+///|
+fn Render3dShadowMultidrawableBatchSetPreparer::new(
+  initial_indirect_parameters_index : Int,
+  initial_batch_set_index : Int,
+) -> Render3dShadowMultidrawableBatchSetPreparer {
+  Render3dShadowMultidrawableBatchSetPreparer::{
+    indirect_parameters_index: initial_indirect_parameters_index,
+    batch_set_index: initial_batch_set_index,
+    work_item_count: 0,
+  }
+}
+
+///|
+fn Render3dShadowMultidrawableBatchSetData::representative_entity_for_bin(
+  self : Render3dShadowMultidrawableBatchSetData,
+  bin : Render3dShadowMultidrawableBin,
+) -> @render.MainEntity? {
+  for instance in self.render_binned_mesh_instances_cpu {
+    if bin.binned_mesh_instance_index(instance.main_entity()) is Some(_) {
+      return Some(instance.main_entity())
+    }
+  }
+  None
+}
+
+///|
+fn Render3dShadowMultidrawableBatchSetData::prepare_multidrawable_binned_batch_set(
+  self : Render3dShadowMultidrawableBatchSetData,
+  indexed : Bool,
+  preparer : Render3dShadowMultidrawableBatchSetPreparer,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  work_item_buffer : @render_batching.PreprocessWorkItemBuffers,
+) -> Render3dShadowBinnedRenderPhaseBatchSetData? {
+  let current_indexed_batch_set_index = preparer.batch_set_index
+  let current_output_index = phase_batched_instance_buffers.buffers.data_buffer.len()
+  let first_work_item_index = if indexed {
+    work_item_buffer.indexed_len()
+  } else {
+    work_item_buffer.non_indexed_len()
+  }
+  let indirect_parameters_base = preparer.indirect_parameters_index
+  let mut first_bin_key_id = -1
+  let mut first_bin_index = -1
+  for bin_key_id, bin_index in self.bin_key_to_bin_index {
+    first_bin_key_id = bin_key_id
+    first_bin_index = bin_index
+    break
+  }
+  if first_bin_index < 0 {
+    return None
+  }
+  guard self.bin(first_bin_index) is Some(first_bin) else { return None }
+  let first_bin_len = first_bin.entity_count()
+  let first_bin_entity = match self.representative_entity_for_bin(first_bin) {
+    Some(entity) => entity
+    None => @render.MainEntity::new(@core.Entity::placeholder())
+  }
+  let cpu_metadata_offset = phase_indirect_parameters_buffers.buffers.cpu_metadata_len(
+    indexed,
+  )
+  let bin_count = self.bin_count()
+  ignore(phase_indirect_parameters_buffers.buffers.allocate(indexed, bin_count))
+  for bin_index in self.bin_key_to_bin_index.values() {
+    guard self.bin(bin_index) is Some(bin) else { continue }
+    guard self.indirect_parameters_offset_for_bin(bin_index)
+      is Some(indirect_parameters_offset) else {
+      continue
+    }
+    phase_indirect_parameters_buffers.buffers.set_cpu_metadata(
+      indexed,
+      cpu_metadata_offset + indirect_parameters_offset,
+      @render_batching.IndirectParametersCpuMetadata::new(
+        phase_batched_instance_buffers.buffers.data_buffer.len(),
+        preparer.batch_set_index,
+      ),
+    )
+    let bin_entity_count = bin.entity_count()
+    work_item_buffer.push_multiple_uninit(indexed, bin_entity_count)
+    for _ in 0..<bin_entity_count {
+      phase_batched_instance_buffers.buffers.data_buffer.push(())
+    }
+    preparer.work_item_count += bin_entity_count
+  }
+  phase_indirect_parameters_buffers.buffers.add_batch_set(
+    indexed, indirect_parameters_base,
+  )
+  preparer.indirect_parameters_index += bin_count
+  preparer.batch_set_index += 1
+  Some(
+    Render3dShadowBinnedRenderPhaseBatchSetData::new(
+      Render3dShadowBinnedRenderPhaseBatchData::new(
+        (first_bin_entity.id(), first_bin_entity),
+        Render3dShadowBatchRange::new(
+          current_output_index,
+          current_output_index + first_bin_len,
+        ),
+        Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
+          indirect_parameters_base,
+          indirect_parameters_base + 1,
+        ),
+      ),
+      Render3dShadowBinKeyData::new(first_bin_key_id),
+      preparer.indirect_parameters_index - indirect_parameters_base,
+      current_indexed_batch_set_index,
+      first_work_item_index,
+    ),
+  )
+}
+
+///|
 pub(all) struct Render3dShadowMultidrawableBatchSetEntry {
   batch_set_key : Render3dShadowBatchSetKeyData
   batch_set : Render3dShadowMultidrawableBatchSetData
@@ -2740,6 +2859,66 @@ pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(
       work_item_buffer,
     )
   }
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`
+// multidrawable-mesh branch for `Shadow`.
+pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(
+  self : Render3dShadowViewPhaseData,
+  retained_view_key : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData] {
+  let batch_sets : Array[Render3dShadowBinnedRenderPhaseBatchSetData] = []
+  if no_indirect_drawing {
+    return batch_sets
+  }
+  let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
+    phase_batched_instance_buffers.buffers.work_item_buffers,
+    retained_view_key,
+    no_indirect_drawing,
+    enable_gpu_occlusion_culling,
+  )
+  @render_batching.init_work_item_buffers(
+    work_item_buffer,
+    phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
+    phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
+  )
+  let indexed_preparer = Render3dShadowMultidrawableBatchSetPreparer::new(
+    phase_indirect_parameters_buffers.buffers.batch_count(true),
+    phase_indirect_parameters_buffers.buffers.batch_set_count(true),
+  )
+  let non_indexed_preparer = Render3dShadowMultidrawableBatchSetPreparer::new(
+    phase_indirect_parameters_buffers.buffers.batch_count(false),
+    phase_indirect_parameters_buffers.buffers.batch_set_count(false),
+  )
+  for entry in self.multidrawable_meshes {
+    let indexed = entry.batch_set_key.indexed()
+    let preparer = if indexed { indexed_preparer } else { non_indexed_preparer }
+    match
+      entry.batch_set.prepare_multidrawable_binned_batch_set(
+        indexed, preparer, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+        work_item_buffer,
+      ) {
+      Some(batch_set) => batch_sets.push(batch_set)
+      None => ()
+    }
+  }
+  work_item_buffer.push_multiple_late_uninit(
+    true,
+    indexed_preparer.work_item_count,
+  )
+  work_item_buffer.push_multiple_late_uninit(
+    false,
+    non_indexed_preparer.work_item_count,
+  )
+  batch_sets
 }
 
 ///|

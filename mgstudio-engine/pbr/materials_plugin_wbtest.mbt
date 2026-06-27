@@ -697,6 +697,77 @@ test "render3d: shadow multidraw batch sets materialize Bevy indirect phase item
 }
 
 ///|
+test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(906UL),
+    @material.DrawFunctionId::new(14U),
+    Some(7),
+    @render_mesh.MeshSlabs::new(33, index_slab_id=Some(34)),
+  )
+  let bin = Render3dShadowBinKeyData::new(707)
+  let first_main = @render.MainEntity::new(@core.Entity::new(141, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(142, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(151, 1), first_main),
+    90U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(152, 1), second_main),
+    91U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  let batch_sets = phase.prepare_multidrawable_phase_buffers(
+    "shadow-view", false, true, phase_instances, indirect_parameters,
+  )
+  let work_items = phase_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(batch_sets.length(), content="1")
+  debug_inspect(phase_instances.buffers.data_buffer.len(), content="2")
+  debug_inspect(work_items.indexed_len(), content="2")
+  debug_inspect(work_items.non_indexed_len(), content="0")
+  debug_inspect(work_items.late_indexed_len(), content="2")
+  debug_inspect(indirect_parameters.buffers.batch_count(true), content="1")
+  debug_inspect(indirect_parameters.buffers.batch_set_count(true), content="1")
+  debug_inspect(indirect_parameters.buffers.cpu_metadata_len(true), content="1")
+  debug_inspect(indirect_parameters.buffers.gpu_metadata_len(true), content="1")
+  debug_inspect(
+    indirect_parameters.buffers
+    .cpu_metadata_at(true, 0)
+    .unwrap()
+    .base_output_index(),
+    content="0",
+  )
+  debug_inspect(
+    indirect_parameters.buffers
+    .cpu_metadata_at(true, 0)
+    .unwrap()
+    .batch_set_index(),
+    content="0",
+  )
+  inspect(batch_sets[0].first_batch().instance_range().start(), content="0")
+  inspect(batch_sets[0].first_batch().instance_range().end(), content="2")
+  debug_inspect(batch_sets[0].first_work_item_index(), content="0")
+  debug_inspect(batch_sets[0].batch_count(), content="1")
+  debug_inspect(
+    batch_sets[0].first_batch().extra_index(),
+    content="IndirectParametersIndex(0, 1, None)",
+  )
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
