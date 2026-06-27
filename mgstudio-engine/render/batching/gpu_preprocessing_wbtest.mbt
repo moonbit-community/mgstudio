@@ -38,6 +38,25 @@ test "gpu preprocessing: instance input buffer can be made nonempty" {
 }
 
 ///|
+test "gpu preprocessing: batched instance clear keeps phase tables for reuse" {
+  let buffers : BatchedInstanceBuffers[Int, Int] = BatchedInstanceBuffers::new()
+  let phase : PhaseBatchedInstanceBuffers[Int] = PhaseBatchedInstanceBuffers::new()
+  phase.marker = 7
+  buffers.insert_phase_instance_buffers("shadow", phase)
+  ignore(buffers.current_input_buffer.add(11))
+  ignore(buffers.previous_input_buffer.add(22))
+  debug_inspect(buffers.phase_instance_buffer_count(), content="1")
+  buffers.clear()
+  debug_inspect(buffers.current_input_buffer.len(), content="0")
+  debug_inspect(buffers.previous_input_buffer.len(), content="0")
+  debug_inspect(buffers.phase_instance_buffer_count(), content="1")
+  debug_inspect(
+    buffers.phase_instance_buffers.get("shadow").unwrap().marker,
+    content="0",
+  )
+}
+
+///|
 test "gpu preprocessing: direct work-item buffers collect one list" {
   let buffers = preprocess_work_item_buffers_direct()
   buffers.push(false, PreprocessWorkItem::new(3, 4))

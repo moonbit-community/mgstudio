@@ -237,7 +237,25 @@ pub fn[BD, BDI] BatchedInstanceBuffers::clear(
 ) -> Unit {
   self.current_input_buffer.clear()
   self.previous_input_buffer.clear()
-  self.phase_instance_buffers.clear()
+  for _, phase_instance_buffers in self.phase_instance_buffers {
+    phase_instance_buffers.clear()
+  }
+}
+
+///|
+pub fn[BD, BDI] BatchedInstanceBuffers::phase_instance_buffer_count(
+  self : BatchedInstanceBuffers[BD, BDI],
+) -> Int {
+  self.phase_instance_buffers.length()
+}
+
+///|
+pub fn[BD, BDI] BatchedInstanceBuffers::insert_phase_instance_buffers(
+  self : BatchedInstanceBuffers[BD, BDI],
+  phase_id : String,
+  buffers : PhaseBatchedInstanceBuffers[BD],
+) -> Unit {
+  self.phase_instance_buffers.set(phase_id, buffers)
 }
 
 ///|

@@ -65,7 +65,9 @@ pub struct BatchedInstanceBuffers[BD, BDI] {
   phase_instance_buffers : @hashmap.HashMap[String, PhaseBatchedInstanceBuffers[BD]]
 }
 pub fn[BD, BDI] BatchedInstanceBuffers::clear(Self[BD, BDI]) -> Unit
+pub fn[BD, BDI] BatchedInstanceBuffers::insert_phase_instance_buffers(Self[BD, BDI], String, PhaseBatchedInstanceBuffers[BD]) -> Unit
 pub fn[BD, BDI] BatchedInstanceBuffers::new() -> Self[BD, BDI]
+pub fn[BD, BDI] BatchedInstanceBuffers::phase_instance_buffer_count(Self[BD, BDI]) -> Int
 pub fn[BD, BDI] BatchedInstanceBuffers::swap_input_buffers(Self[BD, BDI]) -> Unit
 
 pub struct GpuOcclusionCullingWorkItemBuffers {
