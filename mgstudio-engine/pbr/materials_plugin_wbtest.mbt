@@ -369,6 +369,57 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
 }
 
 ///|
+test "render3d: shadow multidraw batch set mirrors Bevy packed bin offsets" {
+  let batch_set = Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData()
+  let first_bin = Render3dShadowBinKeyData::new(101)
+  let second_bin = Render3dShadowBinKeyData::new(202)
+  let first = @render.MainEntity::new(@core.Entity::new(71, 1))
+  let second = @render.MainEntity::new(@core.Entity::new(72, 1))
+  let third = @render.MainEntity::new(@core.Entity::new(73, 1))
+  batch_set.insert(first_bin, first, 10U)
+  batch_set.insert(second_bin, second, 20U)
+  batch_set.insert(second_bin, third, 21U)
+  debug_inspect(batch_set.bin_count(), content="2")
+  debug_inspect(batch_set.cpu_instance_count(), content="3")
+  debug_inspect(batch_set.indirect_parameter_count(), content="2")
+  debug_inspect(batch_set.bin_index(first_bin), content="Some(0)")
+  debug_inspect(batch_set.bin_index(second_bin), content="Some(1)")
+  debug_inspect(
+    batch_set.indirect_parameters_offset_for_bin(0),
+    content="Some(0)",
+  )
+  debug_inspect(
+    batch_set.indirect_parameters_offset_for_bin(1),
+    content="Some(1)",
+  )
+  batch_set.remove(second, second_bin)
+  debug_inspect(batch_set.bin_count(), content="2")
+  debug_inspect(batch_set.cpu_instance_count(), content="2")
+  debug_inspect(
+    batch_set.cpu_instance_at(1).map(fn(instance) { instance.main_entity() }),
+    content="Some({ entity: { id: 73, generation: 1 } })",
+  )
+  batch_set.remove(first, first_bin)
+  debug_inspect(batch_set.bin_count(), content="1")
+  debug_inspect(batch_set.bin_index(first_bin), content="None")
+  debug_inspect(batch_set.bin_index(second_bin), content="Some(1)")
+  debug_inspect(
+    batch_set.indirect_parameters_offset_for_bin(1),
+    content="Some(0)",
+  )
+  debug_inspect(batch_set.indirect_parameter_count(), content="1")
+  let fourth = @render.MainEntity::new(@core.Entity::new(74, 1))
+  let reused_bin = Render3dShadowBinKeyData::new(303)
+  batch_set.insert(reused_bin, fourth, 30U)
+  debug_inspect(batch_set.bin_index(reused_bin), content="Some(0)")
+  debug_inspect(
+    batch_set.indirect_parameters_offset_for_bin(0),
+    content="Some(1)",
+  )
+  debug_inspect(batch_set.indirect_parameter_count(), content="2")
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
