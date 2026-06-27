@@ -22,118 +22,6 @@ priv struct Render3dDirectionalCascadePass {
 }
 
 ///|
-fn render3d_vec3_min(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
-  @math.Vec3::new(
-    @pbr_render.minf(a.x, b.x),
-    @pbr_render.minf(a.y, b.y),
-    @pbr_render.minf(a.z, b.z),
-  )
-}
-
-///|
-fn render3d_vec3_max(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
-  @math.Vec3::new(
-    @pbr_render.maxf(a.x, b.x),
-    @pbr_render.maxf(a.y, b.y),
-    @pbr_render.maxf(a.z, b.z),
-  )
-}
-
-///|
-fn render3d_world_from_light_axes(
-  transform : @transform.Transform,
-) -> (@math.Vec3, @math.Vec3, @math.Vec3) {
-  (
-    @pbr_render.quat_rotate_vec3(
-      transform.rotation,
-      @math.Vec3::new(1.0F, 0.0F, 0.0F),
-    ),
-    @pbr_render.quat_rotate_vec3(
-      transform.rotation,
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    @pbr_render.quat_rotate_vec3(
-      transform.rotation,
-      @math.Vec3::new(0.0F, 0.0F, 1.0F),
-    ),
-  )
-}
-
-///|
-fn render3d_light_from_world_point(
-  point : @math.Vec3,
-  light_x : @math.Vec3,
-  light_y : @math.Vec3,
-  light_z : @math.Vec3,
-) -> @math.Vec3 {
-  @math.Vec3::new(point.dot(light_x), point.dot(light_y), point.dot(light_z))
-}
-
-///|
-fn render3d_camera_view_point_to_world(
-  camera_transform : @transform.Transform,
-  point : @math.Vec3,
-) -> @math.Vec3 {
-  @pbr_render.quat_rotate_vec3(camera_transform.rotation, point).add(
-    camera_transform.translation,
-  )
-}
-
-///|
-fn render3d_directional_clip_from_cascade(
-  cascade_diameter : Float,
-  min_z : Float,
-  max_z : Float,
-) -> @pbr_render.ProjectionMatrix3d {
-  let safe_diameter = if cascade_diameter <= 0.0001F {
-    0.0001F
-  } else {
-    cascade_diameter
-  }
-  let depth = max_z - min_z
-  let r = if depth <= 0.0001F { 1.0F / 0.0001F } else { 1.0F / depth }
-  @pbr_render.ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(2.0F / safe_diameter, 0.0F, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, 2.0F / safe_diameter, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, 0.0F, r, 0.0F),
-    @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-  )
-}
-
-///|
-fn render3d_directional_cascade_from_world(
-  light_x : @math.Vec3,
-  light_y : @math.Vec3,
-  light_z : @math.Vec3,
-  near_plane_center : @math.Vec3,
-) -> @pbr_render.ProjectionMatrix3d {
-  @pbr_render.ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(light_x.x, light_y.x, light_z.x, 0.0F),
-    @math.Vec4::new(light_x.y, light_y.y, light_z.y, 0.0F),
-    @math.Vec4::new(light_x.z, light_y.z, light_z.z, 0.0F),
-    @math.Vec4::new(
-      -near_plane_center.x,
-      -near_plane_center.y,
-      -near_plane_center.z,
-      1.0F,
-    ),
-  )
-}
-
-///|
-fn render3d_directional_cascade_world_translation(
-  light_x : @math.Vec3,
-  light_y : @math.Vec3,
-  light_z : @math.Vec3,
-  near_plane_center : @math.Vec3,
-) -> @math.Vec3 {
-  light_x
-  .mul_scalar(near_plane_center.x)
-  .add(light_y.mul_scalar(near_plane_center.y))
-  .add(light_z.mul_scalar(near_plane_center.z))
-}
-
-///|
 fn render3d_calculate_directional_cascade(
   camera_transform : @transform.Transform,
   light_transform : @transform.Transform,
@@ -141,59 +29,23 @@ fn render3d_calculate_directional_cascade(
   far_bound : Float,
   shadow_map_size : Int,
 ) -> Render3dDirectionalCascadePass {
-  let (light_x, light_y, light_z) = render3d_world_from_light_axes(
-    light_transform,
+  let world_from_light = @math.Mat4::from_quat(light_transform.rotation)
+  let world_from_view = @math.Mat4::from_affine3(
+    @transform.GlobalTransform::from_transform(camera_transform).affine(),
   )
-  let mut min_light = @math.Vec3::splat(3.402823e38F)
-  let mut max_light = @math.Vec3::splat(-3.402823e38F)
-  for corner_view in frustum_corners {
-    let corner_world = render3d_camera_view_point_to_world(
-      camera_transform, corner_view,
-    )
-    let corner_light = render3d_light_from_world_point(
-      corner_world, light_x, light_y, light_z,
-    )
-    min_light = render3d_vec3_min(min_light, corner_light)
-    max_light = render3d_vec3_max(max_light, corner_light)
-  }
-  let body_diagonal = frustum_corners[0]
-    .sub(frustum_corners[6])
-    .length_squared()
-  let far_plane_diagonal = frustum_corners[4]
-    .sub(frustum_corners[6])
-    .length_squared()
-  let cascade_diameter = @pbr_render.maxf(body_diagonal, far_plane_diagonal)
-    .sqrt()
-    .ceil()
-  let safe_size = if shadow_map_size <= 0 { 1 } else { shadow_map_size }
-  let cascade_texel_size = cascade_diameter /
-    Float::from_double(safe_size.to_double())
-  let safe_texel_size = if cascade_texel_size <= 0.000001F {
-    0.000001F
-  } else {
-    cascade_texel_size
-  }
-  let near_plane_center = @math.Vec3::new(
-    (0.5F * (min_light.x + max_light.x) / safe_texel_size).floor() *
-    safe_texel_size,
-    (0.5F * (min_light.y + max_light.y) / safe_texel_size).floor() *
-    safe_texel_size,
-    max_light.z,
+  let light_from_camera = world_from_light.transpose().mul(world_from_view)
+  let cascade = @light.calculate_directional_light_cascade(
+    frustum_corners,
+    Float::from_double(shadow_map_size.to_double()),
+    world_from_light,
+    light_from_camera,
   )
-  let clip_from_cascade = render3d_directional_clip_from_cascade(
-    cascade_diameter,
-    min_light.z,
-    max_light.z,
-  )
-  let cascade_from_world = render3d_directional_cascade_from_world(
-    light_x, light_y, light_z, near_plane_center,
-  )
-  let clip_from_world = clip_from_cascade.mul(cascade_from_world)
-  let translation = render3d_directional_cascade_world_translation(
-    light_x, light_y, light_z, near_plane_center,
+  let translation = cascade.world_from_cascade.w_axis()
+  let clip_from_cascade = @pbr_render.ProjectionMatrix3d::from_mat4(
+    cascade.clip_from_cascade,
   )
   let transform = @transform.Transform::new(
-    translation,
+    @math.Vec3::new(translation.x, translation.y, translation.z),
     light_transform.rotation,
     @math.Vec3::splat(1.0F),
   )
@@ -202,8 +54,10 @@ fn render3d_calculate_directional_cascade(
     projection: @pbr_render.render3d_pass_projection(
       clip_from_cascade, clip_from_cascade, 0.0F, far_bound,
     ),
-    clip_from_world,
-    texel_size: safe_texel_size,
+    clip_from_world: @pbr_render.ProjectionMatrix3d::from_mat4(
+      cascade.clip_from_world,
+    ),
+    texel_size: cascade.texel_size,
     far_bound,
   }
 }

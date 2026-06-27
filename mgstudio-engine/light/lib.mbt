@@ -1252,6 +1252,89 @@ pub fn Cascade::new(
 }
 
 ///|
+fn cascade_max_float(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/cascade.rs::calculate_cascade`.
+pub fn calculate_directional_light_cascade(
+  frustum_corners : Array[@math.Vec3],
+  cascade_texture_size : Float,
+  world_from_light : @math.Mat4,
+  light_from_camera : @math.Mat4,
+) -> Cascade {
+  let mut min = @math.Vec3::splat(3.402823e38F)
+  let mut max = @math.Vec3::splat(-3.402823e38F)
+  for corner_camera_view in frustum_corners {
+    let corner_light_view = light_from_camera.transform_point3(
+      corner_camera_view,
+    )
+    min = min.min(corner_light_view)
+    max = max.max(corner_light_view)
+  }
+
+  let body_diagonal = frustum_corners[0]
+    .sub(frustum_corners[6])
+    .length_squared()
+  let far_plane_diagonal = frustum_corners[4]
+    .sub(frustum_corners[6])
+    .length_squared()
+  let cascade_diameter = cascade_max_float(body_diagonal, far_plane_diagonal)
+    .sqrt()
+    .ceil()
+  let cascade_texel_size = cascade_diameter / cascade_texture_size
+  let near_plane_center = @math.Vec3::new(
+    (0.5F * (min.x + max.x) / cascade_texel_size).floor() * cascade_texel_size,
+    (0.5F * (min.y + max.y) / cascade_texel_size).floor() * cascade_texel_size,
+    max.z,
+  )
+
+  let world_from_light_transpose = world_from_light.transpose()
+  let cascade_from_world = @math.Mat4::from_cols(
+    world_from_light_transpose.x_axis(),
+    world_from_light_transpose.y_axis(),
+    world_from_light_transpose.z_axis(),
+    @math.Vec4::new(
+      -near_plane_center.x,
+      -near_plane_center.y,
+      -near_plane_center.z,
+      1.0F,
+    ),
+  )
+  let world_from_cascade = @math.Mat4::from_cols(
+    world_from_light.x_axis(),
+    world_from_light.y_axis(),
+    world_from_light.z_axis(),
+    world_from_light.mul_vec4(
+      @math.Vec4::new(
+        near_plane_center.x,
+        near_plane_center.y,
+        near_plane_center.z,
+        1.0F,
+      ),
+    ),
+  )
+  let r = 1.0F / (max.z - min.z)
+  let clip_from_cascade = @math.Mat4::from_cols(
+    @math.Vec4::new(2.0F / cascade_diameter, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 2.0F / cascade_diameter, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, r, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+  )
+  Cascade::{
+    world_from_cascade,
+    clip_from_cascade,
+    clip_from_world: clip_from_cascade.mul(cascade_from_world),
+    texel_size: cascade_texel_size,
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_light/src/cascade.rs::Cascades`.
 pub struct Cascades {
   cascades : @hashmap.HashMap[@core.Entity, Array[Cascade]]

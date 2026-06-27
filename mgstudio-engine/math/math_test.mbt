@@ -234,6 +234,34 @@ test "math: Mat4 row and affine conversion preserve Bevy column-major shape" {
 }
 
 ///|
+test "math: Mat4 transpose and transform_point3 match Bevy column vectors" {
+  let matrix = Mat4::from_cols(
+    Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
+    Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
+    Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
+    Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
+  )
+  let transposed = matrix.transpose()
+  debug_inspect(
+    transposed.x_axis().x == 1.0F &&
+    transposed.x_axis().y == 5.0F &&
+    transposed.x_axis().z == 9.0F &&
+    transposed.x_axis().w == 13.0F,
+    content="true",
+  )
+  let translated = Mat4::from_affine3(
+    Affine3::from_translation(Vec3::new(3.0F, 4.0F, 5.0F)),
+  )
+  debug_inspect(
+    approx_vec3(
+      translated.transform_point3(Vec3::new(1.0F, 2.0F, 3.0F)),
+      Vec3::new(4.0F, 6.0F, 8.0F),
+    ),
+    content="true",
+  )
+}
+
+///|
 test "math: Mat4 perspective infinite reverse rh matches Bevy shape" {
   let matrix = Mat4::perspective_infinite_reverse_rh(pi_half(), 1.0F, 0.25F)
   let x = matrix.x_axis()

@@ -830,11 +830,14 @@ pub struct Mat4 {
 } derive(Eq)
 pub fn Mat4::from_affine3(Affine3) -> Self
 pub fn Mat4::from_cols(Vec4, Vec4, Vec4, Vec4) -> Self
+pub fn Mat4::from_quat(Quat) -> Self
 pub fn Mat4::identity() -> Self
 pub fn Mat4::mul(Self, Self) -> Self
 pub fn Mat4::mul_vec4(Self, Vec4) -> Vec4
 pub fn Mat4::perspective_infinite_reverse_rh(Float, Float, Float) -> Self
 pub fn Mat4::row(Self, Int) -> Vec4
+pub fn Mat4::transform_point3(Self, Vec3) -> Vec3
+pub fn Mat4::transpose(Self) -> Self
 pub fn Mat4::w_axis(Self) -> Vec4
 pub fn Mat4::x_axis(Self) -> Vec4
 pub fn Mat4::y_axis(Self) -> Vec4
@@ -1240,7 +1243,9 @@ pub fn Vec3::dot(Self, Self) -> Float
 pub fn Vec3::floor(Self) -> Self
 pub fn Vec3::length(Self) -> Float
 pub fn Vec3::length_squared(Self) -> Float
+pub fn Vec3::max(Self, Self) -> Self
 pub fn Vec3::max_element(Self) -> Float
+pub fn Vec3::min(Self, Self) -> Self
 pub fn Vec3::min_element(Self) -> Float
 pub fn Vec3::mul(Self, Self) -> Self
 pub fn Vec3::mul_scalar(Self, Float) -> Self

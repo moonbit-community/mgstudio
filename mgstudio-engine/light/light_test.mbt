@@ -520,3 +520,40 @@ test "directional shadow map validation produces next power-of-two size" {
     content="2048",
   )
 }
+
+///|
+test "directional cascade calculation follows Bevy stable texel snapping" {
+  let cascade = @light.calculate_directional_light_cascade(
+    [
+      @math.Vec3::new(1.0F, -1.0F, -1.0F),
+      @math.Vec3::new(1.0F, 1.0F, -1.0F),
+      @math.Vec3::new(-1.0F, 1.0F, -1.0F),
+      @math.Vec3::new(-1.0F, -1.0F, -1.0F),
+      @math.Vec3::new(2.0F, -2.0F, -3.0F),
+      @math.Vec3::new(2.0F, 2.0F, -3.0F),
+      @math.Vec3::new(-2.0F, 2.0F, -3.0F),
+      @math.Vec3::new(-2.0F, -2.0F, -3.0F),
+    ],
+    12.0F,
+    @math.Mat4::identity(),
+    @math.Mat4::identity(),
+  )
+  debug_inspect(approx_eq(cascade.texel_size, 0.5F, 1.0e-6F), content="true")
+  let world_translation = cascade.world_from_cascade.w_axis()
+  debug_inspect(
+    approx_eq(world_translation.x, 0.0F, 1.0e-6F) &&
+    approx_eq(world_translation.y, 0.0F, 1.0e-6F) &&
+    approx_eq(world_translation.z, -1.0F, 1.0e-6F) &&
+    approx_eq(world_translation.w, 1.0F, 1.0e-6F),
+    content="true",
+  )
+  let clip_from_cascade = cascade.clip_from_cascade
+  debug_inspect(
+    approx_eq(clip_from_cascade.x_axis().x, 1.0F / 3.0F, 1.0e-6F),
+    content="true",
+  )
+  debug_inspect(
+    approx_eq(clip_from_cascade.z_axis().z, 0.5F, 1.0e-6F),
+    content="true",
+  )
+}

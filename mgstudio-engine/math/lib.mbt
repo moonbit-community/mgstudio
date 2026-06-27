@@ -214,6 +214,48 @@ pub fn Vec3::min_element(self : Vec3) -> Float {
 }
 
 ///|
+pub fn Vec3::min(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(
+    if self.x < other.x {
+      self.x
+    } else {
+      other.x
+    },
+    if self.y < other.y {
+      self.y
+    } else {
+      other.y
+    },
+    if self.z < other.z {
+      self.z
+    } else {
+      other.z
+    },
+  )
+}
+
+///|
+pub fn Vec3::max(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(
+    if self.x > other.x {
+      self.x
+    } else {
+      other.x
+    },
+    if self.y > other.y {
+      self.y
+    } else {
+      other.y
+    },
+    if self.z > other.z {
+      self.z
+    } else {
+      other.z
+    },
+  )
+}
+
+///|
 pub fn Vec3::floor(self : Vec3) -> Vec3 {
   Vec3::new(self.x.floor(), self.y.floor(), self.z.floor())
 }
@@ -323,6 +365,11 @@ pub fn Mat4::identity() -> Mat4 {
 }
 
 ///|
+pub fn Mat4::from_quat(rotation : Quat) -> Mat4 {
+  Mat4::from_affine3(Affine3::from_rotation_translation(rotation, Vec3::zero()))
+}
+
+///|
 // Bevy source: `bevy_math::Mat4::perspective_infinite_reverse_rh`.
 pub fn Mat4::perspective_infinite_reverse_rh(
   fov_y_radians : Float,
@@ -337,6 +384,11 @@ pub fn Mat4::perspective_infinite_reverse_rh(
     Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
     Vec4::new(0.0F, 0.0F, z_near, 0.0F),
   )
+}
+
+///|
+pub fn Mat4::transpose(self : Mat4) -> Mat4 {
+  Mat4::from_cols(self.row(0), self.row(1), self.row(2), self.row(3))
 }
 
 ///|
@@ -367,6 +419,12 @@ pub fn Mat4::from_affine3(affine : Affine3) -> Mat4 {
       1.0F,
     ),
   )
+}
+
+///|
+pub fn Mat4::transform_point3(self : Mat4, point : Vec3) -> Vec3 {
+  let transformed = self.mul_vec4(Vec4::new(point.x, point.y, point.z, 1.0F))
+  Vec3::new(transformed.x, transformed.y, transformed.z)
 }
 
 ///|

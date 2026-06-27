@@ -22,6 +22,8 @@ pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLi
 
 pub fn automatically_add_parallax_correction_components(@app.Commands, @ecs.Query[@core.Entity, (@ecs.With[EnvironmentMapLight], @ecs.With[LightProbe], @ecs.Without[ParallaxCorrection])]) -> Unit
 
+pub fn calculate_directional_light_cascade(Array[@math.Vec3], Float, @math.Mat4, @math.Mat4) -> Cascade
+
 pub fn cluster_visibility_class_id() -> Int
 
 pub fn directional_light_validated_shadow_map_size(Int) -> Int
